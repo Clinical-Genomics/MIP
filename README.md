@@ -1,0 +1,4 @@
+MIP
+===
+
+Mutation Identification Pipeline
