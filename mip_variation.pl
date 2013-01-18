@@ -1111,7 +1111,7 @@ sub VarcallMergePostAnnovar {
     print VMERGE "perl $ids/intersectCollect.pl -db $odf/$_[0]/$vm_dbf -o ", '${outFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt", "\n\n";
     	    
     close(VMERGE);   
-    #FIDSubmitJob(0,$familyid, 1, $_[2],$filename);
+    FIDSubmitJob(0,$familyid, 1, $_[2],$filename);
     return;
 }
 
