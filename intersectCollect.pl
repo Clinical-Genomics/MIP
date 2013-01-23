@@ -22,6 +22,8 @@ intersectCollect.3.2.pl -db db_master.txt -o outfile.txt
 
 -oheaders/--outheaders The headers for each column in output file. The information can also be recorded in the db master file as outheaders=header,,headerN.
 
+-oinfo/--outinfo The headers and order for each column in output file. The information can also be recorded in the db master file as "outinfo:header1=0_2,,headerN=N_N".
+
 -m/--merge Merge all entries found within db files. Unique entries (not found in first db file) will be included. Do not support range matching. (Defaults to "0") 
 
 -prechr/--prefix_chromosomes "chrX" or just "X" (defaults to "X")
@@ -42,7 +44,7 @@ use vars qw($USAGE);
 
 BEGIN {
     $USAGE =
-	qq{intersectCollect.3.1.pl -db db_master.txt -o outfile.txt
+	qq{intersectCollect.pl -db db_master.txt -o outfile.txt
                -db/--dbfile A tab-sep file containing 1 db per line with format (DbPath\tSeparator\tColumn_Keys\tChr_Column\tMatching\tColumns_to_Extract\tFile_Size\t). NOTE: db file and col nr are 0-based.
                   1. DbPath = Complete path to db file. First file determines the nr of elements that are subsequently used to collects information. [string]
                   2. Separator = Anything that can be inserted into perls split function. [string]
@@ -56,15 +58,16 @@ BEGIN {
                   Precedence: 1. command line 2. Recorded in db master file 3. Order of appearance in db master file.
                -oheaders/--outheaders The headers for each column in output file. The information can also be recorded in the db master file as outheaders=header,,headerN. 
                   Precedence: 1. command line 2. Recorded in db master file
+               -oinfo/--outinfo The headers and order for each column in output file. The information can also be recorded in the db master file as "outinfo:header1=0_2,,headerN=N_N".
                -m/--merge Merge all entries found within db files. Unique entries (not found in first db file) will be included. Do not support range matching. (Defaults to "0")
                -prechr/--prefix_chromosomes "chrX" or just "X" (defaults to "X")
 	   };
     
 }
 
-my ($db,$of,$ocol,$oheaders,$merge,$prechr,$help) = (0,"intersectCollect.txt",0,0,0,0);
+my ($db,$of,$ocol,$oheaders, $outinfo,$merge,$prechr,$help) = (0,"intersectCollect.txt",0,0,0,0,0);
 
-my (@chr, @ocol, @oheaders);
+my (@chr, @ocol, @oheaders, @outinfo);
 
 ###
 #User Options
@@ -74,6 +77,7 @@ GetOptions('db|dbfile:s'  => \$db,
 	   'o|outfile:s'  => \$of,
 	   'ocol|outcolumns:s'  => \@ocol, #comma separated
 	   'oheaders|outheaders:s'  => \@oheaders, #comma separated
+	   'oinfo|outinfo:s'  => \@outinfo, #comma separated
 	   'm|merge:n'  => \$merge,
 	   'prechr|prefix_chromosomes:n'  => \$prechr,
 	   'h|help' => \$help,
@@ -103,6 +107,23 @@ if (@oheaders) {
     print STDOUT "\n";
     $oheaders =1; #To not rewrite order of headers supplied by user with the order of headers in the Db master file
 }
+if (@outinfo) {
+    @outinfo = split(/,/,join(',',@outinfo)); #Enables comma separated list
+    print STDOUT "Order of output header and columns as supplied by user: ";
+    for (my $out_info_Counter=0;$out_info_Counter<scalar(@outinfo);$out_info_Counter++) {
+	print STDOUT $outinfo[$out_info_Counter], "\t";
+	if ($outinfo[$out_info_Counter] =~/for_genotypes\=/) { #Handle IDN exception
+	    push(@ocol, $'); #'
+	    push(@oheaders, $`);
+	}
+	elsif ($outinfo[$out_info_Counter] =~/\=/) {
+	    push(@ocol, $'); #'
+	    push(@oheaders, $`);
+	}
+    } 
+    print STDOUT "\n";
+    $outinfo =1; #To not rewrite order supplied by user with the order in the Db master file
+}
 if ($prechr == 0) {
     @chr = ("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","X","Y","MT"); #Chr for enhanced speed in collecting information and reducing memory consumption
 }
@@ -121,7 +142,7 @@ my %unsorted; #For later sorting using ST
 ###
 
 if ($db) {
-    ReadDbMaster($db,$ocol,$oheaders); #Collect information on db files from master file supplied with -db
+    ReadDbMaster($db,$ocol,$oheaders,$outinfo); #Collect information on db files from master file supplied with -db
 }
 
 #Read all range Db file first to enable check against first db file keys as it is read.
@@ -204,10 +225,12 @@ sub ReadDbMaster {
 #DbPath\tSeparator\Column_Keys\tColumns_to_Extract\t. First 4 columns are mandatory.
 #$_[0] = filename
 #$_[1] = "0" || "1", depending on the user supplied an output order (1) or not (0)
-#$_[2] = "0" || "1", depending on the user supplied an output header (1) or nor (0)
+#$_[2] = "0" || "1", depending on the user supplied an output header (1) or not (0)
+#$_[3] = "0" || "1", depending on the user supplied an output headerN=N_N (1) or not (0)
 
     my $local_ocol = $_[1];
     my $local_headers = $_[2];
+    my $local_outinfo = $_[3];
     my (@dbColumnKeys, @dbColumnKeysNr, @dbColumnsToExtract);
     open(DBM, "<$_[0]") or die "Can't open $_[0]:$!, \n";    
     
@@ -218,7 +241,24 @@ sub ReadDbMaster {
 	if (m/^\s+$/) {		# Avoid blank lines
 	    next;
 	}
-	if (m/^#/) {		# Avoid #
+	if ($_=~/^#/) {		# Avoid #
+	    next;
+	}
+	if ($_=~/^outinfo:/i) { #Locate order of out columns if recorded in db master (precedence: 1. Command line, 2. Recorded in db master file 3. Order of appearance in db master file)
+	    if ($local_outinfo == 0) { #Create output headers and order determined by entry in db master file
+		
+		$outinfo = 1; #Ensure that precedence is kept
+		$ocol = 1; #Ensure that precedence is kept
+		$oheaders = 1; #Ensure that precedence is kept. Note: Global
+		@outinfo = split(",", $'); #'
+		for (my $out_info_Counter=0;$out_info_Counter<scalar(@outinfo);$out_info_Counter++) {
+		    
+		    if ($outinfo[$out_info_Counter] =~/\=>/) {
+			push(@ocol, $'); #'
+			push(@oheaders, $`);
+		    }
+		} 
+	    }
 	    next;
 	}
 	if ($_ =~/^outcolumns\=/i) { #Locate order of out columns if recorded in db master (precedence: 1. Command line, 2. Recorded in db master file 3. Order of appearance in db master file)
@@ -288,27 +328,39 @@ sub ReadDbMaster {
 	}
     }
     if ($local_headers == 0) { #No order of output columns headers supplied by user 
-	if ($oheaders == 1) {
+	if ($oheaders == 1 && $outinfo ==0) {
 	    print STDOUT "Order of output columns headers determined by db master file: ";
 	    for (my $out_col_head=0;$out_col_head<scalar(@oheaders);$out_col_head++) {
 		print STDOUT $oheaders[$out_col_head], "\t";
 	    } 
 	}
-	else {
+	elsif ($oheaders == 0 && $outinfo ==0) {
 	    print STDOUT "Proceeding without attaching header information. Headers can be supplied using flag -oheaders or by recording header information (and order) in the db master file by adding 'outheaders=header1,,headerN' before any db files";
 	}
 	print STDOUT "\n";
     }
     if ($local_ocol eq 0) { #No order of output columns supplied by user
-	if ($ocol == 1) {
+	if ($ocol == 1 && $outinfo ==0) {
 	    print STDOUT "Order of output columns determined by db master file: ";
 	    for (my $out_col=0;$out_col<scalar(@ocol);$out_col++) {
 		print STDOUT $ocol[$out_col], "\t";
 	    } 
 	    print STDOUT "\n";
 	}
- 	else {
+ 	elsif ($ocol == 0 && $outinfo ==0) {
 	    print STDOUT "No users supplied order of output columns. Will order the columns according to appearance in db master file\n";
+	}
+    }
+    if ($local_outinfo eq 0) { #No order of output headers and columns supplied by user
+	if ($outinfo == 1) {
+	    print STDOUT "Order of output headers and columns determined by db master file: ";
+	    for (my $out_info_Counter=0;$out_info_Counter<scalar(@outinfo);$out_info_Counter++) {
+		print STDOUT $outinfo[$out_info_Counter], "\t";
+	    }
+	    print STDOUT "\n";
+	}
+ 	else {
+	    print STDOUT "No users supplied order of output header and columns. Will order the columns according to appearance in db master file\n";
 	}
     }
     close(DBM);
