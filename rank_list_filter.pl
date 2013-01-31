@@ -1595,7 +1595,7 @@ sub ReadVCF {
 	if (m/^\s+$/) {		# Avoid blank lines
             next;
         }	
-	if (m/^\#/) {		#Load header and split for use later in writting to outfile
+	if (m/^\#/) {		#Load header and split for use later in writing to outfile
 	    @infile_header = split("\t",$_);
             next;
         }			

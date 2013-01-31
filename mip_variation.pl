@@ -14,7 +14,7 @@ mip_variation.pl  -i [infile...n] -a [project ID] -s [sample ID...n] -em [e-mail
 
 -i/--infile Infile(s) (Mandatory: Supply whole path)
 
--ids/--indirscript The pipeline custom script in dir (Mandatory: Supply whole path)
+-ids/--indirscript The pipeline script in dir (Mandatory: Supply whole path)
 
 -rd/--referencesdir Reference(s) dir (Mandatory: Supply whole path)
 
@@ -119,6 +119,8 @@ mip_variation.pl  -i [infile...n] -a [project ID] -s [sample ID...n] -em [e-mail
 -wgs/--whole_genome_sequencing Analysis to perform are whole genome sequencing data or not (defaults to "0" (=no))
 
 -mc/--maximum_cores The maximum number of cores per node used in the analysis (defaults to "8")
+
+-env_up/--environment_uppmax Sets the environment to UPPMAX. (defaults to "0" (=no))
 
 =head3 I/O
 
@@ -226,13 +228,14 @@ BEGIN {
                -pedigree/--pedigree_file (Supply whole path, defaults to odf/familyid/familyid_pedigree.txt)
                -wgs/--whole_genome_sequencing Analysis to perform are whole genome sequencing data or not (defaults to "0" (=no))
                -mc/--maximum_cores The maximum number of cores per node used in the analysis (defaults to "8")
+               -env_up/--environment_uppmax Sets the environment to UPPMAX. (defaults to "0" (=no))
 	   };
 }
 
 ###
 #Program parameters
 ###
-my ($aid,$em, $ids, $rd, $annovar_path, $odf, $ods, $fnend, $annovar_genome_build_version, $annovar_supported_table_names, $annovar_maf_threshold, $annovar_sift_threshold, $genomeref, $gatk_real_knset1, $gatk_real_knset2, $gatk_recal_knset, $gatk_unigt_snp, $gatk_unigt_indel, $pedigree, $wgs, $gatk_bait, $gatk_exref_snp, $gatk_exref_indel, $vm_dbf, $rankscore, $dgf, $dgfl, $all_db_file, $all_db_cc, $all_db_gidc, $im_db_file, $im_db_cc, $im_db_gidc, $maximum_cores,$gatk_path, $filename, $filename2, $fnt, $fnt2, $aligner, $familyid,$help) = (0,0,0,0,0,0,0, ".sh","hg19", 0, 0, 0, "Homo_sapiens.GRCh37.57.dna.concat.fa", "1000G_phase1.indels.hg19.vcf", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf","dbsnp_135.b37.vcf",1,1,0,0, "SureSelect_All_Exon_50mb_with_annotation_hg19_nochr.bed.pad100.interval_list", "all-agilent_50mb-GRCh37-SNPS_pad100_interval_list.vcf", "all-agilent_50mb-GRCh37-INDELS_pad100_interval_list.vcf", "FDN.intersectCollect_db_master.txt", -100, 1, "IEM_dispGeneList.txt","mart_export_Ensembl_GeneID_key_cleaned_chr.txt",1,4,"IEM_Db_CMMS_version1.2.txt",1,18,8); 
+my ($aid,$em, $ids, $rd, $annovar_path, $odf, $ods, $fnend, $annovar_genome_build_version, $annovar_supported_table_names, $annovar_maf_threshold, $annovar_sift_threshold, $genomeref, $gatk_real_knset1, $gatk_real_knset2, $gatk_recal_knset, $gatk_unigt_snp, $gatk_unigt_indel, $pedigree, $wgs, $gatk_bait, $gatk_exref_snp, $gatk_exref_indel, $vm_dbf, $rankscore, $dgf, $dgfl, $all_db_file, $all_db_cc, $all_db_gidc, $im_db_file, $im_db_cc, $im_db_gidc, $maximum_cores,$environment_uppmax,$gatk_path, $filename, $filename2, $fnt, $fnt2, $aligner, $familyid,$help) = (0,0,0,0,0,0,0, ".sh","hg19", 0, 0, 0, "Homo_sapiens.GRCh37.57.dna.concat.fa", "1000G_phase1.indels.hg19.vcf", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf","dbsnp_135.b37.vcf",1,1,0,0, "SureSelect_All_Exon_50mb_with_annotation_hg19_nochr.bed.pad100.interval_list", "all-agilent_50mb-GRCh37-SNPS_pad100_interval_list.vcf", "all-agilent_50mb-GRCh37-INDELS_pad100_interval_list.vcf", "FDN.intersectCollect_db_master.txt", -100, 1, "IEM_dispGeneList.txt","mart_export_Ensembl_GeneID_key_cleaned_chr.txt",1,4,"IEM_Db_CMMS_version1.2.txt",1,18,8,0); 
 
 ###
 #Arguments for project
@@ -396,17 +399,27 @@ GetOptions('i|infile:s'  => \@infn, #Comma sepatated list
 	   'pedigree|pedigree_file:s'  => \$pedigree, #Path to pedigree file location
 	   'wgs|whole_genome_sequencing:n' => \$wgs,
 	   'mc|maximum_cores:n' => \$maximum_cores, #Per node
+	   'env_up|environment_uppmax:n' => \$environment_uppmax, #Sets several default paths, so that they do not have to be supplied 
 	   'h|help' => \$help,
 	   );
 
 die $USAGE if( $help );
 
+if ($annovar_supported_table_names == 1) {
+    print STDOUT "\nThese annovar databases are supported by MIP:\n";
+    for (my $annovar_supported_table_name_Counter=0;$annovar_supported_table_name_Counter<scalar(@annovar_supported_table_names);$annovar_supported_table_name_Counter++) {
+	print STDOUT $annovar_supported_table_names[$annovar_supported_table_name_Counter], "\n";
+    }
+    print STDOUT "\n";
+    die;
+}
+
 if (@infn == 0) {
-   my $verbosity = 2;
- print"\n";
- pod2usage({-message => "Must supply an infile directory as comma separated list.\n",
-     -verbose => $verbosity
-   });
+    my $verbosity = 2;
+    print"\n";
+    pod2usage({-message => "Must supply an infile directory as comma separated list.\n",
+	       -verbose => $verbosity
+	      });
 }
 if ($aid eq 0) {
     
@@ -422,15 +435,29 @@ if ( scalar(@sid) eq 0) {
 }
 if ( $ids eq 0) {
     
-    print STDERR "\n";
-    print STDERR "Must supply a script dir", "\n\n";
-    die $USAGE;
+    if ($environment_uppmax == 1) {
+	print STDOUT "\n";
+	$ids = "/bubo/proj/$aid/private/mip_scripts_master";
+	print STDOUT "Setting the MIP scripts dir to: $ids", "\n\n";
+    }
+    else {
+	print STDERR "\n";
+	print STDERR "Must supply the MIP scripts dir", "\n\n";
+	die $USAGE;
+    }
 }
 if ( $rd eq 0) {
     
-    print STDERR "\n";
-    print STDERR "Must supply a reference dir", "\n\n";
-    die $USAGE;
+    if ($environment_uppmax == 1) {
+	print STDOUT "\n";
+	$rd = "/bubo/proj/$aid/private/mip_references";
+	print STDOUT "Setting MIP reference dir to: $rd", "\n\n";
+    }
+    else {
+	print STDERR "\n";
+	print STDERR "Must supply a MIP reference dir", "\n\n";
+	die $USAGE;
+    }
 }
 if ( $familyid eq 0 ) {
     
@@ -440,15 +467,39 @@ if ( $familyid eq 0 ) {
 }
 if ($odf eq 0) {
     
-    print STDOUT "\n";
-    $odf = "/bubo/proj/$aid/private/data";
-    print STDOUT "Setting output data dir to: $odf", "\n\n";
+    if ($environment_uppmax == 1) {
+	print STDOUT "\n";
+	if ($wgs == 1) {
+	    $odf = "/bubo/proj/$aid/private/genomes";
+	}
+	else {
+	    $odf = "/bubo/proj/$aid/private/exomes";
+	}
+	print STDOUT "Setting MIP output data dir to: $odf", "\n\n";
+    }
+    else {
+	print STDERR "\n";
+	print STDERR "Must supply a MIP output data dir", "\n\n";
+	die $USAGE;
+    }
 }
 if ($ods eq 0) {
     
-    print STDOUT "\n";
-    $ods = "/bubo/proj/$aid/private/wgs_wf_scripts";
-    print STDOUT "Setting output scripts dir to: $ods", "\n\n";
+    if ($environment_uppmax == 1) {
+	print STDOUT "\n";
+	if ($wgs == 1) {
+	    $ods = "/bubo/proj/$aid/private/genomes_scripts";
+	}
+	else {
+	    $ods = "/bubo/proj/$aid/private/exomes_scripts";
+	}
+	print STDOUT "Setting MIP output scripts dir to: $ods", "\n\n";
+    }
+    else {
+	print STDERR "\n";
+	print STDERR "Must supply a MIP output script dir", "\n\n";
+	die $USAGE;
+    }
 }
 if ($pedigree eq 0) {
     
@@ -460,17 +511,9 @@ if ($pedigree eq 0) {
     }
     elsif ($pRankVar eq 1) { 
 	print STDERR "Could not find pedigree file at: $pedigree \n";
-	print STDERR "Must supply a pedigree file to run Mendelianfiltering", "\n\n";
+	print STDERR "Must supply a pedigree file to run Ranking script", "\n\n";
 	die $USAGE;
     } 
-}
-if ($annovar_supported_table_names == 1) {
-    print STDOUT "\nThese annovar databases are supported by MIP:\n";
-    for (my $annovar_supported_table_name_Counter=0;$annovar_supported_table_name_Counter<scalar(@annovar_supported_table_names);$annovar_supported_table_name_Counter++) {
-	print STDOUT $annovar_supported_table_names[$annovar_supported_table_name_Counter], "\n";
-    }
-    print STDOUT "\n";
-    die;
 }
 if ( ($pANVAR eq 1) && ($annovar_path eq 0) ) {
     
@@ -1198,7 +1241,7 @@ sub VarcallMergePostAnnovar {
 	}
 	$regexp_rd .= $file;
 	#Create family specific template
-	print VMERGE q?perl -nae 'if ($_=~/outinfo/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:DP=Approximate_read_depth:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes=0_$sampleID,"} else { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:DP=Approximate_read_depth:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes=0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outcolumns/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="0_$sampleID,"} else { $sidstring.="0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outheaders/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:DP=Approximate_read_depth:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes,"} else { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:DP=Approximate_read_depth:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes"} } s/IDN/$sidstring/g; print $_;} next;} elsif ($_=~s/FDN/?.$_[0].q?/g) { if($_=~s/^ODF/?.$regexp_odf.q?/g) {} if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="$sampleID,"} else { $sidstring.="$sampleID"} } s/IDN/$sidstring/g; print $_;} else { print $_;} } else { if($_=~s/^RD/?.$regexp_rd.q?/g) {} print $_;}' ?.$rd.q?/CMMS_intersectCollect_db_master_template_feature_icdiffpro.txt > ?."$odf/$_[0]/$vm_dbf", "\n\n";
+	print VMERGE q?perl -nae 'if ($_=~/outinfo/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes=>0_$sampleID,"} else { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes=>0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outcolumns/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="0_$sampleID,"} else { $sidstring.="0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outheaders/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes,"} else { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes"} } s/IDN/$sidstring/g; print $_;} next;} elsif ($_=~s/FDN/?.$_[0].q?/g) { if($_=~s/^ODF/?.$regexp_odf.q?/g) {} if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="$sampleID,"} else { $sidstring.="$sampleID"} } s/IDN/$sidstring/g; print $_;} else { print $_;} } else { if($_=~s/^RD/?.$regexp_rd.q?/g) {} print $_;}' ?.$rd.q?/CMMS_intersectCollect_db_master_template_feature_icdiffpro.txt > ?."$odf/$_[0]/$vm_dbf", "\n\n";
 
     }
     print VMERGE "perl $ids/intersectCollect.pl -db $odf/$_[0]/$vm_dbf -o ", '${outFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt", "\n\n";
