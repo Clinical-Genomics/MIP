@@ -163,7 +163,7 @@ sub InfilesReFormat {
 		    push( @ {$lanes{$sampleid} }, $2);
 		    push(@ {$sampleFlowCells{$sampleid}}, $1);
 		}
-		elsif ( $infiles{$familyid}{$sampleid}[$i] =~ /(\d+)_(\d+)_([^_]+)_([^_]+)_(index\d+)_(\d).fastq/ ) { #Parse 'new' format
+		elsif ( $infiles{$familyid}{$sampleid}[$i] =~ /(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq/ ) { #Parse 'new' format
 		    chomp($1);
 		    $sampleData{$familyid}{$sampleid}{'Lane'} .= "$1;";
 		    $sampleData{$familyid}{$sampleid}{'Date'} .= "$2;";
@@ -180,7 +180,7 @@ sub InfilesReFormat {
 		    $i++; #Skip second direction
 		    $itrack++; #Track for every lane finished
 		}
-		elsif ( $infiles{$familyid}{$sampleid}[$i] =~ /(\d+_\d+_[^_]+_[^_]+_index\d+_\d).fastq/ ) { #Parse 'new' format
+		elsif ( $infiles{$familyid}{$sampleid}[$i] =~ /(\d+_\d+_[^_]+_[^_]+_(index[^_]+)_\d).fastq/ ) { #Parse 'new' format
 		    $Infiles_lane_noending{$familyid}{$sampleid}[$itrack] = $1; #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
 		    $i++; #Skip second direction
 		    $itrack++; #Track for every lane finished
@@ -193,7 +193,7 @@ sub InfilesReFormat {
 	    
 		   $Infiles_bothstrands_noending{$familyid}{$sampleid}[$i]= $1; #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
 	       }
-	       elsif ( $infiles{$familyid}{$sampleid}[$i] =~ /(\d+_\d+_[^_]+_[^_]+_index\d+_\d).fastq/ ) { #Parse 'new' format
+	       elsif ( $infiles{$familyid}{$sampleid}[$i] =~ /(\d+_\d+_[^_]+_[^_]+_(index[^_]+)_\d).fastq/ ) { #Parse 'new' format
 	    
 	    
 		   $Infiles_bothstrands_noending{$familyid}{$sampleid}[$i]= $1; #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).

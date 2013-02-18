@@ -8,13 +8,13 @@ use warnings;
 
 =head1 SYNOPSIS
     
-wgs_var_call_wf.1.4.pl  -i [infile...n] -a [project ID] -s [sample ID...n] -em [e-mail] -ods [outdirscripts] -odf [outdirdata] -ids [indirscripts] -rd [referencedir]
+mip_variation.pl  -i [infile...n] -a [project ID] -s [sample ID...n] -em [e-mail] -ods [outdirscripts] -odf [outdirdata] -ids [indirscripts] -rd [referencedir]
 
 =head2 COMMANDS AND OPTIONS
 
 -i/--infile Infile(s) (Mandatory: Supply whole path)
 
--ids/--indirscript The pipeline custom script in dir (Mandatory: Supply whole path)
+-ids/--indirscript The pipeline script in dir (Mandatory: Supply whole path)
 
 -rd/--referencesdir Reference(s) dir (Mandatory: Supply whole path)
 
@@ -26,93 +26,107 @@ wgs_var_call_wf.1.4.pl  -i [infile...n] -a [project ID] -s [sample ID...n] -em [
 
 -em/--email
 
--odf/--outdirdata The data files output directory (Supply whole path, defaults to data)
+-odf/--outdirdata The data files output directory (Mandatory: Supply whole path)
 
--ods/--outdirscript The script files output directory (Supply whole path, defaults to wgs_wf_scripts)
+-ods/--outdirscript The script files output directory (Mandatory: Supply whole path)
 
--familyid/--family Group id of samples to be compared (defaults to "", (Ex: 1 for IDN 1-1-1A))
+-familyid/--family Group id of samples to be compared (Mandatory, Ex: 1 for IDN 1-1-1A)
 
--pSTV_fq/--samtools Flag running samtools view -q (defaults to yes (=1))
+-pSTV_schr/--samtools_viewschr Flag running samtools view to split per chr & index (defaults to "1" (=yes))
 
--pSTV_schr/--samtools_viewschr Flag running samtools view to split per chr & index (defaults to yes (=1))
-
--pGATK_REAl/--gatk_real Flag running GATK realign (defaults to yes (=1))
+-pGATK_REAl/--gatk_real Flag running GATK realign (defaults to "1" (=yes))
 
 -gatk_real_knset1/--gatk_real_knownset1 GATK realign known INDEL set 1 (defaults to "1000G_phase1.indels.hg19.vcf")
 
 -gatk_real_knset2/--gatk_real_knownset2 GATK realign known INDEL set 2 (defaults to "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf")
 
--gatk_path/--genatk_path  Flag for path to GATK, must be supplied for GATK (defaults to ""). NOTE: Base recalibration has been set to GATK GenomeAnalysisTK-2.1-11-g13c0244 due to issues with malformed reads that the GATK team were unable to reproduce.  
+-gatk_path/--genatk_path  Flag for path to GATK, must be supplied for GATK (defaults to "").  
 
--pGATK_RECAl/--gatk_recal Flag running GATK recalibrate (defaults to yes (=1))
+-pGATK_RECAl/--gatk_recal Flag running GATK recalibrate (defaults to "1" (=yes))
 
 -gatk_recal_knset/--gatk_recal_knownset GATK recal known SNP set (defaults to "dbsnp_135.b37.vcf")
 
--pGATK_UNIGT/--gatk_unigt Flag running GATK unifiedgenotyper (defaults to no (=0))
+-pGATK_UNIGT/--gatk_unigt Flag running GATK unifiedgenotyper (defaults to "0" (=no))
 
--pGATK_HAPCAL/--gatk_hapcal Flag running GATK HaplotypeCaller (defaults to yes (=1))
+-pGATK_HAPCAL/--gatk_hapcal Flag running GATK HaplotypeCaller (defaults to "1" (=yes))
 
--gatkugt_snp/--gatk_unigt_snp Flag running GATK unifiedgenotyper for SNPs (defaults to yes (=1))
+-gatkugt_snp/--gatk_unigt_snp Flag running GATK unifiedgenotyper for SNPs (defaults to "1" (=yes))
 
--gatkugt_ind/--gatk_unigt_indel Flag running GATK unifiedgenotyper for INDELs (defaults to yes (=1))
+-gatkugt_ind/--gatk_unigt_indel Flag running GATK unifiedgenotyper for INDELs (defaults to "1" (=yes))
 
 -gatk_bait/--gatk_bait_il Prepared bait interval_list file for GATK_UnifiedGT. (defaults to "SureSelect_All_Exon_50mb_with_annotation_hg19_nochr.bed.pad100.interval_list")
 
--pGATK_VARRECAL/--gatk_varrecalibrator Flag running GATK variantrecalibrator  (defaults to yes (=1))
+-pGATK_VARRECAL/--gatk_varrecalibrator Flag running GATK variantrecalibrator  (defaults to "1" (=yes))
 
 -gatk_exref_snp/--gatk_exomeref_snp Prepared exome reference file (SNVs) for GATK_Varrecal. (defaults to "all-agilent_50mb-GRCh37-SNPS_pad100_interval_list.vcf")
 
 -gatk_exref_indel/--gatk_exomeref_indel Prepared exome reference file (INDELs) for GATK_Varrecal. (defaults to "all-agilent_50mb-GRCh37-INDELS_pad100_interval_list.vcf")
 
--pPIND/--pindel Flag running Pindel (defaults to no (=0))
+-pPIND/--pindel Flag running Pindel (defaults to "0" (=no))
 
--pGATK_VAREVAL_All/--gatk_vareval_all Flag running GATK varianteval for all variants  (defaults to yes (=1))
+-pGATK_VAREVAL_All/--gatk_vareval_all Flag running GATK varianteval for all variants  (defaults to "1" (=yes))
 
--pGATK_VAREVAL_Exome/--gatk_vareval_exome Flag running GATK varianteval for exonic variants  (defaults to yes (=1))
+-pGATK_VAREVAL_Exome/--gatk_vareval_exome Flag running GATK varianteval for exonic variants  (defaults to "1" (=yes))
 
--pGATK_COMBVAR/--gatk_combinevariants Flag running GATK combinevariants. Use only if UnifiedGT and not HaplotypeCaller was used to call variants (SNVs & INDELs).(defaults to no (=0))
+-pGATK_COMBVAR/--gatk_combinevariants Flag running GATK combinevariants. Use only if UnifiedGT and not HaplotypeCaller was used to call variants (SNVs & INDELs).(defaults to "0" (=no))
 
--pANVAR/--perl Flag running annovar (defaults to yes (=1))
+-pANVAR/--annovar Flag running annovar (defaults to "1" (=yes))
 
--annov/--dirannov dir for annovar (Supply whole path, defaults to /bubo/nobackup/uppnex/annotations/annovar)
+-anva_pa/--annovar_path  Path to annovar script directory (Supply whole path, defaults to "". NOTE:Assumes that the annovar db files are located in annovar/humandb)
 
--annovar_dbsnp_ver/--annovar_dbsnp_version Flag for setting the version of dbsnp in annovar (defaults to snp135NonFlagged;Supported:"132","135","snp135NonFlagged")
+-anva_gbv/--annovar_genome_build_version Annovar genome build version (defaults to "hg19")
 
--annovar_1000g_ver/--annovar_1000g_version Flag for setting the version of 1000g in annovar (defaults to 1000g2012apr_all)
+-anva_tn/--annovar_table_names Annovar table names (comma sep)
 
--annovar_maf_thold/--an_maf_th Flag for setting the maf_threshold in annovar (defaults to 0)
+-anva_stn/--annovar_supported_table_names Annovar MIP supported table names (defaults 0 (=no))
 
--pVMERGE/--perl Flag running intersectCollect.3.2.pl (defaults to yes (=1))
+-anva_maf_th/--annovar_maf_threshold Flag for setting the minor allele frequency threshold in annovar (defaults to "0" (=no))
 
--vm_dbf/--vmerge_db_file Db master file to be used in intersectCollect.3.2.pl (defaults to "FDN.intersectCollect_db_master.txt")
+-anva_sift_th/--annovar_sift_threshold Flag for setting the avsift threshold in annovar (defaults to "0" (=no))
 
--pAddDP/--adddepth Flag for adding depth at nonvariant sites by mpileup and add_depth.pl (defaults to yes (=1))
+-pVMERGE/--variation_annotation_merge Running intersectCollect.pl to merge all annotation info to one file (defaults to "1" (=yes))
 
--pRankVar/--rankvariants Flag running ranking of variants (defaults to yes (=1))
+-vm_db_te/--vmerge_db_template Db template file used to create the specific family '-vm_dbf' master file (defaults to "CMMS_intersectCollect_db_master_template.txt")
+
+-vm_dbf/--vmerge_db_file Db master file to be used in intersectCollect.pl (defaults to "FDN.intersectCollect_db_master.txt")
+
+-pAddDP/--adddepth Flag for adding depth at nonvariant sites by mpileup and add_depth.pl (defaults to "1" (=yes))
+
+-pRankVar/--rankvariants Flag running ranking of variants (defaults to "1" (=yes))
 
 -rs/--rankscore The rank score cut-off (defaults to "-100")
 
--dgf/--dispGeneFiltering Filtering of genes that should be removed from downstream processing (Defaults to "1")
+-dgf/--dispGeneFiltering Filtering of genes that should be removed from downstream processing (Defaults to "1" (=yes))
 
 -dgfl/--dispGeneList List of genes that should be removed from downstream processing (Supply whole path, Format: 1 entry per line;HGNC Symbol)
 
 -all_db_file/--all_elements_Db_file All_Db file (Defaults to "mart_export_Ensembl_GeneID_key_cleaned_chr.txt")
 
--all_db_cc/--all_elements_Db_Gene_Coverage_Calculation All_Db file coverage calculation (Defaults to "1")
+-all_db_cc/--all_elements_Db_Gene_Coverage_Calculation All_Db file coverage calculation (Defaults to "1" (=yes))
 
 -all_db_gidc/--all_elements_Db_Gene_Id_Col All_Db file gene Id column (zero-based, defaults to "4")
 
 -im_db_file/--Im_Db_file Im_Db file (Defaults to "IEM_Db_CMMS_version1.2.txt")
 
--im_db_cc/--Im_Db_Gene_Coverage_Calculation Im_Db_CMMS file coverage calculation (Defaults to "1")
+-im_db_te/--Im_Db_template Im_Db template file used to create the specific family '-im_dbmf' master file (Defaults to "select_dbIEM_variants_db_master.txt")
+
+-im_dbmf/--Im_db_master_file Db master file to be used when selecting variants (defaults to "FDN.intersectCollect_selectVariants_db_master.txt")
+
+-im_dbfof/--Im_db_file_out_file The file(s) to write to when selecting variants with intersectCollect.pl. Comma sep (defaults to "$odf/$familyid/$aligner/GATK/candidates/ranking/$familyid_orphan.selectVariants, $odf/$familyid/$aligner/GATK/candidates/ranking/IEM_Db_CMMS/$familyid.selectVariants"; Supply whole path/file)
+
+-im_db_cc/--Im_Db_Gene_Coverage_Calculation Im_Db_CMMS file coverage calculation (Defaults to "1" (=yes))
 
 -im_db_gidc/--Im_Db_Gene_Id_Col Im_Db_CMMS file gene Id column (zero-based, defaults to "18")
 
--pSCheck/--samplecheck Flag running check for samples belonging to pedigree (defaults to yes (=1))
+-pSCheck/--samplecheck Flag running check for samples belonging to pedigree (defaults to "1" (=yes) )
 
 -pedigree/--pedigree_file (Supply whole path, defaults to $ods/familyid/familyid_pedigree.txt)
 
--wgs/--Flag for setting if whole genome seq or not (default: 0)
+-wgs/--whole_genome_sequencing Analysis to perform are whole genome sequencing data or not (defaults to "0" (=no))
+
+-mc/--maximum_cores The maximum number of cores per node used in the analysis (defaults to "8")
+
+-env_up/--environment_uppmax Sets the environment to UPPMAX. (defaults to "0" (=no))
 
 =head3 I/O
 
@@ -159,12 +173,13 @@ use Pod::Text;
 use Getopt::Long;
 use POSIX;
 use File::Basename;
+use File::Spec;
 
 use vars qw($USAGE);
 
 BEGIN {
     $USAGE =
-	qq{wgs_var_call_wf.pl -id [infile...n] -a [projectid] -s [sampleid...n] -em [e-mail] -ods [outdirscripts] -odf [outdirdata] -ids [indirscripts] -rd [referencedir]
+	qq{mip_variation.pl -id [infile...n] -a [projectid] -s [sampleid...n] -em [e-mail] -ods [outdirscripts] -odf [outdirdata] -ids [indirscripts] -rd [referencedir]
 	       -i/--infile Infile(s), comma sep (Mandatory: Supply whole path)
                -ids/--indirscript The pipeline custom script in dir (Mandatory: Supply whole path)
                -rd/--referencesdir Reference(s) dir (Mandatory: Supply whole path)
@@ -172,65 +187,139 @@ BEGIN {
 	       -a/--projectid The project ID (Mandatory)
 	       -s/--sampleid The sample ID,comma sep (Mandatory)
 	       -em/--email e-mail
-	       -odf/--outdirdata The data files output directory (Supply whole path, defaults to data)
-	       -ods/--outdirscript The script files output directory (Supply whole path, defaults to wgs_wf_scripts)
-               -familyid/--family Group id of samples to be compared (defaults to "", (Ex: 1 for IDN 1-1-1A)))
-               -pSTV_schr/--samtools_viewschr Flag running samtools view to split per chr & index (defaults to yes (=1))
-               -pGATK_REAl/--gatk_real Flag running GATK realign (defaults to yes (=1))
+               -odf/--outdirdata The data files output directory (Mandatory: Supply whole path)
+               -ods/--outdirscript The script files output directory (Mandatory: Supply whole path)
+               -familyid/--family Group id of samples to be compared (Mandatory, Ex: 1 for IDN 1-1-1A )
+               -pSTV_schr/--samtools_viewschr Flag running samtools view to split per chr & index (defaults to "1" (=yes))
+               -pGATK_REAl/--gatk_real Flag running GATK realign (defaults to "1" (=yes))
                -gatk_real_knset1/--gatk_real_knownset1 GATK realign known INDEL set 1 (defaults to "1000G_phase1.indels.hg19.vcf")
                -gatk_real_knset2/--gatk_real_knownset2 GATK realign known INDEL set 2 (defaults to "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf")
-               -gatk_path/--genatk_path  Flag for path to GATK, must be supplied for GATK (defaults to ""). NOTE: Base recalibration has been set to GATK GenomeAnalysisTK-2.1-11-g13c0244 due to issues with malformed reads that the GATK team were unable to reproduce.
-               -pGATK_RECAl/--gatk_recal Flag running GATK recalibrate (defaults to yes (=1))
+               -gatk_path/--genatk_path  Flag for path to GATK, must be supplied for GATK (defaults to "").
+               -pGATK_RECAl/--gatk_recal Flag running GATK recalibrate (defaults to "1" (=yes))
                -gatk_recal_knset/--gatk_recal_knownset GATK recal known SNP set (defaults to "dbsnp_135.b37.vcf")
-               -pGATK_UNIGT/--gatk_unigt Flag running GATK unifiedgenotyper (defaults to no (=0))
-               -gatkugt_snp/--gatk_unigt_snp Flag running GATK unifiedgenotyper for SNPs (defaults to yes (=1))
-               -gatkugt_ind/--gatk_unigt_indel Flag running GATK unifiedgenotyper for INDELs (defaults to yes (=1))
+               -pGATK_UNIGT/--gatk_unigt Flag running GATK unifiedgenotyper (defaults to "0" (=no))
+               -gatkugt_snp/--gatk_unigt_snp Flag running GATK unifiedgenotyper for SNPs (defaults to "1" (=yes))
+               -gatkugt_ind/--gatk_unigt_indel Flag running GATK unifiedgenotyper for INDELs (defaults to "1" (=yes))
                -gatk_bait/--gatk_bait_il Prepared bait interval_list file for GATK_UnifiedGT. (defaults to "SureSelect_All_Exon_50mb_with_annotation_hg19_nochr.bed.pad100.interval_list")
-               -pGATK_HAPCAL/--gatk_hapcal Flag running GATK HaplotypeCaller (defaults to yes (=1))
-               -pGATK_COMBVAR/--gatk_combinevariants Flag running GATK combinevariants. Use only if UnifiedGT and not HaplotypeCaller was used to call variants (SNVs & INDELs).(defaults to no (=0))
-               -pGATK_VARRECAL/--gatk_varrecalibrator Flag running GATK variantrecalibrator  (defaults to yes (=1))
+               -pGATK_HAPCAL/--gatk_hapcal Flag running GATK HaplotypeCaller (defaults to "1" (=yes))
+               -pGATK_COMBVAR/--gatk_combinevariants Flag running GATK combinevariants. Use only if UnifiedGT and not HaplotypeCaller was used to call variants (SNVs & INDELs).(defaults to "0" (=no))
+               -pGATK_VARRECAL/--gatk_varrecalibrator Flag running GATK variantrecalibrator  (defaults to "1" (=yes))
                -gatk_exref_snp/--gatk_exomeref Prepared exome reference file (SNVs) for GATK_Varrecal. (defaults to "all-agilent_50mb-GRCh37-SNPS_pad100_interval_list.vcf")
                -gatk_exref_indel/--gatk_exomeref Prepared exome reference file (INDELs) for GATK_Varrecal. (defaults to "all-agilent_50mb-GRCh37-INDELS_pad100_interval_list.vcf")
-               -pPIND/--pindel Flag running Pindel (defaults to no (=0))
-               -pGATK_VAREVAL_All/--gatk_vareval_all Flag running GATK varianteval for all variants  (defaults to yes (=1))
-               -pGATK_VAREVAL_Exome/--gatk_vareval_exome Flag running GATK varianteval for exonic variants  (defaults to yes (=1))
-               -pANVAR/--perl Flag running annovar (defaults to yes (=1))
-               -annov/--dirannov dir for annovar (Supply whole path, defaults to /bubo/nobackup/uppnex/annotations/annovar)
-               -annovar_dbsnp_ver/--annovar_dbsnp_version Flag for setting the version of dbsnp in annovar (defaults to snp135NonFlagged;Supported:"132","135","snp135NonFlagged")
-               -annovar_1000g_ver/--annovar_1000g_version Flag for setting the version of 1000g in annovar (defaults to 1000g2012apr_all)
-               -annovar_maf_thold/--Flag for setting the maf_threshold in annovar (dbsnp, 1000g etc.)
-               -pVMERGE/--perl Flag running varcall_merge_post_annovar_master.1.0.pl (defaults to yes (=1))
-               -vm_dbf/--vmerge_db_file Db master file to be used in intersectCollect.3.2.pl (defaults to "FDN.intersectCollect_db_master.txt")
-               -pAddDP/--adddepth Flag for adding depth at nonvariant sites by mpileup and add_depth.pl (defaults to yes (=1))             
-               -pRankVar/--rankvariants Flag running ranking of variants (defaults to yes (=1))
+               -pPIND/--pindel Flag running Pindel (defaults to "0" (=no))
+               -pGATK_VAREVAL_All/--gatk_vareval_all Flag running GATK varianteval for all variants  (defaults to "1" (=yes))
+               -pGATK_VAREVAL_Exome/--gatk_vareval_exome Flag running GATK varianteval for exonic variants  (defaults to "1" (=yes))
+               -pANVAR/--annovar Flag running annovar (defaults to "1" (=yes))
+               -anva_pa/--annovar_path  Path to annovar script directory (Supply whole path, defaults to "". NOTE:Assumes that the annovar db files are located in annovar/humandb)
+               -anva_gbv/--annovar_genome_build_version Annovar genome build version (defaults to "hg19")
+               -anva_tn/--annovar_table_names Annovar table names (comma sep)
+               -anva_stn/--annovar_supported_table_names Annovar MIP supported table names (defaults 0 (=no))
+               -anva_maf_th/--annovar_maf_threshold Flag for setting the minor allele frequency threshold in annovar (defaults to "0" (=no))
+               -anva_sift_th/--annovar_sift_threshold Flag for setting the avsift threshold in annovar (defaults to "0" (=no))
+               -pVMERGE/--variation_annotation_merge Running intersectCollect.pl to merge all annotation info to one file (defaults to "1" (=yes))
+               -vm_db_te/--vmerge_db_template Db template file used to create the specific family '-vm_dbf' master file (defaults to "CMMS_intersectCollect_db_master_template.txt")
+               -vm_dbf/--vmerge_db_file Db master file to be used in intersectCollect.pl (defaults to "FDN.intersectCollect_db_master.txt")
+               -pAddDP/--adddepth Flag for adding depth at nonvariant sites by mpileup and add_depth.pl (defaults to "1" (=yes))             
+               -pRankVar/--rankvariants Flag running ranking of variants (defaults to "1" (=yes))
                -rs/--rankscore The rank score cut-off (defaults to "-100")
-               -dgf/--dispGeneFiltering Filtering of genes that should be removed from downstream processing (Defaults to "1")
+               -dgf/--dispGeneFiltering Filtering of genes that should be removed from downstream processing (Defaults to "1" (=yes))
                -dgfl/--dispGeneList List of genes that should be removed from downstream processing (Defaults to "IEM_dispGeneList.txt", Format: 1 entry per line;HGNC Symbol)
                -all_db_file/--all_elements_Db_file All_Db file (Defaults to "mart_export_Ensembl_GeneID_key_cleaned_chr.txt")
-               -all_db_cc/--all_elements_Db_Gene_Coverage_Calculation All_Db file coverage calculation (Defaults to "1")
+               -all_db_cc/--all_elements_Db_Gene_Coverage_Calculation All_Db file coverage calculation (Defaults to "1" (=yes))
                -all_db_gidc/--all_elements_Db_Gene_Id_Col All_Db file gene Id column (zero-based, defaults to "4")
                -im_db_file/--Im_Db_CMMS_file Im_Db_CMMS file (Defaults to "IEM_Db_CMMS_version1.2.txt")
-               -im_db_cc/--Im_Db_Gene_Coverage_Calculation Im_Db_CMMS file coverage calculation (Defaults to "1")
+               -im_db_te/--Im_Db_template Im_Db template file used to create the specific family '-im_dbmf' master file (Defaults to "select_dbIEM_variants_db_master.txt")
+               -im_dbmf/--Im_db_master_file Db master file to be used when selecting variants (defaults to "FDN.intersectCollect_selectVariants_db_master.txt")
+               -im_dbfof/--Im_db_file_out_file The file(s) to write to when selecting variants with intersectCollect.pl. Comma sep (defaults to 'odf/familyid/aligner/GATK/candidates/ranking/familyid_orphan.selectVariants, odf/familyid/aligner/GATK/candidates/ranking/IEM_Db_CMMS/familyid.selectVariants'; Supply whole path/file)
+               -im_db_cc/--Im_Db_Gene_Coverage_Calculation Im_Db_CMMS file coverage calculation (Defaults to "1" (=yes))
                -im_db_gidc/--Im_Db_Gene_Id_Col Im_Db_CMMS file gene Id column (zero-based, defaults to "18")
-               -pSCheck/--samplecheck Flag running check for samples belonging to pedigree (defaults to yes (=1))
+               -pSCheck/--samplecheck Flag running check for samples belonging to pedigree (defaults to "1" (=yes))
                -pedigree/--pedigree_file (Supply whole path, defaults to odf/familyid/familyid_pedigree.txt)
-               -wgs/--Flag for setting if whole genome seq or not (default: 0)
+               -wgs/--whole_genome_sequencing Analysis to perform are whole genome sequencing data or not (defaults to "0" (=no))
+               -mc/--maximum_cores The maximum number of cores per node used in the analysis (defaults to "8")
+               -env_up/--environment_uppmax Sets the environment to UPPMAX. (defaults to "0" (=no))
 	   };
 }
 
 ###
 #Program parameters
 ###
-my ($aid,$em, $ids, $rd, $annov, $odf, $ods, $fnend, $annovar_dbsnp_ver, $annovar_1000g_ver, $annovar_maf_thold, $genomeref, $gatk_real_knset1, $gatk_real_knset2, $gatk_recal_knset, $gatk_unigt_snp, $gatk_unigt_indel, $pedigree, $wgs, $gatk_bait, $gatk_exref_snp, $gatk_exref_indel, $vm_dbf, $rankscore, $dgf, $dgfl, $all_db_file, $all_db_cc, $all_db_gidc, $im_db_file, $im_db_cc, $im_db_gidc, $gatk_path, $filename, $filename2, $fnt, $fnt2, $aligner, $familyid,$help) = (0,0,0,0,"/bubo/nobackup/uppnex/annotations/annovar/humandb", "data", "wgs_wf_scripts", ".sh","snp135NonFlagged", "1000g2012apr_all", 0, "Homo_sapiens.GRCh37.57.dna.concat.fa", "1000G_phase1.indels.hg19.vcf", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf","dbsnp_135.b37.vcf",1,1,0,0, "SureSelect_All_Exon_50mb_with_annotation_hg19_nochr.bed.pad100.interval_list", "all-agilent_50mb-GRCh37-SNPS_pad100_interval_list.vcf", "all-agilent_50mb-GRCh37-INDELS_pad100_interval_list.vcf", "FDN.intersectCollect_db_master.txt", -100, 1, "IEM_dispGeneList.txt","mart_export_Ensembl_GeneID_key_cleaned_chr.txt",1,4,"IEM_Db_CMMS_version1.2.txt",1,18); 
+my ($aid,$em, $ids, $rd, $annovar_path, $odf, $ods, $fnend, $annovar_genome_build_version, $annovar_supported_table_names, $annovar_maf_threshold, $annovar_sift_threshold, $genomeref, $gatk_real_knset1, $gatk_real_knset2, $gatk_recal_knset, $gatk_unigt_snp, $gatk_unigt_indel, $pedigree, $wgs, $gatk_bait, $gatk_exref_snp, $gatk_exref_indel, $vmerge_db_template, $vm_dbf, $rankscore, $dgf, $dgfl, $all_db_file, $all_db_cc, $all_db_gidc, $im_db_file, $Im_Db_template, $Im_db_master_file, $im_db_cc, $im_db_gidc, $maximum_cores,$environment_uppmax,$gatk_path, $filename, $filename2, $fnt, $fnt2, $aligner, $familyid,$help) = (0,0,0,0,0,0,0, ".sh","hg19", 0, 0, 0, "Homo_sapiens.GRCh37.57.dna.concat.fa", "1000G_phase1.indels.hg19.vcf", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf","dbsnp_135.b37.vcf",1,1,0,0, "SureSelect_All_Exon_50mb_with_annotation_hg19_nochr.bed.pad100.interval_list", "all-agilent_50mb-GRCh37-SNPS_pad100_interval_list.vcf", "all-agilent_50mb-GRCh37-INDELS_pad100_interval_list.vcf", "CMMS_intersectCollect_db_master_template.txt","FDN.intersectCollect_db_master.txt", -100, 1, "IEM_dispGeneList.txt","mart_export_Ensembl_GeneID_key_cleaned_chr.txt",1,4,"IEM_Db_CMMS_version1.2.txt","select_dbIEM_variants_db_master.txt", "FDN.intersectCollect_selectVariants_db_master.txt", 1,18,8,0); 
 
 ###
 #Arguments for project
 ###
 my ($pSTV_schr, $pGATK_REAL, $pGATK_RECAL, $pGATK_UNIGT, $pGATK_HAPCAL, $pGATK_VARRECAL, $pGATK_COMBVAR, $pGATK_VAREVAL_All, $pGATK_VAREVAL_Exome, $pANVAR, $pVMERGE, $pAddDP, $pRankVar, $pSCheck, $pPIND) = (1,1,1,0,1,1,0,1,1,1,1,1,1,1,0); #Default arguments for running programs
 
-my (@infn,@sid, @chr, @jobID);
+###
+#Staging Area
+###
+
+my (@infn,@sid, @chr, @jobID, @Im_db_file_out_file);
 my (%infiles,%avcovfn, %dirname, %jobID, %pedigree);
 my @script_parameters=@ARGV; #Passes over command line arguments for printing in master_logg since GetOption removes them from ARGV.
+
+
+#Set default annovar table names
+my @annovar_table_names = ("refgene", "mce46way", "gerp++elem", "segdup", "gwascatalog", "tfbs", "mirna", "snp137NonFlagged", "1000g2012apr_all", "hg19_esp6500si_all.txt", "avsift","ljb_pp2","ljb_mt","ljb_lrt", "ljb_gerp++","ljb_phylop");
+
+#Set supported annovar table name filtering options
+my @annovar_supported_table_names = ("refgene","knownGene","ensGene","mce46way","gerp++elem","segdup","gwascatalog","tfbs","mirna","snp137","snp135","snp132","snp131","snp130","snp129","snp137NonFlagged","snp135NonFlagged","snp132NonFlagged","snp131NonFlagged","snp130NonFlagged","1000g2012apr_all","1000g2012apr_amr","1000g2012apr_eur","1000g2012apr_asn","1000g2012apr_afr","1000g2012feb_all","hg19_esp6500si_all.txt","hg19_esp6500_all.txt","hg19_esp6500_aa.txt","hg19_esp6500_ea.txt","hg19_esp5400_all.txt","hg19_esp5400_aa.txt","hg19_esp5400_ea.txt","avsift","ljb_sift","ljb_pp2","ljb_mt","ljb_lrt","ljb_all","ljb_gerp++","ljb_phylop"); #Used to print list of supported table names
+
+my %annovar_filtering_option = ( 
+    'refgene' => "geneanno",
+    'knownGene' => "geneanno",
+    'ensGene' => "geneanno",
+    'mce46way' => "regionanno",
+    'gerp++elem' => "regionanno",
+    'segdup' => "regionanno",
+    'gwascatalog' => "regionanno",
+    'tfbs' => "regionanno",
+    'mirna' => "regionanno",
+    'snp137' => "filter",
+    'snp135' => "filter",
+    'snp132' => "filter",
+    'snp131' => "filter",
+    'snp130' => "filter",
+    'snp129' => "filter",
+    'snp137NonFlagged' => "filter",    
+    'snp135NonFlagged' => "filter",
+    'snp132NonFlagged' => "filter",
+    'snp131NonFlagged' => "filter",
+    'snp130NonFlagged' => "filter",
+    '1000g2012apr_all' => "filter",
+    '1000g2012apr_amr' => "filter",
+    '1000g2012apr_eur' => "filter",
+    '1000g2012apr_asn' => "filter",
+    '1000g2012apr_afr' => "filter",
+    '1000g2012feb_all' => "filter",
+    'hg19_esp6500si_all.txt' => "filter",
+    'hg19_esp6500_all.txt' => "filter",
+    'hg19_esp6500_aa.txt' => "filter",
+    'hg19_esp6500_ea.txt' => "filter",
+    'hg19_esp5400_all.txt' => "filter",
+    'hg19_esp5400_aa.txt' => "filter",
+    'hg19_esp5400_ea.txt' => "filter",
+    'avsift' => "filter",
+    'ljb_sift' => "filter",
+    'ljb_pp2' => "filter",
+    'ljb_mt' => "filter",
+    'ljb_lrt' => "filter",
+    'ljb_all' => "filter",
+    'ljb_gerp++' => "filter",
+    'ljb_phylop' => "filter",
+    );
+#Set supported annovar table name generic type
+my %annovar_generic_filtering_option = ( 
+    'hg19_esp6500si_all.txt' => "generic",    
+    'hg19_esp6500_all.txt' => "generic",
+    'hg19_esp6500_aa.txt' => "generic",
+    'hg19_esp6500_ea.txt' => "generic",
+    'hg19_esp5400_all.txt' => "generic",
+    'hg19_esp5400_aa.txt' => "generic",
+    'hg19_esp5400_ea.txt' => "generic",
+    );
+
 
 ###
 #Genetic Models
@@ -296,11 +385,14 @@ GetOptions('i|infile:s'  => \@infn, #Comma sepatated list
 	   'pGATK_VAREVAL_All|gatk_vareval_all:n' => \$pGATK_VAREVAL_All, #GATK varianteval all variants
 	   'pGATK_VAREVAL_Exome|gatk_vareval_exome:n' => \$pGATK_VAREVAL_Exome, #GATK varianteval only exonic variants
 	   'pANVAR|annovar:n' => \$pANVAR, #Performs annovar filter gene, region and filter analysis
-	   'annov|dirannov:s'  => \$annov, #path to annovar dir
-	   'annovar_dbsnp_ver|annovar_dbsnp_version:s' => \$annovar_dbsnp_ver,
-	   'annovar_1000g_ver|annovar_1000g_version:s' => \$annovar_1000g_ver,
-	   'annovar_maf_thold|annovar_maf_threshold:n' => \$annovar_maf_thold,
-	   'pVMERGE|varcallmergeannov:n' => \$pVMERGE, #Merges annovar analysis results to one master file
+	   'anva_pa|annovar_path:s'  => \$annovar_path, #path to annovar script dir
+	   'anva_gbv|annovar_genome_build_version:s'  => \$annovar_genome_build_version,
+	   'anva_tn|annovar_table_names:s'  => \@annovar_table_names, #Comma sepatated list
+	   'anva_stn|annovar_supported_table_names:n' => \$annovar_supported_table_names, #Generates a list of supported table names
+	   'anva_maf_th|annovar_maf_threshold:n' => \$annovar_maf_threshold,
+	   'anva_sift_th|annovar_sift_threshold:n' => \$annovar_sift_threshold,	   
+	   'pVMERGE|variation_annotation_merge:n' => \$pVMERGE, #Merges annovar analysis results to one master file
+	   'vm_db_te|vmerge_db_template:s' => \$vmerge_db_template, #Template file to create the specific family db master file
 	   'vm_dbf|vmerge_db_file:s' => \$vm_dbf, #db master file to use when collecting external data
 	   'pAddDP|adddepth:n' => \$pAddDP, #Adds depth (DP) for nonvariants to master file (annovar_all.txt)
 	   'pRankVar|rankvariants:n' => \$pRankVar, #Ranking variants
@@ -311,22 +403,36 @@ GetOptions('i|infile:s'  => \@infn, #Comma sepatated list
 	   'all_db_cc|All_elements_Db_Gene_Coverage_Calculation:n'  => \$all_db_cc, #Db of all genes for coverage calculation (all features connected to overlapping genes across variant)
 	   'all_db_gidc|All_elements_Db_Gene_Id_Col:n'  => \$all_db_gidc, #Db of all genes GeneName column nr zero-based
 	   'im_db_file|Im_Db_CMMS_file:s'  => \$im_db_file, #Db of important genes
+	   'im_db_te|Im_Db_template:s' => \$Im_Db_template, #Template file to create the specific family selectVariants db master file
+	   'im_dbmf|Im_db_master_file:s' => \$Im_db_master_file, #Specific db master file to use when collecting external dataselectingVariants 
+	   'im_dbfof|Im_db_file_out_file:s' => \@Im_db_file_out_file, #The intersectCollect select variants output directorys	      
 	   'im_db_cc|Im_Db_Gene_Coverage_Calculation:n'  => \$im_db_cc, #Db of important genes coverage calculation (all features connected to overlapping genes across variant)
 	   'im_db_gidc|Im_Db_Gene_Id_Col:n'  => \$im_db_gidc, #Db of important genes GeneName column nr zero-based
 	   'pSCheck|samplecheck:n' => \$pSCheck, #Check for samples belonging to pedigree
 	   'pedigree|pedigree_file:s'  => \$pedigree, #Path to pedigree file location
-	   'wgs|wholegenomeseq:n' => \$wgs,
+	   'wgs|whole_genome_sequencing:n' => \$wgs,
+	   'mc|maximum_cores:n' => \$maximum_cores, #Per node
+	   'env_up|environment_uppmax:n' => \$environment_uppmax, #Sets several default paths, so that they do not have to be supplied 
 	   'h|help' => \$help,
 	   );
 
 die $USAGE if( $help );
 
+if ($annovar_supported_table_names == 1) {
+    print STDOUT "\nThese annovar databases are supported by MIP:\n";
+    for (my $annovar_supported_table_name_Counter=0;$annovar_supported_table_name_Counter<scalar(@annovar_supported_table_names);$annovar_supported_table_name_Counter++) {
+	print STDOUT $annovar_supported_table_names[$annovar_supported_table_name_Counter], "\n";
+    }
+    print STDOUT "\n";
+    die;
+}
+
 if (@infn == 0) {
-   my $verbosity = 2;
- print"\n";
- pod2usage({-message => "Must supply an infile directory as comma separated list.\n",
-     -verbose => $verbosity
-   });
+    my $verbosity = 2;
+    print"\n";
+    pod2usage({-message => "Must supply an infile directory as comma separated list.\n",
+	       -verbose => $verbosity
+	      });
 }
 if ($aid eq 0) {
     
@@ -342,15 +448,29 @@ if ( scalar(@sid) eq 0) {
 }
 if ( $ids eq 0) {
     
-    print STDERR "\n";
-    print STDERR "Must supply a script dir", "\n\n";
-    die $USAGE;
+    if ($environment_uppmax == 1) {
+	print STDOUT "\n";
+	$ids = "/bubo/proj/$aid/private/mip_scripts_master";
+	print STDOUT "Setting the MIP scripts dir to: $ids", "\n\n";
+    }
+    else {
+	print STDERR "\n";
+	print STDERR "Must supply the MIP scripts dir", "\n\n";
+	die $USAGE;
+    }
 }
 if ( $rd eq 0) {
     
-    print STDERR "\n";
-    print STDERR "Must supply a reference dir", "\n\n";
-    die $USAGE;
+    if ($environment_uppmax == 1) {
+	print STDOUT "\n";
+	$rd = "/bubo/proj/$aid/private/mip_references";
+	print STDOUT "Setting MIP reference dir to: $rd", "\n\n";
+    }
+    else {
+	print STDERR "\n";
+	print STDERR "Must supply a MIP reference dir", "\n\n";
+	die $USAGE;
+    }
 }
 if ( $familyid eq 0 ) {
     
@@ -360,15 +480,39 @@ if ( $familyid eq 0 ) {
 }
 if ($odf eq 0) {
     
-    print STDOUT "\n";
-    $odf = "/bubo/proj/$aid/private/data";
-    print STDOUT "Setting output data dir to: $odf", "\n\n";
+    if ($environment_uppmax == 1) {
+	print STDOUT "\n";
+	if ($wgs == 1) {
+	    $odf = "/bubo/proj/$aid/private/genomes";
+	}
+	else {
+	    $odf = "/bubo/proj/$aid/private/exomes";
+	}
+	print STDOUT "Setting MIP output data dir to: $odf", "\n\n";
+    }
+    else {
+	print STDERR "\n";
+	print STDERR "Must supply a MIP output data dir", "\n\n";
+	die $USAGE;
+    }
 }
 if ($ods eq 0) {
     
-    print STDOUT "\n";
-    $ods = "/bubo/proj/$aid/private/wgs_wf_scripts";
-    print STDOUT "Setting output scripts dir to: $ods", "\n\n";
+    if ($environment_uppmax == 1) {
+	print STDOUT "\n";
+	if ($wgs == 1) {
+	    $ods = "/bubo/proj/$aid/private/genomes_scripts";
+	}
+	else {
+	    $ods = "/bubo/proj/$aid/private/exomes_scripts";
+	}
+	print STDOUT "Setting MIP output scripts dir to: $ods", "\n\n";
+    }
+    else {
+	print STDERR "\n";
+	print STDERR "Must supply a MIP output script dir", "\n\n";
+	die $USAGE;
+    }
 }
 if ($pedigree eq 0) {
     
@@ -380,10 +524,17 @@ if ($pedigree eq 0) {
     }
     elsif ($pRankVar eq 1) { 
 	print STDERR "Could not find pedigree file at: $pedigree \n";
-	print STDERR "Must supply a pedigree file to run Mendelianfiltering", "\n\n";
+	print STDERR "Must supply a pedigree file to run Ranking script", "\n\n";
 	die $USAGE;
     } 
 }
+if ( ($pANVAR eq 1) && ($annovar_path eq 0) ) {
+    
+    print STDERR "\n";
+    print STDERR "Must supply the path to the annovar script directory if you want to include annovar in the analysis", "\n\n";
+    die $USAGE;
+}
+
 
 #Creates master_logg for the master script 
 `mkdir -p $odf/$familyid/master_logg;`; #Creates the master_logg dir
@@ -398,10 +549,23 @@ print STDOUT "\nScript parameters and info from $script are saved in file: $mast
 
 @infn = split(/,/,join(',',@infn)); #Enables comma separated indir(s)
 @sid = split(/,/,join(',',@sid)); #Enables comma sepatated list of sample IDs
+@Im_db_file_out_file = split(/,/,join(',',@Im_db_file_out_file)); #Enables comma separated selectVariants output dir(s)
 @chr = ("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","X","Y","MT"); #Chr for filtering of bam file
 
 
 InfileReFormat(); #removes .bam ending and extracts filename
+
+if ($pRankVar eq 1) {
+    if ( scalar(@Im_db_file_out_file) eq 0) {
+	if ($environment_uppmax == 1) {
+	    @Im_db_file_out_file = ("$odf/$familyid/$aligner/GATK/candidates/ranking/$familyid"."_orphan.selectVariants","$odf/$familyid/$aligner/GATK/candidates/ranking/IEM_Db_CMMS/$familyid".".selectVariants");
+	}
+	else {
+	    print STDERR "\nSupply the '-Im_db_file_out_file' output file(s) if you want to run 'pRankVar'.\n";
+	    die $USAGE;
+	}
+    }
+}
 
 #########################
 ###Run program part######
@@ -457,11 +621,40 @@ if ($pGATK_UNIGT eq 1) { #Run GATK UnifiedGenoTyper (all.bam for all samples wit
 if ($pGATK_HAPCAL eq 1) { #Run GATK HaplotypeCaller (all.bam for all samples within familyID)
     
     print STDOUT "\nGATK HaplotypeCaller", "\n";print MASTERL "\nGATK HaplotypeCaller", "\n";  
-    GATK_hapcal($familyid, $aligner, "BOTH",0,3,8); #Argument 3 & 4 is where in @chr to start and stop processing. Arg 5 is java heap allocation (Gb).
-    GATK_hapcal($familyid, $aligner, "BOTH",3,6,8);
-    GATK_hapcal($familyid, $aligner, "BOTH",6,12,4);
-    GATK_hapcal($familyid, $aligner, "BOTH",12,18,4);
-    GATK_hapcal($familyid, $aligner, "BOTH",18,26,4);
+    if ($wgs == 0) { #Exome samples   
+	GATK_hapcal($familyid, $aligner, "BOTH",0,3,8); #Argument 3 & 4 is where in @chr to start and stop processing. Arg 5 is java heap allocation (Gb).
+	GATK_hapcal($familyid, $aligner, "BOTH",3,6,8);
+	GATK_hapcal($familyid, $aligner, "BOTH",6,12,4);
+	GATK_hapcal($familyid, $aligner, "BOTH",12,18,4);
+	GATK_hapcal($familyid, $aligner, "BOTH",18,26,4);
+    }
+    else { #Whole genome sequencing requires more memory
+	GATK_hapcal($familyid, $aligner, "BOTH",0,1,24); #Argument 3 & 4 is where in @chr to start and stop processing. Arg 5 is java heap allocation (Gb).
+	GATK_hapcal($familyid, $aligner, "BOTH",1,2,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",2,3,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",3,4,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",4,5,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",5,6,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",6,7,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",7,8,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",8,9,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",9,10,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",10,11,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",11,12,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",12,13,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",13,14,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",14,15,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",15,16,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",16,17,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",17,18,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",18,19,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",19,20,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",20,21,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",21,22,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",22,23,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",23,24,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",24,25,24);
+    }
     GATK_HapCall_ComVar($familyid, $aligner, "BOTH");
 }
 
@@ -542,7 +735,7 @@ if ($pGATK_VAREVAL_All == 1) { #Run GATK VariantEval(all.bam). Moved to after AN
 
 if ($pVMERGE == 1 ) { #Run varcall_merge_post_annovar_master.pl, Merges all variants across all subjects
 
-    print STDOUT "\nintersectCollect.3.2.pl", "\n";print MASTERL "\nintersectCollect.3.2.pl", "\n";
+    print STDOUT "\nintersectCollect.pl", "\n";print MASTERL "\nintersectCollect.pl", "\n";
     
     if ( ($gatk_unigt_snp == 0) && ($gatk_unigt_indel == 0) ) {
 	print STDERR "\n\nNOTE:You have choosen to run  and specified no run mode (SNV or INDEL)!\n\n";print MASTERL "\n\nYou have choosen to run Annovar but not specified no run mode (SNV or INDEL)!\n\n";
@@ -695,20 +888,20 @@ sub RankVar {
 #$_[1] = aligner
 #$_[2] = $gatk_unigt_snps (SNV), $gatk_unigt_indels (INDEL) or BOTH
     
-    if ($_[2] eq "BOTH") {
-	`mkdir -p $odf/$_[0]/$_[1]/info;`; #Creates the alignment folder and info data file directory
-	`mkdir -p $odf/$_[0]/$_[1]/GATK/candidates/ranking/IEM_Db_CMMS;`; #Creates the ranking/IEM Db folder
-    }
-    else { 
-	`mkdir -p $odf/$_[0]/$_[1]/info;`; #Creates the alignment folder and info data file directory   
-	`mkdir -p $ods/$_[0]/$_[1];`; #Creates the aligner script folder    
-    }
+    #if ($_[2] eq "BOTH") {
+    `mkdir -p $odf/$_[0]/$_[1]/info;`; #Creates the alignment folder and info data file directory
+    `mkdir -p $ods/$_[0]/$_[1];`; #Creates the aligner script folder 
     $filename = "$ods/$_[0]/$_[1]/rank_var_$_[2]_$_[0].";
     Checkfnexists($filename, $fnend);
-    
+
 #Info and Logg
     print STDOUT "Creating sbatch script for Ranking Variants and writing script file(s) to: ", $filename, "\n";print MASTERL "Creating sbatch script for Ranking Variants and writing script file(s) to: ", $filename, "\n";
-    print STDOUT "Sbatch script for Ranking Variants data files will be written to: ", $odf,"/$_[0]/$_[1]/GATK/candidates", "\n";print MASTERL "Sbatch script for Ranking Variants data files will be written to: ", $odf,"/$_[0]/$_[1]/GATK/candidates", "\n";
+    
+    for (my $Im_db_file_out_fileCounter=0;$Im_db_file_out_fileCounter<scalar(@Im_db_file_out_file);$Im_db_file_out_fileCounter++) {
+	my ($volume,$directories,$file) = File::Spec->splitpath( $Im_db_file_out_file[$Im_db_file_out_fileCounter] );
+	`mkdir -p $directories;`; #Creates the ranking/Db selection folders
+	print STDOUT "Ranking Variants data files will be written to: $directories$_[0]_ranked_$_[2].txt", "\n";print MASTERL "Ranking Variants data files will be written to: $directories$_[0]_ranked_$_[2].txt", "\n";
+    }    
     
     open (RV, ">$filename") or die "Can't write to $filename: $!\n";
     
@@ -731,34 +924,83 @@ sub RankVar {
     print RV 'referenceArchive="', "$rd", '"', "\n\n"; 
     print RV "#Directories", "\n";
     print RV 'inFamilyDir="',"$odf/$_[0]/$_[1]/GATK", '"', "\n"; # Location of _annovar_all_variants
+
+    print RV "#Create db master file to select variants from template", "\n";
+    my $nrColumns; #Total Nr of columns 
+    my $nrAnnotationColumns; #The number of columns containing annotation info
+    my $pNrofCol; #For perl regexp
+    if (-e "$odf/$_[0]/$_[1]/GATK/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt") { #Check if the exists (rerun actual data to sample from) 
+	$pNrofCol = q?perl -nae 'if ($_=~/^#/ ) { chomp($_); my @nr_of_columns=split("\t",$_); print scalar(@nr_of_columns);last; }' ?;
+	$nrColumns = `$pNrofCol $odf/$_[0]/$_[1]/GATK/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt;`;
+	$nrAnnotationColumns = $nrColumns - scalar(@sid);
+    }
+    elsif (-e "$odf/$_[0]/$vm_dbf") { #First analysis run - no actual data file exists - locate IDN columns from family specific template file (if defined)
+	$pNrofCol = q?perl -nae 'if ($_=~/^outinfo/ || $_=~/^outheaders/ ) { chomp($_); my @nr_of_columns=split(",",$_); print scalar(@nr_of_columns);last; }' ?;
+	$nrColumns = `$pNrofCol $odf/$_[0]/$vm_dbf;`;
+	$nrAnnotationColumns = $nrColumns - scalar(@sid);
+    }
+    elsif (-e "$rd/$vmerge_db_template") { #No information on previous intersectCollect to create annovar_all_variants file - locate IDN columns from unspecific interSect db template file
+	$pNrofCol = q?perl -nae 'if ($_=~/^outinfo/ || $_=~/^outheaders/ ) { chomp($_); my @nr_of_columns=split(",",$_); print scalar(@nr_of_columns);last; }' ?;
+	$nrAnnotationColumns = `$pNrofCol $rd/$vmerge_db_template;`-1; #"-1" Since IDN is already factored in from the regexp
+	$nrColumns = $nrAnnotationColumns + scalar(@sid);
+    }
+    else {
+	print STDERR "Could not estimate location of IDN columns from variant file, nor from templates ('-vm_dbf' or '-vmerge_db_template'). Please provide this information to run 'rankvariants'.", "\n";
+	die;
+    }
     
-    if ($_[2] eq "BOTH") {
-	my $hapcal_both_file = "$odf/$_[0]/$_[1]/GATK/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt";
-	if ( $pAddDP == 0 ) {
-            #Add chr
-	    print RV "#Add chr", "\n";
-	    print RV q?perl -i -p -e ' if($_=~/^#/) {} else {s/^(.+)/chr$1/g }' ?, '${inFamilyDir}', "/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt", "\n\n";
-	}
+    my $sampleIDcolcond = $nrColumns-1; #To write last IDN entry without "," at the end
+    $Im_db_master_file =~ s/FDN/$_[0]/g; #Exchange FND for the real familyID
+    #Add relative path to db_template for variant file(s) 
+    my ($volume,$directories,$file) = File::Spec->splitpath( $odf );
+    my @dirs = File::Spec->splitdir( $directories );
+    my $regexp_odf;
+    for (my $dirs_Count=1;$dirs_Count<scalar(@dirs);$dirs_Count++) {
+	
+	$regexp_odf .= "\\/".$dirs[$dirs_Count]; #Create escape char for / in later regexp
+    }
+    $regexp_odf .= $file;
+    #Add relative path to db_template for reference/db files
+    ($volume,$directories,$file) = File::Spec->splitpath( $rd );
+    @dirs = File::Spec->splitdir( $directories );
+    my $regexp_rd;	
+    for (my $dirs_Count=1;$dirs_Count<scalar(@dirs);$dirs_Count++) {
+	
+	$regexp_rd .= "\\/".$dirs[$dirs_Count]; #Create escape char for / in later regexp
+    }
+    $regexp_rd .= $file;
+    #Create family specific template
+    print RV q?perl -nae 'if ($_=~/outinfo/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes=>0_$sampleID,"} else { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes=>0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outcolumns/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="0_$sampleID,"} else { $sidstring.="0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outheaders/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes,"} else { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes"} } s/IDN/$sidstring/g; print $_;} next;} elsif ($_=~s/FDN/?.$_[0].q?/g) { if($_=~s/^ODF/?.$regexp_odf.q?/g) {} if($_=~s/ALIGNER/?.$aligner.q?/g) {} if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="$sampleID,"} else { $sidstring.="$sampleID"} } s/IDN/$sidstring/g; print $_;} else { print $_;} } else { if($_=~s/^RD/?.$regexp_rd.q?/g) {} print $_;}' ?.$rd.q?/?.$Im_Db_template.q? > ?."$odf/$_[0]/$Im_db_master_file", "\n\n";
+
+    
+    #if ($_[2] eq "BOTH") {
+    my $hapcal_both_file = "$odf/$_[0]/$_[1]/GATK/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt";
+    if ( $pAddDP == 0 ) {
+	#Add chr
+	print RV "#Add chr", "\n";
+	print RV q?perl -i -p -e ' if($_=~/^#/) {} else {s/^(.+)/chr$1/g }' ?, '${inFamilyDir}', "/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt", "\n\n";
+    }
 ###
 #Only IM_Db_genes
 ###
-	print RV 'outFamilyDir="', "$odf/$_[0]/$_[1]/GATK/candidates/ranking/IEM_Db_CMMS", '"', "\n\n";
-	
-	if ( ($pGATK_HAPCAL eq 1) || (-e $hapcal_both_file) ) { #HaplotypeCaller has been used in present call or previously
+    
+    if ( ($pGATK_HAPCAL eq 1) || (-e $hapcal_both_file) ) { #HaplotypeCaller has been used in present call or previously
 #Create temp_file containing only IEM_Db_genes (to avoid duplicates in ranked list)
-	    print RV "#Create temp_file containing only IEM_Db_genes (to avoid duplicates in ranked list)", "\n";
-	    print RV "intersectBed -u -a ", '${inFamilyDir}', "/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt -b ", '${referenceArchive}',"/$im_db_file > ", '${outFamilyDir}', "/$_[0]_temp_both_IEM_Db_$_[2].txt", "\n\n";
-
-	    #Recreate header, which was lost in the intersect
-	    print RV "#Recreate header, which was lost in the intersect", "\n";
-	    print RV q?perl -nae 'if ($_=~/^#/) {print $_}' ?, '${inFamilyDir}', "/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt > ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n";
-	    print RV "cat ", '${outFamilyDir}', "/$_[0]_temp_header.txt ", '${outFamilyDir}', "/$_[0]_temp_both_IEM_Db_$_[2].txt > ", '${outFamilyDir}', "/$_[0]_temp", "\n";
-	    print RV "mv ",'${outFamilyDir}', "/$_[0]_temp ",'${outFamilyDir}', "/$_[0]_temp_both_IEM_Db_$_[2].txt", "\n";
+	print RV "#Create temp_file containing only IEM_Db_genes (to avoid duplicates in ranked list)", "\n";
+	print RV "perl $ids/intersectCollect.pl -db $odf/$_[0]/$Im_db_master_file -s 1 -sofs ";
+	for (my $Im_db_file_out_fileCounter=0;$Im_db_file_out_fileCounter<scalar(@Im_db_file_out_file);$Im_db_file_out_fileCounter++) {
+	    if ($Im_db_file_out_fileCounter eq scalar(@Im_db_file_out_file)-1) {
+		print RV $Im_db_file_out_file[$Im_db_file_out_fileCounter], " \n\n";
+	    }
+	    else {
+		print RV $Im_db_file_out_file[$Im_db_file_out_fileCounter], ",";
+	    }
+	}
+	#Ranking
+	print RV "#Ranking", "\n";
+	for (my $Im_db_file_out_fileCounter=1;$Im_db_file_out_fileCounter<scalar(@Im_db_file_out_file);$Im_db_file_out_fileCounter++) { #Skip orphan file and run selected files
+	    print RV "perl $ids/rank_list_filter.pl -i $Im_db_file_out_file[$Im_db_file_out_fileCounter] -cmms_imdb 1 -dgf $dgf -dgfl ", '${referenceArchive}',"/$dgfl -im_db_file ", '${referenceArchive}',"/$im_db_file -im_db_cc $im_db_cc -im_db_gidc $im_db_gidc  -rs $rankscore -pedigree $pedigree -tarcov ";
 	    
-            #Ranking
-	    print RV "#Ranking", "\n";
-	    print RV "perl $ids/rank_list_filter_chr.1.1.pl -i ", '${outFamilyDir}', "/$_[0]_temp_both_IEM_Db_$_[2].txt -cmms_imdb 1 -dgf $dgf -dgfl ", '${referenceArchive}',"/$dgfl -im_db 1 -im_db_file ", '${referenceArchive}',"/$im_db_file -im_db_cc $im_db_cc -im_db_gidc $im_db_gidc  -rs $rankscore -pedigree $pedigree -tarcov ";
-
 	    for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {#For all sample ids 
 		my $tempinfile = $avcovfn{$sid[$sampleid]};
 		
@@ -771,175 +1013,45 @@ sub RankVar {
 		    
 		}
 	    }
-	    print RV "-o ",'${outFamilyDir}', "/$_[0]_ranked_IEM_Db_CMMS_$_[2].txt", "\n\n";
-	    print RV "rm ", '${outFamilyDir}', "/$_[0]", "_temp_both_IEM_Db_$_[2].txt", "\n\n"; #Remove temp file
-	    print RV "rm ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n\n"; #Remove temp file
+	    ($volume,$directories,$file) = File::Spec->splitpath( $Im_db_file_out_file[$Im_db_file_out_fileCounter] ); #Create outfile
+	    print RV q?-o ?.$directories.$_[0].q?_ranked_?.$_[2].q?.txt?, "\n\n";
 	}
-	else { #If only UnifiedGt has been used to call SNVs and INDELs separetly. NOTE Needs to have identical header to ensure that rank script will work.
-	    if ( $pAddDP == 0 ) {
-                #Add chr
-		print RV q?perl -i -p -e ' if($_=~/^#/) {} else {s/^(.+)/chr$1/g }' ?, '${inFamilyDir}', "/$_[0]_allchr_real_recal_resrt_varrecal_SNV_filt_annovar_all_variants.txt", "\n\n";
-	    }
-#Create temp_file containing only IEM_Db_genes (to avoid duplicates in ranked list)
-	    print RV "intersectBed -u -a ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_varrecal_SNV_filt_annovar_all_variants.txt -b ", '${referenceArchive}',"/$im_db_file > ", '${outFamilyDir}', "/$_[0]", "_temp_both_IEM_Db_SNV.txt", "\n\n";
-	    print RV "intersectBed -u -a ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_varrecal_INDEL_filt_annovar_all_variants.txt -b ", '${referenceArchive}',"/$im_db_file > ", '${outFamilyDir}', "/$_[0]", "_temp_both_IEM_Db_INDEL.txt", "\n\n";
-
-#Recreate header (Only queried one is the first file so only SNV is done)
-	    print RV q?perl -nae 'if ($_=~/^#/) {print $_}' ?, '${inFamilyDir}', "/$_[0]_allchr_real_recal_resrt_varrecal_SNV_filt_annovar_all_variants.txt > ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n";
-	    print RV "cat ", '${outFamilyDir}', "/$_[0]_temp_header.txt ", '${outFamilyDir}', "/$_[0]_temp_both_IEM_Db_SNV.txt > ", '${outFamilyDir}', "/$_[0]_temp", "\n";
-	    print RV "mv ",'${outFamilyDir}', "/$_[0]_temp ",'${outFamilyDir}', "/$_[0]_temp_both_IEM_Db_SNV.txt", "\n";
-
-	    print RV "perl $ids/rank_list_filter_chr.1.1.pl -i ", '${outFamilyDir}', "/$_[0]", "_temp_both_IEM_Db_SNV.txt,", '${outFamilyDir}', "/$_[0]", "_temp_both_IEM_Db_INDEL.txt -cmms_imdb 1 -dgf $dgf -dgfl ", '${referenceArchive}',"/$dgfl -im_db 1 -im_db_file ", '${referenceArchive}',"/$im_db_file -im_db_cc $im_db_cc -im_db_gidc $im_db_gidc -rs $rankscore  -pedigree $pedigree -tarcov ";
-	    for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {#For all sampleIDs
-		my $tempinfile = $avcovfn{$sid[$sampleid]};
-		
-		if ($sampleid eq scalar(@sid)-1) {
-		    
-		    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_IEM_target_coverage.txt ";
-		}
-		else {
-		    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_IEM_target_coverage.txt,";	
-		    
-		}
-	    }
-	    print RV "-o ",'${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2].txt", "\n\n";
-	    print RV "rm ", '${outFamilyDir}', "/$_[0]", "_temp_both_IEM_Db_SNV.txt", "\n"; #Remove temp file
-	    print RV "rm ", '${outFamilyDir}', "/$_[0]", "_temp_both_IEM_Db_INDEL.txt", "\n\n"; #Remove temp file
-	    print RV "rm ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n\n"; #Remove temp file	
-	}
+    }
+    
 ###
 #Create a Mosaic BAM file for viewing only relevant variants related to dbIEM 
 ###
+    print RV q?cp ?.$directories.$_[0].q?_ranked_?.$_[2].q?.txt ?.$directories.$_[0].q?_ranked_?.$_[2].q?_temp.txt?, "\n\n";
+    print RV q?perl -i -p -e 'unless ($_=~/^#/) { s/^chr(.+)/$1/g }' ?.$directories.$_[0].q?_ranked_?.$_[2].q?_temp.txt?, "\n\n"; #Remove chr for intersect with BAM
+    
+    for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {#For all sampleIDs
+	my $tempinfile = $avcovfn{$sid[$sampleid]};
 	
-	print RV "cp ",'${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2].txt ",'${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2]_temp.txt", "\n\n";
-	print RV q?perl -i -p -e 'unless ($_=~/^#/) { s/^chr(.+)/$1/g }' ?,'${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2]_temp.txt", "\n\n"; #Remove chr for intersect with BAM
-	for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {#For all sampleIDs
-	    my $tempinfile = $avcovfn{$sid[$sampleid]};
-	    
-	    print RV "intersectBed -wa -abam $odf/$sid[$sampleid]/$_[1]/$tempinfile.bam -b ",'${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2]_temp.txt > ",'${outFamilyDir}', "/$tempinfile.bam &", "\n\n";		
-	}
-	print RV "wait\n\n";
-	print RV "rm ", '${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2]_temp.txt", "\n"; #Remove temp file
+	print RV q?intersectBed -wa -abam ?.$odf.q?/?.$sid[$sampleid].q?/?.$_[1].q?/?.$tempinfile.q?.bam -b ?.$directories.$_[0].q?_ranked_?.$_[2].q?_temp.txt > ?.$directories.$tempinfile.q?.bam &?, "\n\n";		
+    }
+    print RV "wait\n\n";
 ###	
-#No IEM_Db_genes
+#No IM_Db_genes
 ###
-	print RV 'outFamilyDir="', "$odf/$_[0]/$_[1]/GATK/candidates/ranking", '"', "\n\n";
-#Create temp_file containing no IEM_Db_genes (to avoid duplicates in ranked list)
-	if ( ($pGATK_HAPCAL eq 1) || (-e $hapcal_both_file) ) { #HaplotypeCaller has been used in present call or previously
-	    print RV "intersectBed -v -a ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt -b ", '${referenceArchive}',"/$im_db_file > ", '${outFamilyDir}', "/$_[0]_temp_both_No_IEM_Db_$_[2].txt", "\n\n";
-
-#Recreate header
-	    print RV q?perl -nae 'if ($_=~/^#/) {print $_}' ?, '${inFamilyDir}', "/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt > ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n";
-	    print RV "cat ", '${outFamilyDir}', "/$_[0]_temp_header.txt ", '${outFamilyDir}', "/$_[0]_temp_both_No_IEM_Db_$_[2].txt > ", '${outFamilyDir}', "/$_[0]_temp", "\n";
-	    print RV "mv ",'${outFamilyDir}', "/$_[0]_temp ",'${outFamilyDir}', "/$_[0]_temp_both_No_IEM_Db_$_[2].txt", "\n";
-	    print RV "perl $ids/rank_list_filter_chr.1.1.pl -i ", '${outFamilyDir}', "/$_[0]", "_temp_both_No_IEM_Db_$_[2].txt -dgf $dgf -dgfl ", '${referenceArchive}',"/$dgfl -im_db_file ", '${referenceArchive}',"/$all_db_file -im_db_cc $all_db_cc -im_db_gidc $all_db_gidc -rs $rankscore -pedigree $pedigree -tarcov ";
-	    for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {#For all sampleIDs
-		my $tempinfile = $avcovfn{$sid[$sampleid]};
-		
-		if ($sampleid eq scalar(@sid)-1) {
-		    
-		    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_target_coverage.txt ";
-		}
-		else {
-		    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_target_coverage.txt,";	
-		    
-		}
-	    }
-	    print RV "-o ",'${outFamilyDir}', "/$_[0]", "_ranked_$_[2].txt", "\n\n";
-	    print RV "rm ", '${outFamilyDir}', "/$_[0]", "_temp_both_No_IEM_Db_$_[2].txt", "\n"; #Remove temp file
-	    print RV "rm ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n\n"; #Remove temp file
+    
+    #Ranking
+    print RV "#Ranking", "\n";
+    print RV "perl $ids/rank_list_filter.pl -i $Im_db_file_out_file[0] -dgf $dgf -dgfl ", '${referenceArchive}',"/$dgfl -im_db_file ", '${referenceArchive}',"/$all_db_file -im_db_cc $all_db_cc -im_db_gidc $all_db_gidc -rs $rankscore -pedigree $pedigree -tarcov ";
+    for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {#For all sampleIDs
+	my $tempinfile = $avcovfn{$sid[$sampleid]};
+	
+	if ($sampleid eq scalar(@sid)-1) {
+	    
+	    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_target_coverage.txt ";
 	}
 	else {
-	    print RV "intersectBed -v -a ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_varrecal_SNV_filt_annovar_all_variants.txt -b ", '${referenceArchive}',"/$im_db_file > ", '${outFamilyDir}', "/$_[0]", "_temp_both_No_IEM_Db_SNV.txt", "\n";
-	    print RV "intersectBed -v -a ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_varrecal_INDEL_filt_annovar_all_variants.txt -b ", '${referenceArchive}',"/$im_db_file > ", '${outFamilyDir}', "/$_[0]", "_temp_both_No_IEM_Db_INDEL.txt", "\n\n";
-
-#Recreate header (Only queried one is the first file so only SNV is done)
-	    print RV q?perl -nae 'if ($_=~/^#/) {print $_}' ?, '${inFamilyDir}', "/$_[0]_allchr_real_recal_resrt_varrecal_SNV_filt_annovar_all_variants.txt > ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n";
-	    print RV "cat ", '${outFamilyDir}', "/$_[0]_temp_header.txt ", '${outFamilyDir}', "/$_[0]_temp_both_No_IEM_Db_SNV.txt > ", '${outFamilyDir}', "/$_[0]_temp", "\n";
-	    print RV "mv ",'${outFamilyDir}', "/$_[0]_temp ",'${outFamilyDir}', "/$_[0]_temp_both_No_IEM_Db_SNV.txt", "\n";
-
-	    print RV "perl $ids/rank_list_filter_chr.1.1.pl -i ", '${outFamilyDir}', "/$_[0]_temp_both_No_IEM_Db_SNV.txt,", '${outFamilyDir}', "/$_[0]_temp_both_No_IEM_Db_INDEL.txt -dgf $dgf -dgfl ", '${referenceArchive}',"/$dgfl -im_db_file ", '${referenceArchive}',"/$all_db_file -im_db_cc $all_db_cc -im_db_gidc $all_db_gidc -rs $rankscore -pedigree $pedigree -tarcov ";
-	    for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {#For all sampleIDs
-		my $tempinfile = $avcovfn{$sid[$sampleid]};
-		
-		if ($sampleid eq scalar(@sid)-1) {
-		    
-		    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_target_coverage.txt ";
-		}
-		else {
-		    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_target_coverage.txt,";	
-		    
-		}
-	    }
-	    print RV "-o ",'${outFamilyDir}', "/$_[0]", "_ranked_$_[2].txt", "\n\n";
-	    print RV "rm ", '${outFamilyDir}', "/$_[0]", "_temp_both_No_IEM_Db_SNV.txt", "\n"; #Remove temp file
-	    print RV "rm ", '${outFamilyDir}', "/$_[0]", "_temp_both_No_IEM_Db_INDEL.txt", "\n"; #Remove temp file
-	    print RV "rm ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n\n"; #Remove temp file
-	}
-    }
-    else {
-###
-#Only IEM_Db_genes
-###
-	print RV 'outFamilyDir="', "$odf/$_[0]/$_[1]/GATK/candidates/ranking/IEM_Db_CMMS", '"', "\n\n";
-	if ( $pAddDP == 0 ) {
-            #Add chr
-	    print RV q?perl -i -p -e ' if($_=~/^#/) {} else {s/^(.+)/chr$1/g }' ?, '${inFamilyDir}', "/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt", "\n\n";
-	}
-#Create temp_file containing only IEM_Db_genes (to avoid duplicates in ranked list)
-	print RV "intersectBed -u -a ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt -b ", '${referenceArchive}',"/$im_db_file > ", '${outFamilyDir}', "/$_[0]_temp_IEM_Db_$_[2].txt", "\n";
-
- #Recreate header
-	print RV q?perl -nae 'if ($_=~/^#/) {print $_}' ?, '${inFamilyDir}', "/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt > ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n";
-	print RV "cat ", '${outFamilyDir}', "/$_[0]_temp_header.txt ", '${outFamilyDir}', "/$_[0]_temp_IEM_Db_$_[2].txt > ", '${outFamilyDir}', "/$_[0]_temp", "\n";
-	print RV "mv ",'${outFamilyDir}', "/$_[0]_temp ",'${outFamilyDir}', "/$_[0]_temp_IEM_Db_$_[2].txt", "\n";
-	
-	print RV "perl $ids/rank_list_filter_chr.1.1.pl -i ", '${outFamilyDir}', "/$_[0]_temp_IEM_Db_$_[2].txt -cmms_imdb 1 -dgf $dgf -dgfl ", '${referenceArchive}',"/$dgfl -im_db 1 -im_db_file ", '${referenceArchive}',"/$im_db_file -im_db_cc $im_db_cc -im_db_gidc $im_db_gidc -rs $rankscore -pedigree $pedigree -o ",'${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2].txt", "\n\n";
-	print RV "rm ", '${outFamilyDir}', "/$_[0]", "_temp_IEM_Db_$_[2].txt", "\n\n"; #Remove temp file
-	print RV "rm ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n\n"; #Remove temp file
-###
-#Create a Mosaic BAM file for viewing only relevant variants related to dbIEM 
-###
-	
-	print RV "cp ",'${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2].txt ",'${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2]_temp.txt", "\n\n";
-	print RV q?perl -i -p -e 'unless ($_=~/^#/) { s/^chr(.+)/$1/g }' ?,'${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2]_temp.txt", "\n\n"; #Remove chr for intersect with BAM
-	for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {#For all sampleIDs
-	    my $tempinfile = $avcovfn{$sid[$sampleid]};
+	    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_target_coverage.txt,";	
 	    
-	    print RV "intersectBed -wa -abam $odf/$sid[$sampleid]/$_[1]/$tempinfile.bam -b ",'${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2]_temp.txt > ",'${outFamilyDir}', "/$tempinfile.bam &", "\n\n";		
 	}
-	print RV "wait\n\n";
-	print RV "rm ", '${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2]_temp.txt", "\n"; #Remove temp file
-###
-#No IEM_Db_genes
-###
-	print RV 'outFamilyDir="', "$odf/$_[0]/$_[1]/GATK/candidates/ranking", '"', "\n\n";
-#Create temp_file containing no IEM_Db_genes (to avoid duplicates in ranked list)
-	print RV "intersectBed -v -a ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt -b ", '${referenceArchive}',"/$im_db_file > ", '${outFamilyDir}', "/$_[0]_temp_No_IEM_Db_$_[2].txt", "\n";
-
-#Recreate header
-	print RV q?perl -nae 'if ($_=~/^#/) {print $_}' ?, '${inFamilyDir}', "/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt > ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n";
-	print RV "cat ", '${outFamilyDir}', "/$_[0]_temp_header.txt ", '${outFamilyDir}', "/$_[0]_temp_No_IEM_Db_$_[2].txt > ", '${outFamilyDir}', "/$_[0]_temp", "\n";
-	print RV "mv ",'${outFamilyDir}', "/$_[0]_temp ",'${outFamilyDir}', "/$_[0]_temp_No_IEM_Db_$_[2].txt", "\n";
-
-	print RV "perl $ids/rank_list_filter_chr.1.1.pl -i ", '${outFamilyDir}', "/$_[0]", "_temp_No_IEM_Db_$_[2].txt -dgf $dgf -dgfl ", '${referenceArchive}',"/$dgfl -im_db_file ", '${referenceArchive}',"/$all_db_file -im_db_cc $all_db_cc -im_db_gidc $all_db_gidc -rs $rankscore -pedigree $pedigree -tarcov ";
-	    for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {#For all sampleIDs
-		my $tempinfile = $avcovfn{$sid[$sampleid]};
-		
-		if ($sampleid eq scalar(@sid)-1) {
-		    
-		    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_target_coverage.txt ";
-		}
-		else {
-		    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_target_coverage.txt,";	
-		    
-		}
-	    }
-	print RV "-o ",'${outFamilyDir}', "/$_[0]", "_ranked_$_[2].txt", "\n\n";
-	print RV "rm ", '${outFamilyDir}', "/$_[0]", "_temp_No_IEM_Db_$_[2].txt", "\n"; #Remove temp file
-	print RV "rm ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n\n"; #Remove temp file
     }
-
+    ($volume,$directories,$file) = File::Spec->splitpath( $Im_db_file_out_file[0] ); #Create outfile path
+    print RV q?-o ?.$directories.$_[0].q?_ranked_?.$_[2].q?.txt?, "\n\n";
+    
     close(RV);   
     FIDSubmitJob(0,$familyid, 1, $_[2],$filename);
     return;
@@ -1080,16 +1192,34 @@ sub VarcallMergePostAnnovar {
     print VMERGE 'inFamilyPrefix="',"/$_[0]", "_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar", '"', "\n";
     print VMERGE 'outFamilyDir="', "$odf/$_[0]/$_[1]/GATK", '"', "\n\n";
     
-    if ($em=~/henrik.stranneheim/) { #CMMS specific to not overwrite user supplied info
-	print VMERGE "#Create db master file from template", "\n";
-	my $sampleIDcolumns = scalar(@sid)+5;
-	my $sampleIDcolcond = scalar(@sid)+4;
-	$vm_dbf =~ s/FDN/$_[0]/g; #Exchange FND for the real familyID
-	print VMERGE q?perl -nae 'if ($_=~/outcolumns/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="0_$sampleID,"} else { $sidstring.="0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outheaders/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:DP=Approximate_read_depth:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes,"} else { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:DP=Approximate_read_depth:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes"} } s/IDN/$sidstring/g; print $_;} next;} elsif ($_=~s/FDN/?.$_[0].q?/g) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="$sampleID,"} else { $sidstring.="$sampleID"} } s/IDN/$sidstring/g; print $_;} else {print $_;} } else {print $_;}' ?.$rd.q?/CMMS_intersectCollect_db_master_template.txt > ?."$odf/$_[0]/$vm_dbf", "\n\n";
-
+    
+    print VMERGE "#Create db master file from template", "\n";
+    my $sampleIDcolumns = scalar(@sid)+5; #Requires CMMS format (chr,start,stop,ref_allele,alt_allel,IDN...)
+    my $sampleIDcolcond = scalar(@sid)+4;
+    $vm_dbf =~ s/FDN/$_[0]/g; #Exchange FND for the real familyID
+    #Add relative path to db_template for annovar files 
+    my ($volume,$directories,$file) = File::Spec->splitpath( $odf );
+    my @dirs = File::Spec->splitdir( $directories );
+    my $regexp_odf;
+    for (my $dirs_Count=1;$dirs_Count<scalar(@dirs);$dirs_Count++) {
+	
+	$regexp_odf .= "\\/".$dirs[$dirs_Count]; #Create escape char for / in later regexp
     }
-    print VMERGE "perl $ids/intersectCollect.3.2.pl -db $odf/$_[0]/$vm_dbf -o ", '${outFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt", "\n\n";
-    	    
+    $regexp_odf .= $file;
+    #Add relative path to db_template for reference files
+    ($volume,$directories,$file) = File::Spec->splitpath( $rd );
+    @dirs = File::Spec->splitdir( $directories );
+    my $regexp_rd;	
+    for (my $dirs_Count=1;$dirs_Count<scalar(@dirs);$dirs_Count++) {
+	
+	$regexp_rd .= "\\/".$dirs[$dirs_Count]; #Create escape char for / in later regexp
+    }
+    $regexp_rd .= $file;
+    #Create family specific template
+    print VMERGE q?perl -nae 'if ($_=~/outinfo/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes=>0_$sampleID,"} else { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes=>0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outcolumns/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="0_$sampleID,"} else { $sidstring.="0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outheaders/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes,"} else { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes"} } s/IDN/$sidstring/g; print $_;} next;} elsif ($_=~s/FDN/?.$_[0].q?/g) { if($_=~s/^ODF/?.$regexp_odf.q?/g) {} if($_=~s/ALIGNER/?.$aligner.q?/g) {} if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="$sampleID,"} else { $sidstring.="$sampleID"} } s/IDN/$sidstring/g; print $_;} else { print $_;} } else { if($_=~s/^RD/?.$regexp_rd.q?/g) {} print $_;}' ?.$rd.q?/?.$vmerge_db_template.q? > ?."$odf/$_[0]/$vm_dbf", "\n\n";
+
+    print VMERGE "perl $ids/intersectCollect.pl -db $odf/$_[0]/$vm_dbf -o ", '${outFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt", "\n\n";
+    
     close(VMERGE);   
     FIDSubmitJob(0,$familyid, 1, $_[2],$filename);
     return;
@@ -1117,7 +1247,7 @@ sub AnnovarFilter {
     
     print ANVARF "#! /bin/bash -l", "\n";
     print ANVARF "#SBATCH -A ", $aid, "\n";
-    print ANVARF "#SBATCH -p node -n 8", "\n";
+    print ANVARF "#SBATCH -p node -n $maximum_cores", "\n";
     print ANVARF "#SBATCH -C thin", "\n";	
     print ANVARF "#SBATCH -t 7:00:00", "\n";
     print ANVARF "#SBATCH -J ANNOVARF_$_[2]_$_[0]", "\n";
@@ -1132,7 +1262,7 @@ sub AnnovarFilter {
     }
     
     print ANVARF 'echo "Running on: $(hostname)"',"\n\n";
-    print ANVARF 'inRefDir="', "$annov/humandb", '"', "\n\n"; #$annov path to annovar folder
+    print ANVARF 'inRefDir="', "$annovar_path/humandb", '"', "\n\n"; #$annov path to annovar folder
 
 ###
 #GATK
@@ -1147,7 +1277,7 @@ sub AnnovarFilter {
 #Make sure that mitochondral genome is M and not MT
     print ANVARF "perl -i -p -e 's/^(MT)/M/g' ", '${inFamilyDir}/${inFamilyPrefix}', "\n\n";
 #Prepp to annovar format from GATK vcf4	    
-    print ANVARF "perl $annov/convert2annovar.pl ",'${inFamilyDir}/${inFamilyPrefix}'," -format vcf4 -i > ", '${outFamilyDir}/${outFamilyPrefix_temp}', "\n\n";
+    print ANVARF "perl $annovar_path/convert2annovar.pl ",'${inFamilyDir}/${inFamilyPrefix}'," -format vcf4 -i > ", '${outFamilyDir}/${outFamilyPrefix_temp}', "\n\n";
 
     #Intersect for all samples within familyid and remake file to fit annovar format and subsequent filtering
     print ANVARF q?perl -nae ' if ($_=~/^#/) {print $_;next;} if ($_=~/;set=2/) {} else{ if($F[11] eq "PASS") {} else {$F[11] = "PRES";} print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t", ?;
@@ -1170,29 +1300,37 @@ sub AnnovarFilter {
     print ANVARF 'inFamilyPrefix="',"/$_[0]", "_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar", '"', "\n";    
     print ANVARF 'outFamilyPrefix="',"/$_[0]", "_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar", '"', "\n\n";   	    
     
-
-    print ANVARF "perl $annov/annotate_variation.pl -geneanno -hgvs -buildver hg19 -dbtype refgene ", '${inFamilyDir}', '${inFamilyPrefix} ', '${inRefDir} &', "\n\n"; #Annotation
-    print ANVARF "perl $annov/annotate_variation.pl -regionanno -dbtype mce46way -buildver hg19 ", '${inFamilyDir}', '${inFamilyPrefix} ', '${inRefDir} &', "\n\n"; #SNVs in conserved regions
-    print ANVARF "perl $annov/annotate_variation.pl -regionanno -dbtype gerp++elem -buildver hg19 ", '${inFamilyDir}', '${inFamilyPrefix} ', '${inRefDir} &', "\n\n"; #SNVs in conserved regions according to gerp++	
-    print ANVARF "perl $annov/annotate_variation.pl -regionanno -dbtype segdup -buildver hg19 ", '${inFamilyDir}', '${inFamilyPrefix} ', '${inRefDir} &', "\n\n"; #Finding SNVs in segmental duplications  
-    print ANVARF "perl $annov/annotate_variation.pl -regionanno -dbtype gwascatalog -buildver hg19 ", '${inFamilyDir}', '${inFamilyPrefix} ', '${inRefDir} &', "\n\n"; #SNVs in published GWAS regions
-    print ANVARF "perl $annov/annotate_variation.pl -regionanno -dbtype tfbs -buildver hg19 ", '${inFamilyDir}', '${inFamilyPrefix} ', '${inRefDir} &', "\n\n"; #SNVs in published transcription binding regions
-    print ANVARF "perl $annov/annotate_variation.pl -regionanno -dbtype mirna -buildver hg19 ", '${inFamilyDir}', '${inFamilyPrefix} ', '${inRefDir} &', "\n\n"; #SNVs in published snoRNA and miRNA regions 
-    print ANVARF "perl $annov/annotate_variation.pl -filter -buildver hg19 -dbtype $annovar_1000g_ver --maf_threshold $annovar_maf_thold ", '${inFamilyDir}', '${inFamilyPrefix} ', '${inRefDir} &', "\n\n"; # SNVs in 1000g data 
-    print ANVARF "perl $annov/annotate_variation.pl -filter -buildver hg19 -dbtype $annovar_dbsnp_ver --maf_threshold $annovar_maf_thold ", '${inFamilyDir}', '${inFamilyPrefix} ', '${inRefDir} &', "\n\n"; # SNVs in dbsnp data  
-    #print ANVARF "perl $annov/annotate_variation.pl -filter -buildver hg19 -dbtype generic -genericdbfile hg19_cg69.txt --maf_threshold $annovar_maf_thold ", '${inFamilyDir}', '${inFamilyPrefix} ', '${inRefDir} --outfile ${outFamilyDir}','${outFamilyPrefix}',".hg19_cg69 &", "\n\n"; #SNVs in complete genomics data
-
-    print ANVARF "wait", "\n\n"; 
-
-    print ANVARF "perl $annov/annotate_variation.pl -filter -buildver hg19 -dbtype generic -genericdbfile hg19_esp6500_all.txt --maf_threshold $annovar_maf_thold ", '${inFamilyDir}', '${inFamilyPrefix} ', '${inRefDir} --outfile ${outFamilyDir}','${outFamilyPrefix}', ".hg19_esp6500 &", "\n\n"; # SNVs in ESP data
-    print ANVARF "perl $annov/annotate_variation.pl -filter -buildver hg19 -dbtype avsift --sift_threshold 0 ", '${inFamilyDir}', '${inFamilyPrefix} ', '${inRefDir} &', "\n\n"; #Finding benign SNVS
-    print ANVARF "perl $annov/annotate_variation.pl -filter -buildver hg19 -dbtype ljb_pp2 ", '${inFamilyDir}', '${inFamilyPrefix} ', ' ${inRefDir} &', "\n\n"; #Removing benign SNVS using polyphen 2
-    print ANVARF "perl $annov/annotate_variation.pl -filter -buildver hg19 -dbtype ljb_mt ", '${inFamilyDir}', '${inFamilyPrefix} ', ' ${inRefDir} &', "\n\n"; #Removing benign SNVS using mutationTester
-    print ANVARF "perl $annov/annotate_variation.pl -filter -buildver hg19 -dbtype ljb_lrt ", '${inFamilyDir}', '${inFamilyPrefix} ', ' ${inRefDir} &', "\n\n"; #Removing benign SNVS using lrt
-    print ANVARF "perl $annov/annotate_variation.pl -filter -dbtype ljb_gerp++ -buildver hg19 ", '${inFamilyDir}', '${inFamilyPrefix} ', '${inRefDir} &', "\n\n"; #Finding SNVs in constrained regions using gerp++
-    print ANVARF "perl $annov/annotate_variation.pl -filter -dbtype ljb_phylop -buildver hg19 ", '${inFamilyDir}', '${inFamilyPrefix} ', '${inRefDir} &', "\n\n"; #Finding SNVs in constrained regions using phylop scores   
+    my $core_Counter=1;
+    for (my $table_names_Counter=0;$table_names_Counter<scalar(@annovar_table_names);$table_names_Counter++) { #For all specified table names
+	if ($table_names_Counter eq $core_Counter*$maximum_cores) { #Using only 8 cores
+	    
+	    print ANVARF "wait", "\n\n";
+	    $core_Counter=$core_Counter+1;
+	}
+	print ANVARF q?perl ?.$annovar_path.q?/annotate_variation.pl ?; 
+	print ANVARF q?-?.$annovar_filtering_option{ $annovar_table_names[$table_names_Counter] }.q? ?; #Filtering option
+	if ( $annovar_filtering_option{ $annovar_table_names[$table_names_Counter] } eq "geneanno" ) { #Use hgvs output style
+	    print ANVARF q?-hgvs ?;
+	}
+	print ANVARF q?-buildver ?.$annovar_genome_build_version.q? ?;
+	if ( $annovar_generic_filtering_option{ $annovar_table_names[$table_names_Counter] } ) { #Handle generic format
+	    print ANVARF q?-dbtype generic -genericdbfile ?.$annovar_table_names[$table_names_Counter].q? ?;
+	    print ANVARF q?--outfile ${outFamilyDir}${outFamilyPrefix}.?.$annovar_table_names[$table_names_Counter].q? ?;
+	}	
+	else{
+	    print ANVARF q?-dbtype ?.$annovar_table_names[$table_names_Counter].q? ?;
+	}
+	if ( ($annovar_table_names[$table_names_Counter] =~/^snp/) || ($annovar_table_names[$table_names_Counter] =~/^1000g/) || ($annovar_table_names[$table_names_Counter] =~/_esp/) ) {#Set MAF TH
+	    print ANVARF q?--maf_threshold ?.$annovar_maf_threshold.q? ?;
+	}
+	if ( $annovar_table_names[$table_names_Counter] =~/^avsift/ ) {#Set sift score TH
+	    print ANVARF q?--sift_threshold ?.$annovar_sift_threshold.q? ?;
+	}
+	print ANVARF q?${inFamilyDir}${inFamilyPrefix} ?; #Infile. Outfile is named using infile prefix except for generic files 
+	print ANVARF q?${inRefDir} &?, "\n\n"; #annovar/humandb
+    }
+    print ANVARF "wait", "\n\n";
     
-    print ANVARF "wait", "\n\n";    
     print ANVARF "rm ", '${outFamilyDir}/${outFamilyPrefix_temp}', "\n"; #Remove temp file
     close(ANVARF);
     FIDSubmitJob(0,$familyid, 1, $_[2],$filename);
@@ -1407,7 +1545,7 @@ sub Pindel {
     
     print PINDEL "#! /bin/bash -l", "\n";
     print PINDEL "#SBATCH -A ", $aid, "\n";
-    print PINDEL "#SBATCH -p node -n 8", "\n";
+    print PINDEL "#SBATCH -p node -n $maximum_cores", "\n";
     print PINDEL "#SBATCH -C thin", "\n";	
     print PINDEL "#SBATCH -t 20:00:00", "\n";
 
@@ -1447,7 +1585,7 @@ sub Pindel {
     close(PINDEL_INF); #Closes Pindel config file
 
     print PINDEL "#Pindel\n"; #Call INDELS using PINDEL
-    print PINDEL q?pindel -f ${referenceArchive}/?.$genomeref.q? -i ?.$pindel_config_file.q? -c ALL -o ${outSampleDir}/?.$_[0].q?_allchr_real_recal_resrt_pindel -T 8?, "\n\n"; 
+    print PINDEL q?pindel -f ${referenceArchive}/?.$genomeref.q? -i ?.$pindel_config_file.q? -c ALL -o ${outSampleDir}/?.$_[0].q?_allchr_real_recal_resrt_pindel -T $maximum_cores?, "\n\n"; 
 
     print PINDEL "#Pindel2vcf\n"; #Convert PINDEL calls to vcf
     print PINDEL q?pindel2vcf -p ${inSampleDir}/?.$_[0].q?_allchr_real_recal_resrt_pindel_D -r ${referenceArchive}/?.$genomeref.q? -R NA -d NA -v ${outSampleDir}/?.$_[0].q?_allchr_real_recal_resrt_pindel_D.vcf &?,"\n\n";
@@ -1458,7 +1596,7 @@ sub Pindel {
     print PINDEL q?java -Xmx2g -jar ?.$gatk_path.q?/GenomeAnalysisTK.jar -l INFO -T CombineVariants -R ${referenceArchive}/?.$genomeref.q? -V: ${inSampleDir}/?.$_[0].q?_allchr_real_recal_resrt_pindel_D.vcf -V: ${inSampleDir}/?.$_[0].q?_allchr_real_recal_resrt_pindel_SI.vcf -o ${outSampleDir}/?.$_[0].q?_allchr_real_recal_resrt_pindel_INDEL.vcf?, "\n";
     
     print PINDEL "\n#GATK UnifiedGenoTyper\n"; #Tap into GATK UnifiedGT using PINDEL split-read calls (skips GATKUnifedGT discovery phase)
-    print PINDEL q?java -Xmx12g -jar ?.$gatk_path.q?/GenomeAnalysisTK.jar -l INFO -T UnifiedGenotyper -R ${referenceArchive}/?.$genomeref.q? -D ${referenceArchive}/?.$gatk_recal_knset.q? -glm INDEL -nt 8 -stand_call_conf 30.0 -stand_emit_conf 30.0 --min_base_quality_score 20 --annotation QualByDepth --annotation HaplotypeScore --annotation MappingQualityRankSumTest --annotation ReadPosRankSumTest --annotation FisherStrand --annotation RMSMappingQuality --annotation DepthOfCoverage -L ${referenceArchive}/?.$gatk_bait;
+    print PINDEL q?java -Xmx12g -jar ?.$gatk_path.q?/GenomeAnalysisTK.jar -l INFO -T UnifiedGenotyper -R ${referenceArchive}/?.$genomeref.q? -D ${referenceArchive}/?.$gatk_recal_knset.q? -glm INDEL -nt $maximum_cores -stand_call_conf 30.0 -stand_emit_conf 30.0 --min_base_quality_score 20 --annotation QualByDepth --annotation HaplotypeScore --annotation MappingQualityRankSumTest --annotation ReadPosRankSumTest --annotation FisherStrand --annotation RMSMappingQuality --annotation DepthOfCoverage -L ${referenceArchive}/?.$gatk_bait;
 	
     for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) { #For all sample ids
 	
@@ -1501,7 +1639,7 @@ sub GATK_varrecal {
     
     print GATK_VARREC "#! /bin/bash -l", "\n";
     print GATK_VARREC "#SBATCH -A ", $aid, "\n";
-    print GATK_VARREC "#SBATCH -p node -n 8", "\n";
+    print GATK_VARREC "#SBATCH -p node -n $maximum_cores", "\n";
     print GATK_VARREC "#SBATCH -C thin", "\n";	
     print GATK_VARREC "#SBATCH -t 10:00:00", "\n";
     print GATK_VARREC "#SBATCH -J GATK_VarReCal_$_[2]_", $_[0], "\n";
@@ -1539,7 +1677,7 @@ sub GATK_varrecal {
 	    print GATK_VARREC "java -Xmx4g -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T CombineVariants -R ", '${referenceArchive}',"/$genomeref -V: ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_raw_$_[2].vcf -V: ", '${referenceArchive}',"/$gatk_exref_snp -o ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_raw_$_[2]_comb_ref.vcf";
 	    
 	    print GATK_VARREC "\n\n#GATK VariantRecalibrator","\n\n";	
-	    print GATK_VARREC "java -Xmx12g -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T VariantRecalibrator -R ", '${referenceArchive}',"/$genomeref -recalFile ",'${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2]_comb_ref.intervals -rscriptFile ", '${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2]_comb_ref.intervals.plots.R -tranchesFile ",'${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2]_comb_ref.intervals.tranches -resource:hapmap,VCF,known=false,training=true,truth=true,prior=15.0 ", '${referenceArchive}',"/hapmap_3.3.b37.sites.vcf -resource:omni,VCF,known=false,training=true,truth=false,prior=12.0 ",'${referenceArchive}', "/1000G_omni2.5.b37.sites.vcf -resource:dbsnp,VCF,known=true,training=false,truth=false,prior=8.0 ",'${referenceArchive}', "/dbsnp_135.b37.vcf -resource:mills,VCF,known=true,training=true,truth=true,prior=12.0 ", '${referenceArchive}',"/Mills_and_1000G_gold_standard.indels.hg19.sites.vcf -an QD -an HaplotypeScore -an MQRankSum -an ReadPosRankSum -an FS -an MQ --mode $_[2] -nt 8 -input ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_raw_$_[2]_comb_ref.vcf -L ", '${referenceArchive}',"/$gatk_bait ";
+	    print GATK_VARREC "java -Xmx12g -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T VariantRecalibrator -R ", '${referenceArchive}',"/$genomeref -recalFile ",'${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2]_comb_ref.intervals -rscriptFile ", '${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2]_comb_ref.intervals.plots.R -tranchesFile ",'${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2]_comb_ref.intervals.tranches -resource:hapmap,VCF,known=false,training=true,truth=true,prior=15.0 ", '${referenceArchive}',"/hapmap_3.3.b37.sites.vcf -resource:omni,VCF,known=false,training=true,truth=false,prior=12.0 ",'${referenceArchive}', "/1000G_omni2.5.b37.sites.vcf -resource:dbsnp,VCF,known=true,training=false,truth=false,prior=8.0 ",'${referenceArchive}', "/dbsnp_135.b37.vcf -resource:mills,VCF,known=true,training=true,truth=true,prior=12.0 ", '${referenceArchive}',"/Mills_and_1000G_gold_standard.indels.hg19.sites.vcf -an QD -an HaplotypeScore -an MQRankSum -an ReadPosRankSum -an FS -an MQ --mode $_[2] -nt $maximum_cores -input ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_raw_$_[2]_comb_ref.vcf -L ", '${referenceArchive}',"/$gatk_bait ";
 	    if (scalar(@sid) > 2) {
 		for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) { #For all sample ids
 		    if ( ($sid[$sampleid] =~ /(\d+)-(\d+|-\d+)-(\d+)(A|U)/) ) {#Match sampleID
@@ -1553,7 +1691,7 @@ sub GATK_varrecal {
 	}
 	else { #WGS Analysis
 	    print GATK_VARREC "\n\n#GATK VariantRecalibrator","\n\n";	
-	    print GATK_VARREC "java -Xmx12g -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T VariantRecalibrator -R ", '${referenceArchive}',"/$genomeref -recalFile ",'${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2].intervals -rscriptFile ", '${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2].intervals.plots.R -tranchesFile ",'${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2].intervals.tranches -resource:hapmap,VCF,known=false,training=true,truth=true,prior=15.0 ", '${referenceArchive}',"/hapmap_3.3.b37.sites.vcf -resource:omni,VCF,known=false,training=true,truth=false,prior=12.0 ",'${referenceArchive}', "/1000G_omni2.5.b37.sites.vcf -resource:dbsnp,VCF,known=true,training=false,truth=false,prior=8.0 ",'${referenceArchive}', "/dbsnp_135.b37.vcf -resource:mills,VCF,known=true,training=true,truth=true,prior=12.0 ", '${referenceArchive}',"/Mills_and_1000G_gold_standard.indels.hg19.sites.vcf -an QD -an HaplotypeScore -an MQRankSum -an ReadPosRankSum -an FS -an MQ --mode $_[2] -nt 8 -input ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_raw_$_[2].vcf ";
+	    print GATK_VARREC "java -Xmx12g -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T VariantRecalibrator -R ", '${referenceArchive}',"/$genomeref -recalFile ",'${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2].intervals -rscriptFile ", '${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2].intervals.plots.R -tranchesFile ",'${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2].intervals.tranches -resource:hapmap,VCF,known=false,training=true,truth=true,prior=15.0 ", '${referenceArchive}',"/hapmap_3.3.b37.sites.vcf -resource:omni,VCF,known=false,training=true,truth=false,prior=12.0 ",'${referenceArchive}', "/1000G_omni2.5.b37.sites.vcf -resource:dbsnp,VCF,known=true,training=false,truth=false,prior=8.0 ",'${referenceArchive}', "/dbsnp_135.b37.vcf -resource:mills,VCF,known=true,training=true,truth=true,prior=12.0 ", '${referenceArchive}',"/Mills_and_1000G_gold_standard.indels.hg19.sites.vcf -an QD -an HaplotypeScore -an MQRankSum -an ReadPosRankSum -an FS -an MQ --mode $_[2] -nt $maximum_cores -input ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_raw_$_[2].vcf ";
 	    if (scalar(@sid) > 2) {
 		for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) { #For all sample ids
 		    if ( ($sid[$sampleid] =~ /(\d+)-(\d+|-\d+)-(\d+)(A|U)/) ) {#Match sampleID
@@ -1577,7 +1715,7 @@ sub GATK_varrecal {
 	    print GATK_VARREC "java -Xmx4g -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T CombineVariants -R ", '${referenceArchive}',"/$genomeref -V: ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_raw_$_[2].vcf -V: ", '${referenceArchive}',"/$gatk_exref_snp -o ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_raw_$_[2]_comb_ref.vcf";
 	    
 	    print GATK_VARREC "\n\n#GATK VariantRecalibrator","\n\n";	
-	    print GATK_VARREC "java -Xmx12g -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T VariantRecalibrator -R ", '${referenceArchive}',"/$genomeref -recalFile ",'${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2]_comb_ref.intervals -rscriptFile ", '${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2]_comb_ref.intervals.plots.R -tranchesFile ",'${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2]_comb_ref.intervals.tranches -resource:hapmap,VCF,known=false,training=true,truth=true,prior=15.0 ", '${referenceArchive}',"/hapmap_3.3.b37.sites.vcf -resource:omni,VCF,known=false,training=true,truth=false,prior=12.0 ",'${referenceArchive}', "/1000G_omni2.5.b37.sites.vcf -resource:dbsnp,VCF,known=true,training=false,truth=false,prior=8.0 ",'${referenceArchive}', "/dbsnp_135.b37.vcf -an QD -an HaplotypeScore -an MQRankSum -an ReadPosRankSum -an FS -an MQ --mode SNP -nt 8 -input ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_raw_$_[2]_comb_ref.vcf -L ", '${referenceArchive}',"/$gatk_bait ";
+	    print GATK_VARREC "java -Xmx12g -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T VariantRecalibrator -R ", '${referenceArchive}',"/$genomeref -recalFile ",'${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2]_comb_ref.intervals -rscriptFile ", '${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2]_comb_ref.intervals.plots.R -tranchesFile ",'${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2]_comb_ref.intervals.tranches -resource:hapmap,VCF,known=false,training=true,truth=true,prior=15.0 ", '${referenceArchive}',"/hapmap_3.3.b37.sites.vcf -resource:omni,VCF,known=false,training=true,truth=false,prior=12.0 ",'${referenceArchive}', "/1000G_omni2.5.b37.sites.vcf -resource:dbsnp,VCF,known=true,training=false,truth=false,prior=8.0 ",'${referenceArchive}', "/dbsnp_135.b37.vcf -an QD -an HaplotypeScore -an MQRankSum -an ReadPosRankSum -an FS -an MQ --mode SNP -nt $maximum_cores -input ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_raw_$_[2]_comb_ref.vcf -L ", '${referenceArchive}',"/$gatk_bait ";
 	    if (scalar(@sid) > 2) {
 		for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) { #For all sample ids
 		    if ( ($sid[$sampleid] =~ /(\d+)-(\d+|-\d+)-(\d+)(A|U)/) ) {#Match sampleID
@@ -1591,7 +1729,7 @@ sub GATK_varrecal {
 	}
 	else { #WGS Analysis
 	    print GATK_VARREC "\n\n#GATK VariantRecalibrator","\n\n";	
-	    print GATK_VARREC "java -Xmx12g -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T VariantRecalibrator -R ", '${referenceArchive}',"/$genomeref -recalFile ",'${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2].intervals -rscriptFile ", '${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2].intervals.plots.R -tranchesFile ",'${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2].intervals.tranches -resource:hapmap,VCF,known=false,training=true,truth=true,prior=15.0 ", '${referenceArchive}',"/hapmap_3.3.b37.sites.vcf -resource:omni,VCF,known=false,training=true,truth=false,prior=12.0 ",'${referenceArchive}', "/1000G_omni2.5.b37.sites.vcf -resource:dbsnp,VCF,known=true,training=false,truth=false,prior=8.0 ",'${referenceArchive}', "/dbsnp_135.b37.vcf -an QD -an HaplotypeScore -an MQRankSum -an ReadPosRankSum -an FS -an MQ --mode SNP -nt 8 -input ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_raw_$_[2].vcf ";
+	    print GATK_VARREC "java -Xmx12g -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T VariantRecalibrator -R ", '${referenceArchive}',"/$genomeref -recalFile ",'${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2].intervals -rscriptFile ", '${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2].intervals.plots.R -tranchesFile ",'${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2].intervals.tranches -resource:hapmap,VCF,known=false,training=true,truth=true,prior=15.0 ", '${referenceArchive}',"/hapmap_3.3.b37.sites.vcf -resource:omni,VCF,known=false,training=true,truth=false,prior=12.0 ",'${referenceArchive}', "/1000G_omni2.5.b37.sites.vcf -resource:dbsnp,VCF,known=true,training=false,truth=false,prior=8.0 ",'${referenceArchive}', "/dbsnp_135.b37.vcf -an QD -an HaplotypeScore -an MQRankSum -an ReadPosRankSum -an FS -an MQ --mode SNP -nt $maximum_cores -input ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_raw_$_[2].vcf ";
 	    if (scalar(@sid) > 2) {
 		for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) { #For all sample ids
 		    if ( ($sid[$sampleid] =~ /(\d+)-(\d+|-\d+)-(\d+)(A|U)/) ) {#Match sampleID
@@ -1623,7 +1761,7 @@ sub GATK_varrecal {
 	}
 	else { #WGS
 	    print GATK_VARREC "\n\n#GATK VariantRecalibrator","\n\n";
-	    print GATK_VARREC "java -Xmx12g -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T VariantRecalibrator -R ", '${referenceArchive}',"/$genomeref -recalFile ",'${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2].intervals -rscriptFile ", '${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2].intervals.plots.R -tranchesFile ",'${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2].intervals.tranches -resource:mills,VCF,known=true,training=true,truth=true,prior=12.0 ", '${referenceArchive}',"/Mills_and_1000G_gold_standard.indels.hg19.sites.vcf -an QD -an HaplotypeScore -an ReadPosRankSum -an FS --mode $_[2] -nt 8 -input ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_raw_$_[2].vcf ";
+	    print GATK_VARREC "java -Xmx12g -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T VariantRecalibrator -R ", '${referenceArchive}',"/$genomeref -recalFile ",'${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2].intervals -rscriptFile ", '${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2].intervals.plots.R -tranchesFile ",'${outFamilyDir}', "/$_[0]", "_allchr_varrecal_$_[2].intervals.tranches -resource:mills,VCF,known=true,training=true,truth=true,prior=12.0 ", '${referenceArchive}',"/Mills_and_1000G_gold_standard.indels.hg19.sites.vcf -an QD -an HaplotypeScore -an ReadPosRankSum -an FS --mode $_[2] -nt $maximum_cores -input ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_raw_$_[2].vcf ";
 	    if (scalar(@sid) > 2) {
 		for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) { #For all sample ids
 		    if ( ($sid[$sampleid] =~ /(\d+)-(\d+|-\d+)-(\d+)(A|U)/) ) {#Match sampleID
@@ -1844,7 +1982,7 @@ sub GATK_hapcal {
     
     print GATK_HAPCAL "#! /bin/bash -l", "\n";
     print GATK_HAPCAL "#SBATCH -A ", $aid, "\n";
-    print GATK_HAPCAL "#SBATCH -p node -n 8", "\n";
+    print GATK_HAPCAL "#SBATCH -p node -n $maximum_cores", "\n";
     print GATK_HAPCAL "#SBATCH -C thin", "\n";	
     print GATK_HAPCAL "#SBATCH -t 50:00:00", "\n";
 
@@ -1864,7 +2002,7 @@ sub GATK_hapcal {
     print GATK_HAPCAL 'referenceArchive="', "$rd", '"', "\n\n"; 
     print GATK_HAPCAL "#Samples", "\n";
     print GATK_HAPCAL 'outFamilyDir="', "$odf/$_[0]/$_[1]/GATK/HapCall", '"', "\n\n"; 
-    print GATK_HAPCAL 'outFamilyDir2="',"$odf/$_[0]/", '"', "\n\n"; #For .fam file
+    print GATK_HAPCAL 'outFamilyDir2="',"$odf/$_[0]", '"', "\n\n"; #For .fam file
     
     if ($_[3] == 0) { #Only for the first call of subroutine GATK_hapcal.
 #Generate .fam file for later use in relevant GATK walkers (HaplotypeCaller, VariantscoreRequalibration etc)
@@ -1951,7 +2089,7 @@ sub GATK_unigt {
     
     print GATK_UNIGT "#! /bin/bash -l", "\n";
     print GATK_UNIGT "#SBATCH -A ", $aid, "\n";
-    print GATK_UNIGT "#SBATCH -p node -n 8", "\n";
+    print GATK_UNIGT "#SBATCH -p node -n $maximum_cores", "\n";
     print GATK_UNIGT "#SBATCH -C thin", "\n";	
     print GATK_UNIGT "#SBATCH -t 40:00:00", "\n";
 
@@ -1981,7 +2119,7 @@ sub GATK_unigt {
     else { #INDEL
 	print GATK_UNIGT "$_[2] ";
     }
-    print GATK_UNIGT "-nt 8 -stand_call_conf 30.0 -stand_emit_conf 30.0 --min_base_quality_score 20 --annotation QualByDepth --annotation HaplotypeScore --annotation MappingQualityRankSumTest --annotation ReadPosRankSumTest --annotation FisherStrand --annotation RMSMappingQuality --annotation DepthOfCoverage ";
+    print GATK_UNIGT "-nt $maximum_cores -stand_call_conf 30.0 -stand_emit_conf 30.0 --min_base_quality_score 20 --annotation QualByDepth --annotation HaplotypeScore --annotation MappingQualityRankSumTest --annotation ReadPosRankSumTest --annotation FisherStrand --annotation RMSMappingQuality --annotation DepthOfCoverage ";
     if ($wgs == 0) { #Exome analysis - Restrict analysis to padded target file
 	
 	print GATK_UNIGT "-L ", '${referenceArchive}',"/$gatk_bait ";
@@ -2023,9 +2161,9 @@ sub GATK_recal {
     
     print GATK_RECAL "#! /bin/bash -l", "\n";
     print GATK_RECAL "#SBATCH -A ", $aid, "\n";
-    print GATK_RECAL "#SBATCH -p node -n 8", "\n";
+    print GATK_RECAL "#SBATCH -p node -n $maximum_cores", "\n";
     print GATK_RECAL "#SBATCH -C thin", "\n";	
-    print GATK_RECAL "#SBATCH -t 40:00:00", "\n";
+    print GATK_RECAL "#SBATCH -t 60:00:00", "\n";
     print GATK_RECAL "#SBATCH -J GATK_RECAL_", $_[0], "\n";
     print GATK_RECAL "#SBATCH -e $odf/$_[0]/$_[1]/info/gatk_recal_$_[0].", $fnt ,".stderr.txt", "\n";
     print GATK_RECAL "#SBATCH -o $odf/$_[0]/$_[1]/info/gatk_recal_$_[0].", $fnt ,".stdout.txt", "\n";
@@ -2046,25 +2184,19 @@ sub GATK_recal {
     print GATK_RECAL 'outSampleDir="', "$odf/$_[0]/$_[1]/per_chr/GATK/intermediary", '"', "\n\n";   
 
     my $tempinfile = $avcovfn{$_[0]};
-    my $temp_GATK_path = $gatk_path; #NOTE: Base recalibration has been set to GATK GenomeAnalysisTK-2.1-11-g13c0244 due to issues with malformed reads that the GATK team were unable to reproduce with versions >2.2.
-    my $k=1;
+    my $core_Counter=1;
 
     print GATK_RECAL "#GATK CountCovariates","\n\n";
     for (my $chr=0;$chr<scalar(@chr);$chr++) { #For all chr	    
 	
-	if ($chr eq $k*8) { #Using only 8 cores
+	if ($chr eq $core_Counter*$maximum_cores) { #Using only $maximum_cores 
 	    
 	    print GATK_RECAL "wait", "\n\n";
-	    $k=$k+1;
+	    $core_Counter=$core_Counter+1;
 	}
-#NOTE: Base recalibration has been set to GATK GenomeAnalysisTK-2.1-11-g13c0244 due to issues with malformed reads that the GATK team were unable to reproduce with versions >2.2.
-	if ( basename($temp_GATK_path) =~ /GenomeAnalysisTK-2.2/ ) {
-	    print STDOUT "#\nNOTE: Base recalibration has been set to GATK GenomeAnalysisTK-2.1-11-g13c0244 due to issues with malformed reads that the GATK team were unable to reproduce with versions >2.2.\n";
-	    $temp_GATK_path = dirname($temp_GATK_path)."/GenomeAnalysisTK-2.1-11-g13c0244"
-	}
-	print GATK_RECAL "java -Xmx3g -Djava.io.tmpdir=/proj/$aid/private/nobackup",'/$SLURM_JOB_ID/', "$chr[$chr]/ -jar $temp_GATK_path/GenomeAnalysisTK.jar -l INFO -T BaseRecalibrator -cov ReadGroupCovariate -cov ContextCovariate -cov CycleCovariate -cov QualityScoreCovariate -cov ReadGroupCovariate -R ", '${referenceArchive}',"/$genomeref -knownSites ", '${referenceArchive}', "/$gatk_recal_knset -I ",  '${inSampleDir}', "/$tempinfile","_", "$chr[$chr]","_real.bam -o ", '${outSampleDir}', "/$tempinfile","_", "$chr[$chr]", "_real_recal.grp &", "\n\n";
+	print GATK_RECAL "java -Xmx3g -Djava.io.tmpdir=/proj/$aid/private/nobackup",'/$SLURM_JOB_ID/', "$chr[$chr]/ -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T BaseRecalibrator -cov ReadGroupCovariate -cov ContextCovariate -cov CycleCovariate -cov QualityScoreCovariate -cov ReadGroupCovariate -R ", '${referenceArchive}',"/$genomeref -knownSites ", '${referenceArchive}', "/$gatk_recal_knset -I ",  '${inSampleDir}', "/$tempinfile","_", "$chr[$chr]","_real.bam -o ", '${outSampleDir}', "/$tempinfile","_", "$chr[$chr]", "_real_recal.grp &", "\n\n";
     }
-    $k=1; #Resetting
+    $core_Counter=1; #Resetting
     print GATK_RECAL "wait", "\n\n";
     print GATK_RECAL "#GATK ","\n\n";
     print GATK_RECAL "#Samples", "\n";
@@ -2074,30 +2206,30 @@ sub GATK_recal {
 
     for (my $chr=0;$chr<scalar(@chr);$chr++) { #For all chr	    
 	
-	if ($chr eq $k*8) { #Using only 8 cores
+	if ($chr eq $core_Counter*$maximum_cores) { #Using only $maximum_cores cores
 	    
 	    print GATK_RECAL "wait", "\n\n";
-	    $k=$k+1;
+	    $core_Counter=$core_Counter+1;
 	}
-	print GATK_RECAL "java -Xmx3g -jar $temp_GATK_path/GenomeAnalysisTK.jar -l INFO -T PrintReads -R ", '${referenceArchive}',"/$genomeref -I ", '${inSampleDir}', "/$tempinfile","_", "$chr[$chr]","_real.bam -o ", '${outSampleDir}', "/$tempinfile","_", "$chr[$chr]", "_real_recal.bam -BQSR ", '${inSampleDir_2}', "/$tempinfile","_", "$chr[$chr]", "_real_recal.grp &", "\n\n";
+	print GATK_RECAL "java -Xmx3g -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T PrintReads -R ", '${referenceArchive}',"/$genomeref -I ", '${inSampleDir}', "/$tempinfile","_", "$chr[$chr]","_real.bam -o ", '${outSampleDir}', "/$tempinfile","_", "$chr[$chr]", "_real_recal.bam -BQSR ", '${inSampleDir_2}', "/$tempinfile","_", "$chr[$chr]", "_real_recal.grp &", "\n\n";
 	
     }
-    $k=1; #Resetting for new infile
+    $core_Counter=1; #Resetting for new infile
     print GATK_RECAL "wait", "\n\n";
 ###
 #SamTools sort on real and recal files
 ###
 for (my $chr=0;$chr<scalar(@chr);$chr++) { #For all chr	    
 	
-	if ($chr eq $k*8) { #Using only 8 cores
+	if ($chr eq $core_Counter*$maximum_cores) { #Using only $maximum_cores cores
 	    
 	    print GATK_RECAL "wait", "\n\n";
-	    $k=$k+1;
+	    $core_Counter=$core_Counter+1;
 	}
 	print GATK_RECAL "samtools sort ", '${inSampleDir}', "/$tempinfile","_", "$chr[$chr]", "_real_recal.bam ", '${outSampleDir}', "/$tempinfile","_", "$chr[$chr]", "_real_recal_resrt &","\n\n"; #samtools sort adds .bam
 	
     }
-    $k=1; #Resetting for new infile
+    $core_Counter=1; #Resetting for new infile
     print GATK_RECAL "wait", "\n\n";
 #Create @RG group    
     print GATK_RECAL "samtools view -H ", '${inSampleDir}', "/$tempinfile","_", "$chr[0]", "_real_recal_resrt.bam  > ", '${inSampleDir}', "/$tempinfile","_", "$chr[0]","_real_recal_resrt_header.sam","\n\n"; #NOTE to add @RG group header in later merge
@@ -2116,17 +2248,17 @@ for (my $chr=0;$chr<scalar(@chr);$chr++) { #For all chr
     print GATK_RECAL "wait", "\n\n";
 
 #Index recal and resrt individual files for downstream use with HaplotypeCaller
-    $k=1; #Resetting for new infile
+    $core_Counter=1; #Resetting for new infile
 
     for (my $chr=0;$chr<scalar(@chr);$chr++) { #For all chr	    
-	if ($chr eq $k*8) { #Using only 8 cores
+	if ($chr eq $core_Counter*$maximum_cores) { #Using only $maximum_cores cores
 	    
 	    print GATK_RECAL "wait", "\n\n";
-	    $k=$k+1;
+	    $core_Counter=$core_Counter+1;
 	}
 	print GATK_RECAL "samtools index ", '${inSampleDir}', "/$tempinfile","_", "$chr[$chr]","_real_recal_resrt.bam &", "\n\n";   
     }
-    $k=1; #Resetting
+    $core_Counter=1; #Resetting
     print GATK_RECAL "wait", "\n\n";
     
     close(GATK_RECAL);   
@@ -2154,7 +2286,7 @@ sub GATK_real {
     
     print GATK_REAL "#! /bin/bash -l", "\n";
     print GATK_REAL "#SBATCH -A ", $aid, "\n";
-    print GATK_REAL "#SBATCH -p node -n 8", "\n";
+    print GATK_REAL "#SBATCH -p node -n $maximum_cores", "\n";
     print GATK_REAL "#SBATCH -C thin", "\n";	
     print GATK_REAL "#SBATCH -t 40:00:00", "\n";
     print GATK_REAL "#SBATCH -J GATK_REAL_", $_[0], "\n";
@@ -2177,20 +2309,20 @@ sub GATK_real {
     print GATK_REAL 'outSampleDir="', "$odf/$_[0]/$_[1]/per_chr/GATK/intermediary", '"', "\n\n";   
 
     my $tempinfile = $avcovfn{$_[0]};
-    my $k=1;
+    my $core_Counter=1;
 
     print GATK_REAL "#GATK RealignerTargetCreator","\n\n";
     for (my $chr=0;$chr<scalar(@chr);$chr++) { #For all chr	    
 	
-	if ($chr eq $k*8) { #Using only 8 cores
+	if ($chr eq $core_Counter*$maximum_cores) { #Using only $maximum_cores cores
 	    
 	    print GATK_REAL "wait", "\n\n";
-	    $k=$k+1;
+	    $core_Counter=$core_Counter+1;
 	}
 	print GATK_REAL "java -Xmx3g -Djava.io.tmpdir=/proj/$aid/private/nobackup",'/$SLURM_JOB_ID/', "$chr[$chr]/ -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T RealignerTargetCreator -R ", '${referenceArchive}',"/$genomeref -known ", '${referenceArchive}', "/$gatk_real_knset1 -known ", '${referenceArchive}',"/$gatk_real_knset2 -I ",  '${inSampleDir}', "/$tempinfile","_", "$chr[$chr].bam -o ", '${outSampleDir}', "/$tempinfile","_", "$chr[$chr]", "_real.intervals &", "\n\n";
 	
     }
-    $k=1; #Resetting
+    $core_Counter=1; #Resetting
     print GATK_REAL "wait", "\n\n";
     print GATK_REAL "#GATK IndelRealigner","\n\n";
     print GATK_REAL "#Samples", "\n";
@@ -2200,15 +2332,15 @@ sub GATK_real {
 
     for (my $chr=0;$chr<scalar(@chr);$chr++) { #For all chr	    
 	
-	if ($chr eq $k*8) { #Using only 8 cores
+	if ($chr eq $core_Counter*$maximum_cores) { #Using only $maximum_cores cores
 	    
 	    print GATK_REAL "wait", "\n\n";
-	    $k=$k+1;
+	    $core_Counter=$core_Counter+1;
 	}
 	print GATK_REAL "java -Xmx3g -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T IndelRealigner -R ", '${referenceArchive}',"/$genomeref -known ", '${referenceArchive}', "/$gatk_real_knset1 -known ", '${referenceArchive}',"/$gatk_real_knset2 -I ", '${inSampleDir}', "/$tempinfile","_", "$chr[$chr].bam -o ", '${outSampleDir}', "/$tempinfile","_", "$chr[$chr]", "_real.bam -targetIntervals ", '${inSampleDir_2}', "/$tempinfile","_", "$chr[$chr]", "_real.intervals &", "\n\n";
 	
     }
-    $k=1; #Resetting for new infile
+    $core_Counter=1; #Resetting for new infile
     print GATK_REAL "wait", "\n\n";
       
     close(GATK_REAL);
@@ -2235,7 +2367,7 @@ sub SamtoolsViewSChr {
     
     print STVSCHR "#! /bin/bash -l", "\n";
     print STVSCHR "#SBATCH -A ", $aid, "\n";
-    print STVSCHR "#SBATCH -p node -n 8", "\n";
+    print STVSCHR "#SBATCH -p node -n $maximum_cores", "\n";
     print STVSCHR "#SBATCH -C thin", "\n";	
     print STVSCHR "#SBATCH -t 5:00:00", "\n"; 
     print STVSCHR "#SBATCH -J STVSCHR_", $_[0], "\n";
@@ -2253,27 +2385,27 @@ sub SamtoolsViewSChr {
     print STVSCHR 'echo "Running on: $(hostname)"',"\n\n";
     print STVSCHR "#Samples", "\n";
     
-    my $k=1;
+    my $core_Counter=1;
     my $tempinfile = $avcovfn{$_[0]};
     
     for (my $chr=0;$chr<scalar(@chr);$chr++) { #For all chr
 	
-	if ($chr eq $k*8) { #Using only 8 cores
+	if ($chr eq $core_Counter*$maximum_cores) { #Using only $maximum_cores cores
 	    
 	    print STVSCHR "wait", "\n\n";
-	    $k=$k+1;
+	    $core_Counter=$core_Counter+1;
 	}
 	print STVSCHR "samtools view -b -o $odf/$_[0]/$_[1]/per_chr/$tempinfile", "_", "$chr[$chr].bam $odf/$_[0]/$_[1]/$tempinfile", ".bam $chr[$chr] &", "\n\n";
     }
     
     print STVSCHR "wait", "\n\n";
-    $k=1; #Reset
+    $core_Counter=1; #Reset
     for (my $chr=0;$chr<scalar(@chr);$chr++) { #For all chr
 	
-	if ($chr eq $k*8) { #Using only 8 cores
+	if ($chr eq $core_Counter*$maximum_cores) { #Using only $maximum_cores cores
 	    
 	    print STVSCHR "wait", "\n\n";
-	    $k=$k+1;
+	    $core_Counter=$core_Counter+1;
 	}
 	print STVSCHR "samtools index $odf/$_[0]/$_[1]/per_chr/$tempinfile", "_", "$chr[$chr].bam &", "\n\n";
     }
