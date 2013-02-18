@@ -13,7 +13,7 @@ mip_align.pl  -id [inFilesDir,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [reference
     
 =head2 COMMANDS AND OPTIONS
 
--ifd/--inFilesDir Infile directory(s) (Mandatory: Supply whole path)
+-ifd/--inFilesDir Infile directory(s). Comma sep (Mandatory: Supply whole path)
 
 -isd/--inScriptDir The pipeline script in directory (Mandatory: Supply whole path)
 
@@ -43,9 +43,13 @@ mip_align.pl  -id [inFilesDir,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [reference
 
 -pMoA/--pMosaikAlign Flag running MosaikAlign (defaults to "1" (=yes))
 
--moaref/--mosaikAlignReference MosaikAlign reference (defaults to "concat.dat")
+-moaref/--mosaikAlignReference MosaikAlign reference (defaults to "")
 
--mojdb/--mosaikJumpDbStub MosaikJump stub (defaults to "concat_jdb_15")
+-moaannpe/--mosaikAlignNeuralNetworkPeFile MosaikAlign Neural Network PE File (defaults to "")
+
+-moaannse/--mosaikAlignNeuralNetworkSeFile MosaikAlign Neural Network SE File (defaults to "")
+
+-mojdb/--mosaikJumpDbStub MosaikJump stub (defaults to "")
 
 -pBWA_aln/--pBwaAln Flag running bwa aln (defaults to "0" (=no))
 
@@ -85,7 +89,7 @@ mip_align.pl  -id [inFilesDir,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [reference
 
 -pGdb/--pGenDataBaseCoverageCalculation Coverage calculation of specific genes database (Defaults to "1" (=yes))
 
--gdb/--genDataBase Gene database for specific genes coverage calculations (Defaults to "")
+-gdb/--geneDataBase Gene database for specific genes coverage calculations (Defaults to "")
 
 -pRCP/--pRCovPlots  Flag running rCovPlots (defaults to "1" (=yes))
 
@@ -180,8 +184,10 @@ BEGIN {
 	       -pMoB/--pMosaikBuild Flag running MosaikBuild (defaults to "1" (=yes))
                -mobmfl/--mosaikBuildMeanFragLength Flag for setting the mean fragment length, mfl, (defaults to (=375) bp)
 	       -pMoA/--pMosaikAlign Flag running MosaikAlign (defaults to "1" (=yes))
-               -moaref/--mosaikAlignReference MosaikAlign reference (defaults to "concat.dat")
-               -mojdb/--mosaikJumpDbStub MosaikJump stub (defaults to "concat_jdb_15")
+               -moaref/--mosaikAlignReference MosaikAlign reference (defaults to "")
+               -moaannpe/--mosaikAlignNeuralNetworkPeFile MosaikAlign Neural Network PE File (defaults to "")
+               -moaannse/--mosaikAlignNeuralNetworkSeFile MosaikAlign Neural Network SE File (defaults to "")
+               -mojdb/--mosaikJumpDbStub MosaikJump stub (defaults to "")
                -pBWA_aln/--pBwaAln Flag running bwa aln (defaults to "0" (=no))
                -Bwa_aln_q/--aln_q Flag running bwa aln -q (defaults to 20)
                -pBWA_sampe/--pBwaSampe Flag running bwa sampe (defaults to "0" (=no))
@@ -201,7 +207,7 @@ BEGIN {
                -extbl/--exomeTargetBedInfileList Prepared target BED file for picardTools calculateHSMetrics. (defaults to "". File ending should be ".infile_list") 
                -extpbl/--exomeTargetPaddedBedInfileList Prepared padded target BED file for picardTools calculateHSMetrics. (defaults to "". File ending should be ".padXXX.infile_list")
                -pGdb/--pGenDataBaseCoverageCalculation Coverage calculation of specific genes database (Defaults to "1" (=yes))
-               -gdb/--genDataBase Gene database for specific genes coverage calculations (Defaults to "")
+               -gdb/--geneDataBase Gene database for specific genes coverage calculations (Defaults to "")
 	       -pRCP/--pRCovPlots Flag running rCovPlots (defaults to "1" (=yes))
 	       -pGZ/--pGZip  Flag generating gzip sbatch (defaults to "1" (=yes))
                -pREM/--pRemovalRedundantFiles  Flag generating sbatch script of deletion of redundant files (defaults to "1" (=yes);Note: Must be submitted manually)
@@ -227,7 +233,7 @@ my ($pFQC) = (1);
 
 #Mosaik
 my ($pMoB, $pMoA) = (1,1);
-my ($mosaikBuildMeanFragLength, $mosaikAlignReference, $mosaikJumpDbStub) = (375,"concat.dat","concat_jdb_15");
+my ($mosaikBuildMeanFragLength, $mosaikAlignReference, $mosaikAlignNeuralNetworkPeFile, $mosaikAlignNeuralNetworkSeFile, $mosaikJumpDbStub) = (375,0,0,0,0);
 
 #BWA
 my ($pBWA_aln, $pBWA_sampe) = (0,0);
@@ -242,7 +248,7 @@ my (@picardToolsMergePreviousFiles);
 
 #Coverage
 my ($pCC, $pCC_Bedgc, $pCC_Bedc, $pCC_Qac, $pCC_PicMM, $pCCE_PicHS, $pGdb, $pRCP) = (1,1,1,1,1,1,1,1);
-my ($exomeTargetBed, $exomeTargetBedInfileList, $exomeTargetPaddedBedInfileList, $genDataBase, $picardPath, $xcoverage, $identicalCaptureBedCounter, $identicalCaptureBedIntervalCounter) = (0,0,0,0,0,30,0,0);
+my ($exomeTargetBed, $exomeTargetBedInfileList, $exomeTargetPaddedBedInfileList, $geneDataBase, $picardPath, $xcoverage, $identicalCaptureBedCounter, $identicalCaptureBedIntervalCounter) = (0,0,0,0,0,30,0,0);
 
 #Pipe
 my ($pREM) = (1);
@@ -256,8 +262,10 @@ my (%infiles, %indirpath, %Infiles_lane_noending, %lanes, %Infiles_bothstrands_n
 
 #Capture kits supported from pedigree file.
 my %supported_capture_kits = (
-    'Agilent_SureSelect.V3' => "SureSelect_All_Exon_50mb_with_annotation_hg19_nochr.bed",
-    'Agilent_SureSelect.V4' => "SureSelect_XT_Human_All_Exon_V4_targets_nochr.bed",
+    'Agilent_SureSelect.V3' => "Agilent_SureSelect_V3_hg19_targets_nochr.bed",
+    'Agilent_SureSelect.V4' => "Agilent_SureSelect_V4_hg19_targets_nochr.bed",
+    #'Agilent_SureSelect.V3' => "SureSelect_All_Exon_50mb_with_annotation_hg19_nochr.bed",
+    #'Agilent_SureSelect.V4' => "SureSelect_XT_Human_All_Exon_V4_targets_nochr.bed",
     );
 
 ###
@@ -280,6 +288,7 @@ GetOptions('ifd|inFilesDir:s'  => \@inFilesDir, #Comma separated list
 	   'mobmfl|mosaikBuildMeanFragLength:n' => \$mosaikBuildMeanFragLength, #for fragment length estimation and local search
 	   'pMoA|pMosaikAlign:n' => \$pMoA,
 	   'moaref|mosaikAlignReference:s' => \$mosaikAlignReference, #MosaikAlign reference file assumes existance of jump database files in same dir
+	   'moaannpe|mosaikAlignNeuralNetworkPeFile:s' => \$mosaikAlignNeuralNetworkPeFile, 
 	   'mojdb|mosaikJumpDbStub:s' => \$mosaikJumpDbStub, #Stub for MosaikJump database
 	   'pBWA_aln|pBwaAln:n' => \$pBWA_aln,
 	   'Bwa_aln_q|aln_q:n' => \$aln_q, #BWA aln quality threshold for read trimming down to 35bp
@@ -300,7 +309,7 @@ GetOptions('ifd|inFilesDir:s'  => \@inFilesDir, #Comma separated list
 	   'extpbl|exomeTargetPaddedBedInfileList:s' => \$exomeTargetPaddedBedInfileList, #Padded target file for CalculateHsMetrics
 	   'xcov|xCoverage:n' => \$xcoverage, #Sets max depth to calculate coverage
 	   'pGdb|pGenDataBaseCoverageCalculation:n' => \$pGdb, #Enable important gene db file for coverage calculations
-	   'gdb|genDataBase:s' => \$genDataBase, #Important gene db file used for coverage calcualtions
+	   'gdb|geneDataBase:s' => \$geneDataBase, #Important gene db file used for coverage calcualtions
 	   'pRCP|pRCovPlots:n' => \$pRCP,
 	   'pGZ|pGZip:n' => \$pGZ,
 	   'pREM|pRemovalRedundantFiles:n' => \$pREM,
@@ -519,8 +528,25 @@ unless ( $pMoB || $pMoA || $pBWA_aln || $pBWA_sampe) { #Specify aligner if none 
 
 if ( $pMoB || $pMoA ) {
     if ($pMoA eq 1) {
+	if ($environmentUppmax == 1) {
+	    $mosaikAlignReference = "Homo_sapiens.GRCh37.70.nochr.dat";
+	    $mosaikAlignNeuralNetworkPeFile = "2.1.78.pe.ann";
+	    $mosaikAlignNeuralNetworkSeFile = "2.1.78.se.ann";
+	    $mosaikJumpDbStub = "Homo_sapiens.GRCh37.70.nochr_jdb_15";
+	}
+	elsif ( ($mosaikAlignReference eq 0) || ($mosaikAlignNeuralNetworkPeFile eq 0) || ($mosaikAlignNeuralNetworkSeFile eq 0) || ($mosaikJumpDbStub eq 0) ) {
+	    print STDERR "\nSupply '-mosaikAlignReference', '-$mosaikAlignNeuralNetworkPeFile', '-$mosaikAlignNeuralNetworkSeFile' and '-$mosaikJumpDbStub' to run MosaikAligner\n";   
+	}
 	unless (-e "$referencesDir/$mosaikAlignReference" ) { #Check existence of mosaik hashed reference in supplied reference dir
 	    print STDERR "\nCould not find intended Mosaik Reference file: $referencesDir/$mosaikAlignReference\n\n";
+	    die $USAGE;		
+	}
+	unless (-e "$referencesDir/$mosaikAlignNeuralNetworkPeFile" ) { #Check existence of mosaik neural network file in supplied reference dir
+	    print STDERR "\nCould not find intended Mosaik Neural Network file: $referencesDir/$mosaikAlignNeuralNetworkPeFile\n\n";
+	    die $USAGE;		
+	}
+	unless (-e "$referencesDir/$mosaikAlignNeuralNetworkSeFile" ) { #Check existence of mosaik neural network file in supplied reference dir
+	    print STDERR "\nCould not find intended Mosaik Neural Network file: $referencesDir/$mosaikAlignNeuralNetworkSeFile\n\n";
 	    die $USAGE;		
 	}
 	unless (-e "$referencesDir/$mosaikJumpDbStub"."_keys.jmp" ) { #Check existence of Mosaik jumpDb in supplied reference dir
@@ -535,14 +561,7 @@ if ( $pMoB || $pMoA ) {
 	    print STDERR "\nCould not find intended Mosaik JumpDb: $referencesDir/$mosaikJumpDbStub\n\n";
 	    die $USAGE;		
 	}
-	unless (-e "$referencesDir/2.1.26.pe.100.0065.ann" ) { #Check existence of Mosaik PE neural network in supplied reference dir
-	    print STDERR "\nCould not find intended Mosaik NeuralNetwork: $referencesDir/2.1.26.pe.100.0065.ann\n\n";
-	    die $USAGE;		
-	}
-	unless (-e "$referencesDir/2.1.26.se.100.005.ann" ) { #Check existence of Mosaik SE neural network in supplied reference dir
-	    print STDERR "\nCould not find intended Mosaik NeuralNetwork: $referencesDir/2.1.26.se.100.005.ann\n\n";
-	    die $USAGE;		
-	}
+	
     }
     $aligner = "mosaik";
     $script_parameters{'aligner'} = $aligner;
@@ -692,14 +711,14 @@ if (scalar(@picardToolsMergePreviousFiles) > 0 ) {
 }
 
 
-if ( ($genDataBase eq 0) && ($pGdb == 1) ) {
+if ( ($geneDataBase eq 0) && ($pGdb == 1) ) {
     if ($environmentUppmax == 1) {
-	$genDataBase = "IEM_Db_CMMS_version1.2.txt";
-	unless (-e "$referencesDir/$genDataBase" ) { #Check for gene database file in supplied reference dir
-	    print STDERR "\nCould not find the gene database file: $referencesDir/$genDataBase\n\n";
+	$geneDataBase = "IEM_Db_CMMS_version1.2.txt";
+	unless (-e "$referencesDir/$geneDataBase" ) { #Check for gene database file in supplied reference dir
+	    print STDERR "\nCould not find the gene database file: $referencesDir/$geneDataBase\n\n";
 	    die $USAGE;		
 	}
-	$script_parameters{'genDataBase'} = $genDataBase;
+	$script_parameters{'geneDataBase'} = $geneDataBase;
     }
     else {
 	print STDERR "Supply the gene database file if you want to run '$pGdb'. Supply file with flag '-gdb '.\n\n";
@@ -707,7 +726,7 @@ if ( ($genDataBase eq 0) && ($pGdb == 1) ) {
     }
 }
 else { #Add to enable recreation of cmd line later
-    $script_parameters{'genDataBase'} = $genDataBase;
+    $script_parameters{'geneDataBase'} = $geneDataBase;
 }
 
 
@@ -1397,7 +1416,7 @@ sub Cal_Coverage {
 		    #Collpase the two lines from coverageBed_depth_pos_collapsed and _coverageBed
 		    print CRG q?perl -nae ' print "#Chr\tStart\tStop\tOverlapping_Reads\tNon-zero_Coverage_Bases\tFeature_Length(Nucleotides)\tAverage_Coverage\tFraction_Non-zero_Coverage_Bases\tFraction_Ten_Coverage_Bases\tNr_Zero_Coverage_Bases\tRelative_position_for_Zero_Coverage_Bases\n";chomp($_);my @prev_line=split("\t",$_);my @temp_line; while (<>) { chomp($_); @temp_line = split("\t",$_); if ($prev_line[0]  && ($prev_line[0] eq $temp_line[0]) && ($prev_line[1] == $temp_line[1]) && ($prev_line[2] == $temp_line[2]) ) { if ($prev_line[3] eq "-") { $temp_line[3]=~s/\./\,/;$prev_line[7]=~s/\./\,/; print $prev_line[0],"\t", $prev_line[1],"\t",$prev_line[2],"\t",$prev_line[4],"\t",$prev_line[5],"\t",$prev_line[6],"\t",$temp_line[3],"\t","$prev_line[7]\t","$temp_line[4]\t","$temp_line[5]\t","$temp_line[6]\n";} else { $prev_line[3]=~s/\./\,/;$temp_line[7]=~s/\./\,/; print $temp_line[0],"\t", $temp_line[1],"\t",$temp_line[2],"\t",$temp_line[4],"\t",$temp_line[5],"\t",$temp_line[6],"\t",$prev_line[3],"\t","$temp_line[7]\t","$prev_line[4]\t","$prev_line[5]\t","$prev_line[6]\n";} } else { @prev_line = @temp_line;} }last;' ?, '${outSampleDir}', "/$_[0]_lanes_",$mergelanes, @{ $lanes{$_[0]} }, $fileending,"_coverageBed_merged > ", '${outSampleDir}',"/$_[0]_lanes_",$mergelanes, @{ $lanes{$_[0]} }, $fileending,"_target_coverage.txt", "\n\n";
 		    
-		    if ( ($genDataBase) && ($pGdb == 1) ) {
+		    if ( ($geneDataBase) && ($pGdb == 1) ) {
 			#Add chr to entry to enable comparison to Im_Db
 			print CRG q?perl -i -p -e ' if($_=~/^#/) {} else {s/^(.+)/chr$1/g }' ?, '${outSampleDir}',"/$_[0]_lanes_",$mergelanes, @{ $lanes{$_[0]} }, $fileending,"_target_coverage.txt", "\n\n";
 			
@@ -1407,7 +1426,7 @@ sub Cal_Coverage {
 			
 			#Find Im_db entries
 			print CRG "#Find Im_db entries", "\n";
-			print CRG "intersectBed -a ", '${outSampleDir}',"/$_[0]_lanes_",$mergelanes, @{ $lanes{$_[0]} }, $fileending,"_target_coverage.txt -b $referencesDir/$genDataBase > ", '${outSampleDir}',"/$_[0]_lanes_",$mergelanes, @{ $lanes{$_[0]} }, $fileending,"_temp_IEM_target_coverage.txt", "\n\n";
+			print CRG "intersectBed -a ", '${outSampleDir}',"/$_[0]_lanes_",$mergelanes, @{ $lanes{$_[0]} }, $fileending,"_target_coverage.txt -b $referencesDir/$geneDataBase > ", '${outSampleDir}',"/$_[0]_lanes_",$mergelanes, @{ $lanes{$_[0]} }, $fileending,"_temp_IEM_target_coverage.txt", "\n\n";
 			
 			#Add header and change from temp file
 			print CRG "#Add header and change from temp file", "\n";
@@ -1437,7 +1456,7 @@ sub Cal_Coverage {
 		    my @target_coverage_files;
 		    $target_coverage_db_file .= $fileending."_coverage_target_db_master.txt";		    
 		    $target_coverage_file .= $fileending."_target_coverage.txt";
-		    if ( ($genDataBase) && ($pGdb == 1) ) {		    	
+		    if ( ($geneDataBase) && ($pGdb == 1) ) {		    	
 			$target_coverage_db_Im_db_file .=  $fileending."_coverage_IEM_db_master.txt";
 			$target_coverage_Im_db_file .= $fileending."_IEM_target_coverage.txt";
 			@target_coverage_db_files = ($target_coverage_db_file, $target_coverage_db_Im_db_file); #Db master files	    
@@ -1496,7 +1515,7 @@ sub Cal_Coverage {
 	#Collpase the two lines from coverageBed_depth_pos_collapsed and _coverageBed
 	print CRG q?perl -nae ' print "#Chr\tStart\tStop\tOverlapping_Reads\tNon-zero_Coverage_Bases\tFeature_Length(Nucleotides)\tAverage_Coverage\tFraction_Non-zero_Coverage_Bases\tFraction_Ten_Coverage_Bases\tNr_Zero_Coverage_Bases\tRelative_position_for_Zero_Coverage_Bases\n";chomp($_);my @prev_line=split("\t",$_);my @temp_line; while (<>) { chomp($_); @temp_line = split("\t",$_); if ($prev_line[0]  && ($prev_line[0] eq $temp_line[0]) && ($prev_line[1] == $temp_line[1]) && ($prev_line[2] == $temp_line[2]) ) { if ($prev_line[3] eq "-") { $temp_line[3]=~s/\./\,/;$prev_line[7]=~s/\./\,/; print $prev_line[0],"\t", $prev_line[1],"\t",$prev_line[2],"\t",$prev_line[4],"\t",$prev_line[5],"\t",$prev_line[6],"\t",$temp_line[3],"\t","$prev_line[7]\t","$temp_line[4]\t","$temp_line[5]\t","$temp_line[6]\n";} else { $prev_line[3]=~s/\./\,/;$temp_line[7]=~s/\./\,/; print $temp_line[0],"\t", $temp_line[1],"\t",$temp_line[2],"\t",$temp_line[4],"\t",$temp_line[5],"\t",$temp_line[6],"\t",$prev_line[3],"\t","$temp_line[7]\t","$prev_line[4]\t","$prev_line[5]\t","$prev_line[6]\n";} } else { @prev_line = @temp_line;} }last;' ?, '${outSampleDir}', "/$_[0]_lanes_", @{ $lanes{$_[0]} }, $fileending,"_coverageBed_merged > ", '${outSampleDir}',"/$_[0]_lanes_", @{ $lanes{$_[0]} }, $fileending,"_target_coverage.txt", "\n\n";
 	
-	if ( ($genDataBase) && ($pGdb == 1) ) {
+	if ( ($geneDataBase) && ($pGdb == 1) ) {
 	    #Add chr to entry to enable comparison to Im_Db
 	    print CRG q?perl -i -p -e ' if($_=~/^#/) {} else {s/^(.+)/chr$1/g }' ?, '${outSampleDir}',"/$_[0]_lanes_", @{ $lanes{$_[0]} }, $fileending,"_target_coverage.txt", "\n\n";
 	    
@@ -1505,7 +1524,7 @@ sub Cal_Coverage {
 	    print CRG q?perl -nae 'if ($_=~/^#/) {print $_}' ?, '${outSampleDir}',"/$_[0]_lanes_", @{ $lanes{$_[0]} }, $fileending,"_target_coverage.txt > ", '${outSampleDir}',"/$_[0]_lanes_", @{ $lanes{$_[0]} }, $fileending,"_temp_header.txt", "\n\n";
 	    
 	    print CRG "#Find Im_db entries", "\n";
-	    print CRG "intersectBed -a ", '${outSampleDir}',"/$_[0]_lanes_", @{ $lanes{$_[0]} }, $fileending,"_target_coverage.txt -b $referencesDir/$genDataBase > ", '${outSampleDir}',"/$_[0]_lanes_", @{ $lanes{$_[0]} }, $fileending,"_temp_IEM_target_coverage.txt", "\n\n";
+	    print CRG "intersectBed -a ", '${outSampleDir}',"/$_[0]_lanes_", @{ $lanes{$_[0]} }, $fileending,"_target_coverage.txt -b $referencesDir/$geneDataBase > ", '${outSampleDir}',"/$_[0]_lanes_", @{ $lanes{$_[0]} }, $fileending,"_temp_IEM_target_coverage.txt", "\n\n";
 	    
 	    print CRG "#Add header and change from temp file", "\n";
 	    print CRG "cat ", '${outSampleDir}',"/$_[0]_lanes_", @{ $lanes{$_[0]} }, $fileending,"_temp_header.txt ", '${outSampleDir}',"/$_[0]_lanes_", @{ $lanes{$_[0]} }, $fileending,"_temp_IEM_target_coverage.txt  > ", '${outSampleDir}',"/$_[0]_lanes_", @{ $lanes{$_[0]} }, $fileending,"_IEM_target_coverage.txt", "\n\n";
@@ -1535,7 +1554,7 @@ sub Cal_Coverage {
 
 	$target_coverage_db_file .= $fileending."_coverage_target_db_master.txt";
 	$target_coverage_file .= $fileending."_target_coverage.txt";
-	if ( ($genDataBase) && ($pGdb == 1) ) {
+	if ( ($geneDataBase) && ($pGdb == 1) ) {
 	    $target_coverage_db_Im_db_file .=  $fileending."_coverage_IEM_db_master.txt";
 	    $target_coverage_Im_db_file .= $fileending."_IEM_target_coverage.txt";
 	    @target_coverage_db_files = ($target_coverage_db_file, $target_coverage_db_Im_db_file); #Db master files	    
@@ -1597,7 +1616,7 @@ sub Cal_Coverage {
 	    print CRG "#Collpase the two lines from coverageBed_depth_pos_collapsed and _coverageBed", "\n";
 	    print CRG q?perl -nae ' print "#Chr\tStart\tStop\tOverlapping_Reads\tNon-zero_Coverage_Bases\tFeature_Length(Nucleotides)\tAverage_Coverage\tFraction_Non-zero_Coverage_Bases\tFraction_Ten_Coverage_Bases\tNr_Zero_Coverage_Bases\tRelative_position_for_Zero_Coverage_Bases\n";chomp($_);my @prev_line=split("\t",$_);my @temp_line; while (<>) { chomp($_); @temp_line = split("\t",$_); if ($prev_line[0]  && ($prev_line[0] eq $temp_line[0]) && ($prev_line[1] == $temp_line[1]) && ($prev_line[2] == $temp_line[2]) ) { if ($prev_line[3] eq "-") { $temp_line[3]=~s/\./\,/;$prev_line[7]=~s/\./\,/; print $prev_line[0],"\t", $prev_line[1],"\t",$prev_line[2],"\t",$prev_line[4],"\t",$prev_line[5],"\t",$prev_line[6],"\t",$temp_line[3],"\t","$prev_line[7]\t","$temp_line[4]\t","$temp_line[5]\t","$temp_line[6]\n";} else { $prev_line[3]=~s/\./\,/;$temp_line[7]=~s/\./\,/; print $temp_line[0],"\t", $temp_line[1],"\t",$temp_line[2],"\t",$temp_line[4],"\t",$temp_line[5],"\t",$temp_line[6],"\t",$prev_line[3],"\t","$temp_line[7]\t","$prev_line[4]\t","$prev_line[5]\t","$prev_line[6]\n";} } else { @prev_line = @temp_line;} }last;' ${outSampleDir}/?.$tempinfile.$fileending.q?_coverageBed_merged > ${outSampleDir}/?.$tempinfile.$fileending.q?_target_coverage.txt?, "\n\n";
 
-	    if ( ($genDataBase) && ($pGdb == 1) ) {	    
+	    if ( ($geneDataBase) && ($pGdb == 1) ) {	    
 		#Add chr to entry to enable comparison to Im_Db
 		print CRG "#Add chr to entry to enable comparison to Im_Db", "\n";
 		print CRG q?perl -i -p -e ' if($_=~/^#/) {} else {s/^(.+)/chr$1/g }' ${outSampleDir}/?.$tempinfile.$fileending.q?_target_coverage.txt?, "\n\n";
@@ -1607,7 +1626,7 @@ sub Cal_Coverage {
 		
                 #Find Im_db entries
 		print CRG "#Find Im_db entries", "\n";
-		print CRG q?intersectBed -a ${outSampleDir}/?.$tempinfile.$fileending.q?_target_coverage.txt -b ?.$referencesDir.q?/?.$genDataBase.q? > ${outSampleDir}/?.$tempinfile.$fileending.q?_temp_IEM_target_coverage.txt?, "\n\n";
+		print CRG q?intersectBed -a ${outSampleDir}/?.$tempinfile.$fileending.q?_target_coverage.txt -b ?.$referencesDir.q?/?.$geneDataBase.q? > ${outSampleDir}/?.$tempinfile.$fileending.q?_temp_IEM_target_coverage.txt?, "\n\n";
 
 		#Add header and change from temp file
 		print CRG "#Add header and change from temp file", "\n";
@@ -1633,7 +1652,7 @@ sub Cal_Coverage {
 	    my @target_coverage_db_files;
 	    my @target_coverage_files;
 
-	    if ( ($genDataBase) && ($pGdb == 1) ) {
+	    if ( ($geneDataBase) && ($pGdb == 1) ) {
 		@target_coverage_db_files = ("$outDataDir/$_[0]/$_[1]/coverageReport/$tempinfile$fileending"."_coverage_target_db_master.txt", "$outDataDir/$_[0]/$_[1]/coverageReport/$tempinfile$fileending"."_coverage_IEM_db_master.txt"); #Db master files	    
 		@target_coverage_files = ("$outDataDir/$_[0]/$_[1]/coverageReport/$tempinfile"."$fileending"."_target_coverage.txt", "$outDataDir/$_[0]/$_[1]/coverageReport/$tempinfile"."$fileending"."_IEM_target_coverage.txt"); #Target coverage files created above
 	    }
@@ -2136,7 +2155,7 @@ sub MosaikAlign {
 	print MosA 'referenceArchive="', "$referencesDir", '"', "\n\n";
 	
 	my $tempinfile = $Infiles_lane_noending{$_[0]}[$infile];
-	print MosA "MosaikAligner -in ", '${inSampleDir}', "/$tempinfile",'.', "dat -out ",'${outSampleDir}', "/$Infiles_lane_noending{$_[0]}[$infile] -ia ", '${referenceArchive}', "/$mosaikAlignReference -annpe ",'${referenceArchive}/2.1.26.pe.100.0065.ann', " -annse ",'${referenceArchive}/2.1.26.se.100.005.ann', " -hs 15 -mm 4 -mhp 100 -ls 100 -act 35 -bw 35 -j ", '${referenceArchive}', "/$mosaikJumpDbStub -p $maximum_cores", "\n\n";
+	print MosA "MosaikAligner -in ", '${inSampleDir}', "/$tempinfile",'.', "dat -out ",'${outSampleDir}', "/$Infiles_lane_noending{$_[0]}[$infile] -ia ", '${referenceArchive}', "/$mosaikAlignReference -annpe ",'${referenceArchive}', "/$mosaikAlignNeuralNetworkPeFile -annse ",'${referenceArchive}', "/$mosaikAlignNeuralNetworkSeFile -hs 15 -mm 4 -mhp 100 -ls 100 -act 35 -bw 35 -j ", '${referenceArchive}', "/$mosaikJumpDbStub -p $maximum_cores", "\n\n";
 	
 	$k++; #Tracks nr of sbatch scripts
 	close(MosA);
@@ -2695,7 +2714,7 @@ sub WriteCMDMasterLogg {
     }
     print MASTERL
 	" -pGenDataBaseCoverageCalculation ", $script_parameters{'pGenDataBaseCoverageCalculation'},
-	" -genDataBase ", $script_parameters{'genDataBase'},
+	" -geneDataBase ", $script_parameters{'geneDataBase'},
 	" -pRCovPlots ", $script_parameters{'pRCovPlots'},
 	" -pGZip ", $script_parameters{'pGZip'},
 	" -pRemovalRedundantFiles ", $script_parameters{'pRemovalRedundantFiles'}, "\n";

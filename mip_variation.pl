@@ -86,7 +86,7 @@ mip_variation.pl  -i [infile...n] -a [project ID] -s [sample ID...n] -em [e-mail
 
 -pVMERGE/--variation_annotation_merge Running intersectCollect.pl to merge all annotation info to one file (defaults to "1" (=yes))
 
--vm_db_heo/--vmerge_db_header_order Vmerge header and order of columns (comma sep,)
+-vm_db_te/--vmerge_db_template Db template file used to create the specific family '-vm_dbf' master file (defaults to "CMMS_intersectCollect_db_master_template.txt")
 
 -vm_dbf/--vmerge_db_file Db master file to be used in intersectCollect.pl (defaults to "FDN.intersectCollect_db_master.txt")
 
@@ -107,6 +107,12 @@ mip_variation.pl  -i [infile...n] -a [project ID] -s [sample ID...n] -em [e-mail
 -all_db_gidc/--all_elements_Db_Gene_Id_Col All_Db file gene Id column (zero-based, defaults to "4")
 
 -im_db_file/--Im_Db_file Im_Db file (Defaults to "IEM_Db_CMMS_version1.2.txt")
+
+-im_db_te/--Im_Db_template Im_Db template file used to create the specific family '-im_dbmf' master file (Defaults to "select_dbIEM_variants_db_master.txt")
+
+-im_dbmf/--Im_db_master_file Db master file to be used when selecting variants (defaults to "FDN.intersectCollect_selectVariants_db_master.txt")
+
+-im_dbfof/--Im_db_file_out_file The file(s) to write to when selecting variants with intersectCollect.pl. Comma sep (defaults to "$odf/$familyid/$aligner/GATK/candidates/ranking/$familyid_orphan.selectVariants, $odf/$familyid/$aligner/GATK/candidates/ranking/IEM_Db_CMMS/$familyid.selectVariants"; Supply whole path/file)
 
 -im_db_cc/--Im_Db_Gene_Coverage_Calculation Im_Db_CMMS file coverage calculation (Defaults to "1" (=yes))
 
@@ -211,7 +217,7 @@ BEGIN {
                -anva_maf_th/--annovar_maf_threshold Flag for setting the minor allele frequency threshold in annovar (defaults to "0" (=no))
                -anva_sift_th/--annovar_sift_threshold Flag for setting the avsift threshold in annovar (defaults to "0" (=no))
                -pVMERGE/--variation_annotation_merge Running intersectCollect.pl to merge all annotation info to one file (defaults to "1" (=yes))
-               -vm_db_heo/--vmerge_db_header_order Vmerge header and order of columns (comma sep,)
+               -vm_db_te/--vmerge_db_template Db template file used to create the specific family '-vm_dbf' master file (defaults to "CMMS_intersectCollect_db_master_template.txt")
                -vm_dbf/--vmerge_db_file Db master file to be used in intersectCollect.pl (defaults to "FDN.intersectCollect_db_master.txt")
                -pAddDP/--adddepth Flag for adding depth at nonvariant sites by mpileup and add_depth.pl (defaults to "1" (=yes))             
                -pRankVar/--rankvariants Flag running ranking of variants (defaults to "1" (=yes))
@@ -222,6 +228,9 @@ BEGIN {
                -all_db_cc/--all_elements_Db_Gene_Coverage_Calculation All_Db file coverage calculation (Defaults to "1" (=yes))
                -all_db_gidc/--all_elements_Db_Gene_Id_Col All_Db file gene Id column (zero-based, defaults to "4")
                -im_db_file/--Im_Db_CMMS_file Im_Db_CMMS file (Defaults to "IEM_Db_CMMS_version1.2.txt")
+               -im_db_te/--Im_Db_template Im_Db template file used to create the specific family '-im_dbmf' master file (Defaults to "select_dbIEM_variants_db_master.txt")
+               -im_dbmf/--Im_db_master_file Db master file to be used when selecting variants (defaults to "FDN.intersectCollect_selectVariants_db_master.txt")
+               -im_dbfof/--Im_db_file_out_file The file(s) to write to when selecting variants with intersectCollect.pl. Comma sep (defaults to 'odf/familyid/aligner/GATK/candidates/ranking/familyid_orphan.selectVariants, odf/familyid/aligner/GATK/candidates/ranking/IEM_Db_CMMS/familyid.selectVariants'; Supply whole path/file)
                -im_db_cc/--Im_Db_Gene_Coverage_Calculation Im_Db_CMMS file coverage calculation (Defaults to "1" (=yes))
                -im_db_gidc/--Im_Db_Gene_Id_Col Im_Db_CMMS file gene Id column (zero-based, defaults to "18")
                -pSCheck/--samplecheck Flag running check for samples belonging to pedigree (defaults to "1" (=yes))
@@ -235,7 +244,7 @@ BEGIN {
 ###
 #Program parameters
 ###
-my ($aid,$em, $ids, $rd, $annovar_path, $odf, $ods, $fnend, $annovar_genome_build_version, $annovar_supported_table_names, $annovar_maf_threshold, $annovar_sift_threshold, $genomeref, $gatk_real_knset1, $gatk_real_knset2, $gatk_recal_knset, $gatk_unigt_snp, $gatk_unigt_indel, $pedigree, $wgs, $gatk_bait, $gatk_exref_snp, $gatk_exref_indel, $vm_dbf, $rankscore, $dgf, $dgfl, $all_db_file, $all_db_cc, $all_db_gidc, $im_db_file, $im_db_cc, $im_db_gidc, $maximum_cores,$environment_uppmax,$gatk_path, $filename, $filename2, $fnt, $fnt2, $aligner, $familyid,$help) = (0,0,0,0,0,0,0, ".sh","hg19", 0, 0, 0, "Homo_sapiens.GRCh37.57.dna.concat.fa", "1000G_phase1.indels.hg19.vcf", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf","dbsnp_135.b37.vcf",1,1,0,0, "SureSelect_All_Exon_50mb_with_annotation_hg19_nochr.bed.pad100.interval_list", "all-agilent_50mb-GRCh37-SNPS_pad100_interval_list.vcf", "all-agilent_50mb-GRCh37-INDELS_pad100_interval_list.vcf", "FDN.intersectCollect_db_master.txt", -100, 1, "IEM_dispGeneList.txt","mart_export_Ensembl_GeneID_key_cleaned_chr.txt",1,4,"IEM_Db_CMMS_version1.2.txt",1,18,8,0); 
+my ($aid,$em, $ids, $rd, $annovar_path, $odf, $ods, $fnend, $annovar_genome_build_version, $annovar_supported_table_names, $annovar_maf_threshold, $annovar_sift_threshold, $genomeref, $gatk_real_knset1, $gatk_real_knset2, $gatk_recal_knset, $gatk_unigt_snp, $gatk_unigt_indel, $pedigree, $wgs, $gatk_bait, $gatk_exref_snp, $gatk_exref_indel, $vmerge_db_template, $vm_dbf, $rankscore, $dgf, $dgfl, $all_db_file, $all_db_cc, $all_db_gidc, $im_db_file, $Im_Db_template, $Im_db_master_file, $im_db_cc, $im_db_gidc, $maximum_cores,$environment_uppmax,$gatk_path, $filename, $filename2, $fnt, $fnt2, $aligner, $familyid,$help) = (0,0,0,0,0,0,0, ".sh","hg19", 0, 0, 0, "Homo_sapiens.GRCh37.57.dna.concat.fa", "1000G_phase1.indels.hg19.vcf", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf","dbsnp_135.b37.vcf",1,1,0,0, "SureSelect_All_Exon_50mb_with_annotation_hg19_nochr.bed.pad100.interval_list", "all-agilent_50mb-GRCh37-SNPS_pad100_interval_list.vcf", "all-agilent_50mb-GRCh37-INDELS_pad100_interval_list.vcf", "CMMS_intersectCollect_db_master_template.txt","FDN.intersectCollect_db_master.txt", -100, 1, "IEM_dispGeneList.txt","mart_export_Ensembl_GeneID_key_cleaned_chr.txt",1,4,"IEM_Db_CMMS_version1.2.txt","select_dbIEM_variants_db_master.txt", "FDN.intersectCollect_selectVariants_db_master.txt", 1,18,8,0); 
 
 ###
 #Arguments for project
@@ -246,7 +255,7 @@ my ($pSTV_schr, $pGATK_REAL, $pGATK_RECAL, $pGATK_UNIGT, $pGATK_HAPCAL, $pGATK_V
 #Staging Area
 ###
 
-my (@infn,@sid, @chr, @jobID);
+my (@infn,@sid, @chr, @jobID, @Im_db_file_out_file);
 my (%infiles,%avcovfn, %dirname, %jobID, %pedigree);
 my @script_parameters=@ARGV; #Passes over command line arguments for printing in master_logg since GetOption removes them from ARGV.
 
@@ -383,6 +392,7 @@ GetOptions('i|infile:s'  => \@infn, #Comma sepatated list
 	   'anva_maf_th|annovar_maf_threshold:n' => \$annovar_maf_threshold,
 	   'anva_sift_th|annovar_sift_threshold:n' => \$annovar_sift_threshold,	   
 	   'pVMERGE|variation_annotation_merge:n' => \$pVMERGE, #Merges annovar analysis results to one master file
+	   'vm_db_te|vmerge_db_template:s' => \$vmerge_db_template, #Template file to create the specific family db master file
 	   'vm_dbf|vmerge_db_file:s' => \$vm_dbf, #db master file to use when collecting external data
 	   'pAddDP|adddepth:n' => \$pAddDP, #Adds depth (DP) for nonvariants to master file (annovar_all.txt)
 	   'pRankVar|rankvariants:n' => \$pRankVar, #Ranking variants
@@ -393,6 +403,9 @@ GetOptions('i|infile:s'  => \@infn, #Comma sepatated list
 	   'all_db_cc|All_elements_Db_Gene_Coverage_Calculation:n'  => \$all_db_cc, #Db of all genes for coverage calculation (all features connected to overlapping genes across variant)
 	   'all_db_gidc|All_elements_Db_Gene_Id_Col:n'  => \$all_db_gidc, #Db of all genes GeneName column nr zero-based
 	   'im_db_file|Im_Db_CMMS_file:s'  => \$im_db_file, #Db of important genes
+	   'im_db_te|Im_Db_template:s' => \$Im_Db_template, #Template file to create the specific family selectVariants db master file
+	   'im_dbmf|Im_db_master_file:s' => \$Im_db_master_file, #Specific db master file to use when collecting external dataselectingVariants 
+	   'im_dbfof|Im_db_file_out_file:s' => \@Im_db_file_out_file, #The intersectCollect select variants output directorys	      
 	   'im_db_cc|Im_Db_Gene_Coverage_Calculation:n'  => \$im_db_cc, #Db of important genes coverage calculation (all features connected to overlapping genes across variant)
 	   'im_db_gidc|Im_Db_Gene_Id_Col:n'  => \$im_db_gidc, #Db of important genes GeneName column nr zero-based
 	   'pSCheck|samplecheck:n' => \$pSCheck, #Check for samples belonging to pedigree
@@ -522,6 +535,7 @@ if ( ($pANVAR eq 1) && ($annovar_path eq 0) ) {
     die $USAGE;
 }
 
+
 #Creates master_logg for the master script 
 `mkdir -p $odf/$familyid/master_logg;`; #Creates the master_logg dir
 my ($base,$script) = (`date +%Y%m%d`,`basename $0`); #Catches current date and script name
@@ -535,10 +549,23 @@ print STDOUT "\nScript parameters and info from $script are saved in file: $mast
 
 @infn = split(/,/,join(',',@infn)); #Enables comma separated indir(s)
 @sid = split(/,/,join(',',@sid)); #Enables comma sepatated list of sample IDs
+@Im_db_file_out_file = split(/,/,join(',',@Im_db_file_out_file)); #Enables comma separated selectVariants output dir(s)
 @chr = ("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","X","Y","MT"); #Chr for filtering of bam file
 
 
 InfileReFormat(); #removes .bam ending and extracts filename
+
+if ($pRankVar eq 1) {
+    if ( scalar(@Im_db_file_out_file) eq 0) {
+	if ($environment_uppmax == 1) {
+	    @Im_db_file_out_file = ("$odf/$familyid/$aligner/GATK/candidates/ranking/$familyid"."_orphan.selectVariants","$odf/$familyid/$aligner/GATK/candidates/ranking/IEM_Db_CMMS/$familyid".".selectVariants");
+	}
+	else {
+	    print STDERR "\nSupply the '-Im_db_file_out_file' output file(s) if you want to run 'pRankVar'.\n";
+	    die $USAGE;
+	}
+    }
+}
 
 #########################
 ###Run program part######
@@ -594,11 +621,40 @@ if ($pGATK_UNIGT eq 1) { #Run GATK UnifiedGenoTyper (all.bam for all samples wit
 if ($pGATK_HAPCAL eq 1) { #Run GATK HaplotypeCaller (all.bam for all samples within familyID)
     
     print STDOUT "\nGATK HaplotypeCaller", "\n";print MASTERL "\nGATK HaplotypeCaller", "\n";  
-    GATK_hapcal($familyid, $aligner, "BOTH",0,3,8); #Argument 3 & 4 is where in @chr to start and stop processing. Arg 5 is java heap allocation (Gb).
-    GATK_hapcal($familyid, $aligner, "BOTH",3,6,8);
-    GATK_hapcal($familyid, $aligner, "BOTH",6,12,4);
-    GATK_hapcal($familyid, $aligner, "BOTH",12,18,4);
-    GATK_hapcal($familyid, $aligner, "BOTH",18,26,4);
+    if ($wgs == 0) { #Exome samples   
+	GATK_hapcal($familyid, $aligner, "BOTH",0,3,8); #Argument 3 & 4 is where in @chr to start and stop processing. Arg 5 is java heap allocation (Gb).
+	GATK_hapcal($familyid, $aligner, "BOTH",3,6,8);
+	GATK_hapcal($familyid, $aligner, "BOTH",6,12,4);
+	GATK_hapcal($familyid, $aligner, "BOTH",12,18,4);
+	GATK_hapcal($familyid, $aligner, "BOTH",18,26,4);
+    }
+    else { #Whole genome sequencing requires more memory
+	GATK_hapcal($familyid, $aligner, "BOTH",0,1,24); #Argument 3 & 4 is where in @chr to start and stop processing. Arg 5 is java heap allocation (Gb).
+	GATK_hapcal($familyid, $aligner, "BOTH",1,2,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",2,3,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",3,4,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",4,5,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",5,6,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",6,7,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",7,8,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",8,9,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",9,10,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",10,11,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",11,12,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",12,13,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",13,14,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",14,15,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",15,16,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",16,17,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",17,18,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",18,19,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",19,20,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",20,21,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",21,22,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",22,23,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",23,24,24);
+	GATK_hapcal($familyid, $aligner, "BOTH",24,25,24);
+    }
     GATK_HapCall_ComVar($familyid, $aligner, "BOTH");
 }
 
@@ -832,20 +888,20 @@ sub RankVar {
 #$_[1] = aligner
 #$_[2] = $gatk_unigt_snps (SNV), $gatk_unigt_indels (INDEL) or BOTH
     
-    if ($_[2] eq "BOTH") {
-	`mkdir -p $odf/$_[0]/$_[1]/info;`; #Creates the alignment folder and info data file directory
-	`mkdir -p $odf/$_[0]/$_[1]/GATK/candidates/ranking/IEM_Db_CMMS;`; #Creates the ranking/IEM Db folder
-    }
-    else { 
-	`mkdir -p $odf/$_[0]/$_[1]/info;`; #Creates the alignment folder and info data file directory   
-	`mkdir -p $ods/$_[0]/$_[1];`; #Creates the aligner script folder    
-    }
+    #if ($_[2] eq "BOTH") {
+    `mkdir -p $odf/$_[0]/$_[1]/info;`; #Creates the alignment folder and info data file directory
+    `mkdir -p $ods/$_[0]/$_[1];`; #Creates the aligner script folder 
     $filename = "$ods/$_[0]/$_[1]/rank_var_$_[2]_$_[0].";
     Checkfnexists($filename, $fnend);
-    
+
 #Info and Logg
     print STDOUT "Creating sbatch script for Ranking Variants and writing script file(s) to: ", $filename, "\n";print MASTERL "Creating sbatch script for Ranking Variants and writing script file(s) to: ", $filename, "\n";
-    print STDOUT "Sbatch script for Ranking Variants data files will be written to: ", $odf,"/$_[0]/$_[1]/GATK/candidates", "\n";print MASTERL "Sbatch script for Ranking Variants data files will be written to: ", $odf,"/$_[0]/$_[1]/GATK/candidates", "\n";
+    
+    for (my $Im_db_file_out_fileCounter=0;$Im_db_file_out_fileCounter<scalar(@Im_db_file_out_file);$Im_db_file_out_fileCounter++) {
+	my ($volume,$directories,$file) = File::Spec->splitpath( $Im_db_file_out_file[$Im_db_file_out_fileCounter] );
+	`mkdir -p $directories;`; #Creates the ranking/Db selection folders
+	print STDOUT "Ranking Variants data files will be written to: $directories$_[0]_ranked_$_[2].txt", "\n";print MASTERL "Ranking Variants data files will be written to: $directories$_[0]_ranked_$_[2].txt", "\n";
+    }    
     
     open (RV, ">$filename") or die "Can't write to $filename: $!\n";
     
@@ -868,34 +924,83 @@ sub RankVar {
     print RV 'referenceArchive="', "$rd", '"', "\n\n"; 
     print RV "#Directories", "\n";
     print RV 'inFamilyDir="',"$odf/$_[0]/$_[1]/GATK", '"', "\n"; # Location of _annovar_all_variants
+
+    print RV "#Create db master file to select variants from template", "\n";
+    my $nrColumns; #Total Nr of columns 
+    my $nrAnnotationColumns; #The number of columns containing annotation info
+    my $pNrofCol; #For perl regexp
+    if (-e "$odf/$_[0]/$_[1]/GATK/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt") { #Check if the exists (rerun actual data to sample from) 
+	$pNrofCol = q?perl -nae 'if ($_=~/^#/ ) { chomp($_); my @nr_of_columns=split("\t",$_); print scalar(@nr_of_columns);last; }' ?;
+	$nrColumns = `$pNrofCol $odf/$_[0]/$_[1]/GATK/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt;`;
+	$nrAnnotationColumns = $nrColumns - scalar(@sid);
+    }
+    elsif (-e "$odf/$_[0]/$vm_dbf") { #First analysis run - no actual data file exists - locate IDN columns from family specific template file (if defined)
+	$pNrofCol = q?perl -nae 'if ($_=~/^outinfo/ || $_=~/^outheaders/ ) { chomp($_); my @nr_of_columns=split(",",$_); print scalar(@nr_of_columns);last; }' ?;
+	$nrColumns = `$pNrofCol $odf/$_[0]/$vm_dbf;`;
+	$nrAnnotationColumns = $nrColumns - scalar(@sid);
+    }
+    elsif (-e "$rd/$vmerge_db_template") { #No information on previous intersectCollect to create annovar_all_variants file - locate IDN columns from unspecific interSect db template file
+	$pNrofCol = q?perl -nae 'if ($_=~/^outinfo/ || $_=~/^outheaders/ ) { chomp($_); my @nr_of_columns=split(",",$_); print scalar(@nr_of_columns);last; }' ?;
+	$nrAnnotationColumns = `$pNrofCol $rd/$vmerge_db_template;`-1; #"-1" Since IDN is already factored in from the regexp
+	$nrColumns = $nrAnnotationColumns + scalar(@sid);
+    }
+    else {
+	print STDERR "Could not estimate location of IDN columns from variant file, nor from templates ('-vm_dbf' or '-vmerge_db_template'). Please provide this information to run 'rankvariants'.", "\n";
+	die;
+    }
     
-    if ($_[2] eq "BOTH") {
-	my $hapcal_both_file = "$odf/$_[0]/$_[1]/GATK/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt";
-	if ( $pAddDP == 0 ) {
-            #Add chr
-	    print RV "#Add chr", "\n";
-	    print RV q?perl -i -p -e ' if($_=~/^#/) {} else {s/^(.+)/chr$1/g }' ?, '${inFamilyDir}', "/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt", "\n\n";
-	}
+    my $sampleIDcolcond = $nrColumns-1; #To write last IDN entry without "," at the end
+    $Im_db_master_file =~ s/FDN/$_[0]/g; #Exchange FND for the real familyID
+    #Add relative path to db_template for variant file(s) 
+    my ($volume,$directories,$file) = File::Spec->splitpath( $odf );
+    my @dirs = File::Spec->splitdir( $directories );
+    my $regexp_odf;
+    for (my $dirs_Count=1;$dirs_Count<scalar(@dirs);$dirs_Count++) {
+	
+	$regexp_odf .= "\\/".$dirs[$dirs_Count]; #Create escape char for / in later regexp
+    }
+    $regexp_odf .= $file;
+    #Add relative path to db_template for reference/db files
+    ($volume,$directories,$file) = File::Spec->splitpath( $rd );
+    @dirs = File::Spec->splitdir( $directories );
+    my $regexp_rd;	
+    for (my $dirs_Count=1;$dirs_Count<scalar(@dirs);$dirs_Count++) {
+	
+	$regexp_rd .= "\\/".$dirs[$dirs_Count]; #Create escape char for / in later regexp
+    }
+    $regexp_rd .= $file;
+    #Create family specific template
+    print RV q?perl -nae 'if ($_=~/outinfo/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes=>0_$sampleID,"} else { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes=>0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outcolumns/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="0_$sampleID,"} else { $sidstring.="0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outheaders/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes,"} else { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes"} } s/IDN/$sidstring/g; print $_;} next;} elsif ($_=~s/FDN/?.$_[0].q?/g) { if($_=~s/^ODF/?.$regexp_odf.q?/g) {} if($_=~s/ALIGNER/?.$aligner.q?/g) {} if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="$sampleID,"} else { $sidstring.="$sampleID"} } s/IDN/$sidstring/g; print $_;} else { print $_;} } else { if($_=~s/^RD/?.$regexp_rd.q?/g) {} print $_;}' ?.$rd.q?/?.$Im_Db_template.q? > ?."$odf/$_[0]/$Im_db_master_file", "\n\n";
+
+    
+    #if ($_[2] eq "BOTH") {
+    my $hapcal_both_file = "$odf/$_[0]/$_[1]/GATK/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt";
+    if ( $pAddDP == 0 ) {
+	#Add chr
+	print RV "#Add chr", "\n";
+	print RV q?perl -i -p -e ' if($_=~/^#/) {} else {s/^(.+)/chr$1/g }' ?, '${inFamilyDir}', "/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt", "\n\n";
+    }
 ###
 #Only IM_Db_genes
 ###
-	print RV 'outFamilyDir="', "$odf/$_[0]/$_[1]/GATK/candidates/ranking/IEM_Db_CMMS", '"', "\n\n";
-	
-	if ( ($pGATK_HAPCAL eq 1) || (-e $hapcal_both_file) ) { #HaplotypeCaller has been used in present call or previously
+    
+    if ( ($pGATK_HAPCAL eq 1) || (-e $hapcal_both_file) ) { #HaplotypeCaller has been used in present call or previously
 #Create temp_file containing only IEM_Db_genes (to avoid duplicates in ranked list)
-	    print RV "#Create temp_file containing only IEM_Db_genes (to avoid duplicates in ranked list)", "\n";
-	    print RV "intersectBed -u -a ", '${inFamilyDir}', "/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt -b ", '${referenceArchive}',"/$im_db_file > ", '${outFamilyDir}', "/$_[0]_temp_both_IEM_Db_$_[2].txt", "\n\n";
-
-	    #Recreate header, which was lost in the intersect
-	    print RV "#Recreate header, which was lost in the intersect", "\n";
-	    print RV q?perl -nae 'if ($_=~/^#/) {print $_}' ?, '${inFamilyDir}', "/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt > ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n";
-	    print RV "cat ", '${outFamilyDir}', "/$_[0]_temp_header.txt ", '${outFamilyDir}', "/$_[0]_temp_both_IEM_Db_$_[2].txt > ", '${outFamilyDir}', "/$_[0]_temp", "\n";
-	    print RV "mv ",'${outFamilyDir}', "/$_[0]_temp ",'${outFamilyDir}', "/$_[0]_temp_both_IEM_Db_$_[2].txt", "\n";
+	print RV "#Create temp_file containing only IEM_Db_genes (to avoid duplicates in ranked list)", "\n";
+	print RV "perl $ids/intersectCollect.pl -db $odf/$_[0]/$Im_db_master_file -s 1 -sofs ";
+	for (my $Im_db_file_out_fileCounter=0;$Im_db_file_out_fileCounter<scalar(@Im_db_file_out_file);$Im_db_file_out_fileCounter++) {
+	    if ($Im_db_file_out_fileCounter eq scalar(@Im_db_file_out_file)-1) {
+		print RV $Im_db_file_out_file[$Im_db_file_out_fileCounter], " \n\n";
+	    }
+	    else {
+		print RV $Im_db_file_out_file[$Im_db_file_out_fileCounter], ",";
+	    }
+	}
+	#Ranking
+	print RV "#Ranking", "\n";
+	for (my $Im_db_file_out_fileCounter=1;$Im_db_file_out_fileCounter<scalar(@Im_db_file_out_file);$Im_db_file_out_fileCounter++) { #Skip orphan file and run selected files
+	    print RV "perl $ids/rank_list_filter.pl -i $Im_db_file_out_file[$Im_db_file_out_fileCounter] -cmms_imdb 1 -dgf $dgf -dgfl ", '${referenceArchive}',"/$dgfl -im_db_file ", '${referenceArchive}',"/$im_db_file -im_db_cc $im_db_cc -im_db_gidc $im_db_gidc  -rs $rankscore -pedigree $pedigree -tarcov ";
 	    
-            #Ranking
-	    print RV "#Ranking", "\n";
-	    print RV "perl $ids/rank_list_filter.pl -i ", '${outFamilyDir}', "/$_[0]_temp_both_IEM_Db_$_[2].txt -cmms_imdb 1 -dgf $dgf -dgfl ", '${referenceArchive}',"/$dgfl -im_db 1 -im_db_file ", '${referenceArchive}',"/$im_db_file -im_db_cc $im_db_cc -im_db_gidc $im_db_gidc  -rs $rankscore -pedigree $pedigree -tarcov ";
-
 	    for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {#For all sample ids 
 		my $tempinfile = $avcovfn{$sid[$sampleid]};
 		
@@ -908,175 +1013,45 @@ sub RankVar {
 		    
 		}
 	    }
-	    print RV "-o ",'${outFamilyDir}', "/$_[0]_ranked_IEM_Db_CMMS_$_[2].txt", "\n\n";
-	    print RV "rm ", '${outFamilyDir}', "/$_[0]", "_temp_both_IEM_Db_$_[2].txt", "\n\n"; #Remove temp file
-	    print RV "rm ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n\n"; #Remove temp file
+	    ($volume,$directories,$file) = File::Spec->splitpath( $Im_db_file_out_file[$Im_db_file_out_fileCounter] ); #Create outfile
+	    print RV q?-o ?.$directories.$_[0].q?_ranked_?.$_[2].q?.txt?, "\n\n";
 	}
-	else { #If only UnifiedGt has been used to call SNVs and INDELs separetly. NOTE Needs to have identical header to ensure that rank script will work.
-	    if ( $pAddDP == 0 ) {
-                #Add chr
-		print RV q?perl -i -p -e ' if($_=~/^#/) {} else {s/^(.+)/chr$1/g }' ?, '${inFamilyDir}', "/$_[0]_allchr_real_recal_resrt_varrecal_SNV_filt_annovar_all_variants.txt", "\n\n";
-	    }
-#Create temp_file containing only IEM_Db_genes (to avoid duplicates in ranked list)
-	    print RV "intersectBed -u -a ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_varrecal_SNV_filt_annovar_all_variants.txt -b ", '${referenceArchive}',"/$im_db_file > ", '${outFamilyDir}', "/$_[0]", "_temp_both_IEM_Db_SNV.txt", "\n\n";
-	    print RV "intersectBed -u -a ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_varrecal_INDEL_filt_annovar_all_variants.txt -b ", '${referenceArchive}',"/$im_db_file > ", '${outFamilyDir}', "/$_[0]", "_temp_both_IEM_Db_INDEL.txt", "\n\n";
-
-#Recreate header (Only queried one is the first file so only SNV is done)
-	    print RV q?perl -nae 'if ($_=~/^#/) {print $_}' ?, '${inFamilyDir}', "/$_[0]_allchr_real_recal_resrt_varrecal_SNV_filt_annovar_all_variants.txt > ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n";
-	    print RV "cat ", '${outFamilyDir}', "/$_[0]_temp_header.txt ", '${outFamilyDir}', "/$_[0]_temp_both_IEM_Db_SNV.txt > ", '${outFamilyDir}', "/$_[0]_temp", "\n";
-	    print RV "mv ",'${outFamilyDir}', "/$_[0]_temp ",'${outFamilyDir}', "/$_[0]_temp_both_IEM_Db_SNV.txt", "\n";
-
-	    print RV "perl $ids/rank_list_filter.pl -i ", '${outFamilyDir}', "/$_[0]", "_temp_both_IEM_Db_SNV.txt,", '${outFamilyDir}', "/$_[0]", "_temp_both_IEM_Db_INDEL.txt -cmms_imdb 1 -dgf $dgf -dgfl ", '${referenceArchive}',"/$dgfl -im_db 1 -im_db_file ", '${referenceArchive}',"/$im_db_file -im_db_cc $im_db_cc -im_db_gidc $im_db_gidc -rs $rankscore  -pedigree $pedigree -tarcov ";
-	    for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {#For all sampleIDs
-		my $tempinfile = $avcovfn{$sid[$sampleid]};
-		
-		if ($sampleid eq scalar(@sid)-1) {
-		    
-		    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_IEM_target_coverage.txt ";
-		}
-		else {
-		    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_IEM_target_coverage.txt,";	
-		    
-		}
-	    }
-	    print RV "-o ",'${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2].txt", "\n\n";
-	    print RV "rm ", '${outFamilyDir}', "/$_[0]", "_temp_both_IEM_Db_SNV.txt", "\n"; #Remove temp file
-	    print RV "rm ", '${outFamilyDir}', "/$_[0]", "_temp_both_IEM_Db_INDEL.txt", "\n\n"; #Remove temp file
-	    print RV "rm ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n\n"; #Remove temp file	
-	}
+    }
+    
 ###
 #Create a Mosaic BAM file for viewing only relevant variants related to dbIEM 
 ###
+    print RV q?cp ?.$directories.$_[0].q?_ranked_?.$_[2].q?.txt ?.$directories.$_[0].q?_ranked_?.$_[2].q?_temp.txt?, "\n\n";
+    print RV q?perl -i -p -e 'unless ($_=~/^#/) { s/^chr(.+)/$1/g }' ?.$directories.$_[0].q?_ranked_?.$_[2].q?_temp.txt?, "\n\n"; #Remove chr for intersect with BAM
+    
+    for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {#For all sampleIDs
+	my $tempinfile = $avcovfn{$sid[$sampleid]};
 	
-	print RV "cp ",'${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2].txt ",'${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2]_temp.txt", "\n\n";
-	print RV q?perl -i -p -e 'unless ($_=~/^#/) { s/^chr(.+)/$1/g }' ?,'${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2]_temp.txt", "\n\n"; #Remove chr for intersect with BAM
-	for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {#For all sampleIDs
-	    my $tempinfile = $avcovfn{$sid[$sampleid]};
-	    
-	    print RV "intersectBed -wa -abam $odf/$sid[$sampleid]/$_[1]/$tempinfile.bam -b ",'${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2]_temp.txt > ",'${outFamilyDir}', "/$tempinfile.bam &", "\n\n";		
-	}
-	print RV "wait\n\n";
-	print RV "rm ", '${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2]_temp.txt", "\n"; #Remove temp file
+	print RV q?intersectBed -wa -abam ?.$odf.q?/?.$sid[$sampleid].q?/?.$_[1].q?/?.$tempinfile.q?.bam -b ?.$directories.$_[0].q?_ranked_?.$_[2].q?_temp.txt > ?.$directories.$tempinfile.q?.bam &?, "\n\n";		
+    }
+    print RV "wait\n\n";
 ###	
-#No IEM_Db_genes
+#No IM_Db_genes
 ###
-	print RV 'outFamilyDir="', "$odf/$_[0]/$_[1]/GATK/candidates/ranking", '"', "\n\n";
-#Create temp_file containing no IEM_Db_genes (to avoid duplicates in ranked list)
-	if ( ($pGATK_HAPCAL eq 1) || (-e $hapcal_both_file) ) { #HaplotypeCaller has been used in present call or previously
-	    print RV "intersectBed -v -a ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt -b ", '${referenceArchive}',"/$im_db_file > ", '${outFamilyDir}', "/$_[0]_temp_both_No_IEM_Db_$_[2].txt", "\n\n";
-
-#Recreate header
-	    print RV q?perl -nae 'if ($_=~/^#/) {print $_}' ?, '${inFamilyDir}', "/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt > ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n";
-	    print RV "cat ", '${outFamilyDir}', "/$_[0]_temp_header.txt ", '${outFamilyDir}', "/$_[0]_temp_both_No_IEM_Db_$_[2].txt > ", '${outFamilyDir}', "/$_[0]_temp", "\n";
-	    print RV "mv ",'${outFamilyDir}', "/$_[0]_temp ",'${outFamilyDir}', "/$_[0]_temp_both_No_IEM_Db_$_[2].txt", "\n";
-	    print RV "perl $ids/rank_list_filter.pl -i ", '${outFamilyDir}', "/$_[0]", "_temp_both_No_IEM_Db_$_[2].txt -dgf $dgf -dgfl ", '${referenceArchive}',"/$dgfl -im_db_file ", '${referenceArchive}',"/$all_db_file -im_db_cc $all_db_cc -im_db_gidc $all_db_gidc -rs $rankscore -pedigree $pedigree -tarcov ";
-	    for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {#For all sampleIDs
-		my $tempinfile = $avcovfn{$sid[$sampleid]};
-		
-		if ($sampleid eq scalar(@sid)-1) {
-		    
-		    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_target_coverage.txt ";
-		}
-		else {
-		    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_target_coverage.txt,";	
-		    
-		}
-	    }
-	    print RV "-o ",'${outFamilyDir}', "/$_[0]", "_ranked_$_[2].txt", "\n\n";
-	    print RV "rm ", '${outFamilyDir}', "/$_[0]", "_temp_both_No_IEM_Db_$_[2].txt", "\n"; #Remove temp file
-	    print RV "rm ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n\n"; #Remove temp file
+    
+    #Ranking
+    print RV "#Ranking", "\n";
+    print RV "perl $ids/rank_list_filter.pl -i $Im_db_file_out_file[0] -dgf $dgf -dgfl ", '${referenceArchive}',"/$dgfl -im_db_file ", '${referenceArchive}',"/$all_db_file -im_db_cc $all_db_cc -im_db_gidc $all_db_gidc -rs $rankscore -pedigree $pedigree -tarcov ";
+    for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {#For all sampleIDs
+	my $tempinfile = $avcovfn{$sid[$sampleid]};
+	
+	if ($sampleid eq scalar(@sid)-1) {
+	    
+	    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_target_coverage.txt ";
 	}
 	else {
-	    print RV "intersectBed -v -a ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_varrecal_SNV_filt_annovar_all_variants.txt -b ", '${referenceArchive}',"/$im_db_file > ", '${outFamilyDir}', "/$_[0]", "_temp_both_No_IEM_Db_SNV.txt", "\n";
-	    print RV "intersectBed -v -a ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_varrecal_INDEL_filt_annovar_all_variants.txt -b ", '${referenceArchive}',"/$im_db_file > ", '${outFamilyDir}', "/$_[0]", "_temp_both_No_IEM_Db_INDEL.txt", "\n\n";
-
-#Recreate header (Only queried one is the first file so only SNV is done)
-	    print RV q?perl -nae 'if ($_=~/^#/) {print $_}' ?, '${inFamilyDir}', "/$_[0]_allchr_real_recal_resrt_varrecal_SNV_filt_annovar_all_variants.txt > ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n";
-	    print RV "cat ", '${outFamilyDir}', "/$_[0]_temp_header.txt ", '${outFamilyDir}', "/$_[0]_temp_both_No_IEM_Db_SNV.txt > ", '${outFamilyDir}', "/$_[0]_temp", "\n";
-	    print RV "mv ",'${outFamilyDir}', "/$_[0]_temp ",'${outFamilyDir}', "/$_[0]_temp_both_No_IEM_Db_SNV.txt", "\n";
-
-	    print RV "perl $ids/rank_list_filter.pl -i ", '${outFamilyDir}', "/$_[0]_temp_both_No_IEM_Db_SNV.txt,", '${outFamilyDir}', "/$_[0]_temp_both_No_IEM_Db_INDEL.txt -dgf $dgf -dgfl ", '${referenceArchive}',"/$dgfl -im_db_file ", '${referenceArchive}',"/$all_db_file -im_db_cc $all_db_cc -im_db_gidc $all_db_gidc -rs $rankscore -pedigree $pedigree -tarcov ";
-	    for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {#For all sampleIDs
-		my $tempinfile = $avcovfn{$sid[$sampleid]};
-		
-		if ($sampleid eq scalar(@sid)-1) {
-		    
-		    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_target_coverage.txt ";
-		}
-		else {
-		    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_target_coverage.txt,";	
-		    
-		}
-	    }
-	    print RV "-o ",'${outFamilyDir}', "/$_[0]", "_ranked_$_[2].txt", "\n\n";
-	    print RV "rm ", '${outFamilyDir}', "/$_[0]", "_temp_both_No_IEM_Db_SNV.txt", "\n"; #Remove temp file
-	    print RV "rm ", '${outFamilyDir}', "/$_[0]", "_temp_both_No_IEM_Db_INDEL.txt", "\n"; #Remove temp file
-	    print RV "rm ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n\n"; #Remove temp file
-	}
-    }
-    else {
-###
-#Only IEM_Db_genes
-###
-	print RV 'outFamilyDir="', "$odf/$_[0]/$_[1]/GATK/candidates/ranking/IEM_Db_CMMS", '"', "\n\n";
-	if ( $pAddDP == 0 ) {
-            #Add chr
-	    print RV q?perl -i -p -e ' if($_=~/^#/) {} else {s/^(.+)/chr$1/g }' ?, '${inFamilyDir}', "/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt", "\n\n";
-	}
-#Create temp_file containing only IEM_Db_genes (to avoid duplicates in ranked list)
-	print RV "intersectBed -u -a ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt -b ", '${referenceArchive}',"/$im_db_file > ", '${outFamilyDir}', "/$_[0]_temp_IEM_Db_$_[2].txt", "\n";
-
- #Recreate header
-	print RV q?perl -nae 'if ($_=~/^#/) {print $_}' ?, '${inFamilyDir}', "/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt > ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n";
-	print RV "cat ", '${outFamilyDir}', "/$_[0]_temp_header.txt ", '${outFamilyDir}', "/$_[0]_temp_IEM_Db_$_[2].txt > ", '${outFamilyDir}', "/$_[0]_temp", "\n";
-	print RV "mv ",'${outFamilyDir}', "/$_[0]_temp ",'${outFamilyDir}', "/$_[0]_temp_IEM_Db_$_[2].txt", "\n";
-	
-	print RV "perl $ids/rank_list_filter.pl -i ", '${outFamilyDir}', "/$_[0]_temp_IEM_Db_$_[2].txt -cmms_imdb 1 -dgf $dgf -dgfl ", '${referenceArchive}',"/$dgfl -im_db 1 -im_db_file ", '${referenceArchive}',"/$im_db_file -im_db_cc $im_db_cc -im_db_gidc $im_db_gidc -rs $rankscore -pedigree $pedigree -o ",'${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2].txt", "\n\n";
-	print RV "rm ", '${outFamilyDir}', "/$_[0]", "_temp_IEM_Db_$_[2].txt", "\n\n"; #Remove temp file
-	print RV "rm ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n\n"; #Remove temp file
-###
-#Create a Mosaic BAM file for viewing only relevant variants related to dbIEM 
-###
-	
-	print RV "cp ",'${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2].txt ",'${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2]_temp.txt", "\n\n";
-	print RV q?perl -i -p -e 'unless ($_=~/^#/) { s/^chr(.+)/$1/g }' ?,'${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2]_temp.txt", "\n\n"; #Remove chr for intersect with BAM
-	for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {#For all sampleIDs
-	    my $tempinfile = $avcovfn{$sid[$sampleid]};
+	    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_target_coverage.txt,";	
 	    
-	    print RV "intersectBed -wa -abam $odf/$sid[$sampleid]/$_[1]/$tempinfile.bam -b ",'${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2]_temp.txt > ",'${outFamilyDir}', "/$tempinfile.bam &", "\n\n";		
 	}
-	print RV "wait\n\n";
-	print RV "rm ", '${outFamilyDir}', "/$_[0]", "_ranked_IEM_Db_CMMS_$_[2]_temp.txt", "\n"; #Remove temp file
-###
-#No IEM_Db_genes
-###
-	print RV 'outFamilyDir="', "$odf/$_[0]/$_[1]/GATK/candidates/ranking", '"', "\n\n";
-#Create temp_file containing no IEM_Db_genes (to avoid duplicates in ranked list)
-	print RV "intersectBed -v -a ", '${inFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt -b ", '${referenceArchive}',"/$im_db_file > ", '${outFamilyDir}', "/$_[0]_temp_No_IEM_Db_$_[2].txt", "\n";
-
-#Recreate header
-	print RV q?perl -nae 'if ($_=~/^#/) {print $_}' ?, '${inFamilyDir}', "/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt > ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n";
-	print RV "cat ", '${outFamilyDir}', "/$_[0]_temp_header.txt ", '${outFamilyDir}', "/$_[0]_temp_No_IEM_Db_$_[2].txt > ", '${outFamilyDir}', "/$_[0]_temp", "\n";
-	print RV "mv ",'${outFamilyDir}', "/$_[0]_temp ",'${outFamilyDir}', "/$_[0]_temp_No_IEM_Db_$_[2].txt", "\n";
-
-	print RV "perl $ids/rank_list_filter.pl -i ", '${outFamilyDir}', "/$_[0]", "_temp_No_IEM_Db_$_[2].txt -dgf $dgf -dgfl ", '${referenceArchive}',"/$dgfl -im_db_file ", '${referenceArchive}',"/$all_db_file -im_db_cc $all_db_cc -im_db_gidc $all_db_gidc -rs $rankscore -pedigree $pedigree -tarcov ";
-	    for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {#For all sampleIDs
-		my $tempinfile = $avcovfn{$sid[$sampleid]};
-		
-		if ($sampleid eq scalar(@sid)-1) {
-		    
-		    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_target_coverage.txt ";
-		}
-		else {
-		    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_target_coverage.txt,";	
-		    
-		}
-	    }
-	print RV "-o ",'${outFamilyDir}', "/$_[0]", "_ranked_$_[2].txt", "\n\n";
-	print RV "rm ", '${outFamilyDir}', "/$_[0]", "_temp_No_IEM_Db_$_[2].txt", "\n"; #Remove temp file
-	print RV "rm ", '${outFamilyDir}', "/$_[0]_temp_header.txt", "\n\n"; #Remove temp file
     }
-
+    ($volume,$directories,$file) = File::Spec->splitpath( $Im_db_file_out_file[0] ); #Create outfile path
+    print RV q?-o ?.$directories.$_[0].q?_ranked_?.$_[2].q?.txt?, "\n\n";
+    
     close(RV);   
     FIDSubmitJob(0,$familyid, 1, $_[2],$filename);
     return;
@@ -1217,35 +1192,34 @@ sub VarcallMergePostAnnovar {
     print VMERGE 'inFamilyPrefix="',"/$_[0]", "_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar", '"', "\n";
     print VMERGE 'outFamilyDir="', "$odf/$_[0]/$_[1]/GATK", '"', "\n\n";
     
-    if ($em=~/henrik.stranneheim/) { #CMMS specific to not overwrite user supplied info
-	print VMERGE "#Create db master file from template", "\n";
-	my $sampleIDcolumns = scalar(@sid)+5;
-	my $sampleIDcolcond = scalar(@sid)+4;
-	$vm_dbf =~ s/FDN/$_[0]/g; #Exchange FND for the real familyID
-	#Add relative path to db_template for annovar files 
-	my ($volume,$directories,$file) = File::Spec->splitpath( $odf );
-	my @dirs = File::Spec->splitdir( $directories );
-	my $regexp_odf;
-	for (my $dirs_Count=1;$dirs_Count<scalar(@dirs);$dirs_Count++) {
-	    
-	    $regexp_odf .= "\\/".$dirs[$dirs_Count]; #Create escape char for / in later regexp
-	}
-	$regexp_odf .= $file;
-	#Add relative path to db_template for reference files
-	($volume,$directories,$file) = File::Spec->splitpath( $rd );
-	@dirs = File::Spec->splitdir( $directories );
-	my $regexp_rd;	
-	for (my $dirs_Count=1;$dirs_Count<scalar(@dirs);$dirs_Count++) {
-	    
-	    $regexp_rd .= "\\/".$dirs[$dirs_Count]; #Create escape char for / in later regexp
-	}
-	$regexp_rd .= $file;
-	#Create family specific template
-	print VMERGE q?perl -nae 'if ($_=~/outinfo/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes=>0_$sampleID,"} else { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes=>0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outcolumns/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="0_$sampleID,"} else { $sidstring.="0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outheaders/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes,"} else { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes"} } s/IDN/$sidstring/g; print $_;} next;} elsif ($_=~s/FDN/?.$_[0].q?/g) { if($_=~s/^ODF/?.$regexp_odf.q?/g) {} if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="$sampleID,"} else { $sidstring.="$sampleID"} } s/IDN/$sidstring/g; print $_;} else { print $_;} } else { if($_=~s/^RD/?.$regexp_rd.q?/g) {} print $_;}' ?.$rd.q?/CMMS_intersectCollect_db_master_template_feature_icdiffpro.txt > ?."$odf/$_[0]/$vm_dbf", "\n\n";
-
+    
+    print VMERGE "#Create db master file from template", "\n";
+    my $sampleIDcolumns = scalar(@sid)+5; #Requires CMMS format (chr,start,stop,ref_allele,alt_allel,IDN...)
+    my $sampleIDcolcond = scalar(@sid)+4;
+    $vm_dbf =~ s/FDN/$_[0]/g; #Exchange FND for the real familyID
+    #Add relative path to db_template for annovar files 
+    my ($volume,$directories,$file) = File::Spec->splitpath( $odf );
+    my @dirs = File::Spec->splitdir( $directories );
+    my $regexp_odf;
+    for (my $dirs_Count=1;$dirs_Count<scalar(@dirs);$dirs_Count++) {
+	
+	$regexp_odf .= "\\/".$dirs[$dirs_Count]; #Create escape char for / in later regexp
     }
+    $regexp_odf .= $file;
+    #Add relative path to db_template for reference files
+    ($volume,$directories,$file) = File::Spec->splitpath( $rd );
+    @dirs = File::Spec->splitdir( $directories );
+    my $regexp_rd;	
+    for (my $dirs_Count=1;$dirs_Count<scalar(@dirs);$dirs_Count++) {
+	
+	$regexp_rd .= "\\/".$dirs[$dirs_Count]; #Create escape char for / in later regexp
+    }
+    $regexp_rd .= $file;
+    #Create family specific template
+    print VMERGE q?perl -nae 'if ($_=~/outinfo/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes=>0_$sampleID,"} else { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes=>0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outcolumns/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="0_$sampleID,"} else { $sidstring.="0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outheaders/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes,"} else { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes"} } s/IDN/$sidstring/g; print $_;} next;} elsif ($_=~s/FDN/?.$_[0].q?/g) { if($_=~s/^ODF/?.$regexp_odf.q?/g) {} if($_=~s/ALIGNER/?.$aligner.q?/g) {} if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="$sampleID,"} else { $sidstring.="$sampleID"} } s/IDN/$sidstring/g; print $_;} else { print $_;} } else { if($_=~s/^RD/?.$regexp_rd.q?/g) {} print $_;}' ?.$rd.q?/?.$vmerge_db_template.q? > ?."$odf/$_[0]/$vm_dbf", "\n\n";
+
     print VMERGE "perl $ids/intersectCollect.pl -db $odf/$_[0]/$vm_dbf -o ", '${outFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt", "\n\n";
-    	    
+    
     close(VMERGE);   
     FIDSubmitJob(0,$familyid, 1, $_[2],$filename);
     return;
@@ -2028,7 +2002,7 @@ sub GATK_hapcal {
     print GATK_HAPCAL 'referenceArchive="', "$rd", '"', "\n\n"; 
     print GATK_HAPCAL "#Samples", "\n";
     print GATK_HAPCAL 'outFamilyDir="', "$odf/$_[0]/$_[1]/GATK/HapCall", '"', "\n\n"; 
-    print GATK_HAPCAL 'outFamilyDir2="',"$odf/$_[0]/", '"', "\n\n"; #For .fam file
+    print GATK_HAPCAL 'outFamilyDir2="',"$odf/$_[0]", '"', "\n\n"; #For .fam file
     
     if ($_[3] == 0) { #Only for the first call of subroutine GATK_hapcal.
 #Generate .fam file for later use in relevant GATK walkers (HaplotypeCaller, VariantscoreRequalibration etc)

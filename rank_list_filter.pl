@@ -52,10 +52,6 @@ rank_list_filter.pl -i [infile1] -pedigree [path/file.txt] -o [outfile.txt]
 
 -recgm/--recGeneticModels (Defaults to "0")
 
--annovar_dbsnp_ver/--annovar_dbsnp_version Flag for setting the version of dbsnp in annovar (defaults to snp135NonFlagged;Supporded:"132","135","snp135NonFlagged")
-
--annovar_1000g_ver/--annovar_1000g_version Flag for setting the version of 1000g in annovar (defaults to 1000g2012feb_all)
-
 -tarcov/--targetcoverage Target coverage files for family members, comma sep
 
 =head3 I/O
@@ -98,8 +94,6 @@ BEGIN {
                -pedigree/--pedigree_file (Supply whole path)
                -familyid/--family Group id of samples to be compared (defaults to "", (Ex: 1 for IDN 1-1-1A))
                -recgm/--recGeneticModels (Defaults to "0")
-               -annovar_dbsnp_ver/--annovar_dbsnp_version Flag for setting the version of dbsnp in annovar (defaults to snp135NonFlagged;Supporded:"132","135","snp135NonFlagged")
-               -annovar_1000g_ver/--annovar_1000g_version Flag for setting the version of 1000g in annovar (defaults to 1000g2012feb_all)
                -tarcov/--targetcoverage Target coverage files for family members, comma sep
 	   };
 }
@@ -107,7 +101,7 @@ BEGIN {
 ###
 #Infile flags (variables)
 ###
-my ($i_gidh, $motherID, $fatherID,$of, $nos, $rankscore, $im_db, $im_db_file, $im_db_cc, $im_db_gidc, $dgf, $dgf_l,$pedigree,$familyid, $annovar_dbsnp_ver, $annovar_1000g_ver, $cmms_imdb, $help) = ("HGNC_symbol", 0,0,"ranked_variants.txt", 0, 0, 0, "",0,"",0,0,0,0,"snp135NonFlagged", "1000g2012feb_all",0);
+my ($i_gidh, $motherID, $fatherID,$of, $nos, $rankscore, $im_db, $im_db_file, $im_db_cc, $im_db_gidc, $dgf, $dgf_l,$pedigree,$familyid, $cmms_imdb, $help) = ("HGNC_symbol", 0,0,"ranked_variants.txt", 0, 0, 0, "",0,"",0,0,0,0,0);
 my (@infn, @childID, @sid_aff, @sid_hea, @sid_male, @sid_female, @samples, @recgm,@tarcovfiles);
 my @chr = ("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17","chr18","chr19","chr20","chr21","chr22","chrX","chrY","chrMT");
 
@@ -132,8 +126,6 @@ GetOptions('i|infile:s'  => \@infn, #Comma separated list
 	   'pedigree|pedigree_file:s'  => \$pedigree, #Path to pedigree file location
 	   'familyid|familygroup:s' => \$familyid, #Family group ID (FDN)
 	   'recgm|recGeneticModels:s'  => \@recgm, #Recommended genetic model
-	   'annovar_dbsnp_ver|annovar_dbsnp_version:s' => \$annovar_dbsnp_ver, #dnSNP versions
-	   'annovar_1000g_ver|annovar_1000g_version:s' => \$annovar_1000g_ver, #1000G versions
 	   'h|help' => \$help,
 	   'cmms_imdb|cmms_Db_pathway:n'  => \$cmms_imdb, #Enables CMMS pathways to be added to final list (specific for IEM_Db_CMMS - Secret option)
 	   'tarcov|targetcoverage:s'  => \@tarcovfiles, #Target coverage files for members, comma separated list.
@@ -496,7 +488,8 @@ sub AssignColNr {
 		if ($temp[$column] eq "genomicSuperDups") { $segdupcol = $column; }
 		if ($temp[$column] eq "1000G") { $thGcol = $column; }
 		if ($temp[$column] eq "dbsnp129") { $dbsnp129col = $column; }
-		if ($temp[$column] eq "dbsnp135") { $dbsnpcol = $column; }
+		if ($temp[$column] eq "dbsnp137NonFlagged") { $dbsnpcol = $column; }
+		elsif ($temp[$column] eq "dbsnp135NonFlagged") { $dbsnpcol = $column; }
 		if ($temp[$column] eq "cg69") { $cg69col = $column;} #Currently not used, but supported
 		if ($temp[$column] eq "SIFT_Whole-exome") { $avsiftcol = $column; }
 		if ($temp[$column] eq "PolyPhen_version_2_HumDiv_Whole-exome") { $pp2col = $column; }
@@ -1750,7 +1743,7 @@ sub ReadVCF {
 		$weighted_frequency_score = -1;
 	    }
 	    #dbSNPNonFlagged
-	    if ( $temp[$dbsnpcol] ne $annovar_dbsnp_ver) { #Not found in snp135NonFlagged
+	    if ( $temp[$dbsnpcol] eq "-") { #Not found in dbsnpNonFlagged
 		$weighted_frequency_score = $weighted_frequency_score + 1;
 	    }
 ###
