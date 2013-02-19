@@ -252,7 +252,7 @@ my ($exomeTargetBed, $exomeTargetBedInfileList, $exomeTargetPaddedBedInfileList,
 
 #Pipe
 my ($pREM) = (1);
-my ($humanGenomeReference, $fnend, $aligner, $whole_genome_sequencing, $maximum_cores, $environmentUppmax, $filename, $fnt, $fnt2, $help) = (0, ".sh", "", 0,8,0); #Arguments for project
+my ($humanGenomeReference, $humanGenomeReferenceVersion, $fnend, $aligner, $whole_genome_sequencing, $maximum_cores, $environmentUppmax, $filename, $fnt, $fnt2, $help) = (0, 0, ".sh", "", 0,8,0); #Arguments for project
 my (%infiles, %indirpath, %Infiles_lane_noending, %lanes, %Infiles_bothstrands_noending, %jobID, %paralleljobID, %allsampleIDjobID, %sample_info, %script_parameters); 
 #%infiles=from platform (Illumina), %indirpath for the path to infiles, %Infiles_lane_noending for MosaikBuild (one entry for both strands), %lanes for sample lanes, Infiles_bothstrands_noending for bwa_aln (one entry per strand)
 
@@ -262,8 +262,10 @@ my (%infiles, %indirpath, %Infiles_lane_noending, %lanes, %Infiles_bothstrands_n
 
 #Capture kits supported from pedigree file.
 my %supported_capture_kits = (
-    'Agilent_SureSelect.V3' => "Agilent_SureSelect_V3_hg19_targets_nochr.bed",
-    'Agilent_SureSelect.V4' => "Agilent_SureSelect_V4_hg19_targets_nochr.bed",
+    'Agilent_SureSelect.V2' => "Agilent_SureSelect_V2_GRChVersion_targets_nochr.bed",
+    'Agilent_SureSelect.V3' => "Agilent_SureSelect_V3_GRChVersion_targets_nochr.bed",
+    'Agilent_SureSelect.V4' => "Agilent_SureSelect_V4_GRChVersion_targets_nochr.bed",
+    'Agilent_SureSelect.V5' => "Agilent_SureSelect_V5_GRChVersion_targets_nochr.bed",
     #'Agilent_SureSelect.V3' => "SureSelect_All_Exon_50mb_with_annotation_hg19_nochr.bed",
     #'Agilent_SureSelect.V4' => "SureSelect_XT_Human_All_Exon_V4_targets_nochr.bed",
     );
@@ -489,10 +491,13 @@ if ($humanGenomeReference eq 0) {
     if ( ($pCCE_PicHS ==1) || ($pCC_PicMM ==1) ) {
 	
 	if ($environmentUppmax == 1) {
-	    $humanGenomeReference = "Homo_sapiens.GRCh37.57.dna.concat.fa";
+	    $humanGenomeReference = "Homo_sapiens.GRCh37.70.dna.concat.fa";
+	    if ( $humanGenomeReference =~/Homo_sapiens.GRCh(\d+\.\d+)/) {
+		$humanGenomeReferenceVersion = $1;
+	    }
 	    unless (-e "$referencesDir/$humanGenomeReference" ) { #Check for capture filehuman genome reference in supplied reference dir
 		print STDERR "\nCould not find human genome reference fasta file: $referencesDir/$humanGenomeReference\n\n";
-		die $USAGE;		
+		die $USAGE;
 	    }   
 	    $script_parameters{'humanGenomeReference'} = $humanGenomeReference; #Add to enable recreation of cmd line later
 	}
@@ -500,11 +505,12 @@ if ($humanGenomeReference eq 0) {
 	    print STDERR "\nSupply human genome reference fasta file to run 'pCCE_PicHS' and/or 'pCC_PicMM'\n\n";
 	    die $USAGE
 	}
-	
     }
-    
 }
 else { #Add to enable recreation of cmd line later
+    if ( $humanGenomeReference =~/Homo_sapiens.GRCh(\d+\.\d+)/) { #Used to change capture kit genome reference versiona later
+	$humanGenomeReferenceVersion = $1;
+    }
     $script_parameters{'humanGenomeReference'} = $humanGenomeReference;
 }
 
@@ -520,7 +526,7 @@ if ( $pMoB || $pMoA ){
     }
 }
 
-unless ( $pMoB || $pMoA || $pBWA_aln || $pBWA_sampe) { #Specify aligner if none $pAligner or $aligner was used
+unless ( $pMoB || $pMoA || $pBWA_aln || $pBWA_sampe || $aligner) { #Specify aligner if none $pAligner or $aligner was used
     print STDERR "\n";
     print STDERR "You have to choose either mosaik or bwa or specify which aligner (-alig 'mosaik' or 'bwa') was used if you want to run programs after alignment.", "\n\n";
     die $USAGE;
@@ -568,6 +574,7 @@ if ( $pMoB || $pMoA ) {
 }
 elsif ($aligner =~ m/mosaik/i) {
     $aligner = "mosaik"; #Make sure that aligner program is spelled correctly
+    $script_parameters{'aligner'} = $aligner;
 }
 if ( $pBWA_aln || $pBWA_sampe ){
     $aligner = "bwa";
@@ -576,6 +583,7 @@ if ( $pBWA_aln || $pBWA_sampe ){
 }
 elsif ($aligner =~ m/bwa/i) {
     $aligner = "bwa"; #Make sure that aligner program is spelled correctly
+    $script_parameters{'aligner'} = $aligner;
 }
 
 if ($picardPath eq 0 ) {
@@ -601,6 +609,9 @@ if ( ($exomeTargetBed eq 0) && ($pCC_Bedc ==1) ) {
 	my $uncorrect_capture_Counter = 0; #Track no entries or wrong format entry in pedigree file
 	for (my $sampleid_Counter=0;$sampleid_Counter<scalar(@sampleIDs);$sampleid_Counter++) { #Check that all samples in pedigree have a capture kit
 	    if ( defined( $sample_info{$familyID}{$sampleIDs[$sampleid_Counter]}{'exomeTargetBed'} ) ) { #Capture kit check
+		print $sample_info{$familyID}{$sampleIDs[$sampleid_Counter]}{'exomeTargetBed'}, "\n";
+		$sample_info{$familyID}{$sampleIDs[$sampleid_Counter]}{'exomeTargetBed'} =~ s/Version/$humanGenomeReferenceVersion/;
+		print $sample_info{$familyID}{$sampleIDs[$sampleid_Counter]}{'exomeTargetBed'}, "\n";
 		unless (-e "$referencesDir/$sample_info{$familyID}{$sampleIDs[$sampleid_Counter]}{'exomeTargetBed'}" ) { #Check existence of capture file in supplied reference dir
 		    print STDERR "\nCould not find capture kit target BED-file: $referencesDir/$sample_info{$familyID}{$sampleIDs[$sampleid_Counter]}{'exomeTargetBed'}\n\n";
 		    die $USAGE;		
@@ -623,12 +634,14 @@ if ( ($exomeTargetBed eq 0) && ($pCC_Bedc ==1) ) {
 	    for my $supported_capture_kit (keys %supported_capture_kits) {
 		print STDERR $supported_capture_kit, "\t", $supported_capture_kits{$supported_capture_kit}, "\n";
 	    }	    
-	    print "\n";
+	    print STDERR "\n";
 	    die $USAGE;
 	}
     }
     else {    
 	print STDERR "\nYou must supply a capture kit bed file when running 'pCC_Bedc'\n";
+	print STDERR "\n";
+	die $USAGE;
     }
 }
 else {
@@ -650,6 +663,10 @@ if ( ($exomeTargetBedInfileList eq 0) || ($exomeTargetPaddedBedInfileList eq 0) 
 	    for (my $sampleid_Counter=0;$sampleid_Counter<scalar(@sampleIDs);$sampleid_Counter++) { #Check that all samples in pedigree have a capture kit		
  
 		if ( defined( $sample_info{$familyID}{$sampleIDs[$sampleid_Counter]}{'exomeTargetBedInfileList'} ) ) { #Capture kit check
+		    $sample_info{$familyID}{$sampleIDs[$sampleid_Counter]}{'exomeTargetBedInfileList'} =~ s/Version/$humanGenomeReferenceVersion/;
+		    print $sample_info{$familyID}{$sampleIDs[$sampleid_Counter]}{'exomeTargetBedInfileList'}, "\n";
+ $sample_info{$familyID}{$sampleIDs[$sampleid_Counter]}{'exomeTargetPaddedBedInfileList'} =~ s/Version/$humanGenomeReferenceVersion/;
+		    print $sample_info{$familyID}{$sampleIDs[$sampleid_Counter]}{'exomeTargetPaddedBedInfileList'}, "\n";
 		    unless (-e "$referencesDir/$sample_info{$familyID}{$sampleIDs[$sampleid_Counter]}{'exomeTargetBedInfileList'}" ) { #Check existence of capture file in supplied reference dir
 			print STDERR "\nCould not find capture kit target file: $referencesDir/$sample_info{$familyID}{$sampleIDs[$sampleid_Counter]}{'exomeTargetBedInfileList'}\n\n";
 			die $USAGE;		
@@ -1783,7 +1800,7 @@ sub PicardMarkDup {
     }
     print PMDUP "wait", "\n\n";
     close(PMDUP);
-    ParallelSampleIDSubmitJob($_[0],$filename,"all");
+    #ParallelSampleIDSubmitJob($_[0],$filename,"all");
     return;
 }
 
@@ -2405,6 +2422,7 @@ sub ReadPedigreeFile {
 		    if ($line_info[14]) { #Capture kit
 			my @capture_kits = split(";", $line_info[14]);
 			my $capture_kit =  pop(@capture_kits); #Use only the last capture kit since it should be the most interesting
+			
 			for my $supported_capture_kit (keys %supported_capture_kits) {
 			    if ($supported_capture_kit eq $capture_kit) {
 				$sample_info{$local_familyID}{$line_info[0]}{'exomeTargetBed'} = $supported_capture_kits{$supported_capture_kit}; #capture kit Bed-file
