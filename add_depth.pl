@@ -187,7 +187,7 @@ sub ReadAnnovarAll {
 		
 		if ($sampleVariants{$sid[$sampleid]}{$temp[0]}{$temp[1]}) {
 		    
-		    $allVariants{$temp[0]}{$temp[1]}{$temp[4]}[ $col{$sid[$sampleid]} ] = "$sid[$sampleid];DP=$sampleVariants{$sid[$sampleid]}{$temp[0]}{$temp[1]}"; #NOTE the ; and not : to be able to separate PASS/PRES from DP in filtering
+		    $allVariants{$temp[0]}{$temp[1]}{$temp[4]}[ $col{$sid[$sampleid]} ] .= ":DP=$sampleVariants{$sid[$sampleid]}{$temp[0]}{$temp[1]}"; #Add DP info the original GT call
 		}
 	    }
 	}
