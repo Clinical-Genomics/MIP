@@ -17,6 +17,8 @@ add_depth.pl -i [infile1] -infnv [infilesnv...n]  -sid [sampleID...n] -o [outfil
 
 -o/--outfile The output file (defaults to annovar_master.txt)
 
+-prechr/--prefix_chromosomes "chrX" or just "X" (defaults to "X" i.e. no prefix)
+
 =head3 I/O
 
 Input format (annovar_all_variants(tab sep) - added depth )
@@ -40,16 +42,18 @@ BEGIN {
                -infnv/--infile_no_var Novariant infile(s), comma sep (Same order as sid)
                -sid/--sampleid Sampleid(s), comma sep (Same order as infnv)
 	       -o/--outfile The output file (defaults to annovar_master.txt)
+               -prechr/--prefix_chromosomes "chrX" or just "X" (defaults to "X" i.e. no prefix)
 	   };
 }
 
-my ($of, $inf, $help) = ("annovar_master.txt", 0);
-my (@infnv, @sid);
+my ($of, $inf, $prechr, $help) = ("annovar_master.txt", 0, 0);
+my (@infnv, @sid, @chr);
 
 GetOptions('i|infile:s'  => \$inf,
 	   'infnv|infile_no_var:s'  => \@infnv, #Comma separated list
 	   'sid|sampleid:s'  => \@sid, #Comma separated list
 	   'o|outfile:s'  => \$of,
+	   'prechr|prefix_chromosomes:n'  => \$prechr,
 	   'h|help' => \$help,
 	   );
 
@@ -74,7 +78,13 @@ if (@infnv == 0) {
 @infnv = split(/,/,join(',',@infnv)); #Enables comma separated indir(s)
 @sid = split(/,/,join(',',@sid)); #Enables comma separated indir(s)
 
-my @chr = ("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17","chr18","chr19","chr20","chr21","chr22","chrX","chrY","chrMT"); #Enbables chr sorted outfile
+##Set chr prefix and chromosome names depending on reference used
+if ($prechr == 0) { #Ensembl - no prefix and MT
+    @chr = ("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","X","Y","MT"); #Chr for enhanced speed in collecting information and reducing memory consumption
+}
+else { #Refseq - prefix and M
+    @chr = ("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17","chr18","chr19","chr20","chr21","chr22","chrX","chrY","chrM");
+}
 
 my $header; #To preserve header information
 my (@allVariants, @allVariants_unique, @allVariants_sorted);

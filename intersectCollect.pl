@@ -135,10 +135,10 @@ if (@outinfo) {
     print STDOUT "\n";
     $outinfo =1; #To not rewrite order supplied by user with the order in the Db master file
 }
-if ($prechr == 0) {
+if ($prechr == 0) { #Ensembl - no prefix and MT
     @chr = ("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","X","Y","MT"); #Chr for enhanced speed in collecting information and reducing memory consumption
 }
-else {
+else { #Refseq - prefix and M
     @chr = ("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17","chr18","chr19","chr20","chr21","chr22","chrX","chrY","chrMT");
 }
 	
@@ -383,7 +383,7 @@ sub ReadDbMaster {
 	    }
 	    print STDOUT "\n";
 	}
- 	else {
+ 	elsif ( ($oheaders == 0) && ($ocol == 0) ) {
 	    print STDOUT "No users supplied order of output header and columns. Will order the columns according to appearance in db master file\n";
 	}
     }
