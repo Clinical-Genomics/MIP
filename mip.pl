@@ -461,7 +461,7 @@ DefineParameters("pSamToolsSort", "nocmdinput", "program", 1, 1, "MIP", 0, "_sor
 
 DefineParameters("pPicardToolsMergeSamFiles", "nocmdinput", "program", 0, 0, "MIP", 0, "_merged");
 
-DefineParameters("PicardToolsMergeTempDirectory", "nocmdinput", "path", "/scratch/".'$SLURM_JOB_ID', "notSetYet", "pPicardToolsMergeSamFiles", 0); #Depends on -projectID input, directory created by sbatch script
+DefineParameters("PicardToolsMergeTempDirectory", "nocmdinput", "path", "/scratch/", "notSetYet", "pPicardToolsMergeSamFiles", 0); #Depends on -projectID input, directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
 
 DefineParameters("pPicardToolsMarkduplicates", "nocmdinput", "program", 1, 1, "MIP", 0, "_pmd");
 
@@ -540,7 +540,7 @@ DefineParameters("GATKVariantEvalGold", "nocmdinput", "path", "nodefault", "Mill
 
 DefineParameters("genomeAnalysisToolKitPath", "nocmdinput", "path", "nodefault", "/bubo/home/h12/henriks/programs/GenomeAnalysisTK-2.4-7-g5e89f01", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKVariantEvalAll,pGATKVariantEvalExome", "directory");
 
-DefineParameters("GATKTempDirectory", "nocmdinput", "path", "/scratch/".'$SLURM_JOB_ID', "notSetYet", "pGATKRealigner,pGATKBaseRecalibration", 0); #Depends on -projectID input, directory created by sbatch script
+DefineParameters("GATKTempDirectory", "nocmdinput", "path", "/scratch/".'$SLURM_JOB_ID', "notSetYet", "pGATKRealigner,pGATKBaseRecalibration", 0); #Depends on -projectID input, directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
 
 $parameter{'GATKTargetPaddedBedIntervalList'}{'value'} = "nocmdinput"; #GATK target definition file
 
@@ -3235,7 +3235,7 @@ sub GATKBaseReCalibration {
     if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
        
 	print GATK_RECAL "java -Xmx3g ";
-	print GATK_RECAL "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}." "; #Temporary Directory per chr
+	print GATK_RECAL "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." "; #Temporary Directory per chr
 	print GATK_RECAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print GATK_RECAL "-l INFO "; #Set the minimum level of logging
 	print GATK_RECAL "-T BaseRecalibrator "; #Type of analysis to run
@@ -3277,7 +3277,7 @@ sub GATKBaseReCalibration {
 	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
 	    
 	    print GATK_RECAL "java -Xmx24g ";
-	    print GATK_RECAL "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}." "; #Temporary Directory per chr
+	    print GATK_RECAL "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." "; #Temporary Directory per chr
 	    print GATK_RECAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print GATK_RECAL "-l INFO "; #Set the minimum level of logging
 	    print GATK_RECAL "-T BaseRecalibrator "; #Type of analysis to run
@@ -3316,7 +3316,7 @@ sub GATKBaseReCalibration {
 
     print GATK_RECAL "#Remove Temp Directory\n\n";
     print GATK_RECAL "rm ";
-    print GATK_RECAL "-rf ".$scriptParameter{'GATKTempDirectory'}, "\n\n"; #Remove Temp Directory
+    print GATK_RECAL "-rf ".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID', "\n\n"; #Remove Temp Directory
     
     close(GATK_RECAL);  
     if ($scriptParameter{'pGATKBaseRecalibration'} == 1) { 
@@ -3385,7 +3385,7 @@ sub GATKReAligner {
     if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
 	
 	print GATK_REAL "java -Xmx3g ";
-	print GATK_REAL "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}." "; #Temporary Directory
+	print GATK_REAL "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." "; #Temporary Directory
 	print GATK_REAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print GATK_REAL "-l INFO "; #Set the minimum level of logging
 	print GATK_REAL "-T RealignerTargetCreator "; #Type of analysis to run
@@ -3425,7 +3425,7 @@ sub GATKReAligner {
 	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
 		
 	    print GATK_REAL "java -Xmx3g ";
-	    print GATK_REAL "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}." "; #Temporary Directory
+	    print GATK_REAL "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." "; #Temporary Directory
 	    print GATK_REAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print GATK_REAL "-l INFO "; #Set the minimum level of logging
 	    print GATK_REAL "-T RealignerTargetCreator "; #Type of analysis to run
@@ -3462,7 +3462,7 @@ sub GATKReAligner {
     
     print GATK_REAL "#Remove Temp Directory\n\n";
     print GATK_REAL "rm ";
-    print GATK_REAL "-rf ".$scriptParameter{'GATKTempDirectory'}, "\n\n"; #Remove Temp Directory
+    print GATK_REAL "-rf ".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID', "\n\n"; #Remove Temp Directory
 
     close(GATK_REAL);
     if ($scriptParameter{'pGATKRealigner'} == 1) {
@@ -4190,7 +4190,7 @@ sub PicardToolsMerge {
 
 		print PT_MERGE "java -Xmx4g ";
 		print PT_MERGE "-jar ".$scriptParameter{'picardToolsPath'}."/MergeSamFiles.jar ";
-		print PT_MERGE "TMP_DIR=".$scriptParameter{'PicardToolsMergeTempDirectory'}." "; #Temp Directory
+		print PT_MERGE "TMP_DIR=".$scriptParameter{'PicardToolsMergeTempDirectory'}.'$SLURM_JOB_ID'." "; #Temp Directory
 		print PT_MERGE "OUTPUT=".$outSampleDirectory."/".$sampleID."_lanes_", @{ $lane{$sampleID} } ,$outfileEnding.".bam "; #OutFile
 	    }
 	    
@@ -4204,7 +4204,7 @@ sub PicardToolsMerge {
 
 	print PT_MERGE "#Remove Temp Directory\n\n";
 	print PT_MERGE "rm ";
-	print PT_MERGE "-rf ".$scriptParameter{'PicardToolsMergeTempDirectory'}, "\n\n"; #Remove Temp Directory
+	print PT_MERGE "-rf ".$scriptParameter{'PicardToolsMergeTempDirectory'}.'$SLURM_JOB_ID', "\n\n"; #Remove Temp Directory
     }
     if ( ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'picardToolsMergeSamFilesPrevious'} == 1) && (scalar( @{ $infilesLaneNoEnding{$sampleID} }) > 1) ) { #merge previously merged files with merged files generated this run
 	
@@ -4217,7 +4217,7 @@ sub PicardToolsMerge {
 
 		    print PT_MERGE "java -Xmx4g ";
 		    print PT_MERGE "-jar ".$scriptParameter{'picardToolsPath'}."/MergeSamFiles.jar ";
-		    print PT_MERGE "TMP_DIR=".$scriptParameter{'PicardToolsMergeTempDirectory'}." "; #Temp directory
+		    print PT_MERGE "TMP_DIR=".$scriptParameter{'PicardToolsMergeTempDirectory'}.'$SLURM_JOB_ID'." "; #Temp directory
 		    print PT_MERGE "OUTPUT=".$outSampleDirectory."/".$sampleID."_lanes_".$mergeLanes, @{ $lane{$sampleID} } ,$outfileEnding.".bam "; #OutFile
 		    print PT_MERGE "INPUT=".$inSampleDirectory."/".$sampleID."_lanes_", @{ $lane{$sampleID} } ,$outfileEnding.".bam "; #InFile
 		    print PT_MERGE "INPUT=".$picardToolsMergeSamFilesPrevious[$mergeFileCounter], "\n\n"; #$mergeLanes contains lane info on previous merge, $infilesLaneNoEnding{$sampleID}[0] uses @RG for very first .bam file to include read group for subsequent merges. Complete path. 
@@ -4227,7 +4227,7 @@ sub PicardToolsMerge {
 
 		    print PT_MERGE "#Remove Temp Directory\n\n";
 		    print PT_MERGE "rm ";
-		    print PT_MERGE "-rf ".$scriptParameter{'PicardToolsMergeTempDirectory'}, "\n\n"; #Remove Temp Directory
+		    print PT_MERGE "-rf ".$scriptParameter{'PicardToolsMergeTempDirectory'}.'$SLURM_JOB_ID', "\n\n"; #Remove Temp Directory
 		}
 	    }
 	}
@@ -4243,7 +4243,7 @@ sub PicardToolsMerge {
 		
 		print PT_MERGE "java -Xmx4g ";
 		print PT_MERGE "jar ".$scriptParameter{'picardToolsPath'}."/MergeSamFiles.jar ";
-		print PT_MERGE "TMP_DIR=".$scriptParameter{'PicardToolsMergeTempDirectory'}." "; #Temp Directory
+		print PT_MERGE "TMP_DIR=".$scriptParameter{'PicardToolsMergeTempDirectory'}.'$SLURM_JOB_ID'." "; #Temp Directory
 		print PT_MERGE "OUTPUT=".$outSampleDirectory."/".$sampleID."_lanes_".$mergeLanes, @{ $lane{$sampleID} } ,$outfileEnding.".bam "; #OutFile
 		print PT_MERGE "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
 		print PT_MERGE "INPUT=".$picardToolsMergeSamFilesPrevious[$mergeFileCounter],"\n\n"; #$mergeLanes contains lane info on previous merge, $infilesLaneNoEnding{$sampleID}[0] uses @RG for very first .bam file to include read group for subsequent merges. Complete path. 
@@ -4253,7 +4253,7 @@ sub PicardToolsMerge {
 		
 		print PT_MERGE "#Remove Temp Directory\n\n";
 		print PT_MERGE "rm ";
-		print PT_MERGE "-rf ".$scriptParameter{'PicardToolsMergeTempDirectory'}, "\n\n"; #Remove Temp Directory
+		print PT_MERGE "-rf ".$scriptParameter{'PicardToolsMergeTempDirectory'}.'$SLURM_JOB_ID', "\n\n"; #Remove Temp Directory
 	    }
 	}
     }
