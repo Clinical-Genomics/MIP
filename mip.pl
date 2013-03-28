@@ -3234,7 +3234,7 @@ sub GATKBaseReCalibration {
     
     if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
        
-	print GATK_RECAL "java -Xmx3g ";
+	print GATK_RECAL "java -Xmx24g ";
 	print GATK_RECAL "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." "; #Temporary Directory per chr
 	print GATK_RECAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print GATK_RECAL "-l INFO "; #Set the minimum level of logging
@@ -3256,7 +3256,7 @@ sub GATKBaseReCalibration {
 	
 	print GATK_RECAL "#GATK PrintReads","\n\n";
 	
-	print GATK_RECAL "java -Xmx3g ";
+	print GATK_RECAL "java -Xmx24g ";
 	print GATK_RECAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print GATK_RECAL "-l INFO "; #Set the minimum level of logging"-jar $gatk_path/GenomeAnalysisTK.
 	print GATK_RECAL "-T PrintReads "; #Type of analysis to run
@@ -3384,7 +3384,7 @@ sub GATKReAligner {
     
     if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
 	
-	print GATK_REAL "java -Xmx3g ";
+	print GATK_REAL "java -Xmx24g ";
 	print GATK_REAL "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." "; #Temporary Directory
 	print GATK_REAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print GATK_REAL "-l INFO "; #Set the minimum level of logging
@@ -3402,7 +3402,7 @@ sub GATKReAligner {
 	
 	print GATK_REAL "#GATK IndelRealigner","\n\n";
 	
-	print GATK_REAL "java -Xmx3g ";
+	print GATK_REAL "java -Xmx24g ";
 	print GATK_REAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print GATK_REAL "-l INFO ";
 	print GATK_REAL "-T IndelRealigner ";
@@ -3424,7 +3424,7 @@ sub GATKReAligner {
 	    
 	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
 		
-	    print GATK_REAL "java -Xmx3g ";
+	    print GATK_REAL "java -Xmx24g ";
 	    print GATK_REAL "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." "; #Temporary Directory
 	    print GATK_REAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print GATK_REAL "-l INFO "; #Set the minimum level of logging
@@ -3442,7 +3442,7 @@ sub GATKReAligner {
 	    
 	    print GATK_REAL "#GATK IndelRealigner","\n\n";
 	    
-	    print GATK_REAL "java -Xmx3g ";
+	    print GATK_REAL "java -Xmx24g ";
 	    print GATK_REAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print GATK_REAL "-l INFO ";
 	    print GATK_REAL "-T IndelRealigner ";
@@ -6032,7 +6032,7 @@ sub PerChrGATKReAligner {
 		$coreCounter=$coreCounter+1;
 	    }
 	    
-	    print GATK_REAL "java -Xmx3g ";
+	    print GATK_REAL "java -Xmx24g ";
 	    print GATK_REAL "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}."/".$chromosomes[$chromosomeCounter]."/ "; #Temporary Directory per chr
 	    print GATK_REAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print GATK_REAL "-l INFO "; #Set the minimum level of logging
