@@ -450,7 +450,7 @@ DefineParameters("pBwaSampe", "nocmdinput", "program", 0, 0, "MIP", 0, "nofileEn
 
 ##Choosen MIP Aligner
 
-DefineParameters("aligner", "nocmdinput", "MIP", 0, 0, "MIP", 0);
+DefineParameters("aligner", "nocmdinput", "MIP", "mosaik", "mosaik", "MIP", 0);
 
 
 ##SamTools Sort/Index
@@ -540,7 +540,7 @@ DefineParameters("GATKVariantEvalGold", "nocmdinput", "path", "nodefault", "Mill
 
 DefineParameters("genomeAnalysisToolKitPath", "nocmdinput", "path", "nodefault", "/bubo/home/h12/henriks/programs/GenomeAnalysisTK-2.4-7-g5e89f01", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKVariantEvalAll,pGATKVariantEvalExome", "directory");
 
-DefineParameters("GATKTempDirectory", "nocmdinput", "path", "/scratch/".'$SLURM_JOB_ID', "notSetYet", "pGATKRealigner,pGATKBaseRecalibration", 0); #Depends on -projectID input, directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
+DefineParameters("GATKTempDirectory", "nocmdinput", "path", "/scratch/", "notSetYet", "pGATKRealigner,pGATKBaseRecalibration", 0); #Depends on -projectID input, directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
 
 $parameter{'GATKTargetPaddedBedIntervalList'}{'value'} = "nocmdinput"; #GATK target definition file
 
@@ -845,9 +845,9 @@ foreach my $orderParameterElement (@orderParameters) { #Populate scriptParameter
 
 	$parameter{'referencesDir'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/mip_references";
 	
-	$parameter{'PicardToolsMergeTempDirectory'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/nobackup/".'$SLURM_JOB_ID';
+	$parameter{'PicardToolsMergeTempDirectory'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/nobackup/";
 
-	$parameter{'GATKTempDirectory'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/nobackup/".'$SLURM_JOB_ID';
+	$parameter{'GATKTempDirectory'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/nobackup/";
 
     }
     if ($orderParameterElement eq "familyID") { #Set env_up defaults depending on $scriptParameter{'familyID'} value that now has been set
@@ -3414,7 +3414,7 @@ sub GATKReAligner {
 	    GATKTargetListFlag(*GATK_REAL); #Passing filehandle directly to sub routine using "*". Sub routine prints "-L" lists for all sampleIDs		
 	}
 	print GATK_REAL "-I ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile	
-	print GATK_REAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding.".bam ";
+	print GATK_REAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding.".bam "; #OutFile
 	print GATK_REAL "-targetIntervals ".$intervalSampleDirectory."/".$infile.$outfileEnding.".intervals ", "\n\n";
 	
     }
@@ -3454,7 +3454,7 @@ sub GATKReAligner {
 		GATKTargetListFlag(*GATK_REAL); #Passing filehandle directly to sub routine using "*". Sub routine prints "-L" lists for all sampleIDs		
 	    }
 	    print GATK_REAL "-I ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile		
-	    print GATK_REAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding..".bam ";
+	    print GATK_REAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding.".bam "; #OutFile
 	    print GATK_REAL "-targetIntervals ".$intervalSampleDirectory."/".$infile.$outfileEnding.".intervals ", "\n\n";
 	    
 	}
@@ -5641,7 +5641,7 @@ sub AddToScriptParameter {
 		    
 		    if ( ($scriptParameter{'pBwaAln'} == 0) && ($scriptParameter{'pBwaSampe'} == 0)) {
 			
-			if ($scriptParameter{'aligner'} eq "nocmdinput") {
+			if ($scriptParameter{'aligner'} eq "bwa") {
 			    $scriptParameter{'aligner'} = "mosaik";
 			}
 		    }
@@ -5652,7 +5652,7 @@ sub AddToScriptParameter {
 		    }
 		}
 		elsif ( ($scriptParameter{'pBwaAln'} > 0) || ($scriptParameter{'pBwaSampe'} > 0)) { #BWA track
-		    if ( ($scriptParameter{'aligner'} eq "nocmdinput") || ($scriptParameter{'aligner'} =~ /bwa/i) ) {
+		    if ( ($scriptParameter{'aligner'} eq "mosaik") || ($scriptParameter{'aligner'} =~ /bwa/i) ) {
 			$scriptParameter{'aligner'} = "bwa";
 		    }
 		    else {
