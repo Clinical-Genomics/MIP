@@ -107,6 +107,8 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [reference dir]
 
 -pRCP/--pRCovPlots Plots of genome coverage using rCovPlots (defaults to "1" (=yes))
 
+-pSamT_view/--pSamToolsViewSplitChr Split BAM file into individual chromosomes & index using samTools view (defaults to "1" (=yes))
+
 -gatkpath/--genomeAnalysisToolKitPath  Path to GATK. Mandatory for use of GATK (defaults to "")
 
 -gatktmpd/--GATKTempDirectory Temporary Directory to write to using GATK ReAlignerTargetCreator & BaseRecalibrator (defaults to "/scratch/$SLURM_JOB_ID";Supply whole path)
@@ -122,8 +124,6 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [reference dir]
 -pGATK_baserecal/--pGATKBaseRecalibration Recalibration of bases using GATK BaseRecalibrator/PrintReads (defaults to "1" (=yes))
 
 -gatkbaserecalknset/--GATKBaseReCalibrationSNPKnownSet GATK BaseReCalinbration known SNP set (defaults to "dbsnp_135.b37.vcf")
-
--pSamT_view/--pSamToolsViewSplitChr Split BAM file into individual chromosomes & index using samTools view (defaults to "1" (=yes))
 
 -pGATK_hapcall/--pGATKHaploTypeCaller Variant discovery using GATK HaplotypeCaller (defaults to "1" (=yes))
 
@@ -309,6 +309,7 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                -pRCP/--pRCovPlots Plots of genome coverage using rCovPlots (defaults to "1" (=yes))
                
                ##GATK
+               -pSamT_view/--pSamToolsViewSplitChr Split BAM file into individual chromosomes & index using samTools view (defaults to "1" (=yes))              
                -gatkpath/--genomeAnalysisToolKitPath  Path to GATK. Mandatory for use of GATK (defaults to "")
                -gatktmpd/--GATKTempDirectory Temporary Directory to write to using GATK ReAlignerTargetCreator & BaseRecalibrator (defaults to "/scratch/SLURM_JOB_ID";Supply whole path)
                -gatktpbl/--GATKTargetPaddedBedIntervalList Target BED file interval for GATK (defaults to "". File ending should be ".padXXX.interval_list")
@@ -316,8 +317,7 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                  -gatkrealknset1/--GATKReAlignerINDELKnownSet1 GATK ReAlignerTargetCreator/IndelRealigner known INDEL set 1 (defaults to "1000G_phase1.indels.hg19.vcf")
                  -gatkrealknset2/--GATKReAlignerINDELKnownSet2 GATK ReAlignerTargetCreator/IndelRealigner known INDEL set 2 (defaults to "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf")
                -pGATK_baserecal/--pGATKBaseRecalibration Recalibration of bases using GATK BaseRecalibrator/PrintReads (defaults to "1" (=yes))
-                 -gatkbaserecalknset/--GATKBaseReCalibrationSNPKnownSet GATK BaseReCalinbration known SNP set (defaults to "dbsnp_135.b37.vcf")
-               -pSamT_view/--pSamToolsViewSplitChr Split BAM file into individual chromosomes & index using samTools view (defaults to "1" (=yes))               
+                 -gatkbaserecalknset/--GATKBaseReCalibrationSNPKnownSet GATK BaseReCalinbration known SNP set (defaults to "dbsnp_135.b37.vcf")               
                -pGATK_hapcall/--pGATKHaploTypeCaller Variant discovery using GATK HaplotypeCaller (defaults to "1" (=yes))
                  -gatkhapcallsnpknset/--GATKHaploTypeCallerSNPKnownSet GATK HaplotypeCaller dbSNP set for annotating ID columns (defaults to "dbsnp_135.b37.vcf")
                -pGATK_varrecal/--pGATKVariantRecalibration Variant recalibration using GATK VariantRecalibrator/ApplyRecalibration (defaults to "1" (=yes))
@@ -494,6 +494,9 @@ $parameter{'exomeTargetPaddedBedInfileList'}{'value'} = "nocmdinput";
 
 ##GATK
 
+DefineParameters("pSamToolsViewSplitChr", "nocmdinput", "program", 1, 1, "MIP", 0, "");
+
+
 DefineParameters("pGATKRealigner", "nocmdinput", "program", 1, 1, "MIP", 0, "_rreal");
 
 DefineParameters("GATKReAlignerINDELKnownSet1", "nocmdinput", "path", "1000G_phase1.indels.hg19.vcf", "1000G_phase1.indels.hg19.vcf", "pGATKRealigner", "file");
@@ -504,9 +507,6 @@ DefineParameters("GATKReAlignerINDELKnownSet2", "nocmdinput", "path", "Mills_and
 DefineParameters("pGATKBaseRecalibration", "nocmdinput", "program", 1, 1, "MIP", 0, "_brecal");
 
 DefineParameters("GATKBaseReCalibrationSNPKnownSet", "nocmdinput", "path", "dbsnp_135.b37.vcf", "dbsnp_135.b37.vcf", "pGATKBaseRecalibration", "file");
-
-
-DefineParameters("pSamToolsViewSplitChr", "nocmdinput", "program", 1, 1, "MIP", 0, "");
 
 
 DefineParameters("pGATKHaploTypeCaller", "nocmdinput", "program", 1, 1, "MIP", 0, "_");
@@ -740,6 +740,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'extbl|exomeTargetBedInfileList:s' => \$parameter{'exomeTargetBedInfileList'}{'value'}, #target file for CalculateHsMetrics
 	   'extpbl|exomeTargetPaddedBedInfileList:s' => \$parameter{'exomeTargetPaddedBedInfileList'}{'value'}, #Padded target file for CalculateHsMetrics, GATK
 	   'pRCP|pRCovPlots:n' => \$parameter{'pRCovPlots'}{'value'},
+	   'pSamT_view|pSamToolsViewSplitChr:n' => \$parameter{'pSamToolsViewSplitChr'}{'value'}, #spilt to chr.bam and index
 	   'gatkpath|genomeAnalysisToolKitPath:s' => \$parameter{'genomeAnalysisToolKitPath'}{'value'}, #GATK whole path
 	   'gatktmpd|GATKTempDirectory:s' => \$parameter{'GATKTempDirectory'}{'value'}, #GATK ReAlignerTargetCreator & BaseRecalibrator temporary directory
 	   'gatktpbl|GATKTargetPaddedBedIntervalList:s' => \$parameter{'GATKTargetPaddedBedIntervalList'}{'value'}, #Target file set to be used in GATK
@@ -748,7 +749,6 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'gatkrealknset2|GATKReAlignerINDELKnownSet2:s' => \$parameter{'GATKReAlignerINDELKnownSet2'}{'value'}, #Known INDEL set to be used in GATK ReAlignerTargetCreator/IndelRealigner
 	   'pGATK_baserecal|pGATKBaseRecalibration:n' => \$parameter{'pGATKBaseRecalibration'}{'value'}, #GATK BaseRecalibrator/PrintReads
 	   'gatkbaserecalknset|GATKBaseReCalibrationSNPKnownSet:s' => \$parameter{'GATKBaseReCalibrationSNPKnownSet'}{'value'}, #Known SNP set to be used in GATK BaseRecalibrator/PrintReads
-	   'pSamT_view|pSamToolsViewSplitChr:n' => \$parameter{'pSamToolsViewSplitChr'}{'value'}, #spilt to chr.bam and index
 	   'pGATK_hapcall|pGATKHaploTypeCaller:n' => \$parameter{'pGATKHaploTypeCaller'}{'value'}, #GATK Haplotypecaller
 	   'gatkhapcallsnpknset|GATKHaploTypeCallerSNPKnownSet:s' => \$parameter{'GATKHaploTypeCallerSNPKnownSet'}{'value'}, #Known SNP set to be used in GATK HaplotypeCaller
 	   'pGATK_varrecal|pGATKVariantRecalibration:n' => \$parameter{'pGATKVariantRecalibration'}{'value'}, #GATK VariantRecalibrator/ApplyRecalibration
@@ -1124,6 +1124,7 @@ if ($scriptParameter{'pRCovPlots'} > 0) { #Run Rcovplot scripts
     }
 }
 
+
 if ($scriptParameter{'pGATKRealigner'} > 0) { #Run GATK ReAlignerTargetCreator/IndelRealigner
 
     print STDOUT "\nGATK ReAlignerTargetCreator/IndelRealigner", "\n";print MASTERL "\nGATK ReAlignerTargetCreator/IndelRealigner", "\n";
@@ -1163,7 +1164,7 @@ if ($scriptParameter{'pGATKHaploTypeCaller'} > 0) { #Run GATK HaploTypeCaller. D
 	GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",0,3,8); #Argument 3 & 4 is where in @chr to start and stop processing. Arg 5 is java heap allocation (Gb).
 	GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",3,6,8);
 	GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",6,12,4);
-	GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",12,18,4);
+        GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",12,18,4);
 	GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",18,26,4);	
     }
     else { #Whole genome sequencing requires more memory
@@ -3046,6 +3047,8 @@ sub GATKHaploTypeCaller {
     return;
 }
 
+
+
 sub SamToolsViewSplitChromosomes { 
 #SamTools view split genome.bam file to chr.bam files and index
     
@@ -3094,9 +3097,9 @@ sub SamToolsViewSplitChromosomes {
     
     print ST_VSCHR 'echo "Running on: $(hostname)"',"\n\n";
 
-    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
+    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
     my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr";
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
     my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pSamToolsViewSplitChr'}{'fileEnding'};
     my ($infile, $PicardToolsMergeSwitch) = CheckIfMergedFiles($sampleID);
     my $coreCounter=1;
@@ -3204,7 +3207,7 @@ sub GATKBaseReCalibration {
     print GATK_RECAL "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
     print GATK_RECAL "#SBATCH -p node -n ".$scriptParameter{'maximumCores'}, "\n";
     print GATK_RECAL "#SBATCH -C thin", "\n";	
-    print GATK_RECAL "#SBATCH -t 60:00:00", "\n";
+    print GATK_RECAL "#SBATCH -t 50:00:00", "\n";
     print GATK_RECAL "#SBATCH -J GATK_RECAL_".$sampleID."_".$aligner, "\n";
     if ($scriptParameter{'pGATKBaseRecalibration'} == 1) {
 	print GATK_RECAL "#SBATCH -e ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/gatk_baserecalibration_".$sampleID.".".$fnTracker.".stderr.txt", "\n";
@@ -3247,10 +3250,6 @@ sub GATKBaseReCalibration {
 	print GATK_RECAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
 	print GATK_RECAL "-knownSites ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKBaseReCalibrationSNPKnownSet'}." ";
 	print GATK_RECAL "-nct 8 "; #How many CPU threads should be allocated per data thread to running this analysis
-	if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome analysis - Restrict analysis to padded target file(s)
-	    
-	    GATKTargetListFlag(*GATK_RECAL); #Passing filehandle directly to sub routine using "*". Sub routine prints "-L" lists for all sampleIDs		
-	}
 	print GATK_RECAL "-I ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
 	print GATK_RECAL "-o ".$intervalSampleDirectory."/".$infile.$infileEnding.".grp ", "\n\n"; #Recalibration table file
 	
@@ -3261,11 +3260,7 @@ sub GATKBaseReCalibration {
 	print GATK_RECAL "-l INFO "; #Set the minimum level of logging"-jar $gatk_path/GenomeAnalysisTK.
 	print GATK_RECAL "-T PrintReads "; #Type of analysis to run
 	print GATK_RECAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
-	print GATK_RECAL "-nct 8 "; #How many CPU threads should be allocated per data thread to running this analysis
-	if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome analysis - Restrict analysis to padded target file(s)
-	    
-	    GATKTargetListFlag(*GATK_RECAL); #Passing filehandle directly to sub routine using "*". Sub routine prints "-L" lists for all sampleIDs		
-	}	    
+	print GATK_RECAL "-nct 8 "; #How many CPU threads should be allocated per data thread to running this analysis	    
 	print GATK_RECAL "-I ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
 	print GATK_RECAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding.".bam "; #OutFile
 	print GATK_RECAL "-BQSR ".$intervalSampleDirectory."/".$infile.$infileEnding.".grp ", "\n\n"; #Recalibration table file
@@ -3289,10 +3284,6 @@ sub GATKBaseReCalibration {
 	    print GATK_RECAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
 	    print GATK_RECAL "-knownSites ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKBaseReCalibrationSNPKnownSet'}." ";
 	    print GATK_RECAL "-nct 8 "; #How many CPU threads should be allocated per data thread to running this analysis
-	    if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome analysis - Restrict analysis to padded target file(s)
-		
-		GATKTargetListFlag(*GATK_RECAL); #Passing filehandle directly to sub routine using "*". Sub routine prints "-L" lists for all sampleIDs		
-	    }
 	    print GATK_RECAL "-I ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
 	    print GATK_RECAL "-o ".$intervalSampleDirectory."/".$infile.$infileEnding.".grp ", "\n\n"; #Recalibration table file
 
@@ -3304,10 +3295,6 @@ sub GATKBaseReCalibration {
 	    print GATK_RECAL "-T PrintReads "; #Type of analysis to run
 	    print GATK_RECAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
 	    print GATK_RECAL "-nct 8 "; #How many CPU threads should be allocated per data thread to running this analysis
-	    if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome analysis - Restrict analysis to padded target file(s)
-		
-		GATKTargetListFlag(*GATK_RECAL); #Passing filehandle directly to sub routine using "*". Sub routine prints "-L" lists for all sampleIDs		
-	    }
 	    print GATK_RECAL "-I ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
 	    print GATK_RECAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding.".bam "; #OutFile
 	    print GATK_RECAL "-BQSR ".$intervalSampleDirectory."/".$infile.$infileEnding.".grp ", "\n\n"; #Recalibration table file
@@ -3393,10 +3380,6 @@ sub GATKReAligner {
 	print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet1'}." "; #Input VCF file with known indels
 	print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet2'}." "; #Input VCF file with known indels
 	print GATK_REAL "-nt 8 "; #How many data threads should be allocated to running this analysis.
-	if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome analysis - Restrict analysis to padded target file(s)
-	    
-	    GATKTargetListFlag(*GATK_REAL); #Passing filehandle directly to sub routine using "*". Sub routine prints "-L" lists for all sampleIDs		
-	}
 	print GATK_REAL "-I ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile	    
 	print GATK_REAL "-o ".$intervalSampleDirectory."/".$infile.$outfileEnding.".intervals ", "\n\n"; #Interval outFile
 	
@@ -3409,10 +3392,6 @@ sub GATKReAligner {
 	print GATK_REAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
 	print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet1'}." "; #Input VCF file with known indels
 	print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet2'}." "; #Input VCF file with known indels	 
-	if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome analysis - Restrict analysis to padded target file(s)
-	    
-	    GATKTargetListFlag(*GATK_REAL); #Passing filehandle directly to sub routine using "*". Sub routine prints "-L" lists for all sampleIDs		
-	}
 	print GATK_REAL "-I ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile	
 	print GATK_REAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding.".bam "; #OutFile
 	print GATK_REAL "-targetIntervals ".$intervalSampleDirectory."/".$infile.$outfileEnding.".intervals ", "\n\n";
@@ -3433,10 +3412,6 @@ sub GATKReAligner {
 	    print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet1'}." "; #Input VCF file with known indels
 	    print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet2'}." "; #Input VCF file with known indels
 	    print GATK_REAL "-nt 8 "; #How many data threads should be allocated to running this analysis.
-	    if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome analysis - Restrict analysis to padded target file(s)
-		
-		GATKTargetListFlag(*GATK_REAL); #Passing filehandle directly to sub routine using "*". Sub routine prints "-L" lists for all sampleIDs		
-	    }
 	    print GATK_REAL "-I ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
 	    print GATK_REAL "-o ".$intervalSampleDirectory."/".$infile.$outfileEnding.".intervals ", "\n\n"; #Interval outFile
 	    
@@ -3449,10 +3424,6 @@ sub GATKReAligner {
 	    print GATK_REAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
 	    print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet1'}." "; #Input VCF file with known indels
 	    print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet2'}." "; #Input VCF file with known indels
-	    if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome analysis - Restrict analysis to padded target file(s)
-		
-		GATKTargetListFlag(*GATK_REAL); #Passing filehandle directly to sub routine using "*". Sub routine prints "-L" lists for all sampleIDs		
-	    }
 	    print GATK_REAL "-I ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile		
 	    print GATK_REAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding.".bam "; #OutFile
 	    print GATK_REAL "-targetIntervals ".$intervalSampleDirectory."/".$infile.$outfileEnding.".intervals ", "\n\n";
@@ -5964,193 +5935,6 @@ sub WriteCMDMasterLogg {
 #Decommissioned
 ####
 
-sub PerChrGATKReAligner { 
-#GATK ReAlignerTargetCreator/IndelRealigner to rearrange reads around INDELs. Both ReAlignerTargetCreator and IndelRealigner will be executed within the same sbatch script
-
-    my $sampleID = $_[0];
-    my $aligner = $_[1];
-
-    `mkdir -p $scriptParameter{'outDataDir'}/$sampleID/$aligner/info;`; #Creates the aligner folder and info data file directory
-    `mkdir -p $scriptParameter{'outDataDir'}/$sampleID/$aligner/per_chr/GATK/intermediary`; #Creates the aligner folder, per chromosome and GATK intermediary data file directory
-    `mkdir -p $scriptParameter{'outScriptDir'}/$sampleID/$aligner;`; #Creates the aligner folder script file directory
-
-    if ($scriptParameter{'pGATKRealigner'} == 1) {
-	$filename = $scriptParameter{'outScriptDir'}."/".$sampleID."/".$aligner."/gatk_realign_".$sampleID.".";   
-    }
-    if ($scriptParameter{'pGATKRealigner'} == 2) { #Dry run
-	$filename = $scriptParameter{'outScriptDir'}."/".$sampleID."/".$aligner."/dry_run_gatk_realign_".$sampleID.".";   
-	print STDOUT "Dry Run:\n";print MASTERL  "Dry Run:\n";
-    }
-    Checkfnexists($filename, $fnend);
-
-###Info and Logg
-    print STDOUT "Creating sbatch script GATK ReAlignerTargetCreator/IndelRealigner and writing script file(s) to: ".$filename, "\n";print MASTERL "Creating sbatch script GATK ReAlignerTargetCreator/IndelRealigner and writing script file(s) to: ".$filename, "\n";
-    print STDOUT "Sbatch script GATK ReAlignerTargetCreator/IndelRealigner data files will be written to: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr/GATK", "\n";print MASTERL "Sbatch script GATK ReAlignerTargetCreator/IndelRealigner data files will be written to: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr/GATK", "\n";
-
-    open (GATK_REAL, ">".$filename) or die "Can't write to ".$filename.": $!\n";
-    
-    print GATK_REAL "#! /bin/bash -l", "\n";
-    print GATK_REAL "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
-    print GATK_REAL "#SBATCH -p node -n ".$scriptParameter{'maximumCores'}, "\n";
-    print GATK_REAL "#SBATCH -C thin", "\n";	
-    print GATK_REAL "#SBATCH -t 40:00:00", "\n";
-    print GATK_REAL "#SBATCH -J GATK_REAL_".$sampleID."_".$aligner, "\n";
-    if ($scriptParameter{'pGATKRealigner'} == 1) {
-	print GATK_REAL "#SBATCH -e ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/gatk_realign_".$sampleID.".".$fnTracker.".stderr.txt", "\n";
-	print GATK_REAL "#SBATCH -o ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/gatk_realign_".$sampleID.".".$fnTracker.".stdout.txt", "\n";
-    }
-    elsif ($scriptParameter{'pGATKRealigner'} == 2) { #Dry run
-	print GATK_REAL "#SBATCH -e ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/dry_run_gatk_realign_".$sampleID.".".$fnTracker.".stderr.txt", "\n";
-	print GATK_REAL "#SBATCH -o ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/dry_run_gatk_realign_".$sampleID.".".$fnTracker.".stdout.txt", "\n";
-    }
-
-    unless ($scriptParameter{'email'} eq 0) {
-	print GATK_REAL "#SBATCH --mail-type=END", "\n";
-	print GATK_REAL "#SBATCH --mail-type=FAIL", "\n";
-	print GATK_REAL "#SBATCH --mail-user=".$scriptParameter{'email'}, "\n\n";
-    }
-    
-    print GATK_REAL 'echo "Running on: $(hostname)"',"\n\n";
-   
-    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr";
-    my $intervalSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr/GATK/intermediary";
-    my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr/GATK";
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pSamToolsViewSplitChr'}{'fileEnding'};
-    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKRealigner'}{'fileEnding'};
-    my ($infile, $PicardToolsMergeSwitch) = CheckIfMergedFiles($sampleID);
-    my $coreCounter=1;
-
-    print GATK_REAL "#GATK ReAlignerTargetCreator","\n\n";
-    
-    if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
-
-	for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
-	    
-	    if ($chromosomeCounter eq $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
-		
-		print GATK_REAL "wait", "\n\n";
-		$coreCounter=$coreCounter+1;
-	    }
-	    
-	    print GATK_REAL "java -Xmx24g ";
-	    print GATK_REAL "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}."/".$chromosomes[$chromosomeCounter]."/ "; #Temporary Directory per chr
-	    print GATK_REAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-	    print GATK_REAL "-l INFO "; #Set the minimum level of logging
-	    print GATK_REAL "-T RealignerTargetCreator "; #Type of analysis to run
-	    print GATK_REAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file 
-	    print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet1'}." "; #Input VCF file with known indels
-	    print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet2'}." "; #Input VCF file with known indels
-	    if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome analysis - Restrict analysis to padded target file(s)
-		
-		GATKTargetListFlag(*GATK_REAL); #Passing filehandle directly to sub routine using "*". Sub routine prints "-L" lists for all sampleIDs		
-	    }
-	    print GATK_REAL "-I ".$inSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #InFile	    
-	    print GATK_REAL "-o ".$intervalSampleDirectory."/".$infile.$outfileEnding."_".$chromosomes[$chromosomeCounter].".intervals &", "\n\n"; #Interval outFile
-	    
-	}	
-	
-	print GATK_REAL "wait", "\n\n";
-	
-	$coreCounter=1; #Resetting
-	print GATK_REAL "#GATK IndelRealigner","\n\n";
-	
-	for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
-	    
-	    if ($chromosomeCounter eq $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
-		
-		print GATK_REAL "wait", "\n\n";
-		$coreCounter=$coreCounter+1;
-	    }
-	    
-	    print GATK_REAL "java -Xmx3g ";
-	    print GATK_REAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-	    print GATK_REAL "-l INFO ";
-	    print GATK_REAL "-T IndelRealigner ";
-	    print GATK_REAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
-	    print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet1'}." "; #Input VCF file with known indels
-	    print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet2'}." "; #Input VCF file with known indels
-	    if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome analysis - Restrict analysis to padded target file(s)
-		
-		GATKTargetListFlag(*GATK_REAL); #Passing filehandle directly to sub routine using "*". Sub routine prints "-L" lists for all sampleIDs		
-	    }
-	    print GATK_REAL "-I ".$inSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #InFile	
-	    print GATK_REAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding."_".$chromosomes[$chromosomeCounter].".bam ";
-	    print GATK_REAL "-targetIntervals ".$intervalSampleDirectory."/".$infile.$outfileEnding."_".$chromosomes[$chromosomeCounter].".intervals &", "\n\n";
-	    
-	}
-    }
-    else  { #No previous merge
-	
-	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all infiles per lane
-	    
-	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
-	    
-	    for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
-		
-		if ($chromosomeCounter eq $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
-		    
-		    print GATK_REAL "wait", "\n\n";
-		    $coreCounter=$coreCounter+1;
-		}
-		
-		print GATK_REAL "java -Xmx3g ";
-		print GATK_REAL "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}."/".$chromosomes[$chromosomeCounter]."/ "; #Temporary Directory per chr
-		print GATK_REAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-		print GATK_REAL "-l INFO "; #Set the minimum level of logging
-		print GATK_REAL "-T RealignerTargetCreator "; #Type of analysis to run
-		print GATK_REAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file 
-		print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet1'}." "; #Input VCF file with known indels
-		print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet2'}." "; #Input VCF file with known indels
-		if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome analysis - Restrict analysis to padded target file(s)
-		    
-		    GATKTargetListFlag(*GATK_REAL); #Passing filehandle directly to sub routine using "*". Sub routine prints "-L" lists for all sampleIDs		
-		}
-		print GATK_REAL "-I ".$inSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #InFile
-		print GATK_REAL "-o ".$intervalSampleDirectory."/".$infile.$outfileEnding."_".$chromosomes[$chromosomeCounter].".intervals &", "\n\n"; #Interval outFile
-		
-	    }
-	    
-	    print GATK_REAL "wait", "\n\n";
-	    
-	    $coreCounter=1; #Resetting
-	    print GATK_REAL "#GATK IndelRealigner","\n\n";
-	    
-	    for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
-		
-		if ($chromosomeCounter eq $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
-		    
-		    print GATK_REAL "wait", "\n\n";
-		    $coreCounter=$coreCounter+1;
-		}
-		print GATK_REAL "java -Xmx3g ";
-		print GATK_REAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-		print GATK_REAL "-l INFO ";
-		print GATK_REAL "-T IndelRealigner ";
-		print GATK_REAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
-		print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet1'}." "; #Input VCF file with known indels
-		print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet2'}." "; #Input VCF file with known indels
-		if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome analysis - Restrict analysis to padded target file(s)
-		    
-		    GATKTargetListFlag(*GATK_REAL); #Passing filehandle directly to sub routine using "*". Sub routine prints "-L" lists for all sampleIDs		
-		}
-		print GATK_REAL "-I ".$inSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #InFile		
-		print GATK_REAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding."_".$chromosomes[$chromosomeCounter].".bam ";
-		print GATK_REAL "-targetIntervals ".$intervalSampleDirectory."/".$infile.$outfileEnding."_".$chromosomes[$chromosomeCounter].".intervals &", "\n\n";
-		
-	    }
-	    $coreCounter=1; #Resetting for new infile
-	}
-    }
-    
-    print GATK_REAL "wait", "\n\n";
-    
-    close(GATK_REAL);
-    if ($scriptParameter{'pGATKRealigner'} == 1) {
-	FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 1, "MAIN", $filename, 0); 
-    }
-    return;
-}
-
 sub PerChrGATKHaploTypeCaller { 
 #GATK HaplotypeCaller
     
@@ -6338,6 +6122,360 @@ sub PerChrGATKHaploTypeCaller {
     close(GATK_HAPCAL);  
     if ($scriptParameter{'pGATKHaploTypeCaller'} == 1) {
 	FIDSubmitJob(0,$familyID, 3, "MAIN",$filename,0); #Arg2 eq 3 for parallel execution  
+    }
+    return;
+}
+
+sub PerChrGATKBaseReCalibration { 
+#GATK BaseRecalibrator/PrintReads to recalibrate bases before variant calling. Both BaseRecalibrator/PrintReads will be executed within the same sbatch script
+
+    my $sampleID = $_[0];
+    my $aligner = $_[1];
+
+    `mkdir -p $scriptParameter{'outDataDir'}/$sampleID/$aligner/info;`; #Creates the aligner folder and info data file directory
+    `mkdir -p $scriptParameter{'outDataDir'}/$sampleID/$aligner/per_chr/GATK/intermediary`; #Creates the aligner folder, per chromosome and GATK intermediary data file directory
+    `mkdir -p $scriptParameter{'outScriptDir'}/$sampleID/$aligner;`; #Creates the aligner folder script file directory
+
+    if ($scriptParameter{'pGATKBaseRecalibration'} == 1) {
+	$filename = $scriptParameter{'outScriptDir'}."/".$sampleID."/".$aligner."/gatk_baserecalibration_".$sampleID.".";   
+    }
+    elsif ($scriptParameter{'pGATKBaseRecalibration'} == 2) { #Dry run
+	$filename = $scriptParameter{'outScriptDir'}."/".$sampleID."/".$aligner."/dry_run_gatk_baserecalibration_".$sampleID."."; 
+	print STDOUT "Dry Run:\n";print MASTERL  "Dry Run:\n";  
+    }
+    Checkfnexists($filename, $fnend);
+
+###Info and Logg
+    print STDOUT "Creating sbatch script GATK BaseRecalibrator/PrintReads and writing script file(s) to: ".$filename, "\n";print MASTERL "Creating sbatch script GATK BaseRecalibrator/PrintReads and writing script file(s) to: ".$filename, "\n";
+    print STDOUT "Sbatch script GATK BaseRecalibrator/PrintReads data files will be written to: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr/GATK", "\n";print MASTERL "Sbatch script GATK BaseRecalibrator/PrintReads data files will be written to: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr/GATK", "\n";
+
+    open (GATK_RECAL, ">".$filename) or die "Can't write to ".$filename.": $!\n";
+    
+    print GATK_RECAL "#! /bin/bash -l", "\n";
+    print GATK_RECAL "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
+    print GATK_RECAL "#SBATCH -p node -n ".$scriptParameter{'maximumCores'}, "\n";
+    print GATK_RECAL "#SBATCH -C thin", "\n";	
+    print GATK_RECAL "#SBATCH -t 60:00:00", "\n";
+    print GATK_RECAL "#SBATCH -J GATK_RECAL_".$sampleID."_".$aligner, "\n";
+    if ($scriptParameter{'pGATKBaseRecalibration'} == 1) {
+	print GATK_RECAL "#SBATCH -e ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/gatk_baserecalibration_".$sampleID.".".$fnTracker.".stderr.txt", "\n";
+	print GATK_RECAL "#SBATCH -o ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/gatk_baserecalibration_".$sampleID.".".$fnTracker.".stdout.txt", "\n";
+    }
+    if ($scriptParameter{'pGATKBaseRecalibration'} == 2) { #Dry run
+	print GATK_RECAL "#SBATCH -e ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/dry_run_gatk_baserecalibration_".$sampleID.".".$fnTracker.".stderr.txt", "\n";
+	print GATK_RECAL "#SBATCH -o ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/dry_run_gatk_baserecalibration_".$sampleID.".".$fnTracker.".stdout.txt", "\n";
+    }
+    
+    unless ($scriptParameter{'email'} eq 0) {
+	print GATK_RECAL "#SBATCH --mail-type=END", "\n";
+	print GATK_RECAL "#SBATCH --mail-type=FAIL", "\n";
+	print GATK_RECAL "#SBATCH --mail-user=".$scriptParameter{'email'}, "\n\n";
+    }
+    
+    print GATK_RECAL 'echo "Running on: $(hostname)"',"\n\n";
+    
+    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr/GATK";
+    my $intervalSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr/GATK/intermediary";
+    my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr/GATK";
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKRealigner'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
+    my ($infile, $PicardToolsMergeSwitch) = CheckIfMergedFiles($sampleID);
+    my $coreCounter=1;
+    
+    print GATK_RECAL "#GATK BaseRecalibrator","\n\n";
+    
+    if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
+       
+	for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
+	    
+	    if ($chromosomeCounter eq $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
+		
+		print GATK_RECAL "wait", "\n\n";
+		$coreCounter=$coreCounter+1;
+	    }
+	    
+	    print GATK_RECAL "java -Xmx3g ";
+	    print GATK_RECAL "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'."/".$chromosomes[$chromosomeCounter]." "; #Temporary Directory per chr
+	    print GATK_RECAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+	    print GATK_RECAL "-l INFO "; #Set the minimum level of logging
+	    print GATK_RECAL "-T BaseRecalibrator "; #Type of analysis to run
+	    print GATK_RECAL "-cov ReadGroupCovariate "; #Covariates to be used in the recalibration
+	    print GATK_RECAL "-cov ContextCovariate "; #Covariates to be used in the recalibration
+	    print GATK_RECAL "-cov CycleCovariate "; #Covariates to be used in the recalibration
+	    print GATK_RECAL "-cov QualityScoreCovariate "; #Covariates to be used in the recalibration
+	    print GATK_RECAL "-cov ReadGroupCovariate "; #Covariates to be used in the recalibration
+	    print GATK_RECAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
+	    print GATK_RECAL "-knownSites ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKBaseReCalibrationSNPKnownSet'}." ";
+	    print GATK_RECAL "-I ".$inSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #InFile
+	    print GATK_RECAL "-o ".$intervalSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".grp ", "\n\n"; #Recalibration table file
+	}
+	print GATK_RECAL "wait", "\n\n";
+	
+	$coreCounter=1; #Resetting
+	print GATK_RECAL "#GATK PrintReads","\n\n";
+	for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
+	    
+	    if ($chromosomeCounter eq $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
+		
+		print GATK_RECAL "wait", "\n\n";
+		$coreCounter=$coreCounter+1;
+	    }   
+	    print GATK_RECAL "java -Xmx3g ";
+	    print GATK_RECAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+	    print GATK_RECAL "-l INFO "; #Set the minimum level of logging"-jar $gatk_path/GenomeAnalysisTK.
+	    print GATK_RECAL "-T PrintReads "; #Type of analysis to run
+	    print GATK_RECAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file	    
+	    print GATK_RECAL "-I ".$inSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #InFile
+	    print GATK_RECAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #OutFile
+	    print GATK_RECAL "-BQSR ".$intervalSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".grp ", "\n\n"; #Recalibration table file
+	}
+	print GATK_RECAL "wait", "\n\n";
+    }
+    else { #no previous merge
+	
+	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all infiles per lane
+	    
+	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
+	    
+	    for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
+		
+		if ($chromosomeCounter eq $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
+		    
+		    print GATK_RECAL "wait", "\n\n";
+		    $coreCounter=$coreCounter+1;
+		}
+		print GATK_RECAL "java -Xmx3g ";
+		print GATK_RECAL "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'."/".$chromosomes[$chromosomeCounter]." "; #Temporary Directory per chr
+		print GATK_RECAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+		print GATK_RECAL "-l INFO "; #Set the minimum level of logging
+		print GATK_RECAL "-T BaseRecalibrator "; #Type of analysis to run
+		print GATK_RECAL "-cov ReadGroupCovariate "; #Covariates to be used in the recalibration
+		print GATK_RECAL "-cov ContextCovariate "; #Covariates to be used in the recalibration
+		print GATK_RECAL "-cov CycleCovariate "; #Covariates to be used in the recalibration
+		print GATK_RECAL "-cov QualityScoreCovariate "; #Covariates to be used in the recalibration
+		print GATK_RECAL "-cov ReadGroupCovariate "; #Covariates to be used in the recalibration
+		print GATK_RECAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
+		print GATK_RECAL "-knownSites ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKBaseReCalibrationSNPKnownSet'}." ";
+		if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome analysis - Restrict analysis to padded target file(s)
+		    
+		    GATKTargetListFlag(*GATK_RECAL); #Passing filehandle directly to sub routine using "*". Sub routine prints "-L" lists for all sampleIDs		
+		}
+		print GATK_RECAL "-I ".$inSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #InFile
+		print GATK_RECAL "-o ".$intervalSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".grp &", "\n\n"; #Recalibration table file
+	    }	
+	    print GATK_RECAL "wait", "\n\n";
+	    
+	    $coreCounter=1; #Resetting
+	    print GATK_RECAL "#GATK PrintReads","\n\n";
+	    for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
+		
+		if ($chromosomeCounter eq $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
+		    
+		    print GATK_RECAL "wait", "\n\n";
+		    $coreCounter=$coreCounter+1;
+		}
+		print GATK_RECAL "java -Xmx3g ";
+		print GATK_RECAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+		print GATK_RECAL "-l INFO "; #Set the minimum level of logging"-jar $gatk_path/GenomeAnalysisTK.
+		print GATK_RECAL "-T PrintReads "; #Type of analysis to run
+		print GATK_RECAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
+		print GATK_RECAL "-I ".$inSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #InFile
+		print GATK_RECAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #OutFile
+		print GATK_RECAL "-BQSR ".$intervalSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".grp &", "\n\n"; #Recalibration table file
+	    }
+	    $coreCounter=1; #Resetting for new infile
+	}
+	print GATK_RECAL "wait", "\n\n";
+    }
+    
+    print GATK_RECAL "#Remove Temp Directory\n\n";
+    for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
+	
+	print GATK_RECAL "rm ";
+	print GATK_RECAL "-rf ".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'."/".$chromosomes[$chromosomeCounter], "\n\n"; #Remove Temp Directory
+    }
+
+    close(GATK_RECAL);  
+    if ($scriptParameter{'pGATKBaseRecalibration'} == 1) { 
+	FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 1, "MAIN",$filename,0);
+    }
+    return;
+}
+
+sub PerChrGATKReAligner { 
+#GATK ReAlignerTargetCreator/IndelRealigner to rearrange reads around INDELs. Both ReAlignerTargetCreator and IndelRealigner will be executed within the same sbatch script
+
+    my $sampleID = $_[0];
+    my $aligner = $_[1];
+
+    `mkdir -p $scriptParameter{'outDataDir'}/$sampleID/$aligner/info;`; #Creates the aligner folder and info data file directory
+    `mkdir -p $scriptParameter{'outDataDir'}/$sampleID/$aligner/per_chr/GATK/intermediary`; #Creates the aligner folder, per chromosome and GATK intermediary data file directory
+    `mkdir -p $scriptParameter{'outScriptDir'}/$sampleID/$aligner;`; #Creates the aligner folder script file directory
+
+    if ($scriptParameter{'pGATKRealigner'} == 1) {
+	$filename = $scriptParameter{'outScriptDir'}."/".$sampleID."/".$aligner."/gatk_realign_".$sampleID.".";   
+    }
+    if ($scriptParameter{'pGATKRealigner'} == 2) { #Dry run
+	$filename = $scriptParameter{'outScriptDir'}."/".$sampleID."/".$aligner."/dry_run_gatk_realign_".$sampleID.".";   
+	print STDOUT "Dry Run:\n";print MASTERL  "Dry Run:\n";
+    }
+    Checkfnexists($filename, $fnend);
+
+###Info and Logg
+    print STDOUT "Creating sbatch script GATK ReAlignerTargetCreator/IndelRealigner and writing script file(s) to: ".$filename, "\n";print MASTERL "Creating sbatch script GATK ReAlignerTargetCreator/IndelRealigner and writing script file(s) to: ".$filename, "\n";
+    print STDOUT "Sbatch script GATK ReAlignerTargetCreator/IndelRealigner data files will be written to: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr/GATK", "\n";print MASTERL "Sbatch script GATK ReAlignerTargetCreator/IndelRealigner data files will be written to: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr/GATK", "\n";
+
+    open (GATK_REAL, ">".$filename) or die "Can't write to ".$filename.": $!\n";
+    
+    print GATK_REAL "#! /bin/bash -l", "\n";
+    print GATK_REAL "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
+    print GATK_REAL "#SBATCH -p node -n ".$scriptParameter{'maximumCores'}, "\n";
+    print GATK_REAL "#SBATCH -C thin", "\n";	
+    print GATK_REAL "#SBATCH -t 40:00:00", "\n";
+    print GATK_REAL "#SBATCH -J GATK_REAL_".$sampleID."_".$aligner, "\n";
+    if ($scriptParameter{'pGATKRealigner'} == 1) {
+	print GATK_REAL "#SBATCH -e ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/gatk_realign_".$sampleID.".".$fnTracker.".stderr.txt", "\n";
+	print GATK_REAL "#SBATCH -o ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/gatk_realign_".$sampleID.".".$fnTracker.".stdout.txt", "\n";
+    }
+    elsif ($scriptParameter{'pGATKRealigner'} == 2) { #Dry run
+	print GATK_REAL "#SBATCH -e ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/dry_run_gatk_realign_".$sampleID.".".$fnTracker.".stderr.txt", "\n";
+	print GATK_REAL "#SBATCH -o ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/dry_run_gatk_realign_".$sampleID.".".$fnTracker.".stdout.txt", "\n";
+    }
+
+    unless ($scriptParameter{'email'} eq 0) {
+	print GATK_REAL "#SBATCH --mail-type=END", "\n";
+	print GATK_REAL "#SBATCH --mail-type=FAIL", "\n";
+	print GATK_REAL "#SBATCH --mail-user=".$scriptParameter{'email'}, "\n\n";
+    }
+    
+    print GATK_REAL 'echo "Running on: $(hostname)"',"\n\n";
+   
+    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr";
+    my $intervalSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr/GATK/intermediary";
+    my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr/GATK";
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pSamToolsViewSplitChr'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKRealigner'}{'fileEnding'};
+    my ($infile, $PicardToolsMergeSwitch) = CheckIfMergedFiles($sampleID);
+    my $coreCounter=1;
+
+    print GATK_REAL "#GATK ReAlignerTargetCreator","\n\n";
+    
+    if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
+
+	for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
+	    
+	    if ($chromosomeCounter eq $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
+		
+		print GATK_REAL "wait", "\n\n";
+		$coreCounter=$coreCounter+1;
+	    }
+	    
+	    print GATK_REAL "java -Xmx3g ";
+	    print GATK_REAL "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}."/".$chromosomes[$chromosomeCounter]."/ "; #Temporary Directory per chr
+	    print GATK_REAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+	    print GATK_REAL "-l INFO "; #Set the minimum level of logging
+	    print GATK_REAL "-T RealignerTargetCreator "; #Type of analysis to run
+	    print GATK_REAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file 
+	    print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet1'}." "; #Input VCF file with known indels
+	    print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet2'}." "; #Input VCF file with known indels
+	    print GATK_REAL "-I ".$inSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #InFile	    
+	    print GATK_REAL "-o ".$intervalSampleDirectory."/".$infile.$outfileEnding."_".$chromosomes[$chromosomeCounter].".intervals &", "\n\n"; #Interval outFile
+	    
+	}	
+	
+	print GATK_REAL "wait", "\n\n";
+	
+	$coreCounter=1; #Resetting
+	print GATK_REAL "#GATK IndelRealigner","\n\n";
+	
+	for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
+	    
+	    if ($chromosomeCounter eq $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
+		
+		print GATK_REAL "wait", "\n\n";
+		$coreCounter=$coreCounter+1;
+	    }
+	    
+	    print GATK_REAL "java -Xmx3g ";
+	    print GATK_REAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+	    print GATK_REAL "-l INFO ";
+	    print GATK_REAL "-T IndelRealigner ";
+	    print GATK_REAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
+	    print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet1'}." "; #Input VCF file with known indels
+	    print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet2'}." "; #Input VCF file with known indels
+	    print GATK_REAL "-I ".$inSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #InFile	
+	    print GATK_REAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding."_".$chromosomes[$chromosomeCounter].".bam ";
+	    print GATK_REAL "-targetIntervals ".$intervalSampleDirectory."/".$infile.$outfileEnding."_".$chromosomes[$chromosomeCounter].".intervals &", "\n\n";
+	    
+	}
+    }
+    else  { #No previous merge
+	
+	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all infiles per lane
+	    
+	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
+	    
+	    for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
+		
+		if ($chromosomeCounter eq $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
+		    
+		    print GATK_REAL "wait", "\n\n";
+		    $coreCounter=$coreCounter+1;
+		}
+		
+		print GATK_REAL "java -Xmx3g ";
+		print GATK_REAL "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}."/".$chromosomes[$chromosomeCounter]."/ "; #Temporary Directory per chr
+		print GATK_REAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+		print GATK_REAL "-l INFO "; #Set the minimum level of logging
+		print GATK_REAL "-T RealignerTargetCreator "; #Type of analysis to run
+		print GATK_REAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file 
+		print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet1'}." "; #Input VCF file with known indels
+		print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet2'}." "; #Input VCF file with known indels
+		print GATK_REAL "-I ".$inSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #InFile
+		print GATK_REAL "-o ".$intervalSampleDirectory."/".$infile.$outfileEnding."_".$chromosomes[$chromosomeCounter].".intervals &", "\n\n"; #Interval outFile
+		
+	    }
+	    
+	    print GATK_REAL "wait", "\n\n";
+	    
+	    $coreCounter=1; #Resetting
+	    print GATK_REAL "#GATK IndelRealigner","\n\n";
+	    
+	    for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
+		
+		if ($chromosomeCounter eq $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
+		    
+		    print GATK_REAL "wait", "\n\n";
+		    $coreCounter=$coreCounter+1;
+		}
+		print GATK_REAL "java -Xmx3g ";
+		print GATK_REAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+		print GATK_REAL "-l INFO ";
+		print GATK_REAL "-T IndelRealigner ";
+		print GATK_REAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
+		print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet1'}." "; #Input VCF file with known indels
+		print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet2'}." "; #Input VCF file with known indels
+		print GATK_REAL "-I ".$inSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #InFile		
+		print GATK_REAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding."_".$chromosomes[$chromosomeCounter].".bam ";
+		print GATK_REAL "-targetIntervals ".$intervalSampleDirectory."/".$infile.$outfileEnding."_".$chromosomes[$chromosomeCounter].".intervals &", "\n\n";
+		
+	    }
+	    $coreCounter=1; #Resetting for new infile
+	}
+    }
+    
+    print GATK_REAL "wait", "\n\n";
+
+    print GATK_REAL "#Remove Temp Directory\n\n";
+    for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
+	
+	print GATK_REAL "rm ";
+	print GATK_REAL "-rf ".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'."/".$chromosomes[$chromosomeCounter], "\n\n"; #Remove Temp Directory
+    }   
+ 
+    close(GATK_REAL);
+    if ($scriptParameter{'pGATKRealigner'} == 1) {
+	FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 1, "MAIN", $filename, 0); 
     }
     return;
 }
