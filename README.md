@@ -47,7 +47,7 @@ Dependening on what programs you include in the MIP analysis you also need to ad
 - PicardTools
 
 #####Meta-Data
--Pedigree file (PLINK-format)
+- Pedigree file (PLINK-format)
 
 #####Infiles
 Needs to be on the format: "lane_date_flow-cellID_sampleID_indexX_direction.fastq".  For instance:
@@ -60,6 +60,7 @@ Needs to be on the format: "lane_date_flow-cellID_sampleID_indexX_direction.fast
 ###Usage
 MIP is called from the command line and takes input from the command line (precedence) or a config file (yaml-format).
 Lists are supplied as comma separated input or repeated flag entries. Only flags that will actually be used needs to 
-be specified and MIP will check that all required parameters are set before submitting to SLURM. Program parameters 
-always begins with "p". You can always supply ```perl mip.pl -h``` to list all availaible parameters and defaults.  
+be specified and MIP will check that all required parameters are set before submitting to SLURM. 
+Program parameters always begins with "p". 
+You can always supply ```perl mip.pl -h``` to list all availaible parameters and defaults.  
 
