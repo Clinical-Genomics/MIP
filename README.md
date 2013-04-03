@@ -1,6 +1,5 @@
 #MIP - Mutation Identification Pipeline
 
-
 MIP enables identification of potential disease causing variants from sequencing data. 
 
 ##Overview
@@ -8,7 +7,7 @@ MIP enables identification of potential disease causing variants from sequencing
 MIP analyses paired end reads from the Illumina plattform in fastq(.gz) format to annotated 
 ranked potential disease causing variants. 
 
-MIP performs QC, aligns reads using Mosaik or BWA, performs variant discovery and 
+MIP performs QC, aligns reads using Mosaik or BWA, variant discovery and 
 annotation as well as ranking the found variants according to disease potential.
 
 ##Example Usage
@@ -25,8 +24,8 @@ MIP is written in perl and therfore requires that perl is installed on your OS.
 ####Prerequisites
 
 #####Programs/Modules
-- Perl YAML.pm module from CPAN since this is not included in the perl standard distribution
-(if you want to supply config files to MIP)
+- Perl YAML.pm module from CPAN, since this is not included in the perl standard distribution (if you want to 
+  supply config files to MIP)
 - Simple Linux Utility for Resource Management (SLURM)
 - FastQC
 - Mosaik
@@ -40,7 +39,7 @@ MIP is written in perl and therfore requires that perl is installed on your OS.
 - add_depth.pl
 - rank_list_filter.pl
 
-Dependening on what programs you include in the MIP analysis you also need to add these programs to your bashrc
+Depending on what programs you include in the MIP analysis you also need to add these programs to your bashrc
 
 - FastQC
 - Mosaik
@@ -67,9 +66,9 @@ Lists are supplied as comma separated input or repeated flag entries. Only flags
 be specified and MIP will check that all required parameters are set before submitting to SLURM. 
 
 Program parameters always begins with "p". Program parameters can be set to "0" (=do not run), "1" (=run) and "2" 
-(dry run mode). Any progam can be set to dry run mode and sbatch scripts will be created, but not submitted to SLURM.
-MIP can be restarted from any module, but you need to supply previous dependent programs in dry run mode to ensure 
-proper file handling. 
+(=dry run mode). Any progam can be set to dry run mode and MIP will create sbatch scripts, but not submitted them to 
+SLURM. MIP can be restarted from any module, but you need to supply previous dependent programs in dry run mode to 
+ensure proper file handling. 
 
 MIP allows individual target file calculations if supplied with a pedigree file containing the supported capture kits.
 
@@ -79,13 +78,16 @@ Example usage:
 ```
 perl mip.pl -f 3 -sampleid 3-1-1A,3-2-1U -sampleid 3-2-2U -pFQC 0 -pMosaikBuild 2 -pMosaikAlign 2 -c 3_config.yaml
 ```
-will analyse family 3 using 3 individuals from that family and begin the analysis with programs after MosaikAlign.
+This will analyse family 3 using 3 individuals from that family and begin the analysis with programs after 
+MosaikAlign and use all parameters values as specified in the config file except those supplied on the command line, 
+which has precedence.
 
 ####Input
 
 All MIP scripts (including mip.pl) should be placed in the in script directory specified by "-inScriptDir".
 
-All references and template files should be placed directly in the reference directory specified by "-referencesDir".
+All references and template files should be placed directly in the reference directory specified by "-referencesDir",
+except for ANNOVAR db files, which should be located in annovar/humandb.
 
 ####Output
 
