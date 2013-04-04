@@ -4,11 +4,11 @@ MIP enables identification of potential disease causing variants from sequencing
 
 ##Overview
 
-MIP analyses paired end reads from the Illumina plattform in fastq(.gz) format to annotated 
-ranked potential disease causing variants. 
+MIP performs whole genome or target region analysis of sequenced paired end reads from the Illumina plattform in 
+fastq(.gz) format to generate annotated ranked potential disease causing variants. 
 
-MIP performs QC, aligns reads using Mosaik or BWA, variant discovery and 
-annotation as well as ranking the found variants according to disease potential.
+MIP performs QC, aligns reads using Mosaik or BWA, variant discovery and annotation as well as ranking the found 
+variants according to disease potential with a minimum of manual intervention.
 
 ##Example Usage
 ```
@@ -38,6 +38,8 @@ MIP is written in perl and therfore requires that perl is installed on your OS.
 - intersectCollect.pl
 - add_depth.pl
 - rank_list_filter.pl
+- VcfTools
+- PLINK
 
 Depending on what programs you include in the MIP analysis you also need to add these programs to your bashrc
 
@@ -47,6 +49,8 @@ Depending on what programs you include in the MIP analysis you also need to add 
 - SamTools
 - BedTools
 - PicardTools
+- VcfTools
+- PLINK
 
 #####Meta-Data
 - Pedigree file (PLINK-format)
