@@ -67,6 +67,8 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [reference dir]
 
 -mojdb/--mosaikJumpDbStub MosaikJump stub (defaults to "")
 
+-pBWA_mem/--pBwaMem Align reads using BWA Mem (defaults to "0" (=no))
+
 -pBWA_aln/--pBwaAln Index reads using BWA Aln (defaults to "0" (=no))
 
 -bwaalnq/--bwaAlnQualityTrimming BWA Aln quality threshold for read trimming (defaults to "20")
@@ -199,7 +201,7 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [reference dir]
 
 -imdbte/--ImportantDbTemplate Important Db template file used to create the specific family '-im_dbmf' master file (Defaults to "")
 
--imdbmf/--ImportantDbMasterFile Importnat Db master file to be used when selecting variants (defaults to "")
+-imdbmf/--ImportantDbMasterFile Important Db master file to be used when selecting variants (defaults to "")
 
 -imdbfof/--ImportantDbFileOutFile The file(s) to write to when selecting variants with intersectCollect.pl. Comma sep (defaults to "outDataDir/familyID/aligner/GATK/candidates/ranking/familyID_orphan.selectVariants, outDataDir/familyID/aligner/GATK/candidates/ranking/IEM_Db_CMMS/familyID.selectVariants"; Supply whole path/file)
 
@@ -292,6 +294,7 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                  -mojdb/--mosaikJumpDbStub MosaikJump stub (defaults to "")
                
                ##BWA
+               -pBWA_mem/--pBwaMem Align reads using BWA Mem (defaults to "0" (=no))
                -pBWA_aln/--pBwaAln Index reads using BWA Aln (defaults to "0" (=no))
                  -bwaalnq/--bwaAlnQualityTrimming BWA Aln quality threshold for read trimming (defaults to "20")
                -pBWA_sampe/--pBwaSampe Align reads using BWA Sampe (defaults to "0" (=no))
@@ -373,7 +376,7 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                  -alldbgidc/--allElementsDbGeneIdCol All elements Db file gene ID column (zero-based, defaults to "4")
                  -imdbfile/--ImportantDbFile Important Db file (Defaults to "")
                  -imdbte/--ImportantDbTemplate Important Db template file used to create the specific family '-im_dbmf' master file (Defaults to "")
-                 -imdbmf/--ImportantDbMasterFile Importnat Db master file to be used when selecting variants (defaults to "") 
+                 -imdbmf/--ImportantDbMasterFile Important Db master file to be used when selecting variants (defaults to "") 
                  -imdbfof/--ImportantDbFileOutFile The file(s) to write to when selecting variants with intersectCollect.pl. Comma sep (defaults to "outDataDir/familyID/aligner/GATK/candidates/ranking/familyID_orphan.selectVariants, outDataDir/familyID/aligner/GATK/candidates/ranking/IEM_Db_CMMS/familyID.selectVariants"; Supply whole path/file)
                  -imdbcc/--ImportantDbGeneCoverageCalculation Important Db gene coverage calculation (Defaults to "1" (=yes))
                  -imdbgidc/--ImportantDbGeneIdCol Important Db gene file gene ID column (zero-based, defaults to "18")
@@ -455,6 +458,8 @@ DefineParameters("mosaikJumpDbStub", "nocmdinput", "path", "nodefault", "Homo_sa
 
 
 ##BWA
+
+DefineParameters("pBwaMem", "nocmdinput", "program", 0, 0, "MIP", 0, "nofileEnding");
 
 DefineParameters("pBwaAln", "nocmdinput", "program", 0, 0, "MIP", 0, "nofileEnding");
 
@@ -747,6 +752,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'moaannpe|mosaikAlignNeuralNetworkPeFile:s' => \$parameter{'mosaikAlignNeuralNetworkPeFile'}{'value'},
 	   'moaannse|mosaikAlignNeuralNetworkSeFile:s' => \$parameter{'mosaikAlignNeuralNetworkSeFile'}{'value'}, 
 	   'mojdb|mosaikJumpDbStub:s' => \$parameter{'mosaikJumpDbStub'}{'value'}, #Stub for MosaikJump database
+	   'pBWA_mem|pBwaMem:n' => \$parameter{'pBwaMem'}{'value'},
 	   'pBWA_aln|pBwaAln:n' => \$parameter{'pBwaAln'}{'value'},
 	   'bwaalnq|bwaAlnQualityTrimming:n' => \$parameter{'bwaAlnQualityTrimming'}{'value'}, #BWA aln quality threshold for read trimming down to 35bp
 	   'pBWA_sampe|pBwaSampe:n' => \$parameter{'pBwaSampe'}{'value'},
@@ -1083,6 +1089,16 @@ if ($scriptParameter{'pMosaikAlign'} > 0) { #Run MosaikAlign
 	
 	MosaikAlign($sampleIDs[$sampleIDCounter]);	
     }
+}
+
+if ($scriptParameter{'pBwaMem'} > 0) { #Run BWA Mem
+    
+    print STDOUT "\nBWA Mem", "\n";print MIPLOGG "\nBWA Mem", "\n";
+    
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+	
+	BWA_Mem($sampleIDs[$sampleIDCounter]);	
+    }    
 }
 
 if ($scriptParameter{'pBwaAln'} > 0) { #Run BWA Aln
@@ -1681,7 +1697,7 @@ sub SampleCheck {
     
     close(SCHECK); 
     if ($scriptParameter{'pSampleCheck'} == 1) {
-	FIDSubmitJob(0,$familyID, 2, $callType,$filename,0);
+	FIDSubmitJob(0, $familyID, 2, "MAIN", $filename, 0);
     }
     return;
 }
@@ -1981,7 +1997,7 @@ sub RankVariants {
 
     close(RV);   
     if ($scriptParameter{'pRankVariants'} == 1) {
-	FIDSubmitJob(0,$familyID, 1, $callType,$filename,0);
+	FIDSubmitJob(0, $familyID, 1, "MAIN", $filename, 0);
     }
     return;
 }
@@ -2135,7 +2151,7 @@ sub AddDp {
     
     close(ADDDP);   
     if ($scriptParameter{'pAddDepth'} == 1) {
-	FIDSubmitJob(0,$familyID, 1, $callType,$filename,0);
+	FIDSubmitJob(0, $familyID, 1, "MAIN", $filename, 0);
     }
     return;
 }
@@ -2235,7 +2251,7 @@ sub MergeAnnotatedVariants {
     
     close(MERGE_AV);   
     if ($scriptParameter{'pMergeAnnotatedVariants'} == 1) {
-	FIDSubmitJob(0,$familyID, 1, $callType,$filename,0);
+	FIDSubmitJob(0, $familyID, 1, "MAIN", $filename, 0);
     }
     return;
 }
@@ -2376,7 +2392,7 @@ sub GATKVariantEvalExome {
     
     close(GATK_VAREVALEX);   
     if ($scriptParameter{'pGATKVariantEvalExome'} == 1) {
-	FIDSubmitJob(0,$familyID, 2, $callType,$filename,0); #Do not add jobIDs to later jobID{chainkey}
+	FIDSubmitJob(0, $familyID, 2, "MAIN", $filename, 0); #Do not add jobIDs to later jobID{chainkey}
     }
     return;
 }
@@ -2517,7 +2533,7 @@ sub GATKVariantEvalAll {
     
     close(GATK_VAREVAL);   
     if ($scriptParameter{'pGATKVariantEvalAll'} == 1) {
-	FIDSubmitJob(0,$familyID, 2, $callType,$filename,0); #Do not add jobIDs to later jobID{chainkey}
+	FIDSubmitJob(0, $familyID, 2, "MAIN", $filename, 0); #Do not add jobIDs to later jobID{chainkey}
     }
     return;
 }
@@ -2645,7 +2661,7 @@ sub Annovar {
     close(ANVAR);
 
     if ($scriptParameter{'pAnnovar'} == 1) {
-	FIDSubmitJob(0,$familyID, 1, $callType,$filename,0);
+	FIDSubmitJob(0, $familyID, 1, "MAIN", $filename, 0);
     }
     return;
 }
@@ -2829,7 +2845,7 @@ sub GATKPhaseByTransmission {
 	
 	close(GATK_PHTR);
 	if ($scriptParameter{'pGATKPhaseByTransmission'} == 1) {
-		FIDSubmitJob(0,$familyID, 1, "Phasing", $filename,0);
+		FIDSubmitJob(0, $familyID, 1, "Phasing", $filename, 0);
 	}
 	return;
 }
@@ -3007,7 +3023,7 @@ sub GATKVariantReCalibration {
     print GATK_VARREC "\n\nwait", "\n\n";
     close(GATK_VARREC);   
     if ($scriptParameter{'pGATKVariantRecalibration'} == 1) {
-	FIDSubmitJob(0,$familyID, 1, $callType, $filename,0);
+	FIDSubmitJob(0, $familyID, 1, "MAIN", $filename, 0);
     }
     return;
 }
@@ -3082,8 +3098,9 @@ sub GATKHaplotypeCallerCombineVariants {
 
     print GATK_HAPCALCOMVAR "wait", "\n\n";
     close(GATK_HAPCALCOMVAR);   
+
     if ($scriptParameter{'pGATKHaploTypeCaller'} == 1) {
-	FIDSubmitJob(0,$familyID, 1, "MAIN",$filename,0);    
+	FIDSubmitJob(0, $familyID, 1, "MAIN", $filename, 0);    
     }
     return;
 }
@@ -3276,7 +3293,7 @@ sub GATKHaploTypeCaller {
     
     close(GATK_HAPCAL);  
     if ($scriptParameter{'pGATKHaploTypeCaller'} == 1) {
-	FIDSubmitJob(0,$familyID, 3, "MAIN",$filename,0); #Arg2 eq 3 for parallel execution  
+	FIDSubmitJob(0, $familyID, 3, "MAIN", $filename, 0); #Arg2 eq 3 for parallel execution  
     }
     return;
 }
@@ -3331,9 +3348,9 @@ sub SamToolsViewSplitChromosomes {
     
     print ST_VSCHR 'echo "Running on: $(hostname)"',"\n\n";
 
-    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
+    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
     my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr";
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
     my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pSamToolsViewSplitChr'}{'fileEnding'};
     my ($infile, $PicardToolsMergeSwitch) = CheckIfMergedFiles($sampleID);
     my $coreCounter=1;
@@ -4746,6 +4763,103 @@ sub BWA_Aln {
     return;
 }
 
+sub BWA_Mem {
+###Alignment using of BWA Mem reads
+    
+    my $sampleID = $_[0];
+
+    `mkdir -p $scriptParameter{'outDataDir'}/$sampleID/bwa/info;`; #Creates the bwa folder and info data file directory
+    `mkdir -p $scriptParameter{'outDataDir'}/$sampleID/fastq_reduced;`; #Creates the fastq_reduced folder
+    `mkdir -p $scriptParameter{'outScriptDir'}/$sampleID/bwa;`; #Creates the bwa script directory
+    
+    my $sbatchScriptTracker=0;
+    my $time=0;
+    my $infileSize;
+    for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all infiles but process in the same command i.e. both reads per align call
+	if ($infile{$sampleID}[$infileCounter] =~/.fastq.gz$/) { #Files are already gz and presently the scalar for compression has not been investigated. Therefore no automatic time allocation can be performed.
+	    if ($scriptParameter{'wholeGenomeSequencing'} == 1) {
+		$time = 60;  
+	    }
+	    else {
+		$time = 30;
+	    }
+	}
+	else { #Files are in fastq format	
+	    $infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter+$sbatchScriptTracker]; # collect .fastq file size to enable estimation of time required for aligning, +1 for syncing multiple infiles per sampleID. Hence, filesize will be calculated on read2 (should not matter).
+	    $time = ceil(($infileSize/238)/(3000*60*60)); #238 is a scalar estimating the number of reads depending on filesize. 3500 is the number of reads/s in bwa_mem-0.6.1 plus samtools-0.1.12-10 view sam to bam conversion and 60*60 is to scale to hours. (4600 BWA-0.5.9)
+	}
+	if ($scriptParameter{'pBwaMem'} == 1) {
+	    $filename = $scriptParameter{'outScriptDir'}."/".$sampleID."/bwa/bwa_mem_".$infilesLaneNoEnding{$sampleID}[$infileCounter].".";	
+	}
+	elsif ($scriptParameter{'pBwaMem'} == 2) { #Dry run
+	    $filename = $scriptParameter{'outScriptDir'}."/".$sampleID."/bwa/dry_run_bwa_mem_".$infilesLaneNoEnding{$sampleID}[$infileCounter].".";
+	    print STDOUT "Dry Run:\n";print MIPLOGG  "Dry Run:\n";
+	}
+	Checkfnexists($filename, $fnend);
+
+###Info and Logg
+	print STDOUT "Creating sbatch script Bwa_Mem and writing script file(s) to: ".$filename, "\n";print MIPLOGG "Creating sbatch script Bwa_Mem and writing script file(s) to: ".$filename, "\n";
+	print STDOUT "Sbatch script Bwa_Mem data files will be written to: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$scriptParameter{'aligner'}, "\n";print MIPLOGG "Sbatch script Bwa_Mem data files will be written to: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$scriptParameter{'aligner'}, "\n";
+	
+	open (BWA_MEM, ">".$filename) or die "Can't write to ".$filename.": $!\n";
+	
+	print BWA_MEM "#! /bin/bash -l", "\n";
+	print BWA_MEM "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
+	print BWA_MEM "#SBATCH -p node -n ".$scriptParameter{'maximumCores'}, "\n";
+	print BWA_MEM "#SBATCH -C thin", "\n";
+	print BWA_MEM "#SBATCH -t ".$time.":00:00", "\n";
+	print BWA_MEM "#SBATCH -J BWA_Mem_".$sampleID, "\n";
+	if ($scriptParameter{'pBwaMem'} == 1) {
+	    print BWA_MEM "#SBATCH -e ".$scriptParameter{'outDataDir'}."/".$sampleID."/bwa/info/bwa_mem_".$infilesLaneNoEnding{$sampleID}[$infileCounter].".".$fnTracker.".stderr.txt", "\n";
+	    print BWA_MEM "#SBATCH -o ".$scriptParameter{'outDataDir'}."/".$sampleID."/bwa/info/bwa_mem_".$infilesLaneNoEnding{$sampleID}[$infileCounter].".".$fnTracker.".stdout.txt", "\n";
+	}
+	elsif ($scriptParameter{'pBwaMem'} == 2) {
+	    print BWA_MEM "#SBATCH -e ".$scriptParameter{'outDataDir'}."/".$sampleID."/bwa/info/dry_run_bwa_mem_".$infilesLaneNoEnding{$sampleID}[$infileCounter].".".$fnTracker.".stderr.txt", "\n";
+	    print BWA_MEM "#SBATCH -o ".$scriptParameter{'outDataDir'}."/".$sampleID."/bwa/info/dry_run_bwa_mem_".$infilesLaneNoEnding{$sampleID}[$infileCounter].".".$fnTracker.".stdout.txt", "\n";
+	}
+	
+	unless ($scriptParameter{'email'} eq 0) {	    
+	    print BWA_MEM "#SBATCH --mail-type=END", "\n";
+	    print BWA_MEM "#SBATCH --mail-type=FAIL", "\n";
+	    print BWA_MEM "#SBATCH --mail-user=".$scriptParameter{'email'}, "\n\n";
+	}
+	
+	print BWA_MEM 'echo "Running on: $(hostname)"',"\n\n";
+	
+	my $BWAinSampleDirectory = $indirpath{$sampleID};
+	my $BWAoutSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/bwa"; 
+	my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/fastq_reduced"; #Add option rapid later
+	my $infile = $infile{$sampleID}[$infileCounter+$sbatchScriptTracker]; #For required .fastq file
+	my $infile2 = $infile{$sampleID}[ ($infileCounter+$sbatchScriptTracker+1)]; # #For required .fastq file (Paired read)   
+
+#BWA Mem	
+	print BWA_MEM "bwa mem ";
+	print BWA_MEM "-M "; #Mark shorter split hits as secondary (for Picard compatibility). 
+	print BWA_MEM "-t ".$scriptParameter{'maximumCores'}." "; #Number of threads 
+	print BWA_MEM "-r ".'"@RG\tID:'.$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$sbatchScriptTracker].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '.$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #read group header line
+	print BWA_MEM $BWAinSampleDirectory."/".$infile." "; #Read 1
+	print BWA_MEM $BWAinSampleDirectory."/".$infile2." "; #Read 2
+	print BWA_MEM "| "; #Pipe
+	print BWA_MEM q?perl -nae 'if($_=~/^@/) {print $_;} else { unless ($_=~/(AS:i:0)/) {print $_;} }' ?; #Keep only reads matching reference
+	print BWA_MEM "> ".$outSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter].".sam", "\n\n"; #Outfile (SAM)
+
+#Recreate reduced Fasta reads set	
+	print BWA_MEM "Recreating reduced fasta read set\n";
+	print BWA_MEM "java -Xmx4g ";
+	print BWA_MEM "jar ".$scriptParameter{'picardToolsPath'}."/SamToFastq.jar ";
+	print BWA_MEM "INPUT=".$outSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter].".sam ";
+	print BWA_MEM "FASTQ=".$outSampleDirectory."/".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$sbatchScriptTracker].".fastq.reduced "; #Read 1
+	print BWA_MEM "SECOND_END_FASTQ=".$outSampleDirectory."/".$infilesBothStrandsNoEnding{$sampleID}[ ($infileCounter+$sbatchScriptTracker+1) ].".fastq.reduced ";#Read 2
+		
+	close(BWA_MEM);
+	if ($scriptParameter{'pBwaMem'} == 1) {
+	    FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 3, "MAIN", $filename, $sbatchScriptTracker);
+	}
+	$sbatchScriptTracker++;
+    }
+    return;
+}
+
 sub MosaikAlign {
 #Aligning reads using MosaikAlign
     
@@ -5265,7 +5379,7 @@ sub FIDSubmitJob {
 	push ( @{ $jobID{$sampleIDChainKey} }, $jobID); #Add jobID to hash{$sampleID}[]
 	push ( @{ $jobID{$familyIDChainKey} }, $jobID); #Add jobID to hash{$familyID}[]. Required to enable later test for all subjects sampleID_MAIN have finished before merging to family.
     }
-    else { #Dependent on earlier scripts and/or parallel. JbIDs that do not leave dependencies do not get pushed to jobID hash
+    else { #Dependent on earlier scripts and/or parallel. JobIDs that do not leave dependencies do not get pushed to jobID hash
 	
 	if ($sampleID) { #BEFORE merging to familyID
 
@@ -5303,7 +5417,9 @@ sub FIDSubmitJob {
 	    }
 	    if ( ($path eq "MAIN") && ($jobID{$sampleIDChainKey}) ) { #Check for any previous jobIDs within path MAIN. Test for previous must be done to allow initiating from broken chain
 		if ($dependencies == 4) {
+
 		    for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) {
+
 			if ($jobID{$sampleIDParallelChainKey}{$infileCounter}) {
 			    
 			    for (my $jobCounter=0;$jobCounter<scalar( @{ $jobID{$sampleIDParallelChainKey}{$infileCounter} });$jobCounter++) {	
@@ -5342,7 +5458,9 @@ sub FIDSubmitJob {
 		}
 	    }
 	    if ($path ne "MAIN") { #Check for any previous jobIDs within path current PATH
-		my $sampleIDMainParallelChainKey = $sampleID."_parallel_MAIN"; 
+
+		my $sampleIDMainParallelChainKey = $sampleID."_parallel_MAIN"; 		
+
 		if ( ($dependencies != 3) && ($jobID{$sampleIDMainParallelChainKey}{$sbatchScriptTracker}) ){ #If not a parallel job and a parallel job within MAIN path has prev been processed. Check if previous step was parallel and adds previous parallel jobs that have previously been submitted.
 		    for (my $jobCounter=0;$jobCounter<scalar( @{ $jobID{$sampleIDMainParallelChainKey}{$sbatchScriptTracker} });$jobCounter++) { #All prev parallel MAIN jobIDs
 			my $seenJobIDsCounter = 0;
@@ -5363,10 +5481,15 @@ sub FIDSubmitJob {
 		}
 		my $sampleIDMainChainKey = $sampleID."_MAIN";
 		if ($jobID{$sampleIDMainChainKey}) { #Any MAIN jobIDs necessary for broken chains, since this will be empty then
+		    
 		    for (my $jobCounter=0;$jobCounter<scalar( @{ $jobID{$sampleIDMainChainKey} });$jobCounter++) { #Prev MAIN jobIDs
+			
 			my $seenJobIDsCounter = 0; 
+			
 			if ($jobID{$sampleIDChainKey}) {#If any previous jobIds within current chain exists else go ahead and add
+			    
 			    for (my $currentJobCounter=0;$currentJobCounter<scalar( @{ $jobID{$sampleIDChainKey} });$currentJobCounter++) { #CURRENT path
+				
 				if ($jobID{$sampleIDChainKey}[$currentJobCounter] =~/$jobID{$sampleIDMainChainKey}[$jobCounter]/) {
 				    $seenJobIDsCounter++;
 				}
@@ -5381,7 +5504,9 @@ sub FIDSubmitJob {
 		    }
 		}
 		if ($jobID{$sampleIDChainKey}) {
+		    
 		    for (my $jobCounter=0;$jobCounter<scalar( @{ $jobID{$sampleIDChainKey} });$jobCounter++) {	
+		
 			if ( ($jobCounter == 0) && (scalar( @{ $jobID{$sampleIDChainKey} })== 1) ) {#Only 1 previous jobID 
 			    $jobIDs .= ":$jobID{$sampleIDChainKey}[$jobCounter]"; #first and last jobID start with ":" and end without ":"
 			}
@@ -5420,11 +5545,16 @@ sub FIDSubmitJob {
 	    }
 	}
 	else { #AFTER merging to familyID
+
 	    if ( ($dependencies != 3) && ($jobID{$familyIDParallelChainKey}) ){ #If not a parallel job and a parallel job within CURRENT PATH has prev been processed. Check if previous step was parallel and adds previous parallel jobs that have previously been submitted.
 		for (my $jobCounter=0;$jobCounter<scalar( @{ $jobID{$familyIDParallelChainKey} });$jobCounter++) {
+		    
 		    my $seenJobIDsCounter = 0;
+		    
 		    if ($jobID{$familyIDChainKey}) {#If any previous jobIds within current chain exists else go ahead and add
+		
 			for (my $currentJobCounter=0;$currentJobCounter<scalar( @{ $jobID{$familyIDChainKey} });$currentJobCounter++) {
+			
 			    if ($jobID{$familyIDChainKey}[$currentJobCounter] =~/$jobID{$familyIDParallelChainKey}[$jobCounter]/) { #Only add if not already present
 				$seenJobIDsCounter++;
 			    }
@@ -5440,6 +5570,7 @@ sub FIDSubmitJob {
 	    }
 	    if ( ($path eq "MAIN") && ($jobID{$familyIDChainKey})  ) { #Check for any previous jobIDs within path MAIN. Test for pevious must be done to allow initiating from broken chain
 		for (my $jobCounter=0;$jobCounter<scalar( @{ $jobID{$familyIDChainKey} });$jobCounter++) {	
+		    
 		    if ( ($jobCounter == 0) && (scalar( @{ $jobID{$familyIDChainKey} })== 1) ) {#Only 1 previous jobID 
 			$jobIDs .= ":$jobID{$familyIDChainKey}[$jobCounter]"; #first and last jobID start with ":" and end without ":"
 		    }
@@ -5455,7 +5586,9 @@ sub FIDSubmitJob {
 		}
 	    }
 	    if ($path ne "MAIN") { #Check for any previous jobIDs within MAIN path and current PATH
+		
 		my $fid_main_parallel_chainkey = $familyID."_parallel_MAIN"; 
+		
 		if ( ($dependencies != 3) && ($jobID{$fid_main_parallel_chainkey}) ){ #If not a parallel job and a parallel job within MAIN path has prev been processed. Check if previous step was parallel and adds previous parallel jobs that have previously been submitted.
 		    for (my $jobCounter=0;$jobCounter<scalar( @{ $jobID{$fid_main_parallel_chainkey} });$jobCounter++) { #All prev parallel MAIN jobIDs
 			my $seenJobIDsCounter = 0;
@@ -5476,10 +5609,14 @@ sub FIDSubmitJob {
 		}
 		my $fid_main_chainkey = $familyID."_MAIN";
 		if ($jobID{$fid_main_chainkey}) { #Any MAIN jobIDs necessary for broken chains, since this will be empty then
-		    for (my $jobCounter=0;$jobCounter<scalar( @{ $jobID{$fid_main_chainkey} });$jobCounter++) { #Prev MAIn jobIDs
+		    
+		    for (my $jobCounter=0;$jobCounter<scalar( @{ $jobID{$fid_main_chainkey} });$jobCounter++) { #Prev MAIN jobIDs
 			my $seenJobIDsCounter = 0; 
+		
 			if ($jobID{$familyIDChainKey}) {#If any previous jobIds within current chain exists else go ahead and add
+			    
 			    for (my $currentJobCounter=0;$currentJobCounter<scalar( @{ $jobID{$familyIDChainKey} });$currentJobCounter++) { #CURRENT path
+				
 				if ($jobID{$familyIDChainKey}[$currentJobCounter] =~/$jobID{$fid_main_chainkey}[$jobCounter]/) {
 				    $seenJobIDsCounter++;
 				}
@@ -6268,7 +6405,7 @@ sub GATKPedigreeFlag {
 		    $scriptParameter{'pGATKPhaseByTransmission'} = 0; #Override input since pedigree is not valid for analysis
 		    print STDERR "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";print MIPLOGG "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";
 		    if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) { #Broadcast
-			print STDERR "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false";print MIPLOGG "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false";
+			print STDERR "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n";print MIPLOGG "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n";
 		    }
 		    print "\n";
 		}
@@ -6277,7 +6414,7 @@ sub GATKPedigreeFlag {
 		$scriptParameter{'pGATKPhaseByTransmission'} = 0; #Override input since pedigree is not valid for analysis
 		print STDERR "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";print MIPLOGG "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";
 		if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) { #Broadcast
-		    print STDERR "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false";print MIPLOGG "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false";
+		    print STDERR "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false";print MIPLOGG "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n";
 		}
 		print "\n";
 	    }
