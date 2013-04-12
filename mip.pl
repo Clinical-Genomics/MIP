@@ -552,13 +552,6 @@ DefineParameters("GATKVariantReCalibrationTSFilterLevel", "nocmdinput", "program
 DefineParameters("pGATKPhaseByTransmission", "nocmdinput", "program", 1, 1, "MIP", 0, "phtr_");
 
 
-
-DefineParameters("pGATKReadBackedPhasing", "nocmdinput", "program", 1, 1, "MIP", 0, "phrb_");
-
-DefineParameters("GATKReadBackedPhasingPhaseQualityThresh", "nocmdinput", "program", 20, 20, "pGATKReadBackedPhasing", 0);
-
-
-
 DefineParameters("pGATKVariantEvalAll", "nocmdinput", "program", 1, 1, "MIP", 0, "nofileEnding");
 
 DefineParameters("pGATKVariantEvalExome", "nocmdinput", "program", 1, 1, "MIP", 0, "nofileEnding");
@@ -623,7 +616,7 @@ DefineParameters("allElementsDbGeneCoverageCalculation", "nocmdinput", "program"
 
 DefineParameters("allElementsDbGeneIdCol", "nocmdinput", "program", 4, 4, "pRankVariants", 0);
 
-DefineParameters("ImportantDbFile", "nocmdinput", "path", "nodefault", "dbIEM.v1.1.txt", "pRankVariants", "file");
+DefineParameters("ImportantDbFile", "nocmdinput", "path", "nodefault", "dbIEM_chr.v1.1.txt", "pRankVariants", "file");
 
 DefineParameters("ImportantDbTemplate", "nocmdinput", "path", "nodefault", "select_dbIEM_variants_db_master.txt", "pRankVariants", "file");
 
@@ -631,18 +624,22 @@ DefineParameters("ImportantDbMasterFile", "nocmdinput", "program", "notSetYet", 
 
 DefineParameters("ImportantDbGeneCoverageCalculation", "nocmdinput", "program", 1, 1, "pRankVariants", 0);
 
-DefineParameters("ImportantDbGeneIdCol", "nocmdinput", "program", 18, 18, "pRankVariants", 0);
+DefineParameters("ImportantDbGeneIdCol", "nocmdinput", "program", 17, 17, "pRankVariants", 0);
 
 my @ImportantDbFileOutFile; #List of db outfiles
 
 ##SChecks
 DefineParameters("pSampleCheck", "nocmdinput", "program", 1, 1, "MIP", 0, "nofileEnding");
 
+##Temporary fix to add these here otherwise the filending will be off
+DefineParameters("pGATKReadBackedPhasing", "nocmdinput", "program", 1, 1, "MIP", 0, "phrb_");
+
+DefineParameters("GATKReadBackedPhasingPhaseQualityThresh", "nocmdinput", "program", 20, 20, "pGATKReadBackedPhasing", 0);
 
 ##MIP
 
 ##humanGenomeReference
-DefineParameters("humanGenomeReference", "nocmdinput", "path", "nodefault", "Homo_sapiens.GRCh37.70_nochr.fasta", "pBwaAln,pBwaSampe,pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKVariantEvalAll,pGATKVariantEvalExome,pAnnovar,pAddDepth,pCalculateCoverage,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "file");
+DefineParameters("humanGenomeReference", "nocmdinput", "path", "nodefault", "Homo_sapiens.GRCh37.70_nochr.fasta", "pBwaMem,pBwaAln,pBwaSampe,pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKVariantEvalAll,pGATKVariantEvalExome,pAnnovar,pAddDepth,pCalculateCoverage,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "file");
 
 my ($humanGenomeReferenceSource, $humanGenomeRefereceChromosomePrefix, $humanGenomeReferenceVersion, $fnend, $aligner, $filename, $fnTracker, $help) = ("nocmdinput", "nocmdinput", "nocmdinput", ".sh", "nocmdinput", "nocmdinput", 0);
 
@@ -1253,22 +1250,6 @@ if ($scriptParameter{'pGATKVariantRecalibration'} > 0) { #Run GATK VariantRecali
 
 }
 
-if ($scriptParameter{'pGATKPhaseByTransmission'} > 0) { #Run GATK PhaseByTransmission. Done per family
-
-	print STDOUT "\nGATK PhaseByTransmission", "\n";print MIPLOGG "\nGATK PhaseByTransmission", "\n";
-
-	GATKPhaseByTransmission($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
-
-}
-
-if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) { #Run GATK ReadBackedPhasing. Done per family. NOTE: Needs phased calls
-
-	print STDOUT "\nGATK ReadBackedPhasing", "\n";print MIPLOGG "\nGATK ReadBackedPhasing", "\n";
-
-	GATKReadBackedPhasing($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
-
-}
-
 if ($scriptParameter{'pAnnovar'} > 0) { #Run Annovar. Done per family
 
     print STDOUT "\nAnnovar", "\n";print MIPLOGG "\nAnnovar", "\n";
@@ -1335,6 +1316,23 @@ if ($scriptParameter{'pRemovalRedundantFiles'} > 0) { #Sbatch generation of remo
 	
 	RemoveRedundantFiles($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});	
     }
+}
+
+##Temporary fix to add these here otherwise the filending will be off
+if ($scriptParameter{'pGATKPhaseByTransmission'} > 0) { #Run GATK PhaseByTransmission. Done per family
+
+	print STDOUT "\nGATK PhaseByTransmission", "\n";print MIPLOGG "\nGATK PhaseByTransmission", "\n";
+
+	GATKPhaseByTransmission($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
+
+}
+
+if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) { #Run GATK ReadBackedPhasing. Done per family. NOTE: Needs phased calls
+
+	print STDOUT "\nGATK ReadBackedPhasing", "\n";print MIPLOGG "\nGATK ReadBackedPhasing", "\n";
+
+	GATKReadBackedPhasing($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
+
 }
 
 close(MIPLOGG); #Close mip_logg file
@@ -1856,6 +1854,9 @@ sub RankVariants {
 	    print RV "-im_db_gidc ".$scriptParameter{'ImportantDbGeneIdCol'}." "; #Identifer column number for coverage calculation
 	    print RV "-rs ".$scriptParameter{'rankScore'}." "; #The rank score cut-off
 	    print RV "-pedigree ".$scriptParameter{'pedigreeFile'}." "; #Pedigree file
+	    if ($humanGenomeReferenceSource eq "GRCh") { #Add chr for annovar_merged master file uses chrosome prefix downstream
+		print RV "-prechr 1 "; #Use chr prefix in rank script
+	    }
 	    print RV "-tarcov "; #Target coverage files for family members, comma sep
 	    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {#For all sample ids 
 		
@@ -1952,6 +1953,9 @@ sub RankVariants {
     print RV "-rs ".$scriptParameter{'rankScore'}." "; #The rank score cut-off
     print RV "-pedigree ".$scriptParameter{'pedigreeFile'}." "; #Pedigree file
     print RV "-tarcov "; #Target coverage files for family members, comma sep
+    if ($humanGenomeReferenceSource eq "GRCh") { #Add chr for annovar_merged master file uses chrosome prefix downstream
+	print RV "-prechr 1 "; #Use chr prefix in rank script
+    }
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {#For all sample ids 
 	
 	my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDCounter]}{'pPicardToolsMarkduplicates'}{'fileEnding'}; #Last program before calculation
@@ -2909,7 +2913,7 @@ sub GATKVariantReCalibration {
     
     unless (-e $scriptParameter{'outDataDir'}."/".$familyID."/".$familyID.".fam") { #Check to see if file already exists
 	print GATK_VARREC "#Generating '.fam' file for GATK VariantRecalibrator/ApplyRecalibration","\n\n";
-	print GATK_VARREC q?perl -nae 'my %sample_info;my $mother;my $father; while (<>) { my @F = split(/\t/,$_); if ($_!~/^#/) { if($F[0]=~/(\d+)-(\d+|-\d+)-(\d+)(A|U)/) {} if ($F[3] == 1) {$father = $F[0];} if ($F[2] == 1) {$mother = $F[0];} if($3 % 2 == 1) {push (@{ $sample_info{$1}{$F[0]} }, "1");} else {push (@{ $sample_info{$1}{$F[0]} }, "2");} if ($4 eq "A") {push (@{ $sample_info{$1}{$F[0]} }, "2");} else {push (@{ $sample_info{$1}{$F[0]} }, "1");} } } for my $familyid (keys %sample_info) { for my $sampleid (keys %{ $sample_info{$familyid} }) {print $familyid, " ", $sampleid, " ", $father, " ", $mother," "; for (my $i=0;$i<scalar(@{ $sample_info{$familyid}{$sampleid} });$i++) {print $sample_info{$familyid}{$sampleid}[$i], " ";}print "\n"; } } last;' ?.$scriptParameter{'pedigreeFile'}." > ".$outFamilyFileDirectory."/".$familyID.".fam", "\n\n";
+	print GATK_VARREC q?perl -nae 'my %sample_info;my $mother;my $father; while (<>) { my @F = split(/\t/,$_); if ($_!~/^#/) { if($F[0]=~/(\d+)-(\d+|-\d+)-(\d+)(A|U)/) {} if ($F[3] == 1) {$father = $F[0];} if ($F[2] == 1) {$mother = $F[0];} if($3 % 2 == 1) {push (@{ $sample_info{$1}{$F[0]} }, "1");} else {push (@{ $sample_info{$1}{$F[0]} }, "2");} if ($4 eq "A") {push (@{ $sample_info{$1}{$F[0]} }, "2");} else {push (@{ $sample_info{$1}{$F[0]} }, "1");} } } for my $familyid (keys %sample_info) { for my $sampleid (keys %{ $sample_info{$familyid} }) {print $familyid, " ", $sampleid, " "; if ( ($father eq $sampleid) || ($mother eq $sampleid) ) { print 0, " ", 0, " ";} else { print $father, " ", $mother, " ";} for (my $i=0;$i<scalar(@{ $sample_info{$familyid}{$sampleid} });$i++) {print $sample_info{$familyid}{$sampleid}[$i], " ";}print "\n"; } } last;' ?.$scriptParameter{'pedigreeFile'}." > ".$outFamilyFileDirectory."/".$familyID.".fam", "\n\n";
     }  
     
     if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome analysis 
@@ -3175,7 +3179,7 @@ sub GATKHaploTypeCaller {
 #Generate .fam file for later use in relevant GATK walkers (HaploTypeCaller, VariantscoreRequalibration etc)
 	print GATK_HAPCAL "#Generating '.fam' file for GATK HaploTypeCaller","\n\n";
 	
-	print GATK_HAPCAL q?perl -nae 'my %sample_info;my $mother;my $father; while (<>) { my @F = split(/\t/,$_); if ($_!~/^#/) { if($F[0]=~/(\d+)-(\d+|-\d+)-(\d+)(A|U)/) {} if ($F[3] == 1) {$father = $F[0];} if ($F[2] == 1) {$mother = $F[0];} if($3 % 2 == 1) {push (@{ $sample_info{$1}{$F[0]} }, "1");} else {push (@{ $sample_info{$1}{$F[0]} }, "2");} if ($4 eq "A") {push (@{ $sample_info{$1}{$F[0]} }, "2");} else {push (@{ $sample_info{$1}{$F[0]} }, "1");} } } for my $familyid (keys %sample_info) { for my $sampleid (keys %{ $sample_info{$familyid} }) {print $familyid, " ", $sampleid, " ", $father, " ", $mother," "; for (my $i=0;$i<scalar(@{ $sample_info{$familyid}{$sampleid} });$i++) {print $sample_info{$familyid}{$sampleid}[$i], " ";}print "\n"; } } last;' ?.$scriptParameter{'pedigreeFile'}." > ".$outFamilyFileDirectory."/".$familyID.".fam", "\n\n";
+	print GATK_HAPCAL q?perl -nae 'my %sample_info;my $mother;my $father; while (<>) { my @F = split(/\t/,$_); if ($_!~/^#/) { if($F[0]=~/(\d+)-(\d+|-\d+)-(\d+)(A|U)/) {} if ($F[3] == 1) {$father = $F[0];} if ($F[2] == 1) {$mother = $F[0];} if($3 % 2 == 1) {push (@{ $sample_info{$1}{$F[0]} }, "1");} else {push (@{ $sample_info{$1}{$F[0]} }, "2");} if ($4 eq "A") {push (@{ $sample_info{$1}{$F[0]} }, "2");} else {push (@{ $sample_info{$1}{$F[0]} }, "1");} } } for my $familyid (keys %sample_info) { for my $sampleid (keys %{ $sample_info{$familyid} }) {print $familyid, " ", $sampleid, " "; if ( ($father eq $sampleid) || ($mother eq $sampleid) ) { print 0, " ", 0, " ";} else { print $father, " ", $mother, " ";} for (my $i=0;$i<scalar(@{ $sample_info{$familyid}{$sampleid} });$i++) {print $sample_info{$familyid}{$sampleid}[$i], " ";}print "\n"; } } last;' ?.$scriptParameter{'pedigreeFile'}." > ".$outFamilyFileDirectory."/".$familyID.".fam", "\n\n";
     }
     
     print GATK_HAPCAL "#GATK HaplotypeCaller","\n\n";
@@ -4777,6 +4781,8 @@ sub BWA_Mem {
     my $infileSize;
     for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all infiles but process in the same command i.e. both reads per align call
 	if ($infile{$sampleID}[$infileCounter] =~/.fastq.gz$/) { #Files are already gz and presently the scalar for compression has not been investigated. Therefore no automatic time allocation can be performed.
+	    $infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter+$sbatchScriptTracker];
+	    
 	    if ($scriptParameter{'wholeGenomeSequencing'} == 1) {
 		$time = 60;  
 	    }
@@ -4788,72 +4794,95 @@ sub BWA_Mem {
 	    $infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter+$sbatchScriptTracker]; # collect .fastq file size to enable estimation of time required for aligning, +1 for syncing multiple infiles per sampleID. Hence, filesize will be calculated on read2 (should not matter).
 	    $time = ceil(($infileSize/238)/(3000*60*60)); #238 is a scalar estimating the number of reads depending on filesize. 3500 is the number of reads/s in bwa_mem-0.6.1 plus samtools-0.1.12-10 view sam to bam conversion and 60*60 is to scale to hours. (4600 BWA-0.5.9)
 	}
-	if ($scriptParameter{'pBwaMem'} == 1) {
-	    $filename = $scriptParameter{'outScriptDir'}."/".$sampleID."/bwa/bwa_mem_".$infilesLaneNoEnding{$sampleID}[$infileCounter].".";	
-	}
-	elsif ($scriptParameter{'pBwaMem'} == 2) { #Dry run
-	    $filename = $scriptParameter{'outScriptDir'}."/".$sampleID."/bwa/dry_run_bwa_mem_".$infilesLaneNoEnding{$sampleID}[$infileCounter].".";
-	    print STDOUT "Dry Run:\n";print MIPLOGG  "Dry Run:\n";
-	}
-	Checkfnexists($filename, $fnend);
-
+	my $numberNodes = floor($infileSize / (13*150000000) ); #Determines the numner of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.
+	
+	for (my $sbatchCounter=0;$sbatchCounter<$numberNodes-1;$sbatchCounter++) { #Parallization for each file handled
+	    
+	    if ($scriptParameter{'pBwaMem'} == 1) {
+		$filename = $scriptParameter{'outScriptDir'}."/".$sampleID."/bwa/bwa_mem_".$infilesLaneNoEnding{$sampleID}[$infileCounter].".".$sbatchCounter.".";	
+	    }
+	    elsif ($scriptParameter{'pBwaMem'} == 2) { #Dry run
+		$filename = $scriptParameter{'outScriptDir'}."/".$sampleID."/bwa/dry_run_bwa_mem_".$infilesLaneNoEnding{$sampleID}[$infileCounter].".".$sbatchCounter.".";
+		print STDOUT "Dry Run:\n";print MIPLOGG  "Dry Run:\n";
+	    }
+	    Checkfnexists($filename, $fnend);
+	    my $readStart = $sbatchCounter * 150000000; # Constant for gz files
+	    my $readStop = $readStart + 150000001; #
 ###Info and Logg
-	print STDOUT "Creating sbatch script Bwa_Mem and writing script file(s) to: ".$filename, "\n";print MIPLOGG "Creating sbatch script Bwa_Mem and writing script file(s) to: ".$filename, "\n";
-	print STDOUT "Sbatch script Bwa_Mem data files will be written to: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$scriptParameter{'aligner'}, "\n";print MIPLOGG "Sbatch script Bwa_Mem data files will be written to: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$scriptParameter{'aligner'}, "\n";
-	
-	open (BWA_MEM, ">".$filename) or die "Can't write to ".$filename.": $!\n";
-	
-	print BWA_MEM "#! /bin/bash -l", "\n";
-	print BWA_MEM "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
-	print BWA_MEM "#SBATCH -p node -n ".$scriptParameter{'maximumCores'}, "\n";
-	print BWA_MEM "#SBATCH -C thin", "\n";
-	print BWA_MEM "#SBATCH -t ".$time.":00:00", "\n";
-	print BWA_MEM "#SBATCH -J BWA_Mem_".$sampleID, "\n";
-	if ($scriptParameter{'pBwaMem'} == 1) {
-	    print BWA_MEM "#SBATCH -e ".$scriptParameter{'outDataDir'}."/".$sampleID."/bwa/info/bwa_mem_".$infilesLaneNoEnding{$sampleID}[$infileCounter].".".$fnTracker.".stderr.txt", "\n";
-	    print BWA_MEM "#SBATCH -o ".$scriptParameter{'outDataDir'}."/".$sampleID."/bwa/info/bwa_mem_".$infilesLaneNoEnding{$sampleID}[$infileCounter].".".$fnTracker.".stdout.txt", "\n";
-	}
-	elsif ($scriptParameter{'pBwaMem'} == 2) {
-	    print BWA_MEM "#SBATCH -e ".$scriptParameter{'outDataDir'}."/".$sampleID."/bwa/info/dry_run_bwa_mem_".$infilesLaneNoEnding{$sampleID}[$infileCounter].".".$fnTracker.".stderr.txt", "\n";
-	    print BWA_MEM "#SBATCH -o ".$scriptParameter{'outDataDir'}."/".$sampleID."/bwa/info/dry_run_bwa_mem_".$infilesLaneNoEnding{$sampleID}[$infileCounter].".".$fnTracker.".stdout.txt", "\n";
-	}
-	
-	unless ($scriptParameter{'email'} eq 0) {	    
-	    print BWA_MEM "#SBATCH --mail-type=END", "\n";
-	    print BWA_MEM "#SBATCH --mail-type=FAIL", "\n";
-	    print BWA_MEM "#SBATCH --mail-user=".$scriptParameter{'email'}, "\n\n";
-	}
-	
-	print BWA_MEM 'echo "Running on: $(hostname)"',"\n\n";
-	
-	my $BWAinSampleDirectory = $indirpath{$sampleID};
-	my $BWAoutSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/bwa"; 
-	my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/fastq_reduced"; #Add option rapid later
-	my $infile = $infile{$sampleID}[$infileCounter+$sbatchScriptTracker]; #For required .fastq file
-	my $infile2 = $infile{$sampleID}[ ($infileCounter+$sbatchScriptTracker+1)]; # #For required .fastq file (Paired read)   
-
+	    print STDOUT "Creating sbatch script Bwa_Mem and writing script file(s) to: ".$filename, "\n";print MIPLOGG "Creating sbatch script Bwa_Mem and writing script file(s) to: ".$filename, "\n";
+	    print STDOUT "Sbatch script Bwa_Mem data files will be written to: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$scriptParameter{'aligner'}, "\n";print MIPLOGG "Sbatch script Bwa_Mem data files will be written to: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$scriptParameter{'aligner'}, "\n";
+	    
+	    open (BWA_MEM, ">".$filename) or die "Can't write to ".$filename.": $!\n";
+	    
+	    print BWA_MEM "#! /bin/bash -l", "\n";
+	    print BWA_MEM "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
+	    print BWA_MEM "#SBATCH -p node -n ".$scriptParameter{'maximumCores'}, "\n";
+	    print BWA_MEM "#SBATCH -C thin", "\n";
+	    print BWA_MEM "#SBATCH -t 10:00:00", "\n";
+	    print BWA_MEM "#SBATCH -J BWA_Mem_".$sampleID, "\n";
+	    if ($scriptParameter{'pBwaMem'} == 1) {
+		print BWA_MEM "#SBATCH -e ".$scriptParameter{'outDataDir'}."/".$sampleID."/bwa/info/bwa_mem_".$infilesLaneNoEnding{$sampleID}[$infileCounter].".".$sbatchCounter.".".$fnTracker.".stderr.txt", "\n";
+		print BWA_MEM "#SBATCH -o ".$scriptParameter{'outDataDir'}."/".$sampleID."/bwa/info/bwa_mem_".$infilesLaneNoEnding{$sampleID}[$infileCounter].".".$sbatchCounter.".".$fnTracker.".stdout.txt", "\n";
+	    }
+	    elsif ($scriptParameter{'pBwaMem'} == 2) {
+		print BWA_MEM "#SBATCH -e ".$scriptParameter{'outDataDir'}."/".$sampleID."/bwa/info/dry_run_bwa_mem_".$infilesLaneNoEnding{$sampleID}[$infileCounter].".".$sbatchCounter.".".$fnTracker.".stderr.txt", "\n";
+		print BWA_MEM "#SBATCH -o ".$scriptParameter{'outDataDir'}."/".$sampleID."/bwa/info/dry_run_bwa_mem_".$infilesLaneNoEnding{$sampleID}[$infileCounter].".".$sbatchCounter.".".$fnTracker.".stdout.txt", "\n";
+	    }
+	    
+	    unless ($scriptParameter{'email'} eq 0) {	    
+		print BWA_MEM "#SBATCH --mail-type=END", "\n";
+		print BWA_MEM "#SBATCH --mail-type=FAIL", "\n";
+		print BWA_MEM "#SBATCH --mail-user=".$scriptParameter{'email'}, "\n\n";
+	    }
+	    
+	    print BWA_MEM 'echo "Running on: $(hostname)"',"\n\n";
+	    
+	    my $BWAinSampleDirectory = $indirpath{$sampleID};
+	    my $BWAoutSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/bwa"; 
+	    my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/fastq_reduced"; #Add option rapid later
+	    my $infile = $infile{$sampleID}[$infileCounter+$sbatchScriptTracker]; #For required .fastq file
+	    my $infile2 = $infile{$sampleID}[ ($infileCounter+$sbatchScriptTracker+1)]; # #For required .fastq file (Paired read)   
+	    
 #BWA Mem	
-	print BWA_MEM "bwa mem ";
-	print BWA_MEM "-M "; #Mark shorter split hits as secondary (for Picard compatibility). 
-	print BWA_MEM "-t ".$scriptParameter{'maximumCores'}." "; #Number of threads 
-	print BWA_MEM "-r ".'"@RG\tID:'.$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$sbatchScriptTracker].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '.$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #read group header line
-	print BWA_MEM $BWAinSampleDirectory."/".$infile." "; #Read 1
-	print BWA_MEM $BWAinSampleDirectory."/".$infile2." "; #Read 2
-	print BWA_MEM "| "; #Pipe
-	print BWA_MEM q?perl -nae 'if($_=~/^@/) {print $_;} else { unless ($_=~/(AS:i:0)/) {print $_;} }' ?; #Keep only reads matching reference
-	print BWA_MEM "> ".$outSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter].".sam", "\n\n"; #Outfile (SAM)
-
-#Recreate reduced Fasta reads set	
-	print BWA_MEM "Recreating reduced fasta read set\n";
-	print BWA_MEM "java -Xmx4g ";
-	print BWA_MEM "jar ".$scriptParameter{'picardToolsPath'}."/SamToFastq.jar ";
-	print BWA_MEM "INPUT=".$outSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter].".sam ";
-	print BWA_MEM "FASTQ=".$outSampleDirectory."/".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$sbatchScriptTracker].".fastq.reduced "; #Read 1
-	print BWA_MEM "SECOND_END_FASTQ=".$outSampleDirectory."/".$infilesBothStrandsNoEnding{$sampleID}[ ($infileCounter+$sbatchScriptTracker+1) ].".fastq.reduced ";#Read 2
+	    print BWA_MEM "bwa mem ";
+	    print BWA_MEM "-M "; #Mark shorter split hits as secondary (for Picard compatibility). 
+	    print BWA_MEM "-t ".$scriptParameter{'maximumCores'}." "; #Number of threads 
+	    print BWA_MEM "-r ".'"@RG\tID:'.$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$sbatchScriptTracker].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '.$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #read group header line
+	    print BWA_MEM "<( "; #Pipe to BWA Mem (Read 1)
+	    print BWA_MEM "zcat "; #decompress Read 1
+	    print BWA_MEM $BWAinSampleDirectory."/".$infile." "; #Read 1
+	    print BWA_MEM "| "; #Pipe
+	    print BWA_MEM q?perl -ne 'if ( ($.>?.$readStart.q?) && ($.<?.$readStop.q?) ) {print $_;}' ?; #Limit to sbatch script interval
+	    print BWA_MEM ") "; #End Read 1
+	    print BWA_MEM "<( "; #Pipe to BWA Mem
+	    print BWA_MEM "zcat "; #decompress Read 2
+	    print BWA_MEM $BWAinSampleDirectory."/".$infile2." "; #Read 2
+	    print BWA_MEM "| "; #Pipe
+	    print BWA_MEM q?perl -ne 'if ( ($.>?.$readStart.q?) && ($.<?.$readStop.q?) ) {print $_;}' ?; #Limit to sbatch script interval
+	    print BWA_MEM ") "; #End Read 2
+	    print BWA_MEM "| "; #Pipe SAM to BAm conversion of aligned reads
+	    print BWA_MEM "samtools view "; 
+	    print BWA_MEM "-S "; #input is SAM
+	    print BWA_MEM "-h "; #print header for the SAM output
+	    print BWA_MEM "-u "; #uncompressed BAM output
+	    print BWA_MEM "- "; #/dev/stdin
+	    print BWA_MEM "| "; #Pipe
+	    print BWA_MEM "intersectBed "; #Limit output to only clinically interesting genes
+	    print BWA_MEM "-abam stdin "; #The A input file is in BAM format.  Output will be BAM as well.
+	    print BWA_MEM "-b ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'ImportantDbFile'}." "; #Db file of clinically relevant variants
+	    print BWA_MEM "> ".$BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter.".bam", "\n\n"; #Outfile (BAM)
+	    
+	    print BWA_MEM "samtools sort ";
+	    print BWA_MEM $BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter.".bam "; #Infile
+	    print BWA_MEM $BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter."_sorted", "\n\n"; #OutFile
 		
-	close(BWA_MEM);
-	if ($scriptParameter{'pBwaMem'} == 1) {
-	    FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 3, "MAIN", $filename, $sbatchScriptTracker);
+	    print BWA_MEM "samtools index ";
+	    print BWA_MEM $BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter."_sorted.bam", "\n\n"; #Infile
+
+	    close(BWA_MEM);
+	    if ($scriptParameter{'pBwaMem'} == 1) {
+		FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 3, "MAIN", $filename, $sbatchCounter);
+	    }
 	}
 	$sbatchScriptTracker++;
     }
@@ -6528,7 +6557,7 @@ sub PerChrGATKHaploTypeCaller {
 #Generate .fam file for later use in relevant GATK walkers (HaploTypeCaller, VariantscoreRequalibration etc)
 	print GATK_HAPCAL "#Generating '.fam' file for GATK HaploTypeCaller","\n\n";
 	
-	print GATK_HAPCAL q?perl -nae 'my %sample_info;my $mother;my $father; while (<>) { my @F = split(/\t/,$_); if ($_!~/^#/) { if($F[0]=~/(\d+)-(\d+|-\d+)-(\d+)(A|U)/) {} if ($F[3] == 1) {$father = $F[0];} if ($F[2] == 1) {$mother = $F[0];} if($3 % 2 == 1) {push (@{ $sample_info{$1}{$F[0]} }, "1");} else {push (@{ $sample_info{$1}{$F[0]} }, "2");} if ($4 eq "A") {push (@{ $sample_info{$1}{$F[0]} }, "2");} else {push (@{ $sample_info{$1}{$F[0]} }, "1");} } } for my $familyid (keys %sample_info) { for my $sampleid (keys %{ $sample_info{$familyid} }) {print $familyid, " ", $sampleid, " ", $father, " ", $mother," "; for (my $i=0;$i<scalar(@{ $sample_info{$familyid}{$sampleid} });$i++) {print $sample_info{$familyid}{$sampleid}[$i], " ";}print "\n"; } } last;' ?.$scriptParameter{'pedigreeFile'}." > ".$outFamilyFileDirectory."/".$familyID.".fam", "\n\n";
+	print GATK_HAPCAL q?perl -nae 'my %sample_info;my $mother;my $father; while (<>) { my @F = split(/\t/,$_); if ($_!~/^#/) { if($F[0]=~/(\d+)-(\d+|-\d+)-(\d+)(A|U)/) {} if ($F[3] == 1) {$father = $F[0];} if ($F[2] == 1) {$mother = $F[0];} if($3 % 2 == 1) {push (@{ $sample_info{$1}{$F[0]} }, "1");} else {push (@{ $sample_info{$1}{$F[0]} }, "2");} if ($4 eq "A") {push (@{ $sample_info{$1}{$F[0]} }, "2");} else {push (@{ $sample_info{$1}{$F[0]} }, "1");} } } for my $familyid (keys %sample_info) { for my $sampleid (keys %{ $sample_info{$familyid} }) {print $familyid, " ", $sampleid, " "; if ( ($father eq $sampleid) || ($mother eq $sampleid) ) { print 0, " ", 0, " ";} else { print $father, " ", $mother, " ";} for (my $i=0;$i<scalar(@{ $sample_info{$familyid}{$sampleid} });$i++) {print $sample_info{$familyid}{$sampleid}[$i], " ";}print "\n"; } } last;' ?.$scriptParameter{'pedigreeFile'}." > ".$outFamilyFileDirectory."/".$familyID.".fam", "\n\n";
     }
     
     print GATK_HAPCAL "#GATK HaplotypeCaller","\n\n";

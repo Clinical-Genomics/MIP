@@ -54,6 +54,8 @@ rank_list_filter.pl -i [infile1] -pedigree [path/file.txt] -o [outfile.txt]
 
 -tarcov/--targetcoverage Target coverage files for family members, comma sep
 
+-prechr/--prefix_chromosomes "chrX" or just "X" (defaults to "X")
+
 =head3 I/O
 
 Input format (annovar_all_variants(tab sep) )
@@ -95,15 +97,17 @@ BEGIN {
                -familyid/--family Group id of samples to be compared (defaults to "", (Ex: 1 for IDN 1-1-1A))
                -recgm/--recGeneticModels (Defaults to "0")
                -tarcov/--targetcoverage Target coverage files for family members, comma sep
+               -prechr/--prefix_chromosomes "chrX" or just "X" (defaults to "X")
 	   };
 }
 
 ###
 #Infile flags (variables)
 ###
-my ($i_gidh, $motherID, $fatherID,$of, $nos, $rankscore, $im_db, $im_db_file, $im_db_cc, $im_db_gidc, $dgf, $dgf_l,$pedigree,$familyid, $cmms_imdb, $help) = ("HGNC_symbol", 0,0,"ranked_variants.txt", 0, 0, 0, "",0,"",0,0,0,0,0);
-my (@infn, @childID, @sid_aff, @sid_hea, @sid_male, @sid_female, @samples, @recgm,@tarcovfiles);
-my @chr = ("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17","chr18","chr19","chr20","chr21","chr22","chrX","chrY","chrMT");
+my ($i_gidh, $motherID, $fatherID,$of, $nos, $rankscore, $im_db, $im_db_file, $im_db_cc, $im_db_gidc, $dgf, $dgf_l,$pedigree,$familyid, $cmms_imdb, $prechr, $help) = ("HGNC_symbol", 0,0,"ranked_variants.txt", 0, 0, 0, "",0,"",0,0,0,0,0,0);
+my (@infn, @childID, @sid_aff, @sid_hea, @sid_male, @sid_female, @samples, @recgm,@tarcovfiles, @chr);
+
+#my @chr = ("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17","chr18","chr19","chr20","chr21","chr22","chrX","chrY","chrMT");
 
 GetOptions('i|infile:s'  => \@infn, #Comma separated list
 	   'i_gidh|Infile_Gene_Id_Header:s'  => \$i_gidh, #Header used to find GeneName column to be used in the AR_compound filtering
@@ -126,6 +130,7 @@ GetOptions('i|infile:s'  => \@infn, #Comma separated list
 	   'pedigree|pedigree_file:s'  => \$pedigree, #Path to pedigree file location
 	   'familyid|familygroup:s' => \$familyid, #Family group ID (FDN)
 	   'recgm|recGeneticModels:s'  => \@recgm, #Recommended genetic model
+	   'prechr|prefix_chromosomes:n' => \$prechr,
 	   'h|help' => \$help,
 	   'cmms_imdb|cmms_Db_pathway:n'  => \$cmms_imdb, #Enables CMMS pathways to be added to final list (specific for IEM_Db_CMMS - Secret option)
 	   'tarcov|targetcoverage:s'  => \@tarcovfiles, #Target coverage files for members, comma separated list.
@@ -221,6 +226,14 @@ if (@recgm) {
 if (@tarcovfiles) {
     @tarcovfiles = split(/,/,join(',',@tarcovfiles)); #Enables comma separated unaffected IDN(s)
 }
+
+if ($prechr == 0) { #Ensembl - no prefix and MT
+    @chr = ("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","X","Y","MT"); #Chr for enhanced speed in collecting information and reducing memory consumption
+}
+else { #Refseq - prefix and M
+    @chr = ("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17","chr18","chr19","chr20","chr21","chr22","chrX","chrY","chrMT");
+}
+
 
 #Collect all supplied subjects info
 if (@childID) {
