@@ -1,5 +1,5 @@
 #MIP - Mutation Identification Pipeline
-<<<<<<< HEAD
+
 
 MIP enables identification of potential disease causing variants from sequencing data. 
 
@@ -218,4 +218,4 @@ not be overwritten if you begin a new analysis.
 Mip will place any generated datafiles in the output data directory specified by "-outDataDir". All datatfiles are 
 regenerated for each analysis. STDOUT and STDERR for each program is written in the program/info directory prior to 
 alignment and in the aligner/info directory post alignment. 
->>>>>>> 47d5877af89c6cdcce4fb98b0e348ace8f5d8888
+
