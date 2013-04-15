@@ -558,7 +558,7 @@ sub ReadMosaik {
 		    if (@infiles) {
 			chomp(@infiles); #Remove newline
 			my $temp = pop(@infiles); #Only last file (should be the most interesting)
-			#Mosaik Version		
+			#Mosaik Version
 			$temp_MOSVER = `$pqMOSVER $temp;`; #last record i.e. file with highest version (.Y.stdout.txt) which should be the most interesting (however, beaware that older version like .1.0. will not a appear last in @infiles)
 			#Unaligned mates		
 			$temp_UNAM = `$pqUNAM $temp;`; #last record i.e. file with highest version (.Y.stdout.txt) which should be the most interesting (however, beaware that older version like .1.0. will not a appear last in @infiles)

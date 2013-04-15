@@ -18,7 +18,7 @@ mip_variation.pl  -i [infile...n] -a [project ID] -s [sample ID...n] -em [e-mail
 
 -rd/--referencesdir Reference(s) dir (Mandatory: Supply whole path)
 
--gref/--genomeref Flag for setting genomic reference file (defaults to "Homo_sapiens.GRCh37.57.dna.concat.fa")
+-gref/--genomeref Flag for setting genomic reference file (defaults to "Homo_sapiens.GRCh37.57_dna_concat.fa")
 
 -a/--projectid The project ID (Mandatory)
 
@@ -36,21 +36,25 @@ mip_variation.pl  -i [infile...n] -a [project ID] -s [sample ID...n] -em [e-mail
 
 -pGATK_REAl/--gatk_real Flag running GATK realign (defaults to "1" (=yes))
 
--gatk_real_knset1/--gatk_real_knownset1 GATK realign known INDEL set 1 (defaults to "1000G_phase1.indels.hg19.vcf")
+-gatk_real_knset1/--gatk_real_INDEL_knownset1 GATK realign known INDEL set 1 (defaults to "1000G_phase1.indels.hg19.vcf")
 
--gatk_real_knset2/--gatk_real_knownset2 GATK realign known INDEL set 2 (defaults to "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf")
+-gatk_real_knset2/--gatk_real_INDEL_knownset2 GATK realign known INDEL set 2 (defaults to "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf")
 
 -gatk_path/--genatk_path  Flag for path to GATK, must be supplied for GATK (defaults to "").  
 
 -pGATK_RECAl/--gatk_recal Flag running GATK recalibrate (defaults to "1" (=yes))
 
--gatk_recal_knset/--gatk_recal_knownset GATK recal known SNP set (defaults to "dbsnp_135.b37.vcf")
+-gatk_recal_knset/--gatk_recal_SNP_knownset GATK recal known SNP set (defaults to "dbsnp_135.b37.vcf")
 
--pGATK_UNIGT/--gatk_unigt Flag running GATK unifiedgenotyper (defaults to "0" (=no))
+-pGATK_UNIGT/--gatk_unigt Flag running GATK UnifiedGenotyper (defaults to "0" (=no))
+
+-gatk_unigt_snp/--gatk_unigt_dbsnp GATK UnifiedGenotyper dbSNP set for annotating ID columns (defaults to "dbsnp_135.b37.vcf")
 
 -pGATK_HAPCAL/--gatk_hapcal Flag running GATK HaplotypeCaller (defaults to "1" (=yes))
 
--gatkugt_snp/--gatk_unigt_snp Flag running GATK unifiedgenotyper for SNPs (defaults to "1" (=yes))
+-gatk_hapcal_snp/--gatk_hapcal_dbsnp GATK HaplotypeCaller dbSNP set for annotating ID columns (defaults to "dbsnp_135.b37.vcf")
+
+-gatkugt_snv/--gatk_unigt_snv Flag running GATK unifiedgenotyper for SNPs (defaults to "1" (=yes))
 
 -gatkugt_ind/--gatk_unigt_indel Flag running GATK unifiedgenotyper for INDELs (defaults to "1" (=yes))
 
@@ -120,7 +124,7 @@ mip_variation.pl  -i [infile...n] -a [project ID] -s [sample ID...n] -em [e-mail
 
 -pSCheck/--samplecheck Flag running check for samples belonging to pedigree (defaults to "1" (=yes) )
 
--pedigree/--pedigree_file (Supply whole path, defaults to $ods/familyid/familyid_pedigree.txt)
+-pedigree/--pedigree_file (Supply whole path, defaults to $odf/familyid/familyid_pedigree.txt)
 
 -wgs/--whole_genome_sequencing Analysis to perform are whole genome sequencing data or not (defaults to "0" (=no))
 
@@ -183,7 +187,7 @@ BEGIN {
 	       -i/--infile Infile(s), comma sep (Mandatory: Supply whole path)
                -ids/--indirscript The pipeline custom script in dir (Mandatory: Supply whole path)
                -rd/--referencesdir Reference(s) dir (Mandatory: Supply whole path)
-               -gref/--genomeref Flag for setting genomic reference file (defaults to "Homo_sapiens.GRCh37.57.dna.concat.fa")
+               -gref/--genomeref Flag for setting genomic reference file (defaults to "Homo_sapiens.GRCh37.57_dna_concat.fa")
 	       -a/--projectid The project ID (Mandatory)
 	       -s/--sampleid The sample ID,comma sep (Mandatory)
 	       -em/--email e-mail
@@ -192,16 +196,18 @@ BEGIN {
                -familyid/--family Group id of samples to be compared (Mandatory, Ex: 1 for IDN 1-1-1A )
                -pSTV_schr/--samtools_viewschr Flag running samtools view to split per chr & index (defaults to "1" (=yes))
                -pGATK_REAl/--gatk_real Flag running GATK realign (defaults to "1" (=yes))
-               -gatk_real_knset1/--gatk_real_knownset1 GATK realign known INDEL set 1 (defaults to "1000G_phase1.indels.hg19.vcf")
-               -gatk_real_knset2/--gatk_real_knownset2 GATK realign known INDEL set 2 (defaults to "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf")
+               -gatk_real_knset1/--gatk_real_INDEL_knownset1 GATK realign known INDEL set 1 (defaults to "1000G_phase1.indels.hg19.vcf")
+               -gatk_real_knset2/--gatk_real_INDEL_knownset2 GATK realign known INDEL set 2 (defaults to "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf")
                -gatk_path/--genatk_path  Flag for path to GATK, must be supplied for GATK (defaults to "").
                -pGATK_RECAl/--gatk_recal Flag running GATK recalibrate (defaults to "1" (=yes))
-               -gatk_recal_knset/--gatk_recal_knownset GATK recal known SNP set (defaults to "dbsnp_135.b37.vcf")
+               -gatk_recal_knset/--gatk_recal_SNP_knownset GATK recal known SNP set (defaults to "dbsnp_135.b37.vcf")
                -pGATK_UNIGT/--gatk_unigt Flag running GATK unifiedgenotyper (defaults to "0" (=no))
-               -gatkugt_snp/--gatk_unigt_snp Flag running GATK unifiedgenotyper for SNPs (defaults to "1" (=yes))
+               -gatk_unigt_snp/--gatk_unigt_dbsnp GATK UnifiedGenotyper dbSNP set for annotating ID columns (defaults to "dbsnp_135.b37.vcf")
+               -gatkugt_snv/--gatk_unigt_snv Flag running GATK unifiedgenotyper for SNPs (defaults to "1" (=yes))
                -gatkugt_ind/--gatk_unigt_indel Flag running GATK unifiedgenotyper for INDELs (defaults to "1" (=yes))
                -gatk_bait/--gatk_bait_il Prepared bait interval_list file for GATK_UnifiedGT. (defaults to "SureSelect_All_Exon_50mb_with_annotation_hg19_nochr.bed.pad100.interval_list")
                -pGATK_HAPCAL/--gatk_hapcal Flag running GATK HaplotypeCaller (defaults to "1" (=yes))
+               -gatk_hapcal_snp/--gatk_hapcal_dbsnp GATK HaplotypeCaller dbSNP set for annotating ID columns (defaults to "dbsnp_135.b37.vcf")
                -pGATK_COMBVAR/--gatk_combinevariants Flag running GATK combinevariants. Use only if UnifiedGT and not HaplotypeCaller was used to call variants (SNVs & INDELs).(defaults to "0" (=no))
                -pGATK_VARRECAL/--gatk_varrecalibrator Flag running GATK variantrecalibrator  (defaults to "1" (=yes))
                -gatk_exref_snp/--gatk_exomeref Prepared exome reference file (SNVs) for GATK_Varrecal. (defaults to "all-agilent_50mb-GRCh37-SNPS_pad100_interval_list.vcf")
@@ -244,7 +250,7 @@ BEGIN {
 ###
 #Program parameters
 ###
-my ($aid,$em, $ids, $rd, $annovar_path, $odf, $ods, $fnend, $annovar_genome_build_version, $annovar_supported_table_names, $annovar_maf_threshold, $annovar_sift_threshold, $genomeref, $gatk_real_knset1, $gatk_real_knset2, $gatk_recal_knset, $gatk_unigt_snp, $gatk_unigt_indel, $pedigree, $wgs, $gatk_bait, $gatk_exref_snp, $gatk_exref_indel, $vmerge_db_template, $vm_dbf, $rankscore, $dgf, $dgfl, $all_db_file, $all_db_cc, $all_db_gidc, $im_db_file, $Im_Db_template, $Im_db_master_file, $im_db_cc, $im_db_gidc, $maximum_cores,$environment_uppmax,$gatk_path, $filename, $filename2, $fnt, $fnt2, $aligner, $familyid,$help) = (0,0,0,0,0,0,0, ".sh","hg19", 0, 0, 0, "Homo_sapiens.GRCh37.57.dna.concat.fa", "1000G_phase1.indels.hg19.vcf", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf","dbsnp_135.b37.vcf",1,1,0,0, "SureSelect_All_Exon_50mb_with_annotation_hg19_nochr.bed.pad100.interval_list", "all-agilent_50mb-GRCh37-SNPS_pad100_interval_list.vcf", "all-agilent_50mb-GRCh37-INDELS_pad100_interval_list.vcf", "CMMS_intersectCollect_db_master_template.txt","FDN.intersectCollect_db_master.txt", -100, 1, "IEM_dispGeneList.txt","mart_export_Ensembl_GeneID_key_cleaned_chr.txt",1,4,"IEM_Db_CMMS_version1.2.txt","select_dbIEM_variants_db_master.txt", "FDN.intersectCollect_selectVariants_db_master.txt", 1,18,8,0); 
+my ($aid,$em, $ids, $rd, $annovar_path, $odf, $ods, $fnend, $annovar_genome_build_version, $annovar_supported_table_names, $annovar_maf_threshold, $annovar_sift_threshold, $genomeref, $gatk_real_knset1, $gatk_real_knset2, $gatk_recal_knset, $gatk_unigt_dbsnp, $gatk_hapcal_dbsnp, $gatk_unigt_snv, $gatk_unigt_indel, $pedigree, $wgs, $gatk_bait, $gatk_exref_snp, $gatk_exref_indel, $vmerge_db_template, $vm_dbf, $rankscore, $dgf, $dgfl, $all_db_file, $all_db_cc, $all_db_gidc, $im_db_file, $Im_Db_template, $Im_db_master_file, $im_db_cc, $im_db_gidc, $maximum_cores,$environment_uppmax,$gatk_path, $filename, $filename2, $fnt, $fnt2, $aligner, $familyid,$help) = (0,0,0,0,0,0,0, ".sh","hg19", 0, 0, 0, "Homo_sapiens.GRCh37.57_dna_concat.fa", "1000G_phase1.indels.hg19.vcf", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf","dbsnp_135.b37.vcf","dbsnp_135.b37.vcf","dbsnp_135.b37.vcf",1,1,0,0, "SureSelect_All_Exon_50mb_with_annotation_hg19_nochr.bed.pad100.interval_list", "all-agilent_50mb-GRCh37-SNPS_pad100_interval_list.vcf", "all-agilent_50mb-GRCh37-INDELS_pad100_interval_list.vcf", "CMMS_intersectCollect_db_master_template.txt","FDN.intersectCollect_db_master.txt", -100, 1, "IEM_dispGeneList.txt","mart_export_Ensembl_GeneID_key_cleaned_chr.txt",1,4,"IEM_Db_CMMS_version1.2.txt","select_dbIEM_variants_db_master.txt", "FDN.intersectCollect_selectVariants_db_master.txt", 1,18,8,0); 
 
 ###
 #Arguments for project
@@ -367,16 +373,18 @@ GetOptions('i|infile:s'  => \@infn, #Comma sepatated list
 	   'familyid|familygroup:s' => \$familyid, #Family group ID (Merged to same vcf file after GATK Base Recalibration) 
 	   'pSTV_schr|samtools_viewschr:n' => \$pSTV_schr, #spilt to chr.bam and index
 	   'pGATK_REAL|gatk_real:n' => \$pGATK_REAL, #GATK Realign
-	   'gatk_real_knset1|gatk_real_knownset1:s' => \$gatk_real_knset1, #Known INDEL set to be used in GATK ReAlign
-	   'gatk_real_knset2|gatk_real_knownset2:s' => \$gatk_real_knset2, #Known INDEL set to be used in GATK ReAlign
+	   'gatk_real_knset1|gatk_real_INDEL_knownset1:s' => \$gatk_real_knset1, #Known INDEL set to be used in GATK ReAlign
+	   'gatk_real_knset2|gatk_real_INDEL_knownset2:s' => \$gatk_real_knset2, #Known INDEL set to be used in GATK ReAlign
 	   'gatk_path|genatk_path:s' => \$gatk_path, #Path to GATK
 	   'pGATK_RECAL|gatk_recal:n' => \$pGATK_RECAL, #GATK Recalibrate
-	   'gatk_recal_knset|gatk_recal_knownset:s' => \$gatk_recal_knset, #Known SNP set to be used in GATK Recal
+	   'gatk_recal_knset|gatk_recal_SNP_knownset:s' => \$gatk_recal_knset, #Known SNP set to be used in GATK Recal
 	   'pGATK_UNIGT|gatk_unigt:n' => \$pGATK_UNIGT, #GATK Unifiedgenotyper
-	   'gatkugt_snp|gatk_unigt_snp:n' => \$gatk_unigt_snp, #GATK Unifiedgenotyper SNP mode
+	   'gatk_unigt_snp|gatk_unigt_dbsnp:s' => \$gatk_unigt_dbsnp, #Known SNP set to be used in GATK UnifiedGenotyper
+	   'gatkugt_snv|gatk_unigt_snv:n' => \$gatk_unigt_snv, #GATK Unifiedgenotyper SNP mode
 	   'gatkugt_ind|gatk_unigt_indel:n' => \$gatk_unigt_indel, #GATK Unifiedgenotyper INDEL mode
 	   'gatk_bait|gatk_baith_il:s' => \$gatk_bait, #Padded Interval_list to GATK
 	   'pGATK_HAPCAL|gatk_hapcal:n' => \$pGATK_HAPCAL, #GATK Haplotypecaller
+	   'gatk_hapcal_snp|gatk_hapcal_dbsnp:s' => \$gatk_hapcal_dbsnp, #Known SNP set to be used in GATK HaplotypeCaller
 	   'pGATK_VARRECAL|gatk_varrecalibrator:n' => \$pGATK_VARRECAL, #GATK variantrecalibrator
 	   'gatk_exref_snp|gatk_exomeref_snp:s' => \$gatk_exref_snp, #File of 33 exomes to power probabalistic model GATK Varrecal (SNVs) (Recieved from Måns, 120413)
 	   'gatk_exref_indel|gatk_exomeref_indel:s' => \$gatk_exref_indel, #File of 33 exomes to power probabalistic model GATK Varrecal (INDELs) (Recieved from Måns, 120413)
@@ -450,7 +458,7 @@ if ( $ids eq 0) {
     
     if ($environment_uppmax == 1) {
 	print STDOUT "\n";
-	$ids = "/bubo/proj/$aid/private/mip_scripts_master";
+	$ids = "/proj/$aid/private/mip_scripts_master";
 	print STDOUT "Setting the MIP scripts dir to: $ids", "\n\n";
     }
     else {
@@ -463,7 +471,7 @@ if ( $rd eq 0) {
     
     if ($environment_uppmax == 1) {
 	print STDOUT "\n";
-	$rd = "/bubo/proj/$aid/private/mip_references";
+	$rd = "/proj/$aid/private/mip_references";
 	print STDOUT "Setting MIP reference dir to: $rd", "\n\n";
     }
     else {
@@ -483,10 +491,10 @@ if ($odf eq 0) {
     if ($environment_uppmax == 1) {
 	print STDOUT "\n";
 	if ($wgs == 1) {
-	    $odf = "/bubo/proj/$aid/private/genomes";
+	    $odf = "/proj/$aid/private/genomes";
 	}
 	else {
-	    $odf = "/bubo/proj/$aid/private/exomes";
+	    $odf = "/proj/$aid/private/exomes";
 	}
 	print STDOUT "Setting MIP output data dir to: $odf", "\n\n";
     }
@@ -501,10 +509,10 @@ if ($ods eq 0) {
     if ($environment_uppmax == 1) {
 	print STDOUT "\n";
 	if ($wgs == 1) {
-	    $ods = "/bubo/proj/$aid/private/genomes_scripts";
+	    $ods = "/proj/$aid/private/genomes_scripts";
 	}
 	else {
-	    $ods = "/bubo/proj/$aid/private/exomes_scripts";
+	    $ods = "/proj/$aid/private/exomes_scripts";
 	}
 	print STDOUT "Setting MIP output scripts dir to: $ods", "\n\n";
     }
@@ -550,8 +558,13 @@ print STDOUT "\nScript parameters and info from $script are saved in file: $mast
 @infn = split(/,/,join(',',@infn)); #Enables comma separated indir(s)
 @sid = split(/,/,join(',',@sid)); #Enables comma sepatated list of sample IDs
 @Im_db_file_out_file = split(/,/,join(',',@Im_db_file_out_file)); #Enables comma separated selectVariants output dir(s)
-@chr = ("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","X","Y","MT"); #Chr for filtering of bam file
-
+#Set chr prefix and chromosome names depending on reference used
+if ($genomeref=~/hg\d+/) { #Refseq - prefix and M
+    @chr = ("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17","chr18","chr19","chr20","chr21","chr22","chrX","chrY","chrM"); #Chr for filtering of bam file
+}
+elsif ($genomeref=~/GRCh\d+/) { #Ensembl - no prefix and MT
+    @chr = ("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","X","Y","MT"); #Chr for filtering of bam file
+}
 
 InfileReFormat(); #removes .bam ending and extracts filename
 
@@ -607,13 +620,13 @@ if ($pGATK_UNIGT eq 1) { #Run GATK UnifiedGenoTyper (all.bam for all samples wit
   
     print STDOUT "\nGATK UnifiedGenoTyper", "\n";print MASTERL "\nGATK UnifiedGenoTyper", "\n";
 
-    if ($gatk_unigt_snp == 1) {
+    if ($gatk_unigt_snv == 1) {
 	    GATK_unigt($familyid, $aligner, "SNV");    
     }
     if ($gatk_unigt_indel == 1) {
 	GATK_unigt($familyid, $aligner, "INDEL");    
     }
-    if ( ($gatk_unigt_snp == 0) && ($gatk_unigt_indel == 0) ) {
+    if ( ($gatk_unigt_snv == 0) && ($gatk_unigt_indel == 0) ) {
 	print STDOUT "\n\nNOTE:You have choosen to run GATK UnifiedGenoTyper and  specified no run mode (SNV or INDEL)!\n\n";print MASTERL "\n\nYou have choosen to run GATK UnifiedGenoTyper but not specified no run mode (SNV or INDEL)!\n\n";
     }
 }
@@ -662,16 +675,16 @@ if ($pGATK_VARRECAL eq 1) { #Run GATK VariantRecalibrator(all_samples_raw.vcf)
   
     print STDOUT "\nGATK VariantRecalibrator/ApplyRecalibration", "\n";print MASTERL "\nGATK VariantRecalibrator/ApplyRecalibration", "\n";
     
-    if ( ($gatk_unigt_snp == 1) && ($gatk_unigt_indel == 1) ) {
+    if ( ($gatk_unigt_snv == 1) && ($gatk_unigt_indel == 1) ) {
 	GATK_varrecal($familyid, $aligner, "BOTH"); 
     }
-    elsif ($gatk_unigt_snp == 1) {
+    elsif ($gatk_unigt_snv == 1) {
 	GATK_varrecal($familyid, $aligner, "SNV");    
     }
     elsif ($gatk_unigt_indel == 1) {
 	GATK_varrecal($familyid, $aligner, "INDEL");    
     }
-    if ( ($gatk_unigt_snp == 0) && ($gatk_unigt_indel == 0) ) {
+    if ( ($gatk_unigt_snv == 0) && ($gatk_unigt_indel == 0) ) {
 	print STDERR "\n\nNOTE:You have choosen to run GATK VariantRecalibrator and  specified no run mode (SNV or INDEL)!\n\n";print MASTERL "\n\nYou have choosen to run GATK VariantRecalibrator but not specified no run mode (SNV or INDEL)!\n\n";
     }    
 }
@@ -687,23 +700,23 @@ if ($pGATK_COMBVAR == 1) { #Run GATK CombineVariants(all.bam). Should only be us
   
     print STDOUT "\nGATK CombineVariants", "\n";print MASTERL "\nGATK CombineVariants", "\n";
     
-    for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {
+    #for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {
 	
-	GATK_combinevariants($sid[$sampleid], $aligner, "BOTH",$familyid);
-    }    
+	GATK_combinevariants($familyid, $aligner, "BOTH");
+    #}    
 }
 
 if ($pANVAR eq 1 ) { #Run annovar
     
     print STDOUT "\nAnnovar Analysis", "\n";print MASTERL "\nAnnovar Analysis", "\n";
 
-    if ( ($gatk_unigt_snp == 0) && ($gatk_unigt_indel == 0) ) {
+    if ( ($gatk_unigt_snv == 0) && ($gatk_unigt_indel == 0) ) {
 	print STDERR "\n\nNOTE:You have choosen to run Annovar and specified no run mode (SNV or INDEL)!\n\n";print MASTERL "\n\nYou have choosen to run Annovar but not specified no run mode (SNV or INDEL)!\n\n";
     }
-    elsif ( ($gatk_unigt_snp == 1) && ($gatk_unigt_indel == 1) ) { #Run on BOTH vcf file from HaplotypeCaller or combined vcf per sampleID from UnifiedGT (BOTH file is created from SNV and INDEL files). 
+    elsif ( ($gatk_unigt_snv == 1) && ($gatk_unigt_indel == 1) ) { #Run on BOTH vcf file from HaplotypeCaller or combined vcf per sampleID from UnifiedGT (BOTH file is created from SNV and INDEL files). 
 	AnnovarFilter($familyid, $aligner, "BOTH");
     }
-    elsif ($gatk_unigt_snp == 1) {
+    elsif ($gatk_unigt_snv == 1) {
 	AnnovarFilter($familyid, $aligner, "SNV");    
     }
     elsif ($gatk_unigt_indel == 1) {
@@ -718,13 +731,13 @@ if ($pGATK_VAREVAL_All == 1) { #Run GATK VariantEval(all.bam). Moved to after AN
 
     for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {
 	
-	if ( ($gatk_unigt_snp == 0) && ($gatk_unigt_indel == 0) ) {
+	if ( ($gatk_unigt_snv == 0) && ($gatk_unigt_indel == 0) ) {
 	    print STDERR "\n\nNOTE:You have choosen to run GATK VariantEval All Variants, but specified no run mode (SNV or INDEL)!\n\n";print MASTERL "\n\nYou have choosen to run GATK VariantEval, but not specified no run mode (SNV or INDEL)!\n\n";
 	}
-	elsif ( ($gatk_unigt_snp == 1) && ($gatk_unigt_indel == 1) ) { #Run on BOTH vcf file from HaplotypeCaller or combined vcf per sampleID from UnifiedGT (BOTH file is created from SNV and INDEL files). 
+	elsif ( ($gatk_unigt_snv == 1) && ($gatk_unigt_indel == 1) ) { #Run on BOTH vcf file from HaplotypeCaller or combined vcf per sampleID from UnifiedGT (BOTH file is created from SNV and INDEL files). 
 	    GATK_varianteval($sid[$sampleid], $aligner, "BOTH", 0, $familyid); #0 to keep nr of arguments (instead of EXOME)
 	}
-	elsif ($gatk_unigt_snp == 1) {
+	elsif ($gatk_unigt_snv == 1) {
 	    GATK_varianteval($sid[$sampleid], $aligner, "SNV", 0, $familyid);    
 	}
 	elsif ($gatk_unigt_indel == 1) {
@@ -737,13 +750,13 @@ if ($pVMERGE == 1 ) { #Run varcall_merge_post_annovar_master.pl, Merges all vari
 
     print STDOUT "\nintersectCollect.pl", "\n";print MASTERL "\nintersectCollect.pl", "\n";
     
-    if ( ($gatk_unigt_snp == 0) && ($gatk_unigt_indel == 0) ) {
+    if ( ($gatk_unigt_snv == 0) && ($gatk_unigt_indel == 0) ) {
 	print STDERR "\n\nNOTE:You have choosen to run  and specified no run mode (SNV or INDEL)!\n\n";print MASTERL "\n\nYou have choosen to run Annovar but not specified no run mode (SNV or INDEL)!\n\n";
     }
-    elsif ( ($gatk_unigt_snp == 1) && ($gatk_unigt_indel == 1) ) { #Run on BOTH vcf file from HaplotypeCaller or combined vcf per sampleID from UnifiedGT (BOTH file is created from SNV and INDEL files). 
+    elsif ( ($gatk_unigt_snv == 1) && ($gatk_unigt_indel == 1) ) { #Run on BOTH vcf file from HaplotypeCaller or combined vcf per sampleID from UnifiedGT (BOTH file is created from SNV and INDEL files). 
 	VarcallMergePostAnnovar($familyid, $aligner, "BOTH");
     }
-    elsif ($gatk_unigt_snp == 1) {
+    elsif ($gatk_unigt_snv == 1) {
 	VarcallMergePostAnnovar($familyid, $aligner, "SNV");    
     }
     elsif ($gatk_unigt_indel == 1) {
@@ -758,13 +771,13 @@ if ( $pGATK_VAREVAL_Exome == 1 ) { #Run GATK VariantEval(all.bam) for exome vari
     
     for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {
 	
-	if ( ($gatk_unigt_snp == 0) && ($gatk_unigt_indel == 0) ) {
+	if ( ($gatk_unigt_snv == 0) && ($gatk_unigt_indel == 0) ) {
 	    print STDERR "\n\nNOTE:You have choosen to run GATK VariantEval (Exome) and  specified no run mode (SNV or INDEL)!\n\n";print MASTERL "\n\nYou have choosen to run GATK VariantEval (Exome) but not specified no run mode (SNV or INDEL)!\n\n";
 	}
-	elsif ( ($gatk_unigt_snp == 1) && ($gatk_unigt_indel == 1) ) { #Run on BOTH vcf file from HaplotypeCaller or combined vcf per sampleID from UnifiedGT (BOTH file is created from SNV and INDEL files). 
+	elsif ( ($gatk_unigt_snv == 1) && ($gatk_unigt_indel == 1) ) { #Run on BOTH vcf file from HaplotypeCaller or combined vcf per sampleID from UnifiedGT (BOTH file is created from SNV and INDEL files). 
 	    GATK_varianteval($sid[$sampleid], $aligner, "BOTH", "EXOME", $familyid);
 	}
-	elsif ( ($gatk_unigt_snp == 1) && ($pGATK_COMBVAR ==0) ) {
+	elsif ( ($gatk_unigt_snv == 1) && ($pGATK_COMBVAR ==0) ) {
 	    GATK_varianteval($sid[$sampleid], $aligner, "SNV", "EXOME", $familyid);    
 	}
 	elsif ( ($gatk_unigt_indel == 1) && ($pGATK_COMBVAR ==0) ) {
@@ -777,13 +790,13 @@ if ( $pAddDP == 1 ) { #Add depth (DP) for nonvariants to masterfile (annovar_all
     
     print STDOUT "\nadd_depth.pl for nonvariants (masterfile)", "\n";print MASTERL "\nadd_depth.pl for nonvariants (masterfile)", "\n";
     
-    if ( ($gatk_unigt_snp == 0) && ($gatk_unigt_indel == 0) ) {
+    if ( ($gatk_unigt_snv == 0) && ($gatk_unigt_indel == 0) ) {
 	print STDERR "\n\nNOTE:You have choosen to run AddDP and specified no run mode (SNV or INDEL)!\n\n";print MASTERL "\n\nYou have choosen to run Annovar but not specified no run mode (SNV or INDEL)!\n\n";
     }
-    elsif ( ($gatk_unigt_snp == 1) && ($gatk_unigt_indel == 1) ) { #Run on BOTH vcf file from HaplotypeCaller or combined vcf per sampleID from UnifiedGT (BOTH file is created from SNV and INDEL files). 
+    elsif ( ($gatk_unigt_snv == 1) && ($gatk_unigt_indel == 1) ) { #Run on BOTH vcf file from HaplotypeCaller or combined vcf per sampleID from UnifiedGT (BOTH file is created from SNV and INDEL files). 
 	AddDP($familyid, $aligner, "BOTH");
     }
-    elsif ($gatk_unigt_snp == 1) {
+    elsif ($gatk_unigt_snv == 1) {
 	AddDP($familyid, $aligner, "SNV");    
     }
     elsif ($gatk_unigt_indel == 1) {
@@ -795,13 +808,13 @@ if ( $pRankVar == 1 ) { #Ranking of variants
     
     print STDOUT "\nRank Variants", "\n";print MASTERL "\nRank Variants", "\n";
     
-    if ( ($gatk_unigt_snp == 0) && ($gatk_unigt_indel == 0) ) {
+    if ( ($gatk_unigt_snv == 0) && ($gatk_unigt_indel == 0) ) {
 	print STDERR "\n\nNOTE:You have choosen to run Filter variants and specified no run mode (SNV or INDEL)!\n\n";print MASTERL "\n\nYou have choosen to run Annovar but not specified no run mode (SNV or INDEL)!\n\n";
     }
-    elsif ( ($gatk_unigt_indel == 1) && ($gatk_unigt_snp == 1) ) {
+    elsif ( ($gatk_unigt_indel == 1) && ($gatk_unigt_snv == 1) ) {
 	RankVar($familyid, $aligner, "BOTH");    
     }
-    elsif ($gatk_unigt_snp == 1) {
+    elsif ($gatk_unigt_snv == 1) {
 	RankVar($familyid, $aligner, "SNV");    
     }
     elsif ($gatk_unigt_indel == 1) {
@@ -812,10 +825,10 @@ if ( $pRankVar == 1 ) { #Ranking of variants
 if ( $pSCheck == 1 ) { #Tests sample for correct relatives (only performed for samples with relatives defined in pedigree file) performed on sequence data. Gender is checked in the collect_info.pl script by taking the chrX/chrY ration and expecting females to have a ratio > 5.   
     
     print STDOUT "\nSample check (Gender & Relatives)", "\n";print MASTERL "\nSample check (Gender & Relatives)", "\n";
-    if ( ($gatk_unigt_indel == 1) && ($gatk_unigt_snp == 1) ) {
+    if ( ($gatk_unigt_indel == 1) && ($gatk_unigt_snv == 1) ) {
 	SampleCheck($familyid, $aligner, "BOTH");    
     }
-    elsif ($gatk_unigt_snp == 1) {
+    elsif ($gatk_unigt_snv == 1) {
 	SampleCheck($familyid, $aligner, "SNV");    
     }   
 }
@@ -886,7 +899,7 @@ sub RankVar {
 #Filter and Rank variants depending on mendelian inheritance, frequency and phenotype using rank_filter:chr.pl
 #$_[0] = $familyid NOTE: not sampleid
 #$_[1] = aligner
-#$_[2] = $gatk_unigt_snps (SNV), $gatk_unigt_indels (INDEL) or BOTH
+#$_[2] = $gatk_unigt_snvs (SNV), $gatk_unigt_indels (INDEL) or BOTH
     
     #if ($_[2] eq "BOTH") {
     `mkdir -p $odf/$_[0]/$_[1]/info;`; #Creates the alignment folder and info data file directory
@@ -970,10 +983,9 @@ sub RankVar {
     }
     $regexp_rd .= $file;
     #Create family specific template
-    print RV q?perl -nae 'if ($_=~/outinfo/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes=>0_$sampleID,"} else { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes=>0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outcolumns/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="0_$sampleID,"} else { $sidstring.="0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outheaders/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes,"} else { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes"} } s/IDN/$sidstring/g; print $_;} next;} elsif ($_=~s/FDN/?.$_[0].q?/g) { if($_=~s/^ODF/?.$regexp_odf.q?/g) {} if($_=~s/ALIGNER/?.$aligner.q?/g) {} if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="$sampleID,"} else { $sidstring.="$sampleID"} } s/IDN/$sidstring/g; print $_;} else { print $_;} } else { if($_=~s/^RD/?.$regexp_rd.q?/g) {} print $_;}' ?.$rd.q?/?.$Im_Db_template.q? > ?."$odf/$_[0]/$Im_db_master_file", "\n\n";
+    print RV q?perl -nae 'if ($_=~/outinfo/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN_GT_Call=>0_$sampleID,"} else { $sidstring.="IDN_GT_Call=>0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outcolumns/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="0_$sampleID,"} else { $sidstring.="0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outheaders/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN_GT_Call,"} else { $sidstring.="IDN_GT_Call"} } s/IDN/$sidstring/g; print $_;} next;} elsif ($_=~s/FDN/?.$_[0].q?/g) { if($_=~s/^ODF/?.$regexp_odf.q?/g) {} if($_=~s/ALIGNER/?.$aligner.q?/g) {} if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="$sampleID,"} else { $sidstring.="$sampleID"} } s/IDN/$sidstring/g; print $_;} else { print $_;} } else { if($_=~s/^RD/?.$regexp_rd.q?/g) {} print $_;}' ?.$rd.q?/?.$Im_Db_template.q? > ?."$odf/$_[0]/$Im_db_master_file", "\n\n";
 
     
-    #if ($_[2] eq "BOTH") {
     my $hapcal_both_file = "$odf/$_[0]/$_[1]/GATK/$_[0]_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt";
     if ( $pAddDP == 0 ) {
 	#Add chr
@@ -1006,10 +1018,10 @@ sub RankVar {
 		
 		if ($sampleid eq scalar(@sid)-1) {
 		    
-		    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_IEM_target_coverage.txt ";
+		    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_target_coverage.txt ";
 		}
 		else {
-		    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_IEM_target_coverage.txt,";	
+		    print RV "$odf/$sid[$sampleid]/$_[1]/coverageReport/$tempinfile","_target_coverage.txt,";	
 		    
 		}
 	    }
@@ -1030,6 +1042,10 @@ sub RankVar {
 	print RV q?intersectBed -wa -abam ?.$odf.q?/?.$sid[$sampleid].q?/?.$_[1].q?/?.$tempinfile.q?.bam -b ?.$directories.$_[0].q?_ranked_?.$_[2].q?_temp.txt > ?.$directories.$tempinfile.q?.bam &?, "\n\n";		
     }
     print RV "wait\n\n";
+
+    print RV q?rm ?.$directories.$_[0].q?_ranked_?.$_[2].q?_temp.txt?, "\n\n"; #Remove temp file used in the intersect
+
+
 ###	
 #No IM_Db_genes
 ###
@@ -1052,6 +1068,10 @@ sub RankVar {
     ($volume,$directories,$file) = File::Spec->splitpath( $Im_db_file_out_file[0] ); #Create outfile path
     print RV q?-o ?.$directories.$_[0].q?_ranked_?.$_[2].q?.txt?, "\n\n";
     
+    for (my $Im_db_file_out_fileCounter=0;$Im_db_file_out_fileCounter<scalar(@Im_db_file_out_file);$Im_db_file_out_fileCounter++) {
+	print RV q?rm ?.$Im_db_file_out_file[$Im_db_file_out_fileCounter], "\n\n"; #Remove select files  
+    }
+
     close(RV);   
     FIDSubmitJob(0,$familyid, 1, $_[2],$filename);
     return;
@@ -1061,7 +1081,7 @@ sub AddDP {
 #Adds depth (DP) for all nonvariants pos for all chr (and subjects) to create a master file containing all annovar information and DP for nonvariants in annovar_all.txt master file
 #$_[0] = $familyid NOTE: not sampleid
 #$_[1] = aligner
-#$_[2] = $gatk_unigt_snps (SNV) or $gatk_unigt_indels (INDEL)
+#$_[2] = $gatk_unigt_snvs (SNV) or $gatk_unigt_indels (INDEL)
 
     `mkdir -p $odf/$_[0]/$_[1]/info;`; #Creates the alignment folder and info data file directory
     `mkdir -p $odf/$_[0]/$_[1]/GATK;`; #Creates the aligner and annovar folder   
@@ -1153,7 +1173,7 @@ sub VarcallMergePostAnnovar {
 #Merges all variants for all chr (and subjects) to create a master file containing all annovar information
 #$_[0] = $familyid NOTE: not sampleid
 #$_[1] = aligner
-#$_[2] = $gatk_unigt_snps (SNV) or $gatk_unigt_indels (INDEL)
+#$_[2] = $gatk_unigt_snvs (SNV) or $gatk_unigt_indels (INDEL)
 
     `mkdir -p $odf/$_[0]/$_[1]/info;`; #Creates the alignment folder and info data file directory
     `mkdir -p $odf/$_[0]/$_[1]/GATK;`; #Creates the aligner and annovar folder   
@@ -1216,7 +1236,7 @@ sub VarcallMergePostAnnovar {
     }
     $regexp_rd .= $file;
     #Create family specific template
-    print VMERGE q?perl -nae 'if ($_=~/outinfo/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes=>0_$sampleID,"} else { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes=>0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outcolumns/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="0_$sampleID,"} else { $sidstring.="0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outheaders/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes,"} else { $sidstring.="IDN:Filter:GT=Genotype:AD=Allelic_depths_for_the_ref_and_alt_alleles:GQ=Genotype Quality:PL=Normalized_Phred-scaled_likelihoods_for_genotypes"} } s/IDN/$sidstring/g; print $_;} next;} elsif ($_=~s/FDN/?.$_[0].q?/g) { if($_=~s/^ODF/?.$regexp_odf.q?/g) {} if($_=~s/ALIGNER/?.$aligner.q?/g) {} if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="$sampleID,"} else { $sidstring.="$sampleID"} } s/IDN/$sidstring/g; print $_;} else { print $_;} } else { if($_=~s/^RD/?.$regexp_rd.q?/g) {} print $_;}' ?.$rd.q?/?.$vmerge_db_template.q? > ?."$odf/$_[0]/$vm_dbf", "\n\n";
+    print VMERGE q?perl -nae 'if ($_=~/outinfo/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN_GT_Call=>0_$sampleID,"} else { $sidstring.="IDN_GT_Call=>0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outcolumns/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="0_$sampleID,"} else { $sidstring.="0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outheaders/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN_GT_Call,"} else { $sidstring.="IDN_GT_Call"} } s/IDN/$sidstring/g; print $_;} next;} elsif ($_=~s/FDN/?.$_[0].q?/g) { if($_=~s/^ODF/?.$regexp_odf.q?/g) {} if($_=~s/ALIGNER/?.$aligner.q?/g) {} if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDcolumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="$sampleID,"} else { $sidstring.="$sampleID"} } s/IDN/$sidstring/g; print $_;} else { print $_;} } else { if($_=~s/^RD/?.$regexp_rd.q?/g) {} print $_;}' ?.$rd.q?/?.$vmerge_db_template.q? > ?."$odf/$_[0]/$vm_dbf", "\n\n";
 
     print VMERGE "perl $ids/intersectCollect.pl -db $odf/$_[0]/$vm_dbf -o ", '${outFamilyDir}', "/$_[0]", "_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar_all_variants.txt", "\n\n";
     
@@ -1230,7 +1250,7 @@ sub AnnovarFilter {
 #Works on the familyid_allchr_real_recal_resrt_varrecal_filt_annovar.vcf where all variants per subject is present. Prints new files for each analysis
 #$_[0] = $familyid NOTE: not sampleid
 #$_[1] = aligner
-#$_[2] = $gatk_unigt_snps (SNV) or $gatk_unigt_indels (INDEL) or BOTH
+#$_[2] = $gatk_unigt_snvs (SNV) or $gatk_unigt_indels (INDEL) or BOTH
 
     `mkdir -p $odf/$_[0]/$_[1]/info;`; #Creates the alignment folder and info data file directory
     `mkdir -p $odf/$_[0]/$_[1]/GATK;`; #Creates the aligner and annovar folder   
@@ -1280,7 +1300,7 @@ sub AnnovarFilter {
     print ANVARF "perl $annovar_path/convert2annovar.pl ",'${inFamilyDir}/${inFamilyPrefix}'," -format vcf4 -i > ", '${outFamilyDir}/${outFamilyPrefix_temp}', "\n\n";
 
     #Intersect for all samples within familyid and remake file to fit annovar format and subsequent filtering
-    print ANVARF q?perl -nae ' if ($_=~/^#/) {print $_;next;} if ($_=~/;set=2/) {} else{ if($F[11] eq "PASS") {} else {$F[11] = "PRES";} print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t", ?;
+    print ANVARF q?perl -nae 'my @format; my $formatInfo;chomp($_); if ($_=~/^#/) {print $_;next;} if ($_=~/;set=2/) {} else{ if($F[11] eq "PASS") {} else {$F[11] = "PRES";} @format = split(":",$F[13]); print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t"; ?;
     #print ANVARF q?perl -nae ' if ($_=~/^#/) {print $_;next;} if ($_=~/;set=2/) {} else{ if($F[6] eq "PASS") {} else {$F[6] = "PRES";} print $F[0], "\t", $F[1], "\t", $F[1], "\t", $F[3], "\t", $F[4], "\t", ?; #Old filtering, before convert2annovar.pl was used.
     my @sample_lex_order = sort @sid; #Use lexiographically sorted sample IDNs since GATK UnifiedGT assigns columns in lexigraphical order. @sid is not lexiographically sorted but taken straight from the command line. This lex sort ensures that if the user did not supply samples in lex order, there will be no sample column swaping. 
     for (my $sampleid=0;$sampleid<scalar(@sample_lex_order);$sampleid++) { #For all sample ids
@@ -1288,14 +1308,14 @@ sub AnnovarFilter {
 	my $samplecolumn = 14+$sampleid; #First sample genotype starts at col 14 (start 0, perl). NOTE: Important that samples for unifiedGT has same order. Otherwise there will be a sample mix-up.
 	
 	if ($sampleid eq scalar(@sample_lex_order)-1) {	#Ensure correct order as long as UnifiedGT uses lex sort. 
-	    print ANVARF '"',"$sample_lex_order[$sampleid]:", q?$F[11]:$F[?.$samplecolumn.q?]",?;
+	    print ANVARF q?print "?.$sample_lex_order[$sampleid].q?:$F[11]:"; @formatInfo = split(":",$F[?.$samplecolumn.q?]); for (my $formatInfoCounter=0;$formatInfoCounter<scalar(@formatInfo);$formatInfoCounter++) { print "$format[$formatInfoCounter]=$formatInfo[$formatInfoCounter]"; if ( $formatInfoCounter<scalar(@formatInfo)-1 ) {print ":"} } print "\n"; } ?;
 	}
 	else {
-	    print ANVARF '"',"$sample_lex_order[$sampleid]:", q?$F[11]:$F[?.$samplecolumn.q?]", "\t", ?;
+	    print ANVARF q?print "?.$sample_lex_order[$sampleid].q?:FILTER=$F[11]:"; @formatInfo = split(":",$F[?.$samplecolumn.q?]); for (my $formatInfoCounter=0;$formatInfoCounter<scalar(@formatInfo);$formatInfoCounter++) { print "$format[$formatInfoCounter]=$formatInfo[$formatInfoCounter]"; if ( $formatInfoCounter<scalar(@formatInfo)-1 ) {print ":"} } print "\t"; ?;
 	}
     }
 
-    print ANVARF q?"\n";}' ?.'${outFamilyDir}/${outFamilyPrefix_temp}'.q? > ?, '${outFamilyDir}/${outFamilyPrefix}', "\n\n"; 
+    print ANVARF q?' ?.'${outFamilyDir}/${outFamilyPrefix_temp}'.q? > ?, '${outFamilyDir}/${outFamilyPrefix}', "\n\n"; 
  
     print ANVARF 'inFamilyPrefix="',"/$_[0]", "_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar", '"', "\n";    
     print ANVARF 'outFamilyPrefix="',"/$_[0]", "_allchr_real_recal_resrt_varrecal_$_[2]_filt_annovar", '"', "\n\n";   	    
@@ -1337,65 +1357,11 @@ sub AnnovarFilter {
     return;
 }
 
-sub GATK_combinevariants { 
-#GATK CombineVariants
-#$_[0]= sampleid
-#$_[1]= $aligner, to choose the correct dir depending on what aligner has been used previously
-#$_[2] = BOTH
-#$_[3] = $familyid
-
-    `mkdir -p $odf/$_[3]/$_[1]/info;`; #Creates the aligner folder and info data file directory
-    `mkdir -p $odf/$_[3]/$_[1]/GATK`; #Creates the aligner folder, GATK data file directory
-    `mkdir -p $ods/$_[3]/$_[1]`; #Creates the aligner folder script file directory
-    $filename = "$ods/$_[3]/$_[1]/gatk_combinevar_$_[2]_$_[3].";   
-
-    Checkfnexists($filename, $fnend);
-
-#Info and Logg
-    print STDOUT "Creating sbatch script GATK CombineVariants and writing script file(s) to: ", $filename, "\n";print MASTERL "Creating sbatch script CombineVariants and writing script file(s) to: ", $filename, "\n";
-    print STDOUT "Sbatch script GATK CombineVariants data files will be written to: ", $odf,"/$_[0]/$_[1]/GATK", "\n";print MASTERL "Sbatch script GATK CombineVariants data files will be written to: ", $odf,"/$_[0]/$_[1]/GATK", "\n";
-
-    open (GATK_COMBVAR, ">$filename") or die "Can't write to $filename: $!\n";
-    
-    print GATK_COMBVAR "#! /bin/bash -l", "\n";
-    print GATK_COMBVAR "#SBATCH -A ", $aid, "\n";
-    print GATK_COMBVAR "#SBATCH -p node -n 1", "\n";
-    print GATK_COMBVAR "#SBATCH -C thin", "\n";	
-    print GATK_COMBVAR "#SBATCH -t 2:00:00", "\n";
-    print GATK_COMBVAR "#SBATCH -J GATK_CoVa_$_[2]_", $_[3], "\n";
-    print GATK_COMBVAR "#SBATCH -e $odf/$_[3]/$_[1]/info/gatk_combinevar_$_[2]_$_[3].", $fnt ,".stderr.txt", "\n";
-    print GATK_COMBVAR "#SBATCH -o $odf/$_[3]/$_[1]/info/gatk_combinevar_$_[2]_$_[3].", $fnt ,".stdout.txt", "\n";
-    
-    unless ($em eq 0) {
-	
-	print GATK_COMBVAR "#SBATCH --mail-type=END", "\n";
-	print GATK_COMBVAR "#SBATCH --mail-type=FAIL", "\n";
-	print GATK_COMBVAR "#SBATCH --mail-user=$em", "\n\n";
-	
-    }
-    
-    print GATK_COMBVAR 'echo "Running on: $(hostname)"',"\n\n";
-    print GATK_COMBVAR "#Reference Archive", "\n";
-    print GATK_COMBVAR 'referenceArchive="', "$rd", '"', "\n\n"; 
-    print GATK_COMBVAR "#Samples", "\n";
-    print GATK_COMBVAR 'inSampleDir="',"$odf/$_[3]/$_[1]/GATK", '"', "\n";
-    print GATK_COMBVAR 'outSampleDir="', "$odf/$_[3]/$_[1]/GATK", '"', "\n\n"; 
-    
-    print GATK_COMBVAR "#GATK CombineVariants","\n\n";
-    	   
-    print GATK_COMBVAR "java -Xmx2g -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T CombineVariants -R ", '${referenceArchive}',"/$genomeref -V:$_[3]_SNV ", '${inSampleDir}', "/$_[3]", "_allchr_real_recal_resrt_varrecal_SNV_filt.vcf -V:$_[3]_INDEL ", '${inSampleDir}', "/$_[3]", "_allchr_real_recal_resrt_varrecal_INDEL_filt.vcf -o ",'${outSampleDir}', "/$_[3]", "_allchr_real_recal_resrt_varrecal_BOTH_filt.vcf", "\n\n";
-
-    print GATK_COMBVAR "wait", "\n\n";
-    close(GATK_COMBVAR);   
-    FIDSubmitJob(0,$familyid, 1, $_[2],$filename);
-    return;
-}
-
 sub GATK_varianteval { 
 #GATK VariantEval
 #$_[0]= sampleid
 #$_[1]= $aligner, to choose the correct dir depending on what aligner has been used previously
-#$_[2] = $gatk_unigt_snps (SNV) or $gatk_unigt_indels (INDEL), (BOTH)
+#$_[2] = $gatk_unigt_snvs (SNV) or $gatk_unigt_indels (INDEL), (BOTH)
 #$_[3] = EXOME
 #$_[4] = $familyid 
 
@@ -1617,11 +1583,64 @@ sub Pindel {
     return;
 }
 
+sub GATK_combinevariants { 
+#GATK CombineVariants
+#$_[0]= $familyid
+#$_[1]= $aligner, to choose the correct dir depending on what aligner has been used previously
+#$_[2] = BOTH
+
+    `mkdir -p $odf/$_[0]/$_[1]/info;`; #Creates the aligner folder and info data file directory
+    `mkdir -p $odf/$_[0]/$_[1]/GATK`; #Creates the aligner folder, GATK data file directory
+    `mkdir -p $ods/$_[0]/$_[1]`; #Creates the aligner folder script file directory
+    $filename = "$ods/$_[0]/$_[1]/gatk_combinevar_$_[2]_$_[0].";   
+
+    Checkfnexists($filename, $fnend);
+
+#Info and Logg
+    print STDOUT "Creating sbatch script GATK CombineVariants and writing script file(s) to: ", $filename, "\n";print MASTERL "Creating sbatch script CombineVariants and writing script file(s) to: ", $filename, "\n";
+    print STDOUT "Sbatch script GATK CombineVariants data files will be written to: ", $odf,"/$_[0]/$_[1]/GATK", "\n";print MASTERL "Sbatch script GATK CombineVariants data files will be written to: ", $odf,"/$_[0]/$_[1]/GATK", "\n";
+
+    open (GATK_COMBVAR, ">$filename") or die "Can't write to $filename: $!\n";
+    
+    print GATK_COMBVAR "#! /bin/bash -l", "\n";
+    print GATK_COMBVAR "#SBATCH -A ", $aid, "\n";
+    print GATK_COMBVAR "#SBATCH -p node -n 1", "\n";
+    print GATK_COMBVAR "#SBATCH -C thin", "\n";	
+    print GATK_COMBVAR "#SBATCH -t 2:00:00", "\n";
+    print GATK_COMBVAR "#SBATCH -J GATK_CoVa_$_[2]_", $_[0], "\n";
+    print GATK_COMBVAR "#SBATCH -e $odf/$_[0]/$_[1]/info/gatk_combinevar_$_[2]_$_[0].", $fnt ,".stderr.txt", "\n";
+    print GATK_COMBVAR "#SBATCH -o $odf/$_[0]/$_[1]/info/gatk_combinevar_$_[2]_$_[0].", $fnt ,".stdout.txt", "\n";
+    
+    unless ($em eq 0) {
+	
+	print GATK_COMBVAR "#SBATCH --mail-type=END", "\n";
+	print GATK_COMBVAR "#SBATCH --mail-type=FAIL", "\n";
+	print GATK_COMBVAR "#SBATCH --mail-user=$em", "\n\n";
+	
+    }
+    
+    print GATK_COMBVAR 'echo "Running on: $(hostname)"',"\n\n";
+    print GATK_COMBVAR "#Reference Archive", "\n";
+    print GATK_COMBVAR 'referenceArchive="', "$rd", '"', "\n\n"; 
+    print GATK_COMBVAR "#Samples", "\n";
+    print GATK_COMBVAR 'inSampleDir="',"$odf/$_[0]/$_[1]/GATK", '"', "\n";
+    print GATK_COMBVAR 'outSampleDir="', "$odf/$_[0]/$_[1]/GATK", '"', "\n\n"; 
+    
+    print GATK_COMBVAR "#GATK CombineVariants","\n\n";
+    	   
+    print GATK_COMBVAR "java -Xmx2g -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T CombineVariants -R ", '${referenceArchive}',"/$genomeref -V:$_[0]_SNV ", '${inSampleDir}', "/$_[0]", "_allchr_real_recal_resrt_raw_SNV.vcf -V:$_[0]_INDEL ", '${inSampleDir}', "/$_[0]", "_allchr_real_recal_resrt_raw_INDEL.vcf -o ",'${outSampleDir}', "/$_[0]", "_allchr_real_recal_resrt_raw_BOTH.vcf", "\n\n";
+
+    print GATK_COMBVAR "wait", "\n\n";
+    close(GATK_COMBVAR);   
+    FIDSubmitJob(0,$familyid, 1, $_[2],$filename);
+    return;
+}
+
 sub GATK_varrecal { 
 #GATK VariantRecalibrator/ApplyRecalibration
 #$_[0]= $familyid NOTE: not sampleid
 #$_[1]= $aligner, to choose the correct dir depending on what aligner has been used previously
-#$_[2] = $gatk_unigt_snps (SNV) or $gatk_unigt_indels (INDEL) or BOTH
+#$_[2] = $gatk_unigt_snvs (SNV) or $gatk_unigt_indels (INDEL) or BOTH
 
     `mkdir -p $odf/$_[0]/$_[1]/info;`; #Creates the aligner folder and info data file directory
     `mkdir -p $odf/$_[0]/$_[1]/GATK/intermediary`; #Creates the aligner folder, GATK data file directory
@@ -2012,8 +2031,9 @@ sub GATK_hapcal {
 
     print GATK_HAPCAL "#GATK HaplotypeCaller","\n\n";
     if ($_[4] == 26) { #Special case to enable processing of MT as well within same node for last call, overstrecthing a bit but should be fine
-	for (my $chr=$_[3];$chr<$_[4]-1;$chr++) { #Determined by chr start and stop arguments given as input	    
-	    print GATK_HAPCAL "java -Xmx$_[5]g -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T HaplotypeCaller -R ", '${referenceArchive}',"/$genomeref -D ", '${referenceArchive}',"/$gatk_recal_knset -stand_call_conf 30.0 -stand_emit_conf 30.0 --annotation BaseQualityRankSumTest --annotation ChromosomeCounts --annotation DepthOfCoverage --annotation FisherStrand --annotation HaplotypeScore --annotation InbreedingCoeff --annotation MappingQualityRankSumTest --annotation MappingQualityZero --annotation QualByDepth --annotation RMSMappingQuality --annotation ReadPosRankSumTest --annotation SpanningDeletions --annotation TandemRepeatAnnotator --annotation DepthPerAlleleBySample ";
+	for (my $chr=$_[3];$chr<$_[4]-1;$chr++) { #Determined by chr start and stop arguments given as input	   
+
+	    print GATK_HAPCAL "java -Xmx$_[5]g -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T HaplotypeCaller -R ", '${referenceArchive}',"/$genomeref -D ", '${referenceArchive}',"/$gatk_hapcal_dbsnp -stand_call_conf 30.0 -stand_emit_conf 30.0 --annotation BaseQualityRankSumTest --annotation ChromosomeCounts --annotation DepthOfCoverage --annotation FisherStrand --annotation HaplotypeScore --annotation InbreedingCoeff --annotation MappingQualityRankSumTest --annotation MappingQualityZero --annotation QualByDepth --annotation RMSMappingQuality --annotation ReadPosRankSumTest --annotation SpanningDeletions --annotation TandemRepeatAnnotator --annotation DepthPerAlleleBySample ";
 	    if (scalar(@sid) > 2) {
 		for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) { #For all sample ids
 		    if ( ($sid[$sampleid] =~ /(\d+)-(\d+|-\d+)-(\d+)(A|U)/) ) {#Match sampleID
@@ -2038,7 +2058,7 @@ sub GATK_hapcal {
     }
     else {
 	for (my $chr=$_[3];$chr<$_[4];$chr++) { #Determined by chr start and stop arguments given as input
-	    print GATK_HAPCAL "java -Xmx$_[5]g -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T HaplotypeCaller -R ", '${referenceArchive}',"/$genomeref -D ", '${referenceArchive}',"/$gatk_recal_knset -stand_call_conf 30.0 -stand_emit_conf 30.0 --annotation BaseQualityRankSumTest --annotation ChromosomeCounts --annotation DepthOfCoverage --annotation FisherStrand --annotation HaplotypeScore --annotation InbreedingCoeff --annotation MappingQualityRankSumTest --annotation MappingQualityZero --annotation QualByDepth --annotation RMSMappingQuality --annotation ReadPosRankSumTest --annotation SpanningDeletions --annotation TandemRepeatAnnotator --annotation DepthPerAlleleBySample ";
+	    print GATK_HAPCAL "java -Xmx$_[5]g -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T HaplotypeCaller -R ", '${referenceArchive}',"/$genomeref -D ", '${referenceArchive}',"/$gatk_hapcal_dbsnp -stand_call_conf 30.0 -stand_emit_conf 30.0 --annotation BaseQualityRankSumTest --annotation ChromosomeCounts --annotation DepthOfCoverage --annotation FisherStrand --annotation HaplotypeScore --annotation InbreedingCoeff --annotation MappingQualityRankSumTest --annotation MappingQualityZero --annotation QualByDepth --annotation RMSMappingQuality --annotation ReadPosRankSumTest --annotation SpanningDeletions --annotation TandemRepeatAnnotator --annotation DepthPerAlleleBySample ";
 	    if (scalar(@sid) > 2) {
 		for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) { #For all sample ids
 		    if ( ($sid[$sampleid] =~ /(\d+)-(\d+|-\d+)-(\d+)(A|U)/) ) {#Match sampleID
@@ -2072,7 +2092,7 @@ sub GATK_unigt {
 #GATK UnifiedGenotyper
 #$_[0] = $familyid NOTE: not sampleid
 #$_[1] = $aligner, to choose the correct dir depending on what aligner has been used previously
-#$_[2] = $gatk_unigt_snps (SNV) or $gatk_unigt_indels (INDEL)
+#$_[2] = $gatk_unigt_snvs (SNV) or $gatk_unigt_indels (INDEL)
 
     `mkdir -p $odf/$_[0]/$_[1]/info;`; #Creates the aligner folder and info data file directory
     `mkdir -p $odf/$_[0]/$_[1]/GATK`; #Creates the aligner folder, GATK data file directory
@@ -2111,7 +2131,7 @@ sub GATK_unigt {
     print GATK_UNIGT 'outFamilyDir="', "$odf/$_[0]/$_[1]/GATK", '"', "\n\n"; 
     print GATK_UNIGT "#GATK UnifiedGenotyper","\n\n";
 
-    print GATK_UNIGT "java -Xmx12g -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T UnifiedGenotyper -R ", '${referenceArchive}',"/$genomeref -D ", '${referenceArchive}',"/$gatk_recal_knset -glm ";
+    print GATK_UNIGT "java -Xmx12g -jar $gatk_path/GenomeAnalysisTK.jar -l INFO -T UnifiedGenotyper -R ", '${referenceArchive}',"/$genomeref -D ", '${referenceArchive}',"/$gatk_unigt_dbsnp -glm ";
     
     if ($_[2] eq "SNV") { #UnifiedGT only takes "SNP" and not "SNV" as model input
 	print GATK_UNIGT "SNP ";
@@ -2135,7 +2155,7 @@ sub GATK_unigt {
 
     print GATK_UNIGT "\n\nwait", "\n\n";    
     close(GATK_UNIGT);
-    FIDSubmitJob(0,$familyid, 1, "MAIN",$filename);
+    FIDSubmitJob(0,$familyid, 3, "MAIN",$filename);
     return;
 }
 
