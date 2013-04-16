@@ -1952,10 +1952,10 @@ sub RankVariants {
     print RV "-im_db_gidc ".$scriptParameter{'allElementsDbGeneIdCol'}." "; #Identifer column number for coverage calculation
     print RV "-rs ".$scriptParameter{'rankScore'}." "; #The rank score cut-off
     print RV "-pedigree ".$scriptParameter{'pedigreeFile'}." "; #Pedigree file
-    print RV "-tarcov "; #Target coverage files for family members, comma sep
     if ($humanGenomeReferenceSource eq "GRCh") { #Add chr for annovar_merged master file uses chrosome prefix downstream
 	print RV "-prechr 1 "; #Use chr prefix in rank script
     }
+    print RV "-tarcov "; #Target coverage files for family members, comma sep
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {#For all sample ids 
 	
 	my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDCounter]}{'pPicardToolsMarkduplicates'}{'fileEnding'}; #Last program before calculation
