@@ -203,7 +203,7 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [reference dir]
 
 -imdbmf/--ImportantDbMasterFile Important Db master file to be used when selecting variants (defaults to "")
 
--imdbfof/--ImportantDbFileOutFile The file(s) to write to when selecting variants with intersectCollect.pl. Comma sep (defaults to "outDataDir/familyID/aligner/GATK/candidates/ranking/familyID_orphan.selectVariants, outDataDir/familyID/aligner/GATK/candidates/ranking/IEM_Db_CMMS/familyID.selectVariants"; Supply whole path/file)
+-imdbfof/--ImportantDbFileOutFile The file(s) to write to when selecting variants with intersectCollect.pl. Comma sep (defaults to "outDataDir/familyID/aligner/GATK/candidates/ranking/familyID_orphan.selectVariants, outDataDir/familyID/aligner/GATK/candidates/ranking/clinical/familyID.selectVariants"; Supply whole path/file)
 
 -imdbcc/--ImportantDbGeneCoverageCalculation Important Db gene coverage calculation (Defaults to "1" (=yes))
 
@@ -377,7 +377,7 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                  -imdbfile/--ImportantDbFile Important Db file (Defaults to "")
                  -imdbte/--ImportantDbTemplate Important Db template file used to create the specific family '-im_dbmf' master file (Defaults to "")
                  -imdbmf/--ImportantDbMasterFile Important Db master file to be used when selecting variants (defaults to "") 
-                 -imdbfof/--ImportantDbFileOutFile The file(s) to write to when selecting variants with intersectCollect.pl. Comma sep (defaults to "outDataDir/familyID/aligner/GATK/candidates/ranking/familyID_orphan.selectVariants, outDataDir/familyID/aligner/GATK/candidates/ranking/IEM_Db_CMMS/familyID.selectVariants"; Supply whole path/file)
+                 -imdbfof/--ImportantDbFileOutFile The file(s) to write to when selecting variants with intersectCollect.pl. Comma sep (defaults to "outDataDir/familyID/aligner/GATK/candidates/ranking/familyID_orphan.selectVariants, outDataDir/familyID/aligner/GATK/candidates/ranking/clinical/familyID.selectVariants"; Supply whole path/file)
                  -imdbcc/--ImportantDbGeneCoverageCalculation Important Db gene coverage calculation (Defaults to "1" (=yes))
                  -imdbgidc/--ImportantDbGeneIdCol Important Db gene file gene ID column (zero-based, defaults to "18")
                
@@ -411,13 +411,13 @@ DefineParameters("maximumCores", "nocmdinput", "MIP", 8, 8, "MIP", 0);
 
 DefineParameters("configFile", "nocmdinput", "MIP", 0, 0, "MIP", "file");
 
-DefineParameters("writeConfigFile", "nocmdinput", "MIP", 0, 1, "MIP", 0);
-
 DefineParameters("wholeGenomeSequencing", "nocmdinput", "program", 0, 0, "MIP", 0);
 
 DefineParameters("outDataDir", "nocmdinput", "path", "nodefault", "NotsetYet", "MIP", 0); #Depends on -wholeGenomeSequencing input, directory created by MIP if required
 
 DefineParameters("outScriptDir", "nocmdinput", "path", "nodefault", "NotsetYet", "MIP", 0); #Depends on -wholeGenomeSequencing input, directory created by MIP if required
+
+DefineParameters("writeConfigFile", "nocmdinput", "path", 0, "NotsetYet", "MIP", 0);
 
 DefineParameters("pedigreeFile", "nocmdinput", "path", "nodefault", "NotsetYet", "MIP", "file"); #Depends on -projectID input
 
@@ -549,9 +549,6 @@ DefineParameters("GATKVariantReCalibrationTrainingSetMills", "nocmdinput", "path
 DefineParameters("GATKVariantReCalibrationTSFilterLevel", "nocmdinput", "program", 99.9, 99.9, "pGATKVariantRecalibration", 0);
 
 
-DefineParameters("pGATKPhaseByTransmission", "nocmdinput", "program", 1, 1, "MIP", 0, "phtr_");
-
-
 DefineParameters("pGATKVariantEvalAll", "nocmdinput", "program", 1, 1, "MIP", 0, "nofileEnding");
 
 DefineParameters("pGATKVariantEvalExome", "nocmdinput", "program", 1, 1, "MIP", 0, "nofileEnding");
@@ -632,6 +629,8 @@ my @ImportantDbFileOutFile; #List of db outfiles
 DefineParameters("pSampleCheck", "nocmdinput", "program", 1, 1, "MIP", 0, "nofileEnding");
 
 ##Temporary fix to add these here otherwise the filending will be off
+DefineParameters("pGATKPhaseByTransmission", "nocmdinput", "program", 1, 1, "MIP", 0, "phtr_");
+
 DefineParameters("pGATKReadBackedPhasing", "nocmdinput", "program", 1, 1, "MIP", 0, "phrb_");
 
 DefineParameters("GATKReadBackedPhasingPhaseQualityThresh", "nocmdinput", "program", 20, 20, "pGATKReadBackedPhasing", 0);
@@ -845,13 +844,18 @@ if ($parameter{'annovarSupportedTableNames'}{'value'} eq 1) {
 
 foreach my $orderParameterElement (@orderParameters) { #Populate scriptParameters{'parameterName'} => 'Value'
 
-    if ( (defined($scriptParameter{'projectID'})) && (defined($scriptParameter{'familyID'})) && (defined($scriptParameter{'wholeGenomeSequencing'})) && ($orderParameterElement eq "pedigreeFile") ) {
+    if ( (defined($scriptParameter{'projectID'})) && (defined($scriptParameter{'familyID'})) && (defined($scriptParameter{'wholeGenomeSequencing'})) ) {
+
+	if ($orderParameterElement eq "pedigreeFile" || $orderParameterElement eq "writeConfigFile") {
 	
-	if ($scriptParameter{'wholeGenomeSequencing'} == 1) {
-	    $parameter{'pedigreeFile'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/genomes/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_pedigree.txt";
-	}
-	else {
-	    $parameter{'pedigreeFile'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/exomes/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_pedigree.txt";
+	    if ($scriptParameter{'wholeGenomeSequencing'} == 1) {
+		$parameter{'pedigreeFile'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/genomes/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_pedigree.txt";
+		$parameter{'writeConfigFile'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/genomes/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_config.yaml";
+	    }
+	    else {
+		$parameter{'pedigreeFile'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/exomes/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_pedigree.txt";
+		$parameter{'writeConfigFile'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/exomes/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_config.yaml";
+	    }
 	}
     }
     
@@ -862,13 +866,13 @@ foreach my $orderParameterElement (@orderParameters) { #Populate scriptParameter
 	
 	if ($scriptParameter{'wholeGenomeSequencing'} == 1) {
 	    
-	    $parameter{'outDataDir'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/nobackup/genomes";
+	    $parameter{'outDataDir'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/analysis/nobackup/genomes";
 	    
 	    $parameter{'outScriptDir'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/genomes_scripts";
 	}
 	else {
 
-	    $parameter{'outDataDir'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/nobackup/exomes";
+	    $parameter{'outDataDir'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/analysis/nobackup/exomes";
 
 	    $parameter{'outScriptDir'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/exomes_scripts";
 	}
@@ -879,9 +883,9 @@ foreach my $orderParameterElement (@orderParameters) { #Populate scriptParameter
 
 	$parameter{'referencesDir'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/mip_references";
 	
-	$parameter{'PicardToolsMergeTempDirectory'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/nobackup/";
+	$parameter{'PicardToolsMergeTempDirectory'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/analysis/nobackup/";
 
-	$parameter{'GATKTempDirectory'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/nobackup/";
+	$parameter{'GATKTempDirectory'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/analysis/nobackup/";
 
     }
     if ($orderParameterElement eq "familyID") { #Set env_up defaults depending on $scriptParameter{'familyID'} value that now has been set
@@ -2549,9 +2553,9 @@ sub Annovar {
     my $aligner = $_[1];
     my $callType = $_[2]; #SNV,INDEL or BOTH 
     
-    `mkdir -p $scriptParameter{'outDataDir'}/ $familyID/$aligner/info;`; #Creates the alignment folder and info data file directory
-    `mkdir -p $scriptParameter{'outDataDir'}/ $familyID/$aligner/GATK;`; #Creates the aligner and GATK folder   
-    `mkdir -p $scriptParameter{'outScriptDir'}/ $familyID/$aligner;`; #Creates the aligner script folder
+    `mkdir -p $scriptParameter{'outDataDir'}/$familyID/$aligner/info;`; #Creates the alignment folder and info data file directory
+    `mkdir -p $scriptParameter{'outDataDir'}/$familyID/$aligner/GATK;`; #Creates the aligner and GATK folder   
+    `mkdir -p $scriptParameter{'outScriptDir'}/$familyID/$aligner;`; #Creates the aligner script folder
 
     if ($scriptParameter{'pAnnovar'} == 1) {   
 	$filename = $scriptParameter{'outScriptDir'}."/".$familyID."/".$aligner."/annovar_".$familyID."_".$callType.".";
@@ -2678,8 +2682,8 @@ sub GATKReadBackedPhasing {
 	my $callType = $_[2]; #SNV,INDEL or BOTH
 	
 	`mkdir -p $scriptParameter{'outDataDir'}/$familyID/$aligner/info;`; #Creates the aligner folder and info data file directory
-	`mkdir -p $scriptParameter{'outDataDir'}/$familyID/$aligner/GATK`; #Creates the aligner folder, GATK data file directory
-	`mkdir -p $scriptParameter{'outScriptDir'}/$familyID/$aligner`; #Creates the aligner folder script file directory
+	`mkdir -p $scriptParameter{'outDataDir'}/$familyID/$aligner/GATK;`; #Creates the aligner folder, GATK data file directory
+	`mkdir -p $scriptParameter{'outScriptDir'}/$familyID/$aligner;`; #Creates the aligner folder script file directory
 	
 	if ($scriptParameter{'pGATKReadBackedPhasing'} == 1) {
 		$filename = $scriptParameter{'outScriptDir'}."/".$familyID."/".$aligner."/gatk_readbackedphasing_".$familyID."_".$callType.".";
@@ -2782,8 +2786,8 @@ sub GATKPhaseByTransmission {
 	my $callType = $_[2]; #SNV,INDEL or BOTH
 	
 	`mkdir -p $scriptParameter{'outDataDir'}/$familyID/$aligner/info;`; #Creates the aligner folder and info data file directory
-	`mkdir -p $scriptParameter{'outDataDir'}/$familyID/$aligner/GATK`; #Creates the aligner folder, GATK data file directory
-	`mkdir -p $scriptParameter{'outScriptDir'}/$familyID/$aligner`; #Creates the aligner folder script file directory
+	`mkdir -p $scriptParameter{'outDataDir'}/$familyID/$aligner/GATK;`; #Creates the aligner folder, GATK data file directory
+	`mkdir -p $scriptParameter{'outScriptDir'}/$familyID/$aligner;`; #Creates the aligner folder script file directory
 	
 	if ($scriptParameter{'pGATKPhaseByTransmission'} == 1) {
 		$filename = $scriptParameter{'outScriptDir'}."/".$familyID."/".$aligner."/gatk_phasebytransmission_".$familyID."_".$callType.".";
