@@ -31,7 +31,7 @@ intersectCollect.pl -db db_master.txt -o outfile.txt
 
 -sofs/--selectOutFiles Selected variants and orphan db files out data directory. Comma sep (Defaults to ".";Supply whole path(s) and in the same order as the '-db' db file) 
 
--prechr/--prefix_chromosomes "chrX" or just "X" (defaults to "X")
+-prechr/--prefixChromosomes "chrX" or just "X" (defaults to "X")
 
 =head3 I/O
 
@@ -67,7 +67,7 @@ BEGIN {
                -m/--merge Merge all entries found within db files. Unique entries (not found in first db file) will be included. Do not support range matching. (Defaults to "0")
                -s/--select Select all entries in first infile matching keys in subsequent db files. Do not support range matching. (Defaults to "0")            
                -sofs/--selectOutFiles Selected variants and orphan db files out data directory. Comma sep (Defaults to ".";Supply whole path(s) and in the same order as the '-db' db file)
-               -prechr/--prefix_chromosomes "chrX" or just "X" (defaults to "X")
+               -prechr/--prefixChromosomes "chrX" or just "X" (defaults to "X")
 	   };    
 }
 
@@ -90,7 +90,7 @@ GetOptions('db|dbfile:s'  => \$db,
 	   'm|merge:n'  => \$merge,
 	   's|select:n'  => \$select,
 	   'sofs|selectOutFiles:s'  => \@selectOutFiles, #Comma separated list
-	   'prechr|prefix_chromosomes:n'  => \$prechr,
+	   'prechr|prefixChromosomes:n'  => \$prechr,
 	   'h|help' => \$help,
     );
 

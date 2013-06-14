@@ -1,7 +1,6 @@
 #!/usr/bin/perl - w
-
   
-#Copyright 2012 Henrik Stranneheim
+###Copyright 2012 Henrik Stranneheim
 
 =head1 SYNOPSIS
 
@@ -9,9 +8,9 @@ add_depth.pl -i [infile1] -infnv [infilesnv...n]  -sid [sampleID...n] -o [outfil
 
 =head2 COMMANDS AND OPTIONS
 
--i/--infile annovar_all.txt Infile, comma sep
+-i/--infile Infile, comma sep
 
--infnv/--infile_no_var Novariant infile(s)
+-infnv/--infileNoVariant Novariant infile(s)
 
 -sid/--sampleid Sampleid(s), comma sep
 
@@ -38,8 +37,8 @@ use vars qw($USAGE);
 BEGIN {
     $USAGE =
 	qq{add_depth.pl -i [infile1] -infnv [infilesnv...n]  -sid [sampleID...n] -o [outfile.txt]
-               -i/--infile Annovar_all.txt infile
-               -infnv/--infile_no_var Novariant infile(s), comma sep (Same order as sid)
+               -i/--infile infile
+               -infnv/--infileNoVariant Novariant infile(s), comma sep (Same order as sid)
                -sid/--sampleid Sampleid(s), comma sep (Same order as infnv)
 	       -o/--outfile The output file (defaults to annovar_master.txt)
                -prechr/--prefix_chromosomes "chrX" or just "X" (defaults to "X" i.e. no prefix)
@@ -50,7 +49,7 @@ my ($of, $inf, $prechr, $help) = ("annovar_master.txt", 0, 0);
 my (@infnv, @sid, @chr);
 
 GetOptions('i|infile:s'  => \$inf,
-	   'infnv|infile_no_var:s'  => \@infnv, #Comma separated list
+	   'infnv|infileNoVariant:s'  => \@infnv, #Comma separated list
 	   'sid|sampleid:s'  => \@sid, #Comma separated list
 	   'o|outfile:s'  => \$of,
 	   'prechr|prefix_chromosomes:n'  => \$prechr,
@@ -61,16 +60,16 @@ die $USAGE if( $help );
 
 if ($inf eq 0) {
    my $verbosity = 2;
- print"\n";
- pod2usage({-message => "Must supply an annovar_all.txt infile.\n",
+   print"\n";
+   pod2usage({-message => "Must supply an annovar_all.txt infile.\n",
      -verbose => $verbosity
    });
 }
 
 if (@infnv == 0) {
    my $verbosity = 2;
- print"\n";
- pod2usage({-message => "Must supply infile(s) as comma separeted list.\n",
+   print"\n";
+   pod2usage({-message => "Must supply infile(s) as comma separeted list.\n",
      -verbose => $verbosity
    });
 }
@@ -131,7 +130,7 @@ sub FindCol {
 	    
 	    for (my $colnr=0;$colnr<scalar(@temp);$colnr++) { 
 		
-		if ( $temp[$colnr]=~ /$_[1]/ ) {
+		if ( $temp[$colnr]=~/$_[1]/ ) {
 		    $col{$_[1]} = $colnr;
 		    last; #Break
 		}
