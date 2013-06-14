@@ -390,56 +390,90 @@ sub ReadPedigreeFile {
 #IDN\tSampleID\tMother\tFather\t\Child..n
 #$_[0] = filename
     
+    my @pedigreeFileElements = ("familyID", "sampleID", "father", "mother", "sex", "phenotype", );
+    my $familyID;
+    my $sampleID;
+    
     open(PEDF, "<$_[0]") or die "Can't open $_[0]:$!, \n";    
     my $temp_fatherID;
     my $temp_motherID;
     my $nrsamples;
-
+    
     while (<PEDF>) {
 	chomp $_;
-	
+
+	if ( ($. == 1) && ($_ =~/^\#/) ) { #Header present overwrite @pedigreeFileElements with header info
+	    @pedigreeFileElements = split("\t", $'); #'
+	    next;
+	}
 	if (m/^\s+$/) {		# Avoid blank lines
-            next;
-        }
+	    next;
+	}
 	if (m/^\#/) {		# Avoid #
-            next;
-        }		
+	    next;
+	}		
 	if ( ($_ =~/(\S+)/) ) {	
+	    
 	    chomp($_);
-	    my @temp = split("\t",$_);	    #Loads pedigree info
-	    if ( $temp[0] =~ /(\d+)-(\d+|-\d+)-(\d+)(A|U)/) { #Match IDN
-		$nrsamples++;
-		push (@samples, $temp[0]); #Enables commenting one member and running analysis anyway if -nos is supplied
-		if ($1) {
-		    $familyid = $1;
-		}
-		if ($3 % 2 == 1) { #Male
-#% modulous operator, it gives you an integer representation of the remainder of a division operation. If X / Y divides evenly (that is to say, there's no remainder (or modulus)), the result of X % Y will be zero.
-		    $pedigree{$1}{$temp[0]}[0] = "M"; #Sex, M=Male
-		    if ($2 eq 2) {
-			$temp_fatherID= $temp[0]; #NOTE: No global variable assignation, hence not used in CreateModels. this is only for recording		    
-		    }
-		}
-		else { #Female
-		    $pedigree{$1}{$temp[0]}[0] = "F"; #Sex, F=Female
-		    if ($2 eq 2) {
-			$temp_motherID= $temp[0]; #NOTE: No global variable assignation, hence not used in CreateModels. this is only for recording
-		    }
-		}
-		if ($4 eq "A") { #Affected
-		    $pedigree{$1}{$temp[0]}[1] = 1; #1=Affected
-		    push (@sid_aff, $temp[0]); #Add affected to enable AR_Compound filtering
-		}
-		else { #Unaffected
-		    $pedigree{$1}{$temp[0]}[1] = 0; #0=Unaffected
-		    push (@sid_hea, $temp[0]); #Add healthy to enable AR_Compound filtering
-		}
-		my @temp_rec_genetic_models = split("\;", $temp[10]); #Loads recommende inheritance models as suggested by MDs
-		for (my $model=0;$model<scalar(@temp_rec_genetic_models);$model++) { #Saves models to hash for later comparison
-		    $rec_genetic_models{$temp_rec_genetic_models[$model]} = $temp_rec_genetic_models[$model];
-		}
-		push(@{$pedigree{$1}{$temp[0]}},@temp[2..4,10]); #Populate hash of array for Mother/Father/Child. Full hash: hash{FDN}{IDN}[Sex,Affected,Mother/Father/Child]. Used later in CreateModels subroutine
+	    my @lineInfo = split("\t",$_);	    #Loads pedigree info
+	    
+	    $nrsamples++;	
+	    if ($lineInfo[0] =~/\S+/) { #familyID
+		$familyid = $lineInfo[0];
 	    }
+	    else {
+		print STDERR "Cannot find familyID in column 1\n";
+		die;
+	    }	
+	    if ($lineInfo[1] =~/\S+/) { #sampleID
+		$sampleID = $lineInfo[1];	
+		push (@samples, $lineInfo[1]); #Enables commenting one member and running analysis anyway if -nos is supplied	
+	    }
+	    else {
+		print STDERR "Cannot find sampleID in column 2\n";
+		die;
+	    }
+	    if ($lineInfo[2]  eq $sampleID) { #Father
+		$pedigree{$familyid}{$sampleID}[2] = 0; #Not mother
+		$pedigree{$familyid}{$sampleID}[3] = 1; #father
+		$pedigree{$familyid}{$sampleID}[4] = 0; #Not Child
+		$temp_fatherID= $lineInfo[2]; #NOTE: No global variable assignation, hence not used in CreateModels. this is only for recording		    
+	    }
+	    elsif ($lineInfo[3] eq $sampleID) { #Mother
+		
+		$pedigree{$familyid}{$sampleID}[2] = 1; #Add mother
+		$pedigree{$familyid}{$sampleID}[3] = 0; #father
+		$pedigree{$familyid}{$sampleID}[4] = 0; #Not Child
+		$temp_motherID= $lineInfo[3]; #NOTE: No global variable assignation, hence not used in CreateModels. this is only for recording
+	    }
+	    else { #Child
+		$pedigree{$familyid}{$sampleID}[2] = 0; #Not mother
+		$pedigree{$familyid}{$sampleID}[3] = 0; #Not father
+		$pedigree{$familyid}{$sampleID}[4] = 1; #Child
+		
+	    }
+	    if ($lineInfo[4] == 1) { #Male
+		
+		$pedigree{$familyid}{$sampleID}[0] = "M"; #Sex, M=Male
+	    }
+	    else { #Female
+		$pedigree{$familyid}{$sampleID}[0] = "F"; #Sex, F=Female
+	    }
+	    if ($lineInfo[5] == 2) { #Affected
+		$pedigree{$familyid}{$sampleID}[1] = 1; #1=Affected
+		push (@sid_aff, $lineInfo[1]); #Add affected to enable AR_Compound filtering
+	    }
+	    else { #Unaffected
+		$pedigree{$familyid}{$sampleID}[1] = 0; #0=Unaffected
+		push (@sid_hea, $lineInfo[1]); #Add healthy to enable AR_Compound filtering
+	    }
+	    my @temp_rec_genetic_models = split("\;", $lineInfo[12]); #Loads recommende inheritance models as suggested by MDs
+	    for (my $model=0;$model<scalar(@temp_rec_genetic_models);$model++) { #Saves models to hash for later comparison
+		$rec_genetic_models{$temp_rec_genetic_models[$model]} = $temp_rec_genetic_models[$model];
+	    }
+	    #push(@{$pedigree{$familyID}{$sampleID}},@lineInfo[2..4,10]); #Populate hash of array for Mother/Father/Child. Full hash: hash{FDN}{IDN}[Sex,Affected,Mother/Father/Child]. Used later in CreateModels subroutine
+	    
+	    #}
 	} 	
     }
     close(PEDF);
@@ -999,12 +1033,13 @@ sub AnalyseCompound {
 		    }
 		    if ($2 eq "1/1") {
 			if ( ($temp[0] eq "chrX") || ($temp[0] eq "X") ) { #Check for chrX
-			    if ( ($sid_aff[$sid] =~ /(\d+)-(\d+|-\d+)-(\d+)(A|U)/) ) {#Match sampleID
-				if ($3 % 2 == 1) { #Male#% modulous operator, it gives you an integer representation of the remainder of a division operation. If X / Y divides evenly (that is to say, there's no remainder (or modulus)), the result of X % Y will be zero.
-				    if ($temp[1] > 3522410 && $temp[1] <148858526 ) { # 3522410 = Upper bound for PAR1. 148858526 = Lower bound for PAR2. Hence, variants with location outside of PAR1 or PAR2 should be skiped.
-					$skip++; #No heterozygous compound on chrX outside of PAR regions for affected males
-				    }
+			    #if ( ($sid_aff[$sid] =~ /(\d+)-(\d+|-\d+)-(\d+)(A|U)/) ) {#Match sampleID
+			    if ($pedigree{$familyid}{$sid_aff[$sid]}[0] eq "M") {			
+#	if ($3 % 2 == 1) { #Male#% modulous operator, it gives you an integer representation of the remainder of a division operation. If X / Y divides evenly (that is to say, there's no remainder (or modulus)), the result of X % Y will be zero.
+				if ($temp[1] > 3522410 && $temp[1] <148858526 ) { # 3522410 = Upper bound for PAR1. 148858526 = Lower bound for PAR2. Hence, variants with location outside of PAR1 or PAR2 should be skiped.
+				    $skip++; #No heterozygous compound on chrX outside of PAR regions for affected males
 				}
+				#}
 			    }
 			}
 			else {
@@ -1014,12 +1049,13 @@ sub AnalyseCompound {
 		    }
 		    if ($2 eq "0/1") {
 			if ( ($temp[0] eq "chrX") || ($temp[0] eq "X") ) { #Check for chrX
-			    if ( ($sid_aff[$sid] =~ /(\d+)-(\d+|-\d+)-(\d+)(A|U)/) ) {#Match sampleID
-				if ($3 % 2 == 1) { #Male#% modulous operator, it gives you an integer representation of the remainder of a division operation. If X / Y divides evenly (that is to say, there's no remainder (or modulus)), the result of X % Y will be zero.
-				    if ($temp[1] > 3522410 && $temp[1] <148858526 ) { # 3522410 = Upper bound for PAR1. 148858526 = Lower bound for PAR2. Hence, variants with location outside of PAR1 or PAR2 should be skiped.
-					$skip++; #No heterozygous compound on chrX outside of PAR regions for affected males
-				    }
+			    if ($pedigree{$familyid}{$sid_aff[$sid]}[0] eq "M") {
+			    #if ( ($sid_aff[$sid] =~ /(\d+)-(\d+|-\d+)-(\d+)(A|U)/) ) {#Match sampleID
+			#	if ($3 % 2 == 1) { #Male#% modulous operator, it gives you an integer representation of the remainder of a division operation. If X / Y divides evenly (that is to say, there's no remainder (or modulus)), the result of X % Y will be zero.
+				if ($temp[1] > 3522410 && $temp[1] <148858526 ) { # 3522410 = Upper bound for PAR1. 148858526 = Lower bound for PAR2. Hence, variants with location outside of PAR1 or PAR2 should be skiped.
+				    $skip++; #No heterozygous compound on chrX outside of PAR regions for affected males
 				}
+			    #}
 			    }
 			}
 			else {
@@ -1043,24 +1079,26 @@ sub AnalyseCompound {
 			$skip++;
 		    }
 		    if ($2 eq "0/0") {
-			if ( ($sid_hea[$sid] =~ /(\d+)-(\d+|-\d+)-(\d+)(A|U)/) ) {#Match sampleID
-			    if ($2 eq 2) { #Parent
-				$parent_ref_hom++;
-				if ($parent_ref_hom eq 2) { #Both parent have GT: 0/0 and cannot contribute to AR_compound
-				    $skip++;
-				}
+			#if ( ($sid_hea[$sid] =~ /(\d+)-(\d+|-\d+)-(\d+)(A|U)/) ) {#Match sampleID
+			if ( ($pedigree{$familyid}{$sid_hea[$sid]}[2] == 1) || ($pedigree{$familyid}{$sid_hea[$sid]}[3] == 1) ) { #parent
+			    #if ($2 eq 2) { #Parent
+			    $parent_ref_hom++;
+			    if ($parent_ref_hom eq 2) { #Both parent have GT: 0/0 and cannot contribute to AR_compound
+				$skip++;
 			    }
+			#}
 			}
 			$correct_GT++;
 		    }
 		    if ($2 eq "0/1") {
-			if ( ($sid_hea[$sid] =~ /(\d+)-(\d+|-\d+)-(\d+)(A|U)/) ) {#Match sampleID
-			    if ($2 eq 2) { #Parent
-				$parent_ref_het++;
-				if ($parent_ref_het eq 2) { #Both parent have GT: 0/1 and cannot contribute to AR_compound. If affected is 0/1 all GT:s are identical and not a true AR_compound. If affected is 1/1 then it is a AR mutation and should be recorded as such. 
-				    $skip++;
-				}
+			#if ( ($sid_hea[$sid] =~ /(\d+)-(\d+|-\d+)-(\d+)(A|U)/) ) {#Match sampleID
+			if ( ($pedigree{$familyid}{$sid_hea[$sid]}[2] == 1) || ($pedigree{$familyid}{$sid_hea[$sid]}[3] == 1) ) { #parent
+			#    if ($2 eq 2) { #Parent
+			    $parent_ref_het++;
+			    if ($parent_ref_het eq 2) { #Both parent have GT: 0/1 and cannot contribute to AR_compound. If affected is 0/1 all GT:s are identical and not a true AR_compound. If affected is 1/1 then it is a AR mutation and should be recorded as such. 
+				$skip++;
 			    }
+			    #}
 			}
 			$correct_GT++;
 			$het_C++;
@@ -2065,7 +2103,7 @@ sub WriteCompound {
 #$_[0] = filename
 #$_[1] = chr number
     
-    if ($_[1] eq "chr1") {
+    if ( ($_[1] eq "chr1") || ($_[1] eq "1") ) {
 	open (FILT, ">$_[0]") or die "Can't write to $_[0]: $!\n";
 #Create header
 	if ( @infile_header ) { #If the file came with a header otherwise to not write a header

@@ -37,7 +37,7 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [reference dir]
 
 -al/--aligner Setting which aligner was used for alignment in previous analysis (defaults to "")
 
--wgs/--wholeGenomeSequencing Analysis to perform are based on whole genome sequencing data or not (defaults to "0" (=no))
+-at/--analysisType Type of analysis to perform (defaults to "exomes";Valid entries: "genomes", "exomes", "rapid")
 
 -mc/--maximumCores The maximum number of cores per node used in the analysis (defaults to "8")
 
@@ -81,7 +81,9 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [reference dir]
 
 -picardpath/--picardToolsPath Path to PicardTools. Mandatory for use of PicardTools (defaults to "")
 
--pPicT_merge/--pPicardToolsMergeSamFiles Merge (BAM file(s)) using PicardTools MergeSamFiles (defaults to "0" (=no))
+-pPicT_merge/--pPicardToolsMergeSamFiles Merge (BAM file(s)) using PicardTools MergeSamFiles (defaults to "1" (=yes))
+
+-pPicT_mergerr/--pPicardToolsMergeRapidReads Merge Read batch processed (BAM file(s)) using PicardTools MergeSamFiles (Only relevant in rapid mode;defaults to "0" (=no))
 
 -pictmergetmpd/--PicardToolsMergeTempDirectory Temporary Directory to write to using PicardTools MergeSamFiles (defaults to "/scratch/$SLURM_JOB_ID";Supply whole path)
 
@@ -108,6 +110,8 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [reference dir]
 -extbl/--exomeTargetBedInfileList Prepared target BED file for PicardTools CalculateHSMetrics (defaults to "". File ending should be ".infile_list")
               
 -extpbl/--exomeTargetPaddedBedInfileList Prepared padded target BED file for PicardTools CalculateHSMetrics (defaults to "". File ending should be ".padXXX.infile_list")
+
+-tcovgn/--targetCoverageGeneNameFile File for adding gene name to target calulations (defaults to "".)
 
 -pRCP/--pRCovPlots Plots of genome coverage using rCovPlots (defaults to "1" (=yes))
 
@@ -275,7 +279,7 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                -pedigree/--pedigreeFile (Supply whole path, defaults to "")
                -huref/--humanGenomeReference Fasta file for the human genome reference (defaults to "")
                -al/--aligner Setting which aligner was used for alignment in previous analysis (defaults to "")
-               -wgs/--wholeGenomeSequencing Analysis to perform are based on whole genome sequencing data or not (defaults to "0" (=no))
+               -at/--analysisType Type of analysis to perform (defaults to "exomes";Valid entries: "genomes", "exomes", "rapid")
                -mc/--maximumCores The maximum number of cores per node used in the analysis (defaults to "8")
                -env_up/--environmentUppmax Sets the environment to UPPMAX (defaults to "0" (=no))
                -c/--configFile YAML config file for script parameters (defaults to "")
@@ -308,7 +312,8 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                
                ##PicardTools
                -picardpath/--picardToolsPath Path to PicardTools. Mandatory for use of PicardTools (defaults to "")
-               -pPicT_merge/--pPicardToolsMergeSamFiles Merge (BAM file(s) ) using PicardTools MergeSamFiles (defaults to "0" (=no))
+               -pPicT_merge/--pPicardToolsMergeSamFiles Merge (BAM file(s) ) using PicardTools MergeSamFiles (defaults to "1" (=yes))
+               -pPicT_mergerr/--pPicardToolsMergeRapidReads Merge Read batch processed (BAM file(s)) using PicardTools MergeSamFiles (Only relevant in rapid mode;defaults to "0" (=no))
                  -pictmergetmpd/--PicardToolsMergeTempDirectory Temporary Directory to write to using PicardTools MergeSamFiles (defaults to "/scratch/SLURM_JOB_ID";Supply whole path)
                  -picT_mergeprev/--picardToolsMergeSamFilesPrevious PicardTools MergeSamFiles on merged current files and previous BAM-file(s) (Supply whole path and name, name must contain sample id, and lanes_Xn info)
                -pPicT_markdup/--pPicardToolsMarkduplicates Markduplicates using PicardTools MarkDuplicates (defaults to "1" (=yes))
@@ -324,6 +329,7 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                -pCCE_pichs/--pPicardToolsCalculateHSMetrics Capture calculation using PicardTools CalculateHSmetrics under '-pCC' (defaults to "1" (=yes))
                  -extbl/--exomeTargetBedInfileList Prepared target BED file for PicardTools CalculateHSMetrics (defaults to "". File ending should be ".infile_list") 
                  -extpbl/--exomeTargetPaddedBedInfileList Prepared padded target BED file for PicardTools CalculateHSMetrics (defaults to "". File ending should be ".padXXX.infile_list")
+                 -tcovgn/--targetCoverageGeneNameFile File for adding gene name to target calulations (defaults to "".)
                -pRCP/--pRCovPlots Plots of genome coverage using rCovPlots (defaults to "1" (=yes))
                
                ##GATK              
@@ -411,13 +417,13 @@ DefineParameters("projectID", "nocmdinput", "MIP", "nodefault", "b2010080", "MIP
 
 DefineParameters("email", "nocmdinput", "MIP", 0, 0, "MIP", 0);
 
-DefineParameters("familyID", "nocmdinput", "MIP", "nodefault", 0, "MIP", 0);
+DefineParameters("familyID", "nocmdinput", "path", "nodefault", "noenvironmentUppmaxDefault", "MIP", 0);
 
 DefineParameters("maximumCores", "nocmdinput", "MIP", 8, 8, "MIP", 0);
 
 DefineParameters("configFile", "nocmdinput", "MIP", 0, 0, "MIP", "file");
 
-DefineParameters("wholeGenomeSequencing", "nocmdinput", "program", 0, 0, "MIP", 0);
+DefineParameters("analysisType", "nocmdinput", "program", "exomes", "exomes", "MIP", 0);
 
 DefineParameters("outDataDir", "nocmdinput", "path", "nodefault", "NotsetYet", "MIP", 0); #Depends on -wholeGenomeSequencing input, directory created by MIP if required
 
@@ -487,9 +493,11 @@ DefineParameters("pSamToolsSort", "nocmdinput", "program", 1, 1, "MIP", 0, "_sor
 
 ##PicardTools
 
-DefineParameters("pPicardToolsMergeSamFiles", "nocmdinput", "program", 0, 0, "MIP", 0, "_merged", "MAIN");
+DefineParameters("pPicardToolsMergeRapidReads", "nocmdinput", "program", 0, 0, "MIP", 0, "_sorted", "MAIN");#Rapid mode special case
 
-DefineParameters("PicardToolsMergeTempDirectory", "nocmdinput", "path", "/scratch/", "notSetYet", "pPicardToolsMergeSamFiles", 0); #Depends on -projectID input, directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
+DefineParameters("pPicardToolsMergeSamFiles", "nocmdinput", "program", 1, 1, "MIP", 0, "_merged", "MAIN");
+
+DefineParameters("PicardToolsMergeTempDirectory", "nocmdinput", "path", "/scratch/", "notSetYet", "pBwaMem,pPicardToolsMergeSamFiles", 0); #Depends on -projectID input, directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
 
 DefineParameters("pPicardToolsMarkduplicates", "nocmdinput", "program", 1, 1, "MIP", 0, "_pmd", "MAIN");
 
@@ -511,9 +519,11 @@ DefineParameters("pPicardToolsCalculateHSMetrics", "nocmdinput", "program", 1, 1
 
 DefineParameters("xCoverage", "nocmdinput", "program", 30, 30, "pCalculateCoverage", 0);
 
+DefineParameters("targetCoverageGeneNameFile", "nocmdinput", "path", "nodefault", "mart_export_Ensembl_GeneID_key_cleaned_noblanks_nochr.txt", "pCalculateCoverage", "file");
+
 DefineParameters("pRCovPlots", "nocmdinput", "program", 1, 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC");
 
-DefineParameters("picardToolsPath", "nocmdinput", "path", "nodefault", "/bubo/home/h12/henriks/programs/picard-tools-1.74", "pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "directory");
+DefineParameters("picardToolsPath", "nocmdinput", "path", "nodefault", "/bubo/home/h12/henriks/programs/picard-tools-1.74", "pBwaMem,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "directory");
 
 ##Target definition files
 $parameter{'exomeTargetBed'}{'value'} = "nocmdinput";
@@ -573,7 +583,7 @@ DefineParameters("GATKVariantEvalDbSNP", "nocmdinput", "path", "nodefault", "dbs
 
 DefineParameters("GATKVariantEvalGold", "nocmdinput", "path", "nodefault", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file");
 
-DefineParameters("genomeAnalysisToolKitPath", "nocmdinput", "path", "nodefault", "/bubo/home/h12/henriks/programs/GenomeAnalysisTK-2.4-9-g532efad", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome", "directory");
+DefineParameters("genomeAnalysisToolKitPath", "nocmdinput", "path", "nodefault", "/bubo/home/h12/henriks/programs/GenomeAnalysisTK-2.5-2-gf57256b", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome", "directory");
 
 DefineParameters("GATKTempDirectory", "nocmdinput", "path", "/scratch/", "notSetYet", "pGATKRealigner,pGATKBaseRecalibration", 0); #Depends on -projectID input, directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
 
@@ -622,13 +632,13 @@ DefineParameters("geneFiltering", "nocmdinput", "program", 1, 1, "pRankVariants"
 
 DefineParameters("geneFilteringList", "nocmdinput", "path", "nodefault", "IEM_dispGeneList.txt", "pRankVariants", "file");
 
-DefineParameters("allElementsDbFile", "nocmdinput", "path", "nodefault", "mart_export_Ensembl_GeneID_key_cleaned_chr.txt", "pRankVariants", "file");
+DefineParameters("allElementsDbFile", "nocmdinput", "path", "nodefault", "mart_export_Ensembl_GeneID_key_cleaned_nochr.txt", "pRankVariants", "file");
 
 DefineParameters("allElementsDbGeneCoverageCalculation", "nocmdinput", "program", 1, 1, "pRankVariants", 0);
 
 DefineParameters("allElementsDbGeneIdCol", "nocmdinput", "program", 4, 4, "pRankVariants", 0);
 
-DefineParameters("ImportantDbFile", "nocmdinput", "path", "nodefault", "dbIEM_chr.v1.1.txt", "pRankVariants", "file");
+DefineParameters("ImportantDbFile", "nocmdinput", "path", "nodefault", "dbIEM.v1.1.txt", "pRankVariants", "file");
 
 DefineParameters("ImportantDbTemplate", "nocmdinput", "path", "nodefault", "select_dbIEM_variants_db_master.txt", "pRankVariants", "file");
 
@@ -741,7 +751,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'pedigree|pedigreeFile:s' => \$parameter{'pedigreeFile'}{'value'}, #Pedigree file
 	   'huref|humanGenomeReference:s' => \$parameter{'humanGenomeReference'}{'value'}, #Human genome reference
 	   'al|aligner:s' => \$parameter{'aligner'}{'value'}, #determining which aligner was used previously (if not specified)
-	   'wgs|wholeGenomeSequencing:n' => \$parameter{'wholeGenomeSequencing'}{'value'},
+	   'at|analysisType:s' => \$parameter{'analysisType'}{'value'}, #Type of analysis
 	   'mc|maximumCores:n' => \$parameter{'maximumCores'}{'value'}, #Per node
 	   'env_up|environmentUppmax:n' => \$parameter{'environmentUppmax'}{'value'}, #Sets several default paths, so that they do not have to be supplied
 	   'c|configFile:s' => \$parameter{'configFile'}{'value'},
@@ -764,6 +774,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'pBWA_sampe|pBwaSampe:n' => \$parameter{'pBwaSampe'}{'value'},
 	   'pSamT_sort|pSamToolsSort:n' => \$parameter{'pSamToolsSort'}{'value'},
 	   'pPicT_merge|pPicardToolsMergeSamFiles:n' => \$parameter{'pPicardToolsMergeSamFiles'}{'value'}, #PicardTools MergeSamFiles
+	   'pPicT_mergerr|pPicardToolsMergeRapidReads:n' => \$parameter{'pPicardToolsMergeRapidReads'}{'value'}, #PicardTools MergeSamFiles - Rapid mode
 	   'pictmergetmpd|PicardToolsMergeTempDirectory:s' => \$parameter{'PicardToolsMergeTempDirectory'}{'value'}, #PicardToolsMerge Temporary Directory
 	   'pict_mergeprev|picardToolsMergeSamFilesPrevious:s' => \@picardToolsMergeSamFilesPrevious, #Comma separated list
 	   'pPicT_markdup|pPicardToolsMarkduplicates:s' => \$parameter{'pPicardToolsMarkduplicates'}{'value'}, #PicardTools MarkDuplicates
@@ -778,6 +789,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'pCCE_pichs|pPicardToolsCalculateHSMetrics:n' => \$parameter{'pPicardToolsCalculateHSMetrics'}{'value'},
 	   'extbl|exomeTargetBedInfileList:s' => \$parameter{'exomeTargetBedInfileList'}{'value'}, #target file for CalculateHsMetrics
 	   'extpbl|exomeTargetPaddedBedInfileList:s' => \$parameter{'exomeTargetPaddedBedInfileList'}{'value'}, #Padded target file for CalculateHsMetrics, GATK
+	   'tcovgn|targetCoverageGeneNameFile:s' => \$parameter{'targetCoverageGeneNameFile'}{'value'},
 	   'pRCP|pRCovPlots:n' => \$parameter{'pRCovPlots'}{'value'},
 	   'gatkpath|genomeAnalysisToolKitPath:s' => \$parameter{'genomeAnalysisToolKitPath'}{'value'}, #GATK whole path
 	   'gatktmpd|GATKTempDirectory:s' => \$parameter{'GATKTempDirectory'}{'value'}, #GATK ReAlignerTargetCreator & BaseRecalibrator temporary directory
@@ -816,7 +828,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'pMerge_anvar|pMergeAnnotatedVariants:n' => \$parameter{'pMergeAnnotatedVariants'}{'value'}, #Merges annovar analysis results to one master file
 	   'mergeanvarte|mergeAnnotatedVariantsTemplateFile:s' => \$parameter{'mergeAnnotatedVariantsTemplateFile'}{'value'}, #Template file to create the specific family db master file
 	   'mergeanvardbf|mergeAnnotatedVariantsDbFile:s' => \$parameter{'mergeAnnotatedVariantsDbFile'}{'value'}, #db master file to use when collecting external data
-	   'pAddDP|pAddDepth:n' => \$parameter{'pAddDepth'}{'value'}, #Adds depth (DP) for nonvariants to master file (annovar_merged.txt)
+	   'pAdd_dp|pAddDepth:n' => \$parameter{'pAddDepth'}{'value'}, #Adds depth (DP) for nonvariants to master file (annovar_merged.txt)
 	   'pRankVar|pRankVariants:n' => \$parameter{'pRankVariants'}{'value'}, #Ranking variants
 	   'rs|rankscore:n'  => \$parameter{'rankScore'}{'value'}, #The rank score cut-off
 	   'gf|geneFiltering:n'  => \$parameter{'geneFiltering'}{'value'}, #Enables dispensible gene filtering
@@ -855,38 +867,24 @@ if ($parameter{'annovarSupportedTableNames'}{'value'} eq 1) {
 
 foreach my $orderParameterElement (@orderParameters) { #Populate scriptParameters{'parameterName'} => 'Value'
 
-    if ( (defined($scriptParameter{'projectID'})) && (defined($scriptParameter{'familyID'})) && (defined($scriptParameter{'wholeGenomeSequencing'})) ) {
+    if ( (defined($scriptParameter{'projectID'})) && (defined($scriptParameter{'familyID'}) ) ) {
 
 	if ($orderParameterElement eq "pedigreeFile" || $orderParameterElement eq "writeConfigFile") {
-	
-	    if ($scriptParameter{'wholeGenomeSequencing'} == 1) {
-		$parameter{'pedigreeFile'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/genomes/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_pedigree.txt";
-		$parameter{'writeConfigFile'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/genomes/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_config.yaml";
-	    }
-	    else {
-		$parameter{'pedigreeFile'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/exomes/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_pedigree.txt";
-		$parameter{'writeConfigFile'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/exomes/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_config.yaml";
-	    }
+	    
+	    $parameter{'pedigreeFile'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/".$scriptParameter{'analysisType'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_pedigree.txt";
+	    $parameter{'writeConfigFile'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/".$scriptParameter{'analysisType'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_config.yaml";
 	}
     }
     
 ##3 type of variables: MIP, path or program/program_parameters each is handled in the AddToScriptParameter subroutine.
 ##parameterName, parameterValue, parameterType, parameterDefault, environmentUppmaxDefault, AssociatedProgram, Check directory/file existence)    
     AddToScriptParameter($orderParameterElement, $parameter{$orderParameterElement}{'value'}, $parameter{$orderParameterElement}{'type'}, $parameter{$orderParameterElement}{'default'}, $parameter{$orderParameterElement}{'environmentUppmaxDefault'}, $parameter{$orderParameterElement}{'associatedProgram'}, $parameter{$orderParameterElement}{'existsCheck'});
-    if ($orderParameterElement eq "wholeGenomeSequencing") { #Set env_up defaults depending on $scriptParameter{'wholeGenomeSequencing'} value that now has been set
+   
+    if ($orderParameterElement eq "analysisType") { #Set env_up defaults depending on $scriptParameter{'analysisType'} value that now has been set
 	
-	if ($scriptParameter{'wholeGenomeSequencing'} == 1) {
-	    
-	    $parameter{'outDataDir'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/analysis/nobackup/genomes";
-	    
-	    $parameter{'outScriptDir'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/genomes_scripts";
-	}
-	else {
-
-	    $parameter{'outDataDir'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/analysis/nobackup/exomes";
-
-	    $parameter{'outScriptDir'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/exomes_scripts";
-	}
+	$parameter{'outDataDir'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/analysis/nobackup/".$scriptParameter{'analysisType'};
+	
+	$parameter{'outScriptDir'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/".$scriptParameter{'analysisType'}."_scripts";
     }
     if  ($orderParameterElement eq "projectID") { #Set env_up defaults depending on $scriptParameter{'projectID'} value that now has been set
 
@@ -928,7 +926,7 @@ if (scalar(@inFilesDirs) == 0) { #No input from cmd
 }
 @inFilesDirs = join(',', @inFilesDirs); #If user supplied -inFilesDirs directory 1 -inFilesDirs directory 2 etc
 push(@orderParameters, "inFilesDirs"); #Add to enable later evaluation of parameters in proper order & write to master file
-AddToScriptParameter("inFilesDirs", @inFilesDirs, "path", "nodefault", "yes", "MIP", "directory"); #inFileDirs is dependent on wholegenomeSequencing for environmentUppmax option, hence 6th arg.
+AddToScriptParameter("inFilesDirs", @inFilesDirs, "path", "nodefault", "yes", "MIP", "directory"); #inFileDirs is dependent on analysisType for environmentUppmax option, hence 6th arg.
 
 
 ##picardToolsMergeSamFilesPrevious
@@ -1050,6 +1048,10 @@ my $uncompressedFileSwitch = InfilesReFormat(); #Required to format infiles corr
  
 CreateFileEndings(); #Creates all fileendings as the samples is processed depending on the chain of modules activated
 
+#Create .fam file to be used in variant calling analyses
+my $pqFamFile = q?perl -nae 'print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t", $F[5], "\n";'?;
+my $famFile = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}.".fam";
+`$pqFamFile $scriptParameter{'pedigreeFile'} > $famFile;`;
 
 ####MAIN
 
@@ -1110,6 +1112,18 @@ if ($scriptParameter{'pBwaMem'} > 0) { #Run BWA Mem
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 	
 	BWA_Mem($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});	
+	
+    }    
+}
+
+if ($scriptParameter{'pPicardToolsMergeRapidReads'} > 0) { #Run PicardToolsMergeRapidReads - Relevant only in rapid mode
+    
+    print STDOUT "\nPicardToolsMergeRapidReads", "\n";print MIPLOGG "\nPicardToolsMergeRapidReads", "\n";
+    
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+	
+        #Merge all read batch processes to 1 file again containing sorted & indexed reads matching clinical test genes
+	PicardToolsMergeRapidReads($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});
     }    
 }
 
@@ -1135,12 +1149,15 @@ if ($scriptParameter{'pBwaSampe'} > 0) { #Run BWA Sampe
 
 if ($scriptParameter{'pSamToolsSort'} > 0) { #Run samtools Sort and Index
 
-    print STDOUT "\nSamTools sort & index", "\n";
+    if ($scriptParameter{'analysisType'} ne "rapid") { #In rapid mode Sort and index is done for each batch of reads in the BWA_Mem call, since the link to infile is broken by the read batch processing. However pSamToolsSort should be enabled to ensure correct fileending and merge the flow to ordinary modules.
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
-    
-	SamToolsSortIndex($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});
+	print STDOUT "\nSamTools sort & index", "\n";
+
+	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+	    
+	    SamToolsSortIndex($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});
 	
+	}
     }
 }
 
@@ -1149,7 +1166,9 @@ if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) { #Run picardtools merge
     print STDOUT "\nPicardTool MergeSamFiles", "\n";
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+
 	if ( ($sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} == 1) || (scalar( @{ $infilesLaneNoEnding{ $sampleIDs[$sampleIDCounter] } }) > 1) ) { #Sanity Check that we have something to merge with
+	
 	    PicardToolsMerge($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'}, $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'fileEnding'});	
 	}
     }
@@ -1219,15 +1238,8 @@ if ($scriptParameter{'pGATKHaploTypeCaller'} > 0) { #Run GATK HaploTypeCaller. D
 
     print STDOUT "\nGATK HaplotypeCaller", "\n";print MIPLOGG "\nGATK HaplotypeCaller", "\n";
 
-    if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome samples
-    
-	GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",0,3,8); #Argument 3 & 4 is where in @chr to start and stop processing. Arg 5 is java heap allocation (Gb).
-	GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",3,6,8);
-	GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",6,12,4);
-        GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",12,18,4);
-	GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",18,26,4);	
-    }
-    else { #Whole genome sequencing requires more memory
+    if ($scriptParameter{'analysisType'} eq "genomes") { #Whole genome sequencing - requires more memory
+
 	GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",0,1,24); #Argument 3 & 4 is where in @chr to start and stop processing. Arg 5 is java heap allocation (Gb).
 	GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",1,2,24);
 	GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",2,3,24);
@@ -1252,7 +1264,16 @@ if ($scriptParameter{'pGATKHaploTypeCaller'} > 0) { #Run GATK HaploTypeCaller. D
 	GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",21,22,24);
 	GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",22,23,24);
 	GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",23,24,24);
-	GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",24,25,24);
+	GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",24,25,24);    
+		
+    }
+    else {
+	
+	GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",0,3,8); #Argument 3 & 4 is where in @chr to start and stop processing. Arg 5 is java heap allocation (Gb).
+	GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",3,6,8);
+	GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",6,12,4);
+        GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",12,18,4);
+	GATKHaploTypeCaller($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH",18,26,4);
     }
 }
 
@@ -1304,6 +1325,14 @@ if ($scriptParameter{'pGATKVariantEvalAll'} > 0) { #Run GATK VariantEval for all
     }
 }
 
+if ($scriptParameter{'pMergeAnnotatedVariants'} > 0) { #Run MergeAnnotationVariants using intersectCollect.pl. Done per family
+
+    print STDOUT "\nMergeAnnotatedVariants", "\n";print MIPLOGG "\nMergeAnnotatedVariants", "\n";
+
+    MergeAnnotatedVariants($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
+
+}
+
 if ($scriptParameter{'pGATKVariantEvalExome'} > 0) { #Run GATK VariantEval for exome variants. Done per sampleID
 
     print STDOUT "\nGATK VariantEval Exome", "\n";print MIPLOGG "\nGATK VariantEval Exome", "\n";
@@ -1311,14 +1340,6 @@ if ($scriptParameter{'pGATKVariantEvalExome'} > 0) { #Run GATK VariantEval for e
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { 
 	GATKVariantEvalExome($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'}, "BOTH", $scriptParameter{'familyID'});
     }
-}
-
-if ($scriptParameter{'pMergeAnnotatedVariants'} > 0) { #Run MergeAnnotationVariants using intersectCollect.pl. Done per family
-
-    print STDOUT "\nMergeAnnotatedVariants", "\n";print MIPLOGG "\nMergeAnnotatedVariants", "\n";
-
-    MergeAnnotatedVariants($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
-
 }
 
 if ($scriptParameter{'pAddDepth'} > 0) { #Run AddDepth using add_depth.pl. Done per family
@@ -1630,115 +1651,6 @@ sub UNifiedGT {
 #All infiles should now be merged to 1 file.
 }
 
-sub ProgramPreRequisites {
-###Creates program directories (info & programData & programScript), program script filenames and creates sbatch header.
-
-    my $directoryID = $_[0]; #$samplID|$familyID
-    my $programName = $_[1]; #Assigns filename to sbatch script
-    my $programDirectory = $_[2]; #Builds from $directoryID/$aligner
-    my $callType = $_[3]; ##SNV,INDEL or BOTH
-    my $fileHandle = $_[4]; #Program filehandle
-    my $nrofCores = $_[5]; #The number of cores to allocate
-    my $processTime = $_[6]; #Hours 
-
-    my $filenamePath;
-    my $dryRunFilenamePath;
-    my $programDataDirectory;
-    my $fileInfoPath;
-    my $dryRunFileInfoPath;
-###Sbatch script names and directory creation
-    
-    $programDataDirectory = $scriptParameter{'outDataDir'}."/".$directoryID."/".$programDirectory;
-    $filenamePath = $scriptParameter{'outScriptDir'}."/".$directoryID."/".$programDirectory."/".$programName."_".$directoryID;
-    $dryRunFilenamePath = $scriptParameter{'outScriptDir'}."/".$directoryID."/".$programDirectory."/dry_run_".$programName."_".$directoryID;
-    $fileInfoPath = $scriptParameter{'outDataDir'}."/".$directoryID."/".$programDirectory."/info/".$programName."_".$directoryID;
-    $dryRunFileInfoPath = $scriptParameter{'outDataDir'}."/".$directoryID."/".$programDirectory."/info/dry_run_".$programName."_".$directoryID;
-    
-    if ($callType ne 0) {
-	$filenamePath .= "_".$callType.".";
-	$dryRunFilenamePath .= "_".$callType.".";
-	$fileInfoPath .= "_".$callType.".";
-	$dryRunFileInfoPath .= "_".$callType.".";
-    }
-    else {
-	$filenamePath .= ".";
-	$dryRunFilenamePath .= ".";
-	$fileInfoPath .= ".";
-	$dryRunFileInfoPath .= ".";
-    }
-    	
-    `mkdir -p $scriptParameter{'outDataDir'}/$directoryID/$programDirectory/info;`; #Creates the aligner folder and info data file directory
-    `mkdir -p $programDataDirectory`; #Creates the aligner folder and if supplied the program data file directory
-    `mkdir -p $scriptParameter{'outScriptDir'}/$directoryID/$programDirectory`; #Creates the aligner folder script file directory
-
-    if ( ($scriptParameter{"p".$programName} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-	$filename = $filenamePath; 
-    }
-    elsif ($scriptParameter{"p".$programName} == 2) { #Dry run single program
-	$filename = $dryRunFilenamePath; 
-	print STDOUT "Dry Run:\n";print MIPLOGG  "Dry Run:\n";
-    }
-    else { #Dry run
-	$filename = $dryRunFilenamePath;
-	print STDOUT "Dry Run:\n";print MIPLOGG  "Dry Run:\n";
-    }
-
-    Checkfnexists($filename, $fnend);
-
-###Info and Logg
-    print STDOUT "Creating sbatch script for ".$programName." and writing script file(s) to: ".$filename, "\n";print MIPLOGG "Creating sbatch script for ".$programName." and writing script file(s) to: ".$filename, "\n";
-
-    if ($programName eq "RankVariants") { #Special case
-
-	for (my $ImportantDbFileOutFileCounter=0;$ImportantDbFileOutFileCounter<scalar(@ImportantDbFileOutFile);$ImportantDbFileOutFileCounter++) {
-	    
-	    my ($volume,$directories,$file) = File::Spec->splitpath($ImportantDbFileOutFile[$ImportantDbFileOutFileCounter]);
-	    `mkdir -p $directories;`; 
-	    print STDOUT "RankVariants data files will be written to: ".$directories.$directoryID."_ranked_".$callType.".txt", "\n";print MIPLOGG "RankVariants data files will be written to: ".$directories.$directoryID."_ranked_".$callType.".txt", "\n";    
-	}
-    }
-    else {
-	print STDOUT "Sbatch script ".$programName." data files will be written to: ".$programDataDirectory, "\n";print MIPLOGG "Sbatch script ".$programName." data files will be written to: ".$programDataDirectory, "\n";
-    }
-
-###Sbatch header
-    open ($fileHandle, ">".$filename) or die "Can't write to ".$filename.": $!\n";
-    
-    print $fileHandle "#! /bin/bash -l", "\n";
-    print $fileHandle "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
-    if ($nrofCores == $scriptParameter{'maximumCores'}) {
-	print $fileHandle "#SBATCH -p node -n ".$nrofCores, "\n";
-    }
-    else {
-	print $fileHandle "#SBATCH -n ".$nrofCores, "\n";
-    }
-    print $fileHandle "#SBATCH -C thin", "\n";	
-    print $fileHandle "#SBATCH -t ".$processTime.":00:00", "\n";
-    print $fileHandle "#SBATCH -J ".$programName."_".$directoryID."_".$callType, "\n";
-    
-    if ( ($scriptParameter{"p".$programName} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-	print $fileHandle "#SBATCH -e ".$fileInfoPath.$fnTracker.".stderr.txt", "\n";
-	print $fileHandle "#SBATCH -o ".$fileInfoPath.$fnTracker.".stdout.txt", "\n";
-    }
-    elsif ($scriptParameter{'pSampleCheck'} == 2) { #Single program dry run
-	print $fileHandle "#SBATCH -e ".$dryRunFileInfoPath.$fnTracker.".stderr.txt", "\n";
-	print $fileHandle "#SBATCH -o ".$dryRunFileInfoPath.$fnTracker.".stdout.txt", "\n";
-    }
-    else { #Dry run
-	print $fileHandle "#SBATCH -e ".$dryRunFileInfoPath.$fnTracker.".stderr.txt", "\n";
-	print $fileHandle "#SBATCH -o ".$dryRunFileInfoPath.$fnTracker.".stdout.txt", "\n";
-    }
-    
-    unless ($scriptParameter{'email'} eq 0) {
-	print $fileHandle "#SBATCH --mail-type=END", "\n";
-	print $fileHandle "#SBATCH --mail-type=FAIL", "\n";
-	print $fileHandle "#SBATCH --mail-user=".$scriptParameter{'email'}, "\n\n";	
-    }
-    
-    print $fileHandle 'echo "Running on: $(hostname)"',"\n\n";
-    return;
-}
-
 sub SampleCheck { 
 ###Tests sample for correct relatives (only performed for samples with relatives defined in pedigree file) performed on sequence data.
 
@@ -1857,13 +1769,6 @@ sub RankVariants {
     
     my $haploTypeCallerFile = $inFamilyDirectory."/".$familyID.$infileEnding.$callType.".txt";
 
-###Add chr if required
-    #if ( ($scriptParameter{'pAddDepth'} == 0) && ($humanGenomeReferenceSource eq "GRCh") ) {
-#	print RV "#Add chromosome prefix", "\n";
-#	print RV q?perl -i -p -e ' if($_=~/^#/) {} else {s/^(.+)/chr$1/g }' ?;
-#	print RV $haploTypeCallerFile, "\n\n"; #InFile
- #   }
-
 ###Only Clinically interesting variants
     
     if ( ($scriptParameter{'pGATKHaploTypeCaller'} > 0) || (-f $haploTypeCallerFile) ) { #HaplotypeCaller has been used in present call or previously
@@ -1871,6 +1776,9 @@ sub RankVariants {
 	print RV "#Create temp_file containing only clinically interesting variants (to avoid duplicates in ranked list)", "\n";
 	print RV "perl ".$scriptParameter{'inScriptDir'}."/intersectCollect.pl ";
 	print RV "-db ".$scriptParameter{'outDataDir'}."/".$familyID."/".$scriptParameter{'ImportantDbMasterFile'}." "; #A tab-sep file containing 1 db per line
+	if ($humanGenomeReferenceSource eq "hg19") {
+	    print RV "-prechr 1 "; #Use chr prefix in rank script
+	}
 	print RV "-s 1 "; #Select all entries in first infile matching keys in subsequent db files
 	print RV "-sofs "; #Selected variants and orphan db files out data directory
 	for (my $ImportantDbFileOutFileCounter=0;$ImportantDbFileOutFileCounter<scalar(@ImportantDbFileOutFile);$ImportantDbFileOutFileCounter++) {
@@ -1897,7 +1805,7 @@ sub RankVariants {
 	    print RV "-im_db_gidc ".$scriptParameter{'ImportantDbGeneIdCol'}." "; #Identifer column number for coverage calculation
 	    print RV "-rs ".$scriptParameter{'rankScore'}." "; #The rank score cut-off
 	    print RV "-pedigree ".$scriptParameter{'pedigreeFile'}." "; #Pedigree file
-	    if ($humanGenomeReferenceSource eq "GRCh") { #Add chr for annovar_merged master file uses chrosome prefix downstream
+	    if ($humanGenomeReferenceSource eq "hg19") {
 		print RV "-prechr 1 "; #Use chr prefix in rank script
 	    }
 	    print RV "-tarcov "; #Target coverage files for family members, comma sep
@@ -1995,7 +1903,7 @@ sub RankVariants {
     print RV "-im_db_gidc ".$scriptParameter{'allElementsDbGeneIdCol'}." "; #Identifer column number for coverage calculation
     print RV "-rs ".$scriptParameter{'rankScore'}." "; #The rank score cut-off
     print RV "-pedigree ".$scriptParameter{'pedigreeFile'}." "; #Pedigree file
-    if ($humanGenomeReferenceSource eq "GRCh") { #Add chr for annovar_merged master file uses chrosome prefix downstream
+    if ($humanGenomeReferenceSource eq "hg19") {
 	print RV "-prechr 1 "; #Use chr prefix in rank script
     }
     print RV "-tarcov "; #Target coverage files for family members, comma sep
@@ -2121,6 +2029,7 @@ sub AddDp {
     print ADDDP "perl ".$scriptParameter{'inScriptDir'}."/add_depth.pl ";
     print ADDDP "-i ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".txt "; #InFile
     if ($humanGenomeReferenceSource eq "hg19") {
+	
 	print ADDDP "-prechr 1"; #Use chromosome prefix
     }
     print ADDDP "-infnv "; #No variant files from mpileup
@@ -2149,11 +2058,11 @@ sub AddDp {
     }
     print ADDDP "-o ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".txt", "\n\n"; #Overwrites original annovar_merge.txt file
     
-    if ($humanGenomeReferenceSource eq "GRCh") { #Add chr for annovar_merged master file uses chrosome prefix downstream
+    #if ($humanGenomeReferenceSource eq "GRCh") { #Add chr for annovar_merged master file uses chrosome prefix downstream
 	
-	print ADDDP q?perl -i -p -e ' if($_=~/^#/) {} else {s/^(.+)/chr$1/g }' ?;
-	print ADDDP $inFamilyDirectory."/".$familyID.$infileEnding.$callType.".txt", "\n\n"; #InFile.txt
-    }
+#	print ADDDP q?perl -i -p -e ' if($_=~/^#/) {} else {s/^(.+)/chr$1/g }' ?;
+#	print ADDDP $inFamilyDirectory."/".$familyID.$infileEnding.$callType.".txt", "\n\n"; #InFile.txt
+ #   }
     
     close(ADDDP);   
     if ( ($scriptParameter{'pAddDepth'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
@@ -2249,18 +2158,26 @@ sub GATKVariantEvalExome {
 	print GATK_VAREVALEX "-T SelectVariants "; #Type of analysis to run
 	print GATK_VAREVALEX "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
 	print GATK_VAREVALEX "-V: ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf "; #FamilyID inFile
-	print GATK_VAREVALEX "-o ".$outSampleDirectory."/".$infile.$outfileEnding.$callType."_exome.vcf "; #SampleID exome outFile
+	print GATK_VAREVALEX "-o ".$outSampleDirectory."/".$infile.$outfileEnding.$callType."_temp.vcf "; #SampleID exome outFile
 	print GATK_VAREVALEX "-sn ".$sampleID, "\n\n"; #Include genotypes from this sample
 
-	if ($humanGenomeReferenceSource eq "hg19") {
-	    print GATK_VAREVALEX q?perl -i -p -e 's/^chr(.+)/$1/g' ?;
-	    print GATK_VAREVALEX $outSampleDirectory."/".$infile.$outfileEnding.$callType.".vcf", "\n\n"; #Remove chromosome prefix
-	}
+##Prepp infile to only contain exonic variants
+
+	my $sampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK/varianteval";
+	my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pMergeAnnotatedVariants'}{'fileEnding'};
+
+	print GATK_VAREVALEX "grep exon ";
+	print GATK_VAREVALEX $inFamilyDirectory."/".$familyID.$infileEnding.$callType.".txt "; #InFile
+	print GATK_VAREVALEX "> ".$sampleDirectory."/".$sampleID.$infileEnding.$callType."_exonic_variants.txt", "\n\n"; #OutFile
+
+##Intersect exonic variants from created sampleID vcf file (required for GATKVariantEval for exonic variants)
+	print GATK_VAREVALEX "intersectBed ";
+	print GATK_VAREVALEX "-header "; #Print the header from the A file prior to results.
+	print GATK_VAREVALEX "-a ".$sampleDirectory."/".$infile.$outfileEnding.$callType."_temp.vcf "; #SampleID temp exome vcf inFile
+	print GATK_VAREVALEX "-b ".$sampleDirectory."/".$sampleID.$infileEnding.$callType."_exonic_variants.txt "; #SampleID exonic variants
+	print GATK_VAREVALEX "> ".$sampleDirectory."/".$infile.$outfileEnding.$callType."_exome.vcf", "\n\n"; #OutFile (VCF-format)
 
 ###VariantEval (exome variants)
-
-	my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK/varianteval";
-
 	print GATK_VAREVALEX "#GATK VariantEval","\n\n";
 	
 	print GATK_VAREVALEX "java -Xmx2g ";
@@ -2270,8 +2187,19 @@ sub GATKVariantEvalExome {
 	print GATK_VAREVALEX "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
 	print GATK_VAREVALEX "-D ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKVariantEvalDbSNP'}." "; #dbSNP file
 	print GATK_VAREVALEX "-gold ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKVariantEvalGold'}." "; #Evaluations that count calls at sites of true variation (e.g., indel calls) will use this argument as their gold standard for comparison
-	print GATK_VAREVALEX "--eval ".$inSampleDirectory."/".$infile.$infileEnding.$callType."_exome.vcf "; #InFile
-	print GATK_VAREVALEX "-o ".$outSampleDirectory."/".$infile.$outfileEnding.$callType."_exome.vcf.varianteval", "\n\n"; #OutFile
+	print GATK_VAREVALEX "--eval ".$sampleDirectory."/".$infile.$outfileEnding.$callType."_exome.vcf "; #InFile
+	print GATK_VAREVALEX "-o ".$sampleDirectory."/".$infile.$outfileEnding.$callType."_exome.vcf.varianteval", "\n\n"; #OutFile
+
+##Clean-up temp files
+	print GATK_VAREVALEX "rm ";
+	print GATK_VAREVALEX $sampleDirectory."/".$sampleID.$infileEnding.$callType."_exonic_variants.txt", "\n\n"; #SampleID exonic variants
+
+	print GATK_VAREVALEX "rm ";
+	print GATK_VAREVALEX $sampleDirectory."/".$infile.$outfileEnding.$callType."_temp.vcf", "\n\n"; #SampleID temp exome vcf inFile
+
+	print GATK_VAREVALEX "rm ";
+	print GATK_VAREVALEX $sampleDirectory."/".$infile.$outfileEnding.$callType."_temp.vcf.idx", "\n\n"; #SampleID temp exome vcf inFile
+
     }   
     else { #No previous merge
 ###GATK SelectVariants
@@ -2288,18 +2216,27 @@ sub GATKVariantEvalExome {
 	    print GATK_VAREVALEX "-T SelectVariants "; #Type of analysis to run
 	    print GATK_VAREVALEX "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
 	    print GATK_VAREVALEX "-V: ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf "; #FamilyID infile 
-	    print GATK_VAREVALEX "-o ".$outSampleDirectory."/".$infile.$outfileEnding.$callType."_exome.vcf "; #SampleID outFile
+	    print GATK_VAREVALEX "-o ".$outSampleDirectory."/".$infile.$outfileEnding.$callType."_temp.vcf "; #SampleID outFile
 	    print GATK_VAREVALEX "-sn ".$sampleID, "\n\n"; #Include genotypes from this sample
+
+##Prepp infile to only contain exonic variants
+
+	    my $sampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK/varianteval";
+	    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pMergeAnnotatedVariants'}{'fileEnding'};
 	    
-	    if ($humanGenomeReferenceSource eq "hg19") {
-		print GATK_VAREVALEX q?perl -i -p -e 's/^chr(.+)/$1/g' ?;
-		print GATK_VAREVALEX $outSampleDirectory."/".$infile.$outfileEnding.$callType.".vcf", "\n\n";  #Remove chromosome prefix
-	    }
-
+	    print GATK_VAREVALEX "grep exon ";
+	    print GATK_VAREVALEX $inFamilyDirectory."/".$familyID.$infileEnding.$callType.".txt "; #InFile
+	    print GATK_VAREVALEX "> ".$sampleDirectory."/".$sampleID.$infileEnding.$callType."_exonic_variants.txt", "\n\n"; #OutFile
+	    
+##Intersect exonic variants from created sampleID vcf file (required for GATKVariantEval for exonic variants)
+	    print GATK_VAREVALEX "intersectBed ";
+	    print GATK_VAREVALEX "-header "; #Print the header from the A file prior to results.
+	    print GATK_VAREVALEX "-a ".$sampleDirectory."/".$infile.$outfileEnding.$callType."_temp.vcf "; #SampleID temp exome vcf inFile
+	    print GATK_VAREVALEX "-b ".$sampleDirectory."/".$sampleID.$infileEnding.$callType."_exonic_variants.txt "; #SampleID exonic variants
+	    print GATK_VAREVALEX "> ".$sampleDirectory."/".$infile.$outfileEnding.$callType."_exome.vcf", "\n\n"; #OutFile (VCF-format)
+	    
 ###VariantEval (exome variants)
-
-	    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK/varianteval";
-
+	    
 	    print GATK_VAREVALEX "#GATK VariantEval","\n\n";
 	    
 	    print GATK_VAREVALEX "java -Xmx2g ";
@@ -2309,8 +2246,18 @@ sub GATKVariantEvalExome {
 	    print GATK_VAREVALEX "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
 	    print GATK_VAREVALEX "-D ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKVariantEvalDbSNP'}." "; #dbSNP file
 	    print GATK_VAREVALEX "-gold ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKVariantEvalGold'}." "; #Evaluations that count calls at sites of true variation (e.g., indel calls) will use this argument as their gold standard for comparison
-	    print GATK_VAREVALEX "--eval ".$inSampleDirectory."/".$infile.$infileEnding.$callType."_exome.vcf "; #InFile
-	    print GATK_VAREVALEX "-o ".$outSampleDirectory."/".$infile.$outfileEnding.$callType."_exome.vcf.varianteval", "\n\n"; #OutFile
+	    print GATK_VAREVALEX "--eval ".$sampleDirectory."/".$infile.$outfileEnding.$callType."_exome.vcf "; #InFile
+	    print GATK_VAREVALEX "-o ".$sampleDirectory."/".$infile.$outfileEnding.$callType."_exome.vcf.varianteval", "\n\n"; #OutFile
+
+##Clean-up temp files
+	    print GATK_VAREVALEX "rm ";
+	    print GATK_VAREVALEX $sampleDirectory."/".$sampleID.$infileEnding.$callType."_exonic_variants.txt", "\n\n"; #SampleID exonic variants
+	    
+	    print GATK_VAREVALEX "rm ";
+	    print GATK_VAREVALEX $sampleDirectory."/".$infile.$outfileEnding.$callType."_temp.vcf", "\n\n"; #SampleID temp exome vcf inFile
+
+	    print GATK_VAREVALEX "rm ";
+	    print GATK_VAREVALEX $sampleDirectory."/".$infile.$outfileEnding.$callType."_temp.vcf.idx", "\n\n"; #SampleID temp exome vcf inFile
 	}
     } 
     
@@ -2352,10 +2299,10 @@ sub GATKVariantEvalAll {
 	print GATK_VAREVAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding.$callType.".vcf "; #SampleID outFile
 	print GATK_VAREVAL "-sn ".$sampleID, "\n\n"; #Include genotypes from this sample
 
-	if ($humanGenomeReferenceSource eq "hg19") {
-	    print GATK_VAREVAL q?perl -i -p -e 's/^chr(.+)/$1/g' ?;
-	    print GATK_VAREVAL $outSampleDirectory."/".$infile.$outfileEnding.$callType.".vcf", "\n\n";  #Remove chromosome prefix
-	}
+	#if ($humanGenomeReferenceSource eq "hg19") {
+	 #   print GATK_VAREVAL q?perl -i -p -e 's/^chr(.+)/$1/g' ?;
+	  #  print GATK_VAREVAL $outSampleDirectory."/".$infile.$outfileEnding.$callType.".vcf", "\n\n";  #Remove chromosome prefix
+	#}
 
 ####VariantEval (all variants)
 
@@ -2391,10 +2338,10 @@ sub GATKVariantEvalAll {
 	    print GATK_VAREVAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding.$callType.".vcf "; #SampleID outFile
 	    print GATK_VAREVAL "-sn ".$sampleID, "\n\n"; #Include genotypes from this sample
 	    
-	    if ($humanGenomeReferenceSource eq "hg19") {
-		print GATK_VAREVAL q?perl -i -p -e 's/^chr(.+)/$1/g' ?;
-		print GATK_VAREVAL $outSampleDirectory."/".$infile.$outfileEnding.$callType.".vcf", "\n\n";  #Remove chromosome prefix
-	    }
+	    #if ($humanGenomeReferenceSource eq "hg19") {
+	#	print GATK_VAREVAL q?perl -i -p -e 's/^chr(.+)/$1/g' ?;
+	#	print GATK_VAREVAL $outSampleDirectory."/".$infile.$outfileEnding.$callType.".vcf", "\n\n";  #Remove chromosome prefix
+	 #   }
 
 ###VariantEval (all variants)
 
@@ -2434,11 +2381,6 @@ sub Annovar {
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
     my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pAnnovar'}{'fileEnding'};
-    
-    if ($humanGenomeReferenceSource eq "GRCh") {
-	print ANVAR q?perl -i -p -e 's/^(MT)/M/g' ?;
-	print ANVAR $inFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf ", "\n\n"; #Make sure that mitochondral genome is M and not MT
-    }
 	
     print ANVAR "#Prepare infile to Annovar format from GATK vcf4", "\n";
     print ANVAR "perl ".$scriptParameter{'annovarPath'}."/convert2annovar.pl ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf ";
@@ -2588,7 +2530,7 @@ sub GATKPhaseByTransmission {
     
     unless (-e $FamilyFileDirectory."/".$familyID.".fam") { #Check to see if file already exists
 	print GATK_PHTR "#Generating '.fam' file for GATK PhaseByTransmission","\n\n";
-	print GATK_PHTR q?perl -nae 'my %sample_info;my $mother;my $father; while (<>) { my @F = split(/\t/,$_); if ($_!~/^#/) { if($F[0]=~/(\d+)-(\d+|-\d+)-(\d+)(A|U)/) {} if ($F[3] == 1) {$father = $F[0];} if ($F[2] == 1) {$mother = $F[0];} if($3 % 2 == 1) {push (@{ $sample_info{$1}{$F[0]} }, "1");} else {push (@{ $sample_info{$1}{$F[0]} }, "2");} if ($4 eq "A") {push (@{ $sample_info{$1}{$F[0]} }, "2");} else {push (@{ $sample_info{$1}{$F[0]} }, "1");} } } for my $familyid (keys %sample_info) { for my $sampleid (keys %{ $sample_info{$familyid} }) {print $familyid, " ", $sampleid, " "; if ( ($father eq $sampleid) || ($mother eq $sampleid) ) { print 0, " ", 0, " ";} else { print $father, " ", $mother, " ";} for (my $i=0;$i<scalar(@{ $sample_info{$familyid}{$sampleid} });$i++) {print $sample_info{$familyid}{$sampleid}[$i], " ";}print "\n"; } } last;' ?.$scriptParameter{'pedigreeFile'}." > ".$FamilyFileDirectory."/".$familyID.".fam", "\n\n";
+	print GATK_PHTR q?perl -nae 'print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t", $F[5], "\n";' ?.$scriptParameter{'pedigreeFile'}." > ".$FamilyFileDirectory."/".$familyID.".fam", "\n\n";
     }
     
 ###GATK PhaseByTransmission
@@ -2630,10 +2572,10 @@ sub GATKVariantReCalibration {
     
     unless (-e $scriptParameter{'outDataDir'}."/".$familyID."/".$familyID.".fam") { #Check to see if file already exists
 	print GATK_VARREC "#Generating '.fam' file for GATK VariantRecalibrator/ApplyRecalibration","\n\n";
-	print GATK_VARREC q?perl -nae 'my %sample_info;my $mother;my $father; while (<>) { my @F = split(/\t/,$_); if ($_!~/^#/) { if($F[0]=~/(\d+)-(\d+|-\d+)-(\d+)(A|U)/) {} if ($F[3] == 1) {$father = $F[0];} if ($F[2] == 1) {$mother = $F[0];} if($3 % 2 == 1) {push (@{ $sample_info{$1}{$F[0]} }, "1");} else {push (@{ $sample_info{$1}{$F[0]} }, "2");} if ($4 eq "A") {push (@{ $sample_info{$1}{$F[0]} }, "2");} else {push (@{ $sample_info{$1}{$F[0]} }, "1");} } } for my $familyid (keys %sample_info) { for my $sampleid (keys %{ $sample_info{$familyid} }) {print $familyid, " ", $sampleid, " "; if ( ($father eq $sampleid) || ($mother eq $sampleid) ) { print 0, " ", 0, " ";} else { print $father, " ", $mother, " ";} for (my $i=0;$i<scalar(@{ $sample_info{$familyid}{$sampleid} });$i++) {print $sample_info{$familyid}{$sampleid}[$i], " ";}print "\n"; } } last;' ?.$scriptParameter{'pedigreeFile'}." > ".$outFamilyFileDirectory."/".$familyID.".fam", "\n\n";
+	print GATK_VARREC q?perl -nae 'print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t", $F[5], "\n";' ?.$scriptParameter{'pedigreeFile'}." > ".$outFamilyFileDirectory."/".$familyID.".fam", "\n\n";
     }  
     
-    if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome analysis 
+    if ( ($scriptParameter{'analysisType'} eq "exomes") || ($scriptParameter{'analysisType'} eq "rapid") ) { #Exome/rapid analysis 
 	
 ###GATK CombineVariants
 	
@@ -2661,7 +2603,7 @@ sub GATKVariantReCalibration {
     print GATK_VARREC "-T VariantRecalibrator "; #Type of analysis to run
     print GATK_VARREC "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
     
-    if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome analysis use comined reference for more power
+    if ( ($scriptParameter{'analysisType'} eq "exomes") || ($scriptParameter{'analysisType'} eq "rapid") ) { #Exome/rapid analysis use combined reference for more power
 	
 	print GATK_VARREC "-recalFile ".$variantRecalibratorOutFamilyDirectory."/".$familyID.$infileEnding.$callType."_comb_ref.intervals "; #Recalibration outFile
 	print GATK_VARREC "-rscriptFile ".$variantRecalibratorOutFamilyDirectory."/".$familyID.$infileEnding.$callType."_comb_ref.intervals.plots.R "; #The output rscript file generated by the VQSR to aid in visualization of the input data and learned model
@@ -2701,7 +2643,7 @@ sub GATKVariantReCalibration {
     print GATK_VARREC "-l INFO "; #Set the minimum level of logging
     print GATK_VARREC "-T ApplyRecalibration ";
     print GATK_VARREC "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
-    if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome analysis use comined reference for more power
+    if ( ($scriptParameter{'analysisType'} eq "exomes") || ($scriptParameter{'analysisType'} eq "rapid")) { #Exome/rapid analysis use combined reference for more power
 	
 	print GATK_VARREC "-recalFile ".$applyRecalibrationInFamilyDirectory."/".$familyID.$infileEnding.$callType."_comb_ref.intervals "; #Recalibration outFile
 	print GATK_VARREC "-tranchesFile ".$applyRecalibrationInFamilyDirectory."/".$familyID.$infileEnding.$callType."_comb_ref.intervals.tranches "; #The output tranches file used by ApplyRecalibration
@@ -2724,7 +2666,7 @@ sub GATKVariantReCalibration {
 ###GATK SelectVariants
 
 ##Removes all genotype information for exome ref and recalulates meta-data info for remaining samples in new file.
-    if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome analysis
+    if ( ($scriptParameter{'analysisType'} eq "exomes") || ($scriptParameter{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
 	
 	print GATK_VARREC "\n\n#GATK SelectVariants","\n\n";
 	print GATK_VARREC "java -Xmx2g ";
@@ -2856,8 +2798,7 @@ sub GATKHaploTypeCaller {
 	
 #Generate .fam file for later use in relevant GATK walkers (HaploTypeCaller, VariantscoreRequalibration etc)
 	print GATK_HAPCAL "#Generating '.fam' file for GATK HaploTypeCaller","\n\n";
-	
-	print GATK_HAPCAL q?perl -nae 'my %sample_info;my $mother;my $father; while (<>) { my @F = split(/\t/,$_); if ($_!~/^#/) { if($F[0]=~/(\d+)-(\d+|-\d+)-(\d+)(A|U)/) {} if ($F[3] == 1) {$father = $F[0];} if ($F[2] == 1) {$mother = $F[0];} if($3 % 2 == 1) {push (@{ $sample_info{$1}{$F[0]} }, "1");} else {push (@{ $sample_info{$1}{$F[0]} }, "2");} if ($4 eq "A") {push (@{ $sample_info{$1}{$F[0]} }, "2");} else {push (@{ $sample_info{$1}{$F[0]} }, "1");} } } for my $familyid (keys %sample_info) { for my $sampleid (keys %{ $sample_info{$familyid} }) {print $familyid, " ", $sampleid, " "; if ( ($father eq $sampleid) || ($mother eq $sampleid) ) { print 0, " ", 0, " ";} else { print $father, " ", $mother, " ";} for (my $i=0;$i<scalar(@{ $sample_info{$familyid}{$sampleid} });$i++) {print $sample_info{$familyid}{$sampleid}[$i], " ";}print "\n"; } } last;' ?.$scriptParameter{'pedigreeFile'}." > ".$outFamilyFileDirectory."/".$familyID.".fam", "\n\n";
+	print GATK_HAPCAL q?perl -nae 'print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t", $F[5], "\n";' ?.$scriptParameter{'pedigreeFile'}." > ".$outFamilyFileDirectory."/".$familyID.".fam", "\n\n";
     }
     
     print GATK_HAPCAL "#GATK HaplotypeCaller","\n\n";
@@ -2889,7 +2830,7 @@ sub GATKHaploTypeCaller {
 	    print GATK_HAPCAL "--annotation TandemRepeatAnnotator " ;#annotations to apply to variant calls
 	    print GATK_HAPCAL "--annotation DepthPerAlleleBySample "; #annotations to apply to variant calls
 	    print GATK_HAPCAL "-dcov ".$scriptParameter{'GATKDownSampleToCoverage'}." "; #Coverage to downsample to at any given locus
-	    if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome analysis - Restrict analysis to padded target file(s)
+	    if ( ($scriptParameter{'analysisType'} eq "exomes") || ($scriptParameter{'analysisType'} eq "rapid") ) { #Exome/rapid analysis - Restrict analysis to padded target file(s)
 		
 		GATKTargetListFlag(*GATK_HAPCAL); #Passing filehandle directly to sub routine using "*". Sub routine prints "-L" lists for all sampleIDs		
 	    }
@@ -2943,7 +2884,7 @@ sub GATKHaploTypeCaller {
 	    print GATK_HAPCAL "--annotation TandemRepeatAnnotator " ;#annotations to apply to variant calls
 	    print GATK_HAPCAL "--annotation DepthPerAlleleBySample "; #annotations to apply to variant calls
 	    print GATK_HAPCAL "-dcov ".$scriptParameter{'GATKDownSampleToCoverage'}." "; #Coverage to downsample to at any given locus
-	    if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome analysis - Restrict analysis to padded target file(s)
+	    if ( ($scriptParameter{'analysisType'} eq "exomes") || ($scriptParameter{'analysisType'} eq "rapid") ) { #Exome/rapid analysis - Restrict analysis to padded target file(s)
 		
 		GATKTargetListFlag(*GATK_HAPCAL); #Passing filehandle directly to sub routine using "*". Sub routine prints "-L" lists for all sampleIDs		
 	    }
@@ -3503,8 +3444,8 @@ sub CalculateCoverage {
 	print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_target_coverage.txt", "\n\n"; #OutFile
 	
 	#Add chr to entry to enable comparison to Gene Db
-	print CAL_COV "#Add chr to entry to enable later comparison to Gene Db", "\n";
-	print CAL_COV q?perl -i -p -e ' if($_=~/^#/) {} else {s/^(.+)/chr$1/g }' ?.$outSampleDirectory."/".$infile.$infileEnding."_target_coverage.txt", "\n\n"; #Modify in place
+	#print CAL_COV "#Add chr to entry to enable later comparison to Gene Db", "\n";
+	#print CAL_COV q?perl -i -p -e ' if($_=~/^#/) {} else {s/^(.+)/chr$1/g }' ?.$outSampleDirectory."/".$infile.$infileEnding."_target_coverage.txt", "\n\n"; #Modify in place
 	
 	#Removal of files which the necessary info has been extracted from
 	print CAL_COV "#Removal of files which the necessary info has been extracted from\n";
@@ -3538,15 +3479,18 @@ sub CalculateCoverage {
 	    print TARCOV "outcolumns=0_0,0_1,0_2,0_3,0_4,0_5,0_6,0_7,0_8,0_9,0_10,1_4\n"; #Order of columns in outfile
 	    print TARCOV "outheaders=Chr,Start,Stop,Overlapping_Reads,Non-zero_Coverage_Bases,Feature_Length(Nucleotides),Average_Coverage,Fraction_Non-zero_Coverage_Bases,Fraction_Ten_Coverage_Bases,Nr_Zero_Coverage_Bases,Relative_position_for_Zero_Coverage_Bases,Ensembl_GeneID\n"; #Order and header content in outfile
 	    print TARCOV $targetCoverageFiles[$dbFileCounter],"\t".'\t'."\t0,1,2\t0\texact\t0,1,2,3,4,5,6,7,8,9,10\tsmall","\n";
-	    print TARCOV $scriptParameter{'referencesDir'}."/mart_export_Ensembl_GeneID_key_cleaned_noblanks_chr.txt\t".'\t'."\t0,1,2\t0\trange\t4\tsmall", "\n";
+	    print TARCOV $scriptParameter{'referencesDir'}."/".$scriptParameter{'targetCoverageGeneNameFile'}."\t".'\t'."\t0,1,2\t0\trange\t4\tsmall", "\n";
 	    close(TARCOV);
 	    
 	    #Add GeneNameID to Coverage report
 	    print CAL_COV "perl ";
 	    print CAL_COV $scriptParameter{'inScriptDir'}."/intersectCollect.pl ";
+	    if ($humanGenomeReferenceSource eq "hg19") {
+		
+		print CAL_COV "-prechr 1 "; #Use chromosome prefix
+	    }
 	    print CAL_COV "-o ".$targetCoverageFiles[$dbFileCounter]." "; #OutFile
-	    print CAL_COV "-db ".$targetCoverageDbFiles[$dbFileCounter]." "; #Db master file (InFile(s))
-	    print CAL_COV "-prechr 1", "\n\n"; #Use chromosome prefix
+	    print CAL_COV "-db ".$targetCoverageDbFiles[$dbFileCounter]." ", "\n\n"; #Db master file (InFile(s))
 	}   
     }
 
@@ -3656,8 +3600,8 @@ sub CalculateCoverage {
 	    print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_target_coverage.txt", "\n\n"; #OutFile
 	    
 	    #Add chr to entry to enable comparison to Gene Db
-	    print CAL_COV "#Add chr to entry to enable later comparison to Gene Db", "\n";
-	    print CAL_COV q?perl -i -p -e ' if($_=~/^#/) {} else {s/^(.+)/chr$1/g }' ?.$outSampleDirectory."/".$infile.$outfileEnding."_target_coverage.txt", "\n\n";
+	    #print CAL_COV "#Add chr to entry to enable later comparison to Gene Db", "\n";
+	    #print CAL_COV q?perl -i -p -e ' if($_=~/^#/) {} else {s/^(.+)/chr$1/g }' ?.$outSampleDirectory."/".$infile.$outfileEnding."_target_coverage.txt", "\n\n";
             #Removal of files which the necessary info has been extracted from
 	    print CAL_COV "#Removal of files which the necessary info has been extracted from\n";
 	    print CAL_COV "rm ";
@@ -3689,15 +3633,18 @@ sub CalculateCoverage {
 		print TARCOV "outcolumns=0_0,0_1,0_2,0_3,0_4,0_5,0_6,0_7,0_8,0_9,0_10,1_4\n"; #Order of outcolumns in outfile
 		print TARCOV "outheaders=Chr,Start,Stop,Overlapping_Reads,Non-zero_Coverage_Bases,Feature_Length(Nucleotides),Average_Coverage,Fraction_Non-zero_Coverage_Bases,Fraction_Ten_Coverage_Bases,Nr_Zero_Coverage_Bases,Relative_position_for_Zero_Coverage_Bases,Ensembl_GeneID\n"; #Order and header content in outfile
 		print TARCOV $targetCoverageFiles[$dbFileCounter],"\t".'\t'."\t0,1,2\t0\texact\t0,1,2,3,4,5,6,7,8,9,10\tsmall","\n";
-		print TARCOV $scriptParameter{'referencesDir'}."/mart_export_Ensembl_GeneID_key_cleaned_noblanks_chr.txt\t".'\t'."\t0,1,2\t0\trange\t4\tsmall", "\n";
+		print TARCOV $scriptParameter{'referencesDir'}."/".$scriptParameter{'targetCoverageGeneNameFile'}."\t".'\t'."\t0,1,2\t0\trange\t4\tsmall", "\n";
 		close(TARCOV);
 		
 #Add GeneNameID to Coverage Report
 		print CAL_COV "perl ";
 		print CAL_COV $scriptParameter{'inScriptDir'}."/intersectCollect.pl ";
+		if ($humanGenomeReferenceSource eq "hg19") {
+		    
+		    print CAL_COV "-prechr 1 "; #Use chromosome prefix
+		}
 		print CAL_COV "-o ".$targetCoverageFiles[$dbFileCounter]." "; #OutFile
-		print CAL_COV "-db ".$targetCoverageDbFiles[$dbFileCounter]." "; #Db master file (InFile(s)) 
-		print CAL_COV "-prechr 1", "\n\n"; #Chromosome prefix
+		print CAL_COV "-db ".$targetCoverageDbFiles[$dbFileCounter]." ", "\n\n"; #Db master file (InFile(s))
 	    }
 	}
     }
@@ -3810,7 +3757,14 @@ sub PicardToolsMerge {
   
     my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
     my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pSamToolsSort'}{'fileEnding'};
+    my $infileEnding;
+
+    if ($scriptParameter{'analysisType'} ne "rapid") {
+	$infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pSamToolsSort'}{'fileEnding'};
+    }    
+    else { #Rapid mode used
+	$infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMergeRapidReads'}{'fileEnding'};
+    }
     my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMergeSamFiles'}{'fileEnding'};
 
     if (scalar( @{ $infilesLaneNoEnding{$sampleID} }) > 1) { #Check that we have something to merge and then merge current files before merging with previously merged files
@@ -3910,7 +3864,7 @@ sub SamToolsSortIndex {
     for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files
 
 	if ($infile{$sampleID}[$infileCounter] =~/.fastq.gz$/) { #Files are already gz and presently the scalar for compression has not been investigated. Therefore no automatic time allocation can be performed.
-	    if ($scriptParameter{'wholeGenomeSequencing'} == 1) {
+	    if ($scriptParameter{'analysisType'} eq "genomes") {
 		$time = 25;  
 	    }
 	    else {
@@ -3966,7 +3920,7 @@ sub BWA_Sampe {
     my $infileSize;
     for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files from BWA aln but process in the same command i.e. both reads per align call
 	if ($infile{$sampleID}[$infileCounter] =~/.fastq.gz$/) { #Files are already gz and presently the scalar for compression has not been investigated. Therefore no automatic time allocation can be performed.
-	    if ($scriptParameter{'wholeGenomeSequencing'} == 1) {
+	    if ($scriptParameter{'analysisType'} eq "genomes") {
 		$time = 40;  
 	    }
 	    else {
@@ -4052,80 +4006,183 @@ sub BWA_Aln {
     return;
 }
 
+sub PicardToolsMergeRapidReads { 
+#Merges all batch read processes to one file using PicardTools MergeSamFiles within each sampleid. The read batch proccessed files have to be sorted before attempting to merge.
+ 
+    my $sampleID = $_[0];
+    my $aligner = $_[1];
+
+    ProgramPreRequisites($sampleID, "PicardToolsMergeRapidReads", $aligner, 0, *PT_MERGERR, $scriptParameter{'maximumCores'}, 20);
+  
+    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
+    my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pBwaMem'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMergeRapidReads'}{'fileEnding'};
+    my $coreCounter=1;
+    my $coreTracker=0; #Required to portion out cores and files before wait and to track the MOS_BU outfiles to correct lane
+
+    for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files from 
+
+	my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
+	my $nrReadBatchProcesses = $sampleInfo{$scriptParameter{'familyID'}}{$sampleID}{$infilesLaneNoEnding{$sampleID}[$infileCounter]}{'pBwaMem'}{'ReadBatchProcesses'}; 
+
+	if ($nrReadBatchProcesses > 0) { #Check that we have read batch processes to merge
+
+	    if ($coreTracker == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} nr of cores
+		
+		print PT_MERGERR "wait", "\n\n";
+		$coreCounter=$coreCounter+1;
+	    }
+
+	    for (my $readBatchProcessesCount=0;$readBatchProcessesCount<$nrReadBatchProcesses;$readBatchProcessesCount++) {
+		if ($readBatchProcessesCount eq 0) {
+		    
+		    print PT_MERGERR "java -Xmx4g ";
+		    print PT_MERGERR "-jar ".$scriptParameter{'picardToolsPath'}."/MergeSamFiles.jar ";
+		    print PT_MERGERR "TMP_DIR=".$scriptParameter{'PicardToolsMergeTempDirectory'}.'$SLURM_JOB_ID'." "; #Temp Directory
+		    print PT_MERGERR "OUTPUT=".$outSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter].$outfileEnding.".bam "; #OutFile
+		}
+		
+		print PT_MERGERR "INPUT=".$inSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$readBatchProcessesCount."_sorted_rg.bam "; #InFile(s)
+	    }
+	    print PT_MERGERR "CREATE_INDEX=TRUE &"; #Create a BAM index when writing a coordinate-sorted BAM file.
+	    print PT_MERGERR "\n\n";
+	    $coreTracker++; #Track nr of merge calls for infiles so that wait can be printed at the correct intervals (dependent on $scriptParameter{'maximumCores'})
+	}
+    }
+    print PT_MERGERR "wait", "\n\n";
+    
+    print PT_MERGERR "#Remove Temp Directory\n\n";
+    print PT_MERGERR "rm ";
+    print PT_MERGERR "-rf ".$scriptParameter{'PicardToolsMergeTempDirectory'}.'$SLURM_JOB_ID', "\n\n"; #Remove Temp Directory
+    
+    close(PT_MERGERR);
+    if ( ($scriptParameter{'pPicardToolsMergeRapidReads'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 1, $parameter{'pPicardToolsMergeRapidReads'}{'chain'}, $filename, 0); #0 since it is only 1 file that is handled in parallel.
+    }
+    return;
+}
+
 sub BWA_Mem {
-###Alignment using of BWA Mem reads
+###Alignment using BWA Mem
     
     my $sampleID = $_[0];
     my $aligner = $_[1];
  
-    my $sbatchScriptTracker=0;
+    #my $sbatchScriptTracker=0;
     my $infileSize;
 
     for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all infiles but process in the same command i.e. both reads per align call
 
 	if ($infile{$sampleID}[$infileCounter] =~/.fastq.gz$/) { #Files are already gz and presently the scalar for compression has not been investigated. Therefore no automatic time allocation can be performed.
-	    $infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter+$sbatchScriptTracker];
+	    $infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter+$infileCounter];
 	}
 	else { #Files are in fastq format	
-	    $infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter+$sbatchScriptTracker]; # collect .fastq file size to enable estimation of time required for aligning, +1 for syncing multiple infiles per sampleID. Hence, filesize will be calculated on read2 (should not matter).
+	    $infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter+$infileCounter]; # collect .fastq file size to enable estimation of time required for aligning, +1 for syncing multiple infiles per sampleID. Hence, filesize will be calculated on read2 (should not matter).
 	}
 
-	my $numberNodes = floor($infileSize / (13*150000000) ); #Determines the numner of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.
-	
-	for (my $sbatchCounter=0;$sbatchCounter<$numberNodes-1;$sbatchCounter++) { #Parallization for each file handled
+	if ($scriptParameter{'analysisType'} eq "rapid") {
 
-	    ProgramPreRequisites($sampleID, "BwaMem", $aligner, 0, *BWA_MEM, $scriptParameter{'maximumCores'}, 5);	    
-	    my $readStart = $sbatchCounter * 150000000; #Constant for gz files
-	    my $readStop = $readStart + 150000001; #Constant for gz files
+	    my $numberNodes = floor($infileSize / (13*150000000) ); #Determines the numner of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.
+	
+	    for (my $sbatchCounter=0;$sbatchCounter<$numberNodes-1;$sbatchCounter++) { #Parallization for each file handled
+		
+		ProgramPreRequisites($sampleID, "BwaMem", $aligner, 0, *BWA_MEM, $scriptParameter{'maximumCores'}, 5);	    
+		my $readStart = $sbatchCounter * 150000000; #Constant for gz files
+		my $readStop = $readStart + 150000001; #Constant for gz files
+		
+		my $BWAinSampleDirectory = $indirpath{$sampleID};
+		my $BWAoutSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/bwa"; 
+
+		my $infile = $infile{$sampleID}[$infileCounter+$infileCounter]; #For required .fastq file
+		my $infile2 = $infile{$sampleID}[ ($infileCounter+$infileCounter+1)]; # #For required .fastq file (Paired read)   
+		
+#BWA Mem	
+		print BWA_MEM "bwa mem ";
+		print BWA_MEM "-M "; #Mark shorter split hits as secondary (for Picard compatibility). 
+		print BWA_MEM "-t ".$scriptParameter{'maximumCores'}." "; #Number of threads 
+		print BWA_MEM "-r ".'"@RG\tID:'.$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$infileCounter].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '; #read group header line
+		print BWA_MEM $scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #reference
+
+		print BWA_MEM "<( "; #Pipe to BWA Mem (Read 1)
+		print BWA_MEM "zcat "; #decompress Read 1
+		print BWA_MEM $BWAinSampleDirectory."/".$infile." "; #Read 1
+		print BWA_MEM "| "; #Pipe
+		print BWA_MEM q?perl -ne 'if ( ($.>?.$readStart.q?) && ($.<?.$readStop.q?) ) {print $_;}' ?; #Limit to sbatch script interval
+		print BWA_MEM ") "; #End Read 1
+		print BWA_MEM "<( "; #Pipe to BWA Mem
+		print BWA_MEM "zcat "; #decompress Read 2
+		print BWA_MEM $BWAinSampleDirectory."/".$infile2." "; #Read 2
+		print BWA_MEM "| "; #Pipe
+		print BWA_MEM q?perl -ne 'if ( ($.>?.$readStart.q?) && ($.<?.$readStop.q?) ) {print $_;}' ?; #Limit to sbatch script interval
+		print BWA_MEM ") "; #End Read 2
+		print BWA_MEM "| "; #Pipe SAM to BAM conversion of aligned reads
+		print BWA_MEM "samtools view "; 
+		print BWA_MEM "-S "; #input is SAM
+		print BWA_MEM "-h "; #print header for the SAM output
+		print BWA_MEM "-u "; #uncompressed BAM output
+		print BWA_MEM "- "; #/dev/stdin
+		print BWA_MEM "| "; #Pipe
+		print BWA_MEM "intersectBed "; #Limit output to only clinically interesting genes
+		print BWA_MEM "-abam stdin "; #The A input file is in BAM format.  Output will be BAM as well.
+		print BWA_MEM "-b ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'ImportantDbFile'}." "; #Db file of clinically relevant variants
+		print BWA_MEM "> ".$BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter.".bam", "\n\n"; #Outfile (BAM)
+		
+		print BWA_MEM "samtools sort ";
+		print BWA_MEM $BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter.".bam "; #Infile
+		print BWA_MEM $BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter."_sorted", "\n\n"; #OutFile
+		
+		print BWA_MEM "java -Xmx2g ";
+		print BWA_MEM "-jar ".$scriptParameter{'picardToolsPath'}."/AddOrReplaceReadGroups.jar ";
+		print BWA_MEM "INPUT=".$BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter."_sorted.bam "; #Infile
+		print BWA_MEM "OUTPUT=".$BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter."_sorted_rg.bam "; #Outfile
+		print BWA_MEM "RGID=".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$infileCounter]." "; #Read Group ID
+		print BWA_MEM "RGLB=".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$infileCounter]." "; #Read Group Library
+		print BWA_MEM "RGSM=".$sampleID." "; #Read Group sample name
+		print BWA_MEM "RGPL=ILLUMINA "; #Read Group platform
+		print BWA_MEM "RGPU=".$sampleInfo{$scriptParameter{'familyID'}}{$sampleID}{$infilesLaneNoEnding{$sampleID}[$infileCounter]}{'runBarcode'}." "; #Read Group platform unit 
+		print BWA_MEM "CREATE_INDEX=TRUE "; #Create a BAM index when writing a coordinate-sorted BAM file.
+		
+		#print BWA_MEM "samtools index ";
+		#print BWA_MEM $BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter."_sorted_rg.bam", "\n\n"; #Infile
+		close(BWA_MEM);
+		if ( ($scriptParameter{'pBwaMem'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+		    FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 3, $parameter{'pBwaMem'}{'chain'}, $filename, 0); #$sbatchCounter);
+		}
+                #Save sbatch Counter to track how many read batch processes we have engaged
+		$sampleInfo{$scriptParameter{'familyID'}}{$sampleID}{$infilesLaneNoEnding{$sampleID}[$infileCounter]}{'pBwaMem'}{'ReadBatchProcesses'} = $sbatchCounter; 
+	    }
+	}
+	else { #Not rapid mode align whole file
+
+	    ProgramPreRequisites($sampleID, "BwaMem", $aligner, 0, *BWA_MEM, $scriptParameter{'maximumCores'}, 5);
 	    
 	    my $BWAinSampleDirectory = $indirpath{$sampleID};
 	    my $BWAoutSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/bwa"; 
-	    my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/fastq_reduced"; #Add option rapid later
-	    my $infile = $infile{$sampleID}[$infileCounter+$sbatchScriptTracker]; #For required .fastq file
-	    my $infile2 = $infile{$sampleID}[ ($infileCounter+$sbatchScriptTracker+1)]; # #For required .fastq file (Paired read)   
 	    
-#BWA Mem	
+	    my $infile = $infile{$sampleID}[$infileCounter+$infileCounter]; #For required .fastq file
+	    my $infile2 = $infile{$sampleID}[ ($infileCounter+$infileCounter+1)]; # #For required .fastq file (Paired read)   
+	    
 	    print BWA_MEM "bwa mem ";
 	    print BWA_MEM "-M "; #Mark shorter split hits as secondary (for Picard compatibility). 
 	    print BWA_MEM "-t ".$scriptParameter{'maximumCores'}." "; #Number of threads 
-	    print BWA_MEM "-r ".'"@RG\tID:'.$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$sbatchScriptTracker].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '.$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #read group header line
-	    print BWA_MEM "<( "; #Pipe to BWA Mem (Read 1)
-	    print BWA_MEM "zcat "; #decompress Read 1
+	    print BWA_MEM "-r ".'"@RG\tID:'.$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$infileCounter].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '; #read group header line
+	    print BWA_MEM $scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #reference
 	    print BWA_MEM $BWAinSampleDirectory."/".$infile." "; #Read 1
-	    print BWA_MEM "| "; #Pipe
-	    print BWA_MEM q?perl -ne 'if ( ($.>?.$readStart.q?) && ($.<?.$readStop.q?) ) {print $_;}' ?; #Limit to sbatch script interval
-	    print BWA_MEM ") "; #End Read 1
-	    print BWA_MEM "<( "; #Pipe to BWA Mem
-	    print BWA_MEM "zcat "; #decompress Read 2
 	    print BWA_MEM $BWAinSampleDirectory."/".$infile2." "; #Read 2
-	    print BWA_MEM "| "; #Pipe
-	    print BWA_MEM q?perl -ne 'if ( ($.>?.$readStart.q?) && ($.<?.$readStop.q?) ) {print $_;}' ?; #Limit to sbatch script interval
-	    print BWA_MEM ") "; #End Read 2
-	    print BWA_MEM "| "; #Pipe SAM to BAm conversion of aligned reads
+	    print BWA_MEM "| "; #Pipe SAM to BAM conversion of aligned reads
 	    print BWA_MEM "samtools view "; 
 	    print BWA_MEM "-S "; #input is SAM
 	    print BWA_MEM "-h "; #print header for the SAM output
 	    print BWA_MEM "-u "; #uncompressed BAM output
 	    print BWA_MEM "- "; #/dev/stdin
-	    print BWA_MEM "| "; #Pipe
-	    print BWA_MEM "intersectBed "; #Limit output to only clinically interesting genes
-	    print BWA_MEM "-abam stdin "; #The A input file is in BAM format.  Output will be BAM as well.
-	    print BWA_MEM "-b ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'ImportantDbFile'}." "; #Db file of clinically relevant variants
-	    print BWA_MEM "> ".$BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter.".bam", "\n\n"; #Outfile (BAM)
-	    
-	    print BWA_MEM "samtools sort ";
-	    print BWA_MEM $BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter.".bam "; #Infile
-	    print BWA_MEM $BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter."_sorted", "\n\n"; #OutFile
-		
-	    print BWA_MEM "samtools index ";
-	    print BWA_MEM $BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter."_sorted.bam", "\n\n"; #Infile
+	    print BWA_MEM "> ".$BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter].".bam", "\n\n"; #Outfile (BAM)
 
 	    close(BWA_MEM);
 	    if ( ($scriptParameter{'pBwaMem'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-		FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 3, $parameter{'pBwaMem'}{'chain'}, $filename, $sbatchCounter);
+		FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 3, $parameter{'pBwaMem'}{'chain'}, $filename,  $infileCounter);
 	    }
 	}
-	$sbatchScriptTracker++;
     }
     return;
 }
@@ -4142,7 +4199,7 @@ sub MosaikAlign {
 
     for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all infiles per lane
 	if ($infile{$sampleID}[$infileCounter] =~/.fastq.gz$/) { #Files are already gz and presently the scalar for compression has not been investigated. Therefore no automatic time allocation can be performed.
-	    if ($scriptParameter{'wholeGenomeSequencing'} == 1) {
+	    if ($scriptParameter{'analysisType'} eq "genomes") {
 		$time = 80;  
 	    }
 	    else {
@@ -4503,6 +4560,7 @@ sub FIDSubmitJob {
     my $jobID; #The jobID that is returned from submission
     
     if ($dependencies == 0) { #Initiate chain - No dependencies
+	
 	$jobIDsReturn = `sbatch $sbatchFileName`; #No jobs have been run: submit
 	($jobID) = ($jobIDsReturn =~ /Submitted batch job (\d+)/);
 	push ( @{ $jobID{$sampleIDChainKey} }, $jobID); #Add jobID to hash{$sampleID}[]
@@ -4527,7 +4585,9 @@ sub FIDSubmitJob {
 				my $seenJobIDsSwitch = 0;
  
 				if ($jobID{$sampleIDChainKey}) {#If any previous jobIds within current chain exists else go ahead and add
+				    
 				    for (my $currentJobCounter=0;$currentJobCounter<scalar( @{ $jobID{$sampleIDChainKey} });$currentJobCounter++) {
+				
 					if ($jobID{$sampleIDChainKey}[$currentJobCounter] =~/$jobID{$sampleIDParallelChainKey}{$sbatchScriptTracker}[$jobCounter]/) { #Only add if not already present
 					    $seenJobIDsSwitch++;
 					}
@@ -4570,7 +4630,9 @@ sub FIDSubmitJob {
 		    }
 		}
 		else  {
+		  
 		    for (my $jobCounter=0;$jobCounter<scalar( @{ $jobID{$sampleIDChainKey} });$jobCounter++) {	
+		
 			if ( ($jobCounter == 0) && (scalar( @{ $jobID{$sampleIDChainKey} }) == 1) ) {#Only 1 previous jobID 
 			    $jobIDs .= ":$jobID{$sampleIDChainKey}[$jobCounter]"; #first and last jobID start with ":" and end without ":"
 			}
@@ -4801,7 +4863,7 @@ sub FIDSubmitJob {
 
 sub InfilesReFormat {
 ###Reformat files for mosaik output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames. 
-    
+
     my $uncompressedFileCounter = 0; #Used to decide later if any inputfiles needs to be compressed before starting analysis
     
     for my $sampleID (keys %infile) { #For every sampleID
@@ -4813,7 +4875,9 @@ sub InfilesReFormat {
 	    if ($infile{$sampleID}[$infileCounter] =~ /\/?([^\.\/]+\.[^\.]+)\.lane(\d+)_([12FfRr])\.fastq.gz/) { #Parse fastq.gz 'old' format
 		
 		push( @{$lane{$sampleID}}, $2); #Lane
-		$infilesLaneNoEnding{$sampleID}[$laneTracker]= "$1.$2"; #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
+		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{$1.".".$2}{'sampleBarcode'} = "X"; #Save barcode, but not defined
+		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{$1.".".$2}{'runBarcode'} = $2."_".$1; #Save run barcode
+		$infilesLaneNoEnding{$sampleID}[$laneTracker]= "$1.$2"; #Save old format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
 		$infileCounter++; #Skip second direction
 		$laneTracker++; #Track for every lane finished
 	    }
@@ -4821,13 +4885,18 @@ sub InfilesReFormat {
 		
 		push( @ {$lane{$sampleID}}, $2); #Lane
 		$uncompressedFileCounter = 1; #File needs compression before starting analysis
-		$infilesLaneNoEnding{$sampleID}[$laneTracker]= "$1.$2"; #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
+		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{$1.".".$2}{'sampleBarcode'} = "X"; #Save barcode, but not defined
+		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{$1.".".$2}{'runBarcode'} = $2."_".$1; #Save run barcode
+		
+		$infilesLaneNoEnding{$sampleID}[$laneTracker]= "$1.$2"; #Save old format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
 		$infileCounter++; #Skip second direction
 		$laneTracker++; #Track for every lane finished
 	    }
 	    elsif ($infile{$sampleID}[$infileCounter] =~ /(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq.gz/) { #Parse fastq.gz 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction
 		
 		push( @{$lane{$sampleID}}, $1); #Lane
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'sampleBarcode'} = $5; #Save sample barcode
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'runBarcode'} = $2."_".$3."_".$1; #Save run barcode
 		$infilesLaneNoEnding{$sampleID}[$laneTracker]= "$4.$2_$3_$5."."lane"."$1_$6"; #Save new format (sampleID_date_flow-cell_index_lane_direction) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
 		$infileCounter++; #Skip second direction
 		$laneTracker++; #Track for every lane finished
@@ -4836,6 +4905,8 @@ sub InfilesReFormat {
 		
 		push( @{$lane{$sampleID}}, $1); #Lane
 		$uncompressedFileCounter = 1; #File needs compression before starting analysis
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'sampleBarcode'} = $5; #Save sample barcode
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'runBarcode'} = $2."_".$3."_".$1; #Save run barcode
 		$infilesLaneNoEnding{ $sampleID }[$laneTracker]= "$4.$2_$3_$5."."lane"."$1_$6"; #Save new format (sampleID_date_flow-cell_index_lane_direction) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
 		$infileCounter++; #Skip second direction
 		$laneTracker++; #Track for every lane finished
@@ -4966,23 +5037,23 @@ sub AddToScriptParameter {
 			    
 			    if (scalar(@sampleIDs) == 0) { #No user supplied sample info
 				if (defined($scriptParameter{'sampleIDs'})) { #sampleIDs info in config file
-				    #ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs));
-				    ReadPedigreeFile($scriptParameter{'pedigreeFile'}, 1);  # scalar(@sampleIDs) = 0:No user supplied sample info, but present in config file do NOT overwrite using info from pedigree file
+				    ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs));
+				    #ReadPedigreeFile($scriptParameter{'pedigreeFile'}, 1);  # scalar(@sampleIDs) = 0:No user supplied sample info, but present in config file do NOT overwrite using info from pedigree file
 				}
 				else { #No sampleIDs info in config file
-				    #ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs));
-				    ReadPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs));  # scalar(@sampleIDs) = 0:No user supplied sample info, not defined $scriptParameter{'sampleIDs'} in config file, add it from pedigree file
+				    ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs));
+				    #ReadPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs));  # scalar(@sampleIDs) = 0:No user supplied sample info, not defined $scriptParameter{'sampleIDs'} in config file, add it from pedigree file
 				}
 			    }
 			    else {
-				#ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs));
-				ReadPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs));  # User supplied sample info, do NOT overwrite using info from pedigree file
+				ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs));
+				#ReadPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs));  # User supplied sample info, do NOT overwrite using info from pedigree file
 			    }
 			}
 		    }
 		    elsif ( (defined($scriptParameter{'environmentUppmax'})) && ($scriptParameter{'environmentUppmax'} == 1) ) { #Use default 
 			
-			if ($environmentUppmaxDefault eq "noenvironmentUppmaxDefault") { #Zero should be unlikely to use as a default for "path" 
+			if ($environmentUppmaxDefault eq "noenvironmentUppmaxDefault") { #No environmnetUppmax default 
 			    
 			    if ($parameterName eq "picardToolsMergeSamFilesPrevious") { #Special case 
 				@picardToolsMergeSamFilesPrevious = (); #Empty to not add a 0 as a value, which will cause errors in later conditions use
@@ -4998,16 +5069,11 @@ sub AddToScriptParameter {
 			else { #Default exists
 			    
 			    if ( ($parameterName eq "inFilesDirs") && ($scriptParameter{'pedigreeFile'} ne "nocmdinput") ) {
+			
 				pop(@inFilesDirs); #Remove added 0
-				my $analysisType;
-				if ($scriptParameter{'wholeGenomeSequencing'} == 1) {
-				    $analysisType = "genomes";
-				}
-				else {
-				    $analysisType = "exomes";
-				}
+			
 				for (my $indirectoryCount=0;$indirectoryCount<scalar(@sampleIDs);$indirectoryCount++) {
-				    push(@inFilesDirs, "/proj/".$scriptParameter{'projectID'}."/private/".$analysisType."/".$sampleIDs[$indirectoryCount]."/fastq");
+				    push(@inFilesDirs, "/proj/".$scriptParameter{'projectID'}."/private/".$scriptParameter{'analysisType'}."/".$sampleIDs[$indirectoryCount]."/fastq");
 				}
 				$scriptParameter{'inFilesDirs'} = join(',',@inFilesDirs); #Add to enable recreation of cmd line later
 			    }		    
@@ -5116,8 +5182,8 @@ sub AddToScriptParameter {
 		    }
 		    elsif ($parameterName eq "pedigreeFile") {
 			if (defined($scriptParameter{'pedigreeFile'})) {
-			    #ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs));
-			    ReadPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs)); #  scalar(@sampleIDs)= 0:No user supplied sample info, add it from pedigree file
+			    ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs));
+			    #ReadPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs)); #  scalar(@sampleIDs)= 0:No user supplied sample info, add it from pedigree file
 			} 
 		    }
 		    else {
@@ -5280,6 +5346,7 @@ sub SetTargetFiles {
 	if (defined($scriptParameter{$associatedProgram}) && ($scriptParameter{$associatedProgram} > 0) ) { #Only add active programs parameters
 	    
 	    $parameterSetSwitch = 1;
+
 	    if ($parameterValue eq "nocmdinput") { #No input from cmd
 		
 		for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #Check all samples
@@ -5296,24 +5363,29 @@ sub SetTargetFiles {
 			    $scriptParameter{ $sampleIDs[$sampleIDCounter] }{$parameterName} = $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{$parameterName}; #Add to enable recreation of cmd line later
 			}
 			else {
+			
 			    print STDERR "\nCould not find a target file entry for sample: ".$sampleIDs[$sampleIDCounter], "\n";
 			    print STDERR "\nSupply '-".$parameterName."' if you want to run ".$associatedProgram, "\n\n";		   
 			    $uncorrectCaptureCounter++;
 			}
 		    }
 		    else { #No capture kit information   
+			
 			print STDERR "\nSupply '-".$parameterName."' if you want to run ".$associatedProgram, "\n\n";
 			print STDERR "\n";
 			die $USAGE;
 		    }
 		}
 		if ($uncorrectCaptureCounter > 0) { #If lacking or not supported in pedigree file
+		    
 		    print STDERR "\nChange/add capture kit record in pedigree file: ".$scriptParameter{'pedigreeFile'}, "\n";
 		    print STDERR "List of pedigree supported capture kits records:\n\n";
 		    print STDERR "Pedigree record", "\t", "Capture kit BED-file\n";
 		    for my $supportedCaptureKit (keys %supportedCaptureKits) {
+		
 			print STDERR $supportedCaptureKit, "\t", $supportedCaptureKits{$supportedCaptureKit}, "\n";
 		    }	    
+		    
 		    print STDERR "\n";
 		    die $USAGE;
 		}
@@ -5333,6 +5405,7 @@ sub SetTargetFiles {
 		    $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{$parameterName} = $parameterValue; #Add target file to sampleInfo info to enable individal adjusted capture calculation for each family member
 #Check for file existence
 		    unless (-f $scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{$parameterName}) { #Check for target file in supplied reference dir
+		
 			print STDERR "\nCould not find target file: ".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{$parameterName}, "\n\n";
 			die $USAGE;		
 		    }
@@ -5399,7 +5472,12 @@ sub CreateFileEndings {
 			}
 			
 ###MAIN/Per familyID
+		
 			if ($orderParameterElement eq "pPicardToolsMergeSamFiles") { #Special case - do nothing
+			}
+			elsif ( ($orderParameterElement eq "pSamToolsSort") && ($scriptParameter{'analysisType'} eq "rapid") ) { #Special case - do nothing
+			}
+			elsif ( ($orderParameterElement eq "pPicardToolsMergeRapidReads") && ($scriptParameter{'analysisType'} ne "rapid") ) { #Special case - do nothing
 			}
 			else {
 			    
@@ -5461,6 +5539,115 @@ sub CreateFileEndings {
 	    }
 	}
     }
+}
+
+sub ProgramPreRequisites {
+###Creates program directories (info & programData & programScript), program script filenames and creates sbatch header.
+
+    my $directoryID = $_[0]; #$samplID|$familyID
+    my $programName = $_[1]; #Assigns filename to sbatch script
+    my $programDirectory = $_[2]; #Builds from $directoryID/$aligner
+    my $callType = $_[3]; ##SNV,INDEL or BOTH
+    my $fileHandle = $_[4]; #Program filehandle
+    my $nrofCores = $_[5]; #The number of cores to allocate
+    my $processTime = $_[6]; #Hours 
+
+    my $filenamePath;
+    my $dryRunFilenamePath;
+    my $programDataDirectory;
+    my $fileInfoPath;
+    my $dryRunFileInfoPath;
+###Sbatch script names and directory creation
+    
+    $programDataDirectory = $scriptParameter{'outDataDir'}."/".$directoryID."/".$programDirectory;
+    $filenamePath = $scriptParameter{'outScriptDir'}."/".$directoryID."/".$programDirectory."/".$programName."_".$directoryID;
+    $dryRunFilenamePath = $scriptParameter{'outScriptDir'}."/".$directoryID."/".$programDirectory."/dry_run_".$programName."_".$directoryID;
+    $fileInfoPath = $scriptParameter{'outDataDir'}."/".$directoryID."/".$programDirectory."/info/".$programName."_".$directoryID;
+    $dryRunFileInfoPath = $scriptParameter{'outDataDir'}."/".$directoryID."/".$programDirectory."/info/dry_run_".$programName."_".$directoryID;
+    
+    if ($callType ne 0) {
+	$filenamePath .= "_".$callType.".";
+	$dryRunFilenamePath .= "_".$callType.".";
+	$fileInfoPath .= "_".$callType.".";
+	$dryRunFileInfoPath .= "_".$callType.".";
+    }
+    else {
+	$filenamePath .= ".";
+	$dryRunFilenamePath .= ".";
+	$fileInfoPath .= ".";
+	$dryRunFileInfoPath .= ".";
+    }
+    	
+    `mkdir -p $scriptParameter{'outDataDir'}/$directoryID/$programDirectory/info;`; #Creates the aligner folder and info data file directory
+    `mkdir -p $programDataDirectory`; #Creates the aligner folder and if supplied the program data file directory
+    `mkdir -p $scriptParameter{'outScriptDir'}/$directoryID/$programDirectory`; #Creates the aligner folder script file directory
+
+    if ( ($scriptParameter{"p".$programName} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	$filename = $filenamePath; 
+    }
+    elsif ($scriptParameter{"p".$programName} == 2) { #Dry run single program
+	$filename = $dryRunFilenamePath; 
+	print STDOUT "Dry Run:\n";print MIPLOGG  "Dry Run:\n";
+    }
+    else { #Dry run
+	$filename = $dryRunFilenamePath;
+	print STDOUT "Dry Run:\n";print MIPLOGG  "Dry Run:\n";
+    }
+
+    Checkfnexists($filename, $fnend);
+
+###Info and Logg
+    print STDOUT "Creating sbatch script for ".$programName." and writing script file(s) to: ".$filename, "\n";print MIPLOGG "Creating sbatch script for ".$programName." and writing script file(s) to: ".$filename, "\n";
+
+    if ($programName eq "RankVariants") { #Special case
+
+	for (my $ImportantDbFileOutFileCounter=0;$ImportantDbFileOutFileCounter<scalar(@ImportantDbFileOutFile);$ImportantDbFileOutFileCounter++) {
+	    
+	    my ($volume,$directories,$file) = File::Spec->splitpath($ImportantDbFileOutFile[$ImportantDbFileOutFileCounter]);
+	    `mkdir -p $directories;`; 
+	    print STDOUT "RankVariants data files will be written to: ".$directories.$directoryID."_ranked_".$callType.".txt", "\n";print MIPLOGG "RankVariants data files will be written to: ".$directories.$directoryID."_ranked_".$callType.".txt", "\n";    
+	}
+    }
+    else {
+	print STDOUT "Sbatch script ".$programName." data files will be written to: ".$programDataDirectory, "\n";print MIPLOGG "Sbatch script ".$programName." data files will be written to: ".$programDataDirectory, "\n";
+    }
+
+###Sbatch header
+    open ($fileHandle, ">".$filename) or die "Can't write to ".$filename.": $!\n";
+    
+    print $fileHandle "#! /bin/bash -l", "\n";
+    print $fileHandle "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
+    if ($nrofCores == $scriptParameter{'maximumCores'}) {
+	print $fileHandle "#SBATCH -p node -n ".$nrofCores, "\n";
+    }
+    else {
+	print $fileHandle "#SBATCH -n ".$nrofCores, "\n";
+    }
+    print $fileHandle "#SBATCH -C thin", "\n";	
+    print $fileHandle "#SBATCH -t ".$processTime.":00:00", "\n";
+    print $fileHandle "#SBATCH -J ".$programName."_".$directoryID."_".$callType, "\n";
+    
+    if ( ($scriptParameter{"p".$programName} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	print $fileHandle "#SBATCH -e ".$fileInfoPath.$fnTracker.".stderr.txt", "\n";
+	print $fileHandle "#SBATCH -o ".$fileInfoPath.$fnTracker.".stdout.txt", "\n";
+    }
+    elsif ($scriptParameter{'pSampleCheck'} == 2) { #Single program dry run
+	print $fileHandle "#SBATCH -e ".$dryRunFileInfoPath.$fnTracker.".stderr.txt", "\n";
+	print $fileHandle "#SBATCH -o ".$dryRunFileInfoPath.$fnTracker.".stdout.txt", "\n";
+    }
+    else { #Dry run
+	print $fileHandle "#SBATCH -e ".$dryRunFileInfoPath.$fnTracker.".stderr.txt", "\n";
+	print $fileHandle "#SBATCH -o ".$dryRunFileInfoPath.$fnTracker.".stdout.txt", "\n";
+    }
+    
+    unless ($scriptParameter{'email'} eq 0) {
+	print $fileHandle "#SBATCH --mail-type=END", "\n";
+	print $fileHandle "#SBATCH --mail-type=FAIL", "\n";
+	print $fileHandle "#SBATCH --mail-user=".$scriptParameter{'email'}, "\n\n";	
+    }
+    
+    print $fileHandle 'echo "Running on: $(hostname)"',"\n\n";
+    return;
 }
 
 sub CheckIfMergedFiles {
@@ -5530,22 +5717,19 @@ sub GATKPedigreeFlag {
 
     if (scalar(@sampleIDs) > 2) {
 
+	my $famFile = $outFamilyFileDirectory."/".$scriptParameter{'familyID'}.".fam";
+	my $parentCounter;
+	my $pqParentCounter = q?perl -ne 'my $parentCounter=0; while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] eq 0) || ($line[3] eq 0) ) { $parentCounter++} } } print $parentCounter; last;'?;
+	my $childCounter;
+	my $pqChildCounter = q?perl -ne 'my $childCounter=0; while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] ne 0) || ($line[3] ne 0) ) { $childCounter++} } } print $childCounter; last;'?;
+
 	if ($FILEHANDLE eq "*main::GATK_PHTR") { #Special case - GATK PhaseByTransmission needs parent/child or trio 
 	    
 	    if (scalar(@sampleIDs) < 4) { #i.e.2-3 individuals in pedigree
-		my $parentCounter = 0;
-		my $childCounter = 0;
-		for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #For all sampleIDs
 		    
-		    if ($sampleIDs[$sampleIDCounter] =~ /(\d+)-(\d+|-\d+)-(\d+)(A|U)/) {#Match sampleID
-			if ($2 eq 2) { #Parent
-			    $parentCounter++;
-			}
-			if ($2 eq 1) { #child
-			    $childCounter++;
-			}
-		    }
-		}
+		$parentCounter = `$pqParentCounter $famFile`;
+		$childCounter = `$pqChildCounter $famFile`;		    
+		
 		if ( ($childCounter == 1) && ($parentCounter > 0) ) { #parent/child or trio
 		    print $FILEHANDLE "--pedigreeValidationType ".$pedigreeValidationType." --pedigree ".$outFamilyFileDirectory."/".$scriptParameter{'familyID'}.".fam "; #Pedigree files for samples
 		}
@@ -5568,14 +5752,11 @@ sub GATKPedigreeFlag {
 	    }
 	}
 	else {
-	    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #For all sampleIDs
-		
-		if ($sampleIDs[$sampleIDCounter] =~ /(\d+)-(\d+|-\d+)-(\d+)(A|U)/) {#Match sampleID
-		    if ($2 eq 2) { #Parent
-			print $FILEHANDLE "--pedigreeValidationType ".$pedigreeValidationType." --pedigree ".$outFamilyFileDirectory."/".$scriptParameter{'familyID'}.".fam "; #Pedigree files for samples		
-			last; #Only print once if a parent is found (required to include pedigree)
-		    }
-		}
+
+	    $parentCounter = `$pqParentCounter $famFile`;
+	    
+	    if ($parentCounter > 0) { #Parent
+		print $FILEHANDLE "--pedigreeValidationType ".$pedigreeValidationType." --pedigree ".$outFamilyFileDirectory."/".$scriptParameter{'familyID'}.".fam "; #Pedigree files for samples		
 	    }		
 	}
     }
@@ -5666,7 +5847,8 @@ sub PerChrGATKHaploTypeCaller {
     }
     
     print GATK_HAPCAL 'echo "Running on: $(hostname)"',"\n\n";
-    
+
+    my $FamilyFileDirectory = $scriptParameter{'outDataDir'}."/".$familyID;    
     my $outFamilyFileDirectory = $scriptParameter{'outDataDir'}."/".$familyID;
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/HaploTypeCaller";
     my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKHaploTypeCaller'}{'fileEnding'};
@@ -5674,13 +5856,15 @@ sub PerChrGATKHaploTypeCaller {
     if ($chrStartPosition == 0) { #Only for the first call of subroutine GATK_hapcal.
 	
 #Generate .fam file for later use in relevant GATK walkers (HaploTypeCaller, VariantscoreRequalibration etc)
-	print GATK_HAPCAL "#Generating '.fam' file for GATK HaploTypeCaller","\n\n";
-	
-	print GATK_HAPCAL q?perl -nae 'my %sample_info;my $mother;my $father; while (<>) { my @F = split(/\t/,$_); if ($_!~/^#/) { if($F[0]=~/(\d+)-(\d+|-\d+)-(\d+)(A|U)/) {} if ($F[3] == 1) {$father = $F[0];} if ($F[2] == 1) {$mother = $F[0];} if($3 % 2 == 1) {push (@{ $sample_info{$1}{$F[0]} }, "1");} else {push (@{ $sample_info{$1}{$F[0]} }, "2");} if ($4 eq "A") {push (@{ $sample_info{$1}{$F[0]} }, "2");} else {push (@{ $sample_info{$1}{$F[0]} }, "1");} } } for my $familyid (keys %sample_info) { for my $sampleid (keys %{ $sample_info{$familyid} }) {print $familyid, " ", $sampleid, " "; if ( ($father eq $sampleid) || ($mother eq $sampleid) ) { print 0, " ", 0, " ";} else { print $father, " ", $mother, " ";} for (my $i=0;$i<scalar(@{ $sample_info{$familyid}{$sampleid} });$i++) {print $sample_info{$familyid}{$sampleid}[$i], " ";}print "\n"; } } last;' ?.$scriptParameter{'pedigreeFile'}." > ".$outFamilyFileDirectory."/".$familyID.".fam", "\n\n";
+	unless (-e $FamilyFileDirectory."/".$familyID.".fam") { #Check to see if file already exists
+	    print GATK_PHTR "#Generating '.fam' file for GATK PhaseByTransmission","\n\n";
+	    print GATK_PHTR q?perl -nae 'print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t", $F[5], "\n";' ?.$scriptParameter{'pedigreeFile'}." > ".$FamilyFileDirectory."/".$familyID.".fam", "\n\n";
+	}
     }
     
+	
     print GATK_HAPCAL "#GATK HaplotypeCaller","\n\n";
-    
+	
     if ($chrStopPosition == 26) { #Special case to enable processing of MT as well within same node for last call, overstrecthing a bit but should be fine
 
 	for (my $chromosomeCounter=$chrStartPosition;$chromosomeCounter<$chrStopPosition-1;$chromosomeCounter++) { #Determined by chr start and stop arguments given as input	   
@@ -5707,7 +5891,7 @@ sub PerChrGATKHaploTypeCaller {
 	    print GATK_HAPCAL "--annotation SpanningDeletions "; #annotations to apply to variant calls
 	    print GATK_HAPCAL "--annotation TandemRepeatAnnotator " ;#annotations to apply to variant calls
 	    print GATK_HAPCAL "--annotation DepthPerAlleleBySample "; #annotations to apply to variant calls
-	    if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome analysis - Restrict analysis to padded target file(s)
+	    if ( ($scriptParameter{'analysisType'} eq "exomes") || ($scriptParameter{'analysisType'} eq "rapid") ) { #Exome analysis - Restrict analysis to padded target file(s)
 		
 		GATKTargetListFlag(*GATK_HAPCAL); #Passing filehandle directly to sub routine using "*". Sub routine prints "-L" lists for all sampleIDs		
 	    }
@@ -5793,360 +5977,6 @@ sub PerChrGATKHaploTypeCaller {
     close(GATK_HAPCAL);  
     if ($scriptParameter{'pGATKHaploTypeCaller'} == 1) {
 	FIDSubmitJob(0,$familyID, 3, "MAIN",$filename,0); #Arg2 eq 3 for parallel execution  
-    }
-    return;
-}
-
-sub PerChrGATKBaseReCalibration { 
-#GATK BaseRecalibrator/PrintReads to recalibrate bases before variant calling. Both BaseRecalibrator/PrintReads will be executed within the same sbatch script
-
-    my $sampleID = $_[0];
-    my $aligner = $_[1];
-
-    `mkdir -p $scriptParameter{'outDataDir'}/$sampleID/$aligner/info;`; #Creates the aligner folder and info data file directory
-    `mkdir -p $scriptParameter{'outDataDir'}/$sampleID/$aligner/per_chr/GATK/intermediary`; #Creates the aligner folder, per chromosome and GATK intermediary data file directory
-    `mkdir -p $scriptParameter{'outScriptDir'}/$sampleID/$aligner;`; #Creates the aligner folder script file directory
-
-    if ($scriptParameter{'pGATKBaseRecalibration'} == 1) {
-	$filename = $scriptParameter{'outScriptDir'}."/".$sampleID."/".$aligner."/gatk_baserecalibration_".$sampleID.".";   
-    }
-    elsif ($scriptParameter{'pGATKBaseRecalibration'} == 2) { #Dry run
-	$filename = $scriptParameter{'outScriptDir'}."/".$sampleID."/".$aligner."/dry_run_gatk_baserecalibration_".$sampleID."."; 
-	print STDOUT "Dry Run:\n";print MIPLOGG  "Dry Run:\n";  
-    }
-    Checkfnexists($filename, $fnend);
-
-###Info and Logg
-    print STDOUT "Creating sbatch script GATK BaseRecalibrator/PrintReads and writing script file(s) to: ".$filename, "\n";print MIPLOGG "Creating sbatch script GATK BaseRecalibrator/PrintReads and writing script file(s) to: ".$filename, "\n";
-    print STDOUT "Sbatch script GATK BaseRecalibrator/PrintReads data files will be written to: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr/GATK", "\n";print MIPLOGG "Sbatch script GATK BaseRecalibrator/PrintReads data files will be written to: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr/GATK", "\n";
-
-    open (GATK_RECAL, ">".$filename) or die "Can't write to ".$filename.": $!\n";
-    
-    print GATK_RECAL "#! /bin/bash -l", "\n";
-    print GATK_RECAL "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
-    print GATK_RECAL "#SBATCH -p node -n ".$scriptParameter{'maximumCores'}, "\n";
-    print GATK_RECAL "#SBATCH -C thin", "\n";	
-    print GATK_RECAL "#SBATCH -t 60:00:00", "\n";
-    print GATK_RECAL "#SBATCH -J GATK_RECAL_".$sampleID."_".$aligner, "\n";
-    if ($scriptParameter{'pGATKBaseRecalibration'} == 1) {
-	print GATK_RECAL "#SBATCH -e ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/gatk_baserecalibration_".$sampleID.".".$fnTracker.".stderr.txt", "\n";
-	print GATK_RECAL "#SBATCH -o ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/gatk_baserecalibration_".$sampleID.".".$fnTracker.".stdout.txt", "\n";
-    }
-    if ($scriptParameter{'pGATKBaseRecalibration'} == 2) { #Dry run
-	print GATK_RECAL "#SBATCH -e ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/dry_run_gatk_baserecalibration_".$sampleID.".".$fnTracker.".stderr.txt", "\n";
-	print GATK_RECAL "#SBATCH -o ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/dry_run_gatk_baserecalibration_".$sampleID.".".$fnTracker.".stdout.txt", "\n";
-    }
-    
-    unless ($scriptParameter{'email'} eq 0) {
-	print GATK_RECAL "#SBATCH --mail-type=END", "\n";
-	print GATK_RECAL "#SBATCH --mail-type=FAIL", "\n";
-	print GATK_RECAL "#SBATCH --mail-user=".$scriptParameter{'email'}, "\n\n";
-    }
-    
-    print GATK_RECAL 'echo "Running on: $(hostname)"',"\n\n";
-    
-    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr/GATK";
-    my $intervalSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr/GATK/intermediary";
-    my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr/GATK";
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKRealigner'}{'fileEnding'};
-    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
-    my ($infile, $PicardToolsMergeSwitch) = CheckIfMergedFiles($sampleID);
-    my $coreCounter=1;
-    
-    print GATK_RECAL "#GATK BaseRecalibrator","\n\n";
-    
-    if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
-       
-	for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
-	    
-	    if ($chromosomeCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
-		
-		print GATK_RECAL "wait", "\n\n";
-		$coreCounter=$coreCounter+1;
-	    }
-	    
-	    print GATK_RECAL "java -Xmx3g ";
-	    print GATK_RECAL "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'."/".$chromosomes[$chromosomeCounter]." "; #Temporary Directory per chr
-	    print GATK_RECAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-	    print GATK_RECAL "-l INFO "; #Set the minimum level of logging
-	    print GATK_RECAL "-T BaseRecalibrator "; #Type of analysis to run
-	    print GATK_RECAL "-cov ReadGroupCovariate "; #Covariates to be used in the recalibration
-	    print GATK_RECAL "-cov ContextCovariate "; #Covariates to be used in the recalibration
-	    print GATK_RECAL "-cov CycleCovariate "; #Covariates to be used in the recalibration
-	    print GATK_RECAL "-cov QualityScoreCovariate "; #Covariates to be used in the recalibration
-	    print GATK_RECAL "-cov ReadGroupCovariate "; #Covariates to be used in the recalibration
-	    print GATK_RECAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
-	    print GATK_RECAL "-knownSites ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKBaseReCalibrationSNPKnownSet'}." ";
-	    print GATK_RECAL "-I ".$inSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #InFile
-	    print GATK_RECAL "-o ".$intervalSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".grp ", "\n\n"; #Recalibration table file
-	}
-	print GATK_RECAL "wait", "\n\n";
-	
-	$coreCounter=1; #Resetting
-	print GATK_RECAL "#GATK PrintReads","\n\n";
-	for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
-	    
-	    if ($chromosomeCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
-		
-		print GATK_RECAL "wait", "\n\n";
-		$coreCounter=$coreCounter+1;
-	    }   
-	    print GATK_RECAL "java -Xmx3g ";
-	    print GATK_RECAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-	    print GATK_RECAL "-l INFO "; #Set the minimum level of logging"-jar $gatk_path/GenomeAnalysisTK.
-	    print GATK_RECAL "-T PrintReads "; #Type of analysis to run
-	    print GATK_RECAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file	    
-	    print GATK_RECAL "-I ".$inSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #InFile
-	    print GATK_RECAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #OutFile
-	    print GATK_RECAL "-BQSR ".$intervalSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".grp ", "\n\n"; #Recalibration table file
-	}
-	print GATK_RECAL "wait", "\n\n";
-    }
-    else { #no previous merge
-	
-	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all infiles per lane
-	    
-	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
-	    
-	    for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
-		
-		if ($chromosomeCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
-		    
-		    print GATK_RECAL "wait", "\n\n";
-		    $coreCounter=$coreCounter+1;
-		}
-		print GATK_RECAL "java -Xmx3g ";
-		print GATK_RECAL "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'."/".$chromosomes[$chromosomeCounter]." "; #Temporary Directory per chr
-		print GATK_RECAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-		print GATK_RECAL "-l INFO "; #Set the minimum level of logging
-		print GATK_RECAL "-T BaseRecalibrator "; #Type of analysis to run
-		print GATK_RECAL "-cov ReadGroupCovariate "; #Covariates to be used in the recalibration
-		print GATK_RECAL "-cov ContextCovariate "; #Covariates to be used in the recalibration
-		print GATK_RECAL "-cov CycleCovariate "; #Covariates to be used in the recalibration
-		print GATK_RECAL "-cov QualityScoreCovariate "; #Covariates to be used in the recalibration
-		print GATK_RECAL "-cov ReadGroupCovariate "; #Covariates to be used in the recalibration
-		print GATK_RECAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
-		print GATK_RECAL "-knownSites ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKBaseReCalibrationSNPKnownSet'}." ";
-		if ($scriptParameter{'wholeGenomeSequencing'} == 0) { #Exome analysis - Restrict analysis to padded target file(s)
-		    
-		    GATKTargetListFlag(*GATK_RECAL); #Passing filehandle directly to sub routine using "*". Sub routine prints "-L" lists for all sampleIDs		
-		}
-		print GATK_RECAL "-I ".$inSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #InFile
-		print GATK_RECAL "-o ".$intervalSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".grp &", "\n\n"; #Recalibration table file
-	    }	
-	    print GATK_RECAL "wait", "\n\n";
-	    
-	    $coreCounter=1; #Resetting
-	    print GATK_RECAL "#GATK PrintReads","\n\n";
-	    for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
-		
-		if ($chromosomeCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
-		    
-		    print GATK_RECAL "wait", "\n\n";
-		    $coreCounter=$coreCounter+1;
-		}
-		print GATK_RECAL "java -Xmx3g ";
-		print GATK_RECAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-		print GATK_RECAL "-l INFO "; #Set the minimum level of logging"-jar $gatk_path/GenomeAnalysisTK.
-		print GATK_RECAL "-T PrintReads "; #Type of analysis to run
-		print GATK_RECAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
-		print GATK_RECAL "-I ".$inSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #InFile
-		print GATK_RECAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #OutFile
-		print GATK_RECAL "-BQSR ".$intervalSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".grp &", "\n\n"; #Recalibration table file
-	    }
-	    $coreCounter=1; #Resetting for new infile
-	}
-	print GATK_RECAL "wait", "\n\n";
-    }
-    
-    print GATK_RECAL "#Remove Temp Directory\n\n";
-    for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
-	
-	print GATK_RECAL "rm ";
-	print GATK_RECAL "-rf ".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'."/".$chromosomes[$chromosomeCounter], "\n\n"; #Remove Temp Directory
-    }
-
-    close(GATK_RECAL);  
-    if ($scriptParameter{'pGATKBaseRecalibration'} == 1) { 
-	FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 1, "MAIN",$filename,0);
-    }
-    return;
-}
-
-sub PerChrGATKReAligner { 
-#GATK ReAlignerTargetCreator/IndelRealigner to rearrange reads around INDELs. Both ReAlignerTargetCreator and IndelRealigner will be executed within the same sbatch script
-
-    my $sampleID = $_[0];
-    my $aligner = $_[1];
-
-    `mkdir -p $scriptParameter{'outDataDir'}/$sampleID/$aligner/info;`; #Creates the aligner folder and info data file directory
-    `mkdir -p $scriptParameter{'outDataDir'}/$sampleID/$aligner/per_chr/GATK/intermediary`; #Creates the aligner folder, per chromosome and GATK intermediary data file directory
-    `mkdir -p $scriptParameter{'outScriptDir'}/$sampleID/$aligner;`; #Creates the aligner folder script file directory
-
-    if ($scriptParameter{'pGATKRealigner'} == 1) {
-	$filename = $scriptParameter{'outScriptDir'}."/".$sampleID."/".$aligner."/gatk_realign_".$sampleID.".";   
-    }
-    if ($scriptParameter{'pGATKRealigner'} == 2) { #Dry run
-	$filename = $scriptParameter{'outScriptDir'}."/".$sampleID."/".$aligner."/dry_run_gatk_realign_".$sampleID.".";   
-	print STDOUT "Dry Run:\n";print MIPLOGG  "Dry Run:\n";
-    }
-    Checkfnexists($filename, $fnend);
-
-###Info and Logg
-    print STDOUT "Creating sbatch script GATK ReAlignerTargetCreator/IndelRealigner and writing script file(s) to: ".$filename, "\n";print MIPLOGG "Creating sbatch script GATK ReAlignerTargetCreator/IndelRealigner and writing script file(s) to: ".$filename, "\n";
-    print STDOUT "Sbatch script GATK ReAlignerTargetCreator/IndelRealigner data files will be written to: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr/GATK", "\n";print MIPLOGG "Sbatch script GATK ReAlignerTargetCreator/IndelRealigner data files will be written to: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr/GATK", "\n";
-
-    open (GATK_REAL, ">".$filename) or die "Can't write to ".$filename.": $!\n";
-    
-    print GATK_REAL "#! /bin/bash -l", "\n";
-    print GATK_REAL "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
-    print GATK_REAL "#SBATCH -p node -n ".$scriptParameter{'maximumCores'}, "\n";
-    print GATK_REAL "#SBATCH -C thin", "\n";	
-    print GATK_REAL "#SBATCH -t 40:00:00", "\n";
-    print GATK_REAL "#SBATCH -J GATK_REAL_".$sampleID."_".$aligner, "\n";
-    if ($scriptParameter{'pGATKRealigner'} == 1) {
-	print GATK_REAL "#SBATCH -e ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/gatk_realign_".$sampleID.".".$fnTracker.".stderr.txt", "\n";
-	print GATK_REAL "#SBATCH -o ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/gatk_realign_".$sampleID.".".$fnTracker.".stdout.txt", "\n";
-    }
-    elsif ($scriptParameter{'pGATKRealigner'} == 2) { #Dry run
-	print GATK_REAL "#SBATCH -e ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/dry_run_gatk_realign_".$sampleID.".".$fnTracker.".stderr.txt", "\n";
-	print GATK_REAL "#SBATCH -o ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/dry_run_gatk_realign_".$sampleID.".".$fnTracker.".stdout.txt", "\n";
-    }
-
-    unless ($scriptParameter{'email'} eq 0) {
-	print GATK_REAL "#SBATCH --mail-type=END", "\n";
-	print GATK_REAL "#SBATCH --mail-type=FAIL", "\n";
-	print GATK_REAL "#SBATCH --mail-user=".$scriptParameter{'email'}, "\n\n";
-    }
-    
-    print GATK_REAL 'echo "Running on: $(hostname)"',"\n\n";
-   
-    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr";
-    my $intervalSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr/GATK/intermediary";
-    my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/per_chr/GATK";
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pSamToolsViewSplitChr'}{'fileEnding'};
-    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKRealigner'}{'fileEnding'};
-    my ($infile, $PicardToolsMergeSwitch) = CheckIfMergedFiles($sampleID);
-    my $coreCounter=1;
-
-    print GATK_REAL "#GATK ReAlignerTargetCreator","\n\n";
-    
-    if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
-
-	for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
-	    
-	    if ($chromosomeCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
-		
-		print GATK_REAL "wait", "\n\n";
-		$coreCounter=$coreCounter+1;
-	    }
-	    
-	    print GATK_REAL "java -Xmx3g ";
-	    print GATK_REAL "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}."/".$chromosomes[$chromosomeCounter]."/ "; #Temporary Directory per chr
-	    print GATK_REAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-	    print GATK_REAL "-l INFO "; #Set the minimum level of logging
-	    print GATK_REAL "-T RealignerTargetCreator "; #Type of analysis to run
-	    print GATK_REAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file 
-	    print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet1'}." "; #Input VCF file with known indels
-	    print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet2'}." "; #Input VCF file with known indels
-	    print GATK_REAL "-I ".$inSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #InFile	    
-	    print GATK_REAL "-o ".$intervalSampleDirectory."/".$infile.$outfileEnding."_".$chromosomes[$chromosomeCounter].".intervals &", "\n\n"; #Interval outFile
-	    
-	}	
-	
-	print GATK_REAL "wait", "\n\n";
-	
-	$coreCounter=1; #Resetting
-	print GATK_REAL "#GATK IndelRealigner","\n\n";
-	
-	for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
-	    
-	    if ($chromosomeCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
-		
-		print GATK_REAL "wait", "\n\n";
-		$coreCounter=$coreCounter+1;
-	    }
-	    
-	    print GATK_REAL "java -Xmx3g ";
-	    print GATK_REAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-	    print GATK_REAL "-l INFO ";
-	    print GATK_REAL "-T IndelRealigner ";
-	    print GATK_REAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
-	    print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet1'}." "; #Input VCF file with known indels
-	    print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet2'}." "; #Input VCF file with known indels
-	    print GATK_REAL "-I ".$inSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #InFile	
-	    print GATK_REAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding."_".$chromosomes[$chromosomeCounter].".bam ";
-	    print GATK_REAL "-targetIntervals ".$intervalSampleDirectory."/".$infile.$outfileEnding."_".$chromosomes[$chromosomeCounter].".intervals &", "\n\n";
-	    
-	}
-    }
-    else  { #No previous merge
-	
-	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all infiles per lane
-	    
-	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
-	    
-	    for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
-		
-		if ($chromosomeCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
-		    
-		    print GATK_REAL "wait", "\n\n";
-		    $coreCounter=$coreCounter+1;
-		}
-		
-		print GATK_REAL "java -Xmx3g ";
-		print GATK_REAL "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}."/".$chromosomes[$chromosomeCounter]."/ "; #Temporary Directory per chr
-		print GATK_REAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-		print GATK_REAL "-l INFO "; #Set the minimum level of logging
-		print GATK_REAL "-T RealignerTargetCreator "; #Type of analysis to run
-		print GATK_REAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file 
-		print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet1'}." "; #Input VCF file with known indels
-		print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet2'}." "; #Input VCF file with known indels
-		print GATK_REAL "-I ".$inSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #InFile
-		print GATK_REAL "-o ".$intervalSampleDirectory."/".$infile.$outfileEnding."_".$chromosomes[$chromosomeCounter].".intervals &", "\n\n"; #Interval outFile
-		
-	    }
-	    
-	    print GATK_REAL "wait", "\n\n";
-	    
-	    $coreCounter=1; #Resetting
-	    print GATK_REAL "#GATK IndelRealigner","\n\n";
-	    
-	    for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
-		
-		if ($chromosomeCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
-		    
-		    print GATK_REAL "wait", "\n\n";
-		    $coreCounter=$coreCounter+1;
-		}
-		print GATK_REAL "java -Xmx3g ";
-		print GATK_REAL "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-		print GATK_REAL "-l INFO ";
-		print GATK_REAL "-T IndelRealigner ";
-		print GATK_REAL "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
-		print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet1'}." "; #Input VCF file with known indels
-		print GATK_REAL "-known ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKReAlignerINDELKnownSet2'}." "; #Input VCF file with known indels
-		print GATK_REAL "-I ".$inSampleDirectory."/".$infile.$infileEnding."_".$chromosomes[$chromosomeCounter].".bam "; #InFile		
-		print GATK_REAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding."_".$chromosomes[$chromosomeCounter].".bam ";
-		print GATK_REAL "-targetIntervals ".$intervalSampleDirectory."/".$infile.$outfileEnding."_".$chromosomes[$chromosomeCounter].".intervals &", "\n\n";
-		
-	    }
-	    $coreCounter=1; #Resetting for new infile
-	}
-    }
-    
-    print GATK_REAL "wait", "\n\n";
-
-    print GATK_REAL "#Remove Temp Directory\n\n";
-    for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@chromosomes);$chromosomeCounter++) { #For all chromosome	    
-	
-	print GATK_REAL "rm ";
-	print GATK_REAL "-rf ".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'."/".$chromosomes[$chromosomeCounter], "\n\n"; #Remove Temp Directory
-    }   
- 
-    close(GATK_REAL);
-    if ($scriptParameter{'pGATKRealigner'} == 1) {
-	FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 1, "MAIN", $filename, 0); 
     }
     return;
 }

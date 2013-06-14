@@ -13,9 +13,13 @@ collect_info.pl -a [project ID] -p [projdir] -f [family ID...n] -o [out file]
 
 =head2 COMMANDS AND OPTIONS
 
+-ifd/--inFilesDir Infile directory
+
 -a/--projectid The project ID (Mandatory)
 
 -p/--projectdir Project dir (For instance: exomes)
+
+-pedigree/--pedigreeFile (Supply whole path, defaults to "")
 
 -f/--familyid Group id of samples to be compared, comma separated or just all for all familyIDs (defaults to "")
 
@@ -45,20 +49,24 @@ use vars qw($USAGE);
 BEGIN {
     $USAGE =
 	qq{collect_info.pl -a [project ID] -p [projdir] -s [sample ID...n] -f [family ID...n] -o [out file]
+               -ifd/--inFilesDir Infile directory
 	       -a/--projectid The project ID  (Mandatory)
                -p/--projectdir Project dir (For instance: exomes)  
+               -pedigree/--pedigreeFile (Supply whole path, defaults to "")
                -f/--familyid Group id of samples to be compared, comma separated or just all for all familyIDs (defaults to "")
 	       -o/--outfile The data file output (Supply whole path, defaults to summary_info.txt)};
     
 }
 
-my ($aid,$pid, $o, $projpath,$help) = (0,0,"summary_info.txt","");
+my ($inFilesDir, $aid,$pid, $o, $projpath, $pedigreeFile, $help) = ("", 0,0,"summary_info.txt","");
 my (@inid,@fid);
 my (%sampleData, %familyMembers, %infiles, %indirpath, %Infiles_lane_noending, %lanes, %Infiles_bothstrands_noending, %sampleFlowCells);
 #%infiles=from platform (Illumina), %indirpath for the path to infiles, %Infiles_lane_noending for MosaikBuild (one entry for both strands), %lanes for sample lanes, Infiles_bothstrands_noending for bwa_aln (one entry per strand)
 
-GetOptions('a|projectid:s'  => \$aid,
+GetOptions('ifd|inFilesDir:s' => \$inFilesDir,
+           'a|projectid:s'  => \$aid,
 	   'p|projectdir:s'  => \$pid,
+	   'pedigree|pedigreeFile:s' => \$pedigreeFile, 
 	   'f|familyid:s'  => \@fid, #Comma separated list
 	   'o|outfile:s'  => \$o, #The data file output (Supply whole path, defaults to summary_info.txt)
 	   'h|help' => \$help,
@@ -100,7 +108,8 @@ $projpath = "/bubo/proj/$aid/private/$pid";
 ###
 
 for (my $familyid=0;$familyid<scalar(@fid);$familyid++) {
-    ReadPedigreeFile($projpath, $fid[$familyid]); #Collects sampleID, pedigree and disease status etc
+    #ReadPedigreeFile($projpath, $fid[$familyid]); #Collects sampleID, pedigree and disease status etc
+    ReadPedigreeFile($pedigreeFile, $fid[$familyid]); #Collects sampleID, pedigree and disease status etc
 }
 #Collect input files for all family and sampleIDs
 for my $familyid ( keys %familyMembers ) { #For every family id
@@ -108,8 +117,8 @@ for my $familyid ( keys %familyMembers ) { #For every family id
     print STDOUT "\nFamily ID: ", $familyid,"\n";
 
     for my $sampleid ( keys %{ $familyMembers{$familyid} } ) { #For every sample id
-
-	my @infiles = `cd /bubo/proj/$aid/private/$pid/$sampleid/fastq;ls *.fastq*;`; #cd to sample fastq dir and collect *.fastq* files
+	#my @infiles = `cd /bubo/proj/$aid/private/$pid/$sampleid/fastq;ls *.fastq*;`; #cd to sample fastq dir and collect *.fastq* files
+	my @infiles = `cd $inFilesDir/$sampleid/fastq;ls *.fastq*;`; #cd to sample fastq dir and collect *.fastq* files
 	
 	if (scalar(@infiles) > 0) {
 	    print STDOUT "\nReads from Platform", "\n";
@@ -1074,8 +1083,8 @@ sub ReadGATK {
 		for (my $i=0;$i<scalar( @ { $Infiles_lane_noending{$familyid}{$sampleid} } );$i++) {#All infiles
 		    
 		    my $ret = `ls  $_[0]/$sampleid/mosaik/info/;`; #To look for GATK realign files (Assumes it has been run and same GATK version throughout analyses)
-		    if ($ret =~ /gatk_real_$sampleid/) { #Old format
-			@infiles = `ls  $_[0]/$sampleid/mosaik/info/gatk_real_$sampleid.*.stdout.txt;`; #Find all GATK realign files with sampleid.		
+		    if ($ret =~ /gatk_realign_$sampleid/) { #Old format
+			@infiles = `ls  $_[0]/$sampleid/mosaik/info/gatk_realign_$sampleid.*.stdout.txt;`; #Find all GATK realign files with sampleid.		
 		    }
 		    if (@infiles) {
 			chomp(@infiles); #Remove newline
@@ -1109,7 +1118,8 @@ sub GATKVareValExome {
 		for (my $i=0;$i<scalar(@ { $lanes{$sampleid} });$i++) {
 		    $merged_metricfile .= $lanes{$sampleid}[$i];
 		}
-		my $merged_BOTH_metricfile ="$merged_metricfile"."_sorted_merged_pmd_allchr_real_recal_resrt_varrecal_BOTH_filt.vcf.varianteval_exonic"; #Test if BOTh INDEL and SNV were analyzed together
+		#my $merged_BOTH_metricfile ="$merged_metricfile"."_sorted_merged_pmd_allchr_real_recal_resrt_varrecal_BOTH_filt.vcf.varianteval_exonic"; #Test if BOTh INDEL and SNV were analyzed together
+		my $merged_BOTH_metricfile ="$merged_metricfile"."_sorted_pmd_rreal_brecal_vrecal_BOTH_exome.vcf.varianteval"; #Test if BOTh INDEL and SNV were analyzed together
 		if (-e $merged_BOTH_metricfile) {
 		    ReadVareValExome($merged_BOTH_metricfile,$familyid,$sampleid );
 		    next;
@@ -1121,7 +1131,8 @@ sub GATKVareValExome {
 		else { # Unless merged - perform on singel/individual files
 		    
 		    for (my $i=0;$i<scalar( @ { $Infiles_lane_noending{$familyid}{$sampleid} } );$i++) {#All infiles 
-			my $BOTH_metricfile = "$_[0]/$sampleid/mosaik/GATK/varianteval/$sampleid.$sampleFlowCells{$sampleid}[$i].@{ $lanes{$sampleid} }_sorted_pmd_allchr_real_recal_resrt_varrecal_BOTH_filt.vcf.varianteval_exonic";
+			#my $BOTH_metricfile = "$_[0]/$sampleid/mosaik/GATK/varianteval/$sampleid.$sampleFlowCells{$sampleid}[$i].@{ $lanes{$sampleid} }_sorted_pmd_allchr_real_recal_resrt_varrecal_BOTH_filt.vcf.varianteval_exonic";
+			my $BOTH_metricfile = "$_[0]/$sampleid/mosaik/GATK/varianteval/$sampleid.$sampleFlowCells{$sampleid}[$i].@{ $lanes{$sampleid} }_sorted_pmd_rreal_brecal_vrecal_BOTH.vcf.varianteval_exonic";
 			if (-e $BOTH_metricfile) {
 			    ReadVareValExome($BOTH_metricfile,$familyid,$sampleid );
 			    next;
@@ -1278,7 +1289,8 @@ sub GATKVareValAll {
 		for (my $i=0;$i<scalar(@ { $lanes{$sampleid} });$i++) {
 		    $merged_metricfile .= $lanes{$sampleid}[$i];
 		}
-		my $merged_BOTH_metricfile ="$merged_metricfile"."_sorted_merged_pmd_allchr_real_recal_resrt_varrecal_BOTH_filt.vcf.varianteval"; #Test if BOTH INDEL and SNV were analyzed together
+		#my $merged_BOTH_metricfile ="$merged_metricfile"."_sorted_merged_pmd_allchr_real_recal_resrt_varrecal_BOTH_filt.vcf.varianteval"; #Test if BOTH INDEL and SNV were analyzed together
+		my $merged_BOTH_metricfile ="$merged_metricfile"."_sorted_pmd_rreal_brecal_vrecal_BOTH.vcf.varianteval"; #Test if BOTH INDEL and SNV were analyzed together
 		if (-e $merged_BOTH_metricfile) {
 		    ReadVareValAll($merged_BOTH_metricfile,$familyid,$sampleid );
 		    next;
@@ -1486,8 +1498,8 @@ sub PedigreeCheck {
     for my $familyid ( keys %familyMembers ) { #For every family id
 	my $incorrect_rel=0;
 	my $order_file;
-	if (-e "$_[0]/$familyid/mosaik/GATK/".$familyid."_allchr_real_recal_resrt_varrecal_BOTH_filt.vcf") {	
-	    $order_file = "$_[0]/$familyid/mosaik/GATK/".$familyid."_allchr_real_recal_resrt_varrecal_BOTH_filt.vcf";
+	if (-e "$_[0]/$familyid/mosaik/GATK/".$familyid."_sorted_pmd_rreal_brecal_vrecal_BOTH.vcf") {	
+	    $order_file = "$_[0]/$familyid/mosaik/GATK/".$familyid."_sorted_pmd_rreal_brecal_vrecal_BOTH.vcf";
 	}
 	else {
 	    $order_file = "$_[0]/$familyid/mosaik/GATK/".$familyid."_allchr_real_recal_resrt_varrecal_SNV_filt.vcf";
