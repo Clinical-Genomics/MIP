@@ -42,7 +42,7 @@ MIP is written in perl and therfore requires that perl is installed on your OS.
 - VcfTools
 - PLINK
 
-Depending on what programs you include in the MIP analysis you also need to add these programs to your bashrc
+Depending on what programs you include in the MIP analysis you also need to add these programs to your `bashrc`:
 
 - FastQC
 - Mosaik
@@ -58,7 +58,7 @@ Depending on what programs you include in the MIP analysis you also need to add 
 - Template files for intersectCollect.pl
 
 #####Infiles
-Needs to be on the format: "lane_date_flow-cellID_sampleID_indexX_direction.fastq".  For instance:
+Needs to be on the format: `lane_date_flow-cellID_sampleID_indexX_direction.fastq`. For instance:
 
 ```
 6_120313_AC0GTUACXX_9-1-1A_indexACTTGA_1.fastq.gz
@@ -84,14 +84,14 @@ Example usage:
 perl mip.pl -f 3 -sampleid 3-1-1A,3-2-1U -sampleid 3-2-2U -pFQC 0 -pMosaikBuild 2 -pMosaikAlign 2 -c 3_config.yaml
 ```
 This will analyse family 3 using 3 individuals from that family and begin the analysis with programs after 
-MosaikAlign and use all parameters values as specified in the config file except those supplied on the command line, 
+MosaikAlign and use all parameter values as specified in the config file except those supplied on the command line, 
 which has precedence.
 
 ####Input
 
-All MIP scripts (including mip.pl) should be placed in the in script directory specified by "-inScriptDir".
+All MIP scripts (including mip.pl) should be placed in the script directory specified by `-inScriptDir`.
 
-All references and template files should be placed directly in the reference directory specified by "-referencesDir",
+All references and template files should be placed directly in the reference directory specified by `-referencesDir`,
 except for ANNOVAR db files, which should be located in annovar/humandb.
 
 ####Output
@@ -100,11 +100,11 @@ Analyses done per individual is found under respective sampleID and analyses don
 under the family directory
 
 #####Sbatch Scripts
-MIP will create sbatch scripts (.sh) and submitt them in proper order with attached dependencies to SLURM. These sbatch 
-script are placed in the output script directory specified by "-outScriptDir". The sbatch scripts are versioned and will
+MIP will create sbatch scripts (.sh) and submit them in proper order with attached dependencies to SLURM. These sbatch 
+script are placed in the output script directory specified by `-outScriptDir`. The sbatch scripts are versioned and will
 not be overwritten if you begin a new analysis.
 
 #####Data
-Mip will place any generated datafiles in the output data directory specified by "-outDataDir". All datatfiles are 
+MIP will place any generated datafiles in the output data directory specified by `-outDataDir`. All datatfiles are 
 regenerated for each analysis. STDOUT and STDERR for each program is written in the program/info directory prior to 
 alignment and in the aligner/info directory post alignment.
