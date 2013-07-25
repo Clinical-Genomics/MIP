@@ -5,9 +5,23 @@ use warnings;
 use File::Basename;
 use IO::File;
 
-#Intersects and collects information based on 1-4 keys present (mandatory) in each file to be investigated. The set of elements to be interrogated are decided by the first db file elements unless the merge option is used. The db files are supplied using the -db flag, which should point to a db_master file (tab-sep) with the format (DbPath\tSeparator\tColumn_Keys\tChr_Column\tMatching\tColumns_to_Extract\tFile_Size\t). NOTE that matching should be either range or exact. Currently the range option only supports 3-4 keys i.e. only 3 keys are used to define the range look up (preferbly chr,start,stop). Range db file should be sorted -k1,1 -k2,2n if it contains chr information. If the merge option is used then all overlapping and unique elements are added to the final list. Beware that this option is memory demanding.    
+=for comment
+Intersects and collects information based on 1-4 keys present (mandatory) in
+each file to be investigated. The set of elements to be interrogated are decided
+by the first db file elements unless the merge option is used. The db files are
+supplied using the -db flag, which should point to a db_master file (tab-sep)
+with the format:
+(DbPath\tSeparator\tColumn_Keys\tChr_Column\tMatching\tColumns_to_Extract\tFile_Size\t).
 
-#Copyright 2012 Henrik Stranneheim
+N.B. matching should be either range or exact. Currently the range option only
+supports 3-4 keys i.e. only 3 keys are used to define the range look up
+(preferbly chr, start, stop). Range db file should be sorted -k1,1 -k2,2n if it
+contains chr information. If the merge option is used then all overlapping and
+unique elements are added to the final list. Beware that this option is memory
+demanding.
+=cut
+
+# Copyright 2012 Henrik Stranneheim
 
 =head1 SYNOPSIS
     
@@ -15,7 +29,7 @@ intersectCollect.pl -db db_master.txt -o outfile.txt
     
 =head2 COMMANDS AND OPTIONS
 
--db/--dbfile A tab-sep file containing 1 db per line with format (DbPath\tSeparator\tColumn_Keys\tChr_Column\tMatching\tColumns_to_Extract\tFile_Size\t). NOTE: db file and col nr are 0-based. 
+-db/--dbfile A tab-sep file containing 1 db per line with format (DbPath\tSeparator\tColumn_Keys\tChr_Column\tMatching\tColumns_to_Extract\tFile_Size\t). NOTE: db file and col nr are 0-based.
 
 -o/--outfile The output file (defaults to intersectCollect.txt)
 
@@ -78,18 +92,18 @@ my ($prechr,$help) = (0);
 
 my (@chr, @ocol, @oheaders, @outinfo, @selectOutFiles);
 
-###
-#User Options
-###
+# ==============================================================================
+#   User Options
+# ------------------------------------------------------------------------------
 
 GetOptions('db|dbfile:s'  => \$db,
 	   'o|outfile:s'  => \$outfile,
-	   'ocol|outcolumns:s'  => \@ocol, #comma separated
-	   'oheaders|outheaders:s'  => \@oheaders, #comma separated
-	   'oinfo|outinfo:s'  => \@outinfo, #comma separated
+	   'ocol|outcolumns:s'  => \@ocol,          # comma separated
+	   'oheaders|outheaders:s'  => \@oheaders,  # comma separated
+	   'oinfo|outinfo:s'  => \@outinfo,         # comma separated
 	   'm|merge:n'  => \$merge,
 	   's|select:n'  => \$select,
-	   'sofs|selectOutFiles:s'  => \@selectOutFiles, #Comma separated list
+	   'sofs|selectOutFiles:s'  => \@selectOutFiles,  # Comma separated list
 	   'prechr|prefixChromosomes:n'  => \$prechr,
 	   'h|help' => \$help,
     );
@@ -101,22 +115,25 @@ if ($db eq 0) {
     die $USAGE;
 }
 if (@ocol) {
-    @ocol = split(/,/,join(',',@ocol)); #Enables comma separated list
+    @ocol = split(/,/,join(',',@ocol));  # Enables comma separated list
     print STDOUT "Order of output columns as supplied by user: ";
     for (my $out_col=0;$out_col<scalar(@ocol);$out_col++) {
 	print STDOUT $ocol[$out_col], "\t";
     } 
     print STDOUT "\n";
-    $ocol =1; #To not rewrite order supplied by user with the order in the Db master file
+    # To not rewrite order supplied by user with the order in the Db master file
+    $ocol =1;
 }
 if (@oheaders) { 
-    @oheaders = split(/,/,join(',',@oheaders)); #Enables comma separated list
+    @oheaders = split(/,/,join(',',@oheaders));  # Enables comma separated list
     print STDOUT "Order of output columns headers as supplied by user: ";
     for (my $out_header=0;$out_header<scalar(@oheaders);$out_header++) {
 	print STDOUT $oheaders[$out_header], "\t";
     }
     print STDOUT "\n";
-    $oheaders =1; #To not rewrite order of headers supplied by user with the order of headers in the Db master file
+    # To not rewrite order of headers supplied by user with the order of headers
+    # in the Db master file
+    $oheaders =1;
 }
 if (@outinfo) {
     @outinfo = split(/,/,join(',',@outinfo)); #Enables comma separated list
@@ -151,12 +168,13 @@ my %unsorted; #For later sorting using ST
 
 @selectOutFiles = split(/,/,join(',',@selectOutFiles)); #Enables comma separated selectOutFiles(s)
 
-###
-#MAIN
-###
+# ==============================================================================
+#   MAIN
+# ------------------------------------------------------------------------------
 
 if ($db) {
-    ReadDbMaster($db,$ocol,$oheaders,$outinfo); #Collect information on db files from master file supplied with -db
+    # Collect information on db files from master file supplied with -db
+    ReadDbMaster($db,$ocol,$oheaders,$outinfo);
 }
 
 #Read all range Db file first to enable check against first db file keys as it is read.
