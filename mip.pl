@@ -261,6 +261,9 @@ use POSIX;
 use IO::File;
 
 use vars qw($USAGE);
+  
+# Load in the Coverage module (chanjo)
+use Coverage qw(&chanjo);
 
 BEGIN {
     $USAGE =
@@ -524,6 +527,17 @@ DefineParameters("targetCoverageGeneNameFile", "nocmdinput", "path", "nodefault"
 DefineParameters("pRCovPlots", "nocmdinput", "program", 1, 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC");
 
 DefineParameters("picardToolsPath", "nocmdinput", "path", "nodefault", "/bubo/home/h12/henriks/programs/picard-tools-1.74", "pBwaMem,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "directory");
+
+# -----------------------------------------------
+#  Chanjo
+# -----------------------------------------------
+# Chanjo always RUNS by default, BELONGS TO MIP, 
+DefineParameters("pChanjo", "nocmdinput", "program", 1, 1, "MIP", 0, "nofileEnding", "MAIN");
+
+DefineParameters("chanjoSQL", "nocmdinput", "path", "nodefault", "/bubo/proj/b2010080/private/mip_references/coverage.CCDS12.sqlite", "pChanjo", "file")
+
+DefineParameters("chanjoCutoff", "nocmdinput", "int", 10, 10, "pChanjo", "int")
+# -----------------------------------------------
 
 ##Target definition files
 $parameter{'exomeTargetBed'}{'value'} = "nocmdinput";
@@ -1201,6 +1215,17 @@ if ($scriptParameter{'pRCovPlots'} > 0) { #Run Rcovplot scripts
 	
 	RCoveragePlots($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});	
     }
+}
+
+if ($scriptParameter{'pChanjo'} > 0) {
+  # Run Chanjo script
+  my announcemnet = "\nChanjo\n"
+  print STDOUT announcemnet; print MIPLOGG announcemnet;
+
+  foreach (@sampleIDs) {
+    # How do I find out about the BAM-alignment output name?
+    Chanjo($_, $scriptParameter{'familyID'}, $scriptParameter{'chanjoSQL'});
+  }
 }
 
 
