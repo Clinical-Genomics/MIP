@@ -418,7 +418,7 @@ my @orderParameters; #To add/write parameters in the correct order
 
 ###Project specific
 
-##parameterName, parameterType, parameterDefault, environmentUppmaxDefault, AssociatedProgram, Check directory/file existence, parameterchain)
+##parameterName, parameterType, parameterDefault, environmentUppmaxDefault, AssociatedProgram, Check directory/file existence, parameterChain, programCheck)
 DefineParameters("environmentUppmax", "MIP", 0, 0, "MIP", 0);
 
 DefineParameters("projectID", "MIP", "nodefault", "b2010080", "MIP", 0);
@@ -5012,7 +5012,6 @@ sub DefineParameters {
 ###Defines all attributes of a parameter, so that the correct value can be set and added to %scriptparameter later
 
     my $parameterName = $_[0]; #ParameterName
-    #my $parameterValue = $_[1]; #Parameter to evaluate
     my $parameterType = $_[1]; #Path or program
     my $parameterDefault = $_[2]; #Default setting
     my $environmentUppmaxDefault = $_[3]; #Specific for Uppmax
@@ -5021,14 +5020,12 @@ sub DefineParameters {
     my $fileEnding = $_[6]; #The filending after the module has been run
     my $parameterChain = $_[7]; #The chain to which the program belongs to
     my @programNamePath = split(":", $_[8]) if (defined($_[9])); #The path name of the program(s) for each sbatch script
- 
-    my $parameterValue = "nocmdinput";
 
     if (defined($programNamePath[0])) {
 
 	$parameter{$parameterName} = {
 	    'type' => $parameterType,
-	    'value' => $parameterValue,
+	    'value' => "nocmdinput",
 	    'default' => $parameterDefault,
 	    'environmentUppmaxDefault' => $environmentUppmaxDefault,
 	    'associatedProgram' => $associatedProgram,
@@ -5042,7 +5039,7 @@ sub DefineParameters {
 	
 	$parameter{$parameterName} = {
 	    'type' => $parameterType,
-	    'value' => $parameterValue,
+	    'value' => "nocmdinput",
 	    'default' => $parameterDefault,
 	    'environmentUppmaxDefault' => $environmentUppmaxDefault,
 	    'associatedProgram' => $associatedProgram,
