@@ -17,6 +17,8 @@ intersectCollect.pl -db db_master.txt -o outfile.txt
 
 -db/--dbfile A tab-sep file containing 1 db per line with format (DbPath\tSeparator\tColumn_Keys\tChr_Column\tMatching\tColumns_to_Extract\tFile_Size\t). NOTE: db file and col nr are 0-based. 
 
+-s/--sampleIDs The sample ID(s)
+
 -o/--outfile The output file (defaults to intersectCollect.txt)
 
 -ocol/--outcolumns The order of the col in the outfile. NOTE: db file and col nr are 0-based. (if col 2,3 in 1st db file & col 0,1 in 0th db file is desired then ocol should be 1_2,1_3,0_0,0_1. You are free to include, exclude or rearrange the order as you like. The information can also be recorded in the db master file as outcolumns=fileNr_colNr,,fileN_colN. Precedence 1. command line 2. Recorded in db master file 3. Order of appearance in db master file. 
@@ -27,7 +29,7 @@ intersectCollect.pl -db db_master.txt -o outfile.txt
 
 -m/--merge Merge all entries found within db files. Unique entries (not found in first db file) will be included. Do not support range matching. (Defaults to "0")
 
--s/--select Select all entries in first infile matching keys in subsequent db files. Do not support range matching. (Defaults to "0") 
+-sl/--select Select all entries in first infile matching keys in subsequent db files. Do not support range matching. (Defaults to "0") 
 
 -sofs/--selectOutFiles Selected variants and orphan db files out data directory. Comma sep (Defaults to ".";Supply whole path(s) and in the same order as the '-db' db file) 
 
@@ -58,6 +60,7 @@ BEGIN {
                   5. Columns_to_Extract = The column number(s) for the information to extract from the db file(s). [Number]
                   6. Matching = The type of matching to apply to the keys. Range db file should be sorted -k1,1 -k2,2n if it contains chr information. Currently range has only been tested using chromosomal coordinates. ["range", "exact"].
                   7. File_Size = The size of the db file. If it is large another sub routine is used to collect the information to ensure speed and proper memory handling. ["small", "large"]
+               -s/--sampleIDs The sample ID(s),comma sep
                -o/--outfile The output file (defaults to intersectCollect.txt)
                -ocol/--outcolumns The order of the col in the outfile. NOTE: db file and col nr are 0-based. (if col 2,3 in 1st db file & col 0,1 in 0th db file is desired then ocol should be 1_2,1_3,0_0,0_1. You are free to include, exclude or rearrange the order as you like. The information can also be recorded in the db master file as outcolumns=fileNr_colNr,,fileN_colN. 
                   Precedence: 1. command line 2. Recorded in db master file 3. Order of appearance in db master file.
@@ -65,7 +68,7 @@ BEGIN {
                   Precedence: 1. command line 2. Recorded in db master file
                -oinfo/--outinfo The headers and order for each column in output file. The information can also be recorded in the db master file as "outinfo:header1=0_2,,headerN=N_N".
                -m/--merge Merge all entries found within db files. Unique entries (not found in first db file) will be included. Do not support range matching. (Defaults to "0")
-               -s/--select Select all entries in first infile matching keys in subsequent db files. Do not support range matching. (Defaults to "0")            
+               -sl/--select Select all entries in first infile matching keys in subsequent db files. Do not support range matching. (Defaults to "0")            
                -sofs/--selectOutFiles Selected variants and orphan db files out data directory. Comma sep (Defaults to ".";Supply whole path(s) and in the same order as the '-db' db file)
                -prechr/--prefixChromosomes "chrX" or just "X" (defaults to "X")
 	   };    
@@ -76,19 +79,20 @@ my ($outfile,$ocol,$oheaders, $outinfo) = ("intersectCollect.txt",0,0,0);
 my ($merge,$select) = (0,0);
 my ($prechr,$help) = (0);
 
-my (@chr, @ocol, @oheaders, @outinfo, @selectOutFiles);
+my (@sampleIDs, @chr, @ocol, @oheaders, @outinfo, @selectOutFiles);
 
 ###
 #User Options
 ###
 
 GetOptions('db|dbfile:s'  => \$db,
+	   's|sampleIDs:s'  => \@sampleIDs, #Comma separated list
 	   'o|outfile:s'  => \$outfile,
 	   'ocol|outcolumns:s'  => \@ocol, #comma separated
 	   'oheaders|outheaders:s'  => \@oheaders, #comma separated
 	   'oinfo|outinfo:s'  => \@outinfo, #comma separated
 	   'm|merge:n'  => \$merge,
-	   's|select:n'  => \$select,
+	   'sl|select:n'  => \$select,
 	   'sofs|selectOutFiles:s'  => \@selectOutFiles, #Comma separated list
 	   'prechr|prefixChromosomes:n'  => \$prechr,
 	   'h|help' => \$help,
@@ -123,7 +127,7 @@ if (@outinfo) {
     print STDOUT "Order of output header and columns as supplied by user: ";
     for (my $out_info_Counter=0;$out_info_Counter<scalar(@outinfo);$out_info_Counter++) {
 	print STDOUT $outinfo[$out_info_Counter], "\t";
-	if ($outinfo[$out_info_Counter] =~/for_genotypes\=/) { #Handle IDN exception
+	if ($outinfo[$out_info_Counter] =~/IDN_GT_Call\=/) { #Handle IDN exception
 	    push(@ocol, $'); #'
 	    push(@oheaders, $`);
 	    }
@@ -149,7 +153,9 @@ my (%selectFilehandles, %selectVariants);
 my (%allVariants, %allVariants_chr, %allVariants_chr_unique, %allVariants_chr_sorted); #hash for collected information and temporary hashes for sorting
 my %unsorted; #For later sorting using ST 
 
+@sampleIDs = split(/,/,join(',',@sampleIDs)); #Enables comma separated sampleID(s)
 @selectOutFiles = split(/,/,join(',',@selectOutFiles)); #Enables comma separated selectOutFiles(s)
+
 
 ###
 #MAIN
@@ -275,11 +281,18 @@ sub ReadDbMaster {
 		$ocol = 1; #Ensure that precedence is kept
 		$oheaders = 1; #Ensure that precedence is kept. Note: Global
 		@outinfo = split(",", $'); #'
+		my $IDNCounter = 0;
 		for (my $out_info_Counter=0;$out_info_Counter<scalar(@outinfo);$out_info_Counter++) {
 		    
 		    if ($outinfo[$out_info_Counter] =~/\=>/) {
 			push(@ocol, $'); #'
-			push(@oheaders, $`);
+			     if ( ($sampleIDs[$IDNCounter]) && ($outinfo[$out_info_Counter] =~/IDN_GT_Call\=/) ) { #Handle IDN exception
+				 push(@oheaders, "IDN:".$sampleIDs[$IDNCounter]);
+				 $IDNCounter++;
+			     }
+			     else {
+				 push(@oheaders, $`);
+			     }
 		    }
 		} 
 	    }
@@ -505,8 +518,17 @@ sub ReadInfileSelect {
 	print STDOUT "Select Mode: Writing Selected Variants to: $selectOutFiles[$dbFileNr]\n";
 	if ($oheaders == 1 && $dbFileNr>0) { #Print header if supplied, but not for the unselected variants then keep original header (if any)
 	    print { $selectFilehandles{ $db{$dbFileNr}{'File'} } } "#";
+	    my $IDNCounter = 0;
 	    for (my $out_header=0;$out_header<scalar(@oheaders);$out_header++) {
-		print { $selectFilehandles{ $db{$dbFileNr}{'File'} } } "$oheaders[$out_header]\t";
+		if ( ($sampleIDs[$IDNCounter]) && ($oheaders[$out_header] =~/IDN_GT_Call\=/) ) { #Handle IDN exception
+
+		    print { $selectFilehandles{ $db{$dbFileNr}{'File'} } } "IDN:".$sampleIDs[$IDNCounter],"\t";
+		    $IDNCounter++;
+		}
+		else {
+		    print { $selectFilehandles{ $db{$dbFileNr}{'File'} } } "$oheaders[$out_header]\t";
+		}
+		
 	    }
 	    print { $selectFilehandles{ $db{$dbFileNr}{'File'} } } "\n";
 	}  
