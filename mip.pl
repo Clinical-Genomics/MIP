@@ -528,16 +528,17 @@ DefineParameters("pRCovPlots", "nocmdinput", "program", 1, 1, "pCalculateCoverag
 
 DefineParameters("picardToolsPath", "nocmdinput", "path", "nodefault", "/bubo/home/h12/henriks/programs/picard-tools-1.74", "pBwaMem,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "directory");
 
-# -----------------------------------------------
-#  Chanjo
-# -----------------------------------------------
-# Chanjo always RUNS by default, BELONGS TO MIP, 
-DefineParameters("pChanjo", "nocmdinput", "program", 1, 1, "MIP", 0, "nofileEnding", "MAIN");
+# ---------------------------------------------------------
+#  Chanjo paramters
+#  ~~~~~~~~~~~~~~~~~
+#  Chanjo always RUNS by default, BELONGS TO MIP, 
+# ---------------------------------------------------------
+  DefineParameters("pChanjo", "nocmdinput", "program", 1, 1, "MIP", 0, "nofileEnding", "MAIN");
 
-DefineParameters("chanjoSQL", "nocmdinput", "path", "nodefault", "/bubo/proj/b2010080/private/mip_references/coverage.CCDS12.sqlite", "pChanjo", "file")
+  DefineParameters("chanjoStore", "nocmdinput", "path", "nodefault", "/proj/b2010080/private/mip_references/coverage.CCDS12.sqlite", "pChanjo", "file")
 
-DefineParameters("chanjoCutoff", "nocmdinput", "int", 10, 10, "pChanjo", "int")
-# -----------------------------------------------
+  DefineParameters("chanjoCutoff", "nocmdinput", "program", 10, 10, "pChanjo",
+                   0)
 
 ##Target definition files
 $parameter{'exomeTargetBed'}{'value'} = "nocmdinput";
@@ -1222,9 +1223,13 @@ if ($scriptParameter{'pChanjo'} > 0) {
   my announcemnet = "\nChanjo\n"
   print STDOUT announcemnet; print MIPLOGG announcemnet;
 
-  foreach (@sampleIDs) {
+  foreach my $sampleID (@sampleIDs) {
     # How do I find out about the BAM-alignment output name?
-    Chanjo($_, $scriptParameter{'familyID'}, $scriptParameter{'chanjoSQL'});
+    chanjo(
+      $sampleID,
+      $scriptParameter{'familyID'},
+      $scriptParameter{'chanjoStore'}
+    );
   }
 }
 
