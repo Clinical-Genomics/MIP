@@ -39,10 +39,11 @@ sub chanjo {
   my $sampleID = $_[0];
   my $familyID = $_[1];
   my $aligner = $_[2];
-  my $cutoff = $scriptParameter{'chanjoCutoff'};
+  my $cutoff = $_[3];
+  my $outDataDir = $_[4];
 
-  my $jsonPath = "$scriptParameter{'outDataDir'}/$sampleID/$aligner/"
-                 . "coverageReport/$sampleID.coverage.json";
+  my $jsonPath = "$outDataDir/$sampleID/$aligner/coverageReport"
+                 . "/$sampleID.coverage.json";
 
   # This is the SQLite database used as a reference for all samples
   my $storePath = "$scriptParameter{'chanjoSQL'}";
