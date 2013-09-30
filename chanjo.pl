@@ -1,6 +1,6 @@
 # ---------------------------------------------------------------------- 
-#  File   :  Coverage.pm
-#  History:  27-sep-2013 (robinandeer) Created module
+#  File   :  chanjo.pl
+#  History:  27-sep-2013 (robinandeer) Created file
 # ----------------------------------------------------------------------
 #
 #  Sets up a SBATCH script for running the Chanjo coverage analysis
@@ -8,19 +8,6 @@
 #  database.
 # 
 # ----------------------------------------------------------------------
-use strict;
-use warnings;
-
-package Coverage;
-
-# Followed: http://www.perlmonks.org/?node_id=102347
-use Exporter;
-use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
-
-$VERSION     = 1.00;
-@ISA         = qw(Exporter);
-@EXPORT      = ();             # Auto export (not recommended)
-@EXPORT_OK   = qw(chanjo);     # Export on request
 
 sub chanjo {
   # Generates a SBATCH script for running Chanjo.
@@ -44,13 +31,7 @@ sub chanjo {
   my $cutoff = $_[5];
   my $runMode = $_[6];
   my $dryRunAll = $_[7];
-
-  my $jsonPath = "$outDataDir/$sampleID/$aligner/coverageReport"
-                 . "/$sampleID.coverage.json";
-
-  my $inSampleDir = "$outDataDir/$sampleID/$aligner";
-  my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
-  my $bamPath = "$outDataDir/$sampleID/mosaik";
+  my $sampleInfo = $_[8];
 
   # Estimating runtime (hours)
   # ---------------------------
@@ -60,23 +41,43 @@ sub chanjo {
 
   # -------------------------------------------------------
   #  Writing SBATCH headers
-  #  ~~~~~~~~~~~~~~~~~~~~~~~~
-  #  Hard to remember how this worked...
   # -------------------------------------------------------
   ProgramPreRequisites($sampleID, "chanjo", "$aligner/coverageReport", 0, *CHANJO, 1, $runtimeEst);
+
+  # -------------------------------------------------------
+  #  Figuring out in- and out-files
+  # -------------------------------------------------------
+  my $baseDir = "$outDataDir/$sampleID/$aligner";
+  my $inDir = $baseDir;
+  my $outDir = "$baseDir/coverageReport";
+
+  my $infileEnding = $sampleInfo{ $familyID }{ $sampleID }{'pPicardToolsMarkduplicates'}{'fileEnding'};
+  my $outfile = "$sampleID.coverage.json";
+
+  # Files might have been merged from previous analyses
+  my ($infile, $mergeSwitch) = CheckIfMergedFiles($sampleID);
+
+  if ($mergeSwitch == 1) {
+    # Files were merged previously
+    my $bamPath = "$inDir/$infile"."$infileEnding.bam"
+  } else {
+    # Files haven't been merged previously
+    # TODO: Don't know how this case differs from the one above...
+    my $bamPath = "$inDir/$infile"."$infileEnding.bam"
+  }
 
   # -------------------------------------------------------
   #  Writing body of the SBATCH script
   # -------------------------------------------------------
   print CHANJO "
-  # ============================================================
-  #  Create a temp JSON file with exon coverage annotations
+  # ------------------------------------------------------------
+  #  Creates a temp JSON file with exon coverage annotations
   # ------------------------------------------------------------\n";
   print CHANJO "chanjo annotate $storePath using $bamPath";
   print CHANJO "--cutoff $cutoff";
   print CHANJO "--sample $sampleID";
   print CHANJO "--group $familyID";
-  print CHANJO "--json $jsonPath";
+  print CHANJO "--json $outDir/$outfile";
 
   if ( ($runMode == 1) && ($dryRunAll == 0) ) {
     # Chanjo is a terminally branching job: linear dependencies/no follow up

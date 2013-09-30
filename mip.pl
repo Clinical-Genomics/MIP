@@ -265,9 +265,9 @@ use POSIX;
 use IO::File;
 
 use vars qw($USAGE);
-  
-# Load in the Coverage module (chanjo)
-use Coverage qw(&chanjo);
+
+# Require/dump chanjo subroutine (into global scope...)
+require "chanjo.pl";
 
 BEGIN {
     $USAGE =
@@ -873,9 +873,9 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'imdbcc|ImportantDbGeneCoverageCalculation:n'  => \$parameter{'ImportantDbGeneCoverageCalculation'}{'value'}, #Db of important genes coverage calculation (all features connected to overlapping genes across variant)
 	   'imdbgidc|ImportantDbGeneIdCol:n'  => \$parameter{'ImportantDbGeneIdCol'}{'value'}, #Db of important genes GeneName column nr zero-based
 	   'pSCheck|pSampleCheck:n' => \$parameter{'pSampleCheck'}{'value'}, #QC for samples gender and relationship
-     'pCh|pChanjo:n' => \$parameter{'pChanjo'}{'value'},
-     'chStore|chanjoStore:s' => \$parameter{'chanjoStore'}{'value'},
-     'chCut|chanjoCutoff:n' => \$parameter{'chanjoCutoff'}{'value'},
+     'pCh|pChanjo:n' => \$parameter{'pChanjo'}{'value'},  # Chanjo coverage analysis
+     'chStore|chanjoStore:s' => \$parameter{'chanjoStore'}{'value'},  # Central SQLite database path
+     'chCut|chanjoCutoff:n' => \$parameter{'chanjoCutoff'}{'value'},  # Cutoff used for completeness
 	   );
 
 
@@ -1254,7 +1254,8 @@ if ($scriptParameter{'pChanjo'} > 0) {
       $scriptParameter{'chanjoStore'},
       $scriptParameter{'chanjoCutoff'},
       $scriptParameter{'pChanjo'},
-      $scriptparameter{'dryRunAll'}
+      $scriptparameter{'dryRunAll'},
+      $sampleInfo
     );
   }
 }
