@@ -873,7 +873,11 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'imdbcc|ImportantDbGeneCoverageCalculation:n'  => \$parameter{'ImportantDbGeneCoverageCalculation'}{'value'}, #Db of important genes coverage calculation (all features connected to overlapping genes across variant)
 	   'imdbgidc|ImportantDbGeneIdCol:n'  => \$parameter{'ImportantDbGeneIdCol'}{'value'}, #Db of important genes GeneName column nr zero-based
 	   'pSCheck|pSampleCheck:n' => \$parameter{'pSampleCheck'}{'value'}, #QC for samples gender and relationship
+     'pCh|pChanjo:n' => \$parameter{'pChanjo'}{'value'},
+     'chStore|chanjoStore:s' => \$parameter{'chanjoStore'}{'value'},
+     'chCut|chanjoCutoff:n' => \$parameter{'chanjoCutoff'}{'value'},
 	   );
+
 
 die $USAGE if($help);
 
@@ -1245,13 +1249,15 @@ if ($scriptParameter{'pChanjo'} > 0) {
     chanjo(
       $sampleID,
       $scriptParameter{'familyID'},
+      $scriptParameter{'aligner'},
+      $scriptParameter{'outDataDir'},
       $scriptParameter{'chanjoStore'},
       $scriptParameter{'chanjoCutoff'},
-      $scriptParameter{'outDataDir'}
+      $scriptParameter{'pChanjo'},
+      $scriptparameter{'dryRunAll'}
     );
   }
 }
-
 
 if ($scriptParameter{'pGATKRealigner'} > 0) { #Run GATK ReAlignerTargetCreator/IndelRealigner
 

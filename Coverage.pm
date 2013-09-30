@@ -39,27 +39,31 @@ sub chanjo {
   my $sampleID = $_[0];
   my $familyID = $_[1];
   my $aligner = $_[2];
-  my $cutoff = $_[3];
-  my $outDataDir = $_[4];
+  my $outDataDir = $_[3];
+  my $storePath = $_[4];
+  my $cutoff = $_[5];
+  my $runMode = $_[6];
+  my $dryRunAll = $_[7];
 
   my $jsonPath = "$outDataDir/$sampleID/$aligner/coverageReport"
                  . "/$sampleID.coverage.json";
 
-  # This is the SQLite database used as a reference for all samples
-  my $storePath = "$scriptParameter{'chanjoSQL'}";
+  my $inSampleDir = "$outDataDir/$sampleID/$aligner";
+  my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+  my $bamPath = "$outDataDir/$sampleID/mosaik";
 
-  # Estimating runtime (min)
-  # -------------------------
+  # Estimating runtime (hours)
+  # ---------------------------
   # For Chanjo this should be pretty much the same for all BAM-files when all
   # genes are included. The same number of bases are always parsed.
-  my $runtimeEst = 120;
+  my $runtimeEst = 1.5;
 
   # -------------------------------------------------------
   #  Writing SBATCH headers
   #  ~~~~~~~~~~~~~~~~~~~~~~~~
   #  Hard to remember how this worked...
   # -------------------------------------------------------
-  ProgramPreRequisites($sampleID, "chanjo", "$aligner/coverageReport", 0, *CHANJO, 1, 1);
+  ProgramPreRequisites($sampleID, "chanjo", "$aligner/coverageReport", 0, *CHANJO, 1, $runtimeEst);
 
   # -------------------------------------------------------
   #  Writing body of the SBATCH script
@@ -68,11 +72,16 @@ sub chanjo {
   # ============================================================
   #  Create a temp JSON file with exon coverage annotations
   # ------------------------------------------------------------\n";
-  print CHANJO "chanjo annotate $storePath using $bamFile";
+  print CHANJO "chanjo annotate $storePath using $bamPath";
   print CHANJO "--cutoff $cutoff";
   print CHANJO "--sample $sampleID";
   print CHANJO "--group $familyID";
   print CHANJO "--json $jsonPath";
+
+  if ( ($runMode == 1) && ($dryRunAll == 0) ) {
+    # Chanjo is a terminally branching job: linear dependencies/no follow up
+    FIDSubmitJob($sampleID, $familyID, 2, $parameter{'pChanjo'}{'chain'}, $filename, 0);
+  }
 
   return 1;
 }
