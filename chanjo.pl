@@ -22,7 +22,7 @@ sub chanjo {
   # --json:    Location to temporarily store the exon annotations (JSON-
   #            formatted, parallelizable)
 
-  # Get input parameters and setup other stuff
+  # Get input parameters and setup other stuff (dependencies)
   my $sampleID = $_[0];
   my $familyID = $_[1];
   my $aligner = $_[2];
@@ -63,7 +63,11 @@ sub chanjo {
   } else {
     # Files haven't been merged previously
     # TODO: Don't know how this case differs from the one above...
-    my $bamPath = "$inDir/$infile"."$infileEnding.bam"
+    # Q: Is ``$infilesLaneNoEnding`` a global var? Where from?
+    for my $infile ($infilesLaneNoEnding{ $sampleID } }) {
+      #For all infiles per lane
+      print CHANJO "$inDir/"."$infile.$infileEnding.bam";
+    }
   }
 
   # -------------------------------------------------------
@@ -71,7 +75,10 @@ sub chanjo {
   # -------------------------------------------------------
   print CHANJO "
   # ------------------------------------------------------------
-  #  Creates a temp JSON file with exon coverage annotations
+  #  Chanjo - Coverage analysis tool
+  #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  #  Creates a temporary JSON file with exon coverage
+  #  annotations.
   # ------------------------------------------------------------\n";
   print CHANJO "chanjo annotate $storePath using $bamPath";
   print CHANJO "--cutoff $cutoff";
@@ -79,6 +86,7 @@ sub chanjo {
   print CHANJO "--group $familyID";
   print CHANJO "--json $outDir/$outfile";
 
+  # If the program was set to run and dry run is disabled
   if ( ($runMode == 1) && ($dryRunAll == 0) ) {
     # Chanjo is a terminally branching job: linear dependencies/no follow up
     FIDSubmitJob($sampleID, $familyID, 2, $parameter{'pChanjo'}{'chain'}, $filename, 0);
