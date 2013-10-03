@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-###Master script for analysing paired end reads from the Illumina plattform in fastq(.gz) format to annotated ranked disease causing variants. The program performs QC, aligns reads using Mosaik or BWA, performs variant discovery and annotation as well as ranking the found variants according to disease potential.
+###Master ipt for analysing paired end reads from the Illumina plattform in fastq(.gz) format to annotated ranked disease causing variants. The program performs QC, aligns reads using Mosaik or BWA, performs variant discovery and annotation as well as ranking the found variants according to disease potential.
  
 ###Copyright 2011 Henrik Stranneheim
 
@@ -265,6 +265,9 @@ use POSIX;
 use IO::File;
 
 use vars qw($USAGE);
+
+# Require/dump chanjo subroutine (into global scope...)
+require "chanjo.pl";
 
 BEGIN {
     $USAGE =
@@ -534,6 +537,19 @@ DefineParameters("targetCoverageGeneNameFile", "path", "nodefault", "mart_export
 DefineParameters("pRCovPlots", "program", 1, 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC");
 
 DefineParameters("picardToolsPath", "path", "nodefault", "/bubo/home/h12/henriks/programs/picard-tools-1.74", "pBwaMem,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "directory");
+
+# ---------------------------------------------------------
+#  Chanjo parameters
+#  ~~~~~~~~~~~~~~~~~~
+#  Referred to as "pChanjo"; is a "program"; doesn't run
+#  by default; called by MIP; no file needs checking;
+#  no file ending; belongs to MAIN chain
+# ---------------------------------------------------------
+  DefineParameters("pChanjo", "program", 0, 0, "MIP", 0, "nofileEnding", "MAIN");
+
+  DefineParameters("chanjoStore", "path", "nodefault", "/proj/b2010080/private/mip_references/coverage.CCDS12.sqlite", "pChanjo", "file")
+
+  DefineParameters("chanjoCutoff", "program", 10, 10, "pChanjo", 0)
 
 ##Target definition files
 $parameter{'exomeTargetBed'}{'value'} = "nocmdinput";
@@ -858,7 +874,11 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'imdbcc|ImportantDbGeneCoverageCalculation:n'  => \$parameter{'ImportantDbGeneCoverageCalculation'}{'value'}, #Db of important genes coverage calculation (all features connected to overlapping genes across variant)
 	   'imdbgidc|ImportantDbGeneIdCol:n'  => \$parameter{'ImportantDbGeneIdCol'}{'value'}, #Db of important genes GeneName column nr zero-based
 	   'pSCheck|pSampleCheck:n' => \$parameter{'pSampleCheck'}{'value'}, #QC for samples gender and relationship
+     'pCh|pChanjo:n' => \$parameter{'pChanjo'}{'value'},  # Chanjo coverage analysis
+     'chStore|chanjoStore:s' => \$parameter{'chanjoStore'}{'value'},  # Central SQLite database path
+     'chCut|chanjoCutoff:n' => \$parameter{'chanjoCutoff'}{'value'},  # Cutoff used for completeness
 	   );
+
 
 die $USAGE if($help);
 
@@ -1220,6 +1240,25 @@ if ($scriptParameter{'pRCovPlots'} > 0) { #Run Rcovplot scripts
     }
 }
 
+if ($scriptParameter{'pChanjo'} > 0) {
+  # Run Chanjo
+  my announcement = "\nChanjo\n"
+  print STDOUT announcement; print MIPLOGG announcement;
+
+  foreach my $sampleID (@sampleIDs) {
+    chanjo(
+      $sampleID,
+      $scriptParameter{'familyID'},
+      $scriptParameter{'aligner'},
+      $scriptParameter{'outDataDir'},
+      $scriptParameter{'chanjoStore'},
+      $scriptParameter{'chanjoCutoff'},
+      $scriptParameter{'pChanjo'},
+      $scriptparameter{'dryRunAll'},
+      $sampleInfo
+    );
+  }
+}
 
 if ($scriptParameter{'pGATKRealigner'} > 0) { #Run GATK ReAlignerTargetCreator/IndelRealigner
 
