@@ -86,6 +86,9 @@ sub chanjo {
   print CHANJO "--group $familyID";
   print CHANJO "--json $outDir/$outfile";
 
+  # Drop the file handle
+  close(CHANJO);
+
   # If the program was set to run and dry run is disabled
   if ( ($runMode == 1) && ($dryRunAll == 0) ) {
     # Chanjo is a terminally branching job: linear dependencies/no follow up

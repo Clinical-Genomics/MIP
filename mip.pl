@@ -539,10 +539,11 @@ DefineParameters("pRCovPlots", "program", 1, 1, "pCalculateCoverage", 0, "nofile
 DefineParameters("picardToolsPath", "path", "nodefault", "/bubo/home/h12/henriks/programs/picard-tools-1.74", "pBwaMem,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "directory");
 
 # ---------------------------------------------------------
-#  Chanjo paramters
-#  ~~~~~~~~~~~~~~~~~
-#  Referred to "pChanjo", doesn't run by default, isn't
-#  connected to other downstream processes.
+#  Chanjo parameters
+#  ~~~~~~~~~~~~~~~~~~
+#  Referred to as "pChanjo"; is a "program"; doesn't run
+#  by default; called by MIP; no file needs checking;
+#  no file ending; belongs to MAIN chain
 # ---------------------------------------------------------
   DefineParameters("pChanjo", "program", 0, 0, "MIP", 0, "nofileEnding", "MAIN");
 
@@ -1240,12 +1241,11 @@ if ($scriptParameter{'pRCovPlots'} > 0) { #Run Rcovplot scripts
 }
 
 if ($scriptParameter{'pChanjo'} > 0) {
-  # Run Chanjo script
-  my announcemnet = "\nChanjo\n"
-  print STDOUT announcemnet; print MIPLOGG announcemnet;
+  # Run Chanjo
+  my announcement = "\nChanjo\n"
+  print STDOUT announcement; print MIPLOGG announcement;
 
   foreach my $sampleID (@sampleIDs) {
-    # How do I find out about the BAM-alignment output name?
     chanjo(
       $sampleID,
       $scriptParameter{'familyID'},
