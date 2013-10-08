@@ -66,7 +66,7 @@ sub chanjo {
     # Q: Is ``$infilesLaneNoEnding`` a global var? Where from?
     for my $infile ($infilesLaneNoEnding{ $sampleID } }) {
       #For all infiles per lane
-      print CHANJO "$inDir/"."$infile.$infileEnding.bam";
+      #print CHANJO "$inDir/"."$infile.$infileEnding.bam";
     }
   }
 
@@ -80,10 +80,10 @@ sub chanjo {
   #  Creates a temporary JSON file with exon coverage
   #  annotations.
   # ------------------------------------------------------------\n";
-  print CHANJO "chanjo annotate $storePath using $bamPath";
-  print CHANJO "--cutoff $cutoff";
-  print CHANJO "--sample $sampleID";
-  print CHANJO "--group $familyID";
+  print CHANJO "chanjo annotate $storePath using $bamPath ";
+  print CHANJO "--cutoff $cutoff ";
+  print CHANJO "--sample $sampleID ";
+  print CHANJO "--group $familyID ";
   print CHANJO "--json $outDir/$outfile";
 
   # Drop the file handle
