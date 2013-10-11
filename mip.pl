@@ -1242,22 +1242,21 @@ if ($scriptParameter{'pRCovPlots'} > 0) { #Run Rcovplot scripts
 
 if ($scriptParameter{'pChanjo'} > 0) {
   # Run Chanjo
-  my announcement = "\nChanjo\n"
-  print STDOUT announcement; print MIPLOGG announcement;
+  for my $fh (STDOUT, MIPLOGG) { print $fh "\n\033[93mChanjo\033[0m\n"; }
 
-  foreach my $sampleID (@sampleIDs) {
-    chanjo(
-      $sampleID,
-      $scriptParameter{'familyID'},
-      $scriptParameter{'aligner'},
-      $scriptParameter{'outDataDir'},
-      $scriptParameter{'chanjoStore'},
-      $scriptParameter{'chanjoCutoff'},
-      $scriptParameter{'pChanjo'},
-      $scriptparameter{'dryRunAll'},
-      $sampleInfo
-    );
-  }
+  # Chanjo will run for each sample but generate a single SBATCH script
+  # and a new SQLite database per family to avoid conflicts.
+  chanjo(
+    @sampleIDs,
+    $scriptParameter{'familyID'},
+    $scriptParameter{'aligner'},
+    $scriptParameter{'outDataDir'},
+    $scriptParameter{'chanjoStore'},
+    $scriptParameter{'chanjoCutoff'},
+    $scriptParameter{'pChanjo'},
+    $scriptparameter{'dryRunAll'},
+    $sampleInfo
+  );
 }
 
 if ($scriptParameter{'pGATKRealigner'} > 0) { #Run GATK ReAlignerTargetCreator/IndelRealigner
