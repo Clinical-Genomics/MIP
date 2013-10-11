@@ -23,7 +23,7 @@ sub chanjo {
   #            formatted, parallelizable)
 
   # Get input parameters and setup other stuff (dependencies)
-  my $sampleID = $_[0];
+  my @sampleIDs = $_[0];
   my $familyID = $_[1];
   my $aligner = $_[2];
   my $outDataDir = $_[3];
@@ -31,60 +31,84 @@ sub chanjo {
   my $cutoff = $_[5];
   my $runMode = $_[6];
   my $dryRunAll = $_[7];
-  my $sampleInfo = $_[8];
+  my %sampleInfo = $_[8];
 
   # Estimating runtime (hours)
   # ---------------------------
   # For Chanjo this should be pretty much the same for all BAM-files when all
   # genes are included. The same number of bases are always parsed.
-  my $runtimeEst = 1.5;
+  my $runtimeEst = 1.5 * scalar(@sampleIDs);
 
   # -------------------------------------------------------
   #  Writing SBATCH headers
   # -------------------------------------------------------
-  ProgramPreRequisites($sampleID, "chanjo", "$aligner/coverageReport", 0, *CHANJO, 1, $runtimeEst);
-
-  # -------------------------------------------------------
-  #  Figuring out in- and out-files
-  # -------------------------------------------------------
-  my $baseDir = "$outDataDir/$sampleID/$aligner";
-  my $inDir = $baseDir;
-  my $outDir = "$baseDir/coverageReport";
-
-  my $infileEnding = $sampleInfo{ $familyID }{ $sampleID }{'pPicardToolsMarkduplicates'}{'fileEnding'};
-  my $outfile = "$sampleID.coverage.json";
-
-  # Files might have been merged from previous analyses
-  my ($infile, $mergeSwitch) = CheckIfMergedFiles($sampleID);
-
-  if ($mergeSwitch == 1) {
-    # Files were merged previously
-    my $bamPath = "$inDir/$infile"."$infileEnding.bam"
-  } else {
-    # Files haven't been merged previously
-    # TODO: Don't know how this case differs from the one above...
-    # Q: Is ``$infilesLaneNoEnding`` a global var? Where from?
-    for my $infile ($infilesLaneNoEnding{ $sampleID } }) {
-      #For all infiles per lane
-      print CHANJO "$inDir/"."$infile.$infileEnding.bam";
-    }
-  }
+  ProgramPreRequisites($familyID, "chanjo", "$aligner/coverageReport", 0, *CHANJO, 1, $runtimeEst);
 
   # -------------------------------------------------------
   #  Writing body of the SBATCH script
   # -------------------------------------------------------
   print CHANJO "
   # ------------------------------------------------------------
-  #  Chanjo - Coverage analysis tool
-  #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  #  \033[93mChanjo\033[0m - Coverage analysis tool
+  #  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   #  Creates a temporary JSON file with exon coverage
   #  annotations.
   # ------------------------------------------------------------\n";
-  print CHANJO "chanjo annotate $storePath using $bamPath";
-  print CHANJO "--cutoff $cutoff";
-  print CHANJO "--sample $sampleID";
-  print CHANJO "--group $familyID";
-  print CHANJO "--json $outDir/$outfile";
+  # One central location to store coverage for the family
+  my $storePath = "$outDataDir/$familyID/$aligner/coverage.sqlite";
+
+  # Build a new empty database
+  print CHANJO "chanjo build $storePath using $ccdsPath \n\n";
+
+  # We run all samples in parallel using the ``&`` and ``wait``-commands
+  for my $sampleID (@sampleIDs) {
+
+    # -------------------------------------------------------
+    #  Figuring out in- and out-files
+    # -------------------------------------------------------
+    my $baseDir = "$outDataDir/$sampleID/$aligner";
+    my $inDir = $baseDir;
+    my $outDir = "$baseDir/coverageReport";
+
+    my $infileEnding = $sampleInfo{ $familyID }{ $sampleID }{'pPicardToolsMarkduplicates'}{'fileEnding'};
+    my $outfile = "$sampleID.coverage.json";
+
+    # Files might have been merged from previous analyses
+    my ($infile, $mergeSwitch) = CheckIfMergedFiles($sampleID);
+
+    if ($mergeSwitch == 1) {
+      # Files were merged previously
+      my $bamPath = "$inDir/$infile"."$infileEnding.bam"
+    } else {
+      # Files haven't been merged previously
+      # TODO: Don't know how this case differs from the one above...
+      # Q: Is ``$infilesLaneNoEnding`` a global var? Where from?
+      for my $infile ($infilesLaneNoEnding{ $sampleID } }) {
+        #For all infiles per lane
+        #print CHANJO "$inDir/"."$infile.$infileEnding.bam";
+      }
+    }
+
+    print CHANJO "chanjo annotate $storePath using $bamPath ";
+    print CHANJO "--cutoff $cutoff ";
+    print CHANJO "--sample $sampleID ";
+    print CHANJO "--group $familyID ";
+    print CHANJO "--json $outDir/$outfile ";
+    print CHANJO "&", "\n\n";
+
+  } # END (for each sample)
+
+  # Now wait for all the sample BAM-files to be processed
+  print CHANJO "wait", "\n\n";
+
+  # And sequencially load all the JSON files into the database
+  my $jsonPaths = "";
+  for my $sampleID (@sampleIDs) {
+    $jsonPaths .= "$baseDir/coverageReport$sampleID.coverage.json ";
+  }
+
+  print CHANJO "chanjo $storePath import $jsonPaths";
+  print CHANJO "wait", "\n\n";
 
   # Drop the file handle
   close(CHANJO);
@@ -92,7 +116,7 @@ sub chanjo {
   # If the program was set to run and dry run is disabled
   if ( ($runMode == 1) && ($dryRunAll == 0) ) {
     # Chanjo is a terminally branching job: linear dependencies/no follow up
-    FIDSubmitJob($sampleID, $familyID, 2, $parameter{'pChanjo'}{'chain'}, $filename, 0);
+    FIDSubmitJob(0, $familyID, 2, $parameter{'pChanjo'}{'chain'}, $filename, 0);
   }
 
   return 1;
