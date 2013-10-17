@@ -21,7 +21,7 @@ od <- args[4] #Collect location of out directory
 
 #Read infile
 
-covChr <-read.table(paste(infile), header=F)
+covChr <- read.table(paste(infile), header=F)
 #covChr <-read.table("10-7053.110713_AD035EACXX.1_sorted_genomeCoverageBed.txt", header=T)
 
 #set working directory
@@ -99,9 +99,9 @@ ktrack <-0 #Enables plot of chr1-22
 	}
 }
 
-##########
-#Plot Fraction of bases vs coverage
-##########
+# ==============================================================================
+#		Plot Fraction of bases vs coverage
+# ------------------------------------------------------------------------------
 
 k <-0
 for (pos in 1:length(chr) )  { # For all entries
