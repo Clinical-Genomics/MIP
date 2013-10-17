@@ -107,6 +107,131 @@ $projpath = "/bubo/proj/$aid/private/$pid";
 #MAIN
 ###
 
+RegExpToYAML();
+sub RegExpToYAML {
+    my %regExp;
+#Add to %regExp to enable print in YAML
+    $regExp{'FastQC'}{'Encoding'} = q?perl -nae' if ($_=~/Encoding\s+(\S+\s\S+\s\S+\s\S+|\S+\s\S+)/) {print $1;}' ?; #Collect Encoding
+    
+    $regExp{'FastQC'}{'Sequence_length'} = q?perl -nae' if ($_=~/Sequence length\s(\d+)/) {print $1;}' ?; #Collect Sequence length
+    
+    $regExp{'FastQC'}{'Total_number_of_reads'} = q?perl -nae' if ($_=~/Total Sequences\s(\d+)/) {print $1;}' ?; #Collect Total sequences 
+    
+    $regExp{'FastQC'}{'%GC'} = q?perl -nae' if ($_=~/%GC\s(\d+)/) {print $1;}' ?; #Collect GC content 
+    
+    $regExp{'FastQC'}{'Sequence_duplication'} = q?perl -nae' if ($_=~/#Total Duplicate Percentage\s+(\d+.\d)/) {print $1;}' ?; #Collect Sequence duplication level
+    
+    $regExp{'FastQC'}{'Basic_statistics'} = q?perl -nae' if ($_=~/>>Basic Statistics\s+(\S+)/) {print $1;}' ?; #Collect Basic Statistics
+    
+    $regExp{'FastQC'}{'Per_base_sequence_quality'} = q?perl -nae' if ($_=~/>>Per base sequence quality\s+(\S+)/) {print $1;}' ?; #Collect Per base sequence quality
+    
+    $regExp{'FastQC'}{'Per_sequence_quality_scores'} = q?perl -nae' if ($_=~/>>Per sequence quality scores\s+(\S+)/) {print $1;}' ?; #Collect Per sequence quality scores
+    
+    $regExp{'FastQC'}{'Per_base_sequence_content'} = q?perl -nae' if ($_=~/>>Per base sequence content\s+(\S+)/) {print $1;}' ?; #Collect Per base sequence content
+    
+    $regExp{'FastQC'}{'Per_base_GC_content'} = q?perl -nae' if ($_=~/>>Per base GC content\s+(\S+)/) {print $1;}' ?; #Collect Per base GC content
+    
+    $regExp{'FastQC'}{'Per_sequence_GC_content'} = q?perl -nae' if ($_=~/>>Per sequence GC content\s+(\S+)/) {print $1;}' ?; #Collect Per sequence GC content
+    
+    $regExp{'FastQC'}{'Per_base_N_content'} = q?perl -nae' if ($_=~/>>Per base N content\s+(\S+)/) {print $1;}' ?; #Collect Per base N content
+    
+    $regExp{'FastQC'}{'Sequence_duplication_levels'} = q?perl -nae' if ($_=~/>>Sequence Duplication Levels\s+(\S+)/) {print $1;}' ?; #Collect Sequence Duplication Levels
+    
+    $regExp{'FastQC'}{'Overrepresented_sequences'} = q?perl -nae' if ($_=~/>>Overrepresented sequences\s+(\S+)/) {print $1;}' ?; #Collect Overrepresented sequences
+    
+    $regExp{'FastQC'}{'Kmer_content'} = q?perl -nae' if ($_=~/>>Kmer Content\s+(\S+)/) {print $1;}' ?; #Collect Kmer Content
+    
+    $regExp{'MosaikAligner'}{'Version'} = q?perl -nae' if ($_=~/(\d+\.\d+\.\d+)\s/) {print $1;}' ?; #Collect Mosaik Version 
+    
+    $regExp{'MosaikAligner'}{'Unaligned_mates'} = q?perl -nae' if ($_=~/# unaligned mates\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;}' ?; #Collect Nr of unaligned mates
+    
+    $regExp{'MosaikAligner'}{'Filtered_out'} = q?perl -nae' if ($_=~/# filtered out\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;}' ?; #Collect Nr of filtered out reads 
+    
+    $regExp{'MosaikAligner'}{'Uniquely_aligned_mates'} = q?perl -nae' if ($_=~/# uniquely aligned mates\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;}' ?; #Collect Uniquely aligned mates
+    
+    $regExp{'MosaikAligner'}{'Multiply_aligned_mates'} = q?perl -nae' if ($_=~/# multiply aligned mates\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;}' ?; #Collect Multiply aligned mates
+    
+    $regExp{'MosaikAligner'}{'Total_aligned'} = q?perl -nae' if ($_=~/total aligned:\s+\S+\s+(\S+)\s\(\S+\s(\d+.\d+)/ ) {print $2;} elsif ($_=~/total aligned:\s+(\S+)\s\(\S+\s(\d+.\d+)/ ) { print $2}' ?; #Collect total aligned sequences
+    
+    $regExp{'QaCompute'}{'X_Y_coverage'} = q?perl -nae' if ($F[0]=~/^X/ || $F[0]=~/^Y/ ) {print "$F[2],";}' ?; #Collect X and Y coverage. "," required for later split 
+    
+    $regExp{'SampleChecks'}{'Sample_order'} = q?perl -nae 'if ($_=~/^#CHROM/) {chomp $_; my @line = split(/\t/,$_); for (my $sample=9;$sample<scalar(@line);$sample++) { print $line[$sample], "\t";}last;}' ?; #Collect sample order from vcf file used to create ".ped", ".map" and hence ".mibs".
+    
+    $regExp{'MarkDuplicates'}{'Header_info'}{'Header'} = q?perl -nae' if ($_ =~/^LIBRARY/ ) {print $_;last;}' ?; #Note return whole line (Header) 
+    
+    $regExp{'MarkDuplicates'}{'Header_info'}{'Data'} = q?perl -nae' if ( ($. ==8) && ($_ =~/(\S+)/) ) {print $_;last;}' ?; #Note return whole line and only look at line 8, where the data action is               
+    $regExp{'CalculateHsMetrics'}{'Header_info'}{'Header'} = q?perl -nae' if ($_ =~/^BAIT_SET/ ) {print $_;last;}' ?; #Note return whole line (Header) 
+    
+    $regExp{'CalculateHsMetrics'}{'Header_info'}{'Data'} = q?perl -nae' if ( ($. ==8) && ($_ =~/(\S+)/) ) {print $_;last;}' ?; #Note return whole line and only look at line 8, where the data action is
+    
+    $regExp{'CollectMultipleMetrics'}{'Header_info'}{'Header'} = q?perl -nae' if ($_ =~/^CATEGORY/ ) {print $_;last;}' ?; #Note return whole line (Header) 
+    
+    $regExp{'CollectMultipleMetrics'}{'Header_info'}{'First_of_pair'} = q?perl -nae' if ($_ =~/^FIRST_OF_PAIR/ ) {print $_;last;}' ?; #Note return whole line (FIRST_OF_PAIR)
+    
+    $regExp{'CollectMultipleMetrics'}{'Header_info'}{'Second_of_pair'} = q?perl -nae' if ($_ =~/^SECOND_OF_PAIR/ ) {print $_;last;}' ?; #Note return whole line (SECOND_OF_PAIR)  
+    
+    $regExp{'CollectMultipleMetrics'}{'Header_info'}{'Pair'} = q?perl -nae' if ($_ =~/^PAIR/ ) {print $_;last;}'  ?; #Note return whole line (PAIR)
+    
+    $regExp{'VariantEval_All'}{'CompOverlap_header'}{'CompOverlap_header'} = q?perl -nae' if ($_ =~/^CompOverlap\s+\CompRod/ ) {print $_;last;}' ?; #Note return whole line (Header)
+    
+    $regExp{'VariantEval_All'}{'CompOverlap_header'}{'CompOverlap_data_all'} = q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/all/) && ($_ =~/none/)) {print $_;last;}' ?; #Note return whole line
+    
+    $regExp{'VariantEval_All'}{'CompOverlap_header'}{'CompOverlap_data_known'} = q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/known\s/) ) {print $_;last;}' ?; #Note return whole line
+
+    $regExp{'VariantEval_All'}{'CompOverlap_header'}{'CompOverlap_data_novel'} = q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/novel\s/) ) {print $_;last;}' ?; #Note return whole line
+
+    $regExp{'VariantEval_All'}{'CountVariants_header'}{'CountVariants_header'} = q?perl -nae' if ($_ =~/^CountVariants\s+\CompRod/ ) {print $_;last;}' ?; #Note return whole line (Header)                                               
+    $regExp{'VariantEval_All'}{'CountVariants_header'}{'CountVariants_data_all'} = q?perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/all\s/) ) {print $_;last;}' ?; #Note return whole line                                              
+    $regExp{'VariantEval_All'}{'CountVariants_header'}{'CountVariants_data_known'} = q?perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/known\s/) ) {print $_;last;}' ?; #Note return whole line                                          
+    $regExp{'VariantEval_All'}{'CountVariants_header'}{'CountVariants_data_novel'} = q?perl -nae' if ( ($_ =~/^CountVariants/) && ($_ =~/novel\s/) ) {print $_;last;}' ?; #Note return whole line
+
+    $regExp{'VariantEval_All'}{'IndelSummary_header'}{'IndelSummary_header'} = q?perl -nae' if ($_ =~/^IndelSummary\s+\CompRod/ ) {print $_;last;}' ?; #Note return whole line (Header)                                                                                                                                                                                                                         
+    $regExp{'VariantEval_All'}{'IndelSummary_header'}{'IndelSummary_data_all'} = q?perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?; #Note return whole line                                                                                                                                                                                                        
+    $regExp{'VariantEval_All'}{'IndelSummary_header'}{'IndelSummary_data_known'} = q?perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?; #Note return whole line                                     
+    $regExp{'VariantEval_All'}{'IndelSummary_header'}{'IndelSummary_data_novel'} = q?perl -nae' if ( ($_ =~/^IndelSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?; #Note return whole line 
+
+    $regExp{'VariantEval_All'}{'MultiallelicSummary_header'}{'MultiallelicSummary_header'} = q?perl -nae' if ($_ =~/^MultiallelicSummary\s+\CompRod/ ) {print $_;last;}' ?; #Note return whole line (Header)                         
+    $regExp{'VariantEval_All'}{'MultiallelicSummary_header'}{'MultiallelicSummary_data_all'} = q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?; #Note return whole line                                          
+    $regExp{'VariantEval_All'}{'MultiallelicSummary_header'}{'MultiallelicSummary_data_known'} = q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?; #Note return whole line                                        
+    $regExp{'VariantEval_All'}{'MultiallelicSummary_header'}{'MultiallelicSummary_data_novel'} = q?perl -nae' if ( ($_ =~/^MultiallelicSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?; #Note return whole line
+
+    $regExp{'VariantEval_All'}{'TiTvVariantEvaluator_header'}{'TiTvVariantEvaluator_header'} = q?perl -nae' if ($_ =~/^TiTvVariantEvaluator\s+\CompRod/ ) {print $_;last;}' ?; #Note return whole line (Header)                                                                                                                                                                                        
+    $regExp{'VariantEval_All'}{'TiTvVariantEvaluator_header'}{'TiTvVariantEvaluator_data_all'} = q?perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/all\s/) ) {print $_;last;}' ?; #Note return whole line                                                                                                                                                                                                       
+    $regExp{'VariantEval_All'}{'TiTvVariantEvaluator_header'}{'TiTvVariantEvaluator_data_known'} = q?perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/known\s/) ) {print $_;last;}' ?; #Note return whole line                                                                                                                                                                                               
+    $regExp{'VariantEval_All'}{'TiTvVariantEvaluator_header'}{'TiTvVariantEvaluator_data_novel'} = q?perl -nae' if ( ($_ =~/^TiTvVariantEvaluator/) && ($_ =~/novel\s/) ) {print $_;last;}' ?; #Note return whole line 
+
+    $regExp{'VariantEval_All'}{'ValidationReport_header'}{'ValidationReport_header'} = q?perl -nae' if ($_ =~/^ValidationReport\s+\CompRod/ ) {print $_;last;}' ?; #Note return whole line (Header)                                                                                                                                                                                                                          
+    $regExp{'VariantEval_All'}{'ValidationReport_header'}{'ValidationReport_data_all'} = q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/all\s/) && ($_ =~/none\s/)) {print $_;last;}' ?; #Note return whole line                                                                                                                                                                                                                         
+    $regExp{'VariantEval_All'}{'ValidationReport_header'}{'ValidationReport_data_known'} = q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/known\s/) ) {print $_;last;}' ?; #Note return whole line                                                                                                                                                                                                        
+    $regExp{'VariantEval_All'}{'ValidationReport_header'}{'ValidationReport_data_novel'} = q?perl -nae' if ( ($_ =~/^ValidationReport/) && ($_ =~/novel\s/) ) {print $_;last;}' ?; #Note return whole line
+
+    $regExp{'VariantEval_All'}{'VariantSummary_header'}{'VariantSummary_header'} = q?perl -nae' if ($_ =~/^VariantSummary\s+\CompRod/ ) {print $_;last;}' ?; #Note return whole line (Header)                                                                                                                                                                                                                     
+    $regExp{'VariantEval_All'}{'VariantSummary_header'}{'VariantSummary_data_all'} = q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?; #Note return whole line                                                                                                                                                                                                                   
+    $regExp{'VariantEval_All'}{'VariantSummary_header'}{'VariantSummary_data_known'} = q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?; #Note return whole line                                                                                                                                                                                                                
+    $regExp{'VariantEval_All'}{'VariantSummary_header'}{'VariantSummary_data_novel'} = q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?; #Note return whole line
+#$regExp{''}{''} = ;
+
+##Later use return headers to loop through information and collects the data, this way unless line number changes the code should be stable
+    my @returnData = split (/\s+/, `$regExp{'VariantEval_All'}{'CountVariants_header'}{'CountVariants_data_all'} slask_GATK_variantEval`);
+    #my @returnHeader = split (/\t/, `$regExp{'MarkDuplicates'}{'Line7_header_info'} slask_pmdmetric`);
+    print $returnData[6];
+    #print $returnHeader[1];
+    
+    use YAML;
+    open (YAML, '>', "qc_regExp.yaml") or die "can't open qc_regExp.yaml: $!\n";
+    print YAML Dump(%regExp), "\n";
+    close (YAML);
+}
+
+##TEMP
+open (YAML, "<", "qc_regExp.yaml") or die "can't open qc_regExp.yaml: $!\n";
+my %loadedRegExp = YAML::LoadFile("qc_regExp.yaml");
+close(YAML);
+
+#print $loadedRegExp{'SampleChecks'}{'Sample_order'}, "\n";
+
+##TEMP
+
 for (my $familyid=0;$familyid<scalar(@fid);$familyid++) {
     #ReadPedigreeFile($projpath, $fid[$familyid]); #Collects sampleID, pedigree and disease status etc
     ReadPedigreeFile($pedigreeFile, $fid[$familyid]); #Collects sampleID, pedigree and disease status etc

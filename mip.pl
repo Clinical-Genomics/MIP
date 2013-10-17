@@ -399,12 +399,14 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
 
 ####Script parameters
 
-my %parameter; #Holds all parameters for mip
+my %parameter; #Holds all parameters for MIP
 my %scriptParameter; #Holds all active parameters after the value has been set
 
 $scriptParameter{'MIP'} = 1; #Enable/activate MIP 
 
 my @orderParameters; #To add/write parameters in the correct order
+
+#my %qcMetaData; #Hold all files so be searches for QC metrics
 
 ####Set program parameters
 
@@ -1000,6 +1002,11 @@ if ($scriptParameter{'writeConfigFile'} ne 0) { #Write config file for family
     close (YAML);
 }
 
+#Write QC for only pedigree data used in analysis                                                                                                                                                         
+open (YAML, '>', $scriptParameter{'outDataDir'}."/qc_pedigree.yaml") or die "can't open ".$scriptParameter{'outDataDir'}."/qc_pedigree.yaml: $!\n";
+print YAML Dump(%sampleInfo), "\n";
+close (YAML);
+
 ##Set chr prefix and chromosome names depending on reference used
 if ($scriptParameter{'humanGenomeReference'}=~/hg\d+/) { #Refseq - prefix and M
     @chromosomes = ("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17","chr18","chr19","chr20","chr21","chr22","chrX","chrY","chrM"); #Chr for filtering of bam file
@@ -1044,8 +1051,17 @@ for (my $inputDirectoryCounter=0;$inputDirectoryCounter<scalar(@inFilesDirs);$in
 
 close(MIPLOGG);
 
-my $uncompressedFileSwitch = InfilesReFormat(); #Required to format infiles correctly for subsequent input into aligners
- 
+my $uncompressedFileSwitch = InfilesReFormat2(); #Required to format infiles correctly for subsequent input into aligners
+
+#Write QC for sampleinfo used in analysis                                                                                                                                                                                   
+open (YAML, '>', $scriptParameter{'outDataDir'}."/qc_sampleinfo.yaml") or die "can't open ".$scriptParameter{'outDataDir'}."/qc_sampleinfo.yaml: $!\n";
+print YAML Dump(%sampleInfo), "\n";
+close (YAML);
+
+#open (YAML, '>', $scriptParameter{'outDataDir'}."/qc_programs.yaml") or die "can't open ".$scriptParameter{'outDataDir'}."/qc_programs.yaml: $!\n";
+#print YAML Dump(%qcMetaData), "\n";
+#close (YAML);
+
 CreateFileEndings(); #Creates all fileendings as the samples is processed depending on the chain of modules activated
 
 #Create .fam file to be used in variant calling analyses
@@ -1378,6 +1394,15 @@ if ($scriptParameter{'pRemovalRedundantFiles'} > 0) { #Sbatch generation of remo
 
 close(MIPLOGG); #Close mip_logg file
 
+#Write QC for programs used in analysis                                                                                                                                                                                               
+#open (YAML, '>', $scriptParameter{'outDataDir'}."/qc_programs.yaml") or die "can't open ".$scriptParameter{'outDataDir'}."/qc_programs.yaml: $!\n";
+#print YAML Dump(%qcMetaData), "\n";
+#close (YAML);
+open (YAML, '>', $scriptParameter{'outDataDir'}."/qc_sampleinfo.yaml") or die "can't open ".$scriptParameter{'outDataDir'}."/qc_sampleinfo.yaml: $!\n";
+print YAML Dump(%sampleInfo), "\n";
+close (YAML);
+
+
 ######################
 ###Sub Routines#######
 ######################
@@ -1675,6 +1700,9 @@ sub SampleCheck {
     print SCHECK "--vcf ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf "; #InFile
     print SCHECK "--het "; #Individual inbreeding
     print SCHECK "--out ".$outFamilyDirectory."/".$familyID, "\n\n"; #Outfile
+
+##Collect QC metadata info for later use                                                                                                                                                        
+    SampleInfoQC($scriptParameter{'familyID'}, "noSampleID", "InbreedingFactor", "NoInfile", $outFamilyDirectory, $familyID.".het", "infileDependent"); #"noSampleID is used to select correct keys for %sampleInfo"
 
     print SCHECK "#Create Plink .mibs per family","\n"; 
     print SCHECK "plink ";
@@ -2200,6 +2228,8 @@ sub GATKVariantEvalExome {
 	print GATK_VAREVALEX "rm ";
 	print GATK_VAREVALEX $sampleDirectory."/".$infile.$outfileEnding.$callType."_temp.vcf.idx", "\n\n"; #SampleID temp exome vcf inFile
 
+##Collect QC metadata info for later use                                                                                                                                                       
+	SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "VariantEval_Exome", $infile, $sampleDirectory, $outfileEnding.$callType."_exome.vcf.varianteval", "infileDependent");
     }   
     else { #No previous merge
 ###GATK SelectVariants
@@ -2248,6 +2278,9 @@ sub GATKVariantEvalExome {
 	    print GATK_VAREVALEX "-gold ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKVariantEvalGold'}." "; #Evaluations that count calls at sites of true variation (e.g., indel calls) will use this argument as their gold standard for comparison
 	    print GATK_VAREVALEX "--eval ".$sampleDirectory."/".$infile.$outfileEnding.$callType."_exome.vcf "; #InFile
 	    print GATK_VAREVALEX "-o ".$sampleDirectory."/".$infile.$outfileEnding.$callType."_exome.vcf.varianteval", "\n\n"; #OutFile
+
+##Collect QC metadata info for later use                                                                                                                                                       
+	    SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "VariantEval_Exome", $infile, $sampleDirectory, $outfileEnding.$callType."_exome.vcf.varianteval", "infileDependent");
 
 ##Clean-up temp files
 	    print GATK_VAREVALEX "rm ";
@@ -2319,6 +2352,9 @@ sub GATKVariantEvalAll {
 	print GATK_VAREVAL "-gold ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKVariantEvalGold'}." "; #Evaluations that count calls at sites of true variation (e.g., indel calls) will use this argument as their gold standard for comparison
 	print GATK_VAREVAL "--eval ".$inSampleDirectory."/".$infile.$infileEnding.$callType.".vcf "; #InFile
 	print GATK_VAREVAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding.$callType.".vcf.varianteval", "\n\n"; #OutFile
+
+##Collect QC metadata info for later use                                                                                                                                                       
+	SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "VariantEval_All", $infile, $outSampleDirectory, $outfileEnding.$callType.".vcf.varianteval", "infileDependent");
     }   
     else { #No previous merge
 ###GATK SelectVariants
@@ -2358,6 +2394,9 @@ sub GATKVariantEvalAll {
 	    print GATK_VAREVAL "-gold ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKVariantEvalGold'}." "; #Evaluations that count calls at sites of true variation (e.g., indel calls) will use this argument as their gold standard for comparison
 	    print GATK_VAREVAL "--eval ".$inSampleDirectory."/".$infile.$infileEnding.$callType.".vcf "; #InFile
 	    print GATK_VAREVAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding.$callType.".vcf.varianteval", "\n\n"; #OutFile
+	
+##Collect QC metadata info for later use                                                                                                                                                       
+	    SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "VariantEval_All", $infile, $outSampleDirectory, $outfileEnding.$callType.".vcf.varianteval", "infileDependent");
 	}
     } 
     
@@ -2676,7 +2715,7 @@ sub GATKVariantReCalibration {
 	print GATK_VARREC "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
 	print GATK_VARREC "-V: ".$inFamilyDirectory."/".$familyID.$outfileEnding.$callType."_comb_ref_filtered.vcf "; #InFile
 	print GATK_VARREC "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf "; #OutFile
-	    
+
 	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #For all sampleIDs
 		
 	    print GATK_VARREC "-sn ".$sampleIDs[$sampleIDCounter]." "; #Include genotypes from this sample
@@ -2685,6 +2724,10 @@ sub GATKVariantReCalibration {
     
     print GATK_VARREC "\n\nwait", "\n\n";
     close(GATK_VARREC);   
+
+##Collect QC metadata info for later use
+    SampleInfoQC($scriptParameter{'familyID'}, "noSampleID", "pedigreeCheck", "NoInfile", $outFamilyDirectory, $familyID.$outfileEnding.$callType.".vcf", "infileDependent"); #"noSampleID is used to select correct keys for %sampleInfo"
+
     if ( ($scriptParameter{'pGATKVariantRecalibration'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 	FIDSubmitJob(0, $familyID, 1, $parameter{'pGATKVariantRecalibration'}{'chain'}, $filename, 0);
     }
@@ -3364,12 +3407,18 @@ sub CalculateCoverage {
 	    print CAL_COV "-c ".$scriptParameter{'xCoverage'}." ";
 	    print CAL_COV $inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
 	    print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_qaCompute &", "\n\n"; #OutFile
+	
+##Collect QC metadata info for later use                                                                                                                                                       
+	    SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "QaCompute", $infile, $outSampleDirectory, $outfileEnding."_qaCompute", "infileDependent");
 	}
 	if ($scriptParameter{'pPicardToolsCollectMultipleMetrics'} > 0) {
 	    print CAL_COV "java -Xmx4g -jar ".$scriptParameter{'picardToolsPath'}."/CollectMultipleMetrics.jar ";
 	    print CAL_COV "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
 	    print CAL_COV "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding." "; #OutFile
 	    print CAL_COV "R=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." &", "\n\n"; #Reference file
+
+##Collect QC metadata info for later use                                                                                                                                        
+	    SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "CollectMultipleMetrics", $infile, $outSampleDirectory, $outfileEnding.".alignment_summary_metrics", "infileDependent");
 	}
 	if ($scriptParameter{'pPicardToolsCalculateHSMetrics'} > 0) { #Run CalculateHsMetrics (Target BED-file)
 	    print CAL_COV "java -Xmx4g -jar ".$scriptParameter{'picardToolsPath'}."/CalculateHsMetrics.jar ";
@@ -3378,6 +3427,9 @@ sub CalculateCoverage {
 	    print CAL_COV "REFERENCE_SEQUENCE=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
 	    print CAL_COV "BAIT_INTERVALS=".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetPaddedBedInfileList'}." "; #Capture kit padded target infile_list file
 	    print CAL_COV "TARGET_INTERVALS=".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetBedInfileList'}." &", "\n\n"; #Capture kit target infile_list file
+
+##Collect QC metadata info for later use                                                                                                                                                       
+            SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "CalculateHsMetrics", $infile, $outSampleDirectory, $outfileEnding."_CalculateHsMetrics", "infileDependent");
 	}
 	if ($scriptParameter{'pCoverageBED'} > 0) { #Run coverageBed (exome)
 	    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pCoverageBED'}{'fileEnding'};
@@ -3515,12 +3567,17 @@ sub CalculateCoverage {
 		print CAL_COV "-c ".$scriptParameter{'xCoverage'}." "; #Max depth to calculate coverage on
 		print CAL_COV $inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
 		print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_qaCompute &", "\n\n"; #OutFile
+
+##Collect QC metadata info for later use                                                                                                                                                       
+		SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "QaCompute", $infile, $outSampleDirectory, $outfileEnding."_qaCompute", "infileDependent");
 	    }
 	    if ($scriptParameter{'pPicardToolsCollectMultipleMetrics'} > 0) {
 		print CAL_COV "java -Xmx4g -jar ".$scriptParameter{'picardToolsPath'}."/CollectMultipleMetrics.jar ";
 		print CAL_COV "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
 		print CAL_COV "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding." "; #outFile
 		print CAL_COV "R=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." &", "\n\n"; #Reference file
+		##Collect QC metadata info for later use
+		SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "CollectMultipleMetrics", $infile, $outSampleDirectory, $outfileEnding.".alignment_summary_metrics", "infileDependent");
 	    }
 	    if ($scriptParameter{'pPicardToolsCalculateHSMetrics'} > 0) { #Run CalculateHsMetrics (Target BED-file)
 		print CAL_COV "java -Xmx4g -jar ".$scriptParameter{'picardToolsPath'}."/CalculateHsMetrics.jar ";
@@ -3529,6 +3586,8 @@ sub CalculateCoverage {
 		print CAL_COV "REFERENCE_SEQUENCE=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
 		print CAL_COV "BAIT_INTERVALS=".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetPaddedBedInfileList'}." "; #Capture kit padded target infile_list file
 		print CAL_COV "TARGET_INTERVALS=".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetBedInfileList'}." &", "\n\n"; #Capture kit target infile_list file 
+##Collect QC metadata info for later use                                                                                                                                                       
+		SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "CalculateHsMetrics", $infile, $outSampleDirectory, $outfileEnding."_CalculateHsMetrics", "infileDependent");	    
 	    }
 	    if ($scriptParameter{'pCoverageBED'} > 0) { #Run coverageBed (Target BED-file)
 		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pCoverageBED'}{'fileEnding'};
@@ -3700,8 +3759,13 @@ sub PicardToolsMarkDuplicates {
 	
 	print PT_MDUP "samtools index ";
 	print PT_MDUP $outSampleDirectory."/".$infile.$outfileEnding.".bam ","\n\n";
+	
+##Collect QC metadata info for later use                       
+	SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "MarkDuplicates", $infile, $outSampleDirectory, $outfileEnding."metric", "infileDependent");
+	
     }
     else { #No merged files
+	
 	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files from independent of merged or not
 	    
 	    if ($infileCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
@@ -3719,6 +3783,9 @@ sub PicardToolsMarkDuplicates {
 	    print PT_MDUP "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
 	    print PT_MDUP "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding.".bam "; #OutFile
 	    print PT_MDUP "METRICS_FILE=".$outSampleDirectory."/".$infile.$outfileEnding."metric &","\n\n"; #Metric file  
+
+##Collect QC metadata info for later use                                             
+	    SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "MarkDuplicates", $infile, $outSampleDirectory, $outfileEnding."metric", "infileDependent"); 
 	}    
 	
 	print PT_MDUP "wait", "\n\n";
@@ -4198,6 +4265,7 @@ sub MosaikAlign {
     my $infileSize;
 
     for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all infiles per lane
+	
 	if ($infile{$sampleID}[$infileCounter] =~/.fastq.gz$/) { #Files are already gz and presently the scalar for compression has not been investigated. Therefore no automatic time allocation can be performed.
 	    if ($scriptParameter{'analysisType'} eq "genomes") {
 		$time = 80;  
@@ -4207,13 +4275,15 @@ sub MosaikAlign {
 	    }
 	}
 	else { #Files are in fastq format
+	
 	    if (-e $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter+$sbatchScriptTracker]) {
 		$infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter+$sbatchScriptTracker]; # collect .fastq file size to enable estimation of time required for aligning, +$sbatchScriptTracker for syncing multiple infiles per sampleID. Hence, filesize will be calculated on read1 (should not matter).      
 		$time = ceil(($infileSize/238)/(650*60*60)); #238 is a scalar estimating the number of reads depending on filesize. 650 is the number of reads/s in MosaikAlign-2.1.52 and 60*60 is to scale to hours.
 	    }	    
 	} 
 
-	ProgramPreRequisites($sampleID, "MosaikAlign", $aligner, 0, *MOS_AL, $scriptParameter{'maximumCores'}, $time);
+	my ($stdoutPath) = ProgramPreRequisites($sampleID, "MosaikAlign", $aligner, 0, *MOS_AL, $scriptParameter{'maximumCores'}, $time);
+	my ($volume,$directories,$file) = File::Spec->splitpath($stdoutPath); #Split to enable submission to SampleInfoQC later
 
 	print MOS_AL "mkdir -p /scratch/mosaik_tmp", "\n";
 	print MOS_AL "export MOSAIK_TMP=/scratch/mosaik_tmp", "\n\n";
@@ -4224,7 +4294,7 @@ sub MosaikAlign {
 
 	print MOS_AL "MosaikAligner ";
 	print MOS_AL "-in ".$inSampleDirectory."/".$infile.".dat "; #Infile
-	print MOS_AL "-out ".$outSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]." "; #OutFile
+	print MOS_AL "-out ".$outSampleDirectory."/".$infile." "; #OutFile (MosaikAligner appends .bam to infile name)
 	print MOS_AL "-ia ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikAlignReference'}." "; #Mosaik Reference
 	print MOS_AL "-annpe ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikAlignNeuralNetworkPeFile'}." "; #NerualNetworkPE
 	print MOS_AL "-annse ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikAlignNeuralNetworkSeFile'}." "; #NerualNetworkSE
@@ -4238,6 +4308,10 @@ sub MosaikAlign {
 	print MOS_AL "-p ".$scriptParameter{'maximumCores'}, "\n\n"; #Nr of cores
 	
 	close(MOS_AL);
+
+##Collect QC metadata info for later use                                                                                                                                                      
+	SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "MosaikAligner", $infile, $directories, $file, "infoDirectory");
+
 	if ( ($scriptParameter{'pMosaikAlign'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 	    FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 3, $parameter{'pMosaikAlign'}{'chain'}, $filename, $sbatchScriptTracker);
 	}
@@ -4309,10 +4383,15 @@ sub FastQC {
 	    print FASTQC "wait", "\n\n";
 	    $coreCounter=$coreCounter+1;
 	}
+
 	my $infile = $infile{$sampleID}[$infileCounter];
+
 	print FASTQC "fastqc ";
 	print FASTQC $inSampleDirectory."/".$infile." "; #InFile
 	print FASTQC "-o ".$outSampleDirectory. " &", "\n\n"; #OutFile
+
+##Collect QC metadata info for later use
+	SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "FastQC", $infile, $outSampleDirectory."/".$infile."_fastqc", "fastqc_data.txt", "static");
     }
     print FASTQC "wait", "\n";    
     
@@ -4441,16 +4520,18 @@ sub ReadPlinkPedigreeFile {
     my $userSampleidSwitch = $_[1];
     
 
-    my @pedigreeFileElements = ("familyID", "sampleID", "father", "mother", "sex", "phenotype", );
+    my @pedigreeFileElements = ("FamilyID", "SampleID", "Father", "Mother", "Sex", "Phenotype", );
     my $familyID;
     my $sampleID;
 
     open(PEDF, "<".$fileName) or die "Can't open ".$fileName.":$!, \n";    
      
     while (<PEDF>) {
+	
 	chomp $_;
 	
 	if ( ($. == 1) && ($_ =~/^\#/) ) { #Header present overwrite @pedigreeFileElements with header info
+	
 	    @pedigreeFileElements = split("\t", $'); #'
 	    next;
 	}
@@ -4463,13 +4544,14 @@ sub ReadPlinkPedigreeFile {
 	if ($_ =~/(\S+)/) {	
 	    
 	    chomp($_);
-	    my @lineInfo = split("\t",$_);	    #Loads pedigree info
+	    my @lineInfo = split("\t",$_);	    #Loads pedigree file info
 	    
+##Need to parse familyID and sampleID separately since these have not been set yet
 	    if ($lineInfo[0] =~/\S+/) { #familyID
 		$familyID = $lineInfo[0];
 	    }
 	    else {
-		print STDERR "Cannot find familyID in column 1\n";
+		print STDERR "File: ".$fileName." at line ".$.." cannot find FamilyID in column 1\n";
 		die;
 	    }
 	    if ($lineInfo[1] =~/\S+/) { #sampleID
@@ -4479,49 +4561,53 @@ sub ReadPlinkPedigreeFile {
 		}
 	    }
 	    else {
-		print STDERR "Cannot find sampleID in column 2\n";
+		print STDERR "File: ".$fileName." at line ".$.." cannot find SampleID in column 2\n";
 		die;
 	    }
-	    for (my $sampleElementsCounter=2;$sampleElementsCounter<scalar(@pedigreeFileElements);$sampleElementsCounter++) { #Note skips familyID and sampleID and only parses mandatory elements
+
+	    for (my $sampleElementsCounter=0;$sampleElementsCounter<scalar(@pedigreeFileElements);$sampleElementsCounter++) { #all pedigreeFileElements
 		
-		if ($sampleElementsCounter < 7) { #Only check mandatory elements
+		if ( defined($lineInfo[$sampleElementsCounter]) && ($lineInfo[$sampleElementsCounter] =~/\S+/) ) { #Check that we have an non blank entry
 		    
-		    if ($lineInfo[$sampleElementsCounter] =~/\S+/) {
+		    my @elementInfo = split(";", $lineInfo[$sampleElementsCounter]); #Split element (if required)
+		    
+		    push( @{ $sampleInfo{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]} }, @elementInfo); #Add to %sampleinfo for later use
+##Validation
+		    #for (my $elementsCounter=0;$elementsCounter<scalar(@{ $sampleInfo{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]} });$elementsCounter++) { #Note skips familyID and sampleID and only parses mandatory elements                  
+			#print $pedigreeFileElements[$sampleElementsCounter], "\n";  
+			#print $sampleInfo{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]}[$elementsCounter] , "\n"; 
+		    #}
+		    if ($sampleInfo{$familyID}{$sampleID}{'Capture_kit'}) { #Add latest capture kit for each individual
+			my $capture_kit = $sampleInfo{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]}[-1]; #Use only the last capture kit since it should be the most interesting
+			for my $supportedCaptureKit (keys %supportedCaptureKits) {
+			    
+			    if ($supportedCaptureKit eq $capture_kit) {
+				
+				if ($parameter{'exomeTargetBed'}{'value'} eq "nocmdinput") { #No user supplied info on capture kit target BED-file. Add from pedigree file             
+				    $sampleInfo{$familyID}{$sampleID}{'exomeTargetBed'} = $supportedCaptureKits{$supportedCaptureKit}; #capture kit Bed-file                           
+				}
+				if ($parameter{'exomeTargetBedInfileList'}{'value'} eq "nocmdinput") { #No user supplied info on capture kit target BED-file infile list. Add from pedigree file                                                                                                                                                                     
+				    $sampleInfo{$familyID}{$sampleID}{'exomeTargetBedInfileList'} = $supportedCaptureKits{$supportedCaptureKit}.".infile_list"; #capture kit target in file_list
+				}
+				if ($parameter{'exomeTargetPaddedBedInfileList'}{'value'} eq "nocmdinput") { #No user supplied info on capture kit target BED-file infile list. Add from pedigree file                                                                                                                                                               
+				    $sampleInfo{$familyID}{$sampleID}{'exomeTargetPaddedBedInfileList'} = $supportedCaptureKits{$supportedCaptureKit}.".pad100.infile_list"; #capture kit padded target infile_list                                                                                                                                                  
+				}
+				if ($parameter{'GATKTargetPaddedBedIntervalList'}{'value'} eq "nocmdinput") { #No user supplied info on capture kit target BED-file infile list. Add from pedigree file                                                                                                                                                              
+				    $sampleInfo{$familyID}{$sampleID}{'GATKTargetPaddedBedIntervalList'} = $supportedCaptureKits{$supportedCaptureKit}.".pad100.interval_list"; #capture kit padded target interval_list                                                                                                                                             
+				}
+			    }
+			}
 		    }
-		    else {
-			print STDERR $lineInfo[$sampleElementsCounter], "\t";
-			print STDERR "SampleID: ".$sampleID."\tCannot find ".$pedigreeFileElements[$sampleElementsCounter]." in column ".$sampleElementsCounter, "\n";
+		}
+		else { #No entry in pedigre file element
+		    
+		    if ($sampleElementsCounter < 7) { #Only check mandatory elements 
+			print STDERR $pedigreeFileElements[$sampleElementsCounter], "\t";
+			print STDERR "File: ".$fileName." at line ".$.."\tcannot find '".$pedigreeFileElements[$sampleElementsCounter]."' entry in column ".$sampleElementsCounter, "\n";
 			die;
-		    }
+		    }  
 		}
-		if ( defined($lineInfo[$sampleElementsCounter]) && ($lineInfo[$sampleElementsCounter] =~/\S+/) ) {
-		   
-		    $sampleInfo{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]} = $lineInfo[$sampleElementsCounter];
-		}  
 	    }
-	    if ($lineInfo[16]) { #Capture kit
-		my @captureKits = split(";", $lineInfo[16]);
-		my $capture_kit =  pop(@captureKits); #Use only the last capture kit since it should be the most interesting
-	
-		for my $supportedCaptureKit (keys %supportedCaptureKits) {
-		
-		    if ($supportedCaptureKit eq $capture_kit) {
-		
-			if ($parameter{'exomeTargetBed'}{'value'} eq "nocmdinput") { #No user supplied info on capture kit target BED-file. Add from pedigree file
-			    $sampleInfo{$familyID}{$sampleID}{'exomeTargetBed'} = $supportedCaptureKits{$supportedCaptureKit}; #capture kit Bed-file
-			}
-			if ($parameter{'exomeTargetBedInfileList'}{'value'} eq "nocmdinput") { #No user supplied info on capture kit target BED-file infile list. Add from pedigree file
-			    $sampleInfo{$familyID}{$sampleID}{'exomeTargetBedInfileList'} = $supportedCaptureKits{$supportedCaptureKit}.".infile_list"; #capture kit target infile_list
-			}
-			if ($parameter{'exomeTargetPaddedBedInfileList'}{'value'} eq "nocmdinput") { #No user supplied info on capture kit target BED-file infile list. Add from pedigree file
-			    $sampleInfo{$familyID}{$sampleID}{'exomeTargetPaddedBedInfileList'} = $supportedCaptureKits{$supportedCaptureKit}.".pad100.infile_list"; #capture kit padded target infile_list
-			}
-			if ($parameter{'GATKTargetPaddedBedIntervalList'}{'value'} eq "nocmdinput") { #No user supplied info on capture kit target BED-file infile list. Add from pedigree file
-			    $sampleInfo{$familyID}{$sampleID}{'GATKTargetPaddedBedIntervalList'} = $supportedCaptureKits{$supportedCaptureKit}.".pad100.interval_list"; #capture kit padded target interval_list
-			}
-		    }
-		}
-	    }	
 	}
     } 	
     if ($userSampleidSwitch == 0) {
@@ -4861,6 +4947,93 @@ sub FIDSubmitJob {
     return;
 }
 
+sub InfilesReFormat2 {
+###Reformat files for mosaik output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames.                                  
+    
+    my $uncompressedFileCounter = 0; #Used to decide later if any inputfiles needs to be compressed before starting analysis                                                                    
+    
+    for my $sampleID (keys %infile) { #For every sampleID                                                                                                                                       
+	
+        my $laneTracker=0; #Needed to be able to track when lanes are finished                                                                                                                  
+	
+        for (my $infileCounter=0;$infileCounter<scalar( @ { $infile{$sampleID} });$infileCounter++) { #All inputfiles for all fastq dir and remakes format                                      
+	    
+            if ($infile{$sampleID}[$infileCounter] =~ /\/?([^\.\/]+\.[^\.]+)\.lane(\d+)_([12FfRr])\.fastq.gz/) { #Parse fastq.gz 'old' format, $2="lane", $3="Read direction"
+
+		if ($3 == 1) { #1st read direction
+		    
+		    push( @{$lane{$sampleID}}, $2); #Lane                                                                                                        
+		    $infilesLaneNoEnding{$sampleID}[$laneTracker]= $1.$2; #Save old format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
+		    #$qcMetaData{ $scriptParameter{'familyID'} }{$sampleID}{'fileName'} = $1.".".$2; #Save file name  
+		}
+
+		$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]= $1.$2; #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
+		
+                $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'sampleBarcode'} = "X"; #Save barcode, but not defined
+		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'runBarcode'} = $2."_".$1; #Save run barcode
+		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'readDirection'} = $3; #Save read direction
+		push ( @{ $sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$1.".".$2}{'readDirection'} }, $3); #Save file read direction
+		#push ( @{ $qcMetaData{ $scriptParameter{'familyID'} }{$sampleID}{'file'} }, $1.".".$2); #Save all file(s)                                                                  
+                $laneTracker++; #Track for every lane finished                                                                                                                                  
+            }
+            elsif ($infile{$sampleID}[$infileCounter] =~ /\/?([^\.\/]+\.[^\.]+)\.lane(\d+)_([12FfRr])\.fastq/) { #Parse 'old' format                                                            
+		if ($3 == 1) { #1st read direction
+		    push( @ {$lane{$sampleID}}, $2); #Lane
+		    $infilesLaneNoEnding{$sampleID}[$laneTracker]= $1.$2; #Save old format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
+		    #$qcMetaData{ $scriptParameter{'familyID'} }{$sampleID}{'fileName'} = $1.".".$2; #Save file name
+		}
+
+                $uncompressedFileCounter = 1; #File needs compression before starting analysis           
+		$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]= $1.$2; #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
+		
+                $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'sampleBarcode'} = "X"; #Save barcode, but not defined                                               
+                $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'runBarcode'} = $2."_".$1; #Save run barcode                                                        
+		push ( @{ $sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$1.".".$2}{'readDirection'} }, $3); #Save file read direction
+		#push ( @{ $qcMetaData{ $scriptParameter{'familyID'} }{$sampleID}{'file'} }, $1.".".$2);#Save all file(s)
+		$laneTracker++; #Track for every lane finished                                                                                                                                  
+            }
+            elsif ($infile{$sampleID}[$infileCounter] =~ /(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq.gz/) { #Parse fastq.gz 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, \$5=index,$6=direction                                                                                                                                                                           
+		if ($6 == 1) {
+		    push( @{$lane{$sampleID}}, $1); #Lane
+		    $infilesLaneNoEnding{$sampleID}[$laneTracker]= $4.".".$2."_".$3."_".$5.".lane".$1; #Save new format (sampleID_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
+		    #$qcMetaData{ $scriptParameter{'familyID'} }{$4}{'fileName'} = $4.".".$2."_".$3."_".$5.".lane".$1; #Save file name 
+		}
+
+		$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]= $4.".".$2."_".$3."_".$5.".lane".$1."_".$6; #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'lane'} = $1; #Save sample lane                                              
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'date'} = $2; #Save Sequence run date                                        
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'flow-cell'} = $3; #Save Sequence flow-cell                                  
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'sampleBarcode'} = $5; #Save sample barcode                                  
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'runBarcode'} = $2."_".$3."_".$1; #Save run barcode
+		push ( @{ $sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'ReadDirection'} }, $6); #Save file read direction
+		#push ( @{ $qcMetaData{ $scriptParameter{'familyID'} }{$4}{'file'} }, $4.".".$2."_".$3."_".$5.".lane".$1."_".$6); #Save all infile(s)
+		$laneTracker++; #Track for every lane finished                                                                                                                                  
+            }
+            elsif ($infile{$sampleID}[$infileCounter] =~/(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq/) { #Parse 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=d\irection                                                                                                                                                                                        
+		if ($6 == 1) {
+		    push( @{$lane{$sampleID}}, $1); #Lane
+		    $infilesLaneNoEnding{ $sampleID }[$laneTracker]= $4.".".$2."_".$3."_".$5.".lane".$1; #Save new format (sampleID_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).		
+		    #$qcMetaData{ $scriptParameter{'familyID'} }{$4}{'fileName'} = $4.".".$2."_".$3."_".$5.".lane".$1; #Save file name
+		}
+
+		$uncompressedFileCounter = 1; #File needs compression before starting analysis
+		$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]= $4.".".$2."_".$3."_".$5.".lane".$1."_".$6; #Save new format in hash with samplid as keys and inputfiles in array. Note: These fies have not been created yet and there is one entry per strand and .ending is removed (.fastq).                                                                                                  
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'lane'} = $1; #Save sample lane                                              
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'date'} = $2; #Save Sequence run date                                        
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'flow-cell'} = $3; #Save Sequence flow-cell                                  
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'sampleBarcode'} = $5; #Save sample barcode                                  
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'runBarcode'} = $2."_".$3."_".$1; #Save run barcode
+		push( @{$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'ReadDirection'} }, $6); #Save file read direction                        
+		#push ( @{ $qcMetaData{ $scriptParameter{'familyID'} }{$4}{'file'} }, $4.".".$2."_".$3."_".$5.".lane".$1."_".$6); #Save all infile(s)
+		$laneTracker++; #Track for every lane finished   
+		
+	    }
+        }
+	
+    }
+    return $uncompressedFileCounter;
+}
+
 sub InfilesReFormat {
 ###Reformat files for mosaik output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames. 
 
@@ -4875,8 +5048,8 @@ sub InfilesReFormat {
 	    if ($infile{$sampleID}[$infileCounter] =~ /\/?([^\.\/]+\.[^\.]+)\.lane(\d+)_([12FfRr])\.fastq.gz/) { #Parse fastq.gz 'old' format
 		
 		push( @{$lane{$sampleID}}, $2); #Lane
-		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{$1.".".$2}{'sampleBarcode'} = "X"; #Save barcode, but not defined
-		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{$1.".".$2}{'runBarcode'} = $2."_".$1; #Save run barcode
+		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'sampleBarcode'} = "X"; #Save barcode, but not defined
+		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'runBarcode'} = $2."_".$1; #Save run barcode
 		$infilesLaneNoEnding{$sampleID}[$laneTracker]= "$1.$2"; #Save old format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
 		$infileCounter++; #Skip second direction
 		$laneTracker++; #Track for every lane finished
@@ -4885,8 +5058,8 @@ sub InfilesReFormat {
 		
 		push( @ {$lane{$sampleID}}, $2); #Lane
 		$uncompressedFileCounter = 1; #File needs compression before starting analysis
-		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{$1.".".$2}{'sampleBarcode'} = "X"; #Save barcode, but not defined
-		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{$1.".".$2}{'runBarcode'} = $2."_".$1; #Save run barcode
+		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'sampleBarcode'} = "X"; #Save barcode, but not defined
+		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'runBarcode'} = $2."_".$1; #Save run barcode
 		
 		$infilesLaneNoEnding{$sampleID}[$laneTracker]= "$1.$2"; #Save old format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
 		$infileCounter++; #Skip second direction
@@ -4895,8 +5068,11 @@ sub InfilesReFormat {
 	    elsif ($infile{$sampleID}[$infileCounter] =~ /(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq.gz/) { #Parse fastq.gz 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction
 		
 		push( @{$lane{$sampleID}}, $1); #Lane
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'sampleBarcode'} = $5; #Save sample barcode
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'runBarcode'} = $2."_".$3."_".$1; #Save run barcode
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'lane'} = $1; #Save sample lane
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'date'} = $2; #Save Sequence run date
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'flow-cell'} = $3; #Save Sequence flow-cell
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'sampleBarcode'} = $5; #Save sample barcode
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'runBarcode'} = $2."_".$3."_".$1; #Save run barcode
 		$infilesLaneNoEnding{$sampleID}[$laneTracker]= "$4.$2_$3_$5."."lane"."$1_$6"; #Save new format (sampleID_date_flow-cell_index_lane_direction) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
 		$infileCounter++; #Skip second direction
 		$laneTracker++; #Track for every lane finished
@@ -4905,8 +5081,11 @@ sub InfilesReFormat {
 		
 		push( @{$lane{$sampleID}}, $1); #Lane
 		$uncompressedFileCounter = 1; #File needs compression before starting analysis
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'sampleBarcode'} = $5; #Save sample barcode
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'runBarcode'} = $2."_".$3."_".$1; #Save run barcode
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'lane'} = $1; #Save sample lane
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'date'} = $2; #Save Sequence run date
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'flow-cell'} = $3; #Save Sequence flow-cell
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'sampleBarcode'} = $5; #Save sample barcode
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'runBarcode'} = $2."_".$3."_".$1; #Save run barcode
 		$infilesLaneNoEnding{ $sampleID }[$laneTracker]= "$4.$2_$3_$5."."lane"."$1_$6"; #Save new format (sampleID_date_flow-cell_index_lane_direction) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
 		$infileCounter++; #Skip second direction
 		$laneTracker++; #Track for every lane finished
@@ -5163,6 +5342,18 @@ sub AddToScriptParameter {
 			    print STDERR "\nCould not find intended ".$parameterName." directory: ".$scriptParameter{$parameterName}, "\n\n";
 			    die $USAGE;		
 			}
+			if ($parameterName eq "genomeAnalysisToolKitPath") { #To enable addition of version to sampleInfo
+			    
+			    if ($scriptParameter{$parameterName}=~/GenomeAnalysisTK-([^,]+)/) {
+				$sampleInfo{$scriptParameter{'familyID'}}{'program'}{"GATK"}{'Version'} = $1;
+			    }
+			}
+			if ($parameterName eq "picardToolsPath") { #To enable addition of version to sampleInfo                                                                       
+
+                            if ($scriptParameter{$parameterName}=~/picard-tools-([^,]+)/) {
+                                $sampleInfo{$scriptParameter{'familyID'}}{'program'}{"PicardTools"}{'Version'} = $1;
+                            }
+                        }
 		    }
 		}
 		elsif ( ($parameterExistsCheck) && ($parameterExistsCheck eq "file") && (defined($scriptParameter{$parameterName})) ) { #Check file existence in reference directory
@@ -5647,7 +5838,7 @@ sub ProgramPreRequisites {
     }
     
     print $fileHandle 'echo "Running on: $(hostname)"',"\n\n";
-    return;
+    return ($fileInfoPath.$fnTracker.".stdout.txt"); #Return stdout for QC check later
 }
 
 sub CheckIfMergedFiles {
@@ -5685,6 +5876,51 @@ sub CheckIfMergedFiles {
 	$PicardToolsMergeSwitch = 0;
     }
     return ($infile, $PicardToolsMergeSwitch);
+}
+
+sub SampleInfoQC {
+###Adds outDirectory and outFile to sampleInfo to track all files that QC metrics are to be extracted from later
+
+    my $familyID = $_[0];
+    my $sampleID = $_[1]; #SampleID or "noSampleID" for family level data
+    my $programName = $_[2];
+    my $infile = $_[3]; #infile or "noInFile for family level data"
+    my $outDirectory = $_[4];
+    my $outFileEnding = $_[5]; #Actually complete outfile for "static" & "infoDirectory" 
+    my $outDataType = $_[6];
+
+    if ($sampleID eq "noSampleID") {
+
+	$sampleInfo{$familyID}{'program'}{$programName}{'OutDirectory'} = $outDirectory; #OutDirectory of QC File                                                            
+	if ($outDataType eq "static") { #programs which add a static file in its own directory                                                                                                 
+
+	    $sampleInfo{$familyID}{'program'}{$programName}{'OutFile'} = $outFileEnding; #Static QC outFile                                                                     
+	}
+	if ($outDataType eq "infoDirectory") { #QC metrics are sent to info files                                                                                                                   
+	    $sampleInfo{$familyID}{'program'}{$programName}{'OutFile'} = $outFileEnding; #info stdout file                                                                      
+	}
+	if ($outDataType eq "infileDependent") { #Programs which Add a filending to infile                                                                                                          
+	    $sampleInfo{$familyID}{'program'}{$programName}{'OutFile'} = $outFileEnding; #Infile dependent QC outFile                                                                                                                                                                                       
+	}
+
+    }
+    else {
+	
+	$sampleInfo{$familyID}{$sampleID}{'program'}{$programName}{$infile}{'OutDirectory'} = $outDirectory; #OutDirectory of QC File                                                              
+
+	if ($outDataType eq "static") { #programs which add a static file in its own directory 
+	    
+	    $sampleInfo{$familyID}{$sampleID}{'program'}{$programName}{$infile}{'OutFile'} = $outFileEnding; #Static QC outFile
+	}
+	if ($outDataType eq "infoDirectory") { #QC metrics are sent to info files
+	    
+	    $sampleInfo{$familyID}{$sampleID}{'program'}{$programName}{$infile}{'OutFile'} = $outFileEnding; #info stdout file
+	}
+	if ($outDataType eq "infileDependent") { #Programs which Add a filending to infile
+	    
+	    $sampleInfo{$familyID}{$sampleID}{'program'}{$programName}{$infile}{'OutFile'} = $infile.$outFileEnding; #Infile dependent QC outFile                                                                      
+	}
+    }
 }
 
 sub GATKTargetListFlag {
