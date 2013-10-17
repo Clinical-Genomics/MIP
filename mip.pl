@@ -549,9 +549,9 @@ DefineParameters("picardToolsPath", "path", "nodefault", "/bubo/home/h12/henriks
 # ---------------------------------------------------------
   DefineParameters("pChanjo", "program", 0, 0, "MIP", 0, "nofileEnding", "MAIN");
 
-  DefineParameters("chanjoStore", "path", "nodefault", "/proj/b2010080/private/mip_references/coverage.CCDS12.sqlite", "pChanjo", "file")
+  DefineParameters("chanjoStore", "path", "nodefault", "/proj/b2010080/private/mip_references/coverage.CCDS12.sqlite", "pChanjo", "file");
 
-  DefineParameters("chanjoCutoff", "program", 10, 10, "pChanjo", 0)
+  DefineParameters("chanjoCutoff", "program", 10, 10, "pChanjo", 0);
 
 ##Target definition files
 $parameter{'exomeTargetBed'}{'value'} = "nocmdinput";
