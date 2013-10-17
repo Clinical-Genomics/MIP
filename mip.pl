@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-###Master script for analysing paired end reads from the Illumina plattform in fastq(.gz) format to annotated ranked disease causing variants. The program performs QC, aligns reads using Mosaik or BWA, performs variant discovery and annotation as well as ranking the found variants according to disease potential.
+###Master ipt for analysing paired end reads from the Illumina plattform in fastq(.gz) format to annotated ranked disease causing variants. The program performs QC, aligns reads using Mosaik or BWA, performs variant discovery and annotation as well as ranking the found variants according to disease potential.
  
 ###Copyright 2011 Henrik Stranneheim
 
@@ -70,6 +70,8 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [reference dir]
 -mojdb/--mosaikJumpDbStub MosaikJump stub (defaults to "")
 
 -pBWA_mem/--pBwaMem Align reads using BWA Mem (defaults to "0" (=no))
+
+-bwamemrdb/--bwaMemRapidDb Selection of relevant regions post alignment (Defaults to "")
 
 -pBWA_aln/--pBwaAln Index reads using BWA Aln (defaults to "0" (=no))
 
@@ -154,6 +156,8 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [reference dir]
 -gatkvarrecaltrdbmills/--GATKVariantReCalibrationTrainingSetMills GATK VariantRecalibrator Mills training set (defaults to "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf")
 
 -gatkvarrecaltsfilterlevel/--GATKVariantReCalibrationTSFilterLevel The truth sensitivity level at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
+
+-gatkvarrecalnumbadvariants/--GATKVariantReCalibrationNumBadVariants The number of worst scoring variants to use when building the Gaussian mixture model of bad variants used in GATK VariantRecalibrator (defaults to "1000")
 
 -pGATK_phaseTr/--pGATKPhaseByTransmission Computes the most likely genotype and phases calls were unamibigous using GATK PhaseByTransmission (defaults to "1" (=yes))
 
@@ -262,6 +266,9 @@ use IO::File;
 
 use vars qw($USAGE);
 
+# Require/dump chanjo subroutine (into global scope...)
+require "chanjo.pl";
+
 BEGIN {
     $USAGE =
 	qq{
@@ -285,7 +292,8 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                -c/--configFile YAML config file for script parameters (defaults to "")
                -wc/--writeConfigFile Write YAML configuration file for script parameters (defaults to "";Supply whole path)
                -dra/--dryRunAll Sets all programs to dry run mode i.e. no sbatch submission (defaults to "0" (=no))
-               -h/--help Display this help message               
+               -h/--help Display this help message    
+               -v/--version Display version of MIP            
 
                
                ####Programs
@@ -304,6 +312,7 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                
                ##BWA
                -pBWA_mem/--pBwaMem Align reads using BWA Mem (defaults to "0" (=no))
+                 -bwamemrdb/--bwaMemRapidDb Selection of relevant regions post alignment (Defaults to "")
                -pBWA_aln/--pBwaAln Index reads using BWA Aln (defaults to "0" (=no))
                  -bwaalnq/--bwaAlnQualityTrimming BWA Aln quality threshold for read trimming (defaults to "20")
                -pBWA_sampe/--pBwaSampe Align reads using BWA Sampe (defaults to "0" (=no))
@@ -353,6 +362,7 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                  -gatkvarrecaltromni/--GATKVariantReCalibrationTrainingSet1000GOmni GATK VariantRecalibrator 1000G_omni training set (defaults to "1000G_omni2.5.b37.sites.vcf")
                  -gatkvarrecaltrdbmills/--GATKVariantReCalibrationTrainingSetMills GATK VariantRecalibrator Mills training set (defaults to "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf")
                  -gatkvarrecaltsfilterlevel/--GATKVariantReCalibrationTSFilterLevel The truth sensitivity level at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
+                 -gatkvarrecalnumbadvariants/--GATKVariantReCalibrationNumBadVariants The number of worst scoring variants to use when building the Gaussian mixture model of bad variants used in GATK VariantRecalibrator (defaults to "1000")
                -pGATK_phaseTr/--pGATKPhaseByTransmission Computes the most likely genotype and phases calls were unamibigous using GATK PhaseByTransmission (defaults to "1" (=yes))
                -pGATK_readPh/--pGATKReadBackedPhasing Performs physical phasing of SNP calls, based on sequencing reads using GATK ReadBackedPhasing (defaults to "1" (=yes))
                  -gatkreadphphaseqthr/--GATKReadBackedPhasingPhaseQualityThresh The minimum phasing quality score required to output phasing
@@ -397,133 +407,151 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
 	   };
 }
 
+
 ####Script parameters
 
-my %parameter; #Holds all parameters for mip
+my %parameter; #Holds all parameters for MIP
 my %scriptParameter; #Holds all active parameters after the value has been set
 
 $scriptParameter{'MIP'} = 1; #Enable/activate MIP 
 
 my @orderParameters; #To add/write parameters in the correct order
 
+#my %qcMetaData; #Hold all files so be searches for QC metrics
+
 ####Set program parameters
 
 ###Project specific
 
-##parameterName, parameterValue, parameterType, parameterDefault, environmentUppmaxDefault, AssociatedProgram, Check directory/file existence, parameterchain)
-DefineParameters("environmentUppmax", "nocmdinput", "MIP", 0, 0, "MIP", 0);
+##parameterName, parameterType, parameterDefault, environmentUppmaxDefault, AssociatedProgram, Check directory/file existence, parameterChain, programCheck)
+DefineParameters("environmentUppmax", "MIP", 0, 0, "MIP", 0);
 
-DefineParameters("projectID", "nocmdinput", "MIP", "nodefault", "b2010080", "MIP", 0);
+DefineParameters("projectID", "MIP", "nodefault", "b2010080", "MIP", 0);
 
-DefineParameters("email", "nocmdinput", "MIP", 0, 0, "MIP", 0);
+DefineParameters("email", "MIP", 0, 0, "MIP", 0);
 
-DefineParameters("familyID", "nocmdinput", "path", "nodefault", "noenvironmentUppmaxDefault", "MIP", 0);
+DefineParameters("familyID", "path", "nodefault", "noenvironmentUppmaxDefault", "MIP", 0);
 
-DefineParameters("maximumCores", "nocmdinput", "MIP", 8, 8, "MIP", 0);
+DefineParameters("maximumCores", "MIP", 8, 8, "MIP", 0);
 
-DefineParameters("configFile", "nocmdinput", "MIP", 0, 0, "MIP", "file");
+DefineParameters("configFile", "MIP", 0, 0, "MIP", "file");
 
-DefineParameters("analysisType", "nocmdinput", "program", "exomes", "exomes", "MIP", 0);
+DefineParameters("analysisType", "MIP", "exomes", "exomes", "MIP", 0);
 
-DefineParameters("outDataDir", "nocmdinput", "path", "nodefault", "NotsetYet", "MIP", 0); #Depends on -wholeGenomeSequencing input, directory created by MIP if required
+DefineParameters("outDataDir", "path", "nodefault", "NotsetYet", "MIP", 0); #Depends on -wholeGenomeSequencing input, directory created by MIP if required
 
-DefineParameters("outScriptDir", "nocmdinput", "path", "nodefault", "NotsetYet", "MIP", 0); #Depends on -wholeGenomeSequencing input, directory created by MIP if required
+DefineParameters("outScriptDir", "path", "nodefault", "NotsetYet", "MIP", 0); #Depends on -wholeGenomeSequencing input, directory created by MIP if required
 
-DefineParameters("writeConfigFile", "nocmdinput", "path", 0, "NotsetYet", "MIP", 0);
+DefineParameters("writeConfigFile", "path", 0, "NotsetYet", "MIP", 0);
 
-DefineParameters("pedigreeFile", "nocmdinput", "path", "nodefault", "NotsetYet", "MIP", "file"); #Depends on -projectID input
+DefineParameters("pedigreeFile", "path", "nodefault", "NotsetYet", "MIP", "file"); #Depends on -projectID input
 
-DefineParameters("inScriptDir", "nocmdinput", "path", "nodefault", "NotsetYet", "MIP", "directory"); #Depends on -projectID input
+DefineParameters("inScriptDir", "path", "nodefault", "NotsetYet", "MIP", "directory"); #Depends on -projectID input
 
-DefineParameters("referencesDir", "nocmdinput", "path", "nodefault", "NotsetYet", "MIP", "directory");
+DefineParameters("referencesDir", "path", "nodefault", "NotsetYet", "MIP", "directory");
 
-DefineParameters("dryRunAll", "nocmdinput", "MIP", 0, 0, "MIP", 0);
+DefineParameters("dryRunAll", "MIP", 0, 0, "MIP", 0);
 
 my (@inFilesDirs,@sampleIDs); #Arrays for input file directorys,sampleIDs
 
 ###Programs
 
 ##GZip
-DefineParameters("pGZip", "nocmdinput", "program", 1, 1, "MIP", 0, "nofileEnding", "MAIN");
+DefineParameters("pGZip", "program", 1, 1, "MIP", 0, "nofileEnding", "MAIN", "gzip");
 
 
 ##FastQC
-DefineParameters("pFastQC", "nocmdinput", "program", 1, 1, "MIP", 0, "nofileEnding", "RawSeqQC");
+DefineParameters("pFastQC", "program", 1, 1, "MIP", 0, "nofileEnding", "RawSeqQC", "fastqc");
 
 
 ##RemovalRedundantFiles
-DefineParameters("pRemovalRedundantFiles", "nocmdinput", "program", 1, 1, "MIP", 0, "nofileEnding", "MAIN");
+DefineParameters("pRemovalRedundantFiles", "program", 1, 1, "MIP", 0, "nofileEnding", "MAIN");
 
 
 ##Mosaik
-DefineParameters("pMosaikBuild", "nocmdinput", "program", 1, 1, "MIP", 0, "nofileEnding", "MAIN");
+DefineParameters("pMosaikBuild", "program", 1, 1, "MIP", 0, "nofileEnding", "MAIN", "MosaikBuild");
 
-DefineParameters("mosaikBuildMedianFragLength", "nocmdinput", "program", 375, 375, "pMosaikBuild", 0);
+DefineParameters("mosaikBuildMedianFragLength", "program", 375, 375, "pMosaikBuild", 0);
 
-DefineParameters("pMosaikAlign", "nocmdinput", "program", 1, 1, "MIP", 0, "nofileEnding", "MAIN");
+DefineParameters("pMosaikAlign", "program", 1, 1, "MIP", 0, "nofileEnding", "MAIN", "MosaikAligner");
 
-DefineParameters("mosaikAlignReference", "nocmdinput", "path", "nodefault", "Homo_sapiens.GRCh37.70_nochr.dat", "pMosaikAlign", "file");
+DefineParameters("mosaikAlignReference", "path", "nodefault", "Homo_sapiens.GRCh37.70_nochr.dat", "pMosaikAlign", "file");
 
-DefineParameters("mosaikAlignNeuralNetworkPeFile", "nocmdinput", "path", "nodefault", "2.1.78.pe.ann", "pMosaikAlign", "file");
+DefineParameters("mosaikAlignNeuralNetworkPeFile", "path", "nodefault", "2.1.78.pe.ann", "pMosaikAlign", "file");
 
-DefineParameters("mosaikAlignNeuralNetworkSeFile", "nocmdinput", "path", "nodefault", "2.1.78.se.ann", "pMosaikAlign", "file");
+DefineParameters("mosaikAlignNeuralNetworkSeFile", "path", "nodefault", "2.1.78.se.ann", "pMosaikAlign", "file");
 
-DefineParameters("mosaikJumpDbStub", "nocmdinput", "path", "nodefault", "Homo_sapiens.GRCh37.70_nochr_jdb_15", "pMosaikAlign", "file");
+DefineParameters("mosaikJumpDbStub", "path", "nodefault", "Homo_sapiens.GRCh37.70_nochr_jdb_15", "pMosaikAlign", "file");
 
 
 ##BWA
 
-DefineParameters("pBwaMem", "nocmdinput", "program", 0, 0, "MIP", 0, "nofileEnding", "MAIN");
+DefineParameters("pBwaMem", "program", 0, 0, "MIP", 0, "nofileEnding", "MAIN", "bwa");
 
-DefineParameters("pBwaAln", "nocmdinput", "program", 0, 0, "MIP", 0, "nofileEnding", "MAIN");
+DefineParameters("bwaMemRapidDb", "path", "nodefault", "Agilent_SureSelect.V4.GRCh37.70_targets_nochr.bed.pad100", "pBwaMem", "file");
 
-DefineParameters("bwaAlnQualityTrimming", "nocmdinput", "program", 20, 20, "pBwaAln", 0);
+DefineParameters("pBwaAln", "program", 0, 0, "MIP", 0, "nofileEnding", "MAIN", "bwa");
 
-DefineParameters("pBwaSampe", "nocmdinput", "program", 0, 0, "MIP", 0, "nofileEnding", "MAIN");
+DefineParameters("bwaAlnQualityTrimming", "program", 20, 20, "pBwaAln", 0);
+
+DefineParameters("pBwaSampe", "program", 0, 0, "MIP", 0, "nofileEnding", "MAIN", "bwa");
 
 
 ##Choosen MIP Aligner
 
-DefineParameters("aligner", "nocmdinput", "MIP", "mosaik", "mosaik", "MIP", 0);
+DefineParameters("aligner", "MIP", "mosaik", "mosaik", "MIP", 0);
 
 
 ##SamTools Sort/Index
 
-DefineParameters("pSamToolsSort", "nocmdinput", "program", 1, 1, "MIP", 0, "_sorted", "MAIN");
+DefineParameters("pSamToolsSort", "program", 1, 1, "MIP", 0, "_sorted", "MAIN", "samtools");
 
 ##PicardTools
 
-DefineParameters("pPicardToolsMergeRapidReads", "nocmdinput", "program", 0, 0, "MIP", 0, "_sorted", "MAIN");#Rapid mode special case
+DefineParameters("pPicardToolsMergeRapidReads", "program", 0, 0, "MIP", 0, "_sorted", "MAIN");#Rapid mode special case
 
-DefineParameters("pPicardToolsMergeSamFiles", "nocmdinput", "program", 1, 1, "MIP", 0, "_merged", "MAIN");
+DefineParameters("pPicardToolsMergeSamFiles", "program", 1, 1, "MIP", 0, "_merged", "MAIN");
 
-DefineParameters("PicardToolsMergeTempDirectory", "nocmdinput", "path", "/scratch/", "notSetYet", "pBwaMem,pPicardToolsMergeSamFiles", 0); #Depends on -projectID input, directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
+DefineParameters("PicardToolsMergeTempDirectory", "path", "/scratch/", "notSetYet", "pBwaMem,pPicardToolsMergeSamFiles", 0); #Depends on -projectID input, directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
 
-DefineParameters("pPicardToolsMarkduplicates", "nocmdinput", "program", 1, 1, "MIP", 0, "_pmd", "MAIN");
+DefineParameters("pPicardToolsMarkduplicates", "program", 1, 1, "MIP", 0, "_pmd", "MAIN");
 
 my (@picardToolsMergeSamFilesPrevious); #Any previous sequencing runs
 
 ##Coverage
 
-DefineParameters("pCalculateCoverage", "nocmdinput", "program", 1, 1, "MIP", 0, "nofileEnding", "CoverageQC");
+DefineParameters("pCalculateCoverage", "program", 1, 1, "MIP", 0, "nofileEnding", "CoverageQC", "bedtools");
 
-DefineParameters("pGenomeCoverageBED", "nocmdinput", "program", 1, 1, "pCalculateCoverage", 0, "_genomeCoverageBed", "CoverageQC");
+DefineParameters("pGenomeCoverageBED", "program", 1, 1, "pCalculateCoverage", 0, "_genomeCoverageBed", "CoverageQC", "bedtools");
 
-DefineParameters("pCoverageBED", "nocmdinput", "program", 1, 1, "pCalculateCoverage", 0, "NotSetYet", "CoverageQC");
+DefineParameters("pCoverageBED", "program", 1, 1, "pCalculateCoverage", 0, "NotSetYet", "CoverageQC", "bedtools");
 
-DefineParameters("pQaCompute", "nocmdinput", "program", 1, 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC");
+DefineParameters("pQaCompute", "program", 1, 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC", "qaCompute");
 
-DefineParameters("pPicardToolsCollectMultipleMetrics", "nocmdinput", "program", 1, 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC");
+DefineParameters("pPicardToolsCollectMultipleMetrics", "program", 1, 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC");
 
-DefineParameters("pPicardToolsCalculateHSMetrics", "nocmdinput", "program", 1, 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC");
+DefineParameters("pPicardToolsCalculateHSMetrics", "program", 1, 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC");
 
-DefineParameters("xCoverage", "nocmdinput", "program", 30, 30, "pCalculateCoverage", 0);
+DefineParameters("xCoverage", "program", 30, 30, "pCalculateCoverage", 0);
 
-DefineParameters("targetCoverageGeneNameFile", "nocmdinput", "path", "nodefault", "mart_export_Ensembl_GeneID_key_cleaned_noblanks_nochr.txt", "pCalculateCoverage", "file");
+DefineParameters("targetCoverageGeneNameFile", "path", "nodefault", "mart_export_Ensembl_GeneID_key_cleaned_noblanks_nochr.txt", "pCalculateCoverage", "file");
 
-DefineParameters("pRCovPlots", "nocmdinput", "program", 1, 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC");
+DefineParameters("pRCovPlots", "program", 1, 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC");
 
-DefineParameters("picardToolsPath", "nocmdinput", "path", "nodefault", "/bubo/home/h12/henriks/programs/picard-tools-1.74", "pBwaMem,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "directory");
+DefineParameters("picardToolsPath", "path", "nodefault", "/bubo/home/h12/henriks/programs/picard-tools-1.74", "pBwaMem,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "directory");
+
+# ---------------------------------------------------------
+#  Chanjo parameters
+#  ~~~~~~~~~~~~~~~~~~
+#  Referred to as "pChanjo"; is a "program"; doesn't run
+#  by default; called by MIP; no file needs checking;
+#  no file ending; belongs to MAIN chain
+# ---------------------------------------------------------
+  DefineParameters("pChanjo", "program", 0, 0, "MIP", 0, "nofileEnding", "MAIN");
+
+  DefineParameters("chanjoStore", "path", "nodefault", "/proj/b2010080/private/mip_references/coverage.CCDS12.sqlite", "pChanjo", "file");
+
+  DefineParameters("chanjoCutoff", "program", 10, 10, "pChanjo", 0);
 
 ##Target definition files
 $parameter{'exomeTargetBed'}{'value'} = "nocmdinput";
@@ -532,134 +560,136 @@ $parameter{'exomeTargetPaddedBedInfileList'}{'value'} = "nocmdinput";
 
 ##GATK
 
-DefineParameters("pGATKRealigner", "nocmdinput", "program", 1, 1, "MIP", 0, "_rreal", "MAIN");
+DefineParameters("pGATKRealigner", "program", 1, 1, "MIP", 0, "_rreal", "MAIN");
 
-DefineParameters("GATKReAlignerINDELKnownSet1", "nocmdinput", "path", "1000G_phase1.indels.hg19.vcf", "1000G_phase1.indels.hg19.vcf", "pGATKRealigner", "file");
+DefineParameters("GATKReAlignerINDELKnownSet1", "path", "1000G_phase1.indels.hg19.vcf", "1000G_phase1.indels.hg19.vcf", "pGATKRealigner", "file");
 
-DefineParameters("GATKReAlignerINDELKnownSet2", "nocmdinput", "path", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf", "pGATKRealigner", "file");
-
-
-DefineParameters("pGATKBaseRecalibration", "nocmdinput", "program", 1, 1, "MIP", 0, "_brecal", "MAIN");
-
-DefineParameters("GATKBaseReCalibrationSNPKnownSet", "nocmdinput", "path", "dbsnp_135.b37.vcf", "dbsnp_135.b37.vcf", "pGATKBaseRecalibration", "file");
+DefineParameters("GATKReAlignerINDELKnownSet2", "path", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf", "pGATKRealigner", "file");
 
 
-DefineParameters("pSamToolsViewSplitChr", "nocmdinput", "program", 1, 1, "MIP", 0, "", "MAIN");
+DefineParameters("pGATKBaseRecalibration", "program", 1, 1, "MIP", 0, "_brecal", "MAIN");
+
+DefineParameters("GATKBaseReCalibrationSNPKnownSet", "path", "dbsnp_135.b37.vcf", "dbsnp_135.b37.vcf", "pGATKBaseRecalibration", "file");
 
 
-DefineParameters("pGATKHaploTypeCaller", "nocmdinput", "program", 1, 1, "MIP", 0, "_", "MAIN");
+DefineParameters("pSamToolsViewSplitChr", "program", 1, 1, "MIP", 0, "", "MAIN", "samtools");
 
-DefineParameters("GATKHaploTypeCallerSNPKnownSet", "nocmdinput", "path", "dbsnp_135.b37.vcf", "dbsnp_135.b37.vcf", "pGATKHaploTypeCaller", "file");
 
-DefineParameters("pGATKHaploTypeCallerCombineVariants", "nocmdinput", "program", 1, 1, "MIP", 0, "nofileEnding", "MAIN");
+DefineParameters("pGATKHaploTypeCaller", "program", 1, 1, "MIP", 0, "_", "MAIN");
 
-DefineParameters("pGATKVariantRecalibration", "nocmdinput", "program", 1, 1, "MIP", 0, "vrecal_", "MAIN");
+DefineParameters("GATKHaploTypeCallerSNPKnownSet", "path", "dbsnp_135.b37.vcf", "dbsnp_135.b37.vcf", "pGATKHaploTypeCaller", "file");
 
-DefineParameters("GATKExomeReferenceSNPs", "nocmdinput", "path", "nodefault", "all-agilent_50mb-GRCh37-SNPS_pad100_interval_list.vcf", "pGATKVariantRecalibration", "file");
+DefineParameters("pGATKHaploTypeCallerCombineVariants", "program", 1, 1, "MIP", 0, "nofileEnding", "MAIN");
 
-DefineParameters("GATKVariantReCalibrationTrainingSetHapMap", "nocmdinput", "path", "hapmap_3.3.b37.sites.vcf", "hapmap_3.3.b37.sites.vcf", "pGATKVariantRecalibration", "file");
+DefineParameters("pGATKVariantRecalibration", "program", 1, 1, "MIP", 0, "vrecal_", "MAIN");
 
-DefineParameters("GATKVariantReCalibrationTrainingSetDbSNP", "nocmdinput", "path", "dbsnp_135.b37.vcf", "dbsnp_135.b37.vcf", "pGATKVariantRecalibration", "file");
+DefineParameters("GATKExomeReferenceSNPs", "path", "nodefault", "all-agilent_50mb-GRCh37-SNPS_pad100_interval_list.vcf", "pGATKVariantRecalibration", "file");
 
-DefineParameters("GATKVariantReCalibrationTrainingSet1000GOmni", "nocmdinput", "path", "1000G_omni2.5.b37.sites.vcf", "1000G_omni2.5.b37.sites.vcf", "pGATKVariantRecalibration", "file");
+DefineParameters("GATKVariantReCalibrationTrainingSetHapMap", "path", "hapmap_3.3.b37.sites.vcf", "hapmap_3.3.b37.sites.vcf", "pGATKVariantRecalibration", "file");
 
-DefineParameters("GATKVariantReCalibrationTrainingSetMills", "nocmdinput", "path", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf", "pGATKVariantRecalibration", "file");
+DefineParameters("GATKVariantReCalibrationTrainingSetDbSNP", "path", "dbsnp_135.b37.vcf", "dbsnp_135.b37.vcf", "pGATKVariantRecalibration", "file");
 
-DefineParameters("GATKVariantReCalibrationTSFilterLevel", "nocmdinput", "program", 99.9, 99.9, "pGATKVariantRecalibration", 0);
+DefineParameters("GATKVariantReCalibrationTrainingSet1000GOmni", "path", "1000G_omni2.5.b37.sites.vcf", "1000G_omni2.5.b37.sites.vcf", "pGATKVariantRecalibration", "file");
+
+DefineParameters("GATKVariantReCalibrationTrainingSetMills", "path", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf", "pGATKVariantRecalibration", "file");
+
+DefineParameters("GATKVariantReCalibrationTSFilterLevel", "program", 99.9, 99.9, "pGATKVariantRecalibration", 0);
+
+DefineParameters("GATKVariantReCalibrationNumBadVariants", "program", 1000, 3000, "pGATKVariantRecalibration", 0);
 
  
-DefineParameters("pGATKPhaseByTransmission", "nocmdinput", "program", 1, 1, "MIP", 0, "phtr_", "Phasing");
+DefineParameters("pGATKPhaseByTransmission", "program", 1, 1, "MIP", 0, "phtr_", "Phasing");
 
-DefineParameters("pGATKReadBackedPhasing", "nocmdinput", "program", 1, 1, "MIP", 0, "phrb_", "Phasing");
+DefineParameters("pGATKReadBackedPhasing", "program", 1, 1, "MIP", 0, "phrb_", "Phasing");
 
-DefineParameters("GATKReadBackedPhasingPhaseQualityThresh", "nocmdinput", "program", 20, 20, "pGATKReadBackedPhasing", 0);
+DefineParameters("GATKReadBackedPhasingPhaseQualityThresh", "program", 20, 20, "pGATKReadBackedPhasing", 0);
 
 
-DefineParameters("pGATKVariantEvalAll", "nocmdinput", "program", 1, 1, "MIP", 0, "nofileEnding", "AllVariantQC");
+DefineParameters("pGATKVariantEvalAll", "program", 1, 1, "MIP", 0, "nofileEnding", "AllVariantQC");
 
-DefineParameters("pGATKVariantEvalExome", "nocmdinput", "program", 1, 1, "MIP", 0, "nofileEnding", "ExomeVarintQC");
+DefineParameters("pGATKVariantEvalExome", "program", 1, 1, "MIP", 0, "nofileEnding", "ExomeVarintQC", "bedtools");
 
-DefineParameters("GATKVariantEvalDbSNP", "nocmdinput", "path", "nodefault", "dbsnp_132.hg19.excluding_sites_after_129_nochr.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file");
+DefineParameters("GATKVariantEvalDbSNP", "path", "nodefault", "dbsnp_132.hg19.excluding_sites_after_129_nochr.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file");
 
-DefineParameters("GATKVariantEvalGold", "nocmdinput", "path", "nodefault", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file");
+DefineParameters("GATKVariantEvalGold", "path", "nodefault", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file");
 
-DefineParameters("genomeAnalysisToolKitPath", "nocmdinput", "path", "nodefault", "/bubo/home/h12/henriks/programs/GenomeAnalysisTK-2.5-2-gf57256b", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome", "directory");
+DefineParameters("genomeAnalysisToolKitPath", "path", "nodefault", "/bubo/home/h12/henriks/programs/GenomeAnalysisTK-2.7-2-g6bda569", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome", "directory");
 
-DefineParameters("GATKTempDirectory", "nocmdinput", "path", "/scratch/", "notSetYet", "pGATKRealigner,pGATKBaseRecalibration", 0); #Depends on -projectID input, directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
+DefineParameters("GATKTempDirectory", "path", "/scratch/", "notSetYet", "pGATKRealigner,pGATKBaseRecalibration", 0); #Depends on -projectID input, directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
 
-DefineParameters("GATKDownSampleToCoverage", "nocmdinput", "program", 1000, 1000, "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller", 0);
+DefineParameters("GATKDownSampleToCoverage", "program", 1000, 1000, "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller", 0);
 
 $parameter{'GATKTargetPaddedBedIntervalList'}{'value'} = "nocmdinput"; #GATK target definition file
 
 ##Annovar
 
-DefineParameters("pAnnovar", "nocmdinput", "program", 1, 1, "MIP", 0, "annovar_", "MAIN");
+DefineParameters("pAnnovar", "program", 1, 1, "MIP", 0, "annovar_", "MAIN");
 
-DefineParameters("annovarPath", "nocmdinput", "path", "nodefault", "/bubo/proj/b2010080/private/annovar", "pAnnovar", "directory"); #Note not projectID specific
+DefineParameters("annovarPath", "path", "nodefault", "/bubo/proj/b2010080/private/annovar", "pAnnovar", "directory"); #Note not projectID specific
 
-DefineParameters("annovarGenomeBuildVersion", "nocmdinput", "program", "hg19", "hg19", "pAnnovar", 0);
+DefineParameters("annovarGenomeBuildVersion", "program", "hg19", "hg19", "pAnnovar", 0);
 
-DefineParameters("annovarSupportedTableNames", "nocmdinput", "program", 0, 0, "pAnnovar", 0);
+DefineParameters("annovarSupportedTableNames", "program", 0, 0, "pAnnovar", 0);
 
-DefineParameters("annovarMAFThreshold", "nocmdinput", "program", 0, 0, "pAnnovar", 0);
+DefineParameters("annovarMAFThreshold", "program", 0, 0, "pAnnovar", 0);
 
-DefineParameters("annovarSiftThreshold", "nocmdinput", "program", 0, 0, "pAnnovar", 0);
+DefineParameters("annovarSiftThreshold", "program", 0, 0, "pAnnovar", 0);
 
 my @annovarTableNames; #List of Annovar table names to be used
 
 
 ##VMerge
 
-DefineParameters("pMergeAnnotatedVariants", "nocmdinput", "program", 1, 1, "MIP", 0, "merged_", "MAIN");
+DefineParameters("pMergeAnnotatedVariants", "program", 1, 1, "MIP", 0, "merged_", "MAIN");
 
-DefineParameters("mergeAnnotatedVariantsTemplateFile", "nocmdinput", "path", "nodefault", "CMMS_intersectCollect_db_master_template.txt", "pMergeAnnotatedVariants", "file");
+DefineParameters("mergeAnnotatedVariantsTemplateFile", "path", "nodefault", "CMMS_intersectCollect_db_master_template.txt", "pMergeAnnotatedVariants", "file");
 
-DefineParameters("mergeAnnotatedVariantsDbFile", "nocmdinput", "program", "notSetYet", "notSetYet", "pMergeAnnotatedVariants", 0); #No file check since file is created by MIP later
+DefineParameters("mergeAnnotatedVariantsDbFile", "program", "notSetYet", "notSetYet", "pMergeAnnotatedVariants", 0); #No file check since file is created by MIP later
 
 
 ##Add_depth
 
-DefineParameters("pAddDepth", "nocmdinput", "program", 1, 1, "MIP", 0, "", "MAIN");
+DefineParameters("pAddDepth", "program", 1, 1, "MIP", 0, "", "MAIN");
 
 
 ##RankVariants
 
-DefineParameters("pRankVariants", "nocmdinput", "program", 1, 1, "MIP", 0, "nofileEnding", "MAIN");
+DefineParameters("pRankVariants", "program", 1, 1, "MIP", 0, "nofileEnding", "MAIN");
 
-DefineParameters("rankScore", "nocmdinput", "program", -100, -100, "pRankVariants", 0);
+DefineParameters("rankScore", "program", -100, -100, "pRankVariants", 0);
 
-DefineParameters("geneFiltering", "nocmdinput", "program", 1, 1, "pRankVariants", 0);
+DefineParameters("geneFiltering", "program", 1, 1, "pRankVariants", 0);
 
-DefineParameters("geneFilteringList", "nocmdinput", "path", "nodefault", "IEM_dispGeneList.txt", "pRankVariants", "file");
+DefineParameters("geneFilteringList", "path", "nodefault", "IEM_dispGeneList.txt", "pRankVariants", "file");
 
-DefineParameters("allElementsDbFile", "nocmdinput", "path", "nodefault", "mart_export_Ensembl_GeneID_key_cleaned_nochr.txt", "pRankVariants", "file");
+DefineParameters("allElementsDbFile", "path", "nodefault", "mart_export_Ensembl_GeneID_key_cleaned_nochr.txt", "pRankVariants", "file");
 
-DefineParameters("allElementsDbGeneCoverageCalculation", "nocmdinput", "program", 1, 1, "pRankVariants", 0);
+DefineParameters("allElementsDbGeneCoverageCalculation", "program", 1, 1, "pRankVariants", 0);
 
-DefineParameters("allElementsDbGeneIdCol", "nocmdinput", "program", 4, 4, "pRankVariants", 0);
+DefineParameters("allElementsDbGeneIdCol", "program", 4, 4, "pRankVariants", 0);
 
-DefineParameters("ImportantDbFile", "nocmdinput", "path", "nodefault", "dbIEM.v1.1.txt", "pRankVariants", "file");
+DefineParameters("ImportantDbFile", "path", "nodefault", "dbIEM.v1.2.txt", "pRankVariants", "file");
 
-DefineParameters("ImportantDbTemplate", "nocmdinput", "path", "nodefault", "select_dbIEM_variants_db_master.txt", "pRankVariants", "file");
+DefineParameters("ImportantDbTemplate", "path", "nodefault", "select_dbIEM_variants_db_master.txt", "pRankVariants", "file");
 
-DefineParameters("ImportantDbMasterFile", "nocmdinput", "program", "notSetYet", "NotSetYet", "pRankVariants", 0); #No file check since file is created by MIP later
+DefineParameters("ImportantDbMasterFile", "program", "notSetYet", "NotSetYet", "pRankVariants", 0); #No file check since file is created by MIP later
 
-DefineParameters("ImportantDbGeneCoverageCalculation", "nocmdinput", "program", 1, 1, "pRankVariants", 0);
+DefineParameters("ImportantDbGeneCoverageCalculation", "program", 1, 1, "pRankVariants", 0);
 
-DefineParameters("ImportantDbGeneIdCol", "nocmdinput", "program", 17, 17, "pRankVariants", 0);
+DefineParameters("ImportantDbGeneIdCol", "program", 17, 17, "pRankVariants", 0);
 
 my @ImportantDbFileOutFile; #List of db outfiles
 
 ##SChecks
-DefineParameters("pSampleCheck", "nocmdinput", "program", 1, 1, "MIP", 0, "nofileEnding", "IDQC");
+DefineParameters("pSampleCheck", "program", 1, 1, "MIP", 0, "nofileEnding", "IDQC", "vcftools:plink");
 
 
 ##MIP
 
 ##humanGenomeReference
-DefineParameters("humanGenomeReference", "nocmdinput", "path", "nodefault", "Homo_sapiens.GRCh37.70_nochr.fasta", "pBwaMem,pBwaAln,pBwaSampe,pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKVariantEvalAll,pGATKVariantEvalExome,pAnnovar,pAddDepth,pCalculateCoverage,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "file");
+DefineParameters("humanGenomeReference", "path", "nodefault", "Homo_sapiens.GRCh37.70_nochr.fasta", "pBwaMem,pBwaAln,pBwaSampe,pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKVariantEvalAll,pGATKVariantEvalExome,pAnnovar,pAddDepth,pCalculateCoverage,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "file");
 
-my ($humanGenomeReferenceSource, $humanGenomeRefereceChromosomePrefix, $humanGenomeReferenceVersion, $fnend, $aligner, $filename, $fnTracker, $help) = ("nocmdinput", "nocmdinput", "nocmdinput", ".sh", "nocmdinput", "nocmdinput", 0);
+my ($humanGenomeReferenceSource, $humanGenomeRefereceChromosomePrefix, $humanGenomeReferenceVersion, $fnend, $aligner, $filename, $fnTracker, $version, $help) = ("nocmdinput", "nocmdinput", "nocmdinput", ".sh", "nocmdinput", "nocmdinput", 0);
 
 my (@chromosomes);
 
@@ -758,6 +788,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'wc|writeConfigFile:s' => \$parameter{'writeConfigFile'}{'value'},
 	   'dra|dryRunAll:n' => \$parameter{'dryRunAll'}{'value'},
 	   'h|help' => \$help, #Display help text
+	   'v|version' => \$version, #Display version number
 	   'pGZ|pGZip:n' => \$parameter{'pGZip'}{'value'},
 	   'pFQC|pFastQC:n' => \$parameter{'pFastQC'}{'value'},
 	   'pREM|pRemovalRedundantFiles:n' => \$parameter{'pRemovalRedundantFiles'}{'value'},
@@ -769,6 +800,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'moaannse|mosaikAlignNeuralNetworkSeFile:s' => \$parameter{'mosaikAlignNeuralNetworkSeFile'}{'value'}, 
 	   'mojdb|mosaikJumpDbStub:s' => \$parameter{'mosaikJumpDbStub'}{'value'}, #Stub for MosaikJump database
 	   'pBWA_mem|pBwaMem:n' => \$parameter{'pBwaMem'}{'value'},
+	   'bwamemrdb|bwaMemRapidDb:s' => \$parameter{'bwaMemRapidDb'}{'value'},
 	   'pBWA_aln|pBwaAln:n' => \$parameter{'pBwaAln'}{'value'},
 	   'bwaalnq|bwaAlnQualityTrimming:n' => \$parameter{'bwaAlnQualityTrimming'}{'value'}, #BWA aln quality threshold for read trimming down to 35bp
 	   'pBWA_sampe|pBwaSampe:n' => \$parameter{'pBwaSampe'}{'value'},
@@ -810,7 +842,8 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'gatkvarrecaltrdbsnp|GATKVariantReCalibrationTrainingSetDbSNP:s' => \$parameter{'GATKVariantReCalibrationTrainingSetDbSNP'}{'value'}, #GATK VariantRecalibrator resource
 	   'gatkvarrecaltromni|GATKVariantReCalibrationTrainingSet1000GOmni:s' => \$parameter{'GATKVariantReCalibrationTrainingSet1000GOmni'}{'value'}, #GATK VariantRecalibrator resource
 	   'gatkvarrecaltrdbmills|GATKVariantReCalibrationTrainingSetMills:s' => \$parameter{'GATKVariantReCalibrationTrainingSetMills'}{'value'}, #GATK VariantRecalibrator resource
-	   'gatkvarrecaltsfilterlevel|GATKVariantReCalibrationTSFilterLevel:n' => \$parameter{'GATKVariantReCalibrationTSFilterLevel'}{'value'}, #Truth senativity level
+	   'gatkvarrecaltsfilterlevel|GATKVariantReCalibrationTSFilterLevel:s' => \$parameter{'GATKVariantReCalibrationTSFilterLevel'}{'value'}, #Truth sensativity level
+	   'gatkvarrecalnumbadvariants|GATKVariantReCalibrationNumBadVariants:n' => \$parameter{'GATKVariantReCalibrationNumBadVariants'}{'value'}, #The number of worst scoring variants to use when building the Gaussian mixture model of bad variants
 	   'pGATK_phaseTr|pGATKPhaseByTransmission:n' => \$parameter{'pGATKPhaseByTransmission'}{'value'}, #GATK PhaseByTransmission to produce phased genotype calls
 	   'pGATK_readPh|pGATKReadBackedPhasing:n' => \$parameter{'pGATKReadBackedPhasing'}{'value'}, #GATK ReadBackedPhasing
 	   'gatkreadphphaseqthr|GATKReadBackedPhasingPhaseQualityThresh' => \$parameter{'GATKReadBackedPhasingPhaseQualityThresh'}{'value'}, #quality score required to output phasing
@@ -843,9 +876,15 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'imdbcc|ImportantDbGeneCoverageCalculation:n'  => \$parameter{'ImportantDbGeneCoverageCalculation'}{'value'}, #Db of important genes coverage calculation (all features connected to overlapping genes across variant)
 	   'imdbgidc|ImportantDbGeneIdCol:n'  => \$parameter{'ImportantDbGeneIdCol'}{'value'}, #Db of important genes GeneName column nr zero-based
 	   'pSCheck|pSampleCheck:n' => \$parameter{'pSampleCheck'}{'value'}, #QC for samples gender and relationship
+     'pCh|pChanjo:n' => \$parameter{'pChanjo'}{'value'},  # Chanjo coverage analysis
+     'chStore|chanjoStore:s' => \$parameter{'chanjoStore'}{'value'},  # Central SQLite database path
+     'chCut|chanjoCutoff:n' => \$parameter{'chanjoCutoff'}{'value'},  # Cutoff used for completeness
 	   );
 
+
 die $USAGE if($help);
+
+die "\nMip.pl v1.3\n\n" if($version);
 
 if ($parameter{'configFile'}{'value'} ne "nocmdinput") { #No input from cmd
     
@@ -878,7 +917,7 @@ foreach my $orderParameterElement (@orderParameters) { #Populate scriptParameter
     
 ##3 type of variables: MIP, path or program/program_parameters each is handled in the AddToScriptParameter subroutine.
 ##parameterName, parameterValue, parameterType, parameterDefault, environmentUppmaxDefault, AssociatedProgram, Check directory/file existence)    
-    AddToScriptParameter($orderParameterElement, $parameter{$orderParameterElement}{'value'}, $parameter{$orderParameterElement}{'type'}, $parameter{$orderParameterElement}{'default'}, $parameter{$orderParameterElement}{'environmentUppmaxDefault'}, $parameter{$orderParameterElement}{'associatedProgram'}, $parameter{$orderParameterElement}{'existsCheck'});
+    AddToScriptParameter($orderParameterElement, $parameter{$orderParameterElement}{'value'}, $parameter{$orderParameterElement}{'type'}, $parameter{$orderParameterElement}{'default'}, $parameter{$orderParameterElement}{'environmentUppmaxDefault'}, $parameter{$orderParameterElement}{'associatedProgram'}, $parameter{$orderParameterElement}{'existsCheck'}, $parameter{$orderParameterElement}{'programNamePath'});
    
     if ($orderParameterElement eq "analysisType") { #Set env_up defaults depending on $scriptParameter{'analysisType'} value that now has been set
 	
@@ -1000,6 +1039,11 @@ if ($scriptParameter{'writeConfigFile'} ne 0) { #Write config file for family
     close (YAML);
 }
 
+#Write QC for only pedigree data used in analysis                                                                                                                                                         
+open (YAML, '>', $scriptParameter{'outDataDir'}."/qc_pedigree.yaml") or die "can't open ".$scriptParameter{'outDataDir'}."/qc_pedigree.yaml: $!\n";
+print YAML Dump(%sampleInfo), "\n";
+close (YAML);
+
 ##Set chr prefix and chromosome names depending on reference used
 if ($scriptParameter{'humanGenomeReference'}=~/hg\d+/) { #Refseq - prefix and M
     @chromosomes = ("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17","chr18","chr19","chr20","chr21","chr22","chrX","chrY","chrM"); #Chr for filtering of bam file
@@ -1044,8 +1088,17 @@ for (my $inputDirectoryCounter=0;$inputDirectoryCounter<scalar(@inFilesDirs);$in
 
 close(MIPLOGG);
 
-my $uncompressedFileSwitch = InfilesReFormat(); #Required to format infiles correctly for subsequent input into aligners
- 
+my $uncompressedFileSwitch = InfilesReFormat2(); #Required to format infiles correctly for subsequent input into aligners
+
+#Write QC for sampleinfo used in analysis                                                                                                                                                                                   
+open (YAML, '>', $scriptParameter{'outDataDir'}."/qc_sampleinfo.yaml") or die "can't open ".$scriptParameter{'outDataDir'}."/qc_sampleinfo.yaml: $!\n";
+print YAML Dump(%sampleInfo), "\n";
+close (YAML);
+
+#open (YAML, '>', $scriptParameter{'outDataDir'}."/qc_programs.yaml") or die "can't open ".$scriptParameter{'outDataDir'}."/qc_programs.yaml: $!\n";
+#print YAML Dump(%qcMetaData), "\n";
+#close (YAML);
+
 CreateFileEndings(); #Creates all fileendings as the samples is processed depending on the chain of modules activated
 
 #Create .fam file to be used in variant calling analyses
@@ -1203,6 +1256,24 @@ if ($scriptParameter{'pRCovPlots'} > 0) { #Run Rcovplot scripts
     }
 }
 
+if ($scriptParameter{'pChanjo'} > 0) {
+  # Run Chanjo
+  for my $fh (STDOUT, MIPLOGG) { print $fh "\n\033[93mChanjo\033[0m\n"; }
+
+  # Chanjo will run for each sample but generate a single SBATCH script
+  # and a new SQLite database per family to avoid conflicts.
+  chanjo(
+    @sampleIDs,
+    $scriptParameter{'familyID'},
+    $scriptParameter{'aligner'},
+    $scriptParameter{'outDataDir'},
+    $scriptParameter{'chanjoStore'},
+    $scriptParameter{'chanjoCutoff'},
+    $scriptParameter{'pChanjo'},
+    $scriptparameter{'dryRunAll'},
+    $sampleInfo
+  );
+}
 
 if ($scriptParameter{'pGATKRealigner'} > 0) { #Run GATK ReAlignerTargetCreator/IndelRealigner
 
@@ -1377,6 +1448,15 @@ if ($scriptParameter{'pRemovalRedundantFiles'} > 0) { #Sbatch generation of remo
 }
 
 close(MIPLOGG); #Close mip_logg file
+
+#Write QC for programs used in analysis                                                                                                                                                                                               
+#open (YAML, '>', $scriptParameter{'outDataDir'}."/qc_programs.yaml") or die "can't open ".$scriptParameter{'outDataDir'}."/qc_programs.yaml: $!\n";
+#print YAML Dump(%qcMetaData), "\n";
+#close (YAML);
+open (YAML, '>', $scriptParameter{'outDataDir'}."/qc_sampleinfo.yaml") or die "can't open ".$scriptParameter{'outDataDir'}."/qc_sampleinfo.yaml: $!\n";
+print YAML Dump(%sampleInfo), "\n";
+close (YAML);
+
 
 ######################
 ###Sub Routines#######
@@ -1676,6 +1756,9 @@ sub SampleCheck {
     print SCHECK "--het "; #Individual inbreeding
     print SCHECK "--out ".$outFamilyDirectory."/".$familyID, "\n\n"; #Outfile
 
+##Collect QC metadata info for later use                                                                                                                                                        
+    SampleInfoQC($scriptParameter{'familyID'}, "noSampleID", "InbreedingFactor", "NoInfile", $outFamilyDirectory, $familyID.".het", "infileDependent"); #"noSampleID is used to select correct keys for %sampleInfo"
+
     print SCHECK "#Create Plink .mibs per family","\n"; 
     print SCHECK "plink ";
     print SCHECK "--noweb "; #No web check
@@ -1779,7 +1862,16 @@ sub RankVariants {
 	if ($humanGenomeReferenceSource eq "hg19") {
 	    print RV "-prechr 1 "; #Use chr prefix in rank script
 	}
-	print RV "-s 1 "; #Select all entries in first infile matching keys in subsequent db files
+	print RV "-sl 1 "; #Select all entries in first infile matching keys in subsequent db files
+	print RV "-s ";
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { 
+	if ($sampleIDCounter eq scalar(@sampleIDs)-1) {
+	    print RV $sampleIDs[$sampleIDCounter], " ";
+	}
+	else {
+	    print RV $sampleIDs[$sampleIDCounter], ",";
+	}    
+    }
 	print RV "-sofs "; #Selected variants and orphan db files out data directory
 	for (my $ImportantDbFileOutFileCounter=0;$ImportantDbFileOutFileCounter<scalar(@ImportantDbFileOutFile);$ImportantDbFileOutFileCounter++) {
 	    if ($ImportantDbFileOutFileCounter eq scalar(@ImportantDbFileOutFile)-1) {
@@ -2087,8 +2179,8 @@ sub MergeAnnotatedVariants {
     
 ##Create db master file from template
     print MERGE_AV "#Create db master file from template", "\n";
-    my $sampleIDColumns = scalar(@sampleIDs)+5; #Requires CMMS format (chr,start,stop,ref_allele,alt_allel,IDN...)
-    my $sampleIDcolumnsCondition = scalar(@sampleIDs)+4;
+    my $sampleIDColumns = scalar(@sampleIDs)+6; #Requires CMMS format (chr,start,stop,ref_allele,alt_allel,GT_Call_Filter,IDN...)
+    my $sampleIDcolumnsCondition = scalar(@sampleIDs)+5;
     $scriptParameter{'mergeAnnotatedVariantsDbFile'} =~ s/FDN/$scriptParameter{'familyID'}/g; #Exchange FND for the real familyID
     
 ##Add relative path to db_template for annovar files 
@@ -2112,7 +2204,7 @@ sub MergeAnnotatedVariants {
     $regExpReferenceDirectory .= $file;
     
 ##Create family specific template
-    print MERGE_AV q?perl -nae 'if ($_=~/outinfo/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolumnsCondition.q?) { $sidstring.="IDN_GT_Call=>0_$sampleID,"} else { $sidstring.="IDN_GT_Call=>0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outcolumns/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolumnsCondition.q?) { $sidstring.="0_$sampleID,"} else { $sidstring.="0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outheaders/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolumnsCondition.q?) { $sidstring.="IDN_GT_Call,"} else { $sidstring.="IDN_GT_Call"} } s/IDN/$sidstring/g; print $_;} next;} elsif ($_=~s/FDN_|FDN/?.$familyID.q?/g) { if($_=~s/^ODF/?.$regExpOutDataFile.q?/g) {} if($_=~s/ALIGNER/?.$aligner.q?/g) {} if($_=~s/FILEENDING_/?.$infileEnding.q?/g) {} if($_=~s/CALLTYPE/?.$callType.q?/g) {} if ($_=~/IDN/) { my $sidstring; for (my $sampleID=5;$sampleID<?.$sampleIDColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolumnsCondition.q?) { $sidstring.="$sampleID,"} else { $sidstring.="$sampleID"} } s/IDN/$sidstring/g; print $_;} else { print $_;} } else { if($_=~s/^RD/?.$regExpReferenceDirectory.q?/g) {} print $_;}' ?;
+    print MERGE_AV q?perl -nae 'if ($_=~/outinfo/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=6;$sampleID<?.$sampleIDColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolumnsCondition.q?) { $sidstring.="IDN_GT_Call=>0_$sampleID,"} else { $sidstring.="IDN_GT_Call=>0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outcolumns/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=6;$sampleID<?.$sampleIDColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolumnsCondition.q?) { $sidstring.="0_$sampleID,"} else { $sidstring.="0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} if ($_=~/outheaders/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=6;$sampleID<?.$sampleIDColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolumnsCondition.q?) { $sidstring.="IDN_GT_Call,"} else { $sidstring.="IDN_GT_Call"} } s/IDN/$sidstring/g; print $_;} next;} elsif ($_=~s/FDN_|FDN/?.$familyID.q?/g) { if($_=~s/^ODF/?.$regExpOutDataFile.q?/g) {} if($_=~s/ALIGNER/?.$aligner.q?/g) {} if($_=~s/FILEENDING_/?.$infileEnding.q?/g) {} if($_=~s/CALLTYPE/?.$callType.q?/g) {} if ($_=~/IDN/) { my $sidstring; for (my $sampleID=6;$sampleID<?.$sampleIDColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolumnsCondition.q?) { $sidstring.="$sampleID,"} else { $sidstring.="$sampleID"} } s/IDN/$sidstring/g; print $_;} else { print $_;} } else { if($_=~s/^RD/?.$regExpReferenceDirectory.q?/g) {} print $_;}' ?;
     print MERGE_AV $scriptParameter{'referencesDir'}."/".$scriptParameter{'mergeAnnotatedVariantsTemplateFile'}." "; #Infile
     print MERGE_AV "> ".$scriptParameter{'outDataDir'}."/".$familyID."/".$scriptParameter{'mergeAnnotatedVariantsDbFile'}, "\n\n"; #OutFile
 
@@ -2121,8 +2213,16 @@ sub MergeAnnotatedVariants {
     if ($humanGenomeReferenceSource eq "hg19") {
 	print MERGE_AV "-prechr 1 "; #Use chromosome prefix
     }
-    print MERGE_AV "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".txt", "\n\n";
-    
+    print MERGE_AV "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".txt ";
+    print MERGE_AV "-s ";
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { 
+	if ($sampleIDCounter eq scalar(@sampleIDs)-1) {
+	    print MERGE_AV $sampleIDs[$sampleIDCounter], "\n\n";
+	}
+	else {
+	    print MERGE_AV $sampleIDs[$sampleIDCounter], ",";
+	}    
+    }
     close(MERGE_AV);   
     if ( ($scriptParameter{'pMergeAnnotatedVariants'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 	FIDSubmitJob(0, $familyID, 1, $parameter{'pMergeAnnotatedVariants'}{'chain'}, $filename, 0);
@@ -2200,6 +2300,8 @@ sub GATKVariantEvalExome {
 	print GATK_VAREVALEX "rm ";
 	print GATK_VAREVALEX $sampleDirectory."/".$infile.$outfileEnding.$callType."_temp.vcf.idx", "\n\n"; #SampleID temp exome vcf inFile
 
+##Collect QC metadata info for later use                                                                                                                                                       
+	SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "VariantEval_Exome", $infile, $sampleDirectory, $outfileEnding.$callType."_exome.vcf.varianteval", "infileDependent");
     }   
     else { #No previous merge
 ###GATK SelectVariants
@@ -2248,6 +2350,9 @@ sub GATKVariantEvalExome {
 	    print GATK_VAREVALEX "-gold ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKVariantEvalGold'}." "; #Evaluations that count calls at sites of true variation (e.g., indel calls) will use this argument as their gold standard for comparison
 	    print GATK_VAREVALEX "--eval ".$sampleDirectory."/".$infile.$outfileEnding.$callType."_exome.vcf "; #InFile
 	    print GATK_VAREVALEX "-o ".$sampleDirectory."/".$infile.$outfileEnding.$callType."_exome.vcf.varianteval", "\n\n"; #OutFile
+
+##Collect QC metadata info for later use                                                                                                                                                       
+	    SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "VariantEval_Exome", $infile, $sampleDirectory, $outfileEnding.$callType."_exome.vcf.varianteval", "infileDependent");
 
 ##Clean-up temp files
 	    print GATK_VAREVALEX "rm ";
@@ -2319,6 +2424,9 @@ sub GATKVariantEvalAll {
 	print GATK_VAREVAL "-gold ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKVariantEvalGold'}." "; #Evaluations that count calls at sites of true variation (e.g., indel calls) will use this argument as their gold standard for comparison
 	print GATK_VAREVAL "--eval ".$inSampleDirectory."/".$infile.$infileEnding.$callType.".vcf "; #InFile
 	print GATK_VAREVAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding.$callType.".vcf.varianteval", "\n\n"; #OutFile
+
+##Collect QC metadata info for later use                                                                                                                                                       
+	SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "VariantEval_All", $infile, $outSampleDirectory, $outfileEnding.$callType.".vcf.varianteval", "infileDependent");
     }   
     else { #No previous merge
 ###GATK SelectVariants
@@ -2358,6 +2466,9 @@ sub GATKVariantEvalAll {
 	    print GATK_VAREVAL "-gold ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKVariantEvalGold'}." "; #Evaluations that count calls at sites of true variation (e.g., indel calls) will use this argument as their gold standard for comparison
 	    print GATK_VAREVAL "--eval ".$inSampleDirectory."/".$infile.$infileEnding.$callType.".vcf "; #InFile
 	    print GATK_VAREVAL "-o ".$outSampleDirectory."/".$infile.$outfileEnding.$callType.".vcf.varianteval", "\n\n"; #OutFile
+	
+##Collect QC metadata info for later use                                                                                                                                                       
+	    SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "VariantEval_All", $infile, $outSampleDirectory, $outfileEnding.$callType.".vcf.varianteval", "infileDependent");
 	}
     } 
     
@@ -2389,7 +2500,7 @@ sub Annovar {
     print ANVAR "> ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType."_temp", "\n\n"; #Annovar script
     
     print ANVAR "#Intersect for all samples within familyid and remake file to fit annovar format and subsequent filtering", "\n";
-    print ANVAR q?perl -nae 'my @format; my $formatInfo;chomp($_); if ($_=~/^#/) {print $_;next;} if ($_=~/;set=2/) {} else{ if($F[11] eq "PASS") {} else {$F[11] = "PRES";} @format = split(":",$F[13]); print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t"; ?;
+    print ANVAR q?perl -nae 'my @format; my $formatInfo;chomp($_); if ($_=~/^#/) {print $_;next;} if ($_=~/;set=2/) {} else{ if($F[11] eq "PASS") {} else {$F[11] = "PRES";} @format = split(":",$F[13]); print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t", $F[11], "\t"; ?;
     
     my @sampleIDLexSorts = sort @sampleIDs; #Use lexiographically sorted sample IDNs since GATK HaplotypeCaller/UnifiedGT assigns columns in lexigraphical order. @sampleIDs is not lexiographically sorted if taken straight from the command line. This lex sort ensures that if the user did not supply samples in lex order, there will be no sample column swaping. 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDLexSorts);$sampleIDCounter++) { #For all sample ids
@@ -2397,10 +2508,10 @@ sub Annovar {
 	my $samplecolumn = 14+$sampleIDCounter; #First sample genotype starts at col 14 (start 0, perl). NOTE: Important that samples for HaplotypeCaller/UnifiedGT has same order. Otherwise there will be a sample mix-up.
 	
 	if ($sampleIDCounter eq scalar(@sampleIDLexSorts)-1) {	#Ensure correct order as long as HaplotypeCAller/UnifiedGT uses lex sort. 
-	    print ANVAR q?print "?.$sampleIDLexSorts[$sampleIDCounter].q?:FILTER=$F[11]:"; @formatInfo = split(":",$F[?.$samplecolumn.q?]); for (my $formatInfoCounter=0;$formatInfoCounter<scalar(@formatInfo);$formatInfoCounter++) { print "$format[$formatInfoCounter]=$formatInfo[$formatInfoCounter]"; if ( $formatInfoCounter<scalar(@formatInfo)-1 ) {print ":"} } print "\n"; } ?;
+	    print ANVAR q?print "?.$sampleIDLexSorts[$sampleIDCounter].q?:"; @formatInfo = split(":",$F[?.$samplecolumn.q?]); for (my $formatInfoCounter=0;$formatInfoCounter<scalar(@formatInfo);$formatInfoCounter++) { print "$format[$formatInfoCounter]=$formatInfo[$formatInfoCounter]"; if ( $formatInfoCounter<scalar(@formatInfo)-1 ) {print ":"} } print "\n"; } ?;
 	}
 	else {
-	    print ANVAR q?print "?.$sampleIDLexSorts[$sampleIDCounter].q?:FILTER=$F[11]:"; @formatInfo = split(":",$F[?.$samplecolumn.q?]); for (my $formatInfoCounter=0;$formatInfoCounter<scalar(@formatInfo);$formatInfoCounter++) { print "$format[$formatInfoCounter]=$formatInfo[$formatInfoCounter]"; if ( $formatInfoCounter<scalar(@formatInfo)-1 ) {print ":"} } print "\t"; ?;
+	    print ANVAR q?print "?.$sampleIDLexSorts[$sampleIDCounter].q?:"; @formatInfo = split(":",$F[?.$samplecolumn.q?]); for (my $formatInfoCounter=0;$formatInfoCounter<scalar(@formatInfo);$formatInfoCounter++) { print "$format[$formatInfoCounter]=$formatInfo[$formatInfoCounter]"; if ( $formatInfoCounter<scalar(@formatInfo)-1 ) {print ":"} } print "\t"; ?;
 	}
     }
 
@@ -2623,6 +2734,7 @@ sub GATKVariantReCalibration {
     print GATK_VARREC "-resource:omni,VCF,known=false,training=true,truth=false,prior=12.0 ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKVariantReCalibrationTrainingSet1000GOmni'}." "; #A list of sites for which to apply a prior probability of being correct but which aren't used by the algorithm
     print GATK_VARREC "-resource:dbsnp,VCF,known=true,training=false,truth=false,prior=8.0 ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKVariantReCalibrationTrainingSetDbSNP'}." "; #A list of sites for which to apply a prior probability of being correct but which aren't used by the algorithm
     print GATK_VARREC "-resource:mills,VCF,known=true,training=true,truth=true,prior=12.0 ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKVariantReCalibrationTrainingSetMills'}." "; #A list of sites for which to apply a prior probability of being correct but which aren't used by the algorithm
+    print GATK_VARREC "-numBad ".$scriptParameter{'GATKVariantReCalibrationNumBadVariants'}." "; #The number of worst scoring variants to use when building the Gaussian mixture model of bad variants.
     print GATK_VARREC "-an QD "; #The names of the annotations which should used for calculations
     print GATK_VARREC "-an HaplotypeScore "; #The names of the annotations which should used for calculations
     print GATK_VARREC "-an MQRankSum "; #The names of the annotations which should used for calculations
@@ -2676,7 +2788,7 @@ sub GATKVariantReCalibration {
 	print GATK_VARREC "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
 	print GATK_VARREC "-V: ".$inFamilyDirectory."/".$familyID.$outfileEnding.$callType."_comb_ref_filtered.vcf "; #InFile
 	print GATK_VARREC "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf "; #OutFile
-	    
+
 	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #For all sampleIDs
 		
 	    print GATK_VARREC "-sn ".$sampleIDs[$sampleIDCounter]." "; #Include genotypes from this sample
@@ -2685,6 +2797,10 @@ sub GATKVariantReCalibration {
     
     print GATK_VARREC "\n\nwait", "\n\n";
     close(GATK_VARREC);   
+
+##Collect QC metadata info for later use
+    SampleInfoQC($scriptParameter{'familyID'}, "noSampleID", "pedigreeCheck", "NoInfile", $outFamilyDirectory, $familyID.$outfileEnding.$callType.".vcf", "infileDependent"); #"noSampleID is used to select correct keys for %sampleInfo"
+
     if ( ($scriptParameter{'pGATKVariantRecalibration'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 	FIDSubmitJob(0, $familyID, 1, $parameter{'pGATKVariantRecalibration'}{'chain'}, $filename, 0);
     }
@@ -3364,12 +3480,18 @@ sub CalculateCoverage {
 	    print CAL_COV "-c ".$scriptParameter{'xCoverage'}." ";
 	    print CAL_COV $inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
 	    print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_qaCompute &", "\n\n"; #OutFile
+	
+##Collect QC metadata info for later use                                                                                                                                                       
+	    SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "QaCompute", $infile, $outSampleDirectory, $outfileEnding."_qaCompute", "infileDependent");
 	}
 	if ($scriptParameter{'pPicardToolsCollectMultipleMetrics'} > 0) {
 	    print CAL_COV "java -Xmx4g -jar ".$scriptParameter{'picardToolsPath'}."/CollectMultipleMetrics.jar ";
 	    print CAL_COV "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
 	    print CAL_COV "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding." "; #OutFile
 	    print CAL_COV "R=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." &", "\n\n"; #Reference file
+
+##Collect QC metadata info for later use                                                                                                                                        
+	    SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "CollectMultipleMetrics", $infile, $outSampleDirectory, $outfileEnding.".alignment_summary_metrics", "infileDependent");
 	}
 	if ($scriptParameter{'pPicardToolsCalculateHSMetrics'} > 0) { #Run CalculateHsMetrics (Target BED-file)
 	    print CAL_COV "java -Xmx4g -jar ".$scriptParameter{'picardToolsPath'}."/CalculateHsMetrics.jar ";
@@ -3378,6 +3500,9 @@ sub CalculateCoverage {
 	    print CAL_COV "REFERENCE_SEQUENCE=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
 	    print CAL_COV "BAIT_INTERVALS=".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetPaddedBedInfileList'}." "; #Capture kit padded target infile_list file
 	    print CAL_COV "TARGET_INTERVALS=".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetBedInfileList'}." &", "\n\n"; #Capture kit target infile_list file
+
+##Collect QC metadata info for later use                                                                                                                                                       
+            SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "CalculateHsMetrics", $infile, $outSampleDirectory, $outfileEnding."_CalculateHsMetrics", "infileDependent");
 	}
 	if ($scriptParameter{'pCoverageBED'} > 0) { #Run coverageBed (exome)
 	    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pCoverageBED'}{'fileEnding'};
@@ -3515,12 +3640,17 @@ sub CalculateCoverage {
 		print CAL_COV "-c ".$scriptParameter{'xCoverage'}." "; #Max depth to calculate coverage on
 		print CAL_COV $inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
 		print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_qaCompute &", "\n\n"; #OutFile
+
+##Collect QC metadata info for later use                                                                                                                                                       
+		SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "QaCompute", $infile, $outSampleDirectory, $outfileEnding."_qaCompute", "infileDependent");
 	    }
 	    if ($scriptParameter{'pPicardToolsCollectMultipleMetrics'} > 0) {
 		print CAL_COV "java -Xmx4g -jar ".$scriptParameter{'picardToolsPath'}."/CollectMultipleMetrics.jar ";
 		print CAL_COV "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
 		print CAL_COV "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding." "; #outFile
 		print CAL_COV "R=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." &", "\n\n"; #Reference file
+		##Collect QC metadata info for later use
+		SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "CollectMultipleMetrics", $infile, $outSampleDirectory, $outfileEnding.".alignment_summary_metrics", "infileDependent");
 	    }
 	    if ($scriptParameter{'pPicardToolsCalculateHSMetrics'} > 0) { #Run CalculateHsMetrics (Target BED-file)
 		print CAL_COV "java -Xmx4g -jar ".$scriptParameter{'picardToolsPath'}."/CalculateHsMetrics.jar ";
@@ -3529,6 +3659,8 @@ sub CalculateCoverage {
 		print CAL_COV "REFERENCE_SEQUENCE=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
 		print CAL_COV "BAIT_INTERVALS=".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetPaddedBedInfileList'}." "; #Capture kit padded target infile_list file
 		print CAL_COV "TARGET_INTERVALS=".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetBedInfileList'}." &", "\n\n"; #Capture kit target infile_list file 
+##Collect QC metadata info for later use                                                                                                                                                       
+		SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "CalculateHsMetrics", $infile, $outSampleDirectory, $outfileEnding."_CalculateHsMetrics", "infileDependent");	    
 	    }
 	    if ($scriptParameter{'pCoverageBED'} > 0) { #Run coverageBed (Target BED-file)
 		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pCoverageBED'}{'fileEnding'};
@@ -3700,8 +3832,13 @@ sub PicardToolsMarkDuplicates {
 	
 	print PT_MDUP "samtools index ";
 	print PT_MDUP $outSampleDirectory."/".$infile.$outfileEnding.".bam ","\n\n";
+	
+##Collect QC metadata info for later use                       
+	SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "MarkDuplicates", $infile, $outSampleDirectory, $outfileEnding."metric", "infileDependent");
+	
     }
     else { #No merged files
+	
 	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files from independent of merged or not
 	    
 	    if ($infileCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
@@ -3719,6 +3856,9 @@ sub PicardToolsMarkDuplicates {
 	    print PT_MDUP "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
 	    print PT_MDUP "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding.".bam "; #OutFile
 	    print PT_MDUP "METRICS_FILE=".$outSampleDirectory."/".$infile.$outfileEnding."metric &","\n\n"; #Metric file  
+
+##Collect QC metadata info for later use                                             
+	    SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "MarkDuplicates", $infile, $outSampleDirectory, $outfileEnding."metric", "infileDependent"); 
 	}    
 	
 	print PT_MDUP "wait", "\n\n";
@@ -4020,9 +4160,9 @@ sub PicardToolsMergeRapidReads {
     my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMergeRapidReads'}{'fileEnding'};
     my $coreCounter=1;
     my $coreTracker=0; #Required to portion out cores and files before wait and to track the MOS_BU outfiles to correct lane
-
+    
     for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files from 
-
+	
 	my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
 	my $nrReadBatchProcesses = $sampleInfo{$scriptParameter{'familyID'}}{$sampleID}{$infilesLaneNoEnding{$sampleID}[$infileCounter]}{'pBwaMem'}{'ReadBatchProcesses'}; 
 
@@ -4035,6 +4175,7 @@ sub PicardToolsMergeRapidReads {
 	    }
 
 	    for (my $readBatchProcessesCount=0;$readBatchProcessesCount<$nrReadBatchProcesses;$readBatchProcessesCount++) {
+		
 		if ($readBatchProcessesCount eq 0) {
 		    
 		    print PT_MERGERR "java -Xmx4g ";
@@ -4048,6 +4189,17 @@ sub PicardToolsMergeRapidReads {
 	    print PT_MERGERR "CREATE_INDEX=TRUE &"; #Create a BAM index when writing a coordinate-sorted BAM file.
 	    print PT_MERGERR "\n\n";
 	    $coreTracker++; #Track nr of merge calls for infiles so that wait can be printed at the correct intervals (dependent on $scriptParameter{'maximumCores'})
+	}
+	else { #Still needs to rename file to be included in potential merge of BAM files in next step
+	    
+	    print PT_MERGERR "java -Xmx4g ";
+	    print PT_MERGERR "-jar ".$scriptParameter{'picardToolsPath'}."/MergeSamFiles.jar ";
+	    print PT_MERGERR "TMP_DIR=".$scriptParameter{'PicardToolsMergeTempDirectory'}.'$SLURM_JOB_ID'." "; #Temp Directory
+	    print PT_MERGERR "OUTPUT=".$outSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter].$outfileEnding.".bam "; #OutFile
+	    
+	    print PT_MERGERR "INPUT=".$inSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_0_sorted_rg.bam "; #InFile
+	    print PT_MERGERR "CREATE_INDEX=TRUE &"; #Create a BAM index when writing a coordinate-sorted BAM file.
+	    print PT_MERGERR "\n\n";
 	}
     }
     print PT_MERGERR "wait", "\n\n";
@@ -4069,7 +4221,6 @@ sub BWA_Mem {
     my $sampleID = $_[0];
     my $aligner = $_[1];
  
-    #my $sbatchScriptTracker=0;
     my $infileSize;
 
     for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all infiles but process in the same command i.e. both reads per align call
@@ -4082,14 +4233,24 @@ sub BWA_Mem {
 	}
 
 	if ($scriptParameter{'analysisType'} eq "rapid") {
-
+#original
 	    my $numberNodes = floor($infileSize / (13*150000000) ); #Determines the numner of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.
-	
+#Short read temp fix	    
+	    #my $numberNodes = floor($infileSize / (13*150000000/2) ); #Determines the numner of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.   
+	    if ($numberNodes eq 1) { #Fix to ensure BWA_MEM execution when faced with very small files such as when analyzing very short read lengths
+		$numberNodes = 4; 
+	    }
 	    for (my $sbatchCounter=0;$sbatchCounter<$numberNodes-1;$sbatchCounter++) { #Parallization for each file handled
-		
+#Original
 		ProgramPreRequisites($sampleID, "BwaMem", $aligner, 0, *BWA_MEM, $scriptParameter{'maximumCores'}, 5);	    
+#Short read temp fix
+		#ProgramPreRequisites($sampleID, "BwaMem", $aligner, 0, *BWA_MEM, $scriptParameter{'maximumCores'}, 15);	
+#Original
 		my $readStart = $sbatchCounter * 150000000; #Constant for gz files
 		my $readStop = $readStart + 150000001; #Constant for gz files
+#Short read temp fix 50 bp =2, 35 = 3
+		#my $readStart = $sbatchCounter * 150000000/2; #Constant for gz files
+		#my $readStop = $readStart + ceil(150000001/2); #Constant for gz files
 		
 		my $BWAinSampleDirectory = $indirpath{$sampleID};
 		my $BWAoutSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/bwa"; 
@@ -4125,7 +4286,8 @@ sub BWA_Mem {
 		print BWA_MEM "| "; #Pipe
 		print BWA_MEM "intersectBed "; #Limit output to only clinically interesting genes
 		print BWA_MEM "-abam stdin "; #The A input file is in BAM format.  Output will be BAM as well.
-		print BWA_MEM "-b ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'ImportantDbFile'}." "; #Db file of clinically relevant variants
+		#print BWA_MEM "-b ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'ImportantDbFile'}." "; #Db file of clinically relevant variants
+		print BWA_MEM "-b ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'bwaMemRapidDb'}." "; #Db file of clinically relevant variants
 		print BWA_MEM "> ".$BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter.".bam", "\n\n"; #Outfile (BAM)
 		
 		print BWA_MEM "samtools sort ";
@@ -4198,6 +4360,7 @@ sub MosaikAlign {
     my $infileSize;
 
     for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all infiles per lane
+	
 	if ($infile{$sampleID}[$infileCounter] =~/.fastq.gz$/) { #Files are already gz and presently the scalar for compression has not been investigated. Therefore no automatic time allocation can be performed.
 	    if ($scriptParameter{'analysisType'} eq "genomes") {
 		$time = 80;  
@@ -4207,13 +4370,15 @@ sub MosaikAlign {
 	    }
 	}
 	else { #Files are in fastq format
+	
 	    if (-e $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter+$sbatchScriptTracker]) {
 		$infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter+$sbatchScriptTracker]; # collect .fastq file size to enable estimation of time required for aligning, +$sbatchScriptTracker for syncing multiple infiles per sampleID. Hence, filesize will be calculated on read1 (should not matter).      
 		$time = ceil(($infileSize/238)/(650*60*60)); #238 is a scalar estimating the number of reads depending on filesize. 650 is the number of reads/s in MosaikAlign-2.1.52 and 60*60 is to scale to hours.
 	    }	    
 	} 
 
-	ProgramPreRequisites($sampleID, "MosaikAlign", $aligner, 0, *MOS_AL, $scriptParameter{'maximumCores'}, $time);
+	my ($stdoutPath) = ProgramPreRequisites($sampleID, "MosaikAlign", $aligner, 0, *MOS_AL, $scriptParameter{'maximumCores'}, $time);
+	my ($volume,$directories,$file) = File::Spec->splitpath($stdoutPath); #Split to enable submission to SampleInfoQC later
 
 	print MOS_AL "mkdir -p /scratch/mosaik_tmp", "\n";
 	print MOS_AL "export MOSAIK_TMP=/scratch/mosaik_tmp", "\n\n";
@@ -4224,7 +4389,7 @@ sub MosaikAlign {
 
 	print MOS_AL "MosaikAligner ";
 	print MOS_AL "-in ".$inSampleDirectory."/".$infile.".dat "; #Infile
-	print MOS_AL "-out ".$outSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]." "; #OutFile
+	print MOS_AL "-out ".$outSampleDirectory."/".$infile." "; #OutFile (MosaikAligner appends .bam to infile name)
 	print MOS_AL "-ia ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikAlignReference'}." "; #Mosaik Reference
 	print MOS_AL "-annpe ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikAlignNeuralNetworkPeFile'}." "; #NerualNetworkPE
 	print MOS_AL "-annse ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikAlignNeuralNetworkSeFile'}." "; #NerualNetworkSE
@@ -4238,6 +4403,10 @@ sub MosaikAlign {
 	print MOS_AL "-p ".$scriptParameter{'maximumCores'}, "\n\n"; #Nr of cores
 	
 	close(MOS_AL);
+
+##Collect QC metadata info for later use                                                                                                                                                      
+	SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "MosaikAligner", $infile, $directories, $file, "infoDirectory");
+
 	if ( ($scriptParameter{'pMosaikAlign'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 	    FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 3, $parameter{'pMosaikAlign'}{'chain'}, $filename, $sbatchScriptTracker);
 	}
@@ -4309,10 +4478,15 @@ sub FastQC {
 	    print FASTQC "wait", "\n\n";
 	    $coreCounter=$coreCounter+1;
 	}
+
 	my $infile = $infile{$sampleID}[$infileCounter];
+
 	print FASTQC "fastqc ";
 	print FASTQC $inSampleDirectory."/".$infile." "; #InFile
 	print FASTQC "-o ".$outSampleDirectory. " &", "\n\n"; #OutFile
+
+##Collect QC metadata info for later use
+	SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "FastQC", $infile, $outSampleDirectory."/".$infile."_fastqc", "fastqc_data.txt", "static");
     }
     print FASTQC "wait", "\n";    
     
@@ -4441,16 +4615,18 @@ sub ReadPlinkPedigreeFile {
     my $userSampleidSwitch = $_[1];
     
 
-    my @pedigreeFileElements = ("familyID", "sampleID", "father", "mother", "sex", "phenotype", );
+    my @pedigreeFileElements = ("FamilyID", "SampleID", "Father", "Mother", "Sex", "Phenotype", );
     my $familyID;
     my $sampleID;
 
     open(PEDF, "<".$fileName) or die "Can't open ".$fileName.":$!, \n";    
      
     while (<PEDF>) {
+	
 	chomp $_;
 	
 	if ( ($. == 1) && ($_ =~/^\#/) ) { #Header present overwrite @pedigreeFileElements with header info
+	
 	    @pedigreeFileElements = split("\t", $'); #'
 	    next;
 	}
@@ -4463,13 +4639,14 @@ sub ReadPlinkPedigreeFile {
 	if ($_ =~/(\S+)/) {	
 	    
 	    chomp($_);
-	    my @lineInfo = split("\t",$_);	    #Loads pedigree info
+	    my @lineInfo = split("\t",$_);	    #Loads pedigree file info
 	    
+##Need to parse familyID and sampleID separately since these have not been set yet
 	    if ($lineInfo[0] =~/\S+/) { #familyID
 		$familyID = $lineInfo[0];
 	    }
 	    else {
-		print STDERR "Cannot find familyID in column 1\n";
+		print STDERR "File: ".$fileName." at line ".$.." cannot find FamilyID in column 1\n";
 		die;
 	    }
 	    if ($lineInfo[1] =~/\S+/) { #sampleID
@@ -4479,49 +4656,53 @@ sub ReadPlinkPedigreeFile {
 		}
 	    }
 	    else {
-		print STDERR "Cannot find sampleID in column 2\n";
+		print STDERR "File: ".$fileName." at line ".$.." cannot find SampleID in column 2\n";
 		die;
 	    }
-	    for (my $sampleElementsCounter=2;$sampleElementsCounter<scalar(@pedigreeFileElements);$sampleElementsCounter++) { #Note skips familyID and sampleID and only parses mandatory elements
+
+	    for (my $sampleElementsCounter=0;$sampleElementsCounter<scalar(@pedigreeFileElements);$sampleElementsCounter++) { #all pedigreeFileElements
 		
-		if ($sampleElementsCounter < 7) { #Only check mandatory elements
+		if ( defined($lineInfo[$sampleElementsCounter]) && ($lineInfo[$sampleElementsCounter] =~/\S+/) ) { #Check that we have an non blank entry
 		    
-		    if ($lineInfo[$sampleElementsCounter] =~/\S+/) {
+		    my @elementInfo = split(";", $lineInfo[$sampleElementsCounter]); #Split element (if required)
+		    
+		    push( @{ $sampleInfo{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]} }, @elementInfo); #Add to %sampleinfo for later use
+##Validation
+		    #for (my $elementsCounter=0;$elementsCounter<scalar(@{ $sampleInfo{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]} });$elementsCounter++) { #Note skips familyID and sampleID and only parses mandatory elements                  
+			#print $pedigreeFileElements[$sampleElementsCounter], "\n";  
+			#print $sampleInfo{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]}[$elementsCounter] , "\n"; 
+		    #}
+		    if ($sampleInfo{$familyID}{$sampleID}{'Capture_kit'}) { #Add latest capture kit for each individual
+			my $capture_kit = $sampleInfo{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]}[-1]; #Use only the last capture kit since it should be the most interesting
+			for my $supportedCaptureKit (keys %supportedCaptureKits) {
+			    
+			    if ($supportedCaptureKit eq $capture_kit) {
+				
+				if ($parameter{'exomeTargetBed'}{'value'} eq "nocmdinput") { #No user supplied info on capture kit target BED-file. Add from pedigree file             
+				    $sampleInfo{$familyID}{$sampleID}{'exomeTargetBed'} = $supportedCaptureKits{$supportedCaptureKit}; #capture kit Bed-file                           
+				}
+				if ($parameter{'exomeTargetBedInfileList'}{'value'} eq "nocmdinput") { #No user supplied info on capture kit target BED-file infile list. Add from pedigree file                                                                                                                                                                     
+				    $sampleInfo{$familyID}{$sampleID}{'exomeTargetBedInfileList'} = $supportedCaptureKits{$supportedCaptureKit}.".infile_list"; #capture kit target in file_list
+				}
+				if ($parameter{'exomeTargetPaddedBedInfileList'}{'value'} eq "nocmdinput") { #No user supplied info on capture kit target BED-file infile list. Add from pedigree file                                                                                                                                                               
+				    $sampleInfo{$familyID}{$sampleID}{'exomeTargetPaddedBedInfileList'} = $supportedCaptureKits{$supportedCaptureKit}.".pad100.infile_list"; #capture kit padded target infile_list                                                                                                                                                  
+				}
+				if ($parameter{'GATKTargetPaddedBedIntervalList'}{'value'} eq "nocmdinput") { #No user supplied info on capture kit target BED-file infile list. Add from pedigree file                                                                                                                                                              
+				    $sampleInfo{$familyID}{$sampleID}{'GATKTargetPaddedBedIntervalList'} = $supportedCaptureKits{$supportedCaptureKit}.".pad100.interval_list"; #capture kit padded target interval_list                                                                                                                                             
+				}
+			    }
+			}
 		    }
-		    else {
-			print STDERR $lineInfo[$sampleElementsCounter], "\t";
-			print STDERR "SampleID: ".$sampleID."\tCannot find ".$pedigreeFileElements[$sampleElementsCounter]." in column ".$sampleElementsCounter, "\n";
+		}
+		else { #No entry in pedigre file element
+		    
+		    if ($sampleElementsCounter < 7) { #Only check mandatory elements 
+			print STDERR $pedigreeFileElements[$sampleElementsCounter], "\t";
+			print STDERR "File: ".$fileName." at line ".$.."\tcannot find '".$pedigreeFileElements[$sampleElementsCounter]."' entry in column ".$sampleElementsCounter, "\n";
 			die;
-		    }
+		    }  
 		}
-		if ( defined($lineInfo[$sampleElementsCounter]) && ($lineInfo[$sampleElementsCounter] =~/\S+/) ) {
-		   
-		    $sampleInfo{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]} = $lineInfo[$sampleElementsCounter];
-		}  
 	    }
-	    if ($lineInfo[16]) { #Capture kit
-		my @captureKits = split(";", $lineInfo[16]);
-		my $capture_kit =  pop(@captureKits); #Use only the last capture kit since it should be the most interesting
-	
-		for my $supportedCaptureKit (keys %supportedCaptureKits) {
-		
-		    if ($supportedCaptureKit eq $capture_kit) {
-		
-			if ($parameter{'exomeTargetBed'}{'value'} eq "nocmdinput") { #No user supplied info on capture kit target BED-file. Add from pedigree file
-			    $sampleInfo{$familyID}{$sampleID}{'exomeTargetBed'} = $supportedCaptureKits{$supportedCaptureKit}; #capture kit Bed-file
-			}
-			if ($parameter{'exomeTargetBedInfileList'}{'value'} eq "nocmdinput") { #No user supplied info on capture kit target BED-file infile list. Add from pedigree file
-			    $sampleInfo{$familyID}{$sampleID}{'exomeTargetBedInfileList'} = $supportedCaptureKits{$supportedCaptureKit}.".infile_list"; #capture kit target infile_list
-			}
-			if ($parameter{'exomeTargetPaddedBedInfileList'}{'value'} eq "nocmdinput") { #No user supplied info on capture kit target BED-file infile list. Add from pedigree file
-			    $sampleInfo{$familyID}{$sampleID}{'exomeTargetPaddedBedInfileList'} = $supportedCaptureKits{$supportedCaptureKit}.".pad100.infile_list"; #capture kit padded target infile_list
-			}
-			if ($parameter{'GATKTargetPaddedBedIntervalList'}{'value'} eq "nocmdinput") { #No user supplied info on capture kit target BED-file infile list. Add from pedigree file
-			    $sampleInfo{$familyID}{$sampleID}{'GATKTargetPaddedBedIntervalList'} = $supportedCaptureKits{$supportedCaptureKit}.".pad100.interval_list"; #capture kit padded target interval_list
-			}
-		    }
-		}
-	    }	
 	}
     } 	
     if ($userSampleidSwitch == 0) {
@@ -4861,6 +5042,93 @@ sub FIDSubmitJob {
     return;
 }
 
+sub InfilesReFormat2 {
+###Reformat files for mosaik output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames.                                  
+    
+    my $uncompressedFileCounter = 0; #Used to decide later if any inputfiles needs to be compressed before starting analysis                                                                    
+    
+    for my $sampleID (keys %infile) { #For every sampleID                                                                                                                                       
+	
+        my $laneTracker=0; #Needed to be able to track when lanes are finished                                                                                                                  
+	
+        for (my $infileCounter=0;$infileCounter<scalar( @ { $infile{$sampleID} });$infileCounter++) { #All inputfiles for all fastq dir and remakes format                                      
+	    
+            if ($infile{$sampleID}[$infileCounter] =~ /\/?([^\.\/]+\.[^\.]+)\.lane(\d+)_([12FfRr])\.fastq.gz/) { #Parse fastq.gz 'old' format, $2="lane", $3="Read direction"
+
+		if ($3 == 1) { #1st read direction
+		    
+		    push( @{$lane{$sampleID}}, $2); #Lane                                                                                                        
+		    $infilesLaneNoEnding{$sampleID}[$laneTracker]= $1.$2; #Save old format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
+		    #$qcMetaData{ $scriptParameter{'familyID'} }{$sampleID}{'fileName'} = $1.".".$2; #Save file name  
+		}
+
+		$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]= $1.$2; #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
+		
+                $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'sampleBarcode'} = "X"; #Save barcode, but not defined
+		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'runBarcode'} = $2."_".$1; #Save run barcode
+		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'readDirection'} = $3; #Save read direction
+		push ( @{ $sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$1.".".$2}{'readDirection'} }, $3); #Save file read direction
+		#push ( @{ $qcMetaData{ $scriptParameter{'familyID'} }{$sampleID}{'file'} }, $1.".".$2); #Save all file(s)                                                                  
+                $laneTracker++; #Track for every lane finished                                                                                                                                  
+            }
+            elsif ($infile{$sampleID}[$infileCounter] =~ /\/?([^\.\/]+\.[^\.]+)\.lane(\d+)_([12FfRr])\.fastq/) { #Parse 'old' format                                                            
+		if ($3 == 1) { #1st read direction
+		    push( @ {$lane{$sampleID}}, $2); #Lane
+		    $infilesLaneNoEnding{$sampleID}[$laneTracker]= $1.$2; #Save old format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
+		    #$qcMetaData{ $scriptParameter{'familyID'} }{$sampleID}{'fileName'} = $1.".".$2; #Save file name
+		}
+
+                $uncompressedFileCounter = 1; #File needs compression before starting analysis           
+		$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]= $1.$2; #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
+		
+                $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'sampleBarcode'} = "X"; #Save barcode, but not defined                                               
+                $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'runBarcode'} = $2."_".$1; #Save run barcode                                                        
+		push ( @{ $sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$1.".".$2}{'readDirection'} }, $3); #Save file read direction
+		#push ( @{ $qcMetaData{ $scriptParameter{'familyID'} }{$sampleID}{'file'} }, $1.".".$2);#Save all file(s)
+		$laneTracker++; #Track for every lane finished                                                                                                                                  
+            }
+            elsif ($infile{$sampleID}[$infileCounter] =~ /(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq.gz/) { #Parse fastq.gz 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, \$5=index,$6=direction                                                                                                                                                                           
+		if ($6 == 1) {
+		    push( @{$lane{$sampleID}}, $1); #Lane
+		    $infilesLaneNoEnding{$sampleID}[$laneTracker]= $4.".".$2."_".$3."_".$5.".lane".$1; #Save new format (sampleID_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
+		    #$qcMetaData{ $scriptParameter{'familyID'} }{$4}{'fileName'} = $4.".".$2."_".$3."_".$5.".lane".$1; #Save file name 
+		}
+
+		$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]= $4.".".$2."_".$3."_".$5.".lane".$1."_".$6; #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'lane'} = $1; #Save sample lane                                              
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'date'} = $2; #Save Sequence run date                                        
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'flow-cell'} = $3; #Save Sequence flow-cell                                  
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'sampleBarcode'} = $5; #Save sample barcode                                  
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'runBarcode'} = $2."_".$3."_".$1; #Save run barcode
+		push ( @{ $sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'ReadDirection'} }, $6); #Save file read direction
+		#push ( @{ $qcMetaData{ $scriptParameter{'familyID'} }{$4}{'file'} }, $4.".".$2."_".$3."_".$5.".lane".$1."_".$6); #Save all infile(s)
+		$laneTracker++; #Track for every lane finished                                                                                                                                  
+            }
+            elsif ($infile{$sampleID}[$infileCounter] =~/(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq/) { #Parse 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=d\irection                                                                                                                                                                                        
+		if ($6 == 1) {
+		    push( @{$lane{$sampleID}}, $1); #Lane
+		    $infilesLaneNoEnding{ $sampleID }[$laneTracker]= $4.".".$2."_".$3."_".$5.".lane".$1; #Save new format (sampleID_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).		
+		    #$qcMetaData{ $scriptParameter{'familyID'} }{$4}{'fileName'} = $4.".".$2."_".$3."_".$5.".lane".$1; #Save file name
+		}
+
+		$uncompressedFileCounter = 1; #File needs compression before starting analysis
+		$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]= $4.".".$2."_".$3."_".$5.".lane".$1."_".$6; #Save new format in hash with samplid as keys and inputfiles in array. Note: These fies have not been created yet and there is one entry per strand and .ending is removed (.fastq).                                                                                                  
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'lane'} = $1; #Save sample lane                                              
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'date'} = $2; #Save Sequence run date                                        
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'flow-cell'} = $3; #Save Sequence flow-cell                                  
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'sampleBarcode'} = $5; #Save sample barcode                                  
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'runBarcode'} = $2."_".$3."_".$1; #Save run barcode
+		push( @{$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'ReadDirection'} }, $6); #Save file read direction                        
+		#push ( @{ $qcMetaData{ $scriptParameter{'familyID'} }{$4}{'file'} }, $4.".".$2."_".$3."_".$5.".lane".$1."_".$6); #Save all infile(s)
+		$laneTracker++; #Track for every lane finished   
+		
+	    }
+        }
+	
+    }
+    return $uncompressedFileCounter;
+}
+
 sub InfilesReFormat {
 ###Reformat files for mosaik output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames. 
 
@@ -4875,8 +5143,8 @@ sub InfilesReFormat {
 	    if ($infile{$sampleID}[$infileCounter] =~ /\/?([^\.\/]+\.[^\.]+)\.lane(\d+)_([12FfRr])\.fastq.gz/) { #Parse fastq.gz 'old' format
 		
 		push( @{$lane{$sampleID}}, $2); #Lane
-		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{$1.".".$2}{'sampleBarcode'} = "X"; #Save barcode, but not defined
-		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{$1.".".$2}{'runBarcode'} = $2."_".$1; #Save run barcode
+		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'sampleBarcode'} = "X"; #Save barcode, but not defined
+		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'runBarcode'} = $2."_".$1; #Save run barcode
 		$infilesLaneNoEnding{$sampleID}[$laneTracker]= "$1.$2"; #Save old format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
 		$infileCounter++; #Skip second direction
 		$laneTracker++; #Track for every lane finished
@@ -4885,8 +5153,8 @@ sub InfilesReFormat {
 		
 		push( @ {$lane{$sampleID}}, $2); #Lane
 		$uncompressedFileCounter = 1; #File needs compression before starting analysis
-		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{$1.".".$2}{'sampleBarcode'} = "X"; #Save barcode, but not defined
-		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{$1.".".$2}{'runBarcode'} = $2."_".$1; #Save run barcode
+		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'sampleBarcode'} = "X"; #Save barcode, but not defined
+		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'runBarcode'} = $2."_".$1; #Save run barcode
 		
 		$infilesLaneNoEnding{$sampleID}[$laneTracker]= "$1.$2"; #Save old format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
 		$infileCounter++; #Skip second direction
@@ -4895,8 +5163,11 @@ sub InfilesReFormat {
 	    elsif ($infile{$sampleID}[$infileCounter] =~ /(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq.gz/) { #Parse fastq.gz 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction
 		
 		push( @{$lane{$sampleID}}, $1); #Lane
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'sampleBarcode'} = $5; #Save sample barcode
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'runBarcode'} = $2."_".$3."_".$1; #Save run barcode
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'lane'} = $1; #Save sample lane
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'date'} = $2; #Save Sequence run date
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'flow-cell'} = $3; #Save Sequence flow-cell
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'sampleBarcode'} = $5; #Save sample barcode
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'runBarcode'} = $2."_".$3."_".$1; #Save run barcode
 		$infilesLaneNoEnding{$sampleID}[$laneTracker]= "$4.$2_$3_$5."."lane"."$1_$6"; #Save new format (sampleID_date_flow-cell_index_lane_direction) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
 		$infileCounter++; #Skip second direction
 		$laneTracker++; #Track for every lane finished
@@ -4905,8 +5176,11 @@ sub InfilesReFormat {
 		
 		push( @{$lane{$sampleID}}, $1); #Lane
 		$uncompressedFileCounter = 1; #File needs compression before starting analysis
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'sampleBarcode'} = $5; #Save sample barcode
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'runBarcode'} = $2."_".$3."_".$1; #Save run barcode
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'lane'} = $1; #Save sample lane
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'date'} = $2; #Save Sequence run date
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'flow-cell'} = $3; #Save Sequence flow-cell
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'sampleBarcode'} = $5; #Save sample barcode
+		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'runBarcode'} = $2."_".$3."_".$1; #Save run barcode
 		$infilesLaneNoEnding{ $sampleID }[$laneTracker]= "$4.$2_$3_$5."."lane"."$1_$6"; #Save new format (sampleID_date_flow-cell_index_lane_direction) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
 		$infileCounter++; #Skip second direction
 		$laneTracker++; #Track for every lane finished
@@ -4955,25 +5229,42 @@ sub DefineParameters {
 ###Defines all attributes of a parameter, so that the correct value can be set and added to %scriptparameter later
 
     my $parameterName = $_[0]; #ParameterName
-    my $parameterValue = $_[1]; #Parameter to evaluate
-    my $parameterType = $_[2]; #Path or program
-    my $parameterDefault = $_[3]; #Default setting
-    my $environmentUppmaxDefault = $_[4]; #Specific for Uppmax
-    my $associatedProgram = $_[5]; #The parameters program
-    my $existsCheck = $_[6]; #Check if intendent file exists in reference directory
-    my $fileEnding = $_[7]; #The filending after the module has been run
-    my $parameterChain = $_[8]; #The chain to which the program belongs to
- 
-    $parameter{$parameterName} = {
-	'type' => $parameterType,
-	'value' => $parameterValue,
-	'default' => $parameterDefault,
-	'environmentUppmaxDefault' => $environmentUppmaxDefault,
-	'associatedProgram' => $associatedProgram,
-	'existsCheck' => $existsCheck,
-	'fileEnding' => $fileEnding,
-	'chain' => $parameterChain,
-    };
+    my $parameterType = $_[1]; #Path or program
+    my $parameterDefault = $_[2]; #Default setting
+    my $environmentUppmaxDefault = $_[3]; #Specific for Uppmax
+    my $associatedProgram = $_[4]; #The parameters program
+    my $existsCheck = $_[5]; #Check if intendent file exists in reference directory
+    my $fileEnding = $_[6]; #The filending after the module has been run
+    my $parameterChain = $_[7]; #The chain to which the program belongs to
+    my @programNamePath = split(":", $_[8]) if (defined($_[9])); #The path name of the program(s) for each sbatch script
+
+    if (defined($programNamePath[0])) {
+
+	$parameter{$parameterName} = {
+	    'type' => $parameterType,
+	    'value' => "nocmdinput",
+	    'default' => $parameterDefault,
+	    'environmentUppmaxDefault' => $environmentUppmaxDefault,
+	    'associatedProgram' => $associatedProgram,
+	    'existsCheck' => $existsCheck,
+	    'fileEnding' => $fileEnding,
+	    'chain' => $parameterChain,
+	    'programNamePath' => \@programNamePath,
+	};
+    }
+    else {
+	
+	$parameter{$parameterName} = {
+	    'type' => $parameterType,
+	    'value' => "nocmdinput",
+	    'default' => $parameterDefault,
+	    'environmentUppmaxDefault' => $environmentUppmaxDefault,
+	    'associatedProgram' => $associatedProgram,
+	    'existsCheck' => $existsCheck,
+	    'fileEnding' => $fileEnding,
+	    'chain' => $parameterChain,
+	};
+    }
     
     push(@orderParameters, $parameterName); #Add to enable later evaluation of parameters in proper order & write to master file
     
@@ -4990,7 +5281,7 @@ sub AddToScriptParameter {
     my $environmentUppmaxDefault = $_[4]; #Specific for Uppmax
     my @associatedPrograms = split(/,/, $_[5]); #The parameters program(s)
     my $parameterExistsCheck = $_[6]; #Check if intendent file exists in reference directory
-    
+   
 ##Validation
     #print "parameterName: ".$parameterName, "\n";
     #print "parameterValue: ".$parameterValue, "\n";
@@ -5037,17 +5328,14 @@ sub AddToScriptParameter {
 			    
 			    if (scalar(@sampleIDs) == 0) { #No user supplied sample info
 				if (defined($scriptParameter{'sampleIDs'})) { #sampleIDs info in config file
-				    ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs));
-				    #ReadPedigreeFile($scriptParameter{'pedigreeFile'}, 1);  # scalar(@sampleIDs) = 0:No user supplied sample info, but present in config file do NOT overwrite using info from pedigree file
+				    ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs)); #No user supplied sample info, but present in config file do NOT overwrite using info from pedigree file
 				}
 				else { #No sampleIDs info in config file
-				    ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs));
-				    #ReadPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs));  # scalar(@sampleIDs) = 0:No user supplied sample info, not defined $scriptParameter{'sampleIDs'} in config file, add it from pedigree file
+				    ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs)); #No user supplied sample info, not defined $scriptParameter{'sampleIDs'} in config file, add it from pedigree file
 				}
 			    }
 			    else {
-				ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs));
-				#ReadPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs));  # User supplied sample info, do NOT overwrite using info from pedigree file
+				ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs)); # User supplied sample info, do NOT overwrite using info from pedigree file
 			    }
 			}
 		    }
@@ -5163,6 +5451,18 @@ sub AddToScriptParameter {
 			    print STDERR "\nCould not find intended ".$parameterName." directory: ".$scriptParameter{$parameterName}, "\n\n";
 			    die $USAGE;		
 			}
+			if ($parameterName eq "genomeAnalysisToolKitPath") { #To enable addition of version to sampleInfo
+			    
+			    if ($scriptParameter{$parameterName}=~/GenomeAnalysisTK-([^,]+)/) {
+				$sampleInfo{$scriptParameter{'familyID'}}{'program'}{"GATK"}{'Version'} = $1;
+			    }
+			}
+			if ($parameterName eq "picardToolsPath") { #To enable addition of version to sampleInfo                                                                       
+
+                            if ($scriptParameter{$parameterName}=~/picard-tools-([^,]+)/) {
+                                $sampleInfo{$scriptParameter{'familyID'}}{'program'}{"PicardTools"}{'Version'} = $1;
+                            }
+                        }
 		    }
 		}
 		elsif ( ($parameterExistsCheck) && ($parameterExistsCheck eq "file") && (defined($scriptParameter{$parameterName})) ) { #Check file existence in reference directory
@@ -5227,7 +5527,7 @@ sub AddToScriptParameter {
 	    }
 	    
 	    if ( $parameterType eq "program") {
-		
+
 		if($parameterValue eq "nocmdinput") { #No input from cmd
 		    
 		    if (defined($scriptParameter{$parameterName})) { #Input from config file - do nothing
@@ -5282,6 +5582,22 @@ sub AddToScriptParameter {
 			@ImportantDbFileOutFile = split(/,/, $parameterValue);
 		    }
 		    $scriptParameter{$parameterName} = $parameterValue;
+		}
+		
+		if (defined($parameter{$parameterName}{'programNamePath'}[0])) { #Code for checking commands in your pathand executable
+		
+		    if ($scriptParameter{$parameterName} > 0) { #Only check path(s) for active programs
+	
+			for (my $programNamePathCounter=0;$programNamePathCounter<scalar(@{$parameter{$parameterName}{'programNamePath'}});$programNamePathCounter++) { #Check all binaries for sbatch program
+			    if (grep { -x "$_/".$parameter{$parameterName}{'programNamePath'}[$programNamePathCounter]} split /:/,$ENV{PATH}) {
+				print "ProgramCheck: ".$parameter{$parameterName}{'programNamePath'}[$programNamePathCounter]." installed\n" 
+			    }
+			    else {
+				print "Warning: Could not detect ".$parameter{$parameterName}{'programNamePath'}[$programNamePathCounter]." in your Path\n";
+				die;
+			    }
+			}
+		    }
 		}
 	    }
 	    
@@ -5647,7 +5963,7 @@ sub ProgramPreRequisites {
     }
     
     print $fileHandle 'echo "Running on: $(hostname)"',"\n\n";
-    return;
+    return ($fileInfoPath.$fnTracker.".stdout.txt"); #Return stdout for QC check later
 }
 
 sub CheckIfMergedFiles {
@@ -5685,6 +6001,51 @@ sub CheckIfMergedFiles {
 	$PicardToolsMergeSwitch = 0;
     }
     return ($infile, $PicardToolsMergeSwitch);
+}
+
+sub SampleInfoQC {
+###Adds outDirectory and outFile to sampleInfo to track all files that QC metrics are to be extracted from later
+
+    my $familyID = $_[0];
+    my $sampleID = $_[1]; #SampleID or "noSampleID" for family level data
+    my $programName = $_[2];
+    my $infile = $_[3]; #infile or "noInFile for family level data"
+    my $outDirectory = $_[4];
+    my $outFileEnding = $_[5]; #Actually complete outfile for "static" & "infoDirectory" 
+    my $outDataType = $_[6];
+
+    if ($sampleID eq "noSampleID") {
+
+	$sampleInfo{$familyID}{'program'}{$programName}{'OutDirectory'} = $outDirectory; #OutDirectory of QC File                                                            
+	if ($outDataType eq "static") { #programs which add a static file in its own directory                                                                                                 
+
+	    $sampleInfo{$familyID}{'program'}{$programName}{'OutFile'} = $outFileEnding; #Static QC outFile                                                                     
+	}
+	if ($outDataType eq "infoDirectory") { #QC metrics are sent to info files                                                                                                                   
+	    $sampleInfo{$familyID}{'program'}{$programName}{'OutFile'} = $outFileEnding; #info stdout file                                                                      
+	}
+	if ($outDataType eq "infileDependent") { #Programs which Add a filending to infile                                                                                                          
+	    $sampleInfo{$familyID}{'program'}{$programName}{'OutFile'} = $outFileEnding; #Infile dependent QC outFile                                                                                                                                                                                       
+	}
+
+    }
+    else {
+	
+	$sampleInfo{$familyID}{$sampleID}{'program'}{$programName}{$infile}{'OutDirectory'} = $outDirectory; #OutDirectory of QC File                                                              
+
+	if ($outDataType eq "static") { #programs which add a static file in its own directory 
+	    
+	    $sampleInfo{$familyID}{$sampleID}{'program'}{$programName}{$infile}{'OutFile'} = $outFileEnding; #Static QC outFile
+	}
+	if ($outDataType eq "infoDirectory") { #QC metrics are sent to info files
+	    
+	    $sampleInfo{$familyID}{$sampleID}{'program'}{$programName}{$infile}{'OutFile'} = $outFileEnding; #info stdout file
+	}
+	if ($outDataType eq "infileDependent") { #Programs which Add a filending to infile
+	    
+	    $sampleInfo{$familyID}{$sampleID}{'program'}{$programName}{$infile}{'OutFile'} = $infile.$outFileEnding; #Infile dependent QC outFile                                                                      
+	}
+    }
 }
 
 sub GATKTargetListFlag {

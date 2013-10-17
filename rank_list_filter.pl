@@ -519,30 +519,30 @@ sub AssignColNr {
 	if ($_=~/^#/) {
 	    my @temp = split("\t",$'); #' 
 	    for (my $column=0;$column<scalar(@temp);$column++) {
-		if ($temp[$column] eq "Chr") { $chrcol = $column; }
-		if ($temp[$column] eq "Start") { $startcol = $column; }
-		if ($temp[$column] eq "Stop") { $stopcol = $column; }
-		if ($temp[$column] eq "Ref_allele") { $refallelecol = $column; }
-		if ($temp[$column] eq "Alt_allele") { $altallelecol = $column; }
+		if ($temp[$column] eq "Chromosome") { $chrcol = $column; }
+		if ($temp[$column] eq "Variant_start") { $startcol = $column; }
+		if ($temp[$column] eq "Variant_stop") { $stopcol = $column; }
+		if ($temp[$column] eq "Reference_allele") { $refallelecol = $column; }
+		if ($temp[$column] eq "Alternative_allele") { $altallelecol = $column; }
 		#if ($temp[$column] eq "IDN") { } #Do nothing
 		if ($temp[$column] eq $i_gidh) { $genecol = $column; } #Currently used "HGNC_symbol" (121218) in pipe (Annovar output) 
 		if ($temp[$column] eq "HGMD") { $hgmdcol = $column; }
-		if ($temp[$column] eq "Ensemble_GeneID") { $ensemblegeneidcol = $column; }
+		if ($temp[$column] eq "Ensemble_gene_id") { $ensemblegeneidcol = $column; }
 		if ($temp[$column] eq "Gene_annotation") { $loccol = $column; }
 		if ($temp[$column] eq "Functional_annotation") { $syncol = $column; }
-		if ($temp[$column] eq "phastConsElements") { $mce46waycol = $column; }
-		if ($temp[$column] eq "gerp++elem") { $gerpelemcol = $column; }
-		if ($temp[$column] eq "genomicSuperDups") { $segdupcol = $column; }
+		if ($temp[$column] eq "Phast_cons_elements") { $mce46waycol = $column; }
+		if ($temp[$column] eq "GERP_elements") { $gerpelemcol = $column; }
+		if ($temp[$column] eq "Genomic_super_dups") { $segdupcol = $column; }
 		if ($temp[$column] eq "1000G") { $thGcol = $column; }
-		if ($temp[$column] eq "dbsnp129") { $dbsnp129col = $column; }
-		if ($temp[$column] eq "dbsnp137NonFlagged") { $dbsnpcol = $column; }
+		if ($temp[$column] eq "Dbsnp129") { $dbsnp129col = $column; }
+		if ($temp[$column] eq "Dbsnp_nonflagged") { $dbsnpcol = $column; }
 		elsif ($temp[$column] eq "dbsnp135NonFlagged") { $dbsnpcol = $column; }
 		if ($temp[$column] eq "cg69") { $cg69col = $column;} #Currently not used, but supported
-		if ($temp[$column] eq "SIFT_Whole-exome") { $avsiftcol = $column; }
-		if ($temp[$column] eq "PolyPhen_version_2_HumDiv_Whole-exome") { $pp2col = $column; }
-		if ($temp[$column] eq "MutationTaster_Whole-exome") { $muttascol = $column; }
-		if ($temp[$column] eq "GERP++_Whole-exome") { $gerpbasecol = $column; }
-		if ($temp[$column] eq "PhyloP_Whole-exome") { $phylopcol = $column; }
+		if ($temp[$column] eq "SIFT") { $avsiftcol = $column; }
+		if ($temp[$column] eq "Poly_phen") { $pp2col = $column; }
+		if ($temp[$column] eq "Mutation_taster") { $muttascol = $column; }
+		if ($temp[$column] eq "GERP") { $gerpbasecol = $column; }
+		if ($temp[$column] eq "Phylo_p") { $phylopcol = $column; }
 	    }
 #New columns that are to be appended
 	    $genmodelcol = scalar(@temp); #0-based
@@ -1026,7 +1026,7 @@ sub AnalyseCompound {
 	    my @temp = split("\t",$ar_comp[$ar_line]);	    #Loads variant line
 	    
 	    for (my $sid=0;$sid<scalar( @sid_aff );$sid++)  { #All affected subjects within the same gene
-		if ($ar_comp[$ar_line] =~ /($sid_aff[$sid])\:\S+\:GT=(\d+\/\d+)/ ) { #Find affected GT (Genotype) per sampleID
+		if ($ar_comp[$ar_line] =~ /($sid_aff[$sid])\:GT=(\d+\/\d+)/ ) { #Find affected GT (Genotype) per sampleID
 		    if ($2 eq "0/0") { #No need to add variant since within a family it is unlikely that there are two different heterozygous compounds mutations causing the disease between siblings/parent, i.e. even if other affected members have a variant at that position it is still not valid. 
 			$skip++; #Not relevant variant, skip it
 			next;
@@ -1073,7 +1073,7 @@ sub AnalyseCompound {
 		next;
 	    }
 	    for (my $sid=0;$sid<scalar( @sid_hea );$sid++)  { #All healthy subjects within the same gene
-		if ($ar_comp[$ar_line] =~ /($sid_hea[$sid])\:\S+\:GT=(\d+\/\d+)/ ) { #Find healthy GT (Genotype) per sampleID
+		if ($ar_comp[$ar_line] =~ /($sid_hea[$sid])\:GT=(\d+\/\d+)/ ) { #Find healthy GT (Genotype) per sampleID
 		    
 		    if ($2 eq "1/1") { #No need to add variant since a healthy subject with a homozygous variant cannot be involved in a genetic compound.    
 			$skip++;
@@ -1166,7 +1166,7 @@ sub CountGT {
 	    
 	    for (my $i=0;$i<scalar( @{$genes{$gene} } );$i++) { #All variants within the same gene for all affected sampleID
 		
-		if ($genes{$gene}[$i] =~ /$sid_aff[$sid]\:\S+\:GT=(\d+\/\d+)/ ) { #Find affected GT (Genotype) per sampleID
+		if ($genes{$gene}[$i] =~ /$sid_aff[$sid]\:GT=(\d+\/\d+)/ ) { #Find affected GT (Genotype) per sampleID
 		    my $gt = $1;
 		    
 		    $sid_aff_GT{$gene}{$sid_aff[$sid]}[$i] = $gt; #Save GT (Genotype) for gene, sampleID, and variant number NOTE: Not variant position
@@ -1181,7 +1181,7 @@ sub CountGT {
 	    for (my $sid=0;$sid<scalar( @sid_hea );$sid++)  { #All healthy subjects within the same gene
 		
 		for (my $i=0;$i<scalar( @{$genes{$gene} } );$i++) { #All variants within the same gene for all healthy samplID 
-		    if ($genes{$gene}[$i] =~ /$sid_hea[$sid]\:\S+\:GT=(\d+\/\d+)/ ) { #Find healthy GT (Genotype) per sampleID
+		    if ($genes{$gene}[$i] =~ /$sid_hea[$sid]\:GT=(\d+\/\d+)/ ) { #Find healthy GT (Genotype) per sampleID
 			$sid_hea_GT{$gene}{$sid_hea[$sid]}[$i] = $1; #Save GT (Genotype) for gene, sampleID, and variant number NOTE: Not variant position
 			if ($1 eq "0/0") {
 			    $sid_hea_GT_C{$gene}{$sid_hea[$sid]}{$1}++;
@@ -1322,21 +1322,21 @@ sub CreateModels {
 	    if ($pedigree{$familyid}{$sampleid}[1] == 1 ) {#Affected
 		$motherDS = 1;
 		if ($_[0] eq "MEDIUM") { #Either PASS or PRES genotype calls for all samples
-		    $adom_mom = $sampleid.q?:\S+\:GT=0\/1?; #Het
-		    $arecessive_mom = $sampleid.q?:\S+\:GT=1\/1?; #Hom alt
-		    $xrecessive_mom = $sampleid.q?:\S+\:GT=0\/1?; #Het
-		    $denovo_x_mom = $sampleid.q?:\S+\:GT=0\/1?; #Het
+		    $adom_mom = $sampleid.q?\:GT=0\/1?; #Het
+		    $arecessive_mom = $sampleid.q?\:GT=1\/1?; #Hom alt
+		    $xrecessive_mom = $sampleid.q?\:GT=0\/1?; #Het
+		    $denovo_x_mom = $sampleid.q?\:GT=0\/1?; #Het
 		    push(@compound_aff_model,$sampleid);
 		}
 	    }
 	    else { #healthy
 		if ($_[0] eq "MEDIUM") {
-		    $adom_mom = $sampleid.q?:\S+\:GT=0\/0?; #Hom ref
-		    $arecessive_mom = $sampleid.q?:\S+\:GT=0\/1?; #Het
-		    $xrecessive_mom = $sampleid.q?:\S+\:GT=0\/(1|0)?; #Het/Hom ref
-		    $denovo_dom_mom = $sampleid.q?:\S+\:GT=0\/0?; #Hom ref
-		    $denovo_rec_mom = $sampleid.q?:\S+\:GT=0\/(1|0)?; #Het/Hom ref
-		    $denovo_x_mom = $sampleid.q?:\S+\:GT=0\/(1|0)?; #Het/Hom ref
+		    $adom_mom = $sampleid.q?\:GT=0\/0?; #Hom ref
+		    $arecessive_mom = $sampleid.q?\:GT=0\/1?; #Het
+		    $xrecessive_mom = $sampleid.q?\:GT=0\/(1|0)?; #Het/Hom ref
+		    $denovo_dom_mom = $sampleid.q?\:GT=0\/0?; #Hom ref
+		    $denovo_rec_mom = $sampleid.q?\:GT=0\/(1|0)?; #Het/Hom ref
+		    $denovo_x_mom = $sampleid.q?\:GT=0\/(1|0)?; #Het/Hom ref
 		    push(@compound_hea_model,$sampleid);
 		}
 	    }
@@ -1352,21 +1352,21 @@ sub CreateModels {
 	    if ($pedigree{$familyid}{$sampleid}[1] == 1 ) {#Affected
 		$fatherDS = 1;
 		if ($_[0] eq "MEDIUM") {
-		    $adom_father = $sampleid.q?:\S+\:GT=0\/1?; #Het
-		    $arecessive_father = $sampleid.q?:\S+\:GT=1\/1?; #Hom alt
-		    $xrecessive_father = $sampleid.q?:\S+\:GT=1\/1?; #Het (Male: GT is 1/1 for het on X)
+		    $adom_father = $sampleid.q?\:GT=0\/1?; #Het
+		    $arecessive_father = $sampleid.q?\:GT=1\/1?; #Hom alt
+		    $xrecessive_father = $sampleid.q?\:GT=1\/1?; #Het (Male: GT is 1/1 for het on X)
 		    push(@compound_aff_model,$sampleid);
 		}
 	    }
 	    else { #healthy
 
 		if ($_[0] eq "MEDIUM") {
-		    $adom_father = $sampleid.q?:\S+\:GT=0\/0?; #Hom ref
-		    $arecessive_father = $sampleid.q?:\S+\:GT=0\/1?; #Het
-		    $xrecessive_father = $sampleid.q?:\S+\:GT=0\/0?; #Hom ref
-		    $denovo_dom_father = $sampleid.q?:\S+\:GT=0\/0?; #Hom ref
-		    $denovo_rec_father = $sampleid.q?:\S+\:GT=0\/(1|0)?; #Het/Hom ref, AR_denovo-1,2
-		    $denovo_x_father = $sampleid.q?:\S+\:GT=0\/0?; #Hom reference
+		    $adom_father = $sampleid.q?\:GT=0\/0?; #Hom ref
+		    $arecessive_father = $sampleid.q?\:GT=0\/1?; #Het
+		    $xrecessive_father = $sampleid.q?\:GT=0\/0?; #Hom ref
+		    $denovo_dom_father = $sampleid.q?\:GT=0\/0?; #Hom ref
+		    $denovo_rec_father = $sampleid.q?\:GT=0\/(1|0)?; #Het/Hom ref, AR_denovo-1,2
+		    $denovo_x_father = $sampleid.q?\:GT=0\/0?; #Hom reference
 		    push(@compound_hea_model,$sampleid);
 		}
 	    }
@@ -1382,41 +1382,41 @@ sub CreateModels {
 	    if ($pedigree{$familyid}{$sampleid}[1] == 1 ) {#Affected
 
 		if ($_[0] eq "MEDIUM") {
-		    $arecessive_child = $sampleid.q?:\S+\:GT=1\/1?; #Hom alt
-		    $denovo_dom_child = $sampleid.q?:\S+\:GT=0\/1?; #Het
-		    $denovo_rec_child = $sampleid.q?:\S+\:GT=1\/1?; #Hom alt
+		    $arecessive_child = $sampleid.q?\:GT=1\/1?; #Hom alt
+		    $denovo_dom_child = $sampleid.q?\:GT=0\/1?; #Het
+		    $denovo_rec_child = $sampleid.q?\:GT=1\/1?; #Hom alt
 		    if ( ($fatherDS == 1) && ($motherDS == 1) ) { #Parents affected
-			$adom_child = $sampleid.q?:\S+\:GT=(0|1)\/1?; #Het/hom alt
+			$adom_child = $sampleid.q?\:GT=(0|1)\/1?; #Het/hom alt
 		    }
 		    else {
-			$adom_child = $sampleid.q?:\S+\:GT=0\/1?; #Het, AD-1,2 (Common)
+			$adom_child = $sampleid.q?\:GT=0\/1?; #Het, AD-1,2 (Common)
 		    }
 		    push(@compound_aff_model,$sampleid);
 		    if ($pedigree{$familyid}{$sampleid}[0]=~/M/i) { #Affected and Male			
-			$xrecessive_child = $sampleid.q?:\S+\:GT=1\/1?; #Het (Male: GT is 1/1 for het on X)		    
-			$denovo_x_child = $sampleid.q?:\S+\:GT=1\/1?; #Het (Male: GT is 1/1 for het on X)
+			$xrecessive_child = $sampleid.q?\:GT=1\/1?; #Het (Male: GT is 1/1 for het on X)		    
+			$denovo_x_child = $sampleid.q?\:GT=1\/1?; #Het (Male: GT is 1/1 for het on X)
 		    }
 		    if ($pedigree{$familyid}{$sampleid}[0]=~/F/i) { #Affected and Female
-			$xrecessive_child = $sampleid.q?:\S+\:GT=(0|1)\/1?; #Het/hom alt
-			$denovo_x_child = $sampleid.q?:\S+\:GT=(0|1)\/1?; #Het/hom alt (Hom more unlikely) )
+			$xrecessive_child = $sampleid.q?\:GT=(0|1)\/1?; #Het/hom alt
+			$denovo_x_child = $sampleid.q?\:GT=(0|1)\/1?; #Het/hom alt (Hom more unlikely) )
 		    }
 		}
 	    }
 	    else { #healthy
 
 		if ($_[0] eq "MEDIUM") {
-		    $adom_child = $sampleid.q?:\S+\:GT=0\/0?; #Hom ref
-		    $arecessive_child = $sampleid.q?:\S+\:GT=0\/(1|0)?; #Het/Hom ref
-		    $denovo_dom_child = $sampleid.q?:\S+\:GT=0\/0?; #Hom ref
-		    $denovo_rec_child = $sampleid.q?:\S+\:GT=0\/(1|0)?; #Het/Hom ref, AD_denovo-1,2
+		    $adom_child = $sampleid.q?\:GT=0\/0?; #Hom ref
+		    $arecessive_child = $sampleid.q?\:GT=0\/(1|0)?; #Het/Hom ref
+		    $denovo_dom_child = $sampleid.q?\:GT=0\/0?; #Hom ref
+		    $denovo_rec_child = $sampleid.q?\:GT=0\/(1|0)?; #Het/Hom ref, AD_denovo-1,2
 		    push(@compound_hea_model,$sampleid);
 		    if ( $pedigree{$familyid}{$sampleid}[0]=~/M/i) { #Healthy and Male
-			$xrecessive_child = $sampleid.q?:\S+\:GT=0\/0?; #Hom (Male: GT is 1/1 for het on X)
-			$denovo_x_child = $sampleid.q?:\S+\:GT=0\/0?; #Hom (Male: GT is 1/1 for het on X)
+			$xrecessive_child = $sampleid.q?\:GT=0\/0?; #Hom (Male: GT is 1/1 for het on X)
+			$denovo_x_child = $sampleid.q?\:GT=0\/0?; #Hom (Male: GT is 1/1 for het on X)
 		    }
 		    if ($pedigree{$familyid}{$sampleid}[0]=~/F/i) { #Healthy and Female
-			$xrecessive_child = $sampleid.q?:\S+\:GT=0\/(1|0)?; #Het/Hom ref
-			$denovo_x_child = $sampleid.q?:\S+\:GT=0\/(1|0)?; #Het/Hom ref
+			$xrecessive_child = $sampleid.q?\:GT=0\/(1|0)?; #Het/Hom ref
+			$denovo_x_child = $sampleid.q?\:GT=0\/(1|0)?; #Het/Hom ref
 		    }
 		}
 	    }
@@ -1457,10 +1457,10 @@ sub CreateModelsNoPedigree {
 		    $motherDS = 1;
 		    print STDOUT "Affected Mother: $samples[$sampleid]\n";
 		    if ($_[0] eq "MEDIUM") { #Either PASS or PRES genotype calls for all samples
-			$adom_mom = $samples[$sampleid].q?:\S+\:GT=0\/1?; #Het
-			$arecessive_mom = $samples[$sampleid].q?:\S+\:GT=1\/1?; #Hom alt
-			$xrecessive_mom = $samples[$sampleid].q?:\S+\:GT=0\/1?; #Het
-			$denovo_x_mom = $samples[$sampleid].q?:\S+\:GT=0\/1?; #Het
+			$adom_mom = $samples[$sampleid].q?\:GT=0\/1?; #Het
+			$arecessive_mom = $samples[$sampleid].q?\:GT=1\/1?; #Hom alt
+			$xrecessive_mom = $samples[$sampleid].q?\:GT=0\/1?; #Het
+			$denovo_x_mom = $samples[$sampleid].q?\:GT=0\/1?; #Het
 			push(@compound_aff_model,$samples[$sampleid]);
 		    }
 		}
@@ -1468,12 +1468,12 @@ sub CreateModelsNoPedigree {
 	    if ($motherDS == 0) { #healthy
 		print STDOUT "Unaffected Mother: $samples[$sampleid]\n";
 		if ($_[0] eq "MEDIUM") {
-		    $adom_mom = $samples[$sampleid].q?:\S+\:GT=0\/0?; #Hom ref
-		    $arecessive_mom = $samples[$sampleid].q?:\S+\:GT=0\/1?; #Het
-		    $xrecessive_mom = $samples[$sampleid].q?:\S+\:GT=0\/(1|0)?; #Het/Hom ref
-		    $denovo_dom_mom = $samples[$sampleid].q?:\S+\:GT=0\/0?; #Hom ref
-		    $denovo_rec_mom = $samples[$sampleid].q?:\S+\:GT=0\/(1|0)?; #Het/Hom ref
-		    $denovo_x_mom = $samples[$sampleid].q?:\S+\:GT=0\/(1|0)?; #Het/Hom ref
+		    $adom_mom = $samples[$sampleid].q?\:GT=0\/0?; #Hom ref
+		    $arecessive_mom = $samples[$sampleid].q?\:GT=0\/1?; #Het
+		    $xrecessive_mom = $samples[$sampleid].q?\:GT=0\/(1|0)?; #Het/Hom ref
+		    $denovo_dom_mom = $samples[$sampleid].q?\:GT=0\/0?; #Hom ref
+		    $denovo_rec_mom = $samples[$sampleid].q?\:GT=0\/(1|0)?; #Het/Hom ref
+		    $denovo_x_mom = $samples[$sampleid].q?\:GT=0\/(1|0)?; #Het/Hom ref
 		    push(@compound_hea_model,$samples[$sampleid]);
 		}
 	    }
@@ -1490,9 +1490,9 @@ sub CreateModelsNoPedigree {
 		    $fatherDS = 1;
 		    print STDOUT "Affected Father: $samples[$sampleid]\n";
 		    if ($_[0] eq "MEDIUM") {
-			$adom_father = $samples[$sampleid].q?:\S+\:GT=0\/1?; #Het
-			$arecessive_father = $samples[$sampleid].q?:\S+\:GT=1\/1?; #Hom alt
-			$xrecessive_father = $samples[$sampleid].q?:\S+\:GT=1\/1?; #Het (Male: GT is 1/1 for het on X)
+			$adom_father = $samples[$sampleid].q?\:GT=0\/1?; #Het
+			$arecessive_father = $samples[$sampleid].q?\:GT=1\/1?; #Hom alt
+			$xrecessive_father = $samples[$sampleid].q?\:GT=1\/1?; #Het (Male: GT is 1/1 for het on X)
 			push(@compound_aff_model,$samples[$sampleid]);
 		    }
 		}
@@ -1500,12 +1500,12 @@ sub CreateModelsNoPedigree {
 	    if ($fatherDS == 0) { #healthy
 		print STDOUT "Unaffected Father: $samples[$sampleid]\n";
 		if ($_[0] eq "MEDIUM") {
-		    $adom_father = $samples[$sampleid].q?:\S+\:GT=0\/0?; #Hom ref
-		    $arecessive_father = $samples[$sampleid].q?:\S+\:GT=0\/1?; #Het
-		    $xrecessive_father = $samples[$sampleid].q?:\S+\:GT=0\/0?; #Hom ref
-		    $denovo_dom_father = $samples[$sampleid].q?:\S+\:GT=0\/0?; #Hom ref
-		    $denovo_rec_father = $samples[$sampleid].q?:\S+\:GT=0\/(1|0)?; #Het/Hom ref, AR_denovo-1,2
-		    $denovo_x_father = $samples[$sampleid].q?:\S+\:GT=0\/0?; #Hom reference
+		    $adom_father = $samples[$sampleid].q?\:GT=0\/0?; #Hom ref
+		    $arecessive_father = $samples[$sampleid].q?\:GT=0\/1?; #Het
+		    $xrecessive_father = $samples[$sampleid].q?\:GT=0\/0?; #Hom ref
+		    $denovo_dom_father = $samples[$sampleid].q?\:GT=0\/0?; #Hom ref
+		    $denovo_rec_father = $samples[$sampleid].q?\:GT=0\/(1|0)?; #Het/Hom ref, AR_denovo-1,2
+		    $denovo_x_father = $samples[$sampleid].q?\:GT=0\/0?; #Hom reference
 		    push(@compound_hea_model,$samples[$sampleid]);
 		}
 	    }
@@ -1522,21 +1522,21 @@ sub CreateModelsNoPedigree {
 		if ($samples[$sampleid] eq $sid_aff[$i] ) {#Affected
 		    $childDS = 1;
 		    if ($_[0] eq "MEDIUM") {
-			$arecessive_child = $samples[$sampleid].q?:\S+\:GT=1\/1?; #Hom alt
-			$denovo_dom_child = $samples[$sampleid].q?:\S+\:GT=0\/1?; #Het
-			$denovo_rec_child = $samples[$sampleid].q?:\S+\:GT=1\/1?; #Hom alt
+			$arecessive_child = $samples[$sampleid].q?\:GT=1\/1?; #Hom alt
+			$denovo_dom_child = $samples[$sampleid].q?\:GT=0\/1?; #Het
+			$denovo_rec_child = $samples[$sampleid].q?\:GT=1\/1?; #Hom alt
 			if ( ($fatherDS == 1) && ($motherDS == 1) ) { #Parents affected
-			    $adom_child = $samples[$sampleid].q?:\S+\:GT=(0|1)\/1?; #Het/hom alt
+			    $adom_child = $samples[$sampleid].q?\:GT=(0|1)\/1?; #Het/hom alt
 			}
 			else {
-			    $adom_child = $samples[$sampleid].q?:\S+\:GT=0\/1?; #Het, AD-1,2 (Common)
+			    $adom_child = $samples[$sampleid].q?\:GT=0\/1?; #Het, AD-1,2 (Common)
 			}
 			push(@compound_aff_model,$samples[$sampleid]);
 			if (@sid_male) {
 			    for (my $males=0;$males<scalar(@sid_male);$males++) { #All male samples
 				if ($samples[$sampleid] eq $sid_male[$males]) { #Affected and Male			
-				    $xrecessive_child = $samples[$sampleid].q?:\S+\:GT=1\/1?; #Het (Male: GT is 1/1 for het on X)		    
-				    $denovo_x_child = $samples[$sampleid].q?:\S+\:GT=1\/1?; #Het (Male: GT is 1/1 for het on X)
+				    $xrecessive_child = $samples[$sampleid].q?\:GT=1\/1?; #Het (Male: GT is 1/1 for het on X)		    
+				    $denovo_x_child = $samples[$sampleid].q?\:GT=1\/1?; #Het (Male: GT is 1/1 for het on X)
 				    print STDOUT "Affected male child: $samples[$sampleid]\n";
 				}
 			    }
@@ -1544,8 +1544,8 @@ sub CreateModelsNoPedigree {
 			if (@sid_female) {
 			    for (my $females=0;$females<scalar(@sid_female);$females++) { #All male samples
 				if ($samples[$sampleid] eq $sid_female[$females]) { #Affected and Female
-				    $xrecessive_child = $samples[$sampleid].q?:\S+\:GT=(0|1)\/1?; #Het/hom alt
-				    $denovo_x_child = $samples[$sampleid].q?:\S+\:GT=(0|1)\/1?; #Het/hom alt (Hom more unlikely) )
+				    $xrecessive_child = $samples[$sampleid].q?\:GT=(0|1)\/1?; #Het/hom alt
+				    $denovo_x_child = $samples[$sampleid].q?\:GT=(0|1)\/1?; #Het/hom alt (Hom more unlikely) )
 				    print STDOUT "Affected female child: $samples[$sampleid]\n";
 				}
 			    }
@@ -1556,16 +1556,16 @@ sub CreateModelsNoPedigree {
 	    if ($childDS == 0) { #healthy
 		
 		if ($_[0] eq "MEDIUM") {
-		    $adom_child = $samples[$sampleid].q?:\S+\:GT=0\/0?; #Hom ref
-		    $arecessive_child = $samples[$sampleid].q?:\S+\:GT=0\/(1|0)?; #Het/Hom ref
-		    $denovo_dom_child = $samples[$sampleid].q?:\S+\:GT=0\/0?; #Hom ref
-		    $denovo_rec_child = $samples[$sampleid].q?:\S+\:GT=0\/(1|0)?; #Het/Hom ref, AD_denovo-1,2
+		    $adom_child = $samples[$sampleid].q?\:GT=0\/0?; #Hom ref
+		    $arecessive_child = $samples[$sampleid].q?\:GT=0\/(1|0)?; #Het/Hom ref
+		    $denovo_dom_child = $samples[$sampleid].q?\:GT=0\/0?; #Hom ref
+		    $denovo_rec_child = $samples[$sampleid].q?\:GT=0\/(1|0)?; #Het/Hom ref, AD_denovo-1,2
 		    push(@compound_hea_model,$samples[$sampleid]);
 		    if (@sid_male) { #Male
 			for (my $males=0;$males<scalar(@sid_male);$males++) { #All male samples
 			    if ($samples[$sampleid] eq $sid_male[$males]) { #Healthy and Male
-				$xrecessive_child = $samples[$sampleid].q?:\S+\:GT=0\/0?; #Hom (Male: GT is 1/1 for het on X)
-				$denovo_x_child = $samples[$sampleid].q?:\S+\:GT=0\/0?; #Hom (Male: GT is 1/1 for het on X)
+				$xrecessive_child = $samples[$sampleid].q?\:GT=0\/0?; #Hom (Male: GT is 1/1 for het on X)
+				$denovo_x_child = $samples[$sampleid].q?\:GT=0\/0?; #Hom (Male: GT is 1/1 for het on X)
 				print STDOUT "Unaffected male child: $samples[$sampleid]\n";
 			    }
 			}
@@ -1573,8 +1573,8 @@ sub CreateModelsNoPedigree {
 		    if (@sid_female) {
 			for (my $females=0;$females<scalar(@sid_female);$females++) { #All female samples
 			    if ($samples[$sampleid] eq $sid_female[$females]) {#Healthy and Female
-				$xrecessive_child = $samples[$sampleid].q?:\S+\:GT=0\/(1|0)?; #Het/Hom ref
-				$denovo_x_child = $samples[$sampleid].q?:\S+\:GT=0\/(1|0)?; #Het/Hom ref
+				$xrecessive_child = $samples[$sampleid].q?\:GT=0\/(1|0)?; #Het/Hom ref
+				$denovo_x_child = $samples[$sampleid].q?\:GT=0\/(1|0)?; #Het/Hom ref
 				print STDOUT "Unaffected female child: $samples[$sampleid]\n";
 			    }
 			}
@@ -1679,7 +1679,8 @@ sub ReadVCF {
 	    }
 	    for (my $samples=0;$samples<scalar(@denovo_rec_model);$samples++) {
 		if ( $_=~/$denovo_rec_model[$samples]/) {
-		    if ( ($_=~ /\d+-2-1U:\S+\:GT=0\/1/) && ($_=~ /\d+-2-2U:\S+\:GT=0\/1/) ) { #True AR, hence does not have to be included in the AR_denovo model
+		    #if ( ($_=~ /\d+-2-1U:\S+\:GT=0\/1/) && ($_=~ /\d+-2-2U:\S+\:GT=0\/1/) ) { #True AR, hence does not have to be included in the AR_denovo model
+		    if ( ($_=~ /\d+-2-1U\:GT=0\/1/) && ($_=~ /\d+-2-2U\:GT=0\/1/) ) { #True AR, hence does not have to be included in the AR_denovo model
 		    }
 		    else {
 			$genetic_model_score{"AR_denovo"}++;
@@ -1957,10 +1958,12 @@ sub ReadVCF {
 ###
 #GT CALL
 ###
-	    if ($_=~/\:PRES\:/) {
+	    #if ($_=~/\:PRES\:/) {
+	    if ($_=~/PRES/) {
 		$weighted_gtcall_score = 1;
 	    }
-	    elsif ($_=~/\:PASS\:/) {
+	    #elsif ($_=~/\:PASS\:/) {
+	    elsif ($_=~/PASS/) {
 		$weighted_gtcall_score = 3;
 	    }
 
