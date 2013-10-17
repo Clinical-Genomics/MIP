@@ -3,9 +3,14 @@
 use strict;
 use warnings;
 
-#Collects sample summary info and writes to a tab-sep file. 
-#Works on data structure created by wgs_align and wgs_var_call pipelines. Will look for merged files (when suitable) and if none is found within sampleID, the highest ordered STDERR/STDOUT file or is used for collecting info. 
-#Copyright 2012 Henrik Stranneheim
+=for comment
+Collects sample summary info and writes to a tab-sep file.
+Works on data structure created by wgs_align and wgs_var_call pipelines.
+Will look for merged files (when suitable) and if none is found within sampleID,
+the highest ordered STDERR/STDOUT file or is used for collecting info.
+=cut
+
+# Copyright 2012 Henrik Stranneheim
 
 =head1 SYNOPSIS
 
