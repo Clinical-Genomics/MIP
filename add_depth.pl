@@ -40,7 +40,7 @@ BEGIN {
                -i/--infile infile
                -infnv/--infileNoVariant Novariant infile(s), comma sep (Same order as sid)
                -sid/--sampleid Sampleid(s), comma sep (Same order as infnv)
-	       -o/--outfile The output file (defaults to annovar_master.txt)
+	           -o/--outfile The output file (defaults to annovar_master.txt)
                -prechr/--prefix_chromosomes "chrX" or just "X" (defaults to "X" i.e. no prefix)
 	   };
 }
@@ -74,38 +74,47 @@ if (@infnv == 0) {
    });
 }
 
-@infnv = split(/,/,join(',',@infnv)); #Enables comma separated indir(s)
-@sid = split(/,/,join(',',@sid)); #Enables comma separated indir(s)
+@infnv = split(/,/,join(',',@infnv));  # Enables comma separated indir(s)
+@sid = split(/,/,join(',',@sid));      # Enables comma separated indir(s)
 
-##Set chr prefix and chromosome names depending on reference used
-if ($prechr == 0) { #Ensembl - no prefix and MT
-    @chr = ("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","X","Y","MT"); #Chr for enhanced speed in collecting information and reducing memory consumption
+## Set chr prefix and chromosome names depending on reference used
+if ($prechr == 0) {
+    # Ensembl - no prefix and MT
+    # Chr for enhanced speed in collecting information and reducing memory
+    # consumption
+    @chr = ("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15",
+            "16","17","18","19","20","21","22","X","Y","MT");
 }
-else { #Refseq - prefix and M
-    @chr = ("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17","chr18","chr19","chr20","chr21","chr22","chrX","chrY","chrM");
+else {
+    # Refseq - prefix and M
+    @chr = ("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9",
+            "chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17",
+            "chr18","chr19","chr20","chr21","chr22","chrX","chrY","chrM");
 }
 
-my $header; #To preserve header information
+my $header;  # To preserve header information
 my (@allVariants, @allVariants_unique, @allVariants_sorted);
-my (%allVariants, %allVariants_chr, %allVariants_chr_unique, %allVariants_chr_sorted);
+my (%allVariants, %allVariants_chr, %allVariants_chr_unique,
+    %allVariants_chr_sorted);
 my (%sampleVariants, %col);
 
-###
-#Main
-###
+# ==============================================================================
+#   Main
+# ------------------------------------------------------------------------------
 
 for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {
-    ReadNonVariant($infnv[$sampleid],$sid[$sampleid]); #Read all positions per sampleID that lacks variation
-    FindCol($inf,$sid[$sampleid]); #Collect column of sampleID
+    # Read all positions per sampleID that lacks variation
+    ReadNonVariant($infnv[$sampleid],$sid[$sampleid]);
+    FindCol($inf,$sid[$sampleid]);  # Collect column of sampleID
 }
 
-ReadAnnovarAll($inf); #Read annovar_all.txt master file
-SortAllVariants(); #Sorts all variants
-WriteAddedDepth($of); #Write all variants
+ReadAnnovarAll($inf);  # Read annovar_all.txt master file
+SortAllVariants();     # Sorts all variants
+WriteAddedDepth($of);  # Write all variants
 
-###
-#Sub routines
-###
+# ==============================================================================
+#   Sub routines
+# ------------------------------------------------------------------------------
 
 sub FindCol {
 #Finds sampleID columns number in annovar_all.txt file and then breaks
