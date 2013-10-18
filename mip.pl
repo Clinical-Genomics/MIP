@@ -3818,9 +3818,8 @@ sub Chanjo {
 	}
 	
 	print CHANJO "chanjo ";
-	print CHANJO $scriptParameter{'chanjoStoreFile'}." ";
 	print CHANJO "annotate ";
-	print CHANJO $scriptParameter{'chanjoStoreFile'}." ";
+	print CHANJO $scriptParameter{'referencesDir'}."/".$scriptParameter{'chanjoStoreFile'}." ";
 	print CHANJO "using ";
 	print CHANJO $inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile ; 
 	print CHANJO "--cutoff ".$scriptParameter{'chanjoCutoff'}." "; #Read depth cutoff
@@ -3842,9 +3841,8 @@ sub Chanjo {
 	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
 	    
 	    print CHANJO "chanjo ";
-	    print CHANJO $scriptParameter{'chanjoStoreFile'}." ";
 	    print CHANJO "annotate ";
-	    print CHANJO $scriptParameter{'chanjoStoreFile'}." ";
+	    print CHANJO $scriptParameter{'referencesDir'}."/".$scriptParameter{'chanjoStoreFile'}." ";
 	    print CHANJO "using ";
 	    print CHANJO $inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile ; 
 	    print CHANJO "--cutoff ".$scriptParameter{'chanjoCutoff'}." "; #Read depth cutoff
