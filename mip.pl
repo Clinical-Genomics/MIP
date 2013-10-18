@@ -93,6 +93,14 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [reference dir]
 
 -pPicT_markdup/--pPicardToolsMarkduplicates Markduplicates using PicardTools MarkDuplicates (defaults to "1" (=yes))
 
+-pCh/--pChanjo Chanjo coverage analysis (defaults to "1" (=yes))
+
+-chCCDS/--chanjoCCDS CCDS database (defaults to "")
+
+-chStoreFile/--chanjoStoreFile Central SQLite database file
+
+-chCut/--chanjoCutoff Read depth cutoff (defaults to "10")
+
 -pCC/--pCalculateCoverage Use coverage calculation tools: qaCompute, genomeCoverageBED and PicardTools (MultipleMetrics & HSmetrics) (defaults to "1" (=yes))
 
 -pCC_bedgc/--pGenomeCoverageBED Genome coverage calculation using genomeCoverageBED under '-pCC' (defaults to "1" (=yes))
@@ -263,11 +271,12 @@ use Pod::Text;
 use Getopt::Long;
 use POSIX;
 use IO::File;
+use YAML;
 
 use vars qw($USAGE);
 
 # Require/dump chanjo subroutine (into global scope...)
-require "chanjo.pl";
+#require "chanjo.pl";
 
 BEGIN {
     $USAGE =
@@ -328,6 +337,10 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                -pPicT_markdup/--pPicardToolsMarkduplicates Markduplicates using PicardTools MarkDuplicates (defaults to "1" (=yes))
                
                ##Coverage Calculations
+               -pCh/--pChanjo Chanjo coverage analysis (defaults to "1" (=yes))
+                 -chCCDS/--chanjoCCDS CCDS database (defaults to "")
+                 -chStoreFile/--chanjoStoreFile Central SQLite database file
+                 -chCut/--chanjoCutoff Read depth cutoff (defaults to "10")
                -pCC/--pCalculateCoverage Use coverage calculation tools: qaCompute, genomeCoverageBED and PicardTools (MultipleMetrics & HSmetrics) (defaults to "1" (=yes))
                -pCC_bedgc/--pGenomeCoverageBED Genome coverage calculation using genomeCoverageBED under '-pCC' (defaults to "1" (=yes))
                -pCC_bedc/--pCoverageBED BED file coverage calculation using coverageBED under '-pCC' (defaults to "1" (=yes))
@@ -520,6 +533,14 @@ my (@picardToolsMergeSamFilesPrevious); #Any previous sequencing runs
 
 ##Coverage
 
+DefineParameters("pChanjo", "program", 1, 1, "MIP", 0, "nofileEnding", "CoverageReport");
+
+DefineParameters("chanjoCCDS", "path", "nodefault","CCDS.current.txt", "pChanjo", "file");
+
+DefineParameters("chanjoStoreFile", "path", "nodefault","coverage.CCDS12.sqlite", "pChanjo", "file");
+
+DefineParameters("chanjoCutoff", "program", 10, 10, "pChanjo", 0);
+
 DefineParameters("pCalculateCoverage", "program", 1, 1, "MIP", 0, "nofileEnding", "CoverageQC", "bedtools");
 
 DefineParameters("pGenomeCoverageBED", "program", 1, 1, "pCalculateCoverage", 0, "_genomeCoverageBed", "CoverageQC", "bedtools");
@@ -539,19 +560,6 @@ DefineParameters("targetCoverageGeneNameFile", "path", "nodefault", "mart_export
 DefineParameters("pRCovPlots", "program", 1, 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC");
 
 DefineParameters("picardToolsPath", "path", "nodefault", "/bubo/home/h12/henriks/programs/picard-tools-1.74", "pBwaMem,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "directory");
-
-# ---------------------------------------------------------
-#  Chanjo parameters
-#  ~~~~~~~~~~~~~~~~~~
-#  Referred to as "pChanjo"; is a "program"; doesn't run
-#  by default; called by MIP; no file needs checking;
-#  no file ending; belongs to MAIN chain
-# ---------------------------------------------------------
-  DefineParameters("pChanjo", "program", 0, 0, "MIP", 0, "nofileEnding", "MAIN");
-
-  DefineParameters("chanjoStore", "path", "nodefault", "/proj/b2010080/private/mip_references/coverage.CCDS12.sqlite", "pChanjo", "file");
-
-  DefineParameters("chanjoCutoff", "program", 10, 10, "pChanjo", 0);
 
 ##Target definition files
 $parameter{'exomeTargetBed'}{'value'} = "nocmdinput";
@@ -811,6 +819,10 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'pict_mergeprev|picardToolsMergeSamFilesPrevious:s' => \@picardToolsMergeSamFilesPrevious, #Comma separated list
 	   'pPicT_markdup|pPicardToolsMarkduplicates:s' => \$parameter{'pPicardToolsMarkduplicates'}{'value'}, #PicardTools MarkDuplicates
 	   'picardpath|picardToolsPath:s' => \$parameter{'picardToolsPath'}{'value'}, #Path to picardtools
+	   'pCh|pChanjo:n' => \$parameter{'pChanjo'}{'value'},  # Chanjo coverage analysis
+	   'chCCDS|chanjoCCDS:s' => \$parameter{'chanjoCCDS'}{'value'}, #Chanjo CCDS database
+	   'chStoreFile|chanjoStoreFile:s' => \$parameter{'chanjoStore'}{'value'},  # Central SQLite database file
+	   'chCut|chanjoCutoff:n' => \$parameter{'chanjoCutoff'}{'value'},  # Cutoff used for completeness
 	   'pCC|pCalculateCoverage:n' => \$parameter{'pCalculateCoverage'}{'value'},
 	   'pCC_bedgc|pGenomeCoverageBED:n' => \$parameter{'pGenomeCoverageBED'}{'value'},
 	   'pCC_bedc|pCoverageBED:n' => \$parameter{'pCoverageBED'}{'value'},
@@ -876,9 +888,6 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'imdbcc|ImportantDbGeneCoverageCalculation:n'  => \$parameter{'ImportantDbGeneCoverageCalculation'}{'value'}, #Db of important genes coverage calculation (all features connected to overlapping genes across variant)
 	   'imdbgidc|ImportantDbGeneIdCol:n'  => \$parameter{'ImportantDbGeneIdCol'}{'value'}, #Db of important genes GeneName column nr zero-based
 	   'pSCheck|pSampleCheck:n' => \$parameter{'pSampleCheck'}{'value'}, #QC for samples gender and relationship
-     'pCh|pChanjo:n' => \$parameter{'pChanjo'}{'value'},  # Chanjo coverage analysis
-     'chStore|chanjoStore:s' => \$parameter{'chanjoStore'}{'value'},  # Central SQLite database path
-     'chCut|chanjoCutoff:n' => \$parameter{'chanjoCutoff'}{'value'},  # Cutoff used for completeness
 	   );
 
 
@@ -887,12 +896,8 @@ die $USAGE if($help);
 die "\nMip.pl v1.3\n\n" if($version);
 
 if ($parameter{'configFile'}{'value'} ne "nocmdinput") { #No input from cmd
-    
-    use lib '/bubo/home/h12/henriks/lib/'; #YAML not installed at @UPPMAX and is not included in the standard distribution of perl
-    use YAML;
-    open (YAML, "<".$parameter{'configFile'}{'value'}) or die "can't open ".$parameter{'configFile'}{'value'}.": $!\n";
-    %scriptParameter = YAML::LoadFile($parameter{'configFile'}{'value'});
-    close(YAML);
+
+    %scriptParameter = LoadYAML($parameter{'configFile'}{'value'}); #Load parameters from configfile
 }
 
 if ($parameter{'annovarSupportedTableNames'}{'value'} eq 1) {
@@ -908,7 +913,7 @@ foreach my $orderParameterElement (@orderParameters) { #Populate scriptParameter
 
     if ( (defined($scriptParameter{'projectID'})) && (defined($scriptParameter{'familyID'}) ) ) {
 
-	if ($orderParameterElement eq "pedigreeFile" || $orderParameterElement eq "writeConfigFile") {
+	if ( ($orderParameterElement eq "pedigreeFile") || ($orderParameterElement eq "writeConfigFile") ) {
 	    
 	    $parameter{'pedigreeFile'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/".$scriptParameter{'analysisType'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_pedigree.txt";
 	    $parameter{'writeConfigFile'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/".$scriptParameter{'analysisType'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_config.yaml";
@@ -1034,15 +1039,15 @@ SetTargetFiles("GATKTargetPaddedBedIntervalList", $parameter{'GATKTargetPaddedBe
 
 
 if ($scriptParameter{'writeConfigFile'} ne 0) { #Write config file for family
-    open (YAML, '>', $scriptParameter{'writeConfigFile'}) or die "can't open ".$scriptParameter{'writeConfigFile'}.": $!\n";
-    print YAML Dump(%scriptParameter), "\n";
-    close (YAML);
+
+    WriteYAML($scriptParameter{'writeConfigFile'}, \%scriptParameter); #Write used settings to configfile
 }
 
-#Write QC for only pedigree data used in analysis                                                                                                                                                         
-open (YAML, '>', $scriptParameter{'outDataDir'}."/qc_pedigree.yaml") or die "can't open ".$scriptParameter{'outDataDir'}."/qc_pedigree.yaml: $!\n";
-print YAML Dump(%sampleInfo), "\n";
-close (YAML);
+
+if (defined($scriptParameter{'pedigreeFile'})) { #Write QC for only pedigree data used in analysis                                                        
+
+    WriteYAML($scriptParameter{'outDataDir'}."/qc_pedigree.yaml", \%sampleInfo);
+}
 
 ##Set chr prefix and chromosome names depending on reference used
 if ($scriptParameter{'humanGenomeReference'}=~/hg\d+/) { #Refseq - prefix and M
@@ -1088,16 +1093,11 @@ for (my $inputDirectoryCounter=0;$inputDirectoryCounter<scalar(@inFilesDirs);$in
 
 close(MIPLOGG);
 
-my $uncompressedFileSwitch = InfilesReFormat2(); #Required to format infiles correctly for subsequent input into aligners
+my $uncompressedFileSwitch = InfilesReFormat(); #Required to format infiles correctly for subsequent input into aligners
 
-#Write QC for sampleinfo used in analysis                                                                                                                                                                                   
-open (YAML, '>', $scriptParameter{'outDataDir'}."/qc_sampleinfo.yaml") or die "can't open ".$scriptParameter{'outDataDir'}."/qc_sampleinfo.yaml: $!\n";
-print YAML Dump(%sampleInfo), "\n";
-close (YAML);
+                                                                                                                  
 
-#open (YAML, '>', $scriptParameter{'outDataDir'}."/qc_programs.yaml") or die "can't open ".$scriptParameter{'outDataDir'}."/qc_programs.yaml: $!\n";
-#print YAML Dump(%qcMetaData), "\n";
-#close (YAML);
+WriteYAML($scriptParameter{'outDataDir'}."/qc_sampleinfo.yaml", \%sampleInfo); #Write QC for sampleinfo used in analysis
 
 CreateFileEndings(); #Creates all fileendings as the samples is processed depending on the chain of modules activated
 
@@ -1237,6 +1237,16 @@ if ($scriptParameter{'pPicardToolsMarkduplicates'} > 0) { #PicardTools MarkDupli
     }
 }
 
+if ($scriptParameter{'pChanjo'} > 0) {
+    
+    print STDOUT "\nChanjo", "\n";print MIPLOGG "\nChanjo", "\n";
+    
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #For all SamleIDs
+	
+	Chanjo($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});
+    }
+}
+
 if ($scriptParameter{'pCalculateCoverage'} > 0) { #Run GenomeCoverageBED, qaCompute (Paul Costea), Picard (CollectAlignmentSummaryMetrics, CalculateHsMetrics)
     
     print STDOUT "\nCalculate Coverage", "\n";print MIPLOGG "\nCalculate Coverage", "\n";    
@@ -1254,25 +1264,6 @@ if ($scriptParameter{'pRCovPlots'} > 0) { #Run Rcovplot scripts
 	
 	RCoveragePlots($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});	
     }
-}
-
-if ($scriptParameter{'pChanjo'} > 0) {
-  # Run Chanjo
-  for my $fh (STDOUT, MIPLOGG) { print $fh "\n\033[93mChanjo\033[0m\n"; }
-
-  # Chanjo will run for each sample but generate a single SBATCH script
-  # and a new SQLite database per family to avoid conflicts.
-  chanjo(
-    @sampleIDs,
-    $scriptParameter{'familyID'},
-    $scriptParameter{'aligner'},
-    $scriptParameter{'outDataDir'},
-    $scriptParameter{'chanjoStore'},
-    $scriptParameter{'chanjoCutoff'},
-    $scriptParameter{'pChanjo'},
-    $scriptparameter{'dryRunAll'},
-    $sampleInfo
-  );
 }
 
 if ($scriptParameter{'pGATKRealigner'} > 0) { #Run GATK ReAlignerTargetCreator/IndelRealigner
@@ -3789,6 +3780,89 @@ sub CalculateCoverage {
     return;
 }
 
+sub Chanjo { 
+#Generate coverage SQLite database for each individual (sorted, merged)
+
+    my $sampleID = $_[0];
+    my $aligner = $_[1]; 
+
+    ProgramPreRequisites($sampleID, "Chanjo", $aligner."/coverageReport", 0, *CHANJO, $scriptParameter{'maximumCores'}, 2);    
+
+###
+#Chanjo
+###
+    
+    ##Build new database
+    #print CHANJO "chanjo ";
+    #print CHANJO "build ";
+    #print CHANJO $scriptParameter{'chanjoStoreFile'}." ";
+    #print CHANJO "using ";
+    #print CHANJO $scriptParameter{'referencesDir'}."/".$scriptParameter{'chanjoCCDS'}, "\n\n";    
+    
+    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
+    my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport";
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+
+    
+    my ($infile, $PicardToolsMergeSwitch) = CheckIfMergedFiles($sampleID);
+    my $processCounter=1;
+    my $coreCounter=1;	
+	
+    if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
+	
+	if ($processCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
+	    
+	    print CHANJO "wait", "\n\n";
+	    $coreCounter=$coreCounter+1;
+	}
+	
+	print CHANJO "chanjo ";
+	print CHANJO $scriptParameter{'chanjoStoreFile'}." ";
+	print CHANJO "annotate ";
+	print CHANJO $scriptParameter{'chanjoStoreFile'}." ";
+	print CHANJO "using ";
+	print CHANJO $inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile ; 
+	print CHANJO "--cutoff ".$scriptParameter{'chanjoCutoff'}." "; #Read depth cutoff
+	print CHANJO "--sample ".$sampleID." "; #SampleID
+	print CHANJO "--group ".$scriptParameter{'familyID'}." "; #Group to annotate sample to
+	print CHANJO "--json ".$outSampleDirectory."/".$infile.$outfileEnding."coverage.json &". "\n\n"; #OutFile
+	    
+	$processCounter++; #Increment processCounter
+    }
+    else { #No merged files
+	
+	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files from independent of merged or not
+	    
+	    if ($processCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
+		
+		print CHANJO "wait", "\n\n";
+		$coreCounter=$coreCounter+1;
+	    }
+	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
+	    
+	    print CHANJO "chanjo ";
+	    print CHANJO $scriptParameter{'chanjoStoreFile'}." ";
+	    print CHANJO "annotate ";
+	    print CHANJO $scriptParameter{'chanjoStoreFile'}." ";
+	    print CHANJO "using ";
+	    print CHANJO $inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile ; 
+	    print CHANJO "--cutoff ".$scriptParameter{'chanjoCutoff'}." "; #Read depth cutoff
+	    print CHANJO "--sample ".$sampleID." "; #SampleID
+	    print CHANJO "--group ".$scriptParameter{'familyID'}." "; #Group to annotate sample to
+	    print CHANJO "--json ".$outSampleDirectory."/".$infile.$outfileEnding."coverage.json &". "\n\n"; #OutFile   
+	    
+	    $processCounter++; #Increment processCounter   
+	}
+	print CHANJO "wait", "\n\n";
+    }
+    close(CHANJO);
+    if ( ($scriptParameter{'pChanjo'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 2, $parameter{'pChanjo'}{'chain'}, $filename, 0);
+    }
+    return;
+}
+
 sub PicardToolsMarkDuplicates { 
 #Mark duplicated reads using PicardTools MarkDuplicates in files generated from alignment (sorted, merged)
 
@@ -5042,7 +5116,7 @@ sub FIDSubmitJob {
     return;
 }
 
-sub InfilesReFormat2 {
+sub InfilesReFormat {
 ###Reformat files for mosaik output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames.                                  
     
     my $uncompressedFileCounter = 0; #Used to decide later if any inputfiles needs to be compressed before starting analysis                                                                    
@@ -5058,24 +5132,20 @@ sub InfilesReFormat2 {
 		if ($3 == 1) { #1st read direction
 		    
 		    push( @{$lane{$sampleID}}, $2); #Lane                                                                                                        
-		    $infilesLaneNoEnding{$sampleID}[$laneTracker]= $1.$2; #Save old format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
-		    #$qcMetaData{ $scriptParameter{'familyID'} }{$sampleID}{'fileName'} = $1.".".$2; #Save file name  
+		    $infilesLaneNoEnding{$sampleID}[$laneTracker]= $1.$2; #Save old format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).  
 		}
 
 		$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]= $1.$2; #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
 		
                 $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'sampleBarcode'} = "X"; #Save barcode, but not defined
 		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'runBarcode'} = $2."_".$1; #Save run barcode
-		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'readDirection'} = $3; #Save read direction
-		push ( @{ $sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$1.".".$2}{'readDirection'} }, $3); #Save file read direction
-		#push ( @{ $qcMetaData{ $scriptParameter{'familyID'} }{$sampleID}{'file'} }, $1.".".$2); #Save all file(s)                                                                  
+		push ( @{ $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'readDirection'} }, $3); #Save file read direction                                                                  
                 $laneTracker++; #Track for every lane finished                                                                                                                                  
             }
             elsif ($infile{$sampleID}[$infileCounter] =~ /\/?([^\.\/]+\.[^\.]+)\.lane(\d+)_([12FfRr])\.fastq/) { #Parse 'old' format                                                            
 		if ($3 == 1) { #1st read direction
 		    push( @ {$lane{$sampleID}}, $2); #Lane
 		    $infilesLaneNoEnding{$sampleID}[$laneTracker]= $1.$2; #Save old format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
-		    #$qcMetaData{ $scriptParameter{'familyID'} }{$sampleID}{'fileName'} = $1.".".$2; #Save file name
 		}
 
                 $uncompressedFileCounter = 1; #File needs compression before starting analysis           
@@ -5083,15 +5153,13 @@ sub InfilesReFormat2 {
 		
                 $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'sampleBarcode'} = "X"; #Save barcode, but not defined                                               
                 $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'runBarcode'} = $2."_".$1; #Save run barcode                                                        
-		push ( @{ $sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$1.".".$2}{'readDirection'} }, $3); #Save file read direction
-		#push ( @{ $qcMetaData{ $scriptParameter{'familyID'} }{$sampleID}{'file'} }, $1.".".$2);#Save all file(s)
+		push ( @{ $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'readDirection'} }, $3); #Save file read direction
 		$laneTracker++; #Track for every lane finished                                                                                                                                  
             }
             elsif ($infile{$sampleID}[$infileCounter] =~ /(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq.gz/) { #Parse fastq.gz 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, \$5=index,$6=direction                                                                                                                                                                           
 		if ($6 == 1) {
 		    push( @{$lane{$sampleID}}, $1); #Lane
-		    $infilesLaneNoEnding{$sampleID}[$laneTracker]= $4.".".$2."_".$3."_".$5.".lane".$1; #Save new format (sampleID_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
-		    #$qcMetaData{ $scriptParameter{'familyID'} }{$4}{'fileName'} = $4.".".$2."_".$3."_".$5.".lane".$1; #Save file name 
+		    $infilesLaneNoEnding{$sampleID}[$laneTracker]= $4.".".$2."_".$3."_".$5.".lane".$1; #Save new format (sampleID_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq). 
 		}
 
 		$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]= $4.".".$2."_".$3."_".$5.".lane".$1."_".$6; #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
@@ -5101,14 +5169,12 @@ sub InfilesReFormat2 {
 		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'sampleBarcode'} = $5; #Save sample barcode                                  
 		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'runBarcode'} = $2."_".$3."_".$1; #Save run barcode
 		push ( @{ $sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'ReadDirection'} }, $6); #Save file read direction
-		#push ( @{ $qcMetaData{ $scriptParameter{'familyID'} }{$4}{'file'} }, $4.".".$2."_".$3."_".$5.".lane".$1."_".$6); #Save all infile(s)
 		$laneTracker++; #Track for every lane finished                                                                                                                                  
             }
             elsif ($infile{$sampleID}[$infileCounter] =~/(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq/) { #Parse 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=d\irection                                                                                                                                                                                        
 		if ($6 == 1) {
 		    push( @{$lane{$sampleID}}, $1); #Lane
 		    $infilesLaneNoEnding{ $sampleID }[$laneTracker]= $4.".".$2."_".$3."_".$5.".lane".$1; #Save new format (sampleID_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).		
-		    #$qcMetaData{ $scriptParameter{'familyID'} }{$4}{'fileName'} = $4.".".$2."_".$3."_".$5.".lane".$1; #Save file name
 		}
 
 		$uncompressedFileCounter = 1; #File needs compression before starting analysis
@@ -5119,87 +5185,11 @@ sub InfilesReFormat2 {
 		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'sampleBarcode'} = $5; #Save sample barcode                                  
 		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'runBarcode'} = $2."_".$3."_".$1; #Save run barcode
 		push( @{$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'ReadDirection'} }, $6); #Save file read direction                        
-		#push ( @{ $qcMetaData{ $scriptParameter{'familyID'} }{$4}{'file'} }, $4.".".$2."_".$3."_".$5.".lane".$1."_".$6); #Save all infile(s)
 		$laneTracker++; #Track for every lane finished   
 		
 	    }
         }
 	
-    }
-    return $uncompressedFileCounter;
-}
-
-sub InfilesReFormat {
-###Reformat files for mosaik output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames. 
-
-    my $uncompressedFileCounter = 0; #Used to decide later if any inputfiles needs to be compressed before starting analysis
-    
-    for my $sampleID (keys %infile) { #For every sampleID
-	
-	my $laneTracker=0; #Needed to be able to track when lanes are finished
-	
-	for (my $infileCounter=0;$infileCounter<scalar( @ { $infile{$sampleID} });$infileCounter++) { #All inputfiles for all fastq dir and remakes format
-	    
-	    if ($infile{$sampleID}[$infileCounter] =~ /\/?([^\.\/]+\.[^\.]+)\.lane(\d+)_([12FfRr])\.fastq.gz/) { #Parse fastq.gz 'old' format
-		
-		push( @{$lane{$sampleID}}, $2); #Lane
-		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'sampleBarcode'} = "X"; #Save barcode, but not defined
-		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'runBarcode'} = $2."_".$1; #Save run barcode
-		$infilesLaneNoEnding{$sampleID}[$laneTracker]= "$1.$2"; #Save old format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
-		$infileCounter++; #Skip second direction
-		$laneTracker++; #Track for every lane finished
-	    }
-	    elsif ($infile{$sampleID}[$infileCounter] =~ /\/?([^\.\/]+\.[^\.]+)\.lane(\d+)_([12FfRr])\.fastq/) { #Parse 'old' format
-		
-		push( @ {$lane{$sampleID}}, $2); #Lane
-		$uncompressedFileCounter = 1; #File needs compression before starting analysis
-		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'sampleBarcode'} = "X"; #Save barcode, but not defined
-		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'runBarcode'} = $2."_".$1; #Save run barcode
-		
-		$infilesLaneNoEnding{$sampleID}[$laneTracker]= "$1.$2"; #Save old format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
-		$infileCounter++; #Skip second direction
-		$laneTracker++; #Track for every lane finished
-	    }
-	    elsif ($infile{$sampleID}[$infileCounter] =~ /(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq.gz/) { #Parse fastq.gz 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction
-		
-		push( @{$lane{$sampleID}}, $1); #Lane
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'lane'} = $1; #Save sample lane
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'date'} = $2; #Save Sequence run date
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'flow-cell'} = $3; #Save Sequence flow-cell
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'sampleBarcode'} = $5; #Save sample barcode
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'runBarcode'} = $2."_".$3."_".$1; #Save run barcode
-		$infilesLaneNoEnding{$sampleID}[$laneTracker]= "$4.$2_$3_$5."."lane"."$1_$6"; #Save new format (sampleID_date_flow-cell_index_lane_direction) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
-		$infileCounter++; #Skip second direction
-		$laneTracker++; #Track for every lane finished
-	    }
-	    elsif ($infile{$sampleID}[$infileCounter] =~/(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq/) { #Parse 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction
-		
-		push( @{$lane{$sampleID}}, $1); #Lane
-		$uncompressedFileCounter = 1; #File needs compression before starting analysis
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'lane'} = $1; #Save sample lane
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'date'} = $2; #Save Sequence run date
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'flow-cell'} = $3; #Save Sequence flow-cell
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'sampleBarcode'} = $5; #Save sample barcode
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1."_".$6}{'runBarcode'} = $2."_".$3."_".$1; #Save run barcode
-		$infilesLaneNoEnding{ $sampleID }[$laneTracker]= "$4.$2_$3_$5."."lane"."$1_$6"; #Save new format (sampleID_date_flow-cell_index_lane_direction) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
-		$infileCounter++; #Skip second direction
-		$laneTracker++; #Track for every lane finished
-	    }
-	}
-	
-	for (my $infileCounter=0;$infileCounter<scalar( @ { $infile{ $sampleID } });$infileCounter++) { #Collects inputfiles for every fastq dir and remakes format
-	    if ($infile{$sampleID}[$infileCounter] =~ /\/?([^\.\/]+\.[^\.]+)\.lane(\d+_[12FfRr])\.fastq/) { #Parse 'old' format
-		
-		$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]= "$1.$2"; #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
-		$laneTracker++; #Track for every lane finished
-	    }
-	    elsif ($infile{$sampleID}[$infileCounter] =~ /(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq/) { #Parse 'new' format
-		
-		$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]= "$4.$2_$3_$5."."lane"."$1_$6"; #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
-		$laneTracker++; #Track for every lane finished
-	    }
-	    
-	}
     }
     return $uncompressedFileCounter;
 }
@@ -5483,7 +5473,6 @@ sub AddToScriptParameter {
 		    elsif ($parameterName eq "pedigreeFile") {
 			if (defined($scriptParameter{'pedigreeFile'})) {
 			    ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs));
-			    #ReadPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs)); #  scalar(@sampleIDs)= 0:No user supplied sample info, add it from pedigree file
 			} 
 		    }
 		    else {
@@ -6142,6 +6131,62 @@ sub WriteCMDMipLogg {
 
     #Note FileHandle MIPLOGG not closed
     return;
+}
+
+sub WriteYAML {
+###Writes a YAML hash to file. 
+###Note: 2nd argument should be a hash reference
+
+    my $yamlFile = $_[0]; #Filename
+    my $yamlHashRef = $_[1]; #Hash reference to write to file
+
+    open (YAML, ">". $yamlFile) or die "can't open ".$yamlFile.": $!\n";
+    print YAML Dump( $yamlHashRef ), "\n";
+    close(YAML);
+}
+
+sub LoadYAML {
+###Loads a YAML file into an arbitrary hash and returns it. Note: Currently only supports hashreferences and hashes and no mixed entries 
+
+    my $yamlFile = $_[0];
+    my %yamlHash;
+
+    my $fileType = DetectYamlContentType($yamlFile);
+
+    open (YAML, "<". $yamlFile) or die "can't open ".$yamlFile.": $!\n";    
+        
+        if ($fileType eq "reference") {
+        %yamlHash = %{ YAML::LoadFile($yamlFile) }; #Load hashreference as hash
+        }
+        if ($fileType eq "hash") {
+        %yamlHash = YAML::LoadFile($yamlFile); #File contained a hash = no workup
+        }
+    close(YAML);
+
+    return %yamlHash;
+}
+
+sub DetectYamlContentType {
+###Check the content of the YAML file for seperating hashreferences and hash. Return the content type.
+
+    my $yamlFile = $_[0];
+    my $fileType;
+
+    open (YAML, "<". $yamlFile) or die "can't open ".$yamlFile.": $!\n";
+        
+        while (<YAML>) {
+
+            if ($. == 1 && $_=~/^---$/) { #YAML file contains a hashreference
+                $fileType = "reference";
+                last;
+            }
+            else {
+                $fileType = "hash";
+                last;
+            }
+        }
+    close(YAML);
+    return $fileType;
 }
 
 ####
