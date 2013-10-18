@@ -231,6 +231,12 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [reference dir]
 
 -pSCheck/--pSampleCheck QC for samples gender and relationship (defaults to "1" (=yes) )
 
+-pQCC/--pQcCollect Collect QC metrics from programs processed (defaults to "1" (=yes) )
+
+-QCCsampleinfo/--QCCollectSampleInfoFile SampleInfo File containing info on what to parse from this analysis run (defaults to "")
+
+-QCCregexp/--QCCollectRegExpFile Regular expression file containing the regular expression to be used for each program (defaults to "")
+
 =head3 I/O
 
 Input format ( dir/infile.fastq or dir/infile.fastq.gz)
@@ -417,6 +423,9 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                  -imdbgidc/--ImportantDbGeneIdCol Important Db gene file gene ID column (zero-based, defaults to "18")
                
                -pSCheck/--pSampleCheck QC for samples gender and relationship (defaults to "1" (=yes) )
+               -pQCC/--pQCCollect Collect QC metrics from programs processed (defaults to "1" (=yes) )
+                 -QCCsampleinfo/--QCCollectSampleInfoFile SampleInfo File containing info on what to parse from this analysis run (defaults to "")
+                 -QCCregexp/--QCCollectRegExpFile Regular expression file containing the regular expression to be used for each program (defaults to "")
 	   };
 }
 
@@ -559,7 +568,7 @@ DefineParameters("targetCoverageGeneNameFile", "path", "nodefault", "mart_export
 
 DefineParameters("pRCovPlots", "program", 1, 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC");
 
-DefineParameters("picardToolsPath", "path", "nodefault", "/bubo/home/h12/henriks/programs/picard-tools-1.74", "pBwaMem,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "directory");
+DefineParameters("picardToolsPath", "path", "nodefault", "/home/henriks/programs/picard-tools-1.74", "pBwaMem,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "directory");
 
 ##Target definition files
 $parameter{'exomeTargetBed'}{'value'} = "nocmdinput";
@@ -621,7 +630,7 @@ DefineParameters("GATKVariantEvalDbSNP", "path", "nodefault", "dbsnp_132.hg19.ex
 
 DefineParameters("GATKVariantEvalGold", "path", "nodefault", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file");
 
-DefineParameters("genomeAnalysisToolKitPath", "path", "nodefault", "/bubo/home/h12/henriks/programs/GenomeAnalysisTK-2.7-2-g6bda569", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome", "directory");
+DefineParameters("genomeAnalysisToolKitPath", "path", "nodefault", "/home/henriks/programs/GenomeAnalysisTK-2.7-2-g6bda569", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome", "directory");
 
 DefineParameters("GATKTempDirectory", "path", "/scratch/", "notSetYet", "pGATKRealigner,pGATKBaseRecalibration", 0); #Depends on -projectID input, directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
 
@@ -690,6 +699,14 @@ my @ImportantDbFileOutFile; #List of db outfiles
 
 ##SChecks
 DefineParameters("pSampleCheck", "program", 1, 1, "MIP", 0, "nofileEnding", "IDQC", "vcftools:plink");
+
+##QcCollect
+
+DefineParameters("pQCCollect", "program", 1, 1, "MIP", 0, "nofileEnding", "QCMetrics");
+
+DefineParameters("QCCollectSampleInfoFile", "program", "notSetYet", "notSetYet", "pQCCollect", 0); #No file check since file is created by MIP later
+
+DefineParameters("QCCollectRegExpFile", "path", "nodefault", "qc_regexp.yaml", "pQCCollect", "file");
 
 
 ##MIP
@@ -888,7 +905,10 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'imdbcc|ImportantDbGeneCoverageCalculation:n'  => \$parameter{'ImportantDbGeneCoverageCalculation'}{'value'}, #Db of important genes coverage calculation (all features connected to overlapping genes across variant)
 	   'imdbgidc|ImportantDbGeneIdCol:n'  => \$parameter{'ImportantDbGeneIdCol'}{'value'}, #Db of important genes GeneName column nr zero-based
 	   'pSCheck|pSampleCheck:n' => \$parameter{'pSampleCheck'}{'value'}, #QC for samples gender and relationship
-	   );
+	   'pQCC|pQCCollect:n' => \$parameter{'pQCCollect'}{'value'}, #QCmetrics collect
+	   'QCCsampleinfo|QCCollectSampleInfoFile:s' => \$parameter{'QCCollectSampleInfoFile'}{'value'}, #SampleInfo yaml file produced by MIP
+	   'QCCregexp|QCCollectRegExpFile:s' => \$parameter{'-QCCollectRegExpFile'}{'value'}, #Regular expression yaml file
+    );
 
 
 die $USAGE if($help);
@@ -917,6 +937,7 @@ foreach my $orderParameterElement (@orderParameters) { #Populate scriptParameter
 	    
 	    $parameter{'pedigreeFile'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/".$scriptParameter{'analysisType'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_pedigree.txt";
 	    $parameter{'writeConfigFile'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/".$scriptParameter{'analysisType'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_config.yaml";
+	    $parameter{'QCCollectSampleInfoFile'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/".$scriptParameter{'analysisType'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_qc_sampleInfo.yaml";
 	}
     }
     
@@ -1043,7 +1064,6 @@ if ($scriptParameter{'writeConfigFile'} ne 0) { #Write config file for family
     WriteYAML($scriptParameter{'writeConfigFile'}, \%scriptParameter); #Write used settings to configfile
 }
 
-
 if (defined($scriptParameter{'pedigreeFile'})) { #Write QC for only pedigree data used in analysis                                                        
 
     WriteYAML($scriptParameter{'outDataDir'}."/qc_pedigree.yaml", \%sampleInfo);
@@ -1094,11 +1114,7 @@ for (my $inputDirectoryCounter=0;$inputDirectoryCounter<scalar(@inFilesDirs);$in
 close(MIPLOGG);
 
 my $uncompressedFileSwitch = InfilesReFormat(); #Required to format infiles correctly for subsequent input into aligners
-
-                                                                                                                  
-
-WriteYAML($scriptParameter{'outDataDir'}."/qc_sampleinfo.yaml", \%sampleInfo); #Write QC for sampleinfo used in analysis
-
+                                                               
 CreateFileEndings(); #Creates all fileendings as the samples is processed depending on the chain of modules activated
 
 #Create .fam file to be used in variant calling analyses
@@ -1428,6 +1444,14 @@ if ($scriptParameter{'pSampleCheck'} > 0) { #Run SampleCheck. Done per family
 
 }
 
+if ($scriptParameter{'pQCCollect'} > 0) { #Run QCCollect. Done per family
+
+    print STDOUT "\nQCCollect", "\n";print MIPLOGG "\nQCCollect", "\n";
+
+    QCCollect($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
+
+}
+
 if ($scriptParameter{'pRemovalRedundantFiles'} > 0) { #Sbatch generation of removal of alignment files
     
     print STDOUT "\nRemoval of alignment files", "\n"; print MIPLOGG "\nRemoval of alignment files", "\n";
@@ -1440,13 +1464,11 @@ if ($scriptParameter{'pRemovalRedundantFiles'} > 0) { #Sbatch generation of remo
 
 close(MIPLOGG); #Close mip_logg file
 
-#Write QC for programs used in analysis                                                                                                                                                                                               
-#open (YAML, '>', $scriptParameter{'outDataDir'}."/qc_programs.yaml") or die "can't open ".$scriptParameter{'outDataDir'}."/qc_programs.yaml: $!\n";
-#print YAML Dump(%qcMetaData), "\n";
-#close (YAML);
-open (YAML, '>', $scriptParameter{'outDataDir'}."/qc_sampleinfo.yaml") or die "can't open ".$scriptParameter{'outDataDir'}."/qc_sampleinfo.yaml: $!\n";
-print YAML Dump(%sampleInfo), "\n";
-close (YAML);
+#Write QC for programs used in analysis                                                                                                                                                                                           
+if ($scriptParameter{'QCCollectSampleInfoFile'} ne 0) {#Write SampleInfo to yaml file
+
+    WriteYAML($scriptParameter{'QCCollectSampleInfoFile'}, \%sampleInfo); #Write QC for sampleinfo used in analysis
+}
 
 
 ######################
@@ -1772,6 +1794,31 @@ sub SampleCheck {
     close(SCHECK); 
     if ( ($scriptParameter{'pSampleCheck'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 	FIDSubmitJob(0, $familyID, 2, $parameter{'pSampleCheck'}{'chain'}, $filename, 0);
+    }
+    return;
+}
+
+sub QCCollect { 
+###Tests sample for correct relatives (only performed for samples with relatives defined in pedigree file) performed on sequence data.
+
+    my $familyID = $_[0]; #familyID NOTE: not sampleid 
+    my $aligner = $_[1];
+    my $callType = $_[2]; #SNV,INDEL or BOTH
+
+    ProgramPreRequisites($familyID, "QCCollect", "qccollect", 0, *QCCOLLECT, 1, 1);
+    
+    my $infile = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/qc_sampleinfo.yaml";
+    my $inFamilyDirectory =  $scriptParameter{'outDataDir'}."/".$familyID;
+    my $outFamilyDirectory =  $scriptParameter{'outDataDir'}."/".$familyID;
+
+    print QCCOLLECT "perl ".$scriptParameter{'inScriptDir'}."/qcCollect.pl ";
+    print QCCOLLECT "-sampleInfoFile ".$scriptParameter{'QCCollectSampleInfoFile'}." ";
+    print QCCOLLECT "-regExpFile ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'QCCollectRegExpFile'}." ";
+    print QCCOLLECT "-o ".$outFamilyDirectory."/qcmetrics.yaml ", "\n\n";     
+    
+    close(QCCOLLECT); 
+    if ( ($scriptParameter{'pQCCollect'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	FIDSubmitJob(0, $familyID, 2, $parameter{'pQCCollect'}{'chain'}, $filename, 0);
     }
     return;
 }
