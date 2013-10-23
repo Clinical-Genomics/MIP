@@ -451,7 +451,7 @@ $scriptParameter{'MIP'} = 1; #Enable/activate MIP
 
 my @orderParameters; #To add/write parameters in the correct order
 
-#Add timestamp for later use in mip_logg and qcmetrics yaml file
+#Add timestamp for later use in mip_log and qcmetrics yaml file
 my $timeStamp = (`date +%Y%m%d_%Hh%Mm`); #Catches current date and script name
 chomp($timeStamp); #Remove \n;
 
@@ -1114,21 +1114,21 @@ elsif ($scriptParameter{'humanGenomeReference'}=~/GRCh\d+/) { #Ensembl - no pref
 }
 
 
-####Creates master_logg for the master script 
+####Creates master_log for the master script 
 
 my ($base, $script) = (`date +%Y%m%d`,`basename $0`); #Catches current date and script name
 chomp($base,$script); #Remove \n;
-`mkdir -p $scriptParameter{'outDataDir'}/$scriptParameter{'familyID'}/mip_logg/$base;`; #Creates the mip_logg dir
-my $mipLoggName = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/mip_logg/".$base."/".$script."_".$timeStamp.".txt"; #concatenates mip_logg filename
+`mkdir -p $scriptParameter{'outDataDir'}/$scriptParameter{'familyID'}/mip_log/$base;`; #Creates the mip_log dir
+my $mipLogName = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/mip_log/".$base."/".$script."_".$timeStamp.".txt"; #concatenates mip_log filename
 
-open (MIPLOGG, ">>".$mipLoggName) or die "Can't write to ".$mipLoggName.": $!\n"; #Open file masterLogg
+open (MIPLOG, ">>".$mipLogName) or die "Can't write to ".$mipLogName.": $!\n"; #Open file masterLog
 
 ##Add parameters
-print MIPLOGG "\n".$script." "; #Adds script name to recontruct command line
+print MIPLOG "\n".$script." "; #Adds script name to recontruct command line
 
-WriteCMDMipLogg();
+WriteCMDMipLog();
 
-print STDOUT "\nScript parameters and info from ".$script." are saved in file: ".$mipLoggName, "\n";
+print STDOUT "\nScript parameters and info from ".$script." are saved in file: ".$mipLogName, "\n";
 
 
 ####Collect infiles
@@ -1137,17 +1137,17 @@ for (my $inputDirectoryCounter=0;$inputDirectoryCounter<scalar(@inFilesDirs);$in
     
     my @infiles = `cd $inFilesDirs[ $inputDirectoryCounter ];ls *.fastq*;`; #cd to input dir and collect fastq files and fastq.gz files
    
-    print STDOUT "\nReads from Platform", "\n";print MIPLOGG "\nReads from Platform", "\n";
-    print STDOUT "\nSample ID\t".$sampleIDs[$inputDirectoryCounter],"\n";print MIPLOGG "\nSample ID\t".$sampleIDs[$inputDirectoryCounter],"\n";
+    print STDOUT "\nReads from Platform", "\n";print MIPLOG "\nReads from Platform", "\n";
+    print STDOUT "\nSample ID\t".$sampleIDs[$inputDirectoryCounter],"\n";print MIPLOG "\nSample ID\t".$sampleIDs[$inputDirectoryCounter],"\n";
     print STDOUT "Inputfiles\n",@ { $infile{ $sampleIDs[$inputDirectoryCounter] }  =[@infiles] }, "\n"; #hash with sample id as key and inputfiles in dir as array 
-    print MIPLOGG "Inputfiles\n",@ { $infile{ $sampleIDs[$inputDirectoryCounter] }  =[@infiles] }, "\n";
+    print MIPLOG "Inputfiles\n",@ { $infile{ $sampleIDs[$inputDirectoryCounter] }  =[@infiles] }, "\n";
     
     $indirpath{$sampleIDs[$inputDirectoryCounter]} = $inFilesDirs[ $inputDirectoryCounter ];  #Catch inputdir path
     chomp(@infiles);    #Remove newline from every entry in array
     $infile{ $sampleIDs[$inputDirectoryCounter] }  =[@infiles]; #Reload files into hash (kept above newline just for print STDOUT)
 }
 
-close(MIPLOGG);
+close(MIPLOG);
 
 my $uncompressedFileSwitch = InfilesReFormat(); #Required to format infiles correctly for subsequent input into aligners
                                                                
@@ -1160,11 +1160,11 @@ my $famFile = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/
 
 ####MAIN
 
-open (MIPLOGG, ">>".$mipLoggName) or die "Can't write to ".$mipLoggName.": $!\n"; #Open file run logg
+open (MIPLOG, ">>".$mipLogName) or die "Can't write to ".$mipLogName.": $!\n"; #Open file run log
 
 if ( ($scriptParameter{'pGZip'} > 0) && ($uncompressedFileSwitch eq 1) ) { #GZip of fastq files
 
-    print STDOUT "\nGZip for fastq files", "\n";print MIPLOGG "\nGZip for fastq files", "\n";
+    print STDOUT "\nGZip for fastq files", "\n";print MIPLOG "\nGZip for fastq files", "\n";
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 
@@ -1181,7 +1181,7 @@ if ( ($scriptParameter{'pGZip'} > 0) && ($uncompressedFileSwitch eq 1) ) { #GZip
 
 if ($scriptParameter{'pFastQC'} > 0) { #Run FastQC
     
-    print STDOUT "\nFastQC", "\n";print MIPLOGG "\nFastQC", "\n";
+    print STDOUT "\nFastQC", "\n";print MIPLOG "\nFastQC", "\n";
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 	
@@ -1191,7 +1191,7 @@ if ($scriptParameter{'pFastQC'} > 0) { #Run FastQC
 
 if ($scriptParameter{'pMosaikBuild'} > 0) { #Run MosaikBuild
     
-    print STDOUT "\nMosaikBuild", "\n";print MIPLOGG "\nMosaikBuild", "\n";
+    print STDOUT "\nMosaikBuild", "\n";print MIPLOG "\nMosaikBuild", "\n";
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 	
@@ -1202,7 +1202,7 @@ if ($scriptParameter{'pMosaikBuild'} > 0) { #Run MosaikBuild
 
 if ($scriptParameter{'pMosaikAlign'} > 0) { #Run MosaikAlign
     
-    print STDOUT "\nMosaikAlign", "\n"; print MIPLOGG "\nMosaikAlign", "\n";
+    print STDOUT "\nMosaikAlign", "\n"; print MIPLOG "\nMosaikAlign", "\n";
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 	
@@ -1212,7 +1212,7 @@ if ($scriptParameter{'pMosaikAlign'} > 0) { #Run MosaikAlign
 
 if ($scriptParameter{'pBwaMem'} > 0) { #Run BWA Mem
     
-    print STDOUT "\nBWA Mem", "\n";print MIPLOGG "\nBWA Mem", "\n";
+    print STDOUT "\nBWA Mem", "\n";print MIPLOG "\nBWA Mem", "\n";
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 	
@@ -1223,7 +1223,7 @@ if ($scriptParameter{'pBwaMem'} > 0) { #Run BWA Mem
 
 if ($scriptParameter{'pPicardToolsMergeRapidReads'} > 0) { #Run PicardToolsMergeRapidReads - Relevant only in rapid mode
     
-    print STDOUT "\nPicardToolsMergeRapidReads", "\n";print MIPLOGG "\nPicardToolsMergeRapidReads", "\n";
+    print STDOUT "\nPicardToolsMergeRapidReads", "\n";print MIPLOG "\nPicardToolsMergeRapidReads", "\n";
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 	
@@ -1234,7 +1234,7 @@ if ($scriptParameter{'pPicardToolsMergeRapidReads'} > 0) { #Run PicardToolsMerge
 
 if ($scriptParameter{'pBwaAln'} > 0) { #Run BWA Aln
     
-    print STDOUT "\nBWA Aln", "\n";print MIPLOGG "\nBWA Aln", "\n";
+    print STDOUT "\nBWA Aln", "\n";print MIPLOG "\nBWA Aln", "\n";
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 	
@@ -1244,7 +1244,7 @@ if ($scriptParameter{'pBwaAln'} > 0) { #Run BWA Aln
 
 if ($scriptParameter{'pBwaSampe'} > 0) { #Run BWA Sampe
     
-    print STDOUT "\nBWA Sampe", "\n";print MIPLOGG "\nBWA Sampe", "\n";
+    print STDOUT "\nBWA Sampe", "\n";print MIPLOG "\nBWA Sampe", "\n";
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 	
@@ -1281,7 +1281,7 @@ if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) { #Run picardtools merge
 
 if ($scriptParameter{'pPicardToolsMarkduplicates'} > 0) { #PicardTools MarkDuplicates
 
-    print STDOUT "\nPicardTools MarkDuplicates", "\n";print MIPLOGG "\nPicardTools MarkDuplicates", "\n";
+    print STDOUT "\nPicardTools MarkDuplicates", "\n";print MIPLOG "\nPicardTools MarkDuplicates", "\n";
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
     
@@ -1291,14 +1291,14 @@ if ($scriptParameter{'pPicardToolsMarkduplicates'} > 0) { #PicardTools MarkDupli
 
 if ($scriptParameter{'pChanjoBuild'} > 0) {
     
-    print STDOUT "\nChanjoBuild", "\n";print MIPLOGG "\nChanjoBuild", "\n";
+    print STDOUT "\nChanjoBuild", "\n";print MIPLOG "\nChanjoBuild", "\n";
     
     ChanjoBuild($scriptParameter{'familyID'});
 }
 
 if ($scriptParameter{'pChanjoImport'} > 0) {
     
-    print STDOUT "\nChanjoImport", "\n";print MIPLOGG "\nChanjoImport", "\n";
+    print STDOUT "\nChanjoImport", "\n";print MIPLOG "\nChanjoImport", "\n";
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #For all SamleIDs
 	
@@ -1308,7 +1308,7 @@ if ($scriptParameter{'pChanjoImport'} > 0) {
 
 if ($scriptParameter{'pCalculateCoverage'} > 0) { #Run GenomeCoverageBED, qaCompute (Paul Costea), Picard (CollectAlignmentSummaryMetrics, CalculateHsMetrics)
     
-    print STDOUT "\nCalculate Coverage", "\n";print MIPLOGG "\nCalculate Coverage", "\n";    
+    print STDOUT "\nCalculate Coverage", "\n";print MIPLOG "\nCalculate Coverage", "\n";    
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 
@@ -1317,7 +1317,7 @@ if ($scriptParameter{'pCalculateCoverage'} > 0) { #Run GenomeCoverageBED, qaComp
 }
 
 if ($scriptParameter{'pRCovPlots'} > 0) { #Run Rcovplot scripts   
-    print STDOUT "\nRCovPlots", "\n";print MIPLOGG "\nRCovPlots", "\n";	
+    print STDOUT "\nRCovPlots", "\n";print MIPLOG "\nRCovPlots", "\n";	
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 	
@@ -1327,7 +1327,7 @@ if ($scriptParameter{'pRCovPlots'} > 0) { #Run Rcovplot scripts
 
 if ($scriptParameter{'pGATKRealigner'} > 0) { #Run GATK ReAlignerTargetCreator/IndelRealigner
 
-    print STDOUT "\nGATK ReAlignerTargetCreator/IndelRealigner", "\n";print MIPLOGG "\nGATK ReAlignerTargetCreator/IndelRealigner", "\n";
+    print STDOUT "\nGATK ReAlignerTargetCreator/IndelRealigner", "\n";print MIPLOG "\nGATK ReAlignerTargetCreator/IndelRealigner", "\n";
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {   
     
@@ -1337,7 +1337,7 @@ if ($scriptParameter{'pGATKRealigner'} > 0) { #Run GATK ReAlignerTargetCreator/I
 
 if ($scriptParameter{'pGATKBaseRecalibration'} > 0) { #Run GATK BaseRecalibrator/PrintReads
 
-    print STDOUT "\nGATK BaseRecalibrator/PrintReads", "\n";print MIPLOGG "\nGATK BaseRecalibrator/PrintReads", "\n";
+    print STDOUT "\nGATK BaseRecalibrator/PrintReads", "\n";print MIPLOG "\nGATK BaseRecalibrator/PrintReads", "\n";
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {   
     
@@ -1347,7 +1347,7 @@ if ($scriptParameter{'pGATKBaseRecalibration'} > 0) { #Run GATK BaseRecalibrator
 
 if ($scriptParameter{'pSamToolsViewSplitChr'} > 0) { #Run SamTools View to print per chromosome output, ie, from one whole genome bam file per sample, to chr bam files.
 
-    print STDOUT "\nSamTools view split genome to chromosomes & index", "\n";print MIPLOGG "\nSamTools view split genome to chromosome & index", "\n";
+    print STDOUT "\nSamTools view split genome to chromosomes & index", "\n";print MIPLOG "\nSamTools view split genome to chromosome & index", "\n";
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {   
     
@@ -1357,7 +1357,7 @@ if ($scriptParameter{'pSamToolsViewSplitChr'} > 0) { #Run SamTools View to print
 
 if ($scriptParameter{'pGATKHaploTypeCaller'} > 0) { #Run GATK HaploTypeCaller. Done per family
 
-    print STDOUT "\nGATK HaplotypeCaller", "\n";print MIPLOGG "\nGATK HaplotypeCaller", "\n";
+    print STDOUT "\nGATK HaplotypeCaller", "\n";print MIPLOG "\nGATK HaplotypeCaller", "\n";
 
     if ($scriptParameter{'analysisType'} eq "genomes") { #Whole genome sequencing - requires more memory
 
@@ -1400,14 +1400,14 @@ if ($scriptParameter{'pGATKHaploTypeCaller'} > 0) { #Run GATK HaploTypeCaller. D
 
 if ($scriptParameter{'pGATKHaploTypeCallerCombineVariants'} > 0) { #Run GATK HaplotypeCallerCombineVariants. Done per family
 
-    print STDOUT "\nGATK HaplotypeCallerCombineVariants", "\n";print MIPLOGG "\nGATK HaplotypeCallerCombineVariants", "\n";
+    print STDOUT "\nGATK HaplotypeCallerCombineVariants", "\n";print MIPLOG "\nGATK HaplotypeCallerCombineVariants", "\n";
     GATKHaplotypeCallerCombineVariants($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 
 }
 
 if ($scriptParameter{'pGATKVariantRecalibration'} > 0) { #Run GATK VariantRecalibrator/ApplyRecalibration. Done per family
 
-    print STDOUT "\nGATK VariantRecalibrator/ApplyRecalibration", "\n";print MIPLOGG "\nGATK VariantRecalibrator/ApplyRecalibration", "\n";
+    print STDOUT "\nGATK VariantRecalibrator/ApplyRecalibration", "\n";print MIPLOG "\nGATK VariantRecalibrator/ApplyRecalibration", "\n";
 
     GATKVariantReCalibration($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 
@@ -1415,7 +1415,7 @@ if ($scriptParameter{'pGATKVariantRecalibration'} > 0) { #Run GATK VariantRecali
 
 if ($scriptParameter{'pAnnovar'} > 0) { #Run Annovar. Done per family
 
-    print STDOUT "\nAnnovar", "\n";print MIPLOGG "\nAnnovar", "\n";
+    print STDOUT "\nAnnovar", "\n";print MIPLOG "\nAnnovar", "\n";
 
     Annovar($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 
@@ -1423,7 +1423,7 @@ if ($scriptParameter{'pAnnovar'} > 0) { #Run Annovar. Done per family
 
 if ($scriptParameter{'pGATKPhaseByTransmission'} > 0) { #Run GATK PhaseByTransmission. Done per family
 
-	print STDOUT "\nGATK PhaseByTransmission", "\n";print MIPLOGG "\nGATK PhaseByTransmission", "\n";
+	print STDOUT "\nGATK PhaseByTransmission", "\n";print MIPLOG "\nGATK PhaseByTransmission", "\n";
 
 	GATKPhaseByTransmission($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 
@@ -1431,7 +1431,7 @@ if ($scriptParameter{'pGATKPhaseByTransmission'} > 0) { #Run GATK PhaseByTransmi
 
 if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) { #Run GATK ReadBackedPhasing. Done per family. NOTE: Needs phased calls
 
-	print STDOUT "\nGATK ReadBackedPhasing", "\n";print MIPLOGG "\nGATK ReadBackedPhasing", "\n";
+	print STDOUT "\nGATK ReadBackedPhasing", "\n";print MIPLOG "\nGATK ReadBackedPhasing", "\n";
 
 	GATKReadBackedPhasing($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 
@@ -1439,7 +1439,7 @@ if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) { #Run GATK ReadBackedPhasin
 
 if ($scriptParameter{'pGATKVariantEvalAll'} > 0) { #Run GATK VariantEval for all variants. Done per sampleID
 
-    print STDOUT "\nGATK VariantEval All", "\n";print MIPLOGG "\nGATK VariantEval All", "\n";
+    print STDOUT "\nGATK VariantEval All", "\n";print MIPLOG "\nGATK VariantEval All", "\n";
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { 
 	GATKVariantEvalAll($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'}, "BOTH", $scriptParameter{'familyID'});
@@ -1448,7 +1448,7 @@ if ($scriptParameter{'pGATKVariantEvalAll'} > 0) { #Run GATK VariantEval for all
 
 if ($scriptParameter{'pMergeAnnotatedVariants'} > 0) { #Run MergeAnnotationVariants using intersectCollect.pl. Done per family
 
-    print STDOUT "\nMergeAnnotatedVariants", "\n";print MIPLOGG "\nMergeAnnotatedVariants", "\n";
+    print STDOUT "\nMergeAnnotatedVariants", "\n";print MIPLOG "\nMergeAnnotatedVariants", "\n";
 
     MergeAnnotatedVariants($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 
@@ -1456,7 +1456,7 @@ if ($scriptParameter{'pMergeAnnotatedVariants'} > 0) { #Run MergeAnnotationVaria
 
 if ($scriptParameter{'pGATKVariantEvalExome'} > 0) { #Run GATK VariantEval for exome variants. Done per sampleID
 
-    print STDOUT "\nGATK VariantEval Exome", "\n";print MIPLOGG "\nGATK VariantEval Exome", "\n";
+    print STDOUT "\nGATK VariantEval Exome", "\n";print MIPLOG "\nGATK VariantEval Exome", "\n";
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { 
 	GATKVariantEvalExome($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'}, "BOTH", $scriptParameter{'familyID'});
@@ -1465,7 +1465,7 @@ if ($scriptParameter{'pGATKVariantEvalExome'} > 0) { #Run GATK VariantEval for e
 
 if ($scriptParameter{'pAddDepth'} > 0) { #Run AddDepth using add_depth.pl. Done per family
 
-    print STDOUT "\nAddDepth", "\n";print MIPLOGG "\nAddDepth", "\n";
+    print STDOUT "\nAddDepth", "\n";print MIPLOG "\nAddDepth", "\n";
 
     AddDp($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 
@@ -1473,7 +1473,7 @@ if ($scriptParameter{'pAddDepth'} > 0) { #Run AddDepth using add_depth.pl. Done 
 
 if ($scriptParameter{'pRankVariants'} > 0) { #Run RankVariants. Done per family
 
-    print STDOUT "\nRankVariants", "\n";print MIPLOGG "\nRankVariants", "\n";
+    print STDOUT "\nRankVariants", "\n";print MIPLOG "\nRankVariants", "\n";
 
     RankVariants($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 
@@ -1481,7 +1481,7 @@ if ($scriptParameter{'pRankVariants'} > 0) { #Run RankVariants. Done per family
 
 if ($scriptParameter{'pSampleCheck'} > 0) { #Run SampleCheck. Done per family
 
-    print STDOUT "\nSampleCheck", "\n";print MIPLOGG "\nSampleCheck", "\n";
+    print STDOUT "\nSampleCheck", "\n";print MIPLOG "\nSampleCheck", "\n";
 
     SampleCheck($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 
@@ -1489,7 +1489,7 @@ if ($scriptParameter{'pSampleCheck'} > 0) { #Run SampleCheck. Done per family
 
 if ($scriptParameter{'pQCCollect'} > 0) { #Run QCCollect. Done per family
 
-    print STDOUT "\nQCCollect", "\n";print MIPLOGG "\nQCCollect", "\n";
+    print STDOUT "\nQCCollect", "\n";print MIPLOG "\nQCCollect", "\n";
 
     QCCollect($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 
@@ -1497,7 +1497,7 @@ if ($scriptParameter{'pQCCollect'} > 0) { #Run QCCollect. Done per family
 
 if ($scriptParameter{'pRemovalRedundantFiles'} > 0) { #Sbatch generation of removal of alignment files
     
-    print STDOUT "\nRemoval of alignment files", "\n"; print MIPLOGG "\nRemoval of alignment files", "\n";
+    print STDOUT "\nRemoval of alignment files", "\n"; print MIPLOG "\nRemoval of alignment files", "\n";
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 	
@@ -1505,7 +1505,7 @@ if ($scriptParameter{'pRemovalRedundantFiles'} > 0) { #Sbatch generation of remo
     }
 }
 
-close(MIPLOGG); #Close mip_logg file
+close(MIPLOG); #Close mip_log file
 
 #Write QC for programs used in analysis                                                                                                                                                                                           
 if ($scriptParameter{'sampleInfoFile'} ne 0) {#Write SampleInfo to yaml file
@@ -1531,14 +1531,14 @@ sub RemoveRedundantFiles {
     }
     elsif ($scriptParameter{'pRemovalRedundantFiles'} == 2) { #Dry run
 	$filename = $scriptParameter{'outScriptDir'}."/".$sampleID."/".$aligner."/dry_run_removeRedundantFiles_".$sampleID.".";
-	print STDOUT "Dry Run:\n";print MIPLOGG  "Dry Run:\n";
+	print STDOUT "Dry Run:\n";print MIPLOG  "Dry Run:\n";
     }
 
     Checkfnexists($filename, $fnend);
 
-###Info and Logg
-    print STDOUT "Creating sbatch script RemoveRedundantFiles and writing script file(s) to: ".$filename, "\n";print MIPLOGG "Creating sbatch script RemoveRedundantFiles and writing script file(s) to: ".$filename, "\n";
-    print STDOUT "Sbatch script RemoveRedundantFiles data files will be removed in: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner, "\n";print MIPLOGG "Sbatch script RemoveRedundantFiles data files will be removed in: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner, "\n";
+###Info and Log
+    print STDOUT "Creating sbatch script RemoveRedundantFiles and writing script file(s) to: ".$filename, "\n";print MIPLOG "Creating sbatch script RemoveRedundantFiles and writing script file(s) to: ".$filename, "\n";
+    print STDOUT "Sbatch script RemoveRedundantFiles data files will be removed in: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner, "\n";print MIPLOG "Sbatch script RemoveRedundantFiles data files will be removed in: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner, "\n";
 
     open (REM, ">".$filename) or die "Can't write to ".$filename.": $!\n";
     
@@ -2963,13 +2963,13 @@ sub GATKHaploTypeCaller {
     }
     elsif ($scriptParameter{'pGATKHaploTypeCaller'} == 2) { #Dry run
 	$filename = $scriptParameter{'outScriptDir'}."/".$familyID."/".$aligner."/dry_run_gatk_haplotypecaller_".$familyID."_".$callType."_chr".$tempChromosomeStartPosition."-".$tempChromosomeStopPosition."."; 
-	print STDOUT "Dry Run:\n";print MIPLOGG  "Dry Run:\n"; 
+	print STDOUT "Dry Run:\n";print MIPLOG  "Dry Run:\n"; 
     }
     Checkfnexists($filename, $fnend);
     
-###Info and Logg
-    print STDOUT "Creating sbatch script GATK HaplotypeCaller and writing script file(s) to: ".$filename, "\n";print MIPLOGG "Creating sbatch script GATK HaplotypeCaller and writing script file(s) to: ".$filename, "\n";
-    print STDOUT "Sbatch script GATK HaplotypeCaller data files will be written to: ".$scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/HaplotypeCaller", "\n";print MIPLOGG "Sbatch script GATK HaplotypeCaller data files will be written to: ".$scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/HaploTypeCaller", "\n";
+###Info and Log
+    print STDOUT "Creating sbatch script GATK HaplotypeCaller and writing script file(s) to: ".$filename, "\n";print MIPLOG "Creating sbatch script GATK HaplotypeCaller and writing script file(s) to: ".$filename, "\n";
+    print STDOUT "Sbatch script GATK HaplotypeCaller data files will be written to: ".$scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/HaplotypeCaller", "\n";print MIPLOG "Sbatch script GATK HaplotypeCaller data files will be written to: ".$scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/HaploTypeCaller", "\n";
     
     open (GATK_HAPCAL, ">".$filename) or die "Can't write to ".$filename.": $!\n";
     
@@ -5162,10 +5162,10 @@ sub FIDSubmitJob {
 	    }
 	}
     }
-    print STDOUT "Sbatch script submitted, job id: $jobID\n"; print MIPLOGG "Sbatch script submitted, job id: $jobID\n";
-    print STDOUT "To check status of job, please run \'jobinfo -j $jobID\'\n"; print MIPLOGG "To check status of job, please run \'jobinfo -j $jobID\'\n";
-    print STDOUT "To check status of job, please run \'squeue -j $jobID\'\n";print MIPLOGG "To check status of job, please run \'squeue -j $jobID\'\n";
-    print STDOUT "To cancel job, please run \'scancel $jobID\'\n";print MIPLOGG "To cancel job, please run \'scancel $jobID\'\n";
+    print STDOUT "Sbatch script submitted, job id: $jobID\n"; print MIPLOG "Sbatch script submitted, job id: $jobID\n";
+    print STDOUT "To check status of job, please run \'jobinfo -j $jobID\'\n"; print MIPLOG "To check status of job, please run \'jobinfo -j $jobID\'\n";
+    print STDOUT "To check status of job, please run \'squeue -j $jobID\'\n";print MIPLOG "To check status of job, please run \'squeue -j $jobID\'\n";
+    print STDOUT "To cancel job, please run \'scancel $jobID\'\n";print MIPLOG "To cancel job, please run \'scancel $jobID\'\n";
     return;
 }
 
@@ -5978,17 +5978,17 @@ sub ProgramPreRequisites {
     }
     elsif ($scriptParameter{"p".$programName} == 2) { #Dry run single program
 	$filename = $dryRunFilenamePath; 
-	print STDOUT "Dry Run:\n";print MIPLOGG  "Dry Run:\n";
+	print STDOUT "Dry Run:\n";print MIPLOG  "Dry Run:\n";
     }
     else { #Dry run
 	$filename = $dryRunFilenamePath;
-	print STDOUT "Dry Run:\n";print MIPLOGG  "Dry Run:\n";
+	print STDOUT "Dry Run:\n";print MIPLOG  "Dry Run:\n";
     }
 
     Checkfnexists($filename, $fnend);
 
-###Info and Logg
-    print STDOUT "Creating sbatch script for ".$programName." and writing script file(s) to: ".$filename, "\n";print MIPLOGG "Creating sbatch script for ".$programName." and writing script file(s) to: ".$filename, "\n";
+###Info and Log
+    print STDOUT "Creating sbatch script for ".$programName." and writing script file(s) to: ".$filename, "\n";print MIPLOG "Creating sbatch script for ".$programName." and writing script file(s) to: ".$filename, "\n";
 
     if ($programName eq "RankVariants") { #Special case
 
@@ -5996,11 +5996,11 @@ sub ProgramPreRequisites {
 	    
 	    my ($volume,$directories,$file) = File::Spec->splitpath($ImportantDbFileOutFile[$ImportantDbFileOutFileCounter]);
 	    `mkdir -p $directories;`; 
-	    print STDOUT "RankVariants data files will be written to: ".$directories.$directoryID."_ranked_".$callType.".txt", "\n";print MIPLOGG "RankVariants data files will be written to: ".$directories.$directoryID."_ranked_".$callType.".txt", "\n";    
+	    print STDOUT "RankVariants data files will be written to: ".$directories.$directoryID."_ranked_".$callType.".txt", "\n";print MIPLOG "RankVariants data files will be written to: ".$directories.$directoryID."_ranked_".$callType.".txt", "\n";    
 	}
     }
     else {
-	print STDOUT "Sbatch script ".$programName." data files will be written to: ".$programDataDirectory, "\n";print MIPLOGG "Sbatch script ".$programName." data files will be written to: ".$programDataDirectory, "\n";
+	print STDOUT "Sbatch script ".$programName." data files will be written to: ".$programDataDirectory, "\n";print MIPLOG "Sbatch script ".$programName." data files will be written to: ".$programDataDirectory, "\n";
     }
 
 ###Sbatch header
@@ -6171,18 +6171,18 @@ sub GATKPedigreeFlag {
 		}
 		else {
 		    $scriptParameter{'pGATKPhaseByTransmission'} = 0; #Override input since pedigree is not valid for analysis
-		    print STDERR "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";print MIPLOGG "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";
+		    print STDERR "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";print MIPLOG "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";
 		    if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) { #Broadcast
-			print STDERR "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n";print MIPLOGG "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n";
+			print STDERR "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n";print MIPLOG "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n";
 		    }
 		    print "\n";
 		}
 	    }
 	    else {
 		$scriptParameter{'pGATKPhaseByTransmission'} = 0; #Override input since pedigree is not valid for analysis
-		print STDERR "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";print MIPLOGG "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";
+		print STDERR "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";print MIPLOG "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";
 		if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) { #Broadcast
-		    print STDERR "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false";print MIPLOGG "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n";
+		    print STDERR "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false";print MIPLOG "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n";
 		}
 		print "\n";
 	    }
@@ -6199,9 +6199,9 @@ sub GATKPedigreeFlag {
     return;
 }
 
-sub WriteCMDMipLogg {
+sub WriteCMDMipLog {
     
-    open (MIPLOGG, ">>".$mipLoggName) or die "Can't write to ".$mipLoggName.": $!\n"; #Open file run logg
+    open (MIPLOG, ">>".$mipLogName) or die "Can't write to ".$mipLogName.": $!\n"; #Open file run log
     
     foreach my $orderParameterElement (@orderParameters) {
 	
@@ -6209,13 +6209,13 @@ sub WriteCMDMipLogg {
 	    if ( ($orderParameterElement eq "configFile") && ($scriptParameter{'configFile'} eq 0) ) { #Do not print
 	    }
 	    else {
-		print MIPLOGG "-".$orderParameterElement." ".$scriptParameter{$orderParameterElement}." ";
+		print MIPLOG "-".$orderParameterElement." ".$scriptParameter{$orderParameterElement}." ";
 	    }
 	}
     }
-    print MIPLOGG "\n\n";
+    print MIPLOG "\n\n";
 
-    #Note FileHandle MIPLOGG not closed
+    #Note FileHandle MIPLOG not closed
     return;
 }
 
@@ -6353,13 +6353,13 @@ sub PerChrGATKHaploTypeCaller {
     }
     elsif ($scriptParameter{'pGATKHaploTypeCaller'} == 2) { #Dry run
 	$filename = $scriptParameter{'outScriptDir'}."/".$familyID."/".$aligner."/dry_run_gatk_haplotypecaller_".$familyID."_".$callType."_chr".$tempChromosomeStartPosition."-".$tempChromosomeStopPosition."."; 
-	print STDOUT "Dry Run:\n";print MIPLOGG  "Dry Run:\n"; 
+	print STDOUT "Dry Run:\n";print MIPLOG  "Dry Run:\n"; 
     }
     Checkfnexists($filename, $fnend);
     
-###Info and Logg
-    print STDOUT "Creating sbatch script GATK HaplotypeCaller and writing script file(s) to: ".$filename, "\n";print MIPLOGG "Creating sbatch script GATK HaplotypeCaller and writing script file(s) to: ".$filename, "\n";
-    print STDOUT "Sbatch script GATK HaplotypeCaller data files will be written to: ".$scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/HaplotypeCaller", "\n";print MIPLOGG "Sbatch script GATK HaplotypeCaller data files will be written to: ".$scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/HaploTypeCaller", "\n";
+###Info and Log
+    print STDOUT "Creating sbatch script GATK HaplotypeCaller and writing script file(s) to: ".$filename, "\n";print MIPLOG "Creating sbatch script GATK HaplotypeCaller and writing script file(s) to: ".$filename, "\n";
+    print STDOUT "Sbatch script GATK HaplotypeCaller data files will be written to: ".$scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/HaplotypeCaller", "\n";print MIPLOG "Sbatch script GATK HaplotypeCaller data files will be written to: ".$scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/HaploTypeCaller", "\n";
     
     open (GATK_HAPCAL, ">".$filename) or die "Can't write to ".$filename.": $!\n";
     
