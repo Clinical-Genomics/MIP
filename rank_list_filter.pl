@@ -635,6 +635,7 @@ sub ReadTargetCov {
 	if (/(\S+)/) {  
 	    my @temp = split("\t",$_);	    #Loads variant calls
 	    $temp[8]=~s/\,/\./;
+	    print $temp[11], "\n";
 	    my @temp_EnsembleGeneID = split(";", $temp[11]); #Can have multiple entries due to overlapping genes
 	    for (my $i=0;$i<scalar(@temp_EnsembleGeneID);$i++) { #Add all entries to imdb_tarcov
 		if ($temp[8]<1) { #If a fraction of bases has below 10 in coverage within feature
