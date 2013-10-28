@@ -101,13 +101,11 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [reference dir]
 
 -chbdb/--chanjoBuildDb Reference database (defaults to "")
 
--chbstorefile/--chanjoBuildStoreFile Central SQLite database file (defaults to "{outDataDir}/{familyID}/chanjobuild/{familyID}_coverage.sqlite";Supply whole path)
+-pCh_C/--pChanjoCalculate Chanjo coverage analysis (defaults to "1" (=yes))
 
--pCh_I/--pChanjoImport Chanjo coverage analysis (defaults to "1" (=yes))
+-chccut/--chanjoCalculateCutoff Read depth cutoff (defaults to "10")
 
--chistorefile/--chanjoImportStoreFile Central SQLite database file (defaults to "{outDataDir}/{familyID}/chanjobuild/{familyID}_coverage.sqlite";Supply whole path)
-
--chicut/--chanjoImportCutoff Read depth cutoff (defaults to "10")
+-pCh_I/--pChanjoImport Chanjo import to collect sample info to family Db  (defaults to "1" (=yes))
 
 -pCC/--pCalculateCoverage Use coverage calculation tools: qaCompute, genomeCoverageBED and PicardTools (MultipleMetrics & HSmetrics) (defaults to "1" (=yes))
 
@@ -237,6 +235,8 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [reference dir]
 
 -imdbgidc/--ImportantDbGeneIdCol Important Db gene file gene ID column (zero-based, defaults to "18")
 
+-pRankVar2/--pRankVariants2 Ranking of annotated variants (defaults to "1" (=yes))
+
 -pSCheck/--pSampleCheck QC for samples gender and relationship (defaults to "1" (=yes) )
 
 -pQCC/--pQcCollect Collect QC metrics from programs processed (defaults to "1" (=yes) )
@@ -355,10 +355,9 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                ##Coverage Calculations
                -pCh_B/--pChanjoBuild Chanjo build central SQLite database file (defaults to "1" (=yes))
                  -chbdb/--chanjoBuildDb  Reference database (defaults to "")
-                 -chbstorefile/--chanjoBuildStoreFile Central SQLite database file (defaults to "{outDataDir}/{familyID}/chanjobuild/{familyID}_coverage.sqlite";Supply whole path)
-               -pCh_I/--pChanjoImport Chanjo coverage analysis (defaults to "1" (=yes))
-                 -chistorefile/--chanjoImportStoreFile Central SQLite database file (defaults to "{outDataDir}/{familyID}/chanjobuild/{familyID}_coverage.sqlite";Supply whole path)
-                 -chicut/--chanjoImportCutoff Read depth cutoff (defaults to "10")
+               -pCh_C/--pChanjoCalculate Chanjo coverage analysis (defaults to "1" (=yes))
+                 -chccut/--chanjoCalculateCutoff Read depth cutoff (defaults to "10")
+               -pCh_I/--pChanjoImport Chanjo import to collect sample info to family Db  (defaults to "1" (=yes))
                -pCC/--pCalculateCoverage Use coverage calculation tools: qaCompute, genomeCoverageBED and PicardTools (MultipleMetrics & HSmetrics) (defaults to "1" (=yes))
                -pCC_bedgc/--pGenomeCoverageBED Genome coverage calculation using genomeCoverageBED under '-pCC' (defaults to "1" (=yes))
                -pCC_bedc/--pCoverageBED BED file coverage calculation using coverageBED under '-pCC' (defaults to "1" (=yes))
@@ -433,6 +432,7 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                  -imdbfof/--ImportantDbFileOutFile The file(s) to write to when selecting variants with intersectCollect.pl. Comma sep (defaults to "{outDataDir}/{familyID}/{aligner}/GATK/candidates/ranking/{familyID}_orphan.selectVariants, {outDataDir}/{familyID}/{aligner}/GATK/candidates/ranking/clinical/{familyID}.selectVariants"; Supply whole path/file)
                  -imdbcc/--ImportantDbGeneCoverageCalculation Important Db gene coverage calculation (Defaults to "1" (=yes))
                  -imdbgidc/--ImportantDbGeneIdCol Important Db gene file gene ID column (zero-based, defaults to "18")
+               -pRankVar2/--pRankVariants2 Ranking of annotated variants (defaults to "1" (=yes))
                
                -pSCheck/--pSampleCheck QC for samples gender and relationship (defaults to "1" (=yes) )
                -pQCC/--pQCCollect Collect QC metrics from programs processed (defaults to "1" (=yes) )
@@ -561,15 +561,13 @@ DefineParameters("pChanjoBuild", "program", 1, 1, "MIP", 0, "nofileEnding", "Cov
 
 DefineParameters("chanjoBuildDb", "path", "nodefault","CCDS.current.txt", "pChanjoBuild", "file");
 
-DefineParameters("chanjoBuildStoreFile", "path", "notSetYet", "notSetYet", "pChanjoBuild", "file");
+DefineParameters("pChanjoCalculate", "program", 1, 1, "MIP", 0, "_coverage", "CoverageReport");
+
+DefineParameters("chanjoCalculateCutoff", "program", 10, 10, "pChanjoCalculate", 0);
 
 DefineParameters("pChanjoImport", "program", 1, 1, "MIP", 0, "nofileEnding", "CoverageReport");
 
-DefineParameters("chanjoImportStoreFile", "path", "notSetYet", "notSetYet", "pChanjoImport", "file");
-
-DefineParameters("chanjoImportCutoff", "program", 10, 10, "pChanjoImport", 0);
-
-DefineParameters("pythonVirtualEnvironment", "path", "nodefault", "virtualenv.py.2.7.1", "pChanjoBuild,pChanjoImport", 0);
+DefineParameters("pythonVirtualEnvironment", "path", "nodefault", "virtualenv.py.2.7.1", "pChanjoBuild,pChanjoCalculate,pChanjoImport", 0);
 
 DefineParameters("pCalculateCoverage", "program", 1, 1, "MIP", 0, "nofileEnding", "CoverageQC", "bedtools");
 
@@ -718,6 +716,8 @@ DefineParameters("ImportantDbGeneIdCol", "program", 17, 17, "pRankVariants", 0);
 
 my @ImportantDbFileOutFile; #List of db outfiles
 
+DefineParameters("pRankVariants2", "program", 1, 1, "MIP", 0, "nofileEnding", "MAIN");
+
 ##SChecks
 DefineParameters("pSampleCheck", "program", 1, 1, "MIP", 0, "nofileEnding", "IDQC", "vcftools:plink");
 
@@ -861,10 +861,9 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'picardpath|picardToolsPath:s' => \$parameter{'picardToolsPath'}{'value'}, #Path to picardtools
 	   'pCh_B|pChanjoBuild:n' => \$parameter{'pChanjoBuild'}{'value'},  #Build central SQLiteDatabase
 	   'chbdb|chanjoBuildDb:s' => \$parameter{'chanjoBuildDb'}{'value'}, #Chanjo reference database
-	   'chbstorefile|chanjoBuildStoreFile:s' => \$parameter{'chanjoBuildStoreFile'}{'value'},  # Central SQLite database file
-	   'pCh_I|pChanjoImport:n' => \$parameter{'pChanjoImport'}{'value'},  # Chanjo coverage analysis
-	   'chistorefile|chanjoImportStoreFile:s' => \$parameter{'chanjoImportStoreFile'}{'value'},  # Central SQLite database file
-	   'chicut|chanjoImportCutoff:n' => \$parameter{'chanjoImportCutoff'}{'value'},  # Cutoff used for completeness
+	   'pCh_C|pChanjoCalculate:n' => \$parameter{'pChanjoCalculate'}{'value'},  # Chanjo coverage analysis
+	   'chccut|chanjoCalculateCutoff:n' => \$parameter{'chanjoCalculateCutoff'}{'value'},  # Cutoff used for completeness
+	   'pCh_I|pChanjoImport:n' => \$parameter{'pChanjoImport'}{'value'},  #Build family SQLiteDatabase
 	   'pCC|pCalculateCoverage:n' => \$parameter{'pCalculateCoverage'}{'value'},
 	   'pCC_bedgc|pGenomeCoverageBED:n' => \$parameter{'pGenomeCoverageBED'}{'value'},
 	   'pCC_bedc|pCoverageBED:n' => \$parameter{'pCoverageBED'}{'value'},
@@ -929,6 +928,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'imdbfof|ImportantDbFileOutFile:s' => \@ImportantDbFileOutFile, #The intersectCollect select variants output directorys	      
 	   'imdbcc|ImportantDbGeneCoverageCalculation:n'  => \$parameter{'ImportantDbGeneCoverageCalculation'}{'value'}, #Db of important genes coverage calculation (all features connected to overlapping genes across variant)
 	   'imdbgidc|ImportantDbGeneIdCol:n'  => \$parameter{'ImportantDbGeneIdCol'}{'value'}, #Db of important genes GeneName column nr zero-based
+	   'pRankVar2|pRankVariants2:n' => \$parameter{'pRankVariants2'}{'value'}, #Ranking variants
 	   'pSCheck|pSampleCheck:n' => \$parameter{'pSampleCheck'}{'value'}, #QC for samples gender and relationship
 	   'pQCC|pQCCollect:n' => \$parameter{'pQCCollect'}{'value'}, #QCmetrics collect
 	   'QCCsampleinfo|QCCollectSampleInfoFile:s' => \$parameter{'QCCollectSampleInfoFile'}{'value'}, #SampleInfo yaml file produced by MIP
@@ -999,14 +999,6 @@ foreach my $orderParameterElement (@orderParameters) { #Populate scriptParameter
 	$parameter{'ImportantDbMasterFile'}{'default'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}.".intersectCollect_selectVariants_db_master.txt";
 	
 	$parameter{'ImportantDbMasterFile'}{'environmentUppmaxDefault'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}.".intersectCollect_selectVariants_db_master.txt";
-
-	$parameter{'chanjoBuildStoreFile'}{'default'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/chanjobuild/".$scriptParameter{'familyID'}."_coverage.sqlite";
-	
-	$parameter{'chanjoBuildStoreFile'}{'environmentUppmaxDefault'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/chanjobuild/".$scriptParameter{'familyID'}."_coverage.sqlite";
-
-	$parameter{'chanjoImportStoreFile'}{'default'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/chanjobuild/".$scriptParameter{'familyID'}."_coverage.sqlite";
-
-	$parameter{'chanjoImportStoreFile'}{'environmentUppmaxDefault'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/chanjobuild/".$scriptParameter{'familyID'}."_coverage.sqlite";
 	
     }
 }
@@ -1296,14 +1288,21 @@ if ($scriptParameter{'pChanjoBuild'} > 0) {
     ChanjoBuild($scriptParameter{'familyID'});
 }
 
+if ($scriptParameter{'pChanjoCalculate'} > 0) {
+    
+    print STDOUT "\nChanjoCalculate", "\n";print MIPLOG "\nChanjoCalculate", "\n";
+    
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #For all SampleIDs
+	
+	ChanjoCalculate($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});
+    }
+}
+
 if ($scriptParameter{'pChanjoImport'} > 0) {
     
     print STDOUT "\nChanjoImport", "\n";print MIPLOG "\nChanjoImport", "\n";
     
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #For all SamleIDs
-	
-	ChanjoImport($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});
-    }
+    ChanjoImport($scriptParameter{'familyID'});
 }
 
 if ($scriptParameter{'pCalculateCoverage'} > 0) { #Run GenomeCoverageBED, qaCompute (Paul Costea), Picard (CollectAlignmentSummaryMetrics, CalculateHsMetrics)
@@ -1476,6 +1475,14 @@ if ($scriptParameter{'pRankVariants'} > 0) { #Run RankVariants. Done per family
     print STDOUT "\nRankVariants", "\n";print MIPLOG "\nRankVariants", "\n";
 
     RankVariants($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
+
+}
+
+if ($scriptParameter{'pRankVariants2'} > 0) { #Run RankVariants. Done per family
+
+    print STDOUT "\nRankVariants2", "\n";print MIPLOG "\nRankVariants2", "\n";
+
+    RankVariants2($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 
 }
 
@@ -2130,6 +2137,143 @@ sub RankVariants {
     close(RV);   
     if ( ($scriptParameter{'pRankVariants'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 	FIDSubmitJob(0, $familyID, 1, $parameter{'pRankVariants'}{'chain'}, $filename, 0);
+    }
+    return;
+}
+
+sub RankVariants2 { 
+###Filter and Rank variants depending on mendelian inheritance, frequency and phenotype using rank_filter:chr.pl
+   
+    my $familyID = $_[0]; #familyID NOTE: not sampleid 
+    my $aligner = $_[1];
+    my $callType = $_[2]; #SNV,INDEL or BOTH
+ 
+    ProgramPreRequisites($familyID, "RankVariants2", $aligner, $callType, *RV2, 1, 5);
+
+    my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pAddDepth'}{'fileEnding'};
+
+    print RV2 "#Create db master file to select variants from template", "\n";
+    my $nrColumns; #Total Nr of columns 
+    my $nrAnnotationColumns; #The number of columns containing annotation info
+    my $pNrofCol; #For perl regexp
+   
+    if (-f $scriptParameter{'mergeAnnotatedVariantsDbFile'}) { #First analysis run - no actual data file exists - locate IDN columns from family specific template file (if defined)
+	$pNrofCol = q?perl -nae 'if ($_=~/^outinfo/ || $_=~/^outheaders/ ) { chomp($_); my @nr_of_columns=split(",",$_); print scalar(@nr_of_columns);last; }' ?; #Find the number of columns
+	$nrColumns = `$pNrofCol $scriptParameter{'mergeAnnotatedVariantsDbFile'};`; #perl one-liner, inFile and return nr of columns
+	$nrAnnotationColumns = $nrColumns - scalar(@sampleIDs);
+    }
+    elsif (-f $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/".$familyID.$infileEnding.$callType.".txt") { #Check if the file exists (rerun actual data to sample from) 
+	$pNrofCol = q?perl -nae 'if ($_=~/^#/ ) { chomp($_); my @nr_of_columns=split("\t",$_); print scalar(@nr_of_columns);last; }' ?; #Find the number of columns
+	$nrColumns = `$pNrofCol $scriptParameter{'outDataDir'}/$familyID/$aligner/GATK/$familyID$infileEnding$callType.txt;`; #perl one-liner, inFile and return nr of columns
+	$nrAnnotationColumns = $nrColumns - scalar(@sampleIDs);
+    }
+    elsif (-f $scriptParameter{'referencesDir'}."/".$scriptParameter{'mergeAnnotatedVariantsTemplateFile'}) { #No information on previous intersectCollect to create annovar_merge file - locate IDN columns from unspecific interSect db template file
+	$pNrofCol = q?perl -nae 'if ($_=~/^outinfo/ || $_=~/^outheaders/ ) { chomp($_); my @nr_of_columns=split(",",$_); print scalar(@nr_of_columns);last; }' ?;
+	$nrAnnotationColumns = `$pNrofCol $scriptParameter{'referencesDir'}/$scriptParameter{'mergeAnnotatedVariantsTemplateFile'};`-1; #"-1" Since IDN is already factored in from the regexp
+	$nrColumns = $nrAnnotationColumns + scalar(@sampleIDs);
+    }
+    else {
+	print STDERR "Could not estimate location of IDN columns from variant file, nor from templates ('-mergeAnnotatedVariantsDbFile' or '-mergeAnnotatedVariantsTemplateFile'). Please provide this information to run 'pRankVariants2'.", "\n";
+	die;
+    }
+    
+    my $sampleIDcolcond = $nrColumns-1; #To write last IDN entry without "," at the end
+    
+    $scriptParameter{'ImportantDbMasterFile'} =~ s/FDN/$familyID/g; #Exchange FND for the real familyID
+    
+##Add relative path to db_template for variant file(s) 
+    my ($volume,$directories,$file) = File::Spec->splitpath($scriptParameter{'outDataDir'});
+    my @directories = File::Spec->splitdir($directories);#regExpOutDataFile
+    my $regExpOutDataFile;
+    for (my $directoryCount=1;$directoryCount<scalar(@directories);$directoryCount++) {
+	
+	$regExpOutDataFile .= "\\/".$directories[$directoryCount]; #Create escape char for / in later regexp
+    }
+    $regExpOutDataFile .= $file;
+    
+##Add relative path to db_template for reference/db files
+    ($volume,$directories,$file) = File::Spec->splitpath($scriptParameter{'referencesDir'});
+    @directories = File::Spec->splitdir( $directories );
+    my $regExpReferenceDirectory;	
+    for (my $directoryCount=1;$directoryCount<scalar(@directories);$directoryCount++) {
+	
+	$regExpReferenceDirectory .= "\\/".$directories[$directoryCount]; #Create escape char for / in later regexp
+    }
+    $regExpReferenceDirectory .= $file;
+    
+##Create family specific template
+    print RV2 q?perl -nae 'if ($_=~/outinfo/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN_GT_Call=>0_$sampleID,"} else { $sidstring.="IDN_GT_Call=>0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} elsif ($_=~s/FDN_|FDN/?.$familyID.q?/g) { if($_=~s/^ODF/?.$regExpOutDataFile.q?/g) {} if($_=~s/ALIGNER/?.$aligner.q?/g) {} if($_=~s/FILEENDING_/?.$infileEnding.q?/g) {} if($_=~s/CALLTYPE/?.$callType.q?/g) {} if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="$sampleID,"} else { $sidstring.="$sampleID"} } s/IDN/$sidstring/g; print $_;} else { print $_;} } else { if($_=~s/^RD/?.$regExpReferenceDirectory.q?/g) {} print $_;}' ?;
+
+    print RV2 $scriptParameter{'referencesDir'}."/".$scriptParameter{'ImportantDbTemplate'}." "; #Infile
+    print RV2 "> ".$scriptParameter{'ImportantDbMasterFile'}, "\n\n"; #OutFile
+    
+    my $haploTypeCallerFile = $inFamilyDirectory."/".$familyID.$infileEnding.$callType.".txt";
+
+###Only Clinically interesting variants
+    
+    if ( ($scriptParameter{'pGATKHaploTypeCaller'} > 0) || (-f $haploTypeCallerFile) ) { #HaplotypeCaller has been used in present call or previously
+	
+	print RV2 "#Create temp_file containing only clinically interesting variants (to avoid duplicates in ranked list)", "\n";
+	print RV2 "perl ".$scriptParameter{'inScriptDir'}."/intersectCollect.pl ";
+	print RV2 "-db ".$scriptParameter{'ImportantDbMasterFile'}." "; #A tab-sep file containing 1 db per line
+	if ($humanGenomeReferenceSource eq "hg19") {
+	    print RV2 "-prechr 1 "; #Use chr prefix in rank script
+	}
+	print RV2 "-sl 1 "; #Select all entries in first infile matching keys in subsequent db files
+	print RV2 "-s ";
+	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { 
+	    if ($sampleIDCounter eq scalar(@sampleIDs)-1) {
+		print RV2 $sampleIDs[$sampleIDCounter], " ";
+	    }
+	    else {
+		print RV2 $sampleIDs[$sampleIDCounter], ",";
+	    }    
+	}
+	print RV2 "-sofs "; #Selected variants and orphan db files out data directory
+	for (my $ImportantDbFileOutFileCounter=0;$ImportantDbFileOutFileCounter<scalar(@ImportantDbFileOutFile);$ImportantDbFileOutFileCounter++) {
+	    if ($ImportantDbFileOutFileCounter eq scalar(@ImportantDbFileOutFile)-1) {
+		print RV2 $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter]." ","\n\n";
+	    }
+	    else {
+		print RV2 $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter].",";
+	    }
+	}
+	
+###Ranking
+	print RV2 "#Ranking", "\n";
+	
+	print RV2 "workon ".$scriptParameter{'pythonVirtualEnvironment'}, "\n\n"; #Activate python environment
+	
+	for (my $ImportantDbFileOutFileCounter=1;$ImportantDbFileOutFileCounter<scalar(@ImportantDbFileOutFile);$ImportantDbFileOutFileCounter++) { #Skip orphan file and run selected files
+	    print RV2 "mip_family_analysis.py ";
+	    print RV2 $scriptParameter{'pedigreeFile'}." "; #Pedigree file
+	    print RV2 $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter]." "; #InFile	    
+	    ($volume,$directories,$file) = File::Spec->splitpath( $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter] ); #Collect outfile directory
+	    print RV2 "> ".$directories.$familyID."_ranked_".$callType.".txt", "\n\n"; #OutFile
+	    print RV2 "wait\n\n";
+	}
+    }
+   
+###Research variants
+    
+##Ranking
+    print RV2 "#Ranking", "\n"; 
+    print RV2 "mip_family_analysis.py ";
+    print RV2 $scriptParameter{'pedigreeFile'}." "; #Pedigree file
+    print RV2 $ImportantDbFileOutFile[0]." "; #InFile	    
+    ($volume,$directories,$file) = File::Spec->splitpath( $ImportantDbFileOutFile[0] ); #Collect outfile directory
+    print RV2 "> ".$directories.$familyID."_ranked_".$callType.".txt", "\n\n"; #OutFile
+    print RV2 "wait\n\n";    
+        
+    for (my $ImportantDbFileOutFileCounter=0;$ImportantDbFileOutFileCounter<scalar(@ImportantDbFileOutFile);$ImportantDbFileOutFileCounter++) {
+	print RV2 "rm "; #Remove select files
+	print RV2 $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter], "\n\n";
+    }
+    
+    close(RV2);   
+    if ( ($scriptParameter{'pRankVariants2'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	FIDSubmitJob(0, $familyID, 1, $parameter{'pRankVariants2'}{'chain'}, $filename, 0);
     }
     return;
 }
@@ -3627,93 +3771,93 @@ sub CalculateCoverage {
 ###
 #Coverage Report
 ###
-	print CAL_COV "#Coverage Report Generation\n\n";
-	print CAL_COV "#Returns the depth and breadth of coverage of features from A (-abam)\n";
-	print CAL_COV "coverageBed "; #Returns the depth and breadth of coverage of features from A
-	print CAL_COV "-abam ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile in BAM format
-	print CAL_COV "-b ".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetBed'}." "; #InFile
-	print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_coverageBed &", "\n\n"; #OutFile
+#	print CAL_COV "#Coverage Report Generation\n\n";
+#	print CAL_COV "#Returns the depth and breadth of coverage of features from A (-abam)\n";
+#	print CAL_COV "coverageBed "; #Returns the depth and breadth of coverage of features from A
+#	print CAL_COV "-abam ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile in BAM format
+#	print CAL_COV "-b ".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetBed'}." "; #InFile
+#	print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_coverageBed &", "\n\n"; #OutFile
 	
-	print CAL_COV "coverageBed ";
-	print CAL_COV "-d "; #Report the depth at each position in each B feature.
-	print CAL_COV "-abam ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile in BAM format
-	print CAL_COV "-b ".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetBed'}." "; #InFile
-	print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_depth_pos &", "\n\n"; #OutFile
+#	print CAL_COV "coverageBed ";
+#	print CAL_COV "-d "; #Report the depth at each position in each B feature.
+#	print CAL_COV "-abam ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile in BAM format
+#	print CAL_COV "-b ".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetBed'}." "; #InFile
+#	print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_depth_pos &", "\n\n"; #OutFile
 	
-	print CAL_COV "wait", "\n\n";
+#	print CAL_COV "wait", "\n\n";
 	
 	#Generate the average depth per feature and the number of zero-coverage bases as well as their relative to feature position
-	print CAL_COV "#Generate the average depth per feature and the number of zero-coverage bases as well as their relative to feature position", "\n";
-	print CAL_COV q?perl -nae'my $prev_chr=0;my $prev_start;my $prev_end;my $average_cov=0;my $nr_positions=0;my %feature;my %zerofeature;my @temp_line; while (<>) { chomp($_);  @temp_line = split("\t",$_); if($feature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]}) { if ($temp_line[5] >= 10) { $feature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]}{'high-coverage'}++;} if ($temp_line[5] == 0) { push (@ {$zerofeature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]}{'zero-coverage'}}, $temp_line[1]+$temp_line[4]-1);} $average_cov=$average_cov+$temp_line[5];$nr_positions++;} else { if ($prev_chr && ($prev_start != $temp_line[1]) && ($prev_end != $temp_line[2])) { print "$prev_chr\t","$prev_start\t","$prev_end\t",$average_cov/$nr_positions,"\t"; if ($feature{$prev_chr}{$prev_start}{$prev_end}{'high-coverage'}) { print $feature{$prev_chr}{$prev_start}{$prev_end}{'high-coverage'}/$nr_positions, "\t";} else {print "0\t";} if ($zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}) { print scalar(@ {$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'} }), "\t"; for (my $i=0;$i<scalar(@ {$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}});$i++) { print "$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}[$i];";} print "\tdepth_pos\n"; } else {print "0\t","Na\tdepth_pos\n";} } %feature = ();%zerofeature = ();$average_cov=0;$nr_positions=0;$feature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]} = $_; $prev_chr = $temp_line[0];$prev_start = $temp_line[1];$prev_end = $temp_line[2];if ($temp_line[5] >= 10) { $feature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]}{'high-coverage'}++;} if ($temp_line[5] == 0) { push (@ {$zerofeature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]}{'zero-coverage'} }, $temp_line[1]+$temp_line[4]-1);} $average_cov=$average_cov+$temp_line[5];$nr_positions++;} } print "$prev_chr\t","$prev_start\t","$prev_end\t",$average_cov/$nr_positions,"\t"; if ($feature{$prev_chr}{$prev_start}{$prev_end}{'high-coverage'}) { print $feature{$prev_chr}{$prev_start}{$prev_end}{'high-coverage'}/$nr_positions, "\t";} else {print "0\t";} if ($zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}) { print scalar(@ {$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'} }), "\t"; for (my $i=0;$i<scalar(@ {$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}});$i++) { print "$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}[$i];";} print "\tdepth_pos\n"; } else {print "0\t","Na\tdepth_pos\n";} last;' ?.$outSampleDirectory."/".$infile.$infileEnding."_coverageBed_depth_pos "; #InFile using the just created depth_pos file located in the outSampleDirectory
-	print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_depth_pos_collapsed", "\n\n"; #OutFile
+#	print CAL_COV "#Generate the average depth per feature and the number of zero-coverage bases as well as their relative to feature position", "\n";
+#	print CAL_COV q?perl -nae'my $prev_chr=0;my $prev_start;my $prev_end;my $average_cov=0;my $nr_positions=0;my %feature;my %zerofeature;my @temp_line; while (<>) { chomp($_);  @temp_line = split("\t",$_); if($feature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]}) { if ($temp_line[5] >= 10) { $feature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]}{'high-coverage'}++;} if ($temp_line[5] == 0) { push (@ {$zerofeature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]}{'zero-coverage'}}, $temp_line[1]+$temp_line[4]-1);} $average_cov=$average_cov+$temp_line[5];$nr_positions++;} else { if ($prev_chr && ($prev_start != $temp_line[1]) && ($prev_end != $temp_line[2])) { print "$prev_chr\t","$prev_start\t","$prev_end\t",$average_cov/$nr_positions,"\t"; if ($feature{$prev_chr}{$prev_start}{$prev_end}{'high-coverage'}) { print $feature{$prev_chr}{$prev_start}{$prev_end}{'high-coverage'}/$nr_positions, "\t";} else {print "0\t";} if ($zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}) { print scalar(@ {$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'} }), "\t"; for (my $i=0;$i<scalar(@ {$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}});$i++) { print "$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}[$i];";} print "\tdepth_pos\n"; } else {print "0\t","Na\tdepth_pos\n";} } %feature = ();%zerofeature = ();$average_cov=0;$nr_positions=0;$feature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]} = $_; $prev_chr = $temp_line[0];$prev_start = $temp_line[1];$prev_end = $temp_line[2];if ($temp_line[5] >= 10) { $feature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]}{'high-coverage'}++;} if ($temp_line[5] == 0) { push (@ {$zerofeature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]}{'zero-coverage'} }, $temp_line[1]+$temp_line[4]-1);} $average_cov=$average_cov+$temp_line[5];$nr_positions++;} } print "$prev_chr\t","$prev_start\t","$prev_end\t",$average_cov/$nr_positions,"\t"; if ($feature{$prev_chr}{$prev_start}{$prev_end}{'high-coverage'}) { print $feature{$prev_chr}{$prev_start}{$prev_end}{'high-coverage'}/$nr_positions, "\t";} else {print "0\t";} if ($zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}) { print scalar(@ {$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'} }), "\t"; for (my $i=0;$i<scalar(@ {$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}});$i++) { print "$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}[$i];";} print "\tdepth_pos\n"; } else {print "0\t","Na\tdepth_pos\n";} last;' ?.$outSampleDirectory."/".$infile.$infileEnding."_coverageBed_depth_pos "; #InFile using the just created depth_pos file located in the outSampleDirectory
+#	print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_depth_pos_collapsed", "\n\n"; #OutFile
 	
 	#Concatenate to 1 file to be able to include info from _coverageBed file
-	print CAL_COV "#Concatenate to 1 file to be able to include info from _coverageBed file", "\n";
-	print CAL_COV "cat ";
-	print CAL_COV $outSampleDirectory."/".$infile.$infileEnding."_coverageBed_depth_pos_collapsed "; #InFile
-	print CAL_COV $outSampleDirectory."/".$infile.$infileEnding."_coverageBed "; #InFile
-	print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_merged_temp", "\n\n"; #OutFile
+#	print CAL_COV "#Concatenate to 1 file to be able to include info from _coverageBed file", "\n";
+#	print CAL_COV "cat ";
+#	print CAL_COV $outSampleDirectory."/".$infile.$infileEnding."_coverageBed_depth_pos_collapsed "; #InFile
+#	print CAL_COV $outSampleDirectory."/".$infile.$infileEnding."_coverageBed "; #InFile
+#	print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_merged_temp", "\n\n"; #OutFile
 	
 	#Sort on chr and then numerically on start position. NOTE makes the two lines from each file end up next to each other. The line order is preserved unless the feature annotation is "-", then it is reversed (exception handled by the next perl one-liner) 
-	print CAL_COV "#Sort on chr and then numerically on start position.\n";
-	print CAL_COV "sort ";
-	print CAL_COV "-k1,1 -k2,2n "; #Sort on chr and then numerically on start position.
-	print CAL_COV $outSampleDirectory."/".$infile.$infileEnding."_coverageBed_merged_temp "; #Infile
-	print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_merged", "\n\n"; #OutFile
+#	print CAL_COV "#Sort on chr and then numerically on start position.\n";
+#	print CAL_COV "sort ";
+#	print CAL_COV "-k1,1 -k2,2n "; #Sort on chr and then numerically on start position.
+#	print CAL_COV $outSampleDirectory."/".$infile.$infileEnding."_coverageBed_merged_temp "; #Infile
+#	print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_merged", "\n\n"; #OutFile
 	
 	#Collapse the two lines from coverageBed_depth_pos_collapsed and _coverageBed
-	print CAL_COV "##Collpase the two lines from coverageBed_depth_pos_collapsed and _coverageBed\n";
-	print CAL_COV q?perl -nae ' print "#Chr\tStart\tStop\tOverlapping_Reads\tNon-zero_Coverage_Bases\tFeature_Length(Nucleotides)\tAverage_Coverage\tFraction_Non-zero_Coverage_Bases\tFraction_Ten_Coverage_Bases\tNr_Zero_Coverage_Bases\tRelative_position_for_Zero_Coverage_Bases\n";chomp($_);my @prev_line=split("\t",$_);my @temp_line; while (<>) { chomp($_); @temp_line = split("\t",$_); if ($prev_line[0]  && ($prev_line[0] eq $temp_line[0]) && ($prev_line[1] == $temp_line[1]) && ($prev_line[2] == $temp_line[2])) { unless ($prev_line[7] eq "depth_pos") { $temp_line[3]=~s/\./\,/;$prev_line[4]=~s/\./\,/; print $prev_line[0],"\t", $prev_line[1],"\t",$prev_line[2],"\t",$prev_line[4],"\t",$prev_line[5],"\t",$prev_line[6],"\t",$temp_line[3],"\t","$prev_line[7]\t","$temp_line[4]\t","$temp_line[5]\t","$temp_line[6]\n";} else { $prev_line[3]=~s/\./\,/;$temp_line[4]=~s/\./\,/; print $temp_line[0],"\t", $temp_line[1],"\t",$temp_line[2],"\t",$temp_line[4],"\t",$temp_line[5],"\t",$temp_line[6],"\t",$prev_line[3],"\t","$temp_line[7]\t","$prev_line[4]\t","$prev_line[5]\t","$prev_line[6]\n";} } else { @prev_line = @temp_line;} }last;' ?.$outSampleDirectory."/".$infile.$infileEnding."_coverageBed_merged "; #InFile using the just created sorted _coverageBed_merged file located in the outSampleDirectory
-	print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_target_coverage.txt", "\n\n"; #OutFile
+#	print CAL_COV "##Collpase the two lines from coverageBed_depth_pos_collapsed and _coverageBed\n";
+#	print CAL_COV q?perl -nae ' print "#Chr\tStart\tStop\tOverlapping_Reads\tNon-zero_Coverage_Bases\tFeature_Length(Nucleotides)\tAverage_Coverage\tFraction_Non-zero_Coverage_Bases\tFraction_Ten_Coverage_Bases\tNr_Zero_Coverage_Bases\tRelative_position_for_Zero_Coverage_Bases\n";chomp($_);my @prev_line=split("\t",$_);my @temp_line; while (<>) { chomp($_); @temp_line = split("\t",$_); if ($prev_line[0]  && ($prev_line[0] eq $temp_line[0]) && ($prev_line[1] == $temp_line[1]) && ($prev_line[2] == $temp_line[2])) { unless ($prev_line[7] eq "depth_pos") { $temp_line[3]=~s/\./\,/;$prev_line[4]=~s/\./\,/; print $prev_line[0],"\t", $prev_line[1],"\t",$prev_line[2],"\t",$prev_line[4],"\t",$prev_line[5],"\t",$prev_line[6],"\t",$temp_line[3],"\t","$prev_line[7]\t","$temp_line[4]\t","$temp_line[5]\t","$temp_line[6]\n";} else { $prev_line[3]=~s/\./\,/;$temp_line[4]=~s/\./\,/; print $temp_line[0],"\t", $temp_line[1],"\t",$temp_line[2],"\t",$temp_line[4],"\t",$temp_line[5],"\t",$temp_line[6],"\t",$prev_line[3],"\t","$temp_line[7]\t","$prev_line[4]\t","$prev_line[5]\t","$prev_line[6]\n";} } else { @prev_line = @temp_line;} }last;' ?.$outSampleDirectory."/".$infile.$infileEnding."_coverageBed_merged "; #InFile using the just created sorted _coverageBed_merged file located in the outSampleDirectory
+#	print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_target_coverage.txt", "\n\n"; #OutFile
 	
 	#Add chr to entry to enable comparison to Gene Db
 	#print CAL_COV "#Add chr to entry to enable later comparison to Gene Db", "\n";
 	#print CAL_COV q?perl -i -p -e ' if($_=~/^#/) {} else {s/^(.+)/chr$1/g }' ?.$outSampleDirectory."/".$infile.$infileEnding."_target_coverage.txt", "\n\n"; #Modify in place
 	
 	#Removal of files which the necessary info has been extracted from
-	print CAL_COV "#Removal of files which the necessary info has been extracted from\n";
-	print CAL_COV "rm ";
-	print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_coverageBed", "\n\n";
+#	print CAL_COV "#Removal of files which the necessary info has been extracted from\n";
+#	print CAL_COV "rm ";
+#	print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_coverageBed", "\n\n";
 		
-	print CAL_COV "rm ";
-	print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_depth_pos", "\n\n";
-	print CAL_COV "rm ";
-	print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_depth_pos_collapsed", "\n\n";
-	print CAL_COV "rm ";
-	print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_merged_temp", "\n\n";
-	print CAL_COV "rm ";
-	print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_merged", "\n\n";
+#	print CAL_COV "rm ";
+#	print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_depth_pos", "\n\n";
+#	print CAL_COV "rm ";
+#	print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_depth_pos_collapsed", "\n\n";
+#	print CAL_COV "rm ";
+#	print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_merged_temp", "\n\n";
+#	print CAL_COV "rm ";
+#	print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_merged", "\n\n";
 		
-	my $targetCoverageDbFile = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport/".$infile;
-	my $targetCoverageFile =  $targetCoverageDbFile;
+#	my $targetCoverageDbFile = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport/".$infile;
+#	my $targetCoverageFile =  $targetCoverageDbFile;
 	
-	$targetCoverageDbFile .= $infileEnding."_coverage_target_db_master.txt";		    
-	$targetCoverageFile .= $infileEnding."_target_coverage.txt";    
-	my @targetCoverageDbFiles = ($targetCoverageDbFile); #Db master files	    
-	my @targetCoverageFiles = ($targetCoverageFile); #Target coverage files created above
+#	$targetCoverageDbFile .= $infileEnding."_coverage_target_db_master.txt";		    
+#	$targetCoverageFile .= $infileEnding."_target_coverage.txt";    
+#	my @targetCoverageDbFiles = ($targetCoverageDbFile); #Db master files	    
+#	my @targetCoverageFiles = ($targetCoverageFile); #Target coverage files created above
 	
 ###
 #Create target file with EnsembleGeneID (Required for coverage calculation in rank_script)
 ###
 	#Create db master template 
-	print CAL_COV "#Add GeneName to Coverage Report", "\n";
-	for (my $dbFileCounter=0;$dbFileCounter<scalar(@targetCoverageDbFiles);$dbFileCounter++) {
-	    open (TARCOV, ">".$targetCoverageDbFiles[$dbFileCounter]) or die "Can't write to ".$targetCoverageDbFiles[$dbFileCounter].": $!\n";
-	    print TARCOV "outInfo=Chromosome=>0_0,Start=>0_1,Stop=>0_2,Overlapping_Reads=>0_3,Non-zero_Coverage_Bases=>0_4,Feature_Length(Nucleotides)=>0_5,Average_Coverage=>0_6,Fraction_Non-zero_Coverage_Bases=>0_7,Fraction_Ten_Coverage_Bases=>0_8,Nr_Zero_Coverage_Bases=>0_9,Relative_position_for_Zero_Coverage_Bases=>0_10,Ensembl_GeneID=>1_4\n"; #Order of headers and columns in outfile
-	    print TARCOV $targetCoverageFiles[$dbFileCounter],"\t".'\t'."\t0,1,2\t0\texact\t0,1,2,3,4,5,6,7,8,9,10\tsmall","\n";
-	    print TARCOV $scriptParameter{'referencesDir'}."/".$scriptParameter{'targetCoverageGeneNameFile'}."\t".'\t'."\t0,1,2\t0\trange\t4\tsmall", "\n";
-	    close(TARCOV);
+#	print CAL_COV "#Add GeneName to Coverage Report", "\n";
+#	for (my $dbFileCounter=0;$dbFileCounter<scalar(@targetCoverageDbFiles);$dbFileCounter++) {
+#	    open (TARCOV, ">".$targetCoverageDbFiles[$dbFileCounter]) or die "Can't write to ".$targetCoverageDbFiles[$dbFileCounter].": $!\n";
+#	    print TARCOV "outInfo=Chromosome=>0_0,Start=>0_1,Stop=>0_2,Overlapping_Reads=>0_3,Non-zero_Coverage_Bases=>0_4,Feature_Length(Nucleotides)=>0_5,Average_Coverage=>0_6,Fraction_Non-zero_Coverage_Bases=>0_7,Fraction_Ten_Coverage_Bases=>0_8,Nr_Zero_Coverage_Bases=>0_9,Relative_position_for_Zero_Coverage_Bases=>0_10,Ensembl_GeneID=>1_4\n"; #Order of headers and columns in outfile
+#	    print TARCOV $targetCoverageFiles[$dbFileCounter],"\t".'\t'."\t0,1,2\t0\texact\t0,1,2,3,4,5,6,7,8,9,10\tsmall","\n";
+#	    print TARCOV $scriptParameter{'referencesDir'}."/".$scriptParameter{'targetCoverageGeneNameFile'}."\t".'\t'."\t0,1,2\t0\trange\t4\tsmall", "\n";
+#	    close(TARCOV);
 	    
 	    #Add GeneNameID to Coverage report
-	    print CAL_COV "perl ";
-	    print CAL_COV $scriptParameter{'inScriptDir'}."/intersectCollect.pl ";
-	    if ($humanGenomeReferenceSource eq "hg19") {
+#	    print CAL_COV "perl ";
+#	    print CAL_COV $scriptParameter{'inScriptDir'}."/intersectCollect.pl ";
+#	    if ($humanGenomeReferenceSource eq "hg19") {
 		
-		print CAL_COV "-prechr 1 "; #Use chromosome prefix
-	    }
-	    print CAL_COV "-o ".$targetCoverageFiles[$dbFileCounter]." "; #OutFile
-	    print CAL_COV "-db ".$targetCoverageDbFiles[$dbFileCounter]." ", "\n\n"; #Db master file (InFile(s))
-	}   
+#		print CAL_COV "-prechr 1 "; #Use chromosome prefix
+#	    }
+#	    print CAL_COV "-o ".$targetCoverageFiles[$dbFileCounter]." "; #OutFile
+#	    print CAL_COV "-db ".$targetCoverageDbFiles[$dbFileCounter]." ", "\n\n"; #Db master file (InFile(s))
+#	}   
     }
 
     else { #No merged files
@@ -3792,96 +3936,96 @@ sub CalculateCoverage {
 ###
 #Coverage Report
 ###
-	print CAL_COV "#Coverage Report Generation\n\n";
-	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files from MosaikAlign or BWA_Sampe
+#	print CAL_COV "#Coverage Report Generation\n\n";
+#	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files from MosaikAlign or BWA_Sampe
 	    
-	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
+#	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
 	    
-	    print CAL_COV "#Calculate coverage statistics to enable coverage calculation in rank_script", "\n";
-	    print CAL_COV "coverageBed "; #Returns the depth and breadth of coverage of features from A
-	    print CAL_COV "-abam ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFiles in BAM format
-	    print CAL_COV "-b ".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetBed'}." "; #Infile
-	    print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_coverageBed &", "\n\n"; #OutFile
+#	    print CAL_COV "#Calculate coverage statistics to enable coverage calculation in rank_script", "\n";
+#	    print CAL_COV "coverageBed "; #Returns the depth and breadth of coverage of features from A
+#	    print CAL_COV "-abam ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFiles in BAM format
+#	    print CAL_COV "-b ".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetBed'}." "; #Infile
+#	    print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_coverageBed &", "\n\n"; #OutFile
 	    
-	    print CAL_COV "coverageBed ";
-	    print CAL_COV "-d "; #Report the depth at each position in each B feature.
-	    print CAL_COV "-abam ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFiles in BAM format
-	    print CAL_COV "-b ".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetBed'}." "; #InFile
-	    print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_depth_pos &", "\n\n"; #OutFile
+#	    print CAL_COV "coverageBed ";
+#	    print CAL_COV "-d "; #Report the depth at each position in each B feature.
+#	    print CAL_COV "-abam ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFiles in BAM format
+#	    print CAL_COV "-b ".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetBed'}." "; #InFile
+#	    print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_depth_pos &", "\n\n"; #OutFile
 	    
-	    print CAL_COV "wait", "\n\n";
+#	    print CAL_COV "wait", "\n\n";
 
 #Generate the average depth per feature and the number of zero-coverage bases as well as their relative to feature position
-	    print CAL_COV "#Generate the average depth per feature and the number of zero-coverage bases as well as their relative to feature position", "\n";
-	    print CAL_COV q?perl -nae'my $prev_chr=0;my $prev_start;my $prev_end;my $average_cov=0;my $nr_positions=0;my %feature;my %zerofeature;my @temp_line; while (<>) { chomp($_);  @temp_line = split("\t",$_); if($feature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]}) { if ($temp_line[5] >= 10) { $feature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]}{'high-coverage'}++;} if ($temp_line[5] == 0) { push (@ {$zerofeature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]}{'zero-coverage'}}, $temp_line[1]+$temp_line[4]-1);} $average_cov=$average_cov+$temp_line[5];$nr_positions++;} else { if ($prev_chr && ($prev_start != $temp_line[1]) && ($prev_end != $temp_line[2])) { print "$prev_chr\t","$prev_start\t","$prev_end\t",$average_cov/$nr_positions,"\t"; if ($feature{$prev_chr}{$prev_start}{$prev_end}{'high-coverage'}) { print $feature{$prev_chr}{$prev_start}{$prev_end}{'high-coverage'}/$nr_positions, "\t";} else {print "0\t";} if ($zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}) { print scalar(@ {$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'} }), "\t"; for (my $i=0;$i<scalar(@ {$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}});$i++) { print "$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}[$i];";} print "\tdepth_pos\n"; } else {print "0\t","Na\tdepth_pos\n";} } %feature = ();%zerofeature = ();$average_cov=0;$nr_positions=0;$feature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]} = $_; $prev_chr = $temp_line[0];$prev_start = $temp_line[1];$prev_end = $temp_line[2];if ($temp_line[5] >= 10) { $feature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]}{'high-coverage'}++;} if ($temp_line[5] == 0) { push (@ {$zerofeature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]}{'zero-coverage'} }, $temp_line[1]+$temp_line[4]-1);} $average_cov=$average_cov+$temp_line[5];$nr_positions++;} } print "$prev_chr\t","$prev_start\t","$prev_end\t",$average_cov/$nr_positions,"\t"; if ($feature{$prev_chr}{$prev_start}{$prev_end}{'high-coverage'}) { print $feature{$prev_chr}{$prev_start}{$prev_end}{'high-coverage'}/$nr_positions, "\t";} else {print "0\t";} if ($zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}) { print scalar(@ {$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'} }), "\t"; for (my $i=0;$i<scalar(@ {$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}});$i++) { print "$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}[$i];";} print "\tdepth_pos\n"; } else {print "0\t","Na\tdepth_pos\n";} last;' ?.$outSampleDirectory."/".$infile.$infileEnding."_coverageBed_depth_pos "; #InFile using the just created depth_pos file located in the outSampleDirectory
-	    print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_depth_pos_collapsed", "\n\n"; #OutFile
+#	    print CAL_COV "#Generate the average depth per feature and the number of zero-coverage bases as well as their relative to feature position", "\n";
+#	    print CAL_COV q?perl -nae'my $prev_chr=0;my $prev_start;my $prev_end;my $average_cov=0;my $nr_positions=0;my %feature;my %zerofeature;my @temp_line; while (<>) { chomp($_);  @temp_line = split("\t",$_); if($feature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]}) { if ($temp_line[5] >= 10) { $feature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]}{'high-coverage'}++;} if ($temp_line[5] == 0) { push (@ {$zerofeature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]}{'zero-coverage'}}, $temp_line[1]+$temp_line[4]-1);} $average_cov=$average_cov+$temp_line[5];$nr_positions++;} else { if ($prev_chr && ($prev_start != $temp_line[1]) && ($prev_end != $temp_line[2])) { print "$prev_chr\t","$prev_start\t","$prev_end\t",$average_cov/$nr_positions,"\t"; if ($feature{$prev_chr}{$prev_start}{$prev_end}{'high-coverage'}) { print $feature{$prev_chr}{$prev_start}{$prev_end}{'high-coverage'}/$nr_positions, "\t";} else {print "0\t";} if ($zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}) { print scalar(@ {$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'} }), "\t"; for (my $i=0;$i<scalar(@ {$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}});$i++) { print "$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}[$i];";} print "\tdepth_pos\n"; } else {print "0\t","Na\tdepth_pos\n";} } %feature = ();%zerofeature = ();$average_cov=0;$nr_positions=0;$feature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]} = $_; $prev_chr = $temp_line[0];$prev_start = $temp_line[1];$prev_end = $temp_line[2];if ($temp_line[5] >= 10) { $feature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]}{'high-coverage'}++;} if ($temp_line[5] == 0) { push (@ {$zerofeature{$temp_line[0]}{$temp_line[1]}{$temp_line[2]}{'zero-coverage'} }, $temp_line[1]+$temp_line[4]-1);} $average_cov=$average_cov+$temp_line[5];$nr_positions++;} } print "$prev_chr\t","$prev_start\t","$prev_end\t",$average_cov/$nr_positions,"\t"; if ($feature{$prev_chr}{$prev_start}{$prev_end}{'high-coverage'}) { print $feature{$prev_chr}{$prev_start}{$prev_end}{'high-coverage'}/$nr_positions, "\t";} else {print "0\t";} if ($zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}) { print scalar(@ {$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'} }), "\t"; for (my $i=0;$i<scalar(@ {$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}});$i++) { print "$zerofeature{$prev_chr}{$prev_start}{$prev_end}{'zero-coverage'}[$i];";} print "\tdepth_pos\n"; } else {print "0\t","Na\tdepth_pos\n";} last;' ?.$outSampleDirectory."/".$infile.$infileEnding."_coverageBed_depth_pos "; #InFile using the just created depth_pos file located in the outSampleDirectory
+#	    print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_depth_pos_collapsed", "\n\n"; #OutFile
 	    
 	    #Concatenate to 1 file to be able to include info from _coverageBed file
-	    print CAL_COV "#Concatenate to 1 file to be able to include info from _coverageBed file", "\n";
-	    print CAL_COV "cat ";
-	    print CAL_COV $outSampleDirectory."/".$infile.$infileEnding."_coverageBed_depth_pos_collapsed "; #InFile
-	    print CAL_COV $outSampleDirectory."/".$infile.$infileEnding."_coverageBed "; #InFile
-	    print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_merged_temp",  "\n\n"; #OutFile
+#	    print CAL_COV "#Concatenate to 1 file to be able to include info from _coverageBed file", "\n";
+#	    print CAL_COV "cat ";
+#	    print CAL_COV $outSampleDirectory."/".$infile.$infileEnding."_coverageBed_depth_pos_collapsed "; #InFile
+#	    print CAL_COV $outSampleDirectory."/".$infile.$infileEnding."_coverageBed "; #InFile
+#	    print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_merged_temp",  "\n\n"; #OutFile
 	    
             #Sort on chr and then numerically on start position. NOTE makes the two lines from each file end up next to each other. The line order is preserved unless the feature annotation is "-", then it is reversed (exception handled by the next perl one-liner) 
-	    print CAL_COV "#Sort on chr and then numerically on start position.\n";
-	    print CAL_COV "sort ";
-	    print CAL_COV "-k1,1 -k2,2n "; #Sort on chr and then numerically on start position.
-	    print CAL_COV $outSampleDirectory."/".$infile.$infileEnding."_coverageBed_merged_temp "; #InFile
-	    print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_merged",  "\n\n"; #OutFile
+#	    print CAL_COV "#Sort on chr and then numerically on start position.\n";
+#	    print CAL_COV "sort ";
+#	    print CAL_COV "-k1,1 -k2,2n "; #Sort on chr and then numerically on start position.
+#	    print CAL_COV $outSampleDirectory."/".$infile.$infileEnding."_coverageBed_merged_temp "; #InFile
+#	    print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_merged",  "\n\n"; #OutFile
 	    
 	    #Collpase the two lines from coverageBed_depth_pos_collapsed and _coverageBed
-	    print CAL_COV "#Collpase the two lines from coverageBed_depth_pos_collapsed and _coverageBed", "\n";
-	    print CAL_COV q?perl -nae ' print "#Chr\tStart\tStop\tOverlapping_Reads\tNon-zero_Coverage_Bases\tFeature_Length(Nucleotides)\tAverage_Coverage\tFraction_Non-zero_Coverage_Bases\tFraction_Ten_Coverage_Bases\tNr_Zero_Coverage_Bases\tRelative_position_for_Zero_Coverage_Bases\n";chomp($_);my @prev_line=split("\t",$_);my @temp_line; while (<>) { chomp($_); @temp_line = split("\t",$_); if ($prev_line[0]  && ($prev_line[0] eq $temp_line[0]) && ($prev_line[1] == $temp_line[1]) && ($prev_line[2] == $temp_line[2])) { unless ($prev_line[7] eq "depth_pos") { $temp_line[3]=~s/\./\,/;$prev_line[4]=~s/\./\,/; print $prev_line[0],"\t", $prev_line[1],"\t",$prev_line[2],"\t",$prev_line[4],"\t",$prev_line[5],"\t",$prev_line[6],"\t",$temp_line[3],"\t","$prev_line[7]\t","$temp_line[4]\t","$temp_line[5]\t","$temp_line[6]\n";} else { $prev_line[3]=~s/\./\,/;$temp_line[4]=~s/\./\,/; print $temp_line[0],"\t", $temp_line[1],"\t",$temp_line[2],"\t",$temp_line[4],"\t",$temp_line[5],"\t",$temp_line[6],"\t",$prev_line[3],"\t","$temp_line[7]\t","$prev_line[4]\t","$prev_line[5]\t","$prev_line[6]\n";} } else { @prev_line = @temp_line;} }last;' ?.$outSampleDirectory."/".$infile.$infileEnding."_coverageBed_merged "; #InFile using the just created sorted _coverageBed_merged file located in the outSampleDirectory
-	    print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_target_coverage.txt", "\n\n"; #OutFile
+#	    print CAL_COV "#Collpase the two lines from coverageBed_depth_pos_collapsed and _coverageBed", "\n";
+#	    print CAL_COV q?perl -nae ' print "#Chr\tStart\tStop\tOverlapping_Reads\tNon-zero_Coverage_Bases\tFeature_Length(Nucleotides)\tAverage_Coverage\tFraction_Non-zero_Coverage_Bases\tFraction_Ten_Coverage_Bases\tNr_Zero_Coverage_Bases\tRelative_position_for_Zero_Coverage_Bases\n";chomp($_);my @prev_line=split("\t",$_);my @temp_line; while (<>) { chomp($_); @temp_line = split("\t",$_); if ($prev_line[0]  && ($prev_line[0] eq $temp_line[0]) && ($prev_line[1] == $temp_line[1]) && ($prev_line[2] == $temp_line[2])) { unless ($prev_line[7] eq "depth_pos") { $temp_line[3]=~s/\./\,/;$prev_line[4]=~s/\./\,/; print $prev_line[0],"\t", $prev_line[1],"\t",$prev_line[2],"\t",$prev_line[4],"\t",$prev_line[5],"\t",$prev_line[6],"\t",$temp_line[3],"\t","$prev_line[7]\t","$temp_line[4]\t","$temp_line[5]\t","$temp_line[6]\n";} else { $prev_line[3]=~s/\./\,/;$temp_line[4]=~s/\./\,/; print $temp_line[0],"\t", $temp_line[1],"\t",$temp_line[2],"\t",$temp_line[4],"\t",$temp_line[5],"\t",$temp_line[6],"\t",$prev_line[3],"\t","$temp_line[7]\t","$prev_line[4]\t","$prev_line[5]\t","$prev_line[6]\n";} } else { @prev_line = @temp_line;} }last;' ?.$outSampleDirectory."/".$infile.$infileEnding."_coverageBed_merged "; #InFile using the just created sorted _coverageBed_merged file located in the outSampleDirectory
+#	    print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding."_target_coverage.txt", "\n\n"; #OutFile
 	    
 	    #Add chr to entry to enable comparison to Gene Db
 	    #print CAL_COV "#Add chr to entry to enable later comparison to Gene Db", "\n";
 	    #print CAL_COV q?perl -i -p -e ' if($_=~/^#/) {} else {s/^(.+)/chr$1/g }' ?.$outSampleDirectory."/".$infile.$outfileEnding."_target_coverage.txt", "\n\n";
             #Removal of files which the necessary info has been extracted from
-	    print CAL_COV "#Removal of files which the necessary info has been extracted from\n";
-	    print CAL_COV "rm ";
-	    print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_coverageBed", "\n\n";
+#	    print CAL_COV "#Removal of files which the necessary info has been extracted from\n";
+#	    print CAL_COV "rm ";
+#	    print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_coverageBed", "\n\n";
 	    
-	    print CAL_COV "rm ";
-	    print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_depth_pos", "\n\n";
+#	    print CAL_COV "rm ";
+#	    print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_depth_pos", "\n\n";
 	    
-	    print CAL_COV "rm ";
-	    print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_depth_pos_collapsed", "\n\n";
+#	    print CAL_COV "rm ";
+#	    print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_depth_pos_collapsed", "\n\n";
 	    
-	    print CAL_COV "rm ";
-	    print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_merged_temp", "\n\n";
+#	    print CAL_COV "rm ";
+#	    print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_merged_temp", "\n\n";
 	    
-	    print CAL_COV "rm ";
-	    print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_merged", "\n\n";
+#	    print CAL_COV "rm ";
+#	    print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_merged", "\n\n";
 	    
 ###
 #Create target file with EnsembleGeneID (Required for coverage calculation in rank_script)
 ###
 	    
-	    my @targetCoverageDbFiles = ($scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport/".$infile.$infileEnding."_coverage_target_db_master.txt"); #Db master files	    
-	    my @targetCoverageFiles = ($scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport/".$infile.$infileEnding."_target_coverage.txt"); 
+#	    my @targetCoverageDbFiles = ($scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport/".$infile.$infileEnding."_coverage_target_db_master.txt"); #Db master files	    
+#	    my @targetCoverageFiles = ($scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport/".$infile.$infileEnding."_target_coverage.txt"); 
 	    
 #Create db master template 
-	    print CAL_COV "#Add GeneName to Coverage Report", "\n";
-	    for (my $dbFileCounter=0;$dbFileCounter<scalar(@targetCoverageDbFiles);$dbFileCounter++) { 
-		open (TARCOV, ">".$targetCoverageDbFiles[$dbFileCounter]) or die "Can't write to ".$targetCoverageDbFiles[$dbFileCounter].": $!\n";
-		print TARCOV "outInfo=Chromosome=>0_0,Start=>0_1,Stop=>0_2,Overlapping_Reads=>0_3,Non-zero_Coverage_Bases=>0_4,Feature_Length(Nucleotides)=>0_5,Average_Coverage=>0_6,Fraction_Non-zero_Coverage_Bases=>0_7,Fraction_Ten_Coverage_Bases=>0_8,Nr_Zero_Coverage_Bases=>0_9,Relative_position_for_Zero_Coverage_Bases=>0_10,Ensembl_GeneID=>1_4\n"; #Order of headers and columns in outfile
-		print TARCOV $targetCoverageFiles[$dbFileCounter],"\t".'\t'."\t0,1,2\t0\texact\t0,1,2,3,4,5,6,7,8,9,10\tsmall","\n";
-		print TARCOV $scriptParameter{'referencesDir'}."/".$scriptParameter{'targetCoverageGeneNameFile'}."\t".'\t'."\t0,1,2\t0\trange\t4\tsmall", "\n";
-		close(TARCOV);
+#	    print CAL_COV "#Add GeneName to Coverage Report", "\n";
+#	    for (my $dbFileCounter=0;$dbFileCounter<scalar(@targetCoverageDbFiles);$dbFileCounter++) { 
+#		open (TARCOV, ">".$targetCoverageDbFiles[$dbFileCounter]) or die "Can't write to ".$targetCoverageDbFiles[$dbFileCounter].": $!\n";
+#		print TARCOV "outInfo=Chromosome=>0_0,Start=>0_1,Stop=>0_2,Overlapping_Reads=>0_3,Non-zero_Coverage_Bases=>0_4,Feature_Length(Nucleotides)=>0_5,Average_Coverage=>0_6,Fraction_Non-zero_Coverage_Bases=>0_7,Fraction_Ten_Coverage_Bases=>0_8,Nr_Zero_Coverage_Bases=>0_9,Relative_position_for_Zero_Coverage_Bases=>0_10,Ensembl_GeneID=>1_4\n"; #Order of headers and columns in outfile
+#		print TARCOV $targetCoverageFiles[$dbFileCounter],"\t".'\t'."\t0,1,2\t0\texact\t0,1,2,3,4,5,6,7,8,9,10\tsmall","\n";
+#		print TARCOV $scriptParameter{'referencesDir'}."/".$scriptParameter{'targetCoverageGeneNameFile'}."\t".'\t'."\t0,1,2\t0\trange\t4\tsmall", "\n";
+#		close(TARCOV);
 		
 #Add GeneNameID to Coverage Report
-		print CAL_COV "perl ";
-		print CAL_COV $scriptParameter{'inScriptDir'}."/intersectCollect.pl ";
-		if ($humanGenomeReferenceSource eq "hg19") {
+#		print CAL_COV "perl ";
+#		print CAL_COV $scriptParameter{'inScriptDir'}."/intersectCollect.pl ";
+#		if ($humanGenomeReferenceSource eq "hg19") {
 		    
-		    print CAL_COV "-prechr 1 "; #Use chromosome prefix
-		}
-		print CAL_COV "-o ".$targetCoverageFiles[$dbFileCounter]." "; #OutFile
-		print CAL_COV "-db ".$targetCoverageDbFiles[$dbFileCounter]." ", "\n\n"; #Db master file (InFile(s))
-	    }
-	}
+#		    print CAL_COV "-prechr 1 "; #Use chromosome prefix
+#		}
+#		print CAL_COV "-o ".$targetCoverageFiles[$dbFileCounter]." "; #OutFile
+#		print CAL_COV "-db ".$targetCoverageDbFiles[$dbFileCounter]." ", "\n\n"; #Db master file (InFile(s))
+#	    }
+ #   }
     }
     print CAL_COV "wait", "\n\n";
     
@@ -3893,74 +4037,122 @@ sub CalculateCoverage {
 }
 
 sub ChanjoImport { 
+##Loads the calculated coverage to family database 
+
+    my $familyID = $_[0]; #familyID NOTE: not sampleid 
+
+    ProgramPreRequisites($familyID, "ChanjoImport", "chanjoimport", 0, *CHANJOIMP, 1, 1);
+
+    my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID;
+
+    my $coreCounter=1;
+
+    print CHANJOIMP "workon ".$scriptParameter{'pythonVirtualEnvironment'}, "\n\n"; #Activate python environment
+    
+ ##Build family database for coverage report
+    print CHANJOIMP "chanjo ";
+    print CHANJOIMP $outFamilyDirectory."/".$familyID.".sqlite "; #Central Db for family
+    print CHANJOIMP "import ";
+
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {   
+	
+	my $sampleID = $sampleIDs[$sampleIDCounter];
+	my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport";
+	my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pChanjoCalculate'}{'fileEnding'};
+	
+	my ($infile, $PicardToolsMergeSwitch) = CheckIfMergedFiles($sampleID);	
+
+	if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
+	    print CHANJOIMP $inSampleDirectory."/".$infile.$infileEnding.".json ";      	
+	}
+	else {
+	    
+	    for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files from independent of merged or not
+		
+		if ($infileCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
+		    
+		    print CHANJOCAL "wait", "\n\n";
+		    $coreCounter=$coreCounter+1;
+		}
+		my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
+		print CHANJOIMP $inSampleDirectory."/".$infile.$infileEnding.".json ";
+		
+	    }
+	}
+    }
+    print CHANJOIMP "--force ". "\n\n";#Overwrite if file outFile exists
+    
+    print CHANJOIMP "deactivate ", "\n\n"; #Deactivate python environment
+    close(CHANJOIMP); 
+    if ( ($scriptParameter{'pChanjoImport'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	FIDSubmitJob(0, $familyID, 1, $parameter{'pChanjoImport'}{'chain'}, $filename, 0);
+    }
+    return;
+}
+
+sub ChanjoCalculate { 
 #Generate coverage SQLite database for each individual.
 
     my $sampleID = $_[0];
     my $aligner = $_[1]; 
 
-    ProgramPreRequisites($sampleID, "ChanjoImport", $aligner."/coverageReport", 0, *CHANJOIMP, $scriptParameter{'maximumCores'}, 2);      
+    ProgramPreRequisites($sampleID, "ChanjoCalculate", $aligner."/coverageReport", 0, *CHANJOCAL, $scriptParameter{'maximumCores'}, 2);      
     
+    my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'};
     my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
     my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport";
     my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
-    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pChanjoCalculate'}{'fileEnding'};
 
     
     my ($infile, $PicardToolsMergeSwitch) = CheckIfMergedFiles($sampleID);
-    my $processCounter=1;
     my $coreCounter=1;	
 	
-    print CHANJOIMP "workon ".$scriptParameter{'pythonVirtualEnvironment'}, "\n\n"; #Activate python environment
+    print CHANJOCAL "workon ".$scriptParameter{'pythonVirtualEnvironment'}, "\n\n"; #Activate python environment
 
     if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
-	
-	if ($processCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
-	    
-	    print CHANJOIMP "wait", "\n\n";
-	    $coreCounter=$coreCounter+1;
-	}
 
-	print CHANJOIMP "chanjo ";
-	print CHANJOIMP "annotate ";
-	print CHANJOIMP $scriptParameter{'chanjoImportStoreFile'}." "; #Central Db for family
-	print CHANJOIMP "using ";
-	print CHANJOIMP $inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile ; 
-	print CHANJOIMP "--cutoff ".$scriptParameter{'chanjoImportCutoff'}." "; #Read depth cutoff
-	print CHANJOIMP "--sample ".$sampleID." "; #SampleID
-	print CHANJOIMP "--group ".$scriptParameter{'familyID'}." "; #Group to annotate sample to
-	print CHANJOIMP "--json ".$outSampleDirectory."/".$infile.$outfileEnding."coverage.json &". "\n\n"; #OutFile
-	    
-	$processCounter++; #Increment processCounter
+	print CHANJOCAL "chanjo ";
+	print CHANJOCAL "annotate ";
+	print CHANJOCAL $outFamilyDirectory."/".$scriptParameter{'familyID'}.".sqlite "; #Central Db for family
+	print CHANJOCAL "using ";
+	print CHANJOCAL $inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile ; 
+	print CHANJOCAL "--cutoff ".$scriptParameter{'chanjoCalculateCutoff'}." "; #Read depth cutoff
+	print CHANJOCAL "--sample ".$sampleID." "; #SampleID
+	print CHANJOCAL "--splice-sites "; #Include splice sites for every exon
+	print CHANJOCAL "--group ".$scriptParameter{'familyID'}." "; #Group to annotate sample to
+	print CHANJOCAL "--force ";#Overwrite if file outFile exists
+	print CHANJOCAL "--json ".$outSampleDirectory."/".$infile.$outfileEnding.".json &". "\n\n"; #OutFile	
     }
     else { #No merged files
 	
 	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files from independent of merged or not
 	    
-	    if ($processCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
+	    if ($infileCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
 		
-		print CHANJOIMP "wait", "\n\n";
+		print CHANJOCAL "wait", "\n\n";
 		$coreCounter=$coreCounter+1;
 	    }
 	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
 	    
-	    print CHANJOIMP "chanjo ";
-	    print CHANJOIMP "annotate ";
-	    print CHANJOIMP $scriptParameter{'chanjoImportStoreFile'}." ";
-	    print CHANJOIMP "using ";
-	    print CHANJOIMP $inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile ; 
-	    print CHANJOIMP "--cutoff ".$scriptParameter{'chanjoImportCutoff'}." "; #Read depth cutoff
-	    print CHANJOIMP "--sample ".$sampleID." "; #SampleID
-	    print CHANJOIMP "--group ".$scriptParameter{'familyID'}." "; #Group to annotate sample to
-	    print CHANJOIMP "--json ".$outSampleDirectory."/".$infile.$outfileEnding."coverage.json &". "\n\n"; #OutFile   
-	    
-	    $processCounter++; #Increment processCounter   
+	    print CHANJOCAL "chanjo ";
+	    print CHANJOCAL "annotate ";
+	    print CHANJOCAL $outFamilyDirectory."/".$scriptParameter{'familyID'}.".sqlite "; #Central Db for family
+	    print CHANJOCAL "using ";
+	    print CHANJOCAL $inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile ; 
+	    print CHANJOCAL "--cutoff ".$scriptParameter{'chanjoCalculateCutoff'}." "; #Read depth cutoff
+	    print CHANJOCAL "--sample ".$sampleID." "; #SampleID
+	    print CHANJOCAL "--splice-sites "; #Include splice sites for every exon
+	    print CHANJOCAL "--group ".$scriptParameter{'familyID'}." "; #Group to annotate sample to
+	    print CHANJOCAL "--force ";#Overwrite if file outFile exists
+	    print CHANJOCAL "--json ".$outSampleDirectory."/".$infile.$outfileEnding.".json &". "\n\n"; #OutFile   
 	}
-	print CHANJOIMP "wait", "\n\n";
+	print CHANJOCAL "wait", "\n\n";
     }
-    print CHANJOIMP "deactivate ", "\n\n"; #Deactivate python environment
-    close(CHANJOIMP);
-    if ( ($scriptParameter{'pChanjoImport'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-	FIDSubmitJob(0, $scriptParameter{'familyID'}, 2, $parameter{'pChanjoImport'}{'chain'}, $filename, 0);
+    print CHANJOCAL "deactivate ", "\n\n"; #Deactivate python environment
+    close(CHANJOCAL);
+    if ( ($scriptParameter{'pChanjoCalculate'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	FIDSubmitJob(0, $scriptParameter{'familyID'}, 2, $parameter{'pChanjoCalculate'}{'chain'}, $filename, 0);
     }
     return;
 }
@@ -3971,14 +4163,17 @@ sub ChanjoBuild {
 
     ProgramPreRequisites($familyID, "ChanjoBuild", "chanjobuild", 0, *CHANJOBUI, 1, 1);
 
+    my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID;
+
     print CHANJOBUI "workon ".$scriptParameter{'pythonVirtualEnvironment'}, "\n\n"; #Activate python environment
     
  ##Build new database
     print CHANJOBUI "chanjo ";
     print CHANJOBUI "build ";
-    print CHANJOBUI $scriptParameter{'chanjoBuildStoreFile'}." ";
+    print CHANJOBUI $outFamilyDirectory."/".$familyID.".sqlite ";
     print CHANJOBUI "using ";
-    print CHANJOBUI $scriptParameter{'referencesDir'}."/".$scriptParameter{'chanjoBuildDb'}, "\n\n";      
+    print CHANJOBUI $scriptParameter{'referencesDir'}."/".$scriptParameter{'chanjoBuildDb'}." ";      
+    print CHANJOBUI "--force ", "\n\n";#Overwrite if file outFile exists
 
     print CHANJOBUI "deactivate ", "\n\n"; #Deactivate python environment
     close(CHANJOBUI); 
@@ -3987,6 +4182,8 @@ sub ChanjoBuild {
     }
     return;
 }
+
+
 
 sub PicardToolsMarkDuplicates { 
 #Mark duplicated reads using PicardTools MarkDuplicates in files generated from alignment (sorted, merged)
@@ -5537,23 +5734,6 @@ sub AddToScriptParameter {
 				%sampleInfo = LoadYAML($scriptParameter{'sampleInfoFile'}); #Load parameters from previous run from sampleInfoFile			   
 			    }
 			} 
-		    }
-		    elsif ( ($parameterName eq "chanjoImportStoreFile") || ($parameterName eq "chanjoBuildStoreFile") ) { #To avoid common file existence s check
-
-			if (defined($scriptParameter{'chanjoImportStoreFile'})) { #Active parameter
-
-			    unless (-e $scriptParameter{'chanjoImportStoreFile'}) { #File check
-				
-				if ( ( $scriptParameter{'pChanjoBuild'} == 0) || ( $scriptParameter{'chanjoBuildStoreFile'} ne $scriptParameter{'chanjoImportStoreFile'}) ){ #If no file then we want to create it if enough information is given.
-
-				    print STDOUT "NOTE: Could not find '-chanjoImportStoreFile': ".$scriptParameter{'chanjoImportStoreFile'}.", will attempt to create file using 'pChanjoBuild' & '-chanjoBuildStoreFile'; ".$scriptParameter{'chanjoImportStoreFile'}." before launching ChanjoImport.\n";    
-				    
-				    $parameter{'pChanjoBuild'}{'value'} = 1; #Activate parameter
-				    $parameter{'chanjoBuildStoreFile'}{'value'} = $scriptParameter{'chanjoImportStoreFile'}; #Reset to new info
-				    push(@orderParameters, ("pChanjoBuild","chanjoBuildStoreFile", "chanjoBuildDb", "pythonVirtualEnvironment")); #Rerun AddToScriptParameters and hence reevaluate with new settings for program ChanjoBuild and associative prameters
-				}
-			    }
-			}
 		    } 
 		    else {
 			
