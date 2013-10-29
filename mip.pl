@@ -5384,21 +5384,21 @@ sub InfilesReFormat {
 		    push( @{$lane{$sampleID}}, $2); #Lane                                                                                                      
 
 		    $infilesLaneNoEnding{$sampleID}[$laneTracker]= $1.".".$2; #Save old format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).  
+		    $laneTracker++; #Track for every lane finished 
 		}
 
 		$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]= $1.".".$2; #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
 		
                 $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'sampleBarcode'} = "X"; #Save barcode, but not defined
 		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'runBarcode'} = $2."_".$1; #Save run barcode
-		CheckUniqueArrayElement(\@{ $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'readDirection'} }, \$3); #Check if there are any new info and add it to sampleInfo if so.
-		                                            
-                $laneTracker++; #Track for every lane finished                                                                                                  
+		CheckUniqueArrayElement(\@{ $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'readDirection'} }, \$3); #Check if there are any new info and add it to sampleInfo if so.                                                                                             
             }
             elsif ($infile{$sampleID}[$infileCounter] =~ /\/?([^\.\/]+\.[^\.]+)\.lane(\d+)_([12FfRr])\.fastq/) { #Parse 'old' format                           
 
 		if ($3 == 1) { #1st read direction
 		    push( @ {$lane{$sampleID}}, $2); #Lane
 		    $infilesLaneNoEnding{$sampleID}[$laneTracker]= $1.".".$2; #Save old format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
+		    $laneTracker++; #Track for every lane finished 
 		}
 
                 $uncompressedFileCounter = 1; #File needs compression before starting analysis           
@@ -5406,14 +5406,14 @@ sub InfilesReFormat {
 		
                 $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'sampleBarcode'} = "X"; #Save barcode, but not defined      
                 $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'runBarcode'} = $2."_".$1; #Save run barcode  
-		CheckUniqueArrayElement(\@{ $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'readDirection'} }, \$3); #Check if there are any new info and add it to sampleInfo if so.                
-		$laneTracker++; #Track for every lane finished                                                                                                  
+		CheckUniqueArrayElement(\@{ $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$1.".".$2}{'readDirection'} }, \$3); #Check if there are any new info and add it to sampleInfo if so.                                                                                                       
             }
             elsif ($infile{$sampleID}[$infileCounter] =~ /(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq.gz/) { #Parse fastq.gz 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, \$5=index,$6=direction                                                                                                           
 
 		if ($6 == 1) {
 		    push( @{$lane{$sampleID}}, $1); #Lane
 		    $infilesLaneNoEnding{$sampleID}[$laneTracker]= $4.".".$2."_".$3."_".$5.".lane".$1; #Save new format (sampleID_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq). 
+		    $laneTracker++; #Track for every lane finished 
 		}
 
 		$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]= $4.".".$2."_".$3."_".$5.".lane".$1."_".$6; #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
@@ -5422,14 +5422,14 @@ sub InfilesReFormat {
 		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'flow-cell'} = $3; #Save Sequence flow-cell        
 		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'sampleBarcode'} = $5; #Save sample barcode
 		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'runBarcode'} = $2."_".$3."_".$1."_".$5; #Save run barcode
-		CheckUniqueArrayElement(\@{  $sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'ReadDirection'} }, \$6); #Check if there are any new info and add it to sampleInfo if so.
-		$laneTracker++; #Track for every lane finished                                                                                               
+		CheckUniqueArrayElement(\@{  $sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'ReadDirection'} }, \$6); #Check if there are any new info and add it to sampleInfo if so.                                                                                          
             }
             elsif ($infile{$sampleID}[$infileCounter] =~/(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq/) { #Parse 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=d\irection                                                                                                                      
 
 		if ($6 == 1) {
 		    push( @{$lane{$sampleID}}, $1); #Lane
 		    $infilesLaneNoEnding{ $sampleID }[$laneTracker]= $4.".".$2."_".$3."_".$5.".lane".$1; #Save new format (sampleID_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).		
+		    $laneTracker++; #Track for every lane finished 
 		}
 
 		$uncompressedFileCounter = 1; #File needs compression before starting analysis
@@ -5439,8 +5439,7 @@ sub InfilesReFormat {
 		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'flow-cell'} = $3; #Save Sequence flow-cell  
 		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'sampleBarcode'} = $5; #Save sample barcode       
 		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'runBarcode'} = $2."_".$3."_".$1."_".$5; #Save run barcode
-		CheckUniqueArrayElement(\@{  $sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'ReadDirection'} }, \$6); #Check if there are any new info and add it to sampleInfo if so.               
-		$laneTracker++; #Track for every lane finished   
+		CheckUniqueArrayElement(\@{  $sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$4.".".$2."_".$3."_".$5.".lane".$1}{'ReadDirection'} }, \$6); #Check if there are any new info and add it to sampleInfo if so.              
 	    }
         }
 	
