@@ -4805,7 +4805,7 @@ sub MosaikAlign {
 	if ( ($scriptParameter{'pMosaikAlign'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 ##Collect QC metadata info for later use                     	
 	    SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "MosaikAligner",$infile , $directories, $file, "infoDirectory");
-	    FIDSubmitJob2($sampleID, $scriptParameter{'familyID'}, 3, $parameter{'pMosaikAlign'}{'chain'}, $filename, $sbatchScriptTracker);
+	    FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 3, $parameter{'pMosaikAlign'}{'chain'}, $filename, $sbatchScriptTracker);
 	}
 	$sbatchScriptTracker++; #Tracks nr of sbatch scripts
     }
@@ -4851,7 +4851,7 @@ sub MosaikBuild {
     print MOS_BU "wait", "\n\n";    
     close(MOS_BU);
     if ( ($scriptParameter{'pMosaikBuild'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) { 
-	FIDSubmitJob2($sampleID, $scriptParameter{'familyID'}, 0, $parameter{'pMosaikBuild'}{'chain'}, $filename, 0);
+	FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 0, $parameter{'pMosaikBuild'}{'chain'}, $filename, 0);
     }
     return;
 }   
@@ -4891,7 +4891,7 @@ sub FastQC {
     
     close(FASTQC);
     if ( ($scriptParameter{'pFastQC'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-	FIDSubmitJob2($sampleID, $scriptParameter{'familyID'}, 2, $parameter{'pFastQC'}{'chain'}, $filename, 0);
+	FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 2, $parameter{'pFastQC'}{'chain'}, $filename, 0);
     }
     return;
 }
