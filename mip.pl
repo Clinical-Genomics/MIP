@@ -4084,7 +4084,7 @@ sub ChanjoImport {
     print CHANJOIMP "deactivate ", "\n\n"; #Deactivate python environment
     close(CHANJOIMP); 
     if ( ($scriptParameter{'pChanjoImport'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-	FIDSubmitJob(0, $familyID, 1, $parameter{'pChanjoImport'}{'chain'}, $filename, 0);
+	FIDSubmitJob(0, $familyID, 5, $parameter{'pChanjoImport'}{'chain'}, $filename, 0);
     }
     return;
 }
@@ -4151,7 +4151,7 @@ sub ChanjoCalculate {
     print CHANJOCAL "deactivate ", "\n\n"; #Deactivate python environment
     close(CHANJOCAL);
     if ( ($scriptParameter{'pChanjoCalculate'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-	FIDSubmitJob(0, $scriptParameter{'familyID'}, 2, $parameter{'pChanjoCalculate'}{'chain'}, $filename, 0);
+	FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 5, $parameter{'pChanjoCalculate'}{'chain'}, $filename, 0);
     }
     return;
 }
@@ -4177,7 +4177,7 @@ sub ChanjoBuild {
     print CHANJOBUI "deactivate ", "\n\n"; #Deactivate python environment
     close(CHANJOBUI); 
     if ( ($scriptParameter{'pChanjoBuild'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-	FIDSubmitJob(0, $familyID, 1, $parameter{'pChanjoBuild'}{'chain'}, $filename, 0);
+	FIDSubmitJob(0, $familyID, 5, $parameter{'pChanjoBuild'}{'chain'}, $filename, 0);
     }
     return;
 }
@@ -5076,37 +5076,37 @@ sub PushToJobID {
     my $chainKey;
     
     if ($chainKeyType eq "Parallel") { #Push parallel jobs
-     
-     for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #All infiles
-         
-         $chainKey = $sampleID."_parallel_".$path.$infileCounter; #Set key
-         
-         if ($jobID{$familyIDChainKey}{$chainKey}) { #job exists
-          
-          for (my $jobCounter=0;$jobCounter<scalar( @{ $jobID{$familyIDChainKey}{$chainKey} });$jobCounter++) { #All previous jobs i.e. jobs in this case equals to infiles in number
-              
-              push ( @{ $jobID{$familyIDChainKey}{$sampleIDChainKey} }, $jobID{$familyIDChainKey}{$chainKey}[$jobCounter]); #Add jobID to hash
-          }    
-         }
-     }
+	
+	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #All infiles
+	    
+	    $chainKey = $sampleID."_parallel_".$path.$infileCounter; #Set key
+	    
+	    if ($jobID{$familyIDChainKey}{$chainKey}) { #job exists
+		
+		for (my $jobCounter=0;$jobCounter<scalar( @{ $jobID{$familyIDChainKey}{$chainKey} });$jobCounter++) { #All previous jobs i.e. jobs in this case equals to infiles in number
+		    
+		    push ( @{ $jobID{$familyIDChainKey}{$sampleIDChainKey} }, $jobID{$familyIDChainKey}{$chainKey}[$jobCounter]); #Add jobID to hash
+		}    
+	    }
+	}
     }
     elsif ( ($chainKeyType eq "Merged") || ($chainKeyType eq "Family_Merged")  ) { #Push merged jobs
-     
-     $chainKey = $familyIDChainKey."_".$sampleIDChainKey; #Set key
-     
-     if ($jobID{$familyIDChainKey}{$chainKey}) { #job exists
-         
-         for (my $jobCounter=0;$jobCounter<scalar( @{ $jobID{$familyIDChainKey}{$chainKey} });$jobCounter++) { #All previous jobs i.e. jobs in this case equals to infiles in number
-          
-          if ($chainKeyType eq "Family_Merged") { #Use $familyIDChainKey instead of $sampleIDChainKey
-              
-              push ( @{ $jobID{$familyIDChainKey}{$familyIDChainKey} }, $jobID{$familyIDChainKey}{$chainKey}[$jobCounter]); #Add jobID hash
-          }
-          else {
-              push ( @{ $jobID{$familyIDChainKey}{$sampleIDChainKey} }, $jobID{$familyIDChainKey}{$chainKey}[$jobCounter]); #Add jobID to hash
-          }
-         }    
-     }
+	
+	$chainKey = $familyIDChainKey."_".$sampleIDChainKey; #Set key
+	
+	if ($jobID{$familyIDChainKey}{$chainKey}) { #job exists
+	    
+	    for (my $jobCounter=0;$jobCounter<scalar( @{ $jobID{$familyIDChainKey}{$chainKey} });$jobCounter++) { #All previous jobs i.e. jobs in this case equals to infiles in number
+		
+		if ($chainKeyType eq "Family_Merged") { #Use $familyIDChainKey instead of $sampleIDChainKey
+		    
+		    push ( @{ $jobID{$familyIDChainKey}{$familyIDChainKey} }, $jobID{$familyIDChainKey}{$chainKey}[$jobCounter]); #Add jobID hash
+		}
+		else {
+		    push ( @{ $jobID{$familyIDChainKey}{$sampleIDChainKey} }, $jobID{$familyIDChainKey}{$chainKey}[$jobCounter]); #Add jobID to hash
+		}
+	    }    
+	}
     }
 }
 
@@ -5221,6 +5221,7 @@ sub FIDSubmitJob {
          if ($dependencies == 5) { #Job dependent on both familyID and sampleID push to array
           
           @{ $jobID{$familyIDChainKey}{$familyIDChainKey."_".$sampleIDChainKey} } = (); #Clear latest familyID_sampleID chainkey
+	  @{ $jobID{$familyIDChainKey}{$sampleIDChainKey} } = (); #Clear latest sampleID chainkey
           push ( @{ $jobID{$familyIDChainKey}{$familyIDChainKey."_".$sampleIDChainKey} }, $jobID); #Add jobID to hash
          }
      }
@@ -5326,6 +5327,7 @@ sub FIDSubmitJob {
               
               my $sampleIDChainKey = $sampleIDs[$sampleIDCounter]."_".$path; #Current chain
               @{ $jobID{$familyIDChainKey}{$familyIDChainKey."_".$sampleIDChainKey} } = ();
+	      @{ $jobID{$familyIDChainKey}{$familyIDChainKey} } = (); #Clear latest sampleID chainkey
               push ( @{ $jobID{$familyIDChainKey}{$familyIDChainKey."_".$sampleIDChainKey} }, $jobID);   
           }
          }
