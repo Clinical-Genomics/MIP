@@ -19,25 +19,36 @@ BEGIN {
                -si/--sampleInfoFile SampleInfo file (YAML format, Supply whole path, mandatory)
                -r/--regExpFile Regular expression file (YAML format, Supply whole path, mandatory)
                -o/--outfile The data file output (Supply whole path, defaults to "qcmetrics.yaml")
+               -preg/--printRegExp Print the regexp used at CMMS switch (Defaults to "0" (=no))
+               -prego/--printRegExpOutFile RegExp YAML outfile (Defaults to "qc_regExp.yaml")
                -h/--help Display this help message
                -v/--version Display version};
 }
 
-my ($sampleInfoFile, $regExpFile, $outfile, $version, $help) = (0,0,"qcmetrics.yaml");
+my ($sampleInfoFile, $regExpFile, $outfile, $printRegExp, $printRegExpOutFile, $version, $help) = (0,0,"qcmetrics.yaml", 0, "qc_regExp.yaml");
 my (%sampleInfo, %regExp, %qcData);
 my %qcHeader; #Save header(s) in each outfile
 my %qcProgramData; #Save data in each outFile
 
 GetOptions('si|sampleInfoFile:s' => \$sampleInfoFile,
-       'r|regExpFile:s' => \$regExpFile,
-       'o|outfile:s'  => \$outfile, 
-       'h|help' => \$help,
-       'v|version' => \$version,
+	   'r|regExpFile:s' => \$regExpFile,
+	   'o|outfile:s'  => \$outfile, 
+	   'preg|printRegExp:n' => \$printRegExp,
+	   'prego|printRegExpOutFile:s' => \$printRegExpOutFile,
+	   'h|help' => \$help,
+	   'v|version' => \$version,
     );
 
 die $USAGE if( $help );
 
 die "\nqcCollect.pl v1.0\n\n" if($version);
+
+if ($printRegExp) {
+
+    RegExpToYAML($printRegExpOutFile); #Write regExp used @ CMMS to YAML
+    print STDOUT "Wrote RegExp YAML file to: ".$printRegExpOutFile, "\n";
+    exit;
+}
 
 if ($sampleInfoFile eq 0) {
 
@@ -293,9 +304,9 @@ sub DetectYamlContentType {
     return $fileType;
 }
 
-#RegExpToYAML();
-
 sub RegExpToYAML {
+
+    my $printRegExpOutFile = $_[0]; #File to print regExpe to
 
     my %regExp;
     #Add to %regExp to enable print in YAML
@@ -405,6 +416,6 @@ sub RegExpToYAML {
 #$regExp{''}{''} = ;
 
     
-WriteYAML("qc_regExp.yaml", \%regExp);
+WriteYAML($printRegExpOutFile, \%regExp);
 
 }
