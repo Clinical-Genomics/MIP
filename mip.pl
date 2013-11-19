@@ -889,13 +889,13 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 
 if($help) {
 
-    print "\n".$USAGE, "\n";
+    print STDOUT "\n".$USAGE, "\n";
     exit;
 }
 
 if($version) {
 
-    print STDOUT "\nMip.pl v1.4.1\n\n";
+    print STDOUT "\nMip.pl v1.4.2\n\n";
     exit;
 }
 
@@ -2650,7 +2650,8 @@ sub GATKVariantReCalibration {
 	print GATK_VARREC "-recalFile ".$variantRecalibratorOutFamilyDirectory."/".$familyID.$infileEnding.$callType.".intervals ";
 	print GATK_VARREC "-rscriptFile ".$variantRecalibratorOutFamilyDirectory."/".$familyID.$infileEnding.$callType.".intervals.plots.R ";
 	print GATK_VARREC "-tranchesFile ".$variantRecalibratorOutFamilyDirectory."/".$familyID.$infileEnding.$callType.".intervals.tranches ";
-	print GATK_VARREC "-input ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf ";	  
+	print GATK_VARREC "-input ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf ";
+	print GATK_VARREC "-an DP "; #The names of the annotations which should used for calculations
     }
     print GATK_VARREC "-resource:hapmap,VCF,known=false,training=true,truth=true,prior=15.0 ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKVariantReCalibrationTrainingSetHapMap'}." "; #A list of sites for which to apply a prior probability of being correct but which aren't used by the algorithm
     print GATK_VARREC "-resource:omni,VCF,known=false,training=true,truth=false,prior=12.0 ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKVariantReCalibrationTrainingSet1000GOmni'}." "; #A list of sites for which to apply a prior probability of being correct but which aren't used by the algorithm
@@ -2658,7 +2659,6 @@ sub GATKVariantReCalibration {
     print GATK_VARREC "-resource:mills,VCF,known=true,training=true,truth=true,prior=12.0 ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKVariantReCalibrationTrainingSetMills'}." "; #A list of sites for which to apply a prior probability of being correct but which aren't used by the algorithm
     print GATK_VARREC "-numBad ".$scriptParameter{'GATKVariantReCalibrationNumBadVariants'}." "; #The number of worst scoring variants to use when building the Gaussian mixture model of bad variants.
     print GATK_VARREC "-an QD "; #The names of the annotations which should used for calculations
-    print GATK_VARREC "-an HaplotypeScore "; #The names of the annotations which should used for calculations
     print GATK_VARREC "-an MQRankSum "; #The names of the annotations which should used for calculations
     print GATK_VARREC "-an ReadPosRankSum "; #The names of the annotations which should used for calculations
     print GATK_VARREC "-an FS "; #The names of the annotations which should used for calculations
@@ -3544,7 +3544,7 @@ sub ChanjoImport {
     my $familyID = $_[0]; #familyID NOTE: not sampleid
     my $aligner = $_[1]; #Aligner
 
-    ProgramPreRequisites($familyID, "ChanjoImport", "chanjoimport", 0, *CHANJOIMP, 1, 1);
+    ProgramPreRequisites($familyID, "ChanjoImport", "chanjoimport", 0, *CHANJOIMP, 1, 3);
 
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID;
 
