@@ -91,7 +91,7 @@ my ($outFile, $outInfo) = ("intersectCollect.txt",0);
 my ($merge,$select) = (0,0);
 my ($prefixChromosomes,$help, $version) = (0);
 
-my (@sampleIDs, @chr, @ocol, @oheaders, @outinfo, @selectOutFiles);
+my (@sampleIDs, @chr, @ocol, @oheaders, @outinfo, @selectOutFiles, @metaData);
 
 # ===================================================================
 #   User Options
@@ -109,9 +109,15 @@ GetOptions('db|dbFile:s'  => \$dbFile,
 	   'v|version' => \$version, #Display version number
     );
 
-die $USAGE if( $help );
+if($help) {
+    print STDOUT "\n".$USAGE, "\n";
+    exit;
+}
 
-die "\nintersectCollect.pl v1.0\n\n" if($version);
+if($version) {
+    print STDOUT "\nintersectCollect.pl v1.0", "\n\n";
+    exit
+}
 
 if ($dbFile eq 0) {
     print STDERR "\n", "Need to specify db file by using flag -db. 1 db file per line. Format: DbPath\tSeparator\tColumn_Keys\tChr_Column\tMatching\tColumns_to_Extract\tFile_Size\t \n";
@@ -264,7 +270,8 @@ sub ReadDbMaster {
 	if (m/^\s+$/) {		# Avoid blank lines
 	    next;
 	}
-	if ($_=~/^#/) {		# Avoid #
+	if ($_=~/^##/) {#MetaData
+	    push(@metaData, $_); #Save metadata string
 	    next;
 	}
 	if ($_=~/^outinfo:/i) { #Locate order of out columns if recorded in db master (precedence: 1. Command line, 2. Recorded in db master file 3. Order of appearance in db master file)
@@ -472,6 +479,12 @@ sub ReadInfileSelect {
 	#my $dbfileBaseName = basename($dbFile{$dbFileNr}{'File'});
 	open($selectFilehandles{ $dbFile{$dbFileNr}{'File'} }, ">$selectOutFiles[$dbFileNr]") or die "Can't open $selectOutFiles[$dbFileNr]:$!, \n"; #open file(s) for db output
 	print STDOUT "Select Mode: Writing Selected Variants to: $selectOutFiles[$dbFileNr]\n";
+
+	if (@metaData) { #Print metaData if supplied
+	    for (my $metaDataCounter=0;$metaDataCounter<scalar(@metaData);$metaDataCounter++) {
+		print { $selectFilehandles{ $dbFile{$dbFileNr}{'File'} } } $metaData[$metaDataCounter],"\n";
+	    }
+	}
 	if ($outInfo == 1 && $dbFileNr>0) { #Print header if supplied, but not for the unselected variants then keep original header (if any)
 	    print { $selectFilehandles{ $dbFile{$dbFileNr}{'File'} } } "#";
 	    my $IDNCounter = 0;
@@ -494,6 +507,12 @@ sub ReadInfileSelect {
     my %writeTracker; #For tracking the number of prints to each db file and wether to print to orphan as well
 
     open(RIFS, "<$_[0]") or die "Can't open $_[0]:$!, \n"; #Open first infile
+    
+    if (@metaData) { #Print metaData if supplied
+	for (my $metaDataCounter=0;$metaDataCounter<scalar(@metaData);$metaDataCounter++) {
+	    print { $selectFilehandles{ $dbFile{0}{'File'} } } $metaData[$metaDataCounter],"\n";
+	}
+    }
     
     while (<RIFS>) {
 	
@@ -1300,7 +1319,14 @@ sub WriteChrVariants {
     my $chr = $_[1];
     
     if ( ($_[1] eq 1) || ($_[1] eq "chr1") ) {
+
 	open (WAV, ">$filename") or die "Can't write to $filename: $!\n";
+
+	if (@metaData) { #Print metaData if supplied
+	    for (my $metaDataCounter=0;$metaDataCounter<scalar(@metaData);$metaDataCounter++) {
+		print WAV $metaData[$metaDataCounter],"\n";
+	    }
+	}
 	if ($outInfo == 1) { #Print header if supplied
 	    print WAV "#";
 	    for (my $out_header=0;$out_header<scalar(@oheaders);$out_header++) {
@@ -1406,6 +1432,12 @@ sub WriteAll {
     my $filename = $_[0];
 
     open (WAV, ">$filename") or die "Can't write to $filename: $!\n";
+print "Kalle", "\n";
+    if (@metaData) { #Print metaData if supplied
+	for (my $metaDataCounter=0;$metaDataCounter<scalar(@metaData);$metaDataCounter++) {
+	    print WAV $metaData[$metaDataCounter]."\n";
+	}
+    }
     if ($outInfo == 1 ) { #Print header if supplied
 	print WAV "#";
 	for (my $out_header=0;$out_header<scalar(@oheaders);$out_header++) {
@@ -1720,7 +1752,14 @@ sub WriteAllVariantsMerge {
     my $chr = $_[1];
 
     if ( ($_[1] eq 1) || ($_[1] eq "chr1") ) {
+
 	open (WAVM, ">$filename") or die "Can't write to $filename: $!\n";
+
+	if (@metaData) { #Print metaData if supplied
+	    for (my $metaDataCounter=0;$metaDataCounter<scalar(@metaData);$metaDataCounter++) {
+		print WAV $metaData[$metaDataCounter]."\n";
+	    }
+	}
 	if ($outInfo == 1 ) { #Print header if supplied
 	    print WAVM "#";
 	    for (my $out_header=0;$out_header<scalar(@oheaders);$out_header++) {
