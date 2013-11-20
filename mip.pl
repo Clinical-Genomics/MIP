@@ -2084,7 +2084,13 @@ sub MergeAnnotatedVariants {
     my $aligner = $_[1];
     my $callType = $_[2]; #SNV,INDEL or BOTH 
 
-    ProgramPreRequisites($familyID, "MergeAnnotatedVariants", $aligner."/GATK", $callType, *MERGE_AV, 1, 4);
+    my $numberOfCores = 1; #Set the number of cores depending on exome/rapid or WGS
+
+    if ($scriptParameter{'analysisType'} eq "genomes") { #WGS analysis
+	$numberOfCores = 6; 
+    }
+
+    ProgramPreRequisites($familyID, "MergeAnnotatedVariants", $aligner."/GATK", $callType, *MERGE_AV, $numberOfCores, 4);
 
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
