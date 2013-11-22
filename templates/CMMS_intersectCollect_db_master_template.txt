@@ -1,3 +1,4 @@
+
 ##COLUMNNAME="Chromosome",TYPE="String",DESCRIPTION="Name of contig",DBCVHEADER="Chromosome"
 ##COLUMNNAME="Variant_start",TYPE="Integer",DESCRIPTION="Variation start position",DBCVHEADER="Variation Start"
 ##COLUMNNAME="Variant_stop",TYPE="Integer",DESCRIPTION="Variation stop position",DBCVHEADER="Variation Stop"
@@ -19,7 +20,7 @@
 ##COLUMNNAME="Pseudogene",TYPE="String",VERSION="PsiDR.v0",DESCRIPTION="Pseudogene classification",DBCVHEADER="Pseudogene"
 ##COLUMNNAME="1000G",TYPE="Float",VERSION="hg19_ALL.sites.2012_04",DESCRIPTION="Frequency in the 1000G database",DBCVHEADER="1000G"
 ##COLUMNNAME="Dbsnp129",TYPE="Float",VERSION="129",DESCRIPTION="Frequency in the DbSNP database, version 129. This version is considered to have least amount of false positives.",DBCVHEADER="DbSNP129"
-##COLUMNNAME="Dbsnp_frequency",TYPE="Float",VERSION="132",DESCRIPTION="Frequency in the DbSNP database",DBCVHEADER="DbSNP"
+##COLUMNNAME="Dbsnp_freq",TYPE="Float",VERSION="132",DESCRIPTION="Frequency in the DbSNP database",DBCVHEADER="DbSNP"
 ##COLUMNNAME="Dbsnp_nonflagged",TYPE="Float",VERSION="137",DESCRIPTION="Frequency of variants flagged as 'of clinical importance' in the DbSNP database",DBCVHEADER="DbSNP Clinical"
 ##COLUMNNAME="Dbsnp_rs_nr",TYPE="String",VERSION="132",DESCRIPTION="DbSNP reference SNP ID number",DBCVHEADER="DbSNP RS"
 ##COLUMNNAME="Esp6500",TYPE="Float",VERSION="6500",DESCRIPTION="Frequency in the NHLBI Exome sequencing project (ESP) database. This is a database with exome data for thousands of individuals with heart, lung and blood disorders.",DBCVHEADER="ESP"
