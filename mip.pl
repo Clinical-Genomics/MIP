@@ -539,7 +539,7 @@ DefineParameters("chanjoCalculateCutoff", "program", 10, 10, "pChanjoCalculate",
 
 DefineParameters("pChanjoImport", "program", 1, 1, "MIP", 0, "nofileEnding", "CoverageReport");
 
-DefineParameters("pythonVirtualEnvironment", "path", "nodefault", "virtualenv.py.2.7.1", "pChanjoBuild,pChanjoCalculate,pChanjoImport", 0);
+DefineParameters("pythonVirtualEnvironment", "path", "nodefault", "virtualenv.py.2.7", "pChanjoBuild,pChanjoCalculate,pChanjoImport", 0);
 
 DefineParameters("pCalculateCoverage", "program", 1, 1, "MIP", 0, "nofileEnding", "CoverageQC", "bedtools");
 
@@ -892,7 +892,7 @@ if($help) {
 
 if($version) {
 
-    print STDOUT "\nMip.pl v1.4.2\n\n";
+    print STDOUT "\nMip.pl v1.4.4\n\n";
     exit;
 }
 
