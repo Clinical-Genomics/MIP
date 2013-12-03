@@ -46,7 +46,7 @@ BEGIN {
 }
 
 my ($of, $inf, $prechr, $help) = ("annovar_master.txt", 0, 0);
-my (@infnv, @sid, @chr);
+my (@infnv, @sid, @chr, @metaData);
 
 GetOptions('i|infile:s'  => \$inf,
 	   'infnv|infileNoVariant:s'  => \@infnv, #Comma separated list
@@ -98,9 +98,9 @@ my (%allVariants, %allVariants_chr, %allVariants_chr_unique,
     %allVariants_chr_sorted);
 my (%sampleVariants, %col);
 
-# ==============================================================================
-#   Main
-# ------------------------------------------------------------------------------
+###
+#Main
+###
 
 for (my $sampleid=0;$sampleid<scalar(@sid);$sampleid++) {
     # Read all positions per sampleID that lacks variation
@@ -112,9 +112,9 @@ ReadAnnovarAll($inf);  # Read annovar_all.txt master file
 SortAllVariants();     # Sorts all variants
 WriteAddedDepth($of);  # Write all variants
 
-# ==============================================================================
-#   Sub routines
-# ------------------------------------------------------------------------------
+###
+#Sub routines
+###
 
 sub FindCol {
 #Finds sampleID columns number in annovar_all.txt file and then breaks
@@ -192,6 +192,10 @@ sub ReadAnnovarAll {
 	
 	if (m/^\s+$/) {		# Avoid blank lines
             next;
+        }
+	if ($_=~/^##/) {#MetaData
+	    push(@metaData, $_); #Save metadata string
+	    next;
         }	
 	if (m/^\#/) { #Catch header if present
             $header = $_;
@@ -238,6 +242,11 @@ sub WriteAddedDepth {
     
     open (WAD, ">$_[0]") or die "Can't write to $_[0]: $!\n";
     
+    if (@metaData) { #Print metaData if supplied
+	for (my $metaDataCounter=0;$metaDataCounter<scalar(@metaData);$metaDataCounter++) {
+	    print WAD $metaData[$metaDataCounter],"\n";
+	}
+    }
     if ($header) { #Print original header
 	print WAD $header, "\n";
     } 

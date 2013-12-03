@@ -248,7 +248,6 @@ else { #Other type of keys
     }
 }
 
-
 ###
 #Sub Routines
 ###
@@ -478,41 +477,13 @@ sub ReadInfileSelect {
 	$selectFilehandles{ $dbFile{$dbFileNr}{'File'} }=IO::Handle->new(); #Create anonymous filehandle
 	#my $dbfileBaseName = basename($dbFile{$dbFileNr}{'File'});
 	open($selectFilehandles{ $dbFile{$dbFileNr}{'File'} }, ">$selectOutFiles[$dbFileNr]") or die "Can't open $selectOutFiles[$dbFileNr]:$!, \n"; #open file(s) for db output
-	print STDOUT "Select Mode: Writing Selected Variants to: $selectOutFiles[$dbFileNr]\n";
-
-	if (@metaData) { #Print metaData if supplied
-	    for (my $metaDataCounter=0;$metaDataCounter<scalar(@metaData);$metaDataCounter++) {
-		print { $selectFilehandles{ $dbFile{$dbFileNr}{'File'} } } $metaData[$metaDataCounter],"\n";
-	    }
-	}
-	if ($outInfo == 1 && $dbFileNr>0) { #Print header if supplied, but not for the unselected variants then keep original header (if any)
-	    print { $selectFilehandles{ $dbFile{$dbFileNr}{'File'} } } "#";
-	    my $IDNCounter = 0;
-	    for (my $out_header=0;$out_header<scalar(@oheaders);$out_header++) {
-		if ( ($sampleIDs[$IDNCounter]) && ($oheaders[$out_header] =~/IDN_GT_Call\=/) ) { #Handle IDN exception
-
-		    print { $selectFilehandles{ $dbFile{$dbFileNr}{'File'} } } "IDN:".$sampleIDs[$IDNCounter],"\t";
-		    $IDNCounter++;
-		}
-		else {
-		    print { $selectFilehandles{ $dbFile{$dbFileNr}{'File'} } } "$oheaders[$out_header]\t";
-		}
-		
-	    }
-	    print { $selectFilehandles{ $dbFile{$dbFileNr}{'File'} } } "\n";
-	}  
+	print STDOUT "Select Mode: Writing Selected Variants to: $selectOutFiles[$dbFileNr]\n";  
     }
 
     my %selectedSwithc; #For printing not selected records to orphan file
     my %writeTracker; #For tracking the number of prints to each db file and wether to print to orphan as well
 
     open(RIFS, "<$_[0]") or die "Can't open $_[0]:$!, \n"; #Open first infile
-    
-    if (@metaData) { #Print metaData if supplied
-	for (my $metaDataCounter=0;$metaDataCounter<scalar(@metaData);$metaDataCounter++) {
-	    print { $selectFilehandles{ $dbFile{0}{'File'} } } $metaData[$metaDataCounter],"\n";
-	}
-    }
     
     while (<RIFS>) {
 	
@@ -521,8 +492,36 @@ sub ReadInfileSelect {
 	if (m/^\s+$/) {		# Avoid blank lines
 	    next;
 	}
+	if ($_=~/^##/) {#MetaData
+#	    push(@metaData, $_); #Save metadata string
+	    for (my $dbFileNr=0;$dbFileNr<$dbFileCounter;$dbFileNr++) { #All db files (in order of appearance in $db) except first file
+		print { $selectFilehandles{ $dbFile{$dbFileNr}{'File'} } } $_,"\n";
+	    }
+	    next;
+        }
 	if (m/^#/) {		#Header info
 	    print { $selectFilehandles{ $dbFile{0}{'File'} } } $_, "\n"; #Header in original file, print to unselected variants
+
+	    for (my $dbFileNr=0;$dbFileNr<$dbFileCounter;$dbFileNr++) { #All db files (in order of appearance in $db) except first file
+		if ($outInfo == 1 && $dbFileNr>0) { #Print header if supplied, but not for the unselected variants then keep original header (if any)
+		    print { $selectFilehandles{ $dbFile{$dbFileNr}{'File'} } } "#";
+		    my $IDNCounter = 0;
+		    for (my $out_header=0;$out_header<scalar(@oheaders);$out_header++) {
+			
+			if ( ($sampleIDs[$IDNCounter]) && ($oheaders[$out_header] =~/IDN_GT_Call\=/) ) { #Handle IDN exception
+			    
+			    print { $selectFilehandles{ $dbFile{$dbFileNr}{'File'} } } "IDN:".$sampleIDs[$IDNCounter],"\t";
+			    $IDNCounter++;
+			}
+			else {
+			    print { $selectFilehandles{ $dbFile{$dbFileNr}{'File'} } } "$oheaders[$out_header]\t";
+			}
+			
+		    }
+		    print { $selectFilehandles{ $dbFile{$dbFileNr}{'File'} } } "\n";
+		}
+	    }
+	     
 	    next;
 	}		
 	if ( $_ =~/^(\S+)/ ) {

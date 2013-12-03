@@ -666,9 +666,9 @@ DefineParameters("pRankVariants", "program", 1, 1, "MIP", 0, "nofileEnding", "MA
 
 DefineParameters("rankScore", "program", -100, -100, "pRankVariants", 0);
 
-DefineParameters("ImportantDbFile", "path", "nodefault", "dbIEM.v1.2.txt", "pRankVariants", "file");
+DefineParameters("ImportantDbFile", "path", "nodefault", "dbCMMS.v1.0.txt", "pRankVariants", "file");
 
-DefineParameters("ImportantDbTemplate", "path", "nodefault", "select_dbIEM_variants_db_master.txt", "pRankVariants", "file");
+DefineParameters("ImportantDbTemplate", "path", "nodefault", "select_dbCMMS_variants_db_master.txt", "pRankVariants", "file");
 
 DefineParameters("ImportantDbMasterFile", "program", "notSetYet", "NotSetYet", "pRankVariants", 0); #No file check since file is created by MIP later
 
@@ -1824,18 +1824,18 @@ sub QCCollect {
 }
 
 sub RankVariants { 
-###Filter and Rank variants depending on mendelian inheritance, frequency and phenotype using rank_filter:chr.pl
+###Filter and Rank variants depending on mendelian inheritance, frequency and phenotype
    
     my $familyID = $_[0]; #familyID NOTE: not sampleid 
     my $aligner = $_[1];
     my $callType = $_[2]; #SNV,INDEL or BOTH
  
-    ProgramPreRequisites($familyID, "RankVariants", $aligner, $callType, *RV2, 1, 5);
+    ProgramPreRequisites($familyID, "RankVariants", $aligner, $callType, *RV, 1, 5);
 
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pAddDepth'}{'fileEnding'};
 
-    print RV2 "#Create db master file to select variants from template", "\n";
+    print RV "#Create db master file to select variants from template", "\n";
     my $nrColumns; #Total Nr of columns 
     my $nrAnnotationColumns; #The number of columns containing annotation info
     my $pNrofCol; #For perl regexp
@@ -1885,10 +1885,10 @@ sub RankVariants {
     $regExpReferenceDirectory .= $file;
     
 ##Create family specific template
-    print RV2 q?perl -nae 'if ($_=~/outinfo/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN_GT_Call=>0_$sampleID,"} else { $sidstring.="IDN_GT_Call=>0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} elsif ($_=~s/FDN_|FDN/?.$familyID.q?/g) { if($_=~s/^ODF/?.$regExpOutDataFile.q?/g) {} if($_=~s/ALIGNER/?.$aligner.q?/g) {} if($_=~s/FILEENDING_/?.$infileEnding.q?/g) {} if($_=~s/CALLTYPE/?.$callType.q?/g) {} if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="$sampleID,"} else { $sidstring.="$sampleID"} } s/IDN/$sidstring/g; print $_;} else { print $_;} } else { if($_=~s/^RD/?.$regExpReferenceDirectory.q?/g) {} print $_;}' ?;
+    print RV q?perl -nae 'if ($_=~/outinfo/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN_GT_Call=>0_$sampleID,"} else { $sidstring.="IDN_GT_Call=>0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} elsif ($_=~s/FDN_|FDN/?.$familyID.q?/g) { if($_=~s/^ODF/?.$regExpOutDataFile.q?/g) {} if($_=~s/ALIGNER/?.$aligner.q?/g) {} if($_=~s/FILEENDING_/?.$infileEnding.q?/g) {} if($_=~s/CALLTYPE/?.$callType.q?/g) {} if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="$sampleID,"} else { $sidstring.="$sampleID"} } s/IDN/$sidstring/g; print $_;} else { print $_;} } else { if($_=~s/^RD/?.$regExpReferenceDirectory.q?/g) {} print $_;}' ?;
 
-    print RV2 $scriptParameter{'referencesDir'}."/".$scriptParameter{'ImportantDbTemplate'}." "; #Infile
-    print RV2 "> ".$scriptParameter{'ImportantDbMasterFile'}, "\n\n"; #OutFile
+    print RV $scriptParameter{'referencesDir'}."/".$scriptParameter{'ImportantDbTemplate'}." "; #Infile
+    print RV "> ".$scriptParameter{'ImportantDbMasterFile'}, "\n\n"; #OutFile
     
     my $haploTypeCallerFile = $inFamilyDirectory."/".$familyID.$infileEnding.$callType.".txt";
 
@@ -1896,64 +1896,66 @@ sub RankVariants {
     
     if ( ($scriptParameter{'pGATKHaploTypeCaller'} > 0) || (-f $haploTypeCallerFile) ) { #HaplotypeCaller has been used in present call or previously
 	
-	print RV2 "#Create temp_file containing only clinically interesting variants (to avoid duplicates in ranked list)", "\n";
-	print RV2 "perl ".$scriptParameter{'inScriptDir'}."/intersectCollect.pl ";
-	print RV2 "-db ".$scriptParameter{'ImportantDbMasterFile'}." "; #A tab-sep file containing 1 db per line
+	print RV "#Create temp_file containing only clinically interesting variants (to avoid duplicates in ranked list)", "\n";
+	print RV "perl ".$scriptParameter{'inScriptDir'}."/intersectCollect.pl ";
+	print RV "-db ".$scriptParameter{'ImportantDbMasterFile'}." "; #A tab-sep file containing 1 db per line
 	if ($humanGenomeReferenceSource eq "hg19") {
-	    print RV2 "-prechr 1 "; #Use chr prefix in rank script
+	    print RV "-prechr 1 "; #Use chr prefix in rank script
 	}
-	print RV2 "-sl 1 "; #Select all entries in first infile matching keys in subsequent db files
-	print RV2 "-s ";
+	print RV "-sl 1 "; #Select all entries in first infile matching keys in subsequent db files
+	print RV "-s ";
 	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { 
 	    if ($sampleIDCounter eq scalar(@sampleIDs)-1) {
-		print RV2 $sampleIDs[$sampleIDCounter], " ";
+		print RV $sampleIDs[$sampleIDCounter], " ";
 	    }
 	    else {
-		print RV2 $sampleIDs[$sampleIDCounter], ",";
+		print RV $sampleIDs[$sampleIDCounter], ",";
 	    }    
 	}
-	print RV2 "-sofs "; #Selected variants and orphan db files out data directory
+	print RV "-sofs "; #Selected variants and orphan db files out data directory
 	for (my $ImportantDbFileOutFileCounter=0;$ImportantDbFileOutFileCounter<scalar(@ImportantDbFileOutFile);$ImportantDbFileOutFileCounter++) {
 	    if ($ImportantDbFileOutFileCounter eq scalar(@ImportantDbFileOutFile)-1) {
-		print RV2 $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter]." ","\n\n";
+		print RV $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter]." ","\n\n";
 	    }
 	    else {
-		print RV2 $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter].",";
+		print RV $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter].",";
 	    }
 	}
 	
 ###Ranking
-	print RV2 "#Ranking", "\n";
+	print RV "#Ranking", "\n";
 	
-	print RV2 "workon ".$scriptParameter{'pythonVirtualEnvironment'}, "\n\n"; #Activate python environment
+	print RV "workon ".$scriptParameter{'pythonVirtualEnvironment'}, "\n\n"; #Activate python environment
 	
 	for (my $ImportantDbFileOutFileCounter=1;$ImportantDbFileOutFileCounter<scalar(@ImportantDbFileOutFile);$ImportantDbFileOutFileCounter++) { #Skip orphan file and run selected files
-	    print RV2 "mip_family_analysis.py ";
-	    print RV2 $scriptParameter{'pedigreeFile'}." "; #Pedigree file
-	    print RV2 $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter]." "; #InFile	    
+	    print RV "mip_family_analysis.py ";
+	    print RV $scriptParameter{'pedigreeFile'}." "; #Pedigree file
+	    print RV "-tres ".$scriptParameter{'rankScore'}." "; #Rank score threshold
+	    print RV $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter]." "; #InFile	    
 	    ($volume,$directories,$file) = File::Spec->splitpath( $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter] ); #Collect outfile directory
-	    print RV2 "> ".$directories.$familyID."_ranked_".$callType.".txt", "\n\n"; #OutFile
-	    print RV2 "wait\n\n";
+	    print RV "> ".$directories.$familyID."_ranked_".$callType.".txt", "\n\n"; #OutFile
+	    print RV "wait\n\n";
 	}
     }
    
 ###Research variants
     
 ##Ranking
-    print RV2 "#Ranking", "\n"; 
-    print RV2 "mip_family_analysis.py ";
-    print RV2 $scriptParameter{'pedigreeFile'}." "; #Pedigree file
-    print RV2 $ImportantDbFileOutFile[0]." "; #InFile	    
+    print RV "#Ranking", "\n"; 
+    print RV "mip_family_analysis.py ";
+    print RV $scriptParameter{'pedigreeFile'}." "; #Pedigree file
+    print RV "-tres ".$scriptParameter{'rankScore'}." "; #Rank score threshold
+    print RV $ImportantDbFileOutFile[0]." "; #InFile	    
     ($volume,$directories,$file) = File::Spec->splitpath( $ImportantDbFileOutFile[0] ); #Collect outfile directory
-    print RV2 "> ".$directories.$familyID."_ranked_".$callType.".txt", "\n\n"; #OutFile
-    print RV2 "wait\n\n";    
+    print RV "> ".$directories.$familyID."_ranked_".$callType.".txt", "\n\n"; #OutFile
+    print RV "wait\n\n";    
         
     for (my $ImportantDbFileOutFileCounter=0;$ImportantDbFileOutFileCounter<scalar(@ImportantDbFileOutFile);$ImportantDbFileOutFileCounter++) {
-	print RV2 "rm "; #Remove select files
-	print RV2 $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter], "\n\n";
+	print RV "rm "; #Remove select files
+	print RV $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter], "\n\n";
     }
     
-    close(RV2);   
+    close(RV);   
     if ( ($scriptParameter{'pRankVariants'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 	FIDSubmitJob(0, $familyID, 1, $parameter{'pRankVariants'}{'chain'}, $filename, 0);
     }
