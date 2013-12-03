@@ -273,9 +273,6 @@ use YAML;
 
 use vars qw($USAGE);
 
-# Require/dump chanjo subroutine (into global scope...)
-#require "chanjo.pl";
-
 BEGIN {
     $USAGE =
 	qq{
