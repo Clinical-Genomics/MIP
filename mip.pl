@@ -539,8 +539,6 @@ DefineParameters("chanjoCalculateCutoff", "program", 10, 10, "pChanjoCalculate",
 
 DefineParameters("pChanjoImport", "program", 1, 1, "MIP", 0, "nofileEnding", "CoverageReport");
 
-DefineParameters("pythonVirtualEnvironment", "path", "nodefault", "virtualenv.py.2.7", "pChanjoBuild,pChanjoCalculate,pChanjoImport", 0);
-
 DefineParameters("pCalculateCoverage", "program", 1, 1, "MIP", 0, "nofileEnding", "CoverageQC", "bedtools");
 
 DefineParameters("pGenomeCoverageBED", "program", 1, 1, "pCalculateCoverage", 0, "_genomeCoverageBed", "CoverageQC", "bedtools");
@@ -633,7 +631,7 @@ $parameter{'GATKTargetPaddedBedIntervalList'}{'value'} = "nocmdinput"; #GATK tar
 
 DefineParameters("pAnnovar", "program", 1, 1, "MIP", 0, "annovar_", "MAIN");
 
-DefineParameters("annovarPath", "path", "nodefault", "/bubo/proj/b2010080/private/annovar", "pAnnovar", "directory"); #Note not projectID specific
+DefineParameters("annovarPath", "path", "nodefault", "/proj/b2010080/private/annovar", "pAnnovar", "directory"); #Note not projectID specific
 
 DefineParameters("annovarGenomeBuildVersion", "program", "hg19", "hg19", "pAnnovar", 0);
 
@@ -666,14 +664,15 @@ DefineParameters("pRankVariants", "program", 1, 1, "MIP", 0, "nofileEnding", "MA
 
 DefineParameters("rankScore", "program", -100, -100, "pRankVariants", 0);
 
-DefineParameters("ImportantDbFile", "path", "nodefault", "dbIEM.v1.2.txt", "pRankVariants", "file");
+DefineParameters("ImportantDbFile", "path", "nodefault", "dbCMMS.v1.0.txt", "pRankVariants", "file");
 
-DefineParameters("ImportantDbTemplate", "path", "nodefault", "select_dbIEM_variants_db_master.txt", "pRankVariants", "file");
+DefineParameters("ImportantDbTemplate", "path", "nodefault", "select_dbCMMS_variants_db_master.txt", "pRankVariants", "file");
 
 DefineParameters("ImportantDbMasterFile", "program", "notSetYet", "NotSetYet", "pRankVariants", 0); #No file check since file is created by MIP later
 
 my @ImportantDbFileOutFile; #List of db outfiles
 
+DefineParameters("pythonVirtualEnvironment", "path", "nodefault", "virtualenv.py.2.7", "pChanjoBuild,pChanjoCalculate,pChanjoImport,pRankVariants", 0);
 
 ##SChecks
 DefineParameters("pSampleCheck", "program", 1, 1, "MIP", 0, "nofileEnding", "IDQC", "vcftools:plink");
@@ -1824,18 +1823,18 @@ sub QCCollect {
 }
 
 sub RankVariants { 
-###Filter and Rank variants depending on mendelian inheritance, frequency and phenotype using rank_filter:chr.pl
+###Filter and Rank variants depending on mendelian inheritance, frequency and phenotype
    
     my $familyID = $_[0]; #familyID NOTE: not sampleid 
     my $aligner = $_[1];
     my $callType = $_[2]; #SNV,INDEL or BOTH
  
-    ProgramPreRequisites($familyID, "RankVariants", $aligner, $callType, *RV2, 1, 5);
+    ProgramPreRequisites($familyID, "RankVariants", $aligner, $callType, *RV, 1, 5);
 
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pAddDepth'}{'fileEnding'};
 
-    print RV2 "#Create db master file to select variants from template", "\n";
+    print RV "#Create db master file to select variants from template", "\n";
     my $nrColumns; #Total Nr of columns 
     my $nrAnnotationColumns; #The number of columns containing annotation info
     my $pNrofCol; #For perl regexp
@@ -1885,10 +1884,10 @@ sub RankVariants {
     $regExpReferenceDirectory .= $file;
     
 ##Create family specific template
-    print RV2 q?perl -nae 'if ($_=~/outinfo/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN_GT_Call=>0_$sampleID,"} else { $sidstring.="IDN_GT_Call=>0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} elsif ($_=~s/FDN_|FDN/?.$familyID.q?/g) { if($_=~s/^ODF/?.$regExpOutDataFile.q?/g) {} if($_=~s/ALIGNER/?.$aligner.q?/g) {} if($_=~s/FILEENDING_/?.$infileEnding.q?/g) {} if($_=~s/CALLTYPE/?.$callType.q?/g) {} if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="$sampleID,"} else { $sidstring.="$sampleID"} } s/IDN/$sidstring/g; print $_;} else { print $_;} } else { if($_=~s/^RD/?.$regExpReferenceDirectory.q?/g) {} print $_;}' ?;
+    print RV q?perl -nae 'if ($_=~/outinfo/i) { if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN_GT_Call=>0_$sampleID,"} else { $sidstring.="IDN_GT_Call=>0_$sampleID"} } s/IDN/$sidstring/g; print $_;} next;} elsif ($_=~s/FDN_|FDN/?.$familyID.q?/g) { if($_=~s/^ODF/?.$regExpOutDataFile.q?/g) {} if($_=~s/ALIGNER/?.$aligner.q?/g) {} if($_=~s/FILEENDING_/?.$infileEnding.q?/g) {} if($_=~s/CALLTYPE/?.$callType.q?/g) {} if ($_=~/IDN/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="$sampleID,"} else { $sidstring.="$sampleID"} } s/IDN/$sidstring/g; print $_;} else { print $_;} } else { if($_=~s/^RD/?.$regExpReferenceDirectory.q?/g) {} print $_;}' ?;
 
-    print RV2 $scriptParameter{'referencesDir'}."/".$scriptParameter{'ImportantDbTemplate'}." "; #Infile
-    print RV2 "> ".$scriptParameter{'ImportantDbMasterFile'}, "\n\n"; #OutFile
+    print RV $scriptParameter{'referencesDir'}."/".$scriptParameter{'ImportantDbTemplate'}." "; #Infile
+    print RV "> ".$scriptParameter{'ImportantDbMasterFile'}, "\n\n"; #OutFile
     
     my $haploTypeCallerFile = $inFamilyDirectory."/".$familyID.$infileEnding.$callType.".txt";
 
@@ -1896,64 +1895,66 @@ sub RankVariants {
     
     if ( ($scriptParameter{'pGATKHaploTypeCaller'} > 0) || (-f $haploTypeCallerFile) ) { #HaplotypeCaller has been used in present call or previously
 	
-	print RV2 "#Create temp_file containing only clinically interesting variants (to avoid duplicates in ranked list)", "\n";
-	print RV2 "perl ".$scriptParameter{'inScriptDir'}."/intersectCollect.pl ";
-	print RV2 "-db ".$scriptParameter{'ImportantDbMasterFile'}." "; #A tab-sep file containing 1 db per line
+	print RV "#Create temp_file containing only clinically interesting variants (to avoid duplicates in ranked list)", "\n";
+	print RV "perl ".$scriptParameter{'inScriptDir'}."/intersectCollect.pl ";
+	print RV "-db ".$scriptParameter{'ImportantDbMasterFile'}." "; #A tab-sep file containing 1 db per line
 	if ($humanGenomeReferenceSource eq "hg19") {
-	    print RV2 "-prechr 1 "; #Use chr prefix in rank script
+	    print RV "-prechr 1 "; #Use chr prefix in rank script
 	}
-	print RV2 "-sl 1 "; #Select all entries in first infile matching keys in subsequent db files
-	print RV2 "-s ";
+	print RV "-sl 1 "; #Select all entries in first infile matching keys in subsequent db files
+	print RV "-s ";
 	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { 
 	    if ($sampleIDCounter eq scalar(@sampleIDs)-1) {
-		print RV2 $sampleIDs[$sampleIDCounter], " ";
+		print RV $sampleIDs[$sampleIDCounter], " ";
 	    }
 	    else {
-		print RV2 $sampleIDs[$sampleIDCounter], ",";
+		print RV $sampleIDs[$sampleIDCounter], ",";
 	    }    
 	}
-	print RV2 "-sofs "; #Selected variants and orphan db files out data directory
+	print RV "-sofs "; #Selected variants and orphan db files out data directory
 	for (my $ImportantDbFileOutFileCounter=0;$ImportantDbFileOutFileCounter<scalar(@ImportantDbFileOutFile);$ImportantDbFileOutFileCounter++) {
 	    if ($ImportantDbFileOutFileCounter eq scalar(@ImportantDbFileOutFile)-1) {
-		print RV2 $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter]." ","\n\n";
+		print RV $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter]." ","\n\n";
 	    }
 	    else {
-		print RV2 $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter].",";
+		print RV $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter].",";
 	    }
 	}
 	
 ###Ranking
-	print RV2 "#Ranking", "\n";
+	print RV "#Ranking", "\n";
 	
-	print RV2 "workon ".$scriptParameter{'pythonVirtualEnvironment'}, "\n\n"; #Activate python environment
+	print RV "workon ".$scriptParameter{'pythonVirtualEnvironment'}, "\n\n"; #Activate python environment
 	
 	for (my $ImportantDbFileOutFileCounter=1;$ImportantDbFileOutFileCounter<scalar(@ImportantDbFileOutFile);$ImportantDbFileOutFileCounter++) { #Skip orphan file and run selected files
-	    print RV2 "mip_family_analysis.py ";
-	    print RV2 $scriptParameter{'pedigreeFile'}." "; #Pedigree file
-	    print RV2 $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter]." "; #InFile	    
+	    print RV "mip_family_analysis.py ";
+	    print RV $scriptParameter{'pedigreeFile'}." "; #Pedigree file
+	    print RV "-tres ".$scriptParameter{'rankScore'}." "; #Rank score threshold
+	    print RV $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter]." "; #InFile	    
 	    ($volume,$directories,$file) = File::Spec->splitpath( $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter] ); #Collect outfile directory
-	    print RV2 "> ".$directories.$familyID."_ranked_".$callType.".txt", "\n\n"; #OutFile
-	    print RV2 "wait\n\n";
+	    print RV "> ".$directories.$familyID."_ranked_".$callType.".txt", "\n\n"; #OutFile
+	    print RV "wait\n\n";
 	}
     }
    
 ###Research variants
     
 ##Ranking
-    print RV2 "#Ranking", "\n"; 
-    print RV2 "mip_family_analysis.py ";
-    print RV2 $scriptParameter{'pedigreeFile'}." "; #Pedigree file
-    print RV2 $ImportantDbFileOutFile[0]." "; #InFile	    
+    print RV "#Ranking", "\n"; 
+    print RV "mip_family_analysis.py ";
+    print RV $scriptParameter{'pedigreeFile'}." "; #Pedigree file
+    print RV "-tres ".$scriptParameter{'rankScore'}." "; #Rank score threshold
+    print RV $ImportantDbFileOutFile[0]." "; #InFile	    
     ($volume,$directories,$file) = File::Spec->splitpath( $ImportantDbFileOutFile[0] ); #Collect outfile directory
-    print RV2 "> ".$directories.$familyID."_ranked_".$callType.".txt", "\n\n"; #OutFile
-    print RV2 "wait\n\n";    
+    print RV "> ".$directories.$familyID."_ranked_".$callType.".txt", "\n\n"; #OutFile
+    print RV "wait\n\n";    
         
     for (my $ImportantDbFileOutFileCounter=0;$ImportantDbFileOutFileCounter<scalar(@ImportantDbFileOutFile);$ImportantDbFileOutFileCounter++) {
-	print RV2 "rm "; #Remove select files
-	print RV2 $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter], "\n\n";
+	print RV "rm "; #Remove select files
+	print RV $ImportantDbFileOutFile[$ImportantDbFileOutFileCounter], "\n\n";
     }
     
-    close(RV2);   
+    close(RV);   
     if ( ($scriptParameter{'pRankVariants'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 	FIDSubmitJob(0, $familyID, 1, $parameter{'pRankVariants'}{'chain'}, $filename, 0);
     }
@@ -1967,7 +1968,12 @@ sub AddDp {
     my $aligner = $_[1];
     my $callType = $_[2]; #SNV,INDEL or BOTH 
     
-    ProgramPreRequisites($familyID, "AddDepth", $aligner."/GATK", $callType, *ADDDP, $scriptParameter{'maximumCores'}, 10);
+    my $nrCores = scalar(@sampleIDs); #Detect the number of cores to use from the number of samples
+    if ($nrCores > $scriptParameter{'maximumCores'}) { #Set number of cores depending on how many lanes to process
+	$nrCores = $scriptParameter{'maximumCores'}; #Set to max on cluster
+    }
+
+    ProgramPreRequisites($familyID, "AddDepth", $aligner."/GATK", $callType, *ADDDP, $nrCores, 10);
     
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
@@ -1978,9 +1984,9 @@ sub AddDp {
 #Find all "./." per sample ID and print chr pos to new file (mpileup -l format)
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #For all sample ids, find nonvariants
 	
-	if ($sampleIDCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} 
+	if ($sampleIDCounter == $coreCounter*$nrCores) { #Using only '$nrCores' cores
 	    
-	    print GATK_RECAL "wait", "\n\n";
+	    print ADDDP "wait", "\n\n";
 	    $coreCounter=$coreCounter+1;
 	}
 	print ADDDP "#Find all './.' per sampleID and print chrosome position to new file (mpileup -l format)", "\n";
@@ -2000,9 +2006,9 @@ sub AddDp {
 	my $sampleIDinfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'pPicardToolsMarkduplicates'}{'fileEnding'};
 	$coreCounter=1; #Reset
 	
-	if ($sampleIDCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} 
-	    
-	    print GATK_RECAL "wait", "\n\n";
+	if ($sampleIDCounter == $coreCounter*$nrCores) { #Using only '$nrCores' cores 
+    
+	    print ADDDP "wait", "\n\n";
 	    $coreCounter=$coreCounter+1;
 	}
 	print ADDDP "samtools mpileup ";
@@ -2060,12 +2066,6 @@ sub AddDp {
 	}
     }
     print ADDDP "-o ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".txt", "\n\n"; #Overwrites original annovar_merge.txt file
-    
-    #if ($humanGenomeReferenceSource eq "GRCh") { #Add chr for annovar_merged master file uses chrosome prefix downstream
-	
-#	print ADDDP q?perl -i -p -e ' if($_=~/^#/) {} else {s/^(.+)/chr$1/g }' ?;
-#	print ADDDP $inFamilyDirectory."/".$familyID.$infileEnding.$callType.".txt", "\n\n"; #InFile.txt
- #   }
     
     close(ADDDP);   
     if ( ($scriptParameter{'pAddDepth'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
@@ -2410,8 +2410,13 @@ sub Annovar {
     my $familyID = $_[0]; #familyID NOTE: not sampleid 
     my $aligner = $_[1];
     my $callType = $_[2]; #SNV,INDEL or BOTH 
+#scalar(@annovarTableNames)
+    my $nrCores = scalar(scalar(@annovarTableNames)); #Detect the number of cores to use from the number of annovar databases
+    if ($nrCores > $scriptParameter{'maximumCores'}) { #Set number of cores depending on how many lanes to process
+	$nrCores = $scriptParameter{'maximumCores'}; #Set to max on cluster
+    }
 
-    ProgramPreRequisites( $familyID, "Annovar", $aligner."/GATK", $callType, *ANVAR, $scriptParameter{'maximumCores'}, 7);
+    ProgramPreRequisites( $familyID, "Annovar", $aligner."/GATK", $callType, *ANVAR, $nrCores, 7);
 
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
@@ -2448,7 +2453,7 @@ sub Annovar {
 
     for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@annovarTableNames);$tableNamesCounter++) { #For all specified table names
 	
-	if ($tableNamesCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
+	if ($tableNamesCounter == $coreCounter*$nrCores) { #Using only $nrCores cores
 	    
 	    print ANVAR "wait", "\n\n";
 	    $coreCounter=$coreCounter+1;
@@ -3376,8 +3381,6 @@ sub CalculateCoverage {
 
     my $sampleID = $_[0]; 
     my $aligner = $_[1]; 
-
-    ProgramPreRequisites($sampleID, "CalculateCoverage", $aligner."/coverageReport", 0, *CAL_COV, $scriptParameter{'maximumCores'}, 4);
    
     my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
     my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport";
@@ -3388,6 +3391,8 @@ sub CalculateCoverage {
 
     if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
 	
+	ProgramPreRequisites($sampleID, "CalculateCoverage", $aligner."/coverageReport", 0, *CAL_COV, 4, 4);
+
 	if ($scriptParameter{'pGenomeCoverageBED'} > 0) {
 	    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGenomeCoverageBED'}{'fileEnding'};
 	    
@@ -3434,32 +3439,18 @@ sub CalculateCoverage {
 		SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "CalculateHsMetrics", $infile, $outSampleDirectory, $outfileEnding."_CalculateHsMetrics", "infileDependent");
 	    }
 	}
-	#if ($scriptParameter{'pCoverageBED'} > 0) { #Run coverageBed (exome)
-	 #   my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pCoverageBED'}{'fileEnding'};
-	    
-	  #  print CAL_COV "coverageBed ";
-	  #  print CAL_COV "-hist "; #Report a histogram of coverage for each feature in B as well as a summary histogram for _all_ features in B.
-	  #  print CAL_COV "-abam ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile in BAM format
-	  #  print CAL_COV "-b ".$scriptParameter{'referencesDir'}."/".$sampleInfo{$scriptParameter{'familyID'}}{$sampleID}{'exomeTargetBed'}." "; #InFile
-	  #  print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding." &", "\n\n"; #OutFile
-	    #Remove PCR and Optical duplicates
-	  #  $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pCoverageBEDRMDup'}{'fileEnding'};
-	    
-	  #  print CAL_COV "samtools view ";
-	  #  print CAL_COV "-F 0x400 "; #Skip alignments where read is PCR or optical duplicate
-	  #  print CAL_COV "-b ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
-	  #  print CAL_COV "| coverageBed "; #Note "|"
-	  #  print CAL_COV "-hist "; #Report a histogram of coverage for each feature in B as well as a summary histogram for _all_ features in B.
-	  #  print CAL_COV "-abam stdin "; #InStream
-	  #  print CAL_COV "-b ".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetBed'}." "; #InFile
-	  #  print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding." &", "\n\n"; #OutFile
-	#}
-
 	print CAL_COV "wait", "\n\n";
     }
 
     else { #No merged files
-	
+
+	my $nrCores = scalar( @{$lane{$sampleID}} ) * 4; #Detect the number of cores to use from the number of lanes sequenced (4 processes per lane)
+	if ($nrCores > $scriptParameter{'maximumCores'}) { #Set number of cores depending on how many lanes to process
+	    $nrCores = $scriptParameter{'maximumCores'}; #Set to max on cluster
+	}	
+
+	ProgramPreRequisites($sampleID, "CalculateCoverage", $aligner."/coverageReport", 0, *CAL_COV, $nrCores, 4);
+
 	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files from MosaikAlign or BWA_Sampe
 	    
 	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
@@ -3508,27 +3499,6 @@ sub CalculateCoverage {
 		    SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "CalculateHsMetrics", $infile, $outSampleDirectory, $outfileEnding."_CalculateHsMetrics", "infileDependent");	    
 		}
 	    }
-	    #if ($scriptParameter{'pCoverageBED'} > 0) { #Run coverageBed (Target BED-file)
-	#	my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pCoverageBED'}{'fileEnding'};
-		
-	#	print CAL_COV "coverageBed ";
-	#	print CAL_COV "-hist "; #Report a histogram of coverage for each feature in B as well as a summary histogram for _all_ features in B.
-	#	print CAL_COV "-abam ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile in BAM format
-	#	print CAL_COV "-b ".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetBed'}." "; #InFile
-	#	print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding." &", "\n\n"; #OutFile
-		#Remove PCR and Optical duplicates
-	#	$outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pCoverageBEDRMDup'}{'fileEnding'};
-
-	#	print CAL_COV "samtools view ";
-	#	print CAL_COV "-F 0x400 "; #Skip alignments where read is PCR or optical duplicate
-	#	print CAL_COV "-b ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
-	#	print CAL_COV "| coverageBed "; #Note "|"
-	#	print CAL_COV "-hist "; #Report a histogram of coverage for each feature in B as well as a summary histogram for _all_ features in B.
-	#	print CAL_COV "-abam stdin "; #InStream
-	#	print CAL_COV "-b ".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetBed'}." "; #InFile
-	#	print CAL_COV "> ".$outSampleDirectory."/".$infile.$infileEnding.$outfileEnding." &", "\n\n"; #OutFile
-		
-	#    }
 	    print CAL_COV "wait", "\n\n";
 	}
     }
@@ -3600,7 +3570,7 @@ sub ChanjoCalculate {
     my $sampleID = $_[0];
     my $aligner = $_[1]; 
 
-    ProgramPreRequisites($sampleID, "ChanjoCalculate", $aligner."/coverageReport", 0, *CHANJOCAL, $scriptParameter{'maximumCores'}, 2);      
+    ProgramPreRequisites($sampleID, "ChanjoCalculate", $aligner."/coverageReport", 0, *CHANJOCAL, 1, 2);      
     
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'};
     my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
@@ -3703,8 +3673,6 @@ sub PicardToolsMarkDuplicates {
     else{
 	$time = ceil(3*scalar( @{ $infilesBothStrandsNoEnding{$sampleID} })); #One full lane on Hiseq takes approx. 3 h to process, round up to nearest full hour.	
     }
-
-    ProgramPreRequisites($sampleID, "PicardToolsMarkduplicates", $aligner, 0, *PT_MDUP, $scriptParameter{'maximumCores'}, $time);
     
     my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
     my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
@@ -3718,6 +3686,8 @@ sub PicardToolsMarkDuplicates {
 ###
     
     if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
+
+	ProgramPreRequisites($sampleID, "PicardToolsMarkduplicates", $aligner, 0, *PT_MDUP, 1, $time);
 
 	print PT_MDUP "java -Xmx4g ";
 	print PT_MDUP "-jar ".$scriptParameter{'picardToolsPath'}."/MarkDuplicates.jar ";
@@ -3739,10 +3709,17 @@ sub PicardToolsMarkDuplicates {
 	}
     }
     else { #No merged files
+
+	my $nrCores = scalar( @{$lane{$sampleID}} ); #Detect the number of cores to use from the number of lanes sequenced
+	if ($nrCores > $scriptParameter{'maximumCores'}) { #Set number of cores depending on how many lanes to process
+	    $nrCores = $scriptParameter{'maximumCores'}; #Set to max on cluster
+	}
 	
+	ProgramPreRequisites($sampleID, "PicardToolsMarkduplicates", $aligner, 0, *PT_MDUP, $nrCores, $time);
+
 	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files from independent of merged or not
 	    
-	    if ($infileCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
+	    if ($infileCounter == $coreCounter*$nrCores) { #Using only '$nrCores' cores
 		
 		print PT_MDUP "wait", "\n\n";
 		$coreCounter=$coreCounter+1;
@@ -3769,7 +3746,8 @@ sub PicardToolsMarkDuplicates {
         #SamTools index on just created _sorted(_merged)_pmd.bam
 	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files from alignment
 	    
-	    if ($infileCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
+	    if ($infileCounter == $coreCounter*$nrCores) { #Using only '$nrCores' cores
+	    #if ($infileCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
 		
 		print PT_MDUP "wait", "\n\n";
 		$coreCounter=$coreCounter+1;
@@ -3796,7 +3774,7 @@ sub PicardToolsMerge {
     my $aligner = $_[1];
     my $fileEnding = $_[2]; 
 
-    ProgramPreRequisites($sampleID, "PicardToolsMergeSamFiles", $aligner, 0, *PT_MERGE, $scriptParameter{'maximumCores'}, 20);
+    ProgramPreRequisites($sampleID, "PicardToolsMergeSamFiles", $aligner, 0, *PT_MERGE, 1, 20);
   
     my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
     my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
@@ -3840,7 +3818,7 @@ sub PicardToolsMerge {
 	
 	for (my $mergeFileCounter=0;$mergeFileCounter<scalar(@picardToolsMergeSamFilesPrevious);$mergeFileCounter++) {
 	    
-	    if ($picardToolsMergeSamFilesPrevious[$mergeFileCounter] =~ /$sampleID/) { #Look for sampleID in previously generated file to be merged with current run to be able to merge correct files
+	    if ($picardToolsMergeSamFilesPrevious[$mergeFileCounter] =~ /$sampleID/) { #Look for sampleID in previously generated file to be merged with current run to be able to merge correct files within sampleID
 		if ($picardToolsMergeSamFilesPrevious[$mergeFileCounter] =~ /lane(\d+)|s_(\d+)/) { #Look for lanes_ or lane\d in previously generated file to be merged with current run to be able to extract previous lanes
 		    
 		    my $mergeLanes; if($1) {$mergeLanes = $1;} else {$mergeLanes = $2;} #Make sure to always supply lanes from previous regexp		    
@@ -4325,8 +4303,16 @@ sub MosaikBuild {
 
     my $time = ceil(2.5*scalar( @{ $infilesLaneNoEnding{$sampleID} })); #One full lane on Hiseq takes approx. 1 h for MosaikBuild to process (compressed format, uncompressed 0.5 h), round up to nearest full hour.
 
-    ProgramPreRequisites($sampleID, "MosaikBuild", $aligner, 0, *MOS_BU, $scriptParameter{'maximumCores'}, $time);
-    
+    my $nrCores = scalar( @{$lane{$sampleID}} ); #Detect the number of cores to use when building mosaik format from lanes
+
+    if ($nrCores < $scriptParameter{'maximumCores'}) { #Set number of cores depending on how many lanes to process
+
+	ProgramPreRequisites($sampleID, "MosaikBuild", $aligner, 0, *MOS_BU, $nrCores, $time);
+    }
+    else { #More files than cores proceed with maximum amount
+	ProgramPreRequisites($sampleID, "MosaikBuild", $aligner, 0, *MOS_BU, $scriptParameter{'maximumCores'}, $time);
+    }
+
     my $inSampleDirectory = $indirpath{$sampleID};
     my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/mosaik";
     my $coreCounter=1;
@@ -4336,7 +4322,6 @@ sub MosaikBuild {
 	
 	if ($coreTracker == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} nr of cores
 	    
-	    print MOS_BU "wait", "\n\n";
 	    $coreCounter=$coreCounter+1;
 	}
 	my $infile = $infile{$sampleID}[$infileCounter];
