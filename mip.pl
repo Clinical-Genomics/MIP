@@ -711,7 +711,7 @@ my %supportedCaptureKits = (
     );
 
 ##Set supported annovar table name filtering options
-my @annovarSupportedTableNames = ("refgene", "knownGene", "ensGene", "mce46way", "gerp++elem", "segdup", "gwascatalog", "tfbs", "mirna", "snp137", "snp135", "snp132", "snp131", "snp130", "snp129", "snp137NonFlagged", "snp135NonFlagged", "snp132NonFlagged", "snp131NonFlagged", "snp130NonFlagged", "1000g2012apr_all", "1000g2012apr_amr", "1000g2012apr_eur", "1000g2012apr_asn", "1000g2012apr_afr", "1000g2012feb_all", "hg19_esp6500si_all.txt", "hg19_esp6500_all.txt", "hg19_esp6500_aa.txt", "hg19_esp6500_ea.txt", "hg19_esp5400_all.txt", "hg19_esp5400_aa.txt", "hg19_esp5400_ea.txt", "avsift", "ljb_sift", "ljb_pp2", "ljb_mt", "ljb_lrt", "ljb_all", "ljb_gerp++", "ljb_phylop"); #Used to print list of supported table names
+my @annovarSupportedTableNames = ("refgene", "knownGene", "ensGene", "mce46way", "gerp++elem", "segdup", "gwascatalog", "tfbs", "mirna", "snp137", "snp135", "snp132", "snp131", "snp130", "snp129", "snp137NonFlagged", "snp135NonFlagged", "snp132NonFlagged", "snp131NonFlagged", "snp130NonFlagged", "1000g2012apr_all", "1000g2012apr_amr", "1000g2012apr_eur", "1000g2012apr_asn", "1000g2012apr_afr", "1000g2012feb_all", "hg19_esp6500si_all.txt", "hg19_esp6500_all.txt", "hg19_esp6500_aa.txt", "hg19_esp6500_ea.txt", "hg19_esp5400_all.txt", "hg19_esp5400_aa.txt", "hg19_esp5400_ea.txt", "avsift", "ljb_sift", "ljb_pp2", "ljb_mt", "ljb_lrt", "ljb_all", "ljb_gerp++", "ljb_phylop", "hg19_clinvar_20131105.txt"); #Used to print list of supported table names
 
 my %annovarFilteringOption = ( 
     'refgene' => "geneanno",
@@ -755,6 +755,7 @@ my %annovarFilteringOption = (
     'ljb_all' => "filter",
     'ljb_gerp++' => "filter",
     'ljb_phylop' => "filter",
+    'hg19_clinvar_20131105.txt' => "filter",
     );
 
 ##Set supported annovar table name generic type
@@ -766,6 +767,7 @@ my %annovarGenericFilteringOption = (
     'hg19_esp5400_all.txt' => "generic",
     'hg19_esp5400_aa.txt' => "generic",
     'hg19_esp5400_ea.txt' => "generic",
+    'hg19_clinvar_20131105.txt' => "generic",
     );
 
 
@@ -891,7 +893,7 @@ if($help) {
 
 if($version) {
 
-    print STDOUT "\nMip.pl v1.4.4\n\n";
+    print STDOUT "\nMip.pl v1.4.5\n\n";
     exit;
 }
 
@@ -1097,7 +1099,7 @@ for (my $inputDirectoryCounter=0;$inputDirectoryCounter<scalar(@inFilesDirs);$in
 close(MIPLOG);
 
 my $uncompressedFileSwitch = InfilesReFormat(); #Required to format infiles correctly for subsequent input into aligners
-                                                               
+    
 CreateFileEndings(); #Creates all fileendings as the samples is processed depending on the chain of modules activated
 
 #Create .fam file to be used in variant calling analyses
@@ -1967,11 +1969,8 @@ sub AddDp {
     my $familyID = $_[0]; #familyID NOTE: not sampleid  
     my $aligner = $_[1];
     my $callType = $_[2]; #SNV,INDEL or BOTH 
-    
-    my $nrCores = scalar(@sampleIDs); #Detect the number of cores to use from the number of samples
-    if ($nrCores > $scriptParameter{'maximumCores'}) { #Set number of cores depending on how many lanes to process
-	$nrCores = $scriptParameter{'maximumCores'}; #Set to max on cluster
-    }
+
+    my $nrCores = NrofCoresPerSbatch(scalar(@sampleIDs)); #Detect the number of cores to use from number of samplesIDs
 
     ProgramPreRequisites($familyID, "AddDepth", $aligner."/GATK", $callType, *ADDDP, $nrCores, 10);
     
@@ -2410,11 +2409,8 @@ sub Annovar {
     my $familyID = $_[0]; #familyID NOTE: not sampleid 
     my $aligner = $_[1];
     my $callType = $_[2]; #SNV,INDEL or BOTH 
-#scalar(@annovarTableNames)
-    my $nrCores = scalar(scalar(@annovarTableNames)); #Detect the number of cores to use from the number of annovar databases
-    if ($nrCores > $scriptParameter{'maximumCores'}) { #Set number of cores depending on how many lanes to process
-	$nrCores = $scriptParameter{'maximumCores'}; #Set to max on cluster
-    }
+
+    my $nrCores = NrofCoresPerSbatch(scalar(@annovarTableNames)); #Detect the number of cores to use from @annovarTableNames
 
     ProgramPreRequisites( $familyID, "Annovar", $aligner."/GATK", $callType, *ANVAR, $nrCores, 7);
 
@@ -3444,16 +3440,14 @@ sub CalculateCoverage {
 
     else { #No merged files
 
-	my $nrCores = scalar( @{$lane{$sampleID}} ) * 4; #Detect the number of cores to use from the number of lanes sequenced (4 processes per lane)
-	if ($nrCores > $scriptParameter{'maximumCores'}) { #Set number of cores depending on how many lanes to process
-	    $nrCores = $scriptParameter{'maximumCores'}; #Set to max on cluster
-	}	
+	my $nrCores = NrofCoresPerSbatch(scalar( @{$lane{$sampleID}} ) * 4); #Detect the number of cores to from lanes	
 
 	ProgramPreRequisites($sampleID, "CalculateCoverage", $aligner."/coverageReport", 0, *CAL_COV, $nrCores, 4);
 
 	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files from MosaikAlign or BWA_Sampe
 	    
 	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
+
 	    if ($scriptParameter{'pGenomeCoverageBED'} > 0) {
 		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGenomeCoverageBED'}{'fileEnding'};
 		
@@ -3710,10 +3704,7 @@ sub PicardToolsMarkDuplicates {
     }
     else { #No merged files
 
-	my $nrCores = scalar( @{$lane{$sampleID}} ); #Detect the number of cores to use from the number of lanes sequenced
-	if ($nrCores > $scriptParameter{'maximumCores'}) { #Set number of cores depending on how many lanes to process
-	    $nrCores = $scriptParameter{'maximumCores'}; #Set to max on cluster
-	}
+	my $nrCores = NrofCoresPerSbatch(scalar( @{$lane{$sampleID}} )); #Detect the number of cores to use from lanes
 	
 	ProgramPreRequisites($sampleID, "PicardToolsMarkduplicates", $aligner, 0, *PT_MDUP, $nrCores, $time);
 
@@ -3952,21 +3943,29 @@ sub BWA_Sampe {
 	    $infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter+$sbatchScriptTracker]; # collect .fastq file size to enable estimation of time required for aligning, +1 for syncing multiple infiles per sampleID. Hence, filesize will be calculated on read2 (should not matter).
 	    $time = ceil(($infileSize/238)/(3000*60*60)); #238 is a scalar estimating the number of reads depending on filesize. 3500 is the number of reads/s in Bwa_sampe-0.6.1 plus samtools-0.1.12-10 view sam to bam conversion and 60*60 is to scale to hours. (4600 BWA-0.5.9)
 	}
-	ProgramPreRequisites($sampleID, "BwaSampe", $aligner, 0, *BWA_SA, $scriptParameter{'maximumCores'}, $time);
+	ProgramPreRequisites($sampleID, "BwaSampe", $aligner, 0, *BWA_SA, 1, $time);
 	
 	my $BWAinSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/bwa";
 	my $FASTQinSampleDirectory = $indirpath{$sampleID};
 	my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/bwa";
 	my $infile = $infile{$sampleID}[$infileCounter+$sbatchScriptTracker]; #For required .fastq file
-	my $infile2 = $infile{$sampleID}[ ($infileCounter+$sbatchScriptTracker+1)]; # #For required .fastq file (Paired read)   
 
 #BWA Sampe	
 	print BWA_SA "bwa sampe ";
 	print BWA_SA "-r ".'"@RG\tID:'.$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$sbatchScriptTracker].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '.$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #read group header line
 	print BWA_SA $BWAinSampleDirectory."/".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$sbatchScriptTracker].".sai "; #Read 1
-	print BWA_SA $BWAinSampleDirectory."/".$infilesBothStrandsNoEnding{$sampleID}[ ($infileCounter+$sbatchScriptTracker+1) ].".sai "; #Read 2
+
+	if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present
+	    print BWA_SA $BWAinSampleDirectory."/".$infilesBothStrandsNoEnding{$sampleID}[ ($infileCounter+$sbatchScriptTracker+1) ].".sai "; #Read 2
+	}
+
 	print BWA_SA $FASTQinSampleDirectory."/".$infile." "; #Fastq read 1
-	print BWA_SA $FASTQinSampleDirectory."/".$infile2." "; #Fastq read 2
+	
+	if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present
+	    my $infile2 = $infile{$sampleID}[ ($infileCounter+$sbatchScriptTracker+1)]; # #For required .fastq file (Paired read)   
+	    print BWA_SA $FASTQinSampleDirectory."/".$infile2." "; #Fastq read 2
+	}
+
 	print BWA_SA "> ".$outSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter].".sam", "\n\n"; #Outfile (SAM)
 
 #Convert SAM to BAM using samTools view	
@@ -3994,15 +3993,29 @@ sub BWA_Aln {
 
 
     my $time = ceil(2.5*scalar( @{ $infilesLaneNoEnding{$sampleID} })); #One full lane on Hiseq takes approx. 2,5 h for BWA_Aln to process, round up to nearest full hour.
+    my $nrCores = 0;
 
-    ProgramPreRequisites($sampleID, "BwaAln", $aligner, 0, *BWA_AL, $scriptParameter{'maximumCores'}, $time);
-    
+    for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files   
+
+	if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present
+	    $nrCores =  $nrCores + 2; #2 processes per file
+	}
+	else {#Single-end
+	    $nrCores = $nrCores + 1; #Only 1 file and one process
+	}
+    }
+
+    $nrCores = NrofCoresPerSbatch($nrCores ); #Make sure that the number of cores does not exceed maximum after incrementing above
+
+    ProgramPreRequisites($sampleID, "BwaAln", $aligner, 0, *BWA_AL, $nrCores, $time);
+
     my $inSampleDirectory =  $indirpath{$sampleID};
     my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/bwa";
     my $coreCounter=1;    
+
     for (my $infileCounter=0;$infileCounter<scalar( @{ $infile{$sampleID} });$infileCounter++) {
-	
-	if ($infileCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
+
+	if ($infileCounter == $coreCounter*$nrCores) { #Using only nr of cores eq to lanes or maximumCores
 	    
 	    print BWA_AL "wait", "\n\n";
 	    $coreCounter=$coreCounter+1;
@@ -4096,54 +4109,104 @@ sub PicardToolsMergeRapidReads {
     return;
 }
 
+sub DetermineNrofRapidNodes {
+##Determines the number of nodes to allocate depending on the sequence length, which affects the infile size.
+    
+    my $seqLength = $_[0]; 
+    my $infileSize = $_[1];
+    
+    my $numberNodes = 0; #Nodes to allocate
+    my $readPositionWeight = 1; #Scales the readStart and readStop position
+    my $ReadNrofLines;    
+
+    if ($seqLength > 75 && $seqLength <= 101) {
+	$ReadNrofLines = 190000000; #Read batch size
+	$numberNodes = floor($infileSize / (12 * $ReadNrofLines) ); #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.	
+	print STDOUT "Number of Nodes: ".$numberNodes, "\n";
+    }
+    if ($seqLength > 50 && $seqLength <= 75) {
+	$ReadNrofLines = 190000000; #Read batch size
+	$numberNodes = floor($infileSize / (9.75 * $ReadNrofLines) ); #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.	
+	print STDOUT "Number of Nodes: ".$numberNodes, "\n";
+    }
+    if ($seqLength >= 50 && $seqLength < 75) {
+	$ReadNrofLines = 130000000; #Read batch size
+	$numberNodes = floor($infileSize / (7 * $ReadNrofLines) ); #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.
+	print STDOUT "Number of Nodes: ".$numberNodes, "\n";
+    }
+    if ($seqLength >= 35 && $seqLength < 50) {
+	$ReadNrofLines = 95000000; #Read batch size
+	$numberNodes = floor($infileSize / (6 * $ReadNrofLines) ); #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.
+	print STDOUT "Number of Nodes: ".$numberNodes, "\n";
+    }
+    if ($numberNodes <= 1) {
+	
+	$numberNodes = 2; #Ensure that at least 1 readbatch is processed
+    }
+    return $numberNodes, $ReadNrofLines;
+}
+
 sub BWA_Mem {
 ###Alignment using BWA Mem
-    
+##Development Note: Keep number of nodes att 150000000, but increase the size of the read batch
+   
     my $sampleID = $_[0];
     my $aligner = $_[1];
  
     my $infileSize;
+    my $totalSbatchCounter = 0;
 
     for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all infiles but process in the same command i.e. both reads per align call
 
 	if ($infile{$sampleID}[$infileCounter] =~/.fastq.gz$/) { #Files are already gz and presently the scalar for compression has not been investigated. Therefore no automatic time allocation can be performed.
-	    $infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter+$infileCounter];
+	    if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present
+		$infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter+$infileCounter];
+	    }
+	    else { #Single-end
+		$infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter];
+	    }
 	}
-	else { #Files are in fastq format	
+	else { #Files are in fastq format
+	    if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present	
 	    $infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter+$infileCounter]; # collect .fastq file size to enable estimation of time required for aligning, +1 for syncing multiple infiles per sampleID. Hence, filesize will be calculated on read2 (should not matter).
+	    }
+	    else { #Single-end
+		$infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter];
+	    }
 	}
 
 	if ($scriptParameter{'analysisType'} eq "rapid") {
-#original
-	    my $numberNodes = floor($infileSize / (13*150000000) ); #Determines the numner of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.
-#Short read temp fix	    
-	    #my $numberNodes = floor($infileSize / (13*150000000/2) ); #Determines the numner of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.   
-	    if ($numberNodes eq 1) { #Fix to ensure BWA_MEM execution when faced with very small files such as when analyzing very short read lengths
-		$numberNodes = 4; 
-	    }
+	    
+	    my $seqLength = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'sequenceLength'};
+	    my ($numberNodes, $ReadNrofLines) = DetermineNrofRapidNodes($seqLength, $infileSize);
+	    
 	    for (my $sbatchCounter=0;$sbatchCounter<$numberNodes-1;$sbatchCounter++) { #Parallization for each file handled
-#Original
+		
 		ProgramPreRequisites($sampleID, "BwaMem", $aligner, 0, *BWA_MEM, $scriptParameter{'maximumCores'}, 5);	    
-#Short read temp fix
-		#ProgramPreRequisites($sampleID, "BwaMem", $aligner, 0, *BWA_MEM, $scriptParameter{'maximumCores'}, 15);	
-#Original
-		my $readStart = $sbatchCounter * 150000000; #Constant for gz files
-		my $readStop = $readStart + 150000001; #Constant for gz files
-#Short read temp fix 50 bp =2, 35 = 3
-		#my $readStart = $sbatchCounter * 150000000/2; #Constant for gz files
-		#my $readStop = $readStart + ceil(150000001/2); #Constant for gz files
+		
+		my $readStart = $sbatchCounter *  $ReadNrofLines; #Constant for gz files
+		my $readStop = $readStart + ceil( $ReadNrofLines + 1); #Constant for gz files	
 		
 		my $BWAinSampleDirectory = $indirpath{$sampleID};
 		my $BWAoutSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/bwa"; 
-
-		my $infile = $infile{$sampleID}[$infileCounter+$infileCounter]; #For required .fastq file
-		my $infile2 = $infile{$sampleID}[ ($infileCounter+$infileCounter+1)]; # #For required .fastq file (Paired read)   
+		my $infile;
 		
+		if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present
+		    $infile = $infile{$sampleID}[$infileCounter+$infileCounter]; #For required .fastq file
+		}
+		else { #Single-end
+		    $infile = $infile{$sampleID}[$infileCounter]; #For required .fastq file
+		}
 #BWA Mem	
 		print BWA_MEM "bwa mem ";
 		print BWA_MEM "-M "; #Mark shorter split hits as secondary (for Picard compatibility). 
 		print BWA_MEM "-t ".$scriptParameter{'maximumCores'}." "; #Number of threads 
-		print BWA_MEM "-r ".'"@RG\tID:'.$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$infileCounter].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '; #read group header line
+		if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present
+		    print BWA_MEM "-r ".'"@RG\tID:'.$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$infileCounter].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '; #read group header line
+		}
+		else  {
+		    print BWA_MEM "-r ".'"@RG\tID:'.$infilesBothStrandsNoEnding{$sampleID}[$infileCounter].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '; #read group header line
+		}
 		print BWA_MEM $scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #reference
 
 		print BWA_MEM "<( "; #Pipe to BWA Mem (Read 1)
@@ -4152,12 +4215,17 @@ sub BWA_Mem {
 		print BWA_MEM "| "; #Pipe
 		print BWA_MEM q?perl -ne 'if ( ($.>?.$readStart.q?) && ($.<?.$readStop.q?) ) {print $_;}' ?; #Limit to sbatch script interval
 		print BWA_MEM ") "; #End Read 1
-		print BWA_MEM "<( "; #Pipe to BWA Mem
-		print BWA_MEM "zcat "; #decompress Read 2
-		print BWA_MEM $BWAinSampleDirectory."/".$infile2." "; #Read 2
-		print BWA_MEM "| "; #Pipe
-		print BWA_MEM q?perl -ne 'if ( ($.>?.$readStart.q?) && ($.<?.$readStop.q?) ) {print $_;}' ?; #Limit to sbatch script interval
-		print BWA_MEM ") "; #End Read 2
+
+		if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present
+		    my $infile2 = $infile{$sampleID}[ ($infileCounter+$infileCounter+1)]; # #For required .fastq file (Paired read)   
+		    print BWA_MEM "<( "; #Pipe to BWA Mem (Read 2)
+		    print BWA_MEM "zcat "; #decompress Read 2
+		    print BWA_MEM $BWAinSampleDirectory."/".$infile2." "; #Read 2
+		    print BWA_MEM "| "; #Pipe
+		    print BWA_MEM q?perl -ne 'if ( ($.>?.$readStart.q?) && ($.<?.$readStop.q?) ) {print $_;}' ?; #Limit to sbatch script interval
+		    print BWA_MEM ") "; #End Read 2
+		}
+
 		print BWA_MEM "| "; #Pipe SAM to BAM conversion of aligned reads
 		print BWA_MEM "samtools view "; 
 		print BWA_MEM "-S "; #input is SAM
@@ -4179,21 +4247,28 @@ sub BWA_Mem {
 		print BWA_MEM "-jar ".$scriptParameter{'picardToolsPath'}."/AddOrReplaceReadGroups.jar ";
 		print BWA_MEM "INPUT=".$BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter."_sorted.bam "; #Infile
 		print BWA_MEM "OUTPUT=".$BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter."_sorted_rg.bam "; #Outfile
-		print BWA_MEM "RGID=".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$infileCounter]." "; #Read Group ID
-		print BWA_MEM "RGLB=".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$infileCounter]." "; #Read Group Library
+		if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present
+		    print BWA_MEM "RGID=".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$infileCounter]." "; #Read Group ID
+		    print BWA_MEM "RGLB=".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$infileCounter]." "; #Read Group Library
+		}
+		else { #Single read
+		    print BWA_MEM "RGID=".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter]." "; #Read Group ID
+		    print BWA_MEM "RGLB=".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter]." "; #Read Group Library
+		}
 		print BWA_MEM "RGSM=".$sampleID." "; #Read Group sample name
 		print BWA_MEM "RGPL=ILLUMINA "; #Read Group platform
-		print BWA_MEM "RGPU=".$sampleInfo{$scriptParameter{'familyID'}}{$sampleID}{$infilesLaneNoEnding{$sampleID}[$infileCounter]}{'runBarcode'}." "; #Read Group platform unit 
+		#print BWA_MEM "RGPU=".$sampleInfo{$scriptParameter{'familyID'}}{$sampleID}{$infilesBothStrandsNoEnding{$sampleID}[$infileCounter]}{'runBarcode'}." "; #Read Group platform unit 
+		print BWA_MEM "RGPU=".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'runBarcode'}." "; #Read Group platform unit
 		print BWA_MEM "CREATE_INDEX=TRUE "; #Create a BAM index when writing a coordinate-sorted BAM file.
 		
-		#print BWA_MEM "samtools index ";
-		#print BWA_MEM $BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter."_sorted_rg.bam", "\n\n"; #Infile
 		close(BWA_MEM);
 		if ( ($scriptParameter{'pBwaMem'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-		    FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 3, $parameter{'pBwaMem'}{'chain'}, $filename, 0); #$sbatchCounter);
+		    FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 3, $parameter{'pBwaMem'}{'chain'}, $filename, $totalSbatchCounter);
 		}
+		$totalSbatchCounter++;
                 #Save sbatch Counter to track how many read batch processes we have engaged
-		$sampleInfo{$scriptParameter{'familyID'}}{$sampleID}{$infilesLaneNoEnding{$sampleID}[$infileCounter]}{'pBwaMem'}{'ReadBatchProcesses'} = $sbatchCounter; 
+		$sampleInfo{$scriptParameter{'familyID'}}{$sampleID}{$infilesLaneNoEnding{$sampleID}[$infileCounter]}{'pBwaMem'}{'ReadBatchProcesses'} = $sbatchCounter+1;#Used to be  $sbatchCounter
+		$sampleInfo{$scriptParameter{'familyID'}}{$sampleID}{'pBwaMem'}{'sbatchBatchProcesses'} = $totalSbatchCounter;
 	    }
 	}
 	else { #Not rapid mode align whole file
@@ -4204,7 +4279,6 @@ sub BWA_Mem {
 	    my $BWAoutSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/bwa"; 
 	    
 	    my $infile = $infile{$sampleID}[$infileCounter+$infileCounter]; #For required .fastq file
-	    my $infile2 = $infile{$sampleID}[ ($infileCounter+$infileCounter+1)]; # #For required .fastq file (Paired read)   
 	    
 	    print BWA_MEM "bwa mem ";
 	    print BWA_MEM "-M "; #Mark shorter split hits as secondary (for Picard compatibility). 
@@ -4212,7 +4286,12 @@ sub BWA_Mem {
 	    print BWA_MEM "-r ".'"@RG\tID:'.$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$infileCounter].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '; #read group header line
 	    print BWA_MEM $scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #reference
 	    print BWA_MEM $BWAinSampleDirectory."/".$infile." "; #Read 1
-	    print BWA_MEM $BWAinSampleDirectory."/".$infile2." "; #Read 2
+
+	    if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present
+		my $infile2 = $infile{$sampleID}[ ($infileCounter+$infileCounter+1)]; # #For required .fastq file (Paired read)   
+		print BWA_MEM $BWAinSampleDirectory."/".$infile2." "; #Read 2	    
+	    }
+
 	    print BWA_MEM "| "; #Pipe SAM to BAM conversion of aligned reads
 	    print BWA_MEM "samtools view "; 
 	    print BWA_MEM "-S "; #input is SAM
@@ -4303,40 +4382,62 @@ sub MosaikBuild {
 
     my $time = ceil(2.5*scalar( @{ $infilesLaneNoEnding{$sampleID} })); #One full lane on Hiseq takes approx. 1 h for MosaikBuild to process (compressed format, uncompressed 0.5 h), round up to nearest full hour.
 
-    my $nrCores = scalar( @{$lane{$sampleID}} ); #Detect the number of cores to use when building mosaik format from lanes
-
-    if ($nrCores < $scriptParameter{'maximumCores'}) { #Set number of cores depending on how many lanes to process
-
-	ProgramPreRequisites($sampleID, "MosaikBuild", $aligner, 0, *MOS_BU, $nrCores, $time);
-    }
-    else { #More files than cores proceed with maximum amount
-	ProgramPreRequisites($sampleID, "MosaikBuild", $aligner, 0, *MOS_BU, $scriptParameter{'maximumCores'}, $time);
-    }
+    my $nrCores = NrofCoresPerSbatch(scalar( @{$lane{$sampleID}} )); #Detect the number of cores to use from lanes
+    
+    ProgramPreRequisites($sampleID, "MosaikBuild", $aligner, 0, *MOS_BU, $nrCores, $time);
 
     my $inSampleDirectory = $indirpath{$sampleID};
     my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/mosaik";
     my $coreCounter=1;
-    my $coreTracker=0; #Required to portion out cores and files before wait and to track the MOS_BU outfiles to correct lane
     
-    for (my $infileCounter=0;$infileCounter<(scalar( @{ $infile{$sampleID} }) -1);$infileCounter++) {
+    for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files
+    
+	if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") {
 	
-	if ($coreTracker == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} nr of cores
-	    
-	    $coreCounter=$coreCounter+1;
+	    my $coreTracker=0; #Required to portion out cores and files before wait and to track the MOS_BU outfiles to correct lane
+    
+	    for (my $infileCounter=0;$infileCounter<(scalar( @{ $infile{$sampleID} }) -1);$infileCounter++) {
+		
+		if ($coreTracker == $coreCounter*$nrCores) { #Using only nr of cores eq to lanes or maximumCores
+		    
+		    $coreCounter=$coreCounter+1;
+		    print MOS_BU "wait", "\n\n";
+		}
+		my $infile = $infile{$sampleID}[$infileCounter];
+		my $infile2 = $infile{$sampleID}[ ($infileCounter+1)]; #Paired read
+		$infileCounter = $infileCounter+1; #To correct for reading 2 files at once
+		
+		print MOS_BU "MosaikBuild ";
+		print MOS_BU "-id ".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter]." "; #Read group ID for BAM Header
+		print MOS_BU "-sam ".$sampleID." "; #Sample name for BAM Header
+		print MOS_BU "-st illumina_long "; #Sequencing technology for BAM Header
+		print MOS_BU "-mfl ".$scriptParameter{'mosaikBuildMedianFragLength'}." "; #Median Fragment Length
+		print MOS_BU "-q ".$inSampleDirectory."/".$infile." "; #Read 1
+		print MOS_BU "-q2 ".$inSampleDirectory."/".$infile2." "; #Read 2
+		print MOS_BU "-out ".$outSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$coreTracker].".dat &", "\n\n"; #OutFile
+		$coreTracker++; #Track nr of mosaikBuild calls so that wait can be printed at the correct intervals (dependent on $scriptParameter{'maximumCores'})
+	    }
 	}
-	my $infile = $infile{$sampleID}[$infileCounter];
-	my $infile2 = $infile{$sampleID}[ ($infileCounter+1)]; #Paired read
-	$infileCounter = $infileCounter+1; #To correct for reading 2 files at once
-
-	print MOS_BU "MosaikBuild ";
-	print MOS_BU "-id ".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter]." "; #Read group ID for BAM Header
-	print MOS_BU "-sam ".$sampleID." "; #Sample name for BAM Header
-	print MOS_BU "-st illumina_long "; #Sequencing technology for BAM Header
-	print MOS_BU "-mfl ".$scriptParameter{'mosaikBuildMedianFragLength'}." "; #Median Fragment Length
-	print MOS_BU "-q ".$inSampleDirectory."/".$infile." "; #Read 1
-	print MOS_BU "-q2 ".$inSampleDirectory."/".$infile2." "; #Read 2
-	print MOS_BU "-out ".$outSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[($coreTracker)].".dat &", "\n\n"; #OutFile
-	$coreTracker++; #Track nr of mosaikBuild calls so that wait can be printed at the correct intervals (dependent on $scriptParameter{'maximumCores'})
+	else { #Single-end
+	    
+	    for (my $infileCounter=0;$infileCounter<(scalar( @{ $infile{$sampleID} }));$infileCounter++) {
+		
+		if ($infileCounter == $coreCounter*$nrCores) { #Using only nr of cores eq to lanes or maximumCores
+		    
+		    $coreCounter=$coreCounter+1;
+		    print MOS_BU "wait", "\n\n";
+		}
+		my $infile = $infile{$sampleID}[$infileCounter];
+		
+		print MOS_BU "MosaikBuild ";
+		print MOS_BU "-id ".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter]." "; #Read group ID for BAM Header
+		print MOS_BU "-sam ".$sampleID." "; #Sample name for BAM Header
+		print MOS_BU "-st illumina_long "; #Sequencing technology for BAM Header
+		print MOS_BU "-mfl ".$scriptParameter{'mosaikBuildMedianFragLength'}." "; #Median Fragment Length
+		print MOS_BU "-q ".$inSampleDirectory."/".$infile." "; #Read 1
+		print MOS_BU "-out ".$outSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter].".dat &", "\n\n"; #OutFile
+	    }
+	}
     }
     print MOS_BU "wait", "\n\n";    
     close(MOS_BU);
@@ -4353,14 +4454,29 @@ sub FastQC {
 
     my $time = ceil(0.5*scalar( @{ $infile{$sampleID} })); #One full lane on Hiseq takes approx. 0.5 h for FASTQC to process, round up to nearest full hour.
 
-    ProgramPreRequisites($sampleID, "FastQC", "fastqc", 0, *FASTQC, $scriptParameter{'maximumCores'}, $time);
+    my $nrCores = 0;
+
+    for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files   
+
+	if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present
+	    $nrCores =  $nrCores + 2; #2 processes per file
+	}
+	else {#Single-end
+	    $nrCores = $nrCores + 1; #Only 1 file and one process
+	}
+    }
+
+    $nrCores = NrofCoresPerSbatch($nrCores ); #Make sure that the number of cores does not exceed maximum after incrementing above
+
+    ProgramPreRequisites($sampleID, "FastQC", "fastqc", 0, *FASTQC, $nrCores, $time);
     
     my $inSampleDirectory = $indirpath{$sampleID};
     my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/fastqc";
     my $coreCounter=1;
+    
     for (my $infileCounter=0;$infileCounter<scalar( @{ $infile{$sampleID} });$infileCounter++) {
 	
-	if ($infileCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
+	if ($infileCounter == $coreCounter*$nrCores) { #Using only nr of cores eq to lanes or maximumCores
 	    
 	    print FASTQC "wait", "\n\n";
 	    $coreCounter=$coreCounter+1;
@@ -4566,17 +4682,34 @@ sub PushToJobID {
     my $chainKey;
     
     if ($chainKeyType eq "Parallel") { #Push parallel jobs
-	
-	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #All infiles
-	    
-	    $chainKey = $sampleID."_parallel_".$path.$infileCounter; #Set key
-	    
-	    if ($jobID{$familyIDChainKey}{$chainKey}) { #job exists
-		
-		for (my $jobCounter=0;$jobCounter<scalar( @{ $jobID{$familyIDChainKey}{$chainKey} });$jobCounter++) { #All previous jobs i.e. jobs in this case equals to infiles in number
+
+	if ($scriptParameter{'analysisType'} eq "rapid" && $sampleInfo{$scriptParameter{'familyID'}}{$sampleID}{'pBwaMem'}{'sbatchBatchProcesses'}) {
+	    for (my $sbatchCounter=0;$sbatchCounter<$sampleInfo{$scriptParameter{'familyID'}}{$sampleID}{'pBwaMem'}{'sbatchBatchProcesses'};$sbatchCounter++) {
+		#$sampleInfo{$scriptParameter{'familyID'}}{$sampleID}{'pBwaMem'}{'sbatchBatchProcesses'} = $totalSbatchCounter;
+		$chainKey = $sampleID."_parallel_".$path.$sbatchCounter; #Set key
+
+		if ($jobID{$familyIDChainKey}{$chainKey}) { #job exists
 		    
-		    push ( @{ $jobID{$familyIDChainKey}{$sampleIDChainKey} }, $jobID{$familyIDChainKey}{$chainKey}[$jobCounter]); #Add jobID to hash
-		}    
+		    for (my $jobCounter=0;$jobCounter<scalar( @{ $jobID{$familyIDChainKey}{$chainKey} });$jobCounter++) { #All previous jobs i.e. jobs in this case equals to infiles in number
+			
+			push ( @{ $jobID{$familyIDChainKey}{$sampleIDChainKey} }, $jobID{$familyIDChainKey}{$chainKey}[$jobCounter]); #Add jobID to hash
+		    }    
+		}
+	    }	
+	    $sampleInfo{$scriptParameter{'familyID'}}{$sampleID}{'pBwaMem'}{'sbatchBatchProcesses'} = ();
+	}
+	else {
+	    for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #All infiles
+		
+		$chainKey = $sampleID."_parallel_".$path.$infileCounter; #Set key
+		
+		if ($jobID{$familyIDChainKey}{$chainKey}) { #job exists
+		    
+		    for (my $jobCounter=0;$jobCounter<scalar( @{ $jobID{$familyIDChainKey}{$chainKey} });$jobCounter++) { #All previous jobs i.e. jobs in this case equals to infiles in number
+			
+			push ( @{ $jobID{$familyIDChainKey}{$sampleIDChainKey} }, $jobID{$familyIDChainKey}{$chainKey}[$jobCounter]); #Add jobID to hash
+		    }    
+		}
 	    }
 	}
     }
@@ -4830,91 +4963,141 @@ sub FIDSubmitJob {
     return;
 }
 
+sub NrofCoresPerSbatch {
+##Set the number of cores to allocate per sbatch job
+    
+    my $nrCores = $_[0];
+    
+    if ($nrCores > $scriptParameter{'maximumCores'}) { #Set number of cores depending on how many lanes to process
+	
+	$nrCores = $scriptParameter{'maximumCores'}; #Set to max on cluster
+    }
+    return $nrCores;
+}
+
 sub InfilesReFormat {
 ###Reformat files for mosaik output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames.
     
-    my $uncompressedFileCounter = 0; #Used to decide later if any inputfiles needs to be compressed before starting analysis                     
-    
-    for my $sampleID (keys %infile) { #For every sampleID                                                                                                       
+    my $uncompressedFileCounter = 0; #Used to decide later if any inputfiles needs to be compressed before starting analysis 
+
+    for my $sampleID (keys %infile) { #For every sampleID                                                                                       
 	
-        my $laneTracker=0; #Needed to be able to track when lanes are finished                                                                       
+        my $laneTracker=0; #Needed to be able to track when lanes are finished                                                                  
 	
         for (my $infileCounter=0;$infileCounter<scalar( @ { $infile{$sampleID} });$infileCounter++) { #All inputfiles for all fastq dir and remakes format     
 	    
             if ($infile{$sampleID}[$infileCounter] =~ /\/?([^\.\/]+\.[^\.]+)\.lane(\d+)_([12FfRr])\.fastq.gz/) { #Parse fastq.gz 'old' format, $2="lane", $3="Read direction"
 
-		if ($3 == 1) { #1st read direction
-		    
-		    push( @{$lane{$sampleID}}, $2); #Lane                                                                                                      
-
-		    $infilesLaneNoEnding{$sampleID}[$laneTracker]= $1.".".$2; #Save old format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).  
-		    $laneTracker++; #Track for every lane finished 
-		}
-
-		$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]= $1.".".$2."_".$3; #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
-		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'originalFileName'} = $infile{$sampleID}[$infileCounter]; #Original fileName
-		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'originalFileNameNoEnding'} = $1."lane".$2."_".$3; #Original fileName, but no ending
-                $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'sampleBarcode'} = "X"; #Save barcode, but not defined
-		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'runBarcode'} = $2."_".$1; #Save run barcode
-		CheckUniqueArrayElement(\@{ $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'readDirection'} }, \$3); #Check if there are any new info and add it to sampleInfo if so.                                                                                             
+		AddInfileInfoOld($1, $2, $3, $sampleID, \$laneTracker, $infileCounter, "compressed"); 
             }
             elsif ($infile{$sampleID}[$infileCounter] =~ /\/?([^\.\/]+\.[^\.]+)\.lane(\d+)_([12FfRr])\.fastq/) { #Parse 'old' format                           
 
-		if ($3 == 1) { #1st read direction
-		    push( @ {$lane{$sampleID}}, $2); #Lane
-		    $infilesLaneNoEnding{$sampleID}[$laneTracker]= $1.".".$2; #Save old format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
-		    $laneTracker++; #Track for every lane finished 
-		}
-
-                $uncompressedFileCounter = 1; #File needs compression before starting analysis           
-		$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]= $1.".".$2."_".$3; #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
-		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'originalFileName'} = $infile{$sampleID}[$infileCounter]; #Original fileName
-		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'originalFileNameNoEnding'} = $1."lane".$2."_".$3; #Original fileName, but no ending
-                $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'sampleBarcode'} = "X"; #Save barcode, but not defined      
-                $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'runBarcode'} = $2."_".$1; #Save run barcode  
-		CheckUniqueArrayElement(\@{ $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'readDirection'} }, \$3); #Check if there are any new info and add it to sampleInfo if so.                                                                                                       
+		AddInfileInfoOld($1, $2, $3, $sampleID, \$laneTracker, $infileCounter, "uncompressed");
+                $uncompressedFileCounter = 1; #File needs compression before starting analysis                               
             }
-            elsif ($infile{$sampleID}[$infileCounter] =~ /(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq.gz/) { #Parse fastq.gz 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, \$5=index,$6=direction                                                                                                           
+            elsif ($infile{$sampleID}[$infileCounter] =~ /(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq.gz/) { #Parse fastq.gz 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                                                                                                          
 
-		if ($6 == 1) {
-		    push( @{$lane{$sampleID}}, $1); #Lane
-		    $infilesLaneNoEnding{$sampleID}[$laneTracker]= $4.".".$2."_".$3."_".$5.".lane".$1; #Save new format (sampleID_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq). 
-		    $laneTracker++; #Track for every lane finished 
-		}
-
-		$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]= $4.".".$2."_".$3."_".$5.".lane".$1."_".$6; #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'originalFileName'} = $infile{$sampleID}[$infileCounter]; #Original fileName
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'originalFileNameNoEnding'} = $1."_".$2."_".$3."_".$4."_".$5."_".$6; #Original fileName, but no ending
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'lane'} = $1; #Save sample lane                  
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'date'} = $2; #Save Sequence run date          
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'flow-cell'} = $3; #Save Sequence flow-cell        
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'sampleBarcode'} = $5; #Save sample barcode
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'runBarcode'} = $2."_".$3."_".$1."_".$5; #Save run barcode
-		CheckUniqueArrayElement(\@{  $sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'ReadDirection'} }, \$6); #Check if there are any new info and add it to sampleInfo if so.                                                                                          
-            }
-            elsif ($infile{$sampleID}[$infileCounter] =~/(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq/) { #Parse 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=d\irection                                                                                                                      
-
-		if ($6 == 1) {
-		    push( @{$lane{$sampleID}}, $1); #Lane
-		    $infilesLaneNoEnding{ $sampleID }[$laneTracker]= $4.".".$2."_".$3."_".$5.".lane".$1; #Save new format (sampleID_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).		
-		    $laneTracker++; #Track for every lane finished 
-		}
-
-		$uncompressedFileCounter = 1; #File needs compression before starting analysis
-		$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]= $4.".".$2."_".$3."_".$5.".lane".$1."_".$6; #Save new format in hash with samplid as keys and inputfiles in array. Note: These fies have not been created yet and there is one entry per strand and .ending is removed (.fastq).                    
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'originalFileName'} = $infile{$sampleID}[$infileCounter]; #Original fileName
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'originalFileNameNoEnding'} = $1."_".$2."_".$3."_".$4."_".$5."_".$6; #Original fileName, but no ending
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'lane'} = $1; #Save sample lane              
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'date'} = $2; #Save Sequence run date          
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'flow-cell'} = $3; #Save Sequence flow-cell  
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'sampleBarcode'} = $5; #Save sample barcode       
-		$sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'runBarcode'} = $2."_".$3."_".$1."_".$5; #Save run barcode
-		CheckUniqueArrayElement(\@{  $sampleInfo{ $scriptParameter{'familyID'} }{$4}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'ReadDirection'} }, \$6); #Check if there are any new info and add it to sampleInfo if so.              
+		AddInfileInfo($1, $2, $3, $4, $5, $6, \$laneTracker, $infileCounter, "compressed");
+	    }
+            elsif ($infile{$sampleID}[$infileCounter] =~/(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq/) { #Parse 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                                                                                                                      
+		
+		AddInfileInfo($1, $2, $3, $4, $5, $6, \$laneTracker, $infileCounter, "uncompressed");		
+		$uncompressedFileCounter = 1; #File needs compression before starting analysis             
 	    }
         }
 	
     }
     return $uncompressedFileCounter;
+}
+
+sub AddInfileInfoOld {
+##Adds information derived from infile name to sampleInfo hash. Tracks the number of lanes sequenced and checks unique array elementents.  
+    
+    my $dateFlowCell = $_[0];
+    my $lane = $_[1];
+    my $direction = $_[2];
+    my $sampleID = $_[3];
+    my $laneTrackerRef = $_[4];
+    my $infileCounter = $_[5];
+    my $compressedInfo = $_[6]; #.fastq.gz or .fastq info governs zcat or cat downstream
+
+    my $readFile;
+
+    if ($compressedInfo eq "compressed") {
+	$readFile = "zcat"; #read file in compressed format
+    }
+    else {
+	$readFile = "cat"; #read file in uncompressed format
+    }
+    
+    my $seqLengthRegExp = q?perl -ne 'if ($_!~/@/) {chomp($_);my $seqLength = length($_);print $seqLength;last;}' ?; #Prints sequence length and exits
+
+    if ($direction == 1) { #Read 1
+	
+	push( @{$lane{$sampleID}}, $lane); #Lane
+	$infilesLaneNoEnding{$sampleID}[$$laneTrackerRef]= $dateFlowCell.".".$lane; #Save old format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
+	$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$$laneTrackerRef]}{'sequenceRunType'} = "Single-end"; #Single-end until proven otherwise
+	$$laneTrackerRef++;
+    }
+    if ($direction == 2) { #2nd read direction
+	$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$$laneTrackerRef-1]}{'sequenceRunType'} = "Paired-end"; #$laneTracker -1 since it gets incremented after direction eq 1. 
+    }
+    
+    $infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]= $dateFlowCell.".".$lane."_".$direction; #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
+    $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'originalFileName'} = $infile{$sampleID}[$infileCounter]; #Original fileName
+    $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'originalFileNameNoEnding'} = $dateFlowCell."lane".$lane."_".$direction; #Original fileName, but no ending
+    $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'sampleBarcode'} = "X"; #Save barcode, but not defined
+    $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'runBarcode'} = $lane."_".$dateFlowCell; #Save run barcode
+    CheckUniqueArrayElement(\@{ $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'readDirection'} }, \$direction); #Check if there are any new info and add it to sampleInfo if so. 
+    $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'sequenceLength'} = `cd $indirpath{$sampleID};$readFile $infile{$sampleID}[$infileCounter] | $seqLengthRegExp;`; #Collect sequence length
+}
+
+sub AddInfileInfo {
+##Adds information derived from infile name to sampleInfo hash. Tracks the number of lanes sequenced and checks unique array elementents.  
+
+    my $lane = $_[0];
+    my $date = $_[1];
+    my $flowCell = $_[2];
+    my $sampleID = $_[3];
+    my $index = $_[4];
+    my $direction = $_[5];
+    my $laneTrackerRef = $_[6];
+    my $infileCounter = $_[7];
+    my $compressedInfo = $_[8]; #.fastq.gz or .fastq info governs zcat or cat downstream
+
+    my $readFile;
+
+    if ($compressedInfo eq "compressed") {
+	$readFile = "zcat"; #read file in compressed format
+    }
+    else {
+	$readFile = "cat"; #read file in uncompressed format
+    }
+    
+    my $seqLengthRegExp = q?perl -ne 'if ($_!~/@/) {chomp($_);my $seqLength = length($_);print $seqLength;last;}' ?; #Prints sequence length and exits
+
+    if ($direction == 1) { #Read 1
+	
+	push( @{$lane{$sampleID}}, $lane); #Lane
+	$infilesLaneNoEnding{$sampleID}[$$laneTrackerRef]= $sampleID.".".$date."_".$flowCell."_".$index.".lane".$1; #Save new format (sampleID_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
+	$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$$laneTrackerRef]}{'sequenceRunType'} = "Single-end"; #Single-end until proven otherwise
+	$$laneTrackerRef++;
+    }
+    if ($direction == 2) { #2nd read direction
+	$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$$laneTrackerRef-1]}{'sequenceRunType'} = "Paired-end"; #$laneTracker -1 since it gets incremented after direction eq 1. 
+    }
+    
+    $infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]= $sampleID.".".$date."_".$flowCell."_".$index.".lane".$1."_".$direction; #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
+    $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'originalFileName'} = $infile{$sampleID}[$infileCounter]; #Original fileName
+    $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'originalFileNameNoEnding'} = $1."_".$date."_".$flowCell."_".$sampleID."_".$index."_".$direction; #Original fileName, but no ending
+    $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'lane'} = $1; #Save sample lane                  
+    $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'date'} = $date; #Save Sequence run date          
+    $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'flow-cell'} = $flowCell; #Save Sequence flow-cell        
+    $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'sampleBarcode'} = $index; #Save sample barcode
+    $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'runBarcode'} = $date."_".$flowCell."_".$1."_".$index; #Save run barcode
+    
+    CheckUniqueArrayElement(\@{  $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'ReadDirection'} }, \$direction); #Check if there are any new info and add it to sampleInfo if so.   
+    $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'sequenceLength'} = `cd $indirpath{$sampleID};$readFile $infile{$sampleID}[$infileCounter] | $seqLengthRegExp;`; #Collect sequence length
 }
 
 sub Checkfnexists {
@@ -5244,7 +5427,7 @@ sub AddToScriptParameter {
 		}
 		if ($parameterName eq "'outDataDir") {
 		    if (-e $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_qc_sampleInfo.yaml") { #Read any previous analysis run sampleInfo.yaml file to enable record of previous data if not processed this analysis run. %sampleInfo will be updated for records active/changed in this run, but not inactive program records. 
-		    print "KAlle";
+	     
 		    %sampleInfo = LoadYAML($scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_qc_sampleInfo.yaml");     
 		    }
 		}
@@ -5267,7 +5450,7 @@ sub AddToScriptParameter {
 			
 			if ($parameterName eq "annovarTableNames") {
 ##Set default annovar table names
-			    @annovarTableNames = ("refgene", "mce46way", "gerp++elem", "segdup", "gwascatalog", "tfbs", "mirna", "snp137NonFlagged", "1000g2012apr_all", "hg19_esp6500si_all.txt", "avsift", "ljb_pp2", "ljb_mt", "ljb_lrt", "ljb_gerp++", "ljb_phylop");
+			    @annovarTableNames = ("refgene", "mce46way", "gerp++elem", "segdup", "gwascatalog", "tfbs", "mirna", "snp137NonFlagged", "1000g2012apr_all", "hg19_esp6500si_all.txt", "avsift", "ljb_pp2", "ljb_mt", "ljb_lrt", "ljb_gerp++", "ljb_phylop", "hg19_clinvar_20131105.txt");
 			    $scriptParameter{'annovarTableNames'} = join(",", @annovarTableNames);
 			} 
 			elsif ($parameterName eq "ImportantDbFileOutFile") {
@@ -5657,12 +5840,7 @@ sub ProgramPreRequisites {
     
     print $fileHandle "#! /bin/bash -l", "\n";
     print $fileHandle "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
-    if ($nrofCores == $scriptParameter{'maximumCores'}) {
-	print $fileHandle "#SBATCH -p node -n ".$nrofCores, "\n";
-    }
-    else {
-	print $fileHandle "#SBATCH -n ".$nrofCores, "\n";
-    }
+    print $fileHandle "#SBATCH -n ".$nrofCores, "\n";
     print $fileHandle "#SBATCH -C thin", "\n";	
     print $fileHandle "#SBATCH -t ".$processTime.":00:00", "\n";
     print $fileHandle "#SBATCH -J ".$programName."_".$directoryID."_".$callType, "\n";
