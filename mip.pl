@@ -4109,42 +4109,6 @@ sub PicardToolsMergeRapidReads {
     return;
 }
 
-sub DetermineNrofRapidNodes {
-##Determines the number of nodes to allocate depending on the sequence length, which affects the infile size.
-    
-    my $seqLength = $_[0]; 
-    my $infileSize = $_[1];
-    
-    my $numberNodes = 0; #Nodes to allocate
-    my $readPositionWeight = 1; #Scales the readStart and readStop position
-    my $ReadNrofLines;    
-
-    if ($seqLength > 75 && $seqLength <= 101) {
-	$ReadNrofLines = 190000000; #Read batch size
-	$numberNodes = floor($infileSize / (12 * $ReadNrofLines) ); #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.	
-	print STDOUT "Number of Nodes: ".$numberNodes, "\n";
-    }
-    if ($seqLength > 50 && $seqLength <= 75) {
-	$ReadNrofLines = 190000000; #Read batch size
-	$numberNodes = floor($infileSize / (9.75 * $ReadNrofLines) ); #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.	
-	print STDOUT "Number of Nodes: ".$numberNodes, "\n";
-    }
-    if ($seqLength >= 50 && $seqLength < 75) {
-	$ReadNrofLines = 130000000; #Read batch size
-	$numberNodes = floor($infileSize / (7 * $ReadNrofLines) ); #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.
-	print STDOUT "Number of Nodes: ".$numberNodes, "\n";
-    }
-    if ($seqLength >= 35 && $seqLength < 50) {
-	$ReadNrofLines = 95000000; #Read batch size
-	$numberNodes = floor($infileSize / (6 * $ReadNrofLines) ); #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.
-	print STDOUT "Number of Nodes: ".$numberNodes, "\n";
-    }
-    if ($numberNodes <= 1) {
-	
-	$numberNodes = 2; #Ensure that at least 1 readbatch is processed
-    }
-    return $numberNodes, $ReadNrofLines;
-}
 
 sub BWA_Mem {
 ###Alignment using BWA Mem
@@ -4202,10 +4166,10 @@ sub BWA_Mem {
 		print BWA_MEM "-M "; #Mark shorter split hits as secondary (for Picard compatibility). 
 		print BWA_MEM "-t ".$scriptParameter{'maximumCores'}." "; #Number of threads 
 		if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present
-		    print BWA_MEM "-r ".'"@RG\tID:'.$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$infileCounter].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '; #read group header line
+		    print BWA_MEM "-R ".'"@RG\tID:'.$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$infileCounter].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '; #read group header line
 		}
 		else  {
-		    print BWA_MEM "-r ".'"@RG\tID:'.$infilesBothStrandsNoEnding{$sampleID}[$infileCounter].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '; #read group header line
+		    print BWA_MEM "-R ".'"@RG\tID:'.$infilesBothStrandsNoEnding{$sampleID}[$infileCounter].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '; #read group header line
 		}
 		print BWA_MEM $scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #reference
 
@@ -4235,7 +4199,6 @@ sub BWA_Mem {
 		print BWA_MEM "| "; #Pipe
 		print BWA_MEM "intersectBed "; #Limit output to only clinically interesting genes
 		print BWA_MEM "-abam stdin "; #The A input file is in BAM format.  Output will be BAM as well.
-		#print BWA_MEM "-b ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'ImportantDbFile'}." "; #Db file of clinically relevant variants
 		print BWA_MEM "-b ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'bwaMemRapidDb'}." "; #Db file of clinically relevant variants
 		print BWA_MEM "> ".$BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter.".bam", "\n\n"; #Outfile (BAM)
 		
@@ -4283,7 +4246,7 @@ sub BWA_Mem {
 	    print BWA_MEM "bwa mem ";
 	    print BWA_MEM "-M "; #Mark shorter split hits as secondary (for Picard compatibility). 
 	    print BWA_MEM "-t ".$scriptParameter{'maximumCores'}." "; #Number of threads 
-	    print BWA_MEM "-r ".'"@RG\tID:'.$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$infileCounter].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '; #read group header line
+	    print BWA_MEM "-R ".'"@RG\tID:'.$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$infileCounter].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '; #read group header line
 	    print BWA_MEM $scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #reference
 	    print BWA_MEM $BWAinSampleDirectory."/".$infile." "; #Read 1
 
@@ -6148,6 +6111,43 @@ sub CheckUniqueArrayElement {
 	}
     }
     return;
+}
+
+sub DetermineNrofRapidNodes {
+##Determines the number of nodes to allocate depending on the sequence length, which affects the infile size.
+    
+    my $seqLength = $_[0]; 
+    my $infileSize = $_[1];
+    
+    my $numberNodes = 0; #Nodes to allocate
+    my $readPositionWeight = 1; #Scales the readStart and readStop position
+    my $ReadNrofLines;    
+
+    if ($seqLength > 75 && $seqLength <= 101) {
+	$ReadNrofLines = 190000000; #Read batch size
+	$numberNodes = floor($infileSize / (12 * $ReadNrofLines) ); #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.	
+	print STDOUT "Number of Nodes: ".$numberNodes, "\n";
+    }
+    if ($seqLength > 50 && $seqLength <= 75) {
+	$ReadNrofLines = 190000000; #Read batch size
+	$numberNodes = floor($infileSize / (9.75 * $ReadNrofLines) ); #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.	
+	print STDOUT "Number of Nodes: ".$numberNodes, "\n";
+    }
+    if ($seqLength >= 50 && $seqLength < 75) {
+	$ReadNrofLines = 130000000; #Read batch size
+	$numberNodes = floor($infileSize / (7 * $ReadNrofLines) ); #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.
+	print STDOUT "Number of Nodes: ".$numberNodes, "\n";
+    }
+    if ($seqLength >= 35 && $seqLength < 50) {
+	$ReadNrofLines = 95000000; #Read batch size
+	$numberNodes = floor($infileSize / (6 * $ReadNrofLines) ); #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.
+	print STDOUT "Number of Nodes: ".$numberNodes, "\n";
+    }
+    if ($numberNodes <= 1) {
+	
+	$numberNodes = 2; #Ensure that at least 1 readbatch is processed
+    }
+    return $numberNodes, $ReadNrofLines;
 }
 
 ####
