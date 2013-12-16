@@ -440,7 +440,7 @@ DefineParameters("email", "MIP", 0, 0, "MIP", 0);
 
 DefineParameters("familyID", "path", "nodefault", "noenvironmentUppmaxDefault", "MIP", 0);
 
-DefineParameters("maximumCores", "MIP", 8, 8, "MIP", 0);
+DefineParameters("maximumCores", "MIP", 16, 16, "MIP", 0);
 
 DefineParameters("configFile", "MIP", 0, 0, "MIP", "file");
 
@@ -537,7 +537,7 @@ DefineParameters("pChanjoCalculate", "program", 1, 1, "MIP", 0, "_coverage", "Co
 
 DefineParameters("chanjoCalculateCutoff", "program", 10, 10, "pChanjoCalculate", 0);
 
-DefineParameters("pChanjoImport", "program", 1, 1, "MIP", 0, "nofileEnding", "CoverageReport");
+DefineParameters("pChanjoImport", "program", 1, 0, "MIP", 0, "nofileEnding", "CoverageReport");
 
 DefineParameters("pCalculateCoverage", "program", 1, 1, "MIP", 0, "nofileEnding", "CoverageQC", "bedtools");
 
@@ -965,9 +965,11 @@ foreach my $orderParameterElement (@orderParameters) { #Populate scriptParameter
 if (scalar(@sampleIDs) == 0) { #No input from cmd or from pedigree
     @sampleIDs = ("nocmdinput"); #To enable use of subroutine AddToScriptParameter
 }
-@sampleIDs = join(',',@sampleIDs); #If user supplied -inFilesDirs directory 1 -inFilesDirs directory 2 etc
+@sampleIDs = join(',',@sampleIDs); #If user supplied -sampleID X -sampleID 2 etc or a as a comma separated list
 push(@orderParameters, "sampleIDs"); #Add to enable later evaluation of parameters in proper order & write to master file
 AddToScriptParameter("sampleIDs", @sampleIDs, "path", "nodefault", "noenvironmentUppmaxDefault", "MIP");
+CheckUniqueIDNs();
+
 
 ##inFileDirs
 
@@ -3927,10 +3929,12 @@ sub BWA_Sampe {
     my $sampleID = $_[0];
     my $aligner = $_[1];
     
-    my $sbatchScriptTracker=0;
     my $time=0;
     my $infileSize;
+    my $pairedEndTracker = 0;
+
     for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files from BWA aln but process in the same command i.e. both reads per align call
+
 	if ($infile{$sampleID}[$infileCounter] =~/.fastq.gz$/) { #Files are already gz and presently the scalar for compression has not been investigated. Therefore no automatic time allocation can be performed.
 	    if ($scriptParameter{'analysisType'} eq "genomes") {
 		$time = 40;  
@@ -3940,30 +3944,32 @@ sub BWA_Sampe {
 	    }
 	}
 	else { #Files are in fastq format	
-	    $infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter+$sbatchScriptTracker]; # collect .fastq file size to enable estimation of time required for aligning, +1 for syncing multiple infiles per sampleID. Hence, filesize will be calculated on read2 (should not matter).
+	    $infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$pairedEndTracker]; # collect .fastq file size to enable estimation of time required for aligning.
 	    $time = ceil(($infileSize/238)/(3000*60*60)); #238 is a scalar estimating the number of reads depending on filesize. 3500 is the number of reads/s in Bwa_sampe-0.6.1 plus samtools-0.1.12-10 view sam to bam conversion and 60*60 is to scale to hours. (4600 BWA-0.5.9)
 	}
+	my $sequenceRunMode = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'}; #Collect paired-end or single-end sequence run mode
+
 	ProgramPreRequisites($sampleID, "BwaSampe", $aligner, 0, *BWA_SA, 1, $time);
 	
 	my $BWAinSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/bwa";
 	my $FASTQinSampleDirectory = $indirpath{$sampleID};
 	my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/bwa";
-	my $infile = $infile{$sampleID}[$infileCounter+$sbatchScriptTracker]; #For required .fastq file
+	my $infile = $infile{$sampleID}[$pairedEndTracker]; #For required .fastq file
 
 #BWA Sampe	
 	print BWA_SA "bwa sampe ";
-	print BWA_SA "-r ".'"@RG\tID:'.$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$sbatchScriptTracker].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '.$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #read group header line
-	print BWA_SA $BWAinSampleDirectory."/".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$sbatchScriptTracker].".sai "; #Read 1
+	print BWA_SA "-r ".'"@RG\tID:'.$infilesLaneNoEnding{$sampleID}[$infileCounter].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '.$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #read group header line
+	print BWA_SA $BWAinSampleDirectory."/".$infilesBothStrandsNoEnding{$sampleID}[$pairedEndTracker].".sai "; #Read 1
 
-	if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present
-	    print BWA_SA $BWAinSampleDirectory."/".$infilesBothStrandsNoEnding{$sampleID}[ ($infileCounter+$sbatchScriptTracker+1) ].".sai "; #Read 2
+	if ( $sequenceRunMode eq "Paired-end") {
+	    $pairedEndTracker = $pairedEndTracker+1; #Increment to collect correct read 2 from %infile
+	    print BWA_SA $BWAinSampleDirectory."/".$infilesBothStrandsNoEnding{$sampleID}[$pairedEndTracker].".sai "; #Read 2
 	}
 
 	print BWA_SA $FASTQinSampleDirectory."/".$infile." "; #Fastq read 1
 	
-	if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present
-	    my $infile2 = $infile{$sampleID}[ ($infileCounter+$sbatchScriptTracker+1)]; # #For required .fastq file (Paired read)   
-	    print BWA_SA $FASTQinSampleDirectory."/".$infile2." "; #Fastq read 2
+	if ( $sequenceRunMode eq "Paired-end") { 
+	    print BWA_SA $FASTQinSampleDirectory."/".$infile{$sampleID}[$pairedEndTracker]." "; #Fastq read 2
 	}
 
 	print BWA_SA "> ".$outSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter].".sam", "\n\n"; #Outfile (SAM)
@@ -3978,9 +3984,9 @@ sub BWA_Sampe {
 		
 	close(BWA_SA);
 	if ( ($scriptParameter{'pBwaSampe'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-	    FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 3, $parameter{'pBwaSampe'}{'chain'}, $filename, $sbatchScriptTracker);
+	    FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 3, $parameter{'pBwaSampe'}{'chain'}, $filename, $infileCounter);
 	}
-	$sbatchScriptTracker++;
+	$pairedEndTracker++;
     }
     return;
 }
@@ -4219,8 +4225,7 @@ sub BWA_Mem {
 		    print BWA_MEM "RGLB=".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter]." "; #Read Group Library
 		}
 		print BWA_MEM "RGSM=".$sampleID." "; #Read Group sample name
-		print BWA_MEM "RGPL=ILLUMINA "; #Read Group platform
-		#print BWA_MEM "RGPU=".$sampleInfo{$scriptParameter{'familyID'}}{$sampleID}{$infilesBothStrandsNoEnding{$sampleID}[$infileCounter]}{'runBarcode'}." "; #Read Group platform unit 
+		print BWA_MEM "RGPL=ILLUMINA "; #Read Group platform 
 		print BWA_MEM "RGPU=".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'runBarcode'}." "; #Read Group platform unit
 		print BWA_MEM "CREATE_INDEX=TRUE "; #Create a BAM index when writing a coordinate-sorted BAM file.
 		
@@ -4299,6 +4304,26 @@ sub MosaikAlign {
 		$time = ceil(($infileSize/238)/(650*60*60)); #238 is a scalar estimating the number of reads depending on filesize. 650 is the number of reads/s in MosaikAlign-2.1.52 and 60*60 is to scale to hours.
 	    }	    
 	} 
+	#Set parameters depending on sequence length
+	my $seqLength = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'sequenceLength'};
+	my $actParameter = 35; #the alignment candidate threshold (length)
+	my $bwParameter = 35; #specifies the Smith-Waterman bandwidth.
+
+	if ($seqLength <=36) {
+	    
+	    $actParameter = 20;
+	    $bwParameter = 13;   
+	}
+	if ($seqLength >36 && $seqLength <=51) {
+	    
+	    $actParameter = 25;
+	    $bwParameter = 21;   
+	}
+	if ($seqLength >51 && $seqLength <=76) {
+	    
+	    $bwParameter = 29;   
+	}
+	
 
 	my ($stdoutPath) = ProgramPreRequisites($sampleID, "MosaikAlign", $aligner, 0, *MOS_AL, $scriptParameter{'maximumCores'}, $time);
 	my ($volume,$directories,$file) = File::Spec->splitpath($stdoutPath); #Split to enable submission to SampleInfoQC later
@@ -4314,14 +4339,17 @@ sub MosaikAlign {
 	print MOS_AL "-in ".$inSampleDirectory."/".$infile.".dat "; #Infile
 	print MOS_AL "-out ".$outSampleDirectory."/".$infile." "; #OutFile (MosaikAligner appends .bam to infile name)
 	print MOS_AL "-ia ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikAlignReference'}." "; #Mosaik Reference
-	print MOS_AL "-annpe ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikAlignNeuralNetworkPeFile'}." "; #NerualNetworkPE
 	print MOS_AL "-annse ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikAlignNeuralNetworkSeFile'}." "; #NerualNetworkSE
 	print MOS_AL "-hs 15 "; #hash size
 	print MOS_AL "-mm 4 "; #the # of mismatches allowed
 	print MOS_AL "-mhp 100 "; #the maximum # of positions stored per seed
-	print MOS_AL "-ls 100 "; #enable local alignment search for PE reads
-	print MOS_AL "-act 35 "; #the alignment candidate threshold (length)
-	print MOS_AL "-bw 35 "; #specifies the Smith-Waterman bandwidth.
+
+	if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present
+	    print MOS_AL "-annpe ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikAlignNeuralNetworkPeFile'}." "; #NerualNetworkPE
+	    print MOS_AL "-ls 100 "; #enable local alignment search for PE reads
+	}
+	print MOS_AL "-act ".$actParameter." "; #the alignment candidate threshold (length)
+	print MOS_AL "-bw ".$bwParameter." "; #specifies the Smith-Waterman bandwidth.
 	print MOS_AL "-j ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikJumpDbStub'}." "; #JumpDatabase
 	print MOS_AL "-p ".$scriptParameter{'maximumCores'}, "\n\n"; #Nr of cores
 	
@@ -4342,70 +4370,57 @@ sub MosaikBuild {
     
     my $sampleID = $_[0];
     my $aligner = $_[1];
-
+    
     my $time = ceil(2.5*scalar( @{ $infilesLaneNoEnding{$sampleID} })); #One full lane on Hiseq takes approx. 1 h for MosaikBuild to process (compressed format, uncompressed 0.5 h), round up to nearest full hour.
-
+    
     my $nrCores = NrofCoresPerSbatch(scalar( @{$lane{$sampleID}} )); #Detect the number of cores to use from lanes
     
     ProgramPreRequisites($sampleID, "MosaikBuild", $aligner, 0, *MOS_BU, $nrCores, $time);
-
+    
     my $inSampleDirectory = $indirpath{$sampleID};
     my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/mosaik";
     my $coreCounter=1;
     
+    my $stParameter = "illumina_long"; #Default
+    my  $pairedEndTracker = 0;
+   
     for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files
-    
-	if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") {
 	
-	    my $coreTracker=0; #Required to portion out cores and files before wait and to track the MOS_BU outfiles to correct lane
+	my $sequenceRunMode = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'}; #Collect paired-end or single-end sequence run mode
+	my $coreTracker=0; #Required to portion out cores and files before wait and to track the MOS_BU outfiles to correct lane
     
-	    for (my $infileCounter=0;$infileCounter<(scalar( @{ $infile{$sampleID} }) -1);$infileCounter++) {
-		
-		if ($coreTracker == $coreCounter*$nrCores) { #Using only nr of cores eq to lanes or maximumCores
-		    
-		    $coreCounter=$coreCounter+1;
-		    print MOS_BU "wait", "\n\n";
-		}
-		my $infile = $infile{$sampleID}[$infileCounter];
-		my $infile2 = $infile{$sampleID}[ ($infileCounter+1)]; #Paired read
-		$infileCounter = $infileCounter+1; #To correct for reading 2 files at once
-		
-		print MOS_BU "MosaikBuild ";
-		print MOS_BU "-id ".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter]." "; #Read group ID for BAM Header
-		print MOS_BU "-sam ".$sampleID." "; #Sample name for BAM Header
-		print MOS_BU "-st illumina_long "; #Sequencing technology for BAM Header
-		print MOS_BU "-mfl ".$scriptParameter{'mosaikBuildMedianFragLength'}." "; #Median Fragment Length
-		print MOS_BU "-q ".$inSampleDirectory."/".$infile." "; #Read 1
-		print MOS_BU "-q2 ".$inSampleDirectory."/".$infile2." "; #Read 2
-		print MOS_BU "-out ".$outSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$coreTracker].".dat &", "\n\n"; #OutFile
-		$coreTracker++; #Track nr of mosaikBuild calls so that wait can be printed at the correct intervals (dependent on $scriptParameter{'maximumCores'})
-	    }
-	}
-	else { #Single-end
+	my $seqLength = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$pairedEndTracker]}{'sequenceLength'}; #Collect sequence length, only collect once per MosaikBuild call always using read 1 
+	
+	if ($seqLength <=51) {
 	    
-	    for (my $infileCounter=0;$infileCounter<(scalar( @{ $infile{$sampleID} }));$infileCounter++) {
-		
-		if ($infileCounter == $coreCounter*$nrCores) { #Using only nr of cores eq to lanes or maximumCores
-		    
-		    $coreCounter=$coreCounter+1;
-		    print MOS_BU "wait", "\n\n";
-		}
-		my $infile = $infile{$sampleID}[$infileCounter];
-		
-		print MOS_BU "MosaikBuild ";
-		print MOS_BU "-id ".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter]." "; #Read group ID for BAM Header
-		print MOS_BU "-sam ".$sampleID." "; #Sample name for BAM Header
-		print MOS_BU "-st illumina_long "; #Sequencing technology for BAM Header
-		print MOS_BU "-mfl ".$scriptParameter{'mosaikBuildMedianFragLength'}." "; #Median Fragment Length
-		print MOS_BU "-q ".$inSampleDirectory."/".$infile." "; #Read 1
-		print MOS_BU "-out ".$outSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter].".dat &", "\n\n"; #OutFile
-	    }
+	    $stParameter = "illumina";
 	}
+	
+	if ($infileCounter == $coreCounter*$nrCores) { #Using only nr of cores eq to lanes or maximumCores
+	    
+	    $coreCounter=$coreCounter+1;
+	    print MOS_BU "wait", "\n\n";
+	}
+	
+	print MOS_BU "MosaikBuild ";
+	print MOS_BU "-id ".$infilesLaneNoEnding{$sampleID}[$infileCounter]." "; #Read group ID for BAM Header
+	print MOS_BU "-sam ".$sampleID." "; #Sample name for BAM Header
+	print MOS_BU "-st ".$stParameter." "; #Sequencing technology for BAM Header
+	print MOS_BU "-mfl ".$scriptParameter{'mosaikBuildMedianFragLength'}." "; #Median Fragment Length
+	print MOS_BU "-q ".$inSampleDirectory."/".$infile{$sampleID}[$pairedEndTracker]." "; #Read 1
+	
+	if ( $sequenceRunMode eq "Paired-end") {
+	    $pairedEndTracker = $pairedEndTracker+1; #Increment to collect correct read 2 from %infile
+	    print MOS_BU "-q2 ".$inSampleDirectory."/".$infile{$sampleID}[$pairedEndTracker]." "; #Read 2
+	} 
+
+	$pairedEndTracker++; #Increment to correctly track both seingle-end runs and paired-end runs
+	print MOS_BU "-out ".$outSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter].".dat &", "\n\n"; #OutFile
     }
     print MOS_BU "wait", "\n\n";    
     close(MOS_BU);
     if ( ($scriptParameter{'pMosaikBuild'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) { 
-	FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 0, $parameter{'pMosaikBuild'}{'chain'}, $filename, 0);
+	FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 1, $parameter{'pMosaikBuild'}{'chain'}, $filename, 0);
     }
     return;
 }   
@@ -4960,10 +4975,12 @@ sub InfilesReFormat {
             }
             elsif ($infile{$sampleID}[$infileCounter] =~ /(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq.gz/) { #Parse fastq.gz 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                                                                                                          
 
+		CheckSampleIDMatch($sampleID, $4, $infileCounter);
 		AddInfileInfo($1, $2, $3, $4, $5, $6, \$laneTracker, $infileCounter, "compressed");
 	    }
-            elsif ($infile{$sampleID}[$infileCounter] =~/(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq/) { #Parse 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                                                                                                                      
-		
+            elsif ($infile{$sampleID}[$infileCounter] =~/(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq/) { #Parse 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                             
+                                                                                         
+		CheckSampleIDMatch($sampleID, $4, $infileCounter);
 		AddInfileInfo($1, $2, $3, $4, $5, $6, \$laneTracker, $infileCounter, "uncompressed");		
 		$uncompressedFileCounter = 1; #File needs compression before starting analysis             
 	    }
@@ -4971,6 +4988,26 @@ sub InfilesReFormat {
 	
     }
     return $uncompressedFileCounter;
+}
+
+sub CheckSampleIDMatch {
+##Check that the sampleID provided and sampleID in infile name match.
+    
+    my $sampleID = $_[0]; #SampleID from user
+    my $infileSampleID = $_[1]; #SampleID collect with regexp from infile
+    my $infileCounter = $_[2];
+    
+    my %seen;
+    $seen{$infileSampleID} = 1; #Add input as first increment
+    
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {
+	
+	$seen{$sampleIDs[ $sampleIDCounter]}++;
+    }
+    unless ($seen{$infileSampleID} > 1) {
+	print STDOUT "\n".$sampleID." supplied and sampleID ".$infileSampleID." found in file : ".$infile{$sampleID}[$infileCounter]." does not match. Please rename file to match sampleID: ".$sampleID."\n\n";
+	exit;
+    }
 }
 
 sub AddInfileInfoOld {
@@ -6148,6 +6185,35 @@ sub DetermineNrofRapidNodes {
 	$numberNodes = 2; #Ensure that at least 1 readbatch is processed
     }
     return $numberNodes, $ReadNrofLines;
+}
+
+sub CheckUniqueIDNs {
+##Test that the familyID and the sampleID(s) exists and are unique.
+
+    my %seen; #Hash to test duplicate sampleIDs later
+
+    if (scalar(@sampleIDs) == 0) {
+
+	print STDOUT "\nPlease provide sampleID(s)\n\n";
+	exit;
+    }
+
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {
+
+	$seen{$sampleIDs[$sampleIDCounter]}++; #Increment instance to check duplictaes later
+	
+	if ($scriptParameter{'familyID'} eq $sampleIDs[$sampleIDCounter]) {
+	    
+	    print STDOUT "\nFamilyID: ".$scriptParameter{'familyID'}." equals sampleID: ".$sampleIDs[$sampleIDCounter].". Please make sure that the familyID and sampleID(s) are unique.\n";
+	    exit;
+	}
+	if ($seen{$sampleIDs[$sampleIDCounter]} > 1) {
+	
+	    print STDOUT "\nSampleID: ".$sampleIDs[$sampleIDCounter]." is not uniqe.\n\n";
+	    exit;
+	}
+    }
+    return;
 }
 
 ####
