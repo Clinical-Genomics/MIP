@@ -4084,7 +4084,8 @@ sub PicardToolsMergeRapidReads {
 		    print PT_MERGERR "OUTPUT=".$outSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter].$outfileEnding.".bam "; #OutFile
 		}
 		
-		print PT_MERGERR "INPUT=".$inSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$readBatchProcessesCount."_sorted_rg.bam "; #InFile(s)
+		#print PT_MERGERR "INPUT=".$inSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$readBatchProcessesCount."_sorted_rg.bam "; #InFile(s)
+		print PT_MERGERR "INPUT=".$inSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$readBatchProcessesCount."_sorted.bam "; #InFile(s)
 	    }
 	    print PT_MERGERR "CREATE_INDEX=TRUE &"; #Create a BAM index when writing a coordinate-sorted BAM file.
 	    print PT_MERGERR "\n\n";
@@ -4125,26 +4126,31 @@ sub BWA_Mem {
  
     my $infileSize;
     my $totalSbatchCounter = 0;
+    my $pairedEndTracker = 0;
 
     for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all infiles but process in the same command i.e. both reads per align call
-
+	
+	my $sequenceRunMode = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'}; #Collect paired-end or single-end sequence run mode
+	
 	if ($infile{$sampleID}[$infileCounter] =~/.fastq.gz$/) { #Files are already gz and presently the scalar for compression has not been investigated. Therefore no automatic time allocation can be performed.
+	
 	    if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present
-		$infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter+$infileCounter];
+                $infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter+$infileCounter];
 	    }
 	    else { #Single-end
-		$infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter];
+                $infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter];
 	    }
-	}
-	else { #Files are in fastq format
-	    if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present	
-	    $infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter+$infileCounter]; # collect .fastq file size to enable estimation of time required for aligning, +1 for syncing multiple infiles per sampleID. Hence, filesize will be calculated on read2 (should not matter).
+        }
+        else { #Files are in fastq format
+	    
+	    if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present        
+		$infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter+$infileCounter]; # collect .fastq file size to enable estimation of time required for aligning, +1 for syncing multiple infiles per sampleID. Hence, filesize will be calculated on read2 (should not matter).
 	    }
 	    else { #Single-end
-		$infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter];
+                $infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter];
 	    }
-	}
-
+        }
+	
 	if ($scriptParameter{'analysisType'} eq "rapid") {
 	    
 	    my $seqLength = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'sequenceLength'};
@@ -4160,23 +4166,21 @@ sub BWA_Mem {
 		my $BWAinSampleDirectory = $indirpath{$sampleID};
 		my $BWAoutSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/bwa"; 
 		my $infile;
-		
-		if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present
+
+		if ($sequenceRunMode eq "Paired-end") { #Second read direction if present
+	
 		    $infile = $infile{$sampleID}[$infileCounter+$infileCounter]; #For required .fastq file
-		}
-		else { #Single-end
+                }
+                else { #Single-end
+		    
 		    $infile = $infile{$sampleID}[$infileCounter]; #For required .fastq file
-		}
+                }
+		
 #BWA Mem	
 		print BWA_MEM "bwa mem ";
 		print BWA_MEM "-M "; #Mark shorter split hits as secondary (for Picard compatibility). 
 		print BWA_MEM "-t ".$scriptParameter{'maximumCores'}." "; #Number of threads 
-		if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present
-		    print BWA_MEM "-R ".'"@RG\tID:'.$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$infileCounter].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '; #read group header line
-		}
-		else  {
-		    print BWA_MEM "-R ".'"@RG\tID:'.$infilesBothStrandsNoEnding{$sampleID}[$infileCounter].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '; #read group header line
-		}
+		print BWA_MEM "-R ".'"@RG\tID:'.$infilesLaneNoEnding{$sampleID}[$infileCounter].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '; #read group header line
 		print BWA_MEM $scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #reference
 
 		print BWA_MEM "<( "; #Pipe to BWA Mem (Read 1)
@@ -4186,11 +4190,11 @@ sub BWA_Mem {
 		print BWA_MEM q?perl -ne 'if ( ($.>?.$readStart.q?) && ($.<?.$readStop.q?) ) {print $_;}' ?; #Limit to sbatch script interval
 		print BWA_MEM ") "; #End Read 1
 
-		if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present
-		    my $infile2 = $infile{$sampleID}[ ($infileCounter+$infileCounter+1)]; # #For required .fastq file (Paired read)   
+		if ($sequenceRunMode eq "Paired-end") { #Second read direction if present
+		      
 		    print BWA_MEM "<( "; #Pipe to BWA Mem (Read 2)
 		    print BWA_MEM "zcat "; #decompress Read 2
-		    print BWA_MEM $BWAinSampleDirectory."/".$infile2." "; #Read 2
+		    print BWA_MEM $BWAinSampleDirectory."/".$infile{$sampleID}[$infileCounter+$infileCounter+1]." "; #Read 2
 		    print BWA_MEM "| "; #Pipe
 		    print BWA_MEM q?perl -ne 'if ( ($.>?.$readStart.q?) && ($.<?.$readStop.q?) ) {print $_;}' ?; #Limit to sbatch script interval
 		    print BWA_MEM ") "; #End Read 2
@@ -4211,24 +4215,27 @@ sub BWA_Mem {
 		print BWA_MEM "samtools sort ";
 		print BWA_MEM $BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter.".bam "; #Infile
 		print BWA_MEM $BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter."_sorted", "\n\n"; #OutFile
+
+		print BWA_MEM "samtools index ";
+		print BWA_MEM $BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter."_sorted", "\n\n"; #OutFile
 		
-		print BWA_MEM "java -Xmx2g ";
-		print BWA_MEM "-jar ".$scriptParameter{'picardToolsPath'}."/AddOrReplaceReadGroups.jar ";
-		print BWA_MEM "INPUT=".$BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter."_sorted.bam "; #Infile
-		print BWA_MEM "OUTPUT=".$BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter."_sorted_rg.bam "; #Outfile
-		if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present
-		    print BWA_MEM "RGID=".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$infileCounter]." "; #Read Group ID
-		    print BWA_MEM "RGLB=".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$infileCounter]." "; #Read Group Library
-		}
-		else { #Single read
-		    print BWA_MEM "RGID=".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter]." "; #Read Group ID
-		    print BWA_MEM "RGLB=".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter]." "; #Read Group Library
-		}
-		print BWA_MEM "RGSM=".$sampleID." "; #Read Group sample name
-		print BWA_MEM "RGPL=ILLUMINA "; #Read Group platform 
-		print BWA_MEM "RGPU=".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'runBarcode'}." "; #Read Group platform unit
-		print BWA_MEM "CREATE_INDEX=TRUE "; #Create a BAM index when writing a coordinate-sorted BAM file.
-		
+#		print BWA_MEM "java -Xmx2g ";
+#		print BWA_MEM "-jar ".$scriptParameter{'picardToolsPath'}."/AddOrReplaceReadGroups.jar ";
+#		print BWA_MEM "INPUT=".$BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter."_sorted.bam "; #Infile
+#		print BWA_MEM "OUTPUT=".$BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter."_sorted_rg.bam "; #Outfile
+#		if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present
+#		    print BWA_MEM "RGID=".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$infileCounter]." "; #Read Group ID
+#		    print BWA_MEM "RGLB=".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$infileCounter]." "; #Read Group Library
+#		}
+#		else { #Single read
+#		    print BWA_MEM "RGID=".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter]." "; #Read Group ID
+#		    print BWA_MEM "RGLB=".$infilesBothStrandsNoEnding{$sampleID}[$infileCounter]." "; #Read Group Library
+#		}
+#		print BWA_MEM "RGSM=".$sampleID." "; #Read Group sample name
+#		print BWA_MEM "RGPL=ILLUMINA "; #Read Group platform 
+#		print BWA_MEM "RGPU=".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'runBarcode'}." "; #Read Group platform unit
+#		print BWA_MEM "CREATE_INDEX=TRUE "; #Create a BAM index when writing a coordinate-sorted BAM file.
+
 		close(BWA_MEM);
 		if ( ($scriptParameter{'pBwaMem'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 		    FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 3, $parameter{'pBwaMem'}{'chain'}, $filename, $totalSbatchCounter);
@@ -4246,20 +4253,21 @@ sub BWA_Mem {
 	    my $BWAinSampleDirectory = $indirpath{$sampleID};
 	    my $BWAoutSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/bwa"; 
 	    
-	    my $infile = $infile{$sampleID}[$infileCounter+$infileCounter]; #For required .fastq file
+	    my $infile = $infile{$sampleID}[$pairedEndTracker]; #For required .fastq file
 	    
 	    print BWA_MEM "bwa mem ";
 	    print BWA_MEM "-M "; #Mark shorter split hits as secondary (for Picard compatibility). 
 	    print BWA_MEM "-t ".$scriptParameter{'maximumCores'}." "; #Number of threads 
-	    print BWA_MEM "-R ".'"@RG\tID:'.$infilesBothStrandsNoEnding{$sampleID}[$infileCounter+$infileCounter].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '; #read group header line
+	    print BWA_MEM "-R ".'"@RG\tID:'.$infilesLaneNoEnding{$sampleID}[$infileCounter].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '; #read group header line
 	    print BWA_MEM $scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #reference
-	    print BWA_MEM $BWAinSampleDirectory."/".$infile." "; #Read 1
+	    print BWA_MEM $BWAinSampleDirectory."/".$infile{$sampleID}[$pairedEndTracker]." "; #Read 1
 
-	    if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") { #Second read direction if present
-		my $infile2 = $infile{$sampleID}[ ($infileCounter+$infileCounter+1)]; # #For required .fastq file (Paired read)   
-		print BWA_MEM $BWAinSampleDirectory."/".$infile2." "; #Read 2	    
+	    if ($sequenceRunMode eq "Paired-end") { #Second read direction if present
+
+		$pairedEndTracker = $pairedEndTracker+1; #Increment to collect correct read 2 from %infile 
+		print BWA_MEM $BWAinSampleDirectory."/".$infile{$sampleID}[$pairedEndTracker]." "; #Read 2
 	    }
-
+	    $pairedEndTracker++;
 	    print BWA_MEM "| "; #Pipe SAM to BAM conversion of aligned reads
 	    print BWA_MEM "samtools view "; 
 	    print BWA_MEM "-S "; #input is SAM
