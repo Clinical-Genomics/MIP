@@ -4217,7 +4217,7 @@ sub BWA_Mem {
 		print BWA_MEM $BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter."_sorted", "\n\n"; #OutFile
 
 		print BWA_MEM "samtools index ";
-		print BWA_MEM $BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter."_sorted", "\n\n"; #OutFile
+		print BWA_MEM $BWAoutSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter]."_".$sbatchCounter."_sorted.bam", "\n\n"; #OutFile
 		
 #		print BWA_MEM "java -Xmx2g ";
 #		print BWA_MEM "-jar ".$scriptParameter{'picardToolsPath'}."/AddOrReplaceReadGroups.jar ";
