@@ -105,21 +105,15 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [reference dir]
 
 -pCh_I/--pChanjoImport Chanjo import to collect sample info to family Db  (defaults to "1" (=yes))
 
--pCC/--pCalculateCoverage Use coverage calculation tools: qaCompute, genomeCoverageBED and PicardTools (MultipleMetrics & HSmetrics) (defaults to "1" (=yes))
+-pCC_bedgc/--pGenomeCoverageBED Genome coverage calculation using genomeCoverageBED (defaults to "1" (=yes))
 
--pCC_bedgc/--pGenomeCoverageBED Genome coverage calculation using genomeCoverageBED under '-pCC' (defaults to "1" (=yes))
+-pCC_qac/--pQaCompute Genome coverage calculation using qaCompute (defaults to "1" (=yes))
 
--pCC_bedc/--pCoverageBED BED file coverage calculation using coverageBED under '-pCC' (defaults to "1" (=yes))
+-xcov/--xCoverage Max coverage depth when using '-pGenomeCoverageBED', '-pQaCompute' (defaults to "30")
 
--extb/--exomeTargetBed Target BED file of exome capture for coverageBed '-pCC_bedc' (defaults to "")
+-pCC_picmm/--pPicardToolsCollectMultipleMetrics Metrics calculation using PicardTools collectMultipleMetrics (defaults to "1" (=yes))
 
--pCC_qac/--pQaCompute Genome coverage calculation using qaCompute under '-pCC' (defaults to "1" (=yes))
-
--xcov/--xCoverage Max coverage depth when using '-genomeCoverageBED', '-qaCompute' (defaults to "30")
-
--pCC_picmm/--pPicardToolsCollectMultipleMetrics Metrics calculation using PicardTools collectMultipleMetrics under '-pCC' (defaults to "1" (=yes))
-
--pCCE_pichs/--pPicardToolsCalculateHSMetrics Capture calculation using PicardTools CalculateHSmetrics under '-pCC' (defaults to "1" (=yes))
+-pCCE_pichs/--pPicardToolsCalculateHSMetrics Capture calculation using PicardTools CalculateHSmetrics (defaults to "1" (=yes))
 
 -extbl/--exomeTargetBedInfileList Prepared target BED file for PicardTools CalculateHSMetrics (defaults to "". File ending should be ".infile_list")
               
@@ -334,14 +328,11 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                -pCh_C/--pChanjoCalculate Chanjo coverage analysis (defaults to "1" (=yes))
                  -chccut/--chanjoCalculateCutoff Read depth cutoff (defaults to "10")
                -pCh_I/--pChanjoImport Chanjo import to collect sample info to family Db  (defaults to "1" (=yes))
-               -pCC/--pCalculateCoverage Use coverage calculation tools: qaCompute, genomeCoverageBED and PicardTools (MultipleMetrics & HSmetrics) (defaults to "1" (=yes))
-               -pCC_bedgc/--pGenomeCoverageBED Genome coverage calculation using genomeCoverageBED under '-pCC' (defaults to "1" (=yes))
-               -pCC_bedc/--pCoverageBED BED file coverage calculation using coverageBED under '-pCC' (defaults to "1" (=yes))
-                 -extb/--exomeTargetBed Target BED file of exome capture for coverageBed '-pCC_bedc' (defaults to "")
-               -pCC_qac/--pQaCompute Genome coverage calculation using qaCompute under '-pCC' (defaults to "1" (=yes))
-               -xcov/--xCoverage Max coverage depth when using '-genomeCoverageBED', '-qaCompute' (defaults to "30")
-               -pCC_picmm/--pPicardToolsCollectMultipleMetrics Metrics calculation using PicardTools collectMultipleMetrics under '-pCC' (defaults to "1" (=yes))
-               -pCCE_pichs/--pPicardToolsCalculateHSMetrics Capture calculation using PicardTools CalculateHSmetrics under '-pCC' (defaults to "1" (=yes))
+               -pCC_bedgc/--pGenomeCoverageBED Genome coverage calculation using genomeCoverageBED (defaults to "1" (=yes))
+               -pCC_qac/--pQaCompute Genome coverage calculation using qaCompute (defaults to "1" (=yes))
+               -xcov/--xCoverage Max coverage depth when using '-pGenomeCoverageBED', '-pQaCompute' (defaults to "30")
+               -pCC_picmm/--pPicardToolsCollectMultipleMetrics Metrics calculation using PicardTools collectMultipleMetrics (defaults to "1" (=yes))
+               -pCCE_pichs/--pPicardToolsCalculateHSMetrics Capture calculation using PicardTools CalculateHSmetrics (defaults to "1" (=yes))
                  -extbl/--exomeTargetBedInfileList Prepared target BED file for PicardTools CalculateHSMetrics (defaults to "". File ending should be ".infile_list") 
                  -extpbl/--exomeTargetPaddedBedInfileList Prepared padded target BED file for PicardTools CalculateHSMetrics (defaults to "". File ending should be ".padXXX.infile_list")
                -pRCP/--pRCovPlots Plots of genome coverage using rCovPlots (defaults to "1" (=yes))
@@ -532,26 +523,21 @@ DefineParameters("chanjoCalculateCutoff", "program", 10, "pChanjoCalculate", 0);
 
 DefineParameters("pChanjoImport", "program", 1, "MIP", 0, "nofileEnding", "CoverageReport");
 
-DefineParameters("pCalculateCoverage", "program", 1, "MIP", 0, "nofileEnding", "CoverageQC", "bedtools");
+DefineParameters("pGenomeCoverageBED", "program", 1, "MIP", 0, "_genomeCoverageBed", "CoverageQC_GcovBed", "bedtools");
 
-DefineParameters("pGenomeCoverageBED", "program", 1, "pCalculateCoverage", 0, "_genomeCoverageBed", "CoverageQC", "bedtools");
+DefineParameters("pQaCompute", "program", 1, "MIP", 0, "_qaCompute", "CoverageQC_QAComp", "qaCompute");
 
-DefineParameters("pCoverageBED", "program", 1, "pCalculateCoverage", 0, "NotSetYet", "CoverageQC", "bedtools");
+DefineParameters("pPicardToolsCollectMultipleMetrics", "program", 1, "MIP", 0, "nofileEnding", "CoverageQC_PTCMM");
 
-DefineParameters("pQaCompute", "program", 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC", "qaCompute");
+DefineParameters("pPicardToolsCalculateHSMetrics", "program", 1, "MIP", 0, "nofileEnding", "CoverageQC_PTCHSM");
 
-DefineParameters("pPicardToolsCollectMultipleMetrics", "program", 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC");
+DefineParameters("xCoverage", "program", 30, "pGenomeCoverageBED,pQaCompute", 0);
 
-DefineParameters("pPicardToolsCalculateHSMetrics", "program", 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC");
-
-DefineParameters("xCoverage", "program", 30, "pCalculateCoverage", 0);
-
-DefineParameters("pRCovPlots", "program", 0, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC");
+DefineParameters("pRCovPlots", "program", 0, "MIP", 0, "nofileEnding", "CoverageQC_RCOVP");
 
 DefineParameters("picardToolsPath", "path", "nodefault", "pBwaMem,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "directory");
 
 ##Target definition files
-$parameter{'exomeTargetBed'}{'value'} = "nocmdinput";
 $parameter{'exomeTargetBedInfileList'}{'value'} = "nocmdinput";
 $parameter{'exomeTargetPaddedBedInfileList'}{'value'} = "nocmdinput";
 
@@ -812,10 +798,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'pCh_C|pChanjoCalculate:n' => \$parameter{'pChanjoCalculate'}{'value'},  # Chanjo coverage analysis
 	   'chccut|chanjoCalculateCutoff:n' => \$parameter{'chanjoCalculateCutoff'}{'value'},  # Cutoff used for completeness
 	   'pCh_I|pChanjoImport:n' => \$parameter{'pChanjoImport'}{'value'},  #Build family SQLiteDatabase
-	   'pCC|pCalculateCoverage:n' => \$parameter{'pCalculateCoverage'}{'value'},
 	   'pCC_bedgc|pGenomeCoverageBED:n' => \$parameter{'pGenomeCoverageBED'}{'value'},
-	   'pCC_bedc|pCoverageBED:n' => \$parameter{'pCoverageBED'}{'value'},
-	   'extb|exomeTargetBed:s' => \$parameter{'exomeTargetBed'}{'value'}, #target file for coverageBed
 	   'pCC_qac|pQaCompute:n' => \$parameter{'pQaCompute'}{'value'},
 	   'xcov|xCoverage:n' => \$parameter{'xCoverage'}{'value'}, #Sets max depth to calculate coverage
 	   'pCC_picmm|pPicardToolsCollectMultipleMetrics:n' => \$parameter{'pPicardToolsCollectMultipleMetrics'}{'value'},
@@ -991,7 +974,7 @@ if ($scriptParameter{'pAnnovar'} > 0) {
     }
     @annovarTableNames = join(',', @annovarTableNames); #If user supplied annovar table names
     push(@orderParameters, "annovarTableNames"); #Add to enable later evaluation of parameters in proper order & write to master file
-    AddToScriptParameter("annovarTableNames", @annovarTableNames, "program", "yes", "yes", "pAnnovar"); #"yes" added to enable addition of default table names in AddToScriptParameters
+    AddToScriptParameter("annovarTableNames", @annovarTableNames, "program", "yes", "pAnnovar"); #"yes" added to enable addition of default table names in AddToScriptParameters
 }
 
 if ($scriptParameter{'pRankVariants'} > 0) {
@@ -1002,13 +985,11 @@ if ($scriptParameter{'pRankVariants'} > 0) {
     @ImportantDbFileOutFile = join(',', @ImportantDbFileOutFile); #If user supplied list of genes to be evaluated
     push(@orderParameters, "ImportantDbFileOutFile"); #Add to enable later evaluation of parameters in proper order & write to master file
     UpdateYAML("ImportantDbFileOutFile", $scriptParameter{'clusterConstantPath'}, $scriptParameter{'analysisConstantPath'}, $scriptParameter{'analysisType'},$parameter{'familyID'}{'value'}, $scriptParameter{'aligner'} );
-    AddToScriptParameter("ImportantDbFileOutFile", @ImportantDbFileOutFile, "program", "yes", "yes", "pRankVariants"); 
+    AddToScriptParameter("ImportantDbFileOutFile", @ImportantDbFileOutFile, "program", "yes", "pRankVariants"); 
     
 }
 
 ##Set Target files
-    
-SetTargetFiles("exomeTargetBed", $parameter{'exomeTargetBed'}{'value'}, "pCalculateCoverage,pCoverageBED", "file");
 
 SetTargetFiles("exomeTargetBedInfileList", $parameter{'exomeTargetBedInfileList'}{'value'}, "pPicardToolsCalculateHSMetrics,pPicardToolsCalculateHSMetrics", "file");
 
@@ -1235,13 +1216,43 @@ if ($scriptParameter{'pChanjoImport'} > 0) {
     ChanjoImport($scriptParameter{'familyID'}, $scriptParameter{'aligner'});
 }
 
-if ($scriptParameter{'pCalculateCoverage'} > 0) { #Run GenomeCoverageBED, qaCompute (Paul Costea), Picard (CollectAlignmentSummaryMetrics, CalculateHsMetrics)
+if ($scriptParameter{'pGenomeCoverageBED'} > 0) { #Run GenomeCoverageBED
     
-    print STDOUT "\nCalculate Coverage", "\n";print MIPLOG "\nCalculate Coverage", "\n";    
+    print STDOUT "\nGenomeCoverageBED", "\n";print MIPLOG "\nGenomeCoverageBED", "\n";    
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 
-	CalculateCoverage($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});
+	GenomeCoverageBED($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});
+    }
+}
+
+if ($scriptParameter{'pQaCompute'} > 0) { #Run QaCompute
+    
+    print STDOUT "\nQaCompute", "\n";print MIPLOG "\nQaCompute", "\n";    
+    
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+
+	QaCompute($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});
+    }
+}
+
+if ($scriptParameter{'pPicardToolsCollectMultipleMetrics'} > 0) { #Run PicardToolsCollectMultipleMetrics
+    
+    print STDOUT "\nPicardToolsCollectMultipleMetrics", "\n";print MIPLOG "\nPicardToolsCollectMultipleMetrics", "\n";    
+    
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+
+	PicardToolsCollectMultipleMetrics($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});
+    }
+}
+
+if ($scriptParameter{'pPicardToolsCalculateHSMetrics'} > 0) { #Run PicardToolsCalculateHSMetrics
+    
+    print STDOUT "\nPicardToolsCalculateHSMetrics", "\n";print MIPLOG "\nPicardToolsCalculateHSMetrics", "\n";    
+    
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+
+	PicardToolsCalculateHSMetrics($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});
     }
 }
 
@@ -1525,38 +1536,6 @@ sub RemoveRedundantFiles {
 	}
 	$PicardToolsMergeSwitch = 1;
     }    
-    
-    if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
-	
-	if ( defined($scriptParameter{'pCoverageBED'}) && ($scriptParameter{'pCoverageBED'} > 0) )
- {
-	    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pCoverageBED'}{'fileEnding'};
-	    print REM "rm ";
-	    print REM $inSampleDirectory."/coverageReport/".$infile.$infileEnding, "\n\n"; #bedtools histogram of BED-file	    
-	    
-	    $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pCoverageBEDRMDup'}{'fileEnding'};
-	    
-	    print REM "rm ";
-	    print REM $inSampleDirectory."/coverageReport/".$infile.$infileEnding, "\n\n"; #bedtools histogram of BED-file
-	}	
-    }
-    else {
-	for (my $infileCounter=0;$infileCounter < scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #MosaikBuild takes both reads at once
-	    
-	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
-	    
-	    if ( defined($scriptParameter{'pCoverageBED'}) && ($scriptParameter{'pCoverageBED'} > 0) ) {
-		my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pCoverageBED'}{'fileEnding'};
-		print REM "rm ";
-		print REM $inSampleDirectory."/coverageReport/".$infile.$infileEnding, "\n\n"; #bedtools histogram of BED-file	    
-		
-		$infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pCoverageBEDRMDup'}{'fileEnding'};
-		
-		print REM "rm ";
-		print REM $inSampleDirectory."/coverageReport/".$infile.$infileEnding, "\n\n"; #bedtools histogram of BED-file
-	    }
-	}	
-    }
     
     for (my $infileCounter=0;$infileCounter < scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #MosaikBuild takes both reads at once
 	
@@ -3251,40 +3230,6 @@ sub RCoveragePlots {
 	    print RCOVP $scriptParameter{'xCoverage'}." "; #X-axis max scale
 	    print RCOVP $outSampleDirectory, " &","\n\n"; #OutFile
 	}
-	if ( defined($scriptParameter{'pCoverageBED'}) && ($scriptParameter{'pCoverageBED'} > 0) ) {
-	    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pCoverageBED'}{'fileEnding'};
-	    
-	    print RCOVP "grep ";
-	    print RCOVP "^all "; #Prepp indata file to contain only all features
-	    print RCOVP $inSampleDirectory."/".$infile.$infileEnding." "; #InFile
-	    print RCOVP "> ".$inSampleDirectory."/".$infile.$outfileEnding."_coverageBed_all_hist &", "\n\n"; #OutFile
-
-	    print RCOVP "wait", "\n\n";
-
-	    print RCOVP "Rscript ";
-	    print RCOVP $scriptParameter{'inScriptDir'}."/covplots_exome_all.R ";
-	    print RCOVP $inSampleDirectory."/".$infile.$infileEnding."_coverageBed_all_hist "; #InFile
-	    print RCOVP $infile." "; #Sample name
-	    print RCOVP $outSampleDirectory, " &", "\n\n"; #OutFile
-	    
-	    #Duplicates removed
-	    $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pCoverageBEDRMDup'}{'fileEnding'};
-
-	    print RCOVP "#Duplicates removed\n\n";
-	    print RCOVP "#Prepp indata file to contain only all features\n";
-
-	    print RCOVP "grep ";
-	    print RCOVP "^all "; #Prepp indata file to contain only all features
-	    print RCOVP $inSampleDirectory."/".$infile.$infileEnding." "; #InFile
-	    print RCOVP "> ".$outSampleDirectory."/".$infile.$outfileEnding."_rmdup_coverageBed_all_hist &", "\n\n"; #OutFile
-	    print RCOVP "wait", "\n\n";
-
-	    print RCOVP "Rscript ";
-	    print RCOVP $scriptParameter{'inScriptDir'}."/covplots_exome_all.R ";
-	    print RCOVP $inSampleDirectory."/".$infile.$outfileEnding."rmdup_coverageBed_all_hist "; #InFile
-	    print RCOVP $infile."_rmdup "; #Sample name
-	    print RCOVP $outSampleDirectory, " &", "\n\n"; #OutFile
-	}
     }
     else { #No previous merge
 	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all infiles per lane
@@ -3301,39 +3246,6 @@ sub RCoveragePlots {
 		print RCOVP $scriptParameter{'xCoverage'}." "; #X-axis max scale
 		print RCOVP $outSampleDirectory, " &", "\n\n"; #OutFile
 	    }
-	    if ( defined($scriptParameter{'pCoverageBED'}) && ($scriptParameter{'pCoverageBED'} > 0) ) {
-		my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pCoverageBED'}{'fileEnding'};
-		
-		print RCOVP "#Prepp indata file to contain only all features\n";
-		
-		print RCOVP "grep ";
-		print RCOVP "^all "; #Prepp indata file to contain only all features
-		print RCOVP $inSampleDirectory."/".$infile.$infileEnding." "; #InFile
-		print RCOVP "> ".$outSampleDirectory."/".$infile.$outfileEnding."_coverageBed_all_hist &", "\n\n"; #OutFile 
-		print RCOVP "wait", "\n\n";
-
-		print RCOVP "Rscript ";
-		print RCOVP $scriptParameter{'inScriptDir'}."/covplots_exome_all.R ";
-		print RCOVP $inSampleDirectory."/".$infile.$outfileEnding."_coverageBed_all_hist "; #InFile
-		print RCOVP $infile." "; #X-axis max scale
-		print RCOVP $outSampleDirectory, " &","\n\n"; #OutFile
-#Duplicates removed
-		$infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pCoverageBEDRMDup'}{'fileEnding'};
-		print RCOVP "#Duplicates removed\n\n";	    
-		print RCOVP "#Prepp indata file to contain only all features\n";
-		
-		print RCOVP "grep ";
-		print RCOVP "^all "; #Prepp indata file to contain only all features 
-		print RCOVP $inSampleDirectory."/".$infile.$infileEnding." "; #InFile
-		print RCOVP "> ".$outSampleDirectory."/".$infile.$outfileEnding."_rmdup_coverageBed_all_hist &", "\n\n"; #OutFile
-		print RCOVP "wait", "\n\n";
-
-		print RCOVP "Rscript ";
-		print RCOVP $scriptParameter{'inScriptDir'}."/covplots_exome_all.R ";
-		print RCOVP $inSampleDirectory."/".$infile.$outfileEnding."_rmdup_coverageBed_all_hist "; #InFile
-		print RCOVP $infile."_rmdup "; #Sample name
-		print RCOVP $outSampleDirectory, " &", "\n\n"; #OutFile	    
-	    }
 	}
     }
     print RCOVP "wait", "\n\n";
@@ -3344,136 +3256,257 @@ sub RCoveragePlots {
     return;
 }
 
-sub CalculateCoverage { 
-#Generates sbatch scripts and calculates coverage on alignment files (sorted). 
-#NOTE:Collect_info.pl collects key metric reference file from .alignment_summary_metrics. If not processed genome build will be missing in key metric file.
+sub QaCompute { 
+#Calculates average chromosome coverage on BAM files. 
 
     my $sampleID = $_[0]; 
     my $aligner = $_[1]; 
-   
+    
     my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
     my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport";
     my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
-    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'}; #Programs that will be used downstream will get a local outFileEnding later
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pQaCompute'}{'fileEnding'};
     my ($infile, $PicardToolsMergeSwitch) = CheckIfMergedFiles($sampleID);
     my $coreCounter=1;
 
     if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
 	
-	ProgramPreRequisites($sampleID, "CalculateCoverage", $aligner."/coverageReport", 0, *CAL_COV, 4, 4);
+	ProgramPreRequisites($sampleID, "QaCompute", $aligner."/coverageReport", 0, *QAC, 1, 4);
 
-	if ($scriptParameter{'pGenomeCoverageBED'} > 0) {
-	    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGenomeCoverageBED'}{'fileEnding'};
-	    
-	    print CAL_COV "genomeCoverageBed ";
-	    print CAL_COV "-max ".$scriptParameter{'xCoverage'}." "; #Combine all positions with a depth >= max into a single bin in the histogram.
-	    print CAL_COV "-ibam ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
-	    print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding." &", "\n\n"; #OutFile
-	}
-	if ($scriptParameter{'pQaCompute'} > 0) {
-	    print CAL_COV "qaCompute ";
-	    print CAL_COV "-m "; #Compute median coverage
-	    print CAL_COV "-d "; #Print per-chromosome histogram
-	    print CAL_COV "-i "; #Silent
-	    print CAL_COV "-c ".$scriptParameter{'xCoverage'}." ";
-	    print CAL_COV $inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
-	    print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_qaCompute &", "\n\n"; #OutFile
-
-	    if ( ($scriptParameter{'pCalculateCoverage'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	print QAC "qaCompute ";
+	print QAC "-m "; #Compute median coverage
+	print QAC "-d "; #Print per-chromosome histogram
+	print QAC "-i "; #Silent
+	print QAC "-c ".$scriptParameter{'xCoverage'}." ";
+	print QAC $inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
+	print QAC $outSampleDirectory."/".$infile.$outfileEnding." &", "\n\n"; #OutFile
+	
+	if ( ($scriptParameter{'pQaCompute'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 ##Collect QC metadata info for later use                                                                                              
-		SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "QaCompute", $infile, $outSampleDirectory, $outfileEnding."_qaCompute", "infileDependent");
-	    }
+	    SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "QaCompute", $infile, $outSampleDirectory, $outfileEnding, "infileDependent");
 	}
-	if ($scriptParameter{'pPicardToolsCollectMultipleMetrics'} > 0) {
-	    print CAL_COV "java -Xmx4g -jar ".$scriptParameter{'picardToolsPath'}."/CollectMultipleMetrics.jar ";
-	    print CAL_COV "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
-	    print CAL_COV "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding." "; #OutFile
-	    print CAL_COV "R=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." &", "\n\n"; #Reference file
-
-	    if ( ($scriptParameter{'pCalculateCoverage'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-##Collect QC metadata info for later use                                                                                             
-		SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "CollectMultipleMetrics", $infile, $outSampleDirectory, $outfileEnding.".alignment_summary_metrics", "infileDependent");
-	    }
-	}
-	if ($scriptParameter{'pPicardToolsCalculateHSMetrics'} > 0) { #Run CalculateHsMetrics (Target BED-file)
-	    print CAL_COV "java -Xmx4g -jar ".$scriptParameter{'picardToolsPath'}."/CalculateHsMetrics.jar ";
-	    print CAL_COV "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
-	    print CAL_COV "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding."_CalculateHsMetrics "; #OutFile
-	    print CAL_COV "REFERENCE_SEQUENCE=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
-	    print CAL_COV "BAIT_INTERVALS=".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetPaddedBedInfileList'}." "; #Capture kit padded target infile_list file
-	    print CAL_COV "TARGET_INTERVALS=".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetBedInfileList'}." &", "\n\n"; #Capture kit target infile_list file
-
-	    if ( ($scriptParameter{'pCalculateCoverage'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-##Collect QC metadata info for later use                                                                                   
-		SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "CalculateHsMetrics", $infile, $outSampleDirectory, $outfileEnding."_CalculateHsMetrics", "infileDependent");
-	    }
-	}
-	print CAL_COV "wait", "\n\n";
     }
-
     else { #No merged files
-
-	my $nrCores = NrofCoresPerSbatch(scalar( @{$lane{$sampleID}} ) * 4); #Detect the number of cores to from lanes	
-
-	ProgramPreRequisites($sampleID, "CalculateCoverage", $aligner."/coverageReport", 0, *CAL_COV, $nrCores, 4);
-
+	
+	my $nrCores = NrofCoresPerSbatch(scalar( @{$lane{$sampleID}} ) ); #Detect the number of cores to from lanes	
+	
+	ProgramPreRequisites($sampleID, "QaCompute", $aligner."/coverageReport", 0, *QAC, $nrCores, 4);
+	
 	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files from MosaikAlign or BWA_Sampe
 	    
-	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
-
-	    if ($scriptParameter{'pGenomeCoverageBED'} > 0) {
-		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGenomeCoverageBED'}{'fileEnding'};
+	    if ($infileCounter == $coreCounter*$nrCores) { #Using only $nrCores
 		
-		print CAL_COV "genomeCoverageBed ";
-		print CAL_COV "-max ".$scriptParameter{'xCoverage'}." "; #Combine all positions with a depth >= max into a single bin in the histogram.
-		print CAL_COV "-ibam ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
-		print CAL_COV "> ".$outSampleDirectory."/".$infile.$outfileEnding." &", "\n\n"; #outFile
+		print QAC "wait", "\n\n";
+		$coreCounter=$coreCounter+1;
 	    }
-	    if ($scriptParameter{'pQaCompute'} > 0) { #Genome coverage calculations
-		print CAL_COV "qaCompute ";
-		print CAL_COV "-m "; #Compute median coverage
-		print CAL_COV "-d "; #Print per-chromosome histogram
-		print CAL_COV "-i "; #Silent 
-		print CAL_COV "-c ".$scriptParameter{'xCoverage'}." "; #Max depth to calculate coverage on
-		print CAL_COV $inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
-		print CAL_COV $outSampleDirectory."/".$infile.$outfileEnding."_qaCompute &", "\n\n"; #OutFile
 
-		if ( ($scriptParameter{'pCalculateCoverage'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];	    
+	    
+	    print QAC "qaCompute ";
+	    print QAC "-m "; #Compute median coverage
+	    print QAC "-d "; #Print per-chromosome histogram
+	    print QAC "-i "; #Silent 
+	    print QAC "-c ".$scriptParameter{'xCoverage'}." "; #Max depth to calculate coverage on
+	    print QAC $inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
+	    print QAC $outSampleDirectory."/".$infile.$outfileEnding." &", "\n\n"; #OutFile
+	    
+	    if ( ($scriptParameter{'pQaCompute'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 ##Collect QC metadata info for later use                                                                                                
-		    SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "QaCompute", $infile, $outSampleDirectory, $outfileEnding."_qaCompute", "infileDependent");
-		}
+		SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "QaCompute", $infile, $outSampleDirectory, $outfileEnding, "infileDependent");
 	    }
-	    if ($scriptParameter{'pPicardToolsCollectMultipleMetrics'} > 0) {
-		print CAL_COV "java -Xmx4g -jar ".$scriptParameter{'picardToolsPath'}."/CollectMultipleMetrics.jar ";
-		print CAL_COV "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
-		print CAL_COV "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding." "; #outFile
-		print CAL_COV "R=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." &", "\n\n"; #Reference file
-		if ( ($scriptParameter{'pCalculateCoverage'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-		    ##Collect QC metadata info for later use
-		    SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "CollectMultipleMetrics", $infile, $outSampleDirectory, $outfileEnding.".alignment_summary_metrics", "infileDependent");
-		}
-	    }
-	    if ($scriptParameter{'pPicardToolsCalculateHSMetrics'} > 0) { #Run CalculateHsMetrics (Target BED-file)
-		print CAL_COV "java -Xmx4g -jar ".$scriptParameter{'picardToolsPath'}."/CalculateHsMetrics.jar ";
-		print CAL_COV "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
-		print CAL_COV "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding."_CalculateHsMetrics "; #OutFile
-		print CAL_COV "REFERENCE_SEQUENCE=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
-		print CAL_COV "BAIT_INTERVALS=".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetPaddedBedInfileList'}." "; #Capture kit padded target infile_list file
-		print CAL_COV "TARGET_INTERVALS=".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetBedInfileList'}." &", "\n\n"; #Capture kit target infile_list file 
-		
-		if ( ($scriptParameter{'pCalculateCoverage'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-##Collect QC metadata info for later use                                                                                                 
-		    SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "CalculateHsMetrics", $infile, $outSampleDirectory, $outfileEnding."_CalculateHsMetrics", "infileDependent");	    
-		}
-	    }
-	    print CAL_COV "wait", "\n\n";
+	    
 	}
     }
-    print CAL_COV "wait", "\n\n";
+    print QAC "wait", "\n\n";
     
-    close(CAL_COV);
-    if ( ($scriptParameter{'pCalculateCoverage'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-	FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 1, $parameter{'pCalculateCoverage'}{'chain'}, $filename, 0);
+    close(QAC);
+    if ( ($scriptParameter{'pQaCompute'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 1, $parameter{'pQaCompute'}{'chain'}, $filename, 0);
+    }
+    return;
+}
+
+sub GenomeCoverageBED { 
+#Calculates coverage on BAM files. 
+
+    my $sampleID = $_[0]; 
+    my $aligner = $_[1]; 
+    
+    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
+    my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport";
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGenomeCoverageBED'}{'fileEnding'};
+    my ($infile, $PicardToolsMergeSwitch) = CheckIfMergedFiles($sampleID);
+    my $coreCounter=1;
+
+    if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
+	
+	ProgramPreRequisites($sampleID, "GenomeCoverageBED", $aligner."/coverageReport", 0, *GCOVBED, 1, 4);
+	
+	print GCOVBED "genomeCoverageBed ";
+	print GCOVBED "-max ".$scriptParameter{'xCoverage'}." "; #Combine all positions with a depth >= max into a single bin in the histogram.
+	print GCOVBED "-ibam ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
+	print GCOVBED "> ".$outSampleDirectory."/".$infile.$outfileEnding." ", "\n\n"; #OutFile
+
+    }
+    
+    else { #No merged files
+	
+	my $nrCores = NrofCoresPerSbatch(scalar( @{$lane{$sampleID}} ) ); #Detect the number of cores to from lanes	
+	
+	ProgramPreRequisites($sampleID, "GenomeCoverageBED", $aligner."/coverageReport", 0, *GCOVBED, $nrCores, 4);
+	
+	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files from MosaikAlign or BWA_Sampe
+	    
+	    if ($infileCounter == $coreCounter*$nrCores) { #Using only $nrCores
+		
+		print GCOVBED "wait", "\n\n";
+		$coreCounter=$coreCounter+1;
+	    }
+
+	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];	    
+	    
+	    print GCOVBED "genomeCoverageBed ";
+	    print GCOVBED "-max ".$scriptParameter{'xCoverage'}." "; #Combine all positions with a depth >= max into a single bin in the histogram.
+	    print GCOVBED "-ibam ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
+	    print GCOVBED "> ".$outSampleDirectory."/".$infile.$outfileEnding." &", "\n\n"; #outFile
+	}
+    }
+    print GCOVBED "wait", "\n\n";
+    
+    close(GCOVBED);
+    if ( ($scriptParameter{'pGenomeCoverageBED'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 1, $parameter{'pGenomeCoverageBED'}{'chain'}, $filename, 0);
+    }
+    return;
+}
+
+sub PicardToolsCollectMultipleMetrics { 
+#Calculates coverage and alignment metrics on BAM files. 
+
+    my $sampleID = $_[0]; 
+    my $aligner = $_[1]; 
+    
+    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
+    my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport";
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+    my ($infile, $PicardToolsMergeSwitch) = CheckIfMergedFiles($sampleID);
+    my $coreCounter=1;
+
+    if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
+	
+	ProgramPreRequisites($sampleID, "PicardToolsCollectMultipleMetrics", $aligner."/coverageReport", 0, *PTCMM, 1, 4);
+
+	print PTCMM "java -Xmx4g -jar ".$scriptParameter{'picardToolsPath'}."/CollectMultipleMetrics.jar ";
+	print PTCMM "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
+	print PTCMM "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding." "; #OutFile
+	print PTCMM "R=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." &", "\n\n"; #Reference file
+	
+	if ( ($scriptParameter{'pPicardToolsCollectMultipleMetrics'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+##Collect QC metadata info for later use                                                                                             
+	    SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "CollectMultipleMetrics", $infile, $outSampleDirectory, $outfileEnding.".alignment_summary_metrics", "infileDependent");
+	}
+	
+    }
+    else { #No merged files
+	
+	my $nrCores = NrofCoresPerSbatch(scalar( @{$lane{$sampleID}} ) ); #Detect the number of cores to from lanes	
+	
+	ProgramPreRequisites($sampleID, "PicardToolsCollectMultipleMetrics", $aligner."/coverageReport", 0, *PTCMM, $nrCores, 4);
+	
+	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files from MosaikAlign or BWA_Sampe
+	    
+	    if ($infileCounter == $coreCounter*$nrCores) { #Using only $nrCores
+		
+		print PTCMM "wait", "\n\n";
+		$coreCounter=$coreCounter+1;
+	    }
+
+	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];	    
+	    
+	    print PTCMM "java -Xmx4g -jar ".$scriptParameter{'picardToolsPath'}."/CollectMultipleMetrics.jar ";
+	    print PTCMM "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
+	    print PTCMM "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding." "; #outFile
+	    print PTCMM "R=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." &", "\n\n"; #Reference file
+	    if ( ($scriptParameter{'pPicardToolsCollectMultipleMetrics'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+		##Collect QC metadata info for later use
+		SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "CollectMultipleMetrics", $infile, $outSampleDirectory, $outfileEnding.".alignment_summary_metrics", "infileDependent");
+	    }	    
+	}
+    }
+    print PTCMM "wait", "\n\n";
+    
+    close(PTCMM);
+    if ( ($scriptParameter{'pPicardToolsCollectMultipleMetrics'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 1, $parameter{'pPicardToolsCollectMultipleMetrics'}{'chain'}, $filename, 0);
+    }
+    return;
+}
+
+sub PicardToolsCalculateHSMetrics { 
+#Calculates coverage on exonic part of BAM files. 
+    
+    my $sampleID = $_[0]; 
+    my $aligner = $_[1]; 
+    
+    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
+    my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport";
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+    my ($infile, $PicardToolsMergeSwitch) = CheckIfMergedFiles($sampleID);
+    my $coreCounter=1;
+    
+    if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
+	
+	ProgramPreRequisites($sampleID, "PicardToolsCalculateHSMetrics", $aligner."/coverageReport", 0, *PTCHSM, 1, 4);
+	
+	print PTCHSM "java -Xmx4g -jar ".$scriptParameter{'picardToolsPath'}."/CalculateHsMetrics.jar ";
+	print PTCHSM "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
+	print PTCHSM "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding."_CalculateHsMetrics "; #OutFile
+	print PTCHSM "REFERENCE_SEQUENCE=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
+	print PTCHSM "BAIT_INTERVALS=".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetPaddedBedInfileList'}." "; #Capture kit padded target infile_list file
+	print PTCHSM "TARGET_INTERVALS=".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetBedInfileList'}." &", "\n\n"; #Capture kit target infile_list file
+	
+	if ( ($scriptParameter{'pPicardToolsCalculateHSMetrics'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+##Collect QC metadata info for later use                                                                                   
+	    SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "CalculateHsMetrics", $infile, $outSampleDirectory, $outfileEnding."_CalculateHsMetrics", "infileDependent");
+	}
+    }
+    else { #No merged files
+	
+	my $nrCores = NrofCoresPerSbatch(scalar( @{$lane{$sampleID}} ) ); #Detect the number of cores to from lanes	
+	
+	ProgramPreRequisites($sampleID, "PicardToolsCalculateHSMetrics", $aligner."/coverageReport", 0, *PTCHSM, $nrCores, 4);
+	
+	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files from MosaikAlign or BWA_Sampe
+	    
+	    if ($infileCounter == $coreCounter*$nrCores) { #Using only $nrCores
+		
+		print PTCHSM "wait", "\n\n";
+		$coreCounter=$coreCounter+1;
+	    }
+	    
+	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];	    
+	    
+	    print PTCHSM "java -Xmx4g -jar ".$scriptParameter{'picardToolsPath'}."/CalculateHsMetrics.jar ";
+	    print PTCHSM "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
+	    print PTCHSM "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding."_CalculateHsMetrics "; #OutFile
+	    print PTCHSM "REFERENCE_SEQUENCE=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
+	    print PTCHSM "BAIT_INTERVALS=".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetPaddedBedInfileList'}." "; #Capture kit padded target infile_list file
+	    print PTCHSM "TARGET_INTERVALS=".$scriptParameter{'referencesDir'}."/".$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'exomeTargetBedInfileList'}." &", "\n\n"; #Capture kit target infile_list file 
+	    
+	    if ( ($scriptParameter{'pPicardToolsCalculateHSMetrics'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+##Collect QC metadata info for later use                                                                                                 
+		SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "CalculateHsMetrics", $infile, $outSampleDirectory, $outfileEnding."_CalculateHsMetrics", "infileDependent");	    
+	    }
+	}
+    }
+    print PTCHSM "wait", "\n\n";
+    
+    close(PTCHSM);
+    if ( ($scriptParameter{'pPicardToolsCalculateHSMetrics'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 1, $parameter{'pPicardToolsCalculateHSMetrics'}{'chain'}, $filename, 0);
     }
     return;
 }
@@ -4564,9 +4597,6 @@ sub ReadPlinkPedigreeFile {
 			    
 			    if ($supportedCaptureKit eq $capture_kit) {
 				
-				if ($parameter{'exomeTargetBed'}{'value'} eq "nocmdinput") { #No user supplied info on capture kit target BED-file. Add from pedigree file             
-				    $sampleInfo{$familyID}{$sampleID}{'exomeTargetBed'} = $supportedCaptureKits{$supportedCaptureKit}; #capture kit Bed-file                           
-				}
 				if ($parameter{'exomeTargetBedInfileList'}{'value'} eq "nocmdinput") { #No user supplied info on capture kit target BED-file infile list. Add from pedigree file                                                                                                                                                                     
 				    $sampleInfo{$familyID}{$sampleID}{'exomeTargetBedInfileList'} = $supportedCaptureKits{$supportedCaptureKit}.".infile_list"; #capture kit target in file_list
 				}
@@ -5183,6 +5213,7 @@ sub AddToScriptParameter {
 			    @picardToolsMergeSamFilesPrevious = split(/,/, $scriptParameter{'picardToolsMergeSamFilesPrevious'}); #Transfer to array
 			}
 			if ($parameterName eq "humanGenomeReference") {
+			    
 			    if ($scriptParameter{'humanGenomeReference'} =~/^Homo_sapiens.GRCh(\d+\.\d+)/) { #Used to change capture kit genome reference version later
 				$humanGenomeReferenceVersion = $1;
 				$humanGenomeReferenceSource = "GRCh"; #Ensembl
@@ -5197,8 +5228,9 @@ sub AddToScriptParameter {
 			if ($parameterName eq "pedigreeFile") {
 			    
 			    if (scalar(@sampleIDs) == 0) { #No user supplied sample info
+				
 				if (defined($scriptParameter{'sampleIDs'})) { #sampleIDs info in config file
-				    ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs)); #No user supplied sample info, but present in config file do NOT overwrite using info from pedigree file
+				    ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'}, 1); #No user supplied sample info, but present in config file do NOT overwrite using info from pedigree file
 				}
 				else { #No sampleIDs info in config file
 				    ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs)); #No user supplied sample info, not defined $scriptParameter{'sampleIDs'} in config file, add it from pedigree file
@@ -5210,6 +5242,7 @@ sub AddToScriptParameter {
 			}
 		    }
 		    elsif ($parameterDefault ne "nodefault") { #add default value
+			
 			$scriptParameter{$parameterName} = $parameterDefault; #Set default value
 		    }
 		    else {
@@ -5311,10 +5344,7 @@ sub AddToScriptParameter {
 			    }
 			}
 		    }
-		    elsif ($parameterName eq "pedigreeFile") {
-			if (defined($scriptParameter{'pedigreeFile'})) {
-			    ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs));
-			} 
+		    elsif ($parameterName eq "pedigreeFile") { #Do nothing since file existence is checked by ReadPlinkPedigreeFile
 		    }
 		    elsif ($parameterName eq "sampleInfoFile") {
 			if (defined($scriptParameter{'sampleInfoFile'})) {
@@ -5570,6 +5600,7 @@ sub CreateFileEndings {
 	if (defined($scriptParameter{$orderParameterElement})) { #Only active parameters
 
 	    if ( ($orderParameterElement =~ /^p[A-Z]/) && ($parameter{$orderParameterElement}{'associatedProgram'}) ) { #Only process programs
+
 		if ($parameter{$orderParameterElement}{'chain'} eq "MAIN") { #MAIN chain
 		    
 		    if ($parameter{$orderParameterElement}{'fileEnding'} ne "nofileEnding") { #FileEnding exist
@@ -5626,7 +5657,7 @@ sub CreateFileEndings {
 		if ($parameter{$orderParameterElement}{'chain'} ne "MAIN") { #Other chain(s)
 		    
 		    my $chainfork = $parameter{$orderParameterElement}{'chain'}; 
-		    
+
 		    if ($parameter{$orderParameterElement}{'fileEnding'} ne "nofileEnding") { #FileEnding exist
 			
 ###OTHER/Per sampleID
@@ -5637,13 +5668,7 @@ sub CreateFileEndings {
 				unless (defined($tempFileEnding{$chainfork}{$sampleIDs[$sampleIDCounter]})) {	
 				    $tempFileEnding{$chainfork}{$sampleIDs[$sampleIDCounter]} = $tempFileEnding{$sampleIDs[$sampleIDCounter]}; #Inherit current MAIN chain. 
 				}
-
-				if ($orderParameterElement eq "pCoverageBED") { #Special case
-				    
-				    $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'pCoverageBED'}{'fileEnding'} = $tempFileEnding{$chainfork}{$sampleIDs[$sampleIDCounter]}."_coverageBed_hist"; #Adds from previous entry
-				    $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'pCoverageBEDRMDup'}{'fileEnding'} = $tempFileEnding{$chainfork}{$sampleIDs[$sampleIDCounter]}."_rmdup_coverageBed_hist"; #Adds from previous entry
-				}
-				elsif (defined($tempFileEnding{$chainfork}{$sampleIDs[$sampleIDCounter]})) {
+				if (defined($tempFileEnding{$chainfork}{$sampleIDs[$sampleIDCounter]})) {
 				    $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{$chainfork}{$sampleIDs[$sampleIDCounter]}.$parameter{$orderParameterElement}{'fileEnding'};
 				}
 				else  { #First module that should add filending
