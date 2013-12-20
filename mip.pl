@@ -41,8 +41,6 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [reference dir]
 
 -mc/--maximumCores The maximum number of cores per node used in the analysis (defaults to "8")
 
--env_up/--environmentUppmax Sets the environment to UPPMAX (defaults to "0" (=no))
-
 -c/--configFile YAML config file for script parameters (defaults to "")
 
 -wc/--writeConfigFile Write YAML config file with used script parameters. (defaults to "";Supply whole path)
@@ -126,8 +124,6 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [reference dir]
 -extbl/--exomeTargetBedInfileList Prepared target BED file for PicardTools CalculateHSMetrics (defaults to "". File ending should be ".infile_list")
               
 -extpbl/--exomeTargetPaddedBedInfileList Prepared padded target BED file for PicardTools CalculateHSMetrics (defaults to "". File ending should be ".padXXX.infile_list")
-
--tcovgn/--targetCoverageGeneNameFile File for adding gene name to target calulations (defaults to "".)
 
 -pRCP/--pRCovPlots Plots of genome coverage using rCovPlots (defaults to "1" (=yes))
 
@@ -292,7 +288,6 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                -al/--aligner Setting which aligner was used for alignment in previous analysis (defaults to "")
                -at/--analysisType Type of analysis to perform (defaults to "exomes";Valid entries: "genomes", "exomes", "rapid")
                -mc/--maximumCores The maximum number of cores per node used in the analysis (defaults to "8")
-               -env_up/--environmentUppmax Sets the environment to UPPMAX (defaults to "0" (=no))
                -c/--configFile YAML config file for script parameters (defaults to "")
                -wc/--writeConfigFile Write YAML configuration file for script parameters (defaults to "";Supply whole path)
                -si/--sampleInfoFile YAML file for sample info used in the analysis (defaults to "{outDataDir}/{familyID}/{familyID}_qc_sampleInfo.yaml")
@@ -349,7 +344,6 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                -pCCE_pichs/--pPicardToolsCalculateHSMetrics Capture calculation using PicardTools CalculateHSmetrics under '-pCC' (defaults to "1" (=yes))
                  -extbl/--exomeTargetBedInfileList Prepared target BED file for PicardTools CalculateHSMetrics (defaults to "". File ending should be ".infile_list") 
                  -extpbl/--exomeTargetPaddedBedInfileList Prepared padded target BED file for PicardTools CalculateHSMetrics (defaults to "". File ending should be ".padXXX.infile_list")
-                 -tcovgn/--targetCoverageGeneNameFile File for adding gene name to target calulations (defaults to "".)
                -pRCP/--pRCovPlots Plots of genome coverage using rCovPlots (defaults to "1" (=yes))
                
                ##GATK              
@@ -431,133 +425,130 @@ chomp($timeStamp); #Remove \n;
 
 ###Project specific
 
-##parameterName, parameterType, parameterDefault, environmentUppmaxDefault, AssociatedProgram, Check directory/file existence, parameterChain, programCheck)
-DefineParameters("environmentUppmax", "MIP", 0, 0, "MIP", 0);
+##parameterName, parameterType, parameterDefault, AssociatedProgram, Check directory/file existence, parameterChain, programCheck)
 
-DefineParameters("projectID", "MIP", "nodefault", "b2010080", "MIP", 0);
+DefineParameters("projectID", "MIP", "nodefault", "MIP", 0);
 
-DefineParameters("email", "MIP", 0, 0, "MIP", 0);
+DefineParameters("email", "MIP", 0, "MIP", 0);
 
-DefineParameters("familyID", "path", "nodefault", "noenvironmentUppmaxDefault", "MIP", 0);
+DefineParameters("familyID", "path", "nodefault", "MIP", 0);
 
-DefineParameters("maximumCores", "MIP", 16, 16, "MIP", 0);
+DefineParameters("maximumCores", "MIP", 16, "MIP", 0);
 
-DefineParameters("configFile", "MIP", 0, 0, "MIP", "file");
+DefineParameters("configFile", "MIP", 0, "MIP", "file");
 
-DefineParameters("analysisType", "MIP", "exomes", "exomes", "MIP", 0);
+DefineParameters("analysisType", "MIP", "exomes", "MIP", 0);
 
-DefineParameters("outDataDir", "path", "nodefault", "NotsetYet", "MIP", 0); #Depends on -wholeGenomeSequencing input, directory created by MIP if required
+DefineParameters("outDataDir", "path", "nodefault", "MIP", 0);
 
-DefineParameters("outScriptDir", "path", "nodefault", "NotsetYet", "MIP", 0); #Depends on -wholeGenomeSequencing input, directory created by MIP if required
+DefineParameters("outScriptDir", "path", "nodefault", "MIP", 0);
 
-DefineParameters("writeConfigFile", "path", 0, "NotsetYet", "MIP", 0);
+DefineParameters("writeConfigFile", "path", 0, "MIP", 0);
 
-DefineParameters("sampleInfoFile", "path", "NotsetYet", "NotsetYet", "MIP", "file");
+DefineParameters("sampleInfoFile", "path", "NotsetYet", "MIP", "file");
 
-DefineParameters("pedigreeFile", "path", "nodefault", "NotsetYet", "MIP", "file"); #Depends on -projectID input
+DefineParameters("pedigreeFile", "path", "nodefault", "MIP", "file");
 
-DefineParameters("inScriptDir", "path", "nodefault", "NotsetYet", "MIP", "directory"); #Depends on -projectID input
+DefineParameters("inScriptDir", "path", "nodefault", "MIP", "directory");
 
-DefineParameters("referencesDir", "path", "nodefault", "NotsetYet", "MIP", "directory");
+DefineParameters("referencesDir", "path", "nodefault", "MIP", "directory");
 
-DefineParameters("dryRunAll", "MIP", 0, 0, "MIP", 0);
+DefineParameters("dryRunAll", "MIP", 0, "MIP", 0);
 
 my (@inFilesDirs,@sampleIDs); #Arrays for input file directorys,sampleIDs
 
 ###Programs
 
 ##GZip
-DefineParameters("pGZip", "program", 1, 1, "MIP", 0, "nofileEnding", "MAIN", "gzip");
+DefineParameters("pGZip", "program", 1, "MIP", 0, "nofileEnding", "MAIN", "gzip");
 
 
 ##FastQC
-DefineParameters("pFastQC", "program", 1, 1, "MIP", 0, "nofileEnding", "RawSeqQC", "fastqc");
+DefineParameters("pFastQC", "program", 1, "MIP", 0, "nofileEnding", "RawSeqQC", "fastqc");
 
 
 ##RemovalRedundantFiles
-DefineParameters("pRemovalRedundantFiles", "program", 1, 1, "MIP", 0, "nofileEnding", "MAIN");
+DefineParameters("pRemovalRedundantFiles", "program", 1, "MIP", 0, "nofileEnding", "MAIN");
 
 
 ##Mosaik
-DefineParameters("pMosaikBuild", "program", 1, 1, "MIP", 0, "nofileEnding", "MAIN", "MosaikBuild");
+DefineParameters("pMosaikBuild", "program", 1, "MIP", 0, "nofileEnding", "MAIN", "MosaikBuild");
 
-DefineParameters("mosaikBuildMedianFragLength", "program", 375, 375, "pMosaikBuild", 0);
+DefineParameters("mosaikBuildMedianFragLength", "program", 375, "pMosaikBuild", 0);
 
-DefineParameters("pMosaikAlign", "program", 1, 1, "MIP", 0, "nofileEnding", "MAIN", "MosaikAligner");
+DefineParameters("pMosaikAlign", "program", 1, "MIP", 0, "nofileEnding", "MAIN", "MosaikAligner");
 
-DefineParameters("mosaikAlignReference", "path", "nodefault", "Homo_sapiens.GRCh37.70_nochr.dat", "pMosaikAlign", "file");
+DefineParameters("mosaikAlignReference", "path", "nodefault", "pMosaikAlign", "file");
 
-DefineParameters("mosaikAlignNeuralNetworkPeFile", "path", "nodefault", "2.1.78.pe.ann", "pMosaikAlign", "file");
+DefineParameters("mosaikAlignNeuralNetworkPeFile", "path", "2.1.78.pe.ann", "pMosaikAlign", "file");
 
-DefineParameters("mosaikAlignNeuralNetworkSeFile", "path", "nodefault", "2.1.78.se.ann", "pMosaikAlign", "file");
+DefineParameters("mosaikAlignNeuralNetworkSeFile", "path", "2.1.78.se.ann", "pMosaikAlign", "file");
 
-DefineParameters("mosaikJumpDbStub", "path", "nodefault", "Homo_sapiens.GRCh37.70_nochr_jdb_15", "pMosaikAlign", "file");
+DefineParameters("mosaikJumpDbStub", "path", "nodefault", "pMosaikAlign", "file");
 
 
 ##BWA
 
-DefineParameters("pBwaMem", "program", 0, 0, "MIP", 0, "nofileEnding", "MAIN", "bwa");
+DefineParameters("pBwaMem", "program", 0, "MIP", 0, "nofileEnding", "MAIN", "bwa");
 
-DefineParameters("bwaMemRapidDb", "path", "nodefault", "Agilent_SureSelect.V4.GRCh37.70_targets_nochr.bed.pad100", "pBwaMem", "file");
+DefineParameters("bwaMemRapidDb", "path", "nodefault", "pBwaMem", "file");
 
-DefineParameters("pBwaAln", "program", 0, 0, "MIP", 0, "nofileEnding", "MAIN", "bwa");
+DefineParameters("pBwaAln", "program", 0, "MIP", 0, "nofileEnding", "MAIN", "bwa");
 
-DefineParameters("bwaAlnQualityTrimming", "program", 20, 20, "pBwaAln", 0);
+DefineParameters("bwaAlnQualityTrimming", "program", 20, "pBwaAln", 0);
 
-DefineParameters("pBwaSampe", "program", 0, 0, "MIP", 0, "nofileEnding", "MAIN", "bwa");
+DefineParameters("pBwaSampe", "program", 0, "MIP", 0, "nofileEnding", "MAIN", "bwa");
 
 
 ##Choosen MIP Aligner
 
-DefineParameters("aligner", "MIP", "mosaik", "mosaik", "MIP", 0);
+DefineParameters("aligner", "MIP", "mosaik", "MIP", 0);
 
 
 ##SamTools Sort/Index
 
-DefineParameters("pSamToolsSort", "program", 1, 1, "MIP", 0, "_sorted", "MAIN", "samtools");
+DefineParameters("pSamToolsSort", "program", 1, "MIP", 0, "_sorted", "MAIN", "samtools");
 
 ##PicardTools
 
-DefineParameters("pPicardToolsMergeRapidReads", "program", 0, 0, "MIP", 0, "_sorted", "MAIN");#Rapid mode special case
+DefineParameters("pPicardToolsMergeRapidReads", "program", 0, "MIP", 0, "_sorted", "MAIN");#Rapid mode special case
 
-DefineParameters("pPicardToolsMergeSamFiles", "program", 1, 1, "MIP", 0, "_merged", "MAIN");
+DefineParameters("pPicardToolsMergeSamFiles", "program", 1, "MIP", 0, "_merged", "MAIN");
 
-DefineParameters("PicardToolsMergeTempDirectory", "path", "/scratch/", "notSetYet", "pBwaMem,pPicardToolsMergeSamFiles", 0); #Depends on -projectID input, directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
+DefineParameters("PicardToolsMergeTempDirectory", "path", "/scratch/", "pBwaMem,pPicardToolsMergeSamFiles", 0); #Directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
 
-DefineParameters("pPicardToolsMarkduplicates", "program", 1, 1, "MIP", 0, "_pmd", "MAIN");
+DefineParameters("pPicardToolsMarkduplicates", "program", 1, "MIP", 0, "_pmd", "MAIN");
 
 my (@picardToolsMergeSamFilesPrevious); #Any previous sequencing runs
 
 ##Coverage
-DefineParameters("pChanjoBuild", "program", 1, 1, "MIP", 0, "nofileEnding", "CoverageReport");
+DefineParameters("pChanjoBuild", "program", 1, "MIP", 0, "nofileEnding", "CoverageReport");
 
-DefineParameters("chanjoBuildDb", "path", "nodefault","CCDS.current.txt", "pChanjoBuild", "file");
+DefineParameters("chanjoBuildDb", "path", "nodefault", "pChanjoBuild", "file");
 
-DefineParameters("pChanjoCalculate", "program", 1, 1, "MIP", 0, "_coverage", "CoverageReport");
+DefineParameters("pChanjoCalculate", "program", 1, "MIP", 0, "_coverage", "CoverageReport");
 
-DefineParameters("chanjoCalculateCutoff", "program", 10, 10, "pChanjoCalculate", 0);
+DefineParameters("chanjoCalculateCutoff", "program", 10, "pChanjoCalculate", 0);
 
-DefineParameters("pChanjoImport", "program", 1, 0, "MIP", 0, "nofileEnding", "CoverageReport");
+DefineParameters("pChanjoImport", "program", 1, "MIP", 0, "nofileEnding", "CoverageReport");
 
-DefineParameters("pCalculateCoverage", "program", 1, 1, "MIP", 0, "nofileEnding", "CoverageQC", "bedtools");
+DefineParameters("pCalculateCoverage", "program", 1, "MIP", 0, "nofileEnding", "CoverageQC", "bedtools");
 
-DefineParameters("pGenomeCoverageBED", "program", 1, 1, "pCalculateCoverage", 0, "_genomeCoverageBed", "CoverageQC", "bedtools");
+DefineParameters("pGenomeCoverageBED", "program", 1, "pCalculateCoverage", 0, "_genomeCoverageBed", "CoverageQC", "bedtools");
 
-DefineParameters("pCoverageBED", "program", 1, 1, "pCalculateCoverage", 0, "NotSetYet", "CoverageQC", "bedtools");
+DefineParameters("pCoverageBED", "program", 1, "pCalculateCoverage", 0, "NotSetYet", "CoverageQC", "bedtools");
 
-DefineParameters("pQaCompute", "program", 1, 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC", "qaCompute");
+DefineParameters("pQaCompute", "program", 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC", "qaCompute");
 
-DefineParameters("pPicardToolsCollectMultipleMetrics", "program", 1, 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC");
+DefineParameters("pPicardToolsCollectMultipleMetrics", "program", 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC");
 
-DefineParameters("pPicardToolsCalculateHSMetrics", "program", 1, 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC");
+DefineParameters("pPicardToolsCalculateHSMetrics", "program", 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC");
 
-DefineParameters("xCoverage", "program", 30, 30, "pCalculateCoverage", 0);
+DefineParameters("xCoverage", "program", 30, "pCalculateCoverage", 0);
 
-DefineParameters("targetCoverageGeneNameFile", "path", "nodefault", "mart_export_Ensembl_GeneID_key_cleaned_noblanks_nochr.txt", "pCalculateCoverage", "file");
+DefineParameters("pRCovPlots", "program", 0, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC");
 
-DefineParameters("pRCovPlots", "program", 1, 1, "pCalculateCoverage", 0, "nofileEnding", "CoverageQC");
-
-DefineParameters("picardToolsPath", "path", "nodefault", "/home/henriks/programs/picard-tools-1.74", "pBwaMem,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "directory");
+DefineParameters("picardToolsPath", "path", "nodefault", "pBwaMem,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "directory");
 
 ##Target definition files
 $parameter{'exomeTargetBed'}{'value'} = "nocmdinput";
@@ -566,137 +557,137 @@ $parameter{'exomeTargetPaddedBedInfileList'}{'value'} = "nocmdinput";
 
 ##GATK
 
-DefineParameters("pGATKRealigner", "program", 1, 1, "MIP", 0, "_rreal", "MAIN");
+DefineParameters("pGATKRealigner", "program", 1, "MIP", 0, "_rreal", "MAIN");
 
-DefineParameters("GATKReAlignerINDELKnownSet1", "path", "1000G_phase1.indels.hg19.vcf", "1000G_phase1.indels.hg19.vcf", "pGATKRealigner", "file");
+DefineParameters("GATKReAlignerINDELKnownSet1", "path", "1000G_phase1.indels.hg19.vcf", "pGATKRealigner", "file");
 
-DefineParameters("GATKReAlignerINDELKnownSet2", "path", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf", "pGATKRealigner", "file");
-
-
-DefineParameters("pGATKBaseRecalibration", "program", 1, 1, "MIP", 0, "_brecal", "MAIN");
-
-DefineParameters("GATKBaseReCalibrationSNPKnownSet", "path", "dbsnp_135.b37.vcf", "dbsnp_135.b37.vcf", "pGATKBaseRecalibration", "file");
+DefineParameters("GATKReAlignerINDELKnownSet2", "path", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf", "pGATKRealigner", "file");
 
 
-DefineParameters("pSamToolsViewSplitChr", "program", 1, 1, "MIP", 0, "", "MAIN", "samtools");
+DefineParameters("pGATKBaseRecalibration", "program", 1, "MIP", 0, "_brecal", "MAIN");
+
+DefineParameters("GATKBaseReCalibrationSNPKnownSet", "path", "dbsnp_135.b37.vcf", "pGATKBaseRecalibration", "file");
 
 
-DefineParameters("pGATKHaploTypeCaller", "program", 1, 1, "MIP", 0, "_", "MAIN");
+DefineParameters("pSamToolsViewSplitChr", "program", 1, "MIP", 0, "", "MAIN", "samtools");
 
-DefineParameters("GATKHaploTypeCallerSNPKnownSet", "path", "dbsnp_135.b37.vcf", "dbsnp_135.b37.vcf", "pGATKHaploTypeCaller", "file");
 
-DefineParameters("pGATKHaploTypeCallerCombineVariants", "program", 1, 1, "MIP", 0, "nofileEnding", "MAIN");
+DefineParameters("pGATKHaploTypeCaller", "program", 1, "MIP", 0, "_", "MAIN");
 
-DefineParameters("pGATKVariantRecalibration", "program", 1, 1, "MIP", 0, "vrecal_", "MAIN");
+DefineParameters("GATKHaploTypeCallerSNPKnownSet", "path", "dbsnp_135.b37.vcf", "pGATKHaploTypeCaller", "file");
 
-DefineParameters("GATKExomeReferenceSNPs", "path", "nodefault", "all-agilent_50mb-GRCh37-SNPS_pad100_interval_list.vcf", "pGATKVariantRecalibration", "file");
+DefineParameters("pGATKHaploTypeCallerCombineVariants", "program", 1, "MIP", 0, "nofileEnding", "MAIN");
 
-DefineParameters("GATKVariantReCalibrationTrainingSetHapMap", "path", "hapmap_3.3.b37.sites.vcf", "hapmap_3.3.b37.sites.vcf", "pGATKVariantRecalibration", "file");
+DefineParameters("pGATKVariantRecalibration", "program", 1, "MIP", 0, "vrecal_", "MAIN");
 
-DefineParameters("GATKVariantReCalibrationTrainingSetDbSNP", "path", "dbsnp_135.b37.vcf", "dbsnp_135.b37.vcf", "pGATKVariantRecalibration", "file");
+DefineParameters("GATKExomeReferenceSNPs", "path", "nodefault", "pGATKVariantRecalibration", "file");
 
-DefineParameters("GATKVariantReCalibrationTrainingSet1000GOmni", "path", "1000G_omni2.5.b37.sites.vcf", "1000G_omni2.5.b37.sites.vcf", "pGATKVariantRecalibration", "file");
+DefineParameters("GATKVariantReCalibrationTrainingSetHapMap", "path", "hapmap_3.3.b37.sites.vcf", "pGATKVariantRecalibration", "file");
 
-DefineParameters("GATKVariantReCalibrationTrainingSetMills", "path", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf", "pGATKVariantRecalibration", "file");
+DefineParameters("GATKVariantReCalibrationTrainingSetDbSNP", "path", "dbsnp_135.b37.vcf", "pGATKVariantRecalibration", "file");
 
-DefineParameters("GATKVariantReCalibrationTSFilterLevel", "program", 99.9, 99.9, "pGATKVariantRecalibration", 0);
+DefineParameters("GATKVariantReCalibrationTrainingSet1000GOmni", "path", "1000G_omni2.5.b37.sites.vcf", "pGATKVariantRecalibration", "file");
 
-DefineParameters("GATKVariantReCalibrationNumBadVariants", "program", 1000, 3000, "pGATKVariantRecalibration", 0);
+DefineParameters("GATKVariantReCalibrationTrainingSetMills", "path", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf", "pGATKVariantRecalibration", "file");
+
+DefineParameters("GATKVariantReCalibrationTSFilterLevel", "program", 99.9, "pGATKVariantRecalibration", 0);
+
+DefineParameters("GATKVariantReCalibrationNumBadVariants", "program", 3000, "pGATKVariantRecalibration", 0);
 
  
-DefineParameters("pGATKPhaseByTransmission", "program", 1, 1, "MIP", 0, "phtr_", "Phasing");
+DefineParameters("pGATKPhaseByTransmission", "program", 1, "MIP", 0, "phtr_", "Phasing");
 
-DefineParameters("pGATKReadBackedPhasing", "program", 1, 1, "MIP", 0, "phrb_", "Phasing");
+DefineParameters("pGATKReadBackedPhasing", "program", 1, "MIP", 0, "phrb_", "Phasing");
 
-DefineParameters("GATKReadBackedPhasingPhaseQualityThresh", "program", 20, 20, "pGATKReadBackedPhasing", 0);
+DefineParameters("GATKReadBackedPhasingPhaseQualityThresh", "program", 20, "pGATKReadBackedPhasing", 0);
 
 
-DefineParameters("pGATKVariantEvalAll", "program", 1, 1, "MIP", 0, "nofileEnding", "AllVariantQC");
+DefineParameters("pGATKVariantEvalAll", "program", 1, "MIP", 0, "nofileEnding", "AllVariantQC");
 
-DefineParameters("pGATKVariantEvalExome", "program", 1, 1, "MIP", 0, "nofileEnding", "ExomeVarintQC", "bedtools");
+DefineParameters("pGATKVariantEvalExome", "program", 1, "MIP", 0, "nofileEnding", "ExomeVarintQC", "bedtools");
 
-DefineParameters("GATKVariantEvalDbSNP", "path", "nodefault", "dbsnp_132.hg19.excluding_sites_after_129_nochr.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file");
+DefineParameters("GATKVariantEvalDbSNP", "path", "dbsnp_132.hg19.excluding_sites_after_129_nochr.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file");
 
-DefineParameters("GATKVariantEvalGold", "path", "nodefault", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file");
+DefineParameters("GATKVariantEvalGold", "path", "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file");
 
-DefineParameters("genomeAnalysisToolKitPath", "path", "nodefault", "/home/henriks/programs/GenomeAnalysisTK-2.7-2-g6bda569", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome", "directory");
+DefineParameters("genomeAnalysisToolKitPath", "path", "nodefault", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome", "directory");
 
-DefineParameters("GATKTempDirectory", "path", "/scratch/", "notSetYet", "pGATKRealigner,pGATKBaseRecalibration", 0); #Depends on -projectID input, directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
+DefineParameters("GATKTempDirectory", "path", "/scratch/", "pGATKRealigner,pGATKBaseRecalibration", 0); #Depends on -projectID input, directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
 
-DefineParameters("GATKDownSampleToCoverage", "program", 1000, 1000, "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller", 0);
+DefineParameters("GATKDownSampleToCoverage", "program", 1000, "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller", 0);
 
 $parameter{'GATKTargetPaddedBedIntervalList'}{'value'} = "nocmdinput"; #GATK target definition file
 
 ##Annovar
 
-DefineParameters("pAnnovar", "program", 1, 1, "MIP", 0, "annovar_", "MAIN");
+DefineParameters("pAnnovar", "program", 1, "MIP", 0, "annovar_", "MAIN");
 
-DefineParameters("annovarPath", "path", "nodefault", "/proj/b2010080/private/annovar", "pAnnovar", "directory"); #Note not projectID specific
+DefineParameters("annovarPath", "path", "nodefault", "pAnnovar", "directory"); #Note not projectID specific
 
-DefineParameters("annovarGenomeBuildVersion", "program", "hg19", "hg19", "pAnnovar", 0);
+DefineParameters("annovarGenomeBuildVersion", "program", "hg19", "pAnnovar", 0);
 
-DefineParameters("annovarSupportedTableNames", "program", 0, 0, "pAnnovar", 0);
+DefineParameters("annovarSupportedTableNames", "program", 0, "pAnnovar", 0);
 
-DefineParameters("annovarMAFThreshold", "program", 0, 0, "pAnnovar", 0);
+DefineParameters("annovarMAFThreshold", "program", 0, "pAnnovar", 0);
 
-DefineParameters("annovarSiftThreshold", "program", 0, 0, "pAnnovar", 0);
+DefineParameters("annovarSiftThreshold", "program", 0, "pAnnovar", 0);
 
 my @annovarTableNames; #List of Annovar table names to be used
 
 
 ##VMerge
 
-DefineParameters("pMergeAnnotatedVariants", "program", 1, 1, "MIP", 0, "merged_", "MAIN");
+DefineParameters("pMergeAnnotatedVariants", "program", 1, "MIP", 0, "merged_", "MAIN");
 
-DefineParameters("mergeAnnotatedVariantsTemplateFile", "path", "nodefault", "CMMS_intersectCollect_db_master_template.txt", "pMergeAnnotatedVariants", "file");
+DefineParameters("mergeAnnotatedVariantsTemplateFile", "path", "nodefault", "pMergeAnnotatedVariants", "file");
 
-DefineParameters("mergeAnnotatedVariantsDbFile", "program", "notSetYet", "notSetYet", "pMergeAnnotatedVariants", 0); #No file check since file is created by MIP later
+DefineParameters("mergeAnnotatedVariantsDbFile", "program", "notSetYet", "pMergeAnnotatedVariants", 0); #No file check since file is created by MIP later
 
 
 ##Add_depth
 
-DefineParameters("pAddDepth", "program", 1, 1, "MIP", 0, "", "MAIN");
+DefineParameters("pAddDepth", "program", 1, "MIP", 0, "", "MAIN");
 
 
 ##RankVariants
 
-DefineParameters("pRankVariants", "program", 1, 1, "MIP", 0, "nofileEnding", "MAIN");
+DefineParameters("pRankVariants", "program", 1, "MIP", 0, "nofileEnding", "MAIN");
 
-DefineParameters("rankScore", "program", -100, -100, "pRankVariants", 0);
+DefineParameters("rankScore", "program", -100, "pRankVariants", 0);
 
-DefineParameters("ImportantDbFile", "path", "nodefault", "dbCMMS.v1.0.txt", "pRankVariants", "file");
+DefineParameters("ImportantDbFile", "path", "nodefault", "pRankVariants", "file");
 
-DefineParameters("ImportantDbTemplate", "path", "nodefault", "select_dbCMMS_variants_db_master.txt", "pRankVariants", "file");
+DefineParameters("ImportantDbTemplate", "path", "nodefault", "pRankVariants", "file");
 
-DefineParameters("ImportantDbMasterFile", "program", "notSetYet", "NotSetYet", "pRankVariants", 0); #No file check since file is created by MIP later
+DefineParameters("ImportantDbMasterFile", "program", "notSetYet", "pRankVariants", 0); #No file check since file is created by MIP later
 
 my @ImportantDbFileOutFile; #List of db outfiles
 
-DefineParameters("pythonVirtualEnvironment", "path", "nodefault", "virtualenv.py.2.7", "pChanjoBuild,pChanjoCalculate,pChanjoImport,pRankVariants", 0);
+DefineParameters("pythonVirtualEnvironment", "path", "nodefault", "pChanjoBuild,pChanjoCalculate,pChanjoImport,pRankVariants", 0);
 
 ##SChecks
-DefineParameters("pSampleCheck", "program", 1, 1, "MIP", 0, "nofileEnding", "IDQC", "vcftools:plink");
+DefineParameters("pSampleCheck", "program", 1, "MIP", 0, "nofileEnding", "IDQC", "vcftools:plink");
 
 ##QcCollect
 
-DefineParameters("pQCCollect", "program", 1, 1, "MIP", 0, "nofileEnding", "QCMetrics");
+DefineParameters("pQCCollect", "program", 1, "MIP", 0, "nofileEnding", "QCMetrics");
 
-DefineParameters("QCCollectSampleInfoFile", "program", "notSetYet", "notSetYet", "pQCCollect", 0); #No file check since file is created by MIP later
+DefineParameters("QCCollectSampleInfoFile", "program", "notSetYet", "pQCCollect", 0); #No file check since file is created by MIP later
 
-DefineParameters("QCCollectRegExpFile", "path", "nodefault", "qc_regexp.yaml", "pQCCollect", "file");
+DefineParameters("QCCollectRegExpFile", "path", "qc_regexp.yaml", "pQCCollect", "file");
 
 
 ##MIP
 
 ##humanGenomeReference
-DefineParameters("humanGenomeReference", "path", "nodefault", "Homo_sapiens.GRCh37.70_nochr.fasta", "pBwaMem,pBwaAln,pBwaSampe,pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKVariantEvalAll,pGATKVariantEvalExome,pAnnovar,pAddDepth,pCalculateCoverage,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "file");
+DefineParameters("humanGenomeReference", "path", "nodefault", "pBwaMem,pBwaAln,pBwaSampe,pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKVariantEvalAll,pGATKVariantEvalExome,pAnnovar,pAddDepth,pCalculateCoverage,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "file");
 
 my ($humanGenomeReferenceSource, $humanGenomeRefereceChromosomePrefix, $humanGenomeReferenceVersion, $fnend, $aligner, $filename, $fnTracker, $version, $help) = ("nocmdinput", "nocmdinput", "nocmdinput", ".sh", "nocmdinput", "nocmdinput", 0);
 
 my (@chromosomes);
 
 my (%infile, %indirpath, %infilesLaneNoEnding, %lane, %infilesBothStrandsNoEnding, %jobID, %sampleInfo); 
-#%infiles=from platform (Illumina), %indirpath for the path to infiles, %infilesLaneNoEnding for MosaikBuild (one entry for both strands), %lanes for sample lanes, infilesBothStrandsNoEnding for bwa_aln (one entry per strand)
+#%infiles=from platform (Illumina), %indirpath for the path to infiles, %infilesLaneNoEnding contains one entry for both strands, %lanes for sample lanes, infilesBothStrandsNoEnding contains one entry per strand
 
 
 ####Staging/Sanity Check Area 
@@ -787,7 +778,6 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'al|aligner:s' => \$parameter{'aligner'}{'value'}, #determining which aligner was used previously (if not specified)
 	   'at|analysisType:s' => \$parameter{'analysisType'}{'value'}, #Type of analysis
 	   'mc|maximumCores:n' => \$parameter{'maximumCores'}{'value'}, #Per node
-	   'env_up|environmentUppmax:n' => \$parameter{'environmentUppmax'}{'value'}, #Sets several default paths, so that they do not have to be supplied
 	   'c|configFile:s' => \$parameter{'configFile'}{'value'},
 	   'wc|writeConfigFile:s' => \$parameter{'writeConfigFile'}{'value'},
 	   'si|sampleInfoFile:s' => \$parameter{'sampleInfoFile'}{'value'}, #Write all info on samples and run to YAML file
@@ -832,7 +822,6 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'pCCE_pichs|pPicardToolsCalculateHSMetrics:n' => \$parameter{'pPicardToolsCalculateHSMetrics'}{'value'},
 	   'extbl|exomeTargetBedInfileList:s' => \$parameter{'exomeTargetBedInfileList'}{'value'}, #target file for CalculateHsMetrics
 	   'extpbl|exomeTargetPaddedBedInfileList:s' => \$parameter{'exomeTargetPaddedBedInfileList'}{'value'}, #Padded target file for CalculateHsMetrics, GATK
-	   'tcovgn|targetCoverageGeneNameFile:s' => \$parameter{'targetCoverageGeneNameFile'}{'value'},
 	   'pRCP|pRCovPlots:n' => \$parameter{'pRCovPlots'}{'value'},
 	   'gatkpath|genomeAnalysisToolKitPath:s' => \$parameter{'genomeAnalysisToolKitPath'}{'value'}, #GATK whole path
 	   'gatktmpd|GATKTempDirectory:s' => \$parameter{'GATKTempDirectory'}{'value'}, #GATK ReAlignerTargetCreator & BaseRecalibrator temporary directory
@@ -902,27 +891,11 @@ if ($parameter{'configFile'}{'value'} ne "nocmdinput") { #No input from cmd
     %scriptParameter = LoadYAML($parameter{'configFile'}{'value'}); #Load parameters from configfile
     foreach my $orderParameterElement (@orderParameters) { #Loop through all parameters and update info   
 
-	UpdateYAML($orderParameterElement, $scriptParameter{'clusterConstantPath'}, $scriptParameter{'analysisConstantPath'}, $scriptParameter{'analysisType'},$parameter{'familyID'}{'value'} );
+	UpdateYAML($orderParameterElement, $scriptParameter{'clusterConstantPath'}, $scriptParameter{'analysisConstantPath'}, $scriptParameter{'analysisType'},$parameter{'familyID'}{'value'}, $scriptParameter{'aligner'} );
     }
 }
 
-sub UpdateYAML {
-##Updates the config file to particular user/cluster for entries following specifications. Leaves other entries untouched.
 
-    my $orderParameterElement = $_[0]; #Parameter to update
-    my $clusterConstantPath = $_[1]; #Set the project specific path for this cluster
-    my $analysisConstantPath = $_[2]; #Set the project specific path for this cluster
-    my $analysisType =  $_[3]; #Sets the analysis run type e.g., "exomes", "genomes", "rapid"
-    my $familyID = $_[4]; #Sets the familyID
-    
-    if ($scriptParameter{$orderParameterElement}) {
-	
-	$scriptParameter{$orderParameterElement} =~ s/CLUSTERCONSTANTPATH!/$clusterConstantPath/gi; #Exchange CLUSTERCONSTANTPATH! for current cluster path
-	$scriptParameter{$orderParameterElement} =~ s/ANALYSISCONSTANTPATH!/$analysisConstantPath/gi; #Exchange ANALYSISCONSTANTPATH! for the current analysis path
-	$scriptParameter{$orderParameterElement} =~ s/ANALYSISTYPE!/$analysisType/gi; #Exchange ANALYSISTYPE! for the current analysis type
-	$scriptParameter{$orderParameterElement} =~ s/FDN!/$familyID/gi; #Exchange FND! for the current familyID
-    }
-}
 
 if ($parameter{'annovarSupportedTableNames'}{'value'} eq 1) {
     print STDOUT "\nThese Annovar databases are supported by MIP:\n";
@@ -934,51 +907,19 @@ if ($parameter{'annovarSupportedTableNames'}{'value'} eq 1) {
 }
 
 foreach my $orderParameterElement (@orderParameters) { #Populate scriptParameters{'parameterName'} => 'Value'
-
-    if ( (defined($scriptParameter{'projectID'})) && (defined($scriptParameter{'familyID'}) ) ) {
-
-	if ( ($orderParameterElement eq "pedigreeFile") || ($orderParameterElement eq "writeConfigFile") || ($orderParameterElement eq "QCCollectSampleInfoFile") || ($orderParameterElement eq "sampleInfoFile")) {
-	    
-	    $parameter{'pedigreeFile'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/".$scriptParameter{'analysisType'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_pedigree.txt";
-	    $parameter{'writeConfigFile'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/".$scriptParameter{'analysisType'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_config.yaml";
-	    $parameter{'sampleInfoFile'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/".$scriptParameter{'analysisType'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_qc_sampleInfo.yaml";
-	    $parameter{'QCCollectSampleInfoFile'}{'environmentUppmaxDefault'} = $parameter{'sampleInfoFile'}{'environmentUppmaxDefault'};
-	}
-    }
     
 ##3 type of variables: MIP, path or program/program_parameters each is handled in the AddToScriptParameter subroutine.
-##parameterName, parameterValue, parameterType, parameterDefault, environmentUppmaxDefault, AssociatedProgram, Check directory/file existence)    
-    AddToScriptParameter($orderParameterElement, $parameter{$orderParameterElement}{'value'}, $parameter{$orderParameterElement}{'type'}, $parameter{$orderParameterElement}{'default'}, $parameter{$orderParameterElement}{'environmentUppmaxDefault'}, $parameter{$orderParameterElement}{'associatedProgram'}, $parameter{$orderParameterElement}{'existsCheck'}, $parameter{$orderParameterElement}{'programNamePath'});
+##parameterName, parameterValue, parameterType, parameterDefault, AssociatedProgram, Check directory/file existence)    
+    AddToScriptParameter($orderParameterElement, $parameter{$orderParameterElement}{'value'}, $parameter{$orderParameterElement}{'type'}, $parameter{$orderParameterElement}{'default'}, $parameter{$orderParameterElement}{'associatedProgram'}, $parameter{$orderParameterElement}{'existsCheck'}, $parameter{$orderParameterElement}{'programNamePath'});
    
-    if ($orderParameterElement eq "analysisType") { #Set env_up defaults depending on $scriptParameter{'analysisType'} value that now has been set
-	
-	$parameter{'outDataDir'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/analysis/nobackup/".$scriptParameter{'analysisType'};	
-
-	$parameter{'outScriptDir'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/".$scriptParameter{'analysisType'}."_scripts";
-    }
-    if  ($orderParameterElement eq "projectID") { #Set env_up defaults depending on $scriptParameter{'projectID'} value that now has been set
-
-	$parameter{'inScriptDir'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/mip_scripts_master";
-
-	$parameter{'referencesDir'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/mip_references";
-	
-	$parameter{'PicardToolsMergeTempDirectory'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/analysis/nobackup/";
-
-	$parameter{'GATKTempDirectory'}{'environmentUppmaxDefault'} = "/proj/".$scriptParameter{'projectID'}."/private/analysis/nobackup/";
-
-    }
-    if ($orderParameterElement eq "outDataDir") { #Set defaults/env_up defaults depending on $scriptParameter{'outDataDir'} value that now has been set
+    if ($orderParameterElement eq "outDataDir") { #Set defaults depending on $scriptParameter{'outDataDir'} value that now has been set
 
 	$parameter{'sampleInfoFile'}{'default'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_qc_sampleInfo.yaml";
 	$parameter{'QCCollectSampleInfoFile'}{'default'} = $parameter{'sampleInfoFile'}{'default'};
 
 	$parameter{'mergeAnnotatedVariantsDbFile'}{'default'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_intersectCollect_db_master.txt";
 	
-	$parameter{'mergeAnnotatedVariantsDbFile'}{'environmentUppmaxDefault'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_intersectCollect_db_master.txt";
-	
 	$parameter{'ImportantDbMasterFile'}{'default'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}.".intersectCollect_selectVariants_db_master.txt";
-	
-	$parameter{'ImportantDbMasterFile'}{'environmentUppmaxDefault'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}.".intersectCollect_selectVariants_db_master.txt";
 	
     }
 }
@@ -990,7 +931,7 @@ if (scalar(@sampleIDs) == 0) { #No input from cmd or from pedigree
 }
 @sampleIDs = join(',',@sampleIDs); #If user supplied -sampleID X -sampleID 2 etc or a as a comma separated list
 push(@orderParameters, "sampleIDs"); #Add to enable later evaluation of parameters in proper order & write to master file
-AddToScriptParameter("sampleIDs", @sampleIDs, "path", "nodefault", "noenvironmentUppmaxDefault", "MIP");
+AddToScriptParameter("sampleIDs", @sampleIDs, "path", "nodefault", "MIP");
 CheckUniqueIDNs();
 
 
@@ -1006,7 +947,7 @@ else {
 }
 push(@orderParameters, "inFilesDirs"); #Add to enable later evaluation of parameters in proper order & write to master file			
 $scriptParameter{'inFilesDirs'} = join(',',@inFilesDirs); #Add to enable recreation of cmd line later
-AddToScriptParameter("inFilesDirs", @inFilesDirs, "path", "nodefault", "yes", "MIP", "directory"); #inFileDirs is dependent on analysisType for environmentUppmax option, hence 6th arg.
+AddToScriptParameter("inFilesDirs", @inFilesDirs, "path", "nodefault", "MIP", "directory");
 
 
 ##picardToolsMergeSamFilesPrevious
@@ -1018,7 +959,7 @@ if ( ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) || (scalar(@picardTools
     }
     @picardToolsMergeSamFilesPrevious = join(',', @picardToolsMergeSamFilesPrevious); #If user supplied previously aligned BAM files
     push(@orderParameters, "picardToolsMergeSamFilesPrevious"); #Add to enable later evaluation of parameters in proper order & write to master file
-    AddToScriptParameter("picardToolsMergeSamFilesPrevious", @picardToolsMergeSamFilesPrevious, "path", "nodefault", "noenvironmentUppmaxDefault", "pPicardToolsMergeSamFiles", "file");
+    AddToScriptParameter("picardToolsMergeSamFilesPrevious", @picardToolsMergeSamFilesPrevious, "path", "nodefault", "pPicardToolsMergeSamFiles", "file");
      
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #Check all samples to check, which are to be merged with previous files later
 	if (scalar(@picardToolsMergeSamFilesPrevious) > 0) { #Supplied info - check for which sampleIDs  	
@@ -1060,7 +1001,7 @@ if ($scriptParameter{'pRankVariants'} > 0) {
     }
     @ImportantDbFileOutFile = join(',', @ImportantDbFileOutFile); #If user supplied list of genes to be evaluated
     push(@orderParameters, "ImportantDbFileOutFile"); #Add to enable later evaluation of parameters in proper order & write to master file
-    UpdateYAML("ImportantDbFileOutFile", $scriptParameter{'clusterConstantPath'}, $scriptParameter{'analysisConstantPath'}, $scriptParameter{'analysisType'},$parameter{'familyID'}{'value'} );
+    UpdateYAML("ImportantDbFileOutFile", $scriptParameter{'clusterConstantPath'}, $scriptParameter{'analysisConstantPath'}, $scriptParameter{'analysisType'},$parameter{'familyID'}{'value'}, $scriptParameter{'aligner'} );
     AddToScriptParameter("ImportantDbFileOutFile", @ImportantDbFileOutFile, "program", "yes", "yes", "pRankVariants"); 
     
 }
@@ -5165,12 +5106,11 @@ sub DefineParameters {
     my $parameterName = $_[0]; #ParameterName
     my $parameterType = $_[1]; #Path or program
     my $parameterDefault = $_[2]; #Default setting
-    my $environmentUppmaxDefault = $_[3]; #Specific for Uppmax
-    my $associatedProgram = $_[4]; #The parameters program
-    my $existsCheck = $_[5]; #Check if intendent file exists in reference directory
-    my $fileEnding = $_[6]; #The filending after the module has been run
-    my $parameterChain = $_[7]; #The chain to which the program belongs to
-    my @programNamePath = split(":", $_[8]) if (defined($_[9])); #The path name of the program(s) for each sbatch script
+    my $associatedProgram = $_[3]; #The parameters program
+    my $existsCheck = $_[4]; #Check if intendent file exists in reference directory
+    my $fileEnding = $_[5]; #The filending after the module has been run
+    my $parameterChain = $_[6]; #The chain to which the program belongs to
+    my @programNamePath = split(":", $_[7]) if (defined($_[8])); #The path name of the program(s) for each sbatch script
 
     if (defined($programNamePath[0])) {
 
@@ -5178,7 +5118,6 @@ sub DefineParameters {
 	    'type' => $parameterType,
 	    'value' => "nocmdinput",
 	    'default' => $parameterDefault,
-	    'environmentUppmaxDefault' => $environmentUppmaxDefault,
 	    'associatedProgram' => $associatedProgram,
 	    'existsCheck' => $existsCheck,
 	    'fileEnding' => $fileEnding,
@@ -5192,7 +5131,6 @@ sub DefineParameters {
 	    'type' => $parameterType,
 	    'value' => "nocmdinput",
 	    'default' => $parameterDefault,
-	    'environmentUppmaxDefault' => $environmentUppmaxDefault,
 	    'associatedProgram' => $associatedProgram,
 	    'existsCheck' => $existsCheck,
 	    'fileEnding' => $fileEnding,
@@ -5206,22 +5144,20 @@ sub DefineParameters {
 }
 
 sub AddToScriptParameter {
-###Checks and sets environmentUppmax or default values to scriptPrameters
+###Checks and sets user input or default values to scriptPrameters
     
     my $parameterName = $_[0]; #ParameterName
     my $parameterValue = $_[1]; #Parameter to evaluate
     my $parameterType = $_[2]; #Path or program
     my $parameterDefault = $_[3]; #Default setting
-    my $environmentUppmaxDefault = $_[4]; #Specific for Uppmax
-    my @associatedPrograms = split(/,/, $_[5]); #The parameters program(s)
-    my $parameterExistsCheck = $_[6]; #Check if intendent file exists in reference directory
+    my @associatedPrograms = split(/,/, $_[4]); #The parameters program(s)
+    my $parameterExistsCheck = $_[5]; #Check if intendent file exists in reference directory
    
 ##Validation
     #print "parameterName: ".$parameterName, "\n";
     #print "parameterValue: ".$parameterValue, "\n";
     #print "parameterType: ".$parameterType, "\n";
     #print "parameterDefault: ".$parameterDefault, "\n";
-    #print "environmentUppmaxDefault: ".$environmentUppmaxDefault, "\n";
     #foreach my $associatedProgram (@associatedPrograms) {
 	#print "associatedProgram: ".$associatedProgram, "\n";
     #}
@@ -5270,44 +5206,6 @@ sub AddToScriptParameter {
 			    }
 			    else {
 				ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'}, scalar(@sampleIDs)); # User supplied sample info, do NOT overwrite using info from pedigree file
-			    }
-			}
-		    }
-		    elsif ( (defined($scriptParameter{'environmentUppmax'})) && ($scriptParameter{'environmentUppmax'} == 1) ) { #Use default 
-			
-			if ($environmentUppmaxDefault eq "noenvironmentUppmaxDefault") { #No environmnetUppmax default 
-			    
-			    if ($parameterName eq "picardToolsMergeSamFilesPrevious") { #Special case 
-				@picardToolsMergeSamFilesPrevious = (); #Empty to not add a 0 as a value, which will cause errors in later conditions use
-			    }
-			    elsif ($parameterName eq "sampleIDs") { #Special case 
-				@sampleIDs = (); #Empty to not add a 0 as a value, which will cause errors in later conditions use
-			    }
-			    else {
-				print STDERR "\nSupply '-".$parameterName."' if you want to run ".$associatedProgram, "\n\n";
-				die $USAGE;
-			    }
-			}
-			else { #Default exists
-			    
-			    if ( ($parameterName eq "inFilesDirs") && ($scriptParameter{'pedigreeFile'} ne "nocmdinput") ) {
-				
-				#pop(@inFilesDirs); #Remove added 0
-				
-				#for (my $indirectoryCount=0;$indirectoryCount<scalar(@sampleIDs);$indirectoryCount++) {
-				#   push(@inFilesDirs, "/proj/".$scriptParameter{'projectID'}."/private/".$scriptParameter{'analysisType'}."/".$sampleIDs[$indirectoryCount]."/fastq");
-				#}
-				#$scriptParameter{'inFilesDirs'} = join(',',@inFilesDirs); #Add to enable recreation of cmd line later
-			    }		    
-			    else {
-				if ($parameterName eq "humanGenomeReference") {
-				    if ($environmentUppmaxDefault =~/Homo_sapiens.GRCh(\d+\.\d+)/) {
-					$humanGenomeReferenceVersion = $1;
-					$humanGenomeReferenceSource = "GRCh"; #Ensembl
-					$humanGenomeRefereceChromosomePrefix = "nochr";
-				    }
-				}
-				$scriptParameter{$parameterName} = $environmentUppmaxDefault; #Set environmentUppmax default value
 			    }
 			}
 		    }
@@ -5441,10 +5339,6 @@ sub AddToScriptParameter {
 		    
 		    if (defined($scriptParameter{$parameterName})) { #Input from config file - do nothing
 		    }
-		    elsif ( (defined($scriptParameter{'environmentUppmax'})) && ($scriptParameter{'environmentUppmax'} == 1) ) { #Use default 
-			
-			$scriptParameter{$parameterName} = $environmentUppmaxDefault; #Set environmentUppmax default value
-		    }
 		    elsif ($parameterDefault ne "nodefault") {
 			$scriptParameter{$parameterName} = $parameterDefault; #Set default value
 		    }
@@ -5463,12 +5357,6 @@ sub AddToScriptParameter {
 		    
 		    $scriptParameter{$parameterName} = $parameterValue; 
 		}
-		if ($parameterName eq "'outDataDir") {
-		    if (-e $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_qc_sampleInfo.yaml") { #Read any previous analysis run sampleInfo.yaml file to enable record of previous data if not processed this analysis run. %sampleInfo will be updated for records active/changed in this run, but not inactive program records. 
-	     
-		    %sampleInfo = LoadYAML($scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_qc_sampleInfo.yaml");     
-		    }
-		}
 	    }
 	    
 	    if ( $parameterType eq "program") {
@@ -5482,23 +5370,6 @@ sub AddToScriptParameter {
 			}
 			if ($parameterName eq "ImportantDbFileOutFile") {
 			    @ImportantDbFileOutFile = split(/,/, $scriptParameter{'ImportantDbFileOutFile'});
-			}
-		    }
-		    elsif ( (defined($scriptParameter{'environmentUppmax'})) && ($scriptParameter{'environmentUppmax'} == 1) ) { #Use default 
-			
-			if ($parameterName eq "annovarTableNames") {
-##Set default annovar table names
-			    @annovarTableNames = ("refgene", "mce46way", "gerp++elem", "segdup", "gwascatalog", "tfbs", "mirna", "snp137NonFlagged", "1000g2012apr_all", "hg19_esp6500si_all.txt", "avsift", "ljb_pp2", "ljb_mt", "ljb_lrt", "ljb_gerp++", "ljb_phylop", "hg19_clinvar_20131105.txt");
-			    $scriptParameter{'annovarTableNames'} = join(",", @annovarTableNames);
-			} 
-			elsif ($parameterName eq "ImportantDbFileOutFile") {
-			    my $inDirectoryResearch = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'aligner'}."/GATK/candidates/ranking";
-			    my $inDirectoryClinical = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'aligner'}."/GATK/candidates/ranking/clinical"; 
-			    @ImportantDbFileOutFile = ($inDirectoryResearch."/".$scriptParameter{'familyID'}."_orphan.selectVariants", $inDirectoryClinical."/".$scriptParameter{'familyID'}.".selectVariants");
-			    $scriptParameter{'ImportantDbFileOutFile'} = join(",", @ImportantDbFileOutFile);
-			}
-			else {
-			    $scriptParameter{$parameterName} = $environmentUppmaxDefault; #Set environmentUppmax default value
 			}
 		    }
 		    elsif ($parameterDefault ne "nodefault") {
@@ -5529,7 +5400,7 @@ sub AddToScriptParameter {
 		    $scriptParameter{$parameterName} = $parameterValue;
 		}
 		
-		if (defined($parameter{$parameterName}{'programNamePath'}[0])) { #Code for checking commands in your pathand executable
+		if (defined($parameter{$parameterName}{'programNamePath'}[0])) { #Code for checking commands in your path and executable
 		
 		    if ($scriptParameter{$parameterName} > 0) { #Only check path(s) for active programs
 	
@@ -5615,7 +5486,7 @@ sub SetTargetFiles {
 		    if (defined($scriptParameter{ $sampleIDs[$sampleIDCounter] }{$parameterName})) { #Input from config file - transfer to sampleInfo
 			$sampleInfo{$scriptParameter{'familyID'}}{$sampleIDs[$sampleIDCounter]}{$parameterName} = $scriptParameter{ $sampleIDs[$sampleIDCounter] }{$parameterName};
 		    }
-		    elsif ($scriptParameter{'pedigreeFile'} ne "nocmdinput") {
+		    elsif ( ($scriptParameter{'pedigreeFile'}) && $scriptParameter{'pedigreeFile'} ne "nocmdinput") {
 			
 			if (defined($sampleInfo{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDCounter]}{$parameterName})) { #Capture kit check
 			    $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{$parameterName} =~ s/GenomeReferenceSource/$humanGenomeReferenceSource/; #Replace with Refseq genome or Ensembl genome
@@ -5625,7 +5496,7 @@ sub SetTargetFiles {
 			}
 			else {
 			
-			    print STDERR "\nCould not find a target file entry for sample: ".$sampleIDs[$sampleIDCounter]."in pedigree file", "\n";
+			    print STDERR "\nCould not find a target file entry for sample: ".$sampleIDs[$sampleIDCounter]." in pedigree file", "\n";
 			    print STDERR "\nSupply '-".$parameterName."' if you want to run ".$associatedProgram, "\n\n";		   
 			    $uncorrectCaptureCounter++;
 			}
@@ -6252,6 +6123,26 @@ sub CheckUniqueIDNs {
 	}
     }
     return;
+}
+
+sub UpdateYAML {
+##Updates the config file to particular user/cluster for entries following specifications. Leaves other entries untouched.
+
+    my $orderParameterElement = $_[0]; #Parameter to update
+    my $clusterConstantPath = $_[1]; #Set the project specific path for this cluster
+    my $analysisConstantPath = $_[2]; #Set the project specific path for this cluster
+    my $analysisType =  $_[3]; #Sets the analysis run type e.g., "exomes", "genomes", "rapid"
+    my $familyID = $_[4]; #Sets the familyID
+    my $aligner = $_[5]; #Sets the aligner used
+    
+    if ($scriptParameter{$orderParameterElement}) {
+	
+	$scriptParameter{$orderParameterElement} =~ s/CLUSTERCONSTANTPATH!/$clusterConstantPath/gi; #Exchange CLUSTERCONSTANTPATH! for current cluster path
+	$scriptParameter{$orderParameterElement} =~ s/ANALYSISCONSTANTPATH!/$analysisConstantPath/gi; #Exchange ANALYSISCONSTANTPATH! for the current analysis path
+	$scriptParameter{$orderParameterElement} =~ s/ANALYSISTYPE!/$analysisType/gi; #Exchange ANALYSISTYPE! for the current analysis type
+	$scriptParameter{$orderParameterElement} =~ s/FDN!/$familyID/gi; #Exchange FND! for the current familyID
+	$scriptParameter{$orderParameterElement} =~ s/ALIGNER!/$aligner/gi; #Exchange ALIGNER! for the current aligner
+    }
 }
 
 ####
