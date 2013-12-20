@@ -1003,11 +1003,6 @@ if ($scriptParameter{'writeConfigFile'} ne 0) { #Write config file for family
     WriteYAML($scriptParameter{'writeConfigFile'}, \%scriptParameter); #Write used settings to configfile
 }
 
-if (defined($scriptParameter{'pedigreeFile'})) { #Write QC for only pedigree data used in analysis                                                        
-
-    WriteYAML($scriptParameter{'outDataDir'}."/qc_pedigree.yaml", \%sampleInfo);
-}
-
 ##Set chr prefix and chromosome names depending on reference used
 if ($scriptParameter{'humanGenomeReference'}=~/hg\d+/) { #Refseq - prefix and M
     @chromosomes = ("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17","chr18","chr19","chr20","chr21","chr22","chrX","chrY","chrM"); #Chr for filtering of bam file
@@ -1033,6 +1028,10 @@ WriteCMDMipLog();
 
 print STDOUT "\nScript parameters and info from ".$script." are saved in file: ".$mipLogName, "\n";
 
+if (defined($scriptParameter{'pedigreeFile'})) { #Write QC for only pedigree data used in analysis                                                        
+
+    WriteYAML($scriptParameter{'outDataDir'}."/qc_pedigree.yaml", \%sampleInfo);
+}
 
 ####Collect infiles
 
