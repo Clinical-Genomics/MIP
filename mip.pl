@@ -882,7 +882,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'pSCheck|pSampleCheck:n' => \$parameter{'pSampleCheck'}{'value'}, #QC for samples gender and relationship
 	   'pQCC|pQCCollect:n' => \$parameter{'pQCCollect'}{'value'}, #QCmetrics collect
 	   'QCCsampleinfo|QCCollectSampleInfoFile:s' => \$parameter{'QCCollectSampleInfoFile'}{'value'}, #SampleInfo yaml file produced by MIP
-	   'QCCregexp|QCCollectRegExpFile:s' => \$parameter{'-QCCollectRegExpFile'}{'value'}, #Regular expression yaml file
+	   'QCCregexp|QCCollectRegExpFile:s' => \$parameter{'QCCollectRegExpFile'}{'value'}, #Regular expression yaml file
     );
 
 if($help) {
@@ -900,7 +900,30 @@ if($version) {
 if ($parameter{'configFile'}{'value'} ne "nocmdinput") { #No input from cmd
 
     %scriptParameter = LoadYAML($parameter{'configFile'}{'value'}); #Load parameters from configfile
+    foreach my $orderParameterElement (@orderParameters) { #Loop through all parameters and update info   
+
+	UpdateYAML($orderParameterElement, $scriptParameter{'clusterConstantPath'}, $scriptParameter{'analysisConstantPath'}, $scriptParameter{'analysisType'},$parameter{'familyID'}{'value'} );
+    }
 }
+
+sub UpdateYAML {
+##Updates the config file to particular user/cluster for entries following specifications. Leaves other entries untouched.
+
+    my $orderParameterElement = $_[0]; #Parameter to update
+    my $clusterConstantPath = $_[1]; #Set the project specific path for this cluster
+    my $analysisConstantPath = $_[2]; #Set the project specific path for this cluster
+    my $analysisType =  $_[3]; #Sets the analysis run type e.g., "exomes", "genomes", "rapid"
+    my $familyID = $_[4]; #Sets the familyID
+    
+    if ($scriptParameter{$orderParameterElement}) {
+	
+	$scriptParameter{$orderParameterElement} =~ s/CLUSTERCONSTANTPATH!/$clusterConstantPath/gi; #Exchange CLUSTERCONSTANTPATH! for current cluster path
+	$scriptParameter{$orderParameterElement} =~ s/ANALYSISCONSTANTPATH!/$analysisConstantPath/gi; #Exchange ANALYSISCONSTANTPATH! for the current analysis path
+	$scriptParameter{$orderParameterElement} =~ s/ANALYSISTYPE!/$analysisType/gi; #Exchange ANALYSISTYPE! for the current analysis type
+	$scriptParameter{$orderParameterElement} =~ s/FDN!/$familyID/gi; #Exchange FND! for the current familyID
+    }
+}
+
 if ($parameter{'annovarSupportedTableNames'}{'value'} eq 1) {
     print STDOUT "\nThese Annovar databases are supported by MIP:\n";
     foreach my $annovarSupportedTableName (@annovarSupportedTableNames) {
@@ -974,10 +997,15 @@ CheckUniqueIDNs();
 ##inFileDirs
 
 if (scalar(@inFilesDirs) == 0) { #No input from cmd
-    @inFilesDirs = ("nocmdinput");
+    for (my $indirectoryCount=0;$indirectoryCount<scalar(@sampleIDs);$indirectoryCount++) {
+	push(@inFilesDirs, $scriptParameter{'clusterConstantPath'}."/".$scriptParameter{'analysisType'}."/".$sampleIDs[$indirectoryCount]."/fastq");
+    }
 }
-@inFilesDirs = join(',', @inFilesDirs); #If user supplied -inFilesDirs directory 1 -inFilesDirs directory 2 etc
-push(@orderParameters, "inFilesDirs"); #Add to enable later evaluation of parameters in proper order & write to master file
+else {
+    @inFilesDirs = join(',', @inFilesDirs); #If user supplied -inFilesDirs directory 1 -inFilesDirs directory 2 etc
+}
+push(@orderParameters, "inFilesDirs"); #Add to enable later evaluation of parameters in proper order & write to master file			
+$scriptParameter{'inFilesDirs'} = join(',',@inFilesDirs); #Add to enable recreation of cmd line later
 AddToScriptParameter("inFilesDirs", @inFilesDirs, "path", "nodefault", "yes", "MIP", "directory"); #inFileDirs is dependent on analysisType for environmentUppmax option, hence 6th arg.
 
 
@@ -988,7 +1016,7 @@ if ( ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) || (scalar(@picardTools
     if (scalar(@picardToolsMergeSamFilesPrevious) == 0) {
 	@picardToolsMergeSamFilesPrevious = ("nocmdinput"); 
     }
-    @picardToolsMergeSamFilesPrevious = join(',', @picardToolsMergeSamFilesPrevious); #If user supplied -inFilesDirs directory 1 -inFilesDirs directory 2 etc
+    @picardToolsMergeSamFilesPrevious = join(',', @picardToolsMergeSamFilesPrevious); #If user supplied previously aligned BAM files
     push(@orderParameters, "picardToolsMergeSamFilesPrevious"); #Add to enable later evaluation of parameters in proper order & write to master file
     AddToScriptParameter("picardToolsMergeSamFilesPrevious", @picardToolsMergeSamFilesPrevious, "path", "nodefault", "noenvironmentUppmaxDefault", "pPicardToolsMergeSamFiles", "file");
      
@@ -1020,7 +1048,7 @@ if ($scriptParameter{'pAnnovar'} > 0) {
     if (scalar(@annovarTableNames) == 0) {
 	@annovarTableNames = ("nocmdinput"); #No input from cmd 
     }
-    @annovarTableNames = join(',', @annovarTableNames); #If user supplied -inFilesDirs directory 1 -inFilesDirs directory 2 etc
+    @annovarTableNames = join(',', @annovarTableNames); #If user supplied annovar table names
     push(@orderParameters, "annovarTableNames"); #Add to enable later evaluation of parameters in proper order & write to master file
     AddToScriptParameter("annovarTableNames", @annovarTableNames, "program", "yes", "yes", "pAnnovar"); #"yes" added to enable addition of default table names in AddToScriptParameters
 }
@@ -1030,9 +1058,11 @@ if ($scriptParameter{'pRankVariants'} > 0) {
     if (scalar(@ImportantDbFileOutFile) == 0 ){
 	@ImportantDbFileOutFile = ("nocmdinput"); #No input from cmd
     }
-    @ImportantDbFileOutFile = join(',', @ImportantDbFileOutFile); #If user supplied -inFilesDirs directory 1 -inFilesDirs directory 2 etc
+    @ImportantDbFileOutFile = join(',', @ImportantDbFileOutFile); #If user supplied list of genes to be evaluated
     push(@orderParameters, "ImportantDbFileOutFile"); #Add to enable later evaluation of parameters in proper order & write to master file
+    UpdateYAML("ImportantDbFileOutFile", $scriptParameter{'clusterConstantPath'}, $scriptParameter{'analysisConstantPath'}, $scriptParameter{'analysisType'},$parameter{'familyID'}{'value'} );
     AddToScriptParameter("ImportantDbFileOutFile", @ImportantDbFileOutFile, "program", "yes", "yes", "pRankVariants"); 
+    
 }
 
 ##Set Target files
@@ -5261,13 +5291,13 @@ sub AddToScriptParameter {
 			else { #Default exists
 			    
 			    if ( ($parameterName eq "inFilesDirs") && ($scriptParameter{'pedigreeFile'} ne "nocmdinput") ) {
-			
-				pop(@inFilesDirs); #Remove added 0
-			
-				for (my $indirectoryCount=0;$indirectoryCount<scalar(@sampleIDs);$indirectoryCount++) {
-				    push(@inFilesDirs, "/proj/".$scriptParameter{'projectID'}."/private/".$scriptParameter{'analysisType'}."/".$sampleIDs[$indirectoryCount]."/fastq");
-				}
-				$scriptParameter{'inFilesDirs'} = join(',',@inFilesDirs); #Add to enable recreation of cmd line later
+				
+				#pop(@inFilesDirs); #Remove added 0
+				
+				#for (my $indirectoryCount=0;$indirectoryCount<scalar(@sampleIDs);$indirectoryCount++) {
+				#   push(@inFilesDirs, "/proj/".$scriptParameter{'projectID'}."/private/".$scriptParameter{'analysisType'}."/".$sampleIDs[$indirectoryCount]."/fastq");
+				#}
+				#$scriptParameter{'inFilesDirs'} = join(',',@inFilesDirs); #Add to enable recreation of cmd line later
 			    }		    
 			    else {
 				if ($parameterName eq "humanGenomeReference") {
@@ -5585,7 +5615,7 @@ sub SetTargetFiles {
 		    if (defined($scriptParameter{ $sampleIDs[$sampleIDCounter] }{$parameterName})) { #Input from config file - transfer to sampleInfo
 			$sampleInfo{$scriptParameter{'familyID'}}{$sampleIDs[$sampleIDCounter]}{$parameterName} = $scriptParameter{ $sampleIDs[$sampleIDCounter] }{$parameterName};
 		    }
-		    elsif ($scriptParameter{'environmentUppmax'} == 1) {
+		    elsif ($scriptParameter{'pedigreeFile'} ne "nocmdinput") {
 			
 			if (defined($sampleInfo{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDCounter]}{$parameterName})) { #Capture kit check
 			    $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{$parameterName} =~ s/GenomeReferenceSource/$humanGenomeReferenceSource/; #Replace with Refseq genome or Ensembl genome
@@ -5595,7 +5625,7 @@ sub SetTargetFiles {
 			}
 			else {
 			
-			    print STDERR "\nCould not find a target file entry for sample: ".$sampleIDs[$sampleIDCounter], "\n";
+			    print STDERR "\nCould not find a target file entry for sample: ".$sampleIDs[$sampleIDCounter]."in pedigree file", "\n";
 			    print STDERR "\nSupply '-".$parameterName."' if you want to run ".$associatedProgram, "\n\n";		   
 			    $uncorrectCaptureCounter++;
 			}
