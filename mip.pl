@@ -2759,7 +2759,7 @@ sub GATKHaploTypeCaller {
     
     print GATK_HAPCAL "#! /bin/bash -l", "\n";
     print GATK_HAPCAL "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
-    print GATK_HAPCAL "#SBATCH -p node -n ".$scriptParameter{'maximumCores'}, "\n";
+    print GATK_HAPCAL "#SBATCH -n ".$scriptParameter{'maximumCores'}, "\n";
     print GATK_HAPCAL "#SBATCH -C thin", "\n";	
     print GATK_HAPCAL "#SBATCH -t 50:00:00", "\n";
     
@@ -6210,7 +6210,7 @@ sub PerChrGATKHaploTypeCaller {
     
     print GATK_HAPCAL "#! /bin/bash -l", "\n";
     print GATK_HAPCAL "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
-    print GATK_HAPCAL "#SBATCH -p node -n ".$scriptParameter{'maximumCores'}, "\n";
+    print GATK_HAPCAL "#SBATCH -n ".$scriptParameter{'maximumCores'}, "\n";
     print GATK_HAPCAL "#SBATCH -C thin", "\n";	
     print GATK_HAPCAL "#SBATCH -t 50:00:00", "\n";
     
