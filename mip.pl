@@ -5774,7 +5774,6 @@ sub ProgramPreRequisites {
     print $fileHandle "#! /bin/bash -l", "\n";
     print $fileHandle "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
     print $fileHandle "#SBATCH -n ".$nrofCores, "\n";
-    print $fileHandle "#SBATCH -C thin", "\n";	
     print $fileHandle "#SBATCH -t ".$processTime.":00:00", "\n";
     print $fileHandle "#SBATCH -J ".$programName."_".$directoryID."_".$callType, "\n";
     
