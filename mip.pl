@@ -436,9 +436,9 @@ DefineParameters("outScriptDir", "path", "nodefault", "MIP", 0);
 
 DefineParameters("writeConfigFile", "path", 0, "MIP", 0);
 
-DefineParameters("sampleInfoFile", "path", "NotsetYet", "MIP", "file");
-
 DefineParameters("pedigreeFile", "path", "nodefault", "MIP", "file");
+
+DefineParameters("sampleInfoFile", "path", "NotsetYet", "MIP", "file");
 
 DefineParameters("inScriptDir", "path", "nodefault", "MIP", "directory");
 
@@ -878,8 +878,6 @@ if ($parameter{'configFile'}{'value'} ne "nocmdinput") { #No input from cmd
     }
 }
 
-
-
 if ($parameter{'annovarSupportedTableNames'}{'value'} eq 1) {
     print STDOUT "\nThese Annovar databases are supported by MIP:\n";
     foreach my $annovarSupportedTableName (@annovarSupportedTableNames) {
@@ -904,6 +902,13 @@ foreach my $orderParameterElement (@orderParameters) { #Populate scriptParameter
 	
 	$parameter{'ImportantDbMasterFile'}{'default'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}.".intersectCollect_selectVariants_db_master.txt";
 	
+    }
+    if ( $orderParameterElement eq "pedigreeFile") { #Write QC for only pedigree data used in analysis                                                        
+	
+	if (defined($scriptParameter{'pedigreeFile'})) {
+	    `mkdir -p $scriptParameter{'outDataDir'}/$scriptParameter{'familyID'};`;
+	    WriteYAML($scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/qc_pedigree.yaml", \%sampleInfo);
+	}
     }
 }
 
@@ -1027,11 +1032,6 @@ print MIPLOG "\n".$script." "; #Adds script name to recontruct command line
 WriteCMDMipLog();
 
 print STDOUT "\nScript parameters and info from ".$script." are saved in file: ".$mipLogName, "\n";
-
-if (defined($scriptParameter{'pedigreeFile'})) { #Write QC for only pedigree data used in analysis                                                        
-
-    WriteYAML($scriptParameter{'outDataDir'}."/qc_pedigree.yaml", \%sampleInfo);
-}
 
 ####Collect infiles
 

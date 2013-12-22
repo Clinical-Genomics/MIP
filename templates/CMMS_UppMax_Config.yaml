@@ -3,7 +3,6 @@ clusterConstantPath: /proj/b2010080/private
 analysisConstantPath: analysis/nobackup
 analysisType: exomes
 outScriptDir: CLUSTERCONSTANTPATH!/ANALYSISTYPE!_scripts
-inFilesDirs: CLUSTERCONSTANTPATH!/ANALYSISCONSTANTPATH!/ANALYSISTYPE/IDN!/fastq
 GATKBaseReCalibrationSNPKnownSet: dbsnp_135.b37.vcf
 GATKDownSampleToCoverage: 1000
 GATKExomeReferenceSNPs: all-agilent_50mb-GRCh37-SNPS_pad100_interval_list.vcf
