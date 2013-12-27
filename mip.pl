@@ -4333,7 +4333,6 @@ sub MosaikAlign {
 	    
 	    $bwParameter = 29;   
 	}
-	
 
 	my ($stdoutPath) = ProgramPreRequisites($sampleID, "MosaikAlign", $aligner, 0, *MOS_AL, $scriptParameter{'maximumCores'}, $time);
 	my ($volume,$directories,$file) = File::Spec->splitpath($stdoutPath); #Split to enable submission to SampleInfoQC later
@@ -4363,6 +4362,8 @@ sub MosaikAlign {
 	print MOS_AL "-j ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikJumpDbStub'}." "; #JumpDatabase
 	print MOS_AL "-p ".$scriptParameter{'maximumCores'}, "\n\n"; #Nr of cores
 	
+	print MOS_AL "rm -rf /scratch/mosaik_tmp", "\n\n"; #Cleaning up temp directory
+
 	close(MOS_AL);
 
 	if ( ($scriptParameter{'pMosaikAlign'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
@@ -4747,202 +4748,206 @@ sub FIDSubmitJob {
     my $jobID; #The jobID that is returned from submission
     
     if ($dependencies == -1) { #Initiate chain - No dependencies, lonely program "sapling"
-     
-     $jobIDsReturn = `sbatch $sbatchFileName`; #No jobs have been run: submit
-     ($jobID) = ($jobIDsReturn =~ /Submitted batch job (\d+)/); #Just submitted jobID
+	
+	$jobIDsReturn = `sbatch $sbatchFileName`; #No jobs have been run: submit
+	($jobID) = ($jobIDsReturn =~ /Submitted batch job (\d+)/); #Just submitted jobID
     }
     if ($dependencies == 0) { #Initiate chain - No dependencies, initiate Trunk (Main or other)
-     
-     $jobIDsReturn = `sbatch $sbatchFileName`; #No jobs have been run: submit
-     ($jobID) = ($jobIDsReturn =~ /Submitted batch job (\d+)/); #Just submitted jobID
-     push ( @{ $jobID{$familyIDChainKey}{$sampleIDChainKey} }, $jobID); #Add jobID to hash
+	
+	$jobIDsReturn = `sbatch $sbatchFileName`; #No jobs have been run: submit
+	($jobID) = ($jobIDsReturn =~ /Submitted batch job (\d+)/); #Just submitted jobID
+	push ( @{ $jobID{$familyIDChainKey}{$sampleIDChainKey} }, $jobID); #Add jobID to hash
     }
     else { #Dependent on earlier scripts and/or parallel. JobIDs that do not leave dependencies do not get pushed to jobID hash
-     
-     if ($sampleID) { #Check jobs within sampleID (exception if dependencies = 5) 
-         
-         if ($dependencies == 5) { #Add familyID_sampleID jobs to current sampleID chain
-          
-          PushToJobID($familyIDChainKey, $sampleIDChainKey, $sampleID, $path, "Merged");
-         }
-         if ( ($dependencies == 1) || ($dependencies == 2) ) { #not parallel jobs, but check if last job submission was parallel
-          
-          PushToJobID($familyIDChainKey, $sampleIDChainKey, $sampleID, $path, "Parallel");
-         }
-         if ($path eq "MAIN") {
-          
-          if ( ($dependencies == 4) || ($dependencies == 3) ) { #Parallel jobs
-              
-              $jobIDs = AddToJobID($familyIDChainKey, $sampleIDParallelChainKey); #Add to jobID string
-              
-              if ($jobID{$familyIDChainKey}{$sampleIDChainKey}) { #Check for previous single jobs - required to initiate broken chain with correct dependencies 
+	
+	if ($sampleID) { #Check jobs within sampleID (exception if dependencies = 5) 
+	    
+	    if ($dependencies == 5) { #Add familyID_sampleID jobs to current sampleID chain
+		
+		PushToJobID($familyIDChainKey, $sampleIDChainKey, $sampleID, $path, "Merged");
+	    }
+	    if ( ($dependencies == 1) || ($dependencies == 2) ) { #not parallel jobs, but check if last job submission was parallel
+		
+		PushToJobID($familyIDChainKey, $sampleIDChainKey, $sampleID, $path, "Parallel");
+	    }
+	    if ($path eq "MAIN") {
+		
+		if ( ($dependencies == 4) || ($dependencies == 3) ) { #Parallel jobs
+		    
+		    $jobIDs = AddToJobID($familyIDChainKey, $sampleIDParallelChainKey); #Add to jobID string
+		    
+		    if ($jobID{$familyIDChainKey}{$sampleIDChainKey}) { #Check for previous single jobs - required to initiate broken chain with correct dependencies 
                
-               $jobIDs .= AddToJobID($familyIDChainKey, $sampleIDChainKey); #Add to jobID string
-              }
-              
-          }
-          else { #Previous job was a single job
-              
-              $jobIDs = AddToJobID($familyIDChainKey, $sampleIDChainKey); #Add to jobID string
-          }
-         }
-         if ($path ne "MAIN") { #Check for any previous jobIDs within path current PATH. Branch.
-          
-          if ($jobID{$familyIDChainKey}{$sampleIDChainKey}) { #second or later in branch chain
-              
-              $jobIDs = AddToJobID($familyIDChainKey, $sampleIDChainKey);
-          }
-          elsif ($jobID{$familyID."_MAIN"}{$sampleID."_MAIN"}) { #Inherit from potential MAIN. Trunk
-              
-              $jobIDs = AddToJobID($familyID."_MAIN", $sampleID."_MAIN");
-          }
-         }     
-         if ($jobIDs) { #Previous jobs for chainkey exists
-          $jobIDsReturn = `sbatch --dependency=afterok$jobIDs $sbatchFileName`; #Supply with dependency of previous jobs that this one is dependent on
-          ($jobID) = ($jobIDsReturn =~ /Submitted batch job (\d+)/); #Just submitted jobID
-         }
-         else { #No previous jobs
-          $jobIDsReturn = `sbatch $sbatchFileName`; #No jobs have been run: submit
-          ($jobID) = ($jobIDsReturn =~ /Submitted batch job (\d+)/); #Just submitted jobID
-         }
-         if ($dependencies == 1) { #Ordinary job push to array
-          
-          @{ $jobID{$familyIDChainKey}{$sampleIDChainKey} } = (); #Clear latest familyID/sampleID chain submission
-          
-          ##Clear all latest parallel jobs within chainkey
-          for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) {
-              
-              my $sampleIDParallelChainKey = $sampleID."_parallel_".$path.$infileCounter; #Create key
-              
-              if ($jobID{$familyIDChainKey}{$sampleIDParallelChainKey}) { #Parallel job exists
-               
-               @{ $jobID{$familyIDChainKey}{$sampleIDParallelChainKey} } = (); #Clear latest familyID/sampleID chain submission
+			$jobIDs .= AddToJobID($familyIDChainKey, $sampleIDChainKey); #Add to jobID string
+		    }
+		    
+		}
+		else { #Previous job was a single job
+		    
+		    $jobIDs = AddToJobID($familyIDChainKey, $sampleIDChainKey); #Add to jobID string
+		}
+	    }
+	    if ($path ne "MAIN") { #Check for any previous jobIDs within path current PATH. Branch.
+		
+		if ($jobID{$familyIDChainKey}{$sampleIDChainKey}) { #second or later in branch chain
+		    
+		    $jobIDs = AddToJobID($familyIDChainKey, $sampleIDChainKey);
+		}
+		elsif ($jobID{$familyID."_MAIN"}{$sampleID."_MAIN"}) { #Inherit from potential MAIN. Trunk
+		    
+		    $jobIDs = AddToJobID($familyID."_MAIN", $sampleID."_MAIN");
+		}
+	    }     
+	    if ($jobIDs) { #Previous jobs for chainkey exists
+		$jobIDsReturn = `sbatch --dependency=afterok$jobIDs $sbatchFileName`; #Supply with dependency of previous jobs that this one is dependent on
+		($jobID) = ($jobIDsReturn =~ /Submitted batch job (\d+)/); #Just submitted jobID
+	    }
+	    else { #No previous jobs
+		$jobIDsReturn = `sbatch $sbatchFileName`; #No jobs have been run: submit
+		($jobID) = ($jobIDsReturn =~ /Submitted batch job (\d+)/); #Just submitted jobID
+	    }
+	    if ($dependencies == 1) { #Ordinary job push to array
+		
+		@{ $jobID{$familyIDChainKey}{$sampleIDChainKey} } = (); #Clear latest familyID/sampleID chain submission
+		
+		##Clear all latest parallel jobs within chainkey
+		for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) {
+		    
+		    my $sampleIDParallelChainKey = $sampleID."_parallel_".$path.$infileCounter; #Create key
+		    
+		    if ($jobID{$familyIDChainKey}{$sampleIDParallelChainKey}) { #Parallel job exists
+			
+			@{ $jobID{$familyIDChainKey}{$sampleIDParallelChainKey} } = (); #Clear latest familyID/sampleID chain submission
                     }
-          }
-          
-          push ( @{ $jobID{$familyIDChainKey}{$sampleIDChainKey} }, $jobID); #Add jobID to hash{$sampleID}[]
-         }
-         if ( ($dependencies == 3) || ($dependencies == 4) ) { #Parallel job wait to push to array until all parallel jobs are finished within step
-          
-          push ( @{ $jobID{$familyIDChainKey}{$sampleIDParallelChainKey} }, $jobID); #Add jobID to hash
-         }
-         if ($dependencies == 5) { #Job dependent on both familyID and sampleID push to array
-          
-          @{ $jobID{$familyIDChainKey}{$familyIDChainKey."_".$sampleIDChainKey} } = (); #Clear latest familyID_sampleID chainkey
-	  @{ $jobID{$familyIDChainKey}{$sampleIDChainKey} } = (); #Clear latest sampleID chainkey
-          push ( @{ $jobID{$familyIDChainKey}{$familyIDChainKey."_".$sampleIDChainKey} }, $jobID); #Add jobID to hash
-         }
-     }
-     else { #AFTER merging to familyID
-         
-         if ($dependencies == 5) { ##Add familyID_sampleID jobs to current familyID chain
-          
-          for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #Check jobs for sampleID          
-              
-              my $sampleIDChainKey = $sampleIDs[$sampleIDCounter]."_".$path; #Current chain
-              PushToJobID($familyIDChainKey, $sampleIDChainKey, $sampleID, $path, "Family_Merged");
-          }
-         }
-         if ( ($dependencies == 1) || ($dependencies == 2) ) { #not parallel jobs, but check if last job submission was parallel
-          
-          if ($jobID{$familyIDChainKey}{$familyIDParallelChainKey}) { #Parallel job exists
-              
-              for (my $jobCounter=0;$jobCounter<scalar( @{ $jobID{$familyIDChainKey}{$familyIDParallelChainKey} });$jobCounter++) {
-               
-               push ( @{ $jobID{$familyIDChainKey}{$familyIDChainKey} }, $jobID{$familyIDChainKey}{$familyIDParallelChainKey}[$jobCounter]); #Add jobID to hash{$} 
-              }
-          }
-         }
-         if ( ($path eq "MAIN") && ($jobID{$familyIDChainKey}{$familyIDChainKey}) ) { #Check for any previous jobIDs within path MAIN. Test for previous must be done to allow initiating from broken chain. Trunk and not first in chain
-          if ( ($dependencies == 4) || ($dependencies == 3) ) { #Parallel jobs
-              
-              $jobIDs = AddToJobID($familyIDChainKey, $familyIDParallelChainKey); #Add to jobID string
-          }
-          else { #Previous job was a single job 
-              
-              $jobIDs = AddToJobID($familyIDChainKey, $familyIDChainKey); #Add to jobID string
-          }
-         }
-         elsif ($path eq "MAIN") { #First familyID MAIN chain 
-          
+		}
+		
+		push ( @{ $jobID{$familyIDChainKey}{$sampleIDChainKey} }, $jobID); #Add jobID to hash{$sampleID}[]
+	    }
+	    if ( ($dependencies == 3) || ($dependencies == 4) ) { #Parallel job wait to push to array until all parallel jobs are finished within step
+		
+		push ( @{ $jobID{$familyIDChainKey}{$sampleIDParallelChainKey} }, $jobID); #Add jobID to hash
+	    }
+	    if ($dependencies == 5) { #Job dependent on both familyID and sampleID push to array
+		
+		@{ $jobID{$familyIDChainKey}{$familyIDChainKey."_".$sampleIDChainKey} } = (); #Clear latest familyID_sampleID chainkey
+		@{ $jobID{$familyIDChainKey}{$sampleIDChainKey} } = (); #Clear latest sampleID chainkey
+		push ( @{ $jobID{$familyIDChainKey}{$familyIDChainKey."_".$sampleIDChainKey} }, $jobID); #Add jobID to hash
+	    }
+	}
+	else { #AFTER merging to familyID
+	    
+	    if ($dependencies == 5) { ##Add familyID_sampleID jobs to current familyID chain
+		
+		for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #Check jobs for sampleID          
+		    
+		    my $sampleIDChainKey = $sampleIDs[$sampleIDCounter]."_".$path; #Current chain
+		    PushToJobID($familyIDChainKey, $sampleIDChainKey, $sampleID, $path, "Family_Merged");
+		}
+	    }
+	    if ( ($dependencies == 1) || ($dependencies == 2) ) { #not parallel jobs, but check if last job submission was parallel
+		
+		if ($jobID{$familyIDChainKey}{$familyIDParallelChainKey}) { #Parallel job exists
+		    
+		    for (my $jobCounter=0;$jobCounter<scalar( @{ $jobID{$familyIDChainKey}{$familyIDParallelChainKey} });$jobCounter++) {
+			
+			push ( @{ $jobID{$familyIDChainKey}{$familyIDChainKey} }, $jobID{$familyIDChainKey}{$familyIDParallelChainKey}[$jobCounter]); #Add jobID to hash{$} 
+		    }
+		}
+	    }
+	    if ( ($path eq "MAIN") && ($jobID{$familyIDChainKey}{$familyIDChainKey}) ) { #Check for any previous jobIDs within path MAIN. Test for previous must be done to allow initiating from broken chain. Trunk and not first in chain
+		if ( ($dependencies == 4) || ($dependencies == 3) ) { #Parallel jobs
+		    
+		    $jobIDs = AddToJobID($familyIDChainKey, $familyIDParallelChainKey); #Add to jobID string
+		}
+		else { #Previous job was a single job 
+		    
+		    $jobIDs = AddToJobID($familyIDChainKey, $familyIDChainKey); #Add to jobID string
+		}
+	    }
+	    elsif ($path eq "MAIN") { #First familyID MAIN chain 
+		
           ##Add all previous jobId(s) from sampleId chainkey(s)
-          for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {           
-              
-              my $sampleIDChainKey = $sampleIDs[$sampleIDCounter]."_".$path;
-              
-              if ($jobID{$familyIDChainKey}{$sampleIDChainKey}) {
-               
-               $jobIDs .= AddToJobID($familyIDChainKey, $sampleIDChainKey); #Add to jobID string, while keeping previous additions
-               
-              }
-              for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleIDs[$sampleIDCounter]} });$infileCounter++) {
-               
-               my $sampleIDParallelChainKey = $sampleIDs[$sampleIDCounter]."_parallel_".$path.$infileCounter; #Create key
-               
-               if ($jobID{$familyIDChainKey}{$sampleIDParallelChainKey}) { #Parallel job exists
-                   
-                   $jobIDs .= AddToJobID($familyIDChainKey, $sampleIDParallelChainKey); #Add to jobID string, while keeping previous additions
-                   
-               }
-              }
-          }
-         }
-         if ($path ne "MAIN" ) { #Check for any previous jobIDs within path current PATH. Branch
-          
-          if ($jobID{$familyIDChainKey}{$familyIDChainKey}) { #second or later in branch chain
-              
-              $jobIDs = AddToJobID($familyIDChainKey, $familyIDChainKey); #Family chain
-          }
-          elsif ($jobID{$familyID."_MAIN"}{$familyID."_MAIN"}) { #Inherit from potential MAIN. Trunk
-              
-              $jobIDs = AddToJobID($familyID."_MAIN", $familyID."_MAIN");
-          }
-          else { #First job in new path and first familyID MAIN chain 
-              
-              for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {           
-               
-               my $familyIDChainKey = $familyID."_MAIN";
-               my $sampleIDChainKey = $sampleIDs[$sampleIDCounter]."_MAIN";
-               
-               if ($jobID{$familyIDChainKey}{$sampleIDChainKey}) {
-                   
-                   $jobIDs .= AddToJobID($familyIDChainKey, $sampleIDChainKey); 
-               }
-              }
-          }
-         }
-         if ($jobIDs) {
-          $jobIDsReturn = `sbatch --dependency=afterok$jobIDs $sbatchFileName`; #Supply with dependency of previous jobs that this one is dependent on
-          ($jobID) = ($jobIDsReturn =~ /Submitted batch job (\d+)/);
-         }
-         else {
-          $jobIDsReturn = `sbatch $sbatchFileName`; #No jobs have been run: submit
-          ($jobID) = ($jobIDsReturn =~ /Submitted batch job (\d+)/);
-         }
-         if ($dependencies == 1) { #Ordinary job push to array
-          
-          @{ $jobID{$familyIDChainKey}{$familyIDChainKey} } = (); #Clear latest familyID/sampleID chain submission
-          @{ $jobID{$familyIDChainKey}{$familyIDParallelChainKey} } = (); #Clear latest familyID/sampleID chain submission
-          push ( @{ $jobID{$familyIDChainKey}{$familyIDChainKey} }, $jobID); #Add jobID to hash{$sampleID}[]
-         }
-         if ( ($dependencies == 3) || ($dependencies == 4) ) { #Parallel job wait to push to array until all parallel jobs are finished within step
-          
-          push ( @{ $jobID{$familyIDChainKey}{$familyIDParallelChainKey} }, $jobID); #Add jobID to hash{$sampleID_parallel}[].
-         }    
-         if ($dependencies == 5) { #Job dependent on both familyID and sampleID push to array
-          
-          for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #Check jobs for sampleID          
-              
-              my $sampleIDChainKey = $sampleIDs[$sampleIDCounter]."_".$path; #Current chain
-              @{ $jobID{$familyIDChainKey}{$familyIDChainKey."_".$sampleIDChainKey} } = ();
-	      @{ $jobID{$familyIDChainKey}{$familyIDChainKey} } = (); #Clear latest sampleID chainkey
-              push ( @{ $jobID{$familyIDChainKey}{$familyIDChainKey."_".$sampleIDChainKey} }, $jobID);   
-          }
-         }
-     }
+		for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {           
+		    
+		    my $sampleIDChainKey = $sampleIDs[$sampleIDCounter]."_".$path;
+		    
+		    if ($jobID{$familyIDChainKey}{$sampleIDChainKey}) {
+			
+			$jobIDs .= AddToJobID($familyIDChainKey, $sampleIDChainKey); #Add to jobID string, while keeping previous additions
+			
+		    }
+		    for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleIDs[$sampleIDCounter]} });$infileCounter++) {
+			
+			my $sampleIDParallelChainKey = $sampleIDs[$sampleIDCounter]."_parallel_".$path.$infileCounter; #Create key
+			
+			if ($jobID{$familyIDChainKey}{$sampleIDParallelChainKey}) { #Parallel job exists
+			    
+			    $jobIDs .= AddToJobID($familyIDChainKey, $sampleIDParallelChainKey); #Add to jobID string, while keeping previous additions
+			    
+			}
+		    }
+		}
+	    }
+	    if ($path ne "MAIN" ) { #Check for any previous jobIDs within path current PATH. Branch
+		
+		if ($jobID{$familyIDChainKey}{$familyIDChainKey}) { #second or later in branch chain
+		    
+		    $jobIDs = AddToJobID($familyIDChainKey, $familyIDChainKey); #Family chain
+		}
+		elsif ($jobID{$familyID."_MAIN"}{$familyID."_MAIN"}) { #Inherit from potential MAIN. Trunk
+		    
+		    $jobIDs = AddToJobID($familyID."_MAIN", $familyID."_MAIN");
+		}
+		else { #First job in new path and first familyID MAIN chain 
+		    
+		    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {           
+			
+			my $familyIDChainKey = $familyID."_MAIN";
+			my $sampleIDChainKey = $sampleIDs[$sampleIDCounter]."_MAIN";
+			
+			if ($jobID{$familyIDChainKey}{$sampleIDChainKey}) {
+			    
+			    $jobIDs .= AddToJobID($familyIDChainKey, $sampleIDChainKey); 
+			}
+		    }
+		}
+	    }
+	    if ($jobIDs) {
+		$jobIDsReturn = `sbatch --dependency=afterok$jobIDs $sbatchFileName`; #Supply with dependency of previous jobs that this one is dependent on
+		($jobID) = ($jobIDsReturn =~ /Submitted batch job (\d+)/);
+	    }
+	    else {
+		$jobIDsReturn = `sbatch $sbatchFileName`; #No jobs have been run: submit
+		($jobID) = ($jobIDsReturn =~ /Submitted batch job (\d+)/);
+	    }
+	    if ($dependencies == 1) { #Ordinary job push to array
+		
+		@{ $jobID{$familyIDChainKey}{$familyIDChainKey} } = (); #Clear latest familyID/sampleID chain submission
+		@{ $jobID{$familyIDChainKey}{$familyIDParallelChainKey} } = (); #Clear latest familyID/sampleID chain submission
+		push ( @{ $jobID{$familyIDChainKey}{$familyIDChainKey} }, $jobID); #Add jobID to hash{$sampleID}[]
+	    }
+	    if ( ($dependencies == 3) || ($dependencies == 4) ) { #Parallel job wait to push to array until all parallel jobs are finished within step
+		
+		push ( @{ $jobID{$familyIDChainKey}{$familyIDParallelChainKey} }, $jobID); #Add jobID to hash{$sampleID_parallel}[].
+	    }    
+	    if ($dependencies == 5) { #Job dependent on both familyID and sampleID push to array
+		
+		for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #Check jobs for sampleID          
+		    
+		    my $sampleIDChainKey = $sampleIDs[$sampleIDCounter]."_".$path; #Current chain
+		    @{ $jobID{$familyIDChainKey}{$familyIDChainKey."_".$sampleIDChainKey} } = ();
+		    @{ $jobID{$familyIDChainKey}{$familyIDChainKey} } = (); #Clear latest sampleID chainkey
+		    push ( @{ $jobID{$familyIDChainKey}{$familyIDChainKey."_".$sampleIDChainKey} }, $jobID);   
+		}
+	    }
+	}
+    }
+    if ($jobIDsReturn !~/\d+/) { #Catch errors since, propper sbatch submission should only return numbers
+	print STDERR $jobIDsReturn."\n";
+	print STDERR "\nMIP: Aborting run.\n\n";
+	exit;
     }
     print STDOUT "Sbatch script submitted, job id: $jobID\n"; print MIPLOG "Sbatch script submitted, job id: $jobID\n";
-    print STDOUT "To check status of job, please run \'jobinfo -j $jobID\'\n"; print MIPLOG "To check status of job, please run \'jobinfo -j $jobID\'\n";
     print STDOUT "To check status of job, please run \'squeue -j $jobID\'\n";print MIPLOG "To check status of job, please run \'squeue -j $jobID\'\n";
     print STDOUT "To cancel job, please run \'scancel $jobID\'\n";print MIPLOG "To cancel job, please run \'scancel $jobID\'\n";
     return;
