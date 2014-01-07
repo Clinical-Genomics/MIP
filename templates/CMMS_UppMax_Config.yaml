@@ -44,11 +44,7 @@ inScriptDir: CLUSTERCONSTANTPATH!/mip_scripts_master
 maximumCores: 16
 mergeAnnotatedVariantsDbFile: CLUSTERCONSTANTPATH!/ANALYSISCONSTANTPATH!/ANALYSISTYPE!/FDN!/FDN!_intersectCollect_db_master.txt
 mergeAnnotatedVariantsTemplateFile: CMMS_intersectCollect_db_master_template.txt
-mosaikAlignNeuralNetworkPeFile: 2.1.78.pe.ann
-mosaikAlignNeuralNetworkSeFile: 2.1.78.se.ann
-mosaikAlignReference: Homo_sapiens.GRCh37.70_nochr.dat
 mosaikBuildMedianFragLength: 375
-mosaikJumpDbStub: Homo_sapiens.GRCh37.70_nochr_jdb_15
 outDataDir: CLUSTERCONSTANTPATH!/ANALYSISCONSTANTPATH!/ANALYSISTYPE!
 pAddDepth: 1
 pAnnovar: 1
