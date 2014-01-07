@@ -869,7 +869,7 @@ if($help) {
 
 if($version) {
 
-    print STDOUT "\nMip.pl v1.4.5\n\n";
+    print STDOUT "\nMip.pl v1.4.6\n\n";
     exit;
 }
 
