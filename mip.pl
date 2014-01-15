@@ -266,7 +266,7 @@ use vars qw($USAGE);
 BEGIN {
     $USAGE =
 	qq{
-mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [refdir] -p [project ID] -s [sample ID...n] -em [e-mail] -ods [outdirscripts] -odf [outDataDir] -f [familyID] -p[program]
+mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [project ID] -s [sample ID...n] -em [e-mail] -osd [outdirscripts] -odd [outDataDir] -f [familyID] -p[program]
                ####MIP
 	       -ifd/--inFilesDirs Infile directory(s), comma sep (Mandatory: Supply whole path,)
                -isd/--inScriptDir The pipeline custom script in directory (Mandatory: Supply whole path)
@@ -5676,7 +5676,8 @@ sub AddToScriptParameter {
 			&SetAutoBuildAndScriptParameterPerSample(\@sampleIDs, \@GATKTargetPaddedBedIntervalLists, \$parameterName);
 		    }
 		    elsif ($parameterName eq "pedigreeFile") { #Must come after arrays that can be populated from pedigree file to not overwrite user cmd input 
-			
+
+			$scriptParameter{$parameterName} = $parameterValue;
 			&ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'});
 		    }
 		    else {
@@ -5731,8 +5732,8 @@ sub AddToScriptParameter {
 			
 			for (my $sampleIDsCounter=0;$sampleIDsCounter<scalar(@sampleIDs);$sampleIDsCounter++) { #All sampleIDs
 			    
-			    &CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDsCounter]}{$parameterName}), \$parameterName, "f", \$sampleIDs[$sampleIDsCounter]);
 			    
+			    &CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDsCounter]}{$parameterName}), \$parameterName, "f", \$sampleIDs[$sampleIDsCounter]);			    
 			
 			    if ($parameterName eq "exomeTargetBedInfileLists") {
 				
@@ -6259,7 +6260,7 @@ sub GATKPedigreeFlag {
 		    if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) { #Broadcast
 			print STDERR "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n";print MIPLOG "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n";
 		    }
-		    print "\n";
+		    print STDERR "\n";
 		}
 	    }
 	    else {
@@ -6268,7 +6269,7 @@ sub GATKPedigreeFlag {
 		if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) { #Broadcast
 		    print STDERR "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false";print MIPLOG "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n";
 		}
-		print "\n";
+		print STDERR "\n";
 	    }
 	}
 	else {
@@ -6335,7 +6336,7 @@ sub LoadYAML {
         }
     close(YAML);
     
-    print "Read Yaml file: ". $yamlFile, "\n";
+    print STDOUT "Read Yaml file: ". $yamlFile, "\n";
     return %yamlHash;
 }
 

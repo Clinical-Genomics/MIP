@@ -61,4 +61,4 @@ ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_tfbsConsSites	\t	2,3,4,6
 ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_wgRna	\t	2,3,4,6	2	exact	1	small
 ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_gerp++elem	\t	2,3,4,6	2	exact	1	small
 RD!/hgmd2012.1_striped.txt	\t	0,1,2,4	0	exact	6	small
-RD!/hbvd_130913_local_IEMs.vcf	\t	0,1,1,4	0	exact	7	small
+RD!/hbvd_local_IEMs.vcf	\t	0,1,1,4	0	exact	7	small
