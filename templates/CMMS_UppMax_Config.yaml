@@ -10,7 +10,6 @@ GATKHaploTypeCallerSNPKnownSet: dbsnp_135.b37.vcf
 GATKReAlignerINDELKnownSet1: 1000G_phase1.indels.hg19.vcf
 GATKReAlignerINDELKnownSet2: Mills_and_1000G_gold_standard.indels.hg19.sites.vcf
 GATKReadBackedPhasingPhaseQualityThresh: 20
-GATKTempDirectory: CLUSTERCONSTANTPATH!/ANALYSISCONSTANTPATH!/
 GATKVariantEvalDbSNP: dbsnp_132.hg19.excluding_sites_after_129_nochr.vcf
 GATKVariantEvalGold: Mills_and_1000G_gold_standard.indels.hg19.sites.vcf
 GATKVariantReCalibrationNumBadVariants: 3000
@@ -24,13 +23,12 @@ ImportantDbFileOutFile: 'CLUSTERCONSTANTPATH!/ANALYSISCONSTANTPATH!/ANALYSISTYPE
 ImportantDbMasterFile: CLUSTERCONSTANTPATH!/ANALYSISCONSTANTPATH!/ANALYSISTYPE!/FDN!/FDN!.intersectCollect_selectVariants_db_master.txt
 ImportantDbTemplate: select_dbCMMS_variants_db_master.txt
 MIP: 1
-PicardToolsMergeTempDirectory: CLUSTERCONSTANTPATH!/ANALYSISCONSTANTPATH!/
 QCCollectRegExpFile: qc_regexp.yaml
 QCCollectSampleInfoFile: CLUSTERCONSTANTPATH!/ANALYSISTYPE!/FDN!/FDN!_qc_sampleInfo.yaml
 aligner: mosaik
 annovarGenomeBuildVersion: hg19
 annovarMAFThreshold: 0
-annovarPath: CLUSTERCONSTANTPATH!/annovar
+annovarPath: CLUSTERCONSTANTPATH!/modules/annovar
 annovarSiftThreshold: 0
 annovarSupportedTableNames: 0
 annovarTableNames: 'refgene,mce46way,gerp++elem,segdup,gwascatalog,tfbs,mirna,snp137NonFlagged,1000g2012apr_all,hg19_esp6500si_all.txt,avsift,ljb_pp2,ljb_mt,ljb_lrt,ljb_gerp++,ljb_phylop'
@@ -38,11 +36,10 @@ chanjoBuildDb: CCDS.current.txt
 chanjoCalculateCutoff: 10
 dryRunAll: 0
 email: 0
-genomeAnalysisToolKitPath: CLUSTERCONSTANTPATH!/modules/GenomeAnalysisTK-2.7-2
-humanGenomeReference: Homo_sapiens.GRCh37.70_nochr.fasta
+genomeAnalysisToolKitPath: CLUSTERCONSTANTPATH!/modules/GenomeAnalysisTK-2.8-1
+humanGenomeReference: Homo_sapiens.GRCh37.70.fasta
 inScriptDir: CLUSTERCONSTANTPATH!/mip_scripts_master
 maximumCores: 16
-mergeAnnotatedVariantsDbFile: CLUSTERCONSTANTPATH!/ANALYSISCONSTANTPATH!/ANALYSISTYPE!/FDN!/FDN!_intersectCollect_db_master.txt
 mergeAnnotatedVariantsTemplateFile: CMMS_intersectCollect_db_master_template.txt
 mosaikBuildMedianFragLength: 375
 outDataDir: CLUSTERCONSTANTPATH!/ANALYSISCONSTANTPATH!/ANALYSISTYPE!
@@ -93,4 +90,3 @@ referencesDir: CLUSTERCONSTANTPATH!/mip_references
 sampleInfoFile: CLUSTERCONSTANTPATH!/ANALYSISTYPE!/FDN!/FDN!_qc_sampleInfo.yaml
 writeConfigFile: CLUSTERCONSTANTPATH!/ANALYSISTYPE!/FDN!/FDN!_config.yaml
 xCoverage: 30
-

@@ -191,7 +191,7 @@ sub ParseRegExpHashAndCollect {
 }
 
 sub AddToqcData {
-    ##Add to qcData hash to enable write to yaml format
+##Add to qcData hash to enable write to yaml format
     
     my $familyID = $_[0]; #From SampleInfo
     my $sampleID = $_[1]; #From SampleInfo 
@@ -216,11 +216,23 @@ sub AddToqcData {
 		for (my $regExpKeyCounter=0;$regExpKeyCounter<scalar(@{ $qcProgramData{$program}{$regExpKey} });$regExpKeyCounter++ ) {
 		    
 		    if ( ($familyID) && ($sampleID) && ($infile) ) {
+		
 			$qcData{$familyID}{$sampleID}{$infile}{$program}{$regExpKey}[$regExpKeyCounter] = $qcProgramData{$program}{$regExpKey}[$regExpKeyCounter];
 		    }
 		    elsif ($familyID) {
-			$qcData{$familyID}{'program'}{$program}{$regExpKey}[$regExpKeyCounter] = $qcProgramData{$program}{$regExpKey}[$regExpKeyCounter];
+
+			$qcData{$familyID}{'program'}{$program}{$regExpKey}[$regExpKeyCounter] = $qcProgramData{$program}{$regExpKey}[$regExpKeyCounter];			
 		    }
+		}
+		if ($program eq "QaCompute") {#Check gender for sampleID
+		    my $chrXCoverage = $qcData{$familyID}{$sampleID}{$infile}{$program}{$regExpKey}[0];
+		    my $chrYCoverage = $qcData{$familyID}{$sampleID}{$infile}{$program}{$regExpKey}[1];
+		    GenderCheck(\$familyID,\$sampleID,\$infile, \$chrXCoverage, \$chrYCoverage); #Check that assumed gender is supported by coverage on chrX and chrY
+		}
+		if (defined($qcData{$familyID}{'program'}{'RelationCheck'}{'Sample_RelationCheck'}) && defined ($qcData{$familyID}{'program'}{'pedigreeCheck'}{'Sample_order'}) ) {
+		    
+		    RelationCheck(\$familyID, \@{$qcData{$familyID}{'program'}{'RelationCheck'}{'Sample_RelationCheck'}}, \@{$qcData{$familyID}{'program'}{'pedigreeCheck'}{'Sample_order'}});
+		    delete($qcData{$familyID}{'program'}{'RelationCheck'}); #Not of any use anymore
 		}
 	    }
 	}
@@ -233,7 +245,8 @@ sub AddToqcData {
 		    if ($regExpKeyHeader !~/^header|header$/i) { #Detect if the regExp id for headers and not data. 
 			
 			for (my $qcHeadersCounter=0;$qcHeadersCounter<scalar( @{ $qcHeader{$program}{$regExpKey}{$regExpHeaderKey} } );$qcHeadersCounter++) { #For all collected headers
-                            if ( ($familyID) && ($sampleID) && ($infile)) {
+                            
+			    if ( ($familyID) && ($sampleID) && ($infile)) {
 				$qcData{$familyID}{$sampleID}{$infile}{$program}{$regExpHeaderKey}{$regExpKeyHeader}{ $qcHeader{$program}{$regExpKey}{$regExpHeaderKey}[$qcHeadersCounter] } = $qcProgramData{$program}{$regExpKey}{$regExpKeyHeader}[$qcHeadersCounter]; #Add to qcData using header element[X] --> data[X] to correctly position elements in qcData hash 
                             } 
                             elsif ($familyID) {
@@ -246,6 +259,122 @@ sub AddToqcData {
 	    }
 	}
     }
+}
+
+sub RelationCheck {
+##Uses the .mibs file produced by PLINK to test if family members are indeed related.
+
+    my $familyIDRef = $_[0]; #From SampleInfo
+    my $relationshipValuesRef = $_[1]; #All relationship estimations
+    my $sampleOrderRef = $_[2]; #The sample order so that correct estimation can be connected to the correct sampleIDs
+
+    my %family; #Stores family relations and pairwise comparisons family{$sampleID}{$sampleID}["column"] -> [pairwise]
+    my $sampleIDCounter = 0;
+    my $incorrectRelation=0;
+
+##Splice all relationship extimations from regExp into pairwise comparisons calculated for each sampleID
+    for (my $realtionshipCounter=0;$realtionshipCounter<scalar(@{$relationshipValuesRef});$realtionshipCounter++) {
+	
+	my @pairwiseComparisons = splice(@{$relationshipValuesRef},0,scalar(@{$sampleOrderRef})); #Splices array into each sampleIDs line
+	
+	for (my $column=0;$column<scalar(@{$sampleOrderRef});$column++) { #All columns in .mibs file
+	    
+	    push ( @{ $family{ @{$sampleOrderRef}[$sampleIDCounter] }{ @{$sampleOrderRef}[$column]} }, $pairwiseComparisons[$column]); #Store sampleID, family membersID (including self) and each pairwise comparison. Uses array for to accomodate sibling info.
+	}
+	$sampleIDCounter++;
+    }
+    my $fatherID; #fatherID for the family
+    my $motherID; #motherID for the family
+
+    for my $sampleID ( keys %family ) { #For all sampleIDs
+	#Currently only 1 father or Mother per pedigree is supported
+
+	if ($sampleInfoFile{$$familyIDRef}{$sampleID}{'Father'}[0] ne 0) { #Save fatherID if not 0
+	    $fatherID = $sampleInfoFile{$$familyIDRef}{$sampleID}{'Father'}[0];
+	}
+	if ($sampleInfoFile{$$familyIDRef}{$sampleID}{'Mother'}[0] ne 0) { #Save motherID if not 0
+	    $motherID = $sampleInfoFile{$$familyIDRef}{$sampleID}{'Mother'}[0];
+	}
+    }
+    
+    for my $sampleID ( keys %family ) { #For all sampleIDs
+
+	for my $members ( keys %{$family{$sampleID} } ) { #For every relation within family (mother/father/child)
+	    
+	    for (my $membersCount=0;$membersCount<scalar( @{$family{$sampleID}{$members} } );$membersCount++) { #@ Necessary for siblings
+		
+		if ($family{$sampleID}{$members}[$membersCount] == 1 ) { #Should only hit self
+
+		    if ( $sampleID eq  $members) {
+			#print "Self: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
+		    }
+		    else {
+			$incorrectRelation++;
+			$qcData{$$familyIDRef}{$sampleID}{'RelationCheck'} = "FAIL: Duplicated sample?;";
+			#print  "Incorrect should be self: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
+		    }
+		}
+		elsif ($family{$sampleID}{$members}[$membersCount] > 0.74 ) { #Should include parent to child and child to siblings unless inbreed parents
+
+		    if ( ( ($sampleID ne $fatherID) && ($sampleID ne $motherID) ) || ( ($members ne $fatherID) && ($members ne $motherID) ) ) { #Correct
+			#print "Parent-to-child or child-to-child: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
+		    }
+		    else {
+			$incorrectRelation++;
+			$qcData{$$familyIDRef}{$sampleID}{'RelationCheck'} = "FAIL: Parents related?;";
+			#print "Incorrect: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
+		    }
+		}
+		elsif ($family{$sampleID}{$members}[$membersCount] < 0.70 ) { #Parents unless inbreed
+
+		    if ( ($sampleID eq $fatherID) && ($members eq $motherID) ) {
+			#print "Parents: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
+		    }
+		    elsif ( ($sampleID eq $motherID) && ($members eq $fatherID) ) {
+			#print "Parents: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
+		    }
+		    else {
+			$incorrectRelation++;
+			$qcData{$$familyIDRef}{$sampleID}{'RelationCheck'} = "FAIL:".$sampleID." not related to ".$members.";";
+			#print "Incorrect: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
+		    }
+		}
+	    }
+	}	
+	if ($incorrectRelation == 0) {
+	    $qcData{$$familyIDRef}{$sampleID}{'RelationCheck'} = "PASS";  
+	}
+    }   
+    return;
+}
+
+sub GenderCheck {
+#Uses the coverage on chrX and chrY to check that the sample sequenced has the expected gender
+
+    my $familyIDRef = $_[0]; #From SampleInfo
+    my $sampleIDRef = $_[1]; #From SampleInfo 
+    my $infileRef = $_[2]; #From SampleInfo
+    my $chrXCoverageRef = $_[3];
+    my $chrYCoverageRef = $_[4];
+
+##Validation
+    #print "chrX xoverage: ".$$chrXCoverageRef, "\n";
+    #print "chrY xoverage: ".$$chrYCoverageRef, "\n";
+    #print "Gender: ".$sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'}[0]. "\n";
+    
+    if ( ($$chrXCoverageRef/$$chrYCoverageRef >= 10) && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'}[0] == 2) ) { #Female
+
+	$qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "PASS";
+    }
+    elsif ( ($$chrXCoverageRef/$$chrYCoverageRef < 10) && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'}[0] == 1) ) { #Male
+	
+	$qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "PASS";
+    }
+    else {
+
+	$qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "FAIL";
+    }
+    return;
 }
 
 sub WriteYAML {
@@ -358,6 +487,10 @@ sub RegExpToYAML {
     $regExp{'pedigreeCheck'}{'Sample_order'} = q?perl -nae 'if ($_=~/^#CHROM/) {chomp $_; my @line = split(/\t/,$_); for (my $sample=9;$sample<scalar(@line);$sample++) { print $line[$sample], "\t";}last;}' ?; #Collect sample order from vcf file used to create ".ped", ".map" and hence ".mibs".
     
     $regExp{'InbreedingFactor'}{'Sample_InbreedingFactor'}  = q?perl -nae 'my @inbreedingFactor; if ($. > 1) {my @temp = split(/\s/,$_);push(@inbreedingFactor,$temp[0].":".$temp[4]); print $inbreedingFactor[0], "\t"; }' ?;
+
+    $regExp{'SexCheck'}{'Sample_SexCheck'}  = q?perl -nae 'my @sexCheckFactor; if ($. > 1) {my @temp = split(/\s+/,$_);push(@sexCheckFactor,$temp[1].":".$temp[4]); print $sexCheckFactor[0], "\t"; }' ?;
+
+    $regExp{'RelationCheck'}{'Sample_RelationCheck'}  = q?perl -nae 'print $_;' ?; #Note will return whole file
 
     $regExp{'MarkDuplicates'}{'Header_info'}{'Header'} = q?perl -nae' if ($_ =~/^LIBRARY/ ) {print $_;last;}' ?; #Note return whole line (Header) 
     

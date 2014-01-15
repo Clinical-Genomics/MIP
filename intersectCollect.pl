@@ -829,6 +829,7 @@ sub ReadDbFilesNoChr {
 			    for (my $columns_to_extract=0;$columns_to_extract<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$columns_to_extract++) {
 				
 				my $columnId = $dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$columns_to_extract];
+				
 				$allVariants{ $temp[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{$columnId}=$temp[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$columns_to_extract] ];
 ##Code to collapse some entries and make serial additions of others. CMMS_External specific and not part of original programe. To enable commen previous line and remove comments from subsequent lines.
 				#if ($temp[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$columns_to_extract] ]) {
@@ -1431,7 +1432,7 @@ sub WriteAll {
     my $filename = $_[0];
 
     open (WAV, ">$filename") or die "Can't write to $filename: $!\n";
-print "Kalle", "\n";
+
     if (@metaData) { #Print metaData if supplied
 	for (my $metaDataCounter=0;$metaDataCounter<scalar(@metaData);$metaDataCounter++) {
 	    print WAV $metaData[$metaDataCounter]."\n";
