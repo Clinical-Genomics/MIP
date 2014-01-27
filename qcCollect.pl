@@ -115,7 +115,7 @@ sub SampleQC {
     for my $familyID ( keys %sampleInfoFile ) { #For every family id
 	
 	for my $sampleID ( keys %{ $sampleInfoFile{$familyID} } ) { #For every sample id
-	    
+
 	    if ($sampleInfoFile{$familyID}{$sampleID}{'program'}) { #Only examine programs
 		
 		for my $program ( keys %{ $sampleInfoFile{$familyID}{$sampleID}{'program'} } ) { #For every program  
