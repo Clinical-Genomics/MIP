@@ -22,12 +22,13 @@
 ##COLUMNNAME="Dbsnp_rs_nr"	TYPE="String"	VERSION="138"	DESCRIPTION="DbSNP reference SNP ID number"	SCOUTHEADER="DbSNP RS"
 ##COLUMNNAME="Esp6500"	TYPE="Float"	VERSION="6500"	DESCRIPTION="Frequency in the NHLBI Exome sequencing project (ESP) database. This is a database with exome data for thousands of individuals with heart, lung and blood disorders."	SCOUTHEADER="ESP"
 ##COLUMNNAME="HBVDB"	TYPE="Float"	VERSION="140114"	DESCRIPTION="Local variation database"	SCOUTHEADER="HBVDB"
-##COLUMNNAME="SIFT"	TYPE="Float"	DESCRIPTION="SIFT predicts whether an amino acid substitution affects protein function The closer to 0 the more effect on the protein"	SCOUTHEADER="SIFT"
-##COLUMNNAME="Poly_phen"	TYPE="Float"	DESCRIPTION="PolyPhen 2 predicts whether an amino acid substitution affects protein structure and function. The closer to 1 the more effect on the protein"	SCOUTHEADER="PolyPhen"
-##COLUMNNAME="Mutation_taster"	TYPE="Float"	DESCRIPTION="MutationTaster predicts whether an amino acid substitution affects protein function. The closer to 1 the more effect on the protein"	SCOUTHEADER="MutationTaster"
-##COLUMNNAME="GERP"	TYPE="Float"	DESCRIPTION="GERP identifies constrained elements in multiple alignments by quantifying substitution deficits"	SCOUTHEADER="GERP"
-##COLUMNNAME="LRT"	TYPE="Float"	DESCRIPTION="LRT Using a comparative genomics data set of 32 vertebrate species we show that a likelihood ratio test (LRT) can accurately identify a subset of deleterious mutations that disrupt highly conserved amino acids within protein-coding"	SCOUTHEADER="LRT"
-##COLUMNNAME="Phylo_p"	TYPE="Float"	DESCRIPTION="Conservation scoring by phyloP (phylogenetic p-values) from the PHAST package for multiple alignments of 45 vertebrate genomes to the human genome, plus alternate sets of scores for the primate species and the placental mammal species in the alignments"	SCOUTHEADER="PhyloP"
+##COLUMNNAME="SIFT"	TYPE="Float"	VERSION="ljb2_sift"	DESCRIPTION="SIFT predicts whether an amino acid substitution affects protein function The closer to 0 the more effect on the protein"	SCOUTHEADER="SIFT"
+##COLUMNNAME="Poly_phen HumanDiv"	TYPE="Float"	VERSION="ljb2_pp2hdiv"	DESCRIPTION="PolyPhen 2 predicts whether an amino acid substitution affects protein structure and function. The closer to 1 the more effect on the protein. Based on HumanDiv database for Mendelian phenotypes"	SCOUTHEADER="PolyPhen HumanDiv"
+##COLUMNNAME="Poly_phen HumanVar"	TYPE="Float"	VERSION="ljb2_pp2hvar"	DESCRIPTION="PolyPhen 2 predicts whether an amino acid substitution affects protein structure and function. The closer to 1 the more effect on the protein. Based on HumanVar database for complex phenotypes"	SCOUTHEADER="PolyPhen HumanVar"
+##COLUMNNAME="Mutation_taster"	TYPE="Float"	VERSION="ljb2_mt"	DESCRIPTION="MutationTaster predicts whether an amino acid substitution affects protein function. The closer to 1 the more effect on the protein"	SCOUTHEADER="MutationTaster"
+##COLUMNNAME="GERP"	TYPE="Float"	VERSION="ljb2_gerp"	DESCRIPTION="GERP identifies constrained elements in multiple alignments by quantifying substitution deficits"	SCOUTHEADER="GERP"
+##COLUMNNAME="LRT"	TYPE="Float"	VERSION="ljb2_lrt"	DESCRIPTION="LRT Using a comparative genomics data set of 32 vertebrate species we show that a likelihood ratio test (LRT) can accurately identify a subset of deleterious mutations that disrupt highly conserved amino acids within protein-coding"	SCOUTHEADER="LRT"
+##COLUMNNAME="Phylo_p"	TYPE="Float"	VERSION="ljb2_phylop"	DESCRIPTION="Conservation scoring by phyloP (phylogenetic p-values) from the PHAST package for multiple alignments of 45 vertebrate genomes to the human genome, plus alternate sets of scores for the primate species and the placental mammal species in the alignments"	SCOUTHEADER="PhyloP"
 ##COLUMNNAME="Transfac"	TYPE="String"	DESCRIPTION="Score from the Transfac (Transcription Factor Binding Sites) database"	SCOUTHEADER="Transfac"
 ##COLUMNNAME="SnoRNA_miRNA_annotations"	TYPE="String"	DESCRIPTION="Annotation for RNAs"	SCOUTHEADER="snoRNA & miRNA Annotations"
 ##COLUMNNAME="GT_call_filter"	TYPE="String"	DESCRIPTION="Genotype call quality filter"	SCOUTHEADER="GT Call Filter"
@@ -39,7 +40,7 @@
 ##COLUMNNAME="Clinical_db_genome_build"	TYPE="String"	DESCRIPTION="Genome version used in clinical Db"	SCOUTHEADER="Clinical db Genome Build"
 ##COLUMNNAME="Disease_gene_model"	TYPE="String"	DESCRIPTION="Known disease inheritance model"	SCOUTHEADER="Disease Gene Model"
 ##COLUMNNAME="Clinical_db_gene_annotation"	TYPE="String"	DESCRIPTION="Genes associated with a disease group e.g., IEM, EP"	SCOUTHEADER="Clinical db Gene Annotation"
-outinfo:Chromosome=>0_0,Variant_start=>0_1,Variant_stop=>0_2,Reference_allele=>0_3,Alternative_allele=>0_4,Ensemble_gene_id=>6_3,HGNC_symbol=>1_1,HGNC_approved_name=>6_5,HGNC_synonyms=>6_6,HGMD=>20_6,Gene_annotation=>1_0,Functional_annotation=>2_1,HGNC_transcript_info=>2_2,Phast_cons_elements=>3_1,GERP_elements=>19_1,Genomic_super_dups=>4_1,Pseudogene=>6_7,1000G=>5_1,Dbsnp129=>7_5,Dbsnp_freq=>8_5,Dbsnp_nonflagged=>9_0,Dbsnp_rs_nr=>9_1,Esp6500=>10_1,HBVDB=>21_7,SIFT=>11_1,Poly_phen=>12_1,Mutation_taster=>13_1,GERP=>14_1,LRT=>15_1,Phylo_p=>16_1,Transfac=>17_1,SnoRNA_miRNA_annotations=>18_1,GT_call_filter=>0_5,IDN!
+outinfo:Chromosome=>0_0,Variant_start=>0_1,Variant_stop=>0_2,Reference_allele=>0_3,Alternative_allele=>0_4,Ensemble_gene_id=>6_3,HGNC_symbol=>1_1,HGNC_approved_name=>6_5,HGNC_synonyms=>6_6,HGMD=>21_6,Gene_annotation=>1_0,Functional_annotation=>2_1,HGNC_transcript_info=>2_2,Phast_cons_elements=>3_1,GERP_elements=>20_1,Genomic_super_dups=>4_1,Pseudogene=>6_7,1000G=>5_1,Dbsnp129=>7_5,Dbsnp_freq=>8_5,Dbsnp_nonflagged=>9_0,Dbsnp_rs_nr=>9_1,Esp6500=>10_1,HBVDB=>22_7,SIFT=>11_1,Poly_phen_hdiv=>12_1,Poly_phen_hvar=>13_1,Mutation_taster=>14_1,GERP=>15_1,LRT=>16_1,Phylo_p=>17_1,Transfac=>18_1,SnoRNA_miRNA_annotations=>19_1,GT_call_filter=>0_5,IDN!
 ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!	\t	0,1,2,4	0	exact	0,1,2,3,4,5,IDN!	small	
 ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.variant_function	\t	2,3,4,6	2	exact	0,1	small	
 ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.exonic_variant_function	\t	3,4,5,7	3	exact	1,2	small	
@@ -51,12 +52,13 @@ RD!/dbsnp_138.b37.excluding_sites_after_129_striped.vcf	\t	0,1,1,4	0	exact	5	lar
 RD!/dbsnp_138.b37_striped.vcf	\t	0,1,1,4	0	exact	5	large
 ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_snp137NonFlagged_dropped	\t	2,3,4,6	2	exact	0,1	small
 ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!_hg19_esp6500si_all.txt.hg19_generic_dropped	\t	2,3,4,6	2	exact	1	small
-ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_avsift_dropped	\t	2,3,4,6	2	exact	1	small
-ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb_pp2_dropped	\t	2,3,4,6	2	exact	1	small
-ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb_mt_dropped	\t	2,3,4,6	2	exact	1	small
-ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb_gerp++_dropped	\t	2,3,4,6	2	exact	1	small
-ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb_lrt_dropped	\t	2,3,4,6	2	exact	1	small
-ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb_phylop_dropped	\t	2,3,4,6	2	exact	1	small
+ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb2_sift_dropped	\t	2,3,4,6	2	exact	1	small
+ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb2_pp2hdiv_dropped	\t	2,3,4,6	2	exact	1	small
+ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb2_pp2hvar_dropped	\t	2,3,4,6	2	exact	1	small
+ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb2_mt_dropped	\t	2,3,4,6	2	exact	1	small
+ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb2_gerp++_dropped	\t	2,3,4,6	2	exact	1	small
+ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb2_lrt_dropped	\t	2,3,4,6	2	exact	1	small
+ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb2_phylop_dropped	\t	2,3,4,6	2	exact	1	small
 ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_tfbsConsSites	\t	2,3,4,6	2	exact	1	small
 ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_wgRna	\t	2,3,4,6	2	exact	1	small
 ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_gerp++elem	\t	2,3,4,6	2	exact	1	small

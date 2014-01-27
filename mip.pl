@@ -702,7 +702,7 @@ my %referenceFileEndings = (
     );
 
 ##Set supported annovar table name filtering options
-my @annovarSupportedTableNames = ("refGene", "knownGene", "ensGene", "mce46way", "gerp++elem", "segdup", "gwascatalog", "tfbs", "mirna", "snp137", "snp135", "snp132", "snp131", "snp130", "snp129", "snp137NonFlagged", "snp135NonFlagged", "snp132NonFlagged", "snp131NonFlagged", "snp130NonFlagged", "1000g2012apr_all", "1000g2012apr_amr", "1000g2012apr_eur", "1000g2012apr_asn", "1000g2012apr_afr", "1000g2012feb_all", "esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105", "avsift", "ljb_sift", "ljb_pp2", "ljb_mt", "ljb_lrt", "ljb_all", "ljb_gerp++", "ljb_phylop"); #Used to print list of supported table names
+my @annovarSupportedTableNames = ("refGene", "knownGene", "ensGene", "mce46way", "gerp++elem", "segdup", "gwascatalog", "tfbs", "mirna", "snp137", "snp135", "snp132", "snp131", "snp130", "snp129", "snp137NonFlagged", "snp135NonFlagged", "snp132NonFlagged", "snp131NonFlagged", "snp130NonFlagged", "1000g2012apr_all", "1000g2012apr_amr", "1000g2012apr_eur", "1000g2012apr_asn", "1000g2012apr_afr", "1000g2012feb_all", "esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_ma", "ljb2_fathmm", "ljb2_siphy", "ljb2_lrt", "ljb_all", "ljb2_gerp++", "ljb2_phylop"); #Used to print list of supported table names
 
 my %annovarTables;
 
@@ -2409,6 +2409,7 @@ sub Annovar {
 	if ($annovarTables{$annovarTableNames[$tableNamesCounter]}{'annotation'} eq "geneanno" ) { #Use hgvs output style
 
 	    print ANVAR "-hgvs ";
+	    print ANVAR "-exonicsplicing "; #Annotate variants near intron/exonic borders
 	}
 	print ANVAR "-buildver ".$scriptParameter{'annovarGenomeBuildVersion'}." ";
 
@@ -2428,10 +2429,6 @@ sub Annovar {
 	if ( ($annovarTableNames[$tableNamesCounter] =~/^snp/) || ($annovarTableNames[$tableNamesCounter] =~/_esp/) ) {#Set MAF TH
 	    
 	    print ANVAR "--score_threshold ".$scriptParameter{'annovarMAFThreshold'}." "; #score_threshold since Annovar reserved the maf_threshold for 1000G 
-	}
-	if ( $annovarTableNames[$tableNamesCounter] =~/^avsift/ ) {#Set sift score TH
-
-	    print ANVAR "--sift_threshold ".$scriptParameter{'annovarSiftThreshold'}." ";
 	}
 	print ANVAR $inFamilyDirectory."/".$familyID.$infileEnding.$callType." "; #Infile. Outfile is named using infile prefix except for generic files 
 	print ANVAR $scriptParameter{'annovarPath'}."/humandb &", "\n\n"; #annovar/humandb directory is assumed
@@ -4591,12 +4588,13 @@ sub BuildAnnovarPreRequisites {
     
     $parameter{'annovarBuildReference'}{'buildFile'} = 0; #Ensure that this subrutine is only executed once
     my $annovarTemporaryDirectory = $scriptParameter{'annovarPath'}."/humandb/Db_temporary"; #Temporary download directory
-
-    `mkdir -p $annovarTemporaryDirectory;`; #Make temporary download directory
     
     &ProgramPreRequisites($familyID, $program, $aligner, 0, *ANN_DBF, 1, 3);
 
     print STDOUT "\nNOTE: Will try to create required Annovar database files before executing ".$program,"\n\n";
+
+    print ANN_DBF "#Make temporary download directory\n\n"; 
+    print ANN_DBF "mkdir -p ".$annovarTemporaryDirectory."; ", "\n\n"; 
 
     print ANN_DBF "#Downloading Annovar Db files", "\n\n";
 
@@ -5798,7 +5796,7 @@ sub AddToScriptParameter {
 			}
 			elsif ($parameterName eq "annovarTableNames") {
 
-			    @annovarTableNames = ("refGene", "mce46way", "gerp++elem", "segdup", "tfbs", "mirna", "snp137NonFlagged", "1000g2012apr_all", "esp6500si_all", "avsift", "ljb_pp2", "ljb_mt", "ljb_lrt", "ljb_gerp++","ljb_phylop"); #Set default annovar table names
+			    @annovarTableNames = ("refGene", "mce46way", "gerp++elem", "segdup", "tfbs", "mirna", "snp137NonFlagged", "1000g2012apr_all", "esp6500si_all", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_lrt", "ljb2_gerp++","ljb2_phylop"); #Set default annovar table names
 			    &EnableArrayParameter(\@inFilesDirs, \$parameterName);
 			}
 			else {
@@ -5863,7 +5861,7 @@ sub AddToScriptParameter {
 		    }
 		    elsif ($parameterName eq "annovarTableNames") {
 			
-			@annovarTableNames = ("refGene", "mce46way", "gerp++elem", "segdup", "tfbs", "mirna", "snp137NonFlagged", "1000g2012apr_all", "esp6500si_all", "avsift", "ljb_pp2", "ljb_mt", "ljb_lrt", "ljb_gerp++","ljb_phylop"); #Set default annovar table names
+			@annovarTableNames = ("refGene", "mce46way", "gerp++elem", "segdup", "tfbs", "mirna", "snp137NonFlagged", "1000g2012apr_all", "esp6500si_all", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_lrt", "ljb2_gerp++","ljb2_phylop"); #Set default annovar table names
 			&EnableArrayParameter(\@inFilesDirs, \$parameterName);
 		    }
 		    elsif ($parameterName eq "pedigreeFile") { #Must come after arrays that can be populated from pedigree file to not overwrite user cmd input 
@@ -7192,7 +7190,7 @@ sub DefineAnnovarTables {
 
     my @annovarTablesGeneAnno = ("refGene", "knownGene", "ensGene"); #Tables using annotation option "geneanno"
     my @annovarTablesRegionAnno = ("mce46way", "gerp++elem", "segdup", "tfbs", "mirna"); #Tables using annotation option "regionanno"
-    my @annovarTablesFilter = ("snp137", "snp135", "snp132", "snp131", "snp130", "snp129", "snp137NonFlagged", "snp135NonFlagged", "snp132NonFlagged", "snp131NonFlagged", "snp130NonFlagged", "1000g2012apr_all", "1000g2012apr_amr", "1000g2012apr_eur", "1000g2012apr_asn", "1000g2012apr_afr", "1000g2012feb_all", "esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105", "avsift", "ljb_sift", "ljb_pp2", "ljb_mt", "ljb_lrt", "ljb_all", "ljb_gerp++", "ljb_phylop"); #Tables using annotation option "filter"
+    my @annovarTablesFilter = ("snp137", "snp135", "snp132", "snp131", "snp130", "snp129", "snp137NonFlagged", "snp135NonFlagged", "snp132NonFlagged", "snp131NonFlagged", "snp130NonFlagged", "1000g2012apr_all", "1000g2012apr_amr", "1000g2012apr_eur", "1000g2012apr_asn", "1000g2012apr_afr", "1000g2012feb_all", "esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_ma", "ljb2_fathmm", "ljb2_siphy", "ljb2_lrt", "ljb_all", "ljb2_gerp++", "ljb2_phylop"); #Tables using annotation option "filter"
     my @annovarTablesUrlUcsc = ("mce46way", "segdup", "tfbs", "mirna"); #Tables using urlAlias "ucsc"
     my @annovarGenericFiltering = ("esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105"); #Tables using generic option
     my @annovarGenericFiles = ($annovarGenomeBuildVersion."_esp6500si_all.txt", $annovarGenomeBuildVersion."_esp6500_all.txt", $annovarGenomeBuildVersion."_esp6500_aa.txt", $annovarGenomeBuildVersion."_esp6500_ea.txt", $annovarGenomeBuildVersion."_esp5400_all.txt", $annovarGenomeBuildVersion."_esp5400_aa.txt", $annovarGenomeBuildVersion."_esp5400_ea.txt", $annovarGenomeBuildVersion."_clinvar_20131105.txt"); #Generic table files
