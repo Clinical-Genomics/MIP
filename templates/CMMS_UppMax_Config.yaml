@@ -7,6 +7,7 @@ GATKBaseReCalibrationSNPKnownSet: dbsnp_135.b37.vcf
 GATKDownSampleToCoverage: 1000
 GATKExomeReferenceSNPs: all-agilent_50mb-GRCh37-SNPS_pad100_interval_list.vcf
 GATKHaploTypeCallerSNPKnownSet: dbsnp_135.b37.vcf
+GATKHaploTypeCallerRefBAMInfile: ReferenceBAMInfile.list
 GATKReAlignerINDELKnownSet1: 1000G_phase1.indels.hg19.vcf
 GATKReAlignerINDELKnownSet2: Mills_and_1000G_gold_standard.indels.hg19.sites.vcf
 GATKReadBackedPhasingPhaseQualityThresh: 20
@@ -31,7 +32,7 @@ annovarMAFThreshold: 0
 annovarPath: CLUSTERCONSTANTPATH!/modules/annovar
 annovarSiftThreshold: 0
 annovarSupportedTableNames: 0
-annovarTableNames: 'refgene,mce46way,gerp++elem,segdup,gwascatalog,tfbs,mirna,snp137NonFlagged,1000g2012apr_all,hg19_esp6500si_all.txt,avsift,ljb_pp2,ljb_mt,ljb_lrt,ljb_gerp++,ljb_phylop'
+annovarTableNames: 'refGene,mce46way,gerp++elem,segdup,tfbs,mirna,snp137NonFlagged,1000g2012apr_all,esp6500si_all,avsift,ljb_pp2,ljb_mt,ljb_lrt,ljb_gerp++,ljb_phylop'
 chanjoBuildDb: CCDS.current.txt
 chanjoCalculateCutoff: 10
 dryRunAll: 0
@@ -78,11 +79,10 @@ pQaCompute: 1
 pRCovPlots: 0
 pRankVariants: 1
 pRemovalRedundantFiles: 1
-pSamToolsSort: 1
-pSamToolsViewSplitChr: 1
+pPicardToolsSort: 1
 pSampleCheck: 1
 pedigreeFile: CLUSTERCONSTANTPATH!/ANALYSISTYPE!/FDN!/FDN!_pedigree.txt
-picardToolsPath: CLUSTERCONSTANTPATH!/modules/picard-tools-1.74
+picardToolsPath: CLUSTERCONSTANTPATH!/modules/picard-tools-1.106
 projectID: b2010080
 pythonVirtualEnvironment: virtualenv.py.2.7
 rankScore: -100

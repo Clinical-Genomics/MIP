@@ -1,45 +1,46 @@
-##COLUMNNAME="Chromosome"	TYPE="String"	DESCRIPTION="Name of contig"	DBCVHEADER="Chromosome"
-##COLUMNNAME="Variant_start"	TYPE="Integer"	DESCRIPTION="Variation start position"	DBCVHEADER="Variation Start"
-##COLUMNNAME="Variant_stop"	TYPE="Integer"	DESCRIPTION="Variation stop position"	DBCVHEADER="Variation Stop"
-##COLUMNNAME="Reference_allele"	TYPE="String"	DESCRIPTION="The genomic build reference allele"	DBCVHEADER="Reference Allele"
-##COLUMNNAME="Alternative_allele"	TYPE="String"	DESCRIPTION="The identified alternative alleles"	DBCVHEADER="Alternative Allele"
-##COLUMNNAME="Ensemble_gene_id"	TYPE="String"	VERSION="37.13"	DESCRIPTION="Ensemble gene identifier"	DBCVHEADER="Ensemble Gene ID"
-##COLUMNNAME="HGNC_symbol"	TYPE="String"	VERSION="20121108"	DESCRIPTION="HUGO Gene Nomenclature Committee gene name abbreviation"	DBCVHEADER="HGNC Gene Symbol"
-##COLUMNNAME="HGNC_approved_name"	TYPE="String"	VERSION="20121108"	DESCRIPTION="HUGO Gene Nomenclature Committee approved gene name"	DBCVHEADER="HGNC Gene Name"
-##COLUMNNAME="HGNC_synonyms"	TYPE="String"	VERSION="20121108"	DESCRIPTION="HUGO Gene Nomenclature Committee gene name synonyms"	DBCVHEADER="HGNC Gene Name Synonyms"
-##COLUMNNAME="HGMD"	TYPE="String"	VERSION="20121108"	DESCRIPTION="The Human Gene Mutation Database (HGMD)"	DBCVHEADER="HGMD"
-##COLUMNNAME="Gene_annotation"	TYPE="String"	DESCRIPTION="Variant position annotation in gene"	DBCVHEADER="Gene Annotation"
-##COLUMNNAME="Functional_annotation"	TYPE="String"	DESCRIPTION="Variant effect on gene product"	DBCVHEADER="Functional Annotation"
-##COLUMNNAME="HGNC_transcript_info"	TYPE="String"	DESCRIPTION="ANNOVAR calculated effect on HGNC transcripts associated with variant"	DBCVHEADER="Transcript Annotation"
-##COLUMNNAME="Phast_cons_elements"	TYPE="String"	VERSION="hg19_phastConsElements46way"	DESCRIPTION="Data of conserved regions"	DBCVHEADER="Phast Cons Elements"
-##COLUMNNAME="GERP_elements"	TYPE="String"	VERSION="hg19_gerp++elem"	DESCRIPTION="Genomic evolutionary rate profiling"	DBCVHEADER="GERP Elements"
-##COLUMNNAME="Genomic_super_dups"	TYPE="String"	VERSION="hg19_genomicSuperDups"	DESCRIPTION="Segmental duplication"	DBCVHEADER="Segmental Duplications"
-##COLUMNNAME="Pseudogene"	TYPE="String"	VERSION="PsiDR.v0"	DESCRIPTION="Pseudogene classification"	DBCVHEADER="Pseudogene"
-##COLUMNNAME="1000G"	TYPE="Float"	VERSION="hg19_ALL.sites.2012_04"	DESCRIPTION="Frequency in the 1000G database"	DBCVHEADER="1000G"
-##COLUMNNAME="Dbsnp129"	TYPE="Float"	VERSION="129"	DESCRIPTION="Frequency in the DbSNP database, version 129. This version is considered to have least amount of false positives."	DBCVHEADER="DbSNP129"
-##COLUMNNAME="Dbsnp_freq"	TYPE="Float"	VERSION="132"	DESCRIPTION="Frequency in the DbSNP database"	DBCVHEADER="DbSNP"
-##COLUMNNAME="Dbsnp_nonflagged"	TYPE="String"	VERSION="137"	DESCRIPTION="Variants flagged as 'of clinical importance' in the DbSNP database"	DBCVHEADER="DbSNP Clinical"
-##COLUMNNAME="Dbsnp_rs_nr"	TYPE="String"	VERSION="132"	DESCRIPTION="DbSNP reference SNP ID number"	DBCVHEADER="DbSNP RS"
-##COLUMNNAME="Esp6500"	TYPE="Float"	VERSION="6500"	DESCRIPTION="Frequency in the NHLBI Exome sequencing project (ESP) database. This is a database with exome data for thousands of individuals with heart, lung and blood disorders."	DBCVHEADER="ESP"
-##COLUMNNAME="HBVDB"	TYPE="Float"	VERSION="130913"	DESCRIPTION="Local variation database"	DBCVHEADER="HBVDB"
-##COLUMNNAME="SIFT"	TYPE="Float"	DESCRIPTION="SIFT predicts whether an amino acid substitution affects protein function The closer to 0 the more effect on the protein"	DBCVHEADER="SIFT"
-##COLUMNNAME="Poly_phen"	TYPE="Float"	DESCRIPTION="PolyPhen 2 predicts whether an amino acid substitution affects protein structure and function. The closer to 1 the more effect on the protein"	DBCVHEADER="PolyPhen"
-##COLUMNNAME="Mutation_taster"	TYPE="Float"	DESCRIPTION="MutationTaster predicts whether an amino acid substitution affects protein function. The closer to 1 the more effect on the protein"	DBCVHEADER="MutationTaster"
-##COLUMNNAME="GERP"	TYPE="Float"	DESCRIPTION="GERP identifies constrained elements in multiple alignments by quantifying substitution deficits"	DBCVHEADER="GERP"
-##COLUMNNAME="LRT"	TYPE="Float"	DESCRIPTION="LRT Using a comparative genomics data set of 32 vertebrate species we show that a likelihood ratio test (LRT) can accurately identify a subset of deleterious mutations that disrupt highly conserved amino acids within protein-coding"	DBCVHEADER="LRT"
-##COLUMNNAME="Phylo_p"	TYPE="Float"	DESCRIPTION="Conservation scoring by phyloP (phylogenetic p-values) from the PHAST package for multiple alignments of 45 vertebrate genomes to the human genome, plus alternate sets of scores for the primate species and the placental mammal species in the alignments"	DBCVHEADER="PhyloP"
-##COLUMNNAME="Transfac"	TYPE="String"	DESCRIPTION="Score from the Transfac (Transcription Factor Binding Sites) database"	DBCVHEADER="Transfac"
-##COLUMNNAME="SnoRNA_miRNA_annotations"	TYPE="String"	DESCRIPTION="Annotation for RNAs"	DBCVHEADER="snoRNA & miRNA Annotations"
-##COLUMNNAME="GT_call_filter"	TYPE="String"	DESCRIPTION="Genotype call quality filter"	DBCVHEADER="GT Call Filter"
-##COLUMNNAME="IDN:SampleID"	TYPE="String"	DESCRIPTION="Genotype call data for variant in indivdual:SampleID"	DBCVHEADER="GT CAll"
-##COLUMNNAME="Inheritance_model"	TYPE="String"	DESCRIPTION="Variant inheritance pattern"	DBCVHEADER="Inheritance Model"
-##COLUMNNAME="Compounds"	TYPE="String"	DESCRIPTION="Compound score for compound pairs. Higher the better the compound pair"	DBCVHEADER="Compounds"
-##COLUMNNAME="Rank_score"	TYPE="Integer"	DESCRIPTION="Rank score of disease casuing potential. Higher the more likely disease casuing"	DBCVHEADER="Rank Score"
-##COLUMNNAME="Disease_group"	TYPE="String"	DESCRIPTION="Information on the type of disease"	DBCVHEADER="Disease Group"
-##COLUMNNAME="Clinical_db_genome_build"	TYPE="String"	DESCRIPTION="Genome version used in clinical Db"	DBCVHEADER="Clinical db Genome Build"
-##COLUMNNAME="Disease_gene_model"	TYPE="String"	DESCRIPTION="Known disease inheritance model"	DBCVHEADER="Disease Gene Model"
-##COLUMNNAME="Clinical_db_gene_annotation"	TYPE="String"	DESCRIPTION="Genes associated with a disease group e.g., IEM, EP"	DBCVHEADER="Clinical db Gene Annotation"
-outinfo:Chromosome=>0_0,Variant_start=>0_1,Variant_stop=>0_2,Reference_allele=>0_3,Alternative_allele=>0_4,Ensemble_gene_id=>6_3,HGNC_symbol=>1_1,HGNC_approved_name=>6_5,HGNC_synonyms=>6_6,HGMD=>20_6,Gene_annotation=>1_0,Functional_annotation=>2_1,HGNC_transcript_info=>2_2,Phast_cons_elements=>3_1,GERP_elements=>19_1,Genomic_super_dups=>4_1,Pseudogene=>6_7,1000G=>5_1,Dbsnp129=>7_5,Dbsnp_freq=>8_5,Dbsnp_nonflagged=>9_0,Dbsnp_rs_nr=>9_1,Esp6500=>10_1,HBVDB=>21_7,SIFT=>11_1,Poly_phen=>12_1,Mutation_taster=>13_1,GERP=>14_1,LRT=>15_1,Phylo_p=>16_1,Transfac=>17_1,SnoRNA_miRNA_annotations=>18_1,GT_call_filter=>0_5,IDN!
+##COLUMNNAME="Chromosome"	TYPE="String"	DESCRIPTION="Name of contig"	SCOUTHEADER="Chromosome"
+##COLUMNNAME="Variant_start"	TYPE="Integer"	DESCRIPTION="Variation start position"	SCOUTHEADER="Variation Start"
+##COLUMNNAME="Variant_stop"	TYPE="Integer"	DESCRIPTION="Variation stop position"	SCOUTHEADER="Variation Stop"
+##COLUMNNAME="Reference_allele"	TYPE="String"	DESCRIPTION="The genomic build reference allele"	SCOUTHEADER="Reference Allele"
+##COLUMNNAME="Alternative_allele"	TYPE="String"	DESCRIPTION="The identified alternative alleles"	SCOUTHEADER="Alternative Allele"
+##COLUMNNAME="Ensemble_gene_id"	TYPE="String"	VERSION="37.13"	DESCRIPTION="Ensemble gene identifier"	SCOUTHEADER="Ensemble Gene ID"
+##COLUMNNAME="HGNC_symbol"	TYPE="String"	VERSION="20121108"	DESCRIPTION="HUGO Gene Nomenclature Committee gene name abbreviation"	SCOUTHEADER="HGNC Gene Symbol"
+##COLUMNNAME="HGNC_approved_name"	TYPE="String"	VERSION="20121108"	DESCRIPTION="HUGO Gene Nomenclature Committee approved gene name"	SCOUTHEADER="HGNC Gene Name"
+##COLUMNNAME="HGNC_synonyms"	TYPE="String"	VERSION="20121108"	DESCRIPTION="HUGO Gene Nomenclature Committee gene name synonyms"	SCOUTHEADER="HGNC Gene Name Synonyms"
+##COLUMNNAME="HGMD"	TYPE="String"	VERSION="20121108"	DESCRIPTION="The Human Gene Mutation Database (HGMD)"	SCOUTHEADER="HGMD"
+##COLUMNNAME="Gene_annotation"	TYPE="String"	DESCRIPTION="Variant position annotation in gene"	SCOUTHEADER="Gene Annotation"
+##COLUMNNAME="Functional_annotation"	TYPE="String"	DESCRIPTION="Variant effect on gene product"	SCOUTHEADER="Functional Annotation"
+##COLUMNNAME="HGNC_transcript_info"	TYPE="String"	DESCRIPTION="ANNOVAR calculated effect on HGNC transcripts associated with variant"	SCOUTHEADER="Transcript Annotation"
+##COLUMNNAME="Phast_cons_elements"	TYPE="String"	VERSION="hg19_phastConsElements46way"	DESCRIPTION="Data of conserved regions"	SCOUTHEADER="Phast Cons Elements"
+##COLUMNNAME="GERP_elements"	TYPE="String"	VERSION="hg19_gerp++elem"	DESCRIPTION="Genomic evolutionary rate profiling"	SCOUTHEADER="GERP Elements"
+##COLUMNNAME="Genomic_super_dups"	TYPE="String"	VERSION="hg19_genomicSuperDups"	DESCRIPTION="Segmental duplication"	SCOUTHEADER="Segmental Duplications"
+##COLUMNNAME="Pseudogene"	TYPE="String"	VERSION="PsiDR.v0"	DESCRIPTION="Pseudogene classification"	SCOUTHEADER="Pseudogene"
+##COLUMNNAME="1000G"	TYPE="Float"	VERSION="hg19_ALL.sites.2012_04"	DESCRIPTION="Frequency in the 1000G database"	SCOUTHEADER="1000G"
+##COLUMNNAME="Dbsnp129"	TYPE="Float"	VERSION="129"	DESCRIPTION="Frequency in the DbSNP database, version 129. This version is considered to have least amount of false positives."	SCOUTHEADER="DbSNP129"
+##COLUMNNAME="Dbsnp_freq"	TYPE="Float"	VERSION="138"	DESCRIPTION="Frequency in the DbSNP database"	SCOUTHEADER="DbSNP"
+##COLUMNNAME="Dbsnp_nonflagged"	TYPE="String"	VERSION="137"	DESCRIPTION="Variants flagged as 'of clinical importance' in the DbSNP database"	SCOUTHEADER="DbSNP Clinical"
+##COLUMNNAME="Dbsnp_rs_nr"	TYPE="String"	VERSION="138"	DESCRIPTION="DbSNP reference SNP ID number"	SCOUTHEADER="DbSNP RS"
+##COLUMNNAME="Esp6500"	TYPE="Float"	VERSION="6500"	DESCRIPTION="Frequency in the NHLBI Exome sequencing project (ESP) database. This is a database with exome data for thousands of individuals with heart, lung and blood disorders."	SCOUTHEADER="ESP"
+##COLUMNNAME="HBVDB"	TYPE="Float"	VERSION="140114"	DESCRIPTION="Local variation database"	SCOUTHEADER="HBVDB"
+##COLUMNNAME="SIFT"	TYPE="Float"	VERSION="ljb2_sift"	DESCRIPTION="SIFT predicts whether an amino acid substitution affects protein function The closer to 0 the more effect on the protein"	SCOUTHEADER="SIFT"
+##COLUMNNAME="Poly_phen HumanDiv"	TYPE="Float"	VERSION="ljb2_pp2hdiv"	DESCRIPTION="PolyPhen 2 predicts whether an amino acid substitution affects protein structure and function. The closer to 1 the more effect on the protein. Based on HumanDiv database for Mendelian phenotypes"	SCOUTHEADER="PolyPhen HumanDiv"
+##COLUMNNAME="Poly_phen HumanVar"	TYPE="Float"	VERSION="ljb2_pp2hvar"	DESCRIPTION="PolyPhen 2 predicts whether an amino acid substitution affects protein structure and function. The closer to 1 the more effect on the protein. Based on HumanVar database for complex phenotypes"	SCOUTHEADER="PolyPhen HumanVar"
+##COLUMNNAME="Mutation_taster"	TYPE="Float"	VERSION="ljb2_mt"	DESCRIPTION="MutationTaster predicts whether an amino acid substitution affects protein function. The closer to 1 the more effect on the protein"	SCOUTHEADER="MutationTaster"
+##COLUMNNAME="GERP"	TYPE="Float"	VERSION="ljb2_gerp"	DESCRIPTION="GERP identifies constrained elements in multiple alignments by quantifying substitution deficits"	SCOUTHEADER="GERP"
+##COLUMNNAME="LRT"	TYPE="Float"	VERSION="ljb2_lrt"	DESCRIPTION="LRT Using a comparative genomics data set of 32 vertebrate species we show that a likelihood ratio test (LRT) can accurately identify a subset of deleterious mutations that disrupt highly conserved amino acids within protein-coding"	SCOUTHEADER="LRT"
+##COLUMNNAME="Phylo_p"	TYPE="Float"	VERSION="ljb2_phylop"	DESCRIPTION="Conservation scoring by phyloP (phylogenetic p-values) from the PHAST package for multiple alignments of 45 vertebrate genomes to the human genome, plus alternate sets of scores for the primate species and the placental mammal species in the alignments"	SCOUTHEADER="PhyloP"
+##COLUMNNAME="Transfac"	TYPE="String"	DESCRIPTION="Score from the Transfac (Transcription Factor Binding Sites) database"	SCOUTHEADER="Transfac"
+##COLUMNNAME="SnoRNA_miRNA_annotations"	TYPE="String"	DESCRIPTION="Annotation for RNAs"	SCOUTHEADER="snoRNA & miRNA Annotations"
+##COLUMNNAME="GT_call_filter"	TYPE="String"	DESCRIPTION="Genotype call quality filter"	SCOUTHEADER="GT Call Filter"
+##COLUMNNAME="IDN:SampleID"	TYPE="String"	DESCRIPTION="Genotype call data for variant in indivdual:SampleID"	SCOUTHEADER="GT CAll"
+##COLUMNNAME="Inheritance_model"	TYPE="String"	DESCRIPTION="Variant inheritance pattern"	SCOUTHEADER="Inheritance Model"
+##COLUMNNAME="Compounds"	TYPE="String"	DESCRIPTION="Compound score for compound pairs. Higher the better the compound pair"	SCOUTHEADER="Compounds"
+##COLUMNNAME="Rank_score"	TYPE="Integer"	DESCRIPTION="Rank score of disease casuing potential. Higher the more likely disease casuing"	SCOUTHEADER="Rank Score"
+##COLUMNNAME="Disease_group"	TYPE="String"	DESCRIPTION="Information on the type of disease"	SCOUTHEADER="Disease Group"
+##COLUMNNAME="Clinical_db_genome_build"	TYPE="String"	DESCRIPTION="Genome version used in clinical Db"	SCOUTHEADER="Clinical db Genome Build"
+##COLUMNNAME="Disease_gene_model"	TYPE="String"	DESCRIPTION="Known disease inheritance model"	SCOUTHEADER="Disease Gene Model"
+##COLUMNNAME="Clinical_db_gene_annotation"	TYPE="String"	DESCRIPTION="Genes associated with a disease group e.g., IEM, EP"	SCOUTHEADER="Clinical db Gene Annotation"
+outinfo:Chromosome=>0_0,Variant_start=>0_1,Variant_stop=>0_2,Reference_allele=>0_3,Alternative_allele=>0_4,Ensemble_gene_id=>6_3,HGNC_symbol=>1_1,HGNC_approved_name=>6_5,HGNC_synonyms=>6_6,HGMD=>21_6,Gene_annotation=>1_0,Functional_annotation=>2_1,HGNC_transcript_info=>2_2,Phast_cons_elements=>3_1,GERP_elements=>20_1,Genomic_super_dups=>4_1,Pseudogene=>6_7,1000G=>5_1,Dbsnp129=>7_5,Dbsnp_freq=>8_5,Dbsnp_nonflagged=>9_0,Dbsnp_rs_nr=>9_1,Esp6500=>10_1,HBVDB=>22_7,SIFT=>11_1,Poly_phen_hdiv=>12_1,Poly_phen_hvar=>13_1,Mutation_taster=>14_1,GERP=>15_1,LRT=>16_1,Phylo_p=>17_1,Transfac=>18_1,SnoRNA_miRNA_annotations=>19_1,GT_call_filter=>0_5,IDN!
 ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!	\t	0,1,2,4	0	exact	0,1,2,3,4,5,IDN!	small	
 ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.variant_function	\t	2,3,4,6	2	exact	0,1	small	
 ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.exonic_variant_function	\t	3,4,5,7	3	exact	1,2	small	
@@ -47,16 +48,17 @@ ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_phastConsElements46way	\
 ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_genomicSuperDups	\t	2,3,4,6	2	exact	1	small	
 ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ALL.sites.2012_04_dropped	\t	2,3,4,6	2	exact	1	small	
 RD!/CMMS_External_Db_140114.txt	\t	0,1,2	0	range	3,5,6,7	small
-RD!/dbsnp_132.hg19.excluding_sites_after_129_nochr_striped.vcf	\t	0,1,1,4	0	exact	5	large
-RD!/dbsnp_132.hg19.nochr_striped.vcf	\t	0,1,1,4	0	exact	5	large
+RD!/dbsnp_138.b37.excluding_sites_after_129_striped.vcf	\t	0,1,1,4	0	exact	5	large
+RD!/dbsnp_138.b37_striped.vcf	\t	0,1,1,4	0	exact	5	large
 ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_snp137NonFlagged_dropped	\t	2,3,4,6	2	exact	0,1	small
 ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!_hg19_esp6500si_all.txt.hg19_generic_dropped	\t	2,3,4,6	2	exact	1	small
-ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_avsift_dropped	\t	2,3,4,6	2	exact	1	small
-ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb_pp2_dropped	\t	2,3,4,6	2	exact	1	small
-ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb_mt_dropped	\t	2,3,4,6	2	exact	1	small
-ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb_gerp++_dropped	\t	2,3,4,6	2	exact	1	small
-ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb_lrt_dropped	\t	2,3,4,6	2	exact	1	small
-ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb_phylop_dropped	\t	2,3,4,6	2	exact	1	small
+ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb2_sift_dropped	\t	2,3,4,6	2	exact	1	small
+ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb2_pp2hdiv_dropped	\t	2,3,4,6	2	exact	1	small
+ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb2_pp2hvar_dropped	\t	2,3,4,6	2	exact	1	small
+ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb2_mt_dropped	\t	2,3,4,6	2	exact	1	small
+ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb2_gerp++_dropped	\t	2,3,4,6	2	exact	1	small
+ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb2_lrt_dropped	\t	2,3,4,6	2	exact	1	small
+ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_ljb2_phylop_dropped	\t	2,3,4,6	2	exact	1	small
 ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_tfbsConsSites	\t	2,3,4,6	2	exact	1	small
 ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_wgRna	\t	2,3,4,6	2	exact	1	small
 ODF!/FDN!/ALIGNER!/GATK/FDN!_FILEENDING!_CALLTYPE!.hg19_gerp++elem	\t	2,3,4,6	2	exact	1	small
