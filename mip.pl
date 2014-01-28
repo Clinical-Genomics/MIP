@@ -2997,7 +2997,7 @@ sub GATKReduceReads {
 	print GATK_RR "-I ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFiles  
 	print GATK_RR "-o ".$outSampleDirectory."/".$infile.$outfileEnding.".bam", "\n\n"; #OutFile
 
-	if ( ($scriptParameter{'pGATKBaseRecalibration'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	if ( ($scriptParameter{'pGATKReduceReads'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 
 	    $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'} = $outSampleDirectory."/".$infile.$outfileEnding.".bam";
 	}
@@ -3017,7 +3017,7 @@ sub GATKReduceReads {
 	    print GATK_RR "-I ".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFiles  
 	    print GATK_RR "-o ".$outSampleDirectory."/".$infile.$outfileEnding.".bam", "\n\n"; #OutFile
 	    	
-	    if ( ($scriptParameter{'pGATKBaseRecalibration'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	    if ( ($scriptParameter{'pGATKReduceReads'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 
 		$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'} = $outSampleDirectory."/".$infile.$outfileEnding.".bam";
 	    }
@@ -3028,9 +3028,9 @@ sub GATKReduceReads {
     print GATK_RR "-rf ".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID', "\n\n"; #Remove Temp Directory
     close(GATK_RR);   
     
-    if ( ($scriptParameter{'pGATKBaseRecalibration'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+    if ( ($scriptParameter{'pGATKReduceReads'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 	
-	&FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 1, $parameter{'pGATKBaseRecalibration'}{'chain'}, $fileName, 0);    
+	&FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 1, $parameter{'pGATKReduceReads'}{'chain'}, $fileName, 0);    
     }
     return;
 }
