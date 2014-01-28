@@ -832,9 +832,12 @@ if ($parameter{'configFile'}{'value'} ne "nocmdinput") { #No input from cmd
 
     %scriptParameter = &LoadYAML($parameter{'configFile'}{'value'}); #Load parameters from configfile
 
+    &OverWriteConfigParamWithCMDInfo("analysisType");
+    &OverWriteConfigParamWithCMDInfo("aligner");
+
     foreach my $orderParameterElement (@orderParameters) { #Loop through all parameters and update info   
 
-	&UpdateYAML($orderParameterElement, $scriptParameter{'clusterConstantPath'}, $scriptParameter{'analysisConstantPath'}, $scriptParameter{'analysisType'},$parameter{'familyID'}{'value'}, $scriptParameter{'aligner'} );
+	&UpdateYAML($orderParameterElement, $scriptParameter{'clusterConstantPath'}, $scriptParameter{'analysisConstantPath'}, $scriptParameter{'analysisType'}, $parameter{'familyID'}{'value'}, $scriptParameter{'aligner'} );
     }
 }
 
@@ -1776,10 +1779,12 @@ sub QCCollect {
     print QCCOLLECT "perl ".$scriptParameter{'inScriptDir'}."/qcCollect.pl ";
     print QCCOLLECT "-sampleInfoFile ".$scriptParameter{'QCCollectSampleInfoFile'}." ";
     print QCCOLLECT "-regExpFile ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'QCCollectRegExpFile'}." ";
-    print QCCOLLECT "-o ".$outFamilyDirectory."/qcmetrics.yaml ", "\n\n";     
+    print QCCOLLECT "-o ".$outFamilyDirectory."/".$familyID."_qcmetrics.yaml ", "\n\n";     
     
     close(QCCOLLECT); 
+    
     if ( ($scriptParameter{'pQCCollect'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	&SampleInfoQC($scriptParameter{'familyID'}, "noSampleID", "QCCollect", "noInfile", $outFamilyDirectory, $familyID."_qcmetrics.yaml", "infileDependent"); #"noSampleID is used to select correct keys for %sampleInfo"
 	&FIDSubmitJob(0, $familyID, 2, $parameter{'pQCCollect'}{'chain'}, $fileName, 0);
     }
     return;
@@ -1860,11 +1865,14 @@ sub RankVariants {
 	print RV "perl ".$scriptParameter{'inScriptDir'}."/intersectCollect.pl ";
 	print RV "-db ".$scriptParameter{'ImportantDbMasterFile'}." "; #A tab-sep file containing 1 db per line
 	if ($humanGenomeReferenceSource eq "hg19") {
+
 	    print RV "-prechr 1 "; #Use chr prefix in rank script
 	}
 	print RV "-sl 1 "; #Select all entries in first infile matching keys in subsequent db files
 	print RV "-s ";
+
 	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { 
+
 	    if ($sampleIDCounter eq scalar(@sampleIDs)-1) {
 		print RV $sampleIDs[$sampleIDCounter], " ";
 	    }
@@ -1873,11 +1881,15 @@ sub RankVariants {
 	    }    
 	}
 	print RV "-sofs "; #Selected variants and orphan db files out data directory
+
 	for (my $ImportantDbFileOutFilesCounter=0;$ImportantDbFileOutFilesCounter<scalar(@ImportantDbFileOutFiles);$ImportantDbFileOutFilesCounter++) {
+
 	    if ($ImportantDbFileOutFilesCounter eq scalar(@ImportantDbFileOutFiles)-1) {
+
 		print RV $ImportantDbFileOutFiles[$ImportantDbFileOutFilesCounter]." ","\n\n";
 	    }
 	    else {
+
 		print RV $ImportantDbFileOutFiles[$ImportantDbFileOutFilesCounter].",";
 	    }
 	}
@@ -1895,6 +1907,11 @@ sub RankVariants {
 	    ($volume,$directories,$file) = File::Spec->splitpath( $ImportantDbFileOutFiles[$ImportantDbFileOutFilesCounter] ); #Collect outfile directory
 	    print RV "-o ".$directories.$familyID."_ranked_".$callType.".txt", "\n\n"; #OutFile
 	    print RV "wait\n\n";
+	    
+	    if ( ($scriptParameter{'pRankVariants'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+
+		$sampleInfo{$familyID}{'program'}{'RankVariants'}{'Clinical'}{'Path'} = $directories.$familyID."_ranked_".$callType.".txt";  #Save clinical candidate list path
+	    }
 	}
     }
    
@@ -1909,6 +1926,11 @@ sub RankVariants {
     ($volume,$directories,$file) = File::Spec->splitpath( $ImportantDbFileOutFiles[0] ); #Collect outfile directory
     print RV "-o ".$directories.$familyID."_ranked_".$callType.".txt", "\n\n"; #OutFile
     print RV "wait\n\n";    
+    
+    if ( ($scriptParameter{'pRankVariants'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+
+	$sampleInfo{$familyID}{'program'}{'RankVariants'}{'Research'}{'Path'} = $directories.$familyID."_ranked_".$callType.".txt";  #Save research candidate list path
+    }
         
     for (my $ImportantDbFileOutFilesCounter=0;$ImportantDbFileOutFilesCounter<scalar(@ImportantDbFileOutFiles);$ImportantDbFileOutFilesCounter++) {
 	print RV "rm "; #Remove select files
@@ -2864,7 +2886,7 @@ sub GATKHaploTypeCaller {
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/HaploTypeCaller";
     my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKHaploTypeCaller'}{'fileEnding'};
 
-    print GATK_HAPCAL "mkdir -p ".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID', "\n\n";
+    print GATK_HAPCAL "mkdir -p ".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID', "\n\n"; 
 
     my $contigIntervalListFile = &GATKTargetListFlag(*GATK_HAPCAL, \$chromosome);
 
@@ -5489,12 +5511,23 @@ sub InfilesReFormat {
 		&AddInfileInfoOld($1, $2, $3, $sampleID, \$laneTracker, $infileCounter, "uncompressed");
                 $uncompressedFileCounter = 1; #File needs compression before starting analysis                               
             }
-            elsif ($infile{$sampleID}[$infileCounter] =~ /(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq.gz/) { #Parse fastq.gz 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                                                                                                          
+            elsif ($infile{$sampleID}[$infileCounter] =~ /(\d+)_(\d+)_([^_]+)_([^_]+)_index([^_]+)_(\d).fastq.gz/) { #Parse fastq.gz 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                                                                                                          
 
 		&CheckSampleIDMatch($sampleID, $4, $infileCounter);
 		&AddInfileInfo($1, $2, $3, $4, $5, $6, \$laneTracker, $infileCounter, "compressed");
 	    }
-            elsif ($infile{$sampleID}[$infileCounter] =~/(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq/) { #Parse 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                             
+            elsif ($infile{$sampleID}[$infileCounter] =~/(\d+)_(\d+)_([^_]+)_([^_]+)_index([^_]+)_(\d).fastq/) { #Parse 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                             
+                                                                                         
+		&CheckSampleIDMatch($sampleID, $4, $infileCounter);
+		&AddInfileInfo($1, $2, $3, $4, $5, $6, \$laneTracker, $infileCounter, "uncompressed");		
+		$uncompressedFileCounter = 1; #File needs compression before starting analysis             
+	    }
+	    elsif ($infile{$sampleID}[$infileCounter] =~ /(\d+)_(\d+)_([^_]+)_([^_]+)_([^_]+)_(\d).fastq.gz/) { #Parse fastq.gz 'new' no "index" format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                                                                                                          
+
+		&CheckSampleIDMatch($sampleID, $4, $infileCounter);
+		&AddInfileInfo($1, $2, $3, $4, $5, $6, \$laneTracker, $infileCounter, "compressed");
+	    }
+            elsif ($infile{$sampleID}[$infileCounter] =~/(\d+)_(\d+)_([^_]+)_([^_]+)_([^_]+)_(\d).fastq/) { #Parse 'new' no "index" format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                             
                                                                                          
 		&CheckSampleIDMatch($sampleID, $4, $infileCounter);
 		&AddInfileInfo($1, $2, $3, $4, $5, $6, \$laneTracker, $infileCounter, "uncompressed");		
@@ -7290,6 +7323,16 @@ sub CollectSeqContigs {
     my $SeqDictLocation = $scriptParameter{'referencesDir'}."/".$humanGenomeReferenceNameNoEnding.".dict";
     @contigs = `$pqSeqDict $SeqDictLocation `; #returns a comma seperated string of sequence contigs
     @contigs = split(/,/,join(',', @contigs));
+}
+
+sub OverWriteConfigParamWithCMDInfo {
+
+    my $parameterName = $_[0];
+
+    if ($parameter{$parameterName}{'value'} ne "nocmdinput") { #Overwrite config with cmd info for regExp entries
+	
+	$scriptParameter{$parameterName} = $parameter{$parameterName}{'value'};
+    }
 }
 
 ####
