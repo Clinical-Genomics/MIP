@@ -1893,7 +1893,7 @@ sub RankVariants {
 	    print RV "-tres ".$scriptParameter{'rankScore'}." "; #Rank score threshold
 	    print RV $ImportantDbFileOutFiles[$ImportantDbFileOutFilesCounter]." "; #InFile	    
 	    ($volume,$directories,$file) = File::Spec->splitpath( $ImportantDbFileOutFiles[$ImportantDbFileOutFilesCounter] ); #Collect outfile directory
-	    print RV "> ".$directories.$familyID."_ranked_".$callType.".txt", "\n\n"; #OutFile
+	    print RV "-o ".$directories.$familyID."_ranked_".$callType.".txt", "\n\n"; #OutFile
 	    print RV "wait\n\n";
 	}
     }
@@ -1907,7 +1907,7 @@ sub RankVariants {
     print RV "-tres ".$scriptParameter{'rankScore'}." "; #Rank score threshold
     print RV $ImportantDbFileOutFiles[0]." "; #InFile	    
     ($volume,$directories,$file) = File::Spec->splitpath( $ImportantDbFileOutFiles[0] ); #Collect outfile directory
-    print RV "> ".$directories.$familyID."_ranked_".$callType.".txt", "\n\n"; #OutFile
+    print RV "-o ".$directories.$familyID."_ranked_".$callType.".txt", "\n\n"; #OutFile
     print RV "wait\n\n";    
         
     for (my $ImportantDbFileOutFilesCounter=0;$ImportantDbFileOutFilesCounter<scalar(@ImportantDbFileOutFiles);$ImportantDbFileOutFilesCounter++) {
@@ -2863,6 +2863,8 @@ sub GATKHaploTypeCaller {
     my $outFamilyFileDirectory = $scriptParameter{'outDataDir'}."/".$familyID;
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/HaploTypeCaller";
     my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKHaploTypeCaller'}{'fileEnding'};
+
+    print GATK_HAPCAL "mkdir -p ".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID', "\n\n";
 
     my $contigIntervalListFile = &GATKTargetListFlag(*GATK_HAPCAL, \$chromosome);
 
