@@ -975,7 +975,7 @@ chomp($base,$script); #Remove \n;
 `mkdir -p $scriptParameter{'outDataDir'}/$scriptParameter{'familyID'}/mip_log/$base;`; #Creates the mip_log dir
 my $mipLogName = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/mip_log/".$base."/".$script."_".$timeStamp.".txt"; #concatenates mip_log filename
 
-open (MIPLOG, ">>".$mipLogName) or die "Can't write to ".$mipLogName.": $!\n"; #Open file masterLog
+open (MIPLOG, ">>".$mipLogName) or die "Can't write to ".$mipLogName.":".$!, "\n"; #Open file masterLog
 
 ##Add parameters
 print MIPLOG "\n".$script." "; #Adds script name to recontruct command line
@@ -1013,7 +1013,7 @@ my $famFile = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/
 
 ####MAIN
 
-open (MIPLOG, ">>".$mipLogName) or die "Can't write to ".$mipLogName.": $!\n"; #Open file run log
+open (MIPLOG, ">>".$mipLogName) or die "Can't write to ".$mipLogName.":".$!, "\n"; #Open file run log
 
 if ( ($scriptParameter{'pGZip'} > 0) && ($uncompressedFileSwitch eq 1) ) { #GZip of fastq files
 
@@ -1482,7 +1482,7 @@ sub RemoveRedundantFiles {
     print STDOUT "Creating sbatch script RemoveRedundantFiles and writing script file(s) to: ".$fileName, "\n";print MIPLOG "Creating sbatch script RemoveRedundantFiles and writing script file(s) to: ".$fileName, "\n";
     print STDOUT "Sbatch script RemoveRedundantFiles data files will be removed in: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner, "\n";print MIPLOG "Sbatch script RemoveRedundantFiles data files will be removed in: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner, "\n";
 
-    open (REM, ">".$fileName) or die "Can't write to ".$fileName.": $!\n";
+    open (REM, ">".$fileName) or die "Can't write to ".$fileName.":".$!, "\n";
     
     print REM "#! /bin/bash -l", "\n";
     print REM "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
@@ -1900,7 +1900,7 @@ sub RankVariants {
 	print RV "workon ".$scriptParameter{'pythonVirtualEnvironment'}, "\n\n"; #Activate python environment
 	
 	for (my $ImportantDbFileOutFilesCounter=1;$ImportantDbFileOutFilesCounter<scalar(@ImportantDbFileOutFiles);$ImportantDbFileOutFilesCounter++) { #Skip orphan file and run selected files
-	    print RV "mip_family_analysis.py ";
+	    print RV "run_mip_family_analysis.py ";
 	    print RV $scriptParameter{'pedigreeFile'}." "; #Pedigree file
 	    print RV "-tres ".$scriptParameter{'rankScore'}." "; #Rank score threshold
 	    print RV $ImportantDbFileOutFiles[$ImportantDbFileOutFilesCounter]." "; #InFile	    
@@ -1919,7 +1919,7 @@ sub RankVariants {
     
 ##Ranking
     print RV "#Ranking", "\n"; 
-    print RV "mip_family_analysis.py ";
+    print RV "run_mip_family_analysis.py ";
     print RV $scriptParameter{'pedigreeFile'}." "; #Pedigree file
     print RV "-tres ".$scriptParameter{'rankScore'}." "; #Rank score threshold
     print RV $ImportantDbFileOutFiles[0]." "; #InFile	    
@@ -2811,10 +2811,16 @@ sub GATKHaplotypeCallerCombineVariants {
 
     for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@contigs);$chromosomeCounter++) { #For all chromosome	    
 	
-	if ( -f $inFamilyDirectory."/".$familyID.$infileEnding.$callType."_".$contigs[$chromosomeCounter].".vcf") { #Check if contig vcf file was produced otherwise omit non existent file.
-
-	    print GATK_HAPCALCOMVAR "-V ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType."_".$contigs[$chromosomeCounter].".vcf "; #InFiles  
+	if ( ($scriptParameter{'analysisType'} eq "exomes") || ($scriptParameter{'analysisType'} eq "rapid") ) { #Exome/rapid analysis - Restrict analysis to padded target file(s)
+	    
+	    unless ($contigs[$chromosomeCounter] =~/MT/i) { #Do not add MT for exome and rapid samples. NOTE should be determined by target file instead in the future
+		
+		print GATK_HAPCALCOMVAR "-V ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType."_".$contigs[$chromosomeCounter].".vcf "; #InFiles  
+	    }
 	}
+	else {
+	    print GATK_HAPCALCOMVAR "-V ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType."_".$contigs[$chromosomeCounter].".vcf "; #InFiles  
+	}	
     }
     print GATK_HAPCALCOMVAR "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf", "\n\n"; #OutFile
 
@@ -2856,7 +2862,7 @@ sub GATKHaploTypeCaller {
     print STDOUT "Creating sbatch script GATK HaplotypeCaller and writing script file(s) to: ".$fileName, "\n";print MIPLOG "Creating sbatch script GATK HaplotypeCaller and writing script file(s) to: ".$fileName, "\n";
     print STDOUT "Sbatch script GATK HaplotypeCaller data files will be written to: ".$scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/HaplotypeCaller", "\n";print MIPLOG "Sbatch script GATK HaplotypeCaller data files will be written to: ".$scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/HaploTypeCaller", "\n";
     
-    open (GATK_HAPCAL, ">".$fileName) or die "Can't write to ".$fileName.": $!\n";
+    open (GATK_HAPCAL, ">".$fileName) or die "Can't write to ".$fileName.":".$!, "\n";
     
     print GATK_HAPCAL "#! /bin/bash -l", "\n";
     print GATK_HAPCAL "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
@@ -3648,6 +3654,12 @@ sub ChanjoCalculate {
 	print CHANJOCAL "--group ".$scriptParameter{'familyID'}." "; #Group to annotate sample to
 	print CHANJOCAL "--force ";#Overwrite if file outFile exists
 	print CHANJOCAL "--json ".$outSampleDirectory."/".$infile.$outfileEnding.".json &". "\n\n"; #OutFile	
+
+	
+	if ( ($scriptParameter{'pChanjoCalculate'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+
+	    &SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "ChanjoCalculate", $infile, $outSampleDirectory, $outfileEnding.".json", "infileDependent");
+	}
     }
     else { #No merged files
 	
@@ -3671,15 +3683,21 @@ sub ChanjoCalculate {
 	    print CHANJOCAL "--group ".$scriptParameter{'familyID'}." "; #Group to annotate sample to
 	    print CHANJOCAL "--force ";#Overwrite if file outFile exists
 	    print CHANJOCAL "--json ".$outSampleDirectory."/".$infile.$outfileEnding.".json &". "\n\n"; #OutFile   
+
+	    if ( ($scriptParameter{'pChanjoCalculate'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+		
+		&SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "ChanjoCalculate", $infile, $outSampleDirectory, $outfileEnding.".json", "infileDependent");
+	    }
 	}
 	print CHANJOCAL "wait", "\n\n";
+
     }
     print CHANJOCAL "deactivate ", "\n\n"; #Deactivate python environment
     close(CHANJOCAL);
     if ( ($scriptParameter{'pChanjoCalculate'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	
 	&FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 5, $parameter{'pChanjoCalculate'}{'chain'}, $fileName, 0);
     }
-    return;
 }
 
 sub ChanjoBuild { 
@@ -3702,10 +3720,12 @@ sub ChanjoBuild {
 
     print CHANJOBUI "deactivate ", "\n\n"; #Deactivate python environment
     close(CHANJOBUI); 
+
     if ( ($scriptParameter{'pChanjoBuild'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+
+	&SampleInfoQC($familyID, "noSampleID", "ChanjoBuild", "NoInfile", $outFamilyDirectory, $familyID.".sqlite", "infileDependent"); #"noSampleID is used to select correct keys for %sampleInfo"
 	&FIDSubmitJob(0, $familyID, 5, $parameter{'pChanjoBuild'}{'chain'}, $fileName, 0);
     }
-    return;
 }
 
 sub PicardToolsMarkDuplicates { 
@@ -6361,7 +6381,7 @@ sub ProgramPreRequisites {
     }
 
 ###Sbatch header
-    open ($fileHandle, ">".$fileName) or die "Can't write to ".$fileName.": $!\n";
+    open ($fileHandle, ">".$fileName) or die "Can't write to ".$fileName.":".$!, "\n";
     
     print $fileHandle "#! /bin/bash -l", "\n";
     print $fileHandle "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
@@ -6609,7 +6629,7 @@ sub GATKPedigreeFlag {
 
 sub WriteCMDMipLog {
     
-    open (MIPLOG, ">>".$mipLogName) or die "Can't write to ".$mipLogName.": $!\n"; #Open file run log
+    open (MIPLOG, ">>".$mipLogName) or die "Can't write to ".$mipLogName.":".$!, "\n"; #Open file run log
     
     foreach my $orderParameterElement (@orderParameters) {
 	
@@ -6635,7 +6655,7 @@ sub WriteYAML {
     my $yamlFile = $_[0]; #Filename
     my $yamlHashRef = $_[1]; #Hash reference to write to file
 
-    open (YAML, ">". $yamlFile) or die "can't open ".$yamlFile.": $!\n";
+    open (YAML, ">". $yamlFile) or die "can't open ".$yamlFile.":".$!, "\n";
     print YAML Dump( $yamlHashRef ), "\n";
     close(YAML);
     print STDOUT "Wrote: ".$yamlFile, "\n";
@@ -6649,7 +6669,7 @@ sub LoadYAML {
 
     my $fileType = &DetectYamlContentType($yamlFile);
 
-    open (YAML, "<". $yamlFile) or die "can't open ".$yamlFile.": $!\n";    
+    open (YAML, "<". $yamlFile) or die "can't open ".$yamlFile.":".$!, "\n";    
         
         if ($fileType eq "reference") {
         %yamlHash = %{ YAML::LoadFile($yamlFile) }; #Load hashreference as hash
@@ -6669,7 +6689,7 @@ sub DetectYamlContentType {
     my $yamlFile = $_[0];
     my $fileType;
 
-    open (YAML, "<". $yamlFile) or die "can't open ".$yamlFile.": $!\n";
+    open (YAML, "<". $yamlFile) or die "can't open ".$yamlFile.":".$!, "\n";
         
         while (<YAML>) {
 
