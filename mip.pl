@@ -868,6 +868,7 @@ foreach my $orderParameterElement (@orderParameters) { #Populate scriptParameter
 	if (defined($scriptParameter{'pedigreeFile'})) {
 	    `mkdir -p $scriptParameter{'outDataDir'}/$scriptParameter{'familyID'};`;
 	    &WriteYAML($scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/qc_pedigree.yaml", \%sampleInfo);
+ 
 	}
     }
     if ( $orderParameterElement eq "humanGenomeReference") { #Supply humanGenomeReference to mosaikAlignReference if required
@@ -880,7 +881,6 @@ foreach my $orderParameterElement (@orderParameters) { #Populate scriptParameter
 	}
     }
 }
-
 
 ##sampleIDs
 &PrepareArrayParameters(\@sampleIDs, "sampleIDs", "path", "nodefault", "MIP", "");
@@ -1444,9 +1444,9 @@ if ($scriptParameter{'pRemovalRedundantFiles'} > 0) { #Sbatch generation of remo
 
 close(MIPLOG); #Close mip_log file
 
-#Write QC for programs used in analysis                                                                                                                                                                                           
+#Write QC for programs used in analysis                                                                                                                         
 if ($scriptParameter{'sampleInfoFile'} ne 0) {#Write SampleInfo to yaml file
-
+    
     &WriteYAML($scriptParameter{'sampleInfoFile'}, \%sampleInfo); #Write QC for sampleinfo used in analysis
 }
 
@@ -5081,12 +5081,11 @@ sub ReadPlinkPedigreeFile {
 	    
 	    for (my $sampleElementsCounter=0;$sampleElementsCounter<scalar(@pedigreeFileElements);$sampleElementsCounter++) { #all pedigreeFileElements
 		
-		if ( defined($lineInfo[$sampleElementsCounter]) && ($lineInfo[$sampleElementsCounter] =~/\S+/) ) { #Check that we have an non blank entry
-		    
+		if ( defined($lineInfo[$sampleElementsCounter]) && ($lineInfo[$sampleElementsCounter] =~/\S+/) ) { #Check that we have an non blank entry   
 		    my @elementInfo = split(";", $lineInfo[$sampleElementsCounter]); #Split element (if required)
 		    
 		    &CheckUniqueArrayElement(\@{ $sampleInfo{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]} }, \@elementInfo); #Check if there are any new info and add it to sampleInfo if so. 
-		    
+		   
 		    if ($sampleInfo{$familyID}{$sampleID}{'Capture_kit'}) { #Add latest capture kit for each individual
 			
 			my $capture_kit = $sampleInfo{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]}[-1]; #Use only the last capture kit since it should be the most interesting
@@ -6687,7 +6686,7 @@ sub CheckUniqueArrayElement {
 	
 	##For each arrayQueryRef element, loop through corresponding arrayToCheckRef element(s), add if there are none or an updated/unique entry.
 	for (my $elementsInfoCounter=0;$elementsInfoCounter<scalar(@{$arrayQueryRef});$elementsInfoCounter++) { #all element(s)
-	    
+    
 	    my $elementFound = 0; #Track if there element is present in arrayToCheckRef
 	    
 	    for (my $elementsCounter=0;$elementsCounter<scalar( @{$arrayToCheckRef});$elementsCounter++) { #all arrayToCheckRef elements
@@ -6698,7 +6697,7 @@ sub CheckUniqueArrayElement {
 		}
 	    }
 	    if ($elementFound == 0) { #Not seen in arrayToCheckRef
-		push( @{$arrayToCheckRef}, ${$arrayQueryRef}[$elementsInfoCounter]); #Go ahead and add
+		push( @{$arrayToCheckRef}, ${$arrayQueryRef}[$elementsInfoCounter]); #Go ahead and add	
 	    }
 	}
     }
