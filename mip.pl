@@ -191,8 +191,6 @@ mip.pl  -id [inFilesDirs,.,.,.,n] -ids [inScriptDir,.,.,.,n] -rd [reference dir]
 
 -anvarmafth/--annovarMAFThreshold Sets the minor allele frequency threshold in annovar (defaults to "0")
 
--anvarsiftth/--annovarSiftThreshold Sets the avsift threshold in annovar (defaults to "0")
-
 -pMerge_anvar/--pMergeAnnotatedVariants Merge (& annotate) all annotated variants into one file using intersectCollect.pl to  (defaults to "1" (=yes))
 
 -mergeanvarte/--mergeAnnotatedVariantsTemplateFile Db template file used to create the specific family '-vm_dbf' master file (defaults to "")
@@ -376,7 +374,6 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -anvartn/--annovarTableNames Annovar table names (comma sep)
                  -anvarstn/--annovarSupportedTableNames Print Annovar MIP supported table names (defaults 0 (=no))
                  -anvarmafth/--annovarMAFThreshold Sets the minor allele frequency threshold in annovar (defaults to "0")
-                 -anvarsiftth/--annovarSiftThreshold Sets the avsift threshold in annovar (defaults to "0")   
                
                ##VMerge  
                -pMerge_anvar/--pMergeAnnotatedVariants Merge (& annotate) all annotated variants into one file using intersectCollect.pl to  (defaults to "1" (=yes))
@@ -621,8 +618,6 @@ my (@GATKTargetPaddedBedIntervalLists); #Array for target infile lists used in G
 
 &DefineParameters("annovarMAFThreshold", "program", 0, "pAnnovar");
 
-&DefineParameters("annovarSiftThreshold", "program", 0, "pAnnovar");
-
 my @annovarTableNames; #List of Annovar table names to be used
 
 
@@ -799,7 +794,6 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'anvartn|annovarTableNames:s'  => \@annovarTableNames, #Comma sepatated list
 	   'anvarstn|annovarSupportedTableNames:n' => \$parameter{'annovarSupportedTableNames'}{'value'}, #Generates a list of supported table names
 	   'anvarmafth|annovarMAFThreshold:n' => \$parameter{'annovarMAFThreshold'}{'value'},
-	   'anvarsiftth|annovarSiftThreshold:n' => \$parameter{'annovarSiftThreshold'}{'value'},
 	   'pMerge_anvar|pMergeAnnotatedVariants:n' => \$parameter{'pMergeAnnotatedVariants'}{'value'}, #Merges annovar analysis results to one master file
 	   'mergeanvarte|mergeAnnotatedVariantsTemplateFile:s' => \$parameter{'mergeAnnotatedVariantsTemplateFile'}{'value'}, #Template file to create the specific family db master file
 	   'mergeanvardbf|mergeAnnotatedVariantsDbFile:s' => \$parameter{'mergeAnnotatedVariantsDbFile'}{'value'}, #db master file to use when collecting external data
@@ -2618,9 +2612,14 @@ sub GATKVariantReCalibration {
 ###GATK VariantRecalibrator
     
     my $variantRecalibratorOutFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/intermediary";
-    my @mode = ("SNP","INDEL");
+    my @modes = ("SNP","INDEL");
 
-    for (my $modeCounter=0;$modeCounter<scalar(@mode);$modeCounter++) { #SNP and INDEL will be recalibrated successively in the same file because when you specify eg SNP mode, the indels are emitted without modification, and vice-versa. 
+    if ( ($scriptParameter{'analysisType'} eq "exomes") || ($scriptParameter{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
+
+	@modes = ("BOTH");
+    }
+
+    for (my $modeCounter=0;$modeCounter<scalar(@modes);$modeCounter++) { #SNP and INDEL will be recalibrated successively in the same file because when you specify eg SNP mode, the indels are emitted without modification, and vice-versa. Exome and Rapid will be processed using mode BOTH since there are to few INDELS to use in the recalibration model even though using 30 exome BAMS in Haplotypecaller step. 
 
 	print GATK_VARREC "\n\n#GATK VariantRecalibrator","\n\n";	
 	print GATK_VARREC "java -Xmx4g ";
@@ -2637,26 +2636,12 @@ sub GATKVariantReCalibration {
 	print GATK_VARREC "-L ".$contigIntervalListFile." ";#Target list file (merged or original)	
 	    
 	    if ($scriptParameter{'analysisType'} eq "rapid") {
-		
-		if ($mode[$modeCounter] eq "SNP") {
 		    
-		    print GATK_VARREC "-input ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType."_comb_ref.vcf "; #Infile just created combined vcf
-		}
-		if ($mode[$modeCounter] eq "INDEL") {#Use created recalibrated snp vcf as input
-		    
-		    print GATK_VARREC "-input ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType."_comb_ref_filtered.SNV.vcf ";
-		}
+		print GATK_VARREC "-input ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType."_comb_ref.vcf "; #Infile just created combined vcf
 	    }
 	    if ($scriptParameter{'analysisType'} eq "exomes") {
 		
-		if ($mode[$modeCounter] eq "SNP") {
-		 
 		    print GATK_VARREC "-input ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf "; #Infile HaplotypeCaller combined vcf which used reference BAMs to create combined vcf file
-		}
-		if ($mode[$modeCounter] eq "INDEL") {#Use created recalibrated snp vcf as input
-		    
-		    print GATK_VARREC "-input ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType."_comb_ref_filtered.SNV.vcf ";
-		}
 	    }
 	}
 	else { #WGS
@@ -2664,24 +2649,24 @@ sub GATKVariantReCalibration {
 	    print GATK_VARREC "-recalFile ".$variantRecalibratorOutFamilyDirectory."/".$familyID.$infileEnding.$callType.".intervals ";
 	    print GATK_VARREC "-rscriptFile ".$variantRecalibratorOutFamilyDirectory."/".$familyID.$infileEnding.$callType.".intervals.plots.R ";
 	    print GATK_VARREC "-tranchesFile ".$variantRecalibratorOutFamilyDirectory."/".$familyID.$infileEnding.$callType.".intervals.tranches ";
-	    if ($mode[$modeCounter] eq "SNP") {
+	    if ($modes[$modeCounter] eq "SNP") {
 	
 		print GATK_VARREC "-input ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf ";
 	    }
-	    if ($mode[$modeCounter] eq "INDEL") {#Use created recalibrated snp vcf as input
+	    if ($modes[$modeCounter] eq "INDEL") {#Use created recalibrated snp vcf as input
 	
 		print GATK_VARREC "-input ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".SNV.vcf ";
 	    }
 	    print GATK_VARREC "-an DP "; #The names of the annotations which should used for calculations. NOTE: Not to be used with hybrid capture
 	}
-	if ($mode[$modeCounter] eq "SNP") {
+	if ( ($modes[$modeCounter] eq "SNP") || ($modes[$modeCounter] eq "BOTH") ) {
 	    
 	    print GATK_VARREC "-resource:hapmap,VCF,known=false,training=true,truth=true,prior=15.0 ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKVariantReCalibrationTrainingSetHapMap'}." "; #A list of sites for which to apply a prior probability of being correct but which aren't used by the algorithm
 	    print GATK_VARREC "-resource:omni,VCF,known=false,training=true,truth=false,prior=12.0 ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKVariantReCalibrationTrainingSet1000GOmni'}." "; #A list of sites for which to apply a prior probability of being correct but which aren't used by the algorithm
 	    print GATK_VARREC "-resource:1000G,known=false,training=true,truth=false,prior=10.0 ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKVariantReCalibrationTrainingSet1000GSNP'}." "; #A list of sites for which to apply a prior probability of being correct but which aren't used by the algorithm
 	    print GATK_VARREC "-an QD "; #The names of the annotations which should used for calculations
 	}
-	if ($mode[$modeCounter] eq "INDEL") {
+	if ( ($modes[$modeCounter] eq "INDEL") || ($modes[$modeCounter] eq "BOTH") ) {
 
 	    print GATK_VARREC "-resource:mills,VCF,known=true,training=true,truth=true,prior=12.0 ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKVariantReCalibrationTrainingSetMills'}." "; #A list of sites for which to apply a prior probability of being correct but which aren't used by the algorithm
 	}
@@ -2690,7 +2675,7 @@ sub GATKVariantReCalibration {
 	print GATK_VARREC "-an MQRankSum "; #The names of the annotations which should used for calculations
 	print GATK_VARREC "-an ReadPosRankSum "; #The names of the annotations which should used for calculations
 	print GATK_VARREC "-an FS "; #The names of the annotations which should used for calculations
-	print GATK_VARREC "--mode ".$mode[$modeCounter]." "; #Recalibration mode to employ (SNP|INDEL|BOTH)
+	print GATK_VARREC "--mode ".$modes[$modeCounter]." "; #Recalibration mode to employ (SNP|INDEL|BOTH)
 	print GATK_VARREC "-nt ".$scriptParameter{'maximumCores'}." "; #How many data threads should be allocated to running this analysis    
 	&GATKPedigreeFlag(*GATK_VARREC, $outFamilyFileDirectory, "SILENT"); #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family
 	
@@ -2713,39 +2698,24 @@ sub GATKVariantReCalibration {
 	
 	    if ($scriptParameter{'analysisType'} eq "rapid") {
 		
-		if ($mode[$modeCounter] eq "SNP") {
-		 
-		    print GATK_VARREC "-input ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType."_comb_ref.vcf "; #Infile just created combined vcf
-		    print GATK_VARREC "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType."_comb_ref_filtered.SNV.vcf ";
-		}
-		if ($mode[$modeCounter] eq "INDEL") {#Use created recalibrated snp vcf as input
-
-		    print GATK_VARREC "-input ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType."_comb_ref_filtered.SNV.vcf "; #Infile just created combined vcf
-		    print GATK_VARREC "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType."_comb_ref_filtered.vcf ";		    
-		}
+		print GATK_VARREC "-input ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType."_comb_ref.vcf "; #Infile just created combined vcf
+		print GATK_VARREC "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType."_comb_ref_filtered.vcf ";		    
 	    }
 	    if ($scriptParameter{'analysisType'} eq "exomes") {
 		
-		if ($mode[$modeCounter] eq "SNP") {
-		    print GATK_VARREC "-input ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf "; #Infile HaplotypeCaller combined vcf which used reference BAMs to create combined vcf file
-		    print GATK_VARREC "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType."_comb_ref_filtered.SNV.vcf ";
-		}
-		if ($mode[$modeCounter] eq "INDEL") {#Use created recalibrated snp vcf as input
-	
-		    print GATK_VARREC "-input ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType."_comb_ref_filtered.SNV.vcf ";
-		    print GATK_VARREC "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType."_comb_ref_filtered.vcf ";
-		}
+		print GATK_VARREC "-input ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf "; #Infile HaplotypeCaller combined vcf which used reference BAMs to create combined vcf file
+		print GATK_VARREC "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType."_comb_ref_filtered.vcf ";
 	    }	   
 	}
 	else  { #WGS
 	    print GATK_VARREC "-recalFile ".$applyRecalibrationInFamilyDirectory."/".$familyID.$infileEnding.$callType.".intervals ";
 	    print GATK_VARREC "-tranchesFile ".$applyRecalibrationInFamilyDirectory."/".$familyID.$infileEnding.$callType.".intervals.tranches ";
-	    if ($mode[$modeCounter] eq "SNP") {
+	    if ($modes[$modeCounter] eq "SNP") {
 		
 		print GATK_VARREC "-input ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf ";
 		print GATK_VARREC "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".SNV.vcf ";
 	    }
-	    if ($mode[$modeCounter] eq "INDEL") {#Use created recalibrated snp vcf as input
+	    if ($modes[$modeCounter] eq "INDEL") {#Use created recalibrated snp vcf as input
 	
 		print GATK_VARREC "-input ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".SNV.vcf ";
 		print GATK_VARREC "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf ";
@@ -2753,7 +2723,7 @@ sub GATKVariantReCalibration {
 	}
 	print GATK_VARREC "--ts_filter_level ".$scriptParameter{'GATKVariantReCalibrationTSFilterLevel'}." ";
 	&GATKPedigreeFlag(*GATK_VARREC, $outFamilyFileDirectory, "SILENT"); #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family    
-	print GATK_VARREC "--mode ".$mode[$modeCounter]." "; #Recalibration mode to employ (SNP|INDEL|BOTH)
+	print GATK_VARREC "--mode ".$modes[$modeCounter]." "; #Recalibration mode to employ (SNP|INDEL|BOTH)
     }
 ###GATK SelectVariants
 
@@ -5531,17 +5501,17 @@ sub InfilesReFormat {
 		&AddInfileInfoOld($1, $2, $3, $sampleID, \$laneTracker, $infileCounter, "uncompressed");
                 $uncompressedFileCounter = 1; #File needs compression before starting analysis                               
             }
-            elsif ($infile{$sampleID}[$infileCounter] =~ /(\d+)_(\d+)_([^_]+)_([^_]+)_index([^_]+)_(\d).fastq.gz/) { #Parse fastq.gz 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                                                                                                          
+            #elsif ($infile{$sampleID}[$infileCounter] =~ /(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq.gz/) { #Parse fastq.gz 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                                                                                                          
 
-		&CheckSampleIDMatch($sampleID, $4, $infileCounter);
-		&AddInfileInfo($1, $2, $3, $4, $5, $6, \$laneTracker, $infileCounter, "compressed");
-	    }
-            elsif ($infile{$sampleID}[$infileCounter] =~/(\d+)_(\d+)_([^_]+)_([^_]+)_index([^_]+)_(\d).fastq/) { #Parse 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                             
+	#	&CheckSampleIDMatch($sampleID, $4, $infileCounter);
+	#	&AddInfileInfo($1, $2, $3, $4, $5, $6, \$laneTracker, $infileCounter, "compressed");
+	 #   }
+          #  elsif ($infile{$sampleID}[$infileCounter] =~/(\d+)_(\d+)_([^_]+)_([^_]+)_(index[^_]+)_(\d).fastq/) { #Parse 'new' format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                             
                                                                                          
-		&CheckSampleIDMatch($sampleID, $4, $infileCounter);
-		&AddInfileInfo($1, $2, $3, $4, $5, $6, \$laneTracker, $infileCounter, "uncompressed");		
-		$uncompressedFileCounter = 1; #File needs compression before starting analysis             
-	    }
+	#	&CheckSampleIDMatch($sampleID, $4, $infileCounter);
+	#	&AddInfileInfo($1, $2, $3, $4, $5, $6, \$laneTracker, $infileCounter, "uncompressed");		
+	#	$uncompressedFileCounter = 1; #File needs compression before starting analysis             
+	 #   }
 	    elsif ($infile{$sampleID}[$infileCounter] =~ /(\d+)_(\d+)_([^_]+)_([^_]+)_([^_]+)_(\d).fastq.gz/) { #Parse fastq.gz 'new' no "index" format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                                                                                                          
 
 		&CheckSampleIDMatch($sampleID, $4, $infileCounter);
