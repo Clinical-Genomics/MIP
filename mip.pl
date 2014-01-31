@@ -6015,11 +6015,11 @@ sub AddToScriptParameter {
 
 				%sampleInfo = &LoadYAML($scriptParameter{'sampleInfoFile'}); #Load parameters from previous run from sampleInfoFile	  
 				
-				if (defined($scriptParameter{'pedigreeFile'}) ) {
-				    
-				    $sampleInfo{$scriptParameter{'familyID'}}{'pedigreeFile'}{'Path'} = $scriptParameter{'pedigreeFile'}; #Add pedigreeFile to sampleInfo
-				    $sampleInfo{$scriptParameter{'familyID'}}{'pedigreeFileAnalysis'}{'Path'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/qc_pedigree.yaml"; #Add pedigreeFile info used in this analysis to SampleInfoFile
-				}
+			    }
+			    if (defined($scriptParameter{'pedigreeFile'}) ) {
+				
+				$sampleInfo{$scriptParameter{'familyID'}}{'pedigreeFile'}{'Path'} = $scriptParameter{'pedigreeFile'}; #Add pedigreeFile to sampleInfo
+				$sampleInfo{$scriptParameter{'familyID'}}{'pedigreeFileAnalysis'}{'Path'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/qc_pedigree.yaml"; #Add pedigreeFile info used in this analysis to SampleInfoFile
 			    }
 			} 
 		    }
