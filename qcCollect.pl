@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 
-#Collects MPS QC from MIP. Loads information on files to examine and values to extract from in YAML format and outputs exracted metrics in YAML format. 
+##Collects MPS QC from MIP. Loads information on files to examine and values to extract from in YAML format and outputs exracted metrics in YAML format. 
 #Copyright 2013 Henrik Stranneheim 
 
 use Pod::Usage;
@@ -39,9 +39,16 @@ GetOptions('si|sampleInfoFile:s' => \$sampleInfoFile,
 	   'v|version' => \$version,
     );
 
-die $USAGE if( $help );
+if($help) {
 
-die "\nqcCollect.pl v1.0\n\n" if($version);
+    print STDOUT $USAGE, "\n";
+    exit;
+}
+if($version) {
+
+    print STDOUT "\nqcCollect.pl v1.0\n\n";
+    exit;
+}
 
 if ($printRegExp) {
 
@@ -53,27 +60,29 @@ if ($printRegExp) {
 if ($sampleInfoFile eq 0) {
 
     print STDERR "\n";
+    print STDOUT $USAGE, "\n";
     print STDERR "Must supply a '-sampleInfoFile' (supply whole path)", "\n\n";
-    die $USAGE;
+    exit;
 }
 if ($regExpFile eq 0) {
 
     print STDERR "\n";
+    print STDOUT $USAGE, "\n";
     print STDERR "Must supply a '-regExpFile' (supply whole path)", "\n\n";
-    die $USAGE;
+    exit;
 }
 
 ####MAIN
 
-my %sampleInfoFile = LoadYAML($sampleInfoFile); #Load sampleInfoFile (YAML) and transfer to sampleInfoFile (Hash)
+my %sampleInfoFile = &LoadYAML($sampleInfoFile); #Load sampleInfoFile (YAML) and transfer to sampleInfoFile (Hash)
 
-my %regExpFile = LoadYAML($regExpFile); #Load regExpFile (YAML) and transfer to regExpFile (Hash)
+my %regExpFile = &LoadYAML($regExpFile); #Load regExpFile (YAML) and transfer to regExpFile (Hash)
 
-SampleQC(); #Extracts all qcdata on sampleID level using information in %sampleInfoFile and %regExpFile
+&SampleQC(); #Extracts all qcdata on sampleID level using information in %sampleInfoFile and %regExpFile
 
-FamilyQC(); #Extracts all qcdata on family level using information in %sampleInfoFile and %regExpFile
+&FamilyQC(); #Extracts all qcdata on family level using information in %sampleInfoFile and %regExpFile
 
-WriteYAML($outfile, \%qcData ); #Writes to YAML file
+&WriteYAML($outfile, \%qcData ); #Writes to YAML file
 
 ####SubRoutines
 
@@ -101,9 +110,9 @@ sub FamilyQC {
                     $outFile = $sampleInfoFile{$familyID}{'program'}{$program}{'OutFile'}; #Extract OutFile
                 }  
 		
-                ParseRegExpHashAndCollect($program, $outDirectory, $outFile); #Loads qcHeader and qcProgramData
+                &ParseRegExpHashAndCollect($program, $outDirectory, $outFile); #Loads qcHeader and qcProgramData
 		
-                AddToqcData($familyID, "", $program, ""); #Add extracted information to qcData
+                &AddToqcData($familyID, "", $program, ""); #Add extracted information to qcData
             }
         }
     }
@@ -125,9 +134,9 @@ sub SampleQC {
 			my $outDirectory = $sampleInfoFile{$familyID}{$sampleID}{'program'}{$program}{$infile}{'OutDirectory'};
 			my $outFile = $sampleInfoFile{$familyID}{$sampleID}{'program'}{$program}{$infile}{'OutFile'};
 			
-			ParseRegExpHashAndCollect($program, $outDirectory, $outFile); #Loads qcHeader and qcProgramData
+			&ParseRegExpHashAndCollect($program, $outDirectory, $outFile); #Loads qcHeader and qcProgramData
 			
-			AddToqcData($familyID, $sampleID, $program, $infile); #Add extracted information to qcData
+			&AddToqcData($familyID, $sampleID, $program, $infile); #Add extracted information to qcData
 			
 		    }   
 		}
@@ -227,11 +236,11 @@ sub AddToqcData {
 		if ($program eq "QaCompute") {#Check gender for sampleID
 		    my $chrXCoverage = $qcData{$familyID}{$sampleID}{$infile}{$program}{$regExpKey}[0];
 		    my $chrYCoverage = $qcData{$familyID}{$sampleID}{$infile}{$program}{$regExpKey}[1];
-		    GenderCheck(\$familyID,\$sampleID,\$infile, \$chrXCoverage, \$chrYCoverage); #Check that assumed gender is supported by coverage on chrX and chrY
+		    &GenderCheck(\$familyID,\$sampleID,\$infile, \$chrXCoverage, \$chrYCoverage); #Check that assumed gender is supported by coverage on chrX and chrY
 		}
 		if (defined($qcData{$familyID}{'program'}{'RelationCheck'}{'Sample_RelationCheck'}) && defined ($qcData{$familyID}{'program'}{'pedigreeCheck'}{'Sample_order'}) ) {
 		    
-		    RelationCheck(\$familyID, \@{$qcData{$familyID}{'program'}{'RelationCheck'}{'Sample_RelationCheck'}}, \@{$qcData{$familyID}{'program'}{'pedigreeCheck'}{'Sample_order'}});
+		    &RelationCheck(\$familyID, \@{$qcData{$familyID}{'program'}{'RelationCheck'}{'Sample_RelationCheck'}}, \@{$qcData{$familyID}{'program'}{'pedigreeCheck'}{'Sample_order'}});
 		    delete($qcData{$familyID}{'program'}{'RelationCheck'}); #Not of any use anymore
 		}
 	    }
@@ -395,7 +404,7 @@ sub LoadYAML {
     my $yamlFile = $_[0];
     my %yamlHash;
 
-    my $fileType = DetectYamlContentType($yamlFile);
+    my $fileType = &DetectYamlContentType($yamlFile);
 
     open (YAML, "<". $yamlFile) or die "can't open ".$yamlFile.": $!\n";    
         
@@ -549,6 +558,6 @@ sub RegExpToYAML {
 #$regExp{''}{''} = ;
 
     
-WriteYAML($printRegExpOutFile, \%regExp);
+&WriteYAML($printRegExpOutFile, \%regExp);
 
 }
