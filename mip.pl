@@ -1185,12 +1185,9 @@ if ($scriptParameter{'pQCCollect'} > 0) { #Run QCCollect. Done per family
 
 if ($scriptParameter{'pRemovalRedundantFiles'} > 0) { #Sbatch generation of removal of alignment files
     
-    print STDOUT "\nRemoval of alignment files", "\n"; print MIPLOG "\nRemoval of alignment files", "\n";
-    
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+    print STDOUT "\nRemoval of alignment files", "\n"; print MIPLOG "\nRemoval of alignment files", "\n"; 
 	
-	&RemoveRedundantFiles($scriptParameter{'familyID'}, $sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'}, "BOTH");	
-    }
+	&RemoveRedundantFiles($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");	
 }
 
 close(MIPLOG); #Close mip_log file
@@ -1210,34 +1207,37 @@ sub RemoveRedundantFiles {
 #Generates a sbatch script, which removes some alignment files.
     
     my $familyID = $_[0];
-    my $sampleID = $_[1]; 
-    my $aligner = $_[2];
-    my $callType = $_[3]; #SNV,INDEL or BOTH
+    my $aligner = $_[1];
+    my $callType = $_[2]; #SNV,INDEL or BOTH
 
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
 
-    &ProgramPreRequisites($sampleID, "RemovalRedundantFiles", $aligner, 0, $FILEHANDLE, 1, 1);
+    &ProgramPreRequisites($familyID, "RemovalRedundantFiles", $aligner, 0, $FILEHANDLE, 1, 1);
     
-    `mkdir -p $scriptParameter{'outDataDir'}/$sampleID/$aligner/info;`; #Creates the aligner and info data file directory
-    `mkdir -p $scriptParameter{'outScriptDir'}/$sampleID/$aligner;`; #Creates the aligner script directory
+    `mkdir -p $scriptParameter{'outDataDir'}/$familyID/$aligner/info;`; #Creates the aligner and info data file directory
+    `mkdir -p $scriptParameter{'outScriptDir'}/$familyID/$aligner;`; #Creates the aligner script directory
 
     print $FILEHANDLE 'echo "Running on: $(hostname)"',"\n\n";
 
-    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { 
 
-##Single files
-    for (my $infileCounter=0;$infileCounter < scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #MosaikBuild takes both reads at once
-	
-	my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter]; 
+	my $sampleID = $sampleIDs[$sampleIDCounter];
+	my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
 
-	##MosaikBuild	
-	if ( ($scriptParameter{'pMosaikBuild'} > 0) || ($scriptParameter{'aligner'} eq "mosaik") ) {
+###Single files
+
+	for (my $infileCounter=0;$infileCounter < scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #MosaikBuild takes both reads at once
 	    
-	    print $FILEHANDLE "rm ";
-	    print $FILEHANDLE $inSampleDirectory."/".$infile.".dat", "\n\n"; #MosaikBuild
+	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter]; 
 	    
-	}
-	##MosaikAlign
+##MosaikBuild	
+	    if ( ($scriptParameter{'pMosaikBuild'} > 0) || ($scriptParameter{'aligner'} eq "mosaik") ) {
+		
+		print $FILEHANDLE "rm ";
+		print $FILEHANDLE $inSampleDirectory."/".$infile.".dat", "\n\n"; #MosaikBuild
+		
+	    }
+##MosaikAlign
 	if ( ($scriptParameter{'pMosaikAlign'} > 0) || ($scriptParameter{'aligner'} eq "mosaik") ) {
 	    
 	    print $FILEHANDLE "rm ";
@@ -1245,80 +1245,56 @@ sub RemoveRedundantFiles {
 	    
 	    print $FILEHANDLE "rm ";
 	    print $FILEHANDLE $inSampleDirectory."/".$infile.".bam", "\n\n"; #MosaikAlign	    
-	}	    
-	if ($scriptParameter{'pPicardToolsSortSam'} > 0) {
-	    
-	    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsSortSam'}{'fileEnding'};
-
-	    print $FILEHANDLE "rm ";
-	    print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".bam*", "\n\n"; #Sorted BAM file
 	}
-    }
-
-##Potentially merged files
-    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles($sampleID);        
-    
-    if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
-
-	if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
 	    
-	    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMergeSamFiles'}{'fileEnding'};
+##Remove BWA files
+	    if ($scriptParameter{'pBwaAln'} > 0) {
+		
+		print $FILEHANDLE "rm ";
+		print $FILEHANDLE $inSampleDirectory."/".$infile.".sai", "\n\n"; #BWA_Aln
+	    }
+	    if ($scriptParameter{'pBwaSampe'} >0) {
+		
+		print $FILEHANDLE "rm ";
+		print $FILEHANDLE $inSampleDirectory."/".$infile.".bam", "\n\n"; #BWA_Sampe
+	    }      	    
 	    
-	    print $FILEHANDLE "rm ";
-	    print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".bam*", "\n\n"; #Sorted BAM file
-	}	
-	if ($scriptParameter{'pPicardToolsMarkduplicates'} > 0) {
-	    
-	    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
-	    
-	    print $FILEHANDLE "rm ";
-	    print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".bam*", "\n\n"; #Dedupped BAM file
+##Sorted BAM
+	    if ($scriptParameter{'pPicardToolsSortSam'} > 0) {
+		
+		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsSortSam'}{'fileEnding'};
+		
+		print $FILEHANDLE "rm ";
+		print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".bam*", "\n\n"; #Sorted BAM file
+	    }
 	}
-	if ($scriptParameter{'pGATKRealigner'} > 0) {
-	 
-	    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";   
-	    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKRealigner'}{'fileEnding'};
-	    
-	    print $FILEHANDLE "rm ";
-	    print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".bam*", "\n\n"; #ReAligned BAM file
-	}
-	if ($scriptParameter{'pGATKBaseRecalibration'} > 0) {
-	    
-	    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
-	    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
-	    
-	    print $FILEHANDLE "rm ";
-	    print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".bam*", "\n\n"; #BaseRecalibrated BAM file
-	}
-	if ($scriptParameter{'pGATKHaploTypeCaller'} > 0) {
-	    
-	    my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
-	    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKHaploTypeCaller'}{'fileEnding'};
-	    
-	    print $FILEHANDLE "rm ";
-	    print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf*", "\n\n"; #HaplotypeCaller vcf file
-	}
-    }
-    else {
 	
-	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all infiles per lane
+##Potentially merged files
+	my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles($sampleID);        
+	
+	if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
 	    
-	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
-	     
+	    if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
+		
+		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMergeSamFiles'}{'fileEnding'};
+		
+		print $FILEHANDLE "rm ";
+		print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".bam*", "\n\n"; #Sorted BAM file
+	    }	
 	    if ($scriptParameter{'pPicardToolsMarkduplicates'} > 0) {
 		
 		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
-
+		
 		print $FILEHANDLE "rm ";
 		print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".bam*", "\n\n"; #Dedupped BAM file
 	    }
 	    if ($scriptParameter{'pGATKRealigner'} > 0) {
 		
-		my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
-		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKRealigner'}{'fileEnding'};
-		
-		print $FILEHANDLE "rm ";
-		print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".bam*", "\n\n"; #ReAligned BAM file
+	    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";   
+	    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKRealigner'}{'fileEnding'};
+	    
+	    print $FILEHANDLE "rm ";
+	    print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".bam*", "\n\n"; #ReAligned BAM file
 	    }
 	    if ($scriptParameter{'pGATKBaseRecalibration'} > 0) {
 		
@@ -1328,40 +1304,61 @@ sub RemoveRedundantFiles {
 		print $FILEHANDLE "rm ";
 		print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".bam*", "\n\n"; #BaseRecalibrated BAM file
 	    }
-	    if ($scriptParameter{'pGATKHaploTypeCaller'} > 0) {
+	}
+	else {
+	    
+	    for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all infiles per lane
 		
-		my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
-		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKHaploTypeCaller'}{'fileEnding'};
+		my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
 		
-		print $FILEHANDLE "rm ";
-		print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf*", "\n\n"; #HaplotypeCaller vcf file
+		if ($scriptParameter{'pPicardToolsMarkduplicates'} > 0) {
+		    
+		    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+		    
+		    print $FILEHANDLE "rm ";
+		    print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".bam*", "\n\n"; #Dedupped BAM file
+		}
+		if ($scriptParameter{'pGATKRealigner'} > 0) {
+		    
+		    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
+		    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKRealigner'}{'fileEnding'};
+		    
+		    print $FILEHANDLE "rm ";
+		    print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".bam*", "\n\n"; #ReAligned BAM file
+		}
+		if ($scriptParameter{'pGATKBaseRecalibration'} > 0) {
+		    
+		    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
+		    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
+		    
+		    print $FILEHANDLE "rm ";
+		    print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".bam*", "\n\n"; #BaseRecalibrated BAM file
+		}
 	    }
 	}
     }
-###
-#Remove BWA files
-###
-    if ( ($scriptParameter{'pBwaAln'} > 0) || ($scriptParameter{'pBwaSampe'} >0) || ($scriptParameter{'aligner'} eq "bwa")) {
+###Family files
+    if ($scriptParameter{'pGATKHaploTypeCaller'} > 0) {
 	
-	for (my $infileCounter=0;$infileCounter < scalar( @{ $infilesBothStrandsNoEnding{$sampleID} });$infileCounter++) { #BWA_Aln takes 1 read at a time 
-	    
-	    my $infile = $infilesBothStrandsNoEnding{$sampleID}[$infileCounter]; 
-	    
-	    print $FILEHANDLE "rm ";
-	    print $FILEHANDLE $inSampleDirectory."/".$infile.".sai", "\n\n"; #BWA_Aln
-	}
-	for (my $infileCounter=0;$infileCounter < scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #BWA_Sampe 
-	    
-	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter]; 
-	    
-	    print $FILEHANDLE "rm ";
-	    print $FILEHANDLE $inSampleDirectory."/".$infile.".bam", "\n\n"; #BWA_Sampe
-	}    
-    }    
-    #print $FILEHANDLE "rm ";
-    #print $FILEHANDLE "-rf ";
-    #print $FILEHANDLE $inSampleDirectory."/per_chr", "\n\n"; #samtools/GATK (real/recal)
-    
+	my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/HaploTypeCaller";
+	
+	print $FILEHANDLE "rm -rf ";
+	print $FILEHANDLE $outFamilyDirectory."/", "\n\n"; #Remove HaplotypeCaller individual contigfiles
+	
+	$outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK"; #New outfile directory
+	my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKHaploTypeCaller'}{'fileEnding'};
+	
+	print $FILEHANDLE "rm ";
+	print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf*", "\n\n"; #HaplotypeCaller vcf file
+    }
+    if ($scriptParameter{'pAnnovar'} > 0) {
+	
+	my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
+	my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pAnnovar'}{'fileEnding'};
+	
+	print $FILEHANDLE "rm ";
+	print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType."*".$scriptParameter{'annovarGenomeBuildVersion'}."_*", "\n\n"; #Annovar data files
+    }  
     close($FILEHANDLE);
     return;
 }
