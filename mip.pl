@@ -571,7 +571,7 @@ if($help) {
 
 if($version) {
 
-    print STDOUT "\nMip.pl v1.5.0\n\n";
+    print STDOUT "\nMip.pl v1.5.1\n\n";
     exit;
 }
 
@@ -1185,12 +1185,9 @@ if ($scriptParameter{'pQCCollect'} > 0) { #Run QCCollect. Done per family
 
 if ($scriptParameter{'pRemovalRedundantFiles'} > 0) { #Sbatch generation of removal of alignment files
     
-    print STDOUT "\nRemoval of alignment files", "\n"; print MIPLOG "\nRemoval of alignment files", "\n";
-    
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+    print STDOUT "\nRemoval of alignment files", "\n"; print MIPLOG "\nRemoval of alignment files", "\n"; 
 	
-	&RemoveRedundantFiles($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});	
-    }
+	&RemoveRedundantFiles($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");	
 }
 
 close(MIPLOG); #Close mip_log file
@@ -1209,239 +1206,161 @@ if ($scriptParameter{'sampleInfoFile'} ne 0) {#Write SampleInfo to yaml file
 sub RemoveRedundantFiles {
 #Generates a sbatch script, which removes some alignment files.
     
-    my $sampleID = $_[0]; 
+    my $familyID = $_[0];
     my $aligner = $_[1];
+    my $callType = $_[2]; #SNV,INDEL or BOTH
 
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
+
+    &ProgramPreRequisites($familyID, "RemovalRedundantFiles", $aligner, 0, $FILEHANDLE, 1, 1);
     
-    `mkdir -p $scriptParameter{'outDataDir'}/$sampleID/$aligner/info;`; #Creates the aligner and info data file directory
-    `mkdir -p $scriptParameter{'outScriptDir'}/$sampleID/$aligner;`; #Creates the aligner script directory
-    if ($scriptParameter{'pRemovalRedundantFiles'} == 1) {
-	$fileName = $scriptParameter{'outScriptDir'}."/".$sampleID."/".$aligner."/removeRedundantFiles_".$sampleID.".";
-    }
-    elsif ($scriptParameter{'pRemovalRedundantFiles'} == 2) { #Dry run
-	$fileName = $scriptParameter{'outScriptDir'}."/".$sampleID."/".$aligner."/dry_run_removeRedundantFiles_".$sampleID.".";
-	print STDOUT "Dry Run:\n";print MIPLOG  "Dry Run:\n";
-    }
-    &Checkfnexists(\$fileName, \$fnend, \$fileNameTracker);
+    `mkdir -p $scriptParameter{'outDataDir'}/$familyID/$aligner/info;`; #Creates the aligner and info data file directory
+    `mkdir -p $scriptParameter{'outScriptDir'}/$familyID/$aligner;`; #Creates the aligner script directory
 
-###Info and Log
-    print STDOUT "Creating sbatch script RemoveRedundantFiles and writing script file(s) to: ".$fileName, "\n";print MIPLOG "Creating sbatch script RemoveRedundantFiles and writing script file(s) to: ".$fileName, "\n";
-    print STDOUT "Sbatch script RemoveRedundantFiles data files will be removed in: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner, "\n";print MIPLOG "Sbatch script RemoveRedundantFiles data files will be removed in: ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner, "\n";
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { 
 
-    open ($FILEHANDLE, ">".$fileName) or die "Can't write to ".$fileName.":".$!, "\n";
-    
-    print $FILEHANDLE "#! /bin/bash -l", "\n";
-    print $FILEHANDLE "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
-    print $FILEHANDLE "#SBATCH -n 1", "\n";
-    print $FILEHANDLE "#SBATCH -C thin", "\n";
-    print $FILEHANDLE "#SBATCH -t 00:15:00", "\n";
-    print $FILEHANDLE "#SBATCH -J REM_".$sampleID, "\n";
-    if ($scriptParameter{'pRemovalRedundantFiles'} == 1) {
-	print $FILEHANDLE "#SBATCH -e ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/rem_".$sampleID.".".$fileNameTracker.".stderr.txt", "\n";
-	print $FILEHANDLE "#SBATCH -o ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/rem_".$sampleID.".".$fileNameTracker.".stdout.txt", "\n";
-    }
-    elsif ($scriptParameter{'pRemovalRedundantFiles'} == 2) { #Dry run
-	print $FILEHANDLE "#SBATCH -e ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/rem_".$sampleID.".".$fileNameTracker.".stderr.txt", "\n";
-	print $FILEHANDLE "#SBATCH -o ".$scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/info/rem_".$sampleID.".".$fileNameTracker.".stdout.txt", "\n";
-    }
-    unless ($scriptParameter{'email'} eq 0) {
-	print $FILEHANDLE "#SBATCH --mail-type=END", "\n";
-	print $FILEHANDLE "#SBATCH --mail-type=FAIL", "\n";
-	print $FILEHANDLE "#SBATCH --mail-user=".$scriptParameter{'email'}, "\n\n";
-	
-    }
-    print $FILEHANDLE 'echo "Running on: $(hostname)"',"\n\n";
+	my $sampleID = $sampleIDs[$sampleIDCounter];
+	my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
 
-    print $FILEHANDLE "cd ";
-    print $FILEHANDLE $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner, "\n\n";
+###Single files
 
-    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
-    my $infile;
-    my $mergeLanes; #To pick up merged lanes later 
-    my $PicardToolsMergeSwitch = 0;
-
-    
-#Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch
-    if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'picardToolsMergeSamFilesPrevious'} == 1) { # Files merged this round with merged file from previous round
-	
-	for (my $mergeFileCounter=0;$mergeFileCounter<scalar(@picardToolsMergeSamFilesPrevious);$mergeFileCounter++) {
+	for (my $infileCounter=0;$infileCounter < scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #MosaikBuild takes both reads at once
 	    
-	    if ($picardToolsMergeSamFilesPrevious[$mergeFileCounter] =~ /lane(\d+)|s_(\d+)/) { #Look for lanes_ or lane\d in previously generated file to be merged with current run to be able to extract previous lanes
+	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter]; 
+	    
+##MosaikBuild	
+	    if ( ($scriptParameter{'pMosaikBuild'} > 0) || ($scriptParameter{'aligner'} eq "mosaik") ) {
 		
-		if($1) {$mergeLanes = $1;} else {$mergeLanes = $2;} #Make sure to always supply lanes from previous regexp  
-		$infile = $sampleID."_lanes_".$mergeLanes;
-		for (my $laneCounter=0;$laneCounter<scalar(@ { $lane{$sampleID} });$laneCounter++) {
-		    $infile .= $lane{$sampleID}[$laneCounter]; #Extract lanes per sampleID
-		}
-		$PicardToolsMergeSwitch = 1;
+		print $FILEHANDLE "rm ";
+		print $FILEHANDLE $inSampleDirectory."/".$infile.".dat", "\n\n"; #MosaikBuild
+		
 	    }
-	}
-    }
-    elsif ( ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) && (scalar( @{ $infilesLaneNoEnding{$sampleID} }) > 1) ) { #but only if there is more than one mosaikBuild/BWA_Aln file per sample ID (Sanity check)
-	$infile = $sampleID."_lanes_";
-	for (my $laneCounter=0;$laneCounter<scalar(@ { $lane{$sampleID} });$laneCounter++) {
-	    $infile .= $lane{$sampleID}[$laneCounter]; #Extract lanes per sampleID
-	}
-	$PicardToolsMergeSwitch = 1;
-    }    
-    
-    for (my $infileCounter=0;$infileCounter < scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #MosaikBuild takes both reads at once
-	
-	my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter]; 
-	
-	if ( ($scriptParameter{'pMosaikBuild'} > 0) || ($scriptParameter{'pMosaikAlign'} > 0) || ($scriptParameter{'aligner'} eq "mosaik") ) {
-
-	    print $FILEHANDLE "rm ";
-	    print $FILEHANDLE $inSampleDirectory."/".$infile.".dat", "\n\n"; #MosaikBuild
+##MosaikAlign
+	if ( ($scriptParameter{'pMosaikAlign'} > 0) || ($scriptParameter{'aligner'} eq "mosaik") ) {
 	    
 	    print $FILEHANDLE "rm ";
 	    print $FILEHANDLE $inSampleDirectory."/".$infile.".stat", "\n\n"; #MosaikAlign Stats
 	    
 	    print $FILEHANDLE "rm ";
-	    print $FILEHANDLE $inSampleDirectory."/".$infile.".bam", "\n\n"; #MosaikAlign
+	    print $FILEHANDLE $inSampleDirectory."/".$infile.".bam", "\n\n"; #MosaikAlign	    
+	}
 	    
-	    #print $FILEHANDLE "rm ";
-	    #print $FILEHANDLE $inSampleDirectory."/".$infile.".multiple.bam", "\n\n"; #MosaikAlign Multiple
+##Remove BWA files
+	    if ($scriptParameter{'pBwaAln'} > 0) {
+		
+		print $FILEHANDLE "rm ";
+		print $FILEHANDLE $inSampleDirectory."/".$infile.".sai", "\n\n"; #BWA_Aln
+	    }
+	    if ($scriptParameter{'pBwaSampe'} >0) {
+		
+		print $FILEHANDLE "rm ";
+		print $FILEHANDLE $inSampleDirectory."/".$infile.".bam", "\n\n"; #BWA_Sampe
+	    }      	    
 	    
-	    #print $FILEHANDLE "rm ";
-	    #print $FILEHANDLE $inSampleDirectory."/".$infile."_sorted.bam", "\n\n"; #MosaikAlign/samtools
+##Sorted BAM
+	    if ($scriptParameter{'pPicardToolsSortSam'} > 0) {
+		
+		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsSortSam'}{'fileEnding'};
+		
+		print $FILEHANDLE "rm ";
+		print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".ba*", "\n\n"; #Sorted BAM and bai file
+	    }
+	}
+	
+##Potentially merged files
+	my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles($sampleID);        
+	
+	if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
 	    
-	    #print $FILEHANDLE "rm ";
-	    #print $FILEHANDLE $inSampleDirectory."/".$infile."_sorted.bam.bai", "\n\n"; #MosaikAlign/samtools index
+	    if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
+		
+		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMergeSamFiles'}{'fileEnding'};
+		
+		print $FILEHANDLE "rm ";
+		print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".ba*", "\n\n"; #Sorted BAM and bai file
+	    }	
+	    if ($scriptParameter{'pPicardToolsMarkduplicates'} > 0) {
+		
+		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+		
+		print $FILEHANDLE "rm ";
+		print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".ba*", "\n\n"; #Dedupped BAM and bai file
+	    }
+	    if ($scriptParameter{'pGATKRealigner'} > 0) {
+		
+	    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";   
+	    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKRealigner'}{'fileEnding'};
 	    
+	    print $FILEHANDLE "rm ";
+	    print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".ba*", "\n\n"; #ReAligned BAM and bai file
+	    }
+	    if ($scriptParameter{'pGATKBaseRecalibration'} > 0) {
+		
+		my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
+		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
+		
+		print $FILEHANDLE "rm ";
+		print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".ba*", "\n\n"; #BaseRecalibrated BAM and bai file
+	    }
+	}
+	else {
+	    
+	    for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all infiles per lane
+		
+		my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
+		
+		if ($scriptParameter{'pPicardToolsMarkduplicates'} > 0) {
+		    
+		    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+		    
+		    print $FILEHANDLE "rm ";
+		    print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".ba*", "\n\n"; #Dedupped BAM and bai file
+		}
+		if ($scriptParameter{'pGATKRealigner'} > 0) {
+		    
+		    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
+		    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKRealigner'}{'fileEnding'};
+		    
+		    print $FILEHANDLE "rm ";
+		    print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".ba*", "\n\n"; #ReAligned BAM and bai file
+		}
+		if ($scriptParameter{'pGATKBaseRecalibration'} > 0) {
+		    
+		    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
+		    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
+		    
+		    print $FILEHANDLE "rm ";
+		    print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".ba*", "\n\n"; #BaseRecalibrated BAM and bai file
+		}
+	    }
 	}
     }
-###
-#Remove BWA files
-###
-    if ( ($scriptParameter{'pBwaAln'} > 0) || ($scriptParameter{'pBwaSampe'} >0) || ($scriptParameter{'aligner'} eq "bwa")) {
+###Family files
+    if ($scriptParameter{'pGATKHaploTypeCaller'} > 0) {
 	
-	for (my $infileCounter=0;$infileCounter < scalar( @{ $infilesBothStrandsNoEnding{$sampleID} });$infileCounter++) { #BWA_Aln takes 1 read at a time 
-	    
-	    my $infile = $infilesBothStrandsNoEnding{$sampleID}[$infileCounter]; 
-	    
-	    print $FILEHANDLE "rm ";
-	    print $FILEHANDLE $inSampleDirectory."/".$infile.".sai", "\n\n"; #BWA_Aln
-	}
-	for (my $infileCounter=0;$infileCounter < scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #BWA_Sampe 
-	    
-	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter]; 
-	    
-	    print $FILEHANDLE "rm ";
-	    print $FILEHANDLE $inSampleDirectory."/".$infile.".bam", "\n\n"; #BWA_Sampe
-	}    
-    }    
-    print $FILEHANDLE "rm ";
-    print $FILEHANDLE "-rf ";
-    print $FILEHANDLE $inSampleDirectory."/per_chr", "\n\n"; #samtools/GATK (real/recal)
-    
+	my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/HaploTypeCaller";
+	
+	print $FILEHANDLE "rm -rf ";
+	print $FILEHANDLE $outFamilyDirectory."/", "\n\n"; #Remove HaplotypeCaller individual contigfiles
+	
+	$outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK"; #New outfile directory
+	my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKHaploTypeCaller'}{'fileEnding'};
+	
+	print $FILEHANDLE "rm ";
+	print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf*", "\n\n"; #HaplotypeCaller vcf file
+    }
+    if ($scriptParameter{'pAnnovar'} > 0) {
+	
+	my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
+	my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pAnnovar'}{'fileEnding'};
+	
+	print $FILEHANDLE "rm ";
+	print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType."*".$scriptParameter{'annovarGenomeBuildVersion'}."_*", "\n\n"; #Annovar data files
+	print $FILEHANDLE "rm ";
+	print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".*", "\n\n"; #Annovar data files
+    }  
     close($FILEHANDLE);
     return;
-}
-
-sub UNifiedGT {
-
-    my $familyID = $_[0]; #familyID NOTE: not sampleid
-    my $aligner = $_[1];
-    
-    my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/per_chr/GATK/";
-    my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/per_chr/GATK/";
-    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKHaploTypeCaller'}{'fileEnding'}; #Change to UnifiedGT later
-    my $coreCounter = 1;
-    my $callsCounter = 0; #Count the number of calls for both merged and non-merged files to portion out "wait" command
-    
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #For all sampleIDs
-	
-	my ($infile, $PicardToolsMergeSwitch) = CheckIfMergedFiles($sampleIDs[$sampleIDCounter]);
-	
-	if ($callsCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
-	    
-	    print GATK_UNIGT "wait", "\n\n";
-	    $coreCounter=$coreCounter+1;
-	}
-	
-	if ($PicardToolsMergeSwitch == 1) { #Alignment BAM-files merged previously	    	
-	    
-	    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleIDs[$sampleIDCounter]."/".$aligner."/per_chr/GATK";
-	    my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleIDs[$sampleIDCounter]."/".$aligner."/per_chr/GATK";
-	    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKBaseRecalibration'}{'fileEnding'};
-	    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKBaseRecalibration'}{'fileEnding'};
-	    
-	    for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@contigs);$chromosomeCounter++) { #For all contigs	    
-		
-		if ($chromosomeCounter == 0) {
-		    
-		    print GATK_UNIGT "java -Xmx4g ";
-		    print GATK_UNIGT "-jar ".$scriptParameter{'picardToolsPath'}."/MergeSamFiles.jar "; #Merge all individual contigs to 1 file
-		    print GATK_UNIGT "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}; #Temp Directory
-		    print GATK_UNIGT "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding.".bam "; #OutFile
-		}
-		
-		print GATK_UNIGT "INPUT=".$inSampleDirectory."/".$infile.$infileEnding."_".$contigs[$chromosomeCounter].".bam "; #InFile
-	    }
-	    print GATK_UNIGT "& ", "\n\n";
-	    $callsCounter++;
-	    
-	    if ($callsCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
-		
-		print GATK_UNIGT "wait", "\n\n";
-		$coreCounter=$coreCounter+1;
-	    }
-	    
-	    print GATK_UNIGT "samtools index ";
-	    print GATK_UNIGT $outSampleDirectory."/".$infile.$outfileEnding.".bam &", "\n\n"; #Index just created PicardTools outfile
-	    $callsCounter++;	    
-	}
-	
-	else  { #No previous merge of alignment BAM-files
-	    
-	    for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{ $sampleIDs[$sampleIDCounter] } });$infileCounter++) { #For all infiles per lane
-		
-		my $infile = $infilesLaneNoEnding{ $sampleIDs[$sampleIDCounter] }[$infileCounter];
-		
-		if ($callsCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
-		    
-		    print GATK_UNIGT "wait", "\n\n";
-		    $coreCounter=$coreCounter+1;
-		}
-		
-		my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleIDs[$sampleIDCounter]."/".$aligner."/per_chr/GATK";
-		my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleIDs[$sampleIDCounter]."/".$aligner."/per_chr/GATK";
-		my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKBaseRecalibration'}{'fileEnding'};
-		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKBaseRecalibration'}{'fileEnding'};
-		
-		for (my $chromosomeCounter=0;$chromosomeCounter<scalar(@contigs);$chromosomeCounter++) { #For all contigs	    
-		    
-		    if ($chromosomeCounter == 0) {
-			
-			print GATK_UNIGT "java -Xmx4g ";
-			print GATK_UNIGT "-jar ".$scriptParameter{'picardToolsPath'}."/MergeSamFiles.jar "; #Merge all individual contigs to 1 file
-			print GATK_UNIGT "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}; #Temp Directory
-			print GATK_UNIGT "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding.".bam "; #OutFile
-		    }
-		    
-		    print GATK_UNIGT "INPUT=".$inSampleDirectory."/".$infile.$infileEnding."_".$contigs[$chromosomeCounter].".bam "; #InFile
-		}
-		print GATK_UNIGT "& ", "\n\n";
-		$callsCounter++;
-		
-	    }
-	    for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{ $sampleIDs[$sampleIDCounter] } });$infileCounter++) { #For all infiles per lane
-		if ($callsCounter == $coreCounter*$scriptParameter{'maximumCores'}) { #Using only $scriptParameter{'maximumCores'} cores
-		    
-		    print GATK_UNIGT "wait", "\n\n";
-		    $coreCounter=$coreCounter+1;
-		}
-		
-		my $infile = $infilesLaneNoEnding{ $sampleIDs[$sampleIDCounter] }[$infileCounter];
-		print GATK_UNIGT "samtools index ";
-		print GATK_UNIGT $outSampleDirectory."/".$infile.$outfileEnding.".bam &", "\n\n"; #Index just created PicardTools outfile
-		$callsCounter++;
-	    }
-	}
-    }
-#All infiles should now be merged to 1 file.
 }
 
 sub SampleCheck { 
@@ -2501,7 +2420,9 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE  "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	print $FILEHANDLE "-T SelectVariants "; #Type of analysis to run
-	print $FILEHANDLE "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
+	print $FILEHANDLE "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file	
+	print $FILEHANDLE "-L ".$contigIntervalListFile." ";#Target list file (merged or original)
+	print $FILEHANDLE "-env "; #Don't include loci found to be non-variant after the subsetting procedure. 
 	print $FILEHANDLE "-V: ".$inFamilyDirectory."/".$familyID.$outfileEnding.$callType."_comb_ref_filtered.vcf "; #InFile
 	print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf "; #OutFile
 
@@ -3374,7 +3295,7 @@ sub ChanjoImport {
 }
 
 sub ChanjoCalculate { 
-#Generate coverage SQLite database for each individual.
+#Generate coverage json outfile for each individual.
 
     my $sampleID = $_[0];
     my $aligner = $_[1]; 
@@ -3407,7 +3328,7 @@ sub ChanjoCalculate {
 	print $FILEHANDLE "--splice-sites "; #Include splice sites for every exon
 	print $FILEHANDLE "--group ".$scriptParameter{'familyID'}." "; #Group to annotate sample to
 	print $FILEHANDLE "--force ";#Overwrite if file outFile exists
-	print $FILEHANDLE "--json ".$outSampleDirectory."/".$infile.$outfileEnding.".json &". "\n\n"; #OutFile	
+	print $FILEHANDLE "--json ".$outSampleDirectory."/".$infile.$outfileEnding.".json". "\n\n"; #OutFile	
 
 	
 	if ( ($scriptParameter{'pChanjoCalculate'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
