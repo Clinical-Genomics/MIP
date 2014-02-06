@@ -571,7 +571,7 @@ if($help) {
 
 if($version) {
 
-    print STDOUT "\nMip.pl v1.5.0\n\n";
+    print STDOUT "\nMip.pl v1.5.1\n\n";
     exit;
 }
 
@@ -1217,8 +1217,6 @@ sub RemoveRedundantFiles {
     `mkdir -p $scriptParameter{'outDataDir'}/$familyID/$aligner/info;`; #Creates the aligner and info data file directory
     `mkdir -p $scriptParameter{'outScriptDir'}/$familyID/$aligner;`; #Creates the aligner script directory
 
-    print $FILEHANDLE 'echo "Running on: $(hostname)"',"\n\n";
-
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { 
 
 	my $sampleID = $sampleIDs[$sampleIDCounter];
@@ -1265,7 +1263,7 @@ sub RemoveRedundantFiles {
 		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsSortSam'}{'fileEnding'};
 		
 		print $FILEHANDLE "rm ";
-		print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".bam*", "\n\n"; #Sorted BAM file
+		print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".ba*", "\n\n"; #Sorted BAM and bai file
 	    }
 	}
 	
@@ -1279,14 +1277,14 @@ sub RemoveRedundantFiles {
 		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMergeSamFiles'}{'fileEnding'};
 		
 		print $FILEHANDLE "rm ";
-		print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".bam*", "\n\n"; #Sorted BAM file
+		print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".ba*", "\n\n"; #Sorted BAM and bai file
 	    }	
 	    if ($scriptParameter{'pPicardToolsMarkduplicates'} > 0) {
 		
 		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
 		
 		print $FILEHANDLE "rm ";
-		print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".bam*", "\n\n"; #Dedupped BAM file
+		print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".ba*", "\n\n"; #Dedupped BAM and bai file
 	    }
 	    if ($scriptParameter{'pGATKRealigner'} > 0) {
 		
@@ -1294,7 +1292,7 @@ sub RemoveRedundantFiles {
 	    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKRealigner'}{'fileEnding'};
 	    
 	    print $FILEHANDLE "rm ";
-	    print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".bam*", "\n\n"; #ReAligned BAM file
+	    print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".ba*", "\n\n"; #ReAligned BAM and bai file
 	    }
 	    if ($scriptParameter{'pGATKBaseRecalibration'} > 0) {
 		
@@ -1302,7 +1300,7 @@ sub RemoveRedundantFiles {
 		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
 		
 		print $FILEHANDLE "rm ";
-		print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".bam*", "\n\n"; #BaseRecalibrated BAM file
+		print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".ba*", "\n\n"; #BaseRecalibrated BAM and bai file
 	    }
 	}
 	else {
@@ -1316,7 +1314,7 @@ sub RemoveRedundantFiles {
 		    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
 		    
 		    print $FILEHANDLE "rm ";
-		    print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".bam*", "\n\n"; #Dedupped BAM file
+		    print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".ba*", "\n\n"; #Dedupped BAM and bai file
 		}
 		if ($scriptParameter{'pGATKRealigner'} > 0) {
 		    
@@ -1324,7 +1322,7 @@ sub RemoveRedundantFiles {
 		    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKRealigner'}{'fileEnding'};
 		    
 		    print $FILEHANDLE "rm ";
-		    print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".bam*", "\n\n"; #ReAligned BAM file
+		    print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".ba*", "\n\n"; #ReAligned BAM and bai file
 		}
 		if ($scriptParameter{'pGATKBaseRecalibration'} > 0) {
 		    
@@ -1332,7 +1330,7 @@ sub RemoveRedundantFiles {
 		    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
 		    
 		    print $FILEHANDLE "rm ";
-		    print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".bam*", "\n\n"; #BaseRecalibrated BAM file
+		    print $FILEHANDLE $inSampleDirectory."/".$infile.$outfileEnding.".ba*", "\n\n"; #BaseRecalibrated BAM and bai file
 		}
 	    }
 	}
@@ -1358,6 +1356,8 @@ sub RemoveRedundantFiles {
 	
 	print $FILEHANDLE "rm ";
 	print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType."*".$scriptParameter{'annovarGenomeBuildVersion'}."_*", "\n\n"; #Annovar data files
+	print $FILEHANDLE "rm ";
+	print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".*", "\n\n"; #Annovar data files
     }  
     close($FILEHANDLE);
     return;
