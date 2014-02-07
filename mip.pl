@@ -39,7 +39,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -wc/--writeConfigFile Write YAML configuration file for script parameters (defaults to "";Supply whole path)
                -si/--sampleInfoFile YAML file for sample info used in the analysis (defaults to "{outDataDir}/{familyID}/{familyID}_qc_sampleInfo.yaml")
                -dra/--dryRunAll Sets all programs to dry run mode i.e. no sbatch submission (defaults to "0" (=no))
-               -julp/--JavaUseLargePages Use large page memory. (-XX,hence option considered not stable and are subject to change without notice, but can be consiered when faced with Java Runtime Environment Memory issues)
+               -julp/--javaUseLargePages Use large page memory. (-XX,hence option considered not stable and are subject to change without notice, but can be consiered when faced with Java Runtime Environment Memory issues)
                -pve/--pythonVirtualEnvironment Pyhton virtualenvironment (defaults to "")
                -h/--help Display this help message    
                -v/--version Display version of MIP            
@@ -360,7 +360,7 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists); #Arrays for t
 
 my (@GATKTargetPaddedBedIntervalLists); #Array for target infile lists used in GATK
 
-&DefineParametersPath("JavaUseLargePages", "no", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller");
+&DefineParametersPath("javaUseLargePages", "no", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller");
 
 ##Annovar
 
@@ -478,7 +478,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'si|sampleInfoFile:s' => \$parameter{'sampleInfoFile'}{'value'}, #Write all info on samples and run to YAML file
 	   'dra|dryRunAll:n' => \$parameter{'dryRunAll'}{'value'},
 	   'pve|pythonVirtualEnvironment:s' => \$parameter{'pythonVirtualEnvironment'}{'value'},
-	   'julp|JavaUseLargePages:s' => \$parameter{'JavaUseLargePages'}{'value'},
+	   'julp|javaUseLargePages:s' => \$parameter{'javaUseLargePages'}{'value'},
 	   'h|help' => \$help, #Display help text
 	   'v|version' => \$version, #Display version number
 	   'pGZ|pGZip:n' => \$parameter{'pGZip'}{'value'},
@@ -2571,7 +2571,7 @@ sub GATKHaploTypeCaller {
     
     print $FILEHANDLE "java -Xmx".$javaHeapAllocation."g ";
 
-    if ($scriptParameter{'JavaUseLargePages'} ne "no") {
+    if ($scriptParameter{'javaUseLargePages'} ne "no") {
 	
 	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
     }
@@ -2736,7 +2736,7 @@ sub GATKBaseReCalibration {
        
 	print $FILEHANDLE "java -Xmx24g ";
 
-	if ($scriptParameter{'JavaUseLargePages'} ne "no") {
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
 	    
 	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
 	}
@@ -2782,7 +2782,7 @@ sub GATKBaseReCalibration {
 	    
 	    print $FILEHANDLE "java -Xmx24g ";
 	    
-	    if ($scriptParameter{'JavaUseLargePages'} ne "no") {
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
 		
 		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
 	    }
@@ -2859,7 +2859,7 @@ sub GATKReAligner {
 	
 	print $FILEHANDLE "java -Xmx24g ";
 
-	if ($scriptParameter{'JavaUseLargePages'} ne "no") {
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
 
 	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
 	}
@@ -2901,7 +2901,7 @@ sub GATKReAligner {
 	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
 		
 	    print $FILEHANDLE "java -Xmx24g ";
-	    if ($scriptParameter{'JavaUseLargePages'} ne "no") {
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
 		
 		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
 	    }
