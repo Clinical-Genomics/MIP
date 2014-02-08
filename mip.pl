@@ -3496,6 +3496,7 @@ sub PicardToolsMarkDuplicates {
 	&ProgramPreRequisites($sampleID, "PicardToolsMarkduplicates", $aligner, 0, $FILEHANDLE, 1, $time);
 
 	print $FILEHANDLE "java -Xmx4g ";
+	print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." "; #Temp Directory
 	print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/MarkDuplicates.jar ";
 	print $FILEHANDLE "ASSUME_SORTED=true ";
 	print $FILEHANDLE "REMOVE_DUPLICATES=false ";
@@ -3531,6 +3532,7 @@ sub PicardToolsMarkDuplicates {
 	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
 	    
 	    print $FILEHANDLE "java -Xmx4g ";
+	    print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." "; #Temp Directory
 	    print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/MarkDuplicates.jar ";
 	    print $FILEHANDLE "ASSUME_SORTED=true ";
 	    print $FILEHANDLE "REMOVE_DUPLICATES=false ";
