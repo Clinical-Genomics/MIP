@@ -260,9 +260,9 @@ my @bwaBuildReferenceFileEndings = (".amb", ".ann", ".bwt", ".pac", ".sa");
 
 &DefineParameters("pPicardToolsMergeSamFiles", "program", 1, "MIP", "_merged", "MAIN");
 
-&DefineParametersPath("PicardToolsTempDirectory", "/scratch/", "pBwaMem,pPicardToolsSortSam,pPicardToolsMergeSamFiles", 0); #Directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
-
 &DefineParameters("pPicardToolsMarkduplicates", "program", 1, "MIP", "_pmd", "MAIN");
+
+&DefineParametersPath("PicardToolsTempDirectory", "/scratch/", "pBwaMem,pPicardToolsSortSam,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates", 0); #Directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
 
 my (@picardToolsMergeSamFilesPrevious); #Any previous sequencing runs
 
