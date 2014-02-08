@@ -360,7 +360,7 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists); #Arrays for t
 
 my (@GATKTargetPaddedBedIntervalLists); #Array for target infile lists used in GATK
 
-&DefineParametersPath("javaUseLargePages", "no", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller");
+&DefineParametersPath("javaUseLargePages", "no", "pGATKRealigner,pGATKBaseRecalibration,pGATKReduceReads,pGATKHaploTypeCaller");
 
 ##Annovar
 
@@ -2665,6 +2665,11 @@ sub GATKReduceReads {
     if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
     
 	print $FILEHANDLE "java -Xmx4g ";
+
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." "; #Temporary Directory
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
@@ -2685,6 +2690,11 @@ sub GATKReduceReads {
 	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
 	    
 	    print $FILEHANDLE "java -Xmx4g ";
+	
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
 	    print $FILEHANDLE "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." "; #Temporary Directory
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
@@ -2759,6 +2769,11 @@ sub GATKBaseReCalibration {
 	print $FILEHANDLE "#GATK PrintReads","\n\n";
 	
 	print $FILEHANDLE "java -Xmx24g ";
+
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging"-jar $gatk_path/GenomeAnalysisTK.
 	print $FILEHANDLE "-T PrintReads "; #Type of analysis to run
@@ -2805,6 +2820,11 @@ sub GATKBaseReCalibration {
 	    print $FILEHANDLE "#GATK PrintReads","\n\n";
 	    
 	    print $FILEHANDLE "java -Xmx24g ";
+
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO "; #Set the minimum level of logging"-jar $gatk_path/GenomeAnalysisTK.
 	    print $FILEHANDLE "-T PrintReads "; #Type of analysis to run
@@ -2878,6 +2898,11 @@ sub GATKReAligner {
 	print $FILEHANDLE "#GATK IndelRealigner","\n\n";
 	
 	print $FILEHANDLE "java -Xmx24g ";
+
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO ";
 	print $FILEHANDLE "-T IndelRealigner ";
@@ -2901,6 +2926,7 @@ sub GATKReAligner {
 	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
 		
 	    print $FILEHANDLE "java -Xmx24g ";
+
 	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
 		
 		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
@@ -2920,6 +2946,11 @@ sub GATKReAligner {
 	    print $FILEHANDLE "#GATK IndelRealigner","\n\n";
 	    
 	    print $FILEHANDLE "java -Xmx24g ";
+
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO ";
 	    print $FILEHANDLE "-T IndelRealigner ";
