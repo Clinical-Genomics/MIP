@@ -2288,7 +2288,7 @@ sub GATKPhaseByTransmission {
     
     if ($scriptParameter{'javaUseLargePages'} ne "no") {
 	
-	print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	print GATK_PHTR "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
     }
     print GATK_PHTR "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
     print GATK_PHTR "-l INFO "; #Set the minimum level of logging
