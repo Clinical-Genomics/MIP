@@ -360,7 +360,7 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists); #Arrays for t
 
 my (@GATKTargetPaddedBedIntervalLists); #Array for target infile lists used in GATK
 
-&DefineParametersPath("javaUseLargePages", "no", "pGATKRealigner,pGATKBaseRecalibration,pGATKReduceReads,pGATKHaploTypeCaller");
+&DefineParametersPath("javaUseLargePages", "no", "pGATKRealigner,pGATKBaseRecalibration,pGATKReduceReads,pGATKHaploTypeCaller,pGATKHaploTypeCallerCombineVariants,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome");
 
 ##Annovar
 
@@ -1828,6 +1828,11 @@ sub GATKVariantEvalExome {
 ##Select SampleID from familyID vrecal vcf file
 	print $FILEHANDLE "#GATK SelectVariants","\n\n";
 	print $FILEHANDLE "java -Xmx2g ";
+	
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	print $FILEHANDLE "-T SelectVariants "; #Type of analysis to run
@@ -1856,6 +1861,11 @@ sub GATKVariantEvalExome {
 	print $FILEHANDLE "#GATK VariantEval","\n\n";
 	
 	print $FILEHANDLE "java -Xmx2g ";
+	
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	print $FILEHANDLE "-T VariantEval "; #Type of analysis to run
@@ -1890,6 +1900,11 @@ sub GATKVariantEvalExome {
 	    
 	    print $FILEHANDLE "#GATK SelectVariants","\n\n";
 	    print $FILEHANDLE "java -Xmx2g ";
+
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	    print $FILEHANDLE "-T SelectVariants "; #Type of analysis to run
@@ -1919,6 +1934,11 @@ sub GATKVariantEvalExome {
 	    print $FILEHANDLE "#GATK VariantEval","\n\n";
 	    
 	    print $FILEHANDLE "java -Xmx2g ";
+	 
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	    print $FILEHANDLE "-T VariantEval "; #Type of analysis to run
@@ -1977,6 +1997,11 @@ sub GATKVariantEvalAll {
 ##Select SampleID from familyID vrecal vcf file
 	print $FILEHANDLE "#GATK SelectVariants","\n\n";
 	print $FILEHANDLE "java -Xmx2g ";
+
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	print $FILEHANDLE "-T SelectVariants "; #Type of analysis to run
@@ -1992,6 +2017,11 @@ sub GATKVariantEvalAll {
 	print $FILEHANDLE "#GATK VariantEval","\n\n";
 	
 	print $FILEHANDLE "java -Xmx2g ";
+
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	print $FILEHANDLE "-T VariantEval "; #Type of analysis to run
@@ -2016,6 +2046,11 @@ sub GATKVariantEvalAll {
 	    
 	    print $FILEHANDLE "#GATK SelectVariants","\n\n";
 	    print $FILEHANDLE "java -Xmx2g ";
+
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	    print $FILEHANDLE "-T SelectVariants "; #Type of analysis to run
@@ -2031,6 +2066,11 @@ sub GATKVariantEvalAll {
 	    print $FILEHANDLE "#GATK VariantEval","\n\n";
 	    
 	    print $FILEHANDLE "java -Xmx2g ";
+
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	    print $FILEHANDLE "-T VariantEval "; #Type of analysis to run
@@ -2172,6 +2212,11 @@ sub GATKReadBackedPhasing {
     
     print $FILEHANDLE "\n#GATK ReadBackedPhasing","\n\n";
     print $FILEHANDLE "java -Xmx4g ";
+
+    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+    }
     print $FILEHANDLE "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." "; #Temporary Directory
     print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
     print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
@@ -2240,6 +2285,11 @@ sub GATKPhaseByTransmission {
     
     print GATK_PHTR "\n#GATK PhaseByTransmission","\n\n";
     print GATK_PHTR "java -Xmx4g ";
+    
+    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	
+	print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+    }
     print GATK_PHTR "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
     print GATK_PHTR "-l INFO "; #Set the minimum level of logging
     print GATK_PHTR "-T PhaseByTransmission "; #Type of analysis to run
@@ -2288,6 +2338,11 @@ sub GATKVariantReCalibration {
 ##Needed to include reference exomes to power the building of the probabalistic model. Variants unique to these exomes will be filtered out after varrecal and applyrecal.
 	print $FILEHANDLE "\n#GATK CombineVariants","\n\n";
 	print $FILEHANDLE "java -Xmx4g ";
+	
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	print $FILEHANDLE "-T CombineVariants "; #Type of analysis to run
@@ -2312,6 +2367,11 @@ sub GATKVariantReCalibration {
 
 	print $FILEHANDLE "\n\n#GATK VariantRecalibrator","\n\n";	
 	print $FILEHANDLE "java -Xmx4g ";
+	
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	print $FILEHANDLE "-T VariantRecalibrator "; #Type of analysis to run
@@ -2374,6 +2434,11 @@ sub GATKVariantReCalibration {
 	my $applyRecalibrationInFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/intermediary";
 	
 	print $FILEHANDLE "java -Xmx3g ";
+
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE  "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	print $FILEHANDLE "-T ApplyRecalibration ";
@@ -2421,6 +2486,11 @@ sub GATKVariantReCalibration {
 	
 	print $FILEHANDLE "\n\n#GATK SelectVariants","\n\n";
 	print $FILEHANDLE "java -Xmx2g ";
+
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE  "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	print $FILEHANDLE "-T SelectVariants "; #Type of analysis to run
@@ -2466,6 +2536,11 @@ sub GATKHaplotypeCallerCombineVariants {
     print $FILEHANDLE "#GATK CombineVariants","\n\n";
     	   
     print $FILEHANDLE "java -Xmx2g ";
+
+    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+    }
     print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
     print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
     print $FILEHANDLE "-T CombineVariants "; #Type of analysis to run
