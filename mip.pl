@@ -5716,6 +5716,8 @@ sub AddToScriptParameter {
 			}
 			elsif ($parameterName eq "mosaikAlignReference") { #Special case - do nothing, since file can be created by MIP from the humanGenomeReference if required
 			}
+			elsif ( ($parameterName eq "GATKExomeReferenceSNPs") && ($scriptParameter{'analysisType'} ne "rapid")) { #Do nothing since file is not required unless rapid mode is enabled
+			}
 			elsif ( ($parameterName eq "bwaMemRapidDb") && ($scriptParameter{'analysisType'} ne "rapid")) { #Do nothing since file is not required unless rapid mode is enabled
 			}
 			elsif ( ($parameterName eq "GATKHaploTypeCallerRefBAMInfile") && ($scriptParameter{'analysisType'} =~/rapid|genomes/) ) { #Do nothing since file is not required unless exome mode is enabled
@@ -5898,7 +5900,9 @@ sub AddToScriptParameter {
 				$sampleInfo{$scriptParameter{'familyID'}}{'pedigreeFileAnalysis'}{'Path'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/qc_pedigree.yaml"; #Add pedigreeFile info used in this analysis to SampleInfoFile
 			    }
 			} 
-		    }
+}
+elsif ( ($parameterName eq "GATKExomeReferenceSNPs") && ($scriptParameter{'analysisType'} ne "rapid")) { #Do nothing since file is not required unless rapid mode is enabled
+}
 		    elsif ( ($parameterName eq "bwaMemRapidDb") && ($scriptParameter{'analysisType'} ne "rapid")) { #Do nothing since file is not required unless rapid mode is enabled
 		    }
 		    elsif ( ($parameterName eq "GATKHaploTypeCallerRefBAMInfile") && ($scriptParameter{'analysisType'} =~/rapid|genomes/) ) { #Do nothing since file is not required unless exome mode is enabled
