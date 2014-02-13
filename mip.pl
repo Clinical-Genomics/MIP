@@ -575,9 +575,11 @@ if($help) {
 
 if($version) {
 
-    print STDOUT "\nMip.pl v1.5.1\n\n";
+    print STDOUT "\nMip.pl v1.5.2\n\n";
     exit;
 }
+my $MipVersion = "v1.5.2";#Set version for log
+print STDOUT "MIP Version: ".$MipVersion, "\n";
 
 if ($parameter{'configFile'}{'value'} ne "nocmdinput") { #No input from cmd
 
@@ -6512,7 +6514,7 @@ sub WriteCMDMipLog {
 	}
     }
     print MIPLOG "\n\n";
-
+    print MIPLOG "MIP Version: ".$MipVersion, "\n";
     #Note FileHandle MIPLOG not closed
     return;
 }
