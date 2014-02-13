@@ -39,6 +39,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -wc/--writeConfigFile Write YAML configuration file for script parameters (defaults to "";Supply whole path)
                -si/--sampleInfoFile YAML file for sample info used in the analysis (defaults to "{outDataDir}/{familyID}/{familyID}_qc_sampleInfo.yaml")
                -dra/--dryRunAll Sets all programs to dry run mode i.e. no sbatch submission (defaults to "0" (=no))
+               -julp/--javaUseLargePages Use large page memory. (-XX,hence option considered not stable and are subject to change without notice, but can be consiered when faced with Java Runtime Environment Memory issues)
                -pve/--pythonVirtualEnvironment Pyhton virtualenvironment (defaults to "")
                -h/--help Display this help message    
                -v/--version Display version of MIP            
@@ -95,14 +96,14 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -gatktpbl/--GATKTargetPaddedBedIntervalLists Target BED file interval for GATK (defaults to "". File ending should be ".padXXX.interval_list")
                -gatkdcov/--GATKDownSampleToCoverage Coverage to downsample to at any given locus (defaults to "1000")
                -pGATK_real/--pGATKRealigner Realignments of reads using GATK realign (defaults to "1" (=yes))
-                 -gatkrealknset1/--GATKReAlignerINDELKnownSet1 GATK ReAlignerTargetCreator/IndelRealigner known INDEL set 1 (defaults to "1000G_phase1.indels.hg19.vcf")
-                 -gatkrealknset2/--GATKReAlignerINDELKnownSet2 GATK ReAlignerTargetCreator/IndelRealigner known INDEL set 2 (defaults to "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf")
+                 -gatkrealknset1/--GATKReAlignerINDELKnownSet1 GATK ReAlignerTargetCreator/IndelRealigner known INDEL set 1 (defaults to "1000G_phase1.indels.b37.vcf")
+                 -gatkrealknset2/--GATKReAlignerINDELKnownSet2 GATK ReAlignerTargetCreator/IndelRealigner known INDEL set 2 (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
                -pGATK_baserecal/--pGATKBaseRecalibration Recalibration of bases using GATK BaseRecalibrator/PrintReads (defaults to "1" (=yes))
-                 -gatkbaserecalknset/--GATKBaseReCalibrationSNPKnownSet GATK BaseReCalinbration known SNP set (defaults to "dbsnp_135.b37.vcf") 
+                 -gatkbaserecalknset/--GATKBaseReCalibrationSNPKnownSet GATK BaseReCalinbration known SNP set (defaults to "dbsnp_138.b37.vcf") 
                -pGATK_rr/--pGATKReduceReads Reduces reads in BAM file (defaults to "1" (=yes))                  
                -pGATK_hapcall/--pGATKHaploTypeCaller Variant discovery using GATK HaplotypeCaller (defaults to "1" (=yes))
                  -gatkhapcallrefbaminfile/--GATKHaploTypeCallerRefBAMInfile GATK HaplotypeCaller BAM reference infile list for joint genotyping (defaults to "")
-                 -gatkhapcallsnpknset/--GATKHaploTypeCallerSNPKnownSet GATK HaplotypeCaller dbSNP set for annotating ID columns (defaults to "dbsnp_135.b37.vcf")
+                 -gatkhapcallsnpknset/--GATKHaploTypeCallerSNPKnownSet GATK HaplotypeCaller dbSNP set for annotating ID columns (defaults to "dbsnp_138.b37.vcf")
                -pGATK_hapcallcombine/--pGATKHaploTypeCallerCombineVariants Combine variants from HaplotypeCaller (defaults to "1" (=yes))
                -pGATK_varrecal/--pGATKVariantRecalibration Variant recalibration using GATK VariantRecalibrator/ApplyRecalibration (defaults to "1" (=yes))
                  -gatkexrefsnp/--GATKExomeReferenceSNPs Prepared exome reference file (SNVs) for GATKVariantRecalibration (defaults to "")
@@ -110,7 +111,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -gatkvarrecaltrdbsnp/--GATKVariantReCalibrationTrainingSetDbSNP GATK VariantRecalibrator dbSNP training set (defaults to "dbsnp_135.b37.vcf")
                  -gatkvarrecaltrd1000Gsnp/--GATKVariantReCalibrationTrainingSet1000GSNP GATK VariantRecalibrator 1000G high confidence SNP training set (defaults to "1000G_phase1.snps.high_confidence.b37.vcf")
                  -gatkvarrecaltromni/--GATKVariantReCalibrationTrainingSet1000GOmni GATK VariantRecalibrator 1000G_omni training set (defaults to "1000G_omni2.5.b37.sites.vcf")
-                 -gatkvarrecaltrdbmills/--GATKVariantReCalibrationTrainingSetMills GATK VariantRecalibrator Mills training set (defaults to "Mills_and_1000G_gold_standard.indels.hg19.sites.vcf")
+                 -gatkvarrecaltrdbmills/--GATKVariantReCalibrationTrainingSetMills GATK VariantRecalibrator Mills training set (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
                  -gatkvarrecaltsfilterlevel/--GATKVariantReCalibrationTSFilterLevel The truth sensitivity level at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
                -pGATK_phaseTr/--pGATKPhaseByTransmission Computes the most likely genotype and phases calls were unamibigous using GATK PhaseByTransmission (defaults to "1" (=yes))
                -pGATK_readPh/--pGATKReadBackedPhasing Performs physical phasing of SNP calls, based on sequencing reads using GATK ReadBackedPhasing (defaults to "1" (=yes))
@@ -259,9 +260,9 @@ my @bwaBuildReferenceFileEndings = (".amb", ".ann", ".bwt", ".pac", ".sa");
 
 &DefineParameters("pPicardToolsMergeSamFiles", "program", 1, "MIP", "_merged", "MAIN");
 
-&DefineParametersPath("PicardToolsTempDirectory", "/scratch/", "pBwaMem,pPicardToolsSortSam,pPicardToolsMergeSamFiles", 0); #Directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
-
 &DefineParameters("pPicardToolsMarkduplicates", "program", 1, "MIP", "_pmd", "MAIN");
+
+&DefineParametersPath("PicardToolsTempDirectory", "/scratch/", "pBwaMem,pPicardToolsSortSam,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates", 0); #Directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
 
 my (@picardToolsMergeSamFilesPrevious); #Any previous sequencing runs
 
@@ -299,7 +300,7 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists); #Arrays for t
 
 &DefineParametersPath("GATKReAlignerINDELKnownSet1", "1000G_phase1.indels.b37.vcf", "pGATKRealigner", "file", "noAutoBuild");
 
-&DefineParametersPath("GATKReAlignerINDELKnownSet2", "Mills_and_1000G_gold_standard.indels.b37.sites.vcf", "pGATKRealigner", "file", "noAutoBuild");
+&DefineParametersPath("GATKReAlignerINDELKnownSet2", "Mills_and_1000G_gold_standard.indels.b37.vcf", "pGATKRealigner", "file", "noAutoBuild");
 
 
 &DefineParameters("pGATKBaseRecalibration", "program", 1, "MIP", "_brecal", "MAIN");
@@ -331,7 +332,7 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists); #Arrays for t
 
 &DefineParametersPath("GATKVariantReCalibrationTrainingSet1000GOmni", "1000G_omni2.5.b37.sites.vcf", "pGATKVariantRecalibration", "file", "noAutoBuild");
 
-&DefineParametersPath("GATKVariantReCalibrationTrainingSetMills", "Mills_and_1000G_gold_standard.indels.b37.sites.vcf", "pGATKVariantRecalibration", "file", "noAutoBuild");
+&DefineParametersPath("GATKVariantReCalibrationTrainingSetMills", "Mills_and_1000G_gold_standard.indels.b37.vcf", "pGATKVariantRecalibration", "file", "noAutoBuild");
 
 &DefineParameters("GATKVariantReCalibrationTSFilterLevel", "program", 99.9, "pGATKVariantRecalibration");
 
@@ -349,7 +350,7 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists); #Arrays for t
 
 &DefineParametersPath("GATKVariantEvalDbSNP", "dbsnp_138.b37.excluding_sites_after_129.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file", "noAutoBuild");
 
-&DefineParametersPath("GATKVariantEvalGold", "Mills_and_1000G_gold_standard.indels.b37.sites.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file", "noAutoBuild");
+&DefineParametersPath("GATKVariantEvalGold", "Mills_and_1000G_gold_standard.indels.b37.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file", "noAutoBuild");
 
 &DefineParametersPath("genomeAnalysisToolKitPath", "nodefault", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome", "directory");
 
@@ -358,6 +359,8 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists); #Arrays for t
 &DefineParameters("GATKDownSampleToCoverage", "program", 1000, "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller");
 
 my (@GATKTargetPaddedBedIntervalLists); #Array for target infile lists used in GATK
+
+&DefineParametersPath("javaUseLargePages", "no", "pGATKRealigner,pGATKBaseRecalibration,pGATKReduceReads,pGATKHaploTypeCaller,pGATKHaploTypeCallerCombineVariants,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome");
 
 ##Annovar
 
@@ -475,6 +478,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'si|sampleInfoFile:s' => \$parameter{'sampleInfoFile'}{'value'}, #Write all info on samples and run to YAML file
 	   'dra|dryRunAll:n' => \$parameter{'dryRunAll'}{'value'},
 	   'pve|pythonVirtualEnvironment:s' => \$parameter{'pythonVirtualEnvironment'}{'value'},
+	   'julp|javaUseLargePages:s' => \$parameter{'javaUseLargePages'}{'value'},
 	   'h|help' => \$help, #Display help text
 	   'v|version' => \$version, #Display version number
 	   'pGZ|pGZip:n' => \$parameter{'pGZip'}{'value'},
@@ -571,9 +575,11 @@ if($help) {
 
 if($version) {
 
-    print STDOUT "\nMip.pl v1.5.1\n\n";
+    print STDOUT "\nMip.pl v1.5.2\n\n";
     exit;
 }
+my $MipVersion = "v1.5.2";#Set version for log
+print STDOUT "MIP Version: ".$MipVersion, "\n";
 
 if ($parameter{'configFile'}{'value'} ne "nocmdinput") { #No input from cmd
 
@@ -1052,7 +1058,7 @@ if ($scriptParameter{'pGATKHaploTypeCaller'} > 0) { #Run GATK HaploTypeCaller. D
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {
 	
-	if ($parameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDCounter]}{'GATKTargetPaddedBedIntervalLists'}{'buildFile'} eq 1) {
+	if ( (defined($parameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDCounter]}{'GATKTargetPaddedBedIntervalLists'}{'buildFile'})) && ($parameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDCounter]}{'GATKTargetPaddedBedIntervalLists'}{'buildFile'} eq 1) ){
 	    
 	    &BuildPTCHSMetricPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "GATKHaploTypeCaller");
 	    last; #Will handle all build per sampleID within sbatch script
@@ -1081,7 +1087,7 @@ if ($scriptParameter{'pGATKVariantRecalibration'} > 0) { #Run GATK VariantRecali
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {
 	
-	if ($parameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDCounter]}{'GATKTargetPaddedBedIntervalLists'}{'buildFile'} eq 1) {
+	if ( (defined($parameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDCounter]}{'GATKTargetPaddedBedIntervalLists'}{'buildFile'})) && ($parameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDCounter]}{'GATKTargetPaddedBedIntervalLists'}{'buildFile'} eq 1) ) {
 	    
 	    &BuildPTCHSMetricPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "GATKVariantRecalibration");
 	    last; #Will handle all build per sampleID within sbatch script
@@ -1824,6 +1830,11 @@ sub GATKVariantEvalExome {
 ##Select SampleID from familyID vrecal vcf file
 	print $FILEHANDLE "#GATK SelectVariants","\n\n";
 	print $FILEHANDLE "java -Xmx2g ";
+	
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	print $FILEHANDLE "-T SelectVariants "; #Type of analysis to run
@@ -1852,6 +1863,11 @@ sub GATKVariantEvalExome {
 	print $FILEHANDLE "#GATK VariantEval","\n\n";
 	
 	print $FILEHANDLE "java -Xmx2g ";
+	
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	print $FILEHANDLE "-T VariantEval "; #Type of analysis to run
@@ -1886,6 +1902,11 @@ sub GATKVariantEvalExome {
 	    
 	    print $FILEHANDLE "#GATK SelectVariants","\n\n";
 	    print $FILEHANDLE "java -Xmx2g ";
+
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	    print $FILEHANDLE "-T SelectVariants "; #Type of analysis to run
@@ -1915,6 +1936,11 @@ sub GATKVariantEvalExome {
 	    print $FILEHANDLE "#GATK VariantEval","\n\n";
 	    
 	    print $FILEHANDLE "java -Xmx2g ";
+	 
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	    print $FILEHANDLE "-T VariantEval "; #Type of analysis to run
@@ -1973,6 +1999,11 @@ sub GATKVariantEvalAll {
 ##Select SampleID from familyID vrecal vcf file
 	print $FILEHANDLE "#GATK SelectVariants","\n\n";
 	print $FILEHANDLE "java -Xmx2g ";
+
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	print $FILEHANDLE "-T SelectVariants "; #Type of analysis to run
@@ -1988,6 +2019,11 @@ sub GATKVariantEvalAll {
 	print $FILEHANDLE "#GATK VariantEval","\n\n";
 	
 	print $FILEHANDLE "java -Xmx2g ";
+
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	print $FILEHANDLE "-T VariantEval "; #Type of analysis to run
@@ -2012,6 +2048,11 @@ sub GATKVariantEvalAll {
 	    
 	    print $FILEHANDLE "#GATK SelectVariants","\n\n";
 	    print $FILEHANDLE "java -Xmx2g ";
+
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	    print $FILEHANDLE "-T SelectVariants "; #Type of analysis to run
@@ -2027,6 +2068,11 @@ sub GATKVariantEvalAll {
 	    print $FILEHANDLE "#GATK VariantEval","\n\n";
 	    
 	    print $FILEHANDLE "java -Xmx2g ";
+
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	    print $FILEHANDLE "-T VariantEval "; #Type of analysis to run
@@ -2168,6 +2214,11 @@ sub GATKReadBackedPhasing {
     
     print $FILEHANDLE "\n#GATK ReadBackedPhasing","\n\n";
     print $FILEHANDLE "java -Xmx4g ";
+
+    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+    }
     print $FILEHANDLE "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." "; #Temporary Directory
     print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
     print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
@@ -2236,6 +2287,11 @@ sub GATKPhaseByTransmission {
     
     print GATK_PHTR "\n#GATK PhaseByTransmission","\n\n";
     print GATK_PHTR "java -Xmx4g ";
+    
+    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	
+	print GATK_PHTR "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+    }
     print GATK_PHTR "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
     print GATK_PHTR "-l INFO "; #Set the minimum level of logging
     print GATK_PHTR "-T PhaseByTransmission "; #Type of analysis to run
@@ -2284,6 +2340,11 @@ sub GATKVariantReCalibration {
 ##Needed to include reference exomes to power the building of the probabalistic model. Variants unique to these exomes will be filtered out after varrecal and applyrecal.
 	print $FILEHANDLE "\n#GATK CombineVariants","\n\n";
 	print $FILEHANDLE "java -Xmx4g ";
+	
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	print $FILEHANDLE "-T CombineVariants "; #Type of analysis to run
@@ -2308,6 +2369,11 @@ sub GATKVariantReCalibration {
 
 	print $FILEHANDLE "\n\n#GATK VariantRecalibrator","\n\n";	
 	print $FILEHANDLE "java -Xmx4g ";
+	
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	print $FILEHANDLE "-T VariantRecalibrator "; #Type of analysis to run
@@ -2318,7 +2384,7 @@ sub GATKVariantReCalibration {
 	    print $FILEHANDLE "-recalFile ".$variantRecalibratorOutFamilyDirectory."/".$familyID.$infileEnding.$callType."_comb_ref.intervals "; #Recalibration outFile
 	    print $FILEHANDLE "-rscriptFile ".$variantRecalibratorOutFamilyDirectory."/".$familyID.$infileEnding.$callType."_comb_ref.intervals.plots.R "; #The output rscript file generated by the VQSR to aid in visualization of the input data and learned model
 	    print $FILEHANDLE "-tranchesFile ".$variantRecalibratorOutFamilyDirectory."/".$familyID.$infileEnding.$callType."_comb_ref.intervals.tranches "; #The output tranches file used by ApplyRecalibration
-	print $FILEHANDLE "-L ".$contigIntervalListFile." ";#Target list file (merged or original)	
+	    print $FILEHANDLE "-L ".$contigIntervalListFile." ";#Target list file (merged or original)	
 	    
 	    if ($scriptParameter{'analysisType'} eq "rapid") {
 		    
@@ -2370,6 +2436,11 @@ sub GATKVariantReCalibration {
 	my $applyRecalibrationInFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/intermediary";
 	
 	print $FILEHANDLE "java -Xmx3g ";
+
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE  "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	print $FILEHANDLE "-T ApplyRecalibration ";
@@ -2417,6 +2488,11 @@ sub GATKVariantReCalibration {
 	
 	print $FILEHANDLE "\n\n#GATK SelectVariants","\n\n";
 	print $FILEHANDLE "java -Xmx2g ";
+
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE  "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
 	print $FILEHANDLE "-T SelectVariants "; #Type of analysis to run
@@ -2462,6 +2538,11 @@ sub GATKHaplotypeCallerCombineVariants {
     print $FILEHANDLE "#GATK CombineVariants","\n\n";
     	   
     print $FILEHANDLE "java -Xmx2g ";
+
+    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+    }
     print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
     print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
     print $FILEHANDLE "-T CombineVariants "; #Type of analysis to run
@@ -2551,10 +2632,14 @@ sub GATKHaploTypeCaller {
     my $outFamilyFileDirectory = $scriptParameter{'outDataDir'}."/".$familyID;
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/HaploTypeCaller";
     my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKHaploTypeCaller'}{'fileEnding'};
+    my $contigIntervalListFile;
 
     print $FILEHANDLE "mkdir -p ".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID', "\n\n"; 
 
-    my $contigIntervalListFile = &GATKTargetListFlag($FILEHANDLE, \$chromosome);
+    if ( ($scriptParameter{'analysisType'} eq "exomes") || ($scriptParameter{'analysisType'} eq "rapid") ) { #Exome/rapid analysis - Restrict analysis to padded target file(s)
+
+	$contigIntervalListFile = &GATKTargetListFlag($FILEHANDLE, \$chromosome);
+    }
 
     if ($chromosome eq 1) { #Only for the first call of subroutine GATK_hapcal.
 	
@@ -2566,6 +2651,11 @@ sub GATKHaploTypeCaller {
     print $FILEHANDLE "#GATK HaplotypeCaller","\n\n";
     
     print $FILEHANDLE "java -Xmx".$javaHeapAllocation."g ";
+
+    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+    }
     print $FILEHANDLE "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." "; #Temporary Directory
     print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
     print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
@@ -2592,9 +2682,12 @@ sub GATKHaploTypeCaller {
 
     if ( ($scriptParameter{'analysisType'} eq "exomes") || ($scriptParameter{'analysisType'} eq "rapid") ) { #Exome/rapid analysis - Restrict analysis to padded target file(s)
 
-	 print $FILEHANDLE "-L ".$contigIntervalListFile." ";#Prints the GATK -L parameter for contif specifc (multiple merged and sorted) interval lists files  
+	 print $FILEHANDLE "-L ".$contigIntervalListFile." ";#Prints the GATK -L parameter for contif specific (multiple merged and sorted) interval lists files  
     }
+    if ($scriptParameter{'analysisType'} eq "genomes") {
 
+	print $FILEHANDLE "-L ".$chromosome." "; #Prints the GATK -L parameter for each contig
+    }
     &GATKPedigreeFlag($FILEHANDLE, $outFamilyFileDirectory, "SILENT"); #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family
 
     if ($scriptParameter{'analysisType'} eq "exomes") {
@@ -2656,6 +2749,11 @@ sub GATKReduceReads {
     if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
     
 	print $FILEHANDLE "java -Xmx4g ";
+
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." "; #Temporary Directory
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
@@ -2676,6 +2774,11 @@ sub GATKReduceReads {
 	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
 	    
 	    print $FILEHANDLE "java -Xmx4g ";
+	
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
 	    print $FILEHANDLE "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." "; #Temporary Directory
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
@@ -2726,6 +2829,11 @@ sub GATKBaseReCalibration {
     if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
        
 	print $FILEHANDLE "java -Xmx24g ";
+
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." "; #Temporary Directory per chr
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
@@ -2745,6 +2853,11 @@ sub GATKBaseReCalibration {
 	print $FILEHANDLE "#GATK PrintReads","\n\n";
 	
 	print $FILEHANDLE "java -Xmx24g ";
+
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging"-jar $gatk_path/GenomeAnalysisTK.
 	print $FILEHANDLE "-T PrintReads "; #Type of analysis to run
@@ -2767,6 +2880,11 @@ sub GATKBaseReCalibration {
 	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
 	    
 	    print $FILEHANDLE "java -Xmx24g ";
+	    
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
 	    print $FILEHANDLE "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." "; #Temporary Directory per chr
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
@@ -2786,6 +2904,11 @@ sub GATKBaseReCalibration {
 	    print $FILEHANDLE "#GATK PrintReads","\n\n";
 	    
 	    print $FILEHANDLE "java -Xmx24g ";
+
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO "; #Set the minimum level of logging"-jar $gatk_path/GenomeAnalysisTK.
 	    print $FILEHANDLE "-T PrintReads "; #Type of analysis to run
@@ -2839,6 +2962,11 @@ sub GATKReAligner {
     if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
 	
 	print $FILEHANDLE "java -Xmx24g ";
+
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." "; #Temporary Directory
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
@@ -2854,6 +2982,11 @@ sub GATKReAligner {
 	print $FILEHANDLE "#GATK IndelRealigner","\n\n";
 	
 	print $FILEHANDLE "java -Xmx24g ";
+
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO ";
 	print $FILEHANDLE "-T IndelRealigner ";
@@ -2877,6 +3010,11 @@ sub GATKReAligner {
 	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
 		
 	    print $FILEHANDLE "java -Xmx24g ";
+
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
 	    print $FILEHANDLE "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." "; #Temporary Directory
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
@@ -2892,6 +3030,11 @@ sub GATKReAligner {
 	    print $FILEHANDLE "#GATK IndelRealigner","\n\n";
 	    
 	    print $FILEHANDLE "java -Xmx24g ";
+
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO ";
 	    print $FILEHANDLE "-T IndelRealigner ";
@@ -3438,6 +3581,7 @@ sub PicardToolsMarkDuplicates {
 
 	print $FILEHANDLE "java -Xmx4g ";
 	print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/MarkDuplicates.jar ";
+	print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." "; #Temp Directory
 	print $FILEHANDLE "ASSUME_SORTED=true ";
 	print $FILEHANDLE "REMOVE_DUPLICATES=false ";
 	print $FILEHANDLE "VALIDATION_STRINGENCY=STRICT ";
@@ -3473,6 +3617,7 @@ sub PicardToolsMarkDuplicates {
 	    
 	    print $FILEHANDLE "java -Xmx4g ";
 	    print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/MarkDuplicates.jar ";
+	    print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." "; #Temp Directory
 	    print $FILEHANDLE "ASSUME_SORTED=true ";
 	    print $FILEHANDLE "REMOVE_DUPLICATES=false ";
 	    print $FILEHANDLE "VALIDATION_STRINGENCY=STRICT ";
@@ -5519,7 +5664,7 @@ sub AddToScriptParameter {
 			    
 			    &SetTargetandAutoBuild(\@sampleIDs, \$parameterName, \$referenceFileEndings{'exomeTargetPaddedBedInfileLists'});
 			}
-			if ($parameterName eq "GATKTargetPaddedBedIntervalLists") { #GATKTargetPaddedBedIntervalLists is a comma separated list 
+			if ( ($parameterName eq "GATKTargetPaddedBedIntervalLists") && ($scriptParameter{'analysisType'} ne "genomes") ) { #GATKTargetPaddedBedIntervalLists is a comma separated list 
 			    
 			    &SetTargetandAutoBuild(\@sampleIDs, \$parameterName, \$referenceFileEndings{'GATKTargetPaddedBedIntervalLists'});
 			}
@@ -5553,8 +5698,8 @@ sub AddToScriptParameter {
 			elsif ($parameterName eq "exomeTargetPaddedBedInfileLists") { #Note that potential pedigree files entries will be updated with GenomeReferenceSource and version here
 			    &SetTargetandAutoBuild(\@sampleIDs, \$parameterName, \$referenceFileEndings{'exomeTargetPaddedBedInfileLists'});
 			}
-			elsif ($parameterName eq "GATKTargetPaddedBedIntervalLists") { #Note that potential pedigree files entries will be updated with GenomeReferenceSource and version here 
-			
+			elsif ( ($parameterName eq "GATKTargetPaddedBedIntervalLists") && ($scriptParameter{'analysisType'} ne "genomes") ) { #Note that potential pedigree files entries will be updated with GenomeReferenceSource and version here 
+			    
 			    &SetTargetandAutoBuild(\@sampleIDs, \$parameterName, \$referenceFileEndings{'GATKTargetPaddedBedIntervalLists'});
 			}
 			elsif ($parameterName eq "annovarTableNames") {
@@ -5580,7 +5725,11 @@ sub AddToScriptParameter {
 			}
 			elsif ($parameterName eq "mosaikAlignReference") { #Special case - do nothing, since file can be created by MIP from the humanGenomeReference if required
 			}
+			elsif ( ($parameterName eq "GATKExomeReferenceSNPs") && ($scriptParameter{'analysisType'} ne "rapid")) { #Do nothing since file is not required unless rapid mode is enabled
+			}
 			elsif ( ($parameterName eq "bwaMemRapidDb") && ($scriptParameter{'analysisType'} ne "rapid")) { #Do nothing since file is not required unless rapid mode is enabled
+			}
+			elsif ( ($parameterName eq "GATKHaploTypeCallerRefBAMInfile") && ($scriptParameter{'analysisType'} =~/rapid|genomes/) ) { #Do nothing since file is not required unless exome mode is enabled
 			}
 			else {
 			    
@@ -5616,7 +5765,7 @@ sub AddToScriptParameter {
 			&CompareArrayElements(\@sampleIDs, \@exomeTargetPaddedBedInfileLists, "sampleIDs", $parameterName);
 			&SetAutoBuildAndScriptParameterPerSample(\@sampleIDs, \@exomeTargetPaddedBedInfileLists, \$parameterName);
 		    }
-		    elsif ($parameterName eq "GATKTargetPaddedBedIntervalLists") {	    
+		    elsif ( ($parameterName eq "GATKTargetPaddedBedIntervalLists") && ($scriptParameter{'analysisType'} ne "genomes") ) {	    
 			
 			&EnableArrayParameter(\@GATKTargetPaddedBedIntervalLists, \$parameterName);
 			&CompareArrayElements(\@sampleIDs, \@GATKTargetPaddedBedIntervalLists, "sampleIDs", $parameterName);
@@ -5705,20 +5854,25 @@ sub AddToScriptParameter {
 		    }
 		    elsif ( ($parameterName eq "exomeTargetBedInfileLists") || ($parameterName eq "exomeTargetPaddedBedInfileLists") || ($parameterName eq "GATKTargetPaddedBedIntervalLists") ) {
 			
-			for (my $sampleIDsCounter=0;$sampleIDsCounter<scalar(@sampleIDs);$sampleIDsCounter++) { #All sampleIDs
-			    
-			    &CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDsCounter]}{$parameterName}), \$parameterName, "f", \$sampleIDs[$sampleIDsCounter]);			    
-			
-			    my $exomeTargetBedFileNoEnding = &RemoveFileEnding(\$scriptParameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDsCounter]}{$parameterName} , $referenceFileEndings{$parameterName}); #Remove ".fileending" from reference filename
-			    &CheckTargetExistFileBed(\$exomeTargetBedFileNoEnding, $parameterName);
+			if ( ($parameterName eq "GATKTargetPaddedBedIntervalLists") && ($scriptParameter{'analysisType'} eq "genomes") ) { #No need to check since genomes does not use GATKTargetPaddedBedIntervalLists
 			}
-			undef($scriptParameter{$parameterName}); #Remove parameter to avoid unnecessary print to STDOUT and config
+			else {
+			    
+			    for (my $sampleIDsCounter=0;$sampleIDsCounter<scalar(@sampleIDs);$sampleIDsCounter++) { #All sampleIDs
+				
+				&CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDsCounter]}{$parameterName}), \$parameterName, "f", \$sampleIDs[$sampleIDsCounter]);			    
+				
+				my $exomeTargetBedFileNoEnding = &RemoveFileEnding(\$scriptParameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDsCounter]}{$parameterName} , $referenceFileEndings{$parameterName}); #Remove ".fileending" from reference filename
+				&CheckTargetExistFileBed(\$exomeTargetBedFileNoEnding, $parameterName);
+			    }
+			    undef($scriptParameter{$parameterName}); #Remove parameter to avoid unnecessary print to STDOUT and config
+			}
 		    }
 		    elsif ($parameterName eq "annovarTableNames") {
 			
 			&DefineAnnovarTables(); #Set all AnnovarTables properties
 			my $intendedFilePathRef;
-		
+			
 			for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@annovarTableNames);$tableNamesCounter++) { #All AnnovarTables
 		 
 			    if (defined($annovarTables{$annovarTableNames[$tableNamesCounter]}{'file'})) {
@@ -5760,7 +5914,9 @@ sub AddToScriptParameter {
 				$sampleInfo{$scriptParameter{'familyID'}}{'pedigreeFileAnalysis'}{'Path'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/qc_pedigree.yaml"; #Add pedigreeFile info used in this analysis to SampleInfoFile
 			    }
 			} 
-		    }
+}
+elsif ( ($parameterName eq "GATKExomeReferenceSNPs") && ($scriptParameter{'analysisType'} ne "rapid")) { #Do nothing since file is not required unless rapid mode is enabled
+}
 		    elsif ( ($parameterName eq "bwaMemRapidDb") && ($scriptParameter{'analysisType'} ne "rapid")) { #Do nothing since file is not required unless rapid mode is enabled
 		    }
 		    elsif ( ($parameterName eq "GATKHaploTypeCallerRefBAMInfile") && ($scriptParameter{'analysisType'} =~/rapid|genomes/) ) { #Do nothing since file is not required unless exome mode is enabled
@@ -6358,7 +6514,7 @@ sub WriteCMDMipLog {
 	}
     }
     print MIPLOG "\n\n";
-
+    print MIPLOG "MIP Version: ".$MipVersion, "\n";
     #Note FileHandle MIPLOG not closed
     return;
 }
