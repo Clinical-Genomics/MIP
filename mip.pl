@@ -31,12 +31,13 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
 	       -osd/--outScriptDir The script files (.sh) output directory (Mandatory: Supply whole path)
                -f/--familyID Group id of samples to be compared (defaults to "0" (=no), (Ex: 1 for IDN 1-1-1A))
                -pedigree/--pedigreeFile (Supply whole path, defaults to "")
-               -huref/--humanGenomeReference Fasta file for the human genome reference (defaults to "")
+               -huref/--humanGenomeReference Fasta file for the human genome reference (defaults to "Homo_sapiens.GRCh37.d5.fasta;1000G decoy version 5")
                -al/--aligner Setting which aligner was used for alignment in previous analysis (defaults to "")
                -at/--analysisType Type of analysis to perform (defaults to "exomes";Valid entries: "genomes", "exomes", "rapid")
                -mc/--maximumCores The maximum number of cores per node used in the analysis (defaults to "8")
                -c/--configFile YAML config file for script parameters (defaults to "")
                -wc/--writeConfigFile Write YAML configuration file for script parameters (defaults to "";Supply whole path)
+               -int/--instanceTag Tag family with instance association in sampleInfo file (defaults to "")
                -si/--sampleInfoFile YAML file for sample info used in the analysis (defaults to "{outDataDir}/{familyID}/{familyID}_qc_sampleInfo.yaml")
                -dra/--dryRunAll Sets all programs to dry run mode i.e. no sbatch submission (defaults to "0" (=no))
                -julp/--javaUseLargePages Use large page memory. (-XX,hence option considered not stable and are subject to change without notice, but can be consiered when faced with Java Runtime Environment Memory issues)
@@ -77,7 +78,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                
                ##Coverage Calculations
                -pCh_B/--pChanjoBuild Chanjo build central SQLite database file (defaults to "1" (=yes))
-                 -chbdb/--chanjoBuildDb  Reference database (defaults to "")
+                 -chbdb/--chanjoBuildDb  Reference database (defaults to "CCDS.current.txt")
                -pCh_C/--pChanjoCalculate Chanjo coverage analysis (defaults to "1" (=yes))
                  -chccut/--chanjoCalculateCutoff Read depth cutoff (defaults to "10")
                -pCh_I/--pChanjoImport Chanjo import to collect sample info to family Db  (defaults to "1" (=yes))
@@ -108,7 +109,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pGATK_varrecal/--pGATKVariantRecalibration Variant recalibration using GATK VariantRecalibrator/ApplyRecalibration (defaults to "1" (=yes))
                  -gatkexrefsnp/--GATKExomeReferenceSNPs Prepared exome reference file (SNVs) for GATKVariantRecalibration (defaults to "")
                  -gatkvarrecaltrhapmap/--GATKVariantReCalibrationTrainingSetHapMap GATK VariantRecalibrator HapMap training set (defaults to "hapmap_3.3.b37.sites.vcf")
-                 -gatkvarrecaltrdbsnp/--GATKVariantReCalibrationTrainingSetDbSNP GATK VariantRecalibrator dbSNP training set (defaults to "dbsnp_135.b37.vcf")
+                 -gatkvarrecaltrdbsnp/--GATKVariantReCalibrationTrainingSetDbSNP GATK VariantRecalibrator dbSNP training set (defaults to "dbsnp_138.b37.vcf")
                  -gatkvarrecaltrd1000Gsnp/--GATKVariantReCalibrationTrainingSet1000GSNP GATK VariantRecalibrator 1000G high confidence SNP training set (defaults to "1000G_phase1.snps.high_confidence.b37.vcf")
                  -gatkvarrecaltromni/--GATKVariantReCalibrationTrainingSet1000GOmni GATK VariantRecalibrator 1000G_omni training set (defaults to "1000G_omni2.5.b37.sites.vcf")
                  -gatkvarrecaltrdbmills/--GATKVariantReCalibrationTrainingSetMills GATK VariantRecalibrator Mills training set (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
@@ -118,8 +119,8 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -gatkreadphphaseqthr/--GATKReadBackedPhasingPhaseQualityThresh The minimum phasing quality score required to output phasing
                -pGATK_varevalall/--pGATKVariantEvalAll Variant evaluation using GATK VariantEval for all variants  (defaults to "1" (=yes))
                -pGATK_varevalexome/--pGATKVariantEvalExome Variant evaluation using GATK VariantEval for exonic variants  (defaults to "1" (=yes))
-                 -gatkvarevaldbsnp/--GATKVariantEvalDbSNP DbSNP file used in GATK VariantEval (defaults to "")
-                 -gatkvarevaldbgold/--GATKVariantEvalGold Gold Indel file used in GATK VariantEval (defaults to "")
+                 -gatkvarevaldbsnp/--GATKVariantEvalDbSNP DbSNP file used in GATK VariantEval (defaults to "dbsnp_138.b37.excluding_sites_after_129.vcf")
+                 -gatkvarevaldbgold/--GATKVariantEvalGold Gold Indel file used in GATK VariantEval (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
                
                ##ANNOVAR
                -pANVAR/--pAnnovar Annotate variants using Annovar (defaults to "1" (=yes))
@@ -144,6 +145,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -imdbte/--ImportantDbTemplate Important Db template file used to create the specific family '-im_dbmf' master file (Defaults to "")
                  -imdbmf/--ImportantDbMasterFile Important Db master file to be used when selecting variants (defaults to "{outDataDir}/{familyID}/{familyID}.intersectCollect_selectVariants_db_master.txt";Supply whole path) 
                  -imdbfof/--ImportantDbFileOutFiles The file(s) to write to when selecting variants with intersectCollect.pl. Comma sep (defaults to "{outDataDir}/{familyID}/{aligner}/GATK/candidates/ranking/{familyID}_orphan.selectVariants, {outDataDir}/{familyID}/{aligner}/GATK/candidates/ranking/clinical/{familyID}.selectVariants"; Supply whole path/file)
+                 -gf/--geneFile Defines genes to use when calculating compounds
                -pSCheck/--pSampleCheck QC for samples gender and relationship (defaults to "1" (=yes) )
                -pQCC/--pQCCollect Collect QC metrics from programs processed (defaults to "1" (=yes) )
                  -QCCsampleinfo/--QCCollectSampleInfoFile SampleInfo File containing info on what to parse from this analysis run (defaults to "{outDataDir}/{familyID}/{familyID}_qc_sampleInfo.yaml")
@@ -194,6 +196,8 @@ chomp($timeStamp); #Remove \n;
 &DefineParametersPath("pedigreeFile", "nodefault", "MIP", "file", "noAutoBuild");
 
 &DefineParametersPath("sampleInfoFile", "NotsetYet", "MIP", "file", "noAutoBuild");
+
+&DefineParameters("instanceTag", "MIP", "Unknown", "MIP");
 
 &DefineParametersPath("inScriptDir", "nodefault", "MIP", "directory");
 
@@ -269,7 +273,7 @@ my (@picardToolsMergeSamFilesPrevious); #Any previous sequencing runs
 ##Coverage
 &DefineParameters("pChanjoBuild", "program", 1, "MIP", "nofileEnding", "CoverageReport");
 
-&DefineParametersPath("chanjoBuildDb", "nodefault", "pChanjoBuild", "file", "noAutoBuild");
+&DefineParametersPath("chanjoBuildDb", "CCDS.current.txt", "pChanjoBuild", "file", "yesAutoDownLoad");
 
 &DefineParameters("pChanjoCalculate", "program", 1, "MIP","_coverage", "CoverageReport");
 
@@ -298,9 +302,9 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists); #Arrays for t
 
 &DefineParameters("pGATKRealigner", "program", 1, "MIP", "_rreal", "MAIN");
 
-&DefineParametersPath("GATKReAlignerINDELKnownSet1", "1000G_phase1.indels.b37.vcf", "pGATKRealigner", "file", "noAutoBuild");
+&DefineParametersPath("GATKReAlignerINDELKnownSet1", "1000G_phase1.indels.b37.vcf", "pGATKRealigner", "file", "yesAutoDownLoad");
 
-&DefineParametersPath("GATKReAlignerINDELKnownSet2", "Mills_and_1000G_gold_standard.indels.b37.vcf", "pGATKRealigner", "file", "noAutoBuild");
+&DefineParametersPath("GATKReAlignerINDELKnownSet2", "Mills_and_1000G_gold_standard.indels.b37.vcf", "pGATKRealigner", "file", "yesAutoDownLoad");
 
 
 &DefineParameters("pGATKBaseRecalibration", "program", 1, "MIP", "_brecal", "MAIN");
@@ -324,15 +328,15 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists); #Arrays for t
 
 &DefineParametersPath("GATKExomeReferenceSNPs", "nodefault", "pGATKVariantRecalibration", "file", "noAutoBuild");
 
-&DefineParametersPath("GATKVariantReCalibrationTrainingSetHapMap", "hapmap_3.3.b37.sites.vcf", "pGATKVariantRecalibration", "file", "noAutoBuild");
+&DefineParametersPath("GATKVariantReCalibrationTrainingSetHapMap", "hapmap_3.3.b37.sites.vcf", "pGATKVariantRecalibration", "file", "yesAutoDownLoad");
 
 &DefineParametersPath("GATKVariantReCalibrationTrainingSetDbSNP", "dbsnp_138.b37.vcf", "pGATKVariantRecalibration", "file", "noAutoBuild");
 
 &DefineParametersPath("GATKVariantReCalibrationTrainingSet1000GSNP", "1000G_phase1.snps.high_confidence.b37.vcf", "pGATKVariantRecalibration", "file", "noAutoBuild");
 
-&DefineParametersPath("GATKVariantReCalibrationTrainingSet1000GOmni", "1000G_omni2.5.b37.sites.vcf", "pGATKVariantRecalibration", "file", "noAutoBuild");
+&DefineParametersPath("GATKVariantReCalibrationTrainingSet1000GOmni", "1000G_omni2.5.b37.sites.vcf", "pGATKVariantRecalibration", "file", "yesAutoDownLoad");
 
-&DefineParametersPath("GATKVariantReCalibrationTrainingSetMills", "Mills_and_1000G_gold_standard.indels.b37.vcf", "pGATKVariantRecalibration", "file", "noAutoBuild");
+&DefineParametersPath("GATKVariantReCalibrationTrainingSetMills", "Mills_and_1000G_gold_standard.indels.b37.vcf", "pGATKVariantRecalibration", "file", "yesAutoDownLoad");
 
 &DefineParameters("GATKVariantReCalibrationTSFilterLevel", "program", 99.9, "pGATKVariantRecalibration");
 
@@ -350,7 +354,7 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists); #Arrays for t
 
 &DefineParametersPath("GATKVariantEvalDbSNP", "dbsnp_138.b37.excluding_sites_after_129.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file", "noAutoBuild");
 
-&DefineParametersPath("GATKVariantEvalGold", "Mills_and_1000G_gold_standard.indels.b37.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file", "noAutoBuild");
+&DefineParametersPath("GATKVariantEvalGold", "Mills_and_1000G_gold_standard.indels.b37.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file", "yesAutoDownLoad");
 
 &DefineParametersPath("genomeAnalysisToolKitPath", "nodefault", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome", "directory");
 
@@ -405,6 +409,9 @@ my @annovarTableNames; #List of Annovar table names to be used
 
 my @ImportantDbFileOutFiles; #List of db outfiles
 
+&DefineParametersPath("geneFile", "hg19_refGene.txt", "pRankVariants", "file", "noAutoBuild");
+
+
 &DefineParametersPath("pythonVirtualEnvironment", "nodefault", "pChanjoBuild,pChanjoCalculate,pChanjoImport,pRankVariants");
 
 ##SChecks
@@ -422,7 +429,7 @@ my @ImportantDbFileOutFiles; #List of db outfiles
 ##MIP
 
 ##humanGenomeReference
-&DefineParametersPath("humanGenomeReference", "nodefault", "pBwaMem,pBwaAln,pBwaSampe,pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKHaploTypeCallerCombineVariants,pGATKVariantRecalibration,pGATKVariantEvalAll,pGATKVariantEvalExome,pAnnovar,pAddDepth,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "file", "noAutoBuild");
+&DefineParametersPath("humanGenomeReference", "Homo_sapiens.GRCh37.d5.fasta", "pBwaMem,pBwaAln,pBwaSampe,pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKHaploTypeCallerCombineVariants,pGATKVariantRecalibration,pGATKVariantEvalAll,pGATKVariantEvalExome,pAnnovar,pAddDepth,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "file", "yesAutoDownLoad");
 my @humanGenomeReferenceFileEndings = (".dict", ".fasta.fai"); #Meta files
 
 my ($humanGenomeReferenceSource, $humanGenomeReferenceVersion, $humanGenomeReferenceNameNoEnding, $humanGenomeCompressed, $fnend, $aligner, $fileName, $fileNameTracker, $version, $help) = ("nocmdinput", "nocmdinput", "nocmdinput", "nocmdinput", ".sh", "nocmdinput", "nocmdinput", 0);
@@ -442,6 +449,8 @@ my %supportedCaptureKits = (
     'Agilent_SureSelect.V5' => "Agilent_SureSelect.V5.GenomeReferenceSourceVersion_targets.bed",
     'Latest' => "Agilent_SureSelect.V5.GenomeReferenceSourceVersion_targets.bed",
     );
+
+my %supportedCosmidReferences; #References supported as downloads from Cosmid. Hash is populated after user options are processed
 
 my %referenceFileEndings = (
     'mosaikAlignReference' => ".dat",
@@ -476,6 +485,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'c|configFile:s' => \$parameter{'configFile'}{'value'},
 	   'wc|writeConfigFile:s' => \$parameter{'writeConfigFile'}{'value'},
 	   'si|sampleInfoFile:s' => \$parameter{'sampleInfoFile'}{'value'}, #Write all info on samples and run to YAML file
+	   'int|instanceTag:s' => \$parameter{'instanceTag'}{'value'},
 	   'dra|dryRunAll:n' => \$parameter{'dryRunAll'}{'value'},
 	   'pve|pythonVirtualEnvironment:s' => \$parameter{'pythonVirtualEnvironment'}{'value'},
 	   'julp|javaUseLargePages:s' => \$parameter{'javaUseLargePages'}{'value'},
@@ -560,7 +570,8 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'imdbfile|ImportantDbFile:s'  => \$parameter{'ImportantDbFile'}{'value'}, #Db of important genes
 	   'imdbte|ImportantDbTemplate:s' => \$parameter{'ImportantDbTemplate'}{'value'}, #Template file to create the specific family selectVariants db master file
 	   'imdbmf|ImportantDbMasterFile:s' => \$parameter{'ImportantDbMasterFile'}{'value'}, #Specific db master file to use when collecting external dataselectingVariants 
-	   'imdbfof|ImportantDbFileOutFiles:s' => \@ImportantDbFileOutFiles, #The intersectCollect select variants output directorys	      
+	   'imdbfof|ImportantDbFileOutFiles:s' => \@ImportantDbFileOutFiles, #The intersectCollect select variants output directorys
+	   'gf|geneFile:s' => \$parameter{'geneFile'}{'value'},
 	   'pSCheck|pSampleCheck:n' => \$parameter{'pSampleCheck'}{'value'}, #QC for samples gender and relationship
 	   'pQCC|pQCCollect:n' => \$parameter{'pQCCollect'}{'value'}, #QCmetrics collect
 	   'QCCsampleinfo|QCCollectSampleInfoFile:s' => \$parameter{'QCCollectSampleInfoFile'}{'value'}, #SampleInfo yaml file produced by MIP
@@ -573,12 +584,12 @@ if($help) {
     exit;
 }
 
+my $MipVersion = "v1.5.2";#Set version for log
 if($version) {
 
-    print STDOUT "\nMip.pl v1.5.2\n\n";
+    print STDOUT "\nMip.pl ".$MipVersion, "\n\n";
     exit;
 }
-my $MipVersion = "v1.5.2";#Set version for log
 print STDOUT "MIP Version: ".$MipVersion, "\n";
 
 if ($parameter{'configFile'}{'value'} ne "nocmdinput") { #No input from cmd
@@ -708,6 +719,22 @@ if ($scriptParameter{'pRankVariants'} > 0) {
  
 &PrepareArrayParameters(\@GATKTargetPaddedBedIntervalLists, "GATKTargetPaddedBedIntervalLists", "path", "notSetYet", "pGATKHaploTypeCaller,pGATKVariantRecalibration", "file");
 
+#Cosmid references
+&DefineSupportedCosmidReferences("humanGenomeReference", "decoy", "5", \$humanGenomeReferenceVersion, "compressed");
+&DefineSupportedCosmidReferences("chanjoBuildDb", "ccds", "latest", \$humanGenomeReferenceVersion, "unCompressed");
+&DefineSupportedCosmidReferences("GATKReAlignerINDELKnownSet1", "indel", "2.8", \$humanGenomeReferenceVersion, "compressed");
+&DefineSupportedCosmidReferences("GATKReAlignerINDELKnownSet2", "mills", "2.8", \$humanGenomeReferenceVersion, "compressed");
+&DefineSupportedCosmidReferences("GATKVariantReCalibrationTrainingSetHapMap", "hapmap", "2.8", \$humanGenomeReferenceVersion, "compressed");
+&DefineSupportedCosmidReferences("GATKVariantReCalibrationTrainingSetMills", "mills", "2.8", \$humanGenomeReferenceVersion, "compressed");
+&DefineSupportedCosmidReferences("GATKVariantReCalibrationTrainingSet1000GOmni", "1000g", "2.8", \$humanGenomeReferenceVersion, "compressed");
+&DefineSupportedCosmidReferences("GATKVariantEvalGold", "mills", "2.8", \$humanGenomeReferenceVersion, "compressed");
+
+for my $references (keys %supportedCosmidReferences) {
+
+    &CheckCosmidInstallation(\$references);
+    last; #Only need to check once per analysis run
+}
+
 if ($scriptParameter{'writeConfigFile'} ne 0) { #Write config file for family
 
     &WriteYAML($scriptParameter{'writeConfigFile'}, \%scriptParameter); #Write used settings to configfile
@@ -810,7 +837,7 @@ if ($scriptParameter{'pMosaikAlign'} > 0) { #Run MosaikAlign
 
     print STDOUT "\nMosaikAlign", "\n"; print MIPLOG "\nMosaikAlign", "\n";
 
-    if ( ($parameter{'mosaikAlignReference'}{'buildFile'} eq 1) || ($parameter{'mosaikJumpDbStub'}{'buildFile'} eq 1) ) {
+    if ( ($parameter{'humanGenomeReference'}{'buildFile'} eq 1) || ($parameter{'mosaikAlignReference'}{'buildFile'} eq 1) || ($parameter{'mosaikJumpDbStub'}{'buildFile'} eq 1) ) {
 		
 	&BuildMosaikAlignPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "MosaikAlign");
 	
@@ -832,7 +859,7 @@ if ($scriptParameter{'pBwaMem'} > 0) { #Run BWA Mem
 
     &CheckBuildHumanGenomePreRequisites();
     
-    if ($parameter{'bwaBuildReference'}{'buildFile'} eq 1) {
+    if ( ($parameter{'humanGenomeReference'}{'buildFile'} eq 1) || ($parameter{'bwaBuildReference'}{'buildFile'} eq 1) ) {
 	
 	&BuildBwaPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BwaMem");
     }
@@ -861,7 +888,7 @@ if ($scriptParameter{'pBwaAln'} > 0) { #Run BWA Aln
 
     &CheckBuildHumanGenomePreRequisites();
 
-    if ($parameter{'bwaBuildReference'}{'buildFile'} eq 1) {
+    if ( ($parameter{'humanGenomeReference'}{'buildFile'} eq 1) || ($parameter{'bwaBuildReference'}{'buildFile'} eq 1) ) {
 	
 	&BuildBwaPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BwaAln");
     }
@@ -878,7 +905,7 @@ if ($scriptParameter{'pBwaSampe'} > 0) { #Run BWA Sampe
     
     &CheckBuildHumanGenomePreRequisites();
 
-    if ($parameter{'bwaBuildReference'}{'buildFile'} eq 1) {
+    if ( ($parameter{'humanGenomeReference'}{'buildFile'} eq 1) || ($parameter{'bwaBuildReference'}{'buildFile'} eq 1) ) {
 	
 	&BuildBwaPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BwaSampe");
     }
@@ -928,7 +955,11 @@ if ($scriptParameter{'pPicardToolsMarkduplicates'} > 0) { #PicardTools MarkDupli
 if ($scriptParameter{'pChanjoBuild'} > 0) {
     
     print STDOUT "\nChanjoBuild", "\n";print MIPLOG "\nChanjoBuild", "\n";
-    
+
+    if ($parameter{'chanjoBuildDb'}{'buildFile'} eq 1) {
+		
+	&BuildChanjoBuildPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "ChanjoBuild");
+    }    
     &ChanjoBuild($scriptParameter{'familyID'});
 }
 
@@ -1022,6 +1053,18 @@ if ($scriptParameter{'pGATKRealigner'} > 0) { #Run GATK ReAlignerTargetCreator/I
 
     &CheckBuildHumanGenomePreRequisites();
 
+    for my $parameterName (keys %supportedCosmidReferences) {
+	
+	if ( "pGATKRealigner" =~/$parameter{$parameterName}{'associatedProgram'}/) {
+
+	    if ($parameter{$parameterName}{'buildFile'} eq 1) {
+	   
+		&BuildGATKRealignerPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "GATKRealigner");
+		last;
+	    }
+	}
+    }
+
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {   
     
 	&GATKReAligner($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});	
@@ -1084,6 +1127,18 @@ if ($scriptParameter{'pGATKVariantRecalibration'} > 0) { #Run GATK VariantRecali
     print STDOUT "\nGATK VariantRecalibrator/ApplyRecalibration", "\n";print MIPLOG "\nGATK VariantRecalibrator/ApplyRecalibration", "\n";
     
     &CheckBuildHumanGenomePreRequisites();
+
+    for my $parameterName (keys %supportedCosmidReferences) {
+	
+	if ( "pGATKVariantRecalibration" =~/$parameter{$parameterName}{'associatedProgram'}/) {
+	    
+	    if ($parameter{$parameterName}{'buildFile'} eq 1) {
+
+		&BuildGATKVariantRecalibrationPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "GATKVariantRecalibration");
+		last;
+	    }
+	}
+    }
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {
 	
@@ -1155,6 +1210,10 @@ if ($scriptParameter{'pGATKVariantEvalExome'} > 0) { #Run GATK VariantEval for e
     
     &CheckBuildHumanGenomePreRequisites();
 
+    if ($parameter{'GATKVariantEvalGold'}{'buildFile'} eq 1) {
+	
+	&BuildGATKVariantEvalExomePreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "GATKVariantEvalExome");
+    }
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { 
 	
 	&GATKVariantEvalExome($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'}, "BOTH", $scriptParameter{'familyID'});
@@ -1350,7 +1409,7 @@ sub RemoveRedundantFiles {
 	print $FILEHANDLE $outFamilyDirectory."/", "\n\n"; #Remove HaplotypeCaller individual contigfiles
 	
 	$outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK"; #New outfile directory
-	my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKHaploTypeCaller'}{'fileEnding'};
+	my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKHaploTypeCaller'}{'fileEnding'};
 	
 	print $FILEHANDLE "rm ";
 	print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf*", "\n\n"; #HaplotypeCaller vcf file
@@ -1358,7 +1417,7 @@ sub RemoveRedundantFiles {
     if ($scriptParameter{'pAnnovar'} > 0) {
 	
 	my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
-	my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pAnnovar'}{'fileEnding'};
+	my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pAnnovar'}{'fileEnding'};
 	
 	print $FILEHANDLE "rm ";
 	print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType."*".$scriptParameter{'annovarGenomeBuildVersion'}."_*", "\n\n"; #Annovar data files
@@ -1382,7 +1441,7 @@ sub SampleCheck {
     
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/samplecheck";
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
 
     print $FILEHANDLE "#Create Plink .ped and .map file per family using vcfTools","\n";
     print $FILEHANDLE "vcftools ";
@@ -1478,7 +1537,7 @@ sub RankVariants {
     &ProgramPreRequisites($familyID, "RankVariants", $aligner, $callType, $FILEHANDLE, 1, 5);
 
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pAddDepth'}{'fileEnding'};
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pAddDepth'}{'fileEnding'};
 
     print $FILEHANDLE "#Create db master file to select variants from template", "\n";
     my $nrColumns; #Total Nr of columns 
@@ -1582,13 +1641,14 @@ sub RankVariants {
 	    print $FILEHANDLE $scriptParameter{'pedigreeFile'}." "; #Pedigree file
 	    print $FILEHANDLE "-tres ".$scriptParameter{'rankScore'}." "; #Rank score threshold
 	    print $FILEHANDLE $ImportantDbFileOutFiles[$ImportantDbFileOutFilesCounter]." "; #InFile	    
+	    print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'geneFile'}." "; #Gene file used for annotating AR_compounds
 	    ($volume,$directories,$file) = File::Spec->splitpath( $ImportantDbFileOutFiles[$ImportantDbFileOutFilesCounter] ); #Collect outfile directory
 	    print $FILEHANDLE "-o ".$directories.$familyID."_ranked_".$callType.".txt", "\n\n"; #OutFile
 	    print $FILEHANDLE "wait\n\n";
 	    
 	    if ( ($scriptParameter{'pRankVariants'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 
-		$sampleInfo{$familyID}{'program'}{'RankVariants'}{'Clinical'}{'Path'} = $directories.$familyID."_ranked_".$callType.".txt";  #Save clinical candidate list path
+		$sampleInfo{$familyID}{$familyID}{'program'}{'RankVariants'}{'Clinical'}{'Path'} = $directories.$familyID."_ranked_".$callType.".txt";  #Save clinical candidate list path
 	    }
 	}
     }
@@ -1600,14 +1660,15 @@ sub RankVariants {
     print $FILEHANDLE "run_mip_family_analysis.py ";
     print $FILEHANDLE $scriptParameter{'pedigreeFile'}." "; #Pedigree file
     print $FILEHANDLE "-tres ".$scriptParameter{'rankScore'}." "; #Rank score threshold
-    print $FILEHANDLE $ImportantDbFileOutFiles[0]." "; #InFile	    
+    print $FILEHANDLE $ImportantDbFileOutFiles[0]." "; #InFile	 
+    print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'geneFile'}." "; #Gene file used for annotating AR_compounds   
     ($volume,$directories,$file) = File::Spec->splitpath( $ImportantDbFileOutFiles[0] ); #Collect outfile directory
     print $FILEHANDLE "-o ".$directories.$familyID."_ranked_".$callType.".txt", "\n\n"; #OutFile
     print $FILEHANDLE "wait\n\n";    
     
     if ( ($scriptParameter{'pRankVariants'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 
-	$sampleInfo{$familyID}{'program'}{'RankVariants'}{'Research'}{'Path'} = $directories.$familyID."_ranked_".$callType.".txt";  #Save research candidate list path
+	$sampleInfo{$familyID}{$familyID}{'program'}{'RankVariants'}{'Research'}{'Path'} = $directories.$familyID."_ranked_".$callType.".txt";  #Save research candidate list path
     }
         
     for (my $ImportantDbFileOutFilesCounter=0;$ImportantDbFileOutFilesCounter<scalar(@ImportantDbFileOutFiles);$ImportantDbFileOutFilesCounter++) {
@@ -1615,6 +1676,8 @@ sub RankVariants {
 	print $FILEHANDLE $ImportantDbFileOutFiles[$ImportantDbFileOutFilesCounter], "\n\n";
     }
     
+    print $FILEHANDLE "\n\ndeactivate ", "\n\n"; #Deactivate python environment
+
     close($FILEHANDLE);   
     if ( ($scriptParameter{'pRankVariants'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 	&FIDSubmitJob(0, $familyID, 1, $parameter{'pRankVariants'}{'chain'}, $fileName, 0);
@@ -1635,8 +1698,8 @@ sub AddDp {
     
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pMergeAnnotatedVariants'}{'fileEnding'};
-    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pAddDepth'}{'fileEnding'};
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pMergeAnnotatedVariants'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pAddDepth'}{'fileEnding'};
     my $coreCounter=1;
 
 #Find all "./." per sample ID and print chr pos to new file (mpileup -l format)
@@ -1750,8 +1813,8 @@ sub MergeAnnotatedVariants {
 
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pAnnovar'}{'fileEnding'};
-    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pMergeAnnotatedVariants'}{'fileEnding'};
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pAnnovar'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pMergeAnnotatedVariants'}{'fileEnding'};
     
 ##Create db master file from template
     print $FILEHANDLE "#Create db master file from template", "\n";
@@ -1820,8 +1883,8 @@ sub GATKVariantEvalExome {
     my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
     my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK/varianteval";
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
-    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
     my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles($sampleID);
     
     if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
@@ -1846,7 +1909,7 @@ sub GATKVariantEvalExome {
 ##Prepp infile to only contain exonic variants
 
 	my $sampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK/varianteval";
-	my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pMergeAnnotatedVariants'}{'fileEnding'};
+	my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pMergeAnnotatedVariants'}{'fileEnding'};
 
 	print $FILEHANDLE "grep exon ";
 	print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.".txt "; #InFile
@@ -1918,7 +1981,7 @@ sub GATKVariantEvalExome {
 ##Prepp infile to only contain exonic variants
 
 	    my $sampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK/varianteval";
-	    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pMergeAnnotatedVariants'}{'fileEnding'};
+	    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pMergeAnnotatedVariants'}{'fileEnding'};
 	    
 	    print $FILEHANDLE "grep exon ";
 	    print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.".txt "; #InFile
@@ -1989,8 +2052,8 @@ sub GATKVariantEvalAll {
     my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
     my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK/varianteval";
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
-    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
     my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles($sampleID);
     
     if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
@@ -2110,8 +2173,8 @@ sub Annovar {
 
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
-    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pAnnovar'}{'fileEnding'};
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pAnnovar'}{'fileEnding'};
 	
     print $FILEHANDLE "#Prepare infile to Annovar format from GATK vcf4", "\n";
     print $FILEHANDLE "perl ".$scriptParameter{'annovarPath'}."/convert2annovar.pl ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf ";
@@ -2138,7 +2201,7 @@ sub Annovar {
     print $FILEHANDLE "' ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType."_temp "; #InFile from just created convert2annovar.pl outfile
     print $FILEHANDLE "> ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType, "\n\n"; #OutFile
  
-    $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pAnnovar'}{'fileEnding'};
+    $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pAnnovar'}{'fileEnding'};
     my $coreCounter=1;   	    
 
     for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@annovarTableNames);$tableNamesCounter++) { #For all specified table names
@@ -2203,12 +2266,12 @@ sub GATKReadBackedPhasing {
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $infileEnding;
     if ($scriptParameter{'pGATKPhaseByTransmission'} > 0) { 
-	$infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKPhaseByTransmission'}{'fileEnding'};
+	$infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKPhaseByTransmission'}{'fileEnding'};
     }
     else {
-	$infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
+	$infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
     }
-    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKReadBackedPhasing'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKReadBackedPhasing'}{'fileEnding'};
     
 ###GATK ReadBackedPhasing
     
@@ -2275,8 +2338,8 @@ sub GATKPhaseByTransmission {
     my $FamilyFileDirectory = $scriptParameter{'outDataDir'}."/".$familyID;
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
-    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKPhaseByTransmission'}{'fileEnding'};
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKPhaseByTransmission'}{'fileEnding'};
     
     unless (-e $FamilyFileDirectory."/".$familyID.".fam") { #Check to see if file already exists
 	print GATK_PHTR "#Generating '.fam' file for GATK PhaseByTransmission","\n\n";
@@ -2323,8 +2386,8 @@ sub GATKVariantReCalibration {
     my $outFamilyFileDirectory = $scriptParameter{'outDataDir'}."/".$familyID;
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKHaploTypeCaller'}{'fileEnding'};
-    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKHaploTypeCaller'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
     
     unless (-e $scriptParameter{'outDataDir'}."/".$familyID."/".$familyID.".fam") { #Check to see if file already exists
 	print $FILEHANDLE "#Generating '.fam' file for GATK VariantRecalibrator/ApplyRecalibration","\n\n";
@@ -2514,7 +2577,7 @@ sub GATKVariantReCalibration {
     if ( ($scriptParameter{'pGATKVariantRecalibration'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 ##Collect QC metadata info for later use
 	&SampleInfoQC($familyID, "noSampleID", "pedigreeCheck", "NoInfile", $outFamilyDirectory, $familyID.$outfileEnding.$callType.".vcf", "infileDependent"); #"noSampleID is used to select correct keys for %sampleInfo"
-	$sampleInfo{ $scriptParameter{'familyID'} }{'MostCompleteVCF'}{'Path'} = $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf";	
+	$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'MostCompleteVCF'}{'Path'} = $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf";	
 	&FIDSubmitJob(0, $familyID, 1, $parameter{'pGATKVariantRecalibration'}{'chain'}, $fileName, 0);
     }
     return;
@@ -2532,8 +2595,8 @@ sub GATKHaplotypeCallerCombineVariants {
  
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/HaploTypeCaller";
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKHaploTypeCaller'}{'fileEnding'};
-    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKHaploTypeCaller'}{'fileEnding'};
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKHaploTypeCaller'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKHaploTypeCaller'}{'fileEnding'};
     
     print $FILEHANDLE "#GATK CombineVariants","\n\n";
     	   
@@ -2567,7 +2630,7 @@ sub GATKHaplotypeCallerCombineVariants {
     close($FILEHANDLE);   
     if ( ($scriptParameter{'pGATKHaploTypeCallerCombineVariants'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 
-	$sampleInfo{ $scriptParameter{'familyID'} }{'MostCompleteVCF'}{'Path'} = $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf";	
+	$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'MostCompleteVCF'}{'Path'} = $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf";	
 	&FIDSubmitJob(0, $familyID, 1, $parameter{'pGATKHaploTypeCallerCombineVariants'}{'chain'}, $fileName, 0);    
     }
     return;
@@ -2631,7 +2694,7 @@ sub GATKHaploTypeCaller {
     
     my $outFamilyFileDirectory = $scriptParameter{'outDataDir'}."/".$familyID;
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/HaploTypeCaller";
-    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{'pGATKHaploTypeCaller'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKHaploTypeCaller'}{'fileEnding'};
     my $contigIntervalListFile;
 
     print $FILEHANDLE "mkdir -p ".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID', "\n\n"; 
@@ -2736,7 +2799,7 @@ sub GATKReduceReads {
     my $aligner = $_[1];
 
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle    
-    &ProgramPreRequisites( $sampleID, "GATKReduceReads", $aligner."/GATK", 0, $FILEHANDLE, 1, 10);
+    &ProgramPreRequisites( $sampleID, "GATKReduceReads", $aligner."/GATK", 0, $FILEHANDLE, 1, 50);
     
     my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
     my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
@@ -4551,6 +4614,94 @@ sub BuildAnnovarPreRequisites {
     }
 }
 
+sub BuildGATKVariantEvalExomePreRequisites {
+##Creates the GATKVariantEvalExomePreRequisites.
+
+    my $familyID = $_[0];
+    my $aligner = $_[1];
+    my $program = $_[2];
+
+    my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
+
+    &ProgramPreRequisites($familyID, $program, $aligner, 0, $FILEHANDLE, 1, 1);
+
+    print $FILEHANDLE "cd $scriptParameter{'referencesDir'}", "\n\n"; #Move to reference directory
+
+    my $cosmidResourceDirectory = &CheckCosmidYAML();
+
+    if ($parameter{'GATKVariantEvalGold'}{'buildFile'} eq 1) {
+
+	&DownloadReference(\$program, $FILEHANDLE, "GATKVariantEvalGold", \$cosmidResourceDirectory);
+    }
+
+    close($FILEHANDLE);
+    
+    if ( ($scriptParameter{"p".$program} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	&FIDSubmitJob(0, $familyID, 6, $parameter{"p".$program}{'chain'}, $fileName, 0);
+    }
+}
+
+sub BuildGATKRealignerPreRequisites {
+##Creates the GATKRealignerPreRequisites.
+
+    my $familyID = $_[0];
+    my $aligner = $_[1];
+    my $program = $_[2];
+
+    my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
+
+    &ProgramPreRequisites($familyID, $program, $aligner, 0, $FILEHANDLE, 1, 1);
+
+    print $FILEHANDLE "cd $scriptParameter{'referencesDir'}", "\n\n"; #Move to reference directory
+
+    my $cosmidResourceDirectory = &CheckCosmidYAML();
+
+    if ($parameter{'GATKReAlignerINDELKnownSet1'}{'buildFile'} eq 1) {
+
+	&DownloadReference(\$program, $FILEHANDLE, "GATKReAlignerINDELKnownSet1", \$cosmidResourceDirectory);
+    }
+    if ($parameter{'GATKReAlignerINDELKnownSet2'}{'buildFile'} eq 1) {
+
+	&DownloadReference(\$program, $FILEHANDLE, "GATKReAlignerINDELKnownSet2", \$cosmidResourceDirectory);
+    }
+    close($FILEHANDLE);
+    
+    if ( ($scriptParameter{"p".$program} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	&FIDSubmitJob(0, $familyID, 6, $parameter{"p".$program}{'chain'}, $fileName, 0);
+    }
+}
+
+sub BuildGATKVariantRecalibrationPreRequisites {
+##Creates the GATKVariantRecalibrationPreRequisites.
+
+    my $familyID = $_[0];
+    my $aligner = $_[1];
+    my $program = $_[2];
+
+    my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
+
+    &ProgramPreRequisites($familyID, $program, $aligner, 0, $FILEHANDLE, 1, 1);
+
+    print $FILEHANDLE "cd $scriptParameter{'referencesDir'}", "\n\n"; #Move to reference directory
+
+    my $cosmidResourceDirectory = &CheckCosmidYAML();
+
+    if ($parameter{'GATKVariantReCalibrationTrainingSetHapMap'}{'buildFile'} eq 1) {
+
+	&DownloadReference(\$program, $FILEHANDLE, "GATKVariantReCalibrationTrainingSetHapMap", \$cosmidResourceDirectory);
+    }
+    if ($parameter{'GATKVariantReCalibrationTrainingSet1000GOmni'}{'buildFile'} eq 1) {
+	
+	&DownloadReference(\$program, $FILEHANDLE, "GATKVariantReCalibrationTrainingSet1000GOmni", \$cosmidResourceDirectory);
+    }
+
+    close($FILEHANDLE);
+    
+    if ( ($scriptParameter{"p".$program} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	&FIDSubmitJob(0, $familyID, 6, $parameter{"p".$program}{'chain'}, $fileName, 0);
+    }
+}
+
 sub BuildPTCHSMetricPreRequisites {
 ##Creates the target "infiles_list" "padded.infile_list" and interval_list files
 
@@ -4729,6 +4880,12 @@ sub BuildBwaPreRequisites {
 
     &ProgramPreRequisites($familyID, $program, $aligner, 0, $FILEHANDLE, 1, 3);
 
+    print $FILEHANDLE "cd $scriptParameter{'referencesDir'}", "\n\n"; #Move to reference directory
+
+    my $cosmidResourceDirectory = &CheckCosmidYAML();
+
+    &DownloadReference(\$program, $FILEHANDLE, "humanGenomeReference", \$cosmidResourceDirectory);
+
     print STDOUT "\nNOTE: Will try to create required ".$scriptParameter{'bwaBuildReference'}." index files before executing ".$program,"\n\n";
 
     print $FILEHANDLE "#Building BWA index", "\n\n";
@@ -4752,6 +4909,31 @@ sub BuildBwaPreRequisites {
     }
 }
 
+sub BuildChanjoBuildPreRequisites {
+##Creates the chanjoBuildPreRequisites.
+
+    my $familyID = $_[0];
+    my $aligner = $_[1];
+    my $program = $_[2];
+
+    my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
+
+    &ProgramPreRequisites($familyID, $program, $aligner, 0, $FILEHANDLE, 1, 1);
+
+    print $FILEHANDLE "cd $scriptParameter{'referencesDir'}", "\n\n"; #Move to reference directory
+
+    my $cosmidResourceDirectory = &CheckCosmidYAML();
+
+    &DownloadReference(\$program, $FILEHANDLE, "chanjoBuildDb", \$cosmidResourceDirectory);
+
+    close($FILEHANDLE);
+    
+    if ( ($scriptParameter{"p".$program} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	&FIDSubmitJob(0, $familyID, 6, $parameter{"p".$program}{'chain'}, $fileName, 0);
+    }
+}
+
+
 sub BuildMosaikAlignPreRequisites {
 ##Creates the mosaikAlignPreRequisites using scriptParameters{'humanGenomeReference'} as reference.
 
@@ -4763,6 +4945,12 @@ sub BuildMosaikAlignPreRequisites {
     my $randomInteger = int(rand(10000)); #Generate a random integer between 0-10,000.
 
     &ProgramPreRequisites($familyID, $program, $aligner, 0, $FILEHANDLE, 4, 2);
+
+    print $FILEHANDLE "cd $scriptParameter{'referencesDir'}", "\n\n"; #Move to reference directory
+
+    my $cosmidResourceDirectory = &CheckCosmidYAML();
+
+    &DownloadReference(\$program, $FILEHANDLE, "humanGenomeReference", \$cosmidResourceDirectory);
     
     if ($parameter{'mosaikAlignReference'}{'buildFile'} eq 1) {
 
@@ -4837,6 +5025,56 @@ sub CheckBuildHumanGenomePreRequisites {
     #&CollectSeqContigs(); #Reloads if required NOTE:Preparation for future changes but not activated yet
 }
 
+sub DownloadReference {
+##Downloads references using the database download manager Cosmid.     
+
+    my $programRef = $_[0];
+    my $FILEHANDLE = $_[1];
+    my $parameterName = $_[2];
+    my $cosmidResourceDirectoryRef = $_[3];
+
+    if ($parameter{$parameterName}{'buildFile'} eq 1) { #Reference need to be built a.k.a downloaded
+	
+	print STDOUT "\nNOTE: Will try to download ".$scriptParameter{$parameterName}." before executing ".$$programRef,"\n\n";
+
+	print $FILEHANDLE "workon ".$scriptParameter{'pythonVirtualEnvironment'}, "\n\n"; #Activate python environment
+
+	print $FILEHANDLE "cosmid "; #Database download manager
+	print $FILEHANDLE "clone "; #clone resource
+	print $FILEHANDLE $supportedCosmidReferences{$parameterName}{'cosmidName'}; #The actual reference
+	unless ($supportedCosmidReferences{$parameterName}{'version'} eq "latest") { #Version to download
+
+	    print $FILEHANDLE "#".$supportedCosmidReferences{$parameterName}{'version'},
+	}
+	print $FILEHANDLE "\n\n"; 
+
+	print $FILEHANDLE "deactivate ", "\n\n"; #Deactivate python environment
+	
+	if ($supportedCosmidReferences{$parameterName}{'compressedSwitch'} eq "compressed") {
+
+	    print $FILEHANDLE "gzip ";
+	    print $FILEHANDLE "-d "; #Decompress
+	    print $FILEHANDLE $$cosmidResourceDirectoryRef."/".$supportedCosmidReferences{$parameterName}{'cosmidName'}."/*.gz", "\n\n";
+	}
+
+	my $intendedFilePathRef = \($scriptParameter{'referencesDir'}."/".$scriptParameter{$parameterName});
+	my $temporaryFilePathRef = \($$cosmidResourceDirectoryRef."/".$supportedCosmidReferences{$parameterName}{'cosmidName'}."/*");    
+	&PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
+	
+	#Remove temporary Cosmid resources directory
+	print $FILEHANDLE "rm -rf ";
+	print $FILEHANDLE $$cosmidResourceDirectoryRef."/".$supportedCosmidReferences{$parameterName}{'cosmidName'}."/;", "\n\n";
+	
+	for my $supportedParameterName (keys %supportedCosmidReferences) {
+
+	    if ($supportedCosmidReferences{$supportedParameterName}{'cosmidName'} eq $supportedCosmidReferences{$parameterName}{'cosmidName'}) { #Reset to 0 for all supportedCosmidReferences that are shared between modules 
+		
+		$parameter{$supportedParameterName}{'buildFile'} = 0; #Only need to download once per analysis call
+	    }
+	}
+    }
+}
+
 sub BuildHumanGenomePreRequisites {
 ##Creates the humanGenomePreRequisites using scriptParameters{'humanGenomeReference'} as reference.
 
@@ -4848,6 +5086,8 @@ sub BuildHumanGenomePreRequisites {
     my $randomInteger = int(rand(10000)); #Generate a random integer between 0-10,000.
 
     &ProgramPreRequisites($familyID, $program, $aligner, 0, $FILEHANDLE, 1, 1);
+
+    &DownloadReference(\$program, $FILEHANDLE, "humanGenomeReference");
 
     if ($humanGenomeCompressed eq "compressed") {
 
@@ -4906,6 +5146,32 @@ sub BuildHumanGenomePreRequisites {
     }
 }
 
+sub CheckCosmidInstallation {
+
+    my $parameterNameRef = $_[0];
+    
+    if ($parameter{$$parameterNameRef}{'buildFile'} eq 1) {
+	
+	if (defined($scriptParameter{'pythonVirtualEnvironment'})) {
+	
+	    print STDOUT "Checking your Cosmid installation in preparation for download of ".$scriptParameter{$$parameterNameRef}, "\n"; 
+	    my $whichrReturn = `source ~/.bash_profile; workon $scriptParameter{'pythonVirtualEnvironment'};which cosmid;deactivate;`;
+	    
+	    if ($whichrReturn eq "") {
+		print "\nMIP uses cosmid to download ".$scriptParameter{$$parameterNameRef}." and MIP could not find a cosmid installation in your python virtualenvironment".$scriptParameter{'pythonVirtualEnvironment'}." ","\n"; 
+		exit;
+	    }
+	    else {
+		print STDOUT "Found installation in ".$whichrReturn, "\n";
+	    }
+	}
+	else  {
+	
+	    print STDERR "\nCannot download".$scriptParameter{$$parameterNameRef}." without a '-pythonVirtualEnvironment'";
+	    exit;
+	}
+    }
+}
 
 sub ReadPlinkPedigreeFile {
 ###Reads famid_pedigree.txt file in PLINK format
@@ -5705,7 +5971,7 @@ sub AddToScriptParameter {
 			elsif ($parameterName eq "annovarTableNames") {
 
 			    @annovarTableNames = ("refGene", "mce46way", "gerp++elem", "segdup", "tfbs", "mirna", "snp137NonFlagged", "1000g2012apr_all", "esp6500si_all", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_lrt", "ljb2_gerp++","ljb2_phylop"); #Set default annovar table names
-			    &EnableArrayParameter(\@inFilesDirs, \$parameterName);
+			    &EnableArrayParameter(\@annovarTableNames, \$parameterName);
 			}
 			else {
 			    
@@ -5808,13 +6074,13 @@ sub AddToScriptParameter {
 			if ($parameterName eq "genomeAnalysisToolKitPath") { #To enable addition of version to sampleInfo
 			    
 			    if ($scriptParameter{$parameterName}=~/GenomeAnalysisTK-([^,]+)/) {
-				$sampleInfo{$scriptParameter{'familyID'}}{'program'}{"GATK"}{'Version'} = $1;
+				$sampleInfo{$scriptParameter{'familyID'}}{$scriptParameter{'familyID'}}{'program'}{"GATK"}{'Version'} = $1;
 			    }
 			}
 			if ($parameterName eq "picardToolsPath") { #To enable addition of version to sampleInfo                                                                       
 
                             if ($scriptParameter{$parameterName}=~/picard-tools-([^,]+)/) {
-                                $sampleInfo{$scriptParameter{'familyID'}}{'program'}{"PicardTools"}{'Version'} = $1;
+                                $sampleInfo{$scriptParameter{'familyID'}}{$scriptParameter{'familyID'}}{'program'}{"PicardTools"}{'Version'} = $1;
                             }
                         }
 		    }
@@ -5832,9 +6098,9 @@ sub AddToScriptParameter {
 		    elsif ($parameterName eq "humanGenomeReference") {
 			
 			&CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{$parameterName}), \$parameterName, "f");#Check reference genome
-			$sampleInfo{$scriptParameter{'familyID'}}{"HumanGenomeBuild"}{'Path'} = $scriptParameter{'referencesDir'}."/".$scriptParameter{$parameterName};
-			$sampleInfo{$scriptParameter{'familyID'}}{"HumanGenomeBuild"}{'Source'} = $humanGenomeReferenceSource;
-			$sampleInfo{$scriptParameter{'familyID'}}{"HumanGenomeBuild"}{'Version'} = $humanGenomeReferenceVersion;
+			$sampleInfo{$scriptParameter{'familyID'}}{$scriptParameter{'familyID'}}{"HumanGenomeBuild"}{'Path'} = $scriptParameter{'referencesDir'}."/".$scriptParameter{$parameterName};
+			$sampleInfo{$scriptParameter{'familyID'}}{$scriptParameter{'familyID'}}{"HumanGenomeBuild"}{'Source'} = $humanGenomeReferenceSource;
+			$sampleInfo{$scriptParameter{'familyID'}}{$scriptParameter{'familyID'}}{"HumanGenomeBuild"}{'Version'} = $humanGenomeReferenceVersion;
 
 			#Enable autoBuild of metafiles 	       
 			$parameter{$parameterName.".dict"}{'buildFile'} = "yesAutoBuild";
@@ -5910,21 +6176,20 @@ sub AddToScriptParameter {
 			    }
 			    if (defined($scriptParameter{'pedigreeFile'}) ) {
 				
-				$sampleInfo{$scriptParameter{'familyID'}}{'pedigreeFile'}{'Path'} = $scriptParameter{'pedigreeFile'}; #Add pedigreeFile to sampleInfo
-				$sampleInfo{$scriptParameter{'familyID'}}{'pedigreeFileAnalysis'}{'Path'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/qc_pedigree.yaml"; #Add pedigreeFile info used in this analysis to SampleInfoFile
+				$sampleInfo{$scriptParameter{'familyID'}}{$scriptParameter{'familyID'}}{'pedigreeFile'}{'Path'} = $scriptParameter{'pedigreeFile'}; #Add pedigreeFile to sampleInfo
+				$sampleInfo{$scriptParameter{'familyID'}}{$scriptParameter{'familyID'}}{'pedigreeFileAnalysis'}{'Path'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/qc_pedigree.yaml"; #Add pedigreeFile info used in this analysis to SampleInfoFile
 			    }
 			} 
-}
-elsif ( ($parameterName eq "GATKExomeReferenceSNPs") && ($scriptParameter{'analysisType'} ne "rapid")) { #Do nothing since file is not required unless rapid mode is enabled
-}
+		    }
+		    elsif ( ($parameterName eq "GATKExomeReferenceSNPs") && ($scriptParameter{'analysisType'} ne "rapid")) { #Do nothing since file is not required unless rapid mode is enabled
+		    }
 		    elsif ( ($parameterName eq "bwaMemRapidDb") && ($scriptParameter{'analysisType'} ne "rapid")) { #Do nothing since file is not required unless rapid mode is enabled
 		    }
 		    elsif ( ($parameterName eq "GATKHaploTypeCallerRefBAMInfile") && ($scriptParameter{'analysisType'} =~/rapid|genomes/) ) { #Do nothing since file is not required unless exome mode is enabled
 		    }
 		    else {
 			
-			&CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{$parameterName}), \$parameterName, "f");}
-		    
+			&CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{$parameterName}), \$parameterName, "f");}		    
 		}
 	    }
 	    
@@ -5955,6 +6220,10 @@ elsif ( ($parameterName eq "GATKExomeReferenceSNPs") && ($scriptParameter{'analy
 		else { #Add to enable or overwrite info gathered from config and use in recreation of cmd line later
 		    
 		    $scriptParameter{$parameterName} = $parameterValue; 
+		}
+		if ($parameterName eq "instanceTag") {
+
+		    $sampleInfo{$scriptParameter{'familyID'}}{$scriptParameter{'familyID'}}{$parameterName} = $scriptParameter{$parameterName};
 		}
 	    }
 	    
@@ -6122,12 +6391,12 @@ sub CreateFileEndings {
 			    else {
 				
 				if (defined($tempFileEnding{$scriptParameter{'familyID'}})) {
-				    $sampleInfo{ $scriptParameter{'familyID'} }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{$scriptParameter{'familyID'}}.$parameter{$orderParameterElement}{'fileEnding'};
+				    $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{$scriptParameter{'familyID'}}.$parameter{$orderParameterElement}{'fileEnding'};
 				}
 				else  { #First module that should add filending
-				    $sampleInfo{ $scriptParameter{'familyID'} }{$orderParameterElement}{'fileEnding'} = $parameter{$orderParameterElement}{'fileEnding'};
+				    $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{$orderParameterElement}{'fileEnding'} = $parameter{$orderParameterElement}{'fileEnding'};
 				}
-				$tempFileEnding{$scriptParameter{'familyID'}} = $sampleInfo{ $scriptParameter{'familyID'} }{$orderParameterElement}{'fileEnding'}; #To enable sequential build-up of fileending 
+				$tempFileEnding{$scriptParameter{'familyID'}} = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{$orderParameterElement}{'fileEnding'}; #To enable sequential build-up of fileending 
 			    }		
 			}
 		    }
@@ -6166,12 +6435,12 @@ sub CreateFileEndings {
 				$tempFileEnding{$chainfork}{$scriptParameter{'familyID'}} =  $tempFileEnding{$scriptParameter{'familyID'}}; #Inherit current MAIN chain. 
 			    }
 			    if (defined($tempFileEnding{$chainfork}{$scriptParameter{'familyID'}})) {
-				$sampleInfo{ $scriptParameter{'familyID'} }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{$chainfork}{$scriptParameter{'familyID'}}.$parameter{$orderParameterElement}{'fileEnding'};
+				$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{$chainfork}{$scriptParameter{'familyID'}}.$parameter{$orderParameterElement}{'fileEnding'};
 			    }
 			    else  { #First module that should add filending
-				$sampleInfo{ $scriptParameter{'familyID'} }{$orderParameterElement}{'fileEnding'} = $parameter{$orderParameterElement}{'fileEnding'};
+				$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{$orderParameterElement}{'fileEnding'} = $parameter{$orderParameterElement}{'fileEnding'};
 			    }
-			    $tempFileEnding{$chainfork}{$scriptParameter{'familyID'}} = $sampleInfo{ $scriptParameter{'familyID'} }{$orderParameterElement}{'fileEnding'}; #To enable sequential build-up of fileending 
+			    $tempFileEnding{$chainfork}{$scriptParameter{'familyID'}} = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{$orderParameterElement}{'fileEnding'}; #To enable sequential build-up of fileending 
 			}
 		    }
 		}
@@ -6335,16 +6604,16 @@ sub SampleInfoQC {
 
     if ($sampleID eq "noSampleID") {
 
-	$sampleInfo{$familyID}{'program'}{$programName}{'OutDirectory'} = $outDirectory; #OutDirectory of QC File                                                            
+	$sampleInfo{$familyID}{$familyID}{'program'}{$programName}{'OutDirectory'} = $outDirectory; #OutDirectory of QC File                                                            
 	if ($outDataType eq "static") { #programs which add a static file in its own directory                                                                                                 
 
-	    $sampleInfo{$familyID}{'program'}{$programName}{'OutFile'} = $outFileEnding; #Static QC outFile                                                                     
+	    $sampleInfo{$familyID}{$familyID}{'program'}{$programName}{'OutFile'} = $outFileEnding; #Static QC outFile                                                                     
 	}
 	if ($outDataType eq "infoDirectory") { #QC metrics are sent to info files                                                                                                                   
-	    $sampleInfo{$familyID}{'program'}{$programName}{'OutFile'} = $outFileEnding; #info stdout file                                                                      
+	    $sampleInfo{$familyID}{$familyID}{'program'}{$programName}{'OutFile'} = $outFileEnding; #info stdout file                                                                      
 	}
 	if ($outDataType eq "infileDependent") { #Programs which Add a filending to infile                                                                                                          
-	    $sampleInfo{$familyID}{'program'}{$programName}{'OutFile'} = $outFileEnding; #Infile dependent QC outFile                                                                                                                                                                                       
+	    $sampleInfo{$familyID}{$familyID}{'program'}{$programName}{'OutFile'} = $outFileEnding; #Infile dependent QC outFile                                                                                                                                                                                       
 	}
 
     }
@@ -6538,43 +6807,14 @@ sub LoadYAML {
     my $yamlFile = $_[0];
     my %yamlHash;
 
-    my $fileType = &DetectYamlContentType($yamlFile);
-
     open (YAML, "<". $yamlFile) or die "can't open ".$yamlFile.":".$!, "\n";    
         
-        if ($fileType eq "reference") {
-        %yamlHash = %{ YAML::LoadFile($yamlFile) }; #Load hashreference as hash
-        }
-        if ($fileType eq "hash") {
-        %yamlHash = YAML::LoadFile($yamlFile); #File contained a hash = no workup
-        }
+    %yamlHash = %{ YAML::LoadFile($yamlFile) }; #Load hashreference as hash
+        
     close(YAML);
     
     print STDOUT "Read Yaml file: ". $yamlFile, "\n";
     return %yamlHash;
-}
-
-sub DetectYamlContentType {
-###Check the content of the YAML file for seperating hashreferences and hash. Return the content type.
-
-    my $yamlFile = $_[0];
-    my $fileType;
-
-    open (YAML, "<". $yamlFile) or die "can't open ".$yamlFile.":".$!, "\n";
-        
-        while (<YAML>) {
-
-            if ($. == 1 && $_=~/^---$/) { #YAML file contains a hashreference
-                $fileType = "reference";
-                last;
-            }
-            else {
-                $fileType = "hash";
-                last;
-            }
-        }
-    close(YAML);
-    return $fileType;
 }
 
 sub CheckUniqueArrayElement {
@@ -6711,14 +6951,14 @@ sub UpdateYAML {
 }
 
 sub CheckAutoBuild {
-##Checks if autobuild is on and returns "1" if enabled or "0" if not)
+##Checks if autobuild is on and returns "1" if enabled or "0" if not
 
     my $parameterNameRef = $_[0];
     my $sampleIDRef = $_[1];
 
     if (defined($sampleIDRef)) {
 	
-	if ( ($parameter{ $scriptParameter{'familyID'} }{$$sampleIDRef}{$$parameterNameRef}{'buildFile'} eq "yesAutoBuild") || ($parameter{ $scriptParameter{'familyID'} }{$$sampleIDRef}{$$parameterNameRef}{'buildFile'} eq 1) ) {
+	if ( ($parameter{ $scriptParameter{'familyID'} }{$$sampleIDRef}{$$parameterNameRef}{'buildFile'} eq "yesAutoBuild") || ($parameter{ $scriptParameter{'familyID'} }{$$sampleIDRef}{$$parameterNameRef}{'buildFile'} eq "yesAutoDownLoad") || ($parameter{ $scriptParameter{'familyID'} }{$$sampleIDRef}{$$parameterNameRef}{'buildFile'} eq 1) ) {
 	    
 	    return "1"; #Flag that autobuild is needed
 	}
@@ -6729,14 +6969,54 @@ sub CheckAutoBuild {
     else {
 	
 	if ( ($parameter{$$parameterNameRef}{'buildFile'} eq "yesAutoBuild") || ($parameter{$$parameterNameRef}{'buildFile'} eq 1) ) { #1 for arrays
-	    
 	    return "1"; #Flag that autobuild is needed
+	}
+	elsif ( ($parameter{$$parameterNameRef}{'buildFile'} eq "yesAutoDownLoad") || ($parameter{$$parameterNameRef}{'buildFile'} eq 1) ) {
+	    
+	    if ($parameter{$$parameterNameRef}{'default'} eq $scriptParameter{$$parameterNameRef}) {
+		
+		return "1"; #Flag that autobuild is needed
+	    }
+	    else {
+		
+		print STDERR "\nCould not find file ".$scriptParameter{'referencesDir'}."/".$scriptParameter{$$parameterNameRef}, "\n";
+		print STDERR "\nMake sure that file exists or use the default for this parameter to enable automatic download via Cosmid", "\n";
+		exit;
+	    }
 	}
 	else {
 	    return "0"; #No autobuild is needed   
 	}
     }
 }
+
+#sub CheckAutoDownLoad {
+##Checks if autoDownLoad is on and returns "1" if enabled or "0" if not
+
+ #   my $parameterNameRef = $_[0];
+  #  my $sampleIDRef = $_[1];
+
+   # if (defined($sampleIDRef)) {
+	
+#	if ( ($parameter{ $scriptParameter{'familyID'} }{$$sampleIDRef}{$$parameterNameRef}{'downLoadFile'} eq "yesAutoDownLoad") || ($parameter{ $scriptParameter{'familyID'} }{$$sampleIDRef}{$$parameterNameRef}{'DownLoadFile'} eq 1) ) {
+	    
+#	    return "1"; #Flag that autoDownLoad is needed
+#	}
+#	else {
+#	    return "0"; #No autoDownLoad is needed   
+#	}
+ #   }
+  #  else {
+	
+#	if ( ($parameter{$$parameterNameRef}{'downLoadFile'} eq "yesAutoDownLoad") || ($parameter{$$parameterNameRef}{'downLoadFile'} eq 1) ) { #1 for arrays
+	    
+#	    return "1"; #Flag that autoDownLoad is needed
+#	}
+#	else {
+#	    return "0"; #No autoDownLoad is needed   
+#	}
+ #   }
+#}
 
 sub ParseHumanGenomeReference {
 ##Detect the humanGenomeReference: Source (hg19 or GRCh, Version and chromosome prefix (prefix might be removed in the future))
@@ -6810,7 +7090,7 @@ sub CheckExistance {
 	    else {
  
 		$parameter{$$parameterNameRef}{'buildFile'} = &CheckAutoBuild(\$$parameterNameRef); #Check autoBuild or not and return value
-	       
+		 
 		if ($parameter{$$parameterNameRef}{'buildFile'} == 0) { #No autobuild
 		    
 		    print STDERR $USAGE, "\n";
@@ -7242,6 +7522,44 @@ sub OverWriteConfigParamWithCMDInfo {
 	
 	$scriptParameter{$parameterName} = $parameter{$parameterName}{'value'};
     }
+}
+
+sub DefineSupportedCosmidReferences {
+
+    my $parameterName = $_[0];
+    my $cosmidName = $_[1];
+    my $parameterVersion = $_[2];
+    my $humanGenomeReferenceVersionRef = $_[3];
+    my $compressedSwitch = $_[4];
+
+    $supportedCosmidReferences{$parameterName} = {
+
+	'cosmidName' => $cosmidName,
+	'version' => $parameterVersion,
+	'humanGenomeReferenceVersion' => $$humanGenomeReferenceVersionRef,
+	'compressedSwitch' => $compressedSwitch,
+    };
+}
+
+sub CheckCosmidYAML {
+##Locates and sets the cosmid directory to download to
+
+    my %cosmidResources; #Hash to load cosmid info to
+
+    if (-f $scriptParameter{'referencesDir'}."/cosmid.yaml") { #cosmid.yaml file exists in reference directory
+	
+	%cosmidResources = &LoadYAML($scriptParameter{'referencesDir'}."/cosmid.yaml"); #Load yaml file
+	
+	unless (defined($cosmidResources{'directory'})) { #Set Directory entry if not defined
+	    
+	    $cosmidResources{'directory'} = $scriptParameter{'referencesDir'}."/resources"; #Set the Cosmid default directory
+	}
+    }
+    else { #No cosmid.yaml exist in reference directory
+	
+	$cosmidResources{'directory'} = $scriptParameter{'referencesDir'}."/resources"; #Set the Cosmid default directory
+    }
+    return $cosmidResources{'directory'};
 }
 
 ####
