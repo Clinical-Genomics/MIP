@@ -1534,7 +1534,7 @@ sub RankVariants {
 
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
  
-    &ProgramPreRequisites($familyID, "RankVariants", $aligner, $callType, $FILEHANDLE, 1, 5);
+    &ProgramPreRequisites($familyID, "RankVariants", $aligner, $callType, $FILEHANDLE, 4, 1);
 
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pAddDepth'}{'fileEnding'};
@@ -6942,11 +6942,26 @@ sub UpdateYAML {
     
     if ($scriptParameter{$orderParameterElement}) {
 	
-	$scriptParameter{$orderParameterElement} =~ s/CLUSTERCONSTANTPATH!/$clusterConstantPath/gi; #Exchange CLUSTERCONSTANTPATH! for current cluster path
-	$scriptParameter{$orderParameterElement} =~ s/ANALYSISCONSTANTPATH!/$analysisConstantPath/gi; #Exchange ANALYSISCONSTANTPATH! for the current analysis path
-	$scriptParameter{$orderParameterElement} =~ s/ANALYSISTYPE!/$analysisType/gi; #Exchange ANALYSISTYPE! for the current analysis type
-	$scriptParameter{$orderParameterElement} =~ s/FDN!/$familyID/gi; #Exchange FND! for the current familyID
-	$scriptParameter{$orderParameterElement} =~ s/ALIGNER!/$aligner/gi; #Exchange ALIGNER! for the current aligner
+	if (defined($clusterConstantPath)) {
+	 
+	    $scriptParameter{$orderParameterElement} =~ s/CLUSTERCONSTANTPATH!/$clusterConstantPath/gi; #Exchange CLUSTERCONSTANTPATH! for current cluster path
+	}
+	if (defined($analysisConstantPath)) {
+	 
+	    $scriptParameter{$orderParameterElement} =~ s/ANALYSISCONSTANTPATH!/$analysisConstantPath/gi; #Exchange ANALYSISCONSTANTPATH! for the current analysis path
+	}
+	if (defined($analysisType)) {
+
+	    $scriptParameter{$orderParameterElement} =~ s/ANALYSISTYPE!/$analysisType/gi; #Exchange ANALYSISTYPE! for the current analysis type
+	}
+	if (defined($familyID)) {
+
+	    $scriptParameter{$orderParameterElement} =~ s/FDN!/$familyID/gi; #Exchange FND! for the current familyID
+	}
+	if (defined($aligner)) {
+
+	    $scriptParameter{$orderParameterElement} =~ s/ALIGNER!/$aligner/gi; #Exchange ALIGNER! for the current aligner
+	}
     }
 }
 
