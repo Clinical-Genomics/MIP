@@ -90,24 +90,24 @@ sub FamilyQC {
 
     for my $familyID ( keys %sampleInfoFile ) { #For every family id 
 
-        if ($sampleInfoFile{$familyID}{'program'}) { #Only examine programs     
+        if ($sampleInfoFile{$familyID}{$familyID}{'program'}) { #Only examine programs     
 
-            for my $program ( keys %{ $sampleInfoFile{$familyID}{'program'} } ) { #For every programs           
+            for my $program ( keys %{ $sampleInfoFile{$familyID}{$familyID}{'program'} } ) { #For every programs           
 
 		my $outDirectory;
 		my $outFile;	
 
-                if ($sampleInfoFile{$familyID}{'program'}{$program}{'Version'} ) {
+                if ($sampleInfoFile{$familyID}{$familyID}{'program'}{$program}{'Version'} ) {
                     
-                    $qcData{$familyID}{'program'}{$program}{'Version'} = $sampleInfoFile{$familyID}{'program'}{$program}{'Version'}; #Add version to qcData
+                    $qcData{$familyID}{$familyID}{'program'}{$program}{'Version'} = $sampleInfoFile{$familyID}{$familyID}{'program'}{$program}{'Version'}; #Add version to qcData
                 }
-                if ($sampleInfoFile{$familyID}{'program'}{$program}{'OutDirectory'} ) {
+                if ($sampleInfoFile{$familyID}{$familyID}{'program'}{$program}{'OutDirectory'} ) {
 
-                    $outDirectory = $sampleInfoFile{$familyID}{'program'}{$program}{'OutDirectory'}; #Extract OutDirectory
+                    $outDirectory = $sampleInfoFile{$familyID}{$familyID}{'program'}{$program}{'OutDirectory'}; #Extract OutDirectory
                 }
-                if ($sampleInfoFile{$familyID}{'program'}{$program}{'OutFile'} ) {
+                if ($sampleInfoFile{$familyID}{$familyID}{'program'}{$program}{'OutFile'} ) {
 
-                    $outFile = $sampleInfoFile{$familyID}{'program'}{$program}{'OutFile'}; #Extract OutFile
+                    $outFile = $sampleInfoFile{$familyID}{$familyID}{'program'}{$program}{'OutFile'}; #Extract OutFile
                 }  
 		
                 &ParseRegExpHashAndCollect($program, $outDirectory, $outFile); #Loads qcHeader and qcProgramData
@@ -125,25 +125,28 @@ sub SampleQC {
 	
 	for my $sampleID ( keys %{ $sampleInfoFile{$familyID} } ) { #For every sample id
 
-	    if ($sampleInfoFile{$familyID}{$sampleID}{'program'}) { #Only examine programs
-		
-		for my $program ( keys %{ $sampleInfoFile{$familyID}{$sampleID}{'program'} } ) { #For every program  
+	    unless ($sampleID eq $familyID) { #Family data is on the same level sa sampleIDs
+
+		if ($sampleInfoFile{$familyID}{$sampleID}{'program'}) { #Only examine programs
 		    
-		    for my $infile ( keys %{ $sampleInfoFile{$familyID}{$sampleID}{'program'}{$program} } ) { #For every infile
+		    for my $program ( keys %{ $sampleInfoFile{$familyID}{$sampleID}{'program'} } ) { #For every program  
 			
-			my $outDirectory = $sampleInfoFile{$familyID}{$sampleID}{'program'}{$program}{$infile}{'OutDirectory'};
-			my $outFile = $sampleInfoFile{$familyID}{$sampleID}{'program'}{$program}{$infile}{'OutFile'};
-			
-			&ParseRegExpHashAndCollect($program, $outDirectory, $outFile); #Loads qcHeader and qcProgramData
-			
-			&AddToqcData($familyID, $sampleID, $program, $infile); #Add extracted information to qcData
-			
-		    }   
+			for my $infile ( keys %{ $sampleInfoFile{$familyID}{$sampleID}{'program'}{$program} } ) { #For every infile
+			    
+			    my $outDirectory = $sampleInfoFile{$familyID}{$sampleID}{'program'}{$program}{$infile}{'OutDirectory'};
+			    my $outFile = $sampleInfoFile{$familyID}{$sampleID}{'program'}{$program}{$infile}{'OutFile'};
+			    
+			    &ParseRegExpHashAndCollect($program, $outDirectory, $outFile); #Loads qcHeader and qcProgramData
+			    
+			    &AddToqcData($familyID, $sampleID, $program, $infile); #Add extracted information to qcData
+			    
+			}   
+		    }
 		}
 	    }
 	}
-    }
-}   
+    }   
+}
 
 sub ParseRegExpHashAndCollect {
 ###Parses the RegExpHash structure to identify if the info is 1) Paragraf section(s) (both header and data line(s)); 2) Seperate data line
@@ -217,7 +220,7 @@ sub AddToqcData {
 		    $qcData{$familyID}{$sampleID}{$infile}{$program}{$regExpKey} = $qcProgramData{$program}{$regExpKey}[0]; #key-->value for sampleID
 		}
 		elsif ($familyID) {
-		    $qcData{$familyID}{'program'}{$program}{$regExpKey} = $qcProgramData{$program}{$regExpKey}[0]; #key-->value for familyID
+		    $qcData{$familyID}{$familyID}{'program'}{$program}{$regExpKey} = $qcProgramData{$program}{$regExpKey}[0]; #key-->value for familyID
 		}
 	    }
 	    else { #Write array to qcData
@@ -230,7 +233,7 @@ sub AddToqcData {
 		    }
 		    elsif ($familyID) {
 
-			$qcData{$familyID}{'program'}{$program}{$regExpKey}[$regExpKeyCounter] = $qcProgramData{$program}{$regExpKey}[$regExpKeyCounter];			
+			$qcData{$familyID}{$familyID}{'program'}{$program}{$regExpKey}[$regExpKeyCounter] = $qcProgramData{$program}{$regExpKey}[$regExpKeyCounter];			
 		    }
 		}
 		if ($program eq "QaCompute") {#Check gender for sampleID
@@ -238,10 +241,10 @@ sub AddToqcData {
 		    my $chrYCoverage = $qcData{$familyID}{$sampleID}{$infile}{$program}{$regExpKey}[1];
 		    &GenderCheck(\$familyID,\$sampleID,\$infile, \$chrXCoverage, \$chrYCoverage); #Check that assumed gender is supported by coverage on chrX and chrY
 		}
-		if (defined($qcData{$familyID}{'program'}{'RelationCheck'}{'Sample_RelationCheck'}) && defined ($qcData{$familyID}{'program'}{'pedigreeCheck'}{'Sample_order'}) ) {
+		if (defined($qcData{$familyID}{$familyID}{'program'}{'RelationCheck'}{'Sample_RelationCheck'}) && defined ($qcData{$familyID}{$familyID}{'program'}{'pedigreeCheck'}{'Sample_order'}) ) {
 		    
-		    &RelationCheck(\$familyID, \@{$qcData{$familyID}{'program'}{'RelationCheck'}{'Sample_RelationCheck'}}, \@{$qcData{$familyID}{'program'}{'pedigreeCheck'}{'Sample_order'}});
-		    delete($qcData{$familyID}{'program'}{'RelationCheck'}); #Not of any use anymore
+		    &RelationCheck(\$familyID, \@{$qcData{$familyID}{$familyID}{'program'}{'RelationCheck'}{'Sample_RelationCheck'}}, \@{$qcData{$familyID}{$familyID}{'program'}{'pedigreeCheck'}{'Sample_order'}});
+		    delete($qcData{$familyID}{$familyID}{'program'}{'RelationCheck'}); #Not of any use anymore
 		}
 	    }
 	}
@@ -259,7 +262,7 @@ sub AddToqcData {
 				$qcData{$familyID}{$sampleID}{$infile}{$program}{$regExpHeaderKey}{$regExpKeyHeader}{ $qcHeader{$program}{$regExpKey}{$regExpHeaderKey}[$qcHeadersCounter] } = $qcProgramData{$program}{$regExpKey}{$regExpKeyHeader}[$qcHeadersCounter]; #Add to qcData using header element[X] --> data[X] to correctly position elements in qcData hash 
                             } 
                             elsif ($familyID) {
-				$qcData{$familyID}{$program}{$regExpHeaderKey}{$regExpKeyHeader}{ $qcHeader{$program}{$regExpKey}{$regExpHeaderKey}[$qcHeadersCounter] } = $qcProgramData{$program}{$regExpKey}{$regExpKeyHeader}[$qcHeadersCounter]; #Add to qcData using header element[X] --> data[X] to correctly position elements in qcData hashe
+				$qcData{$familyID}{$familyID}{$program}{$regExpHeaderKey}{$regExpKeyHeader}{ $qcHeader{$program}{$regExpKey}{$regExpHeaderKey}[$qcHeadersCounter] } = $qcProgramData{$program}{$regExpKey}{$regExpKeyHeader}[$qcHeadersCounter]; #Add to qcData using header element[X] --> data[X] to correctly position elements in qcData hash
 				
                             }
                         }    
