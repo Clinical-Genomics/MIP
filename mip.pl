@@ -760,9 +760,11 @@ if ($scriptParameter{'writeConfigFile'} ne 0) { #Write config file for family
 
 ##Set chr prefix and chromosome names depending on reference used
 if ($scriptParameter{'humanGenomeReference'}=~/hg\d+/) { #Refseq - prefix and M
+
     @contigs = ("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17","chr18","chr19","chr20","chr21","chr22","chrX","chrY","chrM"); #Chr for filtering of bam file
 }
 elsif ($scriptParameter{'humanGenomeReference'}=~/GRCh\d+/) { #Ensembl - no prefix and MT
+
     @contigs = ("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","X","Y","MT"); #Chr for filtering of bam file
 }
 
@@ -782,21 +784,8 @@ print MIPLOG "\n".$script." "; #Adds script name to recontruct command line
 
 print STDOUT "\nScript parameters and info from ".$script." are saved in file: ".$mipLogName, "\n";
 
-####Collect infiles
-
-for (my $inputDirectoryCounter=0;$inputDirectoryCounter<scalar(@inFilesDirs);$inputDirectoryCounter++) { #Collects inputfiles
-    
-    my @infiles = `cd $inFilesDirs[ $inputDirectoryCounter ];ls *.fastq*;`; #cd to input dir and collect fastq files and fastq.gz files
-   
-    print STDOUT "\nReads from Platform", "\n";print MIPLOG "\nReads from Platform", "\n";
-    print STDOUT "\nSample ID\t".$sampleIDs[$inputDirectoryCounter],"\n";print MIPLOG "\nSample ID\t".$sampleIDs[$inputDirectoryCounter],"\n";
-    print STDOUT "Inputfiles\n",@ { $infile{ $sampleIDs[$inputDirectoryCounter] }  =[@infiles] }, "\n"; #hash with sample id as key and inputfiles in dir as array 
-    print MIPLOG "Inputfiles\n",@ { $infile{ $sampleIDs[$inputDirectoryCounter] }  =[@infiles] }, "\n";
-    
-    $indirpath{$sampleIDs[$inputDirectoryCounter]} = $inFilesDirs[ $inputDirectoryCounter ];  #Catch inputdir path
-    chomp(@infiles);    #Remove newline from every entry in array
-    $infile{ $sampleIDs[$inputDirectoryCounter] }  =[@infiles]; #Reload files into hash (kept above newline just for print STDOUT)
-}
+##Collect infiles
+&CollectInfiles();
 
 close(MIPLOG);
 
@@ -2391,7 +2380,7 @@ sub GATKPhaseByTransmission {
     my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
     my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKPhaseByTransmission'}{'fileEnding'};
     
-    unless (-e $FamilyFileDirectory."/".$familyID.".fam") { #Check to see if file already exists
+    unless (-f $FamilyFileDirectory."/".$familyID.".fam") { #Check to see if file already exists
 
 	print GATK_PHTR "#Generating '.fam' file for GATK PhaseByTransmission","\n\n";
 	print GATK_PHTR q?perl -nae 'print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t", $F[5], "\n";' ?.$scriptParameter{'pedigreeFile'}." > ".$FamilyFileDirectory."/".$familyID.".fam", "\n\n";
@@ -2411,7 +2400,7 @@ sub GATKPhaseByTransmission {
     print GATK_PHTR "-T PhaseByTransmission "; #Type of analysis to run
     print GATK_PHTR "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
     print GATK_PHTR "-V: ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf "; #InFile (family vcf)
-    &GATKPedigreeFlag(*GATK_PHTR, $FamilyFileDirectory, "SILENT"); #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family
+    &GATKPedigreeFlag(*GATK_PHTR, $FamilyFileDirectory, "SILENT", "GATKPhaseByTransmission"); #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family
     print GATK_PHTR "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf"; #OutFile
     
     close(GATK_PHTR);
@@ -2543,7 +2532,7 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "-an FS "; #The names of the annotations which should used for calculations
 	print $FILEHANDLE "--mode ".$modes[$modeCounter]." "; #Recalibration mode to employ (SNP|INDEL|BOTH)
 	print $FILEHANDLE "-nt ".$scriptParameter{'maximumCores'}." "; #How many data threads should be allocated to running this analysis    
-	&GATKPedigreeFlag($FILEHANDLE, $outFamilyFileDirectory, "SILENT"); #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family
+	&GATKPedigreeFlag($FILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKVariantRecalibration"); #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family
 	
 ###GATK ApplyRecalibration
 	print $FILEHANDLE "\n\n#GATK ApplyRecalibration","\n\n";
@@ -2593,7 +2582,7 @@ sub GATKVariantReCalibration {
 	    }
 	}
 	print $FILEHANDLE "--ts_filter_level ".$scriptParameter{'GATKVariantReCalibrationTSFilterLevel'}." ";
-	&GATKPedigreeFlag($FILEHANDLE, $outFamilyFileDirectory, "SILENT"); #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family    
+	&GATKPedigreeFlag($FILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKVariantRecalibration"); #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family    
 	print $FILEHANDLE "--mode ".$modes[$modeCounter]." "; #Recalibration mode to employ (SNP|INDEL|BOTH)
     }
 ###GATK SelectVariants
@@ -2814,7 +2803,7 @@ sub GATKHaploTypeCaller {
 
 	print $FILEHANDLE "-L ".$chromosome." "; #Prints the GATK -L parameter for each contig
     }
-    &GATKPedigreeFlag($FILEHANDLE, $outFamilyFileDirectory, "SILENT"); #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family
+    &GATKPedigreeFlag($FILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKHaploTypeCaller"); #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family
 
     if ($scriptParameter{'analysisType'} eq "exomes") {
 
@@ -5772,6 +5761,30 @@ sub NrofCoresPerSbatch {
     return $nrCores;
 }
 
+sub CollectInfiles {
+##Collects the ".fastq(.gz)" files from the supplied infiles directory. Checks if any files exist
+    
+    for (my $inputDirectoryCounter=0;$inputDirectoryCounter<scalar(@inFilesDirs);$inputDirectoryCounter++) { #Collects inputfiles
+	
+	my @infiles = `cd $inFilesDirs[ $inputDirectoryCounter ];ls *.fastq*;`; #cd to input dir and collect fastq files and fastq.gz files
+	
+	if (scalar(@infiles) == 0) { #No "*.fastq*" infiles
+	    
+	    print STDERR "Could not find any '.fastq' files in supplied infiles directory ".$inFilesDirs[ $inputDirectoryCounter ], "\n";
+	    exit;
+	}
+	
+	print STDOUT "\nReads from Platform", "\n";print MIPLOG "\nReads from Platform", "\n";
+	print STDOUT "\nSample ID\t".$sampleIDs[$inputDirectoryCounter],"\n";print MIPLOG "\nSample ID\t".$sampleIDs[$inputDirectoryCounter],"\n";
+	print STDOUT "Inputfiles\n",@ { $infile{ $sampleIDs[$inputDirectoryCounter] }  =[@infiles] }, "\n"; #hash with sample id as key and inputfiles in dir as array 
+	print MIPLOG "Inputfiles\n",@ { $infile{ $sampleIDs[$inputDirectoryCounter] }  =[@infiles] }, "\n";
+	
+	$indirpath{$sampleIDs[$inputDirectoryCounter]} = $inFilesDirs[ $inputDirectoryCounter ];  #Catch inputdir path
+	chomp(@infiles);    #Remove newline from every entry in array
+	$infile{ $sampleIDs[$inputDirectoryCounter] }  =[@infiles]; #Reload files into hash (kept above newline just for print STDOUT)
+    }
+}
+
 sub InfilesReFormat {
 ###Reformat files for mosaik output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames.
     
@@ -5813,6 +5826,11 @@ sub InfilesReFormat {
 		}
 		&CheckSampleIDMatch($sampleID, $4, $infileCounter);
 		&AddInfileInfo($1, $2, $3, $4, $5, $6, \$laneTracker, $infileCounter, $compressedSwitch);		
+	    }
+	    else { #No regexp match i.e. file does not follow filename convention 
+
+		print STDERR "Could not detect MIP file name convention for file: ".$infile{$sampleID}[$infileCounter].". \n\nPlease check that the file name follows the specified convention.", "\n";
+		exit;
 	    }
         }
     }
@@ -6867,51 +6885,65 @@ sub GATKPedigreeFlag {
     my $FILEHANDLE = $_[0];
     my $outFamilyFileDirectory = $_[1];
     my $pedigreeValidationType = $_[2];
-
-    if (scalar(@sampleIDs) > 2) {
-
-	my $famFile = $outFamilyFileDirectory."/".$scriptParameter{'familyID'}.".fam";
-	my $parentCounter;
-	my $pqParentCounter = q?perl -ne 'my $parentCounter=0; while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] eq 0) || ($line[3] eq 0) ) { $parentCounter++} } } print $parentCounter; last;'?;
-	my $childCounter;
-	my $pqChildCounter = q?perl -ne 'my $childCounter=0; while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] ne 0) || ($line[3] ne 0) ) { $childCounter++} } } print $childCounter; last;'?;
-
-	if ($FILEHANDLE eq "*main::GATK_PHTR") { #Special case - GATK PhaseByTransmission needs parent/child or trio 
+    my $program = $_[3];
+    
+    my $famFile = $outFamilyFileDirectory."/".$scriptParameter{'familyID'}.".fam";
+    my $parentCounter;
+    my $pqParentCounter = q?perl -ne 'my $parentCounter=0; while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] eq 0) || ($line[3] eq 0) ) { $parentCounter++} } } print $parentCounter; last;'?;
+    my $childCounter;
+    my $pqChildCounter = q?perl -ne 'my $childCounter=0; while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] ne 0) || ($line[3] ne 0) ) { $childCounter++} } } print $childCounter; last;'?;
+    
+    $parentCounter = `$pqParentCounter $famFile`;
+    $childCounter = `$pqChildCounter $famFile`;
+    
+    if ($program ne "GATKPhaseByTransmission") {
+	
+	if ($parentCounter > 0) { #Parents present
 	    
-	    if (scalar(@sampleIDs) < 4) { #i.e.2-3 individuals in pedigree
-		    
-		$parentCounter = `$pqParentCounter $famFile`;
-		$childCounter = `$pqChildCounter $famFile`;		    
+	    print $FILEHANDLE "--pedigreeValidationType ".$pedigreeValidationType." --pedigree ".$outFamilyFileDirectory."/".$scriptParameter{'familyID'}.".fam "; #Pedigree files for samples		
+	}
+    }
+    else {
+	
+	&CheckPedigreeMembers($FILEHANDLE, \$pedigreeValidationType, \$outFamilyFileDirectory, \$parentCounter, \$childCounter); #Special case - GATK PhaseByTransmission needs parent/child or trio 
+    }
+}
+
+sub CheckPedigreeMembers {
+##Detect if the pedigree file contains a valid parent/child or trio
+
+    my $FILEHANDLE = $_[0];
+    my $outFamilyFileDirectory = $_[1];
+    my $pedigreeValidationType = $_[2];
+    my $parentCounterRef = $_[3];
+    my $childCounterRef = $_[4];
+	    
+    if (scalar(@sampleIDs) < 4) { #i.e.1-3 individuals in pedigree		    
 		
-		if ( ($childCounter == 1) && ($parentCounter > 0) ) { #parent/child or trio
-		    print $FILEHANDLE "--pedigreeValidationType ".$pedigreeValidationType." --pedigree ".$outFamilyFileDirectory."/".$scriptParameter{'familyID'}.".fam "; #Pedigree files for samples
-		}
-		else {
-		    $scriptParameter{'pGATKPhaseByTransmission'} = 0; #Override input since pedigree is not valid for analysis
-		    print STDERR "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";print MIPLOG "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";
-		    if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) { #Broadcast
-			print STDERR "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n";print MIPLOG "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n";
-		    }
-		    print STDERR "\n";
-		}
-	    }
-	    else {
-		$scriptParameter{'pGATKPhaseByTransmission'} = 0; #Override input since pedigree is not valid for analysis
-		print STDERR "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";print MIPLOG "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";
-		if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) { #Broadcast
-		    print STDERR "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false";print MIPLOG "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n";
-		}
-		print STDERR "\n";
-	    }
+	if ( ($childCounterRef == 1) && ($parentCounterRef > 0) ) { #parent/child or trio
+
+	    print $FILEHANDLE "--pedigreeValidationType ".$pedigreeValidationType." --pedigree ".$outFamilyFileDirectory."/".$scriptParameter{'familyID'}.".fam "; #Pedigree files for samples
 	}
 	else {
 
-	    $parentCounter = `$pqParentCounter $famFile`;
-	    
-	    if ($parentCounter > 0) { #Parent
-		print $FILEHANDLE "--pedigreeValidationType ".$pedigreeValidationType." --pedigree ".$outFamilyFileDirectory."/".$scriptParameter{'familyID'}.".fam "; #Pedigree files for samples		
-	    }		
+	    $scriptParameter{'pGATKPhaseByTransmission'} = 0; #Override input since pedigree is not valid for analysis
+	    print STDERR "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";print MIPLOG "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";
+	    if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) { #Broadcast
+		
+		print STDERR "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n";print MIPLOG "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n";
+	    }
+	    print STDERR "\n";
 	}
+    }
+    else {
+	
+	$scriptParameter{'pGATKPhaseByTransmission'} = 0; #Override input since pedigree is not valid for analysis
+	print STDERR "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";print MIPLOG "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";
+	if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) { #Broadcast
+	    
+	    print STDERR "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false";print MIPLOG "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n";
+	}
+	print STDERR "\n";
     }
 }
 
