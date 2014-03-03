@@ -116,7 +116,7 @@ if($help) {
 
 if($version) {
     
-    print STDOUT "\nintersectCollect.pl v1.0", "\n\n";
+    print STDOUT "\nintersectCollect.pl v1.1", "\n\n";
     exit
 }
 
