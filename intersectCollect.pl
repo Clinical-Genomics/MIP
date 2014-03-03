@@ -60,6 +60,7 @@ Output format (tab separate list)
 use Pod::Usage;
 use Pod::Text;
 use Getopt::Long;
+use Tabix;
 
 use vars qw($USAGE);
 
@@ -115,7 +116,7 @@ if($help) {
 
 if($version) {
     
-    print STDOUT "\nintersectCollect.pl v1.0", "\n\n";
+    print STDOUT "\nintersectCollect.pl v1.1", "\n\n";
     exit
 }
 
@@ -151,9 +152,11 @@ if (@outInfos) {
 }
 
 if ($prefixChromosomes == 0) { #Ensembl - no prefix and MT
+
     @chromosomes = ("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","X","Y","MT"); #Chromosomes for enhanced speed in collecting information and reducing memory consumption
 }
 else { #Refseq - prefix and MT
+
     @chromosomes = ("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17","chr18","chr19","chr20","chr21","chr22","chrX","chrY","chrMT");
 }
 	
@@ -179,7 +182,7 @@ if ($dbFile) {
 #Read all range Db file first to enable check against first db file keys as it is read.
 for (my $dbFileNr=0;$dbFileNr<$dbFileCounter;$dbFileNr++) {
 
-    if ($dbFile{$dbFileNr}{'Matching'} eq "range") {
+    if ( ($dbFile{$dbFileNr}{'Matching'} eq "range") && ($dbFile{$dbFileNr}{'Size'} ne "tabix") ) {
 
 	if ( ($merge == 0) && ( $select == 0) ) { #Only include elements found in first db file. Not supported by merge option or select option
 
@@ -187,7 +190,7 @@ for (my $dbFileNr=0;$dbFileNr<$dbFileCounter;$dbFileNr++) {
 	}
     }
 }
-
+	
 for (my $dbFileNr=0;$dbFileNr<$dbFileCounter;$dbFileNr++) {
 
     if ($dbFileNr ==0) {#Add first keys and columns to extract and determines valid keys for subsequent Db files
@@ -221,7 +224,9 @@ if ($dbFile{0}{'Chr_column'} ne "Na") { #For chromosome queries
     if ($merge == 0) { #Only include elements found in first db file
 	
 	for (my $chromosomeNumber=0;$chromosomeNumber<scalar(@chromosomes);$chromosomeNumber++) {
-	    
+
+	    &ReadDbFilesTabix($chromosomes[$chromosomeNumber]);#Check that tabix is specified in sub routine, otherwise leave untouched
+
 	    if ($chromosomes[$chromosomeNumber+1]) {
 		
 		&ReadDbFiles($chromosomes[$chromosomeNumber],$chromosomes[$chromosomeNumber+1]); #Scans each file for chromosomes entries only processing those i.e. will scan the db file once for each chr in @chromosomes.   
@@ -266,8 +271,8 @@ else { #Other type of keys
 
     if ( $select == 0) {
 
-	&ReadDbFilesNoChr();
-	&WriteAll($outFile);
+	#&ReadDbFilesNoChr();
+	#&WriteAll($outFile);
     }
     else {
 	#Do nothing because if select mode is on the db files have already beeen read
@@ -277,6 +282,64 @@ else { #Other type of keys
 ###
 #Sub Routines
 ###
+
+sub ReadDbFilesTabix {
+#Reads all db files collected from Db master file, except first db file and db files with features "large", "range". These db files are handled by different subroutines.   
+
+    my $chromosomeNumber = $_[0];
+    
+    for (my $dbFileNr=1;$dbFileNr<$dbFileCounter;$dbFileNr++) { #All db files (in order of appearance in $dbFile) except first db which has already been handled
+	
+	if ($dbFile{$dbFileNr}{'Size'} eq "tabix") { #Only for files with tabix index, other files are handled downstream
+	    
+	    my $tabix = Tabix->new('-data' => $dbFile{$dbFileNr}{'File'});
+	    my @tabixContigs = $tabix->getnames; #Locate all contigs in file
+
+	    if ( grep( /^$chromosomeNumber$/, @tabixContigs ) ) { #Only collect from contigs present in file
+
+		for my $secondKey (keys % {$allVariants{$chromosomeNumber} }) {
+		    
+		    for my $thirdKey (keys % {$allVariants{$chromosomeNumber}{$secondKey} }) {
+			
+			my $iteration = $tabix->query( $chromosomeNumber, ($secondKey-1), $thirdKey+1); #Create overlapping region, creates a bit of search overhead, but should not affect accuracy since return is check for association before collecting
+			    
+			while (my $variantLine = $tabix->read($iteration)){ #Iterate over all postions within region
+			    
+			    if (defined($variantLine)) {
+				
+				my @tabixReturnArray = split('\t', $variantLine);
+				
+				if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 3) {
+				    
+				    if ( $allVariants{$chromosomeNumber}{$secondKey}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}) {
+					
+					for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
+					    
+					    my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
+					    $allVariants{$chromosomeNumber }{$secondKey}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{$$columnIdRef} = $tabixReturnArray[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
+					}
+				    }
+				}
+				if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 4) {
+				    
+				    if ( $allVariants{$chromosomeNumber}{$secondKey}{$thirdKey}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}) {
+					
+					for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
+					    
+					    my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
+					    $allVariants{$chromosomeNumber }{$secondKey}{$thirdKey }{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{$$columnIdRef} = $tabixReturnArray[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
+					}
+				    }
+				}
+			    }
+			}
+		    } 
+		}
+	    }
+	    print STDOUT "Finished Reading chromosome".$chromosomeNumber." in Infile: ".$dbFile{$dbFileNr}{'File'},"\n";   
+	}
+    }
+}
 
 sub ReadDbMaster {
 #Reads DbMaster file
@@ -437,9 +500,9 @@ sub ReadDbFiles {
     my $chromosome = $_[0];
     my $nextChromosome = $_[1];
 
-    for (my $dbFileNr=1;$dbFileNr<$dbFileCounter;$dbFileNr++) { #All db files (in order of appearance in $dbFile) except first db which has already been handled	
+    for (my $dbFileNr=1;$dbFileNr<$dbFileCounter;$dbFileNr++) { #All db files (in order of appearance in $dbFile) except first db which has already been handled     
 	
-	if ( ($dbFile{$dbFileNr}{'Size'} eq "large") || ($dbFile{$dbFileNr}{'Matching'} eq "range") ) { #Already handled
+	if ( ($dbFile{$dbFileNr}{'Size'} eq "tabix") || ($dbFile{$dbFileNr}{'Size'} eq "large") || ($dbFile{$dbFileNr}{'Matching'} eq "range") ) { #Already handled
 
 	    next;
 	}
@@ -2000,3 +2063,34 @@ sub WriteAllVariantsMerge {
 }
 
 
+###Decommissoned###
+sub TabixQuery {
+##Returns 
+
+    my $chromosomeRef = $_[0];
+    my $chromosomeStartRef = $_[1];
+    my $chromosomeStopRef = $_[2];
+    my $arrayColumnsRef = $_[3];    
+    my $tabix = $_[4];
+    my $dbFileNrRef = $_[5];
+
+print $$chromosomeRef, "\t", $$chromosomeStartRef, "\t", $$chromosomeStopRef, "\n";
+my $var = $tabix->read(
+
+  $tabix->query( $$chromosomeRef, $$chromosomeStartRef, $$chromosomeStopRef) 
+
+); #Starts from position but not with the actual position so need to subtrackt -1 from start
+    if (defined($var)) {
+	print $var, "\n";
+	my @tabixReturnArray = split('\t', $var);
+	my @array;
+	if ( $allVariants{$$chromosomeRef}{$$chromosomeStartRef}{$$chromosomeStopRef}{$tabixReturnArray[ $dbFile{$$dbFileNrRef}{'Column_Keys'}[3] ]}) {
+	
+	    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$$dbFileNrRef}{'Column_To_Extract'}});$extractColumnsCounter++) {
+		
+		my $columnIdRef = \($$dbFileNrRef."_".$dbFile{$$dbFileNrRef}{'Column_To_Extract'}[$extractColumnsCounter]);
+		$allVariants{$$chromosomeRef }{$$chromosomeStartRef}{$$chromosomeStopRef }{$tabixReturnArray[ $dbFile{$$dbFileNrRef}{'Column_Keys'}[3] ]}{$$columnIdRef} = $tabixReturnArray[ $dbFile{$$dbFileNrRef}{'Column_To_Extract'}[$extractColumnsCounter] ];
+	    }
+	}
+    }
+}
