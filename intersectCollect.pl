@@ -311,7 +311,7 @@ sub ReadDbFilesTabix {
 				
 				if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 3) {
 				    
-				    if ( $allVariants{$chromosomeNumber}{$secondKey}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}) {
+				    if ( $allVariants{$chromosomeNumber}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ]}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}) {
 					
 					for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
 					    
@@ -322,12 +322,12 @@ sub ReadDbFilesTabix {
 				}
 				if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 4) {
 				    
-				    if ( $allVariants{$chromosomeNumber}{$secondKey}{$thirdKey}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}) {
+				    if ( $allVariants{$chromosomeNumber}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}) {
 					
 					for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
 					    
 					    my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-					    $allVariants{$chromosomeNumber }{$secondKey}{$thirdKey }{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{$$columnIdRef} = $tabixReturnArray[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
+					    $allVariants{$chromosomeNumber}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{$$columnIdRef} = $tabixReturnArray[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
 					}
 				    }
 				}
