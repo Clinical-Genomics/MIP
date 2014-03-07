@@ -83,7 +83,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -chbdb/--chanjoBuildDb  Reference database (defaults to "CCDS.current.txt")
                -pCh_C/--pChanjoCalculate Chanjo coverage analysis (defaults to "1" (=yes))
                  -chccut/--chanjoCalculateCutoff Read depth cutoff (defaults to "10")
-               -pCh_I/--pChanjoImport Chanjo import to collect sample info to family Db  (defaults to "1" (=yes))
+               -pCh_I/--pChanjoImport Chanjo import to collect sample info to family Db  (defaults to "0" (=no))
                -pCC_bedgc/--pGenomeCoverageBED Genome coverage calculation using genomeCoverageBED (defaults to "1" (=yes))
                -pCC_qac/--pQaCompute Genome coverage calculation using qaCompute (defaults to "1" (=yes))
                -xcov/--xCoverage Max coverage depth when using '-pGenomeCoverageBED', '-pQaCompute' (defaults to "30")
@@ -95,6 +95,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                
                ##GATK              
                -gatkpath/--genomeAnalysisToolKitPath  Path to GATK. Mandatory for use of GATK (defaults to "")
+               -gatkbdv/--GATKBundleDownLoadVersion  GATK FTP bundle download version.(defaults to "2.8")
                -gatktmpd/--GATKTempDirectory Temporary Directory to write to using GATK ReAlignerTargetCreator & BaseRecalibrator (defaults to "/scratch/SLURM_JOB_ID";Supply whole path)
                -gatktpbl/--GATKTargetPaddedBedIntervalLists Target BED file interval for GATK (defaults to "". File ending should be ".padXXX.interval_list")
                -gatkdcov/--GATKDownSampleToCoverage Coverage to downsample to at any given locus (defaults to "1000")
@@ -285,7 +286,7 @@ my (@picardToolsMergeSamFilesPrevious); #Any previous sequencing runs
 
 &DefineParameters("chanjoCalculateCutoff", "program", 10, "pChanjoCalculate");
 
-&DefineParameters("pChanjoImport", "program", 1, "MIP", "nofileEnding", "CoverageReport");
+&DefineParameters("pChanjoImport", "program", 0, "MIP", "nofileEnding", "CoverageReport");
 
 &DefineParameters("pGenomeCoverageBED", "program", 1, "MIP", "_genomeCoverageBed", "CoverageQC_GcovBed", "bedtools");
 
@@ -315,7 +316,7 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists); #Arrays for t
 
 &DefineParameters("pGATKBaseRecalibration", "program", 1, "MIP", "_brecal", "MAIN");
 
-&DefineParametersPath("GATKBaseReCalibrationSNPKnownSet", "dbsnp_138.b37.vcf", "pGATKBaseRecalibration", "file", "noAutoBuild");
+&DefineParametersPath("GATKBaseReCalibrationSNPKnownSet", "dbsnp_138.b37.vcf", "pGATKBaseRecalibration", "file", "yesAutoDownLoad");
 
 
 &DefineParameters("pGATKReduceReads", "program", 1, "MIP", "_reduced", "MAIN");
@@ -323,7 +324,7 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists); #Arrays for t
 
 &DefineParameters("pGATKHaploTypeCaller", "program", 1, "MIP", "_", "MAIN");
 
-&DefineParametersPath("GATKHaploTypeCallerSNPKnownSet", "dbsnp_138.b37.vcf", "pGATKHaploTypeCaller", "file", "noAutoBuild");
+&DefineParametersPath("GATKHaploTypeCallerSNPKnownSet", "dbsnp_138.b37.vcf", "pGATKHaploTypeCaller", "file", "yesAutoDownLoad");
 
 &DefineParametersPath("GATKHaploTypeCallerRefBAMInfile", "nodefault", "pGATKHaploTypeCaller", "file", "noAutoBuild");
 
@@ -336,9 +337,9 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists); #Arrays for t
 
 &DefineParametersPath("GATKVariantReCalibrationTrainingSetHapMap", "hapmap_3.3.b37.sites.vcf", "pGATKVariantRecalibration", "file", "yesAutoDownLoad");
 
-&DefineParametersPath("GATKVariantReCalibrationTrainingSetDbSNP", "dbsnp_138.b37.vcf", "pGATKVariantRecalibration", "file", "noAutoBuild");
+&DefineParametersPath("GATKVariantReCalibrationTrainingSetDbSNP", "dbsnp_138.b37.vcf", "pGATKVariantRecalibration", "file", "yesAutoDownLoad");
 
-&DefineParametersPath("GATKVariantReCalibrationTrainingSet1000GSNP", "1000G_phase1.snps.high_confidence.b37.vcf", "pGATKVariantRecalibration", "file", "noAutoBuild");
+&DefineParametersPath("GATKVariantReCalibrationTrainingSet1000GSNP", "1000G_phase1.snps.high_confidence.b37.vcf", "pGATKVariantRecalibration", "file", "yesAutoDownLoad");
 
 &DefineParametersPath("GATKVariantReCalibrationTrainingSet1000GOmni", "1000G_omni2.5.b37.sites.vcf", "pGATKVariantRecalibration", "file", "yesAutoDownLoad");
 
@@ -358,7 +359,7 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists); #Arrays for t
 
 &DefineParameters("pGATKVariantEvalExome", "program", 1, "MIP", "nofileEnding", "ExomeVarintQC", "bedtools");
 
-&DefineParametersPath("GATKVariantEvalDbSNP", "dbsnp_138.b37.excluding_sites_after_129.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file", "noAutoBuild");
+&DefineParametersPath("GATKVariantEvalDbSNP", "dbsnp_138.b37.excluding_sites_after_129.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file", "yesAutoDownLoad");
 
 &DefineParametersPath("GATKVariantEvalGold", "Mills_and_1000G_gold_standard.indels.b37.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file", "yesAutoDownLoad");
 
@@ -367,6 +368,8 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists); #Arrays for t
 &DefineParametersPath("GATKTempDirectory", "/scratch/", "pGATKRealigner,pGATKBaseRecalibration,pGATKReduceReads,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKReadBackedPhasing", 0); #Depends on -projectID input, directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
 
 &DefineParameters("GATKDownSampleToCoverage", "program", 1000, "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller");
+
+&DefineParameters("GATKBundleDownLoadVersion", "program", "2.8", "pBwaMem,pBwaAln,pBwaSampe,pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKHaploTypeCallerCombineVariants,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pAnnovar,pAddDepth,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics"); #Sets the GATK FTP Bundle Download version. Needed for all programs that download the human genome reference
 
 my (@GATKTargetPaddedBedIntervalLists); #Array for target infile lists used in GATK
 
@@ -435,7 +438,7 @@ my @ImportantDbFileOutFiles; #List of db outfiles
 ##MIP
 
 ##humanGenomeReference
-&DefineParametersPath("humanGenomeReference", "Homo_sapiens.GRCh37.d5.fasta", "pBwaMem,pBwaAln,pBwaSampe,pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKHaploTypeCallerCombineVariants,pGATKVariantRecalibration,pGATKVariantEvalAll,pGATKVariantEvalExome,pAnnovar,pAddDepth,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "file", "yesAutoDownLoad");
+&DefineParametersPath("humanGenomeReference", "Homo_sapiens.GRCh37.d5.fasta", "pBwaMem,pBwaAln,pBwaSampe,pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKHaploTypeCallerCombineVariants,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pAnnovar,pAddDepth,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "file", "yesAutoDownLoad");
 my @humanGenomeReferenceFileEndings = (".dict", ".fasta.fai"); #Meta files
 
 my ($humanGenomeReferenceSource, $humanGenomeReferenceVersion, $humanGenomeReferenceNameNoEnding, $humanGenomeCompressed, $fnend, $aligner, $fileName, $fileNameTracker, $version, $help) = ("nocmdinput", "nocmdinput", "nocmdinput", "nocmdinput", ".sh", "nocmdinput", "nocmdinput", 0);
@@ -535,6 +538,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'extpbl|exomeTargetPaddedBedInfileLists:s' => \@exomeTargetPaddedBedInfileLists, #Comma separated list of padded target file for CalculateHsMetrics
 	   'pRCP|pRCovPlots:n' => \$parameter{'pRCovPlots'}{'value'},
 	   'gatkpath|genomeAnalysisToolKitPath:s' => \$parameter{'genomeAnalysisToolKitPath'}{'value'}, #GATK whole path
+	   'gatkbdv|GATKBundleDownLoadVersion:s' => \$parameter{'GATKBundleDownLoadVersion'}{'value'}, #Sets the GATK FTP Bundle Download version
 	   'gatktmpd|GATKTempDirectory:s' => \$parameter{'GATKTempDirectory'}{'value'}, #GATK ReAlignerTargetCreator & BaseRecalibrator temporary directory
 	   'gatktpbl|GATKTargetPaddedBedIntervalLists:s' => \@GATKTargetPaddedBedIntervalLists, #Comma separated list of padded target file set to be used in GATK
 	   'gatkdcov|GATKDownSampleToCoverage:n' => \$parameter{'GATKDownSampleToCoverage'}{'value'}, #GATK downsample to coverage
@@ -558,7 +562,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'gatkvarrecaltsfilterlevel|GATKVariantReCalibrationTSFilterLevel:s' => \$parameter{'GATKVariantReCalibrationTSFilterLevel'}{'value'}, #Truth sensativity level
 	   'pGATK_phaseTr|pGATKPhaseByTransmission:n' => \$parameter{'pGATKPhaseByTransmission'}{'value'}, #GATK PhaseByTransmission to produce phased genotype calls
 	   'pGATK_readPh|pGATKReadBackedPhasing:n' => \$parameter{'pGATKReadBackedPhasing'}{'value'}, #GATK ReadBackedPhasing
-	   'gatkreadphphaseqthr|GATKReadBackedPhasingPhaseQualityThresh' => \$parameter{'GATKReadBackedPhasingPhaseQualityThresh'}{'value'}, #quality score required to output phasing
+	   'gatkreadphphaseqthr|GATKReadBackedPhasingPhaseQualityThresh:n' => \$parameter{'GATKReadBackedPhasingPhaseQualityThresh'}{'value'}, #quality score required to output phasing
 	   'pGATK_varevalall|pGATKVariantEvalAll:n' => \$parameter{'pGATKVariantEvalAll'}{'value'}, #GATK varianteval all variants
 	   'pGATK_varevalexome|pGATKVariantEvalExome:n' => \$parameter{'pGATKVariantEvalExome'}{'value'}, #GATK varianteval only exonic variants
 	   'gatkvarevaldbsnp|GATKVariantEvalDbSNP:s' => \$parameter{'GATKVariantEvalDbSNP'}{'value'},
@@ -593,7 +597,8 @@ if($help) {
     exit;
 }
 
-my $MipVersion = "v1.5.2";#Set version for log
+my $MipVersion = "v1.5.3";#Set version for log
+
 if($version) {
 
     print STDOUT "\nMip.pl ".$MipVersion, "\n\n";
@@ -642,7 +647,7 @@ foreach my $orderParameterElement (@orderParameters) { #Populate scriptParameter
 	$parameter{'ImportantDbMasterFile'}{'default'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}.".intersectCollect_selectVariants_db_master.txt";
 	
     }
-    if ( $orderParameterElement eq "pedigreeFile") { #Write QC for only pedigree data used in analysis                                                        
+    if ($orderParameterElement eq "pedigreeFile") { #Write QC for only pedigree data used in analysis                                                        
 	
 	if (defined($scriptParameter{'pedigreeFile'})) {
 	    `mkdir -p $scriptParameter{'outDataDir'}/$scriptParameter{'familyID'};`;
@@ -650,7 +655,7 @@ foreach my $orderParameterElement (@orderParameters) { #Populate scriptParameter
  
 	}
     }
-    if ( $orderParameterElement eq "humanGenomeReference") { #Supply humanGenomeReference to mosaikAlignReference if required
+    if ($orderParameterElement eq "humanGenomeReference") { #Supply humanGenomeReference to mosaikAlignReference if required
 	
 	if ( (defined($scriptParameter{'humanGenomeReference'})) && (defined($humanGenomeReferenceNameNoEnding)) ) {
 
@@ -659,7 +664,22 @@ foreach my $orderParameterElement (@orderParameters) { #Populate scriptParameter
 	    &SetAutoBuildFeature("bwaBuildReference", \$referenceFileEndings{'bwaBuildReference'}, \$humanGenomeReferenceNameNoEnding);	
 	}
     }
-}
+    if ($orderParameterElement eq "mergeAnnotatedVariantsTemplateFile") { #Check that paths in master template exists
+
+	if (defined($scriptParameter{'mergeAnnotatedVariantsTemplateFile'})) {
+
+	    &CheckTemplateFilesPaths(\($scriptParameter{'referencesDir'}."/".$scriptParameter{'mergeAnnotatedVariantsTemplateFile'}), "mergeAnnotatedVariantsTemplateFile")	    
+	}
+    }
+    if ($orderParameterElement eq "GATKHaploTypeCallerRefBAMInfile") { #Check that paths in BAMInfile exists
+
+	if (defined($scriptParameter{'GATKHaploTypeCallerRefBAMInfile'})) {
+
+	    &CheckTemplateFilesPaths(\($scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKHaploTypeCallerRefBAMInfile'}), "GATKHaploTypeCallerRefBAMInfile")   
+	}
+	
+    }
+} 
 
 ##sampleIDs
 &PrepareArrayParameters(\@sampleIDs, "sampleIDs", "path", "nodefault", "MIP", "");
@@ -731,12 +751,17 @@ if ($scriptParameter{'pRankVariants'} > 0) {
 #Cosmid references
 &DefineSupportedCosmidReferences("humanGenomeReference", "decoy", "5", \$humanGenomeReferenceVersion, "compressed");
 &DefineSupportedCosmidReferences("chanjoBuildDb", "ccds", "latest", \$humanGenomeReferenceVersion, "unCompressed");
-&DefineSupportedCosmidReferences("GATKReAlignerINDELKnownSet1", "indel", "2.8", \$humanGenomeReferenceVersion, "compressed");
-&DefineSupportedCosmidReferences("GATKReAlignerINDELKnownSet2", "mills", "2.8", \$humanGenomeReferenceVersion, "compressed");
-&DefineSupportedCosmidReferences("GATKVariantReCalibrationTrainingSetHapMap", "hapmap", "2.8", \$humanGenomeReferenceVersion, "compressed");
-&DefineSupportedCosmidReferences("GATKVariantReCalibrationTrainingSetMills", "mills", "2.8", \$humanGenomeReferenceVersion, "compressed");
-&DefineSupportedCosmidReferences("GATKVariantReCalibrationTrainingSet1000GOmni", "1000g", "2.8", \$humanGenomeReferenceVersion, "compressed");
-&DefineSupportedCosmidReferences("GATKVariantEvalGold", "mills", "2.8", \$humanGenomeReferenceVersion, "compressed");
+&DefineSupportedCosmidReferences("GATKReAlignerINDELKnownSet1", "indel", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed");
+&DefineSupportedCosmidReferences("GATKReAlignerINDELKnownSet2", "mills", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed");
+&DefineSupportedCosmidReferences("GATKBaseReCalibrationSNPKnownSet", "dbsnp", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed");
+&DefineSupportedCosmidReferences("GATKHaploTypeCallerSNPKnownSet", "dbsnp", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed");
+&DefineSupportedCosmidReferences("GATKVariantReCalibrationTrainingSetHapMap", "hapmap", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed");
+&DefineSupportedCosmidReferences("GATKVariantReCalibrationTrainingSetMills", "mills", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed");
+&DefineSupportedCosmidReferences("GATKVariantReCalibrationTrainingSet1000GOmni", "1000g_omni", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed");
+&DefineSupportedCosmidReferences("GATKVariantReCalibrationTrainingSet1000GSNP", "1000g_snps", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed");
+&DefineSupportedCosmidReferences("GATKVariantReCalibrationTrainingSetDbSNP", "dbsnp", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed");
+&DefineSupportedCosmidReferences("GATKVariantEvalGold", "mills", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed"); 
+&DefineSupportedCosmidReferences("GATKVariantEvalGold", "dbsnpex", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed");
 
 for my $references (keys %supportedCosmidReferences) {
 
@@ -751,9 +776,11 @@ if ($scriptParameter{'writeConfigFile'} ne 0) { #Write config file for family
 
 ##Set chr prefix and chromosome names depending on reference used
 if ($scriptParameter{'humanGenomeReference'}=~/hg\d+/) { #Refseq - prefix and M
+
     @contigs = ("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17","chr18","chr19","chr20","chr21","chr22","chrX","chrY","chrM"); #Chr for filtering of bam file
 }
 elsif ($scriptParameter{'humanGenomeReference'}=~/GRCh\d+/) { #Ensembl - no prefix and MT
+
     @contigs = ("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","X","Y","MT"); #Chr for filtering of bam file
 }
 
@@ -765,6 +792,7 @@ chomp($base,$script); #Remove \n;
 my $mipLogName = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/mip_log/".$base."/".$script."_".$timeStamp.".txt"; #concatenates mip_log filename
 
 open (MIPLOG, ">>".$mipLogName) or die "Can't write to ".$mipLogName.":".$!, "\n"; #Open file masterLog
+my @printFilehandles = (*STDOUT, *MIPLOG); #Used for printing to several FILEHANDLES
 
 ##Add parameters
 print MIPLOG "\n".$script." "; #Adds script name to recontruct command line
@@ -773,21 +801,8 @@ print MIPLOG "\n".$script." "; #Adds script name to recontruct command line
 
 print STDOUT "\nScript parameters and info from ".$script." are saved in file: ".$mipLogName, "\n";
 
-####Collect infiles
-
-for (my $inputDirectoryCounter=0;$inputDirectoryCounter<scalar(@inFilesDirs);$inputDirectoryCounter++) { #Collects inputfiles
-    
-    my @infiles = `cd $inFilesDirs[ $inputDirectoryCounter ];ls *.fastq*;`; #cd to input dir and collect fastq files and fastq.gz files
-   
-    print STDOUT "\nReads from Platform", "\n";print MIPLOG "\nReads from Platform", "\n";
-    print STDOUT "\nSample ID\t".$sampleIDs[$inputDirectoryCounter],"\n";print MIPLOG "\nSample ID\t".$sampleIDs[$inputDirectoryCounter],"\n";
-    print STDOUT "Inputfiles\n",@ { $infile{ $sampleIDs[$inputDirectoryCounter] }  =[@infiles] }, "\n"; #hash with sample id as key and inputfiles in dir as array 
-    print MIPLOG "Inputfiles\n",@ { $infile{ $sampleIDs[$inputDirectoryCounter] }  =[@infiles] }, "\n";
-    
-    $indirpath{$sampleIDs[$inputDirectoryCounter]} = $inFilesDirs[ $inputDirectoryCounter ];  #Catch inputdir path
-    chomp(@infiles);    #Remove newline from every entry in array
-    $infile{ $sampleIDs[$inputDirectoryCounter] }  =[@infiles]; #Reload files into hash (kept above newline just for print STDOUT)
-}
+##Collect infiles
+&CollectInfiles();
 
 close(MIPLOG);
 
@@ -806,7 +821,7 @@ open (MIPLOG, ">>".$mipLogName) or die "Can't write to ".$mipLogName.":".$!, "\n
 
 if ( ($scriptParameter{'pGZip'} > 0) && ($uncompressedFileSwitch eq "unCompressed") ) { #GZip of fastq files
 
-    print STDOUT "\nGZip for fastq files", "\n";print MIPLOG "\nGZip for fastq files", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nGZip for fastq files\n");
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 
@@ -823,8 +838,8 @@ if ( ($scriptParameter{'pGZip'} > 0) && ($uncompressedFileSwitch eq "unCompresse
 
 if ($scriptParameter{'pFastQC'} > 0) { #Run FastQC
     
-    print STDOUT "\nFastQC", "\n";print MIPLOG "\nFastQC", "\n";
-    
+    &PrintToFileHandles(\@printFilehandles, "\nFastQC\n");
+
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 	
 	&FastQC($sampleIDs[$sampleIDCounter]);	
@@ -833,7 +848,7 @@ if ($scriptParameter{'pFastQC'} > 0) { #Run FastQC
 
 if ($scriptParameter{'pMosaikBuild'} > 0) { #Run MosaikBuild
     
-    print STDOUT "\nMosaikBuild", "\n";print MIPLOG "\nMosaikBuild", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nMosaikBuild\n");
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 	
@@ -844,7 +859,7 @@ if ($scriptParameter{'pMosaikBuild'} > 0) { #Run MosaikBuild
 
 if ($scriptParameter{'pMosaikAlign'} > 0) { #Run MosaikAlign
 
-    print STDOUT "\nMosaikAlign", "\n"; print MIPLOG "\nMosaikAlign", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nMosaikAlign\n");
 
     if ( ($parameter{'humanGenomeReference'}{'buildFile'} eq 1) || ($parameter{'mosaikAlignReference'}{'buildFile'} eq 1) || ($parameter{'mosaikJumpDbStub'}{'buildFile'} eq 1) ) {
 		
@@ -864,7 +879,7 @@ if ($scriptParameter{'pMosaikAlign'} > 0) { #Run MosaikAlign
 
 if ($scriptParameter{'pBwaMem'} > 0) { #Run BWA Mem
     
-    print STDOUT "\nBWA Mem", "\n";print MIPLOG "\nBWA Mem", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nBWA Mem\n");
 
     &CheckBuildHumanGenomePreRequisites("BwaMem");
     
@@ -882,7 +897,7 @@ if ($scriptParameter{'pBwaMem'} > 0) { #Run BWA Mem
 
 if ($scriptParameter{'pPicardToolsMergeRapidReads'} > 0) { #Run PicardToolsMergeRapidReads - Relevant only in rapid mode
     
-    print STDOUT "\nPicardToolsMergeRapidReads", "\n";print MIPLOG "\nPicardToolsMergeRapidReads", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nPicardToolsMergeRapidReads\n");
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 	
@@ -893,7 +908,7 @@ if ($scriptParameter{'pPicardToolsMergeRapidReads'} > 0) { #Run PicardToolsMerge
 
 if ($scriptParameter{'pBwaAln'} > 0) { #Run BWA Aln
     
-    print STDOUT "\nBWA Aln", "\n";print MIPLOG "\nBWA Aln", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nBWA Aln\n");
 
     &CheckBuildHumanGenomePreRequisites("BwaAln");
 
@@ -910,7 +925,7 @@ if ($scriptParameter{'pBwaAln'} > 0) { #Run BWA Aln
 
 if ($scriptParameter{'pBwaSampe'} > 0) { #Run BWA Sampe
     
-    print STDOUT "\nBWA Sampe", "\n";print MIPLOG "\nBWA Sampe", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nBWA Sampe\n");
     
     &CheckBuildHumanGenomePreRequisites("BwaSampe");
 
@@ -929,8 +944,8 @@ if ($scriptParameter{'pPicardToolsSortSam'} > 0) { #Run Picardtools SortSam and 
 
     if ($scriptParameter{'analysisType'} ne "rapid") { #In rapid mode Sort and index is done for each batch of reads in the BWA_Mem call, since the link to infile is broken by the read batch processing. However pPicardToolsSortSam should be enabled to ensure correct fileending and merge the flow to ordinary modules.
 
-	print STDOUT "\nPicardTools SortSam & index", "\n";
-
+    &PrintToFileHandles(\@printFilehandles, "\nPicardTools SortSam & index\n");
+	
 	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 	    
 	    &PicardToolsSortSamIndex($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});
@@ -940,7 +955,7 @@ if ($scriptParameter{'pPicardToolsSortSam'} > 0) { #Run Picardtools SortSam and 
 
 if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) { #Run picardtools merge
 
-    print STDOUT "\nPicardTool MergeSamFiles", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nPicardTool MergeSamFiles\n");
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 
@@ -953,7 +968,7 @@ if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) { #Run picardtools merge
 
 if ($scriptParameter{'pPicardToolsMarkduplicates'} > 0) { #PicardTools MarkDuplicates
 
-    print STDOUT "\nPicardTools MarkDuplicates", "\n";print MIPLOG "\nPicardTools MarkDuplicates", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nPicardTools MarkDuplicates\n");
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
     
@@ -963,18 +978,16 @@ if ($scriptParameter{'pPicardToolsMarkduplicates'} > 0) { #PicardTools MarkDupli
 
 if ($scriptParameter{'pChanjoBuild'} > 0) {
     
-    print STDOUT "\nChanjoBuild", "\n";print MIPLOG "\nChanjoBuild", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nChanjoBuild\n");
 
-    if ($parameter{'chanjoBuildDb'}{'buildFile'} eq 1) {
-		
-	&BuildChanjoBuildPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "ChanjoBuild");
-    }    
+    &CheckBuildDownLoadPreRequisites("ChanjoBuild");
+       
     &ChanjoBuild($scriptParameter{'familyID'});
 }
 
 if ($scriptParameter{'pChanjoCalculate'} > 0) {
     
-    print STDOUT "\nChanjoCalculate", "\n";print MIPLOG "\nChanjoCalculate", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nChanjoCalculate\n");
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #For all SampleIDs
 	
@@ -984,14 +997,14 @@ if ($scriptParameter{'pChanjoCalculate'} > 0) {
 
 if ($scriptParameter{'pChanjoImport'} > 0) {
     
-    print STDOUT "\nChanjoImport", "\n";print MIPLOG "\nChanjoImport", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nChanjoImport\n");
     
     &ChanjoImport($scriptParameter{'familyID'}, $scriptParameter{'aligner'});
 }
 
 if ($scriptParameter{'pGenomeCoverageBED'} > 0) { #Run GenomeCoverageBED
     
-    print STDOUT "\nGenomeCoverageBED", "\n";print MIPLOG "\nGenomeCoverageBED", "\n";    
+    &PrintToFileHandles(\@printFilehandles, "\nGenomeCoverageBED\n"); 
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 
@@ -1001,7 +1014,7 @@ if ($scriptParameter{'pGenomeCoverageBED'} > 0) { #Run GenomeCoverageBED
 
 if ($scriptParameter{'pQaCompute'} > 0) { #Run QaCompute
     
-    print STDOUT "\nQaCompute", "\n";print MIPLOG "\nQaCompute", "\n";    
+    &PrintToFileHandles(\@printFilehandles, "\nQaCompute\n");    
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 
@@ -1011,7 +1024,7 @@ if ($scriptParameter{'pQaCompute'} > 0) { #Run QaCompute
 
 if ($scriptParameter{'pPicardToolsCollectMultipleMetrics'} > 0) { #Run PicardToolsCollectMultipleMetrics
     
-    print STDOUT "\nPicardToolsCollectMultipleMetrics", "\n";print MIPLOG "\nPicardToolsCollectMultipleMetrics", "\n";    
+    &PrintToFileHandles(\@printFilehandles, "\nPicardToolsCollectMultipleMetrics\n");   
     
     &CheckBuildHumanGenomePreRequisites("PicardToolsCollectMultipleMetrics");
 
@@ -1023,23 +1036,10 @@ if ($scriptParameter{'pPicardToolsCollectMultipleMetrics'} > 0) { #Run PicardToo
 
 if ($scriptParameter{'pPicardToolsCalculateHSMetrics'} > 0) { #Run PicardToolsCalculateHSMetrics
     
-    print STDOUT "\nPicardToolsCalculateHSMetrics", "\n";print MIPLOG "\nPicardToolsCalculateHSMetrics", "\n";    
+    &PrintToFileHandles(\@printFilehandles, "\nPicardToolsCalculateHSMetrics\n");   
     
     &CheckBuildHumanGenomePreRequisites("PicardToolsCalculateHSMetrics");
-
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {
-
-	if ($parameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDCounter]}{'exomeTargetBedInfileLists'}{'buildFile'} eq 1) {
-	    
-	    &BuildPTCHSMetricPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "PicardToolsCalculateHSMetrics");
-	    last; #Will handle all build per sampleID within sbatch script
-	}
-	if ($parameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDCounter]}{'exomeTargetPaddedBedInfileLists'}{'buildFile'} eq 1) {
-	    
-	    &BuildPTCHSMetricPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "PicardToolsCalculateHSMetrics");
-	    last; #Will handle all build per sampleID within sbatch script
-	}
-    }
+    &CheckBuildPTCHSMetricPreRequisites("PicardToolsCalculateHSMetrics");
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 
@@ -1048,7 +1048,8 @@ if ($scriptParameter{'pPicardToolsCalculateHSMetrics'} > 0) { #Run PicardToolsCa
 }
 
 if ($scriptParameter{'pRCovPlots'} > 0) { #Run Rcovplot scripts   
-    print STDOUT "\nRCovPlots", "\n";print MIPLOG "\nRCovPlots", "\n";	
+
+    &PrintToFileHandles(\@printFilehandles, "\nRCovPlots\n");	
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
 	
@@ -1058,21 +1059,10 @@ if ($scriptParameter{'pRCovPlots'} > 0) { #Run Rcovplot scripts
 
 if ($scriptParameter{'pGATKRealigner'} > 0) { #Run GATK ReAlignerTargetCreator/IndelRealigner
 
-    print STDOUT "\nGATK ReAlignerTargetCreator/IndelRealigner", "\n";print MIPLOG "\nGATK ReAlignerTargetCreator/IndelRealigner", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nGATK ReAlignerTargetCreator/IndelRealigner\n");
 
     &CheckBuildHumanGenomePreRequisites("GATKRealigner");
-
-    for my $parameterName (keys %supportedCosmidReferences) {
-	
-	if ( "pGATKRealigner" =~/$parameter{$parameterName}{'associatedProgram'}/) {
-
-	    if ($parameter{$parameterName}{'buildFile'} eq 1) {
-	   
-		&BuildGATKRealignerPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "GATKRealigner");
-		last;
-	    }
-	}
-    }
+    &CheckBuildDownLoadPreRequisites("GATKRealigner");
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {   
     
@@ -1082,9 +1072,10 @@ if ($scriptParameter{'pGATKRealigner'} > 0) { #Run GATK ReAlignerTargetCreator/I
 
 if ($scriptParameter{'pGATKBaseRecalibration'} > 0) { #Run GATK BaseRecalibrator/PrintReads
 
-    print STDOUT "\nGATK BaseRecalibrator/PrintReads", "\n";print MIPLOG "\nGATK BaseRecalibrator/PrintReads", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nGATK BaseRecalibrator/PrintReads\n");
 
     &CheckBuildHumanGenomePreRequisites("GATKBaseRecalibration");
+    &CheckBuildDownLoadPreRequisites("GATKBaseRecalibration");
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {   
   
@@ -1094,7 +1085,7 @@ if ($scriptParameter{'pGATKBaseRecalibration'} > 0) { #Run GATK BaseRecalibrator
 
 if ($scriptParameter{'pGATKReduceReads'} > 0) { #Run GATK ReduceReads
 
-    print STDOUT "\nGATK ReduceReads", "\n";print MIPLOG "\nGATK ReduceReads", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nGATK ReduceReads\n");
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {   
     
@@ -1104,9 +1095,11 @@ if ($scriptParameter{'pGATKReduceReads'} > 0) { #Run GATK ReduceReads
 
 if ($scriptParameter{'pGATKHaploTypeCaller'} > 0) { #Run GATK HaploTypeCaller. Done per family
 
-    print STDOUT "\nGATK HaplotypeCaller", "\n";print MIPLOG "\nGATK HaplotypeCaller", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nGATK HaplotypeCaller\n");
 
     &CheckBuildHumanGenomePreRequisites("GATKHaploTypeCaller");
+    &CheckBuildDownLoadPreRequisites("GATKHaploTypeCaller");
+    &CheckBuildPTCHSMetricPreRequisites("GATKHaploTypeCaller");
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {
 	
@@ -1124,52 +1117,34 @@ if ($scriptParameter{'pGATKHaploTypeCaller'} > 0) { #Run GATK HaploTypeCaller. D
 
 if ($scriptParameter{'pGATKHaploTypeCallerCombineVariants'} > 0) { #Run GATK HaplotypeCallerCombineVariants. Done per family
 
-    print STDOUT "\nGATK HaplotypeCallerCombineVariants", "\n";print MIPLOG "\nGATK HaplotypeCallerCombineVariants", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nGATK HaplotypeCallerCombineVariants\n");
 
     &CheckBuildHumanGenomePreRequisites("GATKHaploTypeCallerCombineVariants");
-    &GATKHaplotypeCallerCombineVariants($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 
+    &GATKHaplotypeCallerCombineVariants($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 }
 
 if ($scriptParameter{'pGATKVariantRecalibration'} > 0) { #Run GATK VariantRecalibrator/ApplyRecalibration. Done per family
 
-    print STDOUT "\nGATK VariantRecalibrator/ApplyRecalibration", "\n";print MIPLOG "\nGATK VariantRecalibrator/ApplyRecalibration", "\n";
-    
+    &PrintToFileHandles(\@printFilehandles, "\nGATK VariantRecalibrator/ApplyRecalibration\n");
+
     &CheckBuildHumanGenomePreRequisites("GATKVariantRecalibration");
+    &CheckBuildDownLoadPreRequisites("GATKVariantRecalibration");
+    &CheckBuildPTCHSMetricPreRequisites("GATKVariantRecalibration");
 
-    for my $parameterName (keys %supportedCosmidReferences) {
-	
-	if ( "pGATKVariantRecalibration" =~/$parameter{$parameterName}{'associatedProgram'}/) {
-	    
-	    if ($parameter{$parameterName}{'buildFile'} eq 1) {
-
-		&BuildGATKVariantRecalibrationPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "GATKVariantRecalibration");
-		last;
-	    }
-	}
-    }
-
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {
-	
-	if ( (defined($parameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDCounter]}{'GATKTargetPaddedBedIntervalLists'}{'buildFile'})) && ($parameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDCounter]}{'GATKTargetPaddedBedIntervalLists'}{'buildFile'} eq 1) ) {
-	    
-	    &BuildPTCHSMetricPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "GATKVariantRecalibration");
-	    last; #Will handle all build per sampleID within sbatch script
-	}
-    }
     &GATKVariantReCalibration($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 }
 
 if ($scriptParameter{'pSampleCheck'} > 0) { #Run SampleCheck. Done per family
 
-    print STDOUT "\nSampleCheck", "\n";print MIPLOG "\nSampleCheck", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nSampleCheck\n");
 
     &SampleCheck($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 }
 
 if ($scriptParameter{'pGATKPhaseByTransmission'} > 0) { #Run GATK PhaseByTransmission. Done per family
     
-    print STDOUT "\nGATK PhaseByTransmission", "\n";print MIPLOG "\nGATK PhaseByTransmission", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nGATK PhaseByTransmission\n");
     
     &CheckBuildHumanGenomePreRequisites("GATKPhaseByTransmission");
     &GATKPhaseByTransmission($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
@@ -1177,7 +1152,7 @@ if ($scriptParameter{'pGATKPhaseByTransmission'} > 0) { #Run GATK PhaseByTransmi
 
 if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) { #Run GATK ReadBackedPhasing. Done per family. NOTE: Needs phased calls
     
-    print STDOUT "\nGATK ReadBackedPhasing", "\n";print MIPLOG "\nGATK ReadBackedPhasing", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nGATK ReadBackedPhasing\n");
     
     &CheckBuildHumanGenomePreRequisites("GATKReadBackedPhasing");
     &GATKReadBackedPhasing($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
@@ -1185,7 +1160,7 @@ if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) { #Run GATK ReadBackedPhasin
 
 if ($scriptParameter{'pAnnovar'} > 0) { #Run Annovar. Done per family
 
-    print STDOUT "\nAnnovar", "\n";print MIPLOG "\nAnnovar", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nAnnovar\n");
 
     &CheckBuildHumanGenomePreRequisites("Annovar");
 
@@ -1202,7 +1177,7 @@ if ($scriptParameter{'pAnnovar'} > 0) { #Run Annovar. Done per family
 
 if ($scriptParameter{'pGATKVariantEvalAll'} > 0) { #Run GATK VariantEval for all variants. Done per sampleID
 
-    print STDOUT "\nGATK VariantEval All", "\n";print MIPLOG "\nGATK VariantEval All", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nGATK VariantEval All\n");
 
     &CheckBuildHumanGenomePreRequisites("GATKVariantEvalAll");
 
@@ -1214,7 +1189,7 @@ if ($scriptParameter{'pGATKVariantEvalAll'} > 0) { #Run GATK VariantEval for all
 
 if ($scriptParameter{'pMergeAnnotatedVariants'} > 0) { #Run MergeAnnotationVariants using intersectCollect.pl. Done per family
 
-    print STDOUT "\nMergeAnnotatedVariants", "\n";print MIPLOG "\nMergeAnnotatedVariants", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nMergeAnnotatedVariants\n");
 
     &MergeAnnotatedVariants($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 
@@ -1222,14 +1197,11 @@ if ($scriptParameter{'pMergeAnnotatedVariants'} > 0) { #Run MergeAnnotationVaria
 
 if ($scriptParameter{'pGATKVariantEvalExome'} > 0) { #Run GATK VariantEval for exome variants. Done per sampleID
 
-    print STDOUT "\nGATK VariantEval Exome", "\n";print MIPLOG "\nGATK VariantEval Exome", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nGATK VariantEval Exome\n");
     
     &CheckBuildHumanGenomePreRequisites("GATKVariantEvalExome");
+    &CheckBuildDownLoadPreRequisites("GATKVariantEvalExome");
 
-    if ($parameter{'GATKVariantEvalGold'}{'buildFile'} eq 1) {
-	
-	&BuildGATKVariantEvalExomePreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "GATKVariantEvalExome");
-    }
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { 
 	
 	&GATKVariantEvalExome($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'}, "BOTH", $scriptParameter{'familyID'});
@@ -1238,30 +1210,30 @@ if ($scriptParameter{'pGATKVariantEvalExome'} > 0) { #Run GATK VariantEval for e
 
 if ($scriptParameter{'pAddDepth'} > 0) { #Run AddDepth using add_depth.pl. Done per family
 
-    print STDOUT "\nAddDepth", "\n";print MIPLOG "\nAddDepth", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nAddDepth\n");
 
     &AddDp($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 }
 
 if ($scriptParameter{'pRankVariants'} > 0) { #Run RankVariants. Done per family
 
-    print STDOUT "\nRankVariants", "\n";print MIPLOG "\nRankVariants", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nRankVariants\n");
 
     &RankVariants($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 }
 
 if ($scriptParameter{'pQCCollect'} > 0) { #Run QCCollect. Done per family
 
-    print STDOUT "\nQCCollect", "\n";print MIPLOG "\nQCCollect", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nQCCollect\n");
 
     &QCCollect($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 }
 
 if ($scriptParameter{'pRemovalRedundantFiles'} > 0) { #Sbatch generation of removal of alignment files
     
-    print STDOUT "\nRemoval of alignment files", "\n"; print MIPLOG "\nRemoval of alignment files", "\n"; 
-	
-	&RemoveRedundantFiles($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");	
+    &PrintToFileHandles(\@printFilehandles, "\nRemoval of alignment files\n");
+
+    &RemoveRedundantFiles($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");	
 }
 
 if ( ($scriptParameter{'pAnalysisRunStatus'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
@@ -1271,7 +1243,8 @@ if ( ($scriptParameter{'pAnalysisRunStatus'} == 1) && ($scriptParameter{'dryRunA
 
 if ($scriptParameter{'pAnalysisRunStatus'} > 0) {
 
-    print STDOUT "\nAnalysisRunStatus", "\n"; print MIPLOG "\nAnalysisRunStatus", "\n";
+    &PrintToFileHandles(\@printFilehandles, "\nAnalysisRunStatus\n");
+
     &AnalysisRunStatus($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 }
 
@@ -1691,6 +1664,10 @@ sub RankVariants {
 	    
 	    print $FILEHANDLE "run_mip_family_analysis.py ";
 	    print $FILEHANDLE $scriptParameter{'pedigreeFile'}." "; #Pedigree file
+	    if ($scriptParameter{'instanceTag'} eq "CMMS") {
+
+		print $FILEHANDLE "--cmms "; #CMMS flag
+	    }
 	    print $FILEHANDLE "-tres ".$scriptParameter{'rankScore'}." "; #Rank score threshold
 	    print $FILEHANDLE $ImportantDbFileOutFiles[$ImportantDbFileOutFilesCounter]." "; #InFile	    
 	    print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'geneFile'}." "; #Gene file used for annotating AR_compounds
@@ -1711,6 +1688,10 @@ sub RankVariants {
     print $FILEHANDLE "#Ranking", "\n"; 
     print $FILEHANDLE "run_mip_family_analysis.py ";
     print $FILEHANDLE $scriptParameter{'pedigreeFile'}." "; #Pedigree file
+    if ($scriptParameter{'instanceTag'} eq "CMMS") {
+	
+	print $FILEHANDLE "--cmms "; #CMMS flag
+    }
     print $FILEHANDLE "-tres ".$scriptParameter{'rankScore'}." "; #Rank score threshold
     print $FILEHANDLE $ImportantDbFileOutFiles[0]." "; #InFile	 
     print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'geneFile'}." "; #Gene file used for annotating AR_compounds   
@@ -1748,6 +1729,11 @@ sub AddDp {
 
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
     my $nrCores = &NrofCoresPerSbatch(scalar(@sampleIDs)); #Detect the number of cores to use from number of samplesIDs
+
+    if ($scriptParameter{'analysisType'} eq "genomes") {
+
+	$nrCores = 3; #Use at least 3 core for WGS jobs for memory requirements
+    }
 
     &ProgramPreRequisites($familyID, "AddDepth", $aligner."/GATK", $callType, $FILEHANDLE, $nrCores, 10);
     
@@ -1858,14 +1844,16 @@ sub MergeAnnotatedVariants {
     my $callType = $_[2]; #SNV,INDEL or BOTH 
 
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
+    my $time = 4;
     my $numberOfCores = 1; #Set the number of cores depending on exome/rapid or WGS
 
     if ($scriptParameter{'analysisType'} eq "genomes") { #WGS analysis
-
+	
+	$time = 30;
 	$numberOfCores = 6; 
     }
 
-    &ProgramPreRequisites($familyID, "MergeAnnotatedVariants", $aligner."/GATK", $callType, $FILEHANDLE, $numberOfCores, 4);
+    &ProgramPreRequisites($familyID, "MergeAnnotatedVariants", $aligner."/GATK", $callType, $FILEHANDLE, $numberOfCores, $time);
 
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
@@ -2403,7 +2391,8 @@ sub GATKPhaseByTransmission {
     my $aligner = $_[1];
     my $callType = $_[2]; #SNV,INDEL or BOTH
     
-    &ProgramPreRequisites( $familyID, "GATKPhaseByTransmission", $aligner."/GATK", $callType, *GATK_PHTR, 1, 3);
+    my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
+    &ProgramPreRequisites( $familyID, "GATKPhaseByTransmission", $aligner."/GATK", $callType, $FILEHANDLE, 1, 3);
     
     my $FamilyFileDirectory = $scriptParameter{'outDataDir'}."/".$familyID;
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
@@ -2411,30 +2400,30 @@ sub GATKPhaseByTransmission {
     my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
     my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKPhaseByTransmission'}{'fileEnding'};
     
-    unless (-e $FamilyFileDirectory."/".$familyID.".fam") { #Check to see if file already exists
+    unless (-f $FamilyFileDirectory."/".$familyID.".fam") { #Check to see if file already exists
 
-	print GATK_PHTR "#Generating '.fam' file for GATK PhaseByTransmission","\n\n";
-	print GATK_PHTR q?perl -nae 'print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t", $F[5], "\n";' ?.$scriptParameter{'pedigreeFile'}." > ".$FamilyFileDirectory."/".$familyID.".fam", "\n\n";
+	print $FILEHANDLE "#Generating '.fam' file for GATK PhaseByTransmission","\n\n";
+	print $FILEHANDLE q?perl -nae 'print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t", $F[5], "\n";' ?.$scriptParameter{'pedigreeFile'}." > ".$FamilyFileDirectory."/".$familyID.".fam", "\n\n";
     }
     
 ###GATK PhaseByTransmission
     
-    print GATK_PHTR "\n#GATK PhaseByTransmission","\n\n";
-    print GATK_PHTR "java -Xmx4g ";
+    print $FILEHANDLE "\n#GATK PhaseByTransmission","\n\n";
+    print $FILEHANDLE "java -Xmx4g ";
     
     if ($scriptParameter{'javaUseLargePages'} ne "no") {
 	
-	print GATK_PHTR "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
     }
-    print GATK_PHTR "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-    print GATK_PHTR "-l INFO "; #Set the minimum level of logging
-    print GATK_PHTR "-T PhaseByTransmission "; #Type of analysis to run
-    print GATK_PHTR "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
-    print GATK_PHTR "-V: ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf "; #InFile (family vcf)
-    &GATKPedigreeFlag(*GATK_PHTR, $FamilyFileDirectory, "SILENT"); #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family
-    print GATK_PHTR "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf"; #OutFile
+    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+    print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
+    print $FILEHANDLE "-T PhaseByTransmission "; #Type of analysis to run
+    print $FILEHANDLE "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
+    print $FILEHANDLE "-V: ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf "; #InFile (family vcf)
+    &GATKPedigreeFlag($FILEHANDLE, $FamilyFileDirectory, "SILENT", "GATKPhaseByTransmission"); #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family
+    print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf"; #OutFile
     
-    close(GATK_PHTR);
+    close($FILEHANDLE);
 
     if ( ($scriptParameter{'pGATKPhaseByTransmission'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 
@@ -2563,7 +2552,7 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "-an FS "; #The names of the annotations which should used for calculations
 	print $FILEHANDLE "--mode ".$modes[$modeCounter]." "; #Recalibration mode to employ (SNP|INDEL|BOTH)
 	print $FILEHANDLE "-nt ".$scriptParameter{'maximumCores'}." "; #How many data threads should be allocated to running this analysis    
-	&GATKPedigreeFlag($FILEHANDLE, $outFamilyFileDirectory, "SILENT"); #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family
+	&GATKPedigreeFlag($FILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKVariantRecalibration"); #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family
 	
 ###GATK ApplyRecalibration
 	print $FILEHANDLE "\n\n#GATK ApplyRecalibration","\n\n";
@@ -2613,7 +2602,7 @@ sub GATKVariantReCalibration {
 	    }
 	}
 	print $FILEHANDLE "--ts_filter_level ".$scriptParameter{'GATKVariantReCalibrationTSFilterLevel'}." ";
-	&GATKPedigreeFlag($FILEHANDLE, $outFamilyFileDirectory, "SILENT"); #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family    
+	&GATKPedigreeFlag($FILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKVariantRecalibration"); #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family    
 	print $FILEHANDLE "--mode ".$modes[$modeCounter]." "; #Recalibration mode to employ (SNP|INDEL|BOTH)
     }
 ###GATK SelectVariants
@@ -2725,18 +2714,25 @@ sub GATKHaploTypeCaller {
     `mkdir -p $scriptParameter{'outDataDir'}/$familyID/$aligner/GATK/HaploTypeCaller`; #Creates the aligner folder, GATK data file directory
     `mkdir -p $scriptParameter{'outScriptDir'}/$familyID/$aligner`; #Creates the aligner folder script file directory
     
-    if ($scriptParameter{'pGATKHaploTypeCaller'} == 1) {
+    if ( ($scriptParameter{'pGATKHaploTypeCaller'} == 1) && ($scriptParameter{'dryRunAll'} == 0)) {
+	
 	$fileName = $scriptParameter{'outScriptDir'}."/".$familyID."/".$aligner."/gatk_haplotypecaller_".$familyID."_".$callType."_chr".$chromosome."."; 
     }
     elsif ($scriptParameter{'pGATKHaploTypeCaller'} == 2) { #Dry run
+	
 	$fileName = $scriptParameter{'outScriptDir'}."/".$familyID."/".$aligner."/dry_run_gatk_haplotypecaller_".$familyID."_".$callType."_chr".$chromosome."."; 
-	print STDOUT "Dry Run:\n";print MIPLOG  "Dry Run:\n"; 
+	&PrintToFileHandles(\@printFilehandles, "Dry Run:\n");
+    }
+    else { #Dry run
+	
+	$fileName = $scriptParameter{'outScriptDir'}."/".$familyID."/".$aligner."/dry_run_gatk_haplotypecaller_".$familyID."_".$callType."_chr".$chromosome."."; 
+	&PrintToFileHandles(\@printFilehandles, "Dry Run:\n");
     }
     &Checkfnexists(\$fileName, \$fnend, \$fileNameTracker);
 
 ###Info and Log
-    print STDOUT "Creating sbatch script GATK HaplotypeCaller and writing script file(s) to: ".$fileName, "\n";print MIPLOG "Creating sbatch script GATK HaplotypeCaller and writing script file(s) to: ".$fileName, "\n";
-    print STDOUT "Sbatch script GATK HaplotypeCaller data files will be written to: ".$scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/HaplotypeCaller", "\n";print MIPLOG "Sbatch script GATK HaplotypeCaller data files will be written to: ".$scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/HaploTypeCaller", "\n";
+    &PrintToFileHandles(\@printFilehandles, "Creating sbatch script GATK HaplotypeCaller and writing script file(s) to: ".$fileName."\n");
+    &PrintToFileHandles(\@printFilehandles, "Sbatch script GATK HaplotypeCaller data files will be written to: ".$scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/HaplotypeCaller\n");
     
     open ($FILEHANDLE, ">".$fileName) or die "Can't write to ".$fileName.":".$!, "\n";
     
@@ -2834,7 +2830,7 @@ sub GATKHaploTypeCaller {
 
 	print $FILEHANDLE "-L ".$chromosome." "; #Prints the GATK -L parameter for each contig
     }
-    &GATKPedigreeFlag($FILEHANDLE, $outFamilyFileDirectory, "SILENT"); #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family
+    &GATKPedigreeFlag($FILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKHaploTypeCaller"); #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family
 
     if ($scriptParameter{'analysisType'} eq "exomes") {
 
@@ -3723,16 +3719,12 @@ sub PicardToolsMarkDuplicates {
 	print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/MarkDuplicates.jar ";
 	print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." "; #Temp Directory
 	print $FILEHANDLE "ASSUME_SORTED=true ";
+	print $FILEHANDLE "CREATE_INDEX=TRUE "; #create a BAM index when writing a coordinate-sorted BAM file.
 	print $FILEHANDLE "REMOVE_DUPLICATES=false ";
 	print $FILEHANDLE "VALIDATION_STRINGENCY=STRICT ";
 	print $FILEHANDLE "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
 	print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding.".bam "; #OutFile
 	print $FILEHANDLE "METRICS_FILE=".$outSampleDirectory."/".$infile.$outfileEnding."metric ", "\n\n"; #Metric file 
-	
-        #SamTools index on just created _sorted(_merged)_pmd.bam
-	
-	print $FILEHANDLE "samtools index ";
-	print $FILEHANDLE $outSampleDirectory."/".$infile.$outfileEnding.".bam ","\n\n";
 	
 	if ( ($scriptParameter{'pPicardToolsMarkduplicates'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 ##Collect QC metadata info for later use                       
@@ -3756,6 +3748,7 @@ sub PicardToolsMarkDuplicates {
 	    print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/MarkDuplicates.jar ";
 	    print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." "; #Temp Directory
 	    print $FILEHANDLE "ASSUME_SORTED=true ";
+	    print $FILEHANDLE "CREATE_INDEX=TRUE "; #create a BAM index when writing a coordinate-sorted BAM file.
 	    print $FILEHANDLE "REMOVE_DUPLICATES=false ";
 	    print $FILEHANDLE "VALIDATION_STRINGENCY=STRICT ";
 	    print $FILEHANDLE "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
@@ -3771,18 +3764,6 @@ sub PicardToolsMarkDuplicates {
 	}    
 	
 	print $FILEHANDLE "wait", "\n\n";
-
-        #SamTools index on just created _sorted(_merged)_pmd.bam
-	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all files from alignment
-	    
-	    &PrintWait(\$infileCounter, \$nrCores, \$coreCounter, $FILEHANDLE);
-	    
-	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
-	    
-	    print $FILEHANDLE "samtools index ";
-	    print $FILEHANDLE $outSampleDirectory."/".$infile.$outfileEnding.".bam &","\n\n"; #Just created dedupped inFile located in outSamplesDirectory
-	    print $FILEHANDLE "wait", "\n\n";	    
-	}
     }
     close($FILEHANDLE);
 
@@ -3826,6 +3807,7 @@ sub PicardToolsMerge {
 		print $FILEHANDLE "java -Xmx4g ";
 		print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/MergeSamFiles.jar ";
 		print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." "; #Temp Directory
+		print $FILEHANDLE "CREATE_INDEX=TRUE "; #create a BAM index when writing a coordinate-sorted BAM file.
 		print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".$sampleID."_lanes_".$lanes.$outfileEnding.".bam "; #OutFile
 	    }
 	    
@@ -3833,8 +3815,6 @@ sub PicardToolsMerge {
 	}
 	print $FILEHANDLE "\n\n";
 
-	print $FILEHANDLE "samtools index ";
-	print $FILEHANDLE $outSampleDirectory."/".$sampleID."_lanes_", @{ $lane{$sampleID} } ,$outfileEnding.".bam", "\n\n"; #InFile using just created merged outfile
 	print $FILEHANDLE "wait", "\n\n";
 
 	print $FILEHANDLE "#Remove Temp Directory\n\n";
@@ -3859,12 +3839,10 @@ sub PicardToolsMerge {
 		    print $FILEHANDLE "java -Xmx4g ";
 		    print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/MergeSamFiles.jar ";
 		    print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." "; #Temp directory
+		    print $FILEHANDLE "CREATE_INDEX=TRUE "; #create a BAM index when writing a coordinate-sorted BAM file.
 		    print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".$sampleID."_lanes_".$mergeLanes.$lanes.$outfileEnding.".bam "; #OutFile
 		    print $FILEHANDLE "INPUT=".$inSampleDirectory."/".$sampleID."_lanes_".$lanes.$outfileEnding.".bam "; #InFile
 		    print $FILEHANDLE "INPUT=".$picardToolsMergeSamFilesPrevious[$mergeFileCounter], "\n\n"; #$mergeLanes contains lane info on previous merge, $infilesLaneNoEnding{$sampleID}[0] uses @RG for very first .bam file to include read group for subsequent merges. Complete path. 
-		    
-		    print $FILEHANDLE "samtools index ";
-		    print $FILEHANDLE $outSampleDirectory."/".$sampleID."_lanes_".$mergeLanes.$lanes.$outfileEnding.".bam ","\n\n"; #InFile
 
 		    print $FILEHANDLE "#Remove Temp Directory\n\n";
 		    print $FILEHANDLE "rm ";
@@ -3890,12 +3868,10 @@ sub PicardToolsMerge {
 		print $FILEHANDLE "java -Xmx4g ";
 		print $FILEHANDLE "jar ".$scriptParameter{'picardToolsPath'}."/MergeSamFiles.jar ";
 		print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." "; #Temp Directory
+		print $FILEHANDLE "CREATE_INDEX=TRUE "; #create a BAM index when writing a coordinate-sorted BAM file.
 		print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".$sampleID."_lanes_".$mergeLanes.$lanes.$outfileEnding.".bam "; #OutFile
 		print $FILEHANDLE "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
 		print $FILEHANDLE "INPUT=".$picardToolsMergeSamFilesPrevious[$mergeFileCounter],"\n\n"; #$mergeLanes contains lane info on previous merge, $infilesLaneNoEnding{$sampleID}[0] uses @RG for very first .bam file to include read group for subsequent merges. Complete path. 
-		
-		print $FILEHANDLE "samtools index ";
-		print $FILEHANDLE $outSampleDirectory."/".$sampleID."_lanes_".$mergeLanes.$lanes.$outfileEnding.".bam", "\n\n"; #InFile
 		
 		print $FILEHANDLE "#Remove Temp Directory\n\n";
 		print $FILEHANDLE "rm ";
@@ -4343,6 +4319,7 @@ sub MosaikAlign {
     for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) { #For all infiles per lane
 	
 	if ($infile{$sampleID}[$infileCounter] =~/.fastq.gz$/) { #Files are already gz and presently the scalar for compression has not been investigated. Therefore no automatic time allocation can be performed.
+	   
 	    if ($scriptParameter{'analysisType'} eq "genomes") {
 		$time = 80;  
 	    }
@@ -4561,7 +4538,9 @@ sub GZipFastq {
 		print $FILEHANDLE "wait", "\n\n";
 		$coreCounter=$coreCounter+1;
 	    }
+
 	    my $infile = $infile{$sampleID}[$infileCounter];
+
 	    print $FILEHANDLE "gzip ";
 	    print $FILEHANDLE $inSampleDirectory."/".$infile," &", "\n\n"; #InFile
 	    $uncompressedFileCounter++;
@@ -4589,7 +4568,7 @@ sub BuildAnnovarPreRequisites {
     
     &ProgramPreRequisites($familyID, $program, $aligner, 0, $FILEHANDLE, 1, 3);
 
-    print STDOUT "\nNOTE: Will try to create required Annovar database files before executing ".$program,"\n\n";
+    &PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to create required Annovar database files before executing ".$program."\n\n");
 
     print $FILEHANDLE "#Make temporary download directory\n\n"; 
     print $FILEHANDLE "mkdir -p ".$annovarTemporaryDirectory."; ", "\n\n"; 
@@ -4672,91 +4651,38 @@ sub BuildAnnovarPreRequisites {
     }
 }
 
-sub BuildGATKVariantEvalExomePreRequisites {
-##Creates the GATKVariantEvalExomePreRequisites.
+
+sub BuildDownLoadablePreRequisites {
+##Creates the downloadable resources
 
     my $familyID = $_[0];
     my $aligner = $_[1];
     my $program = $_[2];
 
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
-
-    &ProgramPreRequisites($familyID, $program, $aligner, 0, $FILEHANDLE, 1, 1);
+    
+    &ProgramPreRequisites($familyID, $program, $aligner, 0, $FILEHANDLE, 1, 4);
 
     print $FILEHANDLE "cd $scriptParameter{'referencesDir'}", "\n\n"; #Move to reference directory
 
     my $cosmidResourceDirectory = &CheckCosmidYAML();
 
-    if ($parameter{'GATKVariantEvalGold'}{'buildFile'} eq 1) {
+    for my $parameterName (keys %supportedCosmidReferences) {
 
-	&DownloadReference(\$program, $FILEHANDLE, "GATKVariantEvalGold", \$cosmidResourceDirectory);
+	if ( "p".$program eq $parameter{$parameterName}{'associatedProgram'}) {
+
+	    if ($parameter{$parameterName}{'buildFile'} eq 1) {
+	    
+		&DownloadReference(\$program, $FILEHANDLE, $parameterName, \$cosmidResourceDirectory);
+	    }
+	}
     }
-
+    
     close($FILEHANDLE);
     
     if ( ($scriptParameter{"p".$program} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-	&FIDSubmitJob(0, $familyID, 6, $parameter{"p".$program}{'chain'}, $fileName, 0);
-    }
-}
-
-sub BuildGATKRealignerPreRequisites {
-##Creates the GATKRealignerPreRequisites.
-
-    my $familyID = $_[0];
-    my $aligner = $_[1];
-    my $program = $_[2];
-
-    my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
-
-    &ProgramPreRequisites($familyID, $program, $aligner, 0, $FILEHANDLE, 1, 1);
-
-    print $FILEHANDLE "cd $scriptParameter{'referencesDir'}", "\n\n"; #Move to reference directory
-
-    my $cosmidResourceDirectory = &CheckCosmidYAML();
-
-    if ($parameter{'GATKReAlignerINDELKnownSet1'}{'buildFile'} eq 1) {
-
-	&DownloadReference(\$program, $FILEHANDLE, "GATKReAlignerINDELKnownSet1", \$cosmidResourceDirectory);
-    }
-    if ($parameter{'GATKReAlignerINDELKnownSet2'}{'buildFile'} eq 1) {
-
-	&DownloadReference(\$program, $FILEHANDLE, "GATKReAlignerINDELKnownSet2", \$cosmidResourceDirectory);
-    }
-    close($FILEHANDLE);
-    
-    if ( ($scriptParameter{"p".$program} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-	&FIDSubmitJob(0, $familyID, 6, $parameter{"p".$program}{'chain'}, $fileName, 0);
-    }
-}
-
-sub BuildGATKVariantRecalibrationPreRequisites {
-##Creates the GATKVariantRecalibrationPreRequisites.
-
-    my $familyID = $_[0];
-    my $aligner = $_[1];
-    my $program = $_[2];
-
-    my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
-
-    &ProgramPreRequisites($familyID, $program, $aligner, 0, $FILEHANDLE, 1, 1);
-
-    print $FILEHANDLE "cd $scriptParameter{'referencesDir'}", "\n\n"; #Move to reference directory
-
-    my $cosmidResourceDirectory = &CheckCosmidYAML();
-
-    if ($parameter{'GATKVariantReCalibrationTrainingSetHapMap'}{'buildFile'} eq 1) {
-
-	&DownloadReference(\$program, $FILEHANDLE, "GATKVariantReCalibrationTrainingSetHapMap", \$cosmidResourceDirectory);
-    }
-    if ($parameter{'GATKVariantReCalibrationTrainingSet1000GOmni'}{'buildFile'} eq 1) {
 	
-	&DownloadReference(\$program, $FILEHANDLE, "GATKVariantReCalibrationTrainingSet1000GOmni", \$cosmidResourceDirectory);
-    }
-
-    close($FILEHANDLE);
-    
-    if ( ($scriptParameter{"p".$program} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-	&FIDSubmitJob(0, $familyID, 6, $parameter{"p".$program}{'chain'}, $fileName, 0);
+	&FIDSubmitJob(0, $familyID, 6, "MIP", $fileName, 0);
     }
 }
 
@@ -4766,11 +4692,16 @@ sub BuildPTCHSMetricPreRequisites {
     my $familyID = $_[0];
     my $aligner = $_[1];
     my $program = $_[2];   
-    
-    my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
+    my $FILEHANDLE = $_[3]; #Decides if a new sbatch script will be generated or handled by supplied FILEHANDLE
+
     my $parametersToEvaluate = 0; #The number of parameters to evaluate
 
-    &ProgramPreRequisites($familyID, $program, $aligner, 0, $FILEHANDLE, 1, 1);
+    unless(defined($FILEHANDLE)) { #No supplied FILEHANDLE i.e. create new sbatch script    
+	
+	$FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
+
+	&ProgramPreRequisites($familyID, $program, $aligner, 0, $FILEHANDLE, 1, 1);
+    }
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #All sampleIDs
 
@@ -4838,9 +4769,9 @@ sub BuildPTCHSMetricPreRequisites {
 		
 		$sampleIDBuildFileNoEndingTemp = $sampleIDBuildFileNoEnding."_".$randomInteger; #Add random integer	
 		
-		print STDOUT "\nNOTE: Will try to create required ".$sampleIDBuildFile." file before executing ".$program,"\n\n";
+		&PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to create required ".$sampleIDBuildFile." file before executing ".$program."\n\n");
 		
-		print $FILEHANDLE "SampleID:".$sampleIDs[$sampleIDCounter], "\n\n";
+		print $FILEHANDLE "#SampleID:".$sampleIDs[$sampleIDCounter], "\n\n";
 		print $FILEHANDLE "#CreateSequenceDictionary from reference", "\n";
 		print $FILEHANDLE "java -Xmx2g -jar ".$scriptParameter{'picardToolsPath'}."/CreateSequenceDictionary.jar ";
 		print $FILEHANDLE "R=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference genome
@@ -4859,7 +4790,7 @@ sub BuildPTCHSMetricPreRequisites {
 		print $FILEHANDLE "> "; #Write to
 		print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5", "\n\n"; #Remove unnecessary info and reformat 
 		
-		print $FILEHANDLE "Create".$referenceFileEndings{'exomeTargetBedInfileLists'}, "\n";
+		print $FILEHANDLE "#Create".$referenceFileEndings{'exomeTargetBedInfileLists'}, "\n";
 		print $FILEHANDLE "java -Xmx2g -jar ".$scriptParameter{'picardToolsPath'}."/IntervalListTools.jar ";
 		print $FILEHANDLE "INPUT=".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5 ";
 		print $FILEHANDLE "OUTPUT=".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5_".$referenceFileEndings{'exomeTargetBedInfileLists'}." ", "\n\n";
@@ -4871,7 +4802,7 @@ sub BuildPTCHSMetricPreRequisites {
 	    }
 	    if ( (defined($sampleIDBuildSwitchPadded) && ($sampleIDBuildSwitchPadded eq 1)) || (defined($sampleIDBuildSwitchPaddedInterval) && ($sampleIDBuildSwitchPaddedInterval eq 1)) ) {
 		
-		print $FILEHANDLE "Create padded interval list", "\n";
+		print $FILEHANDLE "#Create padded interval list", "\n";
 		print $FILEHANDLE "java -Xmx2g -jar ".$scriptParameter{'picardToolsPath'}."/IntervalListTools.jar ";
 		print $FILEHANDLE "PADDING=100 "; #Add 100 nt on both sides of bed entry
 		print $FILEHANDLE "INPUT=".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5 ";
@@ -4908,19 +4839,26 @@ sub BuildPTCHSMetricPreRequisites {
 		if ( (defined($sampleIDBuildSwitchPadded)) && ($sampleIDBuildSwitchPadded == 0) ) {
 		    
 		    $sampleIDBuildSwitchPaddedInterval = 0;
+		    &SetTargetFileGeneralBuildParameter(\$sampleIDBuildFilePaddedInterval, "GATKTargetPaddedBedIntervalLists", \$sampleIDBuildFile, \$sampleIDBuildFileNoEnding, \$sampleIDs[$sampleIDCounter]);
 		}
 		if ( (defined($sampleIDBuildSwitchInfile)) && ($sampleIDBuildSwitchInfile == 0) ) {
 		    
 		    $sampleIDBuildSwitchPadded = 0;
+		    &SetTargetFileGeneralBuildParameter(\$sampleIDBuildFilePadded, "exomeTargetPaddedBedInfileLists", \$sampleIDBuildFile, \$sampleIDBuildFileNoEnding, \$sampleIDs[$sampleIDCounter]);
 		}
 		$sampleIDBuildSwitchInfile = 0;
+		&SetTargetFileGeneralBuildParameter(\$sampleIDBuildFileInfile, "exomeTargetBedInfileLists", \$sampleIDBuildFile, \$sampleIDBuildFileNoEnding, \$sampleIDs[$sampleIDCounter]);
 	    }
 	}
     }
-    close($FILEHANDLE);
+    unless($_[3]) { #Unless FILEHANDLE was supplied close it and submit 
     
-    if ( ($scriptParameter{"p".$program} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-	&FIDSubmitJob(0, $familyID, 6, "MIP", $fileName, 0); #"MIP" is required or the pPicardToolsCalulateHSMetrics jobs will start prematurely
+	close($FILEHANDLE);
+    
+	if ( ($scriptParameter{"p".$program} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	
+	    &FIDSubmitJob(0, $familyID, 6, "MIP", $fileName, 0); #"MIP" is required or the pPicardToolsCalulateHSMetrics jobs will start prematurely
+	}
     }
 }
 
@@ -4938,59 +4876,33 @@ sub BuildBwaPreRequisites {
 
     &ProgramPreRequisites($familyID, $program, $aligner, 0, $FILEHANDLE, 1, 3);
 
-    print $FILEHANDLE "cd $scriptParameter{'referencesDir'}", "\n\n"; #Move to reference directory
+    &BuildHumanGenomePreRequisites($familyID, $aligner, $program, $FILEHANDLE, $randomInteger);
 
-    my $cosmidResourceDirectory = &CheckCosmidYAML();
+    if ($parameter{'bwaBuildReference'}{'buildFile'} eq 1) {
 
-    &DownloadReference(\$program, $FILEHANDLE, "humanGenomeReference", \$cosmidResourceDirectory);
-
-    print STDOUT "\nNOTE: Will try to create required ".$scriptParameter{'bwaBuildReference'}." index files before executing ".$program,"\n\n";
-
-    print $FILEHANDLE "#Building BWA index", "\n\n";
-    print $FILEHANDLE "bwa index "; #index sequences in the FASTA format
-    print $FILEHANDLE "-p ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'bwaBuildReference'}."_".$randomInteger." "; #prefix of the index
-    print $FILEHANDLE "-a bwtsw "; #BWT construction algorithm
-    print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'},"\n\n"; #the FASTA reference sequences file
-
-    for (my $fileEndingsCounter=0;$fileEndingsCounter<scalar(@bwaBuildReferenceFileEndings);$fileEndingsCounter++) { #All fileEndings
-
-	print $FILEHANDLE "[ -s ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'bwaBuildReference'}.$bwaBuildReferenceFileEndings[$fileEndingsCounter]." ] "; #Check file exists and is larger than 0
-	print $FILEHANDLE "&& rm ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'bwaBuildReference'}."_".$randomInteger.$bwaBuildReferenceFileEndings[$fileEndingsCounter]." "; #If other processes already has created file, remove temp file
-	print $FILEHANDLE "|| "; #File has not been created by other processes
-	print $FILEHANDLE "mv ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'bwaBuildReference'}."_".$randomInteger.$bwaBuildReferenceFileEndings[$fileEndingsCounter]." ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'bwaBuildReference'}.$bwaBuildReferenceFileEndings[$fileEndingsCounter], "\n\n"; #Move file in place
+	&PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to create required ".$scriptParameter{'bwaBuildReference'}." index files before executing ".$program."\n\n");
+	
+	print $FILEHANDLE "#Building BWA index", "\n\n";
+	print $FILEHANDLE "bwa index "; #index sequences in the FASTA format
+	print $FILEHANDLE "-p ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'bwaBuildReference'}."_".$randomInteger." "; #prefix of the index
+	print $FILEHANDLE "-a bwtsw "; #BWT construction algorithm
+	print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'},"\n\n"; #the FASTA reference sequences file
+	
+	for (my $fileEndingsCounter=0;$fileEndingsCounter<scalar(@bwaBuildReferenceFileEndings);$fileEndingsCounter++) { #All fileEndings
+	    
+	    print $FILEHANDLE "[ -s ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'bwaBuildReference'}.$bwaBuildReferenceFileEndings[$fileEndingsCounter]." ] "; #Check file exists and is larger than 0
+	    print $FILEHANDLE "&& rm ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'bwaBuildReference'}."_".$randomInteger.$bwaBuildReferenceFileEndings[$fileEndingsCounter]." "; #If other processes already has created file, remove temp file
+	    print $FILEHANDLE "|| "; #File has not been created by other processes
+	    print $FILEHANDLE "mv ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'bwaBuildReference'}."_".$randomInteger.$bwaBuildReferenceFileEndings[$fileEndingsCounter]." ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'bwaBuildReference'}.$bwaBuildReferenceFileEndings[$fileEndingsCounter], "\n\n"; #Move file in place
+	}
     }
-
     close($FILEHANDLE);
     
     if ( ($scriptParameter{"p".$program} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+
 	&FIDSubmitJob(0, $familyID, 6, $parameter{"p".$program}{'chain'}, $fileName, 0);
     }
 }
-
-sub BuildChanjoBuildPreRequisites {
-##Creates the chanjoBuildPreRequisites.
-
-    my $familyID = $_[0];
-    my $aligner = $_[1];
-    my $program = $_[2];
-
-    my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
-
-    &ProgramPreRequisites($familyID, $program, $aligner, 0, $FILEHANDLE, 1, 1);
-
-    print $FILEHANDLE "cd $scriptParameter{'referencesDir'}", "\n\n"; #Move to reference directory
-
-    my $cosmidResourceDirectory = &CheckCosmidYAML();
-
-    &DownloadReference(\$program, $FILEHANDLE, "chanjoBuildDb", \$cosmidResourceDirectory);
-
-    close($FILEHANDLE);
-    
-    if ( ($scriptParameter{"p".$program} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-	&FIDSubmitJob(0, $familyID, 6, $parameter{"p".$program}{'chain'}, $fileName, 0);
-    }
-}
-
 
 sub BuildMosaikAlignPreRequisites {
 ##Creates the mosaikAlignPreRequisites using scriptParameters{'humanGenomeReference'} as reference.
@@ -5004,15 +4916,11 @@ sub BuildMosaikAlignPreRequisites {
 
     &ProgramPreRequisites($familyID, $program, $aligner, 0, $FILEHANDLE, 4, 2);
 
-    print $FILEHANDLE "cd $scriptParameter{'referencesDir'}", "\n\n"; #Move to reference directory
+    &BuildHumanGenomePreRequisites($familyID, $aligner, $program, $FILEHANDLE, $randomInteger);
 
-    my $cosmidResourceDirectory = &CheckCosmidYAML();
-
-    &DownloadReference(\$program, $FILEHANDLE, "humanGenomeReference", \$cosmidResourceDirectory);
-    
     if ($parameter{'mosaikAlignReference'}{'buildFile'} eq 1) {
 
-	print STDOUT "\nNOTE: Will try to create required ".$scriptParameter{'mosaikAlignReference'}." before executing ".$program,"\n\n";
+	&PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to create required ".$scriptParameter{'mosaikAlignReference'}." before executing ".$program."\n\n");
 
 	print $FILEHANDLE "#Building MosaikAligner Reference", "\n\n";
 	print $FILEHANDLE "MosaikBuild ";
@@ -5029,7 +4937,7 @@ sub BuildMosaikAlignPreRequisites {
     }
     if ($parameter{'mosaikJumpDbStub'}{'buildFile'} eq 1) {
 
-	print STDOUT "\nNOTE: Will try to create required ".$scriptParameter{'mosaikJumpDbStub'}." before executing ".$program,"\n\n";
+	&PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to create required ".$scriptParameter{'mosaikJumpDbStub'}." before executing ".$program."\n\n");
 
 	print $FILEHANDLE "#Building MosaikAligner JumpDatabase", "\n\n";
 	
@@ -5089,6 +4997,31 @@ sub CheckBuildHumanGenomePreRequisites {
     #&CollectSeqContigs(); #Reloads if required NOTE:Preparation for future changes but not activated yet
 }
 
+sub CheckBuildPTCHSMetricPreRequisites {
+
+    my $program = $_[0];
+    my $FILEHANDLE = $_[1]; #Decides if a new sbatch script will be generated or handled by supplied FILEHANDLE
+
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {
+	
+	if ($parameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDCounter]}{'exomeTargetBedInfileLists'}{'buildFile'} eq 1) {
+	    
+	    &BuildPTCHSMetricPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, $program, $FILEHANDLE);
+	    last; #Will handle all build per sampleID within sbatch script
+	}
+	if ($parameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDCounter]}{'exomeTargetPaddedBedInfileLists'}{'buildFile'} eq 1) {
+	    
+	    &BuildPTCHSMetricPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, $program, $FILEHANDLE);
+	    last; #Will handle all build per sampleID within sbatch script
+	}
+	if ( (defined($parameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDCounter]}{'GATKTargetPaddedBedIntervalLists'}{'buildFile'})) && ($parameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDCounter]}{'GATKTargetPaddedBedIntervalLists'}{'buildFile'} eq 1) ){
+	    
+	    &BuildPTCHSMetricPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, $program, $FILEHANDLE);
+	    last; #Will handle all build per sampleID within sbatch script
+	}
+    }
+}
+
 sub DownloadReference {
 ##Downloads references using the database download manager Cosmid.     
 
@@ -5099,7 +5032,7 @@ sub DownloadReference {
 
     if ($parameter{$parameterName}{'buildFile'} eq 1) { #Reference need to be built a.k.a downloaded
 	
-	print STDOUT "\nNOTE: Will try to download ".$scriptParameter{$parameterName}." before executing ".$$programRef,"\n\n";
+	&PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to download ".$scriptParameter{$parameterName}." before executing ".$$programRef."\n\n");
 
 	print $FILEHANDLE "workon ".$scriptParameter{'pythonVirtualEnvironment'}, "\n\n"; #Activate python environment
 
@@ -5128,6 +5061,9 @@ sub DownloadReference {
 	#Remove temporary Cosmid resources directory
 	print $FILEHANDLE "rm -rf ";
 	print $FILEHANDLE $$cosmidResourceDirectoryRef."/".$supportedCosmidReferences{$parameterName}{'cosmidName'}."/;", "\n\n";
+	#Remove temporary Cosmid ".cosmid.yaml" file
+	print $FILEHANDLE "rm ";
+	print $FILEHANDLE $$cosmidResourceDirectoryRef."/.cosmid.yaml", "\n\n";
 	
 	for my $supportedParameterName (keys %supportedCosmidReferences) {
 
@@ -5145,17 +5081,25 @@ sub BuildHumanGenomePreRequisites {
     my $familyID = $_[0];
     my $aligner = $_[1];
     my $program = $_[2];
+    my $FILEHANDLE = $_[3]; #Decides if a new sbatch script will be generated or handled by supplied FILEHANDLE
+    my $randomInteger = $_[4];
 
-    my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
-    my $randomInteger = int(rand(10000)); #Generate a random integer between 0-10,000.
+    unless(defined($FILEHANDLE)) { #No supplied FILEHANDLE i.e. create new sbatch script
 
-    &ProgramPreRequisites($familyID, $program, $aligner, 0, $FILEHANDLE, 1, 1);
+	$FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
+	$randomInteger = int(rand(10000)); #Generate a random integer between 0-10,000.
 
-    &DownloadReference(\$program, $FILEHANDLE, "humanGenomeReference");
+	&ProgramPreRequisites($familyID, $program, $aligner, 0, $FILEHANDLE, 1, 1);
+    }
+
+    print $FILEHANDLE "cd $scriptParameter{'referencesDir'}", "\n\n"; #Move to reference directory
+    my $cosmidResourceDirectory = &CheckCosmidYAML();
+
+    &DownloadReference(\$program, $FILEHANDLE, "humanGenomeReference", \$cosmidResourceDirectory);
 
     if ($humanGenomeCompressed eq "compressed") {
 
-	print STDOUT "\nNOTE: Will try to decompres ".$scriptParameter{'humanGenomeReference'}." before executing ".$program,"\n\n";
+	&PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to decompres ".$scriptParameter{'humanGenomeReference'}." before executing ".$program."\n\n");
 
 	print $FILEHANDLE "gzip ";
 	print $FILEHANDLE "-d "; #Decompress
@@ -5165,13 +5109,13 @@ sub BuildHumanGenomePreRequisites {
 	$humanGenomeCompressed = "unCompressed";
     }
 
-    
+    &CheckBuildPTCHSMetricPreRequisites($program, $FILEHANDLE);
 
     for (my $fileEndingsCounter=0;$fileEndingsCounter<scalar(@humanGenomeReferenceFileEndings);$fileEndingsCounter++) { #All meta files    
 	
 	if ($parameter{"humanGenomeReference.dict"}{'buildFile'} eq 1) { #.dict file
 
-	    print STDOUT "\nNOTE: Will try to create dict file for ".$scriptParameter{'humanGenomeReference'}." before executing ".$program,"\n\n";
+	    &PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to create dict file for ".$scriptParameter{'humanGenomeReference'}." before executing ".$program."\n\n");
 	    
 	    print $FILEHANDLE "#CreateSequenceDictionary from reference", "\n";
 	    print $FILEHANDLE "java -Xmx2g -jar ".$scriptParameter{'picardToolsPath'}."/CreateSequenceDictionary.jar ";
@@ -5185,7 +5129,7 @@ sub BuildHumanGenomePreRequisites {
 	}
 	if ($parameter{"humanGenomeReference.fasta.fai"}{'buildFile'} eq 1) {
 
-	    print STDOUT "\nNOTE: Will try to create .fai file for ".$scriptParameter{'humanGenomeReference'}." before executing ".$program,"\n\n";
+	    &PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to create .fai file for ".$scriptParameter{'humanGenomeReference'}." before executing ".$program."\n\n");
 
 	    print $FILEHANDLE "#Fai file from reference", "\n";
 	    print $FILEHANDLE "ln -s "; #Softlink
@@ -5203,10 +5147,14 @@ sub BuildHumanGenomePreRequisites {
 	    $parameter{"humanGenomeReference.fasta.fai"}{'buildFile'} = 0; #Only create once	
 	}
     }
-    close($FILEHANDLE);
+    unless($_[3]) { #Unless FILEHANDLE was supplied close it and submit 
+	
+	close($FILEHANDLE);
     
-    if ( ($scriptParameter{"p".$program} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-	&FIDSubmitJob(0, $familyID, 6, "MIP", $fileName, 0);
+	if ( ($scriptParameter{"p".$program} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+
+	    &FIDSubmitJob(0, $familyID, 6, "MIP", $fileName, 0);
+	}
     }
 }
 
@@ -5218,15 +5166,17 @@ sub CheckCosmidInstallation {
 	
 	if (defined($scriptParameter{'pythonVirtualEnvironment'})) {
 	
-	    print STDOUT "Checking your Cosmid installation in preparation for download of ".$scriptParameter{$$parameterNameRef}, "\n"; 
+	    &PrintToFileHandles(\@printFilehandles, "Checking your Cosmid installation in preparation for download of ".$scriptParameter{$$parameterNameRef}."\n");
+ 
 	    my $whichrReturn = `source ~/.bash_profile; workon $scriptParameter{'pythonVirtualEnvironment'};which cosmid;deactivate;`;
 	    
 	    if ($whichrReturn eq "") {
-		print "\nMIP uses cosmid to download ".$scriptParameter{$$parameterNameRef}." and MIP could not find a cosmid installation in your python virtualenvironment".$scriptParameter{'pythonVirtualEnvironment'}." ","\n"; 
+		print STDERR "\nMIP uses cosmid to download ".$scriptParameter{$$parameterNameRef}." and MIP could not find a cosmid installation in your python virtualenvironment".$scriptParameter{'pythonVirtualEnvironment'}." ","\n"; 
 		exit;
 	    }
 	    else {
-		print STDOUT "Found installation in ".$whichrReturn, "\n";
+
+		&PrintToFileHandles(\@printFilehandles, "Found installation in ".$whichrReturn."\n");
 	    }
 	}
 	else  {
@@ -5256,7 +5206,7 @@ sub ReadPlinkPedigreeFile {
      
     while (<PEDF>) {
 	
-	chomp $_;
+	chomp $_; #Remove newline
 	
 	if ( ($. == 1) && ($_ =~/^\#/) ) { #Header present overwrite @pedigreeFileElements with header info
 	
@@ -5271,7 +5221,6 @@ sub ReadPlinkPedigreeFile {
         }		
 	if ($_ =~/(\S+)/) {	
 	    
-	    chomp($_);
 	    my @lineInfo = split("\t",$_);	    #Loads pedigree file info
 	    
 ##Need to parse familyID and sampleID separately since these have not been set yet
@@ -5675,9 +5624,9 @@ sub FIDSubmitJob {
 	print STDERR "\nMIP: Aborting run.\n\n";
 	exit;
     }
-    print STDOUT "Sbatch script submitted, job id: $jobID\n"; print MIPLOG "Sbatch script submitted, job id: $jobID\n";
-    print STDOUT "To check status of job, please run \'squeue -j $jobID\'\n";print MIPLOG "To check status of job, please run \'squeue -j $jobID\'\n";
-    print STDOUT "To cancel job, please run \'scancel $jobID\'\n";print MIPLOG "To cancel job, please run \'scancel $jobID\'\n";
+    &PrintToFileHandles(\@printFilehandles, "Sbatch script submitted, job id: $jobID\n");
+    &PrintToFileHandles(\@printFilehandles, "To check status of job, please run \'squeue -j $jobID\'\n");
+    &PrintToFileHandles(\@printFilehandles, "To cancel job, please run \'scancel $jobID\'\n");
 }
 
 sub NrofCoresPerSbatch {
@@ -5690,6 +5639,29 @@ sub NrofCoresPerSbatch {
 	$nrCores = $scriptParameter{'maximumCores'}; #Set to max on cluster
     }
     return $nrCores;
+}
+
+sub CollectInfiles {
+##Collects the ".fastq(.gz)" files from the supplied infiles directory. Checks if any files exist
+    
+    for (my $inputDirectoryCounter=0;$inputDirectoryCounter<scalar(@inFilesDirs);$inputDirectoryCounter++) { #Collects inputfiles
+	
+	my @infiles = `cd $inFilesDirs[ $inputDirectoryCounter ];ls *.fastq*;`; #cd to input dir and collect fastq files and fastq.gz files
+	
+	if (scalar(@infiles) == 0) { #No "*.fastq*" infiles
+	    
+	    print STDERR "Could not find any '.fastq' files in supplied infiles directory ".$inFilesDirs[ $inputDirectoryCounter ], "\n";
+	    exit;
+	}
+	&PrintToFileHandles(\@printFilehandles, "\nReads from Platform\n");
+	&PrintToFileHandles(\@printFilehandles, "\nSample ID\t".$sampleIDs[$inputDirectoryCounter]."\n");
+	print STDOUT "Inputfiles:\n",@ { $infile{ $sampleIDs[$inputDirectoryCounter] }  =[@infiles] }, "\n"; #hash with sample id as key and inputfiles in dir as array 
+	print MIPLOG "Inputfiles:\n",@ { $infile{ $sampleIDs[$inputDirectoryCounter] }  =[@infiles] }, "\n";
+	
+	$indirpath{$sampleIDs[$inputDirectoryCounter]} = $inFilesDirs[ $inputDirectoryCounter ];  #Catch inputdir path
+	chomp(@infiles);    #Remove newline from every entry in array
+	$infile{ $sampleIDs[$inputDirectoryCounter] }  =[@infiles]; #Reload files into hash (kept above newline just for print STDOUT)
+    }
 }
 
 sub InfilesReFormat {
@@ -5733,6 +5705,11 @@ sub InfilesReFormat {
 		}
 		&CheckSampleIDMatch($sampleID, $4, $infileCounter);
 		&AddInfileInfo($1, $2, $3, $4, $5, $6, \$laneTracker, $infileCounter, $compressedSwitch);		
+	    }
+	    else { #No regexp match i.e. file does not follow filename convention 
+
+		print STDERR "Could not detect MIP file name convention for file: ".$infile{$sampleID}[$infileCounter].". \n\nPlease check that the file name follows the specified convention.", "\n";
+		exit;
 	    }
         }
     }
@@ -5996,7 +5973,7 @@ sub AddToScriptParameter {
 			}
 			if ($parameterName eq "humanGenomeReference") {
 			    
-			    ($humanGenomeReferenceVersion, $humanGenomeReferenceSource, $humanGenomeReferenceNameNoEnding) = ParseHumanGenomeReference($scriptParameter{'humanGenomeReference'});
+			    ($humanGenomeReferenceVersion, $humanGenomeReferenceSource, $humanGenomeReferenceNameNoEnding) = &ParseHumanGenomeReference($scriptParameter{'humanGenomeReference'});
 			}
 			if ($parameterName eq "pedigreeFile") {
 			    
@@ -6186,8 +6163,9 @@ sub AddToScriptParameter {
 			    
 			    for (my $sampleIDsCounter=0;$sampleIDsCounter<scalar(@sampleIDs);$sampleIDsCounter++) { #All sampleIDs
 				
-				&CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDsCounter]}{$parameterName}), \$parameterName, "f", \$sampleIDs[$sampleIDsCounter]);			    
-				
+				&CheckSupportedFileEnding(\($scriptParameter{'referencesDir'}."/".$scriptParameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDsCounter]}{$parameterName}), \$referenceFileEndings{$parameterName}, \$parameterName, );
+				&CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDsCounter]}{$parameterName}), \$parameterName, "f", \$sampleIDs[$sampleIDsCounter]);
+			    
 				my $exomeTargetBedFileNoEnding = &RemoveFileEnding(\$scriptParameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDsCounter]}{$parameterName} , $referenceFileEndings{$parameterName}); #Remove ".fileending" from reference filename
 				&CheckTargetExistFileBed(\$exomeTargetBedFileNoEnding, $parameterName);
 			    }
@@ -6550,21 +6528,24 @@ sub ProgramPreRequisites {
     `mkdir -p $scriptParameter{'outScriptDir'}/$directoryID/$programDirectory`; #Creates the aligner folder script file directory
 
     if ( ($scriptParameter{"p".$programName} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+
 	$fileName = $fileNamePath; 
     }
     elsif ($scriptParameter{"p".$programName} == 2) { #Dry run single program
+
 	$fileName = $dryRunFilenamePath; 
-	print STDOUT "Dry Run:\n";print MIPLOG  "Dry Run:\n";
+	&PrintToFileHandles(\@printFilehandles, "Dry Run:\n");
     }
     else { #Dry run
+
 	$fileName = $dryRunFilenamePath;
-	print STDOUT "Dry Run:\n";print MIPLOG  "Dry Run:\n";
+	&PrintToFileHandles(\@printFilehandles, "Dry Run:\n");
     }
 
     &Checkfnexists(\$fileName, \$fnend, \$fileNameTracker);
 
 ###Info and Log
-    print STDOUT "Creating sbatch script for ".$programName." and writing script file(s) to: ".$fileName, "\n";print MIPLOG "Creating sbatch script for ".$programName." and writing script file(s) to: ".$fileName, "\n";
+    &PrintToFileHandles(\@printFilehandles, "Creating sbatch script for ".$programName." and writing script file(s) to: ".$fileName."\n");
 
     if ($programName eq "RankVariants") { #Special case
 
@@ -6572,11 +6553,13 @@ sub ProgramPreRequisites {
 	    
 	    my ($volume,$directories,$file) = File::Spec->splitpath($ImportantDbFileOutFiles[$ImportantDbFileOutFilesCounter]);
 	    `mkdir -p $directories;`; 
-	    print STDOUT "RankVariants data files will be written to: ".$directories.$directoryID."_ranked_".$callType.".txt", "\n";print MIPLOG "RankVariants data files will be written to: ".$directories.$directoryID."_ranked_".$callType.".txt", "\n";    
+
+	    &PrintToFileHandles(\@printFilehandles, "RankVariants data files will be written to: ".$directories.$directoryID."_ranked_".$callType.".txt\n");   
 	}
     }
     else {
-	print STDOUT "Sbatch script ".$programName." data files will be written to: ".$programDataDirectory, "\n";print MIPLOG "Sbatch script ".$programName." data files will be written to: ".$programDataDirectory, "\n";
+
+	&PrintToFileHandles(\@printFilehandles, "Sbatch script ".$programName." data files will be written to: ".$programDataDirectory."\n");
     }
 
 ###Sbatch header
@@ -6589,14 +6572,17 @@ sub ProgramPreRequisites {
     print $fileHandle "#SBATCH -J ".$programName."_".$directoryID."_".$callType, "\n";
     
     if ( ($scriptParameter{"p".$programName} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+
 	print $fileHandle "#SBATCH -e ".$fileInfoPath.$fileNameTracker.".stderr.txt", "\n";
 	print $fileHandle "#SBATCH -o ".$fileInfoPath.$fileNameTracker.".stdout.txt", "\n";
     }
     elsif ($scriptParameter{'pSampleCheck'} == 2) { #Single program dry run
+
 	print $fileHandle "#SBATCH -e ".$dryRunFileInfoPath.$fileNameTracker.".stderr.txt", "\n";
 	print $fileHandle "#SBATCH -o ".$dryRunFileInfoPath.$fileNameTracker.".stdout.txt", "\n";
     }
     else { #Dry run
+
 	print $fileHandle "#SBATCH -e ".$dryRunFileInfoPath.$fileNameTracker.".stderr.txt", "\n";
 	print $fileHandle "#SBATCH -o ".$dryRunFileInfoPath.$fileNameTracker.".stdout.txt", "\n";
     }
@@ -6619,6 +6605,7 @@ sub ProgramPreRequisites {
     }
     
     print $fileHandle 'echo "Running on: $(hostname)"',"\n\n";
+
     return ($fileInfoPath.$fileNameTracker.".stdout.txt"); #Return stdout for QC check later
 }
 
@@ -6636,11 +6623,17 @@ sub CheckIfMergedFiles {
 	    
 	    if ($picardToolsMergeSamFilesPrevious[$mergeFileCounter] =~ /lane(\d+)|s_(\d+)/) { #Look for lanes_ or lane\d in previously generated file to be merged with current run to be able to extract previous lanes
 		
-		if($1) {$mergeLanes = $1;} 
-		else {$mergeLanes = $2;} #Make sure to always supply lanes from previous regexp  
+		if($1) {
+		
+		    $mergeLanes = $1;
+		} 
+		else {
+		    $mergeLanes = $2;
+		} #Make sure to always supply lanes from previous regexp  
 		$infile = $sampleID."_lanes_".$mergeLanes;
 
 		for (my $laneCounter=0;$laneCounter<scalar(@ { $lane{$sampleID} });$laneCounter++) {
+		
 		    $infile .= $lane{$sampleID}[$laneCounter]; #Extract lanes per sampleID
 		}
 		$PicardToolsMergeSwitch = 1;
@@ -6648,14 +6641,17 @@ sub CheckIfMergedFiles {
 	}
     }
     elsif ( ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) && (scalar( @{ $infilesLaneNoEnding{$sampleID} }) > 1) ) { #but only if there is more than one mosaikBuild/BWA_Aln file per sample ID (Sanity check)
+
 	$infile = $sampleID."_lanes_";
 
 	for (my $laneCounter=0;$laneCounter<scalar(@ { $lane{$sampleID} });$laneCounter++) {
+	   
 	    $infile .= $lane{$sampleID}[$laneCounter]; #Extract lanes per sampleID
 	}
 	$PicardToolsMergeSwitch = 1;
     }
     else {
+
 	$PicardToolsMergeSwitch = 0;
     }
     return ($infile, $PicardToolsMergeSwitch);
@@ -6787,51 +6783,67 @@ sub GATKPedigreeFlag {
     my $FILEHANDLE = $_[0];
     my $outFamilyFileDirectory = $_[1];
     my $pedigreeValidationType = $_[2];
-
-    if (scalar(@sampleIDs) > 2) {
-
-	my $famFile = $outFamilyFileDirectory."/".$scriptParameter{'familyID'}.".fam";
-	my $parentCounter;
-	my $pqParentCounter = q?perl -ne 'my $parentCounter=0; while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] eq 0) || ($line[3] eq 0) ) { $parentCounter++} } } print $parentCounter; last;'?;
-	my $childCounter;
-	my $pqChildCounter = q?perl -ne 'my $childCounter=0; while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] ne 0) || ($line[3] ne 0) ) { $childCounter++} } } print $childCounter; last;'?;
-
-	if ($FILEHANDLE eq "*main::GATK_PHTR") { #Special case - GATK PhaseByTransmission needs parent/child or trio 
+    my $program = $_[3];
+    
+    my $famFile = $outFamilyFileDirectory."/".$scriptParameter{'familyID'}.".fam";
+    my $parentCounter;
+    my $pqParentCounter = q?perl -ne 'my $parentCounter=0; while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] eq 0) || ($line[3] eq 0) ) { $parentCounter++} } } print $parentCounter; last;'?;
+    my $childCounter;
+    my $pqChildCounter = q?perl -ne 'my $childCounter=0; while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] ne 0) || ($line[3] ne 0) ) { $childCounter++} } } print $childCounter; last;'?;
+    
+    $parentCounter = `$pqParentCounter $famFile`;
+    $childCounter = `$pqChildCounter $famFile`;
+    
+    if ($program ne "GATKPhaseByTransmission") {
+	
+	if ($parentCounter > 0) { #Parents present
 	    
-	    if (scalar(@sampleIDs) < 4) { #i.e.2-3 individuals in pedigree
-		    
-		$parentCounter = `$pqParentCounter $famFile`;
-		$childCounter = `$pqChildCounter $famFile`;		    
+	    print $FILEHANDLE "--pedigreeValidationType ".$pedigreeValidationType." --pedigree ".$outFamilyFileDirectory."/".$scriptParameter{'familyID'}.".fam "; #Pedigree files for samples		
+	}
+    }
+    else {
+	
+	&CheckPedigreeMembers($FILEHANDLE, \$pedigreeValidationType, \$outFamilyFileDirectory, \$parentCounter, \$childCounter); #Special case - GATK PhaseByTransmission needs parent/child or trio 
+    }
+}
+
+sub CheckPedigreeMembers {
+##Detect if the pedigree file contains a valid parent/child or trio
+
+    my $FILEHANDLE = $_[0];
+    my $outFamilyFileDirectory = $_[1];
+    my $pedigreeValidationType = $_[2];
+    my $parentCounterRef = $_[3];
+    my $childCounterRef = $_[4];
+	    
+    if (scalar(@sampleIDs) < 4) { #i.e.1-3 individuals in pedigree		    
 		
-		if ( ($childCounter == 1) && ($parentCounter > 0) ) { #parent/child or trio
-		    print $FILEHANDLE "--pedigreeValidationType ".$pedigreeValidationType." --pedigree ".$outFamilyFileDirectory."/".$scriptParameter{'familyID'}.".fam "; #Pedigree files for samples
-		}
-		else {
-		    $scriptParameter{'pGATKPhaseByTransmission'} = 0; #Override input since pedigree is not valid for analysis
-		    print STDERR "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";print MIPLOG "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";
-		    if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) { #Broadcast
-			print STDERR "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n";print MIPLOG "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n";
-		    }
-		    print STDERR "\n";
-		}
-	    }
-	    else {
-		$scriptParameter{'pGATKPhaseByTransmission'} = 0; #Override input since pedigree is not valid for analysis
-		print STDERR "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";print MIPLOG "Switched GATK PhaseByTransmission to no run mode since MIP did not detect a valid pedigree for this type of analysis. ";
-		if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) { #Broadcast
-		    print STDERR "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false";print MIPLOG "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n";
-		}
-		print STDERR "\n";
-	    }
+	if ( ($childCounterRef == 1) && ($parentCounterRef > 0) ) { #parent/child or trio
+
+	    print $FILEHANDLE "--pedigreeValidationType ".$pedigreeValidationType." --pedigree ".$outFamilyFileDirectory."/".$scriptParameter{'familyID'}.".fam "; #Pedigree files for samples
 	}
 	else {
 
-	    $parentCounter = `$pqParentCounter $famFile`;
+	    $scriptParameter{'pGATKPhaseByTransmission'} = 0; #Override input since pedigree is not valid for analysis
+	    &PrintToFileHandles(\@printFilehandles, "Switched GATK PhaseByTransmission to 'no run' mode since MIP did not detect a valid pedigree for this type of analysis.");
 	    
-	    if ($parentCounter > 0) { #Parent
-		print $FILEHANDLE "--pedigreeValidationType ".$pedigreeValidationType." --pedigree ".$outFamilyFileDirectory."/".$scriptParameter{'familyID'}.".fam "; #Pedigree files for samples		
-	    }		
+	    if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) { #Broadcast
+		
+		&PrintToFileHandles(\@printFilehandles, "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n");
+	    }
+	    print STDOUT "\n";
 	}
+    }
+    else {
+	
+	$scriptParameter{'pGATKPhaseByTransmission'} = 0; #Override input since pedigree is not valid for analysis
+	&PrintToFileHandles(\@printFilehandles, "Switched GATK PhaseByTransmission to 'no run' mode since MIP did not detect a valid pedigree for this type of analysis.");
+	
+	if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) { #Broadcast
+	    
+	    &PrintToFileHandles(\@printFilehandles, "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n");
+	}
+	print STDERR "\n";
     }
 }
 
@@ -6968,7 +6980,7 @@ sub DetermineNrofRapidNodes {
 }
 
 sub CheckUniqueIDNs {
-##Test that the familyID and the sampleID(s) exists and are unique.
+##Test that the familyID and the sampleID(s) exists and are unique. Check id sampleID contains "_".
 
     my %seen; #Hash to test duplicate sampleIDs later
 
@@ -6984,13 +6996,18 @@ sub CheckUniqueIDNs {
 	
 	if ($scriptParameter{'familyID'} eq $sampleIDs[$sampleIDCounter]) {
 	    
-	    print STDOUT "\nFamilyID: ".$scriptParameter{'familyID'}." equals sampleID: ".$sampleIDs[$sampleIDCounter].". Please make sure that the familyID and sampleID(s) are unique.\n";
+	    print STDERR "\nFamilyID: ".$scriptParameter{'familyID'}." equals sampleID: ".$sampleIDs[$sampleIDCounter].". Please make sure that the familyID and sampleID(s) are unique.\n";
 	    exit;
 	}
 	if ($seen{$sampleIDs[$sampleIDCounter]} > 1) {
 	
-	    print STDOUT "\nSampleID: ".$sampleIDs[$sampleIDCounter]." is not uniqe.\n\n";
+	    print STDERR "\nSampleID: ".$sampleIDs[$sampleIDCounter]." is not uniqe.\n\n";
 	    exit;
+	}
+	if ($sampleIDs[$sampleIDCounter] =~/_/) { #SampleID contains "_", which is not allowed accrding to filename conventions
+
+	    print STDERR "\nSampleID: ".$sampleIDs[$sampleIDCounter]." contains '_'. Please rename sampleID according to MIP's filename convention, removing the '_'.\n\n";
+	    exit;	    
 	}
     }
 }
@@ -7308,6 +7325,43 @@ sub CheckUniqueTargetFiles {
     }
 }
 
+sub CheckTemplateFilesPaths {
+##Checks that file paths in template files exist
+
+    my $fileNameRef = $_[0];
+    my $parameterName = $_[1];
+
+    open(TF, "<".$$fileNameRef) or die "Can't open ".$$fileNameRef.":$!, \n";  
+
+    while (<TF>) {
+
+	chomp $_;
+
+	if (m/^\s+$/) {	# Avoid blank lines
+            next;
+        }
+	if (m/^\#/) {	# Avoid "#"
+            next;
+        }	
+	if ($_ =~/(\S+)/) {	
+	    
+	    my $filePath = $_;
+
+	    if ($filePath=~/^(RD!)/) { #intersectCollect file
+		
+		my @filePath = split('\t', $filePath);
+		$filePath[0] =~ s/^RD!/$scriptParameter{'referencesDir'}/g;
+
+		&CheckExistance(\$filePath[0], \$parameterName, "f"); #Only check paths that pointing to reference directory
+	    }
+	    if ($parameterName eq "GATKHaploTypeCallerRefBAMInfile") { #Only Paths should be present i.e. check all lines
+	       
+		&CheckExistance(\$filePath, \$parameterName, "f");
+	    }
+	}
+    }
+    close(TF);
+}
 
 sub CheckGzipped {
 ##Check if a file is gzipped
@@ -7381,15 +7435,18 @@ sub CheckTargetExistFileBed {
     my $fileRef = $_[0];
     my $parameterName = $_[1];
 
-    if ($$fileRef !~/.bed$/) {
+    if (defined($$fileRef)) {
 
-	print STDERR "Could not find intendended 'file ending with .bed' for target file: ".$$fileRef." in parameter '-".$parameterName."'", "\n";
+	if ($$fileRef !~/.bed$/) {
+	
+	print STDERR "\nCould not find intendended 'file ending with .bed' for target file: ".$$fileRef." in parameter '-".$parameterName."'", "\n";
 	exit;
-    }
-    unless (-f $scriptParameter{'referencesDir'}."/".$$fileRef) {
+	}
+	unless (-f $scriptParameter{'referencesDir'}."/".$$fileRef) {
 
-	print STDERR "Could not find intendended '.bed' file for target file: ".$scriptParameter{'referencesDir'}."/".$$fileRef." in parameter '-".$parameterName."'", "\n\n";
-	exit;
+	    print STDERR "\nCould not find intendended '.bed' file for target file: ".$scriptParameter{'referencesDir'}."/".$$fileRef." in parameter '-".$parameterName."'", "\n\n";
+	    exit;
+	}
     }
 }
 
@@ -7635,6 +7692,50 @@ sub PrintWait {
 	print $FILEHANDLE "wait", "\n\n";
 	$$coreCounterRef=$$coreCounterRef+1;
     }    
+}
+
+sub CheckBuildDownLoadPreRequisites {
+##Checks if some of the actual prerequisites needs to be downloaded and calls subroutine to download them if required
+
+    my $programName = $_[0];
+    
+    for my $parameterName (keys %supportedCosmidReferences) {
+	
+	if ( "p".$programName eq $parameter{$parameterName}{'associatedProgram'}) {
+	    
+	    if ($parameter{$parameterName}{'buildFile'} eq 1) {
+		
+		&BuildDownLoadablePreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, $programName);
+		last;
+	    }
+	}
+    }
+}
+
+sub PrintToFileHandles {
+##Prints to open FILEHANDLES
+
+    my $arrayRef = $_[0];
+    my $statement = $_[1];
+   
+    for (my $filehandleCounter=0;$filehandleCounter<scalar(@{$arrayRef});$filehandleCounter++) {
+	 
+	print {${$arrayRef}[$filehandleCounter]} $statement;
+    }
+}
+
+sub CheckSupportedFileEnding {
+##Check that the supplied fileEnding is supported
+
+    my $fileNameRef = $_[0];
+    my $fileEndingRef = $_[1];
+    my $parameterNameRef = $_[2];
+
+    unless ( (defined($$fileNameRef)) && ($$fileNameRef =~/(\S+)$$fileEndingRef$/) ) {
+	
+	print STDERR "\nThe supplied file: ".$$fileNameRef." for parameter '".$$parameterNameRef."' does not have the supported file ending '".$$fileEndingRef."'.", "\n\n";
+	exit;
+    }
 }
 
 ####
