@@ -2224,7 +2224,7 @@ sub Annovar {
     my $callType = $_[2]; #SNV,INDEL or BOTH 
 
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
-    my $nrCores = &NrofCoresPerSbatch(scalar(@annovarTableNames)); #Detect the number of cores to use from @annovarTableNames
+    my $nrCores = &NrofCoresPerSbatch(scalar(@annovarTableNames)); #Detect the number of cores to use from @annovarTableNames. 
 
     &ProgramPreRequisites( $familyID, "Annovar", $aligner."/GATK", $callType, $FILEHANDLE, $nrCores, 7);
 
@@ -2274,7 +2274,7 @@ sub Annovar {
 	    print $FILEHANDLE "-exonicsplicing "; #Annotate variants near intron/exonic borders
 	}
 	print $FILEHANDLE "-buildver ".$scriptParameter{'annovarGenomeBuildVersion'}." ";
-
+	
 	if($annovarTables{$annovarTableNames[$tableNamesCounter]}{'dbtype'} eq "generic") {
 	    
 	    print $FILEHANDLE "-dbtype generic -genericdbfile ".$annovarTables{$annovarTableNames[$tableNamesCounter]}{'file'}[0]." "; #generic db file
@@ -2294,6 +2294,24 @@ sub Annovar {
 	}
 	print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType." "; #Infile. Outfile is named using infile prefix except for generic files 
 	print $FILEHANDLE $scriptParameter{'annovarPath'}."/humandb &", "\n\n"; #annovar/humandb directory is assumed
+
+	if ($annovarTableNames[$tableNamesCounter] =~/ensGene|refGene/) { #Extra round to catch MT for refSeq as well
+	    
+	    print $FILEHANDLE "grep MT "; #Only MT variants
+	    print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType." "; #Infile.
+	    print $FILEHANDLE "> ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".GRCh37_MT"." ", "\n\n"; #outfile taht can be empty for exomes or MT for WGS
+
+	    print $FILEHANDLE "perl ".$scriptParameter{'annovarPath'}."/annotate_variation.pl "; #Annovar script 
+	    print $FILEHANDLE "-".$annovarTables{$annovarTableNames[$tableNamesCounter]}{'annotation'}." "; #Annotation option
+	    print $FILEHANDLE "-hgvs ";
+	    print $FILEHANDLE "-exonicsplicing "; #Annotate variants near intron/exonic borders
+	    print $FILEHANDLE "-buildver GRCh37_MT ";
+	    print $FILEHANDLE "-dbtype ensGene "; #db file. NOTE: RefSeq does not have mitochondria gene definition. So ANNOVAR use either UCSC Known Gene or Ensembl Gene.
+	    print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.".GRCh37_MT "; #Infile.
+	    print $FILEHANDLE "--outfile ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".GRCh37_MT"." "; #OutFile prefix
+	    print $FILEHANDLE $scriptParameter{'annovarPath'}."/humandb &", "\n\n"; #annovar/humandb directory is assumed
+	    $nrCores--; #Reduce to make sure that print statement comes at correct interval since two calls are made for 1 annovar table
+	}
     }
     print $FILEHANDLE "wait", "\n\n";
     
@@ -7684,7 +7702,7 @@ sub PrintWait {
     my $coreCounterRef = $_[2];
     my $FILEHANDLE = $_[3];
     
-    if ($$counterRef == $$coreCounterRef*$$nrCoresRef) { #Using only nr of cores eq to lanes or maximumCores
+    if ($$counterRef == $$coreCounterRef * $$nrCoresRef) { #Using only nr of cores eq to lanes or maximumCores
 	
 	print $FILEHANDLE "wait", "\n\n";
 	$$coreCounterRef=$$coreCounterRef+1;
