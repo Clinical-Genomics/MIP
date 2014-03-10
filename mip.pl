@@ -597,7 +597,7 @@ if($help) {
     exit;
 }
 
-my $MipVersion = "v1.5.3";#Set version for log
+my $MipVersion = "v1.5.4";#Set version for log
 
 if($version) {
 

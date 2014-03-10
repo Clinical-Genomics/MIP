@@ -730,21 +730,6 @@ sub ReadInfileSelect {
 				
 				my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
 				$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]; #Collect all columns to enable print later
-				#if (scalar(@parsedColumns) > 1) { #X;Y entry i.e. overlapping gene
-				    
-				 #   if ($lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]=~/$parsedColumns[ $parsedColumnsCounter ]/) { #Db infile contains gene of interest
-					
-				#	$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $parsedColumns[ $parsedColumnsCounter ]; #Replace with only entry belonging to gene of interest
-				 #   }
-				  #  else { #No overlapping genes 
-					
-				#	$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]; #Collect all columns to enable print later
-				 #  }
-				#}
-				#else { #No overlapping genes 
-			
-				#$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]; #Collect all columns to enable print later
-				#}
 			    }
 			    if ( ($selectedSwithc{$dbFileNr} == 1) &&  ($dbWroteSwitch == 0) ) { #Print record only once to avoid duplicates
 
@@ -759,7 +744,6 @@ sub ReadInfileSelect {
 			    if ( ($selectedSwithc{$dbFileNr} > 0) && ($selectedSwithc{$dbFileNr} == scalar(@parsedColumns)) ) { #Only Hit in Db file and no other genes outside the Db.
 				
 				$writeTracker{$dbFileNr}++;
-
 			    }
 			}
 		    }    
