@@ -447,6 +447,24 @@ sub ReadDbMaster {
 
 	    @dbExtractColumns = split(/,/, join(',',$dbElements[5]) ); #Enable comma separeted entry for columns to extract
 
+####
+###Currently not used
+####
+	    my @replaceMatchs;
+
+	    for (my $extracColumnsCounter=0;$extracColumnsCounter<scalar(@dbExtractColumns);$extracColumnsCounter++) {
+
+		
+		if ($dbExtractColumns[$extracColumnsCounter] =~/(\S+)!/) { #Locate replace and match entry (if any)
+		    
+		    splice(@dbExtractColumns, $extracColumnsCounter, 1); #Remove replaceMatchs entry
+		    push(@replaceMatchs, $1); #Add to enable match and replace later
+		}
+	    }
+	    $dbFile{$dbFileCounter}{'Column_ReplaceMatch'}= [@replaceMatchs]; #Add dbFile replaceMatchs columns
+###
+###
+
 	    if ($outInfo eq 0) { #Create output order determined by appearance in db master file
 
 		for (my $outColumnCounter=0;$outColumnCounter<scalar(@dbExtractColumns);$outColumnCounter++) {
@@ -677,7 +695,7 @@ sub ReadInfileSelect {
 			    $IDNCounter++;
 			}
 			else {
-			   
+			    
 			    print { $selectFilehandles{ $dbFile{$dbFileNr}{'File'} } } $outHeaders[$outHeaderCounter],"\t";
 			}
 			
@@ -697,14 +715,13 @@ sub ReadInfileSelect {
 		
 		for (my $dbFileNr=1;$dbFileNr<$dbFileCounter;$dbFileNr++) { #All db files (in order of appearance in $db) except first file
 
-		    $selectedSwithc{$dbFileNr}=0;
-		    $writeTracker{$dbFileNr}=0;
+		    $selectedSwithc{$dbFileNr} = 0;
+		    $writeTracker{$dbFileNr} = 0;
 		    my $dbWroteSwitch=0; #make sure that there are no duplictate entries
 
 		    for (my $parsedColumnsCounter=0;$parsedColumnsCounter<scalar(@parsedColumns);$parsedColumnsCounter++) { #Loop through all
 		
-			if ( $selectVariants{$dbFileNr}{$parsedColumns[ $parsedColumnsCounter ]} ) { #If key exists in db file
-
+			if ( $selectVariants{$dbFileNr}{$parsedColumns[ $parsedColumnsCounter ]}{'key'} ) { #If key exists in db file
    
 			    $selectedSwithc{$dbFileNr}++; #Increment switch for correct Db file
 
@@ -713,7 +730,22 @@ sub ReadInfileSelect {
 			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) {
 				
 				my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
-				$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef}= $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]; #Collect all columns to enable print later
+				$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]; #Collect all columns to enable print later
+				#if (scalar(@parsedColumns) > 1) { #X;Y entry i.e. overlapping gene
+				    
+				 #   if ($lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]=~/$parsedColumns[ $parsedColumnsCounter ]/) { #Db infile contains gene of interest
+					
+				#	$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $parsedColumns[ $parsedColumnsCounter ]; #Replace with only entry belonging to gene of interest
+				 #   }
+				  #  else { #No overlapping genes 
+					
+				#	$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]; #Collect all columns to enable print later
+				 #  }
+				#}
+				#else { #No overlapping genes 
+			
+				#$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]; #Collect all columns to enable print later
+				#}
 			    }
 			    if ( ($selectedSwithc{$dbFileNr} == 1) &&  ($dbWroteSwitch == 0) ) { #Print record only once to avoid duplicates
 
@@ -978,13 +1010,19 @@ sub ReadDbFilesNoChrSelect {
 			
 			for (my $parsedColumnCounter=0;$parsedColumnCounter<scalar(@parsed_column);$parsedColumnCounter++) { #Loop through all
 			    
-			    $selectVariants{$dbFileNr}{$parsed_column[$parsedColumnCounter]} = $parsed_column[$parsedColumnCounter]; #Add key entrie(s)
+			    $selectVariants{$dbFileNr}{$parsed_column[$parsedColumnCounter]}{'key'} = $parsed_column[$parsedColumnCounter]; #Add key entry
 			    
 			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) { #Enable collecton of columns from db file
 				
 				my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
 			    
 				$allVariants{ $parsed_column[$parsedColumnCounter] }{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
+			    }
+			    for (my $replaceMatchCounter=0;$replaceMatchCounter<scalar( @{$dbFile{$dbFileNr}{'Column_ReplaceMatch'}});$replaceMatchCounter++) { #Enable collecton of columns from db file
+				
+				my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_ReplaceMatch'}[$replaceMatchCounter]);
+				$selectVariants{$dbFileNr}{$parsed_column[$parsedColumnCounter]}{'replace'} = $lineElements[ $dbFile{$dbFileNr}{'Column_ReplaceMatch'}[$replaceMatchCounter] ];
+				#$allVariants{ $parsed_column[$parsedColumnCounter] }{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_ReplaceMatch'}[$replaceMatchCounter] ];
 			    }
 			}
 		    }

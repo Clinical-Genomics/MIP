@@ -2224,7 +2224,7 @@ sub Annovar {
     my $callType = $_[2]; #SNV,INDEL or BOTH 
 
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
-    my $nrCores = &NrofCoresPerSbatch(scalar(@annovarTableNames)); #Detect the number of cores to use from @annovarTableNames
+    my $nrCores = &NrofCoresPerSbatch(scalar(@annovarTableNames)); #Detect the number of cores to use from @annovarTableNames. 
 
     &ProgramPreRequisites( $familyID, "Annovar", $aligner."/GATK", $callType, $FILEHANDLE, $nrCores, 7);
 
@@ -2274,7 +2274,7 @@ sub Annovar {
 	    print $FILEHANDLE "-exonicsplicing "; #Annotate variants near intron/exonic borders
 	}
 	print $FILEHANDLE "-buildver ".$scriptParameter{'annovarGenomeBuildVersion'}." ";
-
+	
 	if($annovarTables{$annovarTableNames[$tableNamesCounter]}{'dbtype'} eq "generic") {
 	    
 	    print $FILEHANDLE "-dbtype generic -genericdbfile ".$annovarTables{$annovarTableNames[$tableNamesCounter]}{'file'}[0]." "; #generic db file
@@ -2294,9 +2294,47 @@ sub Annovar {
 	}
 	print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType." "; #Infile. Outfile is named using infile prefix except for generic files 
 	print $FILEHANDLE $scriptParameter{'annovarPath'}."/humandb &", "\n\n"; #annovar/humandb directory is assumed
+
+	if ($annovarTableNames[$tableNamesCounter] =~/ensGene|refGene/) { #Extra round to catch MT for refSeq as well
+	    
+	    print $FILEHANDLE "grep MT "; #Only MT variants
+	    print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType." "; #Infile.
+	    print $FILEHANDLE "> ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".GRCh37_MT"." ", "\n\n"; #outfile taht can be empty for exomes or MT for WGS
+
+	    print $FILEHANDLE "perl ".$scriptParameter{'annovarPath'}."/annotate_variation.pl "; #Annovar script 
+	    print $FILEHANDLE "-".$annovarTables{$annovarTableNames[$tableNamesCounter]}{'annotation'}." "; #Annotation option
+	    print $FILEHANDLE "-hgvs ";
+	    print $FILEHANDLE "-exonicsplicing "; #Annotate variants near intron/exonic borders
+	    print $FILEHANDLE "-buildver GRCh37_MT ";
+	    print $FILEHANDLE "-dbtype ensGene "; #db file. NOTE: RefSeq does not have mitochondria gene definition. So ANNOVAR use either UCSC Known Gene or Ensembl Gene.
+	    print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.".GRCh37_MT "; #Infile.
+	    print $FILEHANDLE "--outfile ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".GRCh37_MT"." "; #OutFile prefix
+	    print $FILEHANDLE $scriptParameter{'annovarPath'}."/humandb &", "\n\n"; #annovar/humandb directory is assumed
+	    $nrCores--; #Reduce to make sure that print statement comes at correct interval since two calls are made for 1 annovar table
+	}
     }
     print $FILEHANDLE "wait", "\n\n";
     
+    for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@annovarTableNames);$tableNamesCounter++) { #For all specified table names
+	
+	if ($annovarTableNames[$tableNamesCounter] =~/ensGene|refGene/) { #Extra round to concatenate MT to "variant function" and "exonic.variant" function
+	    
+	    my @files = ("variant_function", "exonic_variant_function");
+	    
+	    for (my $fileCounter=0;$fileCounter<scalar(@files);$fileCounter++) { #For variant.function and exonic.function variants
+		
+		print $FILEHANDLE "cat "; #Concatenate
+		print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".".$files[$fileCounter]." "; #Infile. 
+		print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".GRCh37_MT.".$files[$fileCounter]." "; # MT inFile
+		print $FILEHANDLE "> ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".".$files[$fileCounter].".combined", "\n\n"; #Outfile
+		
+		print $FILEHANDLE "mv "; #replace original file with original information and MT info (if present)
+		print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".".$files[$fileCounter].".combined "; #Outfile
+		print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".".$files[$fileCounter], "\n\n"; #Original file	
+	    }
+	}
+    }
+
     print $FILEHANDLE "rm ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType."_temp", "\n"; #Remove temp file
     close($FILEHANDLE);
 
@@ -4592,6 +4630,15 @@ sub BuildAnnovarPreRequisites {
 		print $FILEHANDLE "-webfrom annovar "; #Download from annovar
 	    }
 	    print $FILEHANDLE $annovarTemporaryDirectory."/ ", "\n\n"; #annovar/humandb directory is assumed
+
+	    if ($annovarTableNames[$tableNamesCounter] =~/ensGene|refGene/) { #Special case for MT download
+		
+		print $FILEHANDLE "perl ".$scriptParameter{'annovarPath'}."/annotate_variation.pl "; #Annovar script 
+		print $FILEHANDLE "-buildver GRCh37_MT "; #GenomeBuild version
+		print $FILEHANDLE "-downdb ensGene "; #Db to download
+		print $FILEHANDLE "-webfrom annovar "; #Download from annovar
+		print $FILEHANDLE $annovarTemporaryDirectory."/ ", "\n\n"; #annovar/humandb directory is assumed
+	    }
 	    
 ##Check file existance and move created file if lacking 
 	    my $intendedFilePathRef;
@@ -7519,9 +7566,9 @@ sub DefineAnnovarTables {
     my @annovarTablesUrlUcsc = ("mce46way", "segdup", "tfbs", "mirna"); #Tables using urlAlias "ucsc"
     my @annovarGenericFiltering = ("esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105"); #Tables using generic option
     my @annovarGenericFiles = ($annovarGenomeBuildVersion."_esp6500si_all.txt", $annovarGenomeBuildVersion."_esp6500_all.txt", $annovarGenomeBuildVersion."_esp6500_aa.txt", $annovarGenomeBuildVersion."_esp6500_ea.txt", $annovarGenomeBuildVersion."_esp5400_all.txt", $annovarGenomeBuildVersion."_esp5400_aa.txt", $annovarGenomeBuildVersion."_esp5400_ea.txt", $annovarGenomeBuildVersion."_clinvar_20131105.txt"); #Generic table files
-    my @annovarRefgeneFiles = ($annovarGenomeBuildVersion."_refGene.txt", $annovarGenomeBuildVersion."_refGeneMrna.fa", $annovarGenomeBuildVersion."_refLink.txt"); #Cater for multiple download
+    my @annovarRefgeneFiles = ($annovarGenomeBuildVersion."_refGene.txt", $annovarGenomeBuildVersion."_refGeneMrna.fa", $annovarGenomeBuildVersion."_refLink.txt", "GRCh37_MT_ensGene.txt", "GRCh37_MT_ensGeneMrna.fa"); #Cater for multiple download
     my @annovarKnownGeneFiles = ($annovarGenomeBuildVersion."_knownGene.txt", $annovarGenomeBuildVersion."_kgXref.txt", $annovarGenomeBuildVersion."_knownGeneMrna.fa"); #Cater for multiple download
-    my @annovarEnsGeneFiles = ($annovarGenomeBuildVersion."_ensGene.txt", $annovarGenomeBuildVersion."_ensGeneMrna.fa"); #Cater for multiple download
+    my @annovarEnsGeneFiles = ($annovarGenomeBuildVersion."_ensGene.txt", $annovarGenomeBuildVersion."_ensGeneMrna.fa", "GRCh37_MT_ensGene.txt", "GRCh37_MT_ensGeneMrna.fa"); #Cater for multiple download
 
     #Set UCSC alias for download from UCSC
     $annovarTables{'mce46way'}{'ucscAlias'} = "phastConsElements46way";
@@ -7687,7 +7734,7 @@ sub PrintWait {
     my $coreCounterRef = $_[2];
     my $FILEHANDLE = $_[3];
     
-    if ($$counterRef == $$coreCounterRef*$$nrCoresRef) { #Using only nr of cores eq to lanes or maximumCores
+    if ($$counterRef == $$coreCounterRef * $$nrCoresRef) { #Using only nr of cores eq to lanes or maximumCores
 	
 	print $FILEHANDLE "wait", "\n\n";
 	$$coreCounterRef=$$coreCounterRef+1;
