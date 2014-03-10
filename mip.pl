@@ -2315,6 +2315,26 @@ sub Annovar {
     }
     print $FILEHANDLE "wait", "\n\n";
     
+    for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@annovarTableNames);$tableNamesCounter++) { #For all specified table names
+	
+	if ($annovarTableNames[$tableNamesCounter] =~/ensGene|refGene/) { #Extra round to concatenate MT to "variant function" and "exonic.variant" function
+	    
+	    my @files = ("variant_function", "exonic_variant_function");
+	    
+	    for (my $fileCounter=0;$fileCounter<scalar(@files);$fileCounter++) { #For variant.function and exonic.function variants
+		
+		print $FILEHANDLE "cat "; #Concatenate
+		print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".".$files[$fileCounter]." "; #Infile. 
+		print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".GRCh37_MT.".$files[$fileCounter]." "; # MT inFile
+		print $FILEHANDLE "> ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".".$files[$fileCounter].".combined", "\n\n"; #Outfile
+		
+		print $FILEHANDLE "mv "; #replace original file with original information and MT info (if present)
+		print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".".$files[$fileCounter].".combined "; #Outfile
+		print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".".$files[$fileCounter], "\n\n"; #Original file	
+	    }
+	}
+    }
+
     print $FILEHANDLE "rm ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType."_temp", "\n"; #Remove temp file
     close($FILEHANDLE);
 
@@ -4606,6 +4626,15 @@ sub BuildAnnovarPreRequisites {
 		print $FILEHANDLE "-webfrom annovar "; #Download from annovar
 	    }
 	    print $FILEHANDLE $annovarTemporaryDirectory."/ ", "\n\n"; #annovar/humandb directory is assumed
+
+	    if ($annovarTableNames[$tableNamesCounter] =~/ensGene|refGene/) { #Special case for MT download
+		
+		print $FILEHANDLE "perl ".$scriptParameter{'annovarPath'}."/annotate_variation.pl "; #Annovar script 
+		print $FILEHANDLE "-buildver GRCh37_MT "; #GenomeBuild version
+		print $FILEHANDLE "-downdb ensGene "; #Db to download
+		print $FILEHANDLE "-webfrom annovar "; #Download from annovar
+		print $FILEHANDLE $annovarTemporaryDirectory."/ ", "\n\n"; #annovar/humandb directory is assumed
+	    }
 	    
 ##Check file existance and move created file if lacking 
 	    my $intendedFilePathRef;
@@ -7534,9 +7563,9 @@ sub DefineAnnovarTables {
     my @annovarTablesUrlUcsc = ("mce46way", "segdup", "tfbs", "mirna"); #Tables using urlAlias "ucsc"
     my @annovarGenericFiltering = ("esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105"); #Tables using generic option
     my @annovarGenericFiles = ($annovarGenomeBuildVersion."_esp6500si_all.txt", $annovarGenomeBuildVersion."_esp6500_all.txt", $annovarGenomeBuildVersion."_esp6500_aa.txt", $annovarGenomeBuildVersion."_esp6500_ea.txt", $annovarGenomeBuildVersion."_esp5400_all.txt", $annovarGenomeBuildVersion."_esp5400_aa.txt", $annovarGenomeBuildVersion."_esp5400_ea.txt", $annovarGenomeBuildVersion."_clinvar_20131105.txt"); #Generic table files
-    my @annovarRefgeneFiles = ($annovarGenomeBuildVersion."_refGene.txt", $annovarGenomeBuildVersion."_refGeneMrna.fa", $annovarGenomeBuildVersion."_refLink.txt"); #Cater for multiple download
+    my @annovarRefgeneFiles = ($annovarGenomeBuildVersion."_refGene.txt", $annovarGenomeBuildVersion."_refGeneMrna.fa", $annovarGenomeBuildVersion."_refLink.txt", "GRCh37_MT_ensGene.txt", "GRCh37_MT_ensGeneMrna.fa"); #Cater for multiple download
     my @annovarKnownGeneFiles = ($annovarGenomeBuildVersion."_knownGene.txt", $annovarGenomeBuildVersion."_kgXref.txt", $annovarGenomeBuildVersion."_knownGeneMrna.fa"); #Cater for multiple download
-    my @annovarEnsGeneFiles = ($annovarGenomeBuildVersion."_ensGene.txt", $annovarGenomeBuildVersion."_ensGeneMrna.fa"); #Cater for multiple download
+    my @annovarEnsGeneFiles = ($annovarGenomeBuildVersion."_ensGene.txt", $annovarGenomeBuildVersion."_ensGeneMrna.fa", "GRCh37_MT_ensGene.txt", "GRCh37_MT_ensGeneMrna.fa"); #Cater for multiple download
 
     #Set UCSC alias for download from UCSC
     $annovarTables{'mce46way'}{'ucscAlias'} = "phastConsElements46way";

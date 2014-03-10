@@ -446,6 +446,9 @@ sub ReadDbMaster {
 
 	    @dbExtractColumns = split(/,/, join(',',$dbElements[5]) ); #Enable comma separeted entry for columns to extract
 
+####
+###Currently not used
+####
 	    my @replaceMatchs;
 
 	    for (my $extracColumnsCounter=0;$extracColumnsCounter<scalar(@dbExtractColumns);$extracColumnsCounter++) {
@@ -458,6 +461,8 @@ sub ReadDbMaster {
 		}
 	    }
 	    $dbFile{$dbFileCounter}{'Column_ReplaceMatch'}= [@replaceMatchs]; #Add dbFile replaceMatchs columns
+###
+###
 
 	    if ($outInfo eq 0) { #Create output order determined by appearance in db master file
 
@@ -724,55 +729,22 @@ sub ReadInfileSelect {
 			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) {
 				
 				my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
-				
-				if (scalar(@parsedColumns) > 1) { #X;Y entry i.e. overlapping gene
-				    
-				    if ($lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]=~/$parsedColumns[ $parsedColumnsCounter ]/) { #Db infile contains gene of interest
-					
-					$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $parsedColumns[ $parsedColumnsCounter ]; #Replace with only entry belonging to gene of interest
-				    }
-				    elsif (defined($dbFile{$DbFileNumber}{'Column_ReplaceMatch'})) {
-
-					for (my $replaceMatchCounter=0;$replaceMatchCounter<scalar(@{$dbFile{$DbFileNumber}{'Column_ReplaceMatch'}});$replaceMatchCounter++) {
-
-					    if ($dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] eq $dbFile{$DbFileNumber}{'Column_ReplaceMatch'}[$replaceMatchCounter]) { #ReplaceMatchEntry
-						
-						my @elements = split(/,/, $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]);
-						my $elementsEntry = "";
-						#print $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ], "\n";
-						for (my $elementsCounter=0;$elementsCounter<scalar(@elements);$elementsCounter++) {
-
-						    if ($elements[$elementsCounter] =~/$selectVariants{$dbFileNr}{$parsedColumns[ $parsedColumnsCounter ]}{'replace'}\:/) { #Functional annotation
-
-							$elementsEntry .= $elements[$elementsCounter].",";
-						    }
-						}
-						if ($lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ] =~/$selectVariants{$dbFileNr}{$parsedColumns[ $parsedColumnsCounter ]}{'replace'}/) {
-						    
-						    print $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ], "\n";
-						    $allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $selectVariants{$dbFileNr}{$parsedColumns[ $parsedColumnsCounter ]}{'replace'}; #Collect all columns to enable print later
-						    print $allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef}, "\n";
-						}
-						else { #No overlapping genes 
-						    
-						    $allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]; #Collect all columns to enable print later
-						}
-					    }
-					    else { #No overlapping genes 
-						
-						$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]; #Collect all columns to enable print later
-					    }
-					}
-				    }
-				    else { #No overlapping genes 
-					
-					$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]; #Collect all columns to enable print later
-				   }
-				}
-				else { #No overlapping genes 
-			
 				$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]; #Collect all columns to enable print later
-				}
+				#if (scalar(@parsedColumns) > 1) { #X;Y entry i.e. overlapping gene
+				    
+				 #   if ($lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]=~/$parsedColumns[ $parsedColumnsCounter ]/) { #Db infile contains gene of interest
+					
+				#	$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $parsedColumns[ $parsedColumnsCounter ]; #Replace with only entry belonging to gene of interest
+				 #   }
+				  #  else { #No overlapping genes 
+					
+				#	$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]; #Collect all columns to enable print later
+				 #  }
+				#}
+				#else { #No overlapping genes 
+			
+				#$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]; #Collect all columns to enable print later
+				#}
 			    }
 			    if ( ($selectedSwithc{$dbFileNr} == 1) &&  ($dbWroteSwitch == 0) ) { #Print record only once to avoid duplicates
 
