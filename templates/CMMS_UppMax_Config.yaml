@@ -6,7 +6,7 @@ outScriptDir: CLUSTERCONSTANTPATH!/ANALYSISTYPE!_scripts
 GATKBaseReCalibrationSNPKnownSet: dbsnp_138.b37.vcf
 GATKDownSampleToCoverage: 1000
 GATKExomeReferenceSNPs: all-agilent_50mb-GRCh37-SNPS_pad100_interval_list.vcf
-GATKHaploTypeCallerSNPKnownSet: dbsnp_135.b37.vcf
+GATKHaploTypeCallerSNPKnownSet: dbsnp_138.b37.vcf
 GATKHaploTypeCallerRefBAMInfile: ReferenceBAMInfile.list
 GATKReAlignerINDELKnownSet1: 1000G_phase1.indels.b37.vcf
 GATKReAlignerINDELKnownSet2: Mills_and_1000G_gold_standard.indels.b37.vcf
@@ -19,14 +19,15 @@ GATKVariantReCalibrationTrainingSet1000GOmni: 1000G_omni2.5.b37.sites.vcf
 GATKVariantReCalibrationTrainingSetDbSNP: dbsnp_138.b37.vcf
 GATKVariantReCalibrationTrainingSetHapMap: hapmap_3.3.b37.sites.vcf
 GATKVariantReCalibrationTrainingSetMills: Mills_and_1000G_gold_standard.indels.b37.vcf
+instanceTag: CMMS
 ImportantDbFile: dbCMMS.v1.0.txt
 ImportantDbFileOutFile: 'CLUSTERCONSTANTPATH!/ANALYSISCONSTANTPATH!/ANALYSISTYPE!/FDN!/ALIGNER!/GATK/candidates/ranking/FDN!_orphan.selectVariants,CLUSTERCONSTANTPATH!/ANALYSISCONSTANTPATH!/ANALYSISTYPE!/FDN!/ALIGNER!/GATK/candidates/ranking/clinical/FDN!.selectVariants'
 ImportantDbMasterFile: CLUSTERCONSTANTPATH!/ANALYSISCONSTANTPATH!/ANALYSISTYPE!/FDN!/FDN!.intersectCollect_selectVariants_db_master.txt
 ImportantDbTemplate: select_dbCMMS_variants_db_master.txt
 MIP: 1
+aligner: mosaik
 QCCollectRegExpFile: qc_regexp.yaml
 QCCollectSampleInfoFile: CLUSTERCONSTANTPATH!/ANALYSISTYPE!/FDN!/FDN!_qc_sampleInfo.yaml
-aligner: mosaik
 annovarGenomeBuildVersion: hg19
 annovarMAFThreshold: 0
 annovarPath: CLUSTERCONSTANTPATH!/modules/annovar

@@ -597,7 +597,7 @@ if($help) {
     exit;
 }
 
-my $MipVersion = "v1.5.4";#Set version for log
+my $MipVersion = "v1.5.5";#Set version for log
 
 if($version) {
 
@@ -1722,12 +1722,7 @@ sub AddDp {
     my $callType = $_[2]; #SNV,INDEL or BOTH 
 
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
-    my $nrCores = &NrofCoresPerSbatch(scalar(@sampleIDs)); #Detect the number of cores to use from number of samplesIDs
-
-    if ( ($scriptParameter{'analysisType'} eq "genomes") && ($nrCores < 4) ) {
-
-	$nrCores = 4; #Use at least 4 core for WGS jobs for memory requirements
-    }
+    my $nrCores = 1;
 
     &ProgramPreRequisites($familyID, "AddDepth", $aligner."/GATK", $callType, $FILEHANDLE, $nrCores, 10);
     
@@ -1820,8 +1815,12 @@ sub AddDp {
 	    print $FILEHANDLE $sampleIDs[$sampleIDCounter].",";		    
 	}
     }
-    print $FILEHANDLE "-o ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".txt", "\n\n"; #Overwrites original annovar_merge.txt file
-    
+    print $FILEHANDLE "-o ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType."_adp.txt", "\n\n"; 
+
+    print $FILEHANDLE "mv "; #Overwrites original annovar_merge.txt file
+    print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType."_adp.txt "; #Add_depth outfile
+    print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.".txt", "\n\n"; #Original file
+
     close($FILEHANDLE);   
 
     if ( ($scriptParameter{'pAddDepth'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
@@ -6363,9 +6362,10 @@ sub AddToScriptParameter {
 		
 		if ( ($scriptParameter{'pMosaikBuild'} > 0) || ($scriptParameter{'pMosaikAlign'} > 0)) { #Mosaik track
 		    
-		    if ( ($scriptParameter{'pBwaAln'} == 0) && ($scriptParameter{'pBwaSampe'} == 0)) {
+		    if ( ($scriptParameter{'pBwaAln'} == 0) && ($scriptParameter{'pBwaSampe'} == 0) && ($scriptParameter{'pBwaMem'} == 0) ) {
 			
 			if ($scriptParameter{'aligner'} eq "bwa") {
+			    
 			    $scriptParameter{'aligner'} = "mosaik";
 			}
 		    }
@@ -6376,7 +6376,7 @@ sub AddToScriptParameter {
 			exit;
 		    }
 		}
-		elsif ( ($scriptParameter{'pBwaAln'} > 0) || ($scriptParameter{'pBwaSampe'} > 0)) { #BWA track
+		elsif ( ($scriptParameter{'pBwaAln'} > 0) || ($scriptParameter{'pBwaSampe'} > 0) || ($scriptParameter{'pBwaMem'} > 0)) { #BWA track
 		    
 		    if ( ($scriptParameter{'aligner'} eq "mosaik") || ($scriptParameter{'aligner'} =~ /bwa/i) ) {
 

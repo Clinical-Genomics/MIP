@@ -44,7 +44,7 @@ if($help) {
 }
 if($version) {
 
-    print STDOUT "\nAdd_depth.pl v1.0\n\n";
+    print STDOUT "\nAdd_depth.pl v1.1\n\n";
     exit;
 }
 
@@ -85,7 +85,7 @@ else {
 my $header;  # To preserve header information
 my (@allVariants);
 my (%allVariants, %allVariantsContig, %allVariantsContigUnique,
-    %allVariantsContigSorted);
+    %allVariantsContigSorted, %dbFilePos);
 my (%sampleVariants, %column);
 
 ###
@@ -99,9 +99,23 @@ for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter+
     &FindColumn($inFile,$sampleIDs[$sampleIDCounter]);  # Collect column of sampleID
 }
 
-&ReadInFile($inFile);  # Read annovar_all.txt master file
-&SortAllVariants();     # Sorts all variants
-&WriteAddedDepth($outFile);  # Write all variants
+for (my $chromosomeNumber=0;$chromosomeNumber<scalar(@contigs);$chromosomeNumber++) {
+
+    if ($contigs[$chromosomeNumber+1]) {
+    
+	&ReadInFile($inFile, $contigs[$chromosomeNumber],$contigs[$chromosomeNumber+1]);  # Read infile per chromosome
+    }
+    else {
+
+	&ReadInFile($inFile, $contigs[$chromosomeNumber]);  # last chromosome
+    }
+    &SortAllVariants($contigs[$chromosomeNumber]);     # Sorts variants per chromsome
+    &WriteAddedDepth($outFile, $contigs[$chromosomeNumber]);  # Write all variants
+
+    #Reset for next chromosome
+    $allVariants{$contigs[$chromosomeNumber]} = (); %allVariantsContig = (); %allVariantsContigUnique = (); %allVariantsContigSorted = ();
+    @allVariants = ();
+}
 
 ###
 #Sub routines
@@ -176,9 +190,15 @@ sub ReadInFile {
 #Reads infile
     
     my $fileName = $_[0];
+    my $chromosome = $_[1];
+    my $nextChromosome = $_[2];
 
     open(RIF, "<".$fileName) or die "Can't open ".$fileName.":".$!, "\n";    
     
+    if ( defined($dbFilePos{$fileName}) ) { #if file has been searched previously
+	
+	seek(RIF, $dbFilePos{$fileName},0) or die "Couldn't seek to ".$dbFilePos{$fileName}." in ".$fileName.": ".$!,"\n"; #Seek to binary position in file where we left off
+    }
     while (<RIF>) {
 	
 	chomp $_; #Remove newline
@@ -199,8 +219,9 @@ sub ReadInFile {
 	if ( $_ =~/\S+/ ) {
 	    
 	    my @lineElements = split("\t",$_);	    #Loads variant calls
-	    $allVariants{$lineElements[0]}{$lineElements[1]}{$lineElements[4]} = [@lineElements]; # Hash{contigs}{pos}{variant}, all variants non overlapping and array [contigs->unknown] All info starting from contigs
 
+	    $allVariants{$lineElements[0]}{$lineElements[1]}{$lineElements[4]} = [@lineElements]; # Hash{contigs}{pos}{variant}, all variants non overlapping and array [contigs->unknown] All info starting from contigs
+	    
 	    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #Check if any nonvariants
 		
 		if ($sampleVariants{$sampleIDs[$sampleIDCounter]}{$lineElements[0]}{$lineElements[1]}) {
@@ -208,66 +229,80 @@ sub ReadInFile {
 		    $allVariants{$lineElements[0]}{$lineElements[1]}{$lineElements[4]}[ $column{$sampleIDs[$sampleIDCounter]} ] .= ":DP=".$sampleVariants{$sampleIDs[$sampleIDCounter]}{$lineElements[0]}{$lineElements[1]}; #Add DP info the original GT call
 		}
 	    }
-	}
-    } 	
+	    if ($nextChromosome && $lineElements[0] eq $nextChromosome) { #If next chromosome is found return (Since all numerically infiles are sorted this is ok)
+		
+		$dbFilePos{$fileName} = tell(RIF); # Save  binary position in file to enable seek when revisiting e.g. next chromsome
+		close(RIF);
+		last;
+	    }
+	} 	
+    }
     close(RIF);
-    print STDOUT "Finished Reading Infile ".$fileName,"\n";
+    print STDOUT "Finished Reading chromosome ".$chromosome." in Infile: ".$fileName,"\n";
 }
 
 sub SortAllVariants {
 #Creates an array of all position which are unique and in sorted ascending order
+
+    my $firstKey = $_[0];
     
-    for my $contigs (keys %allVariants)  { #For all contigs
-	
-	for my $position (keys %{ $allVariants{$contigs} } )  { #For all positions
+    for my $position (keys %{ $allVariants{$firstKey} } )  { 
     
-	    for my $variant (keys % { $allVariants{$contigs}{$position} })  { #For all variants
-		push ( @{$allVariantsContig{$contigs} },$position );
-	    }
+	for my $variant (keys % { $allVariants{$firstKey}{$position} })  { #For all variants
+	    push ( @{$allVariantsContig{$firstKey} },$position );
 	}
-	my %seen = (); @{$allVariantsContigUnique{$contigs} } = grep { ! $seen{$_} ++ } @{$allVariantsContig{$contigs} }; #Unique entries only
-	@{$allVariantsContigSorted{$contigs} } = sort { $a <=> $b } @{ $allVariantsContigUnique{$contigs} }; #Sorts keys to be able to print sorted table later
     }
-    print STDOUT "Sorted all non overlapping entries per contig and position\n";
+    my %seen = (); @{$allVariantsContigUnique{$firstKey} } = grep { ! $seen{$_} ++ } @{$allVariantsContig{$firstKey} }; #Unique entries only
+    @{$allVariantsContigSorted{$firstKey} } = sort { $a <=> $b } @{ $allVariantsContigUnique{$firstKey} }; #Sorts keys to be able to print sorted table later
+
+    print STDOUT "Sorted all non overlapping entries for ".$firstKey." and position\n";
 }
 
 sub WriteAddedDepth {
 #Write added depth variants to new masterfile
     
     my $fileName = $_[0];
+    my $chromosomeNumber = $_[1];
 
-    open (WAD, ">".$fileName) or die "Can't write to ".$fileName.":".$!, "\n";
+    if ( ($chromosomeNumber eq 1) || ($chromosomeNumber eq "chr1") ) {
+
+	open (WAD, ">".$fileName) or die "Can't write to ".$fileName.":".$!, "\n";
     
-    if (@metaData) { #Print metaData if supplied
+	if (@metaData) { #Print metaData if supplied
 
-	for (my $metaDataCounter=0;$metaDataCounter<scalar(@metaData);$metaDataCounter++) {
+	    for (my $metaDataCounter=0;$metaDataCounter<scalar(@metaData);$metaDataCounter++) {
 
-	    print WAD $metaData[$metaDataCounter],"\n";
-	}
-    }
-    if ($header) { #Print original header
-
-	print WAD $header, "\n";
-    } 
-    for (my $contigCounter=0;$contigCounter<scalar(@contigs);$contigCounter++)  { #For all contigs
-
-	if ($allVariantsContigSorted{$contigs[$contigCounter]}) { #If present in infile
-
-	    for (my $i=0;$i<scalar( @{$allVariantsContigSorted{$contigs[$contigCounter]} } );$i++)  { #For all pos per contigs	
-		
-		my $positionRef = \($allVariantsContigSorted{$contigs[$contigCounter]}[$i]); #pos keys to hash from sorted arrray
-		
-		for my $variant (keys % { $allVariants{$contigs[$contigCounter]}{$$positionRef} })  { #For all variants
-		    
-		    for (my $variants=0;$variants<scalar( @{ $allVariants{$contigs[$contigCounter]}{$$positionRef}{$variant} } );$variants++)  {
-
-			print WAD $allVariants{$contigs[$contigCounter]}{$$positionRef}{$variant}[$variants], "\t";
-		    }
-		    print WAD "\n";
-		}
+		print WAD $metaData[$metaDataCounter],"\n";
 	    }
-	}	
+	}
+	if ($header) { #Print original header
+
+	    print WAD $header, "\n";
+	} 
     }
+    else {
+
+	open (WAD, ">>".$fileName) or die "Can't write to ".$fileName.":".$!,"\n";
+    }
+    #for (my $contigCounter=0;$contigCounter<scalar(@contigs);$contigCounter++)  { #For all contigs
+
+    if ($allVariantsContigSorted{$chromosomeNumber}) { #If present in infile
+	
+	for (my $i=0;$i<scalar( @{$allVariantsContigSorted{$chromosomeNumber} } );$i++)  { #For all pos per contigs	
+	    
+	    my $positionRef = \($allVariantsContigSorted{$chromosomeNumber}[$i]); #pos keys to hash from sorted arrray
+	
+	    for my $variant (keys % { $allVariants{$chromosomeNumber}{$$positionRef} })  { #For all variants
+		
+		for (my $variants=0;$variants<scalar( @{ $allVariants{$chromosomeNumber}{$$positionRef}{$variant} } );$variants++)  {
+		    
+		    print WAD $allVariants{$chromosomeNumber}{$$positionRef}{$variant}[$variants], "\t";
+		}
+		print WAD "\n";
+	    }
+	}
+    }	
+    #}
     close(WAD);
     print STDOUT "Wrote all variants with added depth (DP) to ".$fileName,"\n";
     return;
