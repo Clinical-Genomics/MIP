@@ -262,7 +262,7 @@ if ($dbFile{0}{'Chr_column'} ne "Na") { #For chromosome queries
 	    &WriteAllVariantsMerge($outFile, $chromosomes[$chromosomeNumber]); #Write all variants to file per chromosome
 	    
 	    #Reset for next chromosome
-	    %allVariants = (); %allVariantsChromosome = (); %allVariantsChromosomeUnique = (); %allVariantsChromosomeSorted = ();
+	    $allVariants{$chromosomes[$chromosomeNumber]} = (); $allVariantsChromosome{$chromosomes[$chromosomeNumber]} = (); $allVariantsChromosomeUnique{$chromosomes[$chromosomeNumber]} = (); $allVariantsChromosomeSorted{$chromosomes[$chromosomeNumber]} = ();
 	    @allVariants = (); @allVariantsUnique = (); @allVariantsSorted = ();
 	}
     }
@@ -348,7 +348,7 @@ sub ReadDbFilesTabix {
 		    }
 		} 
 	    }
-	    print STDOUT "Finished Reading chromosome".$chromosomeNumber." in Infile: ".$dbFile{$dbFileNr}{'File'},"\n";   
+	    print STDOUT "Finished Reading chromosome ".$chromosomeNumber." in Infile: ".$dbFile{$dbFileNr}{'File'},"\n";   
 	}
     }
 }
@@ -564,79 +564,98 @@ sub ReadDbFiles {
 		if ( $_ =~/^(\S+)/) {
 		    
 		    my @lineElements = split($dbFile{$dbFileNr}{'Separator'},$_); #Splits columns on separator and loads line
-		    
-		    if ($nextChromosome && $lineElements[$dbFile{$dbFileNr}{'Chr_column'}] eq $nextChromosome) { #If next chrosome is found return (Since all numerically infiles are sorted this is ok)
 			
-			###VALIDATION
-			#print STDOUT "Finished Reading chromosomes$chromosome in Infile $dbFile{$dbFileNr}{'File'}","\n";
-			#$dbFilePos{$dbFileNr} = tell(DBF); # Save  binary position in file to enable seek when revisiting e.g. next chromsome
-			#print "Ended at pos $dbFilePos{$dbFileNr} in $dbFile{$dbFileNr}{'File'}\n";
-			close(DBF);
-			last;
-		    }
-		    if ( $lineElements[$dbFile{$dbFileNr}{'Chr_column'}] eq $chromosome) { #If chromosome number and chromosome in line match - go ahead and process
+		    #Depending on the number of column keys supplied by user in db master file . 
+		    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 1) {
 			
-                        #Depending on the number of column keys supplied by user in db master file . 
-			if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 1) {
+			if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }) { #If first key match to already processed first db file 
 			    
-			    if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }) { #If first key match to already processed first db file 
-
-				for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
-				    
-				    my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-				    $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
-				}
-			    }
-			}
-			if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 2) {
-
-			    if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }) {
-
-				for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
-				    
-				    my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-				    $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
-				}
-			    }
-			}
-			if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 3) {
-
-			    if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}) {
-
-				for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
-				    
-				    my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-				    $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
-				}
-			    }
-			}
-			if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 4) {
-			    
-			    if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}) {
-				for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
-				    
-				    my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-				    $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
-				}
-			    }
-			}
-			if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 5) {
-		
-			    if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[4] ]}) {
+			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
 				
-				for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
-				    
-				    my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-				    $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[4] ]}{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
-				}
+				my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
+				$allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
 			    }
 			}
+			if ($nextChromosome && $lineElements[$dbFile{$dbFileNr}{'Chr_column'}] eq $nextChromosome) { #If next chromosome is found return (Since all numerically infiles are sorted this is ok)
+			    
+			    &CheckChromosome(*DBF, \$dbFile{$dbFileNr}{'File'}, \$dbFileNr, \$lineElements[$dbFile{$dbFileNr}{'Chr_column'}]);
+			    close(DBF);
+			    last;
+			}
 		    }
-		} 	
-	    }
+		    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 2) {
+			
+			if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }) {
+			    
+			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
+				
+				my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
+				$allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
+			    }
+			}
+			if ($nextChromosome && $lineElements[$dbFile{$dbFileNr}{'Chr_column'}] eq $nextChromosome) { #If next chromosome is found return (Since all numerically infiles are sorted this is ok)
+		
+			    &CheckChromosome(*DBF, \$dbFile{$dbFileNr}{'File'}, \$dbFileNr, \$lineElements[$dbFile{$dbFileNr}{'Chr_column'}]);
+			    close(DBF);
+			    last;
+			}
+		    }
+		    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 3) {
+			
+			if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}) {
+
+			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
+				    
+				my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
+				$allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
+			    }
+			}
+			if ($nextChromosome && $lineElements[$dbFile{$dbFileNr}{'Chr_column'}] eq $nextChromosome) { #If next chromosome is found return (Since all numerically infiles are sorted this is ok)
+			
+			    &CheckChromosome(*DBF, \$dbFile{$dbFileNr}{'File'}, \$dbFileNr, \$lineElements[$dbFile{$dbFileNr}{'Chr_column'}]);
+			    close(DBF);
+			    last;
+			}
+		    }
+		    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 4) {
+			    
+			if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}) {
+			
+			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
+				    
+				my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
+				$allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
+			    }
+			}
+			if ($nextChromosome && $lineElements[$dbFile{$dbFileNr}{'Chr_column'}] eq $nextChromosome) { #If next chromosome is found return (Since all numerically infiles are sorted this is ok)
+			
+			    &CheckChromosome(*DBF, \$dbFile{$dbFileNr}{'File'}, \$dbFileNr, \$lineElements[$dbFile{$dbFileNr}{'Chr_column'}]);
+			    close(DBF);
+			    last;
+			}
+		    }
+		    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 5) {
+		
+			if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[4] ]}) {
+				
+			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
+				    
+				my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
+				$allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[4] ]}{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
+			    }
+			}
+			if ($nextChromosome && $lineElements[$dbFile{$dbFileNr}{'Chr_column'}] eq $nextChromosome) { #If next chromosome is found return (Since all numerically infiles are sorted this is ok)
+			
+			    &CheckChromosome(*DBF, \$dbFile{$dbFileNr}{'File'}, \$dbFileNr, \$lineElements[$dbFile{$dbFileNr}{'Chr_column'}]);
+			    close(DBF);
+			    last;
+			}
+		    }
+		}
+	    } 	
 	}
 	close(DBF);
-	print STDOUT "Finished Reading chromosome".$chromosome." in Infile: ".$dbFile{$dbFileNr}{'File'},"\n";
+	print STDOUT "Finished Reading chromosome ".$chromosome." in Infile: ".$dbFile{$dbFileNr}{'File'},"\n";
     }
     return;
 }
@@ -731,21 +750,6 @@ sub ReadInfileSelect {
 				
 				my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
 				$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]; #Collect all columns to enable print later
-				#if (scalar(@parsedColumns) > 1) { #X;Y entry i.e. overlapping gene
-				    
-				 #   if ($lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]=~/$parsedColumns[ $parsedColumnsCounter ]/) { #Db infile contains gene of interest
-					
-				#	$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $parsedColumns[ $parsedColumnsCounter ]; #Replace with only entry belonging to gene of interest
-				 #   }
-				  #  else { #No overlapping genes 
-					
-				#	$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]; #Collect all columns to enable print later
-				 #  }
-				#}
-				#else { #No overlapping genes 
-			
-				#$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]; #Collect all columns to enable print later
-				#}
 			    }
 			    if ( ($selectedSwithc{$dbFileNr} == 1) &&  ($dbWroteSwitch == 0) ) { #Print record only once to avoid duplicates
 
@@ -760,7 +764,6 @@ sub ReadInfileSelect {
 			    if ( ($selectedSwithc{$dbFileNr} > 0) && ($selectedSwithc{$dbFileNr} == scalar(@parsedColumns)) ) { #Only Hit in Db file and no other genes outside the Db.
 				
 				$writeTracker{$dbFileNr}++;
-
 			    }
 			}
 		    }    
@@ -2027,51 +2030,60 @@ sub ReadInfileMerge {
 
 	    my @lineElements = split($dbFile{$DbFileNumber}{'Separator'},$_); #Loads line
 
-	    if ($nextChromosome && $lineElements[$dbFile{$DbFileNumber}{'Chr_column'}] eq $nextChromosome) { #If next chromosome is found return (Since all numerically infiles are sorted this is ok)
-
-		print STDOUT "Finished Reading chromosome".$chromosomeNumber." in Infile ".$DbFileName,"\n";
-		$dbFilePos{$DbFileNumber} = tell(RIFM); # Save  binary position in file to enable seek when revisiting e.g. next chromosome
-		print STDERR "Ended at position ".$dbFilePos{$DbFileNumber}." in ".$dbFile{$DbFileNumber}{'File'}, "\n";
-		close(RIFM);
-		return;
+	    if (scalar( @{$dbFile{0}{'Column_Keys'}}) == 1) {
+		    
+		for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) {
+			
+		    my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
+		    $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];
+		}
+		push (@{$unSorted{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}}, $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]);
+		if ( ($nextChromosome) && ($lineElements[$dbFile{$DbFileNumber}{'Chr_column'}] eq $nextChromosome) ) { #If next chromosome is found return (Since all numerically infiles are sorted this is ok)
+		    
+		    &CheckChromosome(*RIFM, \$DbFileName, \$DbFileNumber, \$chromosomeNumber);
+		    return;
+		}
 	    }
-	    if ($lineElements[$dbFile{$DbFileNumber}{'Chr_column'}] eq $chromosomeNumber) { #Only correct chromosome
-
-		if (scalar( @{$dbFile{0}{'Column_Keys'}}) == 1) {
+	    if (scalar( @{$dbFile{0}{'Column_Keys'}}) == 2) {
+		
+		for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) {
 		    
-		    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) {
-			
-			my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
-			$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];
-		    }
-		    push (@{$unSorted{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}}, $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]);
+		    my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
+		    $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];
 		}
-		if (scalar( @{$dbFile{0}{'Column_Keys'}}) == 2) {
+		push (@{$unSorted{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}}, $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]);
+		if ( ($nextChromosome) && ($lineElements[$dbFile{$DbFileNumber}{'Chr_column'}] eq $nextChromosome) ) { #If next chromosome is found return (Since all numerically infiles are sorted this is ok)
 		    
-		    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) {
-			
-			my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
-			$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];
-		    }
-		    push (@{$unSorted{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}}, $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]);
+		    &CheckChromosome(*RIFM, \$DbFileName, \$DbFileNumber, \$chromosomeNumber);
+		    return;
 		}
-		if (scalar( @{$dbFile{0}{'Column_Keys'}}) == 3) {
-
-		    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) {
-			
-			my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
-			$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];	    
-		    }
-		    push (@{$unSorted{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}}, $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]);
-		} 
-		if (scalar( @{$dbFile{0}{'Column_Keys'}}) == 4) {
+	    }
+	    if (scalar( @{$dbFile{0}{'Column_Keys'}}) == 3) {
+		
+		for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) {
 		    
-		    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) {
-			
-			my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
-			$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[3] ]}{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];
-		    }
-		    push (@{$unSorted{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}}, $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]); 	
+		    my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
+		    $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];	    
+		}
+		push (@{$unSorted{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}}, $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]);
+		if ( ($nextChromosome) && ($lineElements[$dbFile{$DbFileNumber}{'Chr_column'}] eq $nextChromosome) ) { #If next chromosome is found return (Since all numerically infiles are sorted this is ok)
+		    
+		    &CheckChromosome(*RIFM, \$DbFileName, \$DbFileNumber, \$chromosomeNumber);
+		    return;
+		}
+	    } 
+	    if (scalar( @{$dbFile{0}{'Column_Keys'}}) == 4) {
+		
+		for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) {
+		    
+		    my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
+		    $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[3] ]}{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];
+		}
+		push (@{$unSorted{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}}, $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]); 	
+		if ( ($nextChromosome) && ($lineElements[$dbFile{$DbFileNumber}{'Chr_column'}] eq $nextChromosome) ) { #If next chromosome is found return (Since all numerically infiles are sorted this is ok)
+		    
+		    &CheckChromosome(*RIFM, \$DbFileName, \$DbFileNumber, \$chromosomeNumber);
+		    return;
 		}
 	    }
 	}
@@ -2124,53 +2136,63 @@ sub ReadDbFilesMerge {
 		
 		my @lineElements = split($dbFile{$dbFileNr}{'Separator'},$_); #Splits columns on separator and loads line
 		
-		if ($nextChromosome && $lineElements[$dbFile{$dbFileNr}{'Chr_column'}] eq $nextChromosome) { #If next chromosome is found return (Since all numerically infiles are sorted this is ok)
+		#Depending on the number of column keys supplied by user in db master file . 
+		if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 1) {
 		    
-		    $dbFilePos{$dbFileNr} = tell(DBFM); # Save  binary position in file to enable seek when revisiting e.g. next chromsome
-		    print STDERR "Ended at position ".$dbFilePos{$dbFileNr}." in ".$dbFile{$dbFileNr}{'File'}, "\n";		    
-		    close(DBFM);
-		    last;
-		}
-		if ( $lineElements[$dbFile{$dbFileNr}{'Chr_column'}] eq $chromosomeNumber) { #If chromosome number and chromosome in line match - go ahead and process
-		    
-		    #Depending on the number of column keys supplied by user in db master file . 
-		    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 1) {
-		       
-			for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
-			    
-			    my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-			    $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
-			}
+		    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
+			
+			my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
+			$allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
 		    }
-		    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 2) {
+		    if ( ($nextChromosome) && ($lineElements[$dbFile{$dbFileNr}{'Chr_column'}] eq $nextChromosome) ) { #If next chromosome is found return (Since all numerically infiles are sorted this is ok)
+			
+			&CheckChromosome(*RIFM, \$dbFile{$dbFileNr}{'File'}, \$dbFileNr, \$chromosomeNumber);
+			last;
+		    }
+		}
+		if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 2) {
 
-			for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
+		    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
 			    
-			    my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-			    $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{$$columnIdRef}= $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
-			}
+			my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
+			$allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{$$columnIdRef}= $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
 		    }
-		    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 3) {
+		    if ( ($nextChromosome) && ($lineElements[$dbFile{$dbFileNr}{'Chr_column'}] eq $nextChromosome) ) { #If next chromosome is found return (Since all numerically infiles are sorted this is ok)
 			
-			for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
-			    
-			    my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-			    $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{$$columnIdRef}= $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
-			}
-		    }
-		    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 4) {
-			
-			for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
-			    
-			    my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-			    $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{$$columnIdRef}= $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
-			    
-			}
-			push (@{$unSorted{$lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ]}}, $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ]);
+			&CheckChromosome(*RIFM, \$dbFile{$dbFileNr}{'File'}, \$dbFileNr, \$chromosomeNumber);
+			last;
 		    }
 		}
-	    } 	
-	}
+		if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 3) {
+		    
+		    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
+			    
+			my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
+			$allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{$$columnIdRef}= $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
+		    }
+		    if ( ($nextChromosome) && ($lineElements[$dbFile{$dbFileNr}{'Chr_column'}] eq $nextChromosome) ) { #If next chromosome is found return (Since all numerically infiles are sorted this is ok)
+			
+			&CheckChromosome(*RIFM, \$dbFile{$dbFileNr}{'File'}, \$dbFileNr, \$chromosomeNumber);
+			last;
+		    }
+		}
+		if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 4) {
+		    
+		    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
+			
+			my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
+			$allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{$$columnIdRef}= $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
+			
+		    }
+		    push (@{$unSorted{$lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ]}}, $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ]);
+		    if ( ($nextChromosome) && ($lineElements[$dbFile{$dbFileNr}{'Chr_column'}] eq $nextChromosome) ) { #If next chromosome is found return (Since all numerically infiles are sorted this is ok)
+			
+			&CheckChromosome(*RIFM, \$dbFile{$dbFileNr}{'File'}, \$dbFileNr, \$chromosomeNumber);
+			last;
+		    }
+		}
+	    }
+	} 	
 	close(DBFM);
 	print STDOUT "Finished Reading chromsome".$chromosomeNumber." in Infile: ".$dbFile{$dbFileNr}{'File'},"\n";
     }
@@ -2336,35 +2358,18 @@ sub WriteAllVariantsMerge {
     print STDOUT "Finished Writing Master file for: chromsome".$chromosome,"\n";
 }
 
+sub CheckChromosome {
+##Save binary position in file, close it and croak
+
+    my $FILEHANDLE = $_[0];
+    my $DbFileNameRef = $_[1];
+    my $DbFileNumberRef = $_[2];
+    my $chromosomeNumberRef = $_[3];
+
+    $dbFilePos{$$DbFileNumberRef} = tell($FILEHANDLE); # Save  binary position in file to enable seek when revisiting e.g. next chromosome
+    close($FILEHANDLE);
+    #print STDOUT "Finished Reading chromosome ".$$chromosomeNumberRef." in Infile ".$$DbFileNameRef,"\n";
+}
 
 ###Decommissoned###
-sub TabixQuery {
-##Returns 
 
-    my $chromosomeRef = $_[0];
-    my $chromosomeStartRef = $_[1];
-    my $chromosomeStopRef = $_[2];
-    my $arrayColumnsRef = $_[3];    
-    my $tabix = $_[4];
-    my $dbFileNrRef = $_[5];
-
-print $$chromosomeRef, "\t", $$chromosomeStartRef, "\t", $$chromosomeStopRef, "\n";
-my $var = $tabix->read(
-
-  $tabix->query( $$chromosomeRef, $$chromosomeStartRef, $$chromosomeStopRef) 
-
-); #Starts from position but not with the actual position so need to subtrackt -1 from start
-    if (defined($var)) {
-	print $var, "\n";
-	my @tabixReturnArray = split('\t', $var);
-	my @array;
-	if ( $allVariants{$$chromosomeRef}{$$chromosomeStartRef}{$$chromosomeStopRef}{$tabixReturnArray[ $dbFile{$$dbFileNrRef}{'Column_Keys'}[3] ]}) {
-	
-	    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$$dbFileNrRef}{'Column_To_Extract'}});$extractColumnsCounter++) {
-		
-		my $columnIdRef = \($$dbFileNrRef."_".$dbFile{$$dbFileNrRef}{'Column_To_Extract'}[$extractColumnsCounter]);
-		$allVariants{$$chromosomeRef }{$$chromosomeStartRef}{$$chromosomeStopRef }{$tabixReturnArray[ $dbFile{$$dbFileNrRef}{'Column_Keys'}[3] ]}{$$columnIdRef} = $tabixReturnArray[ $dbFile{$$dbFileNrRef}{'Column_To_Extract'}[$extractColumnsCounter] ];
-	    }
-	}
-    }
-}
