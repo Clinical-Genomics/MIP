@@ -2523,7 +2523,7 @@ sub GATKVariantReCalibration {
     for (my $modeCounter=0;$modeCounter<scalar(@modes);$modeCounter++) { #SNP and INDEL will be recalibrated successively in the same file because when you specify eg SNP mode, the indels are emitted without modification, and vice-versa. Exome and Rapid will be processed using mode BOTH since there are to few INDELS to use in the recalibration model even though using 30 exome BAMS in Haplotypecaller step. 
 
 	print $FILEHANDLE "\n\n#GATK VariantRecalibrator","\n\n";	
-	print $FILEHANDLE "java -Xmx4g ";
+	print $FILEHANDLE "java -Xmx6g ";
 	
 	if ($scriptParameter{'javaUseLargePages'} ne "no") {
 	    
@@ -2590,7 +2590,7 @@ sub GATKVariantReCalibration {
 	
 	my $applyRecalibrationInFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/intermediary";
 	
-	print $FILEHANDLE "java -Xmx3g ";
+	print $FILEHANDLE "java -Xmx6g ";
 
 	if ($scriptParameter{'javaUseLargePages'} ne "no") {
 	    
@@ -4831,10 +4831,9 @@ sub BuildPTCHSMetricPreRequisites {
 		print $FILEHANDLE "INPUT=".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5 ";
 		print $FILEHANDLE "OUTPUT=".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5_".$referenceFileEndings{'exomeTargetBedInfileLists'}." ", "\n\n";
 		    
-		print $FILEHANDLE "[ -s ".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEnding.$referenceFileEndings{'exomeTargetBedInfileLists'}." ] "; #Check file exists and is larger than 0
-		print $FILEHANDLE "&& rm ".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5_".$referenceFileEndings{'exomeTargetBedInfileLists'}." "; #If other processes already has created file, remove temp file
-		print $FILEHANDLE "|| "; #File has not been created by other processes
-		print $FILEHANDLE "mv ".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5_".$referenceFileEndings{'exomeTargetBedInfileLists'}." ".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEnding.$referenceFileEndings{'exomeTargetBedInfileLists'}, "\n\n"; #Move file in place
+		my $intendedFilePathRef = \($scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEnding.$referenceFileEndings{'exomeTargetBedInfileLists'});
+		my $temporaryFilePathRef = \($scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5_".$referenceFileEndings{'exomeTargetBedInfileLists'});    
+		&PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
 	    }
 	    if ( (defined($sampleIDBuildSwitchPadded) && ($sampleIDBuildSwitchPadded eq 1)) || (defined($sampleIDBuildSwitchPaddedInterval) && ($sampleIDBuildSwitchPaddedInterval eq 1)) ) {
 		
@@ -4844,10 +4843,9 @@ sub BuildPTCHSMetricPreRequisites {
 		print $FILEHANDLE "INPUT=".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5 ";
 		print $FILEHANDLE "OUTPUT=".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5".$referenceFileEndings{'exomeTargetPaddedBedInfileLists'}." ", "\n\n";
 		
-		print $FILEHANDLE "[ -s ".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEnding.$referenceFileEndings{'exomeTargetPaddedBedInfileLists'}." ] "; #Check file exists and is larger than 0
-		print $FILEHANDLE "&& rm ".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5".$referenceFileEndings{'exomeTargetPaddedBedInfileLists'}." "; #If other processes already has created file, remove temp file
-		print $FILEHANDLE "|| "; #File has not been created by other processes
-		print $FILEHANDLE "(mv ".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5".$referenceFileEndings{'exomeTargetPaddedBedInfileLists'}." ".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEnding.$referenceFileEndings{'exomeTargetPaddedBedInfileLists'}."; ";
+		my $intendedFilePathRef = \($scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEnding.$referenceFileEndings{'exomeTargetPaddedBedInfileLists'});
+		my $temporaryFilePathRef = \($scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5".$referenceFileEndings{'exomeTargetPaddedBedInfileLists'});    
+		&PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
 		
 		if (defined($sampleIDBuildSwitchPaddedInterval) && ($sampleIDBuildSwitchPaddedInterval eq 1)) {
 		    
@@ -4857,7 +4855,7 @@ sub BuildPTCHSMetricPreRequisites {
 		    print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEnding.$referenceFileEndings{'GATKTargetPaddedBedIntervalLists'}; #interval_list file
 		}
 		
-		print $FILEHANDLE ")", "\n\n"; #Move file in place
+		print $FILEHANDLE "\n\n";
 	    }
 	    if (defined($sampleIDBuildFile)) {
 		
@@ -4924,10 +4922,9 @@ sub BuildBwaPreRequisites {
 	
 	for (my $fileEndingsCounter=0;$fileEndingsCounter<scalar(@bwaBuildReferenceFileEndings);$fileEndingsCounter++) { #All fileEndings
 	    
-	    print $FILEHANDLE "[ -s ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'bwaBuildReference'}.$bwaBuildReferenceFileEndings[$fileEndingsCounter]." ] "; #Check file exists and is larger than 0
-	    print $FILEHANDLE "&& rm ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'bwaBuildReference'}."_".$randomInteger.$bwaBuildReferenceFileEndings[$fileEndingsCounter]." "; #If other processes already has created file, remove temp file
-	    print $FILEHANDLE "|| "; #File has not been created by other processes
-	    print $FILEHANDLE "mv ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'bwaBuildReference'}."_".$randomInteger.$bwaBuildReferenceFileEndings[$fileEndingsCounter]." ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'bwaBuildReference'}.$bwaBuildReferenceFileEndings[$fileEndingsCounter], "\n\n"; #Move file in place
+	    my $intendedFilePathRef = \($scriptParameter{'referencesDir'}."/".$scriptParameter{'bwaBuildReference'}.$bwaBuildReferenceFileEndings[$fileEndingsCounter]);
+	    my $temporaryFilePathRef = \($scriptParameter{'referencesDir'}."/".$scriptParameter{'bwaBuildReference'}."_".$randomInteger.$bwaBuildReferenceFileEndings[$fileEndingsCounter]);    
+	    &PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
 	}
 	$parameter{'bwaBuildReference'}{'buildFile'} = 0; #Ensure that this subrutine is only executed once
     }
@@ -4964,11 +4961,9 @@ sub BuildMosaikAlignPreRequisites {
 	print $FILEHANDLE "-ga ".$humanGenomeReferenceSource.$humanGenomeReferenceVersion." "; #the genome assembly ID
 	print $FILEHANDLE "-oa ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikAlignReference'}."_".$randomInteger, "\n\n";
 
-	print $FILEHANDLE "[ -s ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikAlignReference'}." ] "; #Check file exists and is larger than 0
-	print $FILEHANDLE "&& rm ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikAlignReference'}."_".$randomInteger." "; #If other processes already has created file, remove temp file
-	print $FILEHANDLE "|| "; #File has not been created by other processes
-	print $FILEHANDLE "mv ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikAlignReference'}."_".$randomInteger." ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikAlignReference'}, "\n\n"; #Move file in place
-
+	my $intendedFilePathRef = \($scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikAlignReference'});
+	my $temporaryFilePathRef = \($scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikAlignReference'}."_".$randomInteger);    
+	&PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
     }
     if ($parameter{'mosaikJumpDbStub'}{'buildFile'} eq 1) {
 
@@ -4984,30 +4979,20 @@ sub BuildMosaikAlignPreRequisites {
 	print $FILEHANDLE "-hs 15 "; #the hash size
 	print $FILEHANDLE "-mem 24 "; #the amount memory used when sorting hashes
 	print $FILEHANDLE "-out ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikJumpDbStub'}."_".$randomInteger, "\n\n"; #Mosaik JumpDbStub for the output filenames
-	
-##Meta
-	print $FILEHANDLE "[ -s ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikJumpDbStub'}."_meta.jmp ] "; #Check file exists and is larger than 0
-	print $FILEHANDLE "&& rm ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikJumpDbStub'}."_".$randomInteger."_meta.jmp "; #If other processes already has created file, remove temp file
-	print $FILEHANDLE "|| "; #File has not been created by other processes
-	print $FILEHANDLE "mv ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikJumpDbStub'}."_".$randomInteger."_meta.jmp ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikJumpDbStub'}."_meta.jmp ", "\n\n"; #Move file in place
-	
-##Keys
-	print $FILEHANDLE "[ -s ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikJumpDbStub'}."_keys.jmp ] "; #Check file exists and is larger than 0
-	print $FILEHANDLE "&& rm ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikJumpDbStub'}."_".$randomInteger."_keys.jmp "; #If other processes already has created file, remove temp file
-	print $FILEHANDLE "|| "; #File has not been created by other processes
-	print $FILEHANDLE "mv ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikJumpDbStub'}."_".$randomInteger."_keys.jmp ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikJumpDbStub'}."_keys.jmp ", "\n\n"; #Move file in place
-	
-##Positions
-	print $FILEHANDLE "[ -s ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikJumpDbStub'}."_positions.jmp ] "; #Check file exists and is larger than 0
-	print $FILEHANDLE "&& rm ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikJumpDbStub'}."_".$randomInteger."_positions.jmp "; #If other processes already has created file, remove temp file
-	print $FILEHANDLE "|| "; #File has not been created by other processes
-	print $FILEHANDLE "mv ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikJumpDbStub'}."_".$randomInteger."_positions.jmp ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikJumpDbStub'}."_positions.jmp ", "\n\n"; #Move file in place
+
+	for (my $fileEndingsCounter=0;$fileEndingsCounter<scalar(@mosaikJumpDbStubFileEndings);$fileEndingsCounter++) {
+
+	    my $intendedFilePathRef = \($scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikJumpDbStub'}.$mosaikJumpDbStubFileEndings[$fileEndingsCounter]);
+	    my $temporaryFilePathRef = \($scriptParameter{'referencesDir'}."/".$scriptParameter{'mosaikJumpDbStub'}."_".$randomInteger.$mosaikJumpDbStubFileEndings[$fileEndingsCounter]);    
+	    &PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
+	}	
 	
 	print $FILEHANDLE "rm -rf /scratch/mosaik_tmp", "\n\n"; #Cleaning up temp directory
     }
     close($FILEHANDLE);
     
     if ( ($scriptParameter{"p".$program} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+
 	&FIDSubmitJob(0, $familyID, 6, $parameter{"p".$program}{'chain'}, $fileName, 0);
     }
 }
