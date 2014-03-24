@@ -459,6 +459,7 @@ my %supportedCaptureKits = (
     'Latest' => "Agilent_SureSelect.V5.GenomeReferenceSourceVersion_targets.bed",
     );
 
+my %plinkPedigree; #Holds allowed entries and positions for Plink pedigree files
 my %supportedCosmidReferences; #References supported as downloads from Cosmid. Hash is populated after user options are processed
 
 my %referenceFileEndings = (
@@ -471,7 +472,7 @@ my %referenceFileEndings = (
     );
 
 ##Set supported annovar table name filtering options
-my @annovarSupportedTableNames = ("refGene", "knownGene", "ensGene", "mce46way", "gerp++elem", "segdup", "gwascatalog", "tfbs", "mirna", "snp137", "snp135", "snp132", "snp131", "snp130", "snp129", "snp137NonFlagged", "snp135NonFlagged", "snp132NonFlagged", "snp131NonFlagged", "snp130NonFlagged", "1000g2012apr_all", "1000g2012apr_amr", "1000g2012apr_eur", "1000g2012apr_asn", "1000g2012apr_afr", "1000g2012feb_all", "esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_ma", "ljb2_fathmm", "ljb2_siphy", "ljb2_lrt", "ljb_all", "ljb2_gerp++", "ljb2_phylop"); #Used to print list of supported table names
+my @annovarSupportedTableNames = ("refGene", "knownGene", "ensGene", "mce46way", "gerp++elem", "segdup", "gwascatalog", "tfbs", "mirna", "snp137", "snp135", "snp132", "snp131", "snp130", "snp129", "snp137NonFlagged", "snp135NonFlagged", "snp132NonFlagged", "snp131NonFlagged", "snp130NonFlagged", "1000g2012apr_all", "1000g2012apr_amr", "1000g2012apr_eur", "1000g2012apr_asn", "1000g2012apr_afr", "1000g2012feb_all", "esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_ma", "ljb2_fathmm", "ljb2_siphy", "ljb2_lrt", "ljb_all", "ljb2_gerp++", "ljb2_phylop", "caddgt20", "caddgt10"); #Used to print list of supported table names
 
 my %annovarTables;
 
@@ -570,7 +571,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'pANVAR|pAnnovar:n' => \$parameter{'pAnnovar'}{'value'}, #Performs annovar filter gene, region and filter analysis
 	   'anvarpath|annovarPath:s'  => \$parameter{'annovarPath'}{'value'}, #path to annovar script dir
 	   'anvargbv|annovarGenomeBuildVersion:s'  => \$parameter{'annovarGenomeBuildVersion'}{'value'},
-	   'anvartn|annovarTableNames:s'  => \@annovarTableNames, #Comma sepatated list
+	   'anvartn|annovarTableNames:s'  => \@annovarTableNames, #Comma separated list
 	   'anvarstn|annovarSupportedTableNames:n' => \$parameter{'annovarSupportedTableNames'}{'value'}, #Generates a list of supported table names
 	   'anvarmafth|annovarMAFThreshold:n' => \$parameter{'annovarMAFThreshold'}{'value'},
 	   'pMerge_anvar|pMergeAnnotatedVariants:n' => \$parameter{'pMergeAnnotatedVariants'}{'value'}, #Merges annovar analysis results to one master file
@@ -606,6 +607,11 @@ if($version) {
 }
 print STDOUT "MIP Version: ".$MipVersion, "\n";
 
+if ($parameter{'annovarSupportedTableNames'}{'value'} eq 1) {
+
+    &PrintSupportedAnnovarTableNames();
+}
+
 if ($parameter{'configFile'}{'value'} ne "nocmdinput") { #No input from cmd
 
     %scriptParameter = &LoadYAML($parameter{'configFile'}{'value'}); #Load parameters from configfile
@@ -617,18 +623,6 @@ if ($parameter{'configFile'}{'value'} ne "nocmdinput") { #No input from cmd
 
 	&UpdateYAML($orderParameterElement, $scriptParameter{'clusterConstantPath'}, $scriptParameter{'analysisConstantPath'}, $scriptParameter{'analysisType'}, $parameter{'familyID'}{'value'}, $scriptParameter{'aligner'} );
     }
-}
-
-if ($parameter{'annovarSupportedTableNames'}{'value'} eq 1) {
-
-    print STDOUT "\nThese Annovar databases are supported by MIP:\n";
-
-    foreach my $annovarSupportedTableName (@annovarSupportedTableNames) {
-
-	print STDOUT $annovarSupportedTableName, "\n";
-    }
-    print STDOUT "\n";
-    exit;
 }
 
 foreach my $orderParameterElement (@orderParameters) { #Populate scriptParameters{'parameterName'} => 'Value'
@@ -668,6 +662,13 @@ foreach my $orderParameterElement (@orderParameters) { #Populate scriptParameter
 	if (defined($scriptParameter{'mergeAnnotatedVariantsTemplateFile'})) {
 
 	    &CheckTemplateFilesPaths(\($scriptParameter{'referencesDir'}."/".$scriptParameter{'mergeAnnotatedVariantsTemplateFile'}), "mergeAnnotatedVariantsTemplateFile")	    
+	}
+    }
+    if ($orderParameterElement eq "ImportantDbTemplate") { #Check that paths in master template exists
+    
+	if (defined($scriptParameter{'ImportantDbTemplate'})) {
+	
+	    &CheckTemplateFilesPaths(\($scriptParameter{'referencesDir'}."/".$scriptParameter{'ImportantDbTemplate'}), "ImportantDbTemplate")	    
 	}
     }
     if ($orderParameterElement eq "GATKHaploTypeCallerRefBAMInfile") { #Check that paths in BAMInfile exists
@@ -5222,6 +5223,8 @@ sub ReadPlinkPedigreeFile {
     my $userExomeTargetPaddedBedInfileListSwitch = &CheckUserInfoArrays(\@exomeTargetPaddedBedInfileLists, "exomeTargetPaddedBedInfileLists");
     my $userExomeTargetPaddedBedIntervalListSwitch = &CheckUserInfoArrays(\@GATKTargetPaddedBedIntervalLists, "GATKTargetPaddedBedIntervalLists");
 
+    &DefinePlinkPedigree(); #Loads allowed entries and positons to be checked
+
     open(PEDF, "<".$fileName) or die "Can't open ".$fileName.":$!, \n";    
      
     while (<PEDF>) {
@@ -5245,19 +5248,25 @@ sub ReadPlinkPedigreeFile {
 	    
 ##Need to parse familyID and sampleID separately since these have not been set yet
 	    if ($lineInfo[0] =~/\S+/) { #familyID
+
 		$familyID = $lineInfo[0];
 	    }
 	    else {
+
 		print STDERR "File: ".$fileName." at line ".$.." cannot find FamilyID in column 1\n";
 		exit;
 	    }
 	    if ($lineInfo[1] =~/\S+/) { #sampleID
+
 		$sampleID = $lineInfo[1];		
+
 		if ($userSampleIDsSwitch == 0) {
+
 		    push(@sampleIDs, $lineInfo[1]); #Save sampleid info
 		}
 	    }
 	    else {
+
 		print STDERR "File: ".$fileName." at line ".$.." cannot find SampleID in column 2\n";
 		exit;
 	    }
@@ -5265,6 +5274,16 @@ sub ReadPlinkPedigreeFile {
 	    for (my $sampleElementsCounter=0;$sampleElementsCounter<scalar(@pedigreeFileElements);$sampleElementsCounter++) { #all pedigreeFileElements
 		
 		if ( defined($lineInfo[$sampleElementsCounter]) && ($lineInfo[$sampleElementsCounter] =~/\S+/) ) { #Check that we have an non blank entry
+		    
+		    my $foundElement =  &CheckEntryHashofArray(\%plinkPedigree, \$sampleElementsCounter, \$lineInfo[$sampleElementsCounter]);
+
+		    if ($foundElement == 1) { #Invalid element found in file
+
+			print STDERR "\nFound illegal element: '".$lineInfo[$sampleElementsCounter]."' in column '".$sampleElementsCounter."' in pedigree file: '".$fileName."' at line '".$.."'\n";
+			print STDERR "\nPlease correct the entry before analysis.\n";
+			print STDERR "\nMIP: Aborting run.\n\n";
+			exit;
+		    }
 		    
 		    my @elementInfo = split(";", $lineInfo[$sampleElementsCounter]); #Split element (if required)
 		    
@@ -5310,6 +5329,14 @@ sub ReadPlinkPedigreeFile {
     }
     print STDOUT "Read pedigree file: ".$fileName, "\n";
     close(PEDF);
+}
+
+sub DefinePlinkPedigree {
+##Defines which entries are allowed and links them to position
+
+    $plinkPedigree{4} = [1, 2, "other"]; #Sex
+    $plinkPedigree{5} = [-9, 0, 1, 2]; #Phenotype
+
 }
 
 sub AddToJobID {
@@ -6097,8 +6124,7 @@ sub AddToScriptParameter {
 		    }
 		    elsif ($parameterName eq "annovarTableNames") {
 			
-			@annovarTableNames = ("refGene", "mce46way", "gerp++elem", "segdup", "tfbs", "mirna", "snp137NonFlagged", "1000g2012apr_all", "esp6500si_all", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_lrt", "ljb2_gerp++","ljb2_phylop"); #Set default annovar table names
-			&EnableArrayParameter(\@inFilesDirs, \$parameterName);
+			&EnableArrayParameter(\@annovarTableNames, \$parameterName);
 		    }
 		    elsif ($parameterName eq "pedigreeFile") { #Must come after arrays that can be populated from pedigree file to not overwrite user cmd input 
 
@@ -6200,24 +6226,31 @@ sub AddToScriptParameter {
 			
 			for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@annovarTableNames);$tableNamesCounter++) { #All AnnovarTables
 		 
-			    if (defined($annovarTables{$annovarTableNames[$tableNamesCounter]}{'file'})) {
+			    if (defined($annovarTables{$annovarTableNames[$tableNamesCounter]})) { #Supported Annovar database
+
+				if (defined($annovarTables{$annovarTableNames[$tableNamesCounter]}{'file'})) {
+				    
+				    for (my $filesCounter=0;$filesCounter<scalar(@{$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'file'}});$filesCounter++) { #All annovarTables file(s), some tables have multiple files downloaded from the same call
+					$intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'file'}[$filesCounter]);
+					&CheckExistance($intendedFilePathRef, \$annovarTableNames[$tableNamesCounter], "f");
+				    }
+				}
+				elsif (defined($annovarTables{ $annovarTableNames[$tableNamesCounter] }{'ucscAlias'})){
+				    
+				    $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'ucscAlias'}.".txt");
+				    &CheckExistance($intendedFilePathRef, \$annovarTableNames[$tableNamesCounter], "f");
+				}
+				else {
 				
-				for (my $filesCounter=0;$filesCounter<scalar(@{$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'file'}});$filesCounter++) { #All annovarTables file(s), some tables have multiple files downloaded from the same call
-				      $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'file'}[$filesCounter]);
-				     &CheckExistance($intendedFilePathRef, \$annovarTableNames[$tableNamesCounter], "f");
+				    $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTableNames[$tableNamesCounter].".txt");
+				    &CheckExistance($intendedFilePathRef, \$annovarTableNames[$tableNamesCounter], "f");
 				}
 			    }
-			    elsif (defined($annovarTables{ $annovarTableNames[$tableNamesCounter] }{'ucscAlias'})){
+			    else { #Annovar Table not supported by MIP
 				
-				$intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'ucscAlias'}.".txt");
-				&CheckExistance($intendedFilePathRef, \$annovarTableNames[$tableNamesCounter], "f");
+				print STDOUT "\nNOTE: You supplied Annovar database: ".$annovarTableNames[$tableNamesCounter]." which is not supported by MIP. MIP can only process supported annovar databases\n";
+				&PrintSupportedAnnovarTableNames();
 			    }
-			    else {
-				
-				$intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTableNames[$tableNamesCounter].".txt");
-				&CheckExistance($intendedFilePathRef, \$annovarTableNames[$tableNamesCounter], "f");
-			    }
-			    
 			}
 		    }
 		    elsif ($parameterName eq "configFile") {  #Do nothing since file existence is checked by &LoadYAML
@@ -7537,7 +7570,7 @@ sub DefineAnnovarTables {
 
     my @annovarTablesGeneAnno = ("refGene", "knownGene", "ensGene"); #Tables using annotation option "geneanno"
     my @annovarTablesRegionAnno = ("mce46way", "gerp++elem", "segdup", "tfbs", "mirna"); #Tables using annotation option "regionanno"
-    my @annovarTablesFilter = ("snp137", "snp135", "snp132", "snp131", "snp130", "snp129", "snp137NonFlagged", "snp135NonFlagged", "snp132NonFlagged", "snp131NonFlagged", "snp130NonFlagged", "1000g2012apr_all", "1000g2012apr_amr", "1000g2012apr_eur", "1000g2012apr_asn", "1000g2012apr_afr", "1000g2012feb_all", "esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_ma", "ljb2_fathmm", "ljb2_siphy", "ljb2_lrt", "ljb_all", "ljb2_gerp++", "ljb2_phylop"); #Tables using annotation option "filter"
+    my @annovarTablesFilter = ("snp137", "snp135", "snp132", "snp131", "snp130", "snp129", "snp137NonFlagged", "snp135NonFlagged", "snp132NonFlagged", "snp131NonFlagged", "snp130NonFlagged", "1000g2012apr_all", "1000g2012apr_amr", "1000g2012apr_eur", "1000g2012apr_asn", "1000g2012apr_afr", "1000g2012feb_all", "esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_ma", "ljb2_fathmm", "ljb2_siphy", "ljb2_lrt", "ljb_all", "ljb2_gerp++", "ljb2_phylop", "caddgt20", "caddgt10"); #Tables using annotation option "filter"
     my @annovarTablesUrlUcsc = ("mce46way", "segdup", "tfbs", "mirna"); #Tables using urlAlias "ucsc"
     my @annovarGenericFiltering = ("esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105"); #Tables using generic option
     my @annovarGenericFiles = ($annovarGenomeBuildVersion."_esp6500si_all.txt", $annovarGenomeBuildVersion."_esp6500_all.txt", $annovarGenomeBuildVersion."_esp6500_aa.txt", $annovarGenomeBuildVersion."_esp6500_ea.txt", $annovarGenomeBuildVersion."_esp5400_all.txt", $annovarGenomeBuildVersion."_esp5400_aa.txt", $annovarGenomeBuildVersion."_esp5400_ea.txt", $annovarGenomeBuildVersion."_clinvar_20131105.txt"); #Generic table files
@@ -7757,6 +7790,35 @@ sub CheckSupportedFileEnding {
 	
 	print STDERR "\nThe supplied file: ".$$fileNameRef." for parameter '".$$parameterNameRef."' does not have the supported file ending '".$$fileEndingRef."'.", "\n\n";
 	exit;
+    }
+}
+
+sub PrintSupportedAnnovarTableNames {
+##Print the by MIP supported Annovar Table names 
+    
+    print STDOUT "\nThese Annovar databases are supported by MIP:\n";
+    
+    foreach my $annovarSupportedTableName (@annovarSupportedTableNames) {
+	
+	print STDOUT $annovarSupportedTableName, "\n";
+    }
+    print STDOUT "\n";
+    exit;
+}
+
+sub CheckEntryHashofArray {
+##Test element for being part of hash of array at supplied key. Return "1" if element is not part of array 
+
+    my $hashRef = $_[0];
+    my $keyRef = $_[1];
+    my $elementRef = $_[2];
+
+    if (defined($$hashRef{$$keyRef})) { #Information on entry present
+
+	if ( ! ( grep /$$elementRef/, @{$$hashRef{$$keyRef}} ) ) { #If element is not part of array
+
+	    return 1;
+	}
     }
 }
 
