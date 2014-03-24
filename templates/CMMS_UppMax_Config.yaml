@@ -1,6 +1,6 @@
 ---
 clusterConstantPath: /proj/b2010080/private
-analysisConstantPath: analysis/nobackup
+analysisConstantPath: nobackup/analysis
 analysisType: exomes
 outScriptDir: CLUSTERCONSTANTPATH!/ANALYSISTYPE!_scripts
 GATKBaseReCalibrationSNPKnownSet: dbsnp_138.b37.vcf
