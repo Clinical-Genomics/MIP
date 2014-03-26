@@ -5291,24 +5291,21 @@ sub ReadPlinkPedigreeFile {
 		    
 		    if ($sampleInfo{$familyID}{$sampleID}{'Capture_kit'}) { #Add latest capture kit for each individual
 			
-			my $capture_kit = $sampleInfo{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]}[-1]; #Use only the last capture kit since it should be the most interesting
+			my $captureKit = $sampleInfo{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]}[-1]; #Use only the last capture kit since it should be the most interesting
 			
-			for my $supportedCaptureKit (keys %supportedCaptureKits) {
-			    
-			    if ($supportedCaptureKit eq $capture_kit) {
-				
-				if ($userExomeTargetBedInfileListsSwitch == 0) {
+			if ($supportedCaptureKits{$captureKit}) {
+
+			    if ($userExomeTargetBedInfileListsSwitch == 0) {
 				    
-				    $scriptParameter{$familyID}{$sampleID}{'exomeTargetBedInfileLists'} = $supportedCaptureKits{$supportedCaptureKit}.$referenceFileEndings{'exomeTargetBedInfileLists'}; #capture kit target in file_list
-				}
-				if ($userExomeTargetPaddedBedInfileListSwitch == 0) {
-                                                                      
-				    $scriptParameter{$familyID}{$sampleID}{'exomeTargetPaddedBedInfileLists'} = $supportedCaptureKits{$supportedCaptureKit}.$referenceFileEndings{'exomeTargetPaddedBedInfileLists'}; #capture kit padded target infile_list                               
-				}
-				if ($userExomeTargetPaddedBedIntervalListSwitch == 0) {
-				                        
-				    $scriptParameter{$familyID}{$sampleID}{'GATKTargetPaddedBedIntervalLists'} = $supportedCaptureKits{$supportedCaptureKit}.$referenceFileEndings{'GATKTargetPaddedBedIntervalLists'}; #capture kit padded target interval_list                          
-				}
+				$scriptParameter{$familyID}{$sampleID}{'exomeTargetBedInfileLists'} = $supportedCaptureKits{$captureKit}.$referenceFileEndings{'exomeTargetBedInfileLists'}; #capture kit target in file_list
+			    }
+			    if ($userExomeTargetPaddedBedInfileListSwitch == 0) {
+				
+				$scriptParameter{$familyID}{$sampleID}{'exomeTargetPaddedBedInfileLists'} = $supportedCaptureKits{$captureKit}.$referenceFileEndings{'exomeTargetPaddedBedInfileLists'}; #capture kit padded target infile_list                               
+			    }
+			    if ($userExomeTargetPaddedBedIntervalListSwitch == 0) {
+				
+				$scriptParameter{$familyID}{$sampleID}{'GATKTargetPaddedBedIntervalLists'} = $supportedCaptureKits{$captureKit}.$referenceFileEndings{'GATKTargetPaddedBedIntervalLists'}; #capture kit padded target interval_list                          
 			    }
 			}
 		    }
@@ -6210,7 +6207,7 @@ sub AddToScriptParameter {
 			    
 			    for (my $sampleIDsCounter=0;$sampleIDsCounter<scalar(@sampleIDs);$sampleIDsCounter++) { #All sampleIDs
 				
-				&CheckSupportedFileEnding(\($scriptParameter{'referencesDir'}."/".$scriptParameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDsCounter]}{$parameterName}), \$referenceFileEndings{$parameterName}, \$parameterName, );
+				&CheckSupportedFileEnding(\($scriptParameter{'referencesDir'}."/".$scriptParameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDsCounter]}{$parameterName}), \$referenceFileEndings{$parameterName}, \$parameterName);
 				&CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDsCounter]}{$parameterName}), \$parameterName, "f", \$sampleIDs[$sampleIDsCounter]);
 			    
 				my $exomeTargetBedFileNoEnding = &RemoveFileEnding(\$scriptParameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDsCounter]}{$parameterName} , $referenceFileEndings{$parameterName}); #Remove ".fileending" from reference filename
