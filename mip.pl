@@ -39,6 +39,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -c/--configFile YAML config file for script parameters (defaults to "")
                -wc/--writeConfigFile Write YAML configuration file for script parameters (defaults to "";Supply whole path)
                -int/--instanceTag Tag family with instance association in sampleInfo file (defaults to "")
+               -rea/--researchEthicalApproval Tag for displaying research candidates in Scout (defaults to "notApproved")
                -si/--sampleInfoFile YAML file for sample info used in the analysis (defaults to "{outDataDir}/{familyID}/{familyID}_qc_sampleInfo.yaml")
                -dra/--dryRunAll Sets all programs to dry run mode i.e. no sbatch submission (defaults to "0" (=no))
                -julp/--javaUseLargePages Use large page memory. (-XX,hence option considered not stable and are subject to change without notice, but can be consiered when faced with Java Runtime Environment Memory issues)
@@ -203,6 +204,8 @@ chomp($timeStamp); #Remove \n;
 
 &DefineParameters("instanceTag", "MIP", "Unknown", "MIP");
 
+&DefineParameters("researchEthicalApproval", "MIP", "notApproved", "MIP");
+
 &DefineParametersPath("inScriptDir", "nodefault", "MIP", "directory");
 
 &DefineParametersPath("referencesDir", "nodefault", "MIP", "directory");
@@ -362,7 +365,7 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists); #Arrays for t
 
 &DefineParametersPath("genomeAnalysisToolKitPath", "nodefault", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome", "directory");
 
-&DefineParametersPath("GATKTempDirectory", "/scratch/", "pGATKRealigner,pGATKBaseRecalibration,pGATKReduceReads,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKReadBackedPhasing", 0); #Depends on -projectID input, directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
+&DefineParametersPath("GATKTempDirectory", "/scratch/", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKReadBackedPhasing", 0); #Depends on -projectID input, directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
 
 &DefineParameters("GATKDownSampleToCoverage", "program", 1000, "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller");
 
@@ -370,7 +373,7 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists); #Arrays for t
 
 my (@GATKTargetPaddedBedIntervalLists); #Array for target infile lists used in GATK
 
-&DefineParametersPath("javaUseLargePages", "no", "pGATKRealigner,pGATKBaseRecalibration,pGATKReduceReads,pGATKHaploTypeCaller,pGATKHaploTypeCallerCombineVariants,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome");
+&DefineParametersPath("javaUseLargePages", "no", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKHaploTypeCallerCombineVariants,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome");
 
 ##Annovar
 
@@ -494,6 +497,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'wc|writeConfigFile:s' => \$parameter{'writeConfigFile'}{'value'},
 	   'si|sampleInfoFile:s' => \$parameter{'sampleInfoFile'}{'value'}, #Write all info on samples and run to YAML file
 	   'int|instanceTag:s' => \$parameter{'instanceTag'}{'value'},
+	   'rea|researchEthicalApproval:s' => \$parameter{'researchEthicalApproval'}{'value'},
 	   'dra|dryRunAll:n' => \$parameter{'dryRunAll'}{'value'},
 	   'pve|pythonVirtualEnvironment:s' => \$parameter{'pythonVirtualEnvironment'}{'value'},
 	   'julp|javaUseLargePages:s' => \$parameter{'javaUseLargePages'}{'value'},
@@ -608,7 +612,7 @@ if ($parameter{'annovarSupportedTableNames'}{'value'} eq 1) {
     &PrintSupportedAnnovarTableNames();
 }
 
-if ($parameter{'configFile'}{'value'} ne "nocmdinput") { #No input from cmd
+if ($parameter{'configFile'}{'value'} ne "nocmdinput") { #Input from cmd
 
     %scriptParameter = &LoadYAML($parameter{'configFile'}{'value'}); #Load parameters from configfile
 
@@ -2369,7 +2373,7 @@ sub GATKReadBackedPhasing {
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #Collect infiles for all sampleIDs
 	
 	my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleIDs[$sampleIDCounter]."/".$aligner."/GATK";
-	my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'pGATKReduceReads'}{'fileEnding'};
+	my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'pGATKBaseRecalibration'}{'fileEnding'};
 	my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles($sampleIDs[$sampleIDCounter]);
 	
 	if ($PicardToolsMergeSwitch == 1) { #Alignment BAM-files merged previously
@@ -6109,6 +6113,10 @@ sub AddToScriptParameter {
 		    $scriptParameter{$parameterName} = $parameterValue; 
 		}
 		if ($parameterName eq "instanceTag") {
+
+		    $sampleInfo{$scriptParameter{'familyID'}}{$scriptParameter{'familyID'}}{$parameterName} = $scriptParameter{$parameterName};
+		}
+		if ($parameterName eq "researchEthicalApproval") {
 
 		    $sampleInfo{$scriptParameter{'familyID'}}{$scriptParameter{'familyID'}}{$parameterName} = $scriptParameter{$parameterName};
 		}

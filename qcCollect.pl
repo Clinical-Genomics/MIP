@@ -373,18 +373,25 @@ sub GenderCheck {
     #print "chrX xoverage: ".$$chrXCoverageRef, "\n";
     #print "chrY xoverage: ".$$chrYCoverageRef, "\n";
     #print "Gender: ".$sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'}[0]. "\n";
-    
-    if ( ($$chrXCoverageRef/$$chrYCoverageRef >= 10) && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'}[0] == 2) ) { #Female
-
-	$qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "PASS";
-    }
-    elsif ( ($$chrXCoverageRef/$$chrYCoverageRef < 10) && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'}[0] == 1) ) { #Male
+   
+    if ( (defined($$chrXCoverageRef)) && (defined($$chrYCoverageRef)) ) {
 	
-	$qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "PASS";
+	if ( ($$chrXCoverageRef / $$chrYCoverageRef >= 10) && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'}[0] == 2) ) { #Female
+	    
+	    $qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "PASS";
+	}
+	elsif ( ($$chrXCoverageRef / $$chrYCoverageRef < 10) && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'}[0] == 1) ) { #Male
+	    
+	    $qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "PASS";
+	}
+	else {
+	    
+	    $qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "FAIL";
+	}
     }
     else {
 
-	$qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "FAIL";
+	$qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "Unknown";
     }
     return;
 }
