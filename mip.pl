@@ -7654,24 +7654,27 @@ sub CheckMostCompleteAndRemoveFile {
     my $fileRef = $_[2];
     my $fileEnding = $_[3];
     
-    unless ($$mostCompleteRef eq $$fileRef) {
-		
-	my $fileName = &RemoveFileEnding(\$$fileRef, $fileEnding);
+    if ( (defined($$mostCompleteRef)) && (defined($$fileRef)) ) { #Not to disturb first dry_run of analysis
 
-	if (defined($fileName)) {
+	unless ($$mostCompleteRef eq $$fileRef) {
+		
+	    my $fileName = &RemoveFileEnding(\$$fileRef, $fileEnding);
+
+	    if (defined($fileName)) {
 	    
-	    my $end = ".*";
+		my $end = ".*";
 
-	    if ($fileEnding eq ".bam") {
+		if ($fileEnding eq ".bam") {
 		
-		$end = ".ba*"; #Removes both .bam and .bai
-	    }
-	    if ($fileEnding eq ".vcf") {
+		    $end = ".ba*"; #Removes both .bam and .bai
+		}
+		if ($fileEnding eq ".vcf") {
 		
-		$end = ".vcf*"; #Removes both .vcf and .vcf.idx
+		    $end = ".vcf*"; #Removes both .vcf and .vcf.idx
+		}
+		print $FILEHANDLE "rm ";
+		print $FILEHANDLE $fileName.$end, "\n\n"; #Remove file(s)
 	    }
-	    print $FILEHANDLE "rm ";
-	    print $FILEHANDLE $fileName.$end, "\n\n"; #Remove file(s)
 	}
     }
 }
