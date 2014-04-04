@@ -1306,7 +1306,7 @@ sub RemoveRedundantFiles {
 		print $FILEHANDLE "rm ";
 		print $FILEHANDLE $inSampleDirectory."/".$infile.".stat", "\n\n"; #MosaikAlign Stats
 		
-		&CheckMostCompleteAndRemoveFile($FILEHANDLE,\$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.".bam"), ".bam");	    
+		&CheckMostCompleteAndRemoveFile($FILEHANDLE, \$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.".bam"), ".bam");	    
 	    }
 ##Remove BWA files
 	    if ($scriptParameter{'pBwaAln'} > 0) {
@@ -1316,18 +1316,18 @@ sub RemoveRedundantFiles {
 	    }
 	    if ($scriptParameter{'pBwaSampe'} >0) {
 		
-		&CheckMostCompleteAndRemoveFile($FILEHANDLE,\$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.".bam"), ".bam");
+		&CheckMostCompleteAndRemoveFile($FILEHANDLE, \$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.".bam"), ".bam");
 	    }  
 	    if ($scriptParameter{'pBwaMem'} >0) {
 	
-		&CheckMostCompleteAndRemoveFile($FILEHANDLE,\$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.".bam"), ".bam");
+		&CheckMostCompleteAndRemoveFile($FILEHANDLE, \$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.".bam"), ".bam");
 	    }    	    
 ##Sorted BAM
 	    if ($scriptParameter{'pPicardToolsSortSam'} > 0) {
 		
 		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsSortSam'}{'fileEnding'};
 		
-		&CheckMostCompleteAndRemoveFile($FILEHANDLE,\$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam"); #Sorted BAM and bai file
+		&CheckMostCompleteAndRemoveFile($FILEHANDLE, \$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam"); #Sorted BAM and bai file
 	    }
 	}
 	
@@ -1340,27 +1340,35 @@ sub RemoveRedundantFiles {
 		
 		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMergeSamFiles'}{'fileEnding'};
 		
-		&CheckMostCompleteAndRemoveFile($FILEHANDLE,\$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam"); #merged BAM and bai file
+		&CheckMostCompleteAndRemoveFile($FILEHANDLE, \$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam"); #merged BAM and bai file
 	    }	
 	    if ($scriptParameter{'pPicardToolsMarkduplicates'} > 0) {
 		
 		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
 		
-		&CheckMostCompleteAndRemoveFile($FILEHANDLE,\$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam"); #Dedupped BAM and bai file
+		&CheckMostCompleteAndRemoveFile($FILEHANDLE, \$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam"); #Dedupped BAM and bai file
 	    }
 	    if ($scriptParameter{'pGATKRealigner'} > 0) {
 		
 		my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";   
 		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKRealigner'}{'fileEnding'};
 	   
-		&CheckMostCompleteAndRemoveFile($FILEHANDLE,\$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam"); #ReAligned BAM and bai file
+		&CheckMostCompleteAndRemoveFile($FILEHANDLE, \$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam"); #ReAligned BAM and bai file
 	    }
 	    if ($scriptParameter{'pGATKBaseRecalibration'} > 0) {
 		
 		my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
 		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
 
-		&CheckMostCompleteAndRemoveFile($FILEHANDLE,\$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam"); #BaseRecalibrated BAM and bai file
+		&CheckMostCompleteAndRemoveFile($FILEHANDLE, \$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam"); #BaseRecalibrated BAM and bai file
+	    }
+	    if ($scriptParameter{'pGATKHaploTypeCaller'} > 0) { #Always collapses all files even if there is only one
+		
+		my $lanes = join("",@{$lane{$sampleID}}); #Extract lanes
+		my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
+		my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKHaploTypeCaller'}{'fileEnding'};
+		
+		&CheckMostCompleteAndRemoveFile($FILEHANDLE, \$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'MostCompleteVCF'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".vcf"), ".vcf"); #HaplotypeCaller gvcf file
 	    }
 	}
 	else {
@@ -1373,33 +1381,50 @@ sub RemoveRedundantFiles {
 		    
 		    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
 
-		    &CheckMostCompleteAndRemoveFile($FILEHANDLE,\$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam"); #Dedupped BAM and bai file
+		    &CheckMostCompleteAndRemoveFile($FILEHANDLE, \$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam"); #Dedupped BAM and bai file
 		}
 		if ($scriptParameter{'pGATKRealigner'} > 0) {
 		    
 		    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
 		    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKRealigner'}{'fileEnding'};
 		    
-		    &CheckMostCompleteAndRemoveFile($FILEHANDLE,\$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam"); #ReAligned BAM and bai file
+		    &CheckMostCompleteAndRemoveFile($FILEHANDLE, \$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam"); #ReAligned BAM and bai file
 		}
 		if ($scriptParameter{'pGATKBaseRecalibration'} > 0) {
 		    
 		    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
 		    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
 
-		    &CheckMostCompleteAndRemoveFile($FILEHANDLE,\$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam"); #BaseRecalibrated BAM and bai file
+		    &CheckMostCompleteAndRemoveFile($FILEHANDLE, \$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam"); #BaseRecalibrated BAM and bai file
+		}
+		if ($scriptParameter{'pGATKHaploTypeCaller'} > 0) { #Always collapses all files even if there is only one
+		    
+		    my $lanes = join("",@{$lane{$sampleID}}); #Extract lanes
+		    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
+		    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKHaploTypeCaller'}{'fileEnding'};
+		    
+		    &CheckMostCompleteAndRemoveFile($FILEHANDLE, \$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'MostCompleteVCF'}{'Path'}, \($inSampleDirectory."/".$sampleID."_lanes_".$lanes.$outfileEnding.".vcf"), ".vcf"); #HaplotypeCaller gvcf file
 		}
 	    }
 	}
-	if ($scriptParameter{'pGATKHaploTypeCaller'} > 0) { #Always collapses all files even if there is only one
-	    
-	    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
-	    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pGATKHaploTypeCaller'}{'fileEnding'};
-	    
-	       &CheckMostCompleteAndRemoveFile($FILEHANDLE,\$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'MostCompleteVCF'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".vcf"), ".vcf"); #HaplotypeCaller gvcf file
-	}
     }
 ###Family files
+    if ($scriptParameter{'pGATKGenoTypeGVCFs'} > 0) {
+
+	my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK"; #New outfile directory
+	my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKGenoTypeGVCFs'}{'fileEnding'};
+	
+	&CheckMostCompleteAndRemoveFile($FILEHANDLE, \$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'MostCompleteVCF'}{'Path'}, \($outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf"), ".vcf"); #GATKGenoTypeGVCFs vcf file
+	
+    }
+    if ($scriptParameter{'pGATKVariantRecalibration'} > 0) {
+	
+	my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK"; #New outfile directory
+	my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
+	
+	&CheckMostCompleteAndRemoveFile($FILEHANDLE, \$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'MostCompleteVCF'}{'Path'}, \($outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf"), ".vcf"); #pGATKVariantRecalibration vcf file
+    
+    }
     if ($scriptParameter{'pAnnovar'} > 0) {
 	
 	my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
