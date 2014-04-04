@@ -1269,7 +1269,7 @@ sub AnalysisRunStatus {
 }
 
 sub RemoveRedundantFiles {
-#Generates a sbatch script, which removes some alignment files.
+#Generates a sbatch script, which removes redundant files.
     
     my $familyID = $_[0];
     my $aligner = $_[1];
@@ -7639,11 +7639,11 @@ sub CheckMostCompleteAndRemoveFile {
 
 	    if ($fileEnding eq ".bam") {
 		
-		$end = ".ba*";
+		$end = ".ba*"; #Removes both .bam and .bai
 	    }
 	    if ($fileEnding eq ".vcf") {
 		
-		$end = ".vcf*";
+		$end = ".vcf*"; #Removes both .vcf and .vcf.idx
 	    }
 	    print $FILEHANDLE "rm ";
 	    print $FILEHANDLE $fileName.$end, "\n\n"; #Remove file(s)
