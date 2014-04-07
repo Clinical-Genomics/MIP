@@ -405,7 +405,7 @@ my @annovarTableNames; #List of Annovar table names to be used
 
 ##Add_depth
 
-&DefineParameters("pAddDepth", "program", 1, "MIP", "", "MAIN");
+&DefineParameters("pAddDepth", "program", 0, "MIP", "", "MAIN");
 
 
 ##RankVariants
@@ -598,7 +598,7 @@ if($help) {
     exit;
 }
 
-my $MipVersion = "v1.5.6";#Set version for log
+my $MipVersion = "v1.5.7";#Set version for log
 
 if($version) {
 
