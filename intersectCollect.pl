@@ -685,6 +685,7 @@ sub ReadInfileSelect {
 				
 				my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
 				$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]; #Collect all columns to enable print later
+				#print $allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ], "\n";
 			    }
 			    if ( ($selectedSwithc{$dbFileNr} == 1) &&  ($dbWroteSwitch == 0) ) { #Print record only once to avoid duplicates
 

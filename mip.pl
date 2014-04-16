@@ -452,6 +452,7 @@ my (%infile, %indirpath, %infilesLaneNoEnding, %lane, %infilesBothStrandsNoEndin
 ##Capture kits supported from pedigree file.
 my %supportedCaptureKits = (
     'Nimblegen_SeqCapEZExome.V2' => "Nimblegen_SeqCapEZExome.V2.GenomeReferenceSourceVersion_targets.bed",
+    'Nimblegen_SeqCapEZExome.V3' => "Nimblegen_SeqCapEZExome.V3.GenomeReferenceSourceVersion_targets.bed",
     'Agilent_SureSelect.V2' => "Agilent_SureSelect.V2.GenomeReferenceSourceVersion_targets.bed",
     'Agilent_SureSelect.V3' => "Agilent_SureSelect.V3.GenomeReferenceSourceVersion_targets.bed",
     'Agilent_SureSelect.V4' => "Agilent_SureSelect.V4.GenomeReferenceSourceVersion_targets.bed",
@@ -2636,6 +2637,7 @@ sub GATKVariantReCalibration {
     close($FILEHANDLE);   
     	
     if ( ($scriptParameter{'pGATKVariantRecalibration'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+
 ##Collect QC metadata info for later use
 	&SampleInfoQC($familyID, "noSampleID", "pedigreeCheck", "NoInfile", $outFamilyDirectory, $familyID.$outfileEnding.$callType.".vcf", "infileDependent"); #"noSampleID is used to select correct keys for %sampleInfo"
 	$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'MostCompleteVCF'}{'Path'} = $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf";	
@@ -2706,6 +2708,8 @@ sub GATKGenoTypeGVCFs {
     close($FILEHANDLE);  
     if ( ($scriptParameter{'pGATKGenoTypeGVCFs'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 
+##Collect QC metadata info for later use
+	$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'MostCompleteVCF'}{'Path'} = $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf";
 	&FIDSubmitJob(0, $familyID, 1, $parameter{'pGATKGenoTypeGVCFs'}{'chain'}, $fileName, 0);
     }
 }
