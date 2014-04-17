@@ -125,7 +125,13 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -gatkvarevaldbsnp/--GATKVariantEvalDbSNP DbSNP file used in GATK VariantEval (defaults to "dbsnp_138.b37.excluding_sites_after_129.vcf")
                  -gatkvarevaldbgold/--GATKVariantEvalGold Gold Indel file used in GATK VariantEval (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
                
-               ##ANNOVAR
+               ##ANNOTATION
+               -pVEP/--pVariantEffectPredictor Annotate variants using VEP (defaults to "1" (=yes))
+                 -vepdirpath/--vepDirectoryPath Path to VEP script directory (Supply whole path, defaults to "")
+                 -vepdircache/vepDirectoryCache Specify the cache directory to use (Supply whole path, defaults to "") 
+               -pVEPPar/--pVEPParser Parse variants using vep_parser.pl (defaults to "1" (=yes))
+                 -vepparsersf/--vepParserSelectFile File containging list of genes to analyse seperately (Supply whole path, defaults to "";tab-sep file and HGNC Symbol required)
+                 -vepparsersfmc/--vepParserSelectFileMatchingColumn Position of HGNC Symbol column in SelectFile
                -pANVAR/--pAnnovar Annotate variants using Annovar (defaults to "1" (=yes))
                  -anvarpath/--annovarPath  Path to Annovar script directory (Supply whole path, defaults to "". NOTE: Assumes that the annovar db files are located in annovar/humandb)
                  -anvargbv/--annovarGenomeBuildVersion Annovar genome build version (defaults to "hg19")
@@ -134,7 +140,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -anvarmafth/--annovarMAFThreshold Sets the minor allele frequency threshold in annovar (defaults to "0")
                
                ##VMerge  
-               -pMerge_anvar/--pMergeAnnotatedVariants Merge (& annotate) all annotated variants into one file using intersectCollect.pl to  (defaults to "1" (=yes))
+               -pMerge_anvar/--pMergeAnnotatedVariants Merge (& annotate) all annotated variants into one file using intersectCollect.pl (defaults to "1" (=yes))
                  -mergeanvarte/--mergeAnnotatedVariantsTemplateFile Db template file used to create the specific family '-mergeanvardbf' master file (defaults to "")
                  -mergeanvardbf/--mergeAnnotatedVariantsDbFile Db master file to be used in intersectCollect.pl (defaults to  "{outDataDir}/{familyID}/{familyID}_intersectCollect_db_master.txt";Supply whole path)
 
@@ -375,6 +381,24 @@ my (@GATKTargetPaddedBedIntervalLists); #Array for target infile lists used in G
 
 &DefineParametersPath("javaUseLargePages", "no", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKHaploTypeCallerCombineVariants,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome");
 
+##VEP
+
+&DefineParameters("pVariantEffectPredictor", "program", 1, "MIP", "vep_", "MAIN");
+
+&DefineParametersPath("vepDirectoryPath", "nodefault", "pVariantEffectPredictor", "directory"); #Note not projectID specific
+
+&DefineParametersPath("vepDirectoryCache", "nodefault", "pVariantEffectPredictor", "directory");
+
+##VEPParser
+
+&DefineParameters("pVEPParser", "program", 1, "MIP", "parsed_", "MAIN");
+
+&DefineParametersPath("vepParserSelectFile", "noUserInfo", "pVEPParser", "file"); 
+
+&DefineParameters("vepParserSelectFileMatchingColumn", "program", "nodefault", "pVEPParser");
+
+my $VEPOutputFiles = 1; #To track if VEPParser was used with a vepParserSelectFile (=2) or not (=1)
+
 ##Annovar
 
 &DefineParameters("pAnnovar", "program", 1, "MIP", "annovar_", "MAIN");
@@ -569,6 +593,12 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'pGATK_varevalexome|pGATKVariantEvalExome:n' => \$parameter{'pGATKVariantEvalExome'}{'value'}, #GATK varianteval only exonic variants
 	   'gatkvarevaldbsnp|GATKVariantEvalDbSNP:s' => \$parameter{'GATKVariantEvalDbSNP'}{'value'},
 	   'gatkvarevaldbgold|GATKVariantEvalGold:s' => \$parameter{'GATKVariantReCalibrationTrainingSetMills'}{'value'},
+	   'pVEP|pVariantEffectPredictor:n' => \$parameter{'pVariantEffectPredictor'}{'value'}, #Annotation of variants using vep
+	   'vepdirpath|vepDirectoryPath:s'  => \$parameter{'vepDirectoryPath'}{'value'}, #path to vep script dir
+	   'vepdircache|vepDirectoryCache:s'  => \$parameter{'vepDirectoryCache'}{'value'}, #path to vep cache dir
+	   'pVEPPar|pVEPParser:n' => \$parameter{'pVEPParser'}{'value'},
+	   'vepparsersf|vepParserSelectFile:s'  => \$parameter{'vepParserSelectFile'}{'value'}, #path to vepParserSelectFile
+	   'vepparsersfmc|vepParserSelectFileMatchingColumn:n' => \$parameter{'vepParserSelectFileMatchingColumn'}{'value'}, #Column of HGNC Symbol in SelectFile
 	   'pANVAR|pAnnovar:n' => \$parameter{'pAnnovar'}{'value'}, #Performs annovar filter gene, region and filter analysis
 	   'anvarpath|annovarPath:s'  => \$parameter{'annovarPath'}{'value'}, #path to annovar script dir
 	   'anvargbv|annovarGenomeBuildVersion:s'  => \$parameter{'annovarGenomeBuildVersion'}{'value'},
@@ -1142,6 +1172,25 @@ if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) { #Run GATK ReadBackedPhasin
     
     &CheckBuildHumanGenomePreRequisites("GATKReadBackedPhasing");
     &GATKReadBackedPhasing($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
+}
+
+if ($scriptParameter{'pVariantEffectPredictor'} > 0) { #Run VariantEffectPredictor. Done per family
+
+    &PrintToFileHandles(\@printFilehandles, "\nVariantEffectPredictor\n");
+
+    &VariantEffectPredictor($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
+}
+
+if ($scriptParameter{'pVEPParser'} > 0) { #Run VariantEffectPredictor. Done per family
+
+    &PrintToFileHandles(\@printFilehandles, "\nVEPParser\n");
+    
+    &VEPParser($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
+
+    if ($scriptParameter{'vepParserSelectFile'} ne "noUserInfo") {
+
+	$VEPOutputFiles = 2; #Use seperate analysis for variants overlapping selected genes and orphans
+    }
 }
 
 if ($scriptParameter{'pAnnovar'} > 0) { #Run Annovar. Done per family
@@ -2226,7 +2275,7 @@ sub Annovar {
 
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pVEPParser'}{'fileEnding'};
     my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pAnnovar'}{'fileEnding'};
 	
     print $FILEHANDLE "#Prepare infile to Annovar format from GATK vcf4", "\n";
@@ -2244,12 +2293,15 @@ sub Annovar {
 	my $samplecolumn = 14+$sampleIDCounter; #First sample genotype starts at col 14 (start 0, perl). NOTE: Important that samples for HaplotypeCaller/UnifiedGT has same order. Otherwise there will be a sample mix-up.
 	
 	if ($sampleIDCounter eq scalar(@sampleIDLexSorts)-1) {	#Ensure correct order as long as HaplotypeCAller/UnifiedGT uses lex sort. 
-	    print $FILEHANDLE q?print "?.$sampleIDLexSorts[$sampleIDCounter].q?:"; @formatInfo = split(":",$F[?.$samplecolumn.q?]); for (my $formatInfoCounter=0;$formatInfoCounter<scalar(@formatInfo);$formatInfoCounter++) { print "$format[$formatInfoCounter]=$formatInfo[$formatInfoCounter]"; if ( $formatInfoCounter<scalar(@formatInfo)-1 ) {print ":"} } print "\n"; } ?;
+	    print $FILEHANDLE q?print "?.$sampleIDLexSorts[$sampleIDCounter].q?:"; @formatInfo = split(":",$F[?.$samplecolumn.q?]); for (my $formatInfoCounter=0;$formatInfoCounter<scalar(@formatInfo);$formatInfoCounter++) { print "$format[$formatInfoCounter]=$formatInfo[$formatInfoCounter]"; if ( $formatInfoCounter<scalar(@formatInfo)-1 ) {print ":"} } ?;
 	}
 	else {
 	    print $FILEHANDLE q?print "?.$sampleIDLexSorts[$sampleIDCounter].q?:"; @formatInfo = split(":",$F[?.$samplecolumn.q?]); for (my $formatInfoCounter=0;$formatInfoCounter<scalar(@formatInfo);$formatInfoCounter++) { print "$format[$formatInfoCounter]=$formatInfo[$formatInfoCounter]"; if ( $formatInfoCounter<scalar(@formatInfo)-1 ) {print ":"} } print "\t"; ?;
 	}
     }
+    ##Include any addtional columns from VEPParse
+    my $numberofFields = 14+scalar(@sampleIDs); #First sample genotype starts at col 14 (start 0, perl).
+    print $FILEHANDLE q?for (my $fieldsCounter=?.$numberofFields.q?;$fieldsCounter<scalar(@F);$fieldsCounter++) {print @F[$fieldsCounter], "\t";} print "\n"; }?;
 
     print $FILEHANDLE "' ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType."_temp "; #InFile from just created convert2annovar.pl outfile
     print $FILEHANDLE "> ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType, "\n\n"; #OutFile
@@ -2472,6 +2524,80 @@ sub GATKPhaseByTransmission {
     if ( ($scriptParameter{'pGATKPhaseByTransmission'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 
 	&FIDSubmitJob(0, $familyID, 1, $parameter{'pGATKPhaseByTransmission'}{'chain'}, $fileName, 0);
+    }
+}
+
+sub VEPParser {
+###VEPParser performs parsing of VariantEffectPredictor annotated variants 
+	
+    my $familyID = $_[0]; #familyID NOTE: not sampleid
+    my $aligner = $_[1];
+    my $callType = $_[2]; #SNV,INDEL or BOTH
+    
+    my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
+    &ProgramPreRequisites( $familyID, "VEPParser", $aligner."/GATK", $callType, $FILEHANDLE, 1, 1);
+    
+    my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
+    my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pVariantEffectPredictor'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pVEPParser'}{'fileEnding'};
+    
+###VEPParser
+
+    print $FILEHANDLE "\n#VEPParser","\n\n";
+    print $FILEHANDLE "perl ".$scriptParameter{'inScriptDir'}."/vep_parser.pl "; #Parses the VEp output to tab-sep format
+    print $FILEHANDLE "-i ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf"; #Infile
+    print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf"; #outfile
+    print $FILEHANDLE "-sf ".$scriptParameter{'vepParserSelectFile'}." "; #List of genes to analyse separately
+    print $FILEHANDLE "-sf_mc ".$scriptParameter{'vepParserSelectFileMatchingColumn'}." "; #Column of HGNC Symbol in SelectFile (-sf)
+
+    close($FILEHANDLE);
+
+    if ( ($scriptParameter{'pVEPParser'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+
+	&FIDSubmitJob(0,$familyID, 2, $parameter{'pVEPParser'}{'chain'}, $fileName,0);
+    }
+}
+
+sub VariantEffectPredictor {
+###VariantEffectPredictor performs annotation of variants 
+	
+    my $familyID = $_[0]; #familyID NOTE: not sampleid
+    my $aligner = $_[1];
+    my $callType = $_[2]; #SNV,INDEL or BOTH
+    
+    my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
+    &ProgramPreRequisites( $familyID, "VariantEffectPredictor", $aligner."/GATK", $callType, $FILEHANDLE, $scriptParameter{'maximumCores'}, 10);
+    
+    my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
+    my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pVariantEffectPredictor'}{'fileEnding'};
+    
+###VariantEffectPredictor
+    
+    print $FILEHANDLE "\n#VariantEffectPredictor","\n\n";
+    print $FILEHANDLE "perl ".$scriptParameter{'vepDirectoryPath'}."/variant_effect_predictor.pl "; #VEP script 
+    print $FILEHANDLE "--dir_cache ".$scriptParameter{'vepDirectoryCache'}." "; #Specify the cache directory to use
+    print $FILEHANDLE "--cache "; #Enables use of the cache.
+    print $FILEHANDLE "--refseq "; #Use the otherfeatures database to retrieve transcripts. This database contains transcript objects corresponding to RefSeq transcripts, along with CCDS and Ensembl ESTs.
+    print $FILEHANDLE "--force_overwrite "; #force the overwrite of the existing file
+    print $FILEHANDLE "--vcf "; #Writes output in VCF format.
+    print $FILEHANDLE "--fork ".$scriptParameter{'maximumCores'}." "; #Enable forking, using the specified number of forks.
+    print $FILEHANDLE "-hgvs "; #Add HGVS nomenclature based on Ensembl stable identifiers to the output.
+    print $FILEHANDLE "--symbol "; #Adds the gene symbol (e.g. HGNC) (where available) to the output. 
+    print $FILEHANDLE "--numbers "; #Adds affected exon and intron numbering to to output. Format is Number/Total.
+    print $FILEHANDLE "--sift s "; #Sift prediction
+    print $FILEHANDLE "--polyphen s "; #Polyphen prediction
+    print $FILEHANDLE "--humdiv "; #Use humdiv
+    print $FILEHANDLE "-i ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf "; #InFile (family vcf)
+    print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf", "\n\n"; #OutFile
+
+    close($FILEHANDLE);
+
+    if ( ($scriptParameter{'pVariantEffectPredictor'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+
+	&FIDSubmitJob(0,$familyID, 2, $parameter{'pVariantEffectPredictor'}{'chain'}, $fileName,0);
     }
 }
 
@@ -5904,7 +6030,9 @@ sub AddToScriptParameter {
 			}
 			elsif ( ($parameterName eq "bwaMemRapidDb") && ($scriptParameter{'analysisType'} ne "rapid")) { #Do nothing since file is not required unless rapid mode is enabled
 			}
-			elsif ( ($parameterName eq "GATKHaploTypeCallerRefBAMInfile") && ($scriptParameter{'analysisType'} =~/rapid|genomes/) ) { #Do nothing since file is not required unless exome mode is enabled
+			elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCFInfile") && ($scriptParameter{'analysisType'} =~/genomes/) ) { #Do nothing since file is not required unless exome or rapid mode is enabled
+			}
+			elsif ( ($parameterName eq "vepParserSelectFileMatchingColumn") && ( $scriptParameter{'vepParserSelectFile'} eq "noUserInfo") ) { #Do nothing since no SelectFile was given
 			}
 			else {
 			    
@@ -6101,7 +6229,9 @@ sub AddToScriptParameter {
 		    }
 		    elsif ( ($parameterName eq "bwaMemRapidDb") && ($scriptParameter{'analysisType'} ne "rapid")) { #Do nothing since file is not required unless rapid mode is enabled
 		    }
-		    elsif ( ($parameterName eq "GATKHaploTypeCallerRefBAMInfile") && ($scriptParameter{'analysisType'} =~/rapid|genomes/) ) { #Do nothing since file is not required unless exome mode is enabled
+		    elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCFInfile") && ($scriptParameter{'analysisType'} =~/genomes/) ) { #Do nothing since file is not required unless exome mode is enabled
+		    }
+		    elsif ( ($parameterName eq "vepParserSelectFile") && ( $scriptParameter{'vepParserSelectFile'} eq "noUserInfo") ) { #Do nothing since no SelectFile was given
 		    }
 		    else {
 			
