@@ -4,9 +4,10 @@ use strict;
 use warnings;
 use File::Basename;
 use IO::File;
+use Set::IntervalTree;
 
 =for comment
-Intersects and collects information based on 1-5 keys present (mandatory) in
+Intersects and collects information based on 1-N keys present in
 each file to be investigated. The set of elements to be interrogated are decided
 by the first db file elements unless the merge option is used. The db files are
 supplied using the -db flag, which should point to a db_master file (tab-sep)
@@ -14,7 +15,7 @@ with the format:
 (DbPath\tSeparator\tColumn_Keys\tChr_Column\tMatching\tColumns_to_Extract\tFile_Size\t).
 
 N.B. matching should be either range or exact. Currently the range option only
-supports 3-5 keys i.e. only 3 keys are used to define the range look up
+supports 3-N keys i.e. only 3 keys are used to define the range look up
 (preferbly chr, start, stop). Range db file should be sorted -k1,1 -k2,2n if it
 contains chr information. If the merge option is used then all overlapping and
 unique elements are added to the final list. Beware that this option is memory
@@ -22,40 +23,6 @@ demanding.
 =cut
 
 # Copyright 2012 Henrik Stranneheim
-
-=head1 SYNOPSIS
-    
-intersectCollect.pl -db db_master.txt -o outFile.txt
-    
-=head2 COMMANDS AND OPTIONS
-
--db/--dbFile A tab-sep file containing 1 db per line with format (DbPath\tSeparator\tColumn_Keys\tChr_Column\tMatching\tColumns_to_Extract\tFile_Size\t). NOTE: db file and col nr are 0-based. 
-
--s/--sampleIDs The sample ID(s)
-
--o/--outFile The output file (defaults to intersectCollect.txt)
-
--oinfo/--outInfos The headers and order for each column in output file. The information can also be recorded in the db master file as "outinfo:header1=0_2,,headerN=N_N". NOTE: db file and col nr are 0-based. (if col 2,3 in 1st db file & col 0,1 in 0th db file is desired then ocol should be 1_2,1_3,0_0,0_1. You are free to include, exclude or rearrange the order as you like. Precedence 1. command line 2. Recorded in db master file 3. Order of appearance in db master file.
-
--m/--merge Merge all entries found within db files. Unique entries (not found in first db file) will be included. Do not support range matching. (Defaults to "0")
-
--sl/--select Select all entries in first infile matching keys in subsequent db files. Do not support range matching. (Defaults to "0") 
-
--sofs/--selectOutFiles Selected variants and orphan db files out data directory. Comma sep (Defaults to ".";Supply whole path(s) and in the same order as the '-db' db file) 
-
--prechr/--prefixChromosomes "chrX" or just "X" (defaults to "X")
-
--h/--help Display this help message    
-
--v/--version Display version
-
-=head3 I/O
-
-Input format db master file (tab-sep)
-
-Output format (tab separate list)
-
-=cut
 
 use Pod::Usage;
 use Pod::Text;
@@ -70,7 +37,7 @@ BEGIN {
                -db/--dbFile A tab-sep file containing 1 db per line with format (DbPath\tSeparator\tColumn_Keys\tChr_Column\tMatching\tColumns_to_Extract\tFile_Size\t). NOTE: db file and col nr are 0-based.
                   1. DbPath = Complete path to db file. First file determines the nr of elements that are subsequently used to collects information. [string]
                   2. Separator = Anything that can be inserted into perls split function. [string]
-                  3. Column_Keys = The column number(s) for the key values that are to be matched (1-4 keys supported). [Number]
+                  3. Column_Keys = The column number(s) for the key values that are to be matched (1-N keys supported). [Number]
                   4. Chr_Column = The column number(s) for the chr information. Set to "Na" if not applicable and the program will not try to use chr information. [Number, Na]
                   5. Columns_to_Extract = The column number(s) for the information to extract from the db file(s). [Number]
                   6. Matching = The type of matching to apply to the keys. Range db file should be sorted -k1,1 -k2,2n if it contains chr information. Currently range has only been tested using chromosomal coordinates. ["range", "exact"].
@@ -116,7 +83,7 @@ if($help) {
 
 if($version) {
     
-    print STDOUT "\nintersectCollect.pl v1.1", "\n\n";
+    print STDOUT "\nintersectCollect.pl v1.2", "\n\n";
     exit
 }
 
@@ -162,7 +129,7 @@ else { #Refseq - prefix and MT
 	
 my $dbFileCounter=0; #Global count of the nr of files in $dbFile
 my (@allVariants, @allVariantsUnique, @allVariantsSorted); #temporary arrays for sorting
-my (%dbFile, %RangeVariants, %RangeBins, %dbFilePos); #Db file structure, range/bin intervalls, binary positions in db files
+my (%dbFile, %dbFilePos, %tree); #Db file structure, range/bin intervalls, binary positions in db files
 my (%selectFilehandles, %selectVariants);
 my (%allVariants, %allVariantsChromosome, %allVariantsChromosomeUnique, %allVariantsChromosomeSorted); #hash for collected information and temporary hashes for sorting
 my %unSorted; #For later sorting using ST 
@@ -186,7 +153,7 @@ for (my $dbFileNr=0;$dbFileNr<$dbFileCounter;$dbFileNr++) {
 
 	if ( ($merge == 0) && ( $select == 0) ) { #Only include elements found in first db file. Not supported by merge option or select option
 
-	    &ReadDbRange($dbFile{$dbFileNr}{'File'},$dbFileNr);
+	    &ReadDbRangeIntervalTree($dbFile{$dbFileNr}{'File'},$dbFileNr);
 	}
     }
 }
@@ -196,9 +163,8 @@ for (my $dbFileNr=0;$dbFileNr<$dbFileCounter;$dbFileNr++) {
     if ($dbFileNr ==0) {#Add first keys and columns to extract and determines valid keys for subsequent Db files
 	
 	if ( ($merge == 0) && ( $select == 0) ) { #Only include elements found in first db file 
-	
-	    &ReadInfile($dbFile{$dbFileNr}{'File'}, $dbFileNr);
-	    %RangeVariants = (); #All done with range queries.
+	    &ReadInfileConcatKey($dbFile{$dbFileNr}{'File'}, $dbFileNr);
+	    %tree = (); #All done with range queries.
 	}
 	if ( $select == 1 ) {
 	    
@@ -229,14 +195,13 @@ if ($dbFile{0}{'Chr_column'} ne "Na") { #For chromosome queries
 
 	    if ($chromosomes[$chromosomeNumber+1]) {
 		
-		&ReadDbFiles($chromosomes[$chromosomeNumber],$chromosomes[$chromosomeNumber+1]); #Scans each file for chromosomes entries only processing those i.e. will scan the db file once for each chr in @chromosomes.   
+		&ReadDbFiles($chromosomes[$chromosomeNumber],$chromosomes[$chromosomeNumber+1]); #Scans each file for chromosomes entries only processing those i.e. will scan the db file once for each chr in @chromosomes.    
 	    }
 	    else {
-		
 		&ReadDbFiles($chromosomes[$chromosomeNumber]); #Last chromosome
 	    }
 	    &SortAllVariantsST($chromosomes[$chromosomeNumber]); #Sort all variants per chromsome
-	    &WriteChrVariants($outFile, $chromosomes[$chromosomeNumber]); #Write all variants to file per chrosome
+	    &WriteChrVariants($outFile, $chromosomes[$chromosomeNumber]); #Write all variants to file per chromosome
 	    
 	    #Reset for next chromosome
 	    $allVariants{$chromosomes[$chromosomeNumber]} = (); %allVariantsChromosome = (); %allVariantsChromosomeUnique = (); %allVariantsChromosomeSorted = ();
@@ -284,7 +249,7 @@ else { #Other type of keys
 ###
 
 sub ReadDbFilesTabix {
-#Reads all db files collected from Db master file, except first db file and db files with features "large", "range". These db files are handled by different subroutines.   
+#Reads all db files collected from Db master file, except first db file and db files with features "large", "range". These db files are handled by different subroutines.
 
     my $chromosomeNumber = $_[0];
     
@@ -292,67 +257,71 @@ sub ReadDbFilesTabix {
 	
 	if ($dbFile{$dbFileNr}{'Size'} eq "tabix") { #Only for files with tabix index, other files are handled downstream
 	    
-	    my $tabix = Tabix->new('-data' => $dbFile{$dbFileNr}{'File'});
-	    my @tabixContigs = $tabix->getnames; #Locate all contigs in file
-
-	    if ( grep( /^$chromosomeNumber$/, @tabixContigs ) ) { #Only collect from contigs present in file
-
-		for my $secondKey (keys % {$allVariants{$chromosomeNumber} }) {
+	    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) >= 2 ) { #Only for tabix files with at least 2 keys
+		
+		my $tabix = Tabix->new('-data' => $dbFile{$dbFileNr}{'File'});
+		my @tabixContigs = $tabix->getnames; #Locate all contigs in file
+		
+		if ( (grep( /^$chromosomeNumber$/, @tabixContigs )) && ($unSorted{$chromosomeNumber}) ) { #Only collect from contigs present in file
 		    
-		    for my $thirdKey (keys % {$allVariants{$chromosomeNumber}{$secondKey} }) {
+		    for (my $arrayPosition=0;$arrayPosition<scalar(@{$unSorted{$chromosomeNumber}});$arrayPosition++) { #All variants on contig
 			
-			my $iteration = $tabix->query( $chromosomeNumber, ($secondKey-1), $thirdKey); #Create overlapping region, creates a bit of search overhead, but should not affect accuracy since return is check for association before collecting
+			my $stopPosition = 0;
+			my $hitCounter = 0;
+			
+			while ( (defined($unSorted{$chromosomeNumber}[$arrayPosition+$stopPosition+1])) && $unSorted{$chromosomeNumber}[$arrayPosition+$stopPosition+1]-$unSorted{$chromosomeNumber}[$arrayPosition] <= 500) { #Find all variants positions within 500 nt
 			    
-			while (my $variantLine = $tabix->read($iteration)){ #Iterate over all postions within region
+			    $stopPosition = $stopPosition+1;
+			}
+			
+			my $iteration = $tabix->query( $chromosomeNumber, ($unSorted{$chromosomeNumber}[$arrayPosition]-1), ($unSorted{$chromosomeNumber}[$arrayPosition+$stopPosition])); #Collect slice from database file
+			
+			while (my $variantLine = $tabix->read($iteration)){ #Iterate over all positions within region
 			    
 			    if (defined($variantLine)) {
-			       
+				
 				my @tabixReturnArray = split('\t', $variantLine);
 				
-				if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 3) {
+				if ( $allVariants{$chromosomeNumber}{ $tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }) { #Position exists in infile
 				    
-				    if ( $allVariants{$chromosomeNumber}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ]}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}) {
-					
-					for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
-					    
-					    my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-					    $allVariants{$chromosomeNumber }{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ]}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{$$columnIdRef} = $tabixReturnArray[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
-					}
-				    }
-				}
-				if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 4) {
+				    my $concatenatedKey = "";
 				    
-				    if ( $allVariants{$chromosomeNumber}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ]}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}) {
+				    for (my $keys=2;$keys<scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}} );$keys++) { #Generate concatenated key
 					
-					for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
-					    
-					    my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-					    $allVariants{$chromosomeNumber }{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ]}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{$$columnIdRef} = $tabixReturnArray[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];					    
-					}
-				    }
-				}
-				if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 5) {
-				    
-				    if ( $allVariants{$chromosomeNumber}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ]}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[4] ]}) {
+					$concatenatedKey .= $tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[$keys] ];
+				    }   
+				    if ( $allVariants{$chromosomeNumber}{ $tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{$concatenatedKey}) { #Variant exists in infile
 					
-					for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
+					for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) { #Collect info from database file
 					    
 					    my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
 
-					    $allVariants{$chromosomeNumber }{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ]}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{$tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[4] ]}{$$columnIdRef} = $tabixReturnArray[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
+					    $allVariants{$chromosomeNumber}{ $tabixReturnArray[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{$concatenatedKey}{$$columnIdRef} = $tabixReturnArray[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
 					}
+					if ($hitCounter >= $stopPosition) { #Exit if all variants within slice have been found
+
+					    $arrayPosition = $arrayPosition + $stopPosition; #Track number of variants entries within slice 
+					    last;
+					}
+					$hitCounter++;				    
 				    }
 				}
+				next; #Position is not found in infile - skip processing of line
 			    }
 			}
+			$arrayPosition = $arrayPosition + $stopPosition; #Track number of variants entries within slice 
 		    }
 		} 
+		print STDOUT "Finished Reading chromosome ".$chromosomeNumber." in Infile: ".$dbFile{$dbFileNr}{'File'},"\n";   
 	    }
-	    print STDOUT "Finished Reading chromosome ".$chromosomeNumber." in Infile: ".$dbFile{$dbFileNr}{'File'},"\n";   
+	    else { #Tabix file must have at least 2 keys
+
+		print STDERR "WARNING: Use of Tabix files with intersectCollect requires at least 2 keys. Less than 2 keys were supplied for file: ".$dbFile{$dbFileNr}{'File'}."\n";
+		print STDERR "WARNING: intersectCollect will skip elements in this file\n";
+	    }
 	}
     }
 }
-
 
 sub ReadDbMaster {
 #Reads DbMaster file
@@ -450,18 +419,19 @@ sub ReadDbMaster {
 ####
 ###Currently not used
 ####
-	    my @replaceMatchs;
+	    #my @replaceMatchs;
 
-	    for (my $extracColumnsCounter=0;$extracColumnsCounter<scalar(@dbExtractColumns);$extracColumnsCounter++) {
+	    #for (my $extracColumnsCounter=0;$extracColumnsCounter<scalar(@dbExtractColumns);$extracColumnsCounter++) {
 
 		
-		if ($dbExtractColumns[$extracColumnsCounter] =~/(\S+)!/) { #Locate replace and match entry (if any)
+	#	if ($dbExtractColumns[$extracColumnsCounter] =~/(\S+)!/) { #Locate replace and match entry (if any)
 		    
-		    splice(@dbExtractColumns, $extracColumnsCounter, 1); #Remove replaceMatchs entry
-		    push(@replaceMatchs, $1); #Add to enable match and replace later
-		}
-	    }
-	    $dbFile{$dbFileCounter}{'Column_ReplaceMatch'}= [@replaceMatchs]; #Add dbFile replaceMatchs columns
+	#	    splice(@dbExtractColumns, $extracColumnsCounter, 1); #Remove replaceMatchs entry
+	#	    push(@replaceMatchs, $1); #Add to enable match and replace later
+	#	}
+	 #   }
+	  #  $dbFile{$dbFileCounter}{'Column_ReplaceMatch'}= [@replaceMatchs]; #Add dbFile replaceMatchs columns
+###
 ###
 ###
 
@@ -565,7 +535,7 @@ sub ReadDbFiles {
 		    
 		    my @lineElements = split($dbFile{$dbFileNr}{'Separator'},$_); #Splits columns on separator and loads line
 			
-		    #Depending on the number of column keys supplied by user in db master file . 
+		    #Depending on the number of column keys supplied by user in db master file. 
 		    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 1) {
 			
 			if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }) { #If first key match to already processed first db file 
@@ -583,69 +553,24 @@ sub ReadDbFiles {
 			    last;
 			}
 		    }
-		    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 2) {
+		    else {
 			
 			if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }) {
 			    
-			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
-				
-				my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-				$allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
-			    }
-			}
-			if ($nextChromosome && $lineElements[$dbFile{$dbFileNr}{'Chr_column'}] eq $nextChromosome) { #If next chromosome is found return (Since all numerically infiles are sorted this is ok)
-		
-			    &CheckChromosome(*DBF, \$dbFile{$dbFileNr}{'File'}, \$dbFileNr, \$lineElements[$dbFile{$dbFileNr}{'Chr_column'}]);
-			    close(DBF);
-			    last;
-			}
-		    }
-		    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 3) {
-			
-			if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}) {
-
-			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
-				    
-				my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-				$allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
-			    }
-			}
-			if ($nextChromosome && $lineElements[$dbFile{$dbFileNr}{'Chr_column'}] eq $nextChromosome) { #If next chromosome is found return (Since all numerically infiles are sorted this is ok)
-			
-			    &CheckChromosome(*DBF, \$dbFile{$dbFileNr}{'File'}, \$dbFileNr, \$lineElements[$dbFile{$dbFileNr}{'Chr_column'}]);
-			    close(DBF);
-			    last;
-			}
-		    }
-		    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 4) {
+			    my $concatenatedKey = "";
 			    
-			if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}) {
-			
-			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
-				    
-				my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-				$allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
-			    }
-			}
-			if ($nextChromosome && $lineElements[$dbFile{$dbFileNr}{'Chr_column'}] eq $nextChromosome) { #If next chromosome is found return (Since all numerically infiles are sorted this is ok)
-			
-			    &CheckChromosome(*DBF, \$dbFile{$dbFileNr}{'File'}, \$dbFileNr, \$lineElements[$dbFile{$dbFileNr}{'Chr_column'}]);
-			    close(DBF);
-			    last;
-			}
-		    }
-		    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 5) {
-		
-			if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[4] ]}) {
+			    for (my $keys=2;$keys<scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}} );$keys++) { #Generate concatenated key
 				
+				$concatenatedKey .= $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[$keys] ];
+			    }
 			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
-				    
+				
 				my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-				$allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[4] ]}{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
+				$allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{$concatenatedKey}{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
 			    }
 			}
 			if ($nextChromosome && $lineElements[$dbFile{$dbFileNr}{'Chr_column'}] eq $nextChromosome) { #If next chromosome is found return (Since all numerically infiles are sorted this is ok)
-			
+		
 			    &CheckChromosome(*DBF, \$dbFile{$dbFileNr}{'File'}, \$dbFileNr, \$lineElements[$dbFile{$dbFileNr}{'Chr_column'}]);
 			    close(DBF);
 			    last;
@@ -665,6 +590,17 @@ sub ReadInfileSelect {
 
     my $dbFileName = $_[0];
     my $DbFileNumber = $_[1];
+
+    my @rangeFilesDbNr;
+    
+#Find all range database files
+    for (my $dbFileNr=0;$dbFileNr<$dbFileCounter;$dbFileNr++) {
+	
+	if ($dbFile{$dbFileNr}{'Matching'} eq "range") {
+	    
+	    push(@rangeFilesDbNr, $dbFileNr);
+	}
+    }
 
     for (my $dbFileNr=0;$dbFileNr<$dbFileCounter;$dbFileNr++) { #All db files (in order of appearance in $db) except first file
 
@@ -750,6 +686,7 @@ sub ReadInfileSelect {
 				
 				my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
 				$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]; #Collect all columns to enable print later
+				#print $allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ], "\n";
 			    }
 			    if ( ($selectedSwithc{$dbFileNr} == 1) &&  ($dbWroteSwitch == 0) ) { #Print record only once to avoid duplicates
 
@@ -782,190 +719,56 @@ sub ReadInfileSelect {
 		    }
 		}
 	    }
-	    if (scalar( @{$dbFile{0}{'Column_Keys'}}) == 2) {
-
+	    else {
+		
+		my $concatenatedKey = "";
+		
+		for (my $keys=2;$keys<scalar( @{$dbFile{0}{'Column_Keys'}} );$keys++) {
+		    
+		    $concatenatedKey .= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[$keys] ]    
+		}
 		for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) {
 		    
 		    my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
-		    $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{$$columnIdRef}= $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];
-		}
-		push (@{$unSorted{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}}, $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]);
-	    }
-	    if (scalar( @{$dbFile{0}{'Column_Keys'}}) == 3) {
-
-		for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) {
+		    $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]}{$concatenatedKey}{$$columnIdRef}= $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];
 		    
-		    my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
-		    $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{$$columnIdRef}= $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];	    
 		}
-		push (@{$unSorted{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}}, $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]);
-
-		for my $rangeDbFiles (keys %RangeVariants) { #All Range Db Files
+		if (scalar( @{$dbFile{0}{'Column_Keys'}}) > 2) {
 		    
-		    for my $firstKey (keys % { $RangeVariants{$rangeDbFiles} })  { #For all first key e.g. chromosomeNr
+		    for (my $RangeDbFileNumberCounter=0;$RangeDbFileNumberCounter<scalar(@rangeFilesDbNr);$RangeDbFileNumberCounter++) {
 			
-			if ($firstKey eq $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]) { #Find correct key e.g. chromosomeNr (enhance speed)
-			   
-			    for my $binNr (keys %{ $RangeBins{$rangeDbFiles}{$firstKey} }) { #For all bins within range Db file and first key (enhance speed)
+			for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{ $rangeFilesDbNr[$RangeDbFileNumberCounter] }{'Column_To_Extract'}});$extractColumnsCounter++) { #Range Db files Column_To_Extract
+			    
+			    my $columnIdRef = \($rangeFilesDbNr[$RangeDbFileNumberCounter]."_".$dbFile{ $rangeFilesDbNr[$RangeDbFileNumberCounter] }{'Column_To_Extract'}[$extractColumnsCounter]);
+			    
+			    if(defined($tree{ $rangeFilesDbNr[$RangeDbFileNumberCounter] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $dbFile{ $rangeFilesDbNr[$RangeDbFileNumberCounter] }{'Column_To_Extract'}[$extractColumnsCounter] }) ) {
+				
+				my $feature;
+				
+				if ($lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] eq $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ]) { #SNV
+				    
+				    $feature = $tree{ $rangeFilesDbNr[$RangeDbFileNumberCounter] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $dbFile{ $rangeFilesDbNr[$RangeDbFileNumberCounter] }{'Column_To_Extract'}[$extractColumnsCounter] }->fetch($lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ], $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ]+1); #Set::IntervalTree uses half-open intervals, i.e. [1,3), [2,6), etc. so adding +1 to SNVs should be ok
+				}
+				else {#Range input
+				    
+				    $feature = $tree{ $rangeFilesDbNr[$RangeDbFileNumberCounter] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $dbFile{ $rangeFilesDbNr[$RangeDbFileNumberCounter] }{'Column_To_Extract'}[$extractColumnsCounter] }->fetch($lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]-1, $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ]);
+				}
+				for(my $arrayElementCounter=0;$arrayElementCounter<scalar(@{$feature});$arrayElementCounter++) {
+				    
+				    if ($arrayElementCounter == 0) {
 					
-				if ($lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] >= $RangeBins{$rangeDbFiles}{$firstKey}{$binNr}{'lowerboundary'} && $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] <= $RangeBins{$rangeDbFiles}{$firstKey}{$binNr}{'upperboundary'} ) { #Found in Range Bin Db file, correct firstKey, within bin and second key overlapps bin range.
-				    
-				    for my $startPosition (keys % { $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr} })  { #For all Db file range start positions within bin
-				 	
-					if ( $startPosition <= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]) { #second key is downstream of start position
-					    
-					    for my $stopPosition (keys % { $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition} })  { #For all range stop positions 
-						
-						if ( $stopPosition >= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] ) { #second key is upstream of stop position i.e overlapping
-						    
-						    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$rangeDbFiles}{'Column_To_Extract'}});$extractColumnsCounter++) {
-
-							my $columnIdRef = \($rangeDbFiles."_".$dbFile{$rangeDbFiles}{'Column_To_Extract'}[$extractColumnsCounter]); #RangeDb file is not random key but ordered Db file from initial for loop.		
-							$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{$$columnIdRef}.= $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition}{$stopPosition}{$$columnIdRef}.";";
-						    }
-						}
-					    }
-					}
-					#Catches events where second key is upstream of range start, but third key is within range i.e. we do not require complete feature overlap
-					elsif ( $startPosition <= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ]) { #third key is downstream of start position
-					    
-					    for my $stopPosition (keys % { $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition} })  { #For all range stop positions 
-						
-						if ( $stopPosition >= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] ) { #third key is upstream of stop position i.e overlapping
-						    
-						    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$rangeDbFiles}{'Column_To_Extract'}});$extractColumnsCounter++) {
-
-							my $columnIdRef = \($rangeDbFiles."_".$dbFile{$rangeDbFiles}{'Column_To_Extract'}[$extractColumnsCounter]); #RangeDb file is not random key but ordered Db file from initial for loop.		
-							$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{$$columnIdRef}.= $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition}{$stopPosition}{$$columnIdRef}.";";
-						    }
-						}
-					    }
-					}
+					$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]}{$concatenatedKey}{$$columnIdRef}=@{$feature}[$arrayElementCounter];
+					
 				    }
-				    last; #No overlapping bins - move to next line
+				    else {
+					
+					$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]}{$concatenatedKey}{$$columnIdRef}.=";".@{$feature}[$arrayElementCounter];
+				    }
 				}
 			    }
 			}
 		    }
 		}
-	    } 
-	    if (scalar( @{$dbFile{0}{'Column_Keys'}}) == 4) {
-		
-		for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) {
-		    
-		    my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
-		    $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[3] ]}{$$columnIdRef}= $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];
-		    
-		}
-		push (@{$unSorted{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}}, $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]);
-
-		for my $rangeDbFiles (keys %RangeVariants) { #All Range Db Files
-		    
-		    for my $firstKey (keys % { $RangeVariants{$rangeDbFiles} })  { #For all first key e.g. chromosomeNr
-			
-			if ($firstKey eq $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]) { #Find correct key e.g. chromosomeNr (enhance speed)
-			    
-			    for my $binNr (keys %{ $RangeBins{$rangeDbFiles}{$firstKey} }) { #For all bins within range Db file and first key (enhance speed)
-				
-				if ($lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] >= $RangeBins{$rangeDbFiles}{$firstKey}{$binNr}{'lowerboundary'} && $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] <= $RangeBins{$rangeDbFiles}{$firstKey}{$binNr}{'upperboundary'} ) { #Found in Range Bin Db file, correct firstKey, within bin and second key overlapps bin range.
-				    
-				    for my $startPosition (keys % { $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr} })  { #For all Db file range start positions within bin
-
-					if ( $startPosition <= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]) { #second key is downstream of start position
-					    
-					    for my $stopPosition (keys % { $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition} })  { #For all range stop positions 
-						
-						if ( $stopPosition >= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] ) { #second key is upstream of stop position i.e overlapping
-						    
-						    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$rangeDbFiles}{'Column_To_Extract'}});$extractColumnsCounter++) {
-
-							my $columnIdRef = \($rangeDbFiles."_".$dbFile{$rangeDbFiles}{'Column_To_Extract'}[$extractColumnsCounter]); #RangeDb file is not random key but ordered Db file from initial for loop.		
-							$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[3] ]}{$$columnIdRef}.= $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition}{$stopPosition}{$$columnIdRef}.";";
-						    }
-						}
-					    }
-					}
-					#Catches events where second key is upstream of range start, but third key is within range i.e. we do not require complete feature overlap
-					elsif ( $startPosition <= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ]) { #third key is downstream of start position
-					    
-					    for my $stopPosition (keys % { $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition} })  { #For all range stop positions 
-						
-						if ( $stopPosition >= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] ) { #third key is upstream of stop position i.e overlapping
-						    
-						    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$rangeDbFiles}{'Column_To_Extract'}});$extractColumnsCounter++) {
-
-							my $columnIdRef = \($rangeDbFiles."_".$dbFile{$rangeDbFiles}{'Column_To_Extract'}[$extractColumnsCounter]); #RangeDb file is not random key but ordered Db file from initial for loop.		
-							$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[3] ]}{$$columnIdRef}.= $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition}{$stopPosition}{$$columnIdRef}.";";
-						    }
-						}
-					    }
-					}
-				    }
-				    last; #No overlapping bins since border spanning events are added to all Bin that the event is spanned - move to next line
-				}
-			    }
-			}
-		    }
-		}
-	    }
-	    if (scalar( @{$dbFile{0}{'Column_Keys'}}) == 5) {
-		
-		for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) {
-		    
-		    my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
-		    $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[3] ]}{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[4] ]}{$$columnIdRef}= $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];
-		    
-		}
-		push (@{$unSorted{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}}, $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]);
-		
-		for my $rangeDbFiles (keys %RangeVariants) { #All Range Db Files
-		    
-		    for my $firstKey (keys % { $RangeVariants{$rangeDbFiles} })  { #For all first key e.g. chromosomeNr
-			
-			if ($firstKey eq $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]) { #Find correct key e.g. chromosomeNr (enhance speed)
-			    
-			    for my $binNr (keys %{ $RangeBins{$rangeDbFiles}{$firstKey} }) { #For all bins within range Db file and first key (enhance speed)
-				
-				if ($lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] >= $RangeBins{$rangeDbFiles}{$firstKey}{$binNr}{'lowerboundary'} && $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] <= $RangeBins{$rangeDbFiles}{$firstKey}{$binNr}{'upperboundary'} ) { #Found in Range Bin Db file, correct firstKey, within bin and second key overlapps bin range.
-				    
-				    for my $startPosition (keys % { $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr} })  { #For all Db file range start positions within bin
-
-					if ( $startPosition <= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]) { #second key is downstream of start position
-					    
-					    for my $stopPosition (keys % { $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition} })  { #For all range stop positions 
-						
-						if ( $stopPosition >= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] ) { #second key is upstream of stop position i.e overlapping
-						    
-						    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$rangeDbFiles}{'Column_To_Extract'}});$extractColumnsCounter++) {
-
-							my $columnIdRef = \($rangeDbFiles."_".$dbFile{$rangeDbFiles}{'Column_To_Extract'}[$extractColumnsCounter]); #RangeDb file is not random key but ordered Db file from initial for loop.		
-							$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[3] ]}{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[4] ]}{$$columnIdRef}.= $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition}{$stopPosition}{$$columnIdRef}.";";
-						    }
-						}
-					    }
-					}
-					#Catches events where second key is upstream of range start, but third key is within range i.e. we do not require complete feature overlap
-					elsif ( $startPosition <= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ]) { #third key is downstream of start position
-					    
-					    for my $stopPosition (keys % { $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition} })  { #For all range stop positions 
-						
-						if ( $stopPosition >= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] ) { #third key is upstream of stop position i.e overlapping
-						    
-						    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$rangeDbFiles}{'Column_To_Extract'}});$extractColumnsCounter++) {
-
-							my $columnIdRef = \($rangeDbFiles."_".$dbFile{$rangeDbFiles}{'Column_To_Extract'}[$extractColumnsCounter]); #RangeDb file is not random key but ordered Db file from initial for loop.		
-							$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[3] ]}{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[4] ]}{$$columnIdRef}.= $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition}{$stopPosition}{$$columnIdRef}.";";
-						    }
-						}
-					    }
-					}
-				    }
-				    last; #No overlapping bins since border spanning events are added to all Bin that the event is spanned - move to next line
-				}
-			    }
-			}
-		    }
-		} 	
 	    }
 	}
     }
@@ -983,7 +786,6 @@ sub ReadDbFilesNoChrSelect {
 #Reads all db files collected from Db master file, except first db file and db files with features "large", "range". These db files are handled by different subroutines.
     
     for (my $dbFileNr=1;$dbFileNr<$dbFileCounter;$dbFileNr++) { #All db files (in order of appearance in $db) except first db which has already been handled 
-	
 	
 	if ( ($dbFile{$dbFileNr}{'Size'} eq "large") || ($dbFile{$dbFileNr}{'Matching'} eq "range") ) { #Already handled
 
@@ -1015,67 +817,27 @@ sub ReadDbFilesNoChrSelect {
 			    
 			    $selectVariants{$dbFileNr}{$parsed_column[$parsedColumnCounter]}{'key'} = $parsed_column[$parsedColumnCounter]; #Add key entry
 			    
-			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) { #Enable collecton of columns from db file
+			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) { #Enable collection of columns from db file
 				
 				my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
 			    
 				$allVariants{ $parsed_column[$parsedColumnCounter] }{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
 			    }
-			    for (my $replaceMatchCounter=0;$replaceMatchCounter<scalar( @{$dbFile{$dbFileNr}{'Column_ReplaceMatch'}});$replaceMatchCounter++) { #Enable collecton of columns from db file
+			#####################
+			###Not enabled yet###
+			#####################
+			    #for (my $replaceMatchCounter=0;$replaceMatchCounter<scalar( @{$dbFile{$dbFileNr}{'Column_ReplaceMatch'}});$replaceMatchCounter++) { #Enable collecton of columns from db file
 				
-				my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_ReplaceMatch'}[$replaceMatchCounter]);
-				$selectVariants{$dbFileNr}{$parsed_column[$parsedColumnCounter]}{'replace'} = $lineElements[ $dbFile{$dbFileNr}{'Column_ReplaceMatch'}[$replaceMatchCounter] ];
+			#	my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_ReplaceMatch'}[$replaceMatchCounter]);
+			#	$selectVariants{$dbFileNr}{$parsed_column[$parsedColumnCounter]}{'replace'} = $lineElements[ $dbFile{$dbFileNr}{'Column_ReplaceMatch'}[$replaceMatchCounter] ];
 				#$allVariants{ $parsed_column[$parsedColumnCounter] }{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_ReplaceMatch'}[$replaceMatchCounter] ];
-			    }
+			 #   }
+			####################
 			}
 		    }
 ###
 #NOTE Only 1 key supported so far 130204
 ###		    
-		    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 2) {
-		
-			if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }) {
-			
-			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
-				
-				my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-				$allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
-			    }
-			}
-		    }
-		    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 3) {
-
-			if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}) {
-
-			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
-				
-				my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-				$allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
-				
-			    }
-			}
-		    }
-		    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 4) {
-
-			if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}) {
-			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
-				
-				my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-				$allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
-			    }
-			}
-		    }
-		    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 5) {
-			
-			if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[4] ]}) {
-			    
-			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
-				
-				my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-				$allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[4] ]}{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
-			    }
-			}
-		    }
 		}
 	    } 	
 	}
@@ -1135,47 +897,19 @@ sub ReadDbFilesNoChr {
 			    }
 			}
 		    }
-		    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 2) {
-			
-			if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }) {
-			
-			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
-				
-				my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-				$allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
-			    }
-			}
-		    }
-		    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 3) {
+		    else {
 
-			if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}) {
-
-			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
-				
-				my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-				$allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{$$columnIdRef} = $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
-				
-			    }
+			my $concatenatedKey = "";
+		
+			for (my $keys=2;$keys<scalar( @{$dbFile{0}{'Column_Keys'}} );$keys++) {
+			    
+			    $concatenatedKey .= $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[$keys] ]    
 			}
-		    }
-		    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 4) {
-			
-			if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}) {
-			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
-				
-				my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-				$allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{$$columnIdRef}= $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
-			    }
-			}
-		    }
-		    if (scalar( @{$dbFile{$dbFileNr}{'Column_Keys'}}) == 5) {
-			
-			if ( $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[4] ]}) {
-			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
-				
-				my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
-				$allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[3] ]}{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[4] ]}{$$columnIdRef}= $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
-			    }
+			for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) {
+			    
+			    my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
+			    $allVariants{ $lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[0] ] }{$lineElements[ $dbFile{$dbFileNr}{'Column_Keys'}[1] ]}{$concatenatedKey}{$$columnIdRef}= $lineElements[ $dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter] ];
+		    
 			}
 		    }
 		}
@@ -1220,70 +954,19 @@ sub ReadDbLarge {
 		    }		    
 		}
 	    }
-	    if (scalar( @{$dbFile{$DbFileNumber}{'Column_Keys'}}) == 2) {	    
+	    else {
+
+		my $concatenatedKey = "";
 		
-		if ( $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] } ) { #Needed to not run out of memory in hash look-up
+		for (my $keys=2;$keys<scalar( @{$dbFile{0}{'Column_Keys'}} );$keys++) {
 		    
-		    if ( $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] } ){ #Check full entry
-
-			for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) { #Extract info
-			    
-			    my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);			
-			    $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{$$columnIdRef}= $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];
-			}		    
-		    }
+		    $concatenatedKey .= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[$keys] ]    
 		}
-	    }
-	    if (scalar( @{$dbFile{$DbFileNumber}{'Column_Keys'}}) == 3) {
-
-		if ( $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] } ) { #Needed to not run out of memory in hash look-up
+		for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) {
 		    
-		    if ( $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] } ){ #Needed to not run out of memory in hash look-up
-			
-			if ( $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }) { #Check full entry
-			  
-			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) { #Extract info
-				
-				my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);			
-				$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{$$columnIdRef}= $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];
-			    }		    
-			}
-		    }		
+		    my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
+		    $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]}{$concatenatedKey}{$$columnIdRef}= $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];
 		    
-		}
-	    }
-	    if (scalar( @{$dbFile{$DbFileNumber}{'Column_Keys'}}) == 4) {
-
-		if ( $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] } ) { #Needed to not run out of memory in hash look-up
-		    
-		    if ( $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] } ){ #Needed to not run out of memory in hash look-up
-			
-			if ( $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[3] ]} ) { #Check full entry
-
-			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) { #Extract info
-				
-				my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);			
-				$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[3] ]}{$$columnIdRef}= $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];
-			    }		    
-			}
-		    }
-		}
-	    }
-	    if (scalar( @{$dbFile{$DbFileNumber}{'Column_Keys'}}) == 5) {
-		
-		if ( $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] } ) { #Needed to not run out of memory in hash look-up
-		    
-		    if ( $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] } ){ #Needed to not run out of memory in hash look-up
-			
-			if ( $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[3] ]}{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[4] ]} ) { #Check full entry
-			    
-			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) { #Extract info
-				
-				my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);			
-				$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[3] ]}{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[4] ]}{$$columnIdRef}= $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];
-			    }		    
-			}
-		    }
 		}
 	    }
 	}
@@ -1293,12 +976,23 @@ sub ReadDbLarge {
     return;
 }
 
-sub ReadInfile {
+sub ReadInfileConcatKey {
 #Reads the first db file, which is the file that all subsequent elements will matched to i.e. only information for elements present in the first file will be added)
 
     my $DbFileName = $_[0];
     my $DbFileNumber = $_[1];
-    
+
+    my @rangeFilesDbNr;
+
+#Find all range database files
+    for (my $dbFileNr=0;$dbFileNr<$dbFileCounter;$dbFileNr++) {
+
+	if ($dbFile{$dbFileNr}{'Matching'} eq "range") {
+
+	    push(@rangeFilesDbNr, $dbFileNr);
+	}
+    }
+
     open(RIF, "<".$DbFileName) or die "Can't open ".$DbFileName.":".$!, "\n";    
     
     while (<RIF>) {
@@ -1323,191 +1017,58 @@ sub ReadInfile {
 		    $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{$$columnIdRef}= $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];
 		}
 	    }
-	    if (scalar( @{$dbFile{0}{'Column_Keys'}}) == 2) {
+	    else {
 
-		for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) {
-		    
-		    my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
-		    $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{$$columnIdRef}= $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];
-		}
-		push (@{$unSorted{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}}, $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]);
-	    }
-	    if (scalar( @{$dbFile{0}{'Column_Keys'}}) == 3) {
-
-		for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) {
-		    
-		    my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
-		    $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];	    
-		}
-		push (@{$unSorted{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}}, $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]);
-
-		for my $rangeDbFiles (keys %RangeVariants) { #All Range Db Files
-		    
-		    for my $firstKey (keys % { $RangeVariants{$rangeDbFiles} })  { #For all first key e.g. chromosomeNr
-			
-			if ($firstKey eq $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]) { #Find correct key e.g. chromosomeNr (enhance speed)
-			   
-			    for my $binNr (keys %{ $RangeBins{$rangeDbFiles}{$firstKey} }) { #For all bins within range Db file and first key (enhance speed)
-					
-				if ($lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] >= $RangeBins{$rangeDbFiles}{$firstKey}{$binNr}{'lowerboundary'} && $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] <= $RangeBins{$rangeDbFiles}{$firstKey}{$binNr}{'upperboundary'} ) { #Found in Range Bin Db file, correct firstKey, within bin and second key overlapps bin range.
-				    
-				    for my $startPosition (keys % { $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr} })  { #For all Db file range start positions within bin
-				 	
-					if ( $startPosition <= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]) { #second key is downstream of start position
-					    
-					    for my $stopPosition (keys % { $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition} })  { #For all range stop positions 
-						
-						if ( $stopPosition >= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] ) { #second key is upstream of stop position i.e overlapping
-						    
-						    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$rangeDbFiles}{'Column_To_Extract'}});$extractColumnsCounter++) {
-							
-							my $columnIdRef = \($rangeDbFiles."_".$dbFile{$rangeDbFiles}{'Column_To_Extract'}[$extractColumnsCounter]); #RangeDb file is not random key but ordered Db file from initial for loop.		
-							$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{$$columnIdRef}.= $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition}{$stopPosition}{$$columnIdRef}.";";
-						    }
-						}
-					    }
-					}
-					#Catches events where second key is upstream of range start, but third key is within range i.e. we do not require complete feature overlap
-					elsif ( $startPosition <= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ]) { #third key is downstream of start position
-					    
-					    for my $stopPosition (keys % { $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition} })  { #For all range stop positions 
-						
-						if ( $stopPosition >= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] ) { #third key is upstream of stop position i.e overlapping
-						    
-						    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$rangeDbFiles}{'Column_To_Extract'}});$extractColumnsCounter++) {
-
-							my $columnIdRef = \($rangeDbFiles."_".$dbFile{$rangeDbFiles}{'Column_To_Extract'}[$extractColumnsCounter]); #RangeDb file is not random key but ordered Db file from initial for loop.
-							$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{$$columnIdRef}.= $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition}{$stopPosition}{$$columnIdRef}.";";
-						    }
-						}
-					    }
-					}
-				    }
-				    last; #No overlapping bins - move to next line
-				}
-			    }
-			}
-		    }
-		}
-	    } 
-	    if (scalar( @{$dbFile{0}{'Column_Keys'}}) == 4) {
+		my $concatenatedKey = "";
 		
+		for (my $keys=2;$keys<scalar( @{$dbFile{0}{'Column_Keys'}} );$keys++) {
+		    
+		    $concatenatedKey .= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[$keys] ]    
+		}
 		for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) {
 		    
 		    my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
-		    $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[3] ]}{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];
+		    $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]}{$concatenatedKey}{$$columnIdRef}= $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];
 		    
 		}
-		push (@{$unSorted{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}}, $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]);
-
-		for my $rangeDbFiles (keys %RangeVariants) { #All Range Db Files
+		if (scalar( @{$dbFile{0}{'Column_Keys'}}) > 2) {
 		    
-		    for my $firstKey (keys % { $RangeVariants{$rangeDbFiles} })  { #For all first key e.g. chromosomeNr
+		    for (my $RangeDbFileNumberCounter=0;$RangeDbFileNumberCounter<scalar(@rangeFilesDbNr);$RangeDbFileNumberCounter++) {
 			
-			if ($firstKey eq $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]) { #Find correct key e.g. chromosomeNr (enhance speed)
+			for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{ $rangeFilesDbNr[$RangeDbFileNumberCounter] }{'Column_To_Extract'}});$extractColumnsCounter++) { #Range Db files Column_To_Extract
 			    
-			    for my $binNr (keys %{ $RangeBins{$rangeDbFiles}{$firstKey} }) { #For all bins within range Db file and first key (enhance speed)
+			    my $columnIdRef = \($rangeFilesDbNr[$RangeDbFileNumberCounter]."_".$dbFile{ $rangeFilesDbNr[$RangeDbFileNumberCounter] }{'Column_To_Extract'}[$extractColumnsCounter]);
+
+			    if(defined($tree{ $rangeFilesDbNr[$RangeDbFileNumberCounter] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $dbFile{ $rangeFilesDbNr[$RangeDbFileNumberCounter] }{'Column_To_Extract'}[$extractColumnsCounter] }) ) {
 				
-				if ($lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] >= $RangeBins{$rangeDbFiles}{$firstKey}{$binNr}{'lowerboundary'} && $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] <= $RangeBins{$rangeDbFiles}{$firstKey}{$binNr}{'upperboundary'} ) { #Found in Range Bin Db file, correct firstKey, within bin and second key overlapps bin range.
+				my $feature;
+				
+				if ($lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] eq $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ]) { #SNV
 				    
-				    for my $startPosition (keys % { $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr} })  { #For all Db file range start positions within bin
+				    $feature = $tree{ $rangeFilesDbNr[$RangeDbFileNumberCounter] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $dbFile{ $rangeFilesDbNr[$RangeDbFileNumberCounter] }{'Column_To_Extract'}[$extractColumnsCounter] }->fetch($lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ], $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ]+1);   
+				}
+				else {#Range input
+				    
+				    $feature = $tree{ $rangeFilesDbNr[$RangeDbFileNumberCounter] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $dbFile{ $rangeFilesDbNr[$RangeDbFileNumberCounter] }{'Column_To_Extract'}[$extractColumnsCounter] }->fetch($lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]-1, $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ]);
+				}
+				for(my $arrayElementCounter=0;$arrayElementCounter<scalar(@{$feature});$arrayElementCounter++) {
+			
+				    if ($arrayElementCounter == 0) {
 
-					if ( $startPosition <= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]) { #second key is downstream of start position
-					    
-					    for my $stopPosition (keys % { $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition} })  { #For all range stop positions 
-						
-						if ( $stopPosition >= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] ) { #second key is upstream of stop position i.e overlapping
-						    
-						    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$rangeDbFiles}{'Column_To_Extract'}});$extractColumnsCounter++) {
-							
-							my $columnIdRef = \($rangeDbFiles."_".$dbFile{$rangeDbFiles}{'Column_To_Extract'}[$extractColumnsCounter]); #RangeDb file is not random key but ordered Db file from initial for loop.
-							$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[3] ]}{$$columnIdRef}.="$RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition}{$stopPosition}{$$columnIdRef};";
-						    }
-						}
-					    }
-					}
-					#Catches events where second key is upstream of range start, but third key is within range i.e. we do not require complete feature overlap
-					elsif ( $startPosition <= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ]) { #third key is downstream of start position
-					    
-					    for my $stopPosition (keys % { $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition} })  { #For all range stop positions 
-						
-						if ( $stopPosition >= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] ) { #third key is upstream of stop position i.e overlapping
-						    
-						    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$rangeDbFiles}{'Column_To_Extract'}});$extractColumnsCounter++) {
-
-							my $columnIdRef = \($rangeDbFiles."_".$dbFile{$rangeDbFiles}{'Column_To_Extract'}[$extractColumnsCounter]); #RangeDb file is not random key but ordered Db file from initial for loop.		
-							$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[3] ]}{$$columnIdRef}.="$RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition}{$stopPosition}{$$columnIdRef};";
-						    }
-						}
-					    }
-					}
+					$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]}{$concatenatedKey}{$$columnIdRef}=@{$feature}[$arrayElementCounter];
+					
 				    }
-				    last; #No overlapping bins since border spanning events are added to all Bin that the event is spanned - move to next line
+				    else {
+			    
+					$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]}{$concatenatedKey}{$$columnIdRef}.=";".@{$feature}[$arrayElementCounter];
+				    }
 				}
 			    }
 			}
 		    }
 		}
 	    }
-	    if (scalar( @{$dbFile{0}{'Column_Keys'}}) == 5) {
-		
-		for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) {
-		    
-		    my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
-		    $allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[3] ]}{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[4] ]}{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ];
-		    
-		}
-		push (@{$unSorted{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}}, $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]);
-		
-		for my $rangeDbFiles (keys %RangeVariants) { #All Range Db Files
-		    
-		    for my $firstKey (keys % { $RangeVariants{$rangeDbFiles} })  { #For all first key e.g. chromosomeNr
-			
-			if ($firstKey eq $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]) { #Find correct key e.g. chromosomeNr (enhance speed)
-			    
-			    for my $binNr (keys %{ $RangeBins{$rangeDbFiles}{$firstKey} }) { #For all bins within range Db file and first key (enhance speed)
-				
-				if ($lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] >= $RangeBins{$rangeDbFiles}{$firstKey}{$binNr}{'lowerboundary'} && $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] <= $RangeBins{$rangeDbFiles}{$firstKey}{$binNr}{'upperboundary'} ) { #Found in Range Bin Db file, correct firstKey, within bin and second key overlapps bin range.
-				    
-				    for my $startPosition (keys % { $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr} })  { #For all Db file range start positions within bin
-					
-					if ( $startPosition <= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]) { #second key is downstream of start position
-					    
-					    for my $stopPosition (keys % { $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition} })  { #For all range stop positions 
-						
-						if ( $stopPosition >= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] ) { #second key is upstream of stop position i.e overlapping
-						    
-						    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$rangeDbFiles}{'Column_To_Extract'}});$extractColumnsCounter++) {
-							
-							my $columnIdRef = \($rangeDbFiles."_".$dbFile{$rangeDbFiles}{'Column_To_Extract'}[$extractColumnsCounter]); #RangeDb file is not random key but ordered Db file from initial for loop.
-							$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[3] ]}{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[4] ]}{$$columnIdRef}.="$RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition}{$stopPosition}{$$columnIdRef};";
-						    }
-						}
-					    }
-					}
-					#Catches events where second key is upstream of range start, but third key is within range i.e. we do not require complete feature overlap
-					elsif ( $startPosition <= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ]) { #third key is downstream of start position
-					    
-					    for my $stopPosition (keys % { $RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition} })  { #For all range stop positions 
-						
-						if ( $stopPosition >= $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] ) { #third key is upstream of stop position i.e overlapping
-						    
-						    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$rangeDbFiles}{'Column_To_Extract'}});$extractColumnsCounter++) {
-							
-							my $columnIdRef = \($rangeDbFiles."_".$dbFile{$rangeDbFiles}{'Column_To_Extract'}[$extractColumnsCounter]); #RangeDb file is not random key but ordered Db file from initial for loop.		
-							$allVariants{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] }{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[3] ]}{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[4] ]}{$$columnIdRef}.="$RangeVariants{$rangeDbFiles}{$firstKey}{$binNr}{$startPosition}{$stopPosition}{$$columnIdRef};";
-						    }
-						}
-					    }
-					}
-				    }
-				    last; #No overlapping bins since border spanning events are added to all Bin that the event is spanned - move to next line
-				}
-			    }
-			}
-		    } 	
-		}
-	    }
+	    push (@{$unSorted{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}}, $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]);
 	}
     }
     close(RIF);
@@ -1515,14 +1076,11 @@ sub ReadInfile {
     return;
 }
 
-sub ReadDbRange {
+sub ReadDbRangeIntervalTree {
 #Reads db file for allowing overlapping feature look-up
     
     my $DbFileName = $_[0];
     my $DbFileNumber = $_[1];
-
-#Loop through file to assign bins based on third key highest value
-    my %EstimateBinsize;
 
     open(DBR, "<".$DbFileName) or die "Can't open ".$DbFileName.":".$!, "\n";    
 
@@ -1539,102 +1097,17 @@ sub ReadDbRange {
 	if ( $_ =~/^(\S+)/ ) {	
 
 	    my @lineElements = split($dbFile{$DbFileNumber}{'Separator'},$_);	    #Loads line
-	 
-	    if ( (scalar( @{$dbFile{0}{'Column_Keys'}}) == 3) || (scalar( @{$dbFile{0}{'Column_Keys'}} ) == 4) || (scalar( @{$dbFile{0}{'Column_Keys'}} ) == 5) ) {
-
-		if ( $EstimateBinsize{$DbFileNumber}{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}{'highest'} && $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] > $EstimateBinsize{$DbFileNumber}{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}{'highest'} ) { #Within FirstKey and highest value of thirdkey e.g. chromosomeNr and stopPosition
-
-		$EstimateBinsize{$DbFileNumber}{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}{'highest'} = $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ];
-		}
-		else { #Initiate binsize
-		 
-		    $EstimateBinsize{$DbFileNumber}{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}{'highest'} = $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ];
-		}
-	    }
-	}
-    }
-    
-    for my $firstKey (keys %{$EstimateBinsize{$DbFileNumber} }) { #Set size of bins and add to %RangeBins. Used later to add values in Rnage Db file to correct bin and when infile is read to reduce the number of hash look-ups that needs to be performed for range Db files. Assumes random distribution of ranges across bins.
-    my $lowerboundary=0;
-    my $upperboundary;
-    my $binsize = $EstimateBinsize{$DbFileNumber}{$firstKey}{'highest'}/100;
-    $upperboundary = $binsize; 
-
-    for (my $binNr=0;$binNr<100;$binNr++) {
 	
-	$RangeBins{$DbFileNumber}{$firstKey}{$binNr}{'lowerboundary'}=$lowerboundary;
-	$RangeBins{$DbFileNumber}{$firstKey}{$binNr}{'upperboundary'}= $upperboundary;
-	$lowerboundary = $lowerboundary + $binsize; #Starting from 0
-	$upperboundary= $upperboundary + $binsize; #Starting from binsize
-    }
-}
-    %EstimateBinsize=();
-    close(DBR);
-
-##Collect values within Range Db file, now that the bin values have been set. A range can end up in several bins if the range spans bin borders. Then as a exackt match is done a bin the range within that bin can actually expand outside of the bin. This is to catch elements that independent of bin/range size.
-
-    open(DBR, "<".$DbFileName) or die "Can't open ".$DbFileName.":".$!, "\n";    
-
-    while (<DBR>) {
-	
-	chomp $_; #Remove newline
-	
-	if (m/^\s+$/) {		# Avoid blank lines
-	    next;
-	}
-	if (m/^#/) {		# Avoid #
-	    next;
-	}		
-	if ( $_ =~/^(\S+)/ ) {	
-
-	    my @lineElements = split($dbFile{$DbFileNumber}{'Separator'},$_); #Loads line
-
-	    if ( (scalar( @{$dbFile{0}{'Column_Keys'}}) == 3) || (scalar( @{$dbFile{0}{'Column_Keys'}} ) == 4) || (scalar( @{$dbFile{0}{'Column_Keys'}} ) == 5)) {
-
-		for my $firstKey (keys %{$RangeBins{$DbFileNumber} }) { #All firstKeys
-		    
-		    if ( $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] eq $firstKey ) { #Correct firstKey - check bins
+##Create Interval Tree
+	    if (scalar( @{$dbFile{0}{'Column_Keys'}}) > 2) {#Needs two keys for range
 		
-			for (my $binNr=0;$binNr<100;$binNr++) { #For all bins
-			  
-			    if ( $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] >= $RangeBins{$DbFileNumber}{$firstKey}{$binNr}{'lowerboundary'} && $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] <= $RangeBins{$DbFileNumber}{$firstKey}{$binNr}{'upperboundary'}) { #Whole range within bin - go ahead and add
-				
-				for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) {
-				    
-				    my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
-				    $RangeVariants{$DbFileNumber}{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}{$binNr}{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]}{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ]}{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]; #RangeVariants{dbNr}{key1}{BinNr}{range_start}{range_stop}{columnId}
-				}
-				last;
-			    }
-			    elsif ( ($lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] >= $RangeBins{$DbFileNumber}{$firstKey}{$binNr}{'lowerboundary'}) && ($lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] >= $RangeBins{$DbFileNumber}{$firstKey}{$binNr}{'upperboundary'}) && ($lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ] <= $RangeBins{$DbFileNumber}{$firstKey}{$binNr}{'upperboundary'}) ) { #Range spans bins
+		for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) { #Defines what scalar to store
 
-				for (my $spanBinNr=$binNr;$spanBinNr<100;$spanBinNr++) {
-
-				    if ( $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] >= $RangeBins{$DbFileNumber}{$firstKey}{$spanBinNr}{'upperboundary'} ) { #Not found upper limit yet
-
-					for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) {
-					    
-					    my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
-					    $RangeVariants{$DbFileNumber}{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}{$spanBinNr}{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]}{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ]}{$$columnIdRef}= $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]; #RangeVariants{dbNr}{key1}{BinNr}{range_start}{range_stop}{columnId}
-					}
-				    }
-				    elsif ( $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ] >= $RangeBins{$DbFileNumber}{$firstKey}{$spanBinNr}{'lowerboundary'} ) { #Found upper limit and check to see if upper limit is before start of bin - if so then add to bin and break
-					for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$DbFileNumber}{'Column_To_Extract'}});$extractColumnsCounter++) {
-					    
-					    my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
-					    $RangeVariants{$DbFileNumber}{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}{$spanBinNr}{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ]}{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ]}{$$columnIdRef}= $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]; #RangeVariants{dbNr}{key1}{BinNr}{range_start}{range_stop}{columnId}
-					}
-					last;
-				    }
-				    else {
-					
-					$binNr=$spanBinNr;
-					last;
-				    }
-				}
-			    }
-			}
+		    unless(defined($tree{$DbFileNumber}{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] }) ) { #Only create once per firstKey and Column_To_Extract
+			
+			$tree{$DbFileNumber}{ $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ] }{ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] } = Set::IntervalTree->new(); #Create tree
 		    }
+		    $tree{$DbFileNumber}{$lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[0] ]}{ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] }->insert($lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ], $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[1] ], $lineElements[ $dbFile{$DbFileNumber}{'Column_Keys'}[2] ]); #Store range and scalar per dbFile/contig/Column_To_Extract
 		}
 	    }
 	}
@@ -1711,115 +1184,41 @@ sub WriteChrVariants {
 
 	open (WAV, ">>".$filename) or die "Can't write to ".$filename.":".$!,"\n";
     }
-
     if (scalar( @{$dbFile{'0'}{'Column_Keys'}}) == 1) { #Any db file should be fine since all have to have the same nr of keys
 	
 	for (my $outColumnCounter=0;$outColumnCounter<scalar(@outColumns);$outColumnCounter++ ) {
 	    
 	    if ( defined($allVariants{$chromosomeNumber}{$outColumns[$outColumnCounter]}) ) {
-
+		
 		print WAV $allVariants{$chromosomeNumber}{$outColumns[$outColumnCounter]}, "\t";
 	    }
 	    else {
-
+		
 		print WAV "-", "\t";
 	    }
 	}
 	print WAV "\n";
     }
-    if (scalar( @{$dbFile{'0'}{'Column_Keys'}}) == 2) { #Any db file should be fine since all have to have the same nr of keys
+    else { #2 or more keys
 
 	for (my $position=0;$position<scalar( @{$allVariantsChromosomeSorted{$chromosomeNumber} } );$position++)  { #For all pos per chromosome	
 	    
-	    my $secondKey = $allVariantsChromosomeSorted{$chromosomeNumber}[$position]; #pos keys to hash from sorted arrray
+	    my $secondKey = \$allVariantsChromosomeSorted{$chromosomeNumber}[$position]; #pos keys to hash from sorted arrray
 	    
-	    for (my $outColumnCounter=0;$outColumnCounter<scalar(@outColumns);$outColumnCounter++ ) {
-		
-		if ( defined($allVariants{$chromosomeNumber}{$secondKey}{$outColumns[$outColumnCounter]}) ) {
-
-		    print WAV $allVariants{$chromosomeNumber}{$secondKey}{$outColumns[$outColumnCounter]}, "\t";
-		}
-		else {
-
-		    print WAV "-", "\t";
-		}
-	    }
-	    print WAV "\n";
-	}
-    }
-    if (scalar( @{$dbFile{'0'}{'Column_Keys'}}) == 3) { #Any db file should be fine since all have to have the same nr of keys
-	
-	for (my $position=0;$position<scalar( @{$allVariantsChromosomeSorted{$chromosomeNumber} } );$position++)  { #For all pos per chr	
-	    
-	    my $secondKey = $allVariantsChromosomeSorted{$chromosomeNumber}[$position]; #pos keys to hash from sorted arrray
-	    
-	    for my $thirdKey (keys % {$allVariants{$chromosomeNumber}{$secondKey} }) {
+	    for my $thirdKey (keys % {$allVariants{$chromosomeNumber}{$$secondKey} }) {
 		
 		for (my $outColumnCounter=0;$outColumnCounter<scalar(@outColumns);$outColumnCounter++ ) {
 		    
-		    if ( defined($allVariants{$chromosomeNumber}{$secondKey}{$thirdKey}{$outColumns[$outColumnCounter]}) ) {
-	
-			print WAV $allVariants{$chromosomeNumber}{$secondKey}{$thirdKey}{$outColumns[$outColumnCounter]}, "\t";
+		    if ( defined($allVariants{$chromosomeNumber}{$$secondKey}{$thirdKey}{$outColumns[$outColumnCounter]}) ) {
+			
+			print WAV $allVariants{$chromosomeNumber}{$$secondKey}{$thirdKey}{$outColumns[$outColumnCounter]}, "\t";
 		    }
 		    else {
 			
 			print WAV "-", "\t";
 		    }
 		}
-		print WAV "\n";   
-	    }
-	}
-    }
-    if (scalar( @{$dbFile{'0'}{'Column_Keys'}}) == 4) { #Any db file should be fine since all have to have the same nr of keys
-	
-	for (my $position=0;$position<scalar( @{$allVariantsChromosomeSorted{$chromosomeNumber} } );$position++)  { #For all pos per chr	
-	    
-	    my $secondKey = $allVariantsChromosomeSorted{$chromosomeNumber}[$position]; #pos keys to hash from sorted arrray
-
-	    for my $thirdKey (keys % {$allVariants{$chromosomeNumber}{$secondKey} }) {
-		
-		for my $fourthKey (keys % {$allVariants{$chromosomeNumber}{$secondKey}{$thirdKey} }) {
-		    
-		    for (my $outColumnCounter=0;$outColumnCounter<scalar(@outColumns);$outColumnCounter++ ) {
-			
-			if ( defined($allVariants{$chromosomeNumber}{$secondKey}{$thirdKey}{$fourthKey}{$outColumns[$outColumnCounter]}) ) { #Seperate zero from undef
-			
-			    print WAV $allVariants{$chromosomeNumber}{$secondKey}{$thirdKey}{$fourthKey}{$outColumns[$outColumnCounter]}, "\t";
-			}
-			else {
-			    print WAV "-", "\t";
-			}
-		    }
-		    print WAV "\n";
-		}
-	    }
-	}
-    }
-    if (scalar( @{$dbFile{'0'}{'Column_Keys'}}) == 5) { #Any db file should be fine since all have to have the same nr of keys
-	
-	for (my $position=0;$position<scalar( @{$allVariantsChromosomeSorted{$chromosomeNumber} } );$position++)  { #For all pos per chr	
-	    
-	    my $secondKey = $allVariantsChromosomeSorted{$chromosomeNumber}[$position]; #pos keys to hash from sorted arrray
-
-	    for my $thirdKey (keys % {$allVariants{$chromosomeNumber}{$secondKey} }) {
-		
-		for my $fourthKey (keys % {$allVariants{$chromosomeNumber}{$secondKey}{$thirdKey} }) {
-
-		    for my $fifthKey (keys % {$allVariants{$chromosomeNumber}{$secondKey}{$thirdKey}{$fourthKey} }) {
-		    
-			for (my $outColumnCounter=0;$outColumnCounter<scalar(@outColumns);$outColumnCounter++ ) {
-			    
-			    if ( defined($allVariants{$chromosomeNumber}{$secondKey}{$thirdKey}{$fourthKey}{$fifthKey}{$outColumns[$outColumnCounter]}) ) { #Seperate zero from undef
-				
-				print WAV $allVariants{$chromosomeNumber}{$secondKey}{$thirdKey}{$fourthKey}{$fifthKey}{$outColumns[$outColumnCounter]}, "\t";
-			    }
-			    else {
-				print WAV "-", "\t";
-			    }
-			}
-			print WAV "\n";
-		    }
-		}
+		print WAV "\n";
 	    }
 	}
     }
@@ -1827,13 +1226,14 @@ sub WriteChrVariants {
 
     if ($prefixChromosomes == 0) {
 
-	print STDOUT "Finished Writing Master file for: chromosome".$chromosomeNumber,"\n";
+	print STDOUT "Finished Writing Master file for: chromosome ".$chromosomeNumber,"\n";
     }
     else {
 
 	print STDOUT "Finished Writing Master file for: ".$chromosomeNumber,"\n";
     }
 }
+
 
 sub WriteAll {
 #Prints tab separated file of all collected db file info 
@@ -1877,7 +1277,7 @@ sub WriteAll {
 	    print WAV "\n";
 	}
     }
-    if (scalar( @{$dbFile{'0'}{'Column_Keys'}}) == 2) { #Any db file should be fine since all have to have the same nr of keys
+    else {
 	
 	for my $firstKey (keys %allVariants) { #All firstKeys
 	    
@@ -1886,7 +1286,7 @@ sub WriteAll {
 		for (my $outColumnCounter=0;$outColumnCounter<scalar(@outColumns);$outColumnCounter++ ) {
 		    
 		    if ( defined($allVariants{$firstKey}{$secondKey}{$outColumns[$outColumnCounter]}) ) {
-		
+			
 			print WAV $allVariants{$firstKey}{$secondKey}{$outColumns[$outColumnCounter]}, "\t";
 		    }
 		    else {
@@ -1895,87 +1295,6 @@ sub WriteAll {
 		    }
 		}
 		print WAV "\n";
-	    }
-	}
-    }
-    if (scalar( @{$dbFile{'0'}{'Column_Keys'}}) == 3) { #Any db file should be fine since all have to have the same nr of keys
-
-	for my $firstKey (keys %allVariants) { #All firstKeys
-	    
-	    for my $secondKey (keys % {$allVariants{$firstKey} }) {
-		
-		for my $thirdKey (keys % {$allVariants{$firstKey}{$secondKey} }) {
-		    
-		    for (my $outColumnCounter=0;$outColumnCounter<scalar(@outColumns);$outColumnCounter++ ) {
-			
-			if ( defined($allVariants{$firstKey}{$secondKey}{$thirdKey}{$outColumns[$outColumnCounter]}) ) {
-			
-			    print WAV $allVariants{$firstKey}{$secondKey}{$thirdKey}{$outColumns[$outColumnCounter]}, "\t";
-			}
-			else {
-			    
-			    print WAV "-", "\t";
-			}
-		    }
-		    print WAV "\n";   
-		}
-	    }
-	}
-    }
-    if (scalar( @{$dbFile{'0'}{'Column_Keys'}}) == 4) { #Any db file should be fine since all have to have the same nr of keys
-	
-	for my $firstKey (keys %allVariants) { #All firstKeys
-	    
-	    for my $secondKey (keys % {$allVariants{$firstKey} }) {
-		
-		for my $thirdKey (keys % {$allVariants{$firstKey}{$secondKey} }) {
-		    
-		    for my $fourthKey (keys % {$allVariants{$firstKey}{$secondKey}{$thirdKey} }) {
-			
-			for (my $outColumnCounter=0;$outColumnCounter<scalar(@outColumns);$outColumnCounter++ ) {
-			    
-			    if ( defined($allVariants{$firstKey}{$secondKey}{$thirdKey}{$fourthKey}{$outColumns[$outColumnCounter]}) ) {
-		
-				print WAV $allVariants{$firstKey}{$secondKey}{$thirdKey}{$fourthKey}{$outColumns[$outColumnCounter]}, "\t";
-			    }
-			    else {
-				
-				print WAV "-", "\t";
-			    }
-			}
-			print WAV "\n";
-		    }
-		}
-	    }
-	}
-    }
-    if (scalar( @{$dbFile{'0'}{'Column_Keys'}}) == 5) { #Any db file should be fine since all have to have the same nr of keys
-	
-	for my $firstKey (keys %allVariants) { #All firstKeys
-	    
-	    for my $secondKey (keys % {$allVariants{$firstKey} }) {
-		
-		for my $thirdKey (keys % {$allVariants{$firstKey}{$secondKey} }) {
-		    
-		    for my $fourthKey (keys % {$allVariants{$firstKey}{$secondKey}{$thirdKey} }) {
-
-			for my $fifthKey (keys % {$allVariants{$firstKey}{$secondKey}{$thirdKey} }) {
-			
-			    for (my $outColumnCounter=0;$outColumnCounter<scalar(@outColumns);$outColumnCounter++ ) {
-				
-				if ( defined($allVariants{$firstKey}{$secondKey}{$thirdKey}{$fourthKey}{$fifthKey}{$outColumns[$outColumnCounter]}) ) {
-				    
-				    print WAV $allVariants{$firstKey}{$secondKey}{$thirdKey}{$fourthKey}{$fifthKey}{$outColumns[$outColumnCounter]}, "\t";
-				}
-				else {
-				    
-				    print WAV "-", "\t";
-				}
-			    }
-			    print WAV "\n";
-			}
-		    }
-		}
 	    }
 	}
     }
