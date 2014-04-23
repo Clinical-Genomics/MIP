@@ -368,9 +368,16 @@ sub ReadInfileVCF {
 					    
 					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'Score'}, \$consequenceSeverity{$consequences[$consequencesCounter]}{'Rank'});
 					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'GeneAnnotation'}, \$consequenceSeverity{$consequences[$consequencesCounter]}{'GeneAnnotation'});
-					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'MostSevere'}, \$consequences[$consequencesCounter]);    
-					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'Sift'}, \$transcriptsEffects[ $vepFormatFieldColumn{'SIFT'} ]);
-					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'PolyPhen'}, \$transcriptsEffects[ $vepFormatFieldColumn{'PolyPhen'} ]);
+					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'MostSevere'}, \$consequences[$consequencesCounter]);
+
+					    if (defined($vepFormatFieldColumn{'SIFT'}) ) {    
+					
+						&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'Sift'}, \$transcriptsEffects[ $vepFormatFieldColumn{'SIFT'} ]);
+					    }
+					    if (defined($vepFormatFieldColumn{'PolyPhen'}) ) {
+
+						&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'PolyPhen'}, \$transcriptsEffects[ $vepFormatFieldColumn{'PolyPhen'} ]);
+					    }
 					}
 				    }
 				    else { #First pass
@@ -378,8 +385,15 @@ sub ReadInfileVCF {
 					&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'Score'}, \$consequenceSeverity{$consequences[$consequencesCounter]}{'Rank'});
 					&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'GeneAnnotation'}, \$consequenceSeverity{$consequences[$consequencesCounter]}{'GeneAnnotation'});
 					&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'MostSevere'}, \$consequences[$consequencesCounter]);    
-					&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'Sift'}, \$transcriptsEffects[ $vepFormatFieldColumn{'SIFT'} ]);
-					&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'PolyPhen'}, \$transcriptsEffects[ $vepFormatFieldColumn{'PolyPhen'} ]);
+					
+					if (defined($vepFormatFieldColumn{'SIFT'}) ) {
+					 
+					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'Sift'}, \$transcriptsEffects[ $vepFormatFieldColumn{'SIFT'} ]);
+					}
+					if (defined($vepFormatFieldColumn{'PolyPhen'}) ) {
+					 
+					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'PolyPhen'}, \$transcriptsEffects[ $vepFormatFieldColumn{'PolyPhen'} ]);
+					}
 				    }
 				}
 			    }

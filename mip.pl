@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl -
 
 use strict;
 use warnings;
@@ -19,7 +19,7 @@ use vars qw($USAGE);
 BEGIN {
     $USAGE =
 	qq{
-mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [project ID] -s [sample ID...n] -em [e-mail] -osd [outdirscripts] -odd [outDataDir] -f [familyID] -p[program]
+mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [project ID] -s [sample ID,.,.,.,n] -em [e-mail] -osd [outdirscripts] -odd [outDataDir] -f [familyID] -p[program]
                ####MIP
 	       -ifd/--inFilesDirs Infile directory(s), comma sep (Mandatory: Supply whole path,)
                -isd/--inScriptDir The pipeline custom script in directory (Mandatory: Supply whole path)
@@ -144,6 +144,8 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pMerge_anvar/--pMergeAnnotatedVariants Merge (& annotate) all annotated variants into one file using intersectCollect.pl (defaults to "1" (=yes))
                  -mergeanvarte/--mergeAnnotatedVariantsTemplateFile Db template file used to create the specific family '-mergeanvardbf' master file (defaults to "")
                  -mergeanvardbf/--mergeAnnotatedVariantsDbFile Db master file to be used in intersectCollect.pl (defaults to  "{outDataDir}/{familyID}/{familyID}_intersectCollect_db_master.txt";Supply whole path)
+                 -mergeanvartese/--mergeAnnotatedVariantsTemplateSelectFile Select Db template file used to create the specific family '-mergeanvardbf' master file (defaults to "")
+                 -mergeanvardbsef/--mergeAnnotatedVariantsDbSelectFile Select Db master file to be used in intersectCollect.pl (defaults to  "{outDataDir}/{familyID}/{familyID}_intersectCollect_db_master.select.txt";Supply whole path)
 
                ##Add_depth
                -pAdd_dp/--pAddDepth Adds read depth at nonvariant sites using SamTools mpileup and add_depth.pl (defaults to "1" (=yes))
@@ -151,10 +153,6 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                ##RankVariants
                -pRankVar/--pRankVariants Ranking of annotated variants (defaults to "1" (=yes))
                  -rs/--rankScore The rank score cut-off (defaults to "-100", .i.e. include everything
-                 -imdbfile/--ImportantDbFile Important Db file (Defaults to "")
-                 -imdbte/--ImportantDbTemplate Important Db template file used to create the specific family '-im_dbmf' master file (Defaults to "")
-                 -imdbmf/--ImportantDbMasterFile Important Db master file to be used when selecting variants (defaults to "{outDataDir}/{familyID}/{familyID}.intersectCollect_selectVariants_db_master.txt";Supply whole path) 
-                 -imdbfof/--ImportantDbFileOutFiles The file(s) to write to when selecting variants with intersectCollect.pl. Comma sep (defaults to "{outDataDir}/{familyID}/{aligner}/GATK/candidates/ranking/{familyID}_orphan.selectVariants, {outDataDir}/{familyID}/{aligner}/GATK/candidates/ranking/clinical/{familyID}.selectVariants"; Supply whole path/file)
                  -gf/--geneFile Defines genes to use when calculating compounds
                -pSCheck/--pSampleCheck QC for samples gender and relationship (defaults to "1" (=yes) )
                -pQCC/--pQCCollect Collect QC metrics from programs processed (defaults to "1" (=yes) )
@@ -429,6 +427,9 @@ my @annovarTableNames; #List of Annovar table names to be used
 
 &DefineParameters("mergeAnnotatedVariantsDbFile", "program", "notSetYet", "pMergeAnnotatedVariants"); #No file check since file is created by MIP later
 
+&DefineParametersPath("mergeAnnotatedVariantsTemplateSelectFile", "nodefault", "pMergeAnnotatedVariants", "file", "noAutoBuild");
+
+&DefineParameters("mergeAnnotatedVariantsDbSelectFile", "program", "notSetYet", "pMergeAnnotatedVariants"); #No file check since file is created by MIP later
 
 ##Add_depth
 
@@ -437,17 +438,9 @@ my @annovarTableNames; #List of Annovar table names to be used
 
 ##RankVariants
 
-&DefineParameters("pRankVariants", "program", 1, "MIP", "nofileEnding", "MAIN");
+&DefineParameters("pRankVariants", "program", 1, "MIP", "ranked_", "MAIN");
 
 &DefineParameters("rankScore", "program", -100, "pRankVariants");
-
-&DefineParametersPath("ImportantDbFile", "nodefault", "pRankVariants", "file", "noAutoBuild");
-
-&DefineParametersPath("ImportantDbTemplate", "nodefault", "pRankVariants", "file", "noAutoBuild");
-
-&DefineParameters("ImportantDbMasterFile", "program", "notSetYet", "pRankVariants"); #No file check since file is created by MIP later
-
-my @ImportantDbFileOutFiles; #List of db outfiles
 
 &DefineParametersPath("geneFile", "hg19_refGene.txt", "pRankVariants", "file", "noAutoBuild");
 
@@ -612,13 +605,11 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'pMerge_anvar|pMergeAnnotatedVariants:n' => \$parameter{'pMergeAnnotatedVariants'}{'value'}, #Merges annovar analysis results to one master file
 	   'mergeanvarte|mergeAnnotatedVariantsTemplateFile:s' => \$parameter{'mergeAnnotatedVariantsTemplateFile'}{'value'}, #Template file to create the specific family db master file
 	   'mergeanvardbf|mergeAnnotatedVariantsDbFile:s' => \$parameter{'mergeAnnotatedVariantsDbFile'}{'value'}, #db master file to use when collecting external data
+	   'mergeanvartese|mergeAnnotatedVariantsTemplateSelectFile:s' => \$parameter{'mergeAnnotatedVariantsTemplateSelectFile'}{'value'}, #Select template file to create the specific family db master file
+	   'mergeanvardbsef|mergeAnnotatedVariantsDbSelectFile:s' => \$parameter{'mergeAnnotatedVariantsDbSelectFile'}{'value'}, #Select db master file to use when collecting external data
 	   'pAdd_dp|pAddDepth:n' => \$parameter{'pAddDepth'}{'value'}, #Adds depth (DP) for nonvariants to master file (annovar_merged.txt)
 	   'pRankVar|pRankVariants:n' => \$parameter{'pRankVariants'}{'value'}, #Ranking variants
 	   'rs|rankscore:n'  => \$parameter{'rankScore'}{'value'}, #The rank score cut-off
-	   'imdbfile|ImportantDbFile:s'  => \$parameter{'ImportantDbFile'}{'value'}, #Db of important genes
-	   'imdbte|ImportantDbTemplate:s' => \$parameter{'ImportantDbTemplate'}{'value'}, #Template file to create the specific family selectVariants db master file
-	   'imdbmf|ImportantDbMasterFile:s' => \$parameter{'ImportantDbMasterFile'}{'value'}, #Specific db master file to use when collecting external dataselectingVariants 
-	   'imdbfof|ImportantDbFileOutFiles:s' => \@ImportantDbFileOutFiles, #The intersectCollect select variants output directorys
 	   'gf|geneFile:s' => \$parameter{'geneFile'}{'value'},
 	   'pSCheck|pSampleCheck:n' => \$parameter{'pSampleCheck'}{'value'}, #QC for samples gender and relationship
 	   'pQCC|pQCCollect:n' => \$parameter{'pQCCollect'}{'value'}, #QCmetrics collect
@@ -672,8 +663,7 @@ foreach my $orderParameterElement (@orderParameters) { #Populate scriptParameter
 	$parameter{'QCCollectSampleInfoFile'}{'default'} = $parameter{'sampleInfoFile'}{'default'};
 
 	$parameter{'mergeAnnotatedVariantsDbFile'}{'default'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_intersectCollect_db_master.txt";
-	
-	$parameter{'ImportantDbMasterFile'}{'default'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}.".intersectCollect_selectVariants_db_master.txt";
+	$parameter{'mergeAnnotatedVariantsDbSelectFile'}{'default'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_intersectCollect_db_master.select.txt";
 	
     }
     if ($orderParameterElement eq "pedigreeFile") { #Write QC for only pedigree data used in analysis                                                        
@@ -700,20 +690,12 @@ foreach my $orderParameterElement (@orderParameters) { #Populate scriptParameter
 	    &CheckTemplateFilesPaths(\($scriptParameter{'referencesDir'}."/".$scriptParameter{'mergeAnnotatedVariantsTemplateFile'}), "mergeAnnotatedVariantsTemplateFile")	    
 	}
     }
-    if ($orderParameterElement eq "ImportantDbTemplate") { #Check that paths in master template exists
-    
-	if (defined($scriptParameter{'ImportantDbTemplate'})) {
+    if ($orderParameterElement eq "mergeAnnotatedVariantsTemplateSelectFile") { #Check that paths in master template exists
 	
-	    &CheckTemplateFilesPaths(\($scriptParameter{'referencesDir'}."/".$scriptParameter{'ImportantDbTemplate'}), "ImportantDbTemplate")	    
+	if (defined($scriptParameter{'mergeAnnotatedVariantsTemplateSelectFile'})) {
+	    
+	    &CheckTemplateFilesPaths(\($scriptParameter{'referencesDir'}."/".$scriptParameter{'mergeAnnotatedVariantsTemplateSelectFile'}), "mergeAnnotatedVariantsTemplateSelectFile")	    
 	}
-    }
-    if ($orderParameterElement eq "GATKHaploTypeCallerRefBAMInfile") { #Check that paths in BAMInfile exists
-
-	if (defined($scriptParameter{'GATKHaploTypeCallerRefBAMInfile'})) {
-
-	    &CheckTemplateFilesPaths(\($scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKHaploTypeCallerRefBAMInfile'}), "GATKHaploTypeCallerRefBAMInfile")   
-	}
-	
     }
 } 
 
@@ -774,12 +756,6 @@ if ($scriptParameter{'pVariantEffectPredictor'} > 0) {
 if ($scriptParameter{'pAnnovar'} > 0) {
 
     &PrepareArrayParameters(\@annovarTableNames, "annovarTableNames", "path", "yes", "pAnnovar", "file"); #"yes" added to enable addition of default table names in &AddToScriptParameters  
-}
-
-if ($scriptParameter{'pRankVariants'} > 0) {
-    
-    &UpdateYAML("ImportantDbFileOutFiles", $scriptParameter{'clusterConstantPath'}, $scriptParameter{'analysisConstantPath'}, $scriptParameter{'analysisType'},$parameter{'familyID'}{'value'}, $scriptParameter{'aligner'} );
-    &PrepareArrayParameters(\@ImportantDbFileOutFiles, "ImportantDbFileOutFiles", "program", "yes", "pRankVariants");  
 }
 
 ##Set Target files
@@ -1604,167 +1580,51 @@ sub RankVariants {
 
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
  
-    &ProgramPreRequisites($familyID, "RankVariants", $aligner, $callType, $FILEHANDLE, 1, 4);
+    &ProgramPreRequisites($familyID, "RankVariants", $aligner."/GATK/candidates/ranking", $callType, $FILEHANDLE, 1, 4);
 
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
+    my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/candidates/ranking";
     my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pAddDepth'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pRankVariants'}{'fileEnding'};
+    my $analysisType = "";
 
-    print $FILEHANDLE "#Create db master file to select variants from template", "\n";
-    my $nrColumns; #Total Nr of columns 
-    my $nrAnnotationColumns; #The number of columns containing annotation info
-    my $pNrofCol; #For perl regexp
-   
-    if (-f $scriptParameter{'mergeAnnotatedVariantsDbFile'}) { #locate IDN columns from family specific template file (if defined)
-
-	$pNrofCol = q?perl -nae 'if ($_=~/^outinfo/ || $_=~/^outheaders/ ) { chomp($_); my @nr_of_columns=split(",",$_); print scalar(@nr_of_columns);last; }' ?; #Find the number of columns
-	$nrColumns = `$pNrofCol $scriptParameter{'mergeAnnotatedVariantsDbFile'};`; #perl one-liner, inFile and return nr of columns
-	$nrAnnotationColumns = $nrColumns - scalar(@sampleIDs);
-    }
-    elsif (-f $scriptParameter{'referencesDir'}."/".$scriptParameter{'mergeAnnotatedVariantsTemplateFile'}) { #No information on previous intersectCollect to create annovar_merge file - locate IDN columns from unspecific interSect db template file
-
-	$pNrofCol = q?perl -nae 'if ($_=~/^outinfo/ || $_=~/^outheaders/ ) { chomp($_); my @nr_of_columns=split(",",$_); print scalar(@nr_of_columns);last; }' ?;
-	$nrAnnotationColumns = `$pNrofCol $scriptParameter{'referencesDir'}/$scriptParameter{'mergeAnnotatedVariantsTemplateFile'};`-1; #"-1" Since IDN is already factored in from the regexp
-	$nrColumns = $nrAnnotationColumns + scalar(@sampleIDs);
-    }
-    elsif (-f $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/".$familyID.$infileEnding.$callType.".txt") { #Check if the file exists (rerun actual data to sample from) 
-
-	$pNrofCol = q?perl -nae 'if ($_=~/^#/ ) { chomp($_); my @nr_of_columns=split("\t",$_); print scalar(@nr_of_columns);last; }' ?; #Find the number of columns
-	$nrColumns = `$pNrofCol $scriptParameter{'outDataDir'}/$familyID/$aligner/GATK/$familyID$infileEnding$callType.txt;`; #perl one-liner, inFile and return nr of columns
-	$nrAnnotationColumns = $nrColumns - scalar(@sampleIDs);
-    }
-    else {
-
-	print STDERR "Could not estimate location of SampleID columns from variant file, nor from templates ('-mergeAnnotatedVariantsDbFile' or '-mergeAnnotatedVariantsTemplateFile'). Please provide this information to run 'pRankVariants'.", "\n";
-	exit;
-    }
-    
-    my $sampleIDcolcond = $nrColumns-1; #To write last IDN entry without "," at the end
-    
-##Add relative path to db_template for variant file(s) 
-    my ($volume,$directories,$file) = File::Spec->splitpath($scriptParameter{'outDataDir'});
-    my @directories = File::Spec->splitdir($directories);#regExpOutDataFile
-    my $regExpOutDataFile;
-
-    for (my $directoryCount=1;$directoryCount<scalar(@directories);$directoryCount++) {
-	
-	$regExpOutDataFile .= "\\/".$directories[$directoryCount]; #Create escape char for / in later regexp
-    }
-    $regExpOutDataFile .= $file;
-    
-##Add relative path to db_template for reference/db files
-    ($volume,$directories,$file) = File::Spec->splitpath($scriptParameter{'referencesDir'});
-    @directories = File::Spec->splitdir( $directories );
-    my $regExpReferenceDirectory;	
-
-    for (my $directoryCount=1;$directoryCount<scalar(@directories);$directoryCount++) {
-	
-	$regExpReferenceDirectory .= "\\/".$directories[$directoryCount]; #Create escape char for / in later regexp
-    }
-    $regExpReferenceDirectory .= $file;
-    
-##Create family specific template
-    print $FILEHANDLE q?perl -nae 'if ($_=~/outinfo/i) { if ($_=~/IDN!/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="IDN_GT_Call=>0_$sampleID,"} else { $sidstring.="IDN_GT_Call=>0_$sampleID"} } s/IDN!/$sidstring/g; print $_;} next;} elsif ($_=~s/FDN\!_|FDN\!/?.$familyID.q?/g) { if($_=~s/^ODF!/?.$regExpOutDataFile.q?/g) {} if($_=~s/ALIGNER!/?.$aligner.q?/g) {} if($_=~s/FILEENDING!_/?.$infileEnding.q?/g) {} if($_=~s/CALLTYPE!/?.$callType.q?/g) {} if ($_=~/IDN!/) { my $sidstring; for (my $sampleID=?.$nrAnnotationColumns.q?;$sampleID<?.$nrColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolcond.q?) { $sidstring.="$sampleID,"} else { $sidstring.="$sampleID"} } s/IDN!/$sidstring/g; print $_;} else { print $_;} } else { if($_=~s/^RD!/?.$regExpReferenceDirectory.q?/g) {} print $_;}' ?;
-
-    print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'ImportantDbTemplate'}." "; #Infile
-    print $FILEHANDLE "> ".$scriptParameter{'ImportantDbMasterFile'}, "\n\n"; #OutFile
-    
-    my $haploTypeCallerFile = $inFamilyDirectory."/".$familyID.$infileEnding.$callType.".txt";
-
-###Only Clinically interesting variants
-    
-    if ( ($scriptParameter{'pGATKHaploTypeCaller'} > 0) || (-f $haploTypeCallerFile) ) { #HaplotypeCaller has been used in present call or previously
-	
-	print $FILEHANDLE "#Create temp_file containing only clinically interesting variants (to avoid duplicates in ranked list)", "\n";
-	print $FILEHANDLE "perl ".$scriptParameter{'inScriptDir'}."/intersectCollect.pl ";
-	print $FILEHANDLE "-db ".$scriptParameter{'ImportantDbMasterFile'}." "; #A tab-sep file containing 1 db per line
-
-	if ($humanGenomeReferenceSource eq "hg19") {
-
-	    print $FILEHANDLE "-prechr 1 "; #Use chr prefix in rank script
-	}
-	print $FILEHANDLE "-sl 1 "; #Select all entries in first infile matching keys in subsequent db files
-	print $FILEHANDLE "-s ";
-
-	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { 
-
-	    if ($sampleIDCounter eq scalar(@sampleIDs)-1) {
-
-		print $FILEHANDLE $sampleIDs[$sampleIDCounter], " ";
-	    }
-	    else {
-
-		print $FILEHANDLE $sampleIDs[$sampleIDCounter], ",";
-	    }    
-	}
-	print $FILEHANDLE "-sofs "; #Selected variants and orphan db files out data directory
-
-	for (my $ImportantDbFileOutFilesCounter=0;$ImportantDbFileOutFilesCounter<scalar(@ImportantDbFileOutFiles);$ImportantDbFileOutFilesCounter++) {
-
-	    if ($ImportantDbFileOutFilesCounter eq scalar(@ImportantDbFileOutFiles)-1) {
-
-		print $FILEHANDLE $ImportantDbFileOutFiles[$ImportantDbFileOutFilesCounter]." ","\n\n";
-	    }
-	    else {
-
-		print $FILEHANDLE $ImportantDbFileOutFiles[$ImportantDbFileOutFilesCounter].",";
-	    }
-	}
-	
 ###Ranking
-	print $FILEHANDLE "#Ranking", "\n";
+    print $FILEHANDLE "#Ranking", "\n";
+    
+    print $FILEHANDLE "workon ".$scriptParameter{'pythonVirtualEnvironment'}, "\n\n"; #Activate python environment
+    
+    for (my $VEPOutputFilesCounter=0;$VEPOutputFilesCounter<$VEPOutputFiles;$VEPOutputFilesCounter++) {
 	
-	print $FILEHANDLE "workon ".$scriptParameter{'pythonVirtualEnvironment'}, "\n\n"; #Activate python environment
-	
-	for (my $ImportantDbFileOutFilesCounter=1;$ImportantDbFileOutFilesCounter<scalar(@ImportantDbFileOutFiles);$ImportantDbFileOutFilesCounter++) { #Skip orphan file and run selected files
+	if ($VEPOutputFiles == 2) {
 	    
-	    print $FILEHANDLE "run_mip_family_analysis.py ";
-	    print $FILEHANDLE $scriptParameter{'pedigreeFile'}." "; #Pedigree file
-	    if ($scriptParameter{'instanceTag'} eq "CMMS") {
-
-		print $FILEHANDLE "--cmms "; #CMMS flag
+	    $analysisType = ".select"; #SelectFile variants
+	}	    
+	print $FILEHANDLE "run_mip_family_analysis.py ";
+	print $FILEHANDLE $scriptParameter{'pedigreeFile'}." "; #Pedigree file
+	
+	if ($scriptParameter{'instanceTag'} eq "CMMS") {
+	    
+	    print $FILEHANDLE "--cmms "; #CMMS flag
+	}
+	print $FILEHANDLE "-tres ".$scriptParameter{'rankScore'}." "; #Rank score threshold
+	print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".txt "; #InFile
+	print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'geneFile'}." "; #Gene file used for annotating AR_compounds
+	print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".txt", "\n\n"; #OutFile
+	print $FILEHANDLE "wait\n\n";
+	
+	if ( ($scriptParameter{'pRankVariants'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	    
+	    if ($VEPOutputFiles == 2) {
+	
+		$sampleInfo{$familyID}{$familyID}{'program'}{'RankVariants'}{'Clinical'}{'Path'} = $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".txt";  #Save clinical candidate list path
 	    }
-	    print $FILEHANDLE "-tres ".$scriptParameter{'rankScore'}." "; #Rank score threshold
-	    print $FILEHANDLE $ImportantDbFileOutFiles[$ImportantDbFileOutFilesCounter]." "; #InFile	    
-	    print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'geneFile'}." "; #Gene file used for annotating AR_compounds
-	    ($volume,$directories,$file) = File::Spec->splitpath( $ImportantDbFileOutFiles[$ImportantDbFileOutFilesCounter] ); #Collect outfile directory
-	    print $FILEHANDLE "-o ".$directories.$familyID."_ranked_".$callType.".txt", "\n\n"; #OutFile
-	    print $FILEHANDLE "wait\n\n";
-	    
-	    if ( ($scriptParameter{'pRankVariants'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	    else {
 
-		$sampleInfo{$familyID}{$familyID}{'program'}{'RankVariants'}{'Clinical'}{'Path'} = $directories.$familyID."_ranked_".$callType.".txt";  #Save clinical candidate list path
+		$sampleInfo{$familyID}{$familyID}{'program'}{'RankVariants'}{'Research'}{'Path'} = $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".txt";  #Save research candidate list path
 	    }
 	}
-    }
-   
-###Research variants
-    
-##Ranking
-    print $FILEHANDLE "#Ranking", "\n"; 
-    print $FILEHANDLE "run_mip_family_analysis.py ";
-    print $FILEHANDLE $scriptParameter{'pedigreeFile'}." "; #Pedigree file
-    if ($scriptParameter{'instanceTag'} eq "CMMS") {
-	
-	print $FILEHANDLE "--cmms "; #CMMS flag
-    }
-    print $FILEHANDLE "-tres ".$scriptParameter{'rankScore'}." "; #Rank score threshold
-    print $FILEHANDLE $ImportantDbFileOutFiles[0]." "; #InFile	 
-    print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'geneFile'}." "; #Gene file used for annotating AR_compounds   
-    ($volume,$directories,$file) = File::Spec->splitpath( $ImportantDbFileOutFiles[0] ); #Collect outfile directory
-    print $FILEHANDLE "-o ".$directories.$familyID."_ranked_".$callType.".txt", "\n\n"; #OutFile
-    print $FILEHANDLE "wait\n\n";    
-    
-    if ( ($scriptParameter{'pRankVariants'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-
-	$sampleInfo{$familyID}{$familyID}{'program'}{'RankVariants'}{'Research'}{'Path'} = $directories.$familyID."_ranked_".$callType.".txt";  #Save research candidate list path
     }
         
-    for (my $ImportantDbFileOutFilesCounter=0;$ImportantDbFileOutFilesCounter<scalar(@ImportantDbFileOutFiles);$ImportantDbFileOutFilesCounter++) {
-
-	print $FILEHANDLE "rm "; #Remove select files
-	print $FILEHANDLE $ImportantDbFileOutFiles[$ImportantDbFileOutFilesCounter], "\n\n";
-    }
-    
     print $FILEHANDLE "\n\ndeactivate ", "\n\n"; #Deactivate python environment
 
     close($FILEHANDLE);   
@@ -1792,96 +1652,103 @@ sub AddDp {
     my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pMergeAnnotatedVariants'}{'fileEnding'};
     my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pAddDepth'}{'fileEnding'};
     my $coreCounter=1;
+    my $analysisType = "";
 
+    for (my $VEPOutputFilesCounter=0;$VEPOutputFilesCounter<$VEPOutputFiles;$VEPOutputFilesCounter++) {
+
+	if ($VEPOutputFiles == 2) {
+
+	    $analysisType = ".select"; #SelectFile variants
+	}
 #Find all "./." per sample ID and print chr pos to new file (mpileup -l format)
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #For all sample ids, find nonvariants
-	
-	&PrintWait(\$sampleIDCounter, \$nrCores, \$coreCounter, $FILEHANDLE);
-	
-	print $FILEHANDLE "#Find all './.' per sampleID and print chrosome position to new file (mpileup -l format)", "\n";
-	
-	print $FILEHANDLE q?perl -F'\t' -nae' if ($_=~ /?.$sampleIDs[$sampleIDCounter].q?\S+\.\/\./ ) { print "$F[0] $F[1]","\n"; }' ?; #print chromosome and start for sampleID
-	print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.".txt "; #InFile
-	print $FILEHANDLE "> ".$outFamilyDirectory."/".$sampleIDs[$sampleIDCounter]."_nonvariants.txt &", "\n\n"; #OutFile
-    }
-    print $FILEHANDLE "wait", "\n\n";
+	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #For all sample ids, find nonvariants
+	    
+	    &PrintWait(\$sampleIDCounter, \$nrCores, \$coreCounter, $FILEHANDLE);
+	    
+	    print $FILEHANDLE "#Find all './.' per sampleID and print chrosome position to new file (mpileup -l format)", "\n";
+	    
+	    print $FILEHANDLE q?perl -F'\t' -nae' if ($_=~ /?.$sampleIDs[$sampleIDCounter].q?\S+\.\/\./ ) { print "$F[0] $F[1]","\n"; }' ?; #print chromosome and start for sampleID
+	    print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".txt "; #InFile
+	    print $FILEHANDLE "> ".$outFamilyDirectory."/".$sampleIDs[$sampleIDCounter]."_nonvariants.txt &", "\n\n"; #OutFile
+	}
+	print $FILEHANDLE "wait", "\n\n";
     
-    print $FILEHANDLE "#Samples indirectory (BAM-files)", "\n\n"; #Indirectory for sample BAM-files
+	print $FILEHANDLE "#Samples indirectory (BAM-files)", "\n\n"; #Indirectory for sample BAM-files
     
 ##Find depth (Only proper pairs)
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #For all sample ids, find nonvariants
-	
-	my ($infile, $PicardToolsMergeSwitch) = CheckIfMergedFiles($sampleIDs[$sampleIDCounter]);
-	my $sampleIDinfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'pPicardToolsMarkduplicates'}{'fileEnding'};
-	$coreCounter=1; #Reset
-	
-	if ($sampleIDCounter == $coreCounter*$nrCores) { #Using only '$nrCores' cores 
-    
-	    print $FILEHANDLE "wait", "\n\n";
-	    $coreCounter=$coreCounter+1;
-	}
-	print $FILEHANDLE "samtools mpileup ";
-	print $FILEHANDLE "-A "; #count anomalous read pairs
-	print $FILEHANDLE "-l ".$outFamilyDirectory."/".$sampleIDs[$sampleIDCounter]."_nonvariants.txt "; #list of positions (chr pos) or regions (BED)
-	
-	if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
+	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #For all sample ids, find nonvariants
 	    
-	    print $FILEHANDLE $scriptParameter{'outDataDir'}."/".$sampleIDs[$sampleIDCounter]."/".$aligner."/".$infile.$sampleIDinfileEnding.".bam "; #InFile (BAM-file)
-	}
-	else { #No previous merge - list all files at once 
+	    my ($infile, $PicardToolsMergeSwitch) = CheckIfMergedFiles($sampleIDs[$sampleIDCounter]);
+	    my $sampleIDinfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'pPicardToolsMarkduplicates'}{'fileEnding'};
+	    $coreCounter=1; #Reset
 	    
-	    for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleIDs[$sampleIDCounter]} });$infileCounter++) { #For all infiles per lane
+	    if ($sampleIDCounter == $coreCounter*$nrCores) { #Using only '$nrCores' cores 
 		
-		my $infile = $infilesLaneNoEnding{$sampleIDs[$sampleIDCounter]}[$infileCounter];
+		print $FILEHANDLE "wait", "\n\n";
+		$coreCounter=$coreCounter+1;
+	    }
+	    print $FILEHANDLE "samtools mpileup ";
+	    print $FILEHANDLE "-A "; #count anomalous read pairs
+	    print $FILEHANDLE "-l ".$outFamilyDirectory."/".$sampleIDs[$sampleIDCounter]."_nonvariants.txt "; #list of positions (chr pos) or regions (BED)
+	    
+	    if ($PicardToolsMergeSwitch == 1) { #Files was merged previously
+		
 		print $FILEHANDLE $scriptParameter{'outDataDir'}."/".$sampleIDs[$sampleIDCounter]."/".$aligner."/".$infile.$sampleIDinfileEnding.".bam "; #InFile (BAM-file)
 	    }
+	    else { #No previous merge - list all files at once 
+		
+		for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleIDs[$sampleIDCounter]} });$infileCounter++) { #For all infiles per lane
+		    
+		    my $infile = $infilesLaneNoEnding{$sampleIDs[$sampleIDCounter]}[$infileCounter];
+		    print $FILEHANDLE $scriptParameter{'outDataDir'}."/".$sampleIDs[$sampleIDCounter]."/".$aligner."/".$infile.$sampleIDinfileEnding.".bam "; #InFile (BAM-file)
+		}
+	    }
+	    print $FILEHANDLE "| "; #Pipe
+	    print $FILEHANDLE q?perl -F'\t' -nae' print $F[0],"\t", $F[1],"\t", $F[3], "\n";' ?; #only print chr coordinates 
+	    print $FILEHANDLE "> ".$outFamilyDirectory."/".$sampleIDs[$sampleIDCounter]."_mpileup_nonvariants.txt &", "\n\n"; #OutFile	
 	}
-	print $FILEHANDLE "| "; #Pipe
-	print $FILEHANDLE q?perl -F'\t' -nae' print $F[0],"\t", $F[1],"\t", $F[3], "\n";' ?; #only print chr coordinates 
-	print $FILEHANDLE "> ".$outFamilyDirectory."/".$sampleIDs[$sampleIDCounter]."_mpileup_nonvariants.txt &", "\n\n"; #OutFile	
-    }
-    print $FILEHANDLE "wait", "\n\n";
+	print $FILEHANDLE "wait", "\n\n";
     
-    print $FILEHANDLE "#Add depth to original file", "\n";
-    print $FILEHANDLE "perl ".$scriptParameter{'inScriptDir'}."/add_depth.pl ";
-    print $FILEHANDLE "-i ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".txt "; #InFile
-
-    if ($humanGenomeReferenceSource eq "hg19") {
+	print $FILEHANDLE "#Add depth to original file", "\n";
+	print $FILEHANDLE "perl ".$scriptParameter{'inScriptDir'}."/add_depth.pl ";
+	print $FILEHANDLE "-i ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".txt "; #InFile
 	
-	print $FILEHANDLE "-prechr 1"; #Use chromosome prefix
-    }
-    print $FILEHANDLE "-infnv "; #No variant files from mpileup
-
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {#For all sample ids mpileup nonvariant files
+	if ($humanGenomeReferenceSource eq "hg19") {
+	    
+	    print $FILEHANDLE "-prechr 1"; #Use chromosome prefix
+	}
+	print $FILEHANDLE "-infnv "; #No variant files from mpileup
 	
-	if ($sampleIDCounter eq scalar(@sampleIDs)-1) {
+	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {#For all sample ids mpileup nonvariant files
 	    
-	    print $FILEHANDLE $outFamilyDirectory."/".$sampleIDs[$sampleIDCounter]."_mpileup_nonvariants.txt ";
+	    if ($sampleIDCounter eq scalar(@sampleIDs)-1) {
+		
+		print $FILEHANDLE $outFamilyDirectory."/".$sampleIDs[$sampleIDCounter]."_mpileup_nonvariants.txt ";
+	    }
+	    else {
+		
+		print $FILEHANDLE $outFamilyDirectory."/".$sampleIDs[$sampleIDCounter]."_mpileup_nonvariants.txt,";	
+	    }
 	}
-	else {
+	print $FILEHANDLE "-s "; #SampleIDs 
+
+	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {#For all sample ids mpileup nonvariant files
 	    
-	    print $FILEHANDLE $outFamilyDirectory."/".$sampleIDs[$sampleIDCounter]."_mpileup_nonvariants.txt,";	
+	    if ($sampleIDCounter eq scalar(@sampleIDs)-1) {
+		
+		print $FILEHANDLE $sampleIDs[$sampleIDCounter]." ";
+	    }
+	    else {
+		
+		print $FILEHANDLE $sampleIDs[$sampleIDCounter].",";		    
+	    }
 	}
+	print $FILEHANDLE "-o ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType."_adp.txt", "\n\n"; 
+
+	print $FILEHANDLE "mv "; #Overwrites original annovar_merge.txt file
+	print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType."_adp.txt "; #Add_depth outfile
+	print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".txt", "\n\n"; #Original file
     }
-    print $FILEHANDLE "-s "; #SampleIDs 
-
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {#For all sample ids mpileup nonvariant files
-	
-	if ($sampleIDCounter eq scalar(@sampleIDs)-1) {
-	    
-	    print $FILEHANDLE $sampleIDs[$sampleIDCounter]." ";
-	}
-	else {
-
-	    print $FILEHANDLE $sampleIDs[$sampleIDCounter].",";		    
-	}
-    }
-    print $FILEHANDLE "-o ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType."_adp.txt", "\n\n"; 
-
-    print $FILEHANDLE "mv "; #Overwrites original annovar_merge.txt file
-    print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType."_adp.txt "; #Add_depth outfile
-    print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.".txt", "\n\n"; #Original file
-
     close($FILEHANDLE);   
 
     if ( ($scriptParameter{'pAddDepth'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
@@ -1913,12 +1780,39 @@ sub MergeAnnotatedVariants {
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pAnnovar'}{'fileEnding'};
     my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pMergeAnnotatedVariants'}{'fileEnding'};
-    
+    my @additionalVCFColumns;
+    my $vcfColumns;
+    my $sampleIDcolumnsCondition;
+    my $analysisType = "";
+
 ##Create db master file from template
     print $FILEHANDLE "#Create db master file from template", "\n";
-    my $sampleIDColumns = scalar(@sampleIDs)+6; #Requires CMMS format (chr,start,stop,ref_allele,alt_allel,GT_Call_Filter,IDN...)
-    my $sampleIDcolumnsCondition = scalar(@sampleIDs)+5;
     
+    if ($scriptParameter{'pVariantEffectPredictor'} == 1) {
+
+	my $AddtionalVEPOutColumnCounter = 3; #HGNC_transcript_info, Functional_annotation, Gene_annotation (constant)
+	splice(@additionalVCFColumns, scalar(@additionalVCFColumns), 0, "HGNC_transcript_info", "Functional_annotation", "Gene_annotation");
+
+	for (my $vepFeatureCounter=0;$vepFeatureCounter<scalar(@vepFeatures);$vepFeatureCounter++) {
+	 
+	    if ($vepFeatures[$vepFeatureCounter] eq "sift") {
+		
+		$AddtionalVEPOutColumnCounter++;
+		splice(@additionalVCFColumns, scalar(@additionalVCFColumns), 0, "Sift");
+	    }
+	    if ($vepFeatures[$vepFeatureCounter] eq "polyphen") {
+
+		$AddtionalVEPOutColumnCounter++;
+		splice(@additionalVCFColumns, scalar(@additionalVCFColumns), 0, "PolyPhen");
+	    }
+	}
+	$vcfColumns = scalar(@sampleIDs)+6+$AddtionalVEPOutColumnCounter; #Requires CMMS format (chr,start,stop,ref_allele,alt_allel,GT_Call_Filter,VEPColumns,IDN...)
+    }
+    else {
+
+	$vcfColumns = scalar(@sampleIDs)+6; #Requires CMMS format (chr,start,stop,ref_allele,alt_allel,GT_Call_Filter,IDN...)
+    }    
+    $sampleIDcolumnsCondition = $vcfColumns - scalar(@sampleIDs);
 ##Add relative path to db_template for annovar files 
     my ($volume,$directories,$file) = File::Spec->splitpath($scriptParameter{'outDataDir'});
     my @directories = File::Spec->splitdir($directories);
@@ -1940,33 +1834,60 @@ sub MergeAnnotatedVariants {
 	$regExpReferenceDirectory .= "\\/".$directories[$directoryCount]; #Create escape char for / in later regexp
     }
     $regExpReferenceDirectory .= $file;
-    
+
+    for (my $VEPOutputFilesCounter=0;$VEPOutputFilesCounter<$VEPOutputFiles;$VEPOutputFilesCounter++) {
+
 ##Create family specific template
-    print $FILEHANDLE q?perl -nae 'if ($_=~/outinfo/i) { if ($_=~/IDN!/) { my $sidstring; for (my $sampleID=6;$sampleID<?.$sampleIDColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolumnsCondition.q?) { $sidstring.="IDN_GT_Call=>0_$sampleID,"} else { $sidstring.="IDN_GT_Call=>0_$sampleID"} } s/IDN!/$sidstring/g; print $_;} next;} elsif ($_=~s/FDN\!_|FDN\!/?.$familyID.q?/g) { if($_=~s/^ODF!/?.$regExpOutDataFile.q?/g) {} if($_=~s/ALIGNER!/?.$aligner.q?/g) {} if($_=~s/FILEENDING!_/?.$infileEnding.q?/g) {} if($_=~s/CALLTYPE!/?.$callType.q?/g) {} if ($_=~/IDN!/) { my $sidstring; for (my $sampleID=6;$sampleID<?.$sampleIDColumns.q?;$sampleID++) { if ($sampleID<?.$sampleIDcolumnsCondition.q?) { $sidstring.="$sampleID,"} else { $sidstring.="$sampleID"} } s/IDN!/$sidstring/g; print $_;} else { print $_;} } else { if($_=~s/^RD!/?.$regExpReferenceDirectory.q?/g) {} print $_;}' ?;
-    print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'mergeAnnotatedVariantsTemplateFile'}." "; #Infile
-    print $FILEHANDLE "> ".$scriptParameter{'mergeAnnotatedVariantsDbFile'}, "\n\n"; #OutFile
-
-    print $FILEHANDLE "perl ".$scriptParameter{'inScriptDir'}."/intersectCollect.pl ";
-    print $FILEHANDLE "-db ".$scriptParameter{'mergeAnnotatedVariantsDbFile'}." ";
-
-    if ($humanGenomeReferenceSource eq "hg19") {
-
-	print $FILEHANDLE "-prechr 1 "; #Use chromosome prefix
-    }
-
-    print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".txt ";
-    print $FILEHANDLE "-s ";
-
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { 
-
-	if ($sampleIDCounter eq scalar(@sampleIDs)-1) {
+	print $FILEHANDLE q?perl -nae '?;
+##Add additional columns
+	my $columnHeaders = join(",", @additionalVCFColumns);
+	print $FILEHANDLE q?my @additionalVCFColumns = (?.$columnHeaders;
+	print $FILEHANDLE q?); my $additionalColumnCounter; ?;
 	
-	    print $FILEHANDLE $sampleIDs[$sampleIDCounter], "\n\n";
+	print $FILEHANDLE q?if ($_=~/outinfo/i) { if ($_=~/IDN!/) { my $columnString; my $sampleIDString; for (my $columnCounter=6;$columnCounter<?.$vcfColumns.q?;$columnCounter++) { if ($columnCounter<?.$sampleIDcolumnsCondition.q?) { $columnString.="$additionalVCFColumns[$additionalColumnCounter]=>0_$columnCounter,"; $additionalColumnCounter++;} elsif ($columnCounter ==?.$vcfColumns.q?-1) { $sampleIDString.="IDN_GT_Call=>0_$columnCounter";} else { $sampleIDString.="IDN_GT_Call=>0_$columnCounter,";} } $columnString .= $sampleIDString ;s/IDN!/$columnString/g; print $_; } next;} elsif ($_=~s/FDN\!_|FDN\!/?.$familyID.q?/g) { if($_=~s/^ODF!/?.$regExpOutDataFile.q?/g) {} if($_=~s/ALIGNER!/?.$aligner.q?/g) {} if($_=~s/FILEENDING!_/?.$infileEnding.q?/g) {} if($_=~s/CALLTYPE!/?.$callType.q?/g) {} if ($_=~/IDN!/) { my $columnString; for (my $columnCounter=6;$columnCounter<?.$vcfColumns.q?;$columnCounter++) { if ($columnCounter<?.$vcfColumns.q?-1) { $columnString.="$columnCounter,"} else { $columnString.="$columnCounter\t"} } s/IDN!/$columnString/g; print $_;} else { print $_;} } else { if($_=~s/^RD!/?.$regExpReferenceDirectory.q?/g) {} print $_;}' ?;
+
+	##Include potential SelectFile variants
+	if ($VEPOutputFiles == 2) {
+	    
+	    print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'mergeAnnotatedVariantsTemplateSelectFile'}." "; #Infile
+	    print $FILEHANDLE "> ".$scriptParameter{'mergeAnnotatedVariantsDbSelectFile'}, "\n\n"; #OutFile
+	}
+	else { #Orphan analysis
+	 
+	    print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'mergeAnnotatedVariantsTemplateFile'}." "; #Infile
+	    print $FILEHANDLE "> ".$scriptParameter{'mergeAnnotatedVariantsDbFile'}, "\n\n"; #OutFile
+	}
+	print $FILEHANDLE "perl ".$scriptParameter{'inScriptDir'}."/intersectCollect.pl ";
+
+	##Include potential SelectFile variants
+	if ($VEPOutputFiles == 2) {
+
+	    $analysisType = ".select"; #SelectFile variants
+	    print $FILEHANDLE "-db ".$scriptParameter{'mergeAnnotatedVariantsDbSelectFile'}." ";
 	}
 	else {
 
-	    print $FILEHANDLE $sampleIDs[$sampleIDCounter], ",";
-	}    
+	    print $FILEHANDLE "-db ".$scriptParameter{'mergeAnnotatedVariantsDbFile'}." ";
+	}
+	if ($humanGenomeReferenceSource eq "hg19") {
+	    
+	    print $FILEHANDLE "-prechr 1 "; #Use chromosome prefix
+	}
+	
+	print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".txt ";
+	print $FILEHANDLE "-s ";
+
+	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { 
+	    
+	    if ($sampleIDCounter eq scalar(@sampleIDs)-1) {
+		
+		print $FILEHANDLE $sampleIDs[$sampleIDCounter], "\n\n";
+	    }
+	    else {
+		
+		print $FILEHANDLE $sampleIDs[$sampleIDCounter], ",";
+	    }    
+	}
     }
     close($FILEHANDLE);   
     
@@ -2340,6 +2261,7 @@ sub Annovar {
 
 	if ($VEPOutputFilesCounter == 1) {
 
+	    $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pVEPParser'}{'fileEnding'};
 	    $analysisType = ".selected"; #SelectFile variants
 	}
 	
@@ -2618,7 +2540,7 @@ sub VEPParser {
     
     if ($scriptParameter{'vepParserSelectFile'} ne "noUserInfo") {
 
-	print $FILEHANDLE "-sf ".$scriptParameter{'vepParserSelectFile'}." "; #List of genes to analyse separately
+	print $FILEHANDLE "-sf ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'vepParserSelectFile'}." "; #List of genes to analyse separately
 	print $FILEHANDLE "-sf_mc ".$scriptParameter{'vepParserSelectFileMatchingColumn'}." "; #Column of HGNC Symbol in SelectFile (-sf)
     }
     print $FILEHANDLE "\n\n";
@@ -6122,6 +6044,8 @@ sub AddToScriptParameter {
 			}
 			elsif ( ($parameterName eq "vepParserSelectFileMatchingColumn") && ( $scriptParameter{'vepParserSelectFile'} eq "noUserInfo") ) { #Do nothing since no SelectFile was given
 			}
+			elsif ( ($parameterName eq "mergeAnnotatedVariantsTemplateSelectFile") && ( $scriptParameter{'vepParserSelectFile'} eq "noUserInfo") ) { #Do nothing since no SelectFile was given
+			}
 			else {
 			    
 			    print STDERR $USAGE, "\n";
@@ -6275,7 +6199,7 @@ sub AddToScriptParameter {
 				if (defined($annovarTables{$annovarTableNames[$tableNamesCounter]}{'file'})) {
 				    
 				    for (my $filesCounter=0;$filesCounter<scalar(@{$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'file'}});$filesCounter++) { #All annovarTables file(s), some tables have multiple files downloaded from the same call
-					$intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'file'}[$filesCounter]);
+			#		intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'file'}[$filesCounter]);
 					&CheckExistance($intendedFilePathRef, \$annovarTableNames[$tableNamesCounter], "f");
 				    }
 				}
@@ -6325,6 +6249,8 @@ sub AddToScriptParameter {
 		    }
 		    elsif ( ($parameterName eq "vepParserSelectFile") && ( $scriptParameter{'vepParserSelectFile'} eq "noUserInfo") ) { #Do nothing since no SelectFile was given
 		    }
+		    elsif ( ($parameterName eq "mergeAnnotatedVariantsTemplateSelectFile") && ( $scriptParameter{'vepParserSelectFile'} eq "noUserInfo") ) { #Do nothing since no SelectFile was given
+			}
 		    else {
 			
 			&CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{$parameterName}), \$parameterName, "f");}		    
@@ -6375,36 +6301,15 @@ sub AddToScriptParameter {
 		    
 		    if (defined($scriptParameter{$parameterName})) { #Input from config file - do nothing
 			
-			if ($parameterName eq "ImportantDbFileOutFiles") {
-			    
-			    @ImportantDbFileOutFiles = split(/,/, $scriptParameter{'ImportantDbFileOutFiles'});
-			}
 		    }
 		    elsif ($parameterDefault ne "nodefault") {
-			
-			if ($parameterName eq "ImportantDbFileOutFiles") {
-	
-			    my $inDirectoryResearch = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'aligner'}."/GATK/candidates/ranking";
-			    my $inDirectoryClinical = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'aligner'}."/GATK/candidates/ranking/clinical"; 
-			    @ImportantDbFileOutFiles = ($inDirectoryResearch."/".$scriptParameter{'familyID'}."_orphan.selectVariants", $inDirectoryClinical."/".$scriptParameter{'familyID'}.".selectVariants");
-			    $scriptParameter{'ImportantDbFileOutFiles'} = join(",", @ImportantDbFileOutFiles);
-			}
-			else {
 			    
-			    $scriptParameter{$parameterName} = $parameterDefault; #Set default value
-			}
+			$scriptParameter{$parameterName} = $parameterDefault; #Set default value
 		    }
 		}
 		else {
 
-		    if ($parameterName eq "ImportantDbFileOutFiles") {
-
-			&EnableArrayParameter(\@ImportantDbFileOutFiles, \$parameterName); #Enables comma separated list of sample IDs from user supplied cmd info
-		    }
-		    else {
-
-			$scriptParameter{$parameterName} = $parameterValue;
-		    }
+		    $scriptParameter{$parameterName} = $parameterValue;
 		}
 		
 		if (defined($parameter{$parameterName}{'programNamePath'}[0])) { #Code for checking commands in your path and executable
@@ -6651,21 +6556,7 @@ sub ProgramPreRequisites {
 
 ###Info and Log
     &PrintToFileHandles(\@printFilehandles, "Creating sbatch script for ".$programName." and writing script file(s) to: ".$fileName."\n");
-
-    if ($programName eq "RankVariants") { #Special case
-
-	for (my $ImportantDbFileOutFilesCounter=0;$ImportantDbFileOutFilesCounter<scalar(@ImportantDbFileOutFiles);$ImportantDbFileOutFilesCounter++) {
-	    
-	    my ($volume,$directories,$file) = File::Spec->splitpath($ImportantDbFileOutFiles[$ImportantDbFileOutFilesCounter]);
-	    `mkdir -p $directories;`; 
-
-	    &PrintToFileHandles(\@printFilehandles, "RankVariants data files will be written to: ".$directories.$directoryID."_ranked_".$callType.".txt\n");   
-	}
-    }
-    else {
-
-	&PrintToFileHandles(\@printFilehandles, "Sbatch script ".$programName." data files will be written to: ".$programDataDirectory."\n");
-    }
+    &PrintToFileHandles(\@printFilehandles, "Sbatch script ".$programName." data files will be written to: ".$programDataDirectory."\n");
 
 ###Sbatch header
     open ($fileHandle, ">".$fileName) or die "Can't write to ".$fileName.":".$!, "\n";
