@@ -1,4 +1,4 @@
-#!/usr/bin/perl -
+#!/usr/bin/perl - w
 
 use strict;
 use warnings;
@@ -130,9 +130,18 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -vepdirpath/--vepDirectoryPath Path to VEP script directory (Supply whole path, defaults to "")
                  -vepdircache/vepDirectoryCache Specify the cache directory to use (Supply whole path, defaults to "") 
                  -vepfeat/--vepFeatures VEP features (comma sep)
-               -pVEPPar/--pVEPParser Parse variants using vep_parser.pl (defaults to "1" (=yes))
-                 -vepparsersf/--vepParserSelectFile File containging list of genes to analyse seperately (Defaults to "";tab-sep file and HGNC Symbol required)
-                 -vepparsersfmc/--vepParserSelectFileMatchingColumn Position of HGNC Symbol column in SelectFile (Defaults to "")
+               -pVCFPar/--pVCFParser Parse variants using vcfParser.pl (defaults to "1" (=yes))
+                 -vcfparservepp/--vcfParserVEPParser Parse VEP transcript specific entries 
+                 -vcfparserrf/--vcfParserRangeFeatureFile Range annotations file (tab-sep)
+                 -vcfparserrfac/--vcfParserRangeFeatureAnnotationColumns Range annotations feature columns (Defaults to ""; comma sep)
+                 -vcfparsersf/--vcfParserSelectFile File containging list of genes to analyse seperately (Defaults to "";tab-sep file and HGNC Symbol required)
+                 -vcfparsersfmc/--vcfParserSelectFileMatchingColumn Position of HGNC Symbol column in SelectFile (Defaults to "")
+                 -vcfparsersfac/--vcfParserSelectFeatureAnnotationColumns Feature columns to use in annotation (Defaults to ""; comma sep)
+                -pSnpeff/--pSnpEff Variant annotation using snpEFF (defaults to "1" (=yes))
+                 -snpeffpath/--snpEffPath Path to snpEff. Mandatory for use of snpEff (defaults to "")
+                 -snpsiftanf/--snpSiftAnnotationFiles Annotation files to use with snpSift (comma sep)
+                 -snpsiftdbnsfpf/--snpSiftDbNSFPFile DbNSFP File (defaults to "dbNSFP2.4_variant.txt.gz")
+                 -snpsiftdbnsfpan/--snpSiftDbNSFPAnnotations DbNSFP annotations to use with snpSift (comma sep)
                -pANVAR/--pAnnovar Annotate variants using Annovar (defaults to "1" (=yes))
                  -anvarpath/--annovarPath  Path to Annovar script directory (Supply whole path, defaults to "". NOTE: Assumes that the annovar db files are located in annovar/humandb)
                  -anvargbv/--annovarGenomeBuildVersion Annovar genome build version (defaults to "hg19")
@@ -154,6 +163,11 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pRankVar/--pRankVariants Ranking of annotated variants (defaults to "1" (=yes))
                  -rs/--rankScore The rank score cut-off (defaults to "-100", .i.e. include everything
                  -gf/--geneFile Defines genes to use when calculating compounds
+                 -cadd/--caddWGSSNVs Annotate whole genome sequencing CADD score (defaults to "0" (=no))
+                 -caddf/--caddWGSSNVsFile Whole genome sequencing CADD score file (defaults to "")
+                 -cadd1kg/--cadd1000Genomes 1000 Genome cadd score file (defaults to "0" (=no))
+                 -cadd1kgf/--cadd1000GenomesFile 1000 Genome cadd score file (defaults to "")
+                 -gene/--wholeGene Allow compound pairs in intronic regions (defaults to "1" (=yes))
                -pSCheck/--pSampleCheck QC for samples gender and relationship (defaults to "1" (=yes) )
                -pQCC/--pQCCollect Collect QC metrics from programs processed (defaults to "1" (=yes) )
                  -QCCsampleinfo/--QCCollectSampleInfoFile SampleInfo File containing info on what to parse from this analysis run (defaults to "{outDataDir}/{familyID}/{familyID}_qc_sampleInfo.yaml")
@@ -390,19 +404,26 @@ my (@GATKTargetPaddedBedIntervalLists); #Array for target infile lists used in G
 
 my @vepFeatures; #List of VEP features to be used
 
-##VEPParser
+##VCFParser
 
-&DefineParameters("pVEPParser", "program", 1, "MIP", "parsed_", "MAIN");
+&DefineParameters("pVCFParser", "program", 1, "MIP", "parsed_", "MAIN");
 
-&DefineParametersPath("vepParserSelectFile", "noUserInfo", "pVEPParser", "file"); 
+&DefineParameters("vcfParserVEPParser", "program", 0, "pVCFParser");
 
-&DefineParameters("vepParserSelectFileMatchingColumn", "program", "nodefault", "pVEPParser");
+&DefineParametersPath("vcfParserRangeFeatureFile", "noUserInfo", "pVCFParser", "file"); 
 
-my $VEPOutputFiles = 1; #To track if VEPParser was used with a vepParserSelectFile (=2) or not (=1)
+&DefineParametersPath("vcfParserSelectFile", "noUserInfo", "pVCFParser", "file"); 
+
+&DefineParameters("vcfParserSelectFileMatchingColumn", "program", "nodefault", "pVCFParser");
+
+my $VEPOutputFiles = 1; #To track if VEPParser was used with a vcfParserSelectFile (=2) or not (=1)
+my @vcfParserRangeFeatureAnnotationColumns;
+my @vcfParserSelectFeatureAnnotationColumns;
+
 
 ##Annovar
 
-&DefineParameters("pAnnovar", "program", 1, "MIP", "annovar_", "MAIN");
+&DefineParameters("pAnnovar", "program", 1, "MIP", "annovar_", "Annovar");
 
 &DefineParametersPath("annovarPath", "nodefault", "pAnnovar", "directory"); #Note not projectID specific
 
@@ -414,6 +435,19 @@ my $VEPOutputFiles = 1; #To track if VEPParser was used with a vepParserSelectFi
 
 my @annovarTableNames; #List of Annovar table names to be used
 
+##SnpEFF
+
+&DefineParameters("pSnpEff", "program", 1, "MIP", "snpeff_", "MAIN");
+
+&DefineParametersPath("snpEffPath", "nodefault", "pSnpEff", "directory");
+
+&DefineParametersPath("snpSiftDbNSFPFile", "dbNSFP2.4_variant.txt.gz", "pSnpEff", "file");
+
+my @snpSiftDbNSFPAnnotations;
+my @snpSiftAnnotationFiles;
+
+##Special case GATKPAth since in SnpEff module GATK CombineVariants is used to merge vcfs 
+&DefineParametersPath("genomeAnalysisToolKitPath", "nodefault", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pSnpEff", "directory");
 
 ##SChecks
 &DefineParameters("pSampleCheck", "program", 1, "MIP", "nofileEnding", "IDQC", "vcftools:plink");
@@ -421,7 +455,7 @@ my @annovarTableNames; #List of Annovar table names to be used
 
 ##VMerge
 
-&DefineParameters("pMergeAnnotatedVariants", "program", 1, "MIP", "merged_", "MAIN");
+&DefineParameters("pMergeAnnotatedVariants", "program", 1, "MIP", "merged_", "Annovar");
 
 &DefineParametersPath("mergeAnnotatedVariantsTemplateFile", "nodefault", "pMergeAnnotatedVariants", "file", "noAutoBuild");
 
@@ -433,7 +467,7 @@ my @annovarTableNames; #List of Annovar table names to be used
 
 ##Add_depth
 
-&DefineParameters("pAddDepth", "program", 0, "MIP", "", "MAIN");
+&DefineParameters("pAddDepth", "program", 0, "MIP", "", "Annovar");
 
 
 ##RankVariants
@@ -444,6 +478,15 @@ my @annovarTableNames; #List of Annovar table names to be used
 
 &DefineParametersPath("geneFile", "hg19_refGene.txt", "pRankVariants", "file", "noAutoBuild");
 
+&DefineParameters("caddWGSSNVs", "program", 0, "pRankVariants");
+
+&DefineParametersPath("caddWGSSNVsFile", "nodefault", "pRankVariants", "file", "noAutoBuild");
+
+&DefineParameters("cadd1000Genomes", "program", 0, "pRankVariants");
+
+&DefineParametersPath("cadd1000GenomesFile", "nodefault", "pRankVariants", "file", "noAutoBuild");
+
+&DefineParameters("wholeGene", "program", 1, "pRankVariants");
 
 &DefineParametersPath("pythonVirtualEnvironment", "nodefault", "pChanjoBuild,pChanjoCalculate,pChanjoImport,pRankVariants");
 
@@ -592,10 +635,19 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'pVEP|pVariantEffectPredictor:n' => \$parameter{'pVariantEffectPredictor'}{'value'}, #Annotation of variants using vep
 	   'vepdirpath|vepDirectoryPath:s'  => \$parameter{'vepDirectoryPath'}{'value'}, #path to vep script dir
 	   'vepdircache|vepDirectoryCache:s'  => \$parameter{'vepDirectoryCache'}{'value'}, #path to vep cache dir
-	   'pVEPPar|pVEPParser:n' => \$parameter{'pVEPParser'}{'value'},
-	   'vepparsersf|vepParserSelectFile:s'  => \$parameter{'vepParserSelectFile'}{'value'}, #path to vepParserSelectFile
-	   'vepparsersfmc|vepParserSelectFileMatchingColumn:n' => \$parameter{'vepParserSelectFileMatchingColumn'}{'value'}, #Column of HGNC Symbol in SelectFile
 	   'vepfeat|vepFeatures:s'  => \@vepFeatures, #Comma separated list
+	   'pVCFPar|pVCFParser:n' => \$parameter{'pVCFParser'}{'value'},
+	   'vepparservepp|vcfParserVEPParser:n' => \$parameter{'vcfParserVEPParser'}{'value'},
+	   'vepparserrf|vcfParserRangeFeatureFile:s'  => \$parameter{'vcfParserRangeFeatureFile'}{'value'}, #path to vcfParserRangeFeatureFile
+	   'vepparserrfac|vcfParserRangeFeatureAnnotationColumns:s'  => \@vcfParserRangeFeatureAnnotationColumns, #Comma separated list
+	   'vepparsersf|vcfParserSelectFile:s'  => \$parameter{'vcfParserSelectFile'}{'value'}, #path to vcfParserSelectFile
+	   'vepparsersfmc|vcfParserSelectFileMatchingColumn:n' => \$parameter{'vcfParserSelectFileMatchingColumn'}{'value'}, #Column of HGNC Symbol in SelectFile
+	   'vepparsersfac|vcfParserSelectFeatureAnnotationColumns:s'  => \@vcfParserSelectFeatureAnnotationColumns, #Comma separated list
+	   'snpeffpath|snpEffPath:s'  => \$parameter{'snpEffPath'}{'value'}, #path to snpEff directory
+	   'pSnpeff|pSnpEff:n' => \$parameter{'pSnpEff'}{'value'},
+	   'snpsiftanf|snpSiftAnnotationFiles:s'  => \@snpSiftAnnotationFiles, #Comma separated list
+	   'snpsiftdbnsfpf|snpSiftDbNSFPFile:s'  => \$parameter{'snpSiftDbNSFPFile'}{'value'}, #DbNSFP file
+	   'snpsiftdbnsfpan|snpSiftDbNSFPAnnotations:s'  => \@snpSiftDbNSFPAnnotations, #Comma separated list
 	   'pANVAR|pAnnovar:n' => \$parameter{'pAnnovar'}{'value'}, #Performs annovar filter gene, region and filter analysis
 	   'anvarpath|annovarPath:s'  => \$parameter{'annovarPath'}{'value'}, #path to annovar script dir
 	   'anvargbv|annovarGenomeBuildVersion:s'  => \$parameter{'annovarGenomeBuildVersion'}{'value'},
@@ -611,6 +663,11 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs, #Comma separated list
 	   'pRankVar|pRankVariants:n' => \$parameter{'pRankVariants'}{'value'}, #Ranking variants
 	   'rs|rankscore:n'  => \$parameter{'rankScore'}{'value'}, #The rank score cut-off
 	   'gf|geneFile:s' => \$parameter{'geneFile'}{'value'},
+	   'cadd|caddWGSSNVs:n' => \$parameter{'caddWGSSNVs'}{'value'},
+	   'caddf|caddWGSSNVsFile:s' => \$parameter{'caddWGSSNVsFile'}{'value'},
+	   'cadd1kg|cadd1000Genomes:n' => \$parameter{'cadd1000Genomes'}{'value'},
+	   'cadd1kgf|cadd1000GenomesFile:s' => \$parameter{'cadd1000GenomesFile'}{'value'},
+	   'gene|wholeGene:n'  => \$parameter{'wholeGene'}{'value'}, #Allow compound pairs in intronic regions
 	   'pSCheck|pSampleCheck:n' => \$parameter{'pSampleCheck'}{'value'}, #QC for samples gender and relationship
 	   'pQCC|pQCCollect:n' => \$parameter{'pQCCollect'}{'value'}, #QCmetrics collect
 	   'QCCsampleinfo|QCCollectSampleInfoFile:s' => \$parameter{'QCCollectSampleInfoFile'}{'value'}, #SampleInfo yaml file produced by MIP
@@ -752,10 +809,21 @@ if ($scriptParameter{'pVariantEffectPredictor'} > 0) {
 
     &PrepareArrayParameters(\@vepFeatures, "vepFeatures", "path", "yes", "pVariantEffectPredictor"); #"yes" added to enable addition of default features in &AddToScriptParameters  
 }
+if ($scriptParameter{'pVCFParser'} > 0) {
+    
+    &PrepareArrayParameters(\@vcfParserRangeFeatureAnnotationColumns, "vcfParserRangeFeatureAnnotationColumns", "path", "nodefault", "pVCFParser");
+    &PrepareArrayParameters(\@vcfParserSelectFeatureAnnotationColumns, "vcfParserSelectFeatureAnnotationColumns", "path", "nodefault", "pVCFParser");
+}
 
 if ($scriptParameter{'pAnnovar'} > 0) {
 
     &PrepareArrayParameters(\@annovarTableNames, "annovarTableNames", "path", "yes", "pAnnovar", "file"); #"yes" added to enable addition of default table names in &AddToScriptParameters  
+}
+
+if ($scriptParameter{'pSnpEff'} > 0) {
+
+    &PrepareArrayParameters(\@snpSiftAnnotationFiles, "snpSiftAnnotationFiles", "path", "yes", "pSnpEff"); #"yes" added to enable addition of default features in &AddToScriptParameters 
+    &PrepareArrayParameters(\@snpSiftDbNSFPAnnotations, "snpSiftDbNSFPAnnotations", "path", "yes", "pSnpEff"); #"yes" added to enable addition of default features in &AddToScriptParameters  
 }
 
 ##Set Target files
@@ -1166,13 +1234,13 @@ if ($scriptParameter{'pVariantEffectPredictor'} > 0) { #Run VariantEffectPredict
     &VariantEffectPredictor($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 }
 
-if ($scriptParameter{'pVEPParser'} > 0) { #Run VariantEffectPredictor. Done per family
+if ($scriptParameter{'pVCFParser'} > 0) { #Run VariantEffectPredictor. Done per family
 
-    &PrintToFileHandles(\@printFilehandles, "\nVEPParser\n");
+    &PrintToFileHandles(\@printFilehandles, "\nVCFParser\n");
     
-    &VEPParser($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
+    &VCFParser($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 
-    if ($scriptParameter{'vepParserSelectFile'} ne "noUserInfo") {
+    if ($scriptParameter{'vcfParserSelectFile'} ne "noUserInfo") {
 
 	$VEPOutputFiles = 2; #Use seperate analysis for variants overlapping selected genes and orphans
     }
@@ -1193,6 +1261,13 @@ if ($scriptParameter{'pAnnovar'} > 0) { #Run Annovar. Done per family
 	}
     }
     &Annovar($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
+}
+
+if ($scriptParameter{'pSnpEff'} > 0) { #Run snpEff. Done per family
+
+    &PrintToFileHandles(\@printFilehandles, "\nSnpEff\n");
+
+    &SnpEff($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 }
 
 if ($scriptParameter{'pGATKVariantEvalAll'} > 0) { #Run GATK VariantEval for all variants. Done per sampleID
@@ -1584,7 +1659,7 @@ sub RankVariants {
 
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/candidates/ranking";
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pAddDepth'}{'fileEnding'};
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pSnpEff'}{'fileEnding'};
     my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pRankVariants'}{'fileEnding'};
     my $analysisType = "";
 
@@ -1595,22 +1670,41 @@ sub RankVariants {
     
     for (my $VEPOutputFilesCounter=0;$VEPOutputFilesCounter<$VEPOutputFiles;$VEPOutputFilesCounter++) {
 	
-	if ($VEPOutputFiles == 2) {
+	if ($VEPOutputFilesCounter == 1) {
 	    
-	    $analysisType = ".select"; #SelectFile variants
-	}	    
-	print $FILEHANDLE "run_mip_family_analysis.py ";
+	    $analysisType = ".selected"; #SelectFile variants
+	}
+	    
+	print $FILEHANDLE "run_genmod.py ";
 	print $FILEHANDLE $scriptParameter{'pedigreeFile'}." "; #Pedigree file
 	
+	if ($scriptParameter{'pVariantEffectPredictor'} > 0) { #Use VEP annotations in compound models
+
+	    print $FILEHANDLE "-vep "; 
+	}
+	else {
+	    
+	    print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'geneFile'}." "; #Gene file used for annotating AR_compounds
+	}
 	if ($scriptParameter{'instanceTag'} eq "CMMS") {
 	    
-	    print $FILEHANDLE "--cmms "; #CMMS flag
+	    print $FILEHANDLE "-family cmms "; #CMMS flag
 	}
-	print $FILEHANDLE "-tres ".$scriptParameter{'rankScore'}." "; #Rank score threshold
-	print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".txt "; #InFile
-	print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'geneFile'}." "; #Gene file used for annotating AR_compounds
-	print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".txt", "\n\n"; #OutFile
-	print $FILEHANDLE "wait\n\n";
+	if ($scriptParameter{'caddWGSSNVs'} == 1) {
+	 
+	    print $FILEHANDLE "-cadd ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'caddWGSSNVsFile'}." "; #Whole genome sequencing CADD score file
+	}
+	if ($scriptParameter{'cadd1000Genomes'} == 1) {
+	 
+	    print $FILEHANDLE "-c1kg ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'cadd1000GenomesFile'}." "; #1000G CADD score file
+	}
+	if ($scriptParameter{'wholeGene'} == 1) {
+	 
+	    print $FILEHANDLE "--whole_gene "; 
+	}
+	#print $FILEHANDLE "-tres ".$scriptParameter{'rankScore'}." "; #Rank score threshold
+	print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".vcf "; #InFile
+	print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf &", "\n\n"; #OutFile
 	
 	if ( ($scriptParameter{'pRankVariants'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 	    
@@ -1624,7 +1718,7 @@ sub RankVariants {
 	    }
 	}
     }
-        
+    print $FILEHANDLE "wait\n\n";
     print $FILEHANDLE "\n\ndeactivate ", "\n\n"; #Deactivate python environment
 
     close($FILEHANDLE);   
@@ -1658,7 +1752,7 @@ sub AddDp {
 
 	if ($VEPOutputFiles == 2) {
 
-	    $analysisType = ".select"; #SelectFile variants
+	    $analysisType = ".selected"; #SelectFile variants
 	}
 #Find all "./." per sample ID and print chr pos to new file (mpileup -l format)
 	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { #For all sample ids, find nonvariants
@@ -1785,13 +1879,11 @@ sub MergeAnnotatedVariants {
     my $sampleIDcolumnsCondition;
     my $analysisType = "";
 
-##Create db master file from template
-    print $FILEHANDLE "#Create db master file from template", "\n";
-    
+    ##Determine number of VEP columns
     if ($scriptParameter{'pVariantEffectPredictor'} == 1) {
 
 	my $AddtionalVEPOutColumnCounter = 3; #HGNC_transcript_info, Functional_annotation, Gene_annotation (constant)
-	splice(@additionalVCFColumns, scalar(@additionalVCFColumns), 0, "HGNC_transcript_info", "Functional_annotation", "Gene_annotation");
+	splice(@additionalVCFColumns, scalar(@additionalVCFColumns), 0, "HGNC_transcript_info", "Functional_annotation", "GeneticRegionAnnotation");
 
 	for (my $vepFeatureCounter=0;$vepFeatureCounter<scalar(@vepFeatures);$vepFeatureCounter++) {
 	 
@@ -1838,6 +1930,7 @@ sub MergeAnnotatedVariants {
     for (my $VEPOutputFilesCounter=0;$VEPOutputFilesCounter<$VEPOutputFiles;$VEPOutputFilesCounter++) {
 
 ##Create family specific template
+	print $FILEHANDLE "#Create db master file from template", "\n";
 	print $FILEHANDLE q?perl -nae '?;
 ##Add additional columns
 	my $columnHeaders = join(",", @additionalVCFColumns);
@@ -1847,7 +1940,7 @@ sub MergeAnnotatedVariants {
 	print $FILEHANDLE q?if ($_=~/outinfo/i) { if ($_=~/IDN!/) { my $columnString; my $sampleIDString; for (my $columnCounter=6;$columnCounter<?.$vcfColumns.q?;$columnCounter++) { if ($columnCounter<?.$sampleIDcolumnsCondition.q?) { $columnString.="$additionalVCFColumns[$additionalColumnCounter]=>0_$columnCounter,"; $additionalColumnCounter++;} elsif ($columnCounter ==?.$vcfColumns.q?-1) { $sampleIDString.="IDN_GT_Call=>0_$columnCounter";} else { $sampleIDString.="IDN_GT_Call=>0_$columnCounter,";} } $columnString .= $sampleIDString ;s/IDN!/$columnString/g; print $_; } next;} elsif ($_=~s/FDN\!_|FDN\!/?.$familyID.q?/g) { if($_=~s/^ODF!/?.$regExpOutDataFile.q?/g) {} if($_=~s/ALIGNER!/?.$aligner.q?/g) {} if($_=~s/FILEENDING!_/?.$infileEnding.q?/g) {} if($_=~s/CALLTYPE!/?.$callType.q?/g) {} if ($_=~/IDN!/) { my $columnString; for (my $columnCounter=6;$columnCounter<?.$vcfColumns.q?;$columnCounter++) { if ($columnCounter<?.$vcfColumns.q?-1) { $columnString.="$columnCounter,"} else { $columnString.="$columnCounter\t"} } s/IDN!/$columnString/g; print $_;} else { print $_;} } else { if($_=~s/^RD!/?.$regExpReferenceDirectory.q?/g) {} print $_;}' ?;
 
 	##Include potential SelectFile variants
-	if ($VEPOutputFiles == 2) {
+	if ($VEPOutputFilesCounter == 1) {
 	    
 	    print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'mergeAnnotatedVariantsTemplateSelectFile'}." "; #Infile
 	    print $FILEHANDLE "> ".$scriptParameter{'mergeAnnotatedVariantsDbSelectFile'}, "\n\n"; #OutFile
@@ -1860,9 +1953,9 @@ sub MergeAnnotatedVariants {
 	print $FILEHANDLE "perl ".$scriptParameter{'inScriptDir'}."/intersectCollect.pl ";
 
 	##Include potential SelectFile variants
-	if ($VEPOutputFiles == 2) {
+	if ($VEPOutputFilesCounter == 1) {
 
-	    $analysisType = ".select"; #SelectFile variants
+	    $analysisType = ".selected"; #SelectFile variants
 	    print $FILEHANDLE "-db ".$scriptParameter{'mergeAnnotatedVariantsDbSelectFile'}." ";
 	}
 	else {
@@ -1938,7 +2031,7 @@ sub GATKVariantEvalExome {
 ##Prepp infile to only contain exonic variants
 
 	my $sampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK/varianteval";
-	my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pMergeAnnotatedVariants'}{'fileEnding'};
+	my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pSnpEff'}{'fileEnding'};
 
 	print $FILEHANDLE "grep exon ";
 	print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.".txt "; #InFile
@@ -1947,7 +2040,7 @@ sub GATKVariantEvalExome {
 	##Include potential SelectFile variants
 	if ($VEPOutputFiles == 2) {
 	    
-	    my $analysisType = ".select"; #SelectFile variants
+	    my $analysisType = ".selected"; #SelectFile variants
 	    print $FILEHANDLE "perl -ne ' if ( ($_=~/exonic/) || ($_=/splicing/) ) {print $_;}' ";
 	    print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".txt "; #InFile
 	    print $FILEHANDLE "> ".$sampleDirectory."/".$sampleID.$infileEnding.$callType."_exonic_variants".$analysisType.".txt", "\n\n"; #OutFile
@@ -2031,7 +2124,7 @@ sub GATKVariantEvalExome {
 ##Prepp infile to only contain exonic variants
 
 	    my $sampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/GATK/varianteval";
-	    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pMergeAnnotatedVariants'}{'fileEnding'};
+	    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pSnpEff'}{'fileEnding'};
 	    
 	    print $FILEHANDLE q?perl -ne ' if ( ($_=~/exonic/) || ($_=/splicing/) ) {print $_;}' ?;
 	    print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.".txt "; #InFile
@@ -2040,7 +2133,7 @@ sub GATKVariantEvalExome {
 	    ##Include potential SelectFile variants
 	    if ($VEPOutputFiles == 2) {
 
-		my $analysisType = ".select"; #SelectFile variants
+		my $analysisType = ".selected"; #SelectFile variants
 		print $FILEHANDLE q?perl -ne ' if ( ($_=~/exonic/) || ($_=/splicing/) ) {print $_;}' ?;
 		print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".txt "; #InFile
 		print $FILEHANDLE "> ".$sampleDirectory."/".$sampleID.$infileEnding.$callType."_exonic_variants".$analysisType.".txt", "\n\n"; #OutFile
@@ -2254,14 +2347,14 @@ sub Annovar {
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pAnnovar'}{'fileEnding'};
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pVEPParser'}{'fileEnding'};
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pVCFParser'}{'fileEnding'};
     my $analysisType = "";
 
     for (my $VEPOutputFilesCounter=0;$VEPOutputFilesCounter<$VEPOutputFiles;$VEPOutputFilesCounter++) {
 
 	if ($VEPOutputFilesCounter == 1) {
 
-	    $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pVEPParser'}{'fileEnding'};
+	    $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pVCFParser'}{'fileEnding'};
 	    $analysisType = ".selected"; #SelectFile variants
 	}
 	
@@ -2516,40 +2609,217 @@ sub GATKPhaseByTransmission {
     }
 }
 
-sub VEPParser {
-###VEPParser performs parsing of VariantEffectPredictor annotated variants 
+sub SnpEff {
+###SnpEff annotates variants 
 	
     my $familyID = $_[0]; #familyID NOTE: not sampleid
     my $aligner = $_[1];
     my $callType = $_[2]; #SNV,INDEL or BOTH
     
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
-    &ProgramPreRequisites( $familyID, "VEPParser", $aligner."/GATK", $callType, $FILEHANDLE, 1, 1);
+    my $nrCores = &NrofCoresPerSbatch(scalar(@snpSiftAnnotationFiles) + scalar(@contigs)); #Detect the number of cores to use from (@snpSiftAnnotationFiles and dbNSFP (=+1)
+    &ProgramPreRequisites( $familyID, "SnpEff", $aligner."/GATK", $callType, $FILEHANDLE, $nrCores, 10);
+    
+    my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
+    my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pVCFParser'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pSnpEff'}{'fileEnding'};
+    my $analysisType = "";
+
+    for (my $VEPOutputFilesCounter=0;$VEPOutputFilesCounter<$VEPOutputFiles;$VEPOutputFilesCounter++) {
+
+	my $coreCounter = 1;
+
+	if ($VEPOutputFilesCounter == 1) {
+    
+	    $analysisType = ".selected"; #SelectFile variants
+	}
+###SnpSift Annotation
+	print $FILEHANDLE "\n#SnpSift Annotation","\n\n";	    
+
+	for (my $snpSiftAnnotationFilesCounter=0;$snpSiftAnnotationFilesCounter<scalar(@snpSiftAnnotationFiles);$snpSiftAnnotationFilesCounter++) {
+
+	    &PrintWait(\$snpSiftAnnotationFilesCounter, \$nrCores, \$coreCounter, $FILEHANDLE);
+	    
+	    print $FILEHANDLE "java -Xmx4g ";
+	    
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
+	    print $FILEHANDLE "-jar ".$scriptParameter{'snpEffPath'}."/SnpSift.jar ";
+	    print $FILEHANDLE "annotate ";
+	    print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$snpSiftAnnotationFiles[$snpSiftAnnotationFilesCounter]." "; #Database
+	    print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".vcf "; #Infile
+	    print $FILEHANDLE "| "; #Pipe
+	    print $FILEHANDLE "perl ".$scriptParameter{'inScriptDir'}."/vcfParser.pl "; #Parses the vcf output
+	    print $FILEHANDLE "> ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType."_".$snpSiftAnnotationFiles[$snpSiftAnnotationFilesCounter]." &","\n\n"; #outfile	       
+	}
+
+###SnpSift dbNSFP
+	if (scalar(@snpSiftDbNSFPAnnotations) > 0) { ##DbNSFP
+
+	    my $combinedNrCores;
+
+	    print $FILEHANDLE "\n#SnpSift dbNSFP","\n\n";
+
+	    for (my $contigsCounter=0;$contigsCounter<scalar(@contigs);$contigsCounter++) {
+		
+		$combinedNrCores = scalar(@snpSiftAnnotationFiles) + $contigsCounter;
+		&PrintWait(\$combinedNrCores, \$nrCores, \$coreCounter, $FILEHANDLE);
+			    		
+		print $FILEHANDLE "java -Xmx500m ";
+		
+		if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		    
+		    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+		}
+		print $FILEHANDLE "-jar ".$scriptParameter{'snpEffPath'}."/SnpSift.jar ";
+		print $FILEHANDLE "dbnsfp ";
+		print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'snpSiftDbNSFPFile'}." "; #DbNSFP file
+		print $FILEHANDLE "-f "; #fields to add
+		
+		for (my $snpSiftDbNSFPAnnotationsCounter=0;$snpSiftDbNSFPAnnotationsCounter<scalar(@snpSiftDbNSFPAnnotations);$snpSiftDbNSFPAnnotationsCounter++) {
+		    
+		    if ($snpSiftDbNSFPAnnotationsCounter == 0) { #First entry
+			
+			print $FILEHANDLE $snpSiftDbNSFPAnnotations[$snpSiftDbNSFPAnnotationsCounter]; #Database
+		    }
+		    elsif ($snpSiftDbNSFPAnnotationsCounter == (scalar(@snpSiftDbNSFPAnnotations)-1) ) { #Last entry
+			
+			print $FILEHANDLE ",".$snpSiftDbNSFPAnnotations[$snpSiftDbNSFPAnnotationsCounter]." "; #Database   
+		    }
+		    else {
+			
+			print $FILEHANDLE ",".$snpSiftDbNSFPAnnotations[$snpSiftDbNSFPAnnotationsCounter]; #Database
+		    }
+		}
+		print $FILEHANDLE "<( "; #Pipe into SnpSift
+		print $FILEHANDLE "cat "; #Read infile
+		print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".vcf "; #Infile
+		print $FILEHANDLE "| ";
+		print $FILEHANDLE "java -Xmx500m ";
+		
+		if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		    
+		    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+		}
+		print $FILEHANDLE "-jar ".$scriptParameter{'snpEffPath'}."/SnpSift.jar ";
+		print $FILEHANDLE "filter "; #Parallalize per contig for speed
+		print $FILEHANDLE q?"( CHROM = '?.$contigs[$contigsCounter].q?' )"?;
+		print $FILEHANDLE ") "; #End Pipe into SnpSift
+		print $FILEHANDLE "> ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType."_".$contigs[$contigsCounter]."_dbnsfp.vcf &","\n\n"; #outfile	       
+	    }
+	    print $FILEHANDLE "wait", "\n\n";
+	    
+	    ##Merge dbNSFP splitted vcfs 
+	    print $FILEHANDLE "java -Xmx4g ";
+	    
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
+	    print $FILEHANDLE "-jar ".$scriptParameter{'snpEffPath'}."/SnpSift.jar ";
+	    print $FILEHANDLE "split -j "; #Joinf VCFs together
+
+	    for (my $contigsCounter=0;$contigsCounter<scalar(@contigs);$contigsCounter++) {
+	
+		print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType."_".$contigs[$contigsCounter]."_dbnsfp.vcf "; #outfiles
+	    }
+	    print $FILEHANDLE "> ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType."_dbnsfp.vcf ","\n\n"; #Merged outfile	  
+	}
+
+	##Merge vcf files to 1 
+	print $FILEHANDLE "\n#GATK CombineVariants","\n\n";
+	print $FILEHANDLE "java -Xmx4g ";
+	
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
+	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+	print $FILEHANDLE "-l INFO "; #Set the minimum level of logging
+	print $FILEHANDLE "-T CombineVariants "; #Type of analysis to run
+	print $FILEHANDLE "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
+	for (my $snpSiftAnnotationFilesCounter=0;$snpSiftAnnotationFilesCounter<scalar(@snpSiftAnnotationFiles);$snpSiftAnnotationFilesCounter++) {
+	    
+	    print $FILEHANDLE "-V: ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType."_".$snpSiftAnnotationFiles[$snpSiftAnnotationFilesCounter]." ";
+	}
+	if (scalar(@snpSiftDbNSFPAnnotations) > 0) { ##DbNSFP processed
+	    
+	    print $FILEHANDLE "-V: ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType."_dbnsfp.vcf ";
+	}
+	print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf "; #outfile
+    }
+    print $FILEHANDLE "\n\n";
+    
+##Remove Temp files
+    print $FILEHANDLE "rm ";
+    print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType."_*"."_dbnsfp.vcf","\n\n";
+
+    close($FILEHANDLE);
+    
+    if ( ($scriptParameter{'pSnpEff'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	
+	&FIDSubmitJob(0,$familyID, 1, $parameter{'pSnpEff'}{'chain'}, $fileName,0);
+    }
+}
+
+sub VCFParser {
+###VCFParser performs parsing of VariantEffectPredictor annotated variants 
+	
+    my $familyID = $_[0]; #familyID NOTE: not sampleid
+    my $aligner = $_[1];
+    my $callType = $_[2]; #SNV,INDEL or BOTH
+    
+    my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
+    &ProgramPreRequisites( $familyID, "VCFParser", $aligner."/GATK", $callType, $FILEHANDLE, 1, 1);
     
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pVariantEffectPredictor'}{'fileEnding'};
-    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pVEPParser'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pVCFParser'}{'fileEnding'};
     
-###VEPParser
+###VCFParser
 
-    print $FILEHANDLE "\n#VEPParser","\n\n";
-    print $FILEHANDLE "perl ".$scriptParameter{'inScriptDir'}."/vep_parser.pl "; #Parses the VEp output to tab-sep format
-    print $FILEHANDLE "-i ".$outFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf "; #Infile
-    print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf "; #outfile
+    print $FILEHANDLE "\n#VCFParser","\n\n";
+    print $FILEHANDLE "perl ".$scriptParameter{'inScriptDir'}."/vcfParser.pl "; #Parses the VEP output to tab-sep format
+    print $FILEHANDLE $outFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf "; #Infile
     
-    if ($scriptParameter{'vepParserSelectFile'} ne "noUserInfo") {
+    if ($scriptParameter{'pVariantEffectPredictor'} > 0) {
 
-	print $FILEHANDLE "-sf ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'vepParserSelectFile'}." "; #List of genes to analyse separately
-	print $FILEHANDLE "-sf_mc ".$scriptParameter{'vepParserSelectFileMatchingColumn'}." "; #Column of HGNC Symbol in SelectFile (-sf)
+	print $FILEHANDLE "--parseVEP ".$scriptParameter{'vcfParserVEPParser'}." "; #Parse VEP transcript specific entries
     }
+    if ($scriptParameter{'vcfParserRangeFeatureFile'} ne "noUserInfo") {
+
+	print $FILEHANDLE "-rf ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'vcfParserRangeFeatureFile'}." "; #List of genes to analyse separately	
+	
+	if (scalar(@vcfParserRangeFeatureAnnotationColumns) > 0) {
+
+	    print $FILEHANDLE "-rf_ac "; #Range annotation columns
+	    print $FILEHANDLE join(',', @vcfParserRangeFeatureAnnotationColumns)." ";	    
+	}
+    }
+    if ($scriptParameter{'vcfParserSelectFile'} ne "noUserInfo") {
+
+	print $FILEHANDLE "-sf ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'vcfParserSelectFile'}." "; #List of genes to analyse separately
+	print $FILEHANDLE "-sf_mc ".$scriptParameter{'vcfParserSelectFileMatchingColumn'}." "; #Column of HGNC Symbol in SelectFile (-sf)
+
+	if (scalar(@vcfParserSelectFeatureAnnotationColumns) > 0) {
+
+	    print $FILEHANDLE "-sf_ac "; #Select annotation columns
+	    print $FILEHANDLE join(',', @vcfParserSelectFeatureAnnotationColumns)." ";	    
+	}
+	print $FILEHANDLE "-sof ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".selected.vcf ";
+    }
+    print $FILEHANDLE "> ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf"; #outfile
     print $FILEHANDLE "\n\n";
 
     close($FILEHANDLE);
 
-    if ( ($scriptParameter{'pVEPParser'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+    if ( ($scriptParameter{'pVCFParser'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 
-	&FIDSubmitJob(0,$familyID, 2, $parameter{'pVEPParser'}{'chain'}, $fileName,0);
+	&FIDSubmitJob(0,$familyID, 1, $parameter{'pVCFParser'}{'chain'}, $fileName,0);
     }
 }
 
@@ -2594,7 +2864,7 @@ sub VariantEffectPredictor {
 
     if ( ($scriptParameter{'pVariantEffectPredictor'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 
-	&FIDSubmitJob(0,$familyID, 2, $parameter{'pVariantEffectPredictor'}{'chain'}, $fileName,0);
+	&FIDSubmitJob(0,$familyID, 1, $parameter{'pVariantEffectPredictor'}{'chain'}, $fileName,0);
     }
 }
 
@@ -5965,10 +6235,26 @@ sub AddToScriptParameter {
 			if ( ($parameterName eq "GATKTargetPaddedBedIntervalLists") && ($scriptParameter{'analysisType'} ne "genomes") ) { #GATKTargetPaddedBedIntervalLists is a comma separated list 
 			    
 			    &SetTargetandAutoBuild(\@sampleIDs, \$parameterName, \$referenceFileEndings{'GATKTargetPaddedBedIntervalLists'});
-			}
+			}  
 			if ($parameterName eq "vepFeatures") { #Input from config file
     
 			    @vepFeatures = split(/,/, $scriptParameter{'vepFeatures'}); #Transfer to array
+			}
+			if ($parameterName eq "vcfParserRangeFeatureAnnotationColumns") { #Input from config file
+    
+			    @vcfParserRangeFeatureAnnotationColumns = split(/,/, $scriptParameter{'vcfParserRangeFeatureAnnotationColumns'}); #Transfer to array
+			}
+			if ($parameterName eq "vcfParserSelectFeatureAnnotationColumns") { #Input from config file
+    
+			    @vcfParserSelectFeatureAnnotationColumns = split(/,/, $scriptParameter{'vcfParserSelectFeatureAnnotationColumns'}); #Transfer to array
+			}
+			if ($parameterName eq "snpSiftAnnotationFiles") { #Input from config file
+    
+			    @snpSiftAnnotationFiles = split(/,/, $scriptParameter{'snpSiftAnnotationFiles'}); #Transfer to array
+			}
+			if ($parameterName eq "snpSiftDbNSFPAnnotations") { #Input from config file
+    
+			    @snpSiftDbNSFPAnnotations = split(/,/, $scriptParameter{'snpSiftDbNSFPAnnotations'}); #Transfer to array
 			}
 			if ($parameterName eq "annovarTableNames") { #Input from config file
 			    
@@ -5998,6 +6284,7 @@ sub AddToScriptParameter {
 			    &SetTargetandAutoBuild(\@sampleIDs, \$parameterName, \$referenceFileEndings{'exomeTargetBedInfileLists'});
 			}
 			elsif ($parameterName eq "exomeTargetPaddedBedInfileLists") { #Note that potential pedigree files entries will be updated with GenomeReferenceSource and version here
+			    
 			    &SetTargetandAutoBuild(\@sampleIDs, \$parameterName, \$referenceFileEndings{'exomeTargetPaddedBedInfileLists'});
 			}
 			elsif ( ($parameterName eq "GATKTargetPaddedBedIntervalLists") && ($scriptParameter{'analysisType'} ne "genomes") ) { #Note that potential pedigree files entries will be updated with GenomeReferenceSource and version here 
@@ -6009,8 +6296,18 @@ sub AddToScriptParameter {
 			    @vepFeatures = ("refseq", "hgvs", "symbol", "numbers", "sift", "polyphen", "humdiv"); #Set default vep features
 			    &EnableArrayParameter(\@vepFeatures, \$parameterName);
 			}
+			elsif ($parameterName eq "snpSiftAnnotationFiles") { #Input from config file
+			    
+			    @snpSiftAnnotationFiles = ("dbsnp_138.b37.excluding_sites_after_129.vcf", "dbsnp_138.b37.vcf", "1000G_phase1.indels.b37.vcf", "1000G_phase1.snps.high_confidence.b37.vcf", "ESP6500SI-V2-SSA137.updatedProteinHgvs.snps_indels.vcf"); #Set default snpSiftAnnotationFiles
+			    &EnableArrayParameter(\@snpSiftAnnotationFiles, \$parameterName);
+			}
+			elsif ($parameterName eq "snpSiftDbNSFPAnnotations") { #Input from config file
+    
+			    @snpSiftDbNSFPAnnotations = ("SIFT_pred", "Polyphen2_HDIV_pred", "Polyphen2_HVAR_pred", "LRT_pred", "MutationTaster_pred", "GERP++_NR", "GERP++_RS", "phastCons100way_vertebrate", "1000Gp1_AF", "ESP6500_AA_AF"); #Set default snpSiftDbNSFPAnnotations
+			    &EnableArrayParameter(\@snpSiftDbNSFPAnnotations, \$parameterName);
+			}
 			elsif ($parameterName eq "annovarTableNames") {
-
+			    
 			    @annovarTableNames = ("refGene", "mce46way", "gerp++elem", "segdup", "tfbs", "mirna", "snp137NonFlagged", "1000g2012apr_all", "esp6500si_all", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_lrt", "ljb2_gerp++","ljb2_phylop"); #Set default annovar table names
 			    &EnableArrayParameter(\@annovarTableNames, \$parameterName);
 			}
@@ -6030,6 +6327,7 @@ sub AddToScriptParameter {
 			    @picardToolsMergeSamFilesPrevious = (); #Empty to not add a 0 as a value, which will cause errors in later conditions use
 			}
 			elsif ( ($parameterName eq "sampleIDs") && (defined($scriptParameter{'pedigreeFile'})) ) { #Special case 
+			    
 			    @sampleIDs = (); #Empty to not add a 0 as a value, which will cause errors in later conditions use
 			}
 			elsif ($parameterName eq "pedigreeFile") { #Special case - do nothing
@@ -6042,9 +6340,15 @@ sub AddToScriptParameter {
 			}
 			elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCFInfile") && ($scriptParameter{'analysisType'} =~/genomes/) ) { #Do nothing since file is not required unless exome or rapid mode is enabled
 			}
-			elsif ( ($parameterName eq "vepParserSelectFileMatchingColumn") && ( $scriptParameter{'vepParserSelectFile'} eq "noUserInfo") ) { #Do nothing since no SelectFile was given
+			elsif ( ($parameterName eq "vcfParserRangeFeatureAnnotationColumns") && ( $scriptParameter{'vcfParserRangeFeatureFile'} eq "noUserInfo") ) { #Do nothing since no SelectFile was given
+			} 
+			elsif ( ($parameterName eq "vcfParserSelectFeatureAnnotationColumns") && ( $scriptParameter{'vcfParserRangeFeatureFile'} eq "noUserInfo") ) { #Do nothing since no SelectFile was given
 			}
-			elsif ( ($parameterName eq "mergeAnnotatedVariantsTemplateSelectFile") && ( $scriptParameter{'vepParserSelectFile'} eq "noUserInfo") ) { #Do nothing since no SelectFile was given
+			elsif ( ($parameterName eq "vcfParserSelectFileMatchingColumn") && ( $scriptParameter{'vcfParserSelectFile'} eq "noUserInfo") ) { #Do nothing since no SelectFile was given
+			}
+			elsif ( ($parameterName eq "mergeAnnotatedVariantsTemplateSelectFile") && ( $scriptParameter{'vcfParserSelectFile'} eq "noUserInfo") ) { #Do nothing since no SelectFile was given
+			}
+			elsif ( ($parameterName eq "geneFile") && ($scriptParameter{'pVariantEffectPredictor'} > 0) ) { #Do nothing since VEP annotations can be used			    
 			}
 			else {
 			    
@@ -6086,9 +6390,25 @@ sub AddToScriptParameter {
 			&CompareArrayElements(\@sampleIDs, \@GATKTargetPaddedBedIntervalLists, "sampleIDs", $parameterName);
 			&SetAutoBuildAndScriptParameterPerSample(\@sampleIDs, \@GATKTargetPaddedBedIntervalLists, \$parameterName);
 		    }
+		    elsif ($parameterName eq "vcfParserRangeFeatureAnnotationColumns") {
+			
+			&EnableArrayParameter(\@vcfParserRangeFeatureAnnotationColumns, \$parameterName);
+		    }
+		    elsif ($parameterName eq "vcfParserSelectFeatureAnnotationColumns") {
+			
+			&EnableArrayParameter(\@vcfParserSelectFeatureAnnotationColumns, \$parameterName);
+		    }
 		    elsif ($parameterName eq "vepFeatures") {
 			
 			&EnableArrayParameter(\@vepFeatures, \$parameterName);
+		    }
+		    elsif ($parameterName eq "snpSiftAnnotationFiles") {
+			
+			&EnableArrayParameter(\@snpSiftAnnotationFiles, \$parameterName);
+		    }
+		    elsif ($parameterName eq "snpSiftDbNSFPAnnotations") {
+			
+			&EnableArrayParameter(\@snpSiftDbNSFPAnnotations, \$parameterName);
 		    }
 		    elsif ($parameterName eq "annovarTableNames") {
 			
@@ -6199,7 +6519,7 @@ sub AddToScriptParameter {
 				if (defined($annovarTables{$annovarTableNames[$tableNamesCounter]}{'file'})) {
 				    
 				    for (my $filesCounter=0;$filesCounter<scalar(@{$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'file'}});$filesCounter++) { #All annovarTables file(s), some tables have multiple files downloaded from the same call
-			#		intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'file'}[$filesCounter]);
+					$intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'file'}[$filesCounter]);
 					&CheckExistance($intendedFilePathRef, \$annovarTableNames[$tableNamesCounter], "f");
 				    }
 				}
@@ -6247,10 +6567,14 @@ sub AddToScriptParameter {
 		    }
 		    elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCFInfile") && ($scriptParameter{'analysisType'} =~/genomes/) ) { #Do nothing since file is not required unless exome mode is enabled
 		    }
-		    elsif ( ($parameterName eq "vepParserSelectFile") && ( $scriptParameter{'vepParserSelectFile'} eq "noUserInfo") ) { #Do nothing since no SelectFile was given
+                    elsif ( ($parameterName eq "vcfParserRangeFeatureFile") && ( $scriptParameter{'vcfParserRangeFeatureFile'} eq "noUserInfo") ) { #Do nothing since no RangeFile was given
 		    }
-		    elsif ( ($parameterName eq "mergeAnnotatedVariantsTemplateSelectFile") && ( $scriptParameter{'vepParserSelectFile'} eq "noUserInfo") ) { #Do nothing since no SelectFile was given
-			}
+		    elsif ( ($parameterName eq "vcfParserSelectFile") && ( $scriptParameter{'vcfParserSelectFile'} eq "noUserInfo") ) { #Do nothing since no SelectFile was given
+		    }
+		    elsif ( ($parameterName eq "mergeAnnotatedVariantsTemplateSelectFile") && ( $scriptParameter{'vcfParserSelectFile'} eq "noUserInfo") ) { #Do nothing since no SelectFile was given
+		    }
+                    elsif ( ($parameterName eq "geneFile") && ($scriptParameter{'pVariantEffectPredictor'} > 0) ) { #Do nothing since VEP annotations can be used			    
+		    }
 		    else {
 			
 			&CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{$parameterName}), \$parameterName, "f");}		    
@@ -7127,7 +7451,6 @@ sub CheckExistance {
     my $parameterNameRef = $_[1];
     my $itemToCheck = $_[2];    
     my $sampleIDRef = $_[3];
-    
     
     if ($itemToCheck eq "d") {
 

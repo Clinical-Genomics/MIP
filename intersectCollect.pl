@@ -677,7 +677,7 @@ sub ReadInfileSelect {
 		    for (my $parsedColumnsCounter=0;$parsedColumnsCounter<scalar(@parsedColumns);$parsedColumnsCounter++) { #Loop through all
 		
 			if ( $selectVariants{$dbFileNr}{$parsedColumns[ $parsedColumnsCounter ]}{'key'} ) { #If key exists in db file
-   
+
 			    $selectedSwithc{$dbFileNr}++; #Increment switch for correct Db file
 
 			    my $filehandle = $selectFilehandles{ $dbFile{$dbFileNr}{'File'} }; #Collect correct anonymous filehandle
@@ -686,7 +686,9 @@ sub ReadInfileSelect {
 				
 				my $columnIdRef = \($DbFileNumber."_".$dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter]);
 				$allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ]; #Collect all columns to enable print later
+				
 				#print $allVariants{ $parsedColumns[ $parsedColumnsCounter ] }{$$columnIdRef} = $lineElements[ $dbFile{$DbFileNumber}{'Column_To_Extract'}[$extractColumnsCounter] ], "\n";
+			    
 			    }
 			    if ( ($selectedSwithc{$dbFileNr} == 1) &&  ($dbWroteSwitch == 0) ) { #Print record only once to avoid duplicates
 
@@ -816,7 +818,7 @@ sub ReadDbFilesNoChrSelect {
 			for (my $parsedColumnCounter=0;$parsedColumnCounter<scalar(@parsed_column);$parsedColumnCounter++) { #Loop through all
 			    
 			    $selectVariants{$dbFileNr}{$parsed_column[$parsedColumnCounter]}{'key'} = $parsed_column[$parsedColumnCounter]; #Add key entry
-			    
+
 			    for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar( @{$dbFile{$dbFileNr}{'Column_To_Extract'}});$extractColumnsCounter++) { #Enable collection of columns from db file
 				
 				my $columnIdRef = \($dbFileNr."_".$dbFile{$dbFileNr}{'Column_To_Extract'}[$extractColumnsCounter]);
