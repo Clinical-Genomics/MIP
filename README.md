@@ -3,6 +3,8 @@
 MIP enables identification of potential disease causing variants from sequencing
 data. 
 
+![DOI](https://zenodo.org/badge/4091/henrikstranneheim/MIP.png)
+
 ##Overview
 
 MIP performs whole genome or target region analysis of sequenced paired end
