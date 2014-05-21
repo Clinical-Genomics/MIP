@@ -1,5 +1,5 @@
 #MIP - Mutation Identification Pipeline
-
+https://zenodo.org/badge/4091/henrikstranneheim/MIP.png
 
 MIP enables identification of potential disease causing variants from sequencing
 data. 
