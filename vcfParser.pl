@@ -12,7 +12,7 @@ use vars qw($USAGE);
 
 BEGIN {
     $USAGE =
-	qq{vep_parser.pl infile.vcf -o selectOutfile.tsv
+	qq{vcfParser.pl infile.vcf > outfile.vcf
            -of/--outputFormat format (Default: vcf)
            -pVEP/--parseVEP Parse VEP transcript specific entries (Default: 0 (=no))
            -rf/--rangeFeatureFile (tsv)
@@ -86,6 +86,8 @@ if ( ($selectOutfile eq "nocmdinput") && ($selectFeatureFile ne 0) ) {
 #MAIN
 ###
 
+&DefineSelectData();
+
 if ($rangeFeatureFile ne 0) {
 
     &ReadRangeFile($rangeFeatureFile);
@@ -96,7 +98,6 @@ if ($selectFeatureFile ne 0) {
     &ReadSelectFile($selectFeatureFile, $selectFeatureMatchingColumn);
 }
 
-&DefineSelectData();
 &DefineSnpEffAnnotations();
 &DefineConsequenceSeverity();
 
@@ -109,6 +110,7 @@ if ($selectFeatureFile ne 0) {
 sub DefineSelectData {
 ##Defines arbitrary INFO fields based on headers in selectFile
 
+    $selectData{'SelectFile'}{'HGNC_id'}{'INFO'} = q?##INFO=<ID=HGNC_id,Number=.,Type=String,Description="HGNC ID for gene(s).;Format:{String}">?;
     $selectData{'SelectFile'}{'Ensemble_gene_id'}{'INFO'} = q?##INFO=<ID=Ensemble_gene_id,Number=.,Type=String,Description="Ensemble gene identifier.;Delimiter:,">?;
     $selectData{'SelectFile'}{'Disease_group_pathway'}{'INFO'} = q?##INFO=<ID=Disease_group_pathway,Number=.,Type=String,Description="Information on the type of disease.;Format:{String}">?;
     $selectData{'SelectFile'}{'Clinical_db_genome_build'}{'INFO'} = q?##INFO=<ID=Clinical_db_genome_build,Number=.,Type=String,Description="Genome version used in clinical Db.;Format:{String}">?;
@@ -120,15 +122,15 @@ sub DefineSelectData {
 sub DefineSnpEffAnnotations {
 ##Defines the snpEff annotations that can be parsed
     
-    $snpEffCmd{'Frequency'}{'Dbsnp129'}{'File'} = q?dbsnp_\S+.excluding_sites_after_129.vcf?;
-    $snpEffCmd{'Frequency'}{'Dbsnp129'}{'INFO'} = q?##INFO=<ID=Dbsnp129,Number=1,Type=Float,Description="dbSNP excluding sites after 129 minor allele frequency.>?;
-    $snpEffCmd{'Frequency'}{'Dbsnp_freq'}{'File'} = q?dbsnp_\d+.\w\d+.vcf?;
-    $snpEffCmd{'Frequency'}{'Dbsnp_freq'}{'INFO'} = q?##INFO=<ID=Dbsnp_freq,Number=1,Type=Float,Description="Frequency in the DbSNP database.">?;
-    $snpEffCmd{'Frequency'}{'1000G_freq'}{'File'} = q?1000G_phase\d+.\S+.\w\d+.vcf?;
-    $snpEffCmd{'Frequency'}{'1000G_freq'}{'INFO'} = q?##INFO=<ID=1000G_freq,Number=1,Type=Float,Description="Frequency in the 1000G database.">?;
-    $snpEffCmd{'Frequency'}{'1000G_freq'}{'FIX_INFO'} = q?##INFO=<ID=SB,Number=4,Type=Integer,Description="Per-sample component statistics which comprise the Fisher's Exact Test to detect strand bias.">?;
-    $snpEffCmd{'Frequency'}{'ESP_freq'}{'File'} = q?ESP\d+SI-V\d+-\w+.updatedProteinHgvs.snps_indels.vcf?;
-    $snpEffCmd{'Frequency'}{'ESP_freq'}{'INFO'} = q?##INFO=<ID=ESP_freq,Number=1,Type=Float,Description="Frequency in ESP database.">?;
+    $snpEffCmd{'Frequency'}{'Dbsnp129MAF'}{'File'} = q?dbsnp_\S+.excluding_sites_after_129.vcf?;
+    $snpEffCmd{'Frequency'}{'Dbsnp129MAF'}{'INFO'} = q?##INFO=<ID=Dbsnp129MAF,Number=1,Type=Float,Description="dbSNP excluding sites after 129 minor allele frequency.>?;
+    $snpEffCmd{'Frequency'}{'DbsnpMAF'}{'File'} = q?dbsnp_\d+.\w\d+.vcf?;
+    $snpEffCmd{'Frequency'}{'DbsnpMAF'}{'INFO'} = q?##INFO=<ID=DbsnpMAF,Number=1,Type=Float,Description="Frequency in the DbSNP database.">?;
+    $snpEffCmd{'Frequency'}{'1000GMAF'}{'File'} = q?1000G_phase\d+.\S+.\w\d+.vcf?;
+    $snpEffCmd{'Frequency'}{'1000GMAF'}{'INFO'} = q?##INFO=<ID=1000GMAF,Number=1,Type=Float,Description="Frequency in the 1000G database.">?;
+    $snpEffCmd{'Frequency'}{'1000GMAF'}{'FIX_INFO'} = q?##INFO=<ID=SB,Number=4,Type=Integer,Description="Per-sample component statistics which comprise the Fisher's Exact Test to detect strand bias.">?;
+    $snpEffCmd{'Frequency'}{'ESPMAF'}{'File'} = q?ESP\d+SI-V\d+-\w+.updatedProteinHgvs.snps_indels.vcf?;
+    $snpEffCmd{'Frequency'}{'ESPMAF'}{'INFO'} = q?##INFO=<ID=ESPMAF,Number=1,Type=Float,Description="Frequency in ESP database.">?;
     $snpEffCmd{'Frequency'}{'BVDMAF'}{'File'} = q?hbvd_local_IEMs.vcf?;
     $snpEffCmd{'Frequency'}{'BVDMAF'}{'INFO'} = q?##INFO=<ID=BVDMAF,Number=1,Type=Float,Description="Frequency in local variation database.">?;
 
@@ -338,9 +340,9 @@ sub ReadInfileVCF {
 			    
 			    push(@metaData, $snpEffCmd{'Frequency'}{$frequencyDb}{'INFO'});
 			    
-			    if ( $frequencyDb eq "1000G_freq") { #Fix lacking SB INFO field after snpEFF processing 
+			    if ( $frequencyDb eq "1000GMAF") { #Fix lacking SB INFO field after snpEFF processing 
 
-				push(@metaData, $snpEffCmd{'Frequency'}{'1000G_freq'}{'FIX_INFO'});
+				push(@metaData, $snpEffCmd{'Frequency'}{'1000GMAF'}{'FIX_INFO'});
 			    }
 			}
 		    }
@@ -480,20 +482,21 @@ sub ReadInfileVCF {
 	    }
 	    for my $frequencyDb (keys % {$snpEffCmd{'Present'}{'frequencyDb'}}) { #Note that the vcf should only contain 1 frequencyDb entry
 
-		if ( ($frequencyDb eq "Dbsnp129") || ($frequencyDb eq "Dbsnp_freq") ) {
+		if ( ($frequencyDb eq "Dbsnp129MAF") || ($frequencyDb eq "DbsnpMAF") ) {
 
 		    if ($lineElements[7] =~/CAF=\[(.+)\]/) {
 			
-			my @tempMafs = sort {$a <=> $b} grep { $_ ne "." } split(",",$1); #Split on ",", remove entries containing only "." and sort remaining entries numerically
+			#my @tempMafs = sort {$a <=> $b} grep { $_ ne "." } split(",",$1); #Split on ",", remove entries containing only "." and sort remaining entries numerically
+			my @tempMafs = split(",",$1); #Split on ","
 			if (scalar(@tempMafs) > 0) {
 			    
-			    ##Save Major Allele frequency info   
-			    $variantLine .= $frequencyDb."=".$tempMafs[0].";";
-			    $selectedVariantLine .= $frequencyDb."=".$tempMafs[0].";";
+			    ##Save Minor Allele frequency info   
+			    $variantLine .= $frequencyDb."=".$tempMafs[1].";";
+			    $selectedVariantLine .= $frequencyDb."=".$tempMafs[1].";";
 			}
 		    }
 		}
-		elsif($frequencyDb eq "1000G_freq") {
+		elsif($frequencyDb eq "1000GMAF") {
 
 		    if ($lineElements[7] =~/pop=/ || $lineElements[7] =~/VT=/ ) {
 			
@@ -503,12 +506,12 @@ sub ReadInfileVCF {
 			    $tempMaf = $1; #Last entry in string eventually
 			    
 			}	
-			##Save Major Allele frequency info   
+			##Save Minor Allele frequency info   
 			$variantLine .= $frequencyDb."=".$tempMaf.";";
 			$selectedVariantLine .= $frequencyDb."=".$tempMaf.";";
 		    }
 		}
-		elsif($frequencyDb eq "ESP_freq") {
+		elsif($frequencyDb eq "ESPMAF") {
 
 		    if ($lineElements[7] =~/MAF=(.+)\;PH/) {
 			
@@ -518,7 +521,7 @@ sub ReadInfileVCF {
 			if (defined($tempMaf) && ($tempMaf ne ".") ) {
 			
 			    $tempMaf = $tempMaf / 100; #fraction for consisten representation
-			    ##Save Major Allele frequency info   
+			    ##Save Minor Allele frequency info   
 			    $variantLine .= $frequencyDb."=".$tempMaf.";";
 			    $selectedVariantLine .= $frequencyDb."=".$tempMaf.";";
 			}
@@ -1070,7 +1073,7 @@ sub ConvertToRange {
 }
 
 sub AddMetaDataINFO {
-##Adds arbitrary INFO fieldsto hash based on supplied headers unless header is already defined
+##Adds arbitrary INFO fields to hash based on supplied headers unless header is already defined
 
     my $hashRef = $_[0];
     my $rangeFileKey = $_[1];
