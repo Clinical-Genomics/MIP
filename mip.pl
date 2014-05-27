@@ -3615,7 +3615,12 @@ sub PicardToolsCollectMultipleMetrics {
 	
 	&ProgramPreRequisites($sampleID, "PicardToolsCollectMultipleMetrics", $aligner."/coverageReport", 0, $FILEHANDLE, 1, 4);
 
-	print $FILEHANDLE "java -Xmx4g -jar ".$scriptParameter{'picardToolsPath'}."/CollectMultipleMetrics.jar ";
+	print $FILEHANDLE "java -Xmx4g ";
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
+	print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/CollectMultipleMetrics.jar ";
 	print $FILEHANDLE "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
 	print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding." "; #OutFile
 	print $FILEHANDLE "R=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." &", "\n\n"; #Reference file
@@ -3638,7 +3643,12 @@ sub PicardToolsCollectMultipleMetrics {
 
 	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];	    
 	    
-	    print $FILEHANDLE "java -Xmx4g -jar ".$scriptParameter{'picardToolsPath'}."/CollectMultipleMetrics.jar ";
+	    print $FILEHANDLE "java -Xmx4g ";
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
+	    print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/CollectMultipleMetrics.jar ";
 	    print $FILEHANDLE "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
 	    print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding." "; #outFile
 	    print $FILEHANDLE "R=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." &", "\n\n"; #Reference file
@@ -3678,7 +3688,12 @@ sub PicardToolsCalculateHSMetrics {
 	
 	&ProgramPreRequisites($sampleID, "PicardToolsCalculateHSMetrics", $aligner."/coverageReport", 0, $FILEHANDLE, 1, 4);
 	
-	print $FILEHANDLE "java -Xmx4g -jar ".$scriptParameter{'picardToolsPath'}."/CalculateHsMetrics.jar ";
+	print $FILEHANDLE "java -Xmx4g ";
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
+	print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/CalculateHsMetrics.jar ";
 	print $FILEHANDLE "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
 	print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding."_CalculateHsMetrics "; #OutFile
 	print $FILEHANDLE "REFERENCE_SEQUENCE=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
@@ -3702,7 +3717,12 @@ sub PicardToolsCalculateHSMetrics {
 	    
 	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];	    
 	    
-	    print $FILEHANDLE "java -Xmx4g -jar ".$scriptParameter{'picardToolsPath'}."/CalculateHsMetrics.jar ";
+	    print $FILEHANDLE "java -Xmx4g ";
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
+	    print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/CalculateHsMetrics.jar ";
 	    print $FILEHANDLE "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam "; #InFile
 	    print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding."_CalculateHsMetrics "; #OutFile
 	    print $FILEHANDLE "REFERENCE_SEQUENCE=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference file
@@ -3920,6 +3940,10 @@ sub PicardToolsMarkDuplicates {
 	&ProgramPreRequisites($sampleID, "PicardToolsMarkduplicates", $aligner, 0, $FILEHANDLE, 1, $time);
 
 	print $FILEHANDLE "java -Xmx4g ";
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/MarkDuplicates.jar ";
 	print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." "; #Temp Directory
 	print $FILEHANDLE "ASSUME_SORTED=true ";
@@ -3949,6 +3973,10 @@ sub PicardToolsMarkDuplicates {
 	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
 	    
 	    print $FILEHANDLE "java -Xmx4g ";
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
 	    print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/MarkDuplicates.jar ";
 	    print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." "; #Temp Directory
 	    print $FILEHANDLE "ASSUME_SORTED=true ";
@@ -4009,6 +4037,10 @@ sub PicardToolsMerge {
 	    if ($infileCounter eq 0) {
 
 		print $FILEHANDLE "java -Xmx4g ";
+		if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		    
+		    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+		}
 		print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/MergeSamFiles.jar ";
 		print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." "; #Temp Directory
 		print $FILEHANDLE "CREATE_INDEX=TRUE "; #create a BAM index when writing a coordinate-sorted BAM file.
@@ -4041,6 +4073,10 @@ sub PicardToolsMerge {
 		    my $mergeLanes; if($1) {$mergeLanes = $1;} else {$mergeLanes = $2;} #Make sure to always supply lanes from previous regexp		    
 
 		    print $FILEHANDLE "java -Xmx4g ";
+		    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+			
+			print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+		    }
 		    print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/MergeSamFiles.jar ";
 		    print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." "; #Temp directory
 		    print $FILEHANDLE "CREATE_INDEX=TRUE "; #create a BAM index when writing a coordinate-sorted BAM file.
@@ -4070,6 +4106,10 @@ sub PicardToolsMerge {
 		my $infile = $infilesLaneNoEnding{$sampleID}[0]; #Can only be 1 element in array due to previous if statement		    
 		
 		print $FILEHANDLE "java -Xmx4g ";
+		if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		    
+		    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+		}
 		print $FILEHANDLE "jar ".$scriptParameter{'picardToolsPath'}."/MergeSamFiles.jar ";
 		print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." "; #Temp Directory
 		print $FILEHANDLE "CREATE_INDEX=TRUE "; #create a BAM index when writing a coordinate-sorted BAM file.
@@ -4146,6 +4186,10 @@ sub PicardToolsSortSamIndex {
 
 	print $FILEHANDLE "#Sorting the reads\n\n";
 	print $FILEHANDLE "java -Xmx4g ";
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/SortSam.jar ";
 	print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." "; #Temp Directory
 	print $FILEHANDLE "SORT_ORDER=coordinate"." "; #Sort per contig and coordinate
@@ -4318,6 +4362,10 @@ sub PicardToolsMergeRapidReads {
 		if ($readBatchProcessesCount eq 0) {
 		    
 		    print $FILEHANDLE "java -Xmx4g ";
+		    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+			
+			print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+		    }
 		    print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/MergeSamFiles.jar ";
 		    print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." "; #Temp Directory
 		    print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter].$outfileEnding.".bam "; #OutFile
@@ -4331,6 +4379,10 @@ sub PicardToolsMergeRapidReads {
 	else { #Still needs to rename file to be included in potential merge of BAM files in next step
 	    
 	    print $FILEHANDLE "java -Xmx4g ";
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
 	    print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/MergeSamFiles.jar ";
 	    print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." "; #Temp Directory
 	    print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter].$outfileEnding.".bam "; #OutFile
@@ -4591,6 +4643,10 @@ sub MosaikAlign {
 
 #BAM to SAM conversion 
 	print $FILEHANDLE "java -Xmx4g ";
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/SamFormatConverter.jar "; #Make sure that the BAM file BIN field is correct (Mosaik v.2.2.3 does according to Picard not set the bin field correctly)
 	print $FILEHANDLE "VALIDATION_STRINGENCY=SILENT "; #Disable errors print 
 	print $FILEHANDLE "INPUT=".$inSampleDirectory."/".$infile.".bam "; #InFile
@@ -4598,6 +4654,10 @@ sub MosaikAlign {
 	
 	#SAM to BAM conversion 
 	print $FILEHANDLE "java -Xmx4g ";
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
 	print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/SamFormatConverter.jar "; #Make sure that the BAM file BIN field is correct (Mosaik v.2.2.3 does according to Picard not set the bin field correctly)
 	print $FILEHANDLE "INPUT=".$inSampleDirectory."/".$infile.".sam "; #InFile
 	print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".$infile.".bam ", "\n\n"; #OutFile
@@ -4986,7 +5046,12 @@ sub BuildPTCHSMetricPreRequisites {
 		
 		print $FILEHANDLE "#SampleID:".$sampleIDs[$sampleIDCounter], "\n\n";
 		print $FILEHANDLE "#CreateSequenceDictionary from reference", "\n";
-		print $FILEHANDLE "java -Xmx2g -jar ".$scriptParameter{'picardToolsPath'}."/CreateSequenceDictionary.jar ";
+		print $FILEHANDLE "java -Xmx2g ";
+		if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		    
+		    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+		}
+		print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/CreateSequenceDictionary.jar ";
 		print $FILEHANDLE "R=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference genome
 		print $FILEHANDLE "OUTPUT=".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict ", "\n\n"; #Output sequence dictionnary
 		
@@ -5004,7 +5069,12 @@ sub BuildPTCHSMetricPreRequisites {
 		print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5", "\n\n"; #Remove unnecessary info and reformat 
 		
 		print $FILEHANDLE "#Create".$referenceFileEndings{'exomeTargetBedInfileLists'}, "\n";
-		print $FILEHANDLE "java -Xmx2g -jar ".$scriptParameter{'picardToolsPath'}."/IntervalListTools.jar ";
+		print $FILEHANDLE "java -Xmx2g ";
+		if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		    
+		    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+		}
+		print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/IntervalListTools.jar ";
 		print $FILEHANDLE "INPUT=".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5 ";
 		print $FILEHANDLE "OUTPUT=".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5_".$referenceFileEndings{'exomeTargetBedInfileLists'}." ", "\n\n";
 		    
@@ -5015,7 +5085,12 @@ sub BuildPTCHSMetricPreRequisites {
 	    if ( (defined($sampleIDBuildSwitchPadded) && ($sampleIDBuildSwitchPadded eq 1)) || (defined($sampleIDBuildSwitchPaddedInterval) && ($sampleIDBuildSwitchPaddedInterval eq 1)) ) {
 		
 		print $FILEHANDLE "#Create padded interval list", "\n";
-		print $FILEHANDLE "java -Xmx2g -jar ".$scriptParameter{'picardToolsPath'}."/IntervalListTools.jar ";
+		print $FILEHANDLE "java -Xmx2g ";
+		if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		    
+		    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+		}
+		print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/IntervalListTools.jar ";
 		print $FILEHANDLE "PADDING=100 "; #Add 100 nt on both sides of bed entry
 		print $FILEHANDLE "INPUT=".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5 ";
 		print $FILEHANDLE "OUTPUT=".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5".$referenceFileEndings{'exomeTargetPaddedBedInfileLists'}." ", "\n\n";
@@ -5315,7 +5390,12 @@ sub BuildHumanGenomePreRequisites {
 	    &PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to create dict file for ".$scriptParameter{'humanGenomeReference'}." before executing ".$program."\n\n");
 	    
 	    print $FILEHANDLE "#CreateSequenceDictionary from reference", "\n";
-	    print $FILEHANDLE "java -Xmx2g -jar ".$scriptParameter{'picardToolsPath'}."/CreateSequenceDictionary.jar ";
+	    print $FILEHANDLE "java -Xmx2g ";
+	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+		
+		print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	    }
+	    print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/CreateSequenceDictionary.jar ";
 	    print $FILEHANDLE "R=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." "; #Reference genome
 	    print $FILEHANDLE "OUTPUT=".$scriptParameter{'referencesDir'}."/".$humanGenomeReferenceNameNoEnding."_".$randomInteger.".dict ", "\n\n"; #Output sequence dictionnary
 	    
@@ -7020,7 +7100,12 @@ sub GATKTargetListFlag {
     if (scalar(@GATKTargetPaddedBedIntervalListFiles) > 1) { #Merge files
       
 	print $FILEHANDLE "\n#Generate merged interval_list\n\n"; 
-	print $FILEHANDLE "java -Xmx2g -jar ".$scriptParameter{'picardToolsPath'}."/IntervalListTools.jar ";
+	print $FILEHANDLE "java -Xmx2g ";
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	    
+	    print $FILEHANDLE "-XX:-UseLargePages "; #UseLargePages for requiring large memory pages (cross-platform flag)
+	}
+	print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/IntervalListTools.jar ";
 	print $FILEHANDLE "UNIQUE=TRUE "; #merge overlapping and adjacent intervals to create a list of unique intervals
     
 	for (my $fileCounter=0;$fileCounter<scalar(@GATKTargetPaddedBedIntervalListFiles);$fileCounter++) {
