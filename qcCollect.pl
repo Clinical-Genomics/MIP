@@ -1,4 +1,5 @@
 #!/usr/bin/perl - w                                                                                                                                                                                       
+
 use strict;
 use warnings;
 
@@ -26,7 +27,7 @@ BEGIN {
 }
 
 my ($sampleInfoFile, $regExpFile, $outfile, $printRegExp, $printRegExpOutFile, $version, $help) = (0,0,"qcmetrics.yaml", 0, "qc_regExp.yaml");
-my (%sampleInfo, %regExp, %qcData);
+my (%sampleInfo, %regExp, %qcData, %evaluateMetric);
 my %qcHeader; #Save header(s) in each outfile
 my %qcProgramData; #Save data in each outFile
 
@@ -82,11 +83,21 @@ my %regExpFile = &LoadYAML($regExpFile); #Load regExpFile (YAML) and transfer to
 
 &FamilyQC(); #Extracts all qcdata on family level using information in %sampleInfoFile and %regExpFile
 
+&DefineEvaluateMetric(); #Defines programs, etrics and thresholds to evaluate
+
+&EvaluateQCParameters(); #Evaluate the metrics
+
 &WriteYAML($outfile, \%qcData ); #Writes to YAML file
 
 ####SubRoutines
 
 sub FamilyQC {
+
+##FamilyQC
+
+##Function  : Extracts all qcdata on family level using information in %sampleInfoFile and %regExpFile
+##Returns   : ""
+##Arguments : 
 
     for my $familyID ( keys %sampleInfoFile ) { #For every family id 
 
@@ -119,7 +130,12 @@ sub FamilyQC {
 }
 
 sub SampleQC {
-###Collects all sample qc in files defined by sampleInfoFile and regular expressions defined by regExpFile.
+
+##SampleQC
+
+##Function  : Collects all sample qc in files defined by sampleInfoFile and regular expressions defined by regExpFile.
+##Returns   : ""
+##Arguments : 
     
     for my $familyID ( keys %sampleInfoFile ) { #For every family id
 	
@@ -149,11 +165,19 @@ sub SampleQC {
 }
 
 sub ParseRegExpHashAndCollect {
-###Parses the RegExpHash structure to identify if the info is 1) Paragraf section(s) (both header and data line(s)); 2) Seperate data line
 
-    my $program = $_[0]; #From SampleInfo
-    my $outDirectory = $_[1]; #From SampleInfo
-    my $outFile = $_[2]; #From SampleInfo
+##ParseRegExpHashAndCollect
+
+##Function  : Parses the RegExpHash structure to identify if the info is 1) Paragraf section(s) (both header and data line(s)); 2) Seperate data line.
+##Returns   : ""
+##Arguments : $program, $outDirectory, $outFile
+##          : $program      => The program to examine
+##          : $outDirectory => Programs out directory
+##          : $outFile      => Programs out file containing parameter to evaluate
+
+    my $program = $_[0];
+    my $outDirectory = $_[1];
+    my $outFile = $_[2]; 
     
     my $regExp; #Holds the current regExp
     my @separators = ('\s+','!',','); #Covers both whitespace and tab. Add other separators if required
@@ -173,13 +197,13 @@ sub ParseRegExpHashAndCollect {
                         
 			@{ $qcHeader{$program}{$regExpKey}{$regExpHeaderKey} } = split(/$separators[$separatorElement]/, `$regExp $outDirectory/$outFile`); #Collect paragraf header                           
 			if ( defined($qcHeader{$program}{$regExpKey}{$regExpHeaderKey})) { #Then split should have been successful                                                                                          
-			    last; #Found correct separator do not continue                                                                                         
+			    last; #Found correct separator - do not continue                                                                                         
 			}   
 		    }
 		    else { #For paragraf data line(s)                                                                                                                        
 			@{ $qcProgramData{$program}{$regExpKey}{$regExpHeaderKey} } = split(/$separators[$separatorElement]/, `$regExp $outDirectory/$outFile`); #Collect paragraf data
 			if ( defined($qcProgramData{$program}{$regExpKey}{$regExpHeaderKey}[1])) { #Then split should have been successful                                                                                                                           
-			    last; #Found correct separator do not continue                                                                                                                                      
+			    last; #Found correct separator - do not continue                                                                                                                                      
 			}
 		    }
 		}
@@ -194,21 +218,30 @@ sub ParseRegExpHashAndCollect {
 		@{ $qcProgramData{$program}{$regExpKey} } = split(/$separators[$separatorElement]/, `$regExp $outDirectory/$outFile`); #Collect data. Use regExpKey as element header
 
 		if ( defined($qcProgramData{$program}{$regExpKey}[1])) { #Then split should have been successful                                                     
+
 		    last; #Found correct separator do not continue                                                                                      
 		}
 	    }
 	}
     }
-    return;
 }
 
 sub AddToqcData {
-##Add to qcData hash to enable write to yaml format
+
+##AddToqcData
+
+##Function  : Add to qcData hash to enable write to yaml format
+##Returns   : ""
+##Arguments : $familyID, $sampleID, $program, $inFile
+##          : $familyID => FamilyID
+##          : $sampleID => SampleID
+##          : $program  => The program to examine 
+##          : $inFile   => infile to program
     
-    my $familyID = $_[0]; #From SampleInfo
-    my $sampleID = $_[1]; #From SampleInfo 
-    my $program = $_[2]; #From SampleInfo
-    my $infile = $_[3]; #From SampleInfo
+    my $familyID = $_[0]; 
+    my $sampleID = $_[1];  
+    my $program = $_[2]; 
+    my $infile = $_[3];
     
     for my $regExpKey ( keys %{ $regExpFile{$program} } ) { #All regExp per program 
 	
@@ -217,9 +250,11 @@ sub AddToqcData {
 	    if (scalar(@{ $qcProgramData{$program}{$regExpKey} }) == 1) { #Enable seperation of writing array or key-->value in qcData
 		
 		if ( ($familyID) && ($sampleID) && ($infile) ) {
+		    
 		    $qcData{$familyID}{$sampleID}{$infile}{$program}{$regExpKey} = $qcProgramData{$program}{$regExpKey}[0]; #key-->value for sampleID
 		}
 		elsif ($familyID) {
+		    
 		    $qcData{$familyID}{$familyID}{'program'}{$program}{$regExpKey} = $qcProgramData{$program}{$regExpKey}[0]; #key-->value for familyID
 		}
 	    }
@@ -237,6 +272,7 @@ sub AddToqcData {
 		    }
 		}
 		if ($program eq "QaCompute") {#Check gender for sampleID
+		 
 		    my $chrXCoverage = $qcData{$familyID}{$sampleID}{$infile}{$program}{$regExpKey}[0];
 		    my $chrYCoverage = $qcData{$familyID}{$sampleID}{$infile}{$program}{$regExpKey}[1];
 		    &GenderCheck(\$familyID,\$sampleID,\$infile, \$chrXCoverage, \$chrYCoverage); #Check that assumed gender is supported by coverage on chrX and chrY
@@ -259,13 +295,106 @@ sub AddToqcData {
 			for (my $qcHeadersCounter=0;$qcHeadersCounter<scalar( @{ $qcHeader{$program}{$regExpKey}{$regExpHeaderKey} } );$qcHeadersCounter++) { #For all collected headers
                             
 			    if ( ($familyID) && ($sampleID) && ($infile)) {
+				
 				$qcData{$familyID}{$sampleID}{$infile}{$program}{$regExpHeaderKey}{$regExpKeyHeader}{ $qcHeader{$program}{$regExpKey}{$regExpHeaderKey}[$qcHeadersCounter] } = $qcProgramData{$program}{$regExpKey}{$regExpKeyHeader}[$qcHeadersCounter]; #Add to qcData using header element[X] --> data[X] to correctly position elements in qcData hash 
                             } 
                             elsif ($familyID) {
+				
 				$qcData{$familyID}{$familyID}{$program}{$regExpHeaderKey}{$regExpKeyHeader}{ $qcHeader{$program}{$regExpKey}{$regExpHeaderKey}[$qcHeadersCounter] } = $qcProgramData{$program}{$regExpKey}{$regExpKeyHeader}[$qcHeadersCounter]; #Add to qcData using header element[X] --> data[X] to correctly position elements in qcData hash
 				
                             }
                         }    
+		    }
+		}
+	    }
+	}
+    }
+}
+
+sub DefineEvaluateMetric {
+
+##DefineEvaluateMetric
+
+##Function  : Sets programs and program metrics and thresholds to be evaluated
+##Returns   : ""
+##Arguments : 
+
+    $evaluateMetric{"MosaikAligner"}{"Total_aligned"}{'threshold'} = 95;
+    $evaluateMetric{"MosaikAligner"}{"Uniquely_aligned_mates"}{'threshold'} = 90;
+    $evaluateMetric{"CalculateHsMetrics"}{"MEAN_TARGET_COVERAGE"}{'threshold'} = 100;
+    $evaluateMetric{"CalculateHsMetrics"}{"PCT_TARGET_BASES_10X"}{'threshold'} = 95;
+    $evaluateMetric{"CalculateHsMetrics"}{"PCT_TARGET_BASES_30X"}{'threshold'} = 90;
+    $evaluateMetric{"CalculateHsMetrics"}{"PCT_ADAPTER"}{'threshold'} = 0.0001;
+    $evaluateMetric{"MarkDuplicates"}{"PERCENT_DUPLICATION"}{'threshold'} = 30;
+}
+sub EvaluateQCParameters {
+
+##EvaluateQCParameters
+
+##Function  : Evaluate parameters to detect parameters falling below threshold 
+##Returns   : ""
+##Arguments : 
+##          : 
+
+    my $status;
+
+    for my $familyID ( keys %qcData ) {
+
+	for my $ID ( keys %{$qcData{$familyID}} ) { #Can beboth sampleID and familyID with current structure
+
+	    for my $infile ( keys %{$qcData{$familyID}{$ID}} ) {
+		
+		if ($infile =~/RelationCheck/) { #Special case
+		  
+		    if ($qcData{$familyID}{$ID}{$infile} ne "PASS") {
+
+			$status = "Status:".$infile.":".$qcData{$familyID}{$ID}{$infile};
+			push(@{$qcData{$familyID}{$familyID}{'Evaluation'}{$infile}}, $status); #Add to QC data at family level
+		    }
+		    next;
+		}
+		if ($infile =~/Evaluation/) { #Special case
+		    
+		    next;
+		}
+		for my $program ( keys %{$qcData{$familyID}{$ID}{$infile}} ) {
+
+		    if (defined($evaluateMetric{$program})) { #Program to be evaluated
+	
+			for my $metric ( keys %{$evaluateMetric{$program}}) { #Metric to be evaluated
+
+			    if (defined($qcData{$familyID}{$ID}{$infile}{$program}{$metric})) {
+
+				if ($qcData{$familyID}{$ID}{$infile}{$program}{$metric} < $evaluateMetric{$program}{$metric}{'threshold'}) { #Determine status - if below add to hash. otherwise PASS and do not include
+				    
+				    $status = "Status:".$ID."_".$program."_".$metric.":".$qcData{$familyID}{$ID}{$infile}{$program}{$metric};
+				    push(@{$qcData{$familyID}{$familyID}{'Evaluation'}{$program}}, $status);
+				}		
+				last;
+			    }
+			    else {
+
+				for my $key ( keys %{$qcData{$familyID}{$ID}{$infile}{$program}} ) {
+				    
+				    if ($key eq "Header") {
+					
+					for my $dataHeader ( keys %{$qcData{$familyID}{$ID}{$infile}{$program}{$key}} ) {
+				
+					    if (defined($qcData{$familyID}{$ID}{$infile}{$program}{$key}{$dataHeader}{$metric})) {
+						
+						if ($qcData{$familyID}{$ID}{$infile}{$program}{$key}{$dataHeader}{$metric} < $evaluateMetric{$program}{$metric}{'threshold'}) { #Determine status - if below add to hash. otherwise PASS and do not include
+	
+						    $status = "Status:".$ID."_".$program."_".$metric.":".$qcData{$familyID}{$ID}{$infile}{$program}{$key}{$dataHeader}{$metric};
+						    push(@{$qcData{$familyID}{$familyID}{'Evaluation'}{$program}}, $status);
+						}
+						next; #Metric go to next section
+					    }
+					}
+					last; #Metric found no need to continue
+				    }
+				}
+			    }
+			}
 		    }
 		}
 	    }
@@ -419,10 +548,12 @@ sub LoadYAML {
     open (YAML, "<". $yamlFile) or die "can't open ".$yamlFile.": $!\n";    
         
         if ($fileType eq "reference") {
-        %yamlHash = %{ YAML::LoadFile($yamlFile) }; #Load hashreference as hash
+
+	    %yamlHash = %{ YAML::LoadFile($yamlFile) }; #Load hashreference as hash
         }
         if ($fileType eq "hash") {
-        %yamlHash = YAML::LoadFile($yamlFile); #File contained a hash = no workup
+        
+	    %yamlHash = YAML::LoadFile($yamlFile); #File contained a hash = no workup
         }
     close(YAML);
 

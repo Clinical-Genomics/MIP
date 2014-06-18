@@ -111,11 +111,13 @@ sub DefineSelectData {
 ##Defines arbitrary INFO fields based on headers in selectFile
 
     $selectData{'SelectFile'}{'HGNC_id'}{'INFO'} = q?##INFO=<ID=HGNC_id,Number=.,Type=String,Description="HGNC ID for gene(s).;Format:{String}">?;
-    $selectData{'SelectFile'}{'Ensemble_gene_id'}{'INFO'} = q?##INFO=<ID=Ensemble_gene_id,Number=.,Type=String,Description="Ensemble gene identifier.;Delimiter:,">?;
+    $selectData{'SelectFile'}{'Ensembl_gene_id'}{'INFO'} = q?##INFO=<ID=Ensembl_gene_id,Number=.,Type=String,Description="Ensemble gene identifier.;Delimiter:,">?;
     $selectData{'SelectFile'}{'Disease_group_pathway'}{'INFO'} = q?##INFO=<ID=Disease_group_pathway,Number=.,Type=String,Description="Information on the type of disease.;Format:{String}">?;
     $selectData{'SelectFile'}{'Clinical_db_genome_build'}{'INFO'} = q?##INFO=<ID=Clinical_db_genome_build,Number=.,Type=String,Description="Genome version used in clinical Db.;Format:{String}">?;
     $selectData{'SelectFile'}{'Disease_gene_model'}{'INFO'} = q?##INFO=<ID=Disease_gene_model,Number=.,Type=String,Description="Known disease inheritance model.;Format:{String}">?;
     $selectData{'SelectFile'}{'Clinical_db_gene_annotation'}{'INFO'} = q?##INFO=<ID=Clinical_db_gene_annotation,Number=.,Type=String,Description="Genes associated with a disease group e.g., IEM, EP.;Format:{String}">?;
+    $selectData{'SelectFile'}{'Reduced_penetrance'}{'INFO'} = q?##INFO=<ID=Reduced_penetrance,Number=.,Type=String,Description="Pathogenic gene which can exhibit reduced penetrance.;Format:{String}">?;
+    $selectData{'SelectFile'}{'Pathogenic_transcript'}{'INFO'} = q?##INFO=<ID=Pathogenic_transcript,Number=.,Type=String,Description="Known pathogenic transcript(s) for gene.;Format:{String}">?;
 
 }
 
@@ -486,8 +488,9 @@ sub ReadInfileVCF {
 
 		    if ($lineElements[7] =~/CAF=\[(.+)\]/) {
 			
-			#my @tempMafs = sort {$a <=> $b} grep { $_ ne "." } split(",",$1); #Split on ",", remove entries containing only "." and sort remaining entries numerically
-			my @tempMafs = split(",",$1); #Split on ","
+			my @tempMafs = sort {$a <=> $b} grep { $_ ne "." } split(",",$1); #Split on ",", remove entries containing only "." and sort remaining entries numerically
+			@tempMafs = split(",",$1); #Split on ","
+			
 			if (scalar(@tempMafs) > 0) {
 			    
 			    ##Save Minor Allele frequency info   
@@ -501,11 +504,15 @@ sub ReadInfileVCF {
 		    if ($lineElements[7] =~/pop=/ || $lineElements[7] =~/VT=/ ) {
 			
 			my $tempMaf;
+
 			while ($lineElements[7] =~m/;AF=(\d+.\d+|\d+)/g) {
 			    
-			    $tempMaf = $1; #Last entry in string eventually
-			    
-			}	
+			    $tempMaf = $1; #Last entry in string eventually    
+			}
+			if ($tempMaf > 0.5) {
+
+			    $tempMaf = 1 - $tempMaf; #Calculate MAF
+			}
 			##Save Minor Allele frequency info   
 			$variantLine .= $frequencyDb."=".$tempMaf.";";
 			$selectedVariantLine .= $frequencyDb."=".$tempMaf.";";
@@ -599,7 +606,7 @@ sub ReadInfileVCF {
 			    
 			    $variantLine .= $variantEffects[$variantEffectCounter].";";
 			    $selectedVariantLine .= $variantEffects[$variantEffectCounter].";";
-		    }
+			}
 		    }
 		}
 		else { #No CSQ field from VEP
@@ -626,6 +633,9 @@ sub ReadInfileVCF {
 		$transcriptsCounter = 0;
 		$selectedTranscriptCounter = 0;
 		
+		$selectedVariantLine .= ";";
+		$variantLine .= ";";
+
 		if (defined($CSQTranscripts)) {
 		    
 		    my @transcripts = split(/,/, $CSQTranscripts);
