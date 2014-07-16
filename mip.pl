@@ -51,8 +51,6 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                ####Programs
                -pGZ/--pGZip GZip fastq files (defaults to "1" (=yes))
 	       -pFQC/--pFastQC Sequence quality analysis using FastQC (defaults to "1" (=yes))
-               -pREM/--pRemovalRedundantFiles Generating sbatch script for deletion of redundant files (defaults to "1" (=yes);Note: Must be submitted manually)
-               -pAR/--pAnalysisRunStatus Sets the analysis run status flag to finished in sampleInfoFile (defaults to "1" (=yes))
 
                ##Mosaik
 	       -pMoB/--pMosaikBuild  Convert reads to Mosaik format using MosaikBuild (defaults to "1" (=yes))
@@ -147,16 +145,6 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -anvartn/--annovarTableNames Annovar table names (comma sep)
                  -anvarstn/--annovarSupportedTableNames Print Annovar MIP supported table names (defaults 0 (=no))
                  -anvarmafth/--annovarMAFThreshold Sets the minor allele frequency threshold in annovar (defaults to "0")
-               
-               ##VMerge  
-               -pMerge_anvar/--pMergeAnnotatedVariants Merge (& annotate) all annotated variants into one file using intersectCollect.pl (defaults to "1" (=yes))
-                 -mergeanvarte/--mergeAnnotatedVariantsTemplateFile Db template file used to create the specific family '-mergeanvardbf' master file (defaults to "")
-                 -mergeanvardbf/--mergeAnnotatedVariantsDbFile Db master file to be used in intersectCollect.pl (defaults to  "{outDataDir}/{familyID}/{familyID}_intersectCollect_db_master.txt";Supply whole path)
-                 -mergeanvartese/--mergeAnnotatedVariantsTemplateSelectFile Select Db template file used to create the specific family '-mergeanvardbf' master file (defaults to "")
-                 -mergeanvardbsef/--mergeAnnotatedVariantsDbSelectFile Select Db master file to be used in intersectCollect.pl (defaults to  "{outDataDir}/{familyID}/{familyID}_intersectCollect_db_master.select.txt";Supply whole path)
-
-               ##Add_depth
-               -pAdd_dp/--pAddDepth Adds read depth at nonvariant sites using SamTools mpileup and add_depth.pl (defaults to "1" (=yes))
 
                ##RankVariants
                -pRankVar/--pRankVariants Ranking of annotated variants (defaults to "1" (=yes))
@@ -171,6 +159,10 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pQCC/--pQCCollect Collect QC metrics from programs processed (defaults to "1" (=yes) )
                  -QCCsampleinfo/--QCCollectSampleInfoFile SampleInfo File containing info on what to parse from this analysis run (defaults to "{outDataDir}/{familyID}/{familyID}_qc_sampleInfo.yaml")
                  -QCCregexp/--QCCollectRegExpFile Regular expression file containing the regular expression to be used for each program (defaults to "")
+               
+               ##Utility
+               -pREM/--pRemoveRedundantFiles Generating sbatch script for deletion of redundant files (defaults to "1" (=yes);Note: Must be submitted manually)
+               -pAR/--pAnalysisRunStatus Sets the analysis run status flag to finished in sampleInfoFile (defaults to "1" (=yes))
 	   };
 }
 
@@ -241,12 +233,6 @@ my (@inFilesDirs,@sampleIDs);  #Arrays for input file directorys,sampleIDs
 ##FastQC
 &DefineParameters("pFastQC", "program", 1, "MIP", "nofileEnding", "RawSeqQC", "fastqc");
 
-
-##RemovalRedundantFiles
-&DefineParameters("pRemovalRedundantFiles", "program", 1, "MIP", "nofileEnding", "MAIN");
-
-##AnalysisRunStatus
-&DefineParameters("pAnalysisRunStatus", "program", 1, "MIP", "", "MAIN");
 
 ##Mosaik
 &DefineParameters("pMosaikBuild", "program", 1, "MIP", "nofileEnding", "MAIN", "MosaikBuild");
@@ -430,7 +416,7 @@ my @vcfParserSelectFeatureAnnotationColumns;
 
 my @annovarTableNames;  #List of Annovar table names to be used
 
-##SnpEFF
+## SnpEFF
 
 &DefineParameters("pSnpEff", "program", 1, "MIP", "snpeff_", "MAIN");
 
@@ -446,28 +432,12 @@ my @snpSiftAnnotationFiles;
 
 &DefineParametersPath("genomeAnalysisToolKitPath", "nodefault", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pVariantEffectPredictor,pSnpEff", "directory");
 
-##SChecks
+
+## SChecks
 &DefineParameters("pSampleCheck", "program", 1, "MIP", "nofileEnding", "IDQC", "vcftools:plink");
 
 
-##VMerge
-
-&DefineParameters("pMergeAnnotatedVariants", "program", 1, "MIP", "merged_", "Annovar");
-
-&DefineParametersPath("mergeAnnotatedVariantsTemplateFile", "nodefault", "pMergeAnnotatedVariants", "file", "noAutoBuild");
-
-&DefineParameters("mergeAnnotatedVariantsDbFile", "program", "notSetYet", "pMergeAnnotatedVariants");  #No file check since file is created by MIP later
-
-&DefineParametersPath("mergeAnnotatedVariantsTemplateSelectFile", "nodefault", "pMergeAnnotatedVariants", "file", "noAutoBuild");
-
-&DefineParameters("mergeAnnotatedVariantsDbSelectFile", "program", "notSetYet", "pMergeAnnotatedVariants");  #No file check since file is created by MIP later
-
-##Add_depth
-
-&DefineParameters("pAddDepth", "program", 0, "MIP", "", "Annovar");
-
-
-##RankVariants
+## RankVariants
 
 &DefineParameters("pRankVariants", "program", 1, "MIP", "ranked_", "MAIN");
 
@@ -487,6 +457,7 @@ my @snpSiftAnnotationFiles;
 
 &DefineParametersPath("pythonVirtualEnvironment", "nodefault", "pChanjoBuild,pChanjoCalculate,pChanjoImport,pRankVariants");
 
+
 ##QcCollect
 
 &DefineParameters("pQCCollect", "program", 1, "MIP", "nofileEnding", "MAIN");
@@ -494,6 +465,13 @@ my @snpSiftAnnotationFiles;
 &DefineParameters("QCCollectSampleInfoFile", "program", "notSetYet", "pQCCollect");  #No file check since file is created by MIP later
 
 &DefineParametersPath("QCCollectRegExpFile", "qc_regexp.yaml", "pQCCollect", "file", "noAutoBuild");
+
+
+##RemoveRedundantFiles
+&DefineParameters("pRemoveRedundantFiles", "program", 1, "MIP", "nofileEnding", "MAIN");
+
+##AnalysisRunStatus
+&DefineParameters("pAnalysisRunStatus", "program", 1, "MIP", "", "MAIN");
 
 ##MIP
 
@@ -566,8 +544,6 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs,  #Comma separated list
 	   'v|version' => \$version,  #Display version number
 	   'pGZ|pGZip:n' => \$parameter{'pGZip'}{'value'},
 	   'pFQC|pFastQC:n' => \$parameter{'pFastQC'}{'value'},
-	   'pREM|pRemovalRedundantFiles:n' => \$parameter{'pRemovalRedundantFiles'}{'value'},
-	   'pAR|pAnalysisRunStatus:n' => \$parameter{'pAnalysisRunStatus'}{'value'},  #AnalysisRunStatus change flag in sampleInfo file if allowed to execute
 	   'pMoB|pMosaikBuild:n' => \$parameter{'pMosaikBuild'}{'value'},
 	   'mobmfl|mosaikBuildMedianFragLength:n' => \$parameter{'mosaikBuildMedianFragLength'}{'value'},  #for fragment length estimation and local search
 	   'pMoA|pMosaikAlign:n' => \$parameter{'pMosaikAlign'}{'value'},
@@ -668,6 +644,8 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs,  #Comma separated list
 	   'pQCC|pQCCollect:n' => \$parameter{'pQCCollect'}{'value'},  #QCmetrics collect
 	   'QCCsampleinfo|QCCollectSampleInfoFile:s' => \$parameter{'QCCollectSampleInfoFile'}{'value'},  #SampleInfo yaml file produced by MIP
 	   'QCCregexp|QCCollectRegExpFile:s' => \$parameter{'QCCollectRegExpFile'}{'value'},  #Regular expression yaml file
+	   'pREM|pRemoveRedundantFiles:n' => \$parameter{'pRemoveRedundantFiles'}{'value'},
+	   'pAR|pAnalysisRunStatus:n' => \$parameter{'pAnalysisRunStatus'}{'value'},  #AnalysisRunStatus change flag in sampleInfo file if allowed to execute
 
     );
 
@@ -1310,7 +1288,7 @@ if ($scriptParameter{'pQCCollect'} > 0) {  #Run QCCollect. Done per family
     &QCCollect($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 }
 
-if ($scriptParameter{'pRemovalRedundantFiles'} > 0) {  #Sbatch generation of removal of alignment files
+if ($scriptParameter{'pRemoveRedundantFiles'} > 0) {  #Sbatch generation of removal of alignment files
     
     &PrintToFileHandles(\@printFilehandles, "\nRemoval of alignment files\n");
 
@@ -1373,7 +1351,7 @@ sub RemoveRedundantFiles {
 
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
 
-    &ProgramPreRequisites($familyID, "RemovalRedundantFiles", $aligner, 0, $FILEHANDLE, 1, 1);
+    &ProgramPreRequisites($familyID, "RemoveRedundantFiles", $aligner, 0, $FILEHANDLE, 1, 1);
     
     `mkdir -p $scriptParameter{'outDataDir'}/$familyID/$aligner/info;`;  #Creates the aligner and info data file directory
     `mkdir -p $scriptParameter{'outScriptDir'}/$familyID/$aligner;`;  #Creates the aligner script directory
