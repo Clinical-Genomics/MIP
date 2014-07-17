@@ -31,8 +31,8 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
 	       -odd/--outDataDir The data files output directory (Mandatory: Supply whole path)
 	       -osd/--outScriptDir The script files (.sh) output directory (Mandatory: Supply whole path)
                -f/--familyID Group id of samples to be compared (defaults to "0" (=no), (Ex: 1 for IDN 1-1-1A))
-               -pedigree/--pedigreeFile (Supply whole path, defaults to "")
-               -huref/--humanGenomeReference Fasta file for the human genome reference (defaults to "Homo_sapiens.GRCh37.d5.fasta;1000G decoy version 5")
+               -ped/--pedigreeFile (Supply whole path, defaults to "")
+               -hgr/--humanGenomeReference Fasta file for the human genome reference (defaults to "Homo_sapiens.GRCh37.d5.fasta;1000G decoy version 5")
                -al/--aligner Setting which aligner was used for alignment in previous analysis (defaults to "")
                -at/--analysisType Type of analysis to perform (defaults to "exomes";Valid entries: "genomes", "exomes", "rapid")
                -mc/--maximumCores The maximum number of cores per node used in the analysis (defaults to "8")
@@ -40,9 +40,9 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -wc/--writeConfigFile Write YAML configuration file for script parameters (defaults to "";Supply whole path)
                -int/--instanceTag Tag family with instance association in sampleInfo file (defaults to "")
                -rea/--researchEthicalApproval Tag for displaying research candidates in Scout (defaults to "notApproved")
-               -si/--sampleInfoFile YAML file for sample info used in the analysis (defaults to "{outDataDir}/{familyID}/{familyID}_qc_sampleInfo.yaml")
+               -sif/--sampleInfoFile YAML file for sample info used in the analysis (defaults to "{outDataDir}/{familyID}/{familyID}_qc_sampleInfo.yaml")
                -dra/--dryRunAll Sets all programs to dry run mode i.e. no sbatch submission (defaults to "0" (=no))
-               -julp/--javaUseLargePages Use large page memory. (-XX,hence option considered not stable and are subject to change without notice, but can be consiered when faced with Java Runtime Environment Memory issues)
+               -jul/--javaUseLargePages Use large page memory. (-XX,hence option considered not stable and are subject to change without notice, but can be consiered when faced with Java Runtime Environment Memory issues)
                -pve/--pythonVirtualEnvironment Pyhton virtualenvironment (defaults to "")
                -h/--help Display this help message    
                -v/--version Display version of MIP            
@@ -57,112 +57,112 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                 -mobmfl/--mosaikBuildMedianFragLength Flag for setting the mean fragment length, mfl, (defaults to (=375) bp)
 	       -pMoA/--pMosaikAlign Align reads using MosaikAlign (defaults to "1" (=yes))
                  -moaref/--mosaikAlignReference MosaikAlign reference (defaults to "{humanGenomeReference}")
-                 -moaannpe/--mosaikAlignNeuralNetworkPeFile MosaikAlign Neural Network PE File (defaults to "2.1.78.pe.ann")
-                 -moaannse/--mosaikAlignNeuralNetworkSeFile MosaikAlign Neural Network SE File (defaults to "2.1.78.se.ann")
+                 -moaape/--mosaikAlignNeuralNetworkPeFile MosaikAlign Neural Network PE File (defaults to "2.1.78.pe.ann")
+                 -moaase/--mosaikAlignNeuralNetworkSeFile MosaikAlign Neural Network SE File (defaults to "2.1.78.se.ann")
                  -mojdb/--mosaikJumpDbStub MosaikJump stub (defaults to "{humanGenomeReference}")
                
                ##BWA
-               -pBWA_mem/--pBwaMem Align reads using BWA Mem (defaults to "0" (=no))
-                 -bwamemrdb/--bwaMemRapidDb Selection of relevant regions post alignment (Defaults to "")
-               -pBWA_aln/--pBwaAln Index reads using BWA Aln (defaults to "0" (=no))
-                 -bwaalnq/--bwaAlnQualityTrimming BWA Aln quality threshold for read trimming (defaults to "20")
-               -pBWA_sampe/--pBwaSampe Align reads using BWA Sampe (defaults to "0" (=no))
+               -pMem/--pBwaMem Align reads using BWA Mem (defaults to "0" (=no))
+                 -memrdb/--bwaMemRapidDb Selection of relevant regions post alignment (Defaults to "")
+               -pAln/--pBwaAln Index reads using BWA Aln (defaults to "0" (=no))
+                 -alnq/--bwaAlnQualityTrimming BWA Aln quality threshold for read trimming (defaults to "20")
+               -pSap/--pBwaSampe Align reads using BWA Sampe (defaults to "0" (=no))
                
                ##PicardTools
-               -picardpath/--picardToolsPath Path to PicardTools. Mandatory for use of PicardTools (defaults to "")
-               -picttmpd/--PicardToolsTempDirectory Temporary Directory to write to using PicardTools (defaults to "/scratch/SLURM_JOB_ID";Supply whole path)
-               -pPicT_sort/--pPicardToolsSortSam Sort & index aligned reads using PicardTools SortSam & index (defaults to "1" (=yes))
-               -pPicT_merge/--pPicardToolsMergeSamFiles Merge (BAM file(s) ) using PicardTools MergeSamFiles (defaults to "1" (=yes))
-               -pPicT_mergerr/--pPicardToolsMergeRapidReads Merge Read batch processed (BAM file(s)) using PicardTools MergeSamFiles (Only relevant in rapid mode;defaults to "0" (=no))
-                 -picT_mergeprev/--picardToolsMergeSamFilesPrevious PicardTools MergeSamFiles on merged current files and previous BAM-file(s) (Supply whole path and name, name must contain sample id, and lanes_Xn info)
-               -pPicT_markdup/--pPicardToolsMarkduplicates Markduplicates using PicardTools MarkDuplicates (defaults to "1" (=yes))
+               -ptp/--picardToolsPath Path to PicardTools. Mandatory for use of PicardTools (defaults to "")
+               -ptd/--PicardToolsTempDirectory Temporary Directory to write to using PicardTools (defaults to "/scratch/SLURM_JOB_ID";Supply whole path)
+               -pPtS/--pPicardToolsSortSam Sort & index aligned reads using PicardTools SortSam & index (defaults to "1" (=yes))
+               -pPtM/--pPicardToolsMergeSamFiles Merge (BAM file(s) ) using PicardTools MergeSamFiles (defaults to "1" (=yes))
+               -pPtMR/--pPicardToolsMergeRapidReads Merge Read batch processed (BAM file(s)) using PicardTools MergeSamFiles (Only relevant in rapid mode;defaults to "0" (=no))
+                 -ptmp/--picardToolsMergeSamFilesPrevious PicardTools MergeSamFiles on merged current files and previous BAM-file(s) (Supply whole path and name, name must contain sample id, and lanes_Xn info)
+               -pPtMD/--pPicardToolsMarkduplicates Markduplicates using PicardTools MarkDuplicates (defaults to "1" (=yes))
                
                ##Coverage Calculations
-               -pCh_B/--pChanjoBuild Chanjo build central SQLite database file (defaults to "1" (=yes))
+               -pChB/--pChanjoBuild Chanjo build central SQLite database file (defaults to "1" (=yes))
                  -chbdb/--chanjoBuildDb  Reference database (defaults to "CCDS.current.txt")
-               -pCh_C/--pChanjoCalculate Chanjo coverage analysis (defaults to "1" (=yes))
+               -pChC/--pChanjoCalculate Chanjo coverage analysis (defaults to "1" (=yes))
                  -chccut/--chanjoCalculateCutoff Read depth cutoff (defaults to "10")
-               -pCh_I/--pChanjoImport Chanjo import to collect sample info to family Db  (defaults to "0" (=no))
-               -pCC_bedgc/--pGenomeCoverageBED Genome coverage calculation using genomeCoverageBED (defaults to "1" (=yes))
-               -xcov/--xCoverage Max coverage depth when using '-pGenomeCoverageBED' (defaults to "30")
-               -pCC_picmm/--pPicardToolsCollectMultipleMetrics Metrics calculation using PicardTools collectMultipleMetrics (defaults to "1" (=yes))
-               -pCCE_pichs/--pPicardToolsCalculateHSMetrics Capture calculation using PicardTools CalculateHSmetrics (defaults to "1" (=yes))
-                 -extbl/--exomeTargetBedInfileLists Prepared target BED file for PicardTools CalculateHSMetrics (defaults to "". File ending should be ".infile_list") 
-                 -extpbl/--exomeTargetPaddedBedInfileLists Prepared padded target BED file for PicardTools CalculateHSMetrics (defaults to "". File ending should be ".padXXX.infile_list")
-               -pRCP/--pRCovPlots Plots of genome coverage using rCovPlots (defaults to "1" (=yes))
+               -pChI/--pChanjoImport Chanjo import to collect sample info to family Db  (defaults to "0" (=no))
+               -pGcB/--pGenomeCoverageBED Genome coverage calculation using genomeCoverageBED (defaults to "1" (=yes))
+                -gcbcov/--GenomeCoverageBEDMaxCoverage Max coverage depth when using '-pGenomeCoverageBED' (defaults to "30")
+               -pPtCMM/--pPicardToolsCollectMultipleMetrics Metrics calculation using PicardTools collectMultipleMetrics (defaults to "1" (=yes))
+               -pPtCHS/--pPicardToolsCalculateHSMetrics Capture calculation using PicardTools CalculateHSmetrics (defaults to "1" (=yes))
+                 -ptchsetl/--exomeTargetBedInfileLists Prepared target BED file for PicardTools CalculateHSMetrics (defaults to "". File ending should be ".infile_list") 
+                 -ptchsetpl/--exomeTargetPaddedBedInfileLists Prepared padded target BED file for PicardTools CalculateHSMetrics (defaults to "". File ending should be ".padXXX.infile_list")
+               -pRcP/--pRCovPlots Plots of genome coverage using rCovPlots (defaults to "1" (=yes))
                
                ##GATK              
-               -gatkpath/--genomeAnalysisToolKitPath  Path to GATK. Mandatory for use of GATK (defaults to "")
-               -gatkbdv/--GATKBundleDownLoadVersion  GATK FTP bundle download version.(defaults to "2.8")
-               -gatktmpd/--GATKTempDirectory Temporary Directory to write to using GATK ReAlignerTargetCreator & BaseRecalibrator (defaults to "/scratch/SLURM_JOB_ID";Supply whole path)
-               -gatktpbl/--GATKTargetPaddedBedIntervalLists Target BED file interval for GATK (defaults to "". File ending should be ".padXXX.interval_list")
-               -gatkdcov/--GATKDownSampleToCoverage Coverage to downsample to at any given locus (defaults to "1000")
-               -pGATK_real/--pGATKRealigner Realignments of reads using GATK realign (defaults to "1" (=yes))
-                 -gatkrealknset1/--GATKReAlignerINDELKnownSet1 GATK ReAlignerTargetCreator/IndelRealigner known INDEL set 1 (defaults to "1000G_phase1.indels.b37.vcf")
-                 -gatkrealknset2/--GATKReAlignerINDELKnownSet2 GATK ReAlignerTargetCreator/IndelRealigner known INDEL set 2 (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
-               -pGATK_baserecal/--pGATKBaseRecalibration Recalibration of bases using GATK BaseRecalibrator/PrintReads (defaults to "1" (=yes))
-                 -gatkbaserecalknset/--GATKBaseReCalibrationSNPKnownSet GATK BaseReCalinbration known SNP set (defaults to "dbsnp_138.b37.vcf")                
-               -pGATK_hapcall/--pGATKHaploTypeCaller Variant discovery using GATK HaplotypeCaller (defaults to "1" (=yes))
-                 -gatkhapcallsnpknset/--GATKHaploTypeCallerSNPKnownSet GATK HaplotypeCaller dbSNP set for annotating ID columns (defaults to "dbsnp_138.b37.vcf")
-               -pGATK_genotype/--pGATKGenoTypeGVCFs Merge gVCF records using GATK GenotypeGVCFs (defaults to "1" (=yes))
-                 -gatkgenotyperefgvcfinfile/--GATKGenoTypeGVCFsRefGVCFInfile GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping (defaults to "")
-               -pGATK_varrecal/--pGATKVariantRecalibration Variant recalibration using GATK VariantRecalibrator/ApplyRecalibration (defaults to "1" (=yes))
-                 -gatkexrefsnp/--GATKExomeReferenceSNPs Prepared exome reference file (SNVs) for GATKVariantRecalibration (defaults to "")
-                 -gatkvarrecaltrhapmap/--GATKVariantReCalibrationTrainingSetHapMap GATK VariantRecalibrator HapMap training set (defaults to "hapmap_3.3.b37.sites.vcf")
-                 -gatkvarrecaltrdbsnp/--GATKVariantReCalibrationTrainingSetDbSNP GATK VariantRecalibrator dbSNP training set (defaults to "dbsnp_138.b37.vcf")
-                 -gatkvarrecaltrd1000Gsnp/--GATKVariantReCalibrationTrainingSet1000GSNP GATK VariantRecalibrator 1000G high confidence SNP training set (defaults to "1000G_phase1.snps.high_confidence.b37.vcf")
-                 -gatkvarrecaltromni/--GATKVariantReCalibrationTrainingSet1000GOmni GATK VariantRecalibrator 1000G_omni training set (defaults to "1000G_omni2.5.b37.sites.vcf")
-                 -gatkvarrecaltrdbmills/--GATKVariantReCalibrationTrainingSetMills GATK VariantRecalibrator Mills training set (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
-                 -gatkvarrecaltsfilterlevel/--GATKVariantReCalibrationTSFilterLevel The truth sensitivity level at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
-               -pGATK_phaseTr/--pGATKPhaseByTransmission Computes the most likely genotype and phases calls were unamibigous using GATK PhaseByTransmission (defaults to "1" (=yes))
-               -pGATK_readPh/--pGATKReadBackedPhasing Performs physical phasing of SNP calls, based on sequencing reads using GATK ReadBackedPhasing (defaults to "1" (=yes))
-                 -gatkreadphphaseqthr/--GATKReadBackedPhasingPhaseQualityThresh The minimum phasing quality score required to output phasing
-               -pGATK_varevalall/--pGATKVariantEvalAll Variant evaluation using GATK VariantEval for all variants  (defaults to "1" (=yes))
-               -pGATK_varevalexome/--pGATKVariantEvalExome Variant evaluation using GATK VariantEval for exonic variants  (defaults to "1" (=yes))
-                 -gatkvarevaldbsnp/--GATKVariantEvalDbSNP DbSNP file used in GATK VariantEval (defaults to "dbsnp_138.b37.excluding_sites_after_129.vcf")
-                 -gatkvarevaldbgold/--GATKVariantEvalGold Gold Indel file used in GATK VariantEval (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
+               -gtp/--genomeAnalysisToolKitPath  Path to GATK. Mandatory for use of GATK (defaults to "")
+               -gbdv/--GATKBundleDownLoadVersion  GATK FTP bundle download version.(defaults to "2.8")
+               -gtd/--GATKTempDirectory Temporary Directory to write to using GATK ReAlignerTargetCreator & BaseRecalibrator (defaults to "/scratch/SLURM_JOB_ID";Supply whole path)
+               -gtpl/--GATKTargetPaddedBedIntervalLists Target BED file interval for GATK (defaults to "". File ending should be ".padXXX.interval_list")
+               -gdco/--GATKDownSampleToCoverage Coverage to downsample to at any given locus (defaults to "1000")
+               -pGrA/--pGATKRealigner Realignments of reads using GATK realign (defaults to "1" (=yes))
+                 -graks1/--GATKReAlignerINDELKnownSet1 GATK ReAlignerTargetCreator/IndelRealigner known INDEL set 1 (defaults to "1000G_phase1.indels.b37.vcf")
+                 -graks2/--GATKReAlignerINDELKnownSet2 GATK ReAlignerTargetCreator/IndelRealigner known INDEL set 2 (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
+               -pGbR/--pGATKBaseRecalibration Recalibration of bases using GATK BaseRecalibrator/PrintReads (defaults to "1" (=yes))
+                 -gbrkse/--GATKBaseReCalibrationSNPKnownSet GATK BaseReCalinbration known SNP set (defaults to "dbsnp_138.b37.vcf")                
+               -pGhC/--pGATKHaploTypeCaller Variant discovery using GATK HaplotypeCaller (defaults to "1" (=yes))
+                 -ghckse/--GATKHaploTypeCallerSNPKnownSet GATK HaplotypeCaller dbSNP set for annotating ID columns (defaults to "dbsnp_138.b37.vcf")
+               -pGgT/--pGATKGenoTypeGVCFs Merge gVCF records using GATK GenotypeGVCFs (defaults to "1" (=yes))
+                 -ggtgrl/--GATKGenoTypeGVCFsRefGVCF GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping (defaults to "")
+               -pGvR/--pGATKVariantRecalibration Variant recalibration using GATK VariantRecalibrator/ApplyRecalibration (defaults to "1" (=yes))
+                 -gvrers/--GATKExomeReferenceSNPs Prepared exome reference file (SNVs) for GATKVariantRecalibration (defaults to "")
+                 -gvrtsh/--GATKVariantReCalibrationTrainingSetHapMap GATK VariantRecalibrator HapMap training set (defaults to "hapmap_3.3.b37.sites.vcf")
+                 -gvrtss/--GATKVariantReCalibrationTrainingSetDbSNP GATK VariantRecalibrator dbSNP training set (defaults to "dbsnp_138.b37.vcf")
+                 -gvrtsg/--GATKVariantReCalibrationTrainingSet1000GSNP GATK VariantRecalibrator 1000G high confidence SNP training set (defaults to "1000G_phase1.snps.high_confidence.b37.vcf")
+                 -gvrtso/--GATKVariantReCalibrationTrainingSet1000GOmni GATK VariantRecalibrator 1000G_omni training set (defaults to "1000G_omni2.5.b37.sites.vcf")
+                 -gvrtsm/--GATKVariantReCalibrationTrainingSetMills GATK VariantRecalibrator Mills training set (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
+                 -gvrtsf/--GATKVariantReCalibrationTSFilterLevel The truth sensitivity level at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
+               -pGpT/--pGATKPhaseByTransmission Computes the most likely genotype and phases calls were unamibigous using GATK PhaseByTransmission (defaults to "1" (=yes))
+               -pGrP/--pGATKReadBackedPhasing Performs physical phasing of SNP calls, based on sequencing reads using GATK ReadBackedPhasing (defaults to "1" (=yes))
+                 -grpqth/--GATKReadBackedPhasingPhaseQualityThreshold The minimum phasing quality score required to output phasing (defaults to "20")
+               -pGvEA/--pGATKVariantEvalAll Variant evaluation using GATK VariantEval for all variants  (defaults to "1" (=yes))
+               -pGvEE/--pGATKVariantEvalExome Variant evaluation using GATK VariantEval for exonic variants  (defaults to "1" (=yes))
+                 -gveedbs/--GATKVariantEvalDbSNP DbSNP file used in GATK VariantEval (defaults to "dbsnp_138.b37.excluding_sites_after_129.vcf")
+                 -gveedbg/--GATKVariantEvalGold Gold Indel file used in GATK VariantEval (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
                
                ##ANNOTATION
-               -pVEP/--pVariantEffectPredictor Annotate variants using VEP (defaults to "1" (=yes))
-                 -vepdirpath/--vepDirectoryPath Path to VEP script directory (Supply whole path, defaults to "")
-                 -vepdircache/vepDirectoryCache Specify the cache directory to use (Supply whole path, defaults to "") 
-                 -vepfeat/--vepFeatures VEP features (comma sep)
-               -pVCFPar/--pVCFParser Parse variants using vcfParser.pl (defaults to "1" (=yes))
-                 -vcfparservepp/--vcfParserVEPParser Parse VEP transcript specific entries 
-                 -vcfparserrf/--vcfParserRangeFeatureFile Range annotations file (tab-sep)
-                 -vcfparserrfac/--vcfParserRangeFeatureAnnotationColumns Range annotations feature columns (Defaults to ""; comma sep)
-                 -vcfparsersf/--vcfParserSelectFile File containging list of genes to analyse seperately (Defaults to "";tab-sep file and HGNC Symbol required)
-                 -vcfparsersfmc/--vcfParserSelectFileMatchingColumn Position of HGNC Symbol column in SelectFile (Defaults to "")
-                 -vcfparsersfac/--vcfParserSelectFeatureAnnotationColumns Feature columns to use in annotation (Defaults to ""; comma sep)
-                -pSnpeff/--pSnpEff Variant annotation using snpEFF (defaults to "1" (=yes))
-                 -snpeffpath/--snpEffPath Path to snpEff. Mandatory for use of snpEff (defaults to "")
-                 -snpsiftanf/--snpSiftAnnotationFiles Annotation files to use with snpSift (comma sep)
-                 -snpsiftdbnsfpf/--snpSiftDbNSFPFile DbNSFP File (defaults to "dbNSFP2.4_variant.txt.gz")
-                 -snpsiftdbnsfpan/--snpSiftDbNSFPAnnotations DbNSFP annotations to use with snpSift (comma sep)
-               -pANVAR/--pAnnovar Annotate variants using Annovar (defaults to "1" (=yes))
-                 -anvarpath/--annovarPath  Path to Annovar script directory (Supply whole path, defaults to "". NOTE: Assumes that the annovar db files are located in annovar/humandb)
-                 -anvargbv/--annovarGenomeBuildVersion Annovar genome build version (defaults to "hg19")
-                 -anvartn/--annovarTableNames Annovar table names (comma sep)
-                 -anvarstn/--annovarSupportedTableNames Print Annovar MIP supported table names (defaults 0 (=no))
+               -pVeP/--pVariantEffectPredictor Annotate variants using VEP (defaults to "1" (=yes))
+                 -vepp/--vepDirectoryPath Path to VEP script directory (Supply whole path, defaults to "")
+                 -vepc/vepDirectoryCache Specify the cache directory to use (Supply whole path, defaults to "") 
+                 -vepf/--vepFeatures VEP features (Defaults to ("refseq","hgvs","symbol","numbers","sift","polyphen","humdiv"); comma sep)
+               -pVcP/--pVCFParser Parse variants using vcfParser.pl (defaults to "1" (=yes))
+                 -vcpvt/--vcfParserVepTranscripts Parse VEP transcript specific entries (defaults to "0" (=no))
+                 -vcprff/--vcfParserRangeFeatureFile Range annotations file (Defaults to ""; tab-sep)
+                 -vcprfa/--vcfParserRangeFeatureAnnotationColumns Range annotations feature columns (Defaults to ""; comma sep)
+                 -vcpsf/--vcfParserSelectFile File containging list of genes to analyse seperately (Defaults to "";tab-sep file and HGNC Symbol required)
+                 -vcpsfm/--vcfParserSelectFileMatchingColumn Position of HGNC Symbol column in SelectFile (Defaults to "")
+                 -vcpsfa/--vcfParserSelectFeatureAnnotationColumns Feature columns to use in annotation (Defaults to ""; comma sep)
+                -pSnE/--pSnpEff Variant annotation using snpEFF (defaults to "1" (=yes))
+                 -snep/--snpEffPath Path to snpEff. Mandatory for use of snpEff (defaults to "")
+                 -snesaf/--snpSiftAnnotationFiles Annotation files to use with snpSift (comma sep)
+                 -snesdbnsfp/--snpSiftDbNSFPFile DbNSFP File (defaults to "dbNSFP2.4_variant.txt.gz")
+                 -snesdbnsfpa/--snpSiftDbNSFPAnnotations DbNSFP annotations to use with snpSift (Defaults to ("SIFT_pred","Polyphen2_HDIV_pred","Polyphen2_HVAR_pred","LRT_pred","MutationTaster_pred","GERP++_NR","GERP++_RS","phastCons100way_vertebrate","1000Gp1_AF","ESP6500_AA_AF"); comma sep)
+               -pAnV/--pAnnovar Annotate variants using Annovar (defaults to "1" (=yes))
+                 -anvp/--annovarPath  Path to Annovar script directory (Supply whole path, defaults to "". NOTE: Assumes that the annovar db files are located in annovar/humandb)
+                 -anvgbv/--annovarGenomeBuildVersion Annovar genome build version (defaults to "hg19")
+                 -anvtn/--annovarTableNames Annovar table names (Defaults to ("refGene","mce46way","gerp++elem","segdup","tfbs","mirna","snp137NonFlagged","1000g2012apr_all","esp6500si_all","ljb2_sift","ljb2_pp2hdiv","ljb2_pp2hvar","ljb2_mt","ljb2_lrt","ljb2_gerp++","ljb2_phylop"); comma sep)
+                 -anvstn/--annovarSupportedTableNames Print Annovar MIP supported table names (defaults 0 (=no))
                  -anvarmafth/--annovarMAFThreshold Sets the minor allele frequency threshold in annovar (defaults to "0")
 
                ##RankVariants
-               -pRankVar/--pRankVariants Ranking of annotated variants (defaults to "1" (=yes))
-                 -rs/--rankScore The rank score cut-off (defaults to "-100", .i.e. include everything
-                 -gf/--geneFile Defines genes to use when calculating compounds
-                 -cadd/--caddWGSSNVs Annotate whole genome sequencing CADD score (defaults to "0" (=no))
-                 -caddf/--caddWGSSNVsFile Whole genome sequencing CADD score file (defaults to "")
-                 -cadd1kg/--cadd1000Genomes 1000 Genome cadd score file (defaults to "0" (=no))
-                 -cadd1kgf/--cadd1000GenomesFile 1000 Genome cadd score file (defaults to "")
-                 -gene/--wholeGene Allow compound pairs in intronic regions (defaults to "1" (=yes))
-               -pSCheck/--pSampleCheck QC for samples gender and relationship (defaults to "1" (=yes) )
-               -pQCC/--pQCCollect Collect QC metrics from programs processed (defaults to "1" (=yes) )
-                 -QCCsampleinfo/--QCCollectSampleInfoFile SampleInfo File containing info on what to parse from this analysis run (defaults to "{outDataDir}/{familyID}/{familyID}_qc_sampleInfo.yaml")
-                 -QCCregexp/--QCCollectRegExpFile Regular expression file containing the regular expression to be used for each program (defaults to "")
+               -pRaV/--pRankVariants Ranking of annotated variants (defaults to "1" (=yes))
+                 -ravrs/--rankScore The rank score cut-off (defaults to "-100", .i.e. include everything
+                 -ravgf/--geneFile Defines genes to use when calculating compounds
+                 -ravcs/--caddWGSSNVs Annotate whole genome sequencing CADD score (defaults to "0" (=no))
+                 -ravcsf/--caddWGSSNVsFile Whole genome sequencing CADD score file (defaults to "")
+                 -ravc1kg/--cadd1000Genomes 1000 Genome cadd score file (defaults to "0" (=no))
+                 -ravc1kgf/--cadd1000GenomesFile 1000 Genome cadd score file (defaults to "")
+                 -ravwg/--wholeGene Allow compound pairs in intronic regions (defaults to "1" (=yes))
+               -pScK/--pSampleCheck QC for samples gender and relationship (defaults to "1" (=yes) )
+               -pQcC/--pQCCollect Collect QC metrics from programs processed (defaults to "1" (=yes) )
+                 -qccsi/--QCCollectSampleInfoFile SampleInfo File containing info on what to parse from this analysis run (defaults to "{outDataDir}/{familyID}/{familyID}_qc_sampleInfo.yaml")
+                 -qccref/--QCCollectRegExpFile Regular expression file containing the regular expression to be used for each program (defaults to "")
                
                ##Utility
-               -pREM/--pRemoveRedundantFiles Generating sbatch script for deletion of redundant files (defaults to "1" (=yes);Note: Must be submitted manually)
-               -pAR/--pAnalysisRunStatus Sets the analysis run status flag to finished in sampleInfoFile (defaults to "1" (=yes))
+               -pReM/--pRemoveRedundantFiles Generating sbatch script for deletion of redundant files (defaults to "1" (=yes);Note: Must be submitted manually)
+               -pArS/--pAnalysisRunStatus Sets the analysis run status flag to finished in sampleInfoFile (defaults to "1" (=yes))
 	   };
 }
 
@@ -300,7 +300,7 @@ my (@picardToolsMergeSamFilesPrevious);  #Any previous sequencing runs
 
 &DefineParameters("pPicardToolsCalculateHSMetrics", "program", 1, "MIP", "nofileEnding", "CoverageQC_PTCHSM");
 
-&DefineParameters("xCoverage", "program", 30, "pGenomeCoverageBED");
+&DefineParameters("GenomeCoverageBEDMaxCoverage", "program", 30, "pGenomeCoverageBED");
 
 &DefineParameters("pRCovPlots", "program", 0, "MIP", "nofileEnding", "CoverageQC_RCOVP");
 
@@ -330,7 +330,7 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists);  #Arrays for 
 
 &DefineParameters("pGATKGenoTypeGVCFs", "program", 1, "MIP", "_", "MAIN");
 
-&DefineParametersPath("GATKGenoTypeGVCFsRefGVCFInfile", "nodefault", "pGATKGenoTypeGVCFs", "file", "noAutoBuild");
+&DefineParametersPath("GATKGenoTypeGVCFsRefGVCF", "nodefault", "pGATKGenoTypeGVCFs", "file", "noAutoBuild");
 
 
 &DefineParameters("pGATKVariantRecalibration", "program", 1, "MIP", "vrecal_", "MAIN");
@@ -354,7 +354,7 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists);  #Arrays for 
 
 &DefineParameters("pGATKReadBackedPhasing", "program", 1, "MIP", "phrb_", "Phasing");
 
-&DefineParameters("GATKReadBackedPhasingPhaseQualityThresh", "program", 20, "pGATKReadBackedPhasing");
+&DefineParameters("GATKReadBackedPhasingPhaseQualityThreshold", "program", 20, "pGATKReadBackedPhasing");
 
 
 &DefineParameters("pGATKVariantEvalAll", "program", 1, "MIP", "nofileEnding", "AllVariantQC");
@@ -389,7 +389,7 @@ my @vepFeatures;  #List of VEP features to be used
 
 &DefineParameters("pVCFParser", "program", 1, "MIP", "parsed_", "MAIN");
 
-&DefineParameters("vcfParserVEPParser", "program", 0, "pVCFParser");
+&DefineParameters("vcfParserVepTranscripts", "program", 0, "pVCFParser");
 
 &DefineParametersPath("vcfParserRangeFeatureFile", "noUserInfo", "pVCFParser", "file"); 
 
@@ -402,20 +402,6 @@ my @vcfParserRangeFeatureAnnotationColumns;
 my @vcfParserSelectFeatureAnnotationColumns;
 
 
-##Annovar
-
-&DefineParameters("pAnnovar", "program", 1, "MIP", "annovar_", "Annovar");
-
-&DefineParametersPath("annovarPath", "nodefault", "pAnnovar", "directory");  #Note not projectID specific
-
-&DefineParameters("annovarGenomeBuildVersion", "program", "hg19", "pAnnovar");
-
-&DefineParameters("annovarSupportedTableNames", "program", 0, "pAnnovar");
-
-&DefineParameters("annovarMAFThreshold", "program", 0, "pAnnovar");
-
-my @annovarTableNames;  #List of Annovar table names to be used
-
 ## SnpEFF
 
 &DefineParameters("pSnpEff", "program", 1, "MIP", "snpeff_", "MAIN");
@@ -427,8 +413,22 @@ my @annovarTableNames;  #List of Annovar table names to be used
 my @snpSiftDbNSFPAnnotations;
 my @snpSiftAnnotationFiles;
 
-##Special case GATKPAth since in VEP and SnpEff module GATK CombineVariants is used to merge vcfs 
-&DefineParametersPath("javaUseLargePages", "no", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKHaploTypeCallerCombineVariants,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pVariantEffectPredictor,pSnpEff");
+##Annovar
+
+&DefineParameters("pAnnovar", "program", 1, "MIP", "annovar_", "MAIN");
+
+&DefineParametersPath("annovarPath", "nodefault", "pAnnovar", "directory");  #Note not projectID specific
+
+&DefineParameters("annovarGenomeBuildVersion", "program", "hg19", "pAnnovar");
+
+&DefineParameters("annovarSupportedTableNames", "program", 0, "pAnnovar");
+
+&DefineParameters("annovarMAFThreshold", "program", 0, "pAnnovar");
+
+my @annovarTableNames;  #List of Annovar table names to be used
+
+##Special case GATKPath since in VEP, SnpEff and Annovar modules use GATK CombineVariants to merge vcfs 
+&DefineParametersPath("javaUseLargePages", "no", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKHaploTypeCallerCombineVariants,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pVariantEffectPredictor,pSnpEff,pAnnovar");
 
 &DefineParametersPath("genomeAnalysisToolKitPath", "nodefault", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pVariantEffectPredictor,pSnpEff", "directory");
 
@@ -527,19 +527,19 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs,  #Comma separated list
 	   'odd|outDataDir:s'  => \$parameter{'outDataDir'}{'value'},  #One dir above sample id, must supply whole path i.e. /proj/...
 	   'osd|outScriptDir:s'  => \$parameter{'outScriptDir'}{'value'},   #One dir above sample id, must supply whole path i.e. /proj/...
 	   'f|familyID:s' => \$parameter{'familyID'}{'value'},  #Family group ID (Merged to same vcf file after GATK Base Recalibration)
-	   'pedigree|pedigreeFile:s' => \$parameter{'pedigreeFile'}{'value'},  #Pedigree file
-	   'huref|humanGenomeReference:s' => \$parameter{'humanGenomeReference'}{'value'},  #Human genome reference
+	   'ped|pedigreeFile:s' => \$parameter{'pedigreeFile'}{'value'},  #Pedigree file
+	   'hgr|humanGenomeReference:s' => \$parameter{'humanGenomeReference'}{'value'},  #Human genome reference
 	   'al|aligner:s' => \$parameter{'aligner'}{'value'},  #determining which aligner was used previously (if not specified)
 	   'at|analysisType:s' => \$parameter{'analysisType'}{'value'},  #Type of analysis
 	   'mc|maximumCores:n' => \$parameter{'maximumCores'}{'value'},  #Per node
 	   'c|configFile:s' => \$parameter{'configFile'}{'value'},
 	   'wc|writeConfigFile:s' => \$parameter{'writeConfigFile'}{'value'},
-	   'si|sampleInfoFile:s' => \$parameter{'sampleInfoFile'}{'value'},  #Write all info on samples and run to YAML file
+	   'sif|sampleInfoFile:s' => \$parameter{'sampleInfoFile'}{'value'},  #Write all info on samples and run to YAML file
 	   'int|instanceTag:s' => \$parameter{'instanceTag'}{'value'},
 	   'rea|researchEthicalApproval:s' => \$parameter{'researchEthicalApproval'}{'value'},
 	   'dra|dryRunAll:n' => \$parameter{'dryRunAll'}{'value'},
 	   'pve|pythonVirtualEnvironment:s' => \$parameter{'pythonVirtualEnvironment'}{'value'},
-	   'julp|javaUseLargePages:s' => \$parameter{'javaUseLargePages'}{'value'},
+	   'jul|javaUseLargePages:s' => \$parameter{'javaUseLargePages'}{'value'},
 	   'h|help' => \$help,  #Display help text
 	   'v|version' => \$version,  #Display version number
 	   'pGZ|pGZip:n' => \$parameter{'pGZip'}{'value'},
@@ -548,104 +548,98 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs,  #Comma separated list
 	   'mobmfl|mosaikBuildMedianFragLength:n' => \$parameter{'mosaikBuildMedianFragLength'}{'value'},  #for fragment length estimation and local search
 	   'pMoA|pMosaikAlign:n' => \$parameter{'pMosaikAlign'}{'value'},
 	   'moaref|mosaikAlignReference:s' => \$parameter{'mosaikAlignReference'}{'value'},  #MosaikAlign reference file assumes existance of jump database files in same dir
-	   'moaannpe|mosaikAlignNeuralNetworkPeFile:s' => \$parameter{'mosaikAlignNeuralNetworkPeFile'}{'value'},
-	   'moaannse|mosaikAlignNeuralNetworkSeFile:s' => \$parameter{'mosaikAlignNeuralNetworkSeFile'}{'value'}, 
+	   'moaape|mosaikAlignNeuralNetworkPeFile:s' => \$parameter{'mosaikAlignNeuralNetworkPeFile'}{'value'},
+	   'moaase|mosaikAlignNeuralNetworkSeFile:s' => \$parameter{'mosaikAlignNeuralNetworkSeFile'}{'value'}, 
 	   'mojdb|mosaikJumpDbStub:s' => \$parameter{'mosaikJumpDbStub'}{'value'},  #Stub for MosaikJump database
-	   'pBWA_mem|pBwaMem:n' => \$parameter{'pBwaMem'}{'value'},
-	   'bwamemrdb|bwaMemRapidDb:s' => \$parameter{'bwaMemRapidDb'}{'value'},
-	   'pBWA_aln|pBwaAln:n' => \$parameter{'pBwaAln'}{'value'},
-	   'bwaalnq|bwaAlnQualityTrimming:n' => \$parameter{'bwaAlnQualityTrimming'}{'value'},  #BWA aln quality threshold for read trimming down to 35bp
-	   'pBWA_sampe|pBwaSampe:n' => \$parameter{'pBwaSampe'}{'value'},
-	   'pPicT_sort|pPicardToolsSortSam:n' => \$parameter{'pPicardToolsSortSam'}{'value'},
-	   'pPicT_merge|pPicardToolsMergeSamFiles:n' => \$parameter{'pPicardToolsMergeSamFiles'}{'value'},  #PicardTools MergeSamFiles
-	   'pPicT_mergerr|pPicardToolsMergeRapidReads:n' => \$parameter{'pPicardToolsMergeRapidReads'}{'value'},  #PicardTools MergeSamFiles - Rapid mode
-	   'pictmergetmpd|PicardToolsTempDirectory:s' => \$parameter{'PicardToolsTempDirectory'}{'value'},  #PicardToolsMerge Temporary Directory
-	   'pict_mergeprev|picardToolsMergeSamFilesPrevious:s' => \@picardToolsMergeSamFilesPrevious,  #Comma separated list
-	   'pPicT_markdup|pPicardToolsMarkduplicates:s' => \$parameter{'pPicardToolsMarkduplicates'}{'value'},  #PicardTools MarkDuplicates
-	   'picardpath|picardToolsPath:s' => \$parameter{'picardToolsPath'}{'value'},  #Path to picardtools
-	   'pCh_B|pChanjoBuild:n' => \$parameter{'pChanjoBuild'}{'value'},   #Build central SQLiteDatabase
+	   'pMem|pBwaMem:n' => \$parameter{'pBwaMem'}{'value'},
+	   'memrdb|bwaMemRapidDb:s' => \$parameter{'bwaMemRapidDb'}{'value'},
+	   'pAln|pBwaAln:n' => \$parameter{'pBwaAln'}{'value'},
+	   'alnq|bwaAlnQualityTrimming:n' => \$parameter{'bwaAlnQualityTrimming'}{'value'},  #BWA aln quality threshold for read trimming down to 35bp
+	   'pSap|pBwaSampe:n' => \$parameter{'pBwaSampe'}{'value'},
+	   'pPtS|pPicardToolsSortSam:n' => \$parameter{'pPicardToolsSortSam'}{'value'},
+	   'pPtM|pPicardToolsMergeSamFiles:n' => \$parameter{'pPicardToolsMergeSamFiles'}{'value'},  #PicardTools mergeSamFiles
+	   'pPtMR|pPicardToolsMergeRapidReads:n' => \$parameter{'pPicardToolsMergeRapidReads'}{'value'},  #PicardTools mergeSamFiles - rapid mode
+	   'ptd|PicardToolsTempDirectory:s' => \$parameter{'PicardToolsTempDirectory'}{'value'},  #PicardTools temporary directory
+	   'ptmp|picardToolsMergeSamFilesPrevious:s' => \@picardToolsMergeSamFilesPrevious,  #Comma separated list
+	   'pPtMD|pPicardToolsMarkduplicates:s' => \$parameter{'pPicardToolsMarkduplicates'}{'value'},  #PicardTools MarkDuplicates
+	   'ptp|picardToolsPath:s' => \$parameter{'picardToolsPath'}{'value'},  #Path to picardtools
+	   'pChB|pChanjoBuild:n' => \$parameter{'pChanjoBuild'}{'value'},   #Build central SQLiteDatabase
 	   'chbdb|chanjoBuildDb:s' => \$parameter{'chanjoBuildDb'}{'value'},  #Chanjo reference database
-	   'pCh_C|pChanjoCalculate:n' => \$parameter{'pChanjoCalculate'}{'value'},   # Chanjo coverage analysis
+	   'pChC|pChanjoCalculate:n' => \$parameter{'pChanjoCalculate'}{'value'},   # Chanjo coverage analysis
 	   'chccut|chanjoCalculateCutoff:n' => \$parameter{'chanjoCalculateCutoff'}{'value'},   # Cutoff used for completeness
-	   'pCh_I|pChanjoImport:n' => \$parameter{'pChanjoImport'}{'value'},   #Build family SQLiteDatabase
-	   'pCC_bedgc|pGenomeCoverageBED:n' => \$parameter{'pGenomeCoverageBED'}{'value'},
-	   'xcov|xCoverage:n' => \$parameter{'xCoverage'}{'value'},  #Sets max depth to calculate coverage
-	   'pCC_picmm|pPicardToolsCollectMultipleMetrics:n' => \$parameter{'pPicardToolsCollectMultipleMetrics'}{'value'},
-	   'pCCE_pichs|pPicardToolsCalculateHSMetrics:n' => \$parameter{'pPicardToolsCalculateHSMetrics'}{'value'},
-	   'extbl|exomeTargetBedInfileLists:s' => \@exomeTargetBedInfileLists,  #Comma separated list of target file for CalculateHsMetrics
-	   'extpbl|exomeTargetPaddedBedInfileLists:s' => \@exomeTargetPaddedBedInfileLists,  #Comma separated list of padded target file for CalculateHsMetrics
-	   'pRCP|pRCovPlots:n' => \$parameter{'pRCovPlots'}{'value'},
-	   'gatkpath|genomeAnalysisToolKitPath:s' => \$parameter{'genomeAnalysisToolKitPath'}{'value'},  #GATK whole path
-	   'gatkbdv|GATKBundleDownLoadVersion:s' => \$parameter{'GATKBundleDownLoadVersion'}{'value'},  #Sets the GATK FTP Bundle Download version
-	   'gatktmpd|GATKTempDirectory:s' => \$parameter{'GATKTempDirectory'}{'value'},  #GATK ReAlignerTargetCreator & BaseRecalibrator temporary directory
-	   'gatktpbl|GATKTargetPaddedBedIntervalLists:s' => \@GATKTargetPaddedBedIntervalLists,  #Comma separated list of padded target file set to be used in GATK
-	   'gatkdcov|GATKDownSampleToCoverage:n' => \$parameter{'GATKDownSampleToCoverage'}{'value'},  #GATK downsample to coverage
-	   'pGATK_real|pGATKRealigner:n' => \$parameter{'pGATKRealigner'}{'value'},  #GATK ReAlignerTargetCreator/IndelRealigner
-	   'gatkrealknset1|GATKReAlignerINDELKnownSet1:s' => \$parameter{'GATKReAlignerINDELKnownSet1'}{'value'},  #Known INDEL set to be used in GATK ReAlignerTargetCreator/IndelRealigner
-	   'gatkrealknset2|GATKReAlignerINDELKnownSet2:s' => \$parameter{'GATKReAlignerINDELKnownSet2'}{'value'},  #Known INDEL set to be used in GATK ReAlignerTargetCreator/IndelRealigner
-	   'pGATK_baserecal|pGATKBaseRecalibration:n' => \$parameter{'pGATKBaseRecalibration'}{'value'},  #GATK BaseRecalibrator/PrintReads
-	   'gatkbaserecalknset|GATKBaseReCalibrationSNPKnownSet:s' => \$parameter{'GATKBaseReCalibrationSNPKnownSet'}{'value'},  #Known SNP set to be used in GATK BaseRecalibrator/PrintReads
-	   'pGATK_hapcall|pGATKHaploTypeCaller:n' => \$parameter{'pGATKHaploTypeCaller'}{'value'},  #GATK Haplotypecaller
-	   'gatkhapcallsnpknset|GATKHaploTypeCallerSNPKnownSet:s' => \$parameter{'GATKHaploTypeCallerSNPKnownSet'}{'value'},  #Known SNP set to be used in GATK HaplotypeCaller
-	   'pGATK_genotype|pGATKGenoTypeGVCFs:n' => \$parameter{'pGATKGenoTypeGVCFs'}{'value'},  #Merge gVCF records using GATK GenotypeGVCFs
-	   'gatkgenotyperefgvcfinfile|GATKGenoTypeGVCFsRefGVCFInfile:s' => \$parameter{'GATKGenoTypeGVCFsRefGVCFInfile'}{'value'},  #GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping
-	   'pGATK_varrecal|pGATKVariantRecalibration:n' => \$parameter{'pGATKVariantRecalibration'}{'value'},  #GATK VariantRecalibrator/ApplyRecalibration
-	   'gatkexrefsnp|GATKExomeReferenceSNPs:s' => \$parameter{'GATKExomeReferenceSNPs'}{'value'},  #File of 33 exomes to power probabalistic model GATK Varrecal (SNVs) (Recieved from Måns, 120413)
-	   'gatkvarrecaltrhapmap|GATKVariantReCalibrationTrainingSetHapMap:s' => \$parameter{'GATKVariantReCalibrationTrainingSetHapMap'}{'value'},  #GATK VariantRecalibrator resource
-	   'gatkvarrecaltrdbsnp|GATKVariantReCalibrationTrainingSetDbSNP:s' => \$parameter{'GATKVariantReCalibrationTrainingSetDbSNP'}{'value'},  #GATK VariantRecalibrator resource
-	   'gatkvarrecaltrd1000Gsnp|GATKVariantReCalibrationTrainingSet1000GSNP:s' => \$parameter{'GATKVariantReCalibrationTrainingSet1000GSNP'}{'value'},  #GATK VariantRecalibrator resource
-	   'gatkvarrecaltromni|GATKVariantReCalibrationTrainingSet1000GOmni:s' => \$parameter{'GATKVariantReCalibrationTrainingSet1000GOmni'}{'value'},  #GATK VariantRecalibrator resource
-	   'gatkvarrecaltrdbmills|GATKVariantReCalibrationTrainingSetMills:s' => \$parameter{'GATKVariantReCalibrationTrainingSetMills'}{'value'},  #GATK VariantRecalibrator resource
-	   'gatkvarrecaltsfilterlevel|GATKVariantReCalibrationTSFilterLevel:s' => \$parameter{'GATKVariantReCalibrationTSFilterLevel'}{'value'},  #Truth sensativity level
-	   'pGATK_phaseTr|pGATKPhaseByTransmission:n' => \$parameter{'pGATKPhaseByTransmission'}{'value'},  #GATK PhaseByTransmission to produce phased genotype calls
-	   'pGATK_readPh|pGATKReadBackedPhasing:n' => \$parameter{'pGATKReadBackedPhasing'}{'value'},  #GATK ReadBackedPhasing
-	   'gatkreadphphaseqthr|GATKReadBackedPhasingPhaseQualityThresh:n' => \$parameter{'GATKReadBackedPhasingPhaseQualityThresh'}{'value'},  #quality score required to output phasing
-	   'pGATK_varevalall|pGATKVariantEvalAll:n' => \$parameter{'pGATKVariantEvalAll'}{'value'},  #GATK varianteval all variants
-	   'pGATK_varevalexome|pGATKVariantEvalExome:n' => \$parameter{'pGATKVariantEvalExome'}{'value'},  #GATK varianteval only exonic variants
-	   'gatkvarevaldbsnp|GATKVariantEvalDbSNP:s' => \$parameter{'GATKVariantEvalDbSNP'}{'value'},
-	   'gatkvarevaldbgold|GATKVariantEvalGold:s' => \$parameter{'GATKVariantReCalibrationTrainingSetMills'}{'value'},
-	   'pVEP|pVariantEffectPredictor:n' => \$parameter{'pVariantEffectPredictor'}{'value'},  #Annotation of variants using vep
-	   'vepdirpath|vepDirectoryPath:s'  => \$parameter{'vepDirectoryPath'}{'value'},  #path to vep script dir
-	   'vepdircache|vepDirectoryCache:s'  => \$parameter{'vepDirectoryCache'}{'value'},  #path to vep cache dir
-	   'vepfeat|vepFeatures:s'  => \@vepFeatures,  #Comma separated list
-	   'pVCFPar|pVCFParser:n' => \$parameter{'pVCFParser'}{'value'},
-	   'vepparservepp|vcfParserVEPParser:n' => \$parameter{'vcfParserVEPParser'}{'value'},
-	   'vepparserrf|vcfParserRangeFeatureFile:s'  => \$parameter{'vcfParserRangeFeatureFile'}{'value'},  #path to vcfParserRangeFeatureFile
-	   'vepparserrfac|vcfParserRangeFeatureAnnotationColumns:s'  => \@vcfParserRangeFeatureAnnotationColumns,  #Comma separated list
-	   'vepparsersf|vcfParserSelectFile:s'  => \$parameter{'vcfParserSelectFile'}{'value'},  #path to vcfParserSelectFile
-	   'vepparsersfmc|vcfParserSelectFileMatchingColumn:n' => \$parameter{'vcfParserSelectFileMatchingColumn'}{'value'},  #Column of HGNC Symbol in SelectFile
-	   'vepparsersfac|vcfParserSelectFeatureAnnotationColumns:s'  => \@vcfParserSelectFeatureAnnotationColumns,  #Comma separated list
-	   'snpeffpath|snpEffPath:s'  => \$parameter{'snpEffPath'}{'value'},  #path to snpEff directory
-	   'pSnpeff|pSnpEff:n' => \$parameter{'pSnpEff'}{'value'},
-	   'snpsiftanf|snpSiftAnnotationFiles:s'  => \@snpSiftAnnotationFiles,  #Comma separated list
-	   'snpsiftdbnsfpf|snpSiftDbNSFPFile:s'  => \$parameter{'snpSiftDbNSFPFile'}{'value'},  #DbNSFP file
-	   'snpsiftdbnsfpan|snpSiftDbNSFPAnnotations:s'  => \@snpSiftDbNSFPAnnotations,  #Comma separated list
-	   'pANVAR|pAnnovar:n' => \$parameter{'pAnnovar'}{'value'},  #Performs annovar filter gene, region and filter analysis
-	   'anvarpath|annovarPath:s'  => \$parameter{'annovarPath'}{'value'},  #path to annovar script dir
-	   'anvargbv|annovarGenomeBuildVersion:s'  => \$parameter{'annovarGenomeBuildVersion'}{'value'},
-	   'anvartn|annovarTableNames:s'  => \@annovarTableNames,  #Comma separated list
-	   'anvarstn|annovarSupportedTableNames:n' => \$parameter{'annovarSupportedTableNames'}{'value'},  #Generates a list of supported table names
+	   'pChI|pChanjoImport:n' => \$parameter{'pChanjoImport'}{'value'},   #Build family SQLiteDatabase
+	   'pGcB|pGenomeCoverageBED:n' => \$parameter{'pGenomeCoverageBED'}{'value'},
+	   'xcov|GenomeCoverageBEDMaxCoverage:n' => \$parameter{'GenomeCoverageBEDMaxCoverage'}{'value'},  #Sets max depth to calculate coverage
+	   'pPtCMM|pPicardToolsCollectMultipleMetrics:n' => \$parameter{'pPicardToolsCollectMultipleMetrics'}{'value'},
+	   'pPtCHS|pPicardToolsCalculateHSMetrics:n' => \$parameter{'pPicardToolsCalculateHSMetrics'}{'value'},
+	   'ptchsetl|exomeTargetBedInfileLists:s' => \@exomeTargetBedInfileLists,  #Comma separated list of target file for CalculateHsMetrics
+	   'ptchsetpl|exomeTargetPaddedBedInfileLists:s' => \@exomeTargetPaddedBedInfileLists,  #Comma separated list of padded target file for CalculateHsMetrics
+	   'pRcP|pRCovPlots:n' => \$parameter{'pRCovPlots'}{'value'},
+	   'gtp|genomeAnalysisToolKitPath:s' => \$parameter{'genomeAnalysisToolKitPath'}{'value'},  #GATK whole path
+	   'gbdv|GATKBundleDownLoadVersion:s' => \$parameter{'GATKBundleDownLoadVersion'}{'value'},  #Sets the GATK FTP Bundle Download version
+	   'gtd|GATKTempDirectory:s' => \$parameter{'GATKTempDirectory'}{'value'},  #GATK ReAlignerTargetCreator & BaseRecalibrator temporary directory
+	   'gtpl|GATKTargetPaddedBedIntervalLists:s' => \@GATKTargetPaddedBedIntervalLists,  #Comma separated list of padded target file set to be used in GATK
+	   'gdco|GATKDownSampleToCoverage:n' => \$parameter{'GATKDownSampleToCoverage'}{'value'},  #GATK downsample to coverage
+	   'pGrA|pGATKRealigner:n' => \$parameter{'pGATKRealigner'}{'value'},  #GATK ReAlignerTargetCreator/IndelRealigner
+	   'graks1|GATKReAlignerINDELKnownSet1:s' => \$parameter{'GATKReAlignerINDELKnownSet1'}{'value'},  #Known INDEL set to be used in GATK ReAlignerTargetCreator/IndelRealigner
+	   'graks2|GATKReAlignerINDELKnownSet2:s' => \$parameter{'GATKReAlignerINDELKnownSet2'}{'value'},  #Known INDEL set to be used in GATK ReAlignerTargetCreator/IndelRealigner
+	   'pGbR|pGATKBaseRecalibration:n' => \$parameter{'pGATKBaseRecalibration'}{'value'},  #GATK BaseRecalibrator/PrintReads
+	   'gbrkse|GATKBaseReCalibrationSNPKnownSet:s' => \$parameter{'GATKBaseReCalibrationSNPKnownSet'}{'value'},  #Known SNP set to be used in GATK BaseRecalibrator/PrintReads
+	   'pGhC|pGATKHaploTypeCaller:n' => \$parameter{'pGATKHaploTypeCaller'}{'value'},  #GATK Haplotypecaller
+	   'ghckse|GATKHaploTypeCallerSNPKnownSet:s' => \$parameter{'GATKHaploTypeCallerSNPKnownSet'}{'value'},  #Known SNP set to be used in GATK HaplotypeCaller
+	   'pGgT|pGATKGenoTypeGVCFs:n' => \$parameter{'pGATKGenoTypeGVCFs'}{'value'},  #Merge gVCF records using GATK GenotypeGVCFs
+	   'ggtgrl|GATKGenoTypeGVCFsRefGVCF:s' => \$parameter{'GATKGenoTypeGVCFsRefGVCF'}{'value'},  #GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping
+	   'pGvR|pGATKVariantRecalibration:n' => \$parameter{'pGATKVariantRecalibration'}{'value'},  #GATK VariantRecalibrator/ApplyRecalibration
+	   'gvrers|GATKExomeReferenceSNPs:s' => \$parameter{'GATKExomeReferenceSNPs'}{'value'},  #File of 33 exomes to power probabalistic model GATK Varrecal (SNVs) (Recieved from Måns, 120413)
+	   'gvrtsh|GATKVariantReCalibrationTrainingSetHapMap:s' => \$parameter{'GATKVariantReCalibrationTrainingSetHapMap'}{'value'},  #GATK VariantRecalibrator resource
+	   'gvrtss|GATKVariantReCalibrationTrainingSetDbSNP:s' => \$parameter{'GATKVariantReCalibrationTrainingSetDbSNP'}{'value'},  #GATK VariantRecalibrator resource
+	   'gvrtsg|GATKVariantReCalibrationTrainingSet1000GSNP:s' => \$parameter{'GATKVariantReCalibrationTrainingSet1000GSNP'}{'value'},  #GATK VariantRecalibrator resource
+	   'gvrtso|GATKVariantReCalibrationTrainingSet1000GOmni:s' => \$parameter{'GATKVariantReCalibrationTrainingSet1000GOmni'}{'value'},  #GATK VariantRecalibrator resource
+	   'gvrtsm|GATKVariantReCalibrationTrainingSetMills:s' => \$parameter{'GATKVariantReCalibrationTrainingSetMills'}{'value'},  #GATK VariantRecalibrator resource
+	   'gvrtsf|GATKVariantReCalibrationTSFilterLevel:s' => \$parameter{'GATKVariantReCalibrationTSFilterLevel'}{'value'},  #Truth sensativity level
+	   'pGpT|pGATKPhaseByTransmission:n' => \$parameter{'pGATKPhaseByTransmission'}{'value'},  #GATK PhaseByTransmission to produce phased genotype calls
+	   'pGrP|pGATKReadBackedPhasing:n' => \$parameter{'pGATKReadBackedPhasing'}{'value'},  #GATK ReadBackedPhasing
+	   'grpqth|GATKReadBackedPhasingPhaseQualityThreshold:n' => \$parameter{'GATKReadBackedPhasingPhaseQualityThreshold'}{'value'},  #quality score required to output phasing
+	   'pGvEA|pGATKVariantEvalAll:n' => \$parameter{'pGATKVariantEvalAll'}{'value'},  #GATK varianteval all variants
+	   'pGvEE|pGATKVariantEvalExome:n' => \$parameter{'pGATKVariantEvalExome'}{'value'},  #GATK varianteval only exonic variants
+	   'gveedbs|GATKVariantEvalDbSNP:s' => \$parameter{'GATKVariantEvalDbSNP'}{'value'},
+	   'gveedbg|GATKVariantEvalGold:s' => \$parameter{'GATKVariantReCalibrationTrainingSetMills'}{'value'},
+	   'pVeP|pVariantEffectPredictor:n' => \$parameter{'pVariantEffectPredictor'}{'value'},  #Annotation of variants using vep
+	   'vepp|vepDirectoryPath:s'  => \$parameter{'vepDirectoryPath'}{'value'},  #path to vep script dir
+	   'vepc|vepDirectoryCache:s'  => \$parameter{'vepDirectoryCache'}{'value'},  #path to vep cache dir
+	   'vepf|vepFeatures:s'  => \@vepFeatures,  #Comma separated list
+	   'pVcP|pVCFParser:n' => \$parameter{'pVCFParser'}{'value'},
+	   'vcpvt|vcfParserVepTranscripts:n' => \$parameter{'vcfParserVepTranscripts'}{'value'},
+	   'vcprff|vcfParserRangeFeatureFile:s'  => \$parameter{'vcfParserRangeFeatureFile'}{'value'},  #path to vcfParserRangeFeatureFile
+	   'vcprfa|vcfParserRangeFeatureAnnotationColumns:s'  => \@vcfParserRangeFeatureAnnotationColumns,  #Comma separated list
+	   'vcpsf|vcfParserSelectFile:s'  => \$parameter{'vcfParserSelectFile'}{'value'},  #path to vcfParserSelectFile
+	   'vcpsfm|vcfParserSelectFileMatchingColumn:n' => \$parameter{'vcfParserSelectFileMatchingColumn'}{'value'},  #Column of HGNC Symbol in SelectFile
+	   'vcpsfa|vcfParserSelectFeatureAnnotationColumns:s'  => \@vcfParserSelectFeatureAnnotationColumns,  #Comma separated list
+	   'snep|snpEffPath:s'  => \$parameter{'snpEffPath'}{'value'},  #path to snpEff directory
+	   'pSnE|pSnpEff:n' => \$parameter{'pSnpEff'}{'value'},
+	   'snesaf|snpSiftAnnotationFiles:s'  => \@snpSiftAnnotationFiles,  #Comma separated list
+	   'snesdbnsfp|snpSiftDbNSFPFile:s'  => \$parameter{'snpSiftDbNSFPFile'}{'value'},  #DbNSFP file
+	   'snesdbnsfpa|snpSiftDbNSFPAnnotations:s'  => \@snpSiftDbNSFPAnnotations,  #Comma separated list
+	   'pAnV|pAnnovar:n' => \$parameter{'pAnnovar'}{'value'},  #Performs annovar filter gene, region and filter analysis
+	   'anvp|annovarPath:s'  => \$parameter{'annovarPath'}{'value'},  #path to annovar script dir
+	   'anvgbv|annovarGenomeBuildVersion:s'  => \$parameter{'annovarGenomeBuildVersion'}{'value'},
+	   'anvtn|annovarTableNames:s'  => \@annovarTableNames,  #Comma separated list
+	   'anvstn|annovarSupportedTableNames:n' => \$parameter{'annovarSupportedTableNames'}{'value'},  #Generates a list of supported table names
 	   'anvarmafth|annovarMAFThreshold:n' => \$parameter{'annovarMAFThreshold'}{'value'},
-	   'pMerge_anvar|pMergeAnnotatedVariants:n' => \$parameter{'pMergeAnnotatedVariants'}{'value'},  #Merges annovar analysis results to one master file
-	   'mergeanvarte|mergeAnnotatedVariantsTemplateFile:s' => \$parameter{'mergeAnnotatedVariantsTemplateFile'}{'value'},  #Template file to create the specific family db master file
-	   'mergeanvardbf|mergeAnnotatedVariantsDbFile:s' => \$parameter{'mergeAnnotatedVariantsDbFile'}{'value'},  #db master file to use when collecting external data
-	   'mergeanvartese|mergeAnnotatedVariantsTemplateSelectFile:s' => \$parameter{'mergeAnnotatedVariantsTemplateSelectFile'}{'value'},  #Select template file to create the specific family db master file
-	   'mergeanvardbsef|mergeAnnotatedVariantsDbSelectFile:s' => \$parameter{'mergeAnnotatedVariantsDbSelectFile'}{'value'},  #Select db master file to use when collecting external data
-	   'pAdd_dp|pAddDepth:n' => \$parameter{'pAddDepth'}{'value'},  #Adds depth (DP) for nonvariants to master file (annovar_merged.txt)
-	   'pRankVar|pRankVariants:n' => \$parameter{'pRankVariants'}{'value'},  #Ranking variants
-	   'rs|rankscore:n'  => \$parameter{'rankScore'}{'value'},  #The rank score cut-off
-	   'gf|geneFile:s' => \$parameter{'geneFile'}{'value'},
-	   'cadd|caddWGSSNVs:n' => \$parameter{'caddWGSSNVs'}{'value'},
-	   'caddf|caddWGSSNVsFile:s' => \$parameter{'caddWGSSNVsFile'}{'value'},
-	   'cadd1kg|cadd1000Genomes:n' => \$parameter{'cadd1000Genomes'}{'value'},
-	   'cadd1kgf|cadd1000GenomesFile:s' => \$parameter{'cadd1000GenomesFile'}{'value'},
-	   'gene|wholeGene:n'  => \$parameter{'wholeGene'}{'value'},  #Allow compound pairs in intronic regions
-	   'pSCheck|pSampleCheck:n' => \$parameter{'pSampleCheck'}{'value'},  #QC for samples gender and relationship
-	   'pQCC|pQCCollect:n' => \$parameter{'pQCCollect'}{'value'},  #QCmetrics collect
-	   'QCCsampleinfo|QCCollectSampleInfoFile:s' => \$parameter{'QCCollectSampleInfoFile'}{'value'},  #SampleInfo yaml file produced by MIP
-	   'QCCregexp|QCCollectRegExpFile:s' => \$parameter{'QCCollectRegExpFile'}{'value'},  #Regular expression yaml file
-	   'pREM|pRemoveRedundantFiles:n' => \$parameter{'pRemoveRedundantFiles'}{'value'},
-	   'pAR|pAnalysisRunStatus:n' => \$parameter{'pAnalysisRunStatus'}{'value'},  #AnalysisRunStatus change flag in sampleInfo file if allowed to execute
+	   'pRaV|pRankVariants:n' => \$parameter{'pRankVariants'}{'value'},  #Ranking variants
+	   'ravrs|rankscore:n'  => \$parameter{'rankScore'}{'value'},  #The rank score cut-off
+	   'ravgf|geneFile:s' => \$parameter{'geneFile'}{'value'},
+	   'ravcs|caddWGSSNVs:n' => \$parameter{'caddWGSSNVs'}{'value'},
+	   'ravcsf|caddWGSSNVsFile:s' => \$parameter{'caddWGSSNVsFile'}{'value'},
+	   'ravc1kg|cadd1000Genomes:n' => \$parameter{'cadd1000Genomes'}{'value'},
+	   'ravc1kgf|cadd1000GenomesFile:s' => \$parameter{'cadd1000GenomesFile'}{'value'},
+	   'ravwg|wholeGene:n'  => \$parameter{'wholeGene'}{'value'},  #Allow compound pairs in intronic regions
+	   'pScK|pSampleCheck:n' => \$parameter{'pSampleCheck'}{'value'},  #QC for samples gender and relationship
+	   'pQcC|pQCCollect:n' => \$parameter{'pQCCollect'}{'value'},  #QCmetrics collect
+	   'qccsi|QCCollectSampleInfoFile:s' => \$parameter{'QCCollectSampleInfoFile'}{'value'},  #SampleInfo yaml file produced by MIP
+	   'qccref|QCCollectRegExpFile:s' => \$parameter{'QCCollectRegExpFile'}{'value'},  #Regular expression yaml file
+	   'pReM|pRemoveRedundantFiles:n' => \$parameter{'pRemoveRedundantFiles'}{'value'},
+	   'pArS|pAnalysisRunStatus:n' => \$parameter{'pAnalysisRunStatus'}{'value'},  #AnalysisRunStatus change flag in sampleInfo file if allowed to execute
 
     );
 
@@ -692,14 +686,11 @@ foreach my $orderParameterElement (@orderParameters) {  #Populate scriptParamete
 
 	$parameter{'sampleInfoFile'}{'default'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_qc_sampleInfo.yaml";
 	$parameter{'QCCollectSampleInfoFile'}{'default'} = $parameter{'sampleInfoFile'}{'default'};
-
-	$parameter{'mergeAnnotatedVariantsDbFile'}{'default'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_intersectCollect_db_master.txt";
-	$parameter{'mergeAnnotatedVariantsDbSelectFile'}{'default'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_intersectCollect_db_master.select.txt";
-	
     }
     if ($orderParameterElement eq "pedigreeFile") {  #Write QC for only pedigree data used in analysis                                                        
 	
 	if (defined($scriptParameter{'pedigreeFile'})) {
+
 	    `mkdir -p $scriptParameter{'outDataDir'}/$scriptParameter{'familyID'};`;
 	    &WriteYAML($scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/qc_pedigree.yaml", \%sampleInfo);
  
@@ -712,20 +703,6 @@ foreach my $orderParameterElement (@orderParameters) {  #Populate scriptParamete
 	    &SetAutoBuildFeature("mosaikAlignReference", \$referenceFileEndings{'mosaikAlignReference'}, \$humanGenomeReferenceNameNoEnding);
 	    &SetAutoBuildFeature("mosaikJumpDbStub", \$referenceFileEndings{'mosaikJumpDbStub'}, \$humanGenomeReferenceNameNoEnding);
 	    &SetAutoBuildFeature("bwaBuildReference", \$referenceFileEndings{'bwaBuildReference'}, \$humanGenomeReferenceNameNoEnding);	
-	}
-    }
-    if ($orderParameterElement eq "mergeAnnotatedVariantsTemplateFile") {  #Check that paths in master template exists
-
-	if (defined($scriptParameter{'mergeAnnotatedVariantsTemplateFile'})) {
-
-	    &CheckTemplateFilesPaths(\($scriptParameter{'referencesDir'}."/".$scriptParameter{'mergeAnnotatedVariantsTemplateFile'}), "mergeAnnotatedVariantsTemplateFile")	    
-	}
-    }
-    if ($orderParameterElement eq "mergeAnnotatedVariantsTemplateSelectFile") {  #Check that paths in master template exists
-	
-	if (defined($scriptParameter{'mergeAnnotatedVariantsTemplateSelectFile'})) {
-	    
-	    &CheckTemplateFilesPaths(\($scriptParameter{'referencesDir'}."/".$scriptParameter{'mergeAnnotatedVariantsTemplateSelectFile'}), "mergeAnnotatedVariantsTemplateSelectFile")	    
 	}
     }
 } 
@@ -1210,6 +1187,13 @@ if ($scriptParameter{'pVCFParser'} > 0) {  #Run VariantEffectPredictor. Done per
     }
 }
 
+if ($scriptParameter{'pSnpEff'} > 0) {  #Run snpEff. Done per family
+
+    &PrintToFileHandles(\@printFilehandles, "\nSnpEff\n");
+
+    &SnpEff($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
+}
+
 if ($scriptParameter{'pAnnovar'} > 0) {  #Run Annovar. Done per family
 
     &PrintToFileHandles(\@printFilehandles, "\nAnnovar\n");
@@ -1227,13 +1211,6 @@ if ($scriptParameter{'pAnnovar'} > 0) {  #Run Annovar. Done per family
     &Annovar($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 }
 
-if ($scriptParameter{'pSnpEff'} > 0) {  #Run snpEff. Done per family
-
-    &PrintToFileHandles(\@printFilehandles, "\nSnpEff\n");
-
-    &SnpEff($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
-}
-
 if ($scriptParameter{'pGATKVariantEvalAll'} > 0) {  #Run GATK VariantEval for all variants. Done per sampleID
 
     &PrintToFileHandles(\@printFilehandles, "\nGATK VariantEval All\n");
@@ -1244,14 +1221,6 @@ if ($scriptParameter{'pGATKVariantEvalAll'} > 0) {  #Run GATK VariantEval for al
 	
 	&GATKVariantEvalAll($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'}, "BOTH", $scriptParameter{'familyID'});
     }
-}
-
-if ($scriptParameter{'pMergeAnnotatedVariants'} > 0) {  #Run MergeAnnotationVariants using intersectCollect.pl. Done per family
-
-    &PrintToFileHandles(\@printFilehandles, "\nMergeAnnotatedVariants\n");
-
-    &MergeAnnotatedVariants($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
-
 }
 
 if ($scriptParameter{'pGATKVariantEvalExome'} > 0) {  #Run GATK VariantEval for exome variants. Done per sampleID
@@ -1265,13 +1234,6 @@ if ($scriptParameter{'pGATKVariantEvalExome'} > 0) {  #Run GATK VariantEval for 
 	
 	&GATKVariantEvalExome($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'}, "BOTH", $scriptParameter{'familyID'});
     }
-}
-
-if ($scriptParameter{'pAddDepth'} > 0) {  #Run AddDepth using add_depth.pl. Done per family
-
-    &PrintToFileHandles(\@printFilehandles, "\nAddDepth\n");
-
-    &AddDp($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 }
 
 if ($scriptParameter{'pRankVariants'} > 0) {  #Run RankVariants. Done per family
@@ -1623,7 +1585,7 @@ sub RankVariants {
 
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK/candidates/ranking";
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pSnpEff'}{'fileEnding'};
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pAnnovar'}{'fileEnding'};
     my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pRankVariants'}{'fileEnding'};
     my $analysisType = "";
 
@@ -1705,266 +1667,6 @@ sub RankVariants {
     }
 }
 
-sub AddDp { 
-###Adds depth (=DP) for all nonvariants pos for all chr (and subjects) to create a master file containing all annovar information and DP for nonvariants in annovar_merged.txt master file. NOTE: Overwrites current ..annovar_merged.txt file. 
-
-    my $familyID = $_[0];  #familyID NOTE: not sampleid  
-    my $aligner = $_[1];
-    my $callType = $_[2];  #SNV,INDEL or BOTH 
-
-    my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
-    my $nrCores = 1;
-
-    &ProgramPreRequisites($familyID, "AddDepth", $aligner."/GATK", $callType, $FILEHANDLE, $nrCores, 10);
-    
-    my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
-    my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pMergeAnnotatedVariants'}{'fileEnding'};
-    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pAddDepth'}{'fileEnding'};
-    my $coreCounter=1;
-    my $analysisType = "";
-
-    for (my $VEPOutputFilesCounter=0;$VEPOutputFilesCounter<$VEPOutputFiles;$VEPOutputFilesCounter++) {
-
-	if ($VEPOutputFiles == 2) {
-
-	    $analysisType = ".selected";  #SelectFile variants
-	}
-#Find all "./." per sample ID and print chr pos to new file (mpileup -l format)
-	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  #For all sample ids, find nonvariants
-	    
-	    &PrintWait(\$sampleIDCounter, \$nrCores, \$coreCounter, $FILEHANDLE);
-	    
-	    print $FILEHANDLE "#Find all './.' per sampleID and print chrosome position to new file (mpileup -l format)", "\n";
-	    
-	    print $FILEHANDLE q?perl -F'\t' -nae' if ($_=~ /?.$sampleIDs[$sampleIDCounter].q?\S+\.\/\./ ) { print "$F[0] $F[1]","\n"; }' ?;  #print chromosome and start for sampleID
-	    print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".txt ";  #InFile
-	    print $FILEHANDLE "> ".$outFamilyDirectory."/".$sampleIDs[$sampleIDCounter]."_nonvariants.txt &", "\n\n";  #OutFile
-	}
-	print $FILEHANDLE "wait", "\n\n";
-    
-	print $FILEHANDLE "#Samples indirectory (BAM-files)", "\n\n";  #Indirectory for sample BAM-files
-    
-##Find depth (Only proper pairs)
-	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  #For all sample ids, find nonvariants
-	    
-	    my ($infile, $PicardToolsMergeSwitch) = CheckIfMergedFiles($sampleIDs[$sampleIDCounter]);
-	    my $sampleIDinfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'pPicardToolsMarkduplicates'}{'fileEnding'};
-	    $coreCounter=1;  #Reset
-	    
-	    if ($sampleIDCounter == $coreCounter*$nrCores) {  #Using only '$nrCores' cores 
-		
-		print $FILEHANDLE "wait", "\n\n";
-		$coreCounter=$coreCounter+1;
-	    }
-	    print $FILEHANDLE "samtools mpileup ";
-	    print $FILEHANDLE "-A ";  #count anomalous read pairs
-	    print $FILEHANDLE "-l ".$outFamilyDirectory."/".$sampleIDs[$sampleIDCounter]."_nonvariants.txt ";  #list of positions (chr pos) or regions (BED)
-	    
-	    if ($PicardToolsMergeSwitch == 1) {  #Files was merged previously
-		
-		print $FILEHANDLE $scriptParameter{'outDataDir'}."/".$sampleIDs[$sampleIDCounter]."/".$aligner."/".$infile.$sampleIDinfileEnding.".bam ";  #InFile (BAM-file)
-	    }
-	    else {  #No previous merge - list all files at once 
-		
-		for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleIDs[$sampleIDCounter]} });$infileCounter++) {  #For all infiles per lane
-		    
-		    my $infile = $infilesLaneNoEnding{$sampleIDs[$sampleIDCounter]}[$infileCounter];
-		    print $FILEHANDLE $scriptParameter{'outDataDir'}."/".$sampleIDs[$sampleIDCounter]."/".$aligner."/".$infile.$sampleIDinfileEnding.".bam ";  #InFile (BAM-file)
-		}
-	    }
-	    print $FILEHANDLE "| ";  #Pipe
-	    print $FILEHANDLE q?perl -F'\t' -nae' print $F[0],"\t", $F[1],"\t", $F[3], "\n";' ?;  #only print chr coordinates 
-	    print $FILEHANDLE "> ".$outFamilyDirectory."/".$sampleIDs[$sampleIDCounter]."_mpileup_nonvariants.txt &", "\n\n";  #OutFile	
-	}
-	print $FILEHANDLE "wait", "\n\n";
-    
-	print $FILEHANDLE "#Add depth to original file", "\n";
-	print $FILEHANDLE "perl ".$scriptParameter{'inScriptDir'}."/add_depth.pl ";
-	print $FILEHANDLE "-i ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".txt ";  #InFile
-	
-	if ($humanGenomeReferenceSource eq "hg19") {
-	    
-	    print $FILEHANDLE "-prechr 1";  #Use chromosome prefix
-	}
-	print $FILEHANDLE "-infnv ";  #No variant files from mpileup
-	
-	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {#For all sample ids mpileup nonvariant files
-	    
-	    if ($sampleIDCounter eq scalar(@sampleIDs)-1) {
-		
-		print $FILEHANDLE $outFamilyDirectory."/".$sampleIDs[$sampleIDCounter]."_mpileup_nonvariants.txt ";
-	    }
-	    else {
-		
-		print $FILEHANDLE $outFamilyDirectory."/".$sampleIDs[$sampleIDCounter]."_mpileup_nonvariants.txt,";	
-	    }
-	}
-	print $FILEHANDLE "-s ";  #SampleIDs 
-
-	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {#For all sample ids mpileup nonvariant files
-	    
-	    if ($sampleIDCounter eq scalar(@sampleIDs)-1) {
-		
-		print $FILEHANDLE $sampleIDs[$sampleIDCounter]." ";
-	    }
-	    else {
-		
-		print $FILEHANDLE $sampleIDs[$sampleIDCounter].",";		    
-	    }
-	}
-	print $FILEHANDLE "-o ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType."_adp.txt", "\n\n"; 
-
-	print $FILEHANDLE "mv ";  #Overwrites original annovar_merge.txt file
-	print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType."_adp.txt ";  #Add_depth outfile
-	print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".txt", "\n\n";  #Original file
-    }
-    close($FILEHANDLE);   
-
-    if ( ($scriptParameter{'pAddDepth'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-
-	&FIDSubmitJob(0, $familyID, 1, $parameter{'pAddDepth'}{'chain'}, $fileName, 0);
-    }
-}
-
-sub MergeAnnotatedVariants { 
-###Merges (& annotates) all variants for all sampleIDs within family to create a master file containing all annotated information
-    
-    my $familyID = $_[0];  #familyID NOTE: not sampleid 
-    my $aligner = $_[1];
-    my $callType = $_[2];  #SNV,INDEL or BOTH 
-
-    my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
-    my $time = 4;
-    my $numberOfCores = 1;  #Set the number of cores depending on exome/rapid or WGS
-
-    if ($scriptParameter{'analysisType'} eq "genomes") {  #WGS analysis
-	
-	$time = 30;
-	$numberOfCores = 6; 
-    }
-
-    &ProgramPreRequisites($familyID, "MergeAnnotatedVariants", $aligner."/GATK", $callType, $FILEHANDLE, $numberOfCores, $time);
-
-    my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
-    my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pAnnovar'}{'fileEnding'};
-    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pMergeAnnotatedVariants'}{'fileEnding'};
-    my @additionalVCFColumns;
-    my $vcfColumns;
-    my $sampleIDcolumnsCondition;
-    my $analysisType = "";
-
-    ##Determine number of VEP columns
-    if ($scriptParameter{'pVariantEffectPredictor'} == 1) {
-
-	my $AddtionalVEPOutColumnCounter = 3;  #HGNC_transcript_info, Functional_annotation, Gene_annotation (constant)
-	splice(@additionalVCFColumns, scalar(@additionalVCFColumns), 0, "HGNC_transcript_info", "Functional_annotation", "GeneticRegionAnnotation");
-
-	for (my $vepFeatureCounter=0;$vepFeatureCounter<scalar(@vepFeatures);$vepFeatureCounter++) {
-	 
-	    if ($vepFeatures[$vepFeatureCounter] eq "sift") {
-		
-		$AddtionalVEPOutColumnCounter++;
-		splice(@additionalVCFColumns, scalar(@additionalVCFColumns), 0, "Sift");
-	    }
-	    if ($vepFeatures[$vepFeatureCounter] eq "polyphen") {
-
-		$AddtionalVEPOutColumnCounter++;
-		splice(@additionalVCFColumns, scalar(@additionalVCFColumns), 0, "PolyPhen");
-	    }
-	}
-	$vcfColumns = scalar(@sampleIDs)+6+$AddtionalVEPOutColumnCounter;  #Requires CMMS format (chr,start,stop,ref_allele,alt_allel,GT_Call_Filter,VEPColumns,IDN...)
-    }
-    else {
-
-	$vcfColumns = scalar(@sampleIDs)+6;  #Requires CMMS format (chr,start,stop,ref_allele,alt_allel,GT_Call_Filter,IDN...)
-    }    
-    $sampleIDcolumnsCondition = $vcfColumns - scalar(@sampleIDs);
-##Add relative path to db_template for annovar files 
-    my ($volume,$directories,$file) = File::Spec->splitpath($scriptParameter{'outDataDir'});
-    my @directories = File::Spec->splitdir($directories);
-    my $regExpOutDataFile;
-
-    for (my $directoryCount=1;$directoryCount<scalar(@directories);$directoryCount++) {
-       
-	$regExpOutDataFile .= "\\/".$directories[$directoryCount];  #Create escape char for / in later regexp
-    }
-    $regExpOutDataFile .= $file;
-    
-##Add relative path to db_template for reference files
-    ($volume,$directories,$file) = File::Spec->splitpath($scriptParameter{'referencesDir'});
-    @directories = File::Spec->splitdir( $directories );
-    my $regExpReferenceDirectory;	
-
-    for (my $directoryCount=1;$directoryCount<scalar(@directories);$directoryCount++) {
-	
-	$regExpReferenceDirectory .= "\\/".$directories[$directoryCount];  #Create escape char for / in later regexp
-    }
-    $regExpReferenceDirectory .= $file;
-
-    for (my $VEPOutputFilesCounter=0;$VEPOutputFilesCounter<$VEPOutputFiles;$VEPOutputFilesCounter++) {
-
-##Create family specific template
-	print $FILEHANDLE "#Create db master file from template", "\n";
-	print $FILEHANDLE q?perl -nae '?;
-##Add additional columns
-	my $columnHeaders = join(",", @additionalVCFColumns);
-	print $FILEHANDLE q?my @additionalVCFColumns = (?.$columnHeaders;
-	print $FILEHANDLE q?); my $additionalColumnCounter; ?;
-	
-	print $FILEHANDLE q?if ($_=~/outinfo/i) { if ($_=~/IDN!/) { my $columnString; my $sampleIDString; for (my $columnCounter=6;$columnCounter<?.$vcfColumns.q?;$columnCounter++) { if ($columnCounter<?.$sampleIDcolumnsCondition.q?) { $columnString.="$additionalVCFColumns[$additionalColumnCounter]=>0_$columnCounter,"; $additionalColumnCounter++;} elsif ($columnCounter ==?.$vcfColumns.q?-1) { $sampleIDString.="IDN_GT_Call=>0_$columnCounter";} else { $sampleIDString.="IDN_GT_Call=>0_$columnCounter,";} } $columnString .= $sampleIDString ;s/IDN!/$columnString/g; print $_; } next;} elsif ($_=~s/FDN\!_|FDN\!/?.$familyID.q?/g) { if($_=~s/^ODF!/?.$regExpOutDataFile.q?/g) {} if($_=~s/ALIGNER!/?.$aligner.q?/g) {} if($_=~s/FILEENDING!_/?.$infileEnding.q?/g) {} if($_=~s/CALLTYPE!/?.$callType.q?/g) {} if ($_=~/IDN!/) { my $columnString; for (my $columnCounter=6;$columnCounter<?.$vcfColumns.q?;$columnCounter++) { if ($columnCounter<?.$vcfColumns.q?-1) { $columnString.="$columnCounter,"} else { $columnString.="$columnCounter\t"} } s/IDN!/$columnString/g; print $_;} else { print $_;} } else { if($_=~s/^RD!/?.$regExpReferenceDirectory.q?/g) {} print $_;}' ?;
-
-	##Include potential SelectFile variants
-	if ($VEPOutputFilesCounter == 1) {
-	    
-	    print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'mergeAnnotatedVariantsTemplateSelectFile'}." ";  #Infile
-	    print $FILEHANDLE "> ".$scriptParameter{'mergeAnnotatedVariantsDbSelectFile'}, "\n\n";  #OutFile
-	}
-	else {  #Orphan analysis
-	 
-	    print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'mergeAnnotatedVariantsTemplateFile'}." ";  #Infile
-	    print $FILEHANDLE "> ".$scriptParameter{'mergeAnnotatedVariantsDbFile'}, "\n\n";  #OutFile
-	}
-	print $FILEHANDLE "perl ".$scriptParameter{'inScriptDir'}."/intersectCollect.pl ";
-
-	##Include potential SelectFile variants
-	if ($VEPOutputFilesCounter == 1) {
-
-	    $analysisType = ".selected";  #SelectFile variants
-	    print $FILEHANDLE "-db ".$scriptParameter{'mergeAnnotatedVariantsDbSelectFile'}." ";
-	}
-	else {
-
-	    print $FILEHANDLE "-db ".$scriptParameter{'mergeAnnotatedVariantsDbFile'}." ";
-	}
-	if ($humanGenomeReferenceSource eq "hg19") {
-	    
-	    print $FILEHANDLE "-prechr 1 ";  #Use chromosome prefix
-	}
-	
-	print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".txt ";
-	print $FILEHANDLE "-s ";
-
-	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { 
-	    
-	    if ($sampleIDCounter eq scalar(@sampleIDs)-1) {
-		
-		print $FILEHANDLE $sampleIDs[$sampleIDCounter], "\n\n";
-	    }
-	    else {
-		
-		print $FILEHANDLE $sampleIDs[$sampleIDCounter], ",";
-	    }    
-	}
-    }
-    close($FILEHANDLE);   
-    
-    if ( ($scriptParameter{'pMergeAnnotatedVariants'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
-
-	&FIDSubmitJob(0, $familyID, 1, $parameter{'pMergeAnnotatedVariants'}{'chain'}, $fileName, 0);
-    }
-}
 
 sub GATKVariantEvalExome { 
 ###GATK VariantEval for exome variants
@@ -2184,6 +1886,7 @@ sub GATKVariantEvalExome {
     }
 }
 
+
 sub GATKVariantEvalAll { 
 ###GATK VariantEval for all variants
 
@@ -2308,8 +2011,9 @@ sub GATKVariantEvalAll {
     }
 }
 
+
 sub Annovar { 
-###Filter SNVs by gene, region and databases
+###Annotate and filter SNVs by gene, region and databases
 
     my $familyID = $_[0];  #familyID NOTE: not sampleid 
     my $aligner = $_[1];
@@ -2323,134 +2027,106 @@ sub Annovar {
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pAnnovar'}{'fileEnding'};
-    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pVCFParser'}{'fileEnding'};
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pSnpEff'}{'fileEnding'};
     my $analysisType = "";
 
     for (my $VEPOutputFilesCounter=0;$VEPOutputFilesCounter<$VEPOutputFiles;$VEPOutputFilesCounter++) {
 
 	if ($VEPOutputFilesCounter == 1) {
 
-	    $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pVCFParser'}{'fileEnding'};
 	    $analysisType = ".selected";  #SelectFile variants
 	}
 	
-	print $FILEHANDLE "#Prepare infile to Annovar format from GATK vcf4", "\n";
-	print $FILEHANDLE "perl ".$scriptParameter{'annovarPath'}."/convert2annovar.pl ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".vcf ";
-	print $FILEHANDLE "-format vcf4old ";  #the format of the input file
-	print $FILEHANDLE "-includeinfo ";  #specify that the output should contain additional information in the input line
-	print $FILEHANDLE "> ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType."_temp", "\n\n";  #Annovar script
-    
-	print $FILEHANDLE "#Intersect for all samples within familyid and remake file to fit annovar format and subsequent filtering", "\n";
-	print $FILEHANDLE q?perl -nae 'my @format; my $formatInfo;chomp($_); if ($_=~/^#/) {print $_;next;} if ($_=~/;set=2/) {} else{ if($F[11] eq "PASS") {} else {$F[11] = "PRES";} @format = split(":",$F[13]); print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t", $F[11], "\t"; ?;
-
-	##Include any addtional columns from VEPParse
-	my $numberofFields = 14+scalar(@sampleIDs);  #First sample genotype starts at col 14 (start 0, perl).
-	print $FILEHANDLE q?for (my $fieldsCounter=?.$numberofFields.q?;$fieldsCounter<scalar(@F);$fieldsCounter++) {print @F[$fieldsCounter], "\t";} ?;
-    
-	my @sampleIDLexSorts = sort @sampleIDs;  #Use lexiographically sorted sample IDNs since GATK HaplotypeCaller/UnifiedGT assigns columns in lexigraphical order. @sampleIDs is not lexiographically sorted if taken straight from the command line. This lex sort ensures that if the user did not supply samples in lex order, there will be no sample column swaping. 
-	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDLexSorts);$sampleIDCounter++) {  #For all sample ids
-	
-	    my $samplecolumn = 14+$sampleIDCounter;  #First sample genotype starts at col 14 (start 0, perl). NOTE: Important that samples for HaplotypeCaller/UnifiedGT has same order. Otherwise there will be a sample mix-up.
-	
-	    if ($sampleIDCounter eq scalar(@sampleIDLexSorts)-1) {	#Ensure correct order as long as HaplotypeCAller/UnifiedGT uses lex sort. 
-		print $FILEHANDLE q?print "?.$sampleIDLexSorts[$sampleIDCounter].q?:"; @formatInfo = split(":",$F[?.$samplecolumn.q?]); for (my $formatInfoCounter=0;$formatInfoCounter<scalar(@formatInfo);$formatInfoCounter++) { print "$format[$formatInfoCounter]=$formatInfo[$formatInfoCounter]"; if ( $formatInfoCounter<scalar(@formatInfo)-1 ) {print ":"} } print "\n"; } ?;
-	    }
-	    else {
-		print $FILEHANDLE q?print "?.$sampleIDLexSorts[$sampleIDCounter].q?:"; @formatInfo = split(":",$F[?.$samplecolumn.q?]); for (my $formatInfoCounter=0;$formatInfoCounter<scalar(@formatInfo);$formatInfoCounter++) { print "$format[$formatInfoCounter]=$formatInfo[$formatInfoCounter]"; if ( $formatInfoCounter<scalar(@formatInfo)-1 ) {print ":"} } print "\t"; ?;
-	    }
-	}
-
-	print $FILEHANDLE "' ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType."_temp ";  #InFile from just created convert2annovar.pl outfile
-	print $FILEHANDLE "> ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType, "\n\n";  #OutFile
-	
-	print $FILEHANDLE "#Perform sort since Annovar is not garantied to produce a numerically sorted outfile", "\n";
-	print $FILEHANDLE "sort ";
-	print $FILEHANDLE "-k1,1 -k2,2n ";  #Numerically by chromosome and start position
-	print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType." ";  #Infile
-	print $FILEHANDLE "> ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType."_sorted ", "\n\n";  #Outfile
-
-	print $FILEHANDLE "mv ";
-	print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType."_sorted ";  #Infile
-	print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType, "\n\n";  #Outfile
-
-	$infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'pAnnovar'}{'fileEnding'};
 	my $coreCounter=1;   	    
+	
+	#&PrintWait(\$tableNamesCounter, \$nrCores, \$coreCounter, $FILEHANDLE);	
+	
+	print $FILEHANDLE "perl ".$scriptParameter{'annovarPath'}."/table_annovar.pl ";  #Annovar script 
+	print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".vcf ";  #Infile
+	print $FILEHANDLE $scriptParameter{'annovarPath'}."/humandb ";  #annovar/humandb directory is assumed
+	print $FILEHANDLE "-buildver ".$scriptParameter{'annovarGenomeBuildVersion'}." ";  #Genome build version
+	print $FILEHANDLE "-vcfinput ";  #Input format
+	print $FILEHANDLE "--remove ";  #Remove all temporary files
+	print $FILEHANDLE "-out ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf ";  #Outfile prefix
+	print $FILEHANDLE "-protocol ";  #Comma-delimited string specifying database protocol
 
+	print $FILEHANDLE join(',', @annovarTableNames)." ";  #Databases to use
+
+	print $FILEHANDLE "-operation ";  #Comma-delimited string specifying type of operation	
 	for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@annovarTableNames);$tableNamesCounter++) {  #For all specified table names
 
-	    &PrintWait(\$tableNamesCounter, \$nrCores, \$coreCounter, $FILEHANDLE);	
+	    if ($annovarTables{$annovarTableNames[$tableNamesCounter]}{'annotation'} eq "geneanno") {
 	
-	    print $FILEHANDLE "perl ".$scriptParameter{'annovarPath'}."/annotate_variation.pl ";  #Annovar script 
-	    print $FILEHANDLE "-".$annovarTables{$annovarTableNames[$tableNamesCounter]}{'annotation'}." ";  #Annotation option	
-
+		print $FILEHANDLE "g";
+	    }
+	    elsif ($annovarTables{$annovarTableNames[$tableNamesCounter]}{'annotation'} eq "regionanno") {
+		
+		print $FILEHANDLE "r";
+	    }
+	    elsif ($annovarTables{$annovarTableNames[$tableNamesCounter]}{'annotation'} eq "filter") {
+		
+		print $FILEHANDLE "f";
+	    }
+	    unless ($tableNamesCounter == scalar(@annovarTableNames) - 1) {
+		
+		print $FILEHANDLE ",";
+	    }
+	}
+	print $FILEHANDLE " ";
+	
+	print $FILEHANDLE "-argument ";
+	for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@annovarTableNames);$tableNamesCounter++) {  #For all specified table names
+	    
 	    if ($annovarTables{$annovarTableNames[$tableNamesCounter]}{'annotation'} eq "geneanno" ) {  #Use hgvs output style
 		
-		print $FILEHANDLE "-hgvs ";
-		print $FILEHANDLE "-exonicsplicing ";  #Annotate variants near intron/exonic borders
+		print $FILEHANDLE "'--exonicsplicing'";  #Annotate variants near intron/exonic borders
 	    }
-	    print $FILEHANDLE "-buildver ".$scriptParameter{'annovarGenomeBuildVersion'}." ";
-	
-	    if($annovarTables{$annovarTableNames[$tableNamesCounter]}{'dbtype'} eq "generic") {
-	    
-		print $FILEHANDLE "-dbtype generic -genericdbfile ".$annovarTables{$annovarTableNames[$tableNamesCounter]}{'file'}[0]." ";  #generic db file
-		print $FILEHANDLE "--outfile ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType."_".$annovarTables{$annovarTableNames[$tableNamesCounter]}{'file'}[0]." ";  #OutFile
-	    }	
-	    else{
-		
-		print $FILEHANDLE "-dbtype ".$annovarTableNames[$tableNamesCounter]." ";  #db file
-	    }
-	    if ($annovarTableNames[$tableNamesCounter] =~/^1000g/) {  #Set MAF TH
+	    unless ($tableNamesCounter == scalar(@annovarTableNames) - 1) {
 
-		print $FILEHANDLE "--maf_threshold ".$scriptParameter{'annovarMAFThreshold'}." ";
+		print $FILEHANDLE ",";
 	    }
-	    if ( ($annovarTableNames[$tableNamesCounter] =~/^snp/) || ($annovarTableNames[$tableNamesCounter] =~/_esp/) ) {#Set MAF TH
-		
-		print $FILEHANDLE "--score_threshold ".$scriptParameter{'annovarMAFThreshold'}." ";  #score_threshold since Annovar reserved the maf_threshold for 1000G 
-	    }
-	    print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType." ";  #Infile. Outfile is named using infile prefix except for generic files 
-	    print $FILEHANDLE $scriptParameter{'annovarPath'}."/humandb &", "\n\n";  #annovar/humandb directory is assumed
+	}
+	print $FILEHANDLE "\n\n";
+
+	for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@annovarTableNames);$tableNamesCounter++) {  #For all specified table names
 
 	    if ($annovarTableNames[$tableNamesCounter] =~/ensGene|refGene/) {  #Extra round to catch MT for refSeq as well
 	    
-		print $FILEHANDLE "grep MT ";  #Only MT variants
-		print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType." ";  #Infile.
-		print $FILEHANDLE "> ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".GRCh37_MT"." ", "\n\n";  #outfile taht can be empty for exomes or MT for WGS
+		#print $FILEHANDLE "grep MT ";  #Only MT variants
+		#print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".vcf ";  #Infile
+		#print $FILEHANDLE "> ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".GRCh37_MT"." ", "\n\n";  #outfile that can be empty for exomes or MT for WGS
 
-		print $FILEHANDLE "perl ".$scriptParameter{'annovarPath'}."/annotate_variation.pl ";  #Annovar script 
-		print $FILEHANDLE "-".$annovarTables{$annovarTableNames[$tableNamesCounter]}{'annotation'}." ";  #Annotation option
-		print $FILEHANDLE "-hgvs ";
-		print $FILEHANDLE "-exonicsplicing ";  #Annotate variants near intron/exonic borders
+		print $FILEHANDLE "perl ".$scriptParameter{'annovarPath'}."/table_annovar.pl ";  #Annovar script 
+		print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".vcf ";  #Infile
+		#print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".GRCh37_MT ";  #Infile.
+		print $FILEHANDLE $scriptParameter{'annovarPath'}."/humandb ";  #annovar/humandb directory is assumed
+		print $FILEHANDLE "-vcfinput ";  #Input format
+		print $FILEHANDLE "--remove ";  #Remove all temporary files
 		print $FILEHANDLE "-buildver GRCh37_MT ";
-		print $FILEHANDLE "-dbtype ensGene ";  #db file. NOTE: RefSeq does not have mitochondria gene definition. So ANNOVAR use either UCSC Known Gene or Ensembl Gene.
-		print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".GRCh37_MT ";  #Infile.
-		print $FILEHANDLE "--outfile ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".GRCh37_MT"." ";  #OutFile prefix
-		print $FILEHANDLE $scriptParameter{'annovarPath'}."/humandb &", "\n\n";  #annovar/humandb directory is assumed
-		$nrCores--;  #Reduce to make sure that print statement comes at correct interval since two calls are made for 1 annovar table
+		print $FILEHANDLE "-protocol ensGene ";  #Comma-delimited string specifying database protocol. NOTE: RefSeq does not have mitochondria gene definition. So ANNOVAR use either UCSC Known Gene or Ensembl Gene.
+		print $FILEHANDLE "-operation g ";  #Comma-delimited string specifying type of operation	
+		print $FILEHANDLE "-argument -exonicsplicing ";  #Annotate variants near intron/exonic borders 
+		print $FILEHANDLE "-out ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType,"\n\n";  #OutFile prefix
+		#$nrCores--;  #Reduce to make sure that print statement comes at correct interval since two calls are made for 1 annovar table
 	    }
 	}
 	print $FILEHANDLE "wait", "\n\n";
-    
-	for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@annovarTableNames);$tableNamesCounter++) {  #For all specified table names
+
+	##Merge vcf files to 1 
+	print $FILEHANDLE "\n#GATK CombineVariants","\n\n";
+	print $FILEHANDLE "java -Xmx4g ";
 	
-	    if ($annovarTableNames[$tableNamesCounter] =~/ensGene|refGene/) {  #Extra round to concatenate MT to "variant function" and "exonic.variant" function
+	if ($scriptParameter{'javaUseLargePages'} ne "no") {
 	    
-		my @files = ("variant_function", "exonic_variant_function");
-		
-		for (my $fileCounter=0;$fileCounter<scalar(@files);$fileCounter++) {  #For variant.function and exonic.function variants
-		
-		    print $FILEHANDLE "cat ";  #Concatenate
-		    print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".".$files[$fileCounter]." ";  #Infile. 
-		    print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".GRCh37_MT.".$files[$fileCounter]." ";  # MT inFile
-		    print $FILEHANDLE "> ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".".$files[$fileCounter].".combined", "\n\n";  #Outfile
-		    
-		    print $FILEHANDLE "mv ";  #replace original file with original information and MT info (if present)
-		    print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".".$files[$fileCounter].".combined ";  #Outfile
-		    print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".".$files[$fileCounter], "\n\n";  #Original file	
-		}
-	    }
+	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
 	}
-	
-	print $FILEHANDLE "rm ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType."_temp", "\n\n";  #Remove temp file
+	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
+	print $FILEHANDLE "-T CombineVariants ";  #Type of analysis to run
+	print $FILEHANDLE "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." ";  #Reference file
+	print $FILEHANDLE "-V: ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf.".$scriptParameter{'annovarGenomeBuildVersion'}."_multianno.vcf ";
+	print $FILEHANDLE "-V: ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".GRCh37_MT_multianno.vcf"." ";
+	print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf","\n\n";  #Outfile
     }
     close($FILEHANDLE);
 
@@ -2459,6 +2135,7 @@ sub Annovar {
 	&FIDSubmitJob(0, $familyID, 1, $parameter{'pAnnovar'}{'chain'}, $fileName, 0);
     }
 }
+
 
 sub GATKReadBackedPhasing {
 ###GATK ReadBackedPhasing performs physical phasing of SNP calls, based on sequencing reads. 
@@ -2495,7 +2172,7 @@ sub GATKReadBackedPhasing {
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
     print $FILEHANDLE "-T ReadBackedPhasing ";  #Type of analysis to run
     print $FILEHANDLE "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." ";  #Reference file
-    print $FILEHANDLE "--phaseQualityThresh ".$scriptParameter{'GATKReadBackedPhasingPhaseQualityThresh'}." ";
+    print $FILEHANDLE "--phaseQualityThresh ".$scriptParameter{'GATKReadBackedPhasingPhaseQualityThreshold'}." ";
 
     if ($scriptParameter{'pGATKPhaseByTransmission'} > 0) { 
 
@@ -2537,6 +2214,7 @@ sub GATKReadBackedPhasing {
 	&FIDSubmitJob(0,$familyID, 2, $parameter{'pGATKReadBackedPhasing'}{'chain'}, $fileName,0);
     }
 }
+
 
 sub GATKPhaseByTransmission {
 ###GATK PhaseByTransmission computes the most likely genotype combination and phases trios and parent/child pairs given their genotype likelihoods and a mutation prior and phases all sites were parent/child transmission can be inferred unambiguously.
@@ -2584,6 +2262,7 @@ sub GATKPhaseByTransmission {
 	&FIDSubmitJob(0, $familyID, 1, $parameter{'pGATKPhaseByTransmission'}{'chain'}, $fileName, 0);
     }
 }
+
 
 sub SnpEff {
 ###SnpEff annotates variants 
@@ -2654,22 +2333,7 @@ sub SnpEff {
 		print $FILEHANDLE "dbnsfp ";
 		print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'snpSiftDbNSFPFile'}." ";  #DbNSFP file
 		print $FILEHANDLE "-f ";  #fields to add
-		
-		for (my $snpSiftDbNSFPAnnotationsCounter=0;$snpSiftDbNSFPAnnotationsCounter<scalar(@snpSiftDbNSFPAnnotations);$snpSiftDbNSFPAnnotationsCounter++) {
-		    
-		    if ($snpSiftDbNSFPAnnotationsCounter == 0) {  #First entry
-			
-			print $FILEHANDLE $snpSiftDbNSFPAnnotations[$snpSiftDbNSFPAnnotationsCounter];  #Database
-		    }
-		    elsif ($snpSiftDbNSFPAnnotationsCounter == (scalar(@snpSiftDbNSFPAnnotations)-1) ) {  #Last entry
-			
-			print $FILEHANDLE ",".$snpSiftDbNSFPAnnotations[$snpSiftDbNSFPAnnotationsCounter]." ";  #Database   
-		    }
-		    else {
-			
-			print $FILEHANDLE ",".$snpSiftDbNSFPAnnotations[$snpSiftDbNSFPAnnotationsCounter];  #Database
-		    }
-		}
+		print $FILEHANDLE join(',', @snpSiftDbNSFPAnnotations)." ";  #Databases
 		print $FILEHANDLE "<( ";  #Pipe into SnpSift
 		print $FILEHANDLE "cat ";  #Read infile
 		print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".vcf ";  #Infile
@@ -2741,6 +2405,7 @@ sub SnpEff {
     }
 }
 
+
 sub VCFParser {
 ###VCFParser performs parsing of VariantEffectPredictor annotated variants 
 	
@@ -2764,7 +2429,7 @@ sub VCFParser {
     
     if ($scriptParameter{'pVariantEffectPredictor'} > 0) {
 
-	print $FILEHANDLE "--parseVEP ".$scriptParameter{'vcfParserVEPParser'}." ";  #Parse VEP transcript specific entries
+	print $FILEHANDLE "--parseVEP ".$scriptParameter{'vcfParserVepTranscripts'}." ";  #Parse VEP transcript specific entries
     }
     if ($scriptParameter{'vcfParserRangeFeatureFile'} ne "noUserInfo") {
 
@@ -2798,6 +2463,7 @@ sub VCFParser {
 	&FIDSubmitJob(0,$familyID, 1, $parameter{'pVCFParser'}{'chain'}, $fileName,0);
     }
 }
+
 
 sub VariantEffectPredictor {
 ###VariantEffectPredictor performs annotation of variants 
@@ -2880,6 +2546,7 @@ sub VariantEffectPredictor {
 	&FIDSubmitJob(0,$familyID, 1, $parameter{'pVariantEffectPredictor'}{'chain'}, $fileName,0);
     }
 }
+
 
 sub GATKVariantReCalibration { 
 #GATK VariantRecalibrator/ApplyRecalibration
@@ -3051,6 +2718,7 @@ sub GATKVariantReCalibration {
     }
 }
 
+
 sub GATKGenoTypeGVCFs { 
 #GATK GenoTypeGVCFs 
     
@@ -3086,7 +2754,7 @@ sub GATKGenoTypeGVCFs {
 
     if ($scriptParameter{'analysisType'} eq "exomes") {
 
-	print $FILEHANDLE "-V ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKGenoTypeGVCFsRefGVCFInfile'}." ";
+	print $FILEHANDLE "-V ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKGenoTypeGVCFsRefGVCF'}." ";
     }
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  #Collect infiles for all sampleIDs
@@ -3119,6 +2787,7 @@ sub GATKGenoTypeGVCFs {
 	&FIDSubmitJob(0, $familyID, 1, $parameter{'pGATKGenoTypeGVCFs'}{'chain'}, $fileName, 0);
     }
 }
+
 
 sub GATKHaploTypeCaller { 
 #GATK HaplotypeCaller 
@@ -3347,6 +3016,7 @@ sub GATKBaseReCalibration {
     }
 }
 
+
 sub GATKReAligner { 
 #GATK ReAlignerTargetCreator/IndelRealigner to rearrange reads around INDELs. Both ReAlignerTargetCreator and IndelRealigner will be executed within the same sbatch script
 
@@ -3476,6 +3146,7 @@ sub GATKReAligner {
     }
 }
 
+
 sub RCoveragePlots { 
 #Generates sbatch scripts for R scripts:
 #1. covplots_genome.R 
@@ -3503,7 +3174,7 @@ sub RCoveragePlots {
 	    print $FILEHANDLE $scriptParameter{'inScriptDir'}."/covplots_genome.R ";
 	    print $FILEHANDLE $inSampleDirectory."/".$infile.$infileEnding." ";  #InFile
 	    print $FILEHANDLE $infile." ";  #Sample name
-	    print $FILEHANDLE $scriptParameter{'xCoverage'}." ";  #X-axis max scale
+	    print $FILEHANDLE $scriptParameter{'GenomeCoverageBEDMaxCoverage'}." ";  #X-axis max scale
 	    print $FILEHANDLE $outSampleDirectory, " &","\n\n";  #OutFile
 	}
     }
@@ -3520,7 +3191,7 @@ sub RCoveragePlots {
 		print $FILEHANDLE $scriptParameter{'inScriptDir'}."/covplots_genome.R ";
 		print $FILEHANDLE $inSampleDirectory."/".$infile.$infileEnding." ";  #InFile
 		print $FILEHANDLE $infile." ";  #Sample name
-		print $FILEHANDLE $scriptParameter{'xCoverage'}." ";  #X-axis max scale
+		print $FILEHANDLE $scriptParameter{'GenomeCoverageBEDMaxCoverage'}." ";  #X-axis max scale
 		print $FILEHANDLE $outSampleDirectory, " &", "\n\n";  #OutFile
 	    }
 	}
@@ -3534,6 +3205,7 @@ sub RCoveragePlots {
     }
     return;
 }
+
 
 sub GenomeCoverageBED { 
 #Calculates coverage on BAM files. 
@@ -3555,7 +3227,7 @@ sub GenomeCoverageBED {
 	&ProgramPreRequisites($sampleID, "GenomeCoverageBED", $aligner."/coverageReport", 0, $FILEHANDLE, 1, 4);
 	
 	print $FILEHANDLE "genomeCoverageBed ";
-	print $FILEHANDLE "-max ".$scriptParameter{'xCoverage'}." ";  #Combine all positions with a depth >= max into a single bin in the histogram.
+	print $FILEHANDLE "-max ".$scriptParameter{'GenomeCoverageBEDMaxCoverage'}." ";  #Combine all positions with a depth >= max into a single bin in the histogram.
 	print $FILEHANDLE "-ibam ".$inSampleDirectory."/".$infile.$infileEnding.".bam ";  #InFile
 	print $FILEHANDLE "> ".$outSampleDirectory."/".$infile.$outfileEnding." ", "\n\n";  #OutFile
 
@@ -3574,7 +3246,7 @@ sub GenomeCoverageBED {
 	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];	    
 	    
 	    print $FILEHANDLE "genomeCoverageBed ";
-	    print $FILEHANDLE "-max ".$scriptParameter{'xCoverage'}." ";  #Combine all positions with a depth >= max into a single bin in the histogram.
+	    print $FILEHANDLE "-max ".$scriptParameter{'GenomeCoverageBEDMaxCoverage'}." ";  #Combine all positions with a depth >= max into a single bin in the histogram.
 	    print $FILEHANDLE "-ibam ".$inSampleDirectory."/".$infile.$infileEnding.".bam ";  #InFile
 	    print $FILEHANDLE "> ".$outSampleDirectory."/".$infile.$outfileEnding." &", "\n\n";  #outFile
 	}
@@ -3589,6 +3261,7 @@ sub GenomeCoverageBED {
     }
     return;
 }
+
 
 sub PicardToolsCollectMultipleMetrics { 
 #Calculates coverage and alignment metrics on BAM files. 
@@ -3662,6 +3335,7 @@ sub PicardToolsCollectMultipleMetrics {
 	&FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 1, $parameter{'pPicardToolsCollectMultipleMetrics'}{'chain'}, $fileName, 0);
     }
 }
+
 
 sub PicardToolsCalculateHSMetrics { 
 #Calculates coverage on exonic part of BAM files. 
@@ -3739,6 +3413,7 @@ sub PicardToolsCalculateHSMetrics {
     }
 }
 
+
 sub ChanjoImport { 
 ##Loads the calculated coverage to family database 
 
@@ -3790,6 +3465,7 @@ sub ChanjoImport {
 	&FIDSubmitJob(0, $familyID, 5, $parameter{'pChanjoImport'}{'chain'}, $fileName, 0);
     }
 }
+
 
 sub ChanjoCalculate { 
 #Generate coverage json outfile for each individual.
@@ -3870,6 +3546,7 @@ sub ChanjoCalculate {
     }
 }
 
+
 sub ChanjoBuild { 
 
     my $familyID = $_[0];  #familyID NOTE: not sampleid 
@@ -3899,6 +3576,7 @@ sub ChanjoBuild {
 	&FIDSubmitJob(0, $familyID, 5, $parameter{'pChanjoBuild'}{'chain'}, $fileName, 0);
     }
 }
+
 
 sub PicardToolsMarkDuplicates { 
 #Mark duplicated reads using PicardTools MarkDuplicates in files generated from alignment (sorted, merged)
@@ -3998,6 +3676,7 @@ sub PicardToolsMarkDuplicates {
 	&FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 1, $parameter{'pPicardToolsMarkduplicates'}{'chain'}, $fileName, 0);
     }
 }
+
 
 sub PicardToolsMerge { 
 #Merges all bam files using PicardTools MergeSamFiles within each sampleid and files generated previously (option if provided with '-picardToolsMergeSamFilesPrevious'). The merged files have to be sorted before attempting to merge.
@@ -4220,10 +3899,13 @@ sub BWA_Sampe {
     for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) {  #For all files from BWA aln but process in the same command i.e. both reads per align call
 
 	if ($infile{$sampleID}[$infileCounter] =~/.fastq.gz$/) {  #Files are already gz and presently the scalar for compression has not been investigated. Therefore no automatic time allocation can be performed.
+	 
 	    if ($scriptParameter{'analysisType'} eq "genomes") {
+	
 		$time = 40;  
 	    }
 	    else {
+		
 		$time = 20;
 	    }
 	}
@@ -4278,6 +3960,7 @@ sub BWA_Sampe {
 	$pairedEndTracker++;
     }
 }
+
 
 sub BWA_Aln {
 #Generates BWA aln index on fastq files
@@ -4555,6 +4238,7 @@ sub BWA_Mem {
     }
 }
 
+
 sub MosaikAlign {
 ###Aligning reads using MosaikAlign
     
@@ -4571,15 +4255,18 @@ sub MosaikAlign {
 	if ($infile{$sampleID}[$infileCounter] =~/.fastq.gz$/) {  #Files are already gz and presently the scalar for compression has not been investigated. Therefore no automatic time allocation can be performed.
 	   
 	    if ($scriptParameter{'analysisType'} eq "genomes") {
+	
 		$time = 80;  
 	    }
 	    else {
+		
 		$time = 40;
 	    }
 	}
 	else {  #Files are in fastq format
 	
 	    if (-e $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter+$sbatchScriptTracker]) {
+
 		$infileSize = -s $indirpath{$sampleID}."/".$infile{$sampleID}[$infileCounter+$sbatchScriptTracker]; #Collect .fastq file size to enable estimation of time required for aligning, +$sbatchScriptTracker for syncing multiple infiles per sampleID. Hence, filesize will be calculated on read1 (should not matter).      
 		$time = ceil(($infileSize/238)/(650*60*60));  #238 is a scalar estimating the number of reads depending on filesize. 650 is the number of reads/s in MosaikAlign-2.1.52 and 60*60 is to scale to hours.
 	    }	    
@@ -4671,6 +4358,7 @@ sub MosaikAlign {
     }
 }
 
+
 sub MosaikBuild {
 #Generates Mosaik hash format on reads using MosaikBuild   
     
@@ -4723,6 +4411,7 @@ sub MosaikBuild {
     }
 }   
 
+
 sub FastQC {
 #Raw sequence quality analysis using FASTQC
 
@@ -4771,6 +4460,7 @@ sub FastQC {
     }
 }
 
+
 sub GZipFastq { 
 #Automatically gzips fastq files. 
     
@@ -4812,6 +4502,7 @@ sub GZipFastq {
 	&FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 0, $parameter{'pGZip'}{'chain'}, $fileName, 0);
     }
 }
+
 
 sub BuildAnnovarPreRequisites {
 ##Creates the AnnovarPreRequisites
@@ -4952,6 +4643,7 @@ sub BuildDownLoadablePreRequisites {
 	&FIDSubmitJob(0, $familyID, 6, "MIP", $fileName, 0);
     }
 }
+
 
 sub BuildPTCHSMetricPreRequisites {
 ##Creates the target "infiles_list" "padded.infile_list" and interval_list files
@@ -5142,6 +4834,7 @@ sub BuildPTCHSMetricPreRequisites {
     }
 }
 
+
 sub BuildBwaPreRequisites {
 ##Creates the BwaPreRequisites using scriptParameters{'humanGenomeReference'} as reference.
 
@@ -5181,6 +4874,7 @@ sub BuildBwaPreRequisites {
 	&FIDSubmitJob(0, $familyID, 6, $parameter{"p".$program}{'chain'}, $fileName, 0);
     }
 }
+
 
 sub BuildMosaikAlignPreRequisites {
 ##Creates the mosaikAlignPreRequisites using scriptParameters{'humanGenomeReference'} as reference.
@@ -5243,6 +4937,7 @@ sub BuildMosaikAlignPreRequisites {
     }
 }
 
+
 sub CheckBuildHumanGenomePreRequisites {
 ##Checks if the HumanGenomePreRequisites needs to be built 
 
@@ -5262,6 +4957,7 @@ sub CheckBuildHumanGenomePreRequisites {
     ##Collect sequence contigs from human reference
     #&CollectSeqContigs();  #Reloads if required NOTE:Preparation for future changes but not activated yet
 }
+
 
 sub CheckBuildPTCHSMetricPreRequisites {
 
@@ -5287,6 +4983,7 @@ sub CheckBuildPTCHSMetricPreRequisites {
 	}
     }
 }
+
 
 sub DownloadReference {
 ##Downloads references using the database download manager Cosmid.     
@@ -5340,6 +5037,7 @@ sub DownloadReference {
 	}
     }
 }
+
 
 sub BuildHumanGenomePreRequisites {
 ##Creates the humanGenomePreRequisites using scriptParameters{'humanGenomeReference'} as reference.
@@ -5429,6 +5127,7 @@ sub BuildHumanGenomePreRequisites {
     }
 }
 
+
 sub CheckCosmidInstallation {
 
     my $parameterNameRef = $_[0];
@@ -5457,6 +5156,7 @@ sub CheckCosmidInstallation {
 	}
     }
 }
+
 
 sub ReadPlinkPedigreeFile {
 ###Reads famid_pedigree.txt file in PLINK format
@@ -5578,6 +5278,7 @@ sub ReadPlinkPedigreeFile {
     close(PEDF);
 }
 
+
 sub DefinePlinkPedigree {
 ##Defines which entries are allowed and links them to position
 
@@ -5585,6 +5286,7 @@ sub DefinePlinkPedigree {
     $plinkPedigree{5} = [-9, 0, 1, 2];  #Phenotype
 
 }
+
 
 sub AddToJobID {
 ###Adds all previous jobIds per familyChainKey and chainKey to jobIDs string used to set the dependency in SLURM.
@@ -5595,25 +5297,30 @@ sub AddToJobID {
      my $jobIDs = "";  #JobID string
 
      if ($jobID{$familyIDChainKey}{$chainKey}) {
-
-     for (my $jobCounter=0;$jobCounter<scalar( @{ $jobID{$familyIDChainKey}{$chainKey} });$jobCounter++) {   #All previous jobIDs
-
-          if ( ($jobCounter == 0) && (scalar( @{ $jobID{$familyIDChainKey}{$chainKey} }) == 1) ) {  #Only 1 previous jobID 
-               $jobIDs .= ":$jobID{$familyIDChainKey}{$chainKey}[$jobCounter]";  #First and last jobID start with ":" and end without ":"
-          }
-          elsif ($jobCounter == 0) {  #First jobID
-               $jobIDs .= ":$jobID{$familyIDChainKey}{$chainKey}[$jobCounter]:";  #First jobID start with :
-          }
-          elsif ($jobCounter eq (scalar( @{ $jobID{$familyIDChainKey}{$chainKey} }) -1) ) {  #Last jobID
-               $jobIDs .= "$jobID{$familyIDChainKey}{$chainKey}[$jobCounter]";  #Last jobID finish without :
-          }
-          else {  #JobIDs in the middle
-               $jobIDs .= "$jobID{$familyIDChainKey}{$chainKey}[$jobCounter]:";
-          }
+	 
+	 for (my $jobCounter=0;$jobCounter<scalar( @{ $jobID{$familyIDChainKey}{$chainKey} });$jobCounter++) {   #All previous jobIDs
+	     
+	     if ( ($jobCounter == 0) && (scalar( @{ $jobID{$familyIDChainKey}{$chainKey} }) == 1) ) {  #Only 1 previous jobID 
+	
+		 $jobIDs .= ":$jobID{$familyIDChainKey}{$chainKey}[$jobCounter]";  #First and last jobID start with ":" and end without ":"
+	     }
+	     elsif ($jobCounter == 0) {  #First jobID
+		 
+		 $jobIDs .= ":$jobID{$familyIDChainKey}{$chainKey}[$jobCounter]:";  #First jobID start with :
+	     }
+	     elsif ($jobCounter eq (scalar( @{ $jobID{$familyIDChainKey}{$chainKey} }) -1) ) {  #Last jobID
+		 
+		 $jobIDs .= "$jobID{$familyIDChainKey}{$chainKey}[$jobCounter]";  #Last jobID finish without :
+	     }
+	     else {  #JobIDs in the middle
+		 
+		 $jobIDs .= "$jobID{$familyIDChainKey}{$chainKey}[$jobCounter]:";
+	     }
+	 }
      }
-}
      return $jobIDs;
 }
+
 
 sub PushToJobID {
     
@@ -5678,6 +5385,7 @@ sub PushToJobID {
 	}
     }
 }
+
 
 sub FIDSubmitJob {
 ###Submits all jobIDs to SLURM using SLURM dependencies. The trunk is the "MAIN path" and any subsequent splits into  branches "other paths" later is handled by adding relevant previous jobIDs to the new paths key in jobID{family_path_key} hash. The subroutine supports parallel job within each step and submission which do not leave any dependencies. Currently any path downstream of MAIN inherits the relevant previous jobIds, but it is not possible to merge to splited paths downstream of main to each other.
@@ -5924,6 +5632,7 @@ sub FIDSubmitJob {
     &PrintToFileHandles(\@printFilehandles, "To cancel job, please run \'scancel $jobID\'\n");
 }
 
+
 sub NrofCoresPerSbatch {
 ##Set the number of cores to allocate per sbatch job
     
@@ -5935,6 +5644,7 @@ sub NrofCoresPerSbatch {
     }
     return $nrCores;
 }
+
 
 sub CollectInfiles {
 ##Collects the ".fastq(.gz)" files from the supplied infiles directory. Checks if any files exist
@@ -5958,6 +5668,7 @@ sub CollectInfiles {
 	$infile{ $sampleIDs[$inputDirectoryCounter] }  =[@infiles];  #Reload files into hash (kept above newline just for print STDOUT)
     }
 }
+
 
 sub InfilesReFormat {
 ###Reformat files for mosaik output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames.
@@ -6011,6 +5722,7 @@ sub InfilesReFormat {
     return $uncompressedFileCounter;
 }
 
+
 sub CheckSampleIDMatch {
 ##Check that the sampleID provided and sampleID in infile name match.
     
@@ -6031,6 +5743,7 @@ sub CheckSampleIDMatch {
 	exit;
     }
 }
+
 
 sub AddInfileInfoOld {
 ##Adds information derived from infile name to sampleInfo hash. Tracks the number of lanes sequenced and checks unique array elementents.  
@@ -6073,6 +5786,7 @@ sub AddInfileInfoOld {
     &CheckUniqueArrayElement(\@{ $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'readDirection'} }, \$direction);  #Check if there are any new info and add it to sampleInfo if so. 
     $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'sequenceLength'} = `cd $indirpath{$sampleID};$readFile $infile{$sampleID}[$infileCounter] | $seqLengthRegExp;`;  #Collect sequence length
 }
+
 
 sub AddInfileInfo {
 ##Adds information derived from infile name to sampleInfo hash. Tracks the number of lanes sequenced and checks unique array elementents.  
@@ -6122,6 +5836,7 @@ sub AddInfileInfo {
     $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesBothStrandsNoEnding{ $sampleID }[$infileCounter]}{'sequenceLength'} = `cd $indirpath{$sampleID};$readFile $infile{$sampleID}[$infileCounter] | $seqLengthRegExp;`;  #Collect sequence length
 }
 
+
 sub Checkfnexists {
 ##Check if a file with with a filename consisting of $filePathRef.$fileCounter.$fileEndingRef exist. If so bumps the version number and return new filename.
     
@@ -6146,6 +5861,7 @@ sub Checkfnexists {
     $$filePathRef = $fileName;  #Transfer to global variable
 }
 
+
 sub DefineParametersPath {
 ###Defines all attributes of a parameter, so that the correct value can be set and added to %scriptparameter later
 
@@ -6166,6 +5882,7 @@ sub DefineParametersPath {
     
     push(@orderParameters, $parameterName);  #Add to enable later evaluation of parameters in proper order & write to master file
 }
+
 
 sub DefineParameters {
 ###Defines all attributes of a parameter, so that the correct value can be set and added to %scriptparameter later
@@ -6204,6 +5921,7 @@ sub DefineParameters {
     
     push(@orderParameters, $parameterName);  #Add to enable later evaluation of parameters in proper order & write to master file
 }
+
 
 sub AddToScriptParameter {
 ###Checks and sets user input or default values to scriptPrameters
@@ -6334,7 +6052,7 @@ sub AddToScriptParameter {
 			}
 			elsif ($parameterName eq "annovarTableNames") {
 			    
-			    @annovarTableNames = ("refGene", "mce46way", "gerp++elem", "segdup", "tfbs", "mirna", "snp137NonFlagged", "1000g2012apr_all", "esp6500si_all", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_lrt", "ljb2_gerp++","ljb2_phylop");  #Set default annovar table names
+			    @annovarTableNames = ("refGene", "mce46way", "gerp++elem", "segdup", "tfbs", "mirna", "snp137NonFlagged", "1000g2012apr_all", "esp6500si_all", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_lrt", "ljb2_gerp++", "ljb2_phylop");  #Set default annovar table names
 			    &EnableArrayParameter(\@annovarTableNames, \$parameterName);
 			}
 			else {
@@ -6364,19 +6082,19 @@ sub AddToScriptParameter {
 			}
 			elsif ( ($parameterName eq "bwaMemRapidDb") && ($scriptParameter{'analysisType'} ne "rapid")) {  #Do nothing since file is not required unless rapid mode is enabled
 			}
-			elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCFInfile") && ($scriptParameter{'analysisType'} =~/genomes/) ) {  #Do nothing since file is not required unless exome or rapid mode is enabled
+			elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCF") && ($scriptParameter{'analysisType'} =~/genomes/) ) {  #Do nothing since file is not required unless exome or rapid mode is enabled
 			}
 			elsif ( ($parameterName eq "vcfParserRangeFeatureAnnotationColumns") && ( $scriptParameter{'vcfParserRangeFeatureFile'} eq "noUserInfo") ) {  #Do nothing since no SelectFile was given
 			} 
 			elsif ( ($parameterName eq "vcfParserSelectFeatureAnnotationColumns") && ( $scriptParameter{'vcfParserRangeFeatureFile'} eq "noUserInfo") ) {  #Do nothing since no SelectFile was given
 			}
 			elsif ( ($parameterName eq "vcfParserSelectFileMatchingColumn") && ( $scriptParameter{'vcfParserSelectFile'} eq "noUserInfo") ) {  #Do nothing since no SelectFile was given
-			
 			}
-			elsif ( ($parameterName eq "mergeAnnotatedVariantsTemplateSelectFile") && ( $scriptParameter{'vcfParserSelectFile'} eq "noUserInfo") ) {  #Do nothing since no SelectFile was given
+			elsif ( ($parameterName eq "geneFile") && ($scriptParameter{'pVariantEffectPredictor'} > 0) ) {  #Do nothing since VEP annotations can be used
 			}
-			elsif ( ($parameterName eq "geneFile") && ($scriptParameter{'pVariantEffectPredictor'} > 0) ) {  #Do nothing since VEP annotations can be used			    
-			
+			elsif ( ($parameterName eq "caddWGSSNVsFile") && ( $scriptParameter{'caddWGSSNVs'} == 0) ) {  #Do nothing since no CADD annotation should be performed
+			}
+			elsif ( ($parameterName eq "cadd1000GenomesFile") && ( $scriptParameter{'cadd1000Genomes'} == 0) ) {  #Do nothing since no CADD annotation should be performed
 			}
 			else {
 			    
@@ -6595,7 +6313,7 @@ sub AddToScriptParameter {
 		    }
 		    elsif ( ($parameterName eq "bwaMemRapidDb") && ($scriptParameter{'analysisType'} ne "rapid")) {  #Do nothing since file is not required unless rapid mode is enabled
 		    }
-		    elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCFInfile") && ($scriptParameter{'analysisType'} =~/genomes/) ) {  #Do nothing since file is not required unless exome mode is enabled
+		    elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCF") && ($scriptParameter{'analysisType'} =~/genomes/) ) {  #Do nothing since file is not required unless exome mode is enabled
 		    }
                     elsif ( ($parameterName eq "vcfParserRangeFeatureFile") && ( $scriptParameter{'vcfParserRangeFeatureFile'} eq "noUserInfo") ) {  #Do nothing since no RangeFile was given
 		    }
@@ -6613,9 +6331,11 @@ sub AddToScriptParameter {
 			    $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'database'}{"SelectFile"}{'File'} = $scriptParameter{$parameterName};
 			}
 		    }
-		    elsif ( ($parameterName eq "mergeAnnotatedVariantsTemplateSelectFile") && ( $scriptParameter{'vcfParserSelectFile'} eq "noUserInfo") ) {  #Do nothing since no SelectFile was given
-		    }
                     elsif ( ($parameterName eq "geneFile") && ($scriptParameter{'pVariantEffectPredictor'} > 0) ) {  #Do nothing since VEP annotations can be used			    
+		    }
+		    elsif ( ($parameterName eq "caddWGSSNVsFile") && ( $scriptParameter{'caddWGSSNVs'} == 0) ) {  #Do nothing since no CADD annotation should be performed
+		    }
+		    elsif ( ($parameterName eq "cadd1000GenomesFile") && ( $scriptParameter{'cadd1000Genomes'} == 0) ) {  #Do nothing since no CADD annotation should be performed
 		    }
 		    else {
 			
@@ -6745,6 +6465,7 @@ sub AddToScriptParameter {
     }
 }
 
+
 sub CreateFileEndings {
 ###Creates the fileEndings depending on which modules are used by the user to relevant chain. 
     
@@ -6804,13 +6525,19 @@ sub CreateFileEndings {
 			    else {
 				
 				if (defined($tempFileEnding{$scriptParameter{'familyID'}})) {
+			
 				    $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{$scriptParameter{'familyID'}}.$parameter{$orderParameterElement}{'fileEnding'};
 				}
 				else  {  #First module that should add filending
+				    
 				    $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{$orderParameterElement}{'fileEnding'} = $parameter{$orderParameterElement}{'fileEnding'};
 				}
-				$tempFileEnding{$scriptParameter{'familyID'}} = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{$orderParameterElement}{'fileEnding'};  #To enable sequential build-up of fileending 
+				$tempFileEnding{ $scriptParameter{'familyID'} } = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{$orderParameterElement}{'fileEnding'};  #To enable sequential build-up of fileending 
 			    }		
+			}
+			else {  #Do not add new module fileEnding
+			 
+			    $sampleInfo{ $scriptParameter{'familyID'} }{  $scriptParameter{'familyID'} }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{ $scriptParameter{'familyID'} };
 			}
 		    }
 		}
@@ -6861,6 +6588,7 @@ sub CreateFileEndings {
 	}
     }
 }
+
 
 sub ProgramPreRequisites {
 ###Creates program directories (info & programData & programScript), program script filenames and creates sbatch header.
@@ -7020,6 +6748,7 @@ sub CheckIfMergedFiles {
     return ($infile, $PicardToolsMergeSwitch);
 }
 
+
 sub SampleInfoQC {
 ###Adds outDirectory and outFile to sampleInfo to track all files that QC metrics are to be extracted from later
 
@@ -7064,6 +6793,7 @@ sub SampleInfoQC {
 	}
     }
 }
+
 
 sub GATKTargetListFlag {
 ###Detects if there are different capture kits across sampleIDs. Creates a temporary merged interval_list for all interval_list that have been supplied and returns temporary list. Will also extract specific contigs if requested and return that list if enabled.
@@ -7125,6 +6855,7 @@ sub GATKTargetListFlag {
     }
 }
 
+
 sub SplitTargetFile {
 ##Splits a target file into new contig specific target file
 
@@ -7144,6 +6875,7 @@ sub SplitTargetFile {
 	return $$outDirectoryRef."/".$$contigRef."_".$$infileRef;
     }
 }
+
 
 sub GATKPedigreeFlag {
 ###Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
@@ -7174,6 +6906,7 @@ sub GATKPedigreeFlag {
 	&CheckPedigreeMembers($FILEHANDLE, \$pedigreeValidationType, \$outFamilyFileDirectory, \$parentCounter, \$childCounter);  #Special case - GATK PhaseByTransmission needs parent/child or trio 
     }
 }
+
 
 sub CheckPedigreeMembers {
 ##Detect if the pedigree file contains a valid parent/child or trio
@@ -7215,6 +6948,7 @@ sub CheckPedigreeMembers {
     }
 }
 
+
 sub WriteCMDMipLog {
     
     open (MIPLOG, ">>".$mipLogName) or die "Can't write to ".$mipLogName.":".$!, "\n";  #Open file run log
@@ -7235,6 +6969,7 @@ sub WriteCMDMipLog {
     ##Note FileHandle MIPLOG not closed
 }
 
+
 sub WriteYAML {
 ###Writes a YAML hash to file. 
 ###Note: 2nd argument should be a hash reference
@@ -7247,6 +6982,7 @@ sub WriteYAML {
     close(YAML);
     print STDOUT "Wrote: ".$yamlFile, "\n";
 }
+
 
 sub LoadYAML {
 ###Loads a YAML file into an arbitrary hash and returns it. Note: Currently only supports hashreferences and hashes and no mixed entries 
@@ -7263,6 +6999,7 @@ sub LoadYAML {
     print STDOUT "Read Yaml file: ". $yamlFile, "\n";
     return %yamlHash;
 }
+
 
 sub CheckUniqueArrayElement {
 ###Detects if there are elements in arrayQueryRef that are not present in scalarQueryRef or arrayToCheckRef. If unique adds the unique element to arrayToCheckRef
@@ -7377,7 +7114,7 @@ sub CheckUniqueIDNs {
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {
 
-	$seen{ $sampleIDs[$sampleIDCounter] }++; #Increment instance to check duplicates later
+	$seen{ $sampleIDs[$sampleIDCounter] }++;  #Increment instance to check duplicates later
 	
 	if ($scriptParameter{'familyID'} eq $sampleIDs[$sampleIDCounter]) {  #FamilyID cannot be the same as sampleID
 	    
@@ -7419,27 +7156,27 @@ sub UpdateYAML {
     my $familyID = $_[4]; 
     my $aligner = $_[5];
     
-    if ($scriptParameter{$$parameterNameRef}) { #Active parameter
+    if ($scriptParameter{$$parameterNameRef}) {  #Active parameter
 	
 	if (defined($clusterConstantPath)) {
 	 
-	    $scriptParameter{$$parameterNameRef} =~ s/CLUSTERCONSTANTPATH!/$clusterConstantPath/gi; #Exchange CLUSTERCONSTANTPATH! for current cluster path
+	    $scriptParameter{$$parameterNameRef} =~ s/CLUSTERCONSTANTPATH!/$clusterConstantPath/gi;  #Exchange CLUSTERCONSTANTPATH! for current cluster path
 	}
 	if (defined($analysisConstantPath)) {
 	 
-	    $scriptParameter{$$parameterNameRef} =~ s/ANALYSISCONSTANTPATH!/$analysisConstantPath/gi; #Exchange ANALYSISCONSTANTPATH! for the current analysis path
+	    $scriptParameter{$$parameterNameRef} =~ s/ANALYSISCONSTANTPATH!/$analysisConstantPath/gi;  #Exchange ANALYSISCONSTANTPATH! for the current analysis path
 	}
 	if (defined($analysisType)) {
 
-	    $scriptParameter{$$parameterNameRef} =~ s/ANALYSISTYPE!/$analysisType/gi; #Exchange ANALYSISTYPE! for the current analysis type
+	    $scriptParameter{$$parameterNameRef} =~ s/ANALYSISTYPE!/$analysisType/gi;  #Exchange ANALYSISTYPE! for the current analysis type
 	}
 	if (defined($familyID)) {
 
-	    $scriptParameter{$$parameterNameRef} =~ s/FDN!/$familyID/gi; #Exchange FND! for the current familyID
+	    $scriptParameter{$$parameterNameRef} =~ s/FDN!/$familyID/gi;  #Exchange FND! for the current familyID
 	}
 	if (defined($aligner)) {
 
-	    $scriptParameter{$$parameterNameRef} =~ s/ALIGNER!/$aligner/gi; #Exchange ALIGNER! for the current aligner
+	    $scriptParameter{$$parameterNameRef} =~ s/ALIGNER!/$aligner/gi;  #Exchange ALIGNER! for the current aligner
 	}
     }
 }
@@ -7462,22 +7199,22 @@ sub CheckAutoBuild {
 	
 	if ( ($parameter{ $scriptParameter{'familyID'} }{$$sampleIDRef}{$$parameterNameRef}{'buildFile'} eq "yesAutoBuild") || ($parameter{ $scriptParameter{'familyID'} }{$$sampleIDRef}{$$parameterNameRef}{'buildFile'} eq "yesAutoDownLoad") || ($parameter{ $scriptParameter{'familyID'} }{$$sampleIDRef}{$$parameterNameRef}{'buildFile'} eq 1) ) {
 	    
-	    return "1"; #Flag that autobuild is needed
+	    return "1";  #Flag that autobuild is needed
 	}
 	else {
-	    return "0"; #No autobuild is needed   
+	    return "0";  #No autobuild is needed   
 	}
     }
     else {
 	
-	if ( ($parameter{$$parameterNameRef}{'buildFile'} eq "yesAutoBuild") || ($parameter{$$parameterNameRef}{'buildFile'} eq 1) ) { #1 for arrays
-	    return "1"; #Flag that autobuild is needed
+	if ( ($parameter{$$parameterNameRef}{'buildFile'} eq "yesAutoBuild") || ($parameter{$$parameterNameRef}{'buildFile'} eq 1) ) {  #1 for arrays
+	    return "1";  #Flag that autobuild is needed
 	}
 	elsif ( ($parameter{$$parameterNameRef}{'buildFile'} eq "yesAutoDownLoad") || ($parameter{$$parameterNameRef}{'buildFile'} eq 1) ) {
 	    
 	    if ($parameter{$$parameterNameRef}{'default'} eq $scriptParameter{$$parameterNameRef}) {
 		
-		return "1"; #Flag that autobuild is needed
+		return "1";  #Flag that autobuild is needed
 	    }
 	    else {
 		
@@ -7487,7 +7224,7 @@ sub CheckAutoBuild {
 	    }
 	}
 	else {
-	    return "0"; #No autobuild is needed   
+	    return "0";  #No autobuild is needed   
 	}
     }
 }
@@ -7504,17 +7241,17 @@ sub ParseHumanGenomeReference {
     
     my $humanGenomeReference = $_[0];
     
-    my $humanGenomeReferenceVersion; #Version of GenomeBuild
-    my $humanGenomeReferenceSource; #Ensembl or NCBI
+    my $humanGenomeReferenceVersion;  #Version of GenomeBuild
+    my $humanGenomeReferenceSource;  #Ensembl or NCBI
     my $humanGenomeReferenceNameNoEnding;
     
-    if ($humanGenomeReference =~/^Homo_sapiens.GRCh(\d+\.\d+|\d+)/) { #Used to change capture kit genome reference version later
+    if ($humanGenomeReference =~/^Homo_sapiens.GRCh(\d+\.\d+|\d+)/) {  #Used to change capture kit genome reference version later
 	$humanGenomeReferenceVersion = $1;
-	$humanGenomeReferenceSource = "GRCh"; #Ensembl
+	$humanGenomeReferenceSource = "GRCh";  #Ensembl
     }
-    elsif ($humanGenomeReference =~/^Homo_sapiens.hg(\d+)/) { #Used to change capture kit genome reference version later
+    elsif ($humanGenomeReference =~/^Homo_sapiens.hg(\d+)/) {  #Used to change capture kit genome reference version later
 	$humanGenomeReferenceVersion = $1;
-	$humanGenomeReferenceSource = "hg"; #Refseq
+	$humanGenomeReferenceSource = "hg";  #Refseq
     }
     else {
 	print STDERR "MIP cannot detect what kind of humanGenomeReference you have supplied. If you want to automatically set the capture kits used please supply the refrence on this format: [Species].[Source][Version].", "\n\n";
@@ -7538,7 +7275,7 @@ sub CheckFileEndingsToBeBuilt {
     my $fileEndingsRef = $_[0];
     my $parameterName = $_[1]; 
     
-    for (my $fileEndingsRefCounter=0;$fileEndingsRefCounter<scalar(@{$fileEndingsRef});$fileEndingsRefCounter++) { #All fileEndings
+    for (my $fileEndingsRefCounter=0;$fileEndingsRefCounter<scalar(@{$fileEndingsRef});$fileEndingsRefCounter++) {  #All fileEndings
 	
 	&CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{$parameterName}.${$fileEndingsRef}[$fileEndingsRefCounter]), \$parameterName, "f");
     }
@@ -7564,7 +7301,7 @@ sub CheckExistance {
     
     if ($itemTypeToCheck eq "d") {
 
-	unless (-d $$itemNameRef) { #Check existence of supplied directory
+	unless (-d $$itemNameRef) {  #Check existence of supplied directory
 	    print STDERR $USAGE, "\n";
 	    print STDERR "\nCould not find intended ".$$parameterNameRef." directory: ".$$itemNameRef, "\n\n";
 	    exit;		
@@ -7572,13 +7309,13 @@ sub CheckExistance {
     }
     elsif ($itemTypeToCheck eq "f") {
 	
-	unless (-f $$itemNameRef) { #Check existence of supplied file in supplied reference dir
+	unless (-f $$itemNameRef) {  #Check existence of supplied file in supplied reference dir
 	    
-	    if (defined($sampleIDRef)) { #Individual files per sampleID
+	    if (defined($sampleIDRef)) {  #Individual files per sampleID
 		
-		$parameter{ $scriptParameter{'familyID'} }{$$sampleIDRef}{$$parameterNameRef}{'buildFile'} = &CheckAutoBuild(\$$parameterNameRef, \$$sampleIDRef); #Check autoBuild or not and return value
+		$parameter{ $scriptParameter{'familyID'} }{$$sampleIDRef}{$$parameterNameRef}{'buildFile'} = &CheckAutoBuild(\$$parameterNameRef, \$$sampleIDRef);  #Check autoBuild or not and return value
 		
-		if ($parameter{ $scriptParameter{'familyID'} }{$$sampleIDRef}{$$parameterNameRef}{'buildFile'} == 0) { #No autobuild
+		if ($parameter{ $scriptParameter{'familyID'} }{$$sampleIDRef}{$$parameterNameRef}{'buildFile'} == 0) {  #No autobuild
 		    
 		    print STDERR $USAGE, "\n";
 		    print STDERR "\nCould not find intended ".$$parameterNameRef." file: ".$$itemNameRef, "\n\n";
@@ -7587,9 +7324,9 @@ sub CheckExistance {
 	    }
 	    else {
  
-		$parameter{$$parameterNameRef}{'buildFile'} = &CheckAutoBuild(\$$parameterNameRef); #Check autoBuild or not and return value
+		$parameter{$$parameterNameRef}{'buildFile'} = &CheckAutoBuild(\$$parameterNameRef);  #Check autoBuild or not and return value
 		 
-		if ($parameter{$$parameterNameRef}{'buildFile'} == 0) { #No autobuild
+		if ($parameter{$$parameterNameRef}{'buildFile'} == 0) {  #No autobuild
 		    
 		    print STDERR $USAGE, "\n";
 		    print STDERR "\nCould not find intended ".$$parameterNameRef." file: ".$$itemNameRef, "\n\n";
@@ -7601,10 +7338,10 @@ sub CheckExistance {
 	    
 	    if (defined($sampleIDRef)) {
 		
-		$parameter{ $scriptParameter{'familyID'} }{$$sampleIDRef}{$$parameterNameRef}{'buildFile'} = 0; #File exist in this check
+		$parameter{ $scriptParameter{'familyID'} }{$$sampleIDRef}{$$parameterNameRef}{'buildFile'} = 0;  #File exist in this check
 	    }
 	    else {
-		$parameter{$$parameterNameRef}{'buildFile'} =  0; #File exist in this check
+		$parameter{$$parameterNameRef}{'buildFile'} =  0;  #File exist in this check
 	    }
 	}
     }
@@ -7644,7 +7381,7 @@ sub SetAutoBuildFeature {
 
 	     &CheckFileEndingsToBeBuilt(\@mosaikJumpDbStubFileEndings, "mosaikJumpDbStub");
 	 }
-	 else {#Complete fileName - No stubs
+	 else {  #Complete fileName - No stubs
 	    
 	     &CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{$parameterName}), \$parameterName, "f");
          }
@@ -7660,18 +7397,18 @@ sub MoveMosaikNN {
 ##Returns  : "" 
 ##Arguments: 
 
-    my @paths = split(/:/,$ENV{PATH}); #Find Mosaik installation path
+    my @paths = split(/:/,$ENV{PATH});  #Find Mosaik installation path
 
     for (my $pathsCounter=0;$pathsCounter<scalar(@paths);$pathsCounter++) {
 
-	if ($paths[$pathsCounter] =~/MOSAIK/) { #Select MOSAIK path
+	if ($paths[$pathsCounter] =~/MOSAIK/) {  #Select MOSAIK path
 	    
-	   $paths[$pathsCounter] =~ s/bin\//src\/networkFile/g; #Location of NN files
+	   $paths[$pathsCounter] =~ s/bin\//src\/networkFile/g;  #Location of NN files
 
 	   print STDOUT "\nCould not find Mosaik Network Files in ".$scriptParameter{'referencesDir'},"\n";
 	   print STDOUT "\nCopying Mosaik Network Files ".$scriptParameter{'mosaikAlignNeuralNetworkSeFile'}." and ".$scriptParameter{'mosaikAlignNeuralNetworkPeFile'}." to ".$scriptParameter{'referencesDir'}." from ".$paths[$pathsCounter], "\n\n";
-	   `cp $paths[$pathsCounter]/$scriptParameter{'mosaikAlignNeuralNetworkSeFile'} $scriptParameter{'referencesDir'}/`; #Copying files in place
-	   `cp $paths[$pathsCounter]/$scriptParameter{'mosaikAlignNeuralNetworkPeFile'} $scriptParameter{'referencesDir'}/`; #Copying files in place
+	   `cp $paths[$pathsCounter]/$scriptParameter{'mosaikAlignNeuralNetworkSeFile'} $scriptParameter{'referencesDir'}/`;  #Copying files in place
+	   `cp $paths[$pathsCounter]/$scriptParameter{'mosaikAlignNeuralNetworkPeFile'} $scriptParameter{'referencesDir'}/`;  #Copying files in place
 	   last;
 	}
     }
@@ -7693,19 +7430,19 @@ sub CheckUserInfoArrays {
     
     my $userSuppliedInfoSwitch;
     
-    if (scalar(@{$arrayRef}) == 0) { ##No user supplied sample info
+    if (scalar(@{$arrayRef}) == 0) {  #No user supplied sample info
 	
-	if (defined($scriptParameter{$parameterName})) { #sampleIDs info in config file
+	if (defined($scriptParameter{$parameterName})) {  #sampleIDs info in config file
 	    
-	    $userSuppliedInfoSwitch = 1; #No user supplied sample info, but present in config file do NOT overwrite using info from pedigree file
+	    $userSuppliedInfoSwitch = 1;  #No user supplied sample info, but present in config file do NOT overwrite using info from pedigree file
 	}
-	else { #No sampleIDs info in config file
+	else {  #No sampleIDs info in config file
 	    
-	    $userSuppliedInfoSwitch = 0; #No user supplied sample info, not defined $scriptParameter{'sampleIDs'} in config file, add it from pedigree file
+	    $userSuppliedInfoSwitch = 0;  #No user supplied sample info, not defined $scriptParameter{'sampleIDs'} in config file, add it from pedigree file
 	}
     }
     else {
-	$userSuppliedInfoSwitch = 1; # User supplied sample info, do NOT overwrite using info from pedigree file	
+	$userSuppliedInfoSwitch = 1;  #User supplied sample info, do NOT overwrite using info from pedigree file	
     }
     return $userSuppliedInfoSwitch;
 }
@@ -7728,12 +7465,12 @@ sub SetTargetFiles {
     my $parameterNameRef = $_[2];
     my $referenceFileEndingRef = $_[3];
     
-    if (defined($scriptParameter{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef})) { #Capture kit check
+    if (defined($scriptParameter{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef})) {  #Capture kit check
 	
-	$scriptParameter{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef} =~ s/GenomeReferenceSource/$humanGenomeReferenceSource/; #Replace with Refseq genome or Ensembl genome
-	$scriptParameter{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef} =~ s/Version/$humanGenomeReferenceVersion/; #Replace with actual version 
+	$scriptParameter{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef} =~ s/GenomeReferenceSource/$humanGenomeReferenceSource/;  #Replace with Refseq genome or Ensembl genome
+	$scriptParameter{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef} =~ s/Version/$humanGenomeReferenceVersion/;  #Replace with actual version 
 	
-	$sampleInfo{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef} = $scriptParameter{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef}; #Add to sampleInfo for qc print later
+	$sampleInfo{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef} = $scriptParameter{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef};  #Add to sampleInfo for qc print later
 	
 	&CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef}), \$$parameterNameRef, "f", \$$sampleIDRef);
 
@@ -7741,12 +7478,12 @@ sub SetTargetFiles {
     }
     else {
 	
-	$supportedCaptureKits{'Latest'} =~ s/GenomeReferenceSource/$humanGenomeReferenceSource/; #Replace with Refseq genome or Ensembl genome
-	$supportedCaptureKits{'Latest'} =~ s/Version/$humanGenomeReferenceVersion/; #Replace with actual version
+	$supportedCaptureKits{'Latest'} =~ s/GenomeReferenceSource/$humanGenomeReferenceSource/;  #Replace with Refseq genome or Ensembl genome
+	$supportedCaptureKits{'Latest'} =~ s/Version/$humanGenomeReferenceVersion/;  #Replace with actual version
 	
-	$scriptParameter{$$parameterNameRef} = "notSetYet"; #Required for autobuild
+	$scriptParameter{$$parameterNameRef} = "notSetYet";  #Required for autobuild
 	
-	&SetAutoBuildFeature($$parameterNameRef, \$$referenceFileEndingRef, \$supportedCaptureKits{'Latest'}, "noPrint"); #Always use the most updated capture kit when building target list
+	&SetAutoBuildFeature($$parameterNameRef, \$$referenceFileEndingRef, \$supportedCaptureKits{'Latest'}, "noPrint");  #Always use the most updated capture kit when building target list
     }
 }
 
@@ -7772,16 +7509,16 @@ sub PrepareArrayParameters {
     my $associatedPrograms = $_[4]; 
     my $parameterExistsCheck = $_[5];
 
-    if (scalar(@{$arrayRef}) == 0) { #No input from cmd or from pedigree
+    if (scalar(@{$arrayRef}) == 0) {  #No input from cmd or from pedigree
 	
-	$parameter{$parameterName}{'value'} = "nocmdinput"; #To enable use of subroutine &AddToScriptParameter
+	$parameter{$parameterName}{'value'} = "nocmdinput";  #To enable use of subroutine &AddToScriptParameter
     }
     else {
 
 	$parameter{$parameterName}{'value'} = "SetbyUser";
-	@{$arrayRef} = join(',',@{$arrayRef}); #If user supplied parameter a comma separated list
+	@{$arrayRef} = join(',',@{$arrayRef});  #If user supplied parameter a comma separated list
     }
-    push(@orderParameters, $parameterName); #Add to enable later evaluation of parameters in proper order & write to master file
+    push(@orderParameters, $parameterName);  #Add to enable later evaluation of parameters in proper order & write to master file
     &AddToScriptParameter($parameterName, $parameter{$parameterName}{'value'}, $parameterType, $parameterDefault, $associatedPrograms, $parameterExistsCheck);
 }
 
@@ -7803,13 +7540,13 @@ sub CheckUniqueTargetFiles {
     my $fileToCompareRef = $_[2];
     my $parameterName = $_[3];
     
-    for (my $compareCounter=($$countRef + 1);$compareCounter<scalar(@{$arrayRef});$compareCounter++) { #Compare all target files to remove autoBuild if file names are identical for each flag
+    for (my $compareCounter=($$countRef + 1);$compareCounter<scalar(@{$arrayRef});$compareCounter++) {  #Compare all target files to remove autoBuild if file names are identical for each flag
 	
 	if ( (defined($$fileToCompareRef)) && (defined($scriptParameter{ $scriptParameter{'familyID'} }{ ${$arrayRef}[$compareCounter] }{$parameterName})) ) {
 
-	    if ($$fileToCompareRef eq $scriptParameter{ $scriptParameter{'familyID'} }{ ${$arrayRef}[$compareCounter] }{$parameterName}) { #Identical target files
+	    if ($$fileToCompareRef eq $scriptParameter{ $scriptParameter{'familyID'} }{ ${$arrayRef}[$compareCounter] }{$parameterName}) {  #Identical target files
 	    
-		$parameter{ $scriptParameter{'familyID'} }{ ${$arrayRef}[$compareCounter] }{$parameterName}{'buildFile'} = 0; #Turn off autoBuild
+		$parameter{ $scriptParameter{'familyID'} }{ ${$arrayRef}[$compareCounter] }{$parameterName}{'buildFile'} = 0;  #Turn off autoBuild
 	    }
 	}
     }
@@ -7835,24 +7572,24 @@ sub CheckTemplateFilesPaths {
 
 	chomp $_;
 
-	if (m/^\s+$/) {	# Avoid blank lines
+	if (m/^\s+$/) {	 # Avoid blank lines
             next;
         }
-	if (m/^\#/) {	# Avoid "#"
+	if (m/^\#/) {  # Avoid "#"
             next;
         }	
 	if ($_ =~/(\S+)/) {	
 	    
 	    my $filePath = $_;
 
-	    if ($filePath=~/^(RD!)/) { #intersectCollect file
+	    if ($filePath=~/^(RD!)/) {  #intersectCollect file
 		
 		my @filePath = split('\t', $filePath);
 		$filePath[0] =~ s/^RD!/$scriptParameter{'referencesDir'}/g;
 
-		&CheckExistance(\$filePath[0], \$parameterName, "f"); #Only check paths that pointing to reference directory
+		&CheckExistance(\$filePath[0], \$parameterName, "f");  #Only check paths that pointing to reference directory
 	    }
-	    if ($parameterName eq "GATKHaploTypeCallerRefBAMInfile") { #Only Paths should be present i.e. check all lines
+	    if ($parameterName eq "GATKHaploTypeCallerRefBAMInfile") {  #Only Paths should be present i.e. check all lines
 	       
 		&CheckExistance(\$filePath, \$parameterName, "f");
 	    }
@@ -7905,6 +7642,7 @@ sub RemoveFileEnding {
     return $fileNameNoEnding;
 }
 
+
 sub ScriptParameterPerSampleID {
 
 ##ScriptParameterPerSampleID
@@ -7922,7 +7660,7 @@ sub ScriptParameterPerSampleID {
     
     if (defined($scriptParameter{$$familyIDRef}{$$sampleIDRef}{$parameterName})) {
 	
-	$scriptParameter{$parameterName} = 1; #Define in scriptParameter so that we now that parameter is present per SampleID
+	$scriptParameter{$parameterName} = 1;  #Define in scriptParameter so that we now that parameter is present per SampleID
     }
 }
 
@@ -7940,8 +7678,8 @@ sub EnableArrayParameter {
     my $arrayRef = $_[0];
     my $parameterNameRef = $_[1];
     
-    $scriptParameter{$$parameterNameRef} = join(',',@{$arrayRef}); #Add to enable recreation of cmd line later
-    @{$arrayRef} = split(/,/,join(',', @{$arrayRef})); #Enables comma separated list of sample IDs from user supplied cmd info
+    $scriptParameter{$$parameterNameRef} = join(',',@{$arrayRef});  #Add to enable recreation of cmd line later
+    @{$arrayRef} = split(/,/,join(',', @{$arrayRef}));  #Enables comma separated list of sample IDs from user supplied cmd info
 }
 
 
@@ -8036,10 +7774,10 @@ sub SetAutoBuildAndScriptParameterPerSample {
     my $parameterArrayRef = $_[1];
     my $parameterNameRef = $_[2];
 
-    for (my $sampleIDsCounter=0;$sampleIDsCounter<scalar(@{$sampleIDArrayRef});$sampleIDsCounter++) { #All sampleIDs
+    for (my $sampleIDsCounter=0;$sampleIDsCounter<scalar(@{$sampleIDArrayRef});$sampleIDsCounter++) {  #All sampleIDs
 	
-	$parameter{ $scriptParameter{'familyID'} }{${$sampleIDArrayRef}[$sampleIDsCounter]}{$$parameterNameRef}{'buildFile'} = "yesAutoBuild"; #Turn on autoBuild
-	$scriptParameter{ $scriptParameter{'familyID'} }{ ${$sampleIDArrayRef}[$sampleIDsCounter] }{$$parameterNameRef} = ${$parameterArrayRef}[$sampleIDsCounter]; #Populate hash that is used in modules
+	$parameter{ $scriptParameter{'familyID'} }{${$sampleIDArrayRef}[$sampleIDsCounter]}{$$parameterNameRef}{'buildFile'} = "yesAutoBuild";  #Turn on autoBuild
+	$scriptParameter{ $scriptParameter{'familyID'} }{ ${$sampleIDArrayRef}[$sampleIDsCounter] }{$$parameterNameRef} = ${$parameterArrayRef}[$sampleIDsCounter];  #Populate hash that is used in modules
     }
 }
 
@@ -8063,8 +7801,8 @@ sub SetTargetFileGeneralBuildParameter {
     my $sampleIDBuildFileNoEndingRef = $_[3];
     my $sampleIDRef = $_[4];
     
-    $$sampleIDBuildFileNoEndingRef = &RemoveFileEnding(\$$targetfileRef, $referenceFileEndings{$parameterName}); #Remove ".fileending" from reference filename
-    $parameter{ $scriptParameter{'familyID'} }{$$sampleIDRef}{$parameterName}{'buildFile'} = 0; #Build once then done
+    $$sampleIDBuildFileNoEndingRef = &RemoveFileEnding(\$$targetfileRef, $referenceFileEndings{$parameterName});  #Remove ".fileending" from reference filename
+    $parameter{ $scriptParameter{'familyID'} }{$$sampleIDRef}{$parameterName}{'buildFile'} = 0;  #Build once then done
     $$sampleIDBuildFileRef = $$targetfileRef;
     
 }
@@ -8084,10 +7822,10 @@ sub PrintCheckExistandMoveFile {
     my $intendedFilePathRef = $_[1]; 
     my $temporaryFilePathRef = $_[2];
     
-    print $FILEHANDLE "[ -s ".$$intendedFilePathRef." ] "; #Check file exists and is larger than 0
-    print $FILEHANDLE "&& rm ".$$temporaryFilePathRef." "; #If other processes already has created file, remove temp file
-    print $FILEHANDLE "|| "; #File has not been created by other processes
-    print $FILEHANDLE "mv ".$$temporaryFilePathRef." ".$$intendedFilePathRef,"\n\n"; #Move file in place
+    print $FILEHANDLE "[ -s ".$$intendedFilePathRef." ] ";  #Check file exists and is larger than 0
+    print $FILEHANDLE "&& rm ".$$temporaryFilePathRef." ";  #If other processes already has created file, remove temp file
+    print $FILEHANDLE "|| ";  #File has not been created by other processes
+    print $FILEHANDLE "mv ".$$temporaryFilePathRef." ".$$intendedFilePathRef,"\n\n";  #Move file in place
     
 }
 
@@ -8100,18 +7838,18 @@ sub DefineAnnovarTables {
 ##Returns  : ""
 ##Arguments: 
 
-    my $annovarGenomeBuildVersion = $scriptParameter{'annovarGenomeBuildVersion'}; #Set the current annovar genome build
+    my $annovarGenomeBuildVersion = $scriptParameter{'annovarGenomeBuildVersion'};  #Set the current annovar genome build
 
     ##Define annovar tables
-    my @annovarTablesGeneAnno = ("refGene", "knownGene", "ensGene"); #Tables using annotation option "geneanno"
-    my @annovarTablesRegionAnno = ("mce46way", "gerp++elem", "segdup", "tfbs", "mirna"); #Tables using annotation option "regionanno"
-    my @annovarTablesFilter = ("snp137", "snp135", "snp132", "snp131", "snp130", "snp129", "snp137NonFlagged", "snp135NonFlagged", "snp132NonFlagged", "snp131NonFlagged", "snp130NonFlagged", "1000g2012apr_all", "1000g2012apr_amr", "1000g2012apr_eur", "1000g2012apr_asn", "1000g2012apr_afr", "1000g2012feb_all", "esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_ma", "ljb2_fathmm", "ljb2_siphy", "ljb2_lrt", "ljb_all", "ljb2_gerp++", "ljb2_phylop", "caddgt20", "caddgt10"); #Tables using annotation option "filter"
-    my @annovarTablesUrlUcsc = ("mce46way", "segdup", "tfbs", "mirna"); #Tables using urlAlias "ucsc"
-    my @annovarGenericFiltering = ("esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105"); #Tables using generic option
-    my @annovarGenericFiles = ($annovarGenomeBuildVersion."_esp6500si_all.txt", $annovarGenomeBuildVersion."_esp6500_all.txt", $annovarGenomeBuildVersion."_esp6500_aa.txt", $annovarGenomeBuildVersion."_esp6500_ea.txt", $annovarGenomeBuildVersion."_esp5400_all.txt", $annovarGenomeBuildVersion."_esp5400_aa.txt", $annovarGenomeBuildVersion."_esp5400_ea.txt", $annovarGenomeBuildVersion."_clinvar_20131105.txt"); #Generic table files
-    my @annovarRefgeneFiles = ($annovarGenomeBuildVersion."_refGene.txt", $annovarGenomeBuildVersion."_refGeneMrna.fa", $annovarGenomeBuildVersion."_refLink.txt", "GRCh37_MT_ensGene.txt", "GRCh37_MT_ensGeneMrna.fa"); #Cater for multiple download
-    my @annovarKnownGeneFiles = ($annovarGenomeBuildVersion."_knownGene.txt", $annovarGenomeBuildVersion."_kgXref.txt", $annovarGenomeBuildVersion."_knownGeneMrna.fa"); #Cater for multiple download
-    my @annovarEnsGeneFiles = ($annovarGenomeBuildVersion."_ensGene.txt", $annovarGenomeBuildVersion."_ensGeneMrna.fa", "GRCh37_MT_ensGene.txt", "GRCh37_MT_ensGeneMrna.fa"); #Cater for multiple download
+    my @annovarTablesGeneAnno = ("refGene", "knownGene", "ensGene");  #Tables using annotation option "geneanno"
+    my @annovarTablesRegionAnno = ("mce46way", "gerp++elem", "segdup", "tfbs", "mirna");  #Tables using annotation option "regionanno"
+    my @annovarTablesFilter = ("snp137", "snp135", "snp132", "snp131", "snp130", "snp129", "snp137NonFlagged", "snp135NonFlagged", "snp132NonFlagged", "snp131NonFlagged", "snp130NonFlagged", "1000g2012apr_all", "1000g2012apr_amr", "1000g2012apr_eur", "1000g2012apr_asn", "1000g2012apr_afr", "1000g2012feb_all", "esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_ma", "ljb2_fathmm", "ljb2_siphy", "ljb2_lrt", "ljb_all", "ljb2_gerp++", "ljb2_phylop", "caddgt20", "caddgt10");  #Tables using annotation option "filter"
+    my @annovarTablesUrlUcsc = ("mce46way", "segdup", "tfbs", "mirna");  #Tables using urlAlias "ucsc"
+    my @annovarGenericFiltering = ("esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105");  #Tables using generic option
+    my @annovarGenericFiles = ($annovarGenomeBuildVersion."_esp6500si_all.txt", $annovarGenomeBuildVersion."_esp6500_all.txt", $annovarGenomeBuildVersion."_esp6500_aa.txt", $annovarGenomeBuildVersion."_esp6500_ea.txt", $annovarGenomeBuildVersion."_esp5400_all.txt", $annovarGenomeBuildVersion."_esp5400_aa.txt", $annovarGenomeBuildVersion."_esp5400_ea.txt", $annovarGenomeBuildVersion."_clinvar_20131105.txt");  #Generic table files
+    my @annovarRefgeneFiles = ($annovarGenomeBuildVersion."_refGene.txt", $annovarGenomeBuildVersion."_refGeneMrna.fa", $annovarGenomeBuildVersion."_refLink.txt", "GRCh37_MT_ensGene.txt", "GRCh37_MT_ensGeneMrna.fa");  #Cater for multiple download
+    my @annovarKnownGeneFiles = ($annovarGenomeBuildVersion."_knownGene.txt", $annovarGenomeBuildVersion."_kgXref.txt", $annovarGenomeBuildVersion."_knownGeneMrna.fa");  #Cater for multiple download
+    my @annovarEnsGeneFiles = ($annovarGenomeBuildVersion."_ensGene.txt", $annovarGenomeBuildVersion."_ensGeneMrna.fa", "GRCh37_MT_ensGene.txt", "GRCh37_MT_ensGeneMrna.fa");  #Cater for multiple download
 
     #Set UCSC alias for download from UCSC
     $annovarTables{'mce46way'}{'ucscAlias'} = "phastConsElements46way";
@@ -8157,7 +7895,7 @@ sub DefineAnnovarTables {
 
 	&AnnovarTableParameters(\$annovarTablesRegionAnno[$tablesCounter], \@annovarTablesRegionAnno, "annotation", "regionanno");
 	&AnnovarTableParameters(\$annovarTablesRegionAnno[$tablesCounter], \@annovarTablesRegionAnno, "urlAlias", "annovar");
-	&AnnovarTableParameters(\$annovarTablesRegionAnno[$tablesCounter], \@annovarTablesUrlUcsc, "urlAlias", "ucsc"); #Replace for ucsc tables NOTE: not all in RegionAnno
+	&AnnovarTableParameters(\$annovarTablesRegionAnno[$tablesCounter], \@annovarTablesUrlUcsc, "urlAlias", "ucsc");  #Replace for ucsc tables NOTE: not all in RegionAnno
     }
     for (my $tablesCounter=0;$tablesCounter<scalar(@annovarTablesFilter);$tablesCounter++) {
 
@@ -8194,17 +7932,17 @@ sub AnnovarTableParameters {
     
     for (my $tablesCounter=0;$tablesCounter<scalar(@{$arrayRef});$tablesCounter++) {
     
-	if (${$arrayRef}[$tablesCounter] eq $$tableNameRef) { #Membership test
+	if (${$arrayRef}[$tablesCounter] eq $$tableNameRef) {  #Membership test
 	    
-	    if ($parameterType eq "file") { #Add as array instead, since some annovar tables have multiple files downloaded for the same call
+	    if ($parameterType eq "file") {  #Add as array instead, since some annovar tables have multiple files downloaded for the same call
 		
-		push(@{$annovarTables{$$tableNameRef}{$parameterType}}, $parameterValue); #Add as array
+		push(@{$annovarTables{$$tableNameRef}{$parameterType}}, $parameterValue);  #Add as array
 	    }
 	    else {
 		
 		$annovarTables{$$tableNameRef}{$parameterType} = $parameterValue;
 	    }
-	    last; #No table should be represented twice within the same array
+	    last;  #No table should be represented twice within the same array
 	}
     }
 }
@@ -8220,7 +7958,7 @@ sub CollectSeqContigs {
 
     my $pqSeqDict = q?perl -nae 'if($F[0]=~/^\@SQ/) { if($F[1]=~/SN\:(\S+)/) {print $1, ",";} }' ?; 
     my $SeqDictLocation = $scriptParameter{'referencesDir'}."/".$humanGenomeReferenceNameNoEnding.".dict";
-    @contigs = `$pqSeqDict $SeqDictLocation `; #returns a comma seperated string of sequence contigs from dict file
+    @contigs = `$pqSeqDict $SeqDictLocation `;  #Returns a comma seperated string of sequence contigs from dict file
     @contigs = split(/,/,join(',', @contigs));
 }
 
@@ -8236,9 +7974,9 @@ sub ReplaceConfigParamWithCMDInfo {
 
     my $parameterName = $_[0];
 
-    if ($parameter{$parameterName}{'value'} ne "nocmdinput") { #Replace config parameter with cmd info for parameter
+    if ($parameter{$parameterName}{'value'} ne "nocmdinput") {  #Replace config parameter with cmd info for parameter
 	
-	$scriptParameter{$parameterName} = $parameter{$parameterName}{'value'}; #Transfer to active parameter
+	$scriptParameter{$parameterName} = $parameter{$parameterName}{'value'};  #Transfer to active parameter
     }
 }
 
@@ -8280,20 +8018,20 @@ sub CheckCosmidYAML {
 ##Returns  : Path to Cosmid Resource directory for current analysis
 ##Arguments: 
 
-    my %cosmidResources; #Hash to load cosmid info to
+    my %cosmidResources;  #Hash to load cosmid info to
 
-    if (-f $scriptParameter{'referencesDir'}."/cosmid.yaml") { #cosmid.yaml file exists in reference directory
+    if (-f $scriptParameter{'referencesDir'}."/cosmid.yaml") {  #Cosmid.yaml file exists in reference directory
 	
-	%cosmidResources = &LoadYAML($scriptParameter{'referencesDir'}."/cosmid.yaml"); #Load yaml file
+	%cosmidResources = &LoadYAML($scriptParameter{'referencesDir'}."/cosmid.yaml");  #Load yaml file
 	
-	unless (defined($cosmidResources{'directory'})) { #Set Directory entry if not defined
+	unless (defined($cosmidResources{'directory'})) {  #Set Directory entry if not defined
 	    
-	    $cosmidResources{'directory'} = $scriptParameter{'referencesDir'}."/resources"; #Set the Cosmid default directory
+	    $cosmidResources{'directory'} = $scriptParameter{'referencesDir'}."/resources";  #Set the Cosmid default directory
 	}
     }
-    else { #No cosmid.yaml exist in reference directory
+    else {  #No cosmid.yaml exist in reference directory
 	
-	$cosmidResources{'directory'} = $scriptParameter{'referencesDir'}."/resources"; #Set the Cosmid default directory
+	$cosmidResources{'directory'} = $scriptParameter{'referencesDir'}."/resources";  #Set the Cosmid default directory
     }
     return $cosmidResources{'directory'};
 }
@@ -8312,15 +8050,16 @@ sub AdjustNrCoresToSeqMode {
     my $nrCoresRef = $_[0];
     my $sequenceRunTypeRef = $_[1];
     
-    if ($$sequenceRunTypeRef eq "Paired-end") { #Second read direction if present
+    if ($$sequenceRunTypeRef eq "Paired-end") {  #Second read direction if present
 
-	$$nrCoresRef =  $$nrCoresRef + 2; #2 processes per file
+	$$nrCoresRef =  $$nrCoresRef + 2;  #2 processes per file
     }
-    else {#Single-end
+    else {  #Single-end
 
-	$$nrCoresRef = $$nrCoresRef + 1; #Only 1 file and one process
+	$$nrCoresRef = $$nrCoresRef + 1;  #Only 1 file and one process
     }
 }
+
 
 sub PrintWait {
 
@@ -8339,10 +8078,10 @@ sub PrintWait {
     my $coreCounterRef = $_[2];
     my $FILEHANDLE = $_[3];
     
-    if ($$counterRef == $$coreCounterRef * $$nrCoresRef) { #Using only nr of cores eq to lanes or maximumCores
+    if ($$counterRef == $$coreCounterRef * $$nrCoresRef) {  #Using only nr of cores eq to lanes or maximumCores
 	
 	print $FILEHANDLE "wait", "\n\n";
-	$$coreCounterRef=$$coreCounterRef+1; #Increase the maximum number of cores allowed to be used since "wait" was just printed 
+	$$coreCounterRef=$$coreCounterRef+1;  #Increase the maximum number of cores allowed to be used since "wait" was just printed 
     }    
 }
 
@@ -8358,18 +8097,19 @@ sub CheckBuildDownLoadPreRequisites {
 
     my $programName = $_[0];
     
-    for my $parameterName (keys %supportedCosmidReferences) { #Supported cosmid references for MIP parameters
+    for my $parameterName (keys %supportedCosmidReferences) {  #Supported cosmid references for MIP parameters
 	
-	if ( "p".$programName eq $parameter{$parameterName}{'associatedProgram'}) { #If the cosmid supported parameter is associated with the MIP program
+	if ( "p".$programName eq $parameter{$parameterName}{'associatedProgram'}) {  #If the cosmid supported parameter is associated with the MIP program
 	    
-	    if ($parameter{$parameterName}{'buildFile'} eq 1) { #Enable autoBuild
+	    if ($parameter{$parameterName}{'buildFile'} eq 1) {  #Enable autoBuild
 		
 		&BuildDownLoadablePreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, $programName);
-		last; #Perform once
+		last;  #Perform once
 	    }
 	}
     }
 }
+
 
 sub PrintToFileHandles {
 
@@ -8413,6 +8153,7 @@ sub CheckSupportedFileEnding {
     }
 }
 
+
 sub PrintSupportedAnnovarTableNames {
 
 ##PrintSupportedAnnovarTableNames
@@ -8447,9 +8188,9 @@ sub CheckEntryHashofArray {
     my $keyRef = $_[1];
     my $elementRef = $_[2];
 
-    if (defined($$hashRef{$$keyRef})) { #Information on entry present
+    if (defined($$hashRef{$$keyRef})) {  #Information on entry present
 
-	if ( ! ( grep /$$elementRef/, @{$$hashRef{$$keyRef}} ) ) { #If element is not part of array
+	if ( ! ( grep /$$elementRef/, @{$$hashRef{$$keyRef}} ) ) {  #If element is not part of array
 
 	    return 1;
 	}
@@ -8474,27 +8215,27 @@ sub CheckMostCompleteAndRemoveFile {
     my $fileRef = $_[2];
     my $fileEnding = $_[3];
     
-    if ( (defined($$mostCompleteRef)) && (defined($$fileRef)) ) { #Not to disturb first dry_run of analysis
+    if ( (defined($$mostCompleteRef)) && (defined($$fileRef)) ) {  #Not to disturb first dry_run of analysis
 
-	unless ($$mostCompleteRef eq $$fileRef) { #Do not remove mostCompleteBAM|VCF
+	unless ($$mostCompleteRef eq $$fileRef) {  #Do not remove mostCompleteBAM|VCF
 		
 	    my $fileName = &RemoveFileEnding(\$$fileRef, $fileEnding);
 
-	    if (defined($fileName)) { #Successfully removed file ending using &RemoveFileEnding
+	    if (defined($fileName)) {  #Successfully removed file ending using &RemoveFileEnding
 	    
-		my $end = ".*"; #Remove all files with ending with ".*"
+		my $end = ".*";  #Remove all files with ending with ".*"
 
-		if ($fileEnding eq ".bam") { #For BAM files 
+		if ($fileEnding eq ".bam") {  #For BAM files 
 		
-		    $end = ".ba*"; #Removes both .bam and .bai
+		    $end = ".ba*";  #Removes both .bam and .bai
 		}
-		if ($fileEnding eq ".vcf") { #For VCF files
+		if ($fileEnding eq ".vcf") {  #For VCF files
 		
-		    $end = ".vcf*"; #Removes both .vcf and .vcf.idx
+		    $end = ".vcf*";  #Removes both .vcf and .vcf.idx
 		}
 		##Print removal of file to sbatch script 
 		print $FILEHANDLE "rm ";
-		print $FILEHANDLE $fileName.$end, "\n\n"; #Remove file(s)
+		print $FILEHANDLE $fileName.$end, "\n\n";  #Remove file(s)
 	    }
 	}
     }
