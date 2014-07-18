@@ -6,12 +6,14 @@ use warnings;
 ###Master script for analysing paired end reads from the Illumina plattform in fastq(.gz) format to annotated ranked disease causing variants. The program performs QC, aligns reads using Mosaik or BWA, performs variant discovery and annotation as well as ranking the found variants according to disease potential.
  
 ###Copyright 2011 Henrik Stranneheim
-    
+
 use Pod::Usage;
 use Pod::Text;
 use Getopt::Long;
 use POSIX;
 use IO::File;
+
+##Third party module
 use YAML;
 
 use vars qw($USAGE);
@@ -21,23 +23,23 @@ BEGIN {
 	qq{
 mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [project ID] -s [sample ID,.,.,.,n] -em [e-mail] -osd [outdirscripts] -odd [outDataDir] -f [familyID] -p[program]
                ####MIP
-	       -ifd/--inFilesDirs Infile directory(s), comma sep (Mandatory: Supply whole path,)
-               -isd/--inScriptDir The pipeline custom script in directory (Mandatory: Supply whole path)
-               -rd/--referencesDir Reference(s) directory (Mandatory: Supply whole path)
-	       -p/--projectID The project ID  (Mandatory)
-	       -s/--sampleIDs The sample ID(s),comma sep (Mandatory)
-	       -em/--email E-mail
+	       -ifd/--inFilesDirs Infile directory(s) (comma sep; mandatory: supply whole path,)
+               -isd/--inScriptDir The pipeline custom script in directory (mandatory: supply whole path)
+               -rd/--referencesDir Reference(s) directory (mandatory: supply whole path)
+	       -p/--projectID The project ID  (mandatory)
+	       -s/--sampleIDs The sample ID(s)(comma sep; mandatory)
+	       -em/--email E-mail (defaults to "")
                -emt/--emailType E-mail type (defaults to F (=FAIL);Options: B (=BEGIN) and/or F (=FAIL) and/or E=(END))
-	       -odd/--outDataDir The data files output directory (Mandatory: Supply whole path)
-	       -osd/--outScriptDir The script files (.sh) output directory (Mandatory: Supply whole path)
+	       -odd/--outDataDir The data files output directory (mandatory: supply whole path)
+	       -osd/--outScriptDir The script files (.sh) output directory (mandatory: supply whole path)
                -f/--familyID Group id of samples to be compared (defaults to "0" (=no), (Ex: 1 for IDN 1-1-1A))
-               -ped/--pedigreeFile (Supply whole path, defaults to "")
+               -ped/--pedigreeFile (defaults to ""; supply whole path)
                -hgr/--humanGenomeReference Fasta file for the human genome reference (defaults to "Homo_sapiens.GRCh37.d5.fasta;1000G decoy version 5")
                -al/--aligner Setting which aligner was used for alignment in previous analysis (defaults to "")
                -at/--analysisType Type of analysis to perform (defaults to "exomes";Valid entries: "genomes", "exomes", "rapid")
                -mc/--maximumCores The maximum number of cores per node used in the analysis (defaults to "8")
                -c/--configFile YAML config file for script parameters (defaults to "")
-               -wc/--writeConfigFile Write YAML configuration file for script parameters (defaults to "";Supply whole path)
+               -wc/--writeConfigFile Write YAML configuration file for script parameters (defaults to "";supply whole path)
                -int/--instanceTag Tag family with instance association in sampleInfo file (defaults to "")
                -rea/--researchEthicalApproval Tag for displaying research candidates in Scout (defaults to "notApproved")
                -sif/--sampleInfoFile YAML file for sample info used in the analysis (defaults to "{outDataDir}/{familyID}/{familyID}_qc_sampleInfo.yaml")
@@ -50,7 +52,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                
                ####Programs
                -pGZ/--pGZip GZip fastq files (defaults to "1" (=yes))
-	       -pFQC/--pFastQC Sequence quality analysis using FastQC (defaults to "1" (=yes))
+	       -pFqC/--pFastQC Sequence quality analysis using FastQC (defaults to "1" (=yes))
 
                ##Mosaik
 	       -pMoB/--pMosaikBuild  Convert reads to Mosaik format using MosaikBuild (defaults to "1" (=yes))
@@ -63,18 +65,18 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                
                ##BWA
                -pMem/--pBwaMem Align reads using BWA Mem (defaults to "0" (=no))
-                 -memrdb/--bwaMemRapidDb Selection of relevant regions post alignment (Defaults to "")
+                 -memrdb/--bwaMemRapidDb Selection of relevant regions post alignment (defaults to "")
                -pAln/--pBwaAln Index reads using BWA Aln (defaults to "0" (=no))
                  -alnq/--bwaAlnQualityTrimming BWA Aln quality threshold for read trimming (defaults to "20")
                -pSap/--pBwaSampe Align reads using BWA Sampe (defaults to "0" (=no))
                
                ##PicardTools
                -ptp/--picardToolsPath Path to PicardTools. Mandatory for use of PicardTools (defaults to "")
-               -ptd/--PicardToolsTempDirectory Temporary Directory to write to using PicardTools (defaults to "/scratch/SLURM_JOB_ID";Supply whole path)
+               -ptd/--PicardToolsTempDirectory Temporary Directory to write to using PicardTools (defaults to "/scratch/SLURM_JOB_ID";supply whole path)
                -pPtS/--pPicardToolsSortSam Sort & index aligned reads using PicardTools SortSam & index (defaults to "1" (=yes))
                -pPtM/--pPicardToolsMergeSamFiles Merge (BAM file(s) ) using PicardTools MergeSamFiles (defaults to "1" (=yes))
                -pPtMR/--pPicardToolsMergeRapidReads Merge Read batch processed (BAM file(s)) using PicardTools MergeSamFiles (Only relevant in rapid mode;defaults to "0" (=no))
-                 -ptmp/--picardToolsMergeSamFilesPrevious PicardTools MergeSamFiles on merged current files and previous BAM-file(s) (Supply whole path and name, name must contain sample id, and lanes_Xn info)
+                 -ptmp/--picardToolsMergeSamFilesPrevious PicardTools MergeSamFiles on merged current files and previous BAM-file(s) (supply whole path and name, name must contain sample id, and lanes_Xn info)
                -pPtMD/--pPicardToolsMarkduplicates Markduplicates using PicardTools MarkDuplicates (defaults to "1" (=yes))
                
                ##Coverage Calculations
@@ -94,7 +96,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                ##GATK              
                -gtp/--genomeAnalysisToolKitPath  Path to GATK. Mandatory for use of GATK (defaults to "")
                -gbdv/--GATKBundleDownLoadVersion  GATK FTP bundle download version.(defaults to "2.8")
-               -gtd/--GATKTempDirectory Temporary Directory to write to using GATK ReAlignerTargetCreator & BaseRecalibrator (defaults to "/scratch/SLURM_JOB_ID";Supply whole path)
+               -gtd/--GATKTempDirectory Temporary Directory to write to using GATK ReAlignerTargetCreator & BaseRecalibrator (defaults to "/scratch/SLURM_JOB_ID";supply whole path)
                -gtpl/--GATKTargetPaddedBedIntervalLists Target BED file interval for GATK (defaults to "". File ending should be ".padXXX.interval_list")
                -gdco/--GATKDownSampleToCoverage Coverage to downsample to at any given locus (defaults to "1000")
                -pGrA/--pGATKRealigner Realignments of reads using GATK realign (defaults to "1" (=yes))
@@ -124,32 +126,32 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                
                ##ANNOTATION
                -pVeP/--pVariantEffectPredictor Annotate variants using VEP (defaults to "1" (=yes))
-                 -vepp/--vepDirectoryPath Path to VEP script directory (Supply whole path, defaults to "")
-                 -vepc/vepDirectoryCache Specify the cache directory to use (Supply whole path, defaults to "") 
-                 -vepf/--vepFeatures VEP features (Defaults to ("refseq","hgvs","symbol","numbers","sift","polyphen","humdiv"); comma sep)
+                 -vepp/--vepDirectoryPath Path to VEP script directory (defaults to ""; supply whole path)
+                 -vepc/vepDirectoryCache Specify the cache directory to use (supply whole path, defaults to "") 
+                 -vepf/--vepFeatures VEP features (defaults to ("refseq","hgvs","symbol","numbers","sift","polyphen","humdiv"); comma sep)
                -pVcP/--pVCFParser Parse variants using vcfParser.pl (defaults to "1" (=yes))
                  -vcpvt/--vcfParserVepTranscripts Parse VEP transcript specific entries (defaults to "0" (=no))
-                 -vcprff/--vcfParserRangeFeatureFile Range annotations file (Defaults to ""; tab-sep)
-                 -vcprfa/--vcfParserRangeFeatureAnnotationColumns Range annotations feature columns (Defaults to ""; comma sep)
-                 -vcpsf/--vcfParserSelectFile File containging list of genes to analyse seperately (Defaults to "";tab-sep file and HGNC Symbol required)
-                 -vcpsfm/--vcfParserSelectFileMatchingColumn Position of HGNC Symbol column in SelectFile (Defaults to "")
-                 -vcpsfa/--vcfParserSelectFeatureAnnotationColumns Feature columns to use in annotation (Defaults to ""; comma sep)
+                 -vcprff/--vcfParserRangeFeatureFile Range annotations file (defaults to ""; tab-sep)
+                 -vcprfa/--vcfParserRangeFeatureAnnotationColumns Range annotations feature columns (defaults to ""; comma sep)
+                 -vcpsf/--vcfParserSelectFile File containging list of genes to analyse seperately (defaults to "";tab-sep file and HGNC Symbol required)
+                 -vcpsfm/--vcfParserSelectFileMatchingColumn Position of HGNC Symbol column in SelectFile (defaults to "")
+                 -vcpsfa/--vcfParserSelectFeatureAnnotationColumns Feature columns to use in annotation (defaults to ""; comma sep)
                 -pSnE/--pSnpEff Variant annotation using snpEFF (defaults to "1" (=yes))
                  -snep/--snpEffPath Path to snpEff. Mandatory for use of snpEff (defaults to "")
                  -snesaf/--snpSiftAnnotationFiles Annotation files to use with snpSift (comma sep)
                  -snesdbnsfp/--snpSiftDbNSFPFile DbNSFP File (defaults to "dbNSFP2.4_variant.txt.gz")
-                 -snesdbnsfpa/--snpSiftDbNSFPAnnotations DbNSFP annotations to use with snpSift (Defaults to ("SIFT_pred","Polyphen2_HDIV_pred","Polyphen2_HVAR_pred","LRT_pred","MutationTaster_pred","GERP++_NR","GERP++_RS","phastCons100way_vertebrate","1000Gp1_AF","ESP6500_AA_AF"); comma sep)
+                 -snesdbnsfpa/--snpSiftDbNSFPAnnotations DbNSFP annotations to use with snpSift (defaults to ("SIFT_pred","Polyphen2_HDIV_pred","Polyphen2_HVAR_pred","LRT_pred","MutationTaster_pred","GERP++_NR","GERP++_RS","phastCons100way_vertebrate","1000Gp1_AF","ESP6500_AA_AF"); comma sep)
                -pAnV/--pAnnovar Annotate variants using Annovar (defaults to "1" (=yes))
-                 -anvp/--annovarPath  Path to Annovar script directory (Supply whole path, defaults to "". NOTE: Assumes that the annovar db files are located in annovar/humandb)
+                 -anvp/--annovarPath  Path to Annovar script directory (supply whole path, defaults to "". NOTE: Assumes that the annovar db files are located in annovar/humandb)
                  -anvgbv/--annovarGenomeBuildVersion Annovar genome build version (defaults to "hg19")
-                 -anvtn/--annovarTableNames Annovar table names (Defaults to ("refGene","mce46way","gerp++elem","segdup","tfbs","mirna","snp137NonFlagged","1000g2012apr_all","esp6500si_all","ljb2_sift","ljb2_pp2hdiv","ljb2_pp2hvar","ljb2_mt","ljb2_lrt","ljb2_gerp++","ljb2_phylop"); comma sep)
+                 -anvtn/--annovarTableNames Annovar table names (defaults to ("refGene","mce46way","gerp++elem","segdup","tfbs","mirna","snp137NonFlagged","1000g2012apr_all","esp6500si_all","ljb2_sift","ljb2_pp2hdiv","ljb2_pp2hvar","ljb2_mt","ljb2_lrt","ljb2_gerp++","ljb2_phylop"); comma sep)
                  -anvstn/--annovarSupportedTableNames Print Annovar MIP supported table names (defaults 0 (=no))
                  -anvarmafth/--annovarMAFThreshold Sets the minor allele frequency threshold in annovar (defaults to "0")
 
                ##RankVariants
                -pRaV/--pRankVariants Ranking of annotated variants (defaults to "1" (=yes))
                  -ravrs/--rankScore The rank score cut-off (defaults to "-100", .i.e. include everything
-                 -ravgf/--geneFile Defines genes to use when calculating compounds
+                 -ravgf/--geneFile Defines genes to use when calculating compounds (defaults to "hg19_refGene.txt")
                  -ravcs/--caddWGSSNVs Annotate whole genome sequencing CADD score (defaults to "0" (=no))
                  -ravcsf/--caddWGSSNVsFile Whole genome sequencing CADD score file (defaults to "")
                  -ravc1kg/--cadd1000Genomes 1000 Genome cadd score file (defaults to "0" (=no))
@@ -172,13 +174,13 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
 my %parameter;  #Holds all parameters for MIP
 my %scriptParameter;  #Holds all active parameters after the value has been set
 
-$scriptParameter{'MIP'} = 1;  #Enable/activate MIP 
+$scriptParameter{'MIP'} = 1;  #Enable/activate MIP
 
 my @orderParameters;  #To add/write parameters in the correct order
 
 #Add timestamp for later use in mip_log and qcmetrics yaml file
 my $timeStamp = (`date +%Y%m%d_%Hh%Mm`);  #Catches current date and script name
-chomp($timeStamp);  #Remove \n;
+chomp($timeStamp);  #Remove \n
 
 ####Set program parameters
 
@@ -224,6 +226,7 @@ chomp($timeStamp);  #Remove \n;
 
 my (@inFilesDirs,@sampleIDs);  #Arrays for input file directorys,sampleIDs
 
+
 ###Programs
 
 ##GZip
@@ -248,10 +251,11 @@ my (@inFilesDirs,@sampleIDs);  #Arrays for input file directorys,sampleIDs
 &DefineParametersPath("mosaikAlignNeuralNetworkSeFile", "2.1.78.se.ann", "pMosaikAlign", "file", "yesAutoBuild");
 
 &DefineParametersPath("mosaikJumpDbStub", "notSetYet", "pMosaikAlign", "file", "yesAutoBuild");
+
 my @mosaikJumpDbStubFileEndings = ("_keys.jmp", "_meta.jmp", "_positions.jmp");
 
-##BWA
 
+##BWA
 &DefineParameters("pBwaMem", "program", 0, "MIP", "nofileEnding", "MAIN", "bwa");
 
 &DefineParametersPath("bwaMemRapidDb", "nodefault", "pBwaMem", "file", "noAutoBuild");
@@ -263,14 +267,14 @@ my @mosaikJumpDbStubFileEndings = ("_keys.jmp", "_meta.jmp", "_positions.jmp");
 &DefineParameters("pBwaSampe", "program", 0, "MIP", "nofileEnding", "MAIN", "bwa");
 
 &DefineParametersPath("bwaBuildReference", "notSetYet", "pBwaMem,pBwaAln,pBwaSampe", "file", "yesAutoBuild");
+
 my @bwaBuildReferenceFileEndings = (".amb", ".ann", ".bwt", ".pac", ".sa");
 
-##Choosen MIP Aligner
 
+##Choosen MIP Aligner
 &DefineParameters("aligner", "MIP", "mosaik", "MIP");
 
 ##PicardTools
-
 &DefineParameters("pPicardToolsSortSam", "program", 1, "MIP", "_sorted", "MAIN");
 
 &DefineParameters("pPicardToolsMergeRapidReads", "program", 0, "MIP", "_sorted", "MAIN");#Rapid mode special case
@@ -282,6 +286,7 @@ my @bwaBuildReferenceFileEndings = (".amb", ".ann", ".bwt", ".pac", ".sa");
 &DefineParametersPath("PicardToolsTempDirectory", "/scratch/", "pBwaMem,pPicardToolsSortSam,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates", 0);  #Directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
 
 my (@picardToolsMergeSamFilesPrevious);  #Any previous sequencing runs
+
 
 ##Coverage
 &DefineParameters("pChanjoBuild", "program", 1, "MIP", "nofileEnding", "CoverageReport");
@@ -309,8 +314,8 @@ my (@picardToolsMergeSamFilesPrevious);  #Any previous sequencing runs
 ##Target definition files
 my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists);  #Arrays for target bed infile lists
 
-##GATK
 
+##GATK
 &DefineParameters("pGATKRealigner", "program", 1, "MIP", "_rreal", "MAIN");
 
 &DefineParametersPath("GATKReAlignerINDELKnownSet1", "1000G_phase1.indels.b37.vcf", "pGATKRealigner", "file", "yesAutoDownLoad");
@@ -375,8 +380,8 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists);  #Arrays for 
 
 my (@GATKTargetPaddedBedIntervalLists);  #Array for target infile lists used in GATK
 
-##VEP
 
+##VEP
 &DefineParameters("pVariantEffectPredictor", "program", 1, "MIP", "vep_", "MAIN");
 
 &DefineParametersPath("vepDirectoryPath", "nodefault", "pVariantEffectPredictor", "directory");  #Note not projectID specific
@@ -385,8 +390,8 @@ my (@GATKTargetPaddedBedIntervalLists);  #Array for target infile lists used in 
 
 my @vepFeatures;  #List of VEP features to be used
 
-##VCFParser
 
+##VCFParser
 &DefineParameters("pVCFParser", "program", 1, "MIP", "parsed_", "MAIN");
 
 &DefineParameters("vcfParserVepTranscripts", "program", 0, "pVCFParser");
@@ -403,7 +408,6 @@ my @vcfParserSelectFeatureAnnotationColumns;
 
 
 ## SnpEFF
-
 &DefineParameters("pSnpEff", "program", 1, "MIP", "snpeff_", "MAIN");
 
 &DefineParametersPath("snpEffPath", "nodefault", "pSnpEff", "directory");
@@ -413,8 +417,8 @@ my @vcfParserSelectFeatureAnnotationColumns;
 my @snpSiftDbNSFPAnnotations;
 my @snpSiftAnnotationFiles;
 
-##Annovar
 
+##Annovar
 &DefineParameters("pAnnovar", "program", 1, "MIP", "annovar_", "MAIN");
 
 &DefineParametersPath("annovarPath", "nodefault", "pAnnovar", "directory");  #Note not projectID specific
@@ -438,7 +442,6 @@ my @annovarTableNames;  #List of Annovar table names to be used
 
 
 ## RankVariants
-
 &DefineParameters("pRankVariants", "program", 1, "MIP", "ranked_", "MAIN");
 
 &DefineParameters("rankScore", "program", -100, "pRankVariants");
@@ -459,7 +462,6 @@ my @annovarTableNames;  #List of Annovar table names to be used
 
 
 ##QcCollect
-
 &DefineParameters("pQCCollect", "program", 1, "MIP", "nofileEnding", "MAIN");
 
 &DefineParameters("QCCollectSampleInfoFile", "program", "notSetYet", "pQCCollect");  #No file check since file is created by MIP later
@@ -470,13 +472,16 @@ my @annovarTableNames;  #List of Annovar table names to be used
 ##RemoveRedundantFiles
 &DefineParameters("pRemoveRedundantFiles", "program", 1, "MIP", "nofileEnding", "MAIN");
 
+
 ##AnalysisRunStatus
 &DefineParameters("pAnalysisRunStatus", "program", 1, "MIP", "", "MAIN");
+
 
 ##MIP
 
 ##humanGenomeReference
 &DefineParametersPath("humanGenomeReference", "Homo_sapiens.GRCh37.d5.fasta", "pBwaMem,pBwaAln,pBwaSampe,pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKHaploTypeCallerCombineVariants,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pAnnovar,pAddDepth,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "file", "yesAutoDownLoad");
+
 my @humanGenomeReferenceFileEndings = (".dict", ".fasta.fai");  #Meta files
 
 my ($humanGenomeReferenceSource, $humanGenomeReferenceVersion, $humanGenomeReferenceNameNoEnding, $humanGenomeCompressed, $fnend, $aligner, $fileName, $fileNameTracker, $version, $help) = ("nocmdinput", "nocmdinput", "nocmdinput", "nocmdinput", ".sh", "nocmdinput", "nocmdinput", 0);
@@ -484,6 +489,7 @@ my ($humanGenomeReferenceSource, $humanGenomeReferenceVersion, $humanGenomeRefer
 my (@contigs);
 
 my (%infile, %indirpath, %infilesLaneNoEnding, %lane, %infilesBothStrandsNoEnding, %jobID, %sampleInfo); 
+
 
 ####Staging/Sanity Check Area 
 
@@ -510,13 +516,14 @@ my %referenceFileEndings = (
     'GATKTargetPaddedBedIntervalLists' => ".pad100.interval_list",
     );
 
+
 ##Set supported annovar table name filtering options
 my @annovarSupportedTableNames = ("refGene", "knownGene", "ensGene", "mce46way", "gerp++elem", "segdup", "gwascatalog", "tfbs", "mirna", "snp137", "snp135", "snp132", "snp131", "snp130", "snp129", "snp137NonFlagged", "snp135NonFlagged", "snp132NonFlagged", "snp131NonFlagged", "snp130NonFlagged", "1000g2012apr_all", "1000g2012apr_amr", "1000g2012apr_eur", "1000g2012apr_asn", "1000g2012apr_afr", "1000g2012feb_all", "esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_ma", "ljb2_fathmm", "ljb2_siphy", "ljb2_lrt", "ljb_all", "ljb2_gerp++", "ljb2_phylop", "caddgt20", "caddgt10");  #Used to print list of supported table names
 
-my %annovarTables;
+my %annovarTables;  #Holds annovar tables
+
 
 ###User Options
-#$parameter{''}{'value'}
 GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs,  #Comma separated list
 	   'isd|inScriptDir:s'  => \$parameter{'inScriptDir'}{'value'},  #Directory for custom scripts required by the pipeline
 	   'rd|referencesDir:s'  => \$parameter{'referencesDir'}{'value'},  #directory containing references
@@ -543,7 +550,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs,  #Comma separated list
 	   'h|help' => \$help,  #Display help text
 	   'v|version' => \$version,  #Display version number
 	   'pGZ|pGZip:n' => \$parameter{'pGZip'}{'value'},
-	   'pFQC|pFastQC:n' => \$parameter{'pFastQC'}{'value'},
+	   'pFqC|pFastQC:n' => \$parameter{'pFastQC'}{'value'},
 	   'pMoB|pMosaikBuild:n' => \$parameter{'pMosaikBuild'}{'value'},
 	   'mobmfl|mosaikBuildMedianFragLength:n' => \$parameter{'mosaikBuildMedianFragLength'}{'value'},  #for fragment length estimation and local search
 	   'pMoA|pMosaikAlign:n' => \$parameter{'pMosaikAlign'}{'value'},
@@ -640,7 +647,6 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs,  #Comma separated list
 	   'qccref|QCCollectRegExpFile:s' => \$parameter{'QCCollectRegExpFile'}{'value'},  #Regular expression yaml file
 	   'pReM|pRemoveRedundantFiles:n' => \$parameter{'pRemoveRedundantFiles'}{'value'},
 	   'pArS|pAnalysisRunStatus:n' => \$parameter{'pAnalysisRunStatus'}{'value'},  #AnalysisRunStatus change flag in sampleInfo file if allowed to execute
-
     );
 
 if($help) {
@@ -676,12 +682,13 @@ if ($parameter{'configFile'}{'value'} ne "nocmdinput") {  #Input from cmd
     }
 }
 
-foreach my $orderParameterElement (@orderParameters) {  #Populate scriptParameters{'parameterName'} => 'Value'
+##Populate scriptParameters{'parameterName'} => 'Value'
+foreach my $orderParameterElement (@orderParameters) {
     
-##3 type of variables: MIP, path or program/program_parameters each is handled in the &AddToScriptParameter subroutine.
-##parameterName, parameterValue, parameterType, parameterDefault, AssociatedProgram, Check directory/file existence)    
+##3 type of variables: MIP, path or program/program_parameters each is handled in the &AddToScriptParameter subroutine.    
     &AddToScriptParameter($orderParameterElement, $parameter{$orderParameterElement}{'value'}, $parameter{$orderParameterElement}{'type'}, $parameter{$orderParameterElement}{'default'}, $parameter{$orderParameterElement}{'associatedProgram'}, $parameter{$orderParameterElement}{'existsCheck'}, $parameter{$orderParameterElement}{'programNamePath'});
    
+    ##Special case for parameters that are dependent on other parameters values
     if ($orderParameterElement eq "outDataDir") {  #Set defaults depending on $scriptParameter{'outDataDir'} value that now has been set
 
 	$parameter{'sampleInfoFile'}{'default'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_qc_sampleInfo.yaml";
@@ -691,9 +698,8 @@ foreach my $orderParameterElement (@orderParameters) {  #Populate scriptParamete
 	
 	if (defined($scriptParameter{'pedigreeFile'})) {
 
-	    `mkdir -p $scriptParameter{'outDataDir'}/$scriptParameter{'familyID'};`;
+	    `mkdir -p $scriptParameter{'outDataDir'}/$scriptParameter{'familyID'};`;  #Create family directory
 	    &WriteYAML($scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/qc_pedigree.yaml", \%sampleInfo);
- 
 	}
     }
     if ($orderParameterElement eq "humanGenomeReference") {  #Supply humanGenomeReference to mosaikAlignReference if required
@@ -709,7 +715,7 @@ foreach my $orderParameterElement (@orderParameters) {  #Populate scriptParamete
 
 ##sampleIDs
 &PrepareArrayParameters(\@sampleIDs, "sampleIDs", "path", "nodefault", "MIP", "");
-&CheckUniqueIDNs();  #Test that smapleIDs are unique
+&CheckUniqueIDNs();  #Test that sampleIDs are unique
 for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  #all sampleIDs
     
     &ScriptParameterPerSampleID(\$scriptParameter{'familyID'}, \$sampleIDs[$sampleIDCounter], "exomeTargetBedInfileLists");
@@ -827,8 +833,9 @@ chomp($base,$script);  #Remove \n;
 `mkdir -p $scriptParameter{'outDataDir'}/$scriptParameter{'familyID'}/mip_log/$base;`;  #Creates the mip_log dir
 my $mipLogName = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/mip_log/".$base."/".$script."_".$timeStamp.".txt";  #concatenates mip_log filename
 
-open (MIPLOG, ">>".$mipLogName) or die "Can't write to ".$mipLogName.":".$!, "\n";  #Open file masterLog
 my @printFilehandles = (*STDOUT, *MIPLOG);  #Used for printing to several FILEHANDLES
+open ($printFilehandles[1], ">>",$mipLogName) or die "Can't write to ".$mipLogName.":".$!, "\n";  #Open file masterLog
+
 
 ##Add parameters
 print MIPLOG "\n".$script." ";  #Adds script name to recontruct command line
@@ -853,7 +860,7 @@ my $famFile = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/
 
 ####MAIN
 
-open (MIPLOG, ">>".$mipLogName) or die "Can't write to ".$mipLogName.":".$!, "\n";  #Open file run log
+open ($printFilehandles[1], ">>", $mipLogName) or die "Can't write to ".$mipLogName.":".$!, "\n";  #Open file run log
 
 if ( ($scriptParameter{'pGZip'} > 0) && ($uncompressedFileSwitch eq "unCompressed") ) {  #GZip of fastq files
 
@@ -2037,9 +2044,7 @@ sub Annovar {
 	    $analysisType = ".selected";  #SelectFile variants
 	}
 	
-	my $coreCounter=1;   	    
-	
-	#&PrintWait(\$tableNamesCounter, \$nrCores, \$coreCounter, $FILEHANDLE);	
+	my $coreCounter=1;   	    	
 	
 	print $FILEHANDLE "perl ".$scriptParameter{'annovarPath'}."/table_annovar.pl ";  #Annovar script 
 	print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".vcf ";  #Infile
@@ -2091,14 +2096,9 @@ sub Annovar {
 	for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@annovarTableNames);$tableNamesCounter++) {  #For all specified table names
 
 	    if ($annovarTableNames[$tableNamesCounter] =~/ensGene|refGene/) {  #Extra round to catch MT for refSeq as well
-	    
-		#print $FILEHANDLE "grep MT ";  #Only MT variants
-		#print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".vcf ";  #Infile
-		#print $FILEHANDLE "> ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".GRCh37_MT"." ", "\n\n";  #outfile that can be empty for exomes or MT for WGS
 
 		print $FILEHANDLE "perl ".$scriptParameter{'annovarPath'}."/table_annovar.pl ";  #Annovar script 
 		print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".vcf ";  #Infile
-		#print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".GRCh37_MT ";  #Infile.
 		print $FILEHANDLE $scriptParameter{'annovarPath'}."/humandb ";  #annovar/humandb directory is assumed
 		print $FILEHANDLE "-vcfinput ";  #Input format
 		print $FILEHANDLE "--remove ";  #Remove all temporary files
@@ -2107,7 +2107,6 @@ sub Annovar {
 		print $FILEHANDLE "-operation g ";  #Comma-delimited string specifying type of operation	
 		print $FILEHANDLE "-argument -exonicsplicing ";  #Annotate variants near intron/exonic borders 
 		print $FILEHANDLE "-out ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType,"\n\n";  #OutFile prefix
-		#$nrCores--;  #Reduce to make sure that print statement comes at correct interval since two calls are made for 1 annovar table
 	    }
 	}
 	print $FILEHANDLE "wait", "\n\n";
@@ -5175,9 +5174,9 @@ sub ReadPlinkPedigreeFile {
 
     &DefinePlinkPedigree();  #Loads allowed entries and positons to be checked
 
-    open(PEDF, "<".$fileName) or die "Can't open ".$fileName.":$!, \n";    
+    open(my $PEDF, "<", $fileName) or die "Can't open ".$fileName.":$!, \n";    
      
-    while (<PEDF>) {
+    while (<$PEDF>) {
 	
 	chomp $_;  #Remove newline
 	
@@ -5893,8 +5892,10 @@ sub DefineParameters {
     my $associatedProgram = $_[3];  #The parameters program
     my $fileEnding = $_[4];  #The filending after the module has been run
     my $parameterChain = $_[5];  #The chain to which the program belongs to
-    my @programNamePath = split(":", $_[6]) if (defined($_[6]));  #The path name of the program(s) for each sbatch script
-
+    my @programNamePath;
+    if (defined($_[6])) {
+	@programNamePath = split(":", $_[6]);  #The path name of the program(s) for each sbatch script
+    }
     if (defined($programNamePath[0])) {
 	
 	$parameter{$parameterName} = {
@@ -6653,7 +6654,7 @@ sub ProgramPreRequisites {
     &PrintToFileHandles(\@printFilehandles, "Sbatch script ".$programName." data files will be written to: ".$programDataDirectory."\n");
 
 ###Sbatch header
-    open ($fileHandle, ">".$fileName) or die "Can't write to ".$fileName.":".$!, "\n";
+    open ($fileHandle, ">",$fileName) or die "Can't write to ".$fileName.":".$!, "\n";
     
     print $fileHandle "#! /bin/bash -l", "\n";
     print $fileHandle "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
@@ -6951,7 +6952,7 @@ sub CheckPedigreeMembers {
 
 sub WriteCMDMipLog {
     
-    open (MIPLOG, ">>".$mipLogName) or die "Can't write to ".$mipLogName.":".$!, "\n";  #Open file run log
+    open (my $MIPLOG, ">>", $mipLogName) or die "Can't write to ".$mipLogName.":".$!, "\n";  #Open file run log
     
     foreach my $orderParameterElement (@orderParameters) {
 	
@@ -6976,10 +6977,10 @@ sub WriteYAML {
 
     my $yamlFile = $_[0];  #Filename
     my $yamlHashRef = $_[1];  #Hash reference to write to file
-
-    open (YAML, ">". $yamlFile) or die "can't open ".$yamlFile.":".$!, "\n";
-    print YAML Dump( $yamlHashRef ), "\n";
-    close(YAML);
+    
+    open (my $YAML, ">", $yamlFile) or die "can't open ".$yamlFile.":".$!, "\n";
+    print $YAML Dump( $yamlHashRef ), "\n";
+    close($YAML);
     print STDOUT "Wrote: ".$yamlFile, "\n";
 }
 
@@ -6990,8 +6991,8 @@ sub LoadYAML {
     my $yamlFile = $_[0];
     my %yamlHash;
 
-    open (YAML, "<". $yamlFile) or die "can't open ".$yamlFile.":".$!, "\n";    
-        
+    open (my $YAML, "<", $yamlFile) or die "can't open ".$yamlFile.":".$!, "\n";    
+    print $yamlFile, "\n";
     %yamlHash = %{ YAML::LoadFile($yamlFile) };  #Load hashreference as hash
         
     close(YAML);
@@ -7566,7 +7567,7 @@ sub CheckTemplateFilesPaths {
     my $fileNameRef = $_[0];
     my $parameterName = $_[1];
 
-    open(TF, "<".$$fileNameRef) or die "Can't open ".$$fileNameRef.":$!, \n";  
+    open(my $TF, "<", $$fileNameRef) or die "Can't open ".$$fileNameRef.":$!, \n";  
 
     while (<TF>) {
 
