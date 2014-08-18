@@ -153,9 +153,9 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -ravrs/--rankScore The rank score cut-off (defaults to "-100", .i.e. include everything
                  -ravgf/--geneFile Defines genes to use when calculating compounds (defaults to "hg19_refGene.txt")
                  -ravcs/--caddWGSSNVs Annotate whole genome sequencing CADD score (defaults to "0" (=no))
-                 -ravcsf/--caddWGSSNVsFile Whole genome sequencing CADD score file (defaults to "")
+                 -ravcsf/--caddWGSSNVsFile Whole genome sequencing CADD score file (defaults to "whole_genome_SNVs.tsv.gz")
                  -ravc1kg/--cadd1000Genomes 1000 Genome cadd score file (defaults to "0" (=no))
-                 -ravc1kgf/--cadd1000GenomesFile 1000 Genome cadd score file (defaults to "")
+                 -ravc1kgf/--cadd1000GenomesFile 1000 Genome cadd score file (defaults to "1000G.tsv.gz")
                  -ravwg/--wholeGene Allow compound pairs in intronic regions (defaults to "1" (=yes))
                -pScK/--pSampleCheck QC for samples gender and relationship (defaults to "1" (=yes) )
                -pQcC/--pQCCollect Collect QC metrics from programs processed (defaults to "1" (=yes) )
@@ -224,8 +224,6 @@ chomp($timeStamp);  #Remove \n
 
 &DefineParameters("dryRunAll", "MIP", 0, "MIP");
 
-my (@inFilesDirs,@sampleIDs);  #Arrays for input file directorys,sampleIDs
-
 
 ###Programs
 
@@ -284,8 +282,6 @@ my @bwaBuildReferenceFileEndings = (".amb", ".ann", ".bwt", ".pac", ".sa");
 &DefineParameters("pPicardToolsMarkduplicates", "program", 1, "MIP", "_pmd", "MAIN");
 
 &DefineParametersPath("PicardToolsTempDirectory", "/scratch/", "pBwaMem,pPicardToolsSortSam,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates", 0);  #Directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
-
-my (@picardToolsMergeSamFilesPrevious);  #Any previous sequencing runs
 
 
 ##Coverage
@@ -388,8 +384,6 @@ my (@GATKTargetPaddedBedIntervalLists);  #Array for target infile lists used in 
 
 &DefineParametersPath("vepDirectoryCache", "nodefault", "pVariantEffectPredictor", "directory");
 
-my @vepFeatures;  #List of VEP features to be used
-
 
 ##VCFParser
 &DefineParameters("pVCFParser", "program", 1, "MIP", "parsed_", "MAIN");
@@ -403,8 +397,6 @@ my @vepFeatures;  #List of VEP features to be used
 &DefineParameters("vcfParserSelectFileMatchingColumn", "program", "nodefault", "pVCFParser");
 
 my $VEPOutputFiles = 1;  #To track if VEPParser was used with a vcfParserSelectFile (=2) or not (=1)
-my @vcfParserRangeFeatureAnnotationColumns;
-my @vcfParserSelectFeatureAnnotationColumns;
 
 
 ## SnpEFF
@@ -413,9 +405,6 @@ my @vcfParserSelectFeatureAnnotationColumns;
 &DefineParametersPath("snpEffPath", "nodefault", "pSnpEff", "directory");
 
 &DefineParametersPath("snpSiftDbNSFPFile", "dbNSFP2.4_variant.txt.gz", "pSnpEff", "file");
-
-my @snpSiftDbNSFPAnnotations;
-my @snpSiftAnnotationFiles;
 
 
 ##Annovar
@@ -429,7 +418,6 @@ my @snpSiftAnnotationFiles;
 
 &DefineParameters("annovarMAFThreshold", "program", 0, "pAnnovar");
 
-my @annovarTableNames;  #List of Annovar table names to be used
 
 ##Special case GATKPath since in VEP, SnpEff and Annovar modules use GATK CombineVariants to merge vcfs 
 &DefineParametersPath("javaUseLargePages", "no", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKHaploTypeCallerCombineVariants,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pVariantEffectPredictor,pSnpEff,pAnnovar");
@@ -450,11 +438,11 @@ my @annovarTableNames;  #List of Annovar table names to be used
 
 &DefineParameters("caddWGSSNVs", "program", 0, "pRankVariants");
 
-&DefineParametersPath("caddWGSSNVsFile", "nodefault", "pRankVariants", "file", "noAutoBuild");
+&DefineParametersPath("caddWGSSNVsFile", "whole_genome_SNVs.tsv.gz", "pRankVariants", "file", "noAutoBuild");
 
 &DefineParameters("cadd1000Genomes", "program", 0, "pRankVariants");
 
-&DefineParametersPath("cadd1000GenomesFile", "nodefault", "pRankVariants", "file", "noAutoBuild");
+&DefineParametersPath("cadd1000GenomesFile", "1000G.tsv.gz", "pRankVariants", "file", "noAutoBuild");
 
 &DefineParameters("wholeGene", "program", 1, "pRankVariants");
 
@@ -522,13 +510,12 @@ my @annovarSupportedTableNames = ("refGene", "knownGene", "ensGene", "mce46way",
 
 my %annovarTables;  #Holds annovar tables
 
-
 ###User Options
-GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs,  #Comma separated list
+GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Comma separated list
 	   'isd|inScriptDir:s'  => \$parameter{'inScriptDir'}{'value'},  #Directory for custom scripts required by the pipeline
 	   'rd|referencesDir:s'  => \$parameter{'referencesDir'}{'value'},  #directory containing references
 	   'p|projectID:s'  => \$parameter{'projectID'}{'value'},
-	   's|sampleIDs:s'  => \@sampleIDs,  #Comma separated list, one below outDataDir
+	   's|sampleIDs:s'  => \@{$parameter{'sampleIDs'}{'value'}},  #Comma separated list, one below outDataDir
 	   'em|email:s'  => \$parameter{'email'}{'value'},  #Email adress
 	   'emt|emailType:s'  => \$parameter{'emailType'}{'value'},  #Email type 
 	   'odd|outDataDir:s'  => \$parameter{'outDataDir'}{'value'},  #One dir above sample id, must supply whole path i.e. /proj/...
@@ -567,7 +554,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs,  #Comma separated list
 	   'pPtM|pPicardToolsMergeSamFiles:n' => \$parameter{'pPicardToolsMergeSamFiles'}{'value'},  #PicardTools mergeSamFiles
 	   'pPtMR|pPicardToolsMergeRapidReads:n' => \$parameter{'pPicardToolsMergeRapidReads'}{'value'},  #PicardTools mergeSamFiles - rapid mode
 	   'ptd|PicardToolsTempDirectory:s' => \$parameter{'PicardToolsTempDirectory'}{'value'},  #PicardTools temporary directory
-	   'ptmp|picardToolsMergeSamFilesPrevious:s' => \@picardToolsMergeSamFilesPrevious,  #Comma separated list
+	   'ptmp|picardToolsMergeSamFilesPrevious:s' => \@{$parameter{'picardToolsMergeSamFilesPrevious'}{'value'}},  #Comma separated list
 	   'pPtMD|pPicardToolsMarkduplicates:s' => \$parameter{'pPicardToolsMarkduplicates'}{'value'},  #PicardTools MarkDuplicates
 	   'ptp|picardToolsPath:s' => \$parameter{'picardToolsPath'}{'value'},  #Path to picardtools
 	   'pChB|pChanjoBuild:n' => \$parameter{'pChanjoBuild'}{'value'},   #Build central SQLiteDatabase
@@ -614,23 +601,23 @@ GetOptions('ifd|inFilesDirs:s'  => \@inFilesDirs,  #Comma separated list
 	   'pVeP|pVariantEffectPredictor:n' => \$parameter{'pVariantEffectPredictor'}{'value'},  #Annotation of variants using vep
 	   'vepp|vepDirectoryPath:s'  => \$parameter{'vepDirectoryPath'}{'value'},  #path to vep script dir
 	   'vepc|vepDirectoryCache:s'  => \$parameter{'vepDirectoryCache'}{'value'},  #path to vep cache dir
-	   'vepf|vepFeatures:s'  => \@vepFeatures,  #Comma separated list
+	   'vepf|vepFeatures:s'  => \@{$parameter{'vepFeatures'}{'value'}},  #Comma separated list
 	   'pVcP|pVCFParser:n' => \$parameter{'pVCFParser'}{'value'},
 	   'vcpvt|vcfParserVepTranscripts:n' => \$parameter{'vcfParserVepTranscripts'}{'value'},
 	   'vcprff|vcfParserRangeFeatureFile:s'  => \$parameter{'vcfParserRangeFeatureFile'}{'value'},  #path to vcfParserRangeFeatureFile
-	   'vcprfa|vcfParserRangeFeatureAnnotationColumns:s'  => \@vcfParserRangeFeatureAnnotationColumns,  #Comma separated list
+	   'vcprfa|vcfParserRangeFeatureAnnotationColumns:s'  => \@{$parameter{'vcfParserRangeFeatureAnnotationColumns'}{'value'}},  #Comma separated list
 	   'vcpsf|vcfParserSelectFile:s'  => \$parameter{'vcfParserSelectFile'}{'value'},  #path to vcfParserSelectFile
 	   'vcpsfm|vcfParserSelectFileMatchingColumn:n' => \$parameter{'vcfParserSelectFileMatchingColumn'}{'value'},  #Column of HGNC Symbol in SelectFile
-	   'vcpsfa|vcfParserSelectFeatureAnnotationColumns:s'  => \@vcfParserSelectFeatureAnnotationColumns,  #Comma separated list
+	   'vcpsfa|vcfParserSelectFeatureAnnotationColumns:s'  => \@{$parameter{'vcfParserSelectFeatureAnnotationColumns'}{'value'}},  #Comma separated list
 	   'snep|snpEffPath:s'  => \$parameter{'snpEffPath'}{'value'},  #path to snpEff directory
 	   'pSnE|pSnpEff:n' => \$parameter{'pSnpEff'}{'value'},
-	   'snesaf|snpSiftAnnotationFiles:s'  => \@snpSiftAnnotationFiles,  #Comma separated list
+	   'snesaf|snpSiftAnnotationFiles:s'  => \@{$parameter{'snpSiftAnnotationFiles'}{'value'}},  #Comma separated list
 	   'snesdbnsfp|snpSiftDbNSFPFile:s'  => \$parameter{'snpSiftDbNSFPFile'}{'value'},  #DbNSFP file
-	   'snesdbnsfpa|snpSiftDbNSFPAnnotations:s'  => \@snpSiftDbNSFPAnnotations,  #Comma separated list
+	   'snesdbnsfpa|snpSiftDbNSFPAnnotations:s'  => \@{$parameter{'snpSiftDbNSFPAnnotations'}{'value'}},  #Comma separated list
 	   'pAnV|pAnnovar:n' => \$parameter{'pAnnovar'}{'value'},  #Performs annovar filter gene, region and filter analysis
 	   'anvp|annovarPath:s'  => \$parameter{'annovarPath'}{'value'},  #path to annovar script dir
 	   'anvgbv|annovarGenomeBuildVersion:s'  => \$parameter{'annovarGenomeBuildVersion'}{'value'},
-	   'anvtn|annovarTableNames:s'  => \@annovarTableNames,  #Comma separated list
+	   'anvtn|annovarTableNames:s'  => \@{$parameter{'annovarTableNames'}{'value'}},  #Comma separated list
 	   'anvstn|annovarSupportedTableNames:n' => \$parameter{'annovarSupportedTableNames'}{'value'},  #Generates a list of supported table names
 	   'anvarmafth|annovarMAFThreshold:n' => \$parameter{'annovarMAFThreshold'}{'value'},
 	   'pRaV|pRankVariants:n' => \$parameter{'pRankVariants'}{'value'},  #Ranking variants
@@ -655,14 +642,14 @@ if($help) {
     exit;
 }
 
-my $MipVersion = "v1.5.7";#Set version for log
+my $mipVersion = "v1.5.7";#Set version for log
 
 if($version) {
 
-    print STDOUT "\nMip.pl ".$MipVersion, "\n\n";
+    print STDOUT "\nMip.pl ".$mipVersion, "\n\n";
     exit;
 }
-print STDOUT "MIP Version: ".$MipVersion, "\n";
+print STDOUT "MIP Version: ".$mipVersion, "\n";
 
 if ($parameter{'annovarSupportedTableNames'}{'value'} eq 1) {
 
@@ -713,75 +700,91 @@ foreach my $orderParameterElement (@orderParameters) {
     }
 } 
 
+
 ##sampleIDs
-&PrepareArrayParameters(\@sampleIDs, "sampleIDs", "path", "nodefault", "MIP", "");
-&CheckUniqueIDNs();  #Test that sampleIDs are unique
-for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  #all sampleIDs
+&DefineArrayParameters(\@{$parameter{'sampleIDs'}{'value'}}, "sampleIDs", "path", "nodefault", "MIP", "");
+
+&CheckUniqueIDNs(\@{$scriptParameter{'sampleIDs'}});  #Test that sampleIDs are unique
+
+for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #all sampleIDs
     
-    &ScriptParameterPerSampleID(\$scriptParameter{'familyID'}, \$sampleIDs[$sampleIDCounter], "exomeTargetBedInfileLists");
-    &ScriptParameterPerSampleID(\$scriptParameter{'familyID'}, \$sampleIDs[$sampleIDCounter], "exomeTargetPaddedBedInfileLists");
-    &ScriptParameterPerSampleID(\$scriptParameter{'familyID'}, \$sampleIDs[$sampleIDCounter], "GATKTargetPaddedBedIntervalLists");
+    &ScriptParameterPerSampleID(\$scriptParameter{'familyID'}, \$scriptParameter{'sampleIDs'}[$sampleIDCounter], "exomeTargetBedInfileLists");
+    &ScriptParameterPerSampleID(\$scriptParameter{'familyID'}, \$scriptParameter{'sampleIDs'}[$sampleIDCounter], "exomeTargetPaddedBedInfileLists");
+    &ScriptParameterPerSampleID(\$scriptParameter{'familyID'}, \$scriptParameter{'sampleIDs'}[$sampleIDCounter], "GATKTargetPaddedBedIntervalLists");
 }
 
 ##inFileDirs
-&PrepareArrayParameters(\@inFilesDirs, "inFilesDirs", "path", "notSetYet", "MIP", "directory");
+&DefineArrayParameters(\@{$parameter{'inFilesDirs'}{'value'}}, "inFilesDirs", "path", "notSetYet", "MIP", "directory");
 
 
 ##picardToolsMergeSamFilesPrevious
-if ( ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) || (scalar(@picardToolsMergeSamFilesPrevious) > 0)) {  #2nd term to enable write to config
+if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
+    
+    if( (scalar(@{$parameter{'picardToolsMergeSamFilesPrevious'}{'value'}}) > 0) ) {
 
-    &PrepareArrayParameters(\@picardToolsMergeSamFilesPrevious, "picardToolsMergeSamFilesPrevious", "path", "nodefault", "pPicardToolsMergeSamFiles", "file");    
-     
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  #Check all samples to check, which are to be merged with previous files later
-
-	if (scalar(@picardToolsMergeSamFilesPrevious) > 0) {  #Supplied info - check for which sampleIDs  	
-
-	    for (my $mergeFileCounter=0;$mergeFileCounter<scalar(@picardToolsMergeSamFilesPrevious);$mergeFileCounter++) {
+	&DefineArrayParameters(\@{$parameter{'picardToolsMergeSamFilesPrevious'}{'value'}}, "picardToolsMergeSamFilesPrevious", "path", "nodefault", "pPicardToolsMergeSamFiles", "file");    
+	
+	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #Check all samples to check, which are to be merged with previous files later
+	    
+	    if (scalar(@{$scriptParameter{'picardToolsMergeSamFilesPrevious'}}) > 0) {  #Supplied info - check for which sampleIDs  	
 		
-		if ($picardToolsMergeSamFilesPrevious[$mergeFileCounter] =~ /$sampleIDs[$sampleIDCounter]/) {  #Look for sampleID in previously generated file to be merged with current run to be able to merge correct files
-
-		    $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} = 1;
-		}
-		else {
-
-		    $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} = 0;
+		for (my $mergeFileCounter=0;$mergeFileCounter<scalar(@{$scriptParameter{'picardToolsMergeSamFilesPrevious'}});$mergeFileCounter++) {
+		    
+		    if ($scriptParameter{'picardToolsMergeSamFilesPrevious'}[$mergeFileCounter] =~ /$scriptParameter{'sampleIDs'}[$sampleIDCounter]/) {  #Look for sampleID in previously generated file to be merged with current run to be able to merge correct files
+			
+			$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} = 1;
+		    }
+		    else {
+			
+			$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} = 0;
+		    }
 		}
 	    }
+	    else {  #Not supplied - Set to 0 
+		
+		$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} = 0;
+	    }
 	}
-	else {  #Not supplied - Set to 0 
-
-	    $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} = 0;
+    }
+    else {  #Not supplied - Set to 0 to handle correctly in program subroutines 
+	
+	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #Set for all sampleIDs
+	    
+	    $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} = 0;
 	}
     }
 }
-else {  #Not supplied - Set to 0 to handle correctly in program subroutines 
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  #Set for all sampleIDs
 
-	$sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} = 0;
-    }
-}
-
+##pVariantEffectPredictor
 if ($scriptParameter{'pVariantEffectPredictor'} > 0) {
 
-    &PrepareArrayParameters(\@vepFeatures, "vepFeatures", "path", "yes", "pVariantEffectPredictor");  #"yes" added to enable addition of default features in &AddToScriptParameters  
+    &DefineArrayParameters(\@{$parameter{'vepFeatures'}{'value'}}, "vepFeatures", "path", "yes", "pVariantEffectPredictor", "");
 }
+
+
+##pVCFParser
 if ($scriptParameter{'pVCFParser'} > 0) {
     
-    &PrepareArrayParameters(\@vcfParserRangeFeatureAnnotationColumns, "vcfParserRangeFeatureAnnotationColumns", "path", "nodefault", "pVCFParser");
-    &PrepareArrayParameters(\@vcfParserSelectFeatureAnnotationColumns, "vcfParserSelectFeatureAnnotationColumns", "path", "nodefault", "pVCFParser");
+    &DefineArrayParameters(\@{$parameter{'vcfParserRangeFeatureAnnotationColumns'}{'value'}}, "vcfParserRangeFeatureAnnotationColumns", "path", "nodefault", "pVCFParser", "");
+    &DefineArrayParameters(\@{$parameter{'vcfParserSelectFeatureAnnotationColumns'}{'value'}}, "vcfParserSelectFeatureAnnotationColumns", "path", "nodefault", "pVCFParser", "");
 }
 
-if ($scriptParameter{'pAnnovar'} > 0) {
 
-    &PrepareArrayParameters(\@annovarTableNames, "annovarTableNames", "path", "yes", "pAnnovar", "file");  #"yes" added to enable addition of default table names in &AddToScriptParameters  
-}
-
+##pSnpEff
 if ($scriptParameter{'pSnpEff'} > 0) {
 
-    &PrepareArrayParameters(\@snpSiftAnnotationFiles, "snpSiftAnnotationFiles", "path", "yes", "pSnpEff");  #"yes" added to enable addition of default features in &AddToScriptParameters 
-    &PrepareArrayParameters(\@snpSiftDbNSFPAnnotations, "snpSiftDbNSFPAnnotations", "path", "yes", "pSnpEff");  #"yes" added to enable addition of default features in &AddToScriptParameters  
+    &DefineArrayParameters(\@{$parameter{'snpSiftAnnotationFiles'}{'value'}}, "snpSiftAnnotationFiles", "path", "yes", "pSnpEff", "");  #"yes" added to enable addition of default features in &AddToScriptParameters
+    &DefineArrayParameters(\@{$parameter{'snpSiftDbNSFPAnnotations'}{'value'}}, "snpSiftDbNSFPAnnotations", "path", "yes", "pSnpEff", "");  #"yes" added to enable addition of default features in &AddToScriptParameters  
 }
+
+
+##pAnnovar
+if ($scriptParameter{'pAnnovar'} > 0) {
+    &DefineAnnovarTables(); #Set all AnnovarTables properties
+    &DefineArrayParameters(\@{$parameter{'annovarTableNames'}{'value'}}, "annovarTableNames", "path", "yes", "pAnnovar", "file");  
+}
+
 
 ##Set Target files
 &PrepareArrayParameters(\@exomeTargetBedInfileLists, "exomeTargetBedInfileLists", "path", "notSetYet", "pPicardToolsCalculateHSMetrics", "file");
@@ -853,10 +856,12 @@ my $uncompressedFileSwitch = &InfilesReFormat();  #Required to format infiles co
     
 &CreateFileEndings();  #Creates all fileendings as the samples is processed depending on the chain of modules activated
 
+
 #Create .fam file to be used in variant calling analyses
 my $pqFamFile = q?perl -nae 'print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t", $F[5], "\n";'?;
 my $famFile = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}.".fam";
 `$pqFamFile $scriptParameter{'pedigreeFile'} > $famFile;`;
+
 
 ####MAIN
 
@@ -866,13 +871,13 @@ if ( ($scriptParameter{'pGZip'} > 0) && ($uncompressedFileSwitch eq "unCompresse
 
     &PrintToFileHandles(\@printFilehandles, "\nGZip for fastq files\n");
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 
-	for (my $infileCounter=0;$infileCounter<scalar( @{ $infile{$sampleIDs[$sampleIDCounter]} });$infileCounter++) {  #To determine which sampleID had the uncompressed files
+	for (my $infileCounter=0;$infileCounter<scalar( @{ $infile{$scriptParameter{'sampleIDs'}[$sampleIDCounter]} });$infileCounter++) {  #To determine which sampleID had the uncompressed files
 	    
-	    if ($infile{$sampleIDs[$sampleIDCounter]}[$infileCounter] =~/.fastq$/) {
+	    if ($infile{$scriptParameter{'sampleIDs'}[$sampleIDCounter]}[$infileCounter] =~/.fastq$/) {
 	
-		&GZipFastq($sampleIDs[$sampleIDCounter]);
+		&GZipFastq($scriptParameter{'sampleIDs'}[$sampleIDCounter]);
 		last;  #Return to sampleID loop i.e. only call subroutine GZipFastq once per sampleID
 	    }
 	}
@@ -883,9 +888,9 @@ if ($scriptParameter{'pFastQC'} > 0) {  #Run FastQC
     
     &PrintToFileHandles(\@printFilehandles, "\nFastQC\n");
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
-	&FastQC($sampleIDs[$sampleIDCounter]);	
+	&FastQC($scriptParameter{'sampleIDs'}[$sampleIDCounter]);	
     }
 }
 
@@ -893,9 +898,9 @@ if ($scriptParameter{'pMosaikBuild'} > 0) {  #Run MosaikBuild
     
     &PrintToFileHandles(\@printFilehandles, "\nMosaikBuild\n");
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
-	&MosaikBuild($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});	
+	&MosaikBuild($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});	
     }
 }
 
@@ -914,9 +919,9 @@ if ($scriptParameter{'pMosaikAlign'} > 0) {  #Run MosaikAlign
 	&MoveMosaikNN();
     }
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
-	&MosaikAlign($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});	
+	&MosaikAlign($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});	
     }
 }
 
@@ -929,9 +934,9 @@ if ($scriptParameter{'pBwaMem'} > 0) {  #Run BWA Mem
 	&BuildBwaPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BwaMem");
     }
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
-	&BWA_Mem($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});	
+	&BWA_Mem($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});	
 	
     }    
 }
@@ -940,10 +945,10 @@ if ($scriptParameter{'pPicardToolsMergeRapidReads'} > 0) {  #Run PicardToolsMerg
     
     &PrintToFileHandles(\@printFilehandles, "\nPicardToolsMergeRapidReads\n");
     
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
         #Merge all read batch processes to 1 file again containing sorted & indexed reads matching clinical test genes
-	&PicardToolsMergeRapidReads($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});
+	&PicardToolsMergeRapidReads($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});
     }    
 }
 
@@ -956,9 +961,9 @@ if ($scriptParameter{'pBwaAln'} > 0) {  #Run BWA Aln
 	&BuildBwaPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BwaAln");
     }
     
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
-	&BWA_Aln($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});	
+	&BWA_Aln($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});	
     }    
 }
 
@@ -971,9 +976,9 @@ if ($scriptParameter{'pBwaSampe'} > 0) {  #Run BWA Sampe
 	&BuildBwaPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BwaSampe");
     }
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
-	&BWA_Sampe($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});
+	&BWA_Sampe($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});
     }
 }
 
@@ -983,9 +988,9 @@ if ($scriptParameter{'pPicardToolsSortSam'} > 0) {  #Run Picardtools SortSam and
 
     &PrintToFileHandles(\@printFilehandles, "\nPicardTools SortSam & index\n");
 	
-	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	    
-	    &PicardToolsSortSamIndex($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});
+	    &PicardToolsSortSamIndex($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});
 	}
     }
 }
@@ -994,11 +999,11 @@ if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {  #Run picardtools merge
 
     &PrintToFileHandles(\@printFilehandles, "\nPicardTool MergeSamFiles\n");
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 
-	if ( ($sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} == 1) || (scalar( @{ $infilesLaneNoEnding{ $sampleIDs[$sampleIDCounter] } }) > 1) ) {  #Sanity Check that we have something to merge with
+	if ( ($sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} == 1) || (scalar( @{ $infilesLaneNoEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] } }) > 1) ) {  #Sanity Check that we have something to merge with
 	
-	    &PicardToolsMerge($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'}, $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'fileEnding'});	
+	    &PicardToolsMerge($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'}, $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'fileEnding'});	
 	}
     }
 }
@@ -1007,9 +1012,9 @@ if ($scriptParameter{'pPicardToolsMarkduplicates'} > 0) {  #PicardTools MarkDupl
 
     &PrintToFileHandles(\@printFilehandles, "\nPicardTools MarkDuplicates\n");
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
     
-	&PicardToolsMarkDuplicates($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});	
+	&PicardToolsMarkDuplicates($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});	
     }
 }
 
@@ -1026,9 +1031,9 @@ if ($scriptParameter{'pChanjoCalculate'} > 0) {
     
     &PrintToFileHandles(\@printFilehandles, "\nChanjoCalculate\n");
     
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  #For all SampleIDs
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #For all SampleIDs
 	
-	&ChanjoCalculate($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});
+	&ChanjoCalculate($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});
     }
 }
 
@@ -1043,9 +1048,9 @@ if ($scriptParameter{'pGenomeCoverageBED'} > 0) {  #Run GenomeCoverageBED
     
     &PrintToFileHandles(\@printFilehandles, "\nGenomeCoverageBED\n"); 
     
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 
-	&GenomeCoverageBED($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});
+	&GenomeCoverageBED($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});
     }
 }
 
@@ -1055,9 +1060,9 @@ if ($scriptParameter{'pPicardToolsCollectMultipleMetrics'} > 0) {  #Run PicardTo
     
     &CheckBuildHumanGenomePreRequisites("PicardToolsCollectMultipleMetrics");
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 
-	&PicardToolsCollectMultipleMetrics($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});
+	&PicardToolsCollectMultipleMetrics($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});
     }
 }
 
@@ -1068,9 +1073,9 @@ if ($scriptParameter{'pPicardToolsCalculateHSMetrics'} > 0) {  #Run PicardToolsC
     &CheckBuildHumanGenomePreRequisites("PicardToolsCalculateHSMetrics");
     &CheckBuildPTCHSMetricPreRequisites("PicardToolsCalculateHSMetrics");
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 
-	&PicardToolsCalculateHSMetrics($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});
+	&PicardToolsCalculateHSMetrics($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});
     }
 }
 
@@ -1078,9 +1083,9 @@ if ($scriptParameter{'pRCovPlots'} > 0) {  #Run Rcovplot scripts
 
     &PrintToFileHandles(\@printFilehandles, "\nRCovPlots\n");	
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
-	&RCoveragePlots($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});	
+	&RCoveragePlots($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});	
     }
 }
 
@@ -1091,9 +1096,9 @@ if ($scriptParameter{'pGATKRealigner'} > 0) {  #Run GATK ReAlignerTargetCreator/
     &CheckBuildHumanGenomePreRequisites("GATKRealigner");
     &CheckBuildDownLoadPreRequisites("GATKRealigner");
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {   
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {   
     
-	&GATKReAligner($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});	
+	&GATKReAligner($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});	
     }
 }
 
@@ -1104,9 +1109,9 @@ if ($scriptParameter{'pGATKBaseRecalibration'} > 0) {  #Run GATK BaseRecalibrato
     &CheckBuildHumanGenomePreRequisites("GATKBaseRecalibration");
     &CheckBuildDownLoadPreRequisites("GATKBaseRecalibration");
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {   
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {   
   
-	&GATKBaseReCalibration($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});	
+	&GATKBaseReCalibration($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});	
     }
 }
 
@@ -1118,17 +1123,17 @@ if ($scriptParameter{'pGATKHaploTypeCaller'} > 0) {  #Run GATK HaploTypeCaller
     &CheckBuildDownLoadPreRequisites("GATKHaploTypeCaller");
     &CheckBuildPTCHSMetricPreRequisites("GATKHaploTypeCaller");
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {
 	
-	if ( (defined($parameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDCounter]}{'GATKTargetPaddedBedIntervalLists'}{'buildFile'})) && ($parameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDCounter]}{'GATKTargetPaddedBedIntervalLists'}{'buildFile'} eq 1) ){
+	if ( (defined($parameter{ $scriptParameter{'familyID'} }{$scriptParameter{'sampleIDs'}[$sampleIDCounter]}{'GATKTargetPaddedBedIntervalLists'}{'buildFile'})) && ($parameter{ $scriptParameter{'familyID'} }{$scriptParameter{'sampleIDs'}[$sampleIDCounter]}{'GATKTargetPaddedBedIntervalLists'}{'buildFile'} eq 1) ){
 	    
 	    &BuildPTCHSMetricPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "GATKHaploTypeCaller");
 	    last;  #Will handle all build per sampleID within sbatch script
 	}
     }
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {
 	    
-	&GATKHaploTypeCaller($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'});
+	&GATKHaploTypeCaller($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});
     }
 }
 
@@ -1207,11 +1212,11 @@ if ($scriptParameter{'pAnnovar'} > 0) {  #Run Annovar. Done per family
 
     &CheckBuildHumanGenomePreRequisites("Annovar");
 
-    for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@annovarTableNames);$tableNamesCounter++) {  #For all specified table names
+    for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@{$scriptParameter{'annovarTableNames'}});$tableNamesCounter++) {  #For all specified table names
 
-	if ($parameter{$annovarTableNames[$tableNamesCounter]}{'buildFile'} eq 1) {
+	if ($parameter{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'buildFile'} eq 1) {
 
-	&BuildAnnovarPreRequisites($scriptParameter{'familyID'}, "mosaik", "Annovar");
+	&BuildAnnovarPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "Annovar");
 	last;  #Will handle all build tables within sbatch script
 	}
     }
@@ -1224,9 +1229,9 @@ if ($scriptParameter{'pGATKVariantEvalAll'} > 0) {  #Run GATK VariantEval for al
 
     &CheckBuildHumanGenomePreRequisites("GATKVariantEvalAll");
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { 
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) { 
 	
-	&GATKVariantEvalAll($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'}, "BOTH", $scriptParameter{'familyID'});
+	&GATKVariantEvalAll($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'}, "BOTH", $scriptParameter{'familyID'});
     }
 }
 
@@ -1237,9 +1242,9 @@ if ($scriptParameter{'pGATKVariantEvalExome'} > 0) {  #Run GATK VariantEval for 
     &CheckBuildHumanGenomePreRequisites("GATKVariantEvalExome");
     &CheckBuildDownLoadPreRequisites("GATKVariantEvalExome");
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { 
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) { 
 	
-	&GATKVariantEvalExome($sampleIDs[$sampleIDCounter], $scriptParameter{'aligner'}, "BOTH", $scriptParameter{'familyID'});
+	&GATKVariantEvalExome($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'}, "BOTH", $scriptParameter{'familyID'});
     }
 }
 
@@ -1325,9 +1330,9 @@ sub RemoveRedundantFiles {
     `mkdir -p $scriptParameter{'outDataDir'}/$familyID/$aligner/info;`;  #Creates the aligner and info data file directory
     `mkdir -p $scriptParameter{'outScriptDir'}/$familyID/$aligner;`;  #Creates the aligner script directory
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) { 
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) { 
 
-	my $sampleID = $sampleIDs[$sampleIDCounter];
+	my $sampleID = $scriptParameter{'sampleIDs'}[$sampleIDCounter];
 	my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
 
 ###Single files
@@ -1726,7 +1731,7 @@ sub GATKVariantEvalExome {
 	if ($VEPOutputFiles == 2) {
 	    
 	    my $analysisType = ".selected";  #SelectFile variants
-	    print $FILEHANDLE "perl -ne ' if ( ($_=~/exonic/) || ($_=/splicing/) ) {print $_;}' ";
+	    print $FILEHANDLE q?perl -ne ' if ( ($_=~/exonic/) || ($_=~/splicing/) ) {print $_;}' ?;
 	    print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".txt ";  #InFile
 	    print $FILEHANDLE "> ".$sampleDirectory."/".$sampleID.$infileEnding.$callType."_exonic_variants".$analysisType.".txt", "\n\n";  #OutFile
 	    
@@ -2027,7 +2032,7 @@ sub Annovar {
     my $callType = $_[2];  #SNV,INDEL or BOTH 
 
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
-    my $nrCores = &NrofCoresPerSbatch(scalar(@annovarTableNames));  #Detect the number of cores to use from @annovarTableNames. 
+    my $nrCores = &NrofCoresPerSbatch(scalar(@{$scriptParameter{'annovarTableNames'}}));  #Detect the number of cores to use from @annovarTableNames. 
 
     &ProgramPreRequisites( $familyID, "Annovar", $aligner."/GATK", $callType, $FILEHANDLE, $nrCores, 7);
 
@@ -2055,24 +2060,24 @@ sub Annovar {
 	print $FILEHANDLE "-out ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf ";  #Outfile prefix
 	print $FILEHANDLE "-protocol ";  #Comma-delimited string specifying database protocol
 
-	print $FILEHANDLE join(',', @annovarTableNames)." ";  #Databases to use
+	print $FILEHANDLE join(',', @{$scriptParameter{'annovarTableNames'}})." ";  #Databases to use
 
 	print $FILEHANDLE "-operation ";  #Comma-delimited string specifying type of operation	
-	for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@annovarTableNames);$tableNamesCounter++) {  #For all specified table names
+	for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@{$scriptParameter{'annovarTableNames'}});$tableNamesCounter++) {  #For all specified table names
 
-	    if ($annovarTables{$annovarTableNames[$tableNamesCounter]}{'annotation'} eq "geneanno") {
+	    if ($annovarTables{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'annotation'} eq "geneanno") {
 	
 		print $FILEHANDLE "g";
 	    }
-	    elsif ($annovarTables{$annovarTableNames[$tableNamesCounter]}{'annotation'} eq "regionanno") {
+	    elsif ($annovarTables{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'annotation'} eq "regionanno") {
 		
 		print $FILEHANDLE "r";
 	    }
-	    elsif ($annovarTables{$annovarTableNames[$tableNamesCounter]}{'annotation'} eq "filter") {
+	    elsif ($annovarTables{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'annotation'} eq "filter") {
 		
 		print $FILEHANDLE "f";
 	    }
-	    unless ($tableNamesCounter == scalar(@annovarTableNames) - 1) {
+	    unless ($tableNamesCounter == scalar(@{$scriptParameter{'annovarTableNames'}}) - 1) {
 		
 		print $FILEHANDLE ",";
 	    }
@@ -2080,22 +2085,22 @@ sub Annovar {
 	print $FILEHANDLE " ";
 	
 	print $FILEHANDLE "-argument ";
-	for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@annovarTableNames);$tableNamesCounter++) {  #For all specified table names
+	for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@{$scriptParameter{'annovarTableNames'}});$tableNamesCounter++) {  #For all specified table names
 	    
-	    if ($annovarTables{$annovarTableNames[$tableNamesCounter]}{'annotation'} eq "geneanno" ) {  #Use hgvs output style
+	    if ($annovarTables{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'annotation'} eq "geneanno" ) {  #Use hgvs output style
 		
 		print $FILEHANDLE "'--exonicsplicing'";  #Annotate variants near intron/exonic borders
 	    }
-	    unless ($tableNamesCounter == scalar(@annovarTableNames) - 1) {
+	    unless ($tableNamesCounter == scalar(@{$scriptParameter{'annovarTableNames'}}) - 1) {
 
 		print $FILEHANDLE ",";
 	    }
 	}
 	print $FILEHANDLE "\n\n";
 
-	for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@annovarTableNames);$tableNamesCounter++) {  #For all specified table names
+	for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@{$scriptParameter{'annovarTableNames'}});$tableNamesCounter++) {  #For all specified table names
 
-	    if ($annovarTableNames[$tableNamesCounter] =~/ensGene|refGene/) {  #Extra round to catch MT for refSeq as well
+	    if ($scriptParameter{'annovarTableNames'}[$tableNamesCounter] =~/ensGene|refGene/) {  #Extra round to catch MT for refSeq as well
 
 		print $FILEHANDLE "perl ".$scriptParameter{'annovarPath'}."/table_annovar.pl ";  #Annovar script 
 		print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".vcf ";  #Infile
@@ -2178,11 +2183,11 @@ sub GATKReadBackedPhasing {
 	print $FILEHANDLE "-respectPhaseInInput ";  #Already phased data - respect calls
     }
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  #Collect infiles for all sampleIDs
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #Collect infiles for all sampleIDs
 	
-	my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleIDs[$sampleIDCounter]."/".$aligner."/GATK";
-	my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'pGATKBaseRecalibration'}{'fileEnding'};
-	my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles($sampleIDs[$sampleIDCounter]);
+	my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$scriptParameter{'sampleIDs'}[$sampleIDCounter]."/".$aligner."/GATK";
+	my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'pGATKBaseRecalibration'}{'fileEnding'};
+	my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles($scriptParameter{'sampleIDs'}[$sampleIDCounter]);
 	
 	if ($PicardToolsMergeSwitch == 1) {  #Alignment BAM-files merged previously
 	    
@@ -2190,9 +2195,9 @@ sub GATKReadBackedPhasing {
 	}
 	else {  #No previous merge of alignment BAM-files
 	    
-	    for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{ $sampleIDs[$sampleIDCounter] } });$infileCounter++) {  #For all infiles per lane
+	    for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] } });$infileCounter++) {  #For all infiles per lane
 		
-		my $infile = $infilesLaneNoEnding{ $sampleIDs[$sampleIDCounter] }[$infileCounter];
+		my $infile = $infilesLaneNoEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }[$infileCounter];
 		
 		print $FILEHANDLE "-I ".$inSampleDirectory."/".$infile.$infileEnding.".bam ";  #InFile(s)
 	    }
@@ -2271,7 +2276,7 @@ sub SnpEff {
     my $callType = $_[2];  #SNV,INDEL or BOTH
     
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
-    my $nrCores = &NrofCoresPerSbatch(scalar(@snpSiftAnnotationFiles) + scalar(@contigs));  #Detect the number of cores to use from (@snpSiftAnnotationFiles and dbNSFP (=+1)
+    my $nrCores = &NrofCoresPerSbatch(scalar(@{$scriptParameter{'snpSiftAnnotationFiles'}}) + scalar(@contigs));  #Detect the number of cores to use from (snpSiftAnnotationFiles and dbNSFP (=+1)
     &ProgramPreRequisites( $familyID, "SnpEff", $aligner."/GATK", $callType, $FILEHANDLE, $nrCores, 10);
     
     my $inFamilyDirectory = $scriptParameter{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
@@ -2291,7 +2296,7 @@ sub SnpEff {
 ###SnpSift Annotation
 	print $FILEHANDLE "\n#SnpSift Annotation","\n\n";	    
 
-	for (my $snpSiftAnnotationFilesCounter=0;$snpSiftAnnotationFilesCounter<scalar(@snpSiftAnnotationFiles);$snpSiftAnnotationFilesCounter++) {
+	for (my $snpSiftAnnotationFilesCounter=0;$snpSiftAnnotationFilesCounter<scalar(@{$scriptParameter{'snpSiftAnnotationFiles'}});$snpSiftAnnotationFilesCounter++) {
 
 	    &PrintWait(\$snpSiftAnnotationFilesCounter, \$nrCores, \$coreCounter, $FILEHANDLE);
 	    
@@ -2303,15 +2308,15 @@ sub SnpEff {
 	    }
 	    print $FILEHANDLE "-jar ".$scriptParameter{'snpEffPath'}."/SnpSift.jar ";
 	    print $FILEHANDLE "annotate ";
-	    print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$snpSiftAnnotationFiles[$snpSiftAnnotationFilesCounter]." ";  #Database
+	    print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'snpSiftAnnotationFiles'}[$snpSiftAnnotationFilesCounter]." ";  #Database
 	    print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".vcf ";  #Infile
 	    print $FILEHANDLE "| ";  #Pipe
 	    print $FILEHANDLE "perl ".$scriptParameter{'inScriptDir'}."/vcfParser.pl ";  #Parses the vcf output
-	    print $FILEHANDLE "> ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType."_".$snpSiftAnnotationFiles[$snpSiftAnnotationFilesCounter]." &","\n\n";  #outfile	       
+	    print $FILEHANDLE "> ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType."_".$scriptParameter{'snpSiftAnnotationFiles'}[$snpSiftAnnotationFilesCounter]." &","\n\n";  #outfile	       
 	}
 
 ###SnpSift dbNSFP
-	if (scalar(@snpSiftDbNSFPAnnotations) > 0) {
+	if (scalar(@{$scriptParameter{'snpSiftDbNSFPAnnotations'}}) > 0) {
 
 	    my $combinedNrCores;
 
@@ -2319,7 +2324,7 @@ sub SnpEff {
 
 	    for (my $contigsCounter=0;$contigsCounter<scalar(@contigs);$contigsCounter++) {
 		
-		$combinedNrCores = scalar(@snpSiftAnnotationFiles) + $contigsCounter;
+		$combinedNrCores = scalar(@{$scriptParameter{'snpSiftAnnotationFiles'}}) + $contigsCounter;
 		&PrintWait(\$combinedNrCores, \$nrCores, \$coreCounter, $FILEHANDLE);
 			    		
 		print $FILEHANDLE "java -Xmx500m ";
@@ -2332,7 +2337,7 @@ sub SnpEff {
 		print $FILEHANDLE "dbnsfp ";
 		print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'snpSiftDbNSFPFile'}." ";  #DbNSFP file
 		print $FILEHANDLE "-f ";  #fields to add
-		print $FILEHANDLE join(',', @snpSiftDbNSFPAnnotations)." ";  #Databases
+		print $FILEHANDLE join(',', @{$scriptParameter{'snpSiftDbNSFPAnnotations'}})." ";  #Databases
 		print $FILEHANDLE "<( ";  #Pipe into SnpSift
 		print $FILEHANDLE "cat ";  #Read infile
 		print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".vcf ";  #Infile
@@ -2380,11 +2385,11 @@ sub SnpEff {
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-T CombineVariants ";  #Type of analysis to run
 	print $FILEHANDLE "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." ";  #Reference file
-	for (my $snpSiftAnnotationFilesCounter=0;$snpSiftAnnotationFilesCounter<scalar(@snpSiftAnnotationFiles);$snpSiftAnnotationFilesCounter++) {
+	for (my $snpSiftAnnotationFilesCounter=0;$snpSiftAnnotationFilesCounter<scalar(@{$scriptParameter{'snpSiftAnnotationFiles'}});$snpSiftAnnotationFilesCounter++) {
 	    
-	    print $FILEHANDLE "-V: ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType."_".$snpSiftAnnotationFiles[$snpSiftAnnotationFilesCounter]." ";
+	    print $FILEHANDLE "-V: ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType."_".$scriptParameter{'snpSiftAnnotationFiles'}[$snpSiftAnnotationFilesCounter]." ";
 	}
-	if (scalar(@snpSiftDbNSFPAnnotations) > 0) { #DbNSFP processed
+	if (scalar(@{$scriptParameter{'snpSiftDbNSFPAnnotations'}}) > 0) { #DbNSFP processed
 	    
 	    print $FILEHANDLE "-V: ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType."_dbnsfp.vcf ";
 	}
@@ -2434,10 +2439,10 @@ sub VCFParser {
 
 	print $FILEHANDLE "-rf ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'vcfParserRangeFeatureFile'}." ";  #List of genes to analyse separately	
 	
-	if (scalar(@vcfParserRangeFeatureAnnotationColumns) > 0) {
+	if (scalar(@{$scriptParameter{'vcfParserRangeFeatureAnnotationColumns'}}) > 0) {
 
 	    print $FILEHANDLE "-rf_ac ";  #Range annotation columns
-	    print $FILEHANDLE join(',', @vcfParserRangeFeatureAnnotationColumns)." ";	    
+	    print $FILEHANDLE join(',', @{$scriptParameter{'vcfParserRangeFeatureAnnotationColumns'}})." ";	    
 	}
     }
     if ($scriptParameter{'vcfParserSelectFile'} ne "noUserInfo") {
@@ -2445,10 +2450,10 @@ sub VCFParser {
 	print $FILEHANDLE "-sf ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'vcfParserSelectFile'}." ";  #List of genes to analyse separately
 	print $FILEHANDLE "-sf_mc ".$scriptParameter{'vcfParserSelectFileMatchingColumn'}." ";  #Column of HGNC Symbol in SelectFile (-sf)
 
-	if (scalar(@vcfParserSelectFeatureAnnotationColumns) > 0) {
+	if (scalar(@{$scriptParameter{'vcfParserSelectFeatureAnnotationColumns'}}) > 0) {
 
 	    print $FILEHANDLE "-sf_ac ";  #Select annotation columns
-	    print $FILEHANDLE join(',', @vcfParserSelectFeatureAnnotationColumns)." ";	    
+	    print $FILEHANDLE join(',', @{$scriptParameter{'vcfParserSelectFeatureAnnotationColumns'}})." ";	    
 	}
 	print $FILEHANDLE "-sof ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".selected.vcf ";
     }
@@ -2499,11 +2504,11 @@ sub VariantEffectPredictor {
 	
 	print $FILEHANDLE "--chr ".$contigs[$contigsCounter]." ";
 
-	for (my $vepFeatureCounter=0;$vepFeatureCounter<scalar(@vepFeatures);$vepFeatureCounter++) {
+	for (my $vepFeatureCounter=0;$vepFeatureCounter<scalar(@{$scriptParameter{'vepFeatures'}});$vepFeatureCounter++) {
 	    
-	    print $FILEHANDLE "--".$vepFeatures[$vepFeatureCounter]." ";  #Add VEP features to the output.
+	    print $FILEHANDLE "--".$scriptParameter{'vepFeatures'}[$vepFeatureCounter]." ";  #Add VEP features to the output.
 	    
-	    if ( ($vepFeatures[$vepFeatureCounter] eq "sift") || ($vepFeatures[$vepFeatureCounter] eq "polyphen") )  {  #Protein predictions
+	    if ( ($scriptParameter{'vepFeatures'}[$vepFeatureCounter] eq "sift") || ($scriptParameter{'vepFeatures'}[$vepFeatureCounter] eq "polyphen") )  {  #Protein predictions
 		
 		print $FILEHANDLE "s ";  #Add prediction score 
 	    }
@@ -2699,9 +2704,9 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "-V: ".$inFamilyDirectory."/".$familyID.$outfileEnding.$callType."_filtered.vcf ";  #InFile
 	print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf ";  #OutFile
 
-	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  #For all sampleIDs
+	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #For all sampleIDs
 		
-	    print $FILEHANDLE "-sn ".$sampleIDs[$sampleIDCounter]." ";  #Include genotypes from this sample
+	    print $FILEHANDLE "-sn ".$scriptParameter{'sampleIDs'}[$sampleIDCounter]." ";  #Include genotypes from this sample
 	}
     }
     
@@ -2756,11 +2761,11 @@ sub GATKGenoTypeGVCFs {
 	print $FILEHANDLE "-V ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKGenoTypeGVCFsRefGVCF'}." ";
     }
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  #Collect infiles for all sampleIDs
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #Collect infiles for all sampleIDs
 	
-	my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleIDs[$sampleIDCounter]."/".$aligner."/GATK";
-	my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'pGATKHaploTypeCaller'}{'fileEnding'};
-	my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles($sampleIDs[$sampleIDCounter]);
+	my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$scriptParameter{'sampleIDs'}[$sampleIDCounter]."/".$aligner."/GATK";
+	my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'pGATKHaploTypeCaller'}{'fileEnding'};
+	my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles($scriptParameter{'sampleIDs'}[$sampleIDCounter]);
 	
 	if ($PicardToolsMergeSwitch == 1) {  #Alignment BAM-files merged previously
 	    
@@ -2768,8 +2773,8 @@ sub GATKGenoTypeGVCFs {
 	}
 	else {  #No previous merge of alignment BAM-files
 
-	    my $lanes = join("",@{$lane{ $sampleIDs[$sampleIDCounter] }});  #Extract lanes
-	    print $FILEHANDLE "-V ".$inSampleDirectory."/".$sampleIDs[$sampleIDCounter]."_lanes_".$lanes.$infileEnding.".vcf ";  #InFile(s)
+	    my $lanes = join("",@{$lane{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }});  #Extract lanes
+	    print $FILEHANDLE "-V ".$inSampleDirectory."/".$scriptParameter{'sampleIDs'}[$sampleIDCounter]."_lanes_".$lanes.$infileEnding.".vcf ";  #InFile(s)
 	} 
     } 
     print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf", "\n\n";  #OutFile
@@ -3433,9 +3438,9 @@ sub ChanjoImport {
     print $FILEHANDLE $outFamilyDirectory."/".$familyID.".sqlite ";  #Central Db for family
     print $FILEHANDLE "import ";
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {   
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {   
 	
-	my $sampleID = $sampleIDs[$sampleIDCounter];
+	my $sampleID = $scriptParameter{'sampleIDs'}[$sampleIDCounter];
 	my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport";
 	my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pChanjoCalculate'}{'fileEnding'};
 	
@@ -3736,11 +3741,11 @@ sub PicardToolsMerge {
     }
     if ( ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'picardToolsMergeSamFilesPrevious'} == 1) && (scalar( @{ $infilesLaneNoEnding{$sampleID} }) > 1) ) {  #merge previously merged files with merged files generated this run
 	
-	for (my $mergeFileCounter=0;$mergeFileCounter<scalar(@picardToolsMergeSamFilesPrevious);$mergeFileCounter++) {
+	for (my $mergeFileCounter=0;$mergeFileCounter<scalar(@{$scriptParameter{'picardToolsMergeSamFilesPrevious'}});$mergeFileCounter++) {
 	    
-	    if ($picardToolsMergeSamFilesPrevious[$mergeFileCounter] =~ /$sampleID/) {  #Look for sampleID in previously generated file to be merged with current run to be able to merge correct files within sampleID
+	    if ($scriptParameter{'picardToolsMergeSamFilesPrevious'}[$mergeFileCounter] =~ /$sampleID/) {  #Look for sampleID in previously generated file to be merged with current run to be able to merge correct files within sampleID
 
-		if ($picardToolsMergeSamFilesPrevious[$mergeFileCounter] =~ /lane(\d+)|s_(\d+)/) {  #Look for lanes_ or lane\d in previously generated file to be merged with current run to be able to extract previous lanes
+		if ($scriptParameter{'picardToolsMergeSamFilesPrevious'}[$mergeFileCounter] =~ /lane(\d+)|s_(\d+)/) {  #Look for lanes_ or lane\d in previously generated file to be merged with current run to be able to extract previous lanes
 		    
 		    my $mergeLanes; if($1) {$mergeLanes = $1;} else {$mergeLanes = $2;}  #Make sure to always supply lanes from previous regexp		    
 
@@ -3754,7 +3759,7 @@ sub PicardToolsMerge {
 		    print $FILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
 		    print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".$sampleID."_lanes_".$mergeLanes.$lanes.$outfileEnding.".bam ";  #OutFile
 		    print $FILEHANDLE "INPUT=".$inSampleDirectory."/".$sampleID."_lanes_".$lanes.$outfileEnding.".bam ";  #InFile
-		    print $FILEHANDLE "INPUT=".$picardToolsMergeSamFilesPrevious[$mergeFileCounter], "\n\n";  #$mergeLanes contains lane info on previous merge, $infilesLaneNoEnding{$sampleID}[0] uses @RG for very first .bam file to include read group for subsequent merges. Complete path. 
+		    print $FILEHANDLE "INPUT=".$scriptParameter{'picardToolsMergeSamFilesPrevious'}[$mergeFileCounter], "\n\n";  #$mergeLanes contains lane info on previous merge, $infilesLaneNoEnding{$sampleID}[0] uses @RG for very first .bam file to include read group for subsequent merges. Complete path. 
 
 		    print $FILEHANDLE "#Remove Temp Directory\n\n";
 		    print $FILEHANDLE "rm ";
@@ -3770,9 +3775,9 @@ sub PicardToolsMerge {
     }
     elsif ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'picardToolsMergeSamFilesPrevious'} == 1) {  #Merge previously merged files with single file generated this run
 	
-	for (my $mergeFileCounter=0;$mergeFileCounter<scalar(@picardToolsMergeSamFilesPrevious);$mergeFileCounter++) {
+	for (my $mergeFileCounter=0;$mergeFileCounter<scalar(@{$scriptParameter{'picardToolsMergeSamFilesPrevious'}});$mergeFileCounter++) {
 	    
-	    if ($picardToolsMergeSamFilesPrevious[$mergeFileCounter] =~ /lane(\d+)|s_(\d+)/) {  #Look for lanes_ or lane\d in previously generated file to be merged with current run to be able to extract previous lanes
+	    if ($scriptParameter{'picardToolsMergeSamFilesPrevious'}[$mergeFileCounter] =~ /lane(\d+)|s_(\d+)/) {  #Look for lanes_ or lane\d in previously generated file to be merged with current run to be able to extract previous lanes
 		
 		my $mergeLanes; if($1) {$mergeLanes = $1;} else {$mergeLanes = $2;}  #Make sure to always supply lanes from previous regexp
 		my $infile = $infilesLaneNoEnding{$sampleID}[0];  #Can only be 1 element in array due to previous if statement		    
@@ -3787,7 +3792,7 @@ sub PicardToolsMerge {
 		print $FILEHANDLE "CREATE_INDEX=TRUE ";  #create a BAM index when writing a coordinate-sorted BAM file.
 		print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".$sampleID."_lanes_".$mergeLanes.$lanes.$outfileEnding.".bam ";  #OutFile
 		print $FILEHANDLE "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam ";  #InFile
-		print $FILEHANDLE "INPUT=".$picardToolsMergeSamFilesPrevious[$mergeFileCounter],"\n\n";  #$mergeLanes contains lane info on previous merge, $infilesLaneNoEnding{$sampleID}[0] uses @RG for very first .bam file to include read group for subsequent merges. Complete path. 
+		print $FILEHANDLE "INPUT=".$scriptParameter{'picardToolsMergeSamFilesPrevious'}[$mergeFileCounter],"\n\n";  #$mergeLanes contains lane info on previous merge, $infilesLaneNoEnding{$sampleID}[0] uses @RG for very first .bam file to include read group for subsequent merges. Complete path. 
 		
 		print $FILEHANDLE "#Remove Temp Directory\n\n";
 		print $FILEHANDLE "rm ";
@@ -4523,15 +4528,15 @@ sub BuildAnnovarPreRequisites {
 
     print $FILEHANDLE "#Downloading Annovar Db files", "\n\n";
 
-    for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@annovarTableNames);$tableNamesCounter++) {  #For all specified table names
+    for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@{$scriptParameter{'annovarTableNames'}});$tableNamesCounter++) {  #For all specified table names
 	
-	if ($parameter{$annovarTableNames[$tableNamesCounter]}{'buildFile'} eq 1) {
+	if ($parameter{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'buildFile'} eq 1) {
 	    
 	    print $FILEHANDLE "perl ".$scriptParameter{'annovarPath'}."/annotate_variation.pl ";  #Annovar script 
 	    print $FILEHANDLE "-buildver ".$scriptParameter{'annovarGenomeBuildVersion'}." ";  #GenomeBuild version
-	    print $FILEHANDLE "-downdb ".$annovarTables{$annovarTableNames[$tableNamesCounter]}{'download'}." ";  #Db to download
+	    print $FILEHANDLE "-downdb ".$annovarTables{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'download'}." ";  #Db to download
 	    
-	    if (defined($annovarTables{$annovarTableNames[$tableNamesCounter]}{'ucscAlias'})) {
+	    if (defined($annovarTables{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'ucscAlias'})) {
 		
 		print $FILEHANDLE "-webfrom ucsc ";  #Download from ucsc
 	    }
@@ -4541,7 +4546,7 @@ sub BuildAnnovarPreRequisites {
 	    }
 	    print $FILEHANDLE $annovarTemporaryDirectory."/ ", "\n\n";  #Annovar/humandb directory is assumed
 
-	    if ($annovarTableNames[$tableNamesCounter] =~/ensGene|refGene/) {  #Special case for MT download
+	    if ($scriptParameter{'annovarTableNames'}[$tableNamesCounter] =~/ensGene|refGene/) {  #Special case for MT download
 		
 		print $FILEHANDLE "perl ".$scriptParameter{'annovarPath'}."/annotate_variation.pl ";  #Annovar script 
 		print $FILEHANDLE "-buildver GRCh37_MT ";  #GenomeBuild version
@@ -4554,50 +4559,50 @@ sub BuildAnnovarPreRequisites {
 	    my $intendedFilePathRef;
 	    my $temporaryFilePathRef;
 	    
-	    if (defined($annovarTables{ $annovarTableNames[$tableNamesCounter] }{'file'})) {
+	    if (defined($annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'file'})) {
 		
-		for (my $filesCounter=0;$filesCounter<scalar(@{$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'file'}});$filesCounter++) {  #All annovarTables file(s), some tables have multiple files downloaded from the same call
+		for (my $filesCounter=0;$filesCounter<scalar(@{$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'file'}});$filesCounter++) {  #All annovarTables file(s), some tables have multiple files downloaded from the same call
 		    
-		    $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'file'}[$filesCounter]);  
-		    $temporaryFilePathRef = \($annovarTemporaryDirectory."/".$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'file'}[$filesCounter]);    
+		    $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'file'}[$filesCounter]);  
+		    $temporaryFilePathRef = \($annovarTemporaryDirectory."/".$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'file'}[$filesCounter]);    
 		    &PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
 		
-		    if (defined($annovarTables{ $annovarTableNames[$tableNamesCounter] }{'indexFile'})) {
+		    if (defined($annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'indexFile'})) {
 		    
-			$intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'file'}[$filesCounter].".idx");  
-			$temporaryFilePathRef = \($annovarTemporaryDirectory."/".$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'file'}[$filesCounter].".idx");
+			$intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'file'}[$filesCounter].".idx");  
+			$temporaryFilePathRef = \($annovarTemporaryDirectory."/".$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'file'}[$filesCounter].".idx");
 			&PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);	
 		    }
 		}		
 	    }
-	    elsif ((defined($annovarTables{ $annovarTableNames[$tableNamesCounter] }{'ucscAlias'}))){
+	    elsif ((defined($annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'}))){
 	    
-		$intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'ucscAlias'}.".txt");
-		$temporaryFilePathRef = \($annovarTemporaryDirectory."/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'ucscAlias'}.".txt");
+		$intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'}.".txt");
+		$temporaryFilePathRef = \($annovarTemporaryDirectory."/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'}.".txt");
 		&PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
 	    
-		if (defined($annovarTables{ $annovarTableNames[$tableNamesCounter] }{'indexFile'})) {
+		if (defined($annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'indexFile'})) {
 		    
-		    $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'ucscAlias'}.".txt.idx");
-		    $temporaryFilePathRef = \($annovarTemporaryDirectory."/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'ucscAlias'}.".txt.idx");
+		    $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'}.".txt.idx");
+		    $temporaryFilePathRef = \($annovarTemporaryDirectory."/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'}.".txt.idx");
 		    &PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
 		}
 	    }
 	    else {
 	    
-		$intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTableNames[$tableNamesCounter].".txt");
-		$temporaryFilePathRef = \($annovarTemporaryDirectory."/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTableNames[$tableNamesCounter].".txt");    
+		$intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$scriptParameter{'annovarTableNames'}[$tableNamesCounter].".txt");
+		$temporaryFilePathRef = \($annovarTemporaryDirectory."/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$scriptParameter{'annovarTableNames'}[$tableNamesCounter].".txt");    
 		&PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
 	    
-		if (defined($annovarTables{ $annovarTableNames[$tableNamesCounter] }{'indexFile'})) {
+		if (defined($annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'indexFile'})) {
 	
-		    $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTableNames[$tableNamesCounter].".txt.idx");
-		    $temporaryFilePathRef = \($annovarTemporaryDirectory."/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTableNames[$tableNamesCounter].".txt.idx");    
+		    $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$scriptParameter{'annovarTableNames'}[$tableNamesCounter].".txt.idx");
+		    $temporaryFilePathRef = \($annovarTemporaryDirectory."/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$scriptParameter{'annovarTableNames'}[$tableNamesCounter].".txt.idx");    
 		    &PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);	
 		}				
 	    }
 	}
-        $parameter{$annovarTableNames[$tableNamesCounter]}{'buildFile'} = 0;
+        $parameter{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'buildFile'} = 0;
     }
     
     print $FILEHANDLE "rm -rf $annovarTemporaryDirectory;", "\n\n";  #Cleaning up temp directory
@@ -4661,18 +4666,18 @@ sub BuildPTCHSMetricPreRequisites {
 	&ProgramPreRequisites($familyID, $program, $aligner, 0, $FILEHANDLE, 1, 1);
     }
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  #All sampleIDs
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #All sampleIDs
 
-	my $sampleIDBuildSwitchInfile = $parameter{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'exomeTargetBedInfileLists'}{'buildFile'};
-	my $sampleIDBuildFileInfile = $scriptParameter{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'exomeTargetBedInfileLists'};
+	my $sampleIDBuildSwitchInfile = $parameter{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'exomeTargetBedInfileLists'}{'buildFile'};
+	my $sampleIDBuildFileInfile = $scriptParameter{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'exomeTargetBedInfileLists'};
 	my $infileListNoEnding = &RemoveFileEnding(\$sampleIDBuildFileInfile, $referenceFileEndings{'exomeTargetBedInfileLists'});  #For comparison of identical filename.bed files, to avoid creating files twice
 
-	my $sampleIDBuildSwitchPadded = $parameter{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'exomeTargetPaddedBedInfileLists'}{'buildFile'};
-	my $sampleIDBuildFilePadded = $scriptParameter{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'exomeTargetPaddedBedInfileLists'};
+	my $sampleIDBuildSwitchPadded = $parameter{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'exomeTargetPaddedBedInfileLists'}{'buildFile'};
+	my $sampleIDBuildFilePadded = $scriptParameter{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'exomeTargetPaddedBedInfileLists'};
 	my $paddedInfileListNoEnding = &RemoveFileEnding(\$sampleIDBuildFilePadded , $referenceFileEndings{'exomeTargetPaddedBedInfileLists'});  #For comparison of identical filename.bed files, to avoid creating files twice
 
-	my $sampleIDBuildSwitchPaddedInterval = $parameter{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'GATKTargetPaddedBedIntervalLists'}{'buildFile'};
-	my $sampleIDBuildFilePaddedInterval = $scriptParameter{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'GATKTargetPaddedBedIntervalLists'};
+	my $sampleIDBuildSwitchPaddedInterval = $parameter{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'GATKTargetPaddedBedIntervalLists'}{'buildFile'};
+	my $sampleIDBuildFilePaddedInterval = $scriptParameter{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'GATKTargetPaddedBedIntervalLists'};
 	my $paddedIntervalListNoEnding = &RemoveFileEnding(\$sampleIDBuildFilePaddedInterval , $referenceFileEndings{'GATKTargetPaddedBedIntervalLists'});  #For comparison of identical filename.bed files, to avoid creating files twice
 
 	if ( (defined($sampleIDBuildSwitchPadded)) && ($sampleIDBuildSwitchPadded == 1) ) {  #If identical filename.bed and padded files need creation do not build infile_list in separate part of sbatch
@@ -4697,9 +4702,9 @@ sub BuildPTCHSMetricPreRequisites {
 	}
 	
         ##Turn of build of identical filename.bed files
-	&CheckUniqueTargetFiles(\@sampleIDs, \$sampleIDCounter, \$sampleIDBuildFileInfile, "exomeTargetBedInfileLists");
-	&CheckUniqueTargetFiles(\@sampleIDs, \$sampleIDCounter, \$sampleIDBuildFilePadded, "exomeTargetPaddedBedInfileLists");
-	&CheckUniqueTargetFiles(\@sampleIDs, \$sampleIDCounter, \$sampleIDBuildFilePaddedInterval, "GATKTargetPaddedBedIntervalLists");
+	&CheckUniqueTargetFiles(\@{$scriptParameter{'sampleIDs'}}, \$sampleIDCounter, \$sampleIDBuildFileInfile, "exomeTargetBedInfileLists");
+	&CheckUniqueTargetFiles(\@{$scriptParameter{'sampleIDs'}}, \$sampleIDCounter, \$sampleIDBuildFilePadded, "exomeTargetPaddedBedInfileLists");
+	&CheckUniqueTargetFiles(\@{$scriptParameter{'sampleIDs'}}, \$sampleIDCounter, \$sampleIDBuildFilePaddedInterval, "GATKTargetPaddedBedIntervalLists");
 	
 	for (my $parameterCounter=0;$parameterCounter<$parametersToEvaluate;$parameterCounter++) {
 
@@ -4712,15 +4717,15 @@ sub BuildPTCHSMetricPreRequisites {
 	    
 	    if ( (defined($sampleIDBuildSwitchInfile)) && ($sampleIDBuildSwitchInfile eq 1) ) {
 		
-		&SetTargetFileGeneralBuildParameter(\$sampleIDBuildFileInfile, "exomeTargetBedInfileLists", \$sampleIDBuildFile, \$sampleIDBuildFileNoEnding, \$sampleIDs[$sampleIDCounter]);
+		&SetTargetFileGeneralBuildParameter(\$sampleIDBuildFileInfile, "exomeTargetBedInfileLists", \$sampleIDBuildFile, \$sampleIDBuildFileNoEnding, \$scriptParameter{'sampleIDs'}[$sampleIDCounter]);
 	    }
 	    elsif ( (defined($sampleIDBuildSwitchPadded)) && ($sampleIDBuildSwitchPadded eq 1) ) {
 
-		&SetTargetFileGeneralBuildParameter(\$sampleIDBuildFilePadded, "exomeTargetPaddedBedInfileLists", \$sampleIDBuildFile, \$sampleIDBuildFileNoEnding, \$sampleIDs[$sampleIDCounter]);
+		&SetTargetFileGeneralBuildParameter(\$sampleIDBuildFilePadded, "exomeTargetPaddedBedInfileLists", \$sampleIDBuildFile, \$sampleIDBuildFileNoEnding, \$scriptParameter{'sampleIDs'}[$sampleIDCounter]);
 	    }
 	    elsif ( (defined($sampleIDBuildSwitchPaddedInterval)) && ($sampleIDBuildSwitchPaddedInterval == 1) ) {
 		
-		&SetTargetFileGeneralBuildParameter(\$sampleIDBuildFilePaddedInterval, "GATKTargetPaddedBedIntervalLists", \$sampleIDBuildFile, \$sampleIDBuildFileNoEnding, \$sampleIDs[$sampleIDCounter]);
+		&SetTargetFileGeneralBuildParameter(\$sampleIDBuildFilePaddedInterval, "GATKTargetPaddedBedIntervalLists", \$sampleIDBuildFile, \$sampleIDBuildFileNoEnding, \$scriptParameter{'sampleIDs'}[$sampleIDCounter]);
 	    }
 	    
 	    if (defined($sampleIDBuildFile)) {
@@ -4729,7 +4734,7 @@ sub BuildPTCHSMetricPreRequisites {
 		
 		&PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to create required ".$sampleIDBuildFile." file before executing ".$program."\n\n");
 		
-		print $FILEHANDLE "#SampleID:".$sampleIDs[$sampleIDCounter], "\n\n";
+		print $FILEHANDLE "#SampleID:".$scriptParameter{'sampleIDs'}[$sampleIDCounter], "\n\n";
 		print $FILEHANDLE "#CreateSequenceDictionary from reference", "\n";
 		print $FILEHANDLE "java -Xmx2g ";
 		if ($scriptParameter{'javaUseLargePages'} ne "no") {
@@ -4810,15 +4815,15 @@ sub BuildPTCHSMetricPreRequisites {
 		if ( (defined($sampleIDBuildSwitchPadded)) && ($sampleIDBuildSwitchPadded == 0) ) {
 		    
 		    $sampleIDBuildSwitchPaddedInterval = 0;
-		    &SetTargetFileGeneralBuildParameter(\$sampleIDBuildFilePaddedInterval, "GATKTargetPaddedBedIntervalLists", \$sampleIDBuildFile, \$sampleIDBuildFileNoEnding, \$sampleIDs[$sampleIDCounter]);
+		    &SetTargetFileGeneralBuildParameter(\$sampleIDBuildFilePaddedInterval, "GATKTargetPaddedBedIntervalLists", \$sampleIDBuildFile, \$sampleIDBuildFileNoEnding, \$scriptParameter{'sampleIDs'}[$sampleIDCounter]);
 		}
 		if ( (defined($sampleIDBuildSwitchInfile)) && ($sampleIDBuildSwitchInfile == 0) ) {
 		    
 		    $sampleIDBuildSwitchPadded = 0;
-		    &SetTargetFileGeneralBuildParameter(\$sampleIDBuildFilePadded, "exomeTargetPaddedBedInfileLists", \$sampleIDBuildFile, \$sampleIDBuildFileNoEnding, \$sampleIDs[$sampleIDCounter]);
+		    &SetTargetFileGeneralBuildParameter(\$sampleIDBuildFilePadded, "exomeTargetPaddedBedInfileLists", \$sampleIDBuildFile, \$sampleIDBuildFileNoEnding, \$scriptParameter{'sampleIDs'}[$sampleIDCounter]);
 		}
 		$sampleIDBuildSwitchInfile = 0;
-		&SetTargetFileGeneralBuildParameter(\$sampleIDBuildFileInfile, "exomeTargetBedInfileLists", \$sampleIDBuildFile, \$sampleIDBuildFileNoEnding, \$sampleIDs[$sampleIDCounter]);
+		&SetTargetFileGeneralBuildParameter(\$sampleIDBuildFileInfile, "exomeTargetBedInfileLists", \$sampleIDBuildFile, \$sampleIDBuildFileNoEnding, \$scriptParameter{'sampleIDs'}[$sampleIDCounter]);
 	    }
 	}
     }
@@ -4963,19 +4968,19 @@ sub CheckBuildPTCHSMetricPreRequisites {
     my $program = $_[0];
     my $FILEHANDLE = $_[1];  #Decides if a new sbatch script will be generated or handled by supplied FILEHANDLE
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {
 	
-	if ($parameter{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'exomeTargetBedInfileLists'}{'buildFile'} eq 1) {
+	if ($parameter{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'exomeTargetBedInfileLists'}{'buildFile'} eq 1) {
 	    
 	    &BuildPTCHSMetricPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, $program, $FILEHANDLE);
 	    last;  #Will handle all build per sampleID within sbatch script
 	}
-	if ($parameter{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'exomeTargetPaddedBedInfileLists'}{'buildFile'} eq 1) {
+	if ($parameter{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'exomeTargetPaddedBedInfileLists'}{'buildFile'} eq 1) {
 	    
 	    &BuildPTCHSMetricPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, $program, $FILEHANDLE);
 	    last;  #Will handle all build per sampleID within sbatch script
 	}
-	if ( (defined($parameter{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'GATKTargetPaddedBedIntervalLists'}{'buildFile'})) && ($parameter{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'GATKTargetPaddedBedIntervalLists'}{'buildFile'} eq 1) ){
+	if ( (defined($parameter{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'GATKTargetPaddedBedIntervalLists'}{'buildFile'})) && ($parameter{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'GATKTargetPaddedBedIntervalLists'}{'buildFile'} eq 1) ){
 	    
 	    &BuildPTCHSMetricPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, $program, $FILEHANDLE);
 	    last;  #Will handle all build per sampleID within sbatch script
@@ -5167,7 +5172,7 @@ sub ReadPlinkPedigreeFile {
     my $familyID;
     my $sampleID;
     
-    my $userSampleIDsSwitch = &CheckUserInfoArrays(\@sampleIDs, "sampleIDs");
+    my $userSampleIDsSwitch = &CheckUserInfoArrays(\@{$parameter{'sampleIDs'}{'value'}}, "sampleIDs");
     my $userExomeTargetBedInfileListsSwitch = &CheckUserInfoArrays(\@exomeTargetBedInfileLists, "exomeTargetBedInfileLists"); 
     my $userExomeTargetPaddedBedInfileListSwitch = &CheckUserInfoArrays(\@exomeTargetPaddedBedInfileLists, "exomeTargetPaddedBedInfileLists");
     my $userExomeTargetPaddedBedIntervalListSwitch = &CheckUserInfoArrays(\@GATKTargetPaddedBedIntervalLists, "GATKTargetPaddedBedIntervalLists");
@@ -5210,8 +5215,8 @@ sub ReadPlinkPedigreeFile {
 		$sampleID = $lineInfo[1];		
 
 		if ($userSampleIDsSwitch == 0) {
-
-		    push(@sampleIDs, $lineInfo[1]);  #Save sampleid info
+		    
+		    push(@{$scriptParameter{'sampleIDs'}}, $lineInfo[1]);  #Save sampleid info
 		}
 	    }
 	    else {
@@ -5271,10 +5276,10 @@ sub ReadPlinkPedigreeFile {
 	}	
     }
     if ($userSampleIDsSwitch == 0) {
-	@sampleIDs = sort(@sampleIDs);  #Lexiographical sort to determine the correct order of ids indata
+	@{$scriptParameter{'sampleIDs'}} = sort(@{$scriptParameter{'sampleIDs'}});  #Lexiographical sort to determine the correct order of ids indata
     }
     print STDOUT "Read pedigree file: ".$fileName, "\n";
-    close(PEDF);
+    close($PEDF);
 }
 
 
@@ -5425,9 +5430,9 @@ sub FIDSubmitJob {
 	$jobIDsReturn = `sbatch $sbatchFileName`;  #No jobs have been run: submit
 	($jobID) = ($jobIDsReturn =~ /Submitted batch job (\d+)/);  #Just submitted jobID
 	
-	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {
+	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {
 
-	    my $sampleIDChainKey =  $sampleIDs[$sampleIDCounter]."_".$path;
+	    my $sampleIDChainKey =  $scriptParameter{'sampleIDs'}[$sampleIDCounter]."_".$path;
 	    push ( @{ $jobID{$familyIDChainKey}{$sampleIDChainKey} }, $jobID);  #Add jobID to hash
 	}
     }
@@ -5517,9 +5522,9 @@ sub FIDSubmitJob {
 	    
 	    if ($dependencies == 5) {  #Add familyID_sampleID jobs to current familyID chain
 		
-		for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  #Check jobs for sampleID          
+		for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #Check jobs for sampleID          
 		    
-		    my $sampleIDChainKey = $sampleIDs[$sampleIDCounter]."_".$path;  #Current chain
+		    my $sampleIDChainKey = $scriptParameter{'sampleIDs'}[$sampleIDCounter]."_".$path;  #Current chain
 		    &PushToJobID($familyIDChainKey, $sampleIDChainKey, $sampleID, $path, "Family_Merged");
 		}
 	    }
@@ -5546,18 +5551,18 @@ sub FIDSubmitJob {
 	    elsif ($path eq "MAIN") {  #First familyID MAIN chain 
 		
 		##Add all previous jobId(s) from sampleId chainkey(s)
-		for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {           
+		for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {           
 		    
-		    my $sampleIDChainKey = $sampleIDs[$sampleIDCounter]."_".$path;
+		    my $sampleIDChainKey = $scriptParameter{'sampleIDs'}[$sampleIDCounter]."_".$path;
 		    
 		    if ($jobID{$familyIDChainKey}{$sampleIDChainKey}) {
 			
 			$jobIDs .= &AddToJobID($familyIDChainKey, $sampleIDChainKey);  #Add to jobID string, while keeping previous additions
 			
 		    }
-		    for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{ $sampleIDs[$sampleIDCounter] } });$infileCounter++) {
+		    for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] } });$infileCounter++) {
 			
-			my $sampleIDParallelChainKey = $sampleIDs[$sampleIDCounter]."_parallel_".$path.$infileCounter;  #Create key
+			my $sampleIDParallelChainKey = $scriptParameter{'sampleIDs'}[$sampleIDCounter]."_parallel_".$path.$infileCounter;  #Create key
 			
 			if ($jobID{$familyIDChainKey}{$sampleIDParallelChainKey}) {  #Parallel job exists
 			    
@@ -5579,10 +5584,10 @@ sub FIDSubmitJob {
 		}
 		else {  #First job in new path and first familyID MAIN chain 
 		    
-		    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {           
+		    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {           
 			
 			my $familyIDChainKey = $familyID."_MAIN";
-			my $sampleIDChainKey = $sampleIDs[$sampleIDCounter]."_MAIN";
+			my $sampleIDChainKey = $scriptParameter{'sampleIDs'}[$sampleIDCounter]."_MAIN";
 			
 			if ($jobID{$familyIDChainKey}{$sampleIDChainKey}) {
 			    
@@ -5611,9 +5616,9 @@ sub FIDSubmitJob {
 	    }    
 	    if ($dependencies == 5) {  #Job dependent on both familyID and sampleID push to array
 		
-		for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  #Check jobs for sampleID          
+		for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #Check jobs for sampleID          
 		    
-		    my $sampleIDChainKey = $sampleIDs[$sampleIDCounter]."_".$path;  #Current chain
+		    my $sampleIDChainKey = $scriptParameter{'sampleIDs'}[$sampleIDCounter]."_".$path;  #Current chain
 		    @{ $jobID{$familyIDChainKey}{$familyIDChainKey."_".$sampleIDChainKey} } = ();
 		    @{ $jobID{$familyIDChainKey}{$familyIDChainKey} } = ();  #Clear latest sampleID chainkey
 		    push ( @{ $jobID{$familyIDChainKey}{$familyIDChainKey."_".$sampleIDChainKey} }, $jobID);   
@@ -5648,23 +5653,23 @@ sub NrofCoresPerSbatch {
 sub CollectInfiles {
 ##Collects the ".fastq(.gz)" files from the supplied infiles directory. Checks if any files exist
     
-    for (my $inputDirectoryCounter=0;$inputDirectoryCounter<scalar(@inFilesDirs);$inputDirectoryCounter++) {  #Collects inputfiles
+    for (my $inputDirectoryCounter=0;$inputDirectoryCounter<scalar(@{$scriptParameter{'sampleIDs'}});$inputDirectoryCounter++) {  #Collects inputfiles govern by sampleIDs
 	
-	my @infiles = `cd $inFilesDirs[ $inputDirectoryCounter ];ls *.fastq*;`;  #'cd' to input dir and collect fastq files and fastq.gz files
+	my @infiles = `cd $scriptParameter{'inFilesDirs'}[ $inputDirectoryCounter ];ls *.fastq*;`;  #'cd' to input dir and collect fastq files and fastq.gz files
 	
 	if (scalar(@infiles) == 0) {  #No "*.fastq*" infiles
 	    
-	    print STDERR "Could not find any '.fastq' files in supplied infiles directory ".$inFilesDirs[ $inputDirectoryCounter ], "\n";
+	    print STDERR "Could not find any '.fastq' files in supplied infiles directory ".$scriptParameter{'inFilesDirs'}[ $inputDirectoryCounter ], "\n";
 	    exit;
 	}
 	&PrintToFileHandles(\@printFilehandles, "\nReads from Platform\n");
-	&PrintToFileHandles(\@printFilehandles, "\nSample ID\t".$sampleIDs[$inputDirectoryCounter]."\n");
-	print STDOUT "Inputfiles:\n",@ { $infile{ $sampleIDs[$inputDirectoryCounter] }  =[@infiles] }, "\n";  #Hash with sample id as key and inputfiles in dir as array 
-	print MIPLOG "Inputfiles:\n",@ { $infile{ $sampleIDs[$inputDirectoryCounter] }  =[@infiles] }, "\n";
+	&PrintToFileHandles(\@printFilehandles, "\nSample ID\t".$scriptParameter{'sampleIDs'}[$inputDirectoryCounter]."\n");
+	print STDOUT "Inputfiles:\n",@ { $infile{ $scriptParameter{'sampleIDs'}[$inputDirectoryCounter] }  =[@infiles] }, "\n";  #Hash with sample id as key and inputfiles in dir as array 
+	print MIPLOG "Inputfiles:\n",@ { $infile{ $scriptParameter{'sampleIDs'}[$inputDirectoryCounter] }  =[@infiles] }, "\n";
 	
-	$indirpath{$sampleIDs[$inputDirectoryCounter]} = $inFilesDirs[ $inputDirectoryCounter ];   #Catch inputdir path
+	$indirpath{$scriptParameter{'sampleIDs'}[$inputDirectoryCounter]} = $scriptParameter{'inFilesDirs'}[ $inputDirectoryCounter ];   #Catch inputdir path
 	chomp(@infiles);    #Remove newline from every entry in array
-	$infile{ $sampleIDs[$inputDirectoryCounter] }  =[@infiles];  #Reload files into hash (kept above newline just for print STDOUT)
+	$infile{ $scriptParameter{'sampleIDs'}[$inputDirectoryCounter] }  =[@infiles];  #Reload files into hash (kept above newline just for print STDOUT)
     }
 }
 
@@ -5732,9 +5737,9 @@ sub CheckSampleIDMatch {
     my %seen;
     $seen{$infileSampleID} = 1;  #Add input as first increment
     
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {
 	
-	$seen{$sampleIDs[ $sampleIDCounter]}++;
+	$seen{$scriptParameter{'sampleIDs'}[ $sampleIDCounter]}++;
     }
     unless ($seen{$infileSampleID} > 1) {
 
@@ -5861,6 +5866,42 @@ sub Checkfnexists {
 }
 
 
+sub DefineArrayParameters {
+
+##PrepareArrayParameters
+    
+##Function : Check if user supplied cmd info and supplies arrayParameters to scriptParameters
+##Returns : ""
+##Arguments: $arrayRef, $parameterName, $parameterType, $parameterDefault, $associatedPrograms, $parameterExistsCheck
+## : $arrayRef => Array to loop in for parameter {REF}
+## : $parameterName => MIP parameter to evaluate
+## : $parameterType => Type of MIP parameter
+## : $parameterDefault => The parameter default value
+## : $associatedPrograms => Programs that use the parameter. Comma separated string
+## : $parameterExistsCheck => Check if intendent file exists in reference directory
+
+    my $arrayRef = $_[0];
+    my $parameterName = $_[1];
+    my $parameterType = $_[2];
+    my $parameterDefault = $_[3];
+    my $associatedPrograms = $_[4];
+    my $parameterExistsCheck = $_[5];
+
+    $parameter{$parameterName}{'array'} = "yes";  #To separate scalars from arrays
+
+    if (scalar(@{$arrayRef}) == 0) { #No input from cmd 
+
+	$parameter{$parameterName}{'value'} = ["nocmdinput"]; #To enable use of subroutine &AddToScriptParameter
+    }
+    else {
+
+	@{$scriptParameter{$parameterName}} = split(',', join(',',@{$arrayRef})); #If user supplied parameter a comma separated list
+    }
+    push(@orderParameters, $parameterName); #Add to enable later evaluation of parameters in proper order & write to master file
+    &AddToScriptParameter($parameterName, $parameter{$parameterName}{'value'}[0], $parameterType, $parameterDefault, $associatedPrograms, $parameterExistsCheck);
+}
+
+
 sub DefineParametersPath {
 ###Defines all attributes of a parameter, so that the correct value can be set and added to %scriptparameter later
 
@@ -5956,54 +5997,18 @@ sub AddToScriptParameter {
 		if ($parameterValue eq "nocmdinput") {  #No input from cmd
 		    
 		    if (defined($scriptParameter{$parameterName})) {  #Input from config file
-			
-			if ($parameterName eq "sampleIDs") {  #SampleIDs is a comma separated list 
-			   
-			    @sampleIDs = split(/,/, $scriptParameter{'sampleIDs'});  #Transfer to array
-			}
-			if ($parameterName eq "inFilesDirs") {  #InFilesDirs is a comma separated list 
-
-			    @inFilesDirs = split(/,/, $scriptParameter{'inFilesDirs'});  #Transfer to array			    
-			} 
-			if ($parameterName eq "picardToolsMergeSamFilesPrevious") {
-
-			    @picardToolsMergeSamFilesPrevious = split(/,/, $scriptParameter{'picardToolsMergeSamFilesPrevious'});  #Transfer to array
-			}
+			 
 			if ($parameterName eq "exomeTargetBedInfileLists") {  #ExomeTargetBedInfileListss is a comma separated list 
-
-			    &SetTargetandAutoBuild(\@sampleIDs, \$parameterName, \$referenceFileEndings{'exomeTargetBedInfileLists'});
+			   
+			    &SetTargetandAutoBuild(\@{$scriptParameter{'sampleIDs'}}, \$parameterName, \$referenceFileEndings{'exomeTargetBedInfileLists'});
 			}
 			if ($parameterName eq "exomeTargetPaddedBedInfileLists") {  #ExomeTargetPaddedBedInfileLists is a comma separated list 
 			    
-			    &SetTargetandAutoBuild(\@sampleIDs, \$parameterName, \$referenceFileEndings{'exomeTargetPaddedBedInfileLists'});
+			    &SetTargetandAutoBuild(\@{$scriptParameter{'sampleIDs'}}, \$parameterName, \$referenceFileEndings{'exomeTargetPaddedBedInfileLists'});
 			}
 			if ( ($parameterName eq "GATKTargetPaddedBedIntervalLists") && ($scriptParameter{'analysisType'} ne "genomes") ) {  #GATKTargetPaddedBedIntervalLists is a comma separated list 
 			    
-			    &SetTargetandAutoBuild(\@sampleIDs, \$parameterName, \$referenceFileEndings{'GATKTargetPaddedBedIntervalLists'});
-			}  
-			if ($parameterName eq "vepFeatures") {  #Input from config file
-    
-			    @vepFeatures = split(/,/, $scriptParameter{'vepFeatures'});  #Transfer to array
-			}
-			if ($parameterName eq "vcfParserRangeFeatureAnnotationColumns") {  #Input from config file
-    
-			    @vcfParserRangeFeatureAnnotationColumns = split(/,/, $scriptParameter{'vcfParserRangeFeatureAnnotationColumns'});  #Transfer to array
-			}
-			if ($parameterName eq "vcfParserSelectFeatureAnnotationColumns") {  #Input from config file
-    
-			    @vcfParserSelectFeatureAnnotationColumns = split(/,/, $scriptParameter{'vcfParserSelectFeatureAnnotationColumns'});  #Transfer to array
-			}
-			if ($parameterName eq "snpSiftAnnotationFiles") {  #Input from config file
-    
-			    @snpSiftAnnotationFiles = split(/,/, $scriptParameter{'snpSiftAnnotationFiles'});  #Transfer to array
-			}
-			if ($parameterName eq "snpSiftDbNSFPAnnotations") {  #Input from config file
-    
-			    @snpSiftDbNSFPAnnotations = split(/,/, $scriptParameter{'snpSiftDbNSFPAnnotations'});  #Transfer to array
-			}
-			if ($parameterName eq "annovarTableNames") {  #Input from config file
-			    
-			    @annovarTableNames = split(/,/, $scriptParameter{'annovarTableNames'});  #Transfer to array
+			    &SetTargetandAutoBuild(\@{$scriptParameter{'sampleIDs'}}, \$parameterName, \$referenceFileEndings{'GATKTargetPaddedBedIntervalLists'});
 			}
 			if ($parameterName eq "humanGenomeReference") {
 			    
@@ -6018,43 +6023,38 @@ sub AddToScriptParameter {
 			
 			if ($parameterName eq "inFilesDirs") {
 			    
-			    for (my $indirectoryCount=0;$indirectoryCount<scalar(@sampleIDs);$indirectoryCount++) {
+			    for (my $indirectoryCount=0;$indirectoryCount<scalar(@{$scriptParameter{'sampleIDs'}});$indirectoryCount++) {
 				
-				push(@inFilesDirs, $scriptParameter{'clusterConstantPath'}."/".$scriptParameter{'analysisType'}."/".$sampleIDs[$indirectoryCount]."/fastq");					
+				push(@{$scriptParameter{'inFilesDirs'}}, $scriptParameter{'clusterConstantPath'}."/".$scriptParameter{'analysisType'}."/".$scriptParameter{'sampleIDs'}[$indirectoryCount]."/fastq");					
 			    }
-			    &EnableArrayParameter(\@inFilesDirs, \$parameterName);
 			}
 			elsif ($parameterName eq "exomeTargetBedInfileLists") {  #Note that potential pedigree files entries will be updated with GenomeReferenceSource and version here
 			    
-			    &SetTargetandAutoBuild(\@sampleIDs, \$parameterName, \$referenceFileEndings{'exomeTargetBedInfileLists'});
+			    &SetTargetandAutoBuild(\@{$scriptParameter{'sampleIDs'}}, \$parameterName, \$referenceFileEndings{'exomeTargetBedInfileLists'});
 			}
 			elsif ($parameterName eq "exomeTargetPaddedBedInfileLists") {  #Note that potential pedigree files entries will be updated with GenomeReferenceSource and version here
 			    
-			    &SetTargetandAutoBuild(\@sampleIDs, \$parameterName, \$referenceFileEndings{'exomeTargetPaddedBedInfileLists'});
+			    &SetTargetandAutoBuild(\@{$scriptParameter{'sampleIDs'}}, \$parameterName, \$referenceFileEndings{'exomeTargetPaddedBedInfileLists'});
 			}
 			elsif ( ($parameterName eq "GATKTargetPaddedBedIntervalLists") && ($scriptParameter{'analysisType'} ne "genomes") ) {  #Note that potential pedigree files entries will be updated with GenomeReferenceSource and version here 
 			    
-			    &SetTargetandAutoBuild(\@sampleIDs, \$parameterName, \$referenceFileEndings{'GATKTargetPaddedBedIntervalLists'});
+			    &SetTargetandAutoBuild(\@{$scriptParameter{'sampleIDs'}}, \$parameterName, \$referenceFileEndings{'GATKTargetPaddedBedIntervalLists'});
 			}
 			elsif ($parameterName eq "vepFeatures") {
 			    
-			    @vepFeatures = ("refseq", "hgvs", "symbol", "numbers", "sift", "polyphen", "humdiv");  #Set default vep features
-			    &EnableArrayParameter(\@vepFeatures, \$parameterName);
+			    @{$scriptParameter{'vepFeatures'}} = ("refseq", "hgvs", "symbol", "numbers", "sift", "polyphen", "humdiv");  #Set default vep features
 			}
 			elsif ($parameterName eq "snpSiftAnnotationFiles") {  #Input from config file
 			    
-			    @snpSiftAnnotationFiles = ("dbsnp_138.b37.excluding_sites_after_129.vcf", "dbsnp_138.b37.vcf", "1000G_phase1.indels.b37.vcf", "1000G_phase1.snps.high_confidence.b37.vcf", "ESP6500SI-V2-SSA137.updatedProteinHgvs.snps_indels.vcf");  #Set default snpSiftAnnotationFiles
-			    &EnableArrayParameter(\@snpSiftAnnotationFiles, \$parameterName);
+			    @{$scriptParameter{'snpSiftAnnotationFiles'}} = ("dbsnp_138.b37.excluding_sites_after_129.vcf", "dbsnp_138.b37.vcf", "1000G_phase1.indels.b37.vcf", "1000G_phase1.snps.high_confidence.b37.vcf", "ESP6500SI-V2-SSA137.updatedProteinHgvs.snps_indels.vcf");  #Set default snpSiftAnnotationFiles
 			}
 			elsif ($parameterName eq "snpSiftDbNSFPAnnotations") {  #Input from config file
     
-			    @snpSiftDbNSFPAnnotations = ("SIFT_pred", "Polyphen2_HDIV_pred", "Polyphen2_HVAR_pred", "LRT_pred", "MutationTaster_pred", "GERP++_NR", "GERP++_RS", "phastCons100way_vertebrate", "1000Gp1_AF", "ESP6500_AA_AF");  #Set default snpSiftDbNSFPAnnotations
-			    &EnableArrayParameter(\@snpSiftDbNSFPAnnotations, \$parameterName);
+			    @{$scriptParameter{'snpSiftDbNSFPAnnotations'}} = ("SIFT_pred", "Polyphen2_HDIV_pred", "Polyphen2_HVAR_pred", "LRT_pred", "MutationTaster_pred", "GERP++_NR", "GERP++_RS", "phastCons100way_vertebrate", "1000Gp1_AF", "ESP6500_AA_AF");  #Set default snpSiftDbNSFPAnnotations
 			}
 			elsif ($parameterName eq "annovarTableNames") {
 			    
-			    @annovarTableNames = ("refGene", "mce46way", "gerp++elem", "segdup", "tfbs", "mirna", "snp137NonFlagged", "1000g2012apr_all", "esp6500si_all", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_lrt", "ljb2_gerp++", "ljb2_phylop");  #Set default annovar table names
-			    &EnableArrayParameter(\@annovarTableNames, \$parameterName);
+			    @{$scriptParameter{'annovarTableNames'}} = ("refGene", "mce46way", "gerp++elem", "segdup", "tfbs", "mirna", "snp137NonFlagged", "1000g2012apr_all", "esp6500si_all", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_lrt", "ljb2_gerp++", "ljb2_phylop");  #Set default annovar table names
 			}
 			else {
 			    
@@ -6066,18 +6066,8 @@ sub AddToScriptParameter {
 			}
 		    }
 		    else {
-			
-			if ($parameterName eq "picardToolsMergeSamFilesPrevious") {  
 
-			    @picardToolsMergeSamFilesPrevious = ();  #Empty to not add a 0 as a value, which will cause errors in later conditions use
-			}
-			elsif ( ($parameterName eq "sampleIDs") && (defined($scriptParameter{'pedigreeFile'})) ) {  #Special case 
-			    
-			    @sampleIDs = ();  #Empty to not add a 0 as a value, which will cause errors in later conditions use
-			}
-			elsif ($parameterName eq "pedigreeFile") {  #Special case - do nothing
-			}
-			elsif ($parameterName eq "mosaikAlignReference") {  #Special case - do nothing, since file can be created by MIP from the humanGenomeReference if required
+			if ($parameterName eq "mosaikAlignReference") {  #Special case - do nothing, since file can be created by MIP from the humanGenomeReference if required
 			}
 			elsif ( ($parameterName eq "GATKExomeReferenceSNPs") && ($scriptParameter{'analysisType'} ne "rapid")) {  #Do nothing since file is not required unless rapid mode is enabled
 			}
@@ -6107,59 +6097,23 @@ sub AddToScriptParameter {
 		}
 		else {  #Add to enable or overwrite info gathered from config and use in recreation of cmd line later
 		    
-		    if ($parameterName eq "sampleIDs") {	  
-
-			&EnableArrayParameter(\@sampleIDs, \$parameterName);  
-		    }
-		    elsif ($parameterName eq "inFilesDirs") {	    
-
-			&EnableArrayParameter(\@inFilesDirs, \$parameterName);
-		    }
-		    elsif ($parameterName eq "picardToolsMergeSamFilesPrevious") {
-			
-			&EnableArrayParameter(\@picardToolsMergeSamFilesPrevious, \$parameterName);
-		    }
-		    elsif ($parameterName eq "exomeTargetBedInfileLists") {	    
+		    if ($parameterName eq "exomeTargetBedInfileLists") {	    
 			
 			&EnableArrayParameter(\@exomeTargetBedInfileLists, \$parameterName);
-			&CompareArrayElements(\@sampleIDs, \@exomeTargetBedInfileLists, "sampleIDs", $parameterName);
-			&SetAutoBuildAndScriptParameterPerSample(\@sampleIDs, \@exomeTargetBedInfileLists, \$parameterName);
+			&CompareArrayElements(\@{$scriptParameter{'sampleIDs'}}, \@exomeTargetBedInfileLists, "sampleIDs", $parameterName);
+			&SetAutoBuildAndScriptParameterPerSample(\@{$scriptParameter{'sampleIDs'}}, \@exomeTargetBedInfileLists, \$parameterName);
 		    }
 		    elsif ($parameterName eq "exomeTargetPaddedBedInfileLists") {	    
 			
 			&EnableArrayParameter(\@exomeTargetPaddedBedInfileLists, \$parameterName);
-			&CompareArrayElements(\@sampleIDs, \@exomeTargetPaddedBedInfileLists, "sampleIDs", $parameterName);
-			&SetAutoBuildAndScriptParameterPerSample(\@sampleIDs, \@exomeTargetPaddedBedInfileLists, \$parameterName);
+			&CompareArrayElements(\@{$scriptParameter{'sampleIDs'}}, \@exomeTargetPaddedBedInfileLists, "sampleIDs", $parameterName);
+			&SetAutoBuildAndScriptParameterPerSample(\@{$scriptParameter{'sampleIDs'}}, \@exomeTargetPaddedBedInfileLists, \$parameterName);
 		    }
 		    elsif ( ($parameterName eq "GATKTargetPaddedBedIntervalLists") && ($scriptParameter{'analysisType'} ne "genomes") ) {	    
 			
 			&EnableArrayParameter(\@GATKTargetPaddedBedIntervalLists, \$parameterName);
-			&CompareArrayElements(\@sampleIDs, \@GATKTargetPaddedBedIntervalLists, "sampleIDs", $parameterName);
-			&SetAutoBuildAndScriptParameterPerSample(\@sampleIDs, \@GATKTargetPaddedBedIntervalLists, \$parameterName);
-		    }
-		    elsif ($parameterName eq "vcfParserRangeFeatureAnnotationColumns") {
-			
-			&EnableArrayParameter(\@vcfParserRangeFeatureAnnotationColumns, \$parameterName);
-		    }
-		    elsif ($parameterName eq "vcfParserSelectFeatureAnnotationColumns") {
-			
-			&EnableArrayParameter(\@vcfParserSelectFeatureAnnotationColumns, \$parameterName);
-		    }
-		    elsif ($parameterName eq "vepFeatures") {
-			
-			&EnableArrayParameter(\@vepFeatures, \$parameterName);
-		    }
-		    elsif ($parameterName eq "snpSiftAnnotationFiles") {
-			
-			&EnableArrayParameter(\@snpSiftAnnotationFiles, \$parameterName);
-		    }
-		    elsif ($parameterName eq "snpSiftDbNSFPAnnotations") {
-			
-			&EnableArrayParameter(\@snpSiftDbNSFPAnnotations, \$parameterName);
-		    }
-		    elsif ($parameterName eq "annovarTableNames") {
-			
-			&EnableArrayParameter(\@annovarTableNames, \$parameterName);
+			&CompareArrayElements(\@{$scriptParameter{'sampleIDs'}}, \@GATKTargetPaddedBedIntervalLists, "sampleIDs", $parameterName);
+			&SetAutoBuildAndScriptParameterPerSample(\@{$scriptParameter{'sampleIDs'}}, \@GATKTargetPaddedBedIntervalLists, \$parameterName);
 		    }
 		    elsif ($parameterName eq "pedigreeFile") {  #Must come after arrays that can be populated from pedigree file to not overwrite user cmd input 
 
@@ -6172,18 +6126,20 @@ sub AddToScriptParameter {
 			    
 			    ($humanGenomeReferenceVersion, $humanGenomeReferenceSource, $humanGenomeReferenceNameNoEnding) = &ParseHumanGenomeReference($parameterValue);
 			}
-			$scriptParameter{$parameterName} = $parameterValue;
+			if (defined($parameter{$parameterName}{'array'})) {  #Do nothing			   
+			}
+			else {
+			    $scriptParameter{$parameterName} = $parameterValue;
+			}
 		    }
 		}
 		if ( $parameterExistsCheck && ($parameterExistsCheck eq "directory") ) {  #Check dir existence
 		    
 		    if ($parameterName eq "inFilesDirs") {
 			
-			@inFilesDirs = split(/,/, join(',', @inFilesDirs));
-			
-			for (my $indirectoryCount=0;$indirectoryCount<scalar(@inFilesDirs);$indirectoryCount++) {
+			for (my $indirectoryCount=0;$indirectoryCount<scalar(@{$scriptParameter{'inFilesDirs'}});$indirectoryCount++) {
 			    
-			    &CheckExistance(\$inFilesDirs[$indirectoryCount], \$parameterName, "d");
+			    &CheckExistance(\$scriptParameter{'inFilesDirs'}[$indirectoryCount], \$parameterName, "d");
 			}
 		    }
 		    else {
@@ -6216,6 +6172,13 @@ sub AddToScriptParameter {
 			
 			&CheckFileEndingsToBeBuilt(\@bwaBuildReferenceFileEndings, $parameterName);
 		    }
+		    elsif ($parameterName eq "picardToolsMergeSamFilesPrevious") {
+
+			for (my $fileCounter=0;$fileCounter<scalar(@{$scriptParameter{'picardToolsMergeSamFilesPrevious'}});$fileCounter++) {  #All AnnovarTables
+
+			    &CheckExistance(\$scriptParameter{'picardToolsMergeSamFilesPrevious'}[$fileCounter], \$parameterName, "f");
+			}
+		    }
 		    elsif ($parameterName eq "humanGenomeReference") {
 			
 			&CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{$parameterName}), \$parameterName, "f");#Check reference genome
@@ -6245,12 +6208,12 @@ sub AddToScriptParameter {
 			}
 			else {
 			    
-			    for (my $sampleIDsCounter=0;$sampleIDsCounter<scalar(@sampleIDs);$sampleIDsCounter++) {  #All sampleIDs
+			    for (my $sampleIDsCounter=0;$sampleIDsCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDsCounter++) {  #All sampleIDs
 				
-				 &CheckSupportedFileEnding(\($scriptParameter{'referencesDir'}."/".$scriptParameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDsCounter]}{$parameterName}), \$referenceFileEndings{$parameterName}, \$parameterName);
-				 &CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDsCounter]}{$parameterName}), \$parameterName, "f", \$sampleIDs[$sampleIDsCounter]);
+				 &CheckSupportedFileEnding(\($scriptParameter{'referencesDir'}."/".$scriptParameter{ $scriptParameter{'familyID'} }{$scriptParameter{'sampleIDs'}[$sampleIDsCounter]}{$parameterName}), \$referenceFileEndings{$parameterName}, \$parameterName);
+				 &CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{ $scriptParameter{'familyID'} }{$scriptParameter{'sampleIDs'}[$sampleIDsCounter]}{$parameterName}), \$parameterName, "f", \$scriptParameter{'sampleIDs'}[$sampleIDsCounter]);
 			    
-				my $exomeTargetBedFileNoEnding = &RemoveFileEnding(\$scriptParameter{ $scriptParameter{'familyID'} }{$sampleIDs[$sampleIDsCounter]}{$parameterName} , $referenceFileEndings{$parameterName});  #Remove ".fileending" from reference filename
+				my $exomeTargetBedFileNoEnding = &RemoveFileEnding(\$scriptParameter{ $scriptParameter{'familyID'} }{$scriptParameter{'sampleIDs'}[$sampleIDsCounter]}{$parameterName} , $referenceFileEndings{$parameterName});  #Remove ".fileending" from reference filename
 				 &CheckTargetExistFileBed(\$exomeTargetBedFileNoEnding, $parameterName);
 			    }
 			    undef($scriptParameter{$parameterName});  #Remove parameter to avoid unnecessary print to STDOUT and config
@@ -6258,34 +6221,33 @@ sub AddToScriptParameter {
 		    }
 		    elsif ($parameterName eq "annovarTableNames") {
 			
-			&DefineAnnovarTables();  #Set all AnnovarTables properties
 			my $intendedFilePathRef;
-			
-			for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@annovarTableNames);$tableNamesCounter++) {  #All AnnovarTables
-		 
-			    if (defined($annovarTables{$annovarTableNames[$tableNamesCounter]})) {  #Supported Annovar database
 
-				if (defined($annovarTables{$annovarTableNames[$tableNamesCounter]}{'file'})) {
+			for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@{$scriptParameter{'annovarTableNames'}});$tableNamesCounter++) {  #All AnnovarTables
+		 
+			    if (defined($annovarTables{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]})) {  #Supported Annovar database
+				
+				if (defined($annovarTables{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'file'})) {
 				    
-				    for (my $filesCounter=0;$filesCounter<scalar(@{$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'file'}});$filesCounter++) {  #All annovarTables file(s), some tables have multiple files downloaded from the same call
-					 $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'file'}[$filesCounter]);
-					 &CheckExistance($intendedFilePathRef, \$annovarTableNames[$tableNamesCounter], "f");
+				    for (my $filesCounter=0;$filesCounter<scalar(@{$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'file'}});$filesCounter++) {  #All annovarTables file(s), some tables have multiple files downloaded from the same call
+					 $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'file'}[$filesCounter]);
+					 &CheckExistance($intendedFilePathRef, \$scriptParameter{'annovarTableNames'}[$tableNamesCounter], "f");
 				    }
 				}
-				elsif (defined($annovarTables{ $annovarTableNames[$tableNamesCounter] }{'ucscAlias'})){
+				elsif (defined($annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'})){
 				    
-				     $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTables{ $annovarTableNames[$tableNamesCounter] }{'ucscAlias'}.".txt");
-				     &CheckExistance($intendedFilePathRef, \$annovarTableNames[$tableNamesCounter], "f");
+				     $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'}.".txt");
+				     &CheckExistance($intendedFilePathRef, \$scriptParameter{'annovarTableNames'}[$tableNamesCounter], "f");
 				}
 				else {
 				
-				     $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTableNames[$tableNamesCounter].".txt");
-				     &CheckExistance($intendedFilePathRef, \$annovarTableNames[$tableNamesCounter], "f");
+				     $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$scriptParameter{'annovarTableNames'}[$tableNamesCounter].".txt");
+				     &CheckExistance($intendedFilePathRef, \$scriptParameter{'annovarTableNames'}[$tableNamesCounter], "f");
 				}
 			    }
 			    else {  #Annovar Table not supported by MIP
 				
-				print STDOUT "\nNOTE: You supplied Annovar database: ".$annovarTableNames[$tableNamesCounter]." which is not supported by MIP. MIP can only process supported annovar databases\n";
+				print STDOUT "\nNOTE: You supplied Annovar database: ".$scriptParameter{'annovarTableNames'}[$tableNamesCounter]." which is not supported by MIP. MIP can only process supported annovar databases\n";
 				&PrintSupportedAnnovarTableNames();
 			    }
 			}
@@ -6461,8 +6423,14 @@ sub AddToScriptParameter {
     }	
 ##Parameter set
     if (defined($scriptParameter{$parameterName})) {
-
-	print STDOUT "Set ".$parameterName." to: ".$scriptParameter{$parameterName}, "\n";
+	
+	if (defined($parameter{$parameterName}{'array'})) {
+	 
+	    print STDOUT "Set ".$parameterName." to: ".join(',',@{$scriptParameter{$parameterName}}), "\n";   
+	}
+	else {
+	    print STDOUT "Set ".$parameterName." to: ".$scriptParameter{$parameterName}, "\n";
+	}
     }
 }
 
@@ -6483,35 +6451,35 @@ sub CreateFileEndings {
 		    if ($parameter{$orderParameterElement}{'fileEnding'} ne "nofileEnding") {  #FileEnding exist
 			
 ###MAIN/Per sampleID
-			for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {
+			for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {
 			    
 			    if ($scriptParameter{$orderParameterElement} > 0) {  #Fileending should be added    
 				
 				if ($orderParameterElement eq "pPicardToolsMergeSamFiles") {  #Special case
 				    
-				    if ( (@picardToolsMergeSamFilesPrevious) || (scalar( @{ $infilesLaneNoEnding{ $sampleIDs[$sampleIDCounter] } }) > 1) ) {  #Sanity check that we have something to merge and hence to fileEnding should be added
+				    if ( (defined($scriptParameter{'picardToolsMergeSamFilesPrevious'})) || (scalar( @{ $infilesLaneNoEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] } }) > 1) ) {  #Sanity check that we have something to merge and hence to fileEnding should be added
 					
-					$sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'pPicardToolsMergeSamFiles'}{'fileEnding'} = $tempFileEnding{ $sampleIDs[$sampleIDCounter] }.$parameter{$orderParameterElement}{'fileEnding'};  #Adds from previous entry 
+					$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'pPicardToolsMergeSamFiles'}{'fileEnding'} = $tempFileEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }.$parameter{$orderParameterElement}{'fileEnding'};  #Adds from previous entry 
 				    }
 				    else {
 					
-					$sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'pPicardToolsMergeSamFiles'}{'fileEnding'} = $tempFileEnding{ $sampleIDs[$sampleIDCounter] }."";
+					$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'pPicardToolsMergeSamFiles'}{'fileEnding'} = $tempFileEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }."";
 				    }
 				}
 				else {
-				    if (defined($tempFileEnding{ $sampleIDs[$sampleIDCounter] })) {
+				    if (defined($tempFileEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] })) {
 					
-					$sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{ $sampleIDs[$sampleIDCounter] }.$parameter{$orderParameterElement}{'fileEnding'};
+					$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }.$parameter{$orderParameterElement}{'fileEnding'};
 				    }
 				    else  {  #First module that should add filending
-					$sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = $parameter{$orderParameterElement}{'fileEnding'};
+					$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = $parameter{$orderParameterElement}{'fileEnding'};
 				    } 
 				}
 			    }
 			    else {  #Do not add new module fileEnding
-				$sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{ $sampleIDs[$sampleIDCounter] };
+				$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] };
 			    }
-			    $tempFileEnding{ $sampleIDs[$sampleIDCounter] } = $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'};  #To enable sequential build-up of fileending
+			    $tempFileEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] } = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'};  #To enable sequential build-up of fileending
 			}
 			
 ###MAIN/Per familyID
@@ -6549,22 +6517,22 @@ sub CreateFileEndings {
 		    if ($parameter{$orderParameterElement}{'fileEnding'} ne "nofileEnding") {  #FileEnding exist
 			
 ###OTHER/Per sampleID
-			for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {
+			for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {
 			    
 			    if ($scriptParameter{$orderParameterElement} > 0) {  #Fileending should be added    
 			
-				unless (defined($tempFileEnding{$chainfork}{ $sampleIDs[$sampleIDCounter] })) {	
-				    $tempFileEnding{$chainfork}{ $sampleIDs[$sampleIDCounter] } = $tempFileEnding{ $sampleIDs[$sampleIDCounter] };  #Inherit current MAIN chain. 
+				unless (defined($tempFileEnding{$chainfork}{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] })) {	
+				    $tempFileEnding{$chainfork}{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] } = $tempFileEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] };  #Inherit current MAIN chain. 
 				}
-				if (defined($tempFileEnding{$chainfork}{ $sampleIDs[$sampleIDCounter] })) {
-				    $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{$chainfork}{ $sampleIDs[$sampleIDCounter] }.$parameter{$orderParameterElement}{'fileEnding'};
+				if (defined($tempFileEnding{$chainfork}{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] })) {
+				    $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{$chainfork}{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }.$parameter{$orderParameterElement}{'fileEnding'};
 				}
 				else  {  #First module that should add filending
-				    $sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = $parameter{$orderParameterElement}{'fileEnding'};
+				    $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = $parameter{$orderParameterElement}{'fileEnding'};
 				} 
 			    }
 			    else {  #Do not add new module fileEnding
-				$sampleInfo{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{$chainfork}{ $sampleIDs[$sampleIDCounter] };
+				$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{$chainfork}{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] };
 			    }
 			    ##NOTE: No sequential build-up of fileending
 			}
@@ -6710,9 +6678,9 @@ sub CheckIfMergedFiles {
 
     if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'picardToolsMergeSamFilesPrevious'} == 1) {  # Files merged this round with merged file from previous round
 	
-	for (my $mergeFileCounter=0;$mergeFileCounter<scalar(@picardToolsMergeSamFilesPrevious);$mergeFileCounter++) {
+	for (my $mergeFileCounter=0;$mergeFileCounter<scalar(@{$scriptParameter{'picardToolsMergeSamFilesPrevious'}});$mergeFileCounter++) {
 	    
-	    if ($picardToolsMergeSamFilesPrevious[$mergeFileCounter] =~ /lane(\d+)|s_(\d+)/) {  #Look for lanes_ or lane\d in previously generated file to be merged with current run to be able to extract previous lanes
+	    if ($scriptParameter{'picardToolsMergeSamFilesPrevious'}[$mergeFileCounter] =~ /lane(\d+)|s_(\d+)/) {  #Look for lanes_ or lane\d in previously generated file to be merged with current run to be able to extract previous lanes
 		
 		##Make sure to always supply lanes from previous regexp 
 		if($1) {
@@ -6805,17 +6773,17 @@ sub GATKTargetListFlag {
     my %GATKTargetPaddedBedIntervalListTracker;
     my @GATKTargetPaddedBedIntervalListFiles;
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {  #Collect infiles for all sampleIDs
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #Collect infiles for all sampleIDs
 	
-	if (defined($scriptParameter{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'GATKTargetPaddedBedIntervalLists'})) {
+	if (defined($scriptParameter{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'GATKTargetPaddedBedIntervalLists'})) {
 
-	    $scriptParameter{'GATKTargetPaddedBedIntervalLists'} = $scriptParameter{'referencesDir'}."/".$scriptParameter{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'GATKTargetPaddedBedIntervalLists'};
+	    $scriptParameter{'GATKTargetPaddedBedIntervalLists'} = $scriptParameter{'referencesDir'}."/".$scriptParameter{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'GATKTargetPaddedBedIntervalLists'};
        
 	    $GATKTargetPaddedBedIntervalListTracker{ $scriptParameter{'GATKTargetPaddedBedIntervalLists'} }++;
 	    
 	    if ($GATKTargetPaddedBedIntervalListTracker{ $scriptParameter{'GATKTargetPaddedBedIntervalLists'} } == 1) {  #Not detected previously
 		
-		push(@GATKTargetPaddedBedIntervalListFiles, $scriptParameter{ $scriptParameter{'familyID'} }{ $sampleIDs[$sampleIDCounter] }{'GATKTargetPaddedBedIntervalLists'});
+		push(@GATKTargetPaddedBedIntervalListFiles, $scriptParameter{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'GATKTargetPaddedBedIntervalLists'});
 	    }
 	}
     }
@@ -6918,7 +6886,7 @@ sub CheckPedigreeMembers {
     my $parentCounterRef = $_[3];
     my $childCounterRef = $_[4];
 	    
-    if (scalar(@sampleIDs) < 4) {  #i.e.1-3 individuals in pedigree		    
+    if (scalar(@{$scriptParameter{'sampleIDs'}}) < 4) {  #i.e.1-3 individuals in pedigree		    
 		
 	if ( ($childCounterRef == 1) && ($parentCounterRef > 0) ) {  #Parent/child or trio
 
@@ -6961,12 +6929,19 @@ sub WriteCMDMipLog {
 	    if ( ($orderParameterElement eq "configFile") && ($scriptParameter{'configFile'} eq 0) ) {  #Do not print
 	    }
 	    else {
-		print MIPLOG "-".$orderParameterElement." ".$scriptParameter{$orderParameterElement}." ";
+
+		if (defined($parameter{$orderParameterElement}{'array'})) {
+
+		    print MIPLOG "-".$orderParameterElement." ".join(',', @{$scriptParameter{$orderParameterElement}})." ";
+		}
+		else {
+		    print MIPLOG "-".$orderParameterElement." ".$scriptParameter{$orderParameterElement}." ";
+		}
 	    }
 	}
     }
     print MIPLOG "\n\n";
-    print MIPLOG "MIP Version: ".$MipVersion, "\n";
+    print MIPLOG "MIP Version: ".$mipVersion, "\n";
     ##Note FileHandle MIPLOG not closed
 }
 
@@ -6992,10 +6967,9 @@ sub LoadYAML {
     my %yamlHash;
 
     open (my $YAML, "<", $yamlFile) or die "can't open ".$yamlFile.":".$!, "\n";    
-    print $yamlFile, "\n";
     %yamlHash = %{ YAML::LoadFile($yamlFile) };  #Load hashreference as hash
         
-    close(YAML);
+    close($YAML);
     
     print STDOUT "Read Yaml file: ". $yamlFile, "\n";
     return %yamlHash;
@@ -7103,33 +7077,36 @@ sub CheckUniqueIDNs {
     
 ##Function : Test that the familyID and the sampleID(s) exists and are unique. Check if id sampleID contains "_".
 ##Returns  : "" 
-##Arguments: 
+##Arguments: $sampleIdArrayRef
+##         : $sampleIDArrayRef => Array to loop in for parameter {REF}
+
+    my $sampleIdArrayRef = $_[0];
 
     my %seen;  #Hash to test duplicate sampleIDs later
 
-    if (scalar(@sampleIDs) == 0) {
+    if (scalar(@{$sampleIdArrayRef}) == 0) {
 
 	print STDOUT "\nPlease provide sampleID(s)\n\n";
 	exit;
     }
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@sampleIDs);$sampleIDCounter++) {
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$sampleIdArrayRef});$sampleIDCounter++) {
 
-	$seen{ $sampleIDs[$sampleIDCounter] }++;  #Increment instance to check duplicates later
+	$seen{ ${$sampleIdArrayRef}[$sampleIDCounter] }++;  #Increment instance to check duplicates later
 	
-	if ($scriptParameter{'familyID'} eq $sampleIDs[$sampleIDCounter]) {  #FamilyID cannot be the same as sampleID
+	if ($scriptParameter{'familyID'} eq ${$sampleIdArrayRef}[$sampleIDCounter]) {  #FamilyID cannot be the same as sampleID
 	    
-	    print STDERR "\nFamilyID: ".$scriptParameter{'familyID'}." equals sampleID: ".$sampleIDs[$sampleIDCounter].". Please make sure that the familyID and sampleID(s) are unique.\n";
+	    print STDERR "\nFamilyID: ".$scriptParameter{'familyID'}." equals sampleID: ".${$sampleIdArrayRef}[$sampleIDCounter].". Please make sure that the familyID and sampleID(s) are unique.\n";
 	    exit;
 	}
-	if ($seen{ $sampleIDs[$sampleIDCounter] } > 1) {  #Check sampleID are unique
+	if ($seen{ ${$sampleIdArrayRef}[$sampleIDCounter] } > 1) {  #Check sampleID are unique
 	
-	    print STDERR "\nSampleID: ".$sampleIDs[$sampleIDCounter]." is not uniqe.\n\n";
+	    print STDERR "\nSampleID: ".${$sampleIdArrayRef}[$sampleIDCounter]." is not uniqe.\n\n";
 	    exit;
 	}
-	if ($sampleIDs[$sampleIDCounter] =~/_/) {  #SampleID contains "_", which is not allowed accrding to filename conventions
+	if (${$sampleIdArrayRef}[$sampleIDCounter] =~/_/) {  #SampleID contains "_", which is not allowed accrding to filename conventions
 
-	    print STDERR "\nSampleID: ".$sampleIDs[$sampleIDCounter]." contains '_'. Please rename sampleID according to MIP's filename convention, removing the '_'.\n\n";
+	    print STDERR "\nSampleID: ".${$sampleIdArrayRef}[$sampleIDCounter]." contains '_'. Please rename sampleID according to MIP's filename convention, removing the '_'.\n\n";
 	    exit;	    
 	}
     }
@@ -7303,6 +7280,7 @@ sub CheckExistance {
     if ($itemTypeToCheck eq "d") {
 
 	unless (-d $$itemNameRef) {  #Check existence of supplied directory
+	    
 	    print STDERR $USAGE, "\n";
 	    print STDERR "\nCould not find intended ".$$parameterNameRef." directory: ".$$itemNameRef, "\n\n";
 	    exit;		
@@ -7324,7 +7302,7 @@ sub CheckExistance {
 		}
 	    }
 	    else {
- 
+		 
 		$parameter{$$parameterNameRef}{'buildFile'} = &CheckAutoBuild(\$$parameterNameRef);  #Check autoBuild or not and return value
 		 
 		if ($parameter{$$parameterNameRef}{'buildFile'} == 0) {  #No autobuild

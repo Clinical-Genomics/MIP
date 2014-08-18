@@ -267,22 +267,23 @@ sub ReadSelectFile {
 	
 	chomp $_; #Remove newline
 
-	if (m/^\s+$/) {		# Avoid blank lines
+	if (m/^\s+$/) { # Avoid blank lines
 	    
 	    next;
 	}
-	if ($_=~/^##/) {#MetaData - Avoid
+	if ($_=~/^##/) { # MetaData - Avoid
 	    
 	    next;
 	}
-	if ($_=~/^#/) {#Header/Comment
+	if ($_=~/^#/) { # Header/Comment
 	    
-	    @headers = split(/\t/, $_);	    
+	    @headers = split(/\t/, $_);
 	    next;
 	}
 	if ( $_ =~/^(\S+)/ ) {	
 	    
-	    my @lineElements = split("\t",$_); #Loads select line elements
+	    my @lineElements = split("\t",$_); # Loads select line elements
+	    $lineElements[$selectFeatureColumn] =~ s/\s/_/g; # Replace whitespace with "_"
 	    $selectData{$lineElements[$selectFeatureColumn]} = $lineElements[$selectFeatureColumn];
 
 ##Create Interval Tree
@@ -654,7 +655,7 @@ sub ReadInfileVCF {
 				
 				if ($selectData{ $variantData{'Symbol'} }) { #Exists in selected Features
 				    
-				    $selectedTranscriptTracker = 1; #record belongs to selected Features
+				    $selectedTranscriptTracker = 1; #Record belongs to selected Features
 				    
 				    &AddFieldToElementCounter(\$selectedTranscriptCounter, \$selectedVariantLine, ",", \$variantData{'Symbol'}, \$outputFormat, "HGVScp=");
 				}
