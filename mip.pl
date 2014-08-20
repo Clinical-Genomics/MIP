@@ -82,8 +82,8 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                ##Coverage Calculations
                -pChB/--pChanjoBuild Chanjo build central SQLite database file (defaults to "1" (=yes))
                  -chbdb/--chanjoBuildDb  Reference database (defaults to "CCDS.current.txt")
-               -pChC/--pChanjoCalculate Chanjo coverage analysis (defaults to "1" (=yes))
-                 -chccut/--chanjoCalculateCutoff Read depth cutoff (defaults to "10")
+               -pChA/--pChanjoAnnotate Chanjo coverage analysis (defaults to "1" (=yes))
+                 -chacut/--chanjoAnnotateCutoff Read depth cutoff (defaults to "10")
                -pChI/--pChanjoImport Chanjo import to collect sample info to family Db  (defaults to "0" (=no))
                -pGcB/--pGenomeCoverageBED Genome coverage calculation using genomeCoverageBED (defaults to "1" (=yes))
                 -gcbcov/--GenomeCoverageBEDMaxCoverage Max coverage depth when using '-pGenomeCoverageBED' (defaults to "30")
@@ -289,9 +289,9 @@ my @bwaBuildReferenceFileEndings = (".amb", ".ann", ".bwt", ".pac", ".sa");
 
 &DefineParametersPath("chanjoBuildDb", "CCDS.current.txt", "pChanjoBuild", "file", "yesAutoDownLoad");
 
-&DefineParameters("pChanjoCalculate", "program", 1, "MIP","_coverage", "CoverageReport");
+&DefineParameters("pChanjoAnnotate", "program", 1, "MIP","_coverage", "CoverageReport");
 
-&DefineParameters("chanjoCalculateCutoff", "program", 10, "pChanjoCalculate");
+&DefineParameters("chanjoAnnotateCutoff", "program", 10, "pChanjoAnnotate");
 
 &DefineParameters("pChanjoImport", "program", 0, "MIP", "nofileEnding", "CoverageReport");
 
@@ -446,7 +446,7 @@ my $VEPOutputFiles = 1;  #To track if VEPParser was used with a vcfParserSelectF
 
 &DefineParameters("wholeGene", "program", 1, "pRankVariants");
 
-&DefineParametersPath("pythonVirtualEnvironment", "nodefault", "pChanjoBuild,pChanjoCalculate,pChanjoImport,pRankVariants");
+&DefineParametersPath("pythonVirtualEnvironment", "nodefault", "pChanjoBuild,pChanjoAnnotate,pChanjoImport,pRankVariants");
 
 
 ##QcCollect
@@ -559,8 +559,8 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'ptp|picardToolsPath:s' => \$parameter{'picardToolsPath'}{'value'},  #Path to picardtools
 	   'pChB|pChanjoBuild:n' => \$parameter{'pChanjoBuild'}{'value'},   #Build central SQLiteDatabase
 	   'chbdb|chanjoBuildDb:s' => \$parameter{'chanjoBuildDb'}{'value'},  #Chanjo reference database
-	   'pChC|pChanjoCalculate:n' => \$parameter{'pChanjoCalculate'}{'value'},   # Chanjo coverage analysis
-	   'chccut|chanjoCalculateCutoff:n' => \$parameter{'chanjoCalculateCutoff'}{'value'},   # Cutoff used for completeness
+	   'pChA|pChanjoAnnotate:n' => \$parameter{'pChanjoAnnotate'}{'value'},   # Chanjo coverage analysis
+	   'chacut|chanjoAnnotateCutoff:n' => \$parameter{'chanjoAnnotateCutoff'}{'value'},   # Cutoff used for completeness
 	   'pChI|pChanjoImport:n' => \$parameter{'pChanjoImport'}{'value'},   #Build family SQLiteDatabase
 	   'pGcB|pGenomeCoverageBED:n' => \$parameter{'pGenomeCoverageBED'}{'value'},
 	   'xcov|GenomeCoverageBEDMaxCoverage:n' => \$parameter{'GenomeCoverageBEDMaxCoverage'}{'value'},  #Sets max depth to calculate coverage
@@ -1027,13 +1027,13 @@ if ($scriptParameter{'pChanjoBuild'} > 0) {
     &ChanjoBuild($scriptParameter{'familyID'});
 }
 
-if ($scriptParameter{'pChanjoCalculate'} > 0) {
+if ($scriptParameter{'pChanjoAnnotate'} > 0) {
     
-    &PrintToFileHandles(\@printFilehandles, "\nChanjoCalculate\n");
+    &PrintToFileHandles(\@printFilehandles, "\nChanjoAnnotate\n");
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #For all SampleIDs
 	
-	&ChanjoCalculate($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});
+	&ChanjoAnnotate($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});
     }
 }
 
@@ -2117,20 +2117,8 @@ sub Annovar {
 	print $FILEHANDLE "wait", "\n\n";
 
 	##Merge vcf files to 1 
-	print $FILEHANDLE "\n#GATK CombineVariants","\n\n";
-	print $FILEHANDLE "java -Xmx4g ";
-	
-	if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	    
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	}
-	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	print $FILEHANDLE "-T CombineVariants ";  #Type of analysis to run
-	print $FILEHANDLE "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." ";  #Reference file
-	print $FILEHANDLE "-V: ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf.".$scriptParameter{'annovarGenomeBuildVersion'}."_multianno.vcf ";
-	print $FILEHANDLE "-V: ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".GRCh37_MT_multianno.vcf"." ";
-	print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf","\n\n";  #Outfile
+	my @mitochondria = ("vcf.".$scriptParameter{'annovarGenomeBuildVersion'}."_multianno", "GRCh37_MT_multianno");
+	&CombineVariants($FILEHANDLE, \@mitochondria, $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".", ".vcf", $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf");
     }
     close($FILEHANDLE);
 
@@ -2501,7 +2489,8 @@ sub VariantEffectPredictor {
 	print $FILEHANDLE "--vcf ";  #Writes output in VCF format.
 	print $FILEHANDLE "--fork 4 ";  #Enable forking, using the specified number of forks.
 	print $FILEHANDLE "--buffer_size 20000 ";  #Sets the internal buffer size, corresponding to the number of variations that are read in to memory simultaneously 
-	
+	print $FILEHANDLE "--offline ";  #Use installed assembly version
+	print $FILEHANDLE "--fasta ".$scriptParameter{'vepDirectoryCache'}." ";  #Use local fasta reference file
 	print $FILEHANDLE "--chr ".$contigs[$contigsCounter]." ";
 
 	for (my $vepFeatureCounter=0;$vepFeatureCounter<scalar(@{$scriptParameter{'vepFeatures'}});$vepFeatureCounter++) {
@@ -2518,24 +2507,8 @@ sub VariantEffectPredictor {
     }
     print $FILEHANDLE "wait", "\n\n";
 
-    ##Concatenate vcf files to 1 
-    print $FILEHANDLE "\n#GATK CombineVariants","\n\n";
-    print $FILEHANDLE "java -Xmx4g ";
-    
-    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	
-	print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-    }
-    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-T CombineVariants ";  #Type of analysis to run
-    print $FILEHANDLE "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." ";  #Reference file
-
-    for (my $contigsCounter=0;$contigsCounter<scalar(@contigs);$contigsCounter++) {
-	
-	print $FILEHANDLE "-V: ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType."_".$contigs[$contigsCounter].".vcf ";  #outfiles
-    }
-    print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf", "\n\n";  #OutFile
+    ##Concatenate vcf files to 1
+    &CombineVariants($FILEHANDLE, \@contigs, $outFamilyDirectory."/".$familyID.$outfileEnding.$callType."_", ".vcf", $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf");
 
     ##Remove Temp files
     print $FILEHANDLE "rm ";
@@ -3434,21 +3407,21 @@ sub ChanjoImport {
     print $FILEHANDLE "workon ".$scriptParameter{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
     
     ##Build family database for coverage report
-    print $FILEHANDLE "chanjo ";
-    print $FILEHANDLE $outFamilyDirectory."/".$familyID.".sqlite ";  #Central Db for family
-    print $FILEHANDLE "import ";
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {   
 	
 	my $sampleID = $scriptParameter{'sampleIDs'}[$sampleIDCounter];
 	my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport";
-	my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pChanjoCalculate'}{'fileEnding'};
+	my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pChanjoAnnotate'}{'fileEnding'};
 	
 	my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles($sampleID);	
 
 	if ($PicardToolsMergeSwitch == 1) {  #Files was merged previously
-	   
-	    print $FILEHANDLE $inSampleDirectory."/".$infile.$infileEnding.".json ";      	
+	    print $FILEHANDLE "chanjo ";
+	    print $FILEHANDLE "import ";
+	    print $FILEHANDLE $inSampleDirectory."/".$infile.$infileEnding.".bed ";
+	    print $FILEHANDLE "--db=".$outFamilyDirectory."/".$familyID.".sqlite ","\n\n";  #Central Db for family
+      	
 	}
 	else {
 	    
@@ -3457,7 +3430,10 @@ sub ChanjoImport {
 		&PrintWait(\$infileCounter, \$scriptParameter{'maximumCores'}, \$coreCounter, $FILEHANDLE);		
 		
 		my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
-		print $FILEHANDLE $inSampleDirectory."/".$infile.$infileEnding.".json ";
+		print $FILEHANDLE "chanjo ";
+		print $FILEHANDLE "import ";
+		print $FILEHANDLE $inSampleDirectory."/".$infile.$infileEnding.".bed ";
+		print $FILEHANDLE "--db=".$outFamilyDirectory."/".$familyID.".sqlite ","\n\n";  #Central Db for family
 		
 	    }
 	}
@@ -3471,7 +3447,7 @@ sub ChanjoImport {
 }
 
 
-sub ChanjoCalculate { 
+sub ChanjoAnnotate { 
 #Generate coverage json outfile for each individual.
 
     my $sampleID = $_[0];
@@ -3479,13 +3455,13 @@ sub ChanjoCalculate {
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
-    &ProgramPreRequisites($sampleID, "ChanjoCalculate", $aligner."/coverageReport", 0, $FILEHANDLE, 1, 2);      
+    &ProgramPreRequisites($sampleID, "ChanjoAnnotate", $aligner."/coverageReport", 0, $FILEHANDLE, 1, 2);      
     
     my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'};
     my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
     my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport";
     my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
-    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pChanjoCalculate'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pChanjoAnnotate'}{'fileEnding'};
 
     
     my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles($sampleID);
@@ -3494,23 +3470,22 @@ sub ChanjoCalculate {
     print $FILEHANDLE "workon ".$scriptParameter{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
 
     if ($PicardToolsMergeSwitch == 1) {  #Files was merged previously
-
+	
+	&ChanjoConvert($FILEHANDLE, $scriptParameter{'referencesDir'}."/".$scriptParameter{'chanjoBuildDb'});
 	print $FILEHANDLE "chanjo ";
 	print $FILEHANDLE "annotate ";
-	print $FILEHANDLE $outFamilyDirectory."/".$scriptParameter{'familyID'}.".sqlite ";  #Central Db for family
-	print $FILEHANDLE "using ";
-	print $FILEHANDLE $inSampleDirectory."/".$infile.$infileEnding.".bam ";  #InFile ; 
-	print $FILEHANDLE "--cutoff ".$scriptParameter{'chanjoCalculateCutoff'}." ";  #Read depth cutoff
-	print $FILEHANDLE "--sample ".$sampleID." ";  #SampleID
-	print $FILEHANDLE "--splice-sites ";  #Include splice sites for every exon
-	print $FILEHANDLE "--group ".$scriptParameter{'familyID'}." ";  #Group to annotate sample to
-	print $FILEHANDLE "--force ";  #Overwrite if file outFile exists
-	print $FILEHANDLE "--json ".$outSampleDirectory."/".$infile.$outfileEnding.".json". "\n\n";  #OutFile	
-
+	print $FILEHANDLE $inSampleDirectory."/".$infile.$infileEnding.".bam ";  #InFile
+	print $FILEHANDLE "--cutoff ".$scriptParameter{'chanjoAnnotateCutoff'}." ";  #The “cutoff” is used for the completeness calculation
+	print $FILEHANDLE "--sample ".$sampleID." ";  #A unique sample Id
+	print $FILEHANDLE "-–extend-by 2 ";  #Extend each interval to include e.g. splice sites 
+	print $FILEHANDLE "--group ".$scriptParameter{'familyID'}." ";  #Grouping option for samples
+	#print $FILEHANDLE "–-institute ".$scriptParameter{'instanceTag'}." ";  #Grouping option for groups
+	print $FILEHANDLE "--force ";  #Overwrite an existing output file
+	print $FILEHANDLE "> ".$outSampleDirectory."/".$infile.$outfileEnding.".bed". "\n\n";  #OutFile
 	
-	if ( ($scriptParameter{'pChanjoCalculate'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	if ( ($scriptParameter{'pChanjoAnnotate'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 
-	    &SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "ChanjoCalculate", $infile, $outSampleDirectory, $outfileEnding.".json", "infileDependent");
+	    &SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "ChanjoAnnotate", $infile, $outSampleDirectory, $outfileEnding.".json", "infileDependent");
 	}
     }
     else {  #No merged files
@@ -3521,21 +3496,21 @@ sub ChanjoCalculate {
 	    
 	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
 	    
+	    &ChanjoConvert($FILEHANDLE, $scriptParameter{'referencesDir'}."/".$scriptParameter{'chanjoBuildDb'});
 	    print $FILEHANDLE "chanjo ";
 	    print $FILEHANDLE "annotate ";
-	    print $FILEHANDLE $outFamilyDirectory."/".$scriptParameter{'familyID'}.".sqlite ";  #Central Db for family
-	    print $FILEHANDLE "using ";
-	    print $FILEHANDLE $inSampleDirectory."/".$infile.$infileEnding.".bam ";  #InFile ; 
-	    print $FILEHANDLE "--cutoff ".$scriptParameter{'chanjoCalculateCutoff'}." ";  #Read depth cutoff
-	    print $FILEHANDLE "--sample ".$sampleID." ";  #SampleID
-	    print $FILEHANDLE "--splice-sites ";  #Include splice sites for every exon
-	    print $FILEHANDLE "--group ".$scriptParameter{'familyID'}." ";  #Group to annotate sample to
-	    print $FILEHANDLE "--force ";  #Overwrite if file outFile exists
-	    print $FILEHANDLE "--json ".$outSampleDirectory."/".$infile.$outfileEnding.".json &". "\n\n";  #OutFile   
+	    print $FILEHANDLE $inSampleDirectory."/".$infile.$infileEnding.".bam ";  #InFile
+	    print $FILEHANDLE "--cutoff ".$scriptParameter{'chanjoAnnotateCutoff'}." ";  #The “cutoff” is used for the completeness calculation
+	    print $FILEHANDLE "--sample ".$sampleID." ";  #A unique sample Id
+	    print $FILEHANDLE "-–extend-by 2 ";  #Extend each interval to include e.g. splice sites 
+	    print $FILEHANDLE "--group ".$scriptParameter{'familyID'}." ";  #Grouping option for samples
+	    #print $FILEHANDLE "–-institute ".$scriptParameter{'instanceTag'}." ";  #Grouping option for groups
+	    print $FILEHANDLE "--force ";  #Overwrite an existing output file
+	    print $FILEHANDLE "> ".$outSampleDirectory."/".$infile.$outfileEnding.".bed". "\n\n";  #OutFile
 
-	    if ( ($scriptParameter{'pChanjoCalculate'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	    if ( ($scriptParameter{'pChanjoAnnotate'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 		
-		&SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "ChanjoCalculate", $infile, $outSampleDirectory, $outfileEnding.".json", "infileDependent");
+		&SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "ChanjoAnnotate", $infile, $outSampleDirectory, $outfileEnding.".json", "infileDependent");
 	    }
 	}
 	print $FILEHANDLE "wait", "\n\n";
@@ -3544,9 +3519,9 @@ sub ChanjoCalculate {
     print $FILEHANDLE "deactivate ", "\n\n";  #Deactivate python environment
     close($FILEHANDLE);
 
-    if ( ($scriptParameter{'pChanjoCalculate'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+    if ( ($scriptParameter{'pChanjoAnnotate'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 	
-	&FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 5, $parameter{'pChanjoCalculate'}{'chain'}, $fileName, 0);
+	&FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 5, $parameter{'pChanjoAnnotate'}{'chain'}, $fileName, 0);
     }
 }
 
@@ -3564,11 +3539,10 @@ sub ChanjoBuild {
     print $FILEHANDLE "workon ".$scriptParameter{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
     
     ##Build new database
+    &ChanjoConvert($FILEHANDLE, $scriptParameter{'referencesDir'}."/".$scriptParameter{'chanjoBuildDb'});
     print $FILEHANDLE "chanjo ";
     print $FILEHANDLE "build ";
-    print $FILEHANDLE $outFamilyDirectory."/".$familyID.".sqlite ";
-    print $FILEHANDLE "using ";
-    print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'chanjoBuildDb'}." ";      
+    print $FILEHANDLE "--db=".$outFamilyDirectory."/".$familyID.".sqlite ";      
     print $FILEHANDLE "--force ", "\n\n";#Overwrite if file outFile exists
 
     print $FILEHANDLE "deactivate ", "\n\n";  #Deactivate python environment
@@ -8184,7 +8158,7 @@ sub CheckMostCompleteAndRemoveFile {
 ##Function  : Checks if the file is recorded as the "MostCompleteBAM|VCF". If false writes removal of file(s) to supplied filehandle
 ##Returns   : ""
 ##Arguments : $FILEHANDLE, $mostCompleteRef, $fileRef, $fileEnding
-##          : $FILEHANDLE      => SBATCH script FILEHANDLE to print to. 
+##          : $FILEHANDLE      => SBATCH script FILEHANDLE to print to 
 ##          : $mostCompleteRef => The mostComplete file (BAM|VCF) {REF}
 ##          : $fileRef         => Current file {REF}
 ##          : $fileEnding      => File ending of $fileRef
@@ -8219,6 +8193,76 @@ sub CheckMostCompleteAndRemoveFile {
 	}
     }
 }
+
+
+sub CombineVariants {
+
+##CombineVariants
+    
+##Function : Writes sbatch code to supplied filehandle to combine variants in vcf format. Each array element is combined with the infilePre and Postfix.
+##Returns  : ""
+##Arguments: $FILEHANDLE, $arrayRef, $infilePrefix, $infilePostfix, $outfile
+##         : $FILEHANDLE    => SBATCH script FILEHANDLE to print to
+##         : $arrayRef      => Holding the number and part of file names to be combined
+##         : $infilePrefix  => Will be combined with the each array element
+##         : $infilePostfix => Will be combined with the each array element
+##         : $outfile       => The combined outfile
+
+    my $FILEHANDLE = $_[0];
+    my $arrayRef = $_[1];
+    my $infilePrefix = $_[2];
+    my $infilePostfix = $_[3];
+    my $outfile = $_[4];
+    
+    unless (defined($infilePostfix)) {
+	
+	$infilePostfix = "";  #No postfix
+    }
+    unless (defined($outfile)) {
+	
+	$outfile = $infilePrefix.".vcf";  
+    }
+    print $FILEHANDLE "\n#GATK CombineVariants","\n\n";
+    print $FILEHANDLE "java -Xmx4g ";
+    
+    if ($scriptParameter{'javaUseLargePages'} ne "no") {
+	
+	print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
+    }
+    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
+    print $FILEHANDLE "-T CombineVariants ";  #Type of analysis to run
+    print $FILEHANDLE "-R ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." ";  #Reference file
+    
+    for (my $elementCounter=0;$elementCounter<scalar(@{$arrayRef});$elementCounter++) {
+	
+	print $FILEHANDLE "-V: ".$infilePrefix.${$arrayRef}[$elementCounter].$infilePostfix." ";  #files to combined
+    }
+    print $FILEHANDLE "-o ".$outfile, "\n\n";  #OutFile
+}
+
+sub ChanjoConvert {
+    
+##ChanjoConvert
+    
+##Function : Writes sbatch code to supplied filehandle to convert a database file into a sorted bed file and piping it
+##Returns  : ""
+##Arguments: $FILEHANDLE, $chanjoDatabase
+##         : $FILEHANDLE => SBATCH script FILEHANDLE to print to
+##         : $chanjoDatabase => The database to convert and pipe
+    
+    my $FILEHANDLE = $_[0];
+    my $chanjoDatabase = $_[1];
+    
+    print $FILEHANDLE "sort ";  #Unix sort
+    print $FILEHANDLE "-k1,1 -k2,2n ";  #Sort numerically 
+    print $FILEHANDLE $chanjoDatabase." ";  #Chanjo Db file to be sorted
+    print $FILEHANDLE "| ";  #Pipe
+    print $FILEHANDLE "chanjo convert ";  #Convert ccds to bed
+    print $FILEHANDLE "| ";  #Pipe
+    
+}
+
 
 ####
 #Decommissioned
