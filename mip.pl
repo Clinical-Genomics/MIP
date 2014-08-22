@@ -6673,12 +6673,19 @@ sub ProgramPreRequisites {
 }
 
 sub CheckIfMergedFiles {
-###Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch
+
+##CheckIfMergedFiles
+    
+##Function : Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
+##Returns  : "$infile, $PicardToolsMergeSwitch"
+##Arguments: $sampleID
+##         : $sampleID => The sampleID
+
     my $sampleID = $_[0];
 
     my $infile;
     my $mergeLanes;  #To pick up merged lanes later 
-    my $PicardToolsMergeSwitch = 0;
+    my $PicardToolsMergeSwitch = 0;  #0=no merge was previously performed
 
     if ($sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'picardToolsMergeSamFilesPrevious'} == 1) {  # Files merged this round with merged file from previous round
 	
@@ -6692,6 +6699,7 @@ sub CheckIfMergedFiles {
 		    $mergeLanes = $1;
 		} 
 		else {
+
 		    $mergeLanes = $2;
 		}  
 		$infile = $sampleID."_lanes_".$mergeLanes;
@@ -6723,19 +6731,32 @@ sub CheckIfMergedFiles {
 
 
 sub SampleInfoQC {
-###Adds outDirectory and outFile to sampleInfo to track all files that QC metrics are to be extracted from later
+
+##SampleInfoQC
+    
+##Function : Adds outDirectory and outFile to sampleInfo to track all files that QC metrics are to be extracted from later
+##Returns  : ""
+##Arguments: $familyID, $sampleID, $programName, $infile, $outDirectory, $outFileEnding, $outDataType
+##         : $familyID      => The familyID
+##         : $sampleID      => SampleID or "noSampleID" for family level data
+##         : $programName   => The program
+##         : $infile        => Infile or "noInFile for family level data"
+##         : $outDirectory  => The outdirectory of the QC file
+##         : $outFileEnding => The outfile ending. Actually complete outfile for "static" & "infoDirectory"
+##         : $outDataType   => Type of data produced by program (infoDirectory|infileDependent|static) 
 
     my $familyID = $_[0];
-    my $sampleID = $_[1];  #SampleID or "noSampleID" for family level data
+    my $sampleID = $_[1];
     my $programName = $_[2];
-    my $infile = $_[3];  #Infile or "noInFile for family level data"
+    my $infile = $_[3];
     my $outDirectory = $_[4];
-    my $outFileEnding = $_[5];  #Actually complete outfile for "static" & "infoDirectory" 
+    my $outFileEnding = $_[5];
     my $outDataType = $_[6];
 
     if ($sampleID eq "noSampleID") {
 
-	$sampleInfo{$familyID}{$familyID}{'program'}{$programName}{'OutDirectory'} = $outDirectory;  #OutDirectory of QC File                                                            
+	$sampleInfo{$familyID}{$familyID}{'program'}{$programName}{'OutDirectory'} = $outDirectory;  #OutDirectory of QC file
+                                                            
 	if ($outDataType eq "static") {  #Programs which add a static file in its own directory                                                                                                 
 
 	    $sampleInfo{$familyID}{$familyID}{'program'}{$programName}{'OutFile'} = $outFileEnding;  #Static QC outFile                                                                     
@@ -6750,7 +6771,7 @@ sub SampleInfoQC {
     }
     else {
 	
-	$sampleInfo{$familyID}{$sampleID}{'program'}{$programName}{$infile}{'OutDirectory'} = $outDirectory;  #OutDirectory of QC File                                                              
+	$sampleInfo{$familyID}{$sampleID}{'program'}{$programName}{$infile}{'OutDirectory'} = $outDirectory;  #OutDirectory of QC file                                                              
 
 	if ($outDataType eq "static") {  #Programs which add a static file in its own directory 
 	    
@@ -6769,8 +6790,15 @@ sub SampleInfoQC {
 
 
 sub GATKTargetListFlag {
-###Detects if there are different capture kits across sampleIDs. Creates a temporary merged interval_list for all interval_list that have been supplied and returns temporary list. Will also extract specific contigs if requested and return that list if enabled.
+
+##GATKTargetListFlag
     
+##Function : Detects if there are different capture kits across sampleIDs. Creates a temporary merged interval_list for all interval_list that have been supplied and returns temporary list. Will also extract specific contigs if requested and return that list if enabled.
+##Returns  : "Filepath"
+##Arguments: $FILEHANDLE, $contigRef
+##         : $FILEHANDLE => FILEHANDLE to write to
+##         : $contigRef  => The contig to extract {REF}
+
     my $FILEHANDLE = $_[0];
     my $contigRef = $_[1];
 
@@ -6781,9 +6809,9 @@ sub GATKTargetListFlag {
 	
 	if (defined($scriptParameter{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'GATKTargetPaddedBedIntervalLists'})) {
 
-	    $scriptParameter{'GATKTargetPaddedBedIntervalLists'} = $scriptParameter{'referencesDir'}."/".$scriptParameter{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'GATKTargetPaddedBedIntervalLists'};
+	    $scriptParameter{'GATKTargetPaddedBedIntervalLists'} = $scriptParameter{'referencesDir'}."/".$scriptParameter{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'GATKTargetPaddedBedIntervalLists'};  #Transfer to scriptParameter top level
        
-	    $GATKTargetPaddedBedIntervalListTracker{ $scriptParameter{'GATKTargetPaddedBedIntervalLists'} }++;
+	    $GATKTargetPaddedBedIntervalListTracker{ $scriptParameter{'GATKTargetPaddedBedIntervalLists'} }++;  #Increment to track file record
 	    
 	    if ($GATKTargetPaddedBedIntervalListTracker{ $scriptParameter{'GATKTargetPaddedBedIntervalLists'} } == 1) {  #Not detected previously
 		
@@ -6815,7 +6843,7 @@ sub GATKTargetListFlag {
 	if (defined($$contigRef)) {
 	    
 	    my $inDirectory = $scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID';
-	    return &SplitTargetFile(*$FILEHANDLE, \$inDirectory, \$outDirectory, \("merged.interval_list"), \$$contigRef);
+	    return &SplitTargetFile(*$FILEHANDLE, \$inDirectory, \$outDirectory, \("merged.interval_list"), \$$contigRef);  #Split
 	}
         return $outDirectory."/merged.interval_list";  #No split
     }
@@ -6824,21 +6852,32 @@ sub GATKTargetListFlag {
 	return &SplitTargetFile(*$FILEHANDLE, \$scriptParameter{'referencesDir'}, \$outDirectory, \$GATKTargetPaddedBedIntervalListFiles[0], \$$contigRef);  #Only 1 file for all samples
     }
     else {#No merge and no split. return original and only file
+
 	return  $scriptParameter{'referencesDir'}."/".$GATKTargetPaddedBedIntervalListFiles[0];
     }
 }
 
 
 sub SplitTargetFile {
-##Splits a target file into new contig specific target file
+
+##SplitTargetFile
+    
+##Function : Splits a target file into new contig specific target file
+##Returns  : "Filepath to splitted file"
+##Arguments: $FILEHANDLE, $inDirectoryRef, $outDirectoryRef, $infileRef, $contigRef
+##         : $FILEHANDLE             => FILEHANDLE to write to
+##         : $inDirectoryRef  => Indirectory {REF}
+##         : $outDirectoryRef => Analysis outdirectory {REF}
+##         : $infileRef       => Target file {REF}
+##         : $contigRef       => The contig to extract {REF}
 
     my $FILEHANDLE = $_[0];
     my $inDirectoryRef = $_[1];
     my $outDirectoryRef = $_[2];
     my $infileRef = $_[3];
-    my $contigRef = $_[4];  #The contig to extract
+    my $contigRef = $_[4];
     
-    if (defined($$contigRef)) {
+    if (defined($$contigRef)) {  #The contig to split
 	
 	print $FILEHANDLE "\n#Generate contig specific interval_list\n\n"; 
 	print $FILEHANDLE q?perl -nae 'if($_=~/^\@/) {print $_;} elsif($_=~/^?.$$contigRef.q?\s+/) {print $_;}' ?;  #Select header and contig
@@ -6851,8 +6890,17 @@ sub SplitTargetFile {
 
 
 sub GATKPedigreeFlag {
-###Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
+
+##GATKPedigreeFlag
     
+##Function : Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
+##Returns  : ""
+##Arguments: $FILEHANDLE, $outFamilyFileDirectory, $pedigreeValidationType, $program
+##         : $FILEHANDLE             => FILEHANDLE to write to
+##         : $outFamilyFileDirectory => The family data analysis directory 
+##         : $pedigreeValidationType => The pedigree validation strictness level
+##         : $program                => The program to use the pedigree file
+
     my $FILEHANDLE = $_[0];
     my $outFamilyFileDirectory = $_[1];
     my $pedigreeValidationType = $_[2];
@@ -6864,8 +6912,8 @@ sub GATKPedigreeFlag {
     my $childCounter;
     my $pqChildCounter = q?perl -ne 'my $childCounter=0; while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] ne 0) || ($line[3] ne 0) ) { $childCounter++} } } print $childCounter; last;'?;
     
-    $parentCounter = `$pqParentCounter $famFile`;
-    $childCounter = `$pqChildCounter $famFile`;
+    $parentCounter = `$pqParentCounter $famFile`;  #Count the number of parents
+    $childCounter = `$pqChildCounter $famFile`;  #Count the number of children
     
     if ($program ne "GATKPhaseByTransmission") {
 	
@@ -6882,7 +6930,17 @@ sub GATKPedigreeFlag {
 
 
 sub CheckPedigreeMembers {
-##Detect if the pedigree file contains a valid parent/child or trio
+
+##CheckPedigreeMembers
+    
+##Function : Detect if the pedigree file contains a valid parent/child or trio
+##Returns  : ""
+##Arguments: $FILEHANDLE, $outFamilyFileDirectory, $pedigreeValidationType, $parentCounterRef, $childCounterRef
+##         : $FILEHANDLE             => FILEHANDLE to write to
+##         : $outFamilyFileDirectory => The family data analysis directory 
+##         : $pedigreeValidationType => The pedigree validation strictness level
+##         : $parentCounterRef       => The number of parent(s)
+##         : $childCounterRef        => The number of children(s)
 
     my $FILEHANDLE = $_[0];
     my $outFamilyFileDirectory = $_[1];
@@ -6923,7 +6981,13 @@ sub CheckPedigreeMembers {
 
 
 sub WriteCMDMipLog {
+
+##WriteCMDMipLog
     
+##Function : Write CMD to MIP log file
+##Returns  : ""
+##Arguments: 
+
     open (my $MIPLOG, ">>", $mipLogName) or die "Can't write to ".$mipLogName.":".$!, "\n";  #Open file run log
     
     foreach my $orderParameterElement (@orderParameters) {
@@ -6934,7 +6998,7 @@ sub WriteCMDMipLog {
 	    }
 	    else {
 
-		if (defined($parameter{$orderParameterElement}{'array'})) {
+		if (defined($parameter{$orderParameterElement}{'array'})) {  #Array parameters need to be comma sep 
 
 		    print MIPLOG "-".$orderParameterElement." ".join(',', @{$scriptParameter{$orderParameterElement}})." ";
 		}
@@ -6951,23 +7015,37 @@ sub WriteCMDMipLog {
 
 
 sub WriteYAML {
-###Writes a YAML hash to file. 
-###Note: 2nd argument should be a hash reference
+ 
+##WriteYAML
+    
+##Function : Writes a YAML hash to file
+##Returns  : ""
+##Arguments: $yamlFile, $yamlHashRef
+##         : $yamlFile    => The yaml file to write to
+##         : $yamlHashRef => The hash to dump {REF}
 
     my $yamlFile = $_[0];  #Filename
     my $yamlHashRef = $_[1];  #Hash reference to write to file
     
     open (my $YAML, ">", $yamlFile) or die "can't open ".$yamlFile.":".$!, "\n";
     print $YAML Dump( $yamlHashRef ), "\n";
+
     close($YAML);
     print STDOUT "Wrote: ".$yamlFile, "\n";
 }
 
 
 sub LoadYAML {
-###Loads a YAML file into an arbitrary hash and returns it. Note: Currently only supports hashreferences and hashes and no mixed entries 
+ 
+##LoadYAML
+    
+##Function : Loads a YAML file into an arbitrary hash and returns it. Note: Currently only supports hashreferences and hashes and no mixed entries.
+##Returns  : %yamlHash
+##Arguments: $yamlFile
+##         : $yamlFile => The yaml file to load
 
     my $yamlFile = $_[0];
+
     my %yamlHash;
 
     open (my $YAML, "<", $yamlFile) or die "can't open ".$yamlFile.":".$!, "\n";    
@@ -6981,13 +7059,22 @@ sub LoadYAML {
 
 
 sub CheckUniqueArrayElement {
-###Detects if there are elements in arrayQueryRef that are not present in scalarQueryRef or arrayToCheckRef. If unique adds the unique element to arrayToCheckRef
 
-    my $arrayToCheckRef = $_[0];  #The arrayref to be queried
+##CheckUniqueArrayElement
+    
+##Function : Detects if there are elements in arrayQueryRef that are not present in scalarQueryRef or arrayToCheckRef. If unique adds the unique element to arrayToCheckRef.
+##Returns  : ""
+##Arguments: $arrayToCheckRef, $arrayQueryRef, scalarQueryRef
+##         : $arrayToCheckRef => The arrayref to be queried {REF}
+##         : $arrayQueryRef   => The query array {REF}
+##         : $scalarQueryRef  => The query scalar {REF}
+
+    my $arrayToCheckRef = $_[0];
     my $arrayQueryRef;
     my $scalarQueryRef;
 
-    if (ref($_[1]) eq "ARRAY") {
+    if (ref($_[1]) eq "ARRAY") {  #Array reference
+
 	$arrayQueryRef = $_[1];
 	
 	##For each arrayQueryRef element, loop through corresponding arrayToCheckRef element(s), add if there are none or an updated/unique entry.
@@ -6997,17 +7084,18 @@ sub CheckUniqueArrayElement {
 	    
 	    for (my $elementsCounter=0;$elementsCounter<scalar( @{$arrayToCheckRef});$elementsCounter++) {  #All arrayToCheckRef elements
 		
-		if (${$arrayToCheckRef}[$elementsCounter] eq ${$arrayQueryRef}[$elementsInfoCounter]) {  #Check presens
+		if (${$arrayToCheckRef}[$elementsCounter] eq ${$arrayQueryRef}[$elementsInfoCounter]) {  #Check presence
 		    
 		    $elementFound = 1;   #Entry is present in both arrays
 		}
 	    }
 	    if ($elementFound == 0) {  #Not seen in arrayToCheckRef
+
 		push( @{$arrayToCheckRef}, ${$arrayQueryRef}[$elementsInfoCounter]);  #Go ahead and add	
 	    }
 	}
     }
-    if (ref($_[1]) eq "SCALAR") {
+    if (ref($_[1]) eq "SCALAR") {  #Scalar reference
 
 	$scalarQueryRef = $_[1]; 
 
@@ -7015,12 +7103,13 @@ sub CheckUniqueArrayElement {
 	
 	for (my $elementsCounter=0;$elementsCounter<scalar( @{$arrayToCheckRef});$elementsCounter++) {  #All arrayToCheckRef elements
 	    
-	    if (${$arrayToCheckRef}[$elementsCounter] eq $$scalarQueryRef) {  #Check presens
+	    if (${$arrayToCheckRef}[$elementsCounter] eq $$scalarQueryRef) {  #Check presence
 		
 		$elementFound = 1;  #Entry is present in both arrays
 	    }
 	}
 	if ($elementFound == 0) {  #Not seen in arrayToCheckRef
+
 	    push( @{$arrayToCheckRef}, $$scalarQueryRef);  #Go ahead and add
 	}
     }

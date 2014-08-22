@@ -56,9 +56,10 @@ if($help) {
     exit;
 }
 
+my $vcfParserVersion = "1.0.0";
 if($version) {
     
-    print STDOUT "\nvep_parser.pl v1.0", "\n\n";
+    print STDOUT "\nvcfParser.pl v".$vcfParserVersion, "\n\n";
     exit
 }
 if ( (scalar(@rangeFeatureAnnotationColumns) == 0) && ($rangeFeatureFile ne 0) ) {
@@ -413,6 +414,9 @@ sub ReadInfileVCF {
 		    }
 		}
 	    }
+	    &AddProgramToMeta(\@metaData);
+	    &AddProgramToMeta(\@selectMetaData);
+
 	    push(@metaData, $_); #Save string
 	    push(@selectMetaData, $_); #Save string
 	    
@@ -1199,4 +1203,21 @@ sub TreeAnnotations {
 	    }
 	}
     }
+}
+
+
+sub AddProgramToMeta {
+    
+##AddProgramToMeta
+    
+##Function : Adds the program version and run date to the vcf meta-information section
+##Returns  : ""
+##Arguments: $arrayRef
+##         : $arrayRef => The array to store the meta data {REF}
+    
+    my $arrayRef = $_[0];
+    
+    my ($base, $script) = (`date +%Y%m%d`,`basename $0`);  #Catches current date and script name
+    chomp($base,$script);  #Remove \n;
+    push(@{$arrayRef}, "##".$script."=<ID=Version=".$vcfParserVersion.",Date=".$base);
 }
