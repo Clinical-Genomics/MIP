@@ -2525,7 +2525,7 @@ sub VariantEffectPredictor {
 	    
 	    if ( ($scriptParameter{'vepFeatures'}[$vepFeatureCounter] eq "sift") || ($scriptParameter{'vepFeatures'}[$vepFeatureCounter] eq "polyphen") )  {  #Protein predictions
 		
-		print $FILEHANDLE "s ";  #Add prediction score 
+		print $FILEHANDLE "b ";  #Add prediction score and prediction term 
 	    }
 	}
 	print $FILEHANDLE "-i ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf ";  #InFile (family vcf)
