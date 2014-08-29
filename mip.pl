@@ -80,6 +80,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pPtMD/--pPicardToolsMarkduplicates Markduplicates using PicardTools MarkDuplicates (defaults to "1" (=yes))
                
                ##Coverage Calculations
+               -pChS/--pChanjoSexCheck Predicts gender from sex chromosome coverage (defaults to "1")
                -pChB/--pChanjoBuild Chanjo build central SQLite database file (defaults to "1" (=yes))
                  -chbdb/--chanjoBuildDb  Reference database (defaults to "CCDS.current.txt")
                -pChA/--pChanjoAnnotate Chanjo coverage analysis (defaults to "1" (=yes))
@@ -286,6 +287,8 @@ my @bwaBuildReferenceFileEndings = (".amb", ".ann", ".bwt", ".pac", ".sa");
 
 
 ##Coverage
+&DefineParameters("pChanjoSexCheck", "program", 1, "MIP",".sexcheck", "CoverageReport_Gender");
+
 &DefineParameters("pChanjoBuild", "program", 1, "MIP", "nofileEnding", "CoverageReport");
 
 &DefineParametersPath("chanjoBuildDb", "CCDS.current.txt", "pChanjoBuild", "file", "yesAutoDownLoad");
@@ -560,9 +563,10 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'ptmp|picardToolsMergeSamFilesPrevious:s' => \@{$parameter{'picardToolsMergeSamFilesPrevious'}{'value'}},  #Comma separated list
 	   'pPtMD|pPicardToolsMarkduplicates:s' => \$parameter{'pPicardToolsMarkduplicates'}{'value'},  #PicardTools MarkDuplicates
 	   'ptp|picardToolsPath:s' => \$parameter{'picardToolsPath'}{'value'},  #Path to picardtools
+	   'pChS|pChanjoSexCheck:n' => \$parameter{'pChanjoSexCheck'}{'value'},   #Chanjo coverage analysis on sex chromosomes
 	   'pChB|pChanjoBuild:n' => \$parameter{'pChanjoBuild'}{'value'},   #Build central SQLiteDatabase
 	   'chbdb|chanjoBuildDb:s' => \$parameter{'chanjoBuildDb'}{'value'},  #Chanjo reference database
-	   'pChA|pChanjoAnnotate:n' => \$parameter{'pChanjoAnnotate'}{'value'},   # Chanjo coverage analysis
+	   'pChA|pChanjoAnnotate:n' => \$parameter{'pChanjoAnnotate'}{'value'},   #Chanjo coverage analysis
 	   'chacut|chanjoAnnotateCutoff:n' => \$parameter{'chanjoAnnotateCutoff'}{'value'},   # Cutoff used for completeness
 	   'pChI|pChanjoImport:n' => \$parameter{'pChanjoImport'}{'value'},   #Build family SQLiteDatabase
 	   'pGcB|pGenomeCoverageBED:n' => \$parameter{'pGenomeCoverageBED'}{'value'},
@@ -1019,6 +1023,16 @@ if ($scriptParameter{'pPicardToolsMarkduplicates'} > 0) {  #PicardTools MarkDupl
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
     
 	&PicardToolsMarkDuplicates($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});	
+    }
+}
+
+if ($scriptParameter{'pChanjoSexCheck'} > 0) {
+    
+    &PrintToFileHandles(\@printFilehandles, "\npChanjoSexCheck\n");
+    
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #For all SampleIDs
+	
+	&ChanjoSexCheck($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});
     }
 }
 
@@ -1653,8 +1667,7 @@ sub RankVariants {
 	print $FILEHANDLE "score_mip_variants ";
 	print $FILEHANDLE $scriptParameter{'pedigreeFile'}." ";  #Pedigree file
 	print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf ";  #InFile
-	print $FILEHANDLE "> ";  #Pipe
-	print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType."_tmp".$analysisType.".vcf ", "\n\n";  #Tmp outfile
+	print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType."_tmp".$analysisType.".vcf ", "\n\n";  #Tmp outfile
 
 	print $FILEHANDLE "mv ";  #Copy to remove temp file
 	print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType."_tmp".$analysisType.".vcf ";
@@ -3486,8 +3499,71 @@ sub ChanjoImport {
 }
 
 
+sub ChanjoSexCheck { 
+#Predict gender from BAM files
+
+    my $sampleID = $_[0];
+    my $aligner = $_[1]; 
+
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+
+    &ProgramPreRequisites($sampleID, "ChanjoSexCheck", $aligner."/coverageReport", 0, $FILEHANDLE, 1, 2);      
+    
+    my $outFamilyDirectory = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'};
+    my $inSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner;
+    my $outSampleDirectory = $scriptParameter{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport";
+    my $infileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+    my $outfileEnding = $sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'pChanjoSexCheck'}{'fileEnding'};
+
+    
+    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles($sampleID);
+    my $coreCounter=1;	
+	
+    print $FILEHANDLE "workon ".$scriptParameter{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+
+    if ($PicardToolsMergeSwitch == 1) {  #Files was merged previously
+	
+	print $FILEHANDLE "sex-check ";
+	print $FILEHANDLE $inSampleDirectory."/".$infile.$infileEnding.".bam ";  #InFile
+	print $FILEHANDLE "> ".$outSampleDirectory."/".$infile.$outfileEnding, "\n\n";  #OutFile
+	
+	if ( ($scriptParameter{'pChanjoSexCheck'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+
+	    &SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "ChanjoSexCheck", $infile, $outSampleDirectory, $outfileEnding, "infileDependent");
+	}
+    }
+    else {  #No merged files
+	
+	for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) {  #For all files from independent of merged or not
+	    
+	    &PrintWait(\$infileCounter, \$scriptParameter{'maximumCores'}, \$coreCounter, $FILEHANDLE);
+	    
+	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
+	    
+	    print $FILEHANDLE "sex-check ";
+	    print $FILEHANDLE $inSampleDirectory."/".$infile.$infileEnding.".bam ";  #InFile
+	    print $FILEHANDLE "> ".$outSampleDirectory."/".$infile.$outfileEnding, "\n\n";  #OutFile
+
+	    if ( ($scriptParameter{'pChanjoSexCheck'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+		
+		&SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "ChanjoSexCheck", $infile, $outSampleDirectory, $outfileEnding, "infileDependent");
+	    }
+	}
+	print $FILEHANDLE "wait", "\n\n";
+
+    }
+    print $FILEHANDLE "deactivate ", "\n\n";  #Deactivate python environment
+    close($FILEHANDLE);
+
+    if ( ($scriptParameter{'pChanjoSexCheck'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
+	
+	&FIDSubmitJob($sampleID, $scriptParameter{'familyID'}, 1, $parameter{'pChanjoSexCheck'}{'chain'}, $fileName, 0);
+    }
+}
+
+
 sub ChanjoAnnotate { 
-#Generate coverage json outfile for each individual.
+#Generate coverage bed outfile for each individual.
 
     my $sampleID = $_[0];
     my $aligner = $_[1]; 
@@ -3522,7 +3598,7 @@ sub ChanjoAnnotate {
 	
 	if ( ($scriptParameter{'pChanjoAnnotate'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 
-	    &SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "ChanjoAnnotate", $infile, $outSampleDirectory, $outfileEnding.".json", "infileDependent");
+	    &SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "ChanjoAnnotate", $infile, $outSampleDirectory, $outfileEnding.".bed", "infileDependent");
 	}
     }
     else {  #No merged files
@@ -3545,7 +3621,7 @@ sub ChanjoAnnotate {
 
 	    if ( ($scriptParameter{'pChanjoAnnotate'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 		
-		&SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "ChanjoAnnotate", $infile, $outSampleDirectory, $outfileEnding.".json", "infileDependent");
+		&SampleInfoQC($scriptParameter{'familyID'}, $sampleID, "ChanjoAnnotate", $infile, $outSampleDirectory, $outfileEnding.".bed", "infileDependent");
 	    }
 	}
 	print $FILEHANDLE "wait", "\n\n";

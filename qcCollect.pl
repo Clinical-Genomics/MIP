@@ -257,6 +257,11 @@ sub AddToqcData {
 		    
 		    $qcData{$familyID}{$familyID}{'program'}{$program}{$regExpKey} = $qcProgramData{$program}{$regExpKey}[0]; #key-->value for familyID
 		}
+		if ($program eq "ChanjoSexCheck") {#Check gender for sampleID
+		    
+		    my $ChanjoSexCheck = @{$qcProgramData{$program}{$regExpKey}}[0]; #ArrayRef
+		    &GenderCheck(\$familyID, \$sampleID, \$infile, \$ChanjoSexCheck); #Check that assumed gender is supported by coverage on chrX and chrY
+		}
 	    }
 	    else { #Write array to qcData
 		
@@ -270,12 +275,6 @@ sub AddToqcData {
 
 			$qcData{$familyID}{$familyID}{'program'}{$program}{$regExpKey}[$regExpKeyCounter] = $qcProgramData{$program}{$regExpKey}[$regExpKeyCounter];			
 		    }
-		}
-		if ($program eq "QaCompute") {#Check gender for sampleID
-		 
-		    my $chrXCoverage = $qcData{$familyID}{$sampleID}{$infile}{$program}{$regExpKey}[0];
-		    my $chrYCoverage = $qcData{$familyID}{$sampleID}{$infile}{$program}{$regExpKey}[1];
-		    &GenderCheck(\$familyID,\$sampleID,\$infile, \$chrXCoverage, \$chrYCoverage); #Check that assumed gender is supported by coverage on chrX and chrY
 		}
 		if (defined($qcData{$familyID}{$familyID}{'program'}{'RelationCheck'}{'Sample_RelationCheck'}) && defined ($qcData{$familyID}{$familyID}{'program'}{'pedigreeCheck'}{'Sample_order'}) ) {
 		    
@@ -340,7 +339,7 @@ sub EvaluateQCParameters {
 
     for my $familyID ( keys %qcData ) {
 
-	for my $ID ( keys %{$qcData{$familyID}} ) { #Can beboth sampleID and familyID with current structure
+	for my $ID ( keys %{$qcData{$familyID}} ) { #Can be both sampleID and familyID with current structure
 
 	    for my $infile ( keys %{$qcData{$familyID}{$ID}} ) {
 		
@@ -490,37 +489,25 @@ sub RelationCheck {
 }
 
 sub GenderCheck {
-#Uses the coverage on chrX and chrY to check that the sample sequenced has the expected gender
+#Checks that the gender predicted by ChanjoSexCheck is confirmed in the pedigee for the sample
 
     my $familyIDRef = $_[0]; #From SampleInfo
     my $sampleIDRef = $_[1]; #From SampleInfo 
     my $infileRef = $_[2]; #From SampleInfo
-    my $chrXCoverageRef = $_[3];
-    my $chrYCoverageRef = $_[4];
-
-##Validation
-    #print "chrX xoverage: ".$$chrXCoverageRef, "\n";
-    #print "chrY xoverage: ".$$chrYCoverageRef, "\n";
-    #print "Gender: ".$sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'}[0]. "\n";
-   
-    if ( (defined($$chrXCoverageRef)) && (defined($$chrYCoverageRef)) ) {
+    my $chanjoSexCheckGenderRef = $_[3]; #From ChanjoSexCheck 
+    
+    print $$chanjoSexCheckGenderRef."\t".$sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'}[0], "\n";
+    if ( ($$chanjoSexCheckGenderRef eq "female") && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'}[0] == 2) ) { #Female
 	
-	if ( ($$chrXCoverageRef / $$chrYCoverageRef >= 10) && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'}[0] == 2) ) { #Female
-	    
-	    $qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "PASS";
-	}
-	elsif ( ($$chrXCoverageRef / $$chrYCoverageRef < 10) && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'}[0] == 1) ) { #Male
-	    
-	    $qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "PASS";
-	}
-	else {
-	    
-	    $qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "FAIL";
-	}
+	$qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "PASS";
+    }
+    elsif ( ($$chanjoSexCheckGenderRef eq "male") && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'}[0] == 1) ) { #Male
+	
+	$qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "PASS";
     }
     else {
-
-	$qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "Unknown";
+	
+	$qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "FAIL";
     }
     return;
 }
@@ -631,9 +618,7 @@ sub RegExpToYAML {
     $regExp{'MosaikAligner'}{'Multiply_aligned_mates'} = q?perl -nae' if ($_=~/# multiply aligned mates\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;}' ?; #Collect Multiply aligned mates
     
     $regExp{'MosaikAligner'}{'Total_aligned'} = q?perl -nae' if ($_=~/total aligned:\s+\S+\s+(\S+)\s\(\S+\s(\d+.\d+)/ ) {print $2;} elsif ($_=~/total aligned:\s+(\S+)\s\(\S+\s(\d+.\d+)/ ) { print $2}' ?; #Collect total aligned sequences
-    
-    $regExp{'QaCompute'}{'X_Y_coverage'} = q?perl -nae' if ($F[0]=~/^X/ || $F[0]=~/^Y/ ) {print "$F[2],";}' ?; #Collect X and Y coverage. "," required for later split 
-    
+    $regExp{'ChanjoSexCheck'}{'gender'} = q?perl -nae 'if( ($F[0]!~/^#/) && ($F[2] =~/\S+/) ) {print $F[2];}' ?;  #Collect gender from ChanjoSexCheck
     $regExp{'pedigreeCheck'}{'Sample_order'} = q?perl -nae 'if ($_=~/^#CHROM/) {chomp $_; my @line = split(/\t/,$_); for (my $sample=9;$sample<scalar(@line);$sample++) { print $line[$sample], "\t";}last;}' ?; #Collect sample order from vcf file used to create ".ped", ".map" and hence ".mibs".
     
     $regExp{'InbreedingFactor'}{'Sample_InbreedingFactor'}  = q?perl -nae 'my @inbreedingFactor; if ($. > 1) {my @temp = split(/\s/,$_);push(@inbreedingFactor,$temp[0].":".$temp[4]); print $inbreedingFactor[0], "\t"; }' ?;
