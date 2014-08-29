@@ -1617,12 +1617,13 @@ sub RankVariants {
 	}
 	
 	print $FILEHANDLE "#Calculate Gene Models", "\n";    
-	print $FILEHANDLE "run_genmod.py ";
-	print $FILEHANDLE $scriptParameter{'pedigreeFile'}." ";  #Pedigree file
+	print $FILEHANDLE "genmod annotate ";
+	print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".vcf ";  #InFile
+	print $FILEHANDLE "--family_file ".$scriptParameter{'pedigreeFile'}." ";  #Pedigree file
 	
 	if ($scriptParameter{'pVariantEffectPredictor'} > 0) {  #Use VEP annotations in compound models
 
-	    print $FILEHANDLE "-vep "; 
+	    print $FILEHANDLE "--vep "; 
 	}
 	else {
 	    
@@ -1630,27 +1631,26 @@ sub RankVariants {
 	}
 	if ($scriptParameter{'instanceTag'} eq "CMMS") {
 	    
-	    print $FILEHANDLE "-family cmms ";  #CMMS flag
+	    print $FILEHANDLE "--family_type cmms ";  #CMMS flag
 	}
 	if ($scriptParameter{'caddWGSSNVs'} == 1) {
 	 
-	    print $FILEHANDLE "-cadd ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'caddWGSSNVsFile'}." ";  #Whole genome sequencing CADD score file
+	    print $FILEHANDLE "--cadd_file ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'caddWGSSNVsFile'}." ";  #Whole genome sequencing CADD score file
 	}
 	if ($scriptParameter{'cadd1000Genomes'} == 1) {
 	 
-	    print $FILEHANDLE "-c1kg ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'cadd1000GenomesFile'}." ";  #1000G CADD score file
+	    print $FILEHANDLE "--cadd_1000g ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'cadd1000GenomesFile'}." ";  #1000G CADD score file
 	}
 	if ($scriptParameter{'wholeGene'} == 1) {
 	 
 	    print $FILEHANDLE "--whole_gene "; 
 	}
 	#print $FILEHANDLE "-tres ".$scriptParameter{'rankScore'}." ";  #Rank score threshold
-	print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".vcf ";  #InFile
 	print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf", "\n\n";  #OutFile
 	
 ##Ranking
 	print $FILEHANDLE "#Ranking", "\n";
-	print $FILEHANDLE "variant_scorer.py ";
+	print $FILEHANDLE "score_mip_variants ";
 	print $FILEHANDLE $scriptParameter{'pedigreeFile'}." ";  #Pedigree file
 	print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf ";  #InFile
 	print $FILEHANDLE "> ";  #Pipe
@@ -2093,7 +2093,16 @@ sub Annovar {
 	    
 	    if ($annovarTables{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'annotation'} eq "geneanno" ) {  #Use hgvs output style
 		
-		print $FILEHANDLE "'--exonicsplicing'";  #Annotate variants near intron/exonic borders
+		print $FILEHANDLE "'--hgvs ";  #Use hgvs annotation
+		print $FILEHANDLE "--exonicsplicing'";  #Annotate variants near intron/exonic borders
+	    }
+	    if ($scriptParameter{'annovarTableNames'}[$tableNamesCounter] =~/^1000g/) {#Set MAF TH
+
+		print $FILEHANDLE "'--maf_threshold ".$scriptParameter{'annovarMAFThreshold'}."'";
+	    }
+	    if ( ($scriptParameter{'annovarTableNames'}[$tableNamesCounter] =~/^snp/) || ($scriptParameter{'annovarTableNames'}[$tableNamesCounter] =~/_esp/) ) {#Set MAF TH
+
+		print $FILEHANDLE "'--score_threshold ".$scriptParameter{'annovarMAFThreshold'}."'"; #score_threshold since Annovar reserved the maf_threshold for 1000G
 	    }
 	    unless ($tableNamesCounter == scalar(@{$scriptParameter{'annovarTableNames'}}) - 1) {
 
@@ -3507,10 +3516,8 @@ sub ChanjoAnnotate {
 	print $FILEHANDLE $inSampleDirectory."/".$infile.$infileEnding.".bam ";  #InFile
 	print $FILEHANDLE "--cutoff ".$scriptParameter{'chanjoAnnotateCutoff'}." ";  #The “cutoff” is used for the completeness calculation
 	print $FILEHANDLE "--sample ".$sampleID." ";  #A unique sample Id
-	print $FILEHANDLE "-–extend-by 2 ";  #Extend each interval to include e.g. splice sites 
+	print $FILEHANDLE "--extendby 2 ";  #Dynamically extend intervals symetrically
 	print $FILEHANDLE "--group ".$scriptParameter{'familyID'}." ";  #Grouping option for samples
-	#print $FILEHANDLE "–-institute ".$scriptParameter{'instanceTag'}." ";  #Grouping option for groups
-	print $FILEHANDLE "--force ";  #Overwrite an existing output file
 	print $FILEHANDLE "> ".$outSampleDirectory."/".$infile.$outfileEnding.".bed". "\n\n";  #OutFile
 	
 	if ( ($scriptParameter{'pChanjoAnnotate'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
@@ -3532,10 +3539,8 @@ sub ChanjoAnnotate {
 	    print $FILEHANDLE $inSampleDirectory."/".$infile.$infileEnding.".bam ";  #InFile
 	    print $FILEHANDLE "--cutoff ".$scriptParameter{'chanjoAnnotateCutoff'}." ";  #The “cutoff” is used for the completeness calculation
 	    print $FILEHANDLE "--sample ".$sampleID." ";  #A unique sample Id
-	    print $FILEHANDLE "-–extend-by 2 ";  #Extend each interval to include e.g. splice sites 
+	    print $FILEHANDLE "--extendby 2 ";  #Dynamically extend intervals symetrically
 	    print $FILEHANDLE "--group ".$scriptParameter{'familyID'}." ";  #Grouping option for samples
-	    #print $FILEHANDLE "–-institute ".$scriptParameter{'instanceTag'}." ";  #Grouping option for groups
-	    print $FILEHANDLE "--force ";  #Overwrite an existing output file
 	    print $FILEHANDLE "> ".$outSampleDirectory."/".$infile.$outfileEnding.".bed". "\n\n";  #OutFile
 
 	    if ( ($scriptParameter{'pChanjoAnnotate'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
@@ -3571,9 +3576,10 @@ sub ChanjoBuild {
     ##Build new database
     &ChanjoConvert($FILEHANDLE, $scriptParameter{'referencesDir'}."/".$scriptParameter{'chanjoBuildDb'});
     print $FILEHANDLE "chanjo ";
+    print $FILEHANDLE "--db ".$outFamilyDirectory."/".$familyID.".sqlite ";  #Path/URI of the SQL database
+    print $FILEHANDLE "--dialect sqlite";  #Type of SQL database
+    print $FILEHANDLE "--force ", "\n\n";  #Overwrite existing assets without warning
     print $FILEHANDLE "build ";
-    print $FILEHANDLE "--db=".$outFamilyDirectory."/".$familyID.".sqlite ";      
-    print $FILEHANDLE "--force ", "\n\n";#Overwrite if file outFile exists
 
     print $FILEHANDLE "deactivate ", "\n\n";  #Deactivate python environment
     close($FILEHANDLE); 

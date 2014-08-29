@@ -33,8 +33,8 @@ my (%geneAnnotation, %consequenceSeverity, %rangeData, %selectData, %snpEffCmd, 
 my ($help, $version) = (0, 0);
 
 if (defined($ARGV) && $ARGV[0]!~/^-/) { #Collect potential infile - otherwise read from STDIN
-
-$infile = $ARGV[0];
+    
+    $infile = $ARGV[0];
 }
 
 ###User Options
@@ -112,13 +112,13 @@ sub DefineSelectData {
 ##Defines arbitrary INFO fields based on headers in selectFile
 
     $selectData{'SelectFile'}{'HGNC_id'}{'INFO'} = q?##INFO=<ID=HGNC_id,Number=.,Type=String,Description="HGNC ID for gene(s).;Format:{String}">?;
-    $selectData{'SelectFile'}{'Ensembl_gene_id'}{'INFO'} = q?##INFO=<ID=Ensembl_gene_id,Number=.,Type=String,Description="Ensemble gene identifier.;Delimiter:,">?;
+    $selectData{'SelectFile'}{'Ensembl_gene_id'}{'INFO'} = q?##INFO=<ID=Ensembl_gene_id,Number=.,Type=String,Description="Ensembl gene identifier.;Delimiter:,">?;
     $selectData{'SelectFile'}{'Disease_group_pathway'}{'INFO'} = q?##INFO=<ID=Disease_group_pathway,Number=.,Type=String,Description="Information on the type of disease.;Format:{String}">?;
     $selectData{'SelectFile'}{'Clinical_db_genome_build'}{'INFO'} = q?##INFO=<ID=Clinical_db_genome_build,Number=.,Type=String,Description="Genome version used in clinical Db.;Format:{String}">?;
     $selectData{'SelectFile'}{'Disease_gene_model'}{'INFO'} = q?##INFO=<ID=Disease_gene_model,Number=.,Type=String,Description="Known disease inheritance model.;Format:{String}">?;
     $selectData{'SelectFile'}{'Clinical_db_gene_annotation'}{'INFO'} = q?##INFO=<ID=Clinical_db_gene_annotation,Number=.,Type=String,Description="Genes associated with a disease group e.g., IEM, EP.;Format:{String}">?;
     $selectData{'SelectFile'}{'Reduced_penetrance'}{'INFO'} = q?##INFO=<ID=Reduced_penetrance,Number=.,Type=String,Description="Pathogenic gene which can exhibit reduced penetrance.;Format:{String}">?;
-    $selectData{'SelectFile'}{'Pathogenic_transcript'}{'INFO'} = q?##INFO=<ID=Pathogenic_transcript,Number=.,Type=String,Description="Known pathogenic transcript(s) for gene.;Format:{String}">?;
+    $selectData{'SelectFile'}{'Disease_associated_transcript'}{'INFO'} = q?##INFO=<ID=Disease_associated_transcript,Number=.,Type=String,Description="Known pathogenic transcript(s) for gene.;Format:{String}">?;
 
 }
 
@@ -134,8 +134,6 @@ sub DefineSnpEffAnnotations {
     $snpEffCmd{'Frequency'}{'1000GMAF'}{'FIX_INFO'} = q?##INFO=<ID=SB,Number=4,Type=Integer,Description="Per-sample component statistics which comprise the Fisher's Exact Test to detect strand bias.">?;
     $snpEffCmd{'Frequency'}{'ESPMAF'}{'File'} = q?ESP\d+SI-V\d+-\w+.updatedProteinHgvs.snps_indels.vcf?;
     $snpEffCmd{'Frequency'}{'ESPMAF'}{'INFO'} = q?##INFO=<ID=ESPMAF,Number=1,Type=Float,Description="Frequency in ESP database.">?;
-    $snpEffCmd{'Frequency'}{'BVDMAF'}{'File'} = q?hbvd_local_IEMs.vcf?;
-    $snpEffCmd{'Frequency'}{'BVDMAF'}{'INFO'} = q?##INFO=<ID=BVDMAF,Number=1,Type=Float,Description="Frequency in local variation database.">?;
 
 }
 
@@ -1132,7 +1130,7 @@ sub RangeAnnotations {
 	    
 	    $features .= ";".$$lineElementsArrayRef[ $$rangeCoulumnsArrayRef[$extractColumnsCounter] ];
 	}
-	&AddMetaDataINFO($hashRef, $rangeFileKey, \$$headersArrayRef[ $$rangeCoulumnsArrayRef[$extractColumnsCounter] ], \$extractColumnsCounter, \$selectFeatureFile);#Add header to future INFO field
+	&AddMetaDataINFO($hashRef, $rangeFileKey, \$$headersArrayRef[ $$rangeCoulumnsArrayRef[$extractColumnsCounter] ], \$extractColumnsCounter, \$$rangeFileRef);#Add header to future INFO field
     }
     unless(defined($tree{$rangeFileKey}{ $$lineElementsArrayRef[0] })) { #Only create once per firstKey
 	
@@ -1219,5 +1217,5 @@ sub AddProgramToMeta {
     
     my ($base, $script) = (`date +%Y%m%d`,`basename $0`);  #Catches current date and script name
     chomp($base,$script);  #Remove \n;
-    push(@{$arrayRef}, "##".$script."=<ID=Version=".$vcfParserVersion.",Date=".$base);
+    push(@{$arrayRef}, "##Software=<ID=".$script.",Version=".$vcfParserVersion.",Date=".$base);
 }
