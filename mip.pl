@@ -498,7 +498,6 @@ my %supportedCaptureKits = (
     'Latest' => "Agilent_SureSelect.V5.GenomeReferenceSourceVersion_targets.bed",
     );
 
-my %plinkPedigree;  #Holds allowed entries and positions for Plink pedigree files
 my %supportedCosmidReferences;  #References supported as downloads from Cosmid. Hash is populated after user options are processed
 
 my %referenceFileEndings = (
@@ -695,6 +694,7 @@ foreach my $orderParameterElement (@orderParameters) {
 
 	    `mkdir -p $scriptParameter{'outDataDir'}/$scriptParameter{'familyID'};`;  #Create family directory
 	    &WriteYAML($scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/qc_pedigree.yaml", \%sampleInfo);
+	    &RemovePedigreeElements(\%sampleInfo);  #NOTE: Removes all elements at hash third level except 'Capture_kit'
 	}
     }
     if ($orderParameterElement eq "humanGenomeReference") {  #Supply humanGenomeReference to mosaikAlignReference if required
@@ -1665,8 +1665,8 @@ sub RankVariants {
 ##Ranking
 	print $FILEHANDLE "#Ranking", "\n";
 	print $FILEHANDLE "score_mip_variants ";
-	print $FILEHANDLE $scriptParameter{'pedigreeFile'}." ";  #Pedigree file
 	print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf ";  #InFile
+	print $FILEHANDLE $scriptParameter{'pedigreeFile'}." ";  #Pedigree file
 	print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType."_tmp".$analysisType.".vcf ", "\n\n";  #Tmp outfile
 
 	print $FILEHANDLE "mv ";  #Copy to remove temp file
@@ -2525,7 +2525,7 @@ sub VariantEffectPredictor {
 	    
 	    if ( ($scriptParameter{'vepFeatures'}[$vepFeatureCounter] eq "sift") || ($scriptParameter{'vepFeatures'}[$vepFeatureCounter] eq "polyphen") )  {  #Protein predictions
 		
-		print $FILEHANDLE "b ";  #Add prediction score and prediction term 
+		print $FILEHANDLE "p ";  #Add prediction term 
 	    }
 	}
 	print $FILEHANDLE "-i ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf ";  #InFile (family vcf)
@@ -5263,7 +5263,7 @@ sub ReadPlinkPedigreeFile {
     my $userExomeTargetPaddedBedInfileListSwitch = &CheckUserInfoArrays(\@exomeTargetPaddedBedInfileLists, "exomeTargetPaddedBedInfileLists");
     my $userExomeTargetPaddedBedIntervalListSwitch = &CheckUserInfoArrays(\@GATKTargetPaddedBedIntervalLists, "GATKTargetPaddedBedIntervalLists");
 
-    &DefinePlinkPedigree();  #Loads allowed entries and positons to be checked
+    my %plinkPedigree = &DefinePlinkPedigree();  #Holds allowed entries and positions to be checked for Plink pedigree files
 
     open(my $PEDF, "<", $fileName) or die "Can't open ".$fileName.":$!, \n";    
      
@@ -5353,6 +5353,7 @@ sub ReadPlinkPedigreeFile {
 		else {  #No entry in pedigre file element
 		    
 		    if ($sampleElementsCounter < 7) {  #Only check mandatory elements 
+
 			print STDERR $pedigreeFileElements[$sampleElementsCounter], "\t";
 			print STDERR "File: ".$fileName." at line ".$.."\tcannot find '".$pedigreeFileElements[$sampleElementsCounter]."' entry in column ".$sampleElementsCounter, "\n";
 			exit;
@@ -5372,9 +5373,12 @@ sub ReadPlinkPedigreeFile {
 sub DefinePlinkPedigree {
 ##Defines which entries are allowed and links them to position
 
+    my %plinkPedigree;
+
     $plinkPedigree{4} = [1, 2, "other"];  #Sex
     $plinkPedigree{5} = [-9, 0, 1, 2];  #Phenotype
 
+    return %plinkPedigree
 }
 
 
@@ -7167,7 +7171,7 @@ sub CheckUniqueArrayElement {
 	    for (my $elementsCounter=0;$elementsCounter<scalar( @{$arrayToCheckRef});$elementsCounter++) {  #All arrayToCheckRef elements
 		
 		if (${$arrayToCheckRef}[$elementsCounter] eq ${$arrayQueryRef}[$elementsInfoCounter]) {  #Check presence
-		    
+
 		    $elementFound = 1;   #Entry is present in both arrays
 		}
 	    }
@@ -8334,7 +8338,7 @@ sub CheckEntryHashofArray {
 ##Function : Test element for being part of hash of array at supplied key. 
 ##Returns  : Return "1" if element is not part of array
 ##Arguments: $hashRef, $keyRef, $elementRef
-##         : $hashRef    => Hash {REF}. 
+##         : $hashRef    => Hash {REF} 
 ##         : $keyRef     => The key pointing to the array in the $hashRef {REF}
 ##         : $elementRef => Element to look for in hash of array {REF}
 
@@ -8442,6 +8446,7 @@ sub CombineVariants {
     print $FILEHANDLE "-o ".$outfile, "\n\n";  #OutFile
 }
 
+
 sub ChanjoConvert {
     
 ##ChanjoConvert
@@ -8464,6 +8469,33 @@ sub ChanjoConvert {
     
 }
 
+
+sub RemovePedigreeElements {
+
+##RemovePedigreeElements
+    
+##Function : Removes ALL keys at third level except 'Capture_kit'. 
+##Returns  : ""
+##Arguments: $hashRef
+##         : $hashRef => Hash {REF}
+    
+    my $hashRef = $_[0];
+    
+    for my $familyID (keys %{$hashRef}) {
+	
+	for my $sampleID (keys %{ ${$hashRef}{$familyID} })  {
+	    
+	    for my $pedigreeElements (keys %{ ${$hashRef}{$familyID}{$sampleID} })  {
+		
+		unless ($pedigreeElements eq 'Capture_kit') {
+		    
+		    delete(${$hashRef}{$familyID}{$sampleID}{$pedigreeElements})
+		}
+		
+	    }
+	}
+    }
+}
 
 ####
 #Decommissioned
