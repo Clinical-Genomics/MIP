@@ -1629,7 +1629,7 @@ sub RankVariants {
 	    
 	    $analysisType = ".selected";  #SelectFile variants
 	}
-	
+##Gene Models
 	print $FILEHANDLE "#Calculate Gene Models", "\n";    
 	print $FILEHANDLE "genmod annotate ";
 	print $FILEHANDLE $inFamilyDirectory."/".$familyID.$infileEnding.$callType.$analysisType.".vcf ";  #InFile
@@ -1659,19 +1659,13 @@ sub RankVariants {
 	 
 	    print $FILEHANDLE "--whole_gene "; 
 	}
-	#print $FILEHANDLE "-tres ".$scriptParameter{'rankScore'}." ";  #Rank score threshold
-	print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf", "\n\n";  #OutFile
-	
-##Ranking
-	print $FILEHANDLE "#Ranking", "\n";
-	print $FILEHANDLE "score_mip_variants ";
-	print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf ";  #InFile
-	print $FILEHANDLE $scriptParameter{'pedigreeFile'}." ";  #Pedigree file
-	print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType."_tmp".$analysisType.".vcf ", "\n\n";  #Tmp outfile
 
-	print $FILEHANDLE "mv ";  #Copy to remove temp file
-	print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType."_tmp".$analysisType.".vcf ";
-	print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf ", "\n\n";;
+##Ranking
+	print $FILEHANDLE "| ";  #Pipe
+	print $FILEHANDLE "score_mip_variants ";
+	print $FILEHANDLE "- ";  #Expect infile stream
+	print $FILEHANDLE $scriptParameter{'pedigreeFile'}." ";  #Pedigree file
+	print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf ", "\n\n";  #Outfile
 
 	if ( ($scriptParameter{'pRankVariants'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 	    
@@ -2349,7 +2343,7 @@ sub SnpEff {
 		}
 		print $FILEHANDLE "-jar ".$scriptParameter{'snpEffPath'}."/SnpSift.jar ";
 		print $FILEHANDLE "dbnsfp ";
-		print $FILEHANDLE "-db ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'snpSiftDbNSFPFile'}." ";  #DbNSFP file
+		print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'snpSiftDbNSFPFile'}." ";  #DbNSFP file
 		print $FILEHANDLE "-f ";  #fields to add
 		print $FILEHANDLE join(',', @{$scriptParameter{'snpSiftDbNSFPAnnotations'}})." ";  #Databases
 		print $FILEHANDLE "<( ";  #Pipe into SnpSift
