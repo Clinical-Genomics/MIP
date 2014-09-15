@@ -6390,6 +6390,8 @@ sub AddToScriptParameter {
 			}
 			else {  #To enable addition of selectFile to sampleInfo                                                                       
 			    
+			    &CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{$parameterName}), \$parameterName, "f");
+
 			    if ($scriptParameter{$parameterName}=~/v(\d+\.\d+)/) {
 				
 				$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'database'}{"SelectFile"}{'Version'} = $1;
@@ -6405,7 +6407,8 @@ sub AddToScriptParameter {
 		    }
 		    else {
 			
-			 &CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{$parameterName}), \$parameterName, "f");}		    
+			 &CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{$parameterName}), \$parameterName, "f");
+                    }		    
 		}
 	    }
 	    
