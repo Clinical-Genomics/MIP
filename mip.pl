@@ -110,7 +110,6 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pGgT/--pGATKGenoTypeGVCFs Merge gVCF records using GATK GenotypeGVCFs (defaults to "1" (=yes))
                  -ggtgrl/--GATKGenoTypeGVCFsRefGVCF GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping (defaults to "")
                -pGvR/--pGATKVariantRecalibration Variant recalibration using GATK VariantRecalibrator/ApplyRecalibration (defaults to "1" (=yes))
-                 -gvrers/--GATKExomeReferenceSNPs Prepared exome reference file (SNVs) for GATKVariantRecalibration (defaults to "")
                  -gvrtsh/--GATKVariantReCalibrationTrainingSetHapMap GATK VariantRecalibrator HapMap training set (defaults to "hapmap_3.3.b37.sites.vcf")
                  -gvrtss/--GATKVariantReCalibrationTrainingSetDbSNP GATK VariantRecalibrator dbSNP training set (defaults to "dbsnp_138.b37.vcf")
                  -gvrtsg/--GATKVariantReCalibrationTrainingSet1000GSNP GATK VariantRecalibrator 1000G high confidence SNP training set (defaults to "1000G_phase1.snps.high_confidence.b37.vcf")
@@ -339,8 +338,6 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists);  #Arrays for 
 
 
 &DefineParameters("pGATKVariantRecalibration", "program", 1, "MIP", "vrecal_", "MAIN");
-
-&DefineParametersPath("GATKExomeReferenceSNPs", "nodefault", "pGATKVariantRecalibration", "file", "noAutoBuild");
 
 &DefineParametersPath("GATKVariantReCalibrationTrainingSetHapMap", "hapmap_3.3.b37.sites.vcf", "pGATKVariantRecalibration", "file", "yesAutoDownLoad");
 
@@ -590,7 +587,6 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'pGgT|pGATKGenoTypeGVCFs:n' => \$parameter{'pGATKGenoTypeGVCFs'}{'value'},  #Merge gVCF records using GATK GenotypeGVCFs
 	   'ggtgrl|GATKGenoTypeGVCFsRefGVCF:s' => \$parameter{'GATKGenoTypeGVCFsRefGVCF'}{'value'},  #GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping
 	   'pGvR|pGATKVariantRecalibration:n' => \$parameter{'pGATKVariantRecalibration'}{'value'},  #GATK VariantRecalibrator/ApplyRecalibration
-	   'gvrers|GATKExomeReferenceSNPs:s' => \$parameter{'GATKExomeReferenceSNPs'}{'value'},  #File of 33 exomes to power probabalistic model GATK Varrecal (SNVs) (Recieved from Måns, 120413)
 	   'gvrtsh|GATKVariantReCalibrationTrainingSetHapMap:s' => \$parameter{'GATKVariantReCalibrationTrainingSetHapMap'}{'value'},  #GATK VariantRecalibrator resource
 	   'gvrtss|GATKVariantReCalibrationTrainingSetDbSNP:s' => \$parameter{'GATKVariantReCalibrationTrainingSetDbSNP'}{'value'},  #GATK VariantRecalibrator resource
 	   'gvrtsg|GATKVariantReCalibrationTrainingSet1000GSNP:s' => \$parameter{'GATKVariantReCalibrationTrainingSet1000GSNP'}{'value'},  #GATK VariantRecalibrator resource
@@ -1716,11 +1712,9 @@ sub GATKVariantEvalExome {
 ##Select SampleID from familyID vrecal vcf file
 	print $FILEHANDLE "#GATK SelectVariants","\n\n";
 	print $FILEHANDLE "java -Xmx2g ";
-	
-	if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	    
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	}
+
+	&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
@@ -1771,10 +1765,8 @@ sub GATKVariantEvalExome {
 	
 	print $FILEHANDLE "java -Xmx2g ";
 	
-	if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	    
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	}
+	&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+	
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-T VariantEval ";  #Type of analysis to run
@@ -1810,10 +1802,8 @@ sub GATKVariantEvalExome {
 	    print $FILEHANDLE "#GATK SelectVariants","\n\n";
 	    print $FILEHANDLE "java -Xmx2g ";
 
-	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		
-		print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	    }
+	    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
@@ -1865,10 +1855,8 @@ sub GATKVariantEvalExome {
 	    
 	    print $FILEHANDLE "java -Xmx2g ";
 	 
-	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		
-		print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	    }
+	    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+	    
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	    print $FILEHANDLE "-T VariantEval ";  #Type of analysis to run
@@ -1936,10 +1924,8 @@ sub GATKVariantEvalAll {
 	print $FILEHANDLE "#GATK SelectVariants","\n\n";
 	print $FILEHANDLE "java -Xmx2g ";
 
-	if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	    
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	}
+	&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+	
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
@@ -1956,10 +1942,8 @@ sub GATKVariantEvalAll {
 	
 	print $FILEHANDLE "java -Xmx2g ";
 
-	if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	    
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	}
+	&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+	
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-T VariantEval ";  #Type of analysis to run
@@ -1985,10 +1969,8 @@ sub GATKVariantEvalAll {
 	    print $FILEHANDLE "#GATK SelectVariants","\n\n";
 	    print $FILEHANDLE "java -Xmx2g ";
 
-	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		
-		print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	    }
+	    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
@@ -2005,10 +1987,7 @@ sub GATKVariantEvalAll {
 	    
 	    print $FILEHANDLE "java -Xmx2g ";
 
-	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		
-		print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	    }
+	    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
 
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
@@ -2175,10 +2154,8 @@ sub GATKReadBackedPhasing {
     print $FILEHANDLE "\n#GATK ReadBackedPhasing","\n\n";
     print $FILEHANDLE "java -Xmx4g ";
 
-    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-    }
+    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
     print $FILEHANDLE "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." ";  #Temporary Directory
     print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
@@ -2255,10 +2232,8 @@ sub GATKPhaseByTransmission {
     print $FILEHANDLE "\n#GATK PhaseByTransmission","\n\n";
     print $FILEHANDLE "java -Xmx4g ";
     
-    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	
-	print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-    }
+    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+    
     print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
     print $FILEHANDLE "-T PhaseByTransmission ";  #Type of analysis to run
@@ -2310,10 +2285,8 @@ sub SnpEff {
 	    
 	    print $FILEHANDLE "java -Xmx4g ";
 	    
-	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		
-		print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	    }
+	    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+	    
 	    print $FILEHANDLE "-jar ".$scriptParameter{'snpEffPath'}."/SnpSift.jar ";
 	    print $FILEHANDLE "annotate ";
 	    print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'snpSiftAnnotationFiles'}[$snpSiftAnnotationFilesCounter]." ";  #Database
@@ -2337,10 +2310,8 @@ sub SnpEff {
 			    		
 		print $FILEHANDLE "java -Xmx500m ";
 		
-		if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		    
-		    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-		}
+		&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+		
 		print $FILEHANDLE "-jar ".$scriptParameter{'snpEffPath'}."/SnpSift.jar ";
 		print $FILEHANDLE "dbnsfp ";
 		print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'snpSiftDbNSFPFile'}." ";  #DbNSFP file
@@ -2352,10 +2323,8 @@ sub SnpEff {
 		print $FILEHANDLE "| ";
 		print $FILEHANDLE "java -Xmx500m ";
 		
-		if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		    
-		    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-		}
+		&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+		
 		print $FILEHANDLE "-jar ".$scriptParameter{'snpEffPath'}."/SnpSift.jar ";
 		print $FILEHANDLE "filter ";  #Parallalize per contig for speed
 		print $FILEHANDLE q?"( CHROM = '?.$contigs[$contigsCounter].q?' )"?;
@@ -2367,10 +2336,8 @@ sub SnpEff {
 	    ##Merge dbNSFP splitted vcfs 
 	    print $FILEHANDLE "java -Xmx4g ";
 	    
-	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		
-		print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	    }
+	    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
 	    print $FILEHANDLE "-jar ".$scriptParameter{'snpEffPath'}."/SnpSift.jar ";
 	    print $FILEHANDLE "split -j ";  #Joinf VCFs together
 
@@ -2385,10 +2352,8 @@ sub SnpEff {
 	print $FILEHANDLE "\n#GATK CombineVariants","\n\n";
 	print $FILEHANDLE "java -Xmx4g ";
 	
-	if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	    
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	}
+	&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-T CombineVariants ";  #Type of analysis to run
@@ -2586,10 +2551,8 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "\n\n#GATK VariantRecalibrator","\n\n";	
 	print $FILEHANDLE "java -Xmx6g ";
 	
-	if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	    
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	}
+	&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-T VariantRecalibrator ";  #Type of analysis to run
@@ -2642,10 +2605,8 @@ sub GATKVariantReCalibration {
 	
 	print $FILEHANDLE "java -Xmx6g ";
 
-	if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	    
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	}
+	&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
 	print $FILEHANDLE  "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-T ApplyRecalibration ";
@@ -2684,10 +2645,8 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "\n\n#GATK SelectVariants","\n\n";
 	print $FILEHANDLE "java -Xmx2g ";
 
-	if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	    
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	}
+	&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
 	print $FILEHANDLE  "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
@@ -2709,10 +2668,8 @@ sub GATKVariantReCalibration {
 	    print $FILEHANDLE "\n\n#GATK SelectVariants","\n\n";
 	    print $FILEHANDLE "java -Xmx2g ";
 	    
-	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		
-		print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	    }
+	    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+	    
 	    print $FILEHANDLE  "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
@@ -2763,10 +2720,8 @@ sub GATKGenoTypeGVCFs {
     
     print $FILEHANDLE "java -Xmx4g ";
 
-    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-    }
+    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+    
     print $FILEHANDLE "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." ";  #Temporary Directory
     print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
@@ -2775,7 +2730,7 @@ sub GATKGenoTypeGVCFs {
     print $FILEHANDLE "-D ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKHaploTypeCallerSNPKnownSet'}." ";  #Known SNPs to use for annotation SNPs
     print $FILEHANDLE "-nt 16 ";  #How many data threads should be allocated to running this analysis.
 
-    if ($scriptParameter{'analysisType'} eq "exomes") {
+    if ( ($scriptParameter{'analysisType'} eq "exomes") || ($scriptParameter{'analysisType'} eq "rapid") ) {
 
 	print $FILEHANDLE "-V ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'GATKGenoTypeGVCFsRefGVCF'}." ";
     }
@@ -2834,10 +2789,8 @@ sub GATKHaploTypeCaller {
     
     print $FILEHANDLE "java -Xmx4g ";
 
-    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-    }
+    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
     print $FILEHANDLE "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." ";  #Temporary Directory
     print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
@@ -2927,11 +2880,8 @@ sub GATKBaseReCalibration {
     if ($PicardToolsMergeSwitch == 1) {  #Files was merged previously
        
 	print $FILEHANDLE "java -Xmx24g ";
-
-	if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	    
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	}
+	
+	&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
 
 	print $FILEHANDLE "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." ";  #Temporary Directory per chr
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
@@ -2953,11 +2903,9 @@ sub GATKBaseReCalibration {
 	print $FILEHANDLE "#GATK PrintReads","\n\n";
 
 	print $FILEHANDLE "java -Xmx24g ";
-
-	if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	    
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	}
+	
+	&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+	
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging"-jar $gatk_path/GenomeAnalysisTK.
 	print $FILEHANDLE "-T PrintReads ";  #Type of analysis to run
@@ -2981,10 +2929,7 @@ sub GATKBaseReCalibration {
 	   
 	    print $FILEHANDLE "java -Xmx24g ";
 	    
-	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		
-		print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	    }
+	    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
 
 	    print $FILEHANDLE "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." ";  #Temporary Directory per chr
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
@@ -3007,10 +2952,8 @@ sub GATKBaseReCalibration {
 	    
 	    print $FILEHANDLE "java -Xmx24g ";
 
-	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		
-		print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	    }
+	    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+	    
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging"-jar $gatk_path/GenomeAnalysisTK.
 	    print $FILEHANDLE "-T PrintReads ";  #Type of analysis to run
@@ -3065,10 +3008,7 @@ sub GATKReAligner {
 	
 	print $FILEHANDLE "java -Xmx24g ";
 
-	if ($scriptParameter{'javaUseLargePages'} ne "no") {
-
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	}
+	&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
 
 	print $FILEHANDLE "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." ";  #Temporary Directory
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
@@ -3086,10 +3026,8 @@ sub GATKReAligner {
 	
 	print $FILEHANDLE "java -Xmx24g ";
 
-	if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	    
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	}
+	&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+	
 	print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO ";
 	print $FILEHANDLE "-T IndelRealigner ";
@@ -3114,10 +3052,7 @@ sub GATKReAligner {
 		
 	    print $FILEHANDLE "java -Xmx24g ";
 
-	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		
-		print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	    }
+	    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
 
 	    print $FILEHANDLE "-Djava.io.tmpdir=".$scriptParameter{'GATKTempDirectory'}.'$SLURM_JOB_ID'." ";  #Temporary Directory
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
@@ -3135,10 +3070,8 @@ sub GATKReAligner {
 	    
 	    print $FILEHANDLE "java -Xmx24g ";
 
-	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		
-		print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	    }
+	    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
 	    print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	    print $FILEHANDLE "-l INFO ";
 	    print $FILEHANDLE "-T IndelRealigner ";
@@ -3306,10 +3239,9 @@ sub PicardToolsCollectMultipleMetrics {
 	&ProgramPreRequisites($sampleID, "PicardToolsCollectMultipleMetrics", $aligner."/coverageReport", 0, $FILEHANDLE, 1, 4);
 
 	print $FILEHANDLE "java -Xmx4g ";
-	if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	    
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	}
+
+	&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
 	print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/CollectMultipleMetrics.jar ";
 	print $FILEHANDLE "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam ";  #InFile
 	print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding." ";  #OutFile
@@ -3334,10 +3266,9 @@ sub PicardToolsCollectMultipleMetrics {
 	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];	    
 	    
 	    print $FILEHANDLE "java -Xmx4g ";
-	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		
-		print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	    }
+
+	    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
 	    print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/CollectMultipleMetrics.jar ";
 	    print $FILEHANDLE "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam ";  #InFile
 	    print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding." ";  #outFile
@@ -3380,10 +3311,9 @@ sub PicardToolsCalculateHSMetrics {
 	&ProgramPreRequisites($sampleID, "PicardToolsCalculateHSMetrics", $aligner."/coverageReport", 0, $FILEHANDLE, 1, 4);
 	
 	print $FILEHANDLE "java -Xmx4g ";
-	if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	    
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	}
+
+	&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
 	print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/CalculateHsMetrics.jar ";
 	print $FILEHANDLE "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam ";  #InFile
 	print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding."_CalculateHsMetrics ";  #OutFile
@@ -3409,10 +3339,9 @@ sub PicardToolsCalculateHSMetrics {
 	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];	    
 	    
 	    print $FILEHANDLE "java -Xmx4g ";
-	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		
-		print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	    }
+
+	    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
 	    print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/CalculateHsMetrics.jar ";
 	    print $FILEHANDLE "INPUT=".$inSampleDirectory."/".$infile.$infileEnding.".bam ";  #InFile
 	    print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".$infile.$outfileEnding."_CalculateHsMetrics ";  #OutFile
@@ -3696,10 +3625,9 @@ sub PicardToolsMarkDuplicates {
 	&ProgramPreRequisites($sampleID, "PicardToolsMarkduplicates", $aligner, 0, $FILEHANDLE, 1, $time);
 
 	print $FILEHANDLE "java -Xmx4g ";
-	if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	    
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	}
+
+	&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
 	print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/MarkDuplicates.jar ";
 	print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." ";  #Temp Directory
 	print $FILEHANDLE "ASSUME_SORTED=true ";
@@ -3729,10 +3657,9 @@ sub PicardToolsMarkDuplicates {
 	    my $infile = $infilesLaneNoEnding{$sampleID}[$infileCounter];
 	    
 	    print $FILEHANDLE "java -Xmx4g ";
-	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		
-		print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	    }
+	    
+	    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
 	    print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/MarkDuplicates.jar ";
 	    print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." ";  #Temp Directory
 	    print $FILEHANDLE "ASSUME_SORTED=true ";
@@ -3794,10 +3721,9 @@ sub PicardToolsMerge {
 	    if ($infileCounter eq 0) {
 
 		print $FILEHANDLE "java -Xmx4g ";
-		if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		    
-		    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-		}
+
+		&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
 		print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/MergeSamFiles.jar ";
 		print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." ";  #Temp Directory
 		print $FILEHANDLE "CREATE_INDEX=TRUE ";  #create a BAM index when writing a coordinate-sorted BAM file.
@@ -3830,10 +3756,9 @@ sub PicardToolsMerge {
 		    my $mergeLanes; if($1) {$mergeLanes = $1;} else {$mergeLanes = $2;}  #Make sure to always supply lanes from previous regexp		    
 
 		    print $FILEHANDLE "java -Xmx4g ";
-		    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-			
-			print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-		    }
+
+		    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
 		    print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/MergeSamFiles.jar ";
 		    print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." ";  #Temp directory
 		    print $FILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
@@ -3863,10 +3788,9 @@ sub PicardToolsMerge {
 		my $infile = $infilesLaneNoEnding{$sampleID}[0];  #Can only be 1 element in array due to previous if statement		    
 		
 		print $FILEHANDLE "java -Xmx4g ";
-		if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		    
-		    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-		}
+
+		&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+		
 		print $FILEHANDLE "jar ".$scriptParameter{'picardToolsPath'}."/MergeSamFiles.jar ";
 		print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." ";  #Temp Directory
 		print $FILEHANDLE "CREATE_INDEX=TRUE ";  #create a BAM index when writing a coordinate-sorted BAM file.
@@ -3943,10 +3867,9 @@ sub PicardToolsSortSamIndex {
 
 	print $FILEHANDLE "#Sorting the reads\n\n";
 	print $FILEHANDLE "java -Xmx4g ";
-	if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	    
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	}
+
+	&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+	
 	print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/SortSam.jar ";
 	print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." ";  #Temp Directory
 	print $FILEHANDLE "SORT_ORDER=coordinate"." ";  #Sort per contig and coordinate
@@ -4123,10 +4046,9 @@ sub PicardToolsMergeRapidReads {
 		if ($readBatchProcessesCount eq 0) {
 		    
 		    print $FILEHANDLE "java -Xmx4g ";
-		    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-			
-			print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-		    }
+
+		    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+		    
 		    print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/MergeSamFiles.jar ";
 		    print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." ";  #Temp Directory
 		    print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter].$outfileEnding.".bam ";  #OutFile
@@ -4140,10 +4062,9 @@ sub PicardToolsMergeRapidReads {
 	else {  #Still needs to rename file to be included in potential merge of BAM files in next step
 	    
 	    print $FILEHANDLE "java -Xmx4g ";
-	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		
-		print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	    }
+
+	    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+	    
 	    print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/MergeSamFiles.jar ";
 	    print $FILEHANDLE "TMP_DIR=".$scriptParameter{'PicardToolsTempDirectory'}.'$SLURM_JOB_ID'." ";  #Temp Directory
 	    print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".$infilesLaneNoEnding{$sampleID}[$infileCounter].$outfileEnding.".bam ";  #OutFile
@@ -4408,10 +4329,9 @@ sub MosaikAlign {
 
 #BAM to SAM conversion 
 	print $FILEHANDLE "java -Xmx4g ";
-	if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	    
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	}
+
+	&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
 	print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/SamFormatConverter.jar ";  #Make sure that the BAM file BIN field is correct (Mosaik v.2.2.3 does according to Picard not set the bin field correctly)
 	print $FILEHANDLE "VALIDATION_STRINGENCY=SILENT ";  #Disable errors print 
 	print $FILEHANDLE "INPUT=".$inSampleDirectory."/".$infile.".bam ";  #InFile
@@ -4419,10 +4339,9 @@ sub MosaikAlign {
 	
 	#SAM to BAM conversion 
 	print $FILEHANDLE "java -Xmx4g ";
-	if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	    
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	}
+
+	&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
 	print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/SamFormatConverter.jar ";  #Make sure that the BAM file BIN field is correct (Mosaik v.2.2.3 does according to Picard not set the bin field correctly)
 	print $FILEHANDLE "INPUT=".$inSampleDirectory."/".$infile.".sam ";  #InFile
 	print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".$infile.".bam ", "\n\n";  #OutFile
@@ -4817,10 +4736,9 @@ sub BuildPTCHSMetricPreRequisites {
 		print $FILEHANDLE "#SampleID:".$scriptParameter{'sampleIDs'}[$sampleIDCounter], "\n\n";
 		print $FILEHANDLE "#CreateSequenceDictionary from reference", "\n";
 		print $FILEHANDLE "java -Xmx2g ";
-		if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		    
-		    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-		}
+
+		&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+		
 		print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/CreateSequenceDictionary.jar ";
 		print $FILEHANDLE "R=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." ";  #Reference genome
 		print $FILEHANDLE "OUTPUT=".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict ", "\n\n";  #Output sequence dictionnary
@@ -4840,10 +4758,9 @@ sub BuildPTCHSMetricPreRequisites {
 		
 		print $FILEHANDLE "#Create".$referenceFileEndings{'exomeTargetBedInfileLists'}, "\n";
 		print $FILEHANDLE "java -Xmx2g ";
-		if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		    
-		    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-		}
+
+		&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
 		print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/IntervalListTools.jar ";
 		print $FILEHANDLE "INPUT=".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5 ";
 		print $FILEHANDLE "OUTPUT=".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5_".$referenceFileEndings{'exomeTargetBedInfileLists'}." ", "\n\n";
@@ -4856,10 +4773,9 @@ sub BuildPTCHSMetricPreRequisites {
 		
 		print $FILEHANDLE "#Create padded interval list", "\n";
 		print $FILEHANDLE "java -Xmx2g ";
-		if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		    
-		    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-		}
+
+		&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+		
 		print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/IntervalListTools.jar ";
 		print $FILEHANDLE "PADDING=100 ";  #Add 100 nt on both sides of bed entry
 		print $FILEHANDLE "INPUT=".$scriptParameter{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5 ";
@@ -5167,10 +5083,9 @@ sub BuildHumanGenomePreRequisites {
 	    
 	    print $FILEHANDLE "#CreateSequenceDictionary from reference", "\n";
 	    print $FILEHANDLE "java -Xmx2g ";
-	    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-		
-		print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	    }
+
+	    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
 	    print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/CreateSequenceDictionary.jar ";
 	    print $FILEHANDLE "R=".$scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}." ";  #Reference genome
 	    print $FILEHANDLE "OUTPUT=".$scriptParameter{'referencesDir'}."/".$humanGenomeReferenceNameNoEnding."_".$randomInteger.".dict ", "\n\n";  #Output sequence dictionnary
@@ -6153,8 +6068,6 @@ sub AddToScriptParameter {
 
 			if ($parameterName eq "mosaikAlignReference") {  #Special case - do nothing, since file can be created by MIP from the humanGenomeReference if required
 			}
-			elsif ( ($parameterName eq "GATKExomeReferenceSNPs") && ($scriptParameter{'analysisType'} ne "rapid")) {  #Do nothing since file is not required unless rapid mode is enabled
-			}
 			elsif ( ($parameterName eq "bwaMemRapidDb") && ($scriptParameter{'analysisType'} ne "rapid")) {  #Do nothing since file is not required unless rapid mode is enabled
 			}
 			elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCF") && ($scriptParameter{'analysisType'} =~/genomes/) ) {  #Do nothing since file is not required unless exome or rapid mode is enabled
@@ -6355,8 +6268,6 @@ sub AddToScriptParameter {
 				$sampleInfo{$scriptParameter{'familyID'}}{$scriptParameter{'familyID'}}{'pedigreeFileAnalysis'}{'Path'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/qc_pedigree.yaml";  #Add pedigreeFile info used in this analysis to SampleInfoFile
 			    }
 			} 
-		    }
-		    elsif ( ($parameterName eq "GATKExomeReferenceSNPs") && ($scriptParameter{'analysisType'} ne "rapid")) {  #Do nothing since file is not required unless rapid mode is enabled
 		    }
 		    elsif ( ($parameterName eq "bwaMemRapidDb") && ($scriptParameter{'analysisType'} ne "rapid")) {  #Do nothing since file is not required unless rapid mode is enabled
 		    }
@@ -6907,10 +6818,9 @@ sub GATKTargetListFlag {
       
 	print $FILEHANDLE "\n#Generate merged interval_list\n\n"; 
 	print $FILEHANDLE "java -Xmx2g ";
-	if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	    
-	    print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-	}
+
+	&WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+	
 	print $FILEHANDLE "-jar ".$scriptParameter{'picardToolsPath'}."/IntervalListTools.jar ";
 	print $FILEHANDLE "UNIQUE=TRUE ";  #Merge overlapping and adjacent intervals to create a list of unique intervals
     
@@ -8424,10 +8334,8 @@ sub CombineVariants {
     print $FILEHANDLE "\n#GATK CombineVariants","\n\n";
     print $FILEHANDLE "java -Xmx4g ";
     
-    if ($scriptParameter{'javaUseLargePages'} ne "no") {
-	
-	print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-    }
+    &WriteUseLargePages($FILEHANDLE, \$scriptParameter{'javaUseLargePages'});
+
     print $FILEHANDLE "-jar ".$scriptParameter{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
     print $FILEHANDLE "-T CombineVariants ";  #Type of analysis to run
@@ -8488,6 +8396,26 @@ sub RemovePedigreeElements {
 		
 	    }
 	}
+    }
+}
+
+
+sub WriteUseLargePages {
+
+##WriteUseLargePages
+    
+##Function : Write useLargePages java flag to sbatch script if enabled
+##Returns  : ""
+##Arguments: $FILEHANDLE, $arrayRef, $infilePrefix, $infilePostfix, $outfile
+##         : $FILEHANDLE       => SBATCH script FILEHANDLE to print to
+##         : $useLargePagesRef => UseLargePages for requiring large memory pages (cross-platform flag) {REF}
+	
+    my $FILEHANDLE = $_[0];
+    my $useLargePagesRef = $_[1];
+    
+    if ($$useLargePagesRef ne "no") {
+	
+	print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
     }
 }
 
