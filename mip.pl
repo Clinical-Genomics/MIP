@@ -798,7 +798,7 @@ if ($scriptParameter{'pAnnovar'} > 0) {
 #Cosmid references
 &DefineSupportedCosmidReferences("humanGenomeReference", "decoy", "5", \$humanGenomeReferenceVersion, "compressed");
 &DefineSupportedCosmidReferences("chanjoBuildDb", "ccds", "latest", \$humanGenomeReferenceVersion, "unCompressed");
-&DefineSupportedCosmidReferences("GATKReAlignerINDELKnownSet1", "indel", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed");
+&DefineSupportedCosmidReferences("GATKReAlignerINDELKnownSet1", "indels", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed");
 &DefineSupportedCosmidReferences("GATKReAlignerINDELKnownSet2", "mills", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed");
 &DefineSupportedCosmidReferences("GATKBaseReCalibrationSNPKnownSet", "dbsnp", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed");
 &DefineSupportedCosmidReferences("GATKHaploTypeCallerSNPKnownSet", "dbsnp", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed");
