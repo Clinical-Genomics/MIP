@@ -369,8 +369,6 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists);  #Arrays for 
 
 &DefineParametersPath("GATKVariantEvalGold", "Mills_and_1000G_gold_standard.indels.b37.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file", "yesAutoDownLoad");
 
-&DefineParametersPath("genomeAnalysisToolKitPath", "nodefault", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome", "directory");
-
 &DefineParametersPath("GATKTempDirectory", "/scratch/", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKReadBackedPhasing", 0);  #Depends on -projectID input, directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
 
 &DefineParameters("GATKDownSampleToCoverage", "program", 1000, "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller");
@@ -402,7 +400,7 @@ my (@GATKTargetPaddedBedIntervalLists);  #Array for target infile lists used in 
 my $VEPOutputFiles = 1;  #To track if VEPParser was used with a vcfParserSelectFile (=2) or not (=1)
 
 
-## SnpEFF
+##SnpEFF
 &DefineParameters("pSnpEff", "program", 1, "MIP", "snpeff_", "MAIN");
 
 &DefineParametersPath("snpEffPath", "nodefault", "pSnpEff", "directory");
@@ -428,11 +426,11 @@ my $VEPOutputFiles = 1;  #To track if VEPParser was used with a vcfParserSelectF
 &DefineParametersPath("genomeAnalysisToolKitPath", "nodefault", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pVariantEffectPredictor,pSnpEff", "directory");
 
 
-## SChecks
+##SChecks
 &DefineParameters("pSampleCheck", "program", 1, "MIP", "nofileEnding", "IDQC", "vcftools:plink");
 
 
-## RankVariants
+##RankVariants
 &DefineParameters("pRankVariants", "program", 1, "MIP", "ranked_", "MAIN");
 
 &DefineParameters("rankScore", "program", -100, "pRankVariants");
@@ -5391,7 +5389,18 @@ sub PushToJobID {
 
 
 sub FIDSubmitJob {
-###Submits all jobIDs to SLURM using SLURM dependencies. The trunk is the "MAIN path" and any subsequent splits into  branches "other paths" later is handled by adding relevant previous jobIDs to the new paths key in jobID{family_path_key} hash. The subroutine supports parallel job within each step and submission which do not leave any dependencies. Currently any path downstream of MAIN inherits the relevant previous jobIds, but it is not possible to merge to splited paths downstream of main to each other.
+
+##FIDSubmitJob
+    
+##Function : Submits all jobIDs to SLURM using SLURM dependencies. The trunk is the "MAIN path" and any subsequent splits into  branches "other paths" later is handled by adding relevant previous jobIDs to the new paths key in jobID{family_path_key} hash. The subroutine supports parallel job within each step and submission which do not leave any dependencies. Currently any path downstream of MAIN inherits the relevant previous jobIds, but it is not possible to merge to splited paths downstream of main to each other.
+##Returns  : ""
+##Arguments: $sampleID
+##         : $sampleID            => Sample id
+##         : $familyID            => Family id
+##         : $dependencies        => Job dependencies
+##         : $path                => Trunk or Branch
+##         : $sbatchFileName      => Sbatch filename to submit
+##         : $sbatchScriptTracker => Track the number of parallel processes (e.g. sbatch scripts for a module)
 
 ###Dependencies - $_[2]
     
@@ -5406,17 +5415,17 @@ sub FIDSubmitJob {
     
     my $sampleID = $_[0];
     my $familyID = $_[1];
-    my $dependencies = $_[2]; 
-    my $path = $_[3];  #Trunk or Branch
-    my $sbatchFileName = $_[4];  #Sbatch filename to submit.
-    my $sbatchScriptTracker = $_[5];  #Track the number of parallel processes (e.g. sbatch scripts for a module)
+    my $dependencies = $_[2];
+    my $path = $_[3];
+    my $sbatchFileName = $_[4];
+    my $sbatchScriptTracker = $_[5];
     
     my $jobIDs="";  #Create string with all previous jobIDs
     my $jobIDsReturn;  #Return jobID
     my $sampleIDChainKey = $sampleID."_".$path;  #Sample chainkey
     my $familyIDChainKey = $familyID."_".$path;  #Family chainkey
     my $sampleIDParallelChainKey = $sampleID."_parallel_".$path.$sbatchScriptTracker;  #Sample parallel chainkey
-    my $familyIDParallelChainKey = $familyID."_parallel_".$path.$sbatchScriptTracker;  #Faimly parallel chainkey
+    my $familyIDParallelChainKey = $familyID."_parallel_".$path.$sbatchScriptTracker;  #Family parallel chainkey
     my $jobID;  #The jobID that is returned from submission
     
     if ($dependencies == -1) {  #Initiate chain - No dependencies, lonely program "sapling"
@@ -5596,10 +5605,12 @@ sub FIDSubmitJob {
 		}
 	    }
 	    if ($jobIDs) {
+
 		$jobIDsReturn = `sbatch --dependency=afterok$jobIDs $sbatchFileName`;  #Supply with dependency of previous jobs that this one is dependent on
 		($jobID) = ($jobIDsReturn =~ /Submitted batch job (\d+)/);
 	    }
 	    else {
+
 		$jobIDsReturn = `sbatch $sbatchFileName`;  #No jobs have been run: submit
 		($jobID) = ($jobIDsReturn =~ /Submitted batch job (\d+)/);
 	    }
@@ -5626,6 +5637,7 @@ sub FIDSubmitJob {
 	}
     }
     if ($jobIDsReturn !~/\d+/) {  #Catch errors since, propper sbatch submission should only return numbers
+
 	print STDERR $jobIDsReturn."\n";
 	print STDERR "\nMIP: Aborting run.\n\n";
 	exit;
@@ -5637,8 +5649,14 @@ sub FIDSubmitJob {
 
 
 sub NrofCoresPerSbatch {
-##Set the number of cores to allocate per sbatch job
+
+##NrofCoresPerSbatch
     
+##Function : Set the number of cores to allocate per sbatch job.
+##Returns  : "$nrCores"
+##Arguments: $nrCores
+##         : $nrCores => The number of cores to allocate
+
     my $nrCores = $_[0];
     
     if ($nrCores > $scriptParameter{'maximumCores'}) {  #Set number of cores depending on how many lanes to process
@@ -5650,7 +5668,13 @@ sub NrofCoresPerSbatch {
 
 
 sub CollectInfiles {
-##Collects the ".fastq(.gz)" files from the supplied infiles directory. Checks if any files exist
+
+##CollectInfiles
+    
+##Function : Collects the ".fastq(.gz)" files from the supplied infiles directory. Checks if any files exist.
+##Returns  : ""
+##Arguments:
+##         :
     
     for (my $inputDirectoryCounter=0;$inputDirectoryCounter<scalar(@{$scriptParameter{'sampleIDs'}});$inputDirectoryCounter++) {  #Collects inputfiles govern by sampleIDs
 	
@@ -5663,8 +5687,8 @@ sub CollectInfiles {
 	}
 	&PrintToFileHandles(\@printFilehandles, "\nReads from Platform\n");
 	&PrintToFileHandles(\@printFilehandles, "\nSample ID\t".$scriptParameter{'sampleIDs'}[$inputDirectoryCounter]."\n");
-	print STDOUT "Inputfiles:\n",@ { $infile{ $scriptParameter{'sampleIDs'}[$inputDirectoryCounter] }  =[@infiles] }, "\n";  #Hash with sample id as key and inputfiles in dir as array 
-	print MIPLOG "Inputfiles:\n",@ { $infile{ $scriptParameter{'sampleIDs'}[$inputDirectoryCounter] }  =[@infiles] }, "\n";
+	print STDOUT "Inputfiles:\n",@ { $infile{ $scriptParameter{'sampleIDs'}[$inputDirectoryCounter] } = [@infiles] }, "\n";  #Hash with sample id as key and inputfiles in dir as array 
+	print MIPLOG "Inputfiles:\n",@ { $infile{ $scriptParameter{'sampleIDs'}[$inputDirectoryCounter] } = [@infiles] }, "\n";
 	
 	$indirpath{$scriptParameter{'sampleIDs'}[$inputDirectoryCounter]} = $scriptParameter{'inFilesDirs'}[ $inputDirectoryCounter ];   #Catch inputdir path
 	chomp(@infiles);    #Remove newline from every entry in array
@@ -5674,8 +5698,14 @@ sub CollectInfiles {
 
 
 sub InfilesReFormat {
-###Reformat files for mosaik output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames.
+
+##InfilesReFormat
     
+##Function : Reformat files for MIP output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames.
+##Returns  : "$uncompressedFileCounter"
+##Arguments:
+##         :
+
     my $uncompressedFileCounter = 0;  #Used to decide later if any inputfiles needs to be compressed before starting analysis 
 
     for my $sampleID (keys %infile) {  #For every sampleID                                                                                       
@@ -5727,10 +5757,18 @@ sub InfilesReFormat {
 
 
 sub CheckSampleIDMatch {
-##Check that the sampleID provided and sampleID in infile name match.
+
+##CheckSampleIDMatch
     
-    my $sampleID = $_[0];  #SampleID from user
-    my $infileSampleID = $_[1];  #SampleID collect with regexp from infile
+##Function : Check that the sampleID provided and sampleID in infile name match.
+##Returns  : ""
+##Arguments: $sampleID, $infileSampleID, $infileCounter
+##         : $sampleID       => Sample id from user
+##         : $infileSampleID => SampleID collect with regexp from infile
+##         : $infileCounter  => Counts the number of infiles
+
+    my $sampleID = $_[0];
+    my $infileSampleID = $_[1];
     my $infileCounter = $_[2];
     
     my %seen;
@@ -5749,7 +5787,19 @@ sub CheckSampleIDMatch {
 
 
 sub AddInfileInfoOld {
-##Adds information derived from infile name to sampleInfo hash. Tracks the number of lanes sequenced and checks unique array elementents.  
+  
+##AddInfileInfoOld
+    
+##Function : Adds information derived from infile name to sampleInfo hash. Tracks the number of lanes sequenced and checks unique array elementents.
+##Returns  : ""
+##Arguments: $dateFlowCell, $lane, $direction, $sampleID, $laneTrackerRef, $infileCounter, $compressedInfo
+##         : $dateFlowCell   => Date and flow-cell
+##         : $lane           => Flow-cell lane
+##         : $direction      => Sequencing read direction
+##         : $sampleID       => Sample id
+##         : $laneTrackerRef => Counts the number of lanes sequenced {REF}
+##         : $infileCounter  => Counts the number of infiles
+##         : $compressedInfo => ".fastq.gz" or ".fastq" info governs zcat or cat downstream
     
     my $dateFlowCell = $_[0];
     my $lane = $_[1];
@@ -5762,9 +5812,11 @@ sub AddInfileInfoOld {
     my $readFile;
 
     if ($compressedInfo eq "compressed") {
+
 	$readFile = "zcat";  #Read file in compressed format
     }
     else {
+
 	$readFile = "cat";  #Read file in uncompressed format
     }
     
@@ -5778,6 +5830,7 @@ sub AddInfileInfoOld {
 	$$laneTrackerRef++;
     }
     if ($direction == 2) {  #2nd read direction
+
 	$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$$laneTrackerRef-1]}{'sequenceRunType'} = "Paired-end";  #$laneTracker -1 since it gets incremented after direction eq 1. 
     }
     
@@ -5792,7 +5845,21 @@ sub AddInfileInfoOld {
 
 
 sub AddInfileInfo {
-##Adds information derived from infile name to sampleInfo hash. Tracks the number of lanes sequenced and checks unique array elementents.  
+  
+##AddInfileInfo
+    
+##Function : Adds information derived from infile name to sampleInfo hash. Tracks the number of lanes sequenced and checks unique array elementents.
+##Returns  : ""
+##Arguments: $lane, $date, $flowCell, $sampleID, $index, $direction, $laneTrackerRef, $infileCounter, $compressedInfo
+##         : $lane           => Flow-cell lane
+##         : $date           => Flow-cell sequencing date
+##         : $flowCell       => Flow-cell id
+##         : $sampleID       => Sample id
+##         : $index          => The DNA library preparation molecular barcode
+##         : $direction      => Sequencing read direction
+##         : $laneTrackerRef => Counts the number of lanes sequenced {REF}
+##         : $infileCounter  => Counts the number of infiles
+##         : $compressedInfo => ".fastq.gz" or ".fastq" info governs zcat or cat downstream
 
     my $lane = $_[0];
     my $date = $_[1];
@@ -5802,14 +5869,16 @@ sub AddInfileInfo {
     my $direction = $_[5];
     my $laneTrackerRef = $_[6];
     my $infileCounter = $_[7];
-    my $compressedInfo = $_[8]; #".fastq.gz" or ".fastq" info governs zcat or cat downstream
+    my $compressedInfo = $_[8];
 
     my $readFile;
 
     if ($compressedInfo eq "compressed") {
+
 	$readFile = "zcat";  #Read file in compressed format
     }
     else {
+
 	$readFile = "cat";  #Read file in uncompressed format
     }
     
@@ -5823,6 +5892,7 @@ sub AddInfileInfo {
 	$$laneTrackerRef++;
     }
     if ($direction == 2) {  #2nd read direction
+
 	$sampleInfo{ $scriptParameter{'familyID'} }{$sampleID}{'file'}{$infilesLaneNoEnding{ $sampleID }[$$laneTrackerRef-1]}{'sequenceRunType'} = "Paired-end";  #$laneTracker -1 since it gets incremented after direction eq 1. 
     }
     
@@ -5840,44 +5910,49 @@ sub AddInfileInfo {
 }
 
 
-sub Checkfnexists {
-##Check if a file with with a filename consisting of $filePathRef.$fileCounter.$fileEndingRef exist. If so bumps the version number and return new filename.
+sub CheckFileNameExists {
+
+##CheckFileNameExists
     
+##Function : Check if a file with with a filename consisting of $filePathRef.$fileCounter.$fileEndingRef exist. If so bumps the version number and return new filename and sbatch version number.
+##Returns  : "$fileName, $fileNameTracker"
+##Arguments: $filePathRef, $fileEndingRef
+##         : $filePathRef   => The file path {REF}
+##         : $fileEndingRef => The file ending {REF}
+
     my $filePathRef = $_[0];
     my $fileEndingRef = $_[1];
-    my $fileNameTrackerRef = $_[2];
 
-    my $fileName;
-    
-    $$fileNameTrackerRef = 0;  #Nr of sbatch scripts with identical filenames
+    my $fileName;  #Temp filename
+    my $fileNameTracker = 0;  #Nr of sbatch scripts with identical filenames i.e. version number
   
     for (my $fileCounter=0;$fileCounter<9999;$fileCounter++) {  #Number of possible files with the same name
 	
 	$fileName = $$filePathRef.$fileCounter.$$fileEndingRef;  #Filename, filenr and fileending
-	$$fileNameTrackerRef = $fileCounter;  #Nr of sbatch scripts with identical filenames
-	if (-f $fileName) {  #File exists 
-	}
-	else {
-	    last;  #Exit loop 
+	$fileNameTracker = $fileCounter;  #Nr of sbatch scripts with identical filenames
+
+	unless (-f $fileName) {  #File exists
+
+	    last;  #No file exists
 	}	
     }
-    $$filePathRef = $fileName;  #Transfer to global variable
+    return ($fileName, $fileNameTracker);
 }
 
 
 sub DefineArrayParameters {
 
-##PrepareArrayParameters
+##DefineArrayParameters
     
 ##Function : Check if user supplied cmd info and supplies arrayParameters to scriptParameters
 ##Returns : ""
 ##Arguments: $arrayRef, $parameterName, $parameterType, $parameterDefault, $associatedPrograms, $parameterExistsCheck
-## : $arrayRef => Array to loop in for parameter {REF}
-## : $parameterName => MIP parameter to evaluate
-## : $parameterType => Type of MIP parameter
-## : $parameterDefault => The parameter default value
-## : $associatedPrograms => Programs that use the parameter. Comma separated string
-## : $parameterExistsCheck => Check if intendent file exists in reference directory
+##         : $arrayRef             => Array to loop in for parameter {REF}
+##         : $parameterName        => MIP parameter to evaluate
+##         : $parameterType        => Type of MIP parameter
+##         : $parameterDefault     => The parameter default value
+##         : $associatedPrograms   => Programs that use the parameter. Comma separated string
+##         : $parameterExistsCheck => Check if intendent file exists in reference directory
 
     my $arrayRef = $_[0];
     my $parameterName = $_[1];
@@ -5902,13 +5977,22 @@ sub DefineArrayParameters {
 
 
 sub DefineParametersPath {
-###Defines all attributes of a parameter, so that the correct value can be set and added to %scriptparameter later
 
-    my $parameterName = $_[0];  #ParameterName
-    my $parameterDefault = $_[1];  #Default setting
-    my $associatedProgram = $_[2];  #The parameters program
-    my $existsCheck = $_[3];  #Check if intendent file exists in reference directory
-    my $buildFile = $_[4];  #Autovivication of file if it does not exists (yes or no)
+##DefineParametersPath
+    
+##Function : Defines all attributes of a parameter, so that the correct value can be set and added to %scriptparameter later.
+##Arguments: $parameterName, $parameterDefault, $associatedProgram, $existsCheck
+##         : $parameterName     => Parameter name
+##         : $parameterDefault  => Default setting
+##         : $associatedProgram => The parameters program
+##         : $existsCheck       => Check if intendent file exists in reference directory
+##         : $buildFile         => Autovivication of file if it does not exists (yes or no)
+
+    my $parameterName = $_[0];
+    my $parameterDefault = $_[1];
+    my $associatedProgram = $_[2];
+    my $existsCheck = $_[3];
+    my $buildFile = $_[4];
     
     $parameter{$parameterName} = {
 	'type' => "path",
@@ -5924,17 +6008,30 @@ sub DefineParametersPath {
 
 
 sub DefineParameters {
-###Defines all attributes of a parameter, so that the correct value can be set and added to %scriptparameter later
 
-    my $parameterName = $_[0];  #ParameterName
-    my $parameterType = $_[1];  #MIP or program
-    my $parameterDefault = $_[2];  #Default setting
-    my $associatedProgram = $_[3];  #The parameters program
-    my $fileEnding = $_[4];  #The filending after the module has been run
-    my $parameterChain = $_[5];  #The chain to which the program belongs to
+##DefineParameters
+    
+##Function : Defines all attributes of a parameter, so that the correct value can be set and added to %scriptparameter later.
+##Arguments: $parameterName, $parameterType, $parameterDefault, $associatedProgram, $fileEnding, @programNamePath
+##         : $parameterName     => Parameter name
+##         : $parameterType     => MIP or program
+##         : $parameterDefault  => Default setting
+##         : $associatedProgram => The parameters program
+##         : $fileEnding        => The filending after the module has been run
+##         : $parameterChain    => The chain to which the program belongs to
+##         : @programNamePath   => The path name of the program(s) for each sbatch script
+
+    my $parameterName = $_[0];
+    my $parameterType = $_[1];
+    my $parameterDefault = $_[2];
+    my $associatedProgram = $_[3];
+    my $fileEnding = $_[4];
+    my $parameterChain = $_[5];
     my @programNamePath;
+
     if (defined($_[6])) {
-	@programNamePath = split(":", $_[6]);  #The path name of the program(s) for each sbatch script
+
+	@programNamePath = split(":", $_[6]);
     }
     if (defined($programNamePath[0])) {
 	
@@ -5965,14 +6062,25 @@ sub DefineParameters {
 
 
 sub AddToScriptParameter {
-###Checks and sets user input or default values to scriptPrameters
+
+##AddToScriptParameter
     
-    my $parameterName = $_[0];  #ParameterName
-    my $parameterValue = $_[1];  #Parameter to evaluate
-    my $parameterType = $_[2];  #Path or program
-    my $parameterDefault = $_[3];  #Default setting
-    my @associatedPrograms = split(/,/, $_[4]);  #The parameters program(s)
-    my $parameterExistsCheck = $_[5];  #Check if intendent file exists in reference directory
+##Function : Checks and sets user input or default values to scriptParameters
+##Returns  : ""
+##Arguments: $parameterName, $parameterValue, $parameterType, $parameterDefault, @associatedPrograms, $parameterExistsCheck
+##         : $parameterName        => Parameter name
+##         : $parameterValue       => Parameter value to evaluate
+##         : $parameterType        => Path, MIP or program
+##         : $parameterDefault     => Default setting
+##         : @associatedPrograms   => The parameters program(s)
+##         : $parameterExistsCheck => Check if intendent file exists in reference directory
+    
+    my $parameterName = $_[0];
+    my $parameterValue = $_[1];
+    my $parameterType = $_[2];
+    my $parameterDefault = $_[3];
+    my @associatedPrograms = split(/,/, $_[4]);
+    my $parameterExistsCheck = $_[5];
    
 ##Validation
     #print "parameterName: ".$parameterName, "\n";
@@ -5991,7 +6099,7 @@ sub AddToScriptParameter {
 	    
 	    $parameterSetSwitch = 1;
 
-	    if ($parameterType eq "path") {
+	    if ($parameterType eq "path") {  #Evaluate "Path" parameters
 		
 		if ($parameterValue eq "nocmdinput") {  #No input from cmd
 		    
@@ -6301,7 +6409,7 @@ sub AddToScriptParameter {
 		}
 	    }
 	    
-	    if ($parameterType eq "MIP") {
+	    if ($parameterType eq "MIP") {  #Evaluate "MIP" parameters
 		
 		if ($parameterValue eq "nocmdinput") {  #No input from cmd
 		    
@@ -6339,7 +6447,7 @@ sub AddToScriptParameter {
 		}
 	    }
 	    
-	    if ( $parameterType eq "program") {
+	    if ( $parameterType eq "program") {  #Evaluate "program" parameters
 
 		if($parameterValue eq "nocmdinput") {  #No input from cmd
 		    
@@ -6431,7 +6539,13 @@ sub AddToScriptParameter {
 
 
 sub CreateFileEndings {
-###Creates the fileEndings depending on which modules are used by the user to relevant chain. 
+
+##CreateFileEndings
+    
+##Function : Creates the fileEndings depending on which modules are used by the user to relevant chain.
+##Returns  : ""
+##Arguments: 
+##         : 
     
     my %tempFileEnding;  #Used to enable seqential build-up of fileEndings between modules
     
@@ -6462,6 +6576,7 @@ sub CreateFileEndings {
 				    }
 				}
 				else {
+
 				    if (defined($tempFileEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] })) {
 					
 					$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }.$parameter{$orderParameterElement}{'fileEnding'};
@@ -6517,16 +6632,20 @@ sub CreateFileEndings {
 			    if ($scriptParameter{$orderParameterElement} > 0) {  #Fileending should be added    
 			
 				unless (defined($tempFileEnding{$chainfork}{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] })) {	
+
 				    $tempFileEnding{$chainfork}{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] } = $tempFileEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] };  #Inherit current MAIN chain. 
 				}
 				if (defined($tempFileEnding{$chainfork}{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] })) {
+
 				    $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{$chainfork}{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }.$parameter{$orderParameterElement}{'fileEnding'};
 				}
 				else  {  #First module that should add filending
+
 				    $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = $parameter{$orderParameterElement}{'fileEnding'};
 				} 
 			    }
 			    else {  #Do not add new module fileEnding
+
 				$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{$chainfork}{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] };
 			    }
 			    ##NOTE: No sequential build-up of fileending
@@ -6536,12 +6655,15 @@ sub CreateFileEndings {
 			if ($scriptParameter{$orderParameterElement} > 0) {  #File ending should be added
 			    
 			    unless (defined($tempFileEnding{$chainfork}{$scriptParameter{'familyID'}})) {	
+
 				$tempFileEnding{$chainfork}{$scriptParameter{'familyID'}} =  $tempFileEnding{$scriptParameter{'familyID'}};  #Inherit current MAIN chain. 
 			    }
 			    if (defined($tempFileEnding{$chainfork}{$scriptParameter{'familyID'}})) {
+
 				$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{$chainfork}{$scriptParameter{'familyID'}}.$parameter{$orderParameterElement}{'fileEnding'};
 			    }
 			    else  {  #First module that should add filending
+
 				$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{$orderParameterElement}{'fileEnding'} = $parameter{$orderParameterElement}{'fileEnding'};
 			    }
 			    $tempFileEnding{$chainfork}{$scriptParameter{'familyID'}} = $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{$orderParameterElement}{'fileEnding'};  #To enable sequential build-up of fileending 
@@ -6555,21 +6677,34 @@ sub CreateFileEndings {
 
 
 sub ProgramPreRequisites {
-###Creates program directories (info & programData & programScript), program script filenames and creates sbatch header.
 
-    my $directoryID = $_[0];  #$samplID|$familyID
-    my $programName = $_[1];  #Assigns filename to sbatch script
-    my $programDirectory = $_[2];  #Builds from $directoryID/$aligner
-    my $callType = $_[3];  ##SNV,INDEL or BOTH
-    my $fileHandle = $_[4];  #Program filehandle
-    my $nrofCores = $_[5];  #The number of cores to allocate
-    my $processTime = $_[6];  #Hours 
+##ProgramPreRequisites
+    
+##Function : Creates program directories (info & programData & programScript), program script filenames and writes sbatch header.
+##Returns  : Path to stdout
+##Arguments: $directoryID, $programName, $programDirectory, $callType, $FILEHANDLE, $nrofCores, $processTime
+##         : $directoryID      => $samplID|$familyID
+##         : $programName      => Assigns filename to sbatch script
+##         : $programDirectory => Builds from $directoryID/$aligner
+##         : $callType         => SNV,INDEL or BOTH
+##         : $FILEHANDLE       => FILEHANDLE to write to
+##         : $nrofCores        => The number of cores to allocate
+##         : $processTime      => Hours
+
+    my $directoryID = $_[0];
+    my $programName = $_[1];
+    my $programDirectory = $_[2];
+    my $callType = $_[3];
+    my $FILEHANDLE = $_[4];
+    my $nrofCores = $_[5];
+    my $processTime = $_[6];
 
     my $fileNamePath;
     my $dryRunFilenamePath;
     my $programDataDirectory;
     my $fileInfoPath;
     my $dryRunFileInfoPath;
+    my $fileNameTracker;
 ###Sbatch script names and directory creation
     
     $programDataDirectory = $scriptParameter{'outDataDir'}."/".$directoryID."/".$programDirectory;
@@ -6578,13 +6713,16 @@ sub ProgramPreRequisites {
     $fileInfoPath = $scriptParameter{'outDataDir'}."/".$directoryID."/".$programDirectory."/info/".$programName."_".$directoryID;
     $dryRunFileInfoPath = $scriptParameter{'outDataDir'}."/".$directoryID."/".$programDirectory."/info/dry_run_".$programName."_".$directoryID;
     
+    ##Add calltype filename path
     if ($callType ne 0) {
+
 	$fileNamePath .= "_".$callType.".";
 	$dryRunFilenamePath .= "_".$callType.".";
 	$fileInfoPath .= "_".$callType.".";
 	$dryRunFileInfoPath .= "_".$callType.".";
     }
     else {
+
 	$fileNamePath .= ".";
 	$dryRunFilenamePath .= ".";
 	$fileInfoPath .= ".";
@@ -6610,57 +6748,57 @@ sub ProgramPreRequisites {
 	&PrintToFileHandles(\@printFilehandles, "Dry Run:\n");
     }
 
-    &Checkfnexists(\$fileName, \$fnend, \$fileNameTracker);
+    ($fileName, $fileNameTracker) = &CheckFileNameExists(\$fileName, \$fnend);
 
 ###Info and Log
     &PrintToFileHandles(\@printFilehandles, "Creating sbatch script for ".$programName." and writing script file(s) to: ".$fileName."\n");
     &PrintToFileHandles(\@printFilehandles, "Sbatch script ".$programName." data files will be written to: ".$programDataDirectory."\n");
 
 ###Sbatch header
-    open ($fileHandle, ">",$fileName) or die "Can't write to ".$fileName.":".$!, "\n";
+    open ($FILEHANDLE, ">",$fileName) or die "Can't write to ".$fileName.":".$!, "\n";
     
-    print $fileHandle "#! /bin/bash -l", "\n";
-    print $fileHandle "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
-    print $fileHandle "#SBATCH -n ".$nrofCores, "\n";
-    print $fileHandle "#SBATCH -t ".$processTime.":00:00", "\n";
-    print $fileHandle "#SBATCH -J ".$programName."_".$directoryID."_".$callType, "\n";
+    print $FILEHANDLE "#! /bin/bash -l", "\n";
+    print $FILEHANDLE "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
+    print $FILEHANDLE "#SBATCH -n ".$nrofCores, "\n";
+    print $FILEHANDLE "#SBATCH -t ".$processTime.":00:00", "\n";
+    print $FILEHANDLE "#SBATCH -J ".$programName."_".$directoryID."_".$callType, "\n";
     
     if ( ($scriptParameter{"p".$programName} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 
-	print $fileHandle "#SBATCH -e ".$fileInfoPath.$fileNameTracker.".stderr.txt", "\n";
-	print $fileHandle "#SBATCH -o ".$fileInfoPath.$fileNameTracker.".stdout.txt", "\n";
+	print $FILEHANDLE "#SBATCH -e ".$fileInfoPath.$fileNameTracker.".stderr.txt", "\n";
+	print $FILEHANDLE "#SBATCH -o ".$fileInfoPath.$fileNameTracker.".stdout.txt", "\n";
     }
     elsif ($scriptParameter{'pSampleCheck'} == 2) {  #Single program dry run
 
-	print $fileHandle "#SBATCH -e ".$dryRunFileInfoPath.$fileNameTracker.".stderr.txt", "\n";
-	print $fileHandle "#SBATCH -o ".$dryRunFileInfoPath.$fileNameTracker.".stdout.txt", "\n";
+	print $FILEHANDLE "#SBATCH -e ".$dryRunFileInfoPath.$fileNameTracker.".stderr.txt", "\n";
+	print $FILEHANDLE "#SBATCH -o ".$dryRunFileInfoPath.$fileNameTracker.".stdout.txt", "\n";
     }
     else {  #Dry run
 
-	print $fileHandle "#SBATCH -e ".$dryRunFileInfoPath.$fileNameTracker.".stderr.txt", "\n";
-	print $fileHandle "#SBATCH -o ".$dryRunFileInfoPath.$fileNameTracker.".stdout.txt", "\n";
+	print $FILEHANDLE "#SBATCH -e ".$dryRunFileInfoPath.$fileNameTracker.".stderr.txt", "\n";
+	print $FILEHANDLE "#SBATCH -o ".$dryRunFileInfoPath.$fileNameTracker.".stdout.txt", "\n";
     }
     
     unless ($scriptParameter{'email'} eq 0) {
 	
 	if ($scriptParameter{'emailType'} =~/B/i) {
 
-	    print $fileHandle "#SBATCH --mail-type=BEGIN", "\n";
+	    print $FILEHANDLE "#SBATCH --mail-type=BEGIN", "\n";
 	}
 	if ($scriptParameter{'emailType'} =~/E/i) {
 	 
-	    print $fileHandle "#SBATCH --mail-type=END", "\n";
+	    print $FILEHANDLE "#SBATCH --mail-type=END", "\n";
 	}
 	if ($scriptParameter{'emailType'} =~/F/i) {
 	    
-	    print $fileHandle "#SBATCH --mail-type=FAIL", "\n";
+	    print $FILEHANDLE "#SBATCH --mail-type=FAIL", "\n";
 	}
-	print $fileHandle "#SBATCH --mail-user=".$scriptParameter{'email'}, "\n\n";	
+	print $FILEHANDLE "#SBATCH --mail-user=".$scriptParameter{'email'}, "\n\n";	
     }
     
-    print $fileHandle 'echo "Running on: $(hostname)"',"\n\n";
+    print $FILEHANDLE 'echo "Running on: $(hostname)"',"\n\n";
 
-    return ($fileInfoPath.$fileNameTracker.".stdout.txt");  #Return stdout for QC check later
+    return ($fileInfoPath.$fileNameTracker.".stdout.txt");  #Return stdout path for QC check later
 }
 
 sub CheckIfMergedFiles {
@@ -6855,7 +6993,7 @@ sub SplitTargetFile {
 ##Function : Splits a target file into new contig specific target file
 ##Returns  : "Filepath to splitted file"
 ##Arguments: $FILEHANDLE, $inDirectoryRef, $outDirectoryRef, $infileRef, $contigRef
-##         : $FILEHANDLE             => FILEHANDLE to write to
+##         : $FILEHANDLE      => FILEHANDLE to write to
 ##         : $inDirectoryRef  => Indirectory {REF}
 ##         : $outDirectoryRef => Analysis outdirectory {REF}
 ##         : $infileRef       => Target file {REF}
