@@ -111,14 +111,14 @@ if ($selectFeatureFile ne 0) {
 sub DefineSelectData {
 ##Defines arbitrary INFO fields based on headers in selectFile
 
-    $selectData{'SelectFile'}{'HGNC_symbol'}{'INFO'} = q?##INFO=<ID=HGNC_symbol,Number=.,Type=String,Description="HGNC symbol for gene(s).;Format:{String}">?;
-    $selectData{'SelectFile'}{'Ensembl_gene_id'}{'INFO'} = q?##INFO=<ID=Ensembl_gene_id,Number=.,Type=String,Description="Ensembl gene identifier.;Delimiter:,">?;
-    $selectData{'SelectFile'}{'Disease_group_pathway'}{'INFO'} = q?##INFO=<ID=Disease_group_pathway,Number=.,Type=String,Description="Information on the type of disease.;Format:{String}">?;
-    $selectData{'SelectFile'}{'Clinical_db_genome_build'}{'INFO'} = q?##INFO=<ID=Clinical_db_genome_build,Number=.,Type=String,Description="Genome version used in clinical Db.;Format:{String}">?;
-    $selectData{'SelectFile'}{'Genetic_model'}{'INFO'} = q?##INFO=<ID=Genetic_model,Number=.,Type=String,Description="Known disease gene inheritance model.;Format:{String}">?;
-    $selectData{'SelectFile'}{'Clinical_db_gene_annotation'}{'INFO'} = q?##INFO=<ID=Clinical_db_gene_annotation,Number=.,Type=String,Description="Genes associated with a disease group e.g., IEM, EP.;Format:{String}">?;
-    $selectData{'SelectFile'}{'Reduced_penetrance'}{'INFO'} = q?##INFO=<ID=Reduced_penetrance,Number=.,Type=String,Description="Pathogenic gene which can exhibit reduced penetrance.;Format:{String}">?;
-    $selectData{'SelectFile'}{'Disease_associated_transcript'}{'INFO'} = q?##INFO=<ID=Disease_associated_transcript,Number=.,Type=String,Description="Known pathogenic transcript(s) for gene.;Format:{String}">?;
+    $selectData{'SelectFile'}{'HGNC_symbol'}{'INFO'} = q?##INFO=<ID=HGNC_symbol,Number=.,Type=String,Description="The HGNC gene symbol">?;
+    $selectData{'SelectFile'}{'Ensembl_gene_id'}{'INFO'} = q?##INFO=<ID=Ensembl_gene_id,Number=.,Type=String,Description="Ensembl gene identifier">?;
+    $selectData{'SelectFile'}{'Disease_group_pathway'}{'INFO'} = q?##INFO=<ID=Disease_group_pathway,Number=.,Type=String,Description="Disease group affected pathway">?;
+    $selectData{'SelectFile'}{'Clinical_db_genome_build'}{'INFO'} = q?##INFO=<ID=Clinical_db_genome_build,Number=.,Type=String,Description="Genome version used in clinical Db">?;
+    $selectData{'SelectFile'}{'Genetic_disease_model'}{'INFO'} = q?##INFO=<ID=Genetic_disease_model,Number=.,Type=String,Description="Known disease gene inheritance model">?;
+    $selectData{'SelectFile'}{'Clinical_db_gene_annotation'}{'INFO'} = q?##INFO=<ID=Clinical_db_gene_annotation,Number=.,Type=String,Description="Gene disease group association">?;
+    $selectData{'SelectFile'}{'Reduced_penetrance'}{'INFO'} = q?##INFO=<ID=Reduced_penetrance,Number=.,Type=String,Description="Pathogenic gene which can exhibit reduced penetrance">?;
+    $selectData{'SelectFile'}{'Disease_associated_transcript'}{'INFO'} = q?##INFO=<ID=Disease_associated_transcript,Number=.,Type=String,Description="Known pathogenic transcript(s) for gene">?;
 
 }
 
