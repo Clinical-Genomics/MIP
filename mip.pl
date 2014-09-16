@@ -157,7 +157,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -ravc1kg/--cadd1000Genomes 1000 Genome cadd score file (defaults to "0" (=no))
                  -ravc1kgf/--cadd1000GenomesFile 1000 Genome cadd score file (defaults to "1000G.tsv.gz")
                  -ravwg/--wholeGene Allow compound pairs in intronic regions (defaults to "1" (=yes))
-                 -ravrm/--rankModel Rank model config file (defaults to "")
+                 -ravrm/--rankModelFile Rank model config file (defaults to "")
                -pScK/--pSampleCheck QC for samples gender and relationship (defaults to "1" (=yes) )
                -pQcC/--pQCCollect Collect QC metrics from programs processed (defaults to "1" (=yes) )
                  -qccsi/--QCCollectSampleInfoFile SampleInfo File containing info on what to parse from this analysis run (defaults to "{outDataDir}/{familyID}/{familyID}_qc_sampleInfo.yaml")
@@ -445,7 +445,7 @@ my $VEPOutputFiles = 1;  #To track if VEPParser was used with a vcfParserSelectF
 
 &DefineParameters("wholeGene", "program", 1, "pRankVariants");
 
-&DefineParametersPath("rankModel", "noUserInfo", "pRankVariants", "file", "noAutoBuild");
+&DefineParametersPath("rankModelFile", "noUserInfo", "pRankVariants", "file", "noAutoBuild");
 
 &DefineParametersPath("pythonVirtualEnvironment", "nodefault", "pChanjoBuild,pChanjoAnnotate,pChanjoImport,pRankVariants");
 
@@ -628,7 +628,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'ravc1kg|cadd1000Genomes:n' => \$parameter{'cadd1000Genomes'}{'value'},
 	   'ravc1kgf|cadd1000GenomesFile:s' => \$parameter{'cadd1000GenomesFile'}{'value'},
 	   'ravwg|wholeGene:n'  => \$parameter{'wholeGene'}{'value'},  #Allow compound pairs in intronic regions
-	   'ravrm|rankModel:s' => \$parameter{'rankModel'}{'value'},  #The rank modell config.ini path
+	   'ravrm|rankModelFile:s' => \$parameter{'rankModelFile'}{'value'},  #The rank modell config.ini path
 	   'pScK|pSampleCheck:n' => \$parameter{'pSampleCheck'}{'value'},  #QC for samples gender and relationship
 	   'pQcC|pQCCollect:n' => \$parameter{'pQCCollect'}{'value'},  #QCmetrics collect
 	   'qccsi|QCCollectSampleInfoFile:s' => \$parameter{'QCCollectSampleInfoFile'}{'value'},  #SampleInfo yaml file produced by MIP
@@ -1660,9 +1660,9 @@ sub RankVariants {
 	print $FILEHANDLE "- ";  #Expect infile stream
 	print $FILEHANDLE $scriptParameter{'pedigreeFile'}." ";  #Pedigree file
 
-	if ($scriptParameter{'rankModel'} ne "noUserInfo") {
+	if ($scriptParameter{'rankModelFile'} ne "noUserInfo") {
 
-	    print $FILEHANDLE "--plugin_file ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'rankModel'}." ";  #Rank model config.ini file 
+	    print $FILEHANDLE "--plugin_file ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'rankModelFile'}." ";  #Rank model config.ini file 
 	}
 	print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf ", "\n\n";  #Outfile
 
@@ -6197,7 +6197,7 @@ sub AddToScriptParameter {
 			}
 			elsif ( ($parameterName eq "cadd1000GenomesFile") && ( $scriptParameter{'cadd1000Genomes'} == 0) ) {  #Do nothing since no CADD annotation should be performed
 			}
-			elsif ( ($parameterName eq "rankModel") && ( $scriptParameter{'rankModel'} eq "noUserInfo") ) {  #Do nothing since no rank model was given i.e. use rank scripts deafult supplied with distribution
+			elsif ( ($parameterName eq "rankModelFile") && ( $scriptParameter{'rankModelFile'} eq "noUserInfo") ) {  #Do nothing since no rank model was given i.e. use rank scripts deafult supplied with distribution
 			}
 			else {
 			    
@@ -6412,9 +6412,9 @@ sub AddToScriptParameter {
 		    }
 		    elsif ( ($parameterName eq "cadd1000GenomesFile") && ( $scriptParameter{'cadd1000Genomes'} == 0) ) {  #Do nothing since no CADD annotation should be performed
 		    }
-		    elsif ($parameterName eq "rankModel") {  
+		    elsif ($parameterName eq "rankModelFile") {  
 			
-			if ($scriptParameter{'rankModel'} eq "noUserInfo") {  #Do nothing since no rank model config file was given. Usse default supplied by ranking script
+			if ($scriptParameter{'rankModelFile'} eq "noUserInfo") {  #Do nothing since no rank model config file was given. Usse default supplied by ranking script
 			}
 			else {  #To enable addition of rankModel file and version to sampleInfo                                                                       
 			    
