@@ -151,13 +151,13 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
 
                ##RankVariants
                -pRaV/--pRankVariants Ranking of annotated variants (defaults to "1" (=yes))
-                 -ravrs/--rankScore The rank score cut-off (defaults to "-100", .i.e. include everything
                  -ravgf/--geneFile Defines genes to use when calculating compounds (defaults to "hg19_refGene.txt")
                  -ravcs/--caddWGSSNVs Annotate whole genome sequencing CADD score (defaults to "0" (=no))
                  -ravcsf/--caddWGSSNVsFile Whole genome sequencing CADD score file (defaults to "whole_genome_SNVs.tsv.gz")
                  -ravc1kg/--cadd1000Genomes 1000 Genome cadd score file (defaults to "0" (=no))
                  -ravc1kgf/--cadd1000GenomesFile 1000 Genome cadd score file (defaults to "1000G.tsv.gz")
                  -ravwg/--wholeGene Allow compound pairs in intronic regions (defaults to "1" (=yes))
+                 -ravrm/--rankModel Rank model config file (defaults to "")
                -pScK/--pSampleCheck QC for samples gender and relationship (defaults to "1" (=yes) )
                -pQcC/--pQCCollect Collect QC metrics from programs processed (defaults to "1" (=yes) )
                  -qccsi/--QCCollectSampleInfoFile SampleInfo File containing info on what to parse from this analysis run (defaults to "{outDataDir}/{familyID}/{familyID}_qc_sampleInfo.yaml")
@@ -433,8 +433,6 @@ my $VEPOutputFiles = 1;  #To track if VEPParser was used with a vcfParserSelectF
 ##RankVariants
 &DefineParameters("pRankVariants", "program", 1, "MIP", "ranked_", "MAIN");
 
-&DefineParameters("rankScore", "program", -100, "pRankVariants");
-
 &DefineParametersPath("geneFile", "hg19_refGene.txt", "pRankVariants", "file", "noAutoBuild");
 
 &DefineParameters("caddWGSSNVs", "program", 0, "pRankVariants");
@@ -446,6 +444,8 @@ my $VEPOutputFiles = 1;  #To track if VEPParser was used with a vcfParserSelectF
 &DefineParametersPath("cadd1000GenomesFile", "1000G.tsv.gz", "pRankVariants", "file", "noAutoBuild");
 
 &DefineParameters("wholeGene", "program", 1, "pRankVariants");
+
+&DefineParametersPath("rankModel", "noUserInfo", "pRankVariants", "file", "noAutoBuild");
 
 &DefineParametersPath("pythonVirtualEnvironment", "nodefault", "pChanjoBuild,pChanjoAnnotate,pChanjoImport,pRankVariants");
 
@@ -622,13 +622,13 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'anvstn|annovarSupportedTableNames:n' => \$parameter{'annovarSupportedTableNames'}{'value'},  #Generates a list of supported table names
 	   'anvarmafth|annovarMAFThreshold:n' => \$parameter{'annovarMAFThreshold'}{'value'},
 	   'pRaV|pRankVariants:n' => \$parameter{'pRankVariants'}{'value'},  #Ranking variants
-	   'ravrs|rankscore:n'  => \$parameter{'rankScore'}{'value'},  #The rank score cut-off
 	   'ravgf|geneFile:s' => \$parameter{'geneFile'}{'value'},
 	   'ravcs|caddWGSSNVs:n' => \$parameter{'caddWGSSNVs'}{'value'},
 	   'ravcsf|caddWGSSNVsFile:s' => \$parameter{'caddWGSSNVsFile'}{'value'},
 	   'ravc1kg|cadd1000Genomes:n' => \$parameter{'cadd1000Genomes'}{'value'},
 	   'ravc1kgf|cadd1000GenomesFile:s' => \$parameter{'cadd1000GenomesFile'}{'value'},
 	   'ravwg|wholeGene:n'  => \$parameter{'wholeGene'}{'value'},  #Allow compound pairs in intronic regions
+	   'ravrm|rankModel:s' => \$parameter{'rankModel'}{'value'},  #The rank modell config.ini path
 	   'pScK|pSampleCheck:n' => \$parameter{'pSampleCheck'}{'value'},  #QC for samples gender and relationship
 	   'pQcC|pQCCollect:n' => \$parameter{'pQCCollect'}{'value'},  #QCmetrics collect
 	   'qccsi|QCCollectSampleInfoFile:s' => \$parameter{'QCCollectSampleInfoFile'}{'value'},  #SampleInfo yaml file produced by MIP
@@ -1659,6 +1659,11 @@ sub RankVariants {
 	print $FILEHANDLE "score_mip_variants ";
 	print $FILEHANDLE "- ";  #Expect infile stream
 	print $FILEHANDLE $scriptParameter{'pedigreeFile'}." ";  #Pedigree file
+
+	if ($scriptParameter{'rankModel'} ne "noUserInfo") {
+
+	    print $FILEHANDLE "--plugin_file ".$scriptParameter{'referencesDir'}."/".$scriptParameter{'rankModel'}." ";  #Rank model config.ini file 
+	}
 	print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf ", "\n\n";  #Outfile
 
 	if ( ($scriptParameter{'pRankVariants'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
@@ -6172,7 +6177,7 @@ sub AddToScriptParameter {
 			    $scriptParameter{$parameterName} = $parameterDefault;  #Set default value
 			}
 		    }
-		    else {
+		    else {  #No default
 
 			if ($parameterName eq "mosaikAlignReference") {  #Special case - do nothing, since file can be created by MIP from the humanGenomeReference if required
 			}
@@ -6191,6 +6196,8 @@ sub AddToScriptParameter {
 			elsif ( ($parameterName eq "caddWGSSNVsFile") && ( $scriptParameter{'caddWGSSNVs'} == 0) ) {  #Do nothing since no CADD annotation should be performed
 			}
 			elsif ( ($parameterName eq "cadd1000GenomesFile") && ( $scriptParameter{'cadd1000Genomes'} == 0) ) {  #Do nothing since no CADD annotation should be performed
+			}
+			elsif ( ($parameterName eq "rankModel") && ( $scriptParameter{'rankModel'} eq "noUserInfo") ) {  #Do nothing since no rank model was given i.e. use rank scripts deafult supplied with distribution
 			}
 			else {
 			    
@@ -6404,6 +6411,21 @@ sub AddToScriptParameter {
 		    elsif ( ($parameterName eq "caddWGSSNVsFile") && ( $scriptParameter{'caddWGSSNVs'} == 0) ) {  #Do nothing since no CADD annotation should be performed
 		    }
 		    elsif ( ($parameterName eq "cadd1000GenomesFile") && ( $scriptParameter{'cadd1000Genomes'} == 0) ) {  #Do nothing since no CADD annotation should be performed
+		    }
+		    elsif ($parameterName eq "rankModel") {  
+			
+			if ($scriptParameter{'rankModel'} eq "noUserInfo") {  #Do nothing since no rank model config file was given. Usse default supplied by ranking script
+			}
+			else {  #To enable addition of rankModel file and version to sampleInfo                                                                       
+			    
+			    &CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{$parameterName}), \$parameterName, "f");
+			    
+			    if ($scriptParameter{$parameterName}=~/v(\d+\.\d+)/) {
+				
+				$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'program'}{"RankVariants"}{'RankModel'}{'Version'} = $1;
+			    }
+			    $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'program'}{"RankVariants"}{'RankModel'}{'File'} = $scriptParameter{$parameterName};
+			}
 		    }
 		    else {
 			
