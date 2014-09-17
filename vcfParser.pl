@@ -81,7 +81,8 @@ if ( ($selectOutfile eq "nocmdinput") && ($selectFeatureFile ne 0) ) {
     exit;
 }
 
-@selectFeatureAnnotationColumns = split(/,/,join(',',@selectFeatureAnnotationColumns)); #Enables comma separated sampleID(s)
+@rangeFeatureAnnotationColumns = split(/,/,join(',',@rangeFeatureAnnotationColumns)); #Enables comma separated annotation columns on cmd
+@selectFeatureAnnotationColumns = split(/,/,join(',',@selectFeatureAnnotationColumns)); #Enables comma separated annotation columns on cmd
 
 ###
 #MAIN
@@ -128,12 +129,12 @@ sub DefineSnpEffAnnotations {
     $snpEffCmd{'Frequency'}{'Dbsnp129MAF'}{'File'} = q?dbsnp_\S+.excluding_sites_after_129.vcf?;
     $snpEffCmd{'Frequency'}{'Dbsnp129MAF'}{'INFO'} = q?##INFO=<ID=Dbsnp129MAF,Number=1,Type=Float,Description="dbSNP excluding sites after 129 minor allele frequency.>?;
     $snpEffCmd{'Frequency'}{'DbsnpMAF'}{'File'} = q?dbsnp_\d+.\w\d+.vcf?;
-    $snpEffCmd{'Frequency'}{'DbsnpMAF'}{'INFO'} = q?##INFO=<ID=DbsnpMAF,Number=1,Type=Float,Description="Frequency in the DbSNP database.">?;
+    $snpEffCmd{'Frequency'}{'DbsnpMAF'}{'INFO'} = q?##INFO=<ID=DbsnpMAF,Number=1,Type=Float,Description="MAF in the DbSNP database.">?;
     $snpEffCmd{'Frequency'}{'1000GMAF'}{'File'} = q?1000G_phase\d+.\S+.\w\d+.vcf?;
-    $snpEffCmd{'Frequency'}{'1000GMAF'}{'INFO'} = q?##INFO=<ID=1000GMAF,Number=1,Type=Float,Description="Frequency in the 1000G database.">?;
+    $snpEffCmd{'Frequency'}{'1000GMAF'}{'INFO'} = q?##INFO=<ID=1000GMAF,Number=1,Type=Float,Description="MAF in the 1000G database.">?;
     $snpEffCmd{'Frequency'}{'1000GMAF'}{'FIX_INFO'} = q?##INFO=<ID=SB,Number=4,Type=Integer,Description="Per-sample component statistics which comprise the Fisher's Exact Test to detect strand bias.">?;
     $snpEffCmd{'Frequency'}{'ESPMAF'}{'File'} = q?ESP\d+SI-V\d+-\w+.updatedProteinHgvs.snps_indels.vcf?;
-    $snpEffCmd{'Frequency'}{'ESPMAF'}{'INFO'} = q?##INFO=<ID=ESPMAF,Number=1,Type=Float,Description="Frequency in ESP database.">?;
+    $snpEffCmd{'Frequency'}{'ESPMAF'}{'INFO'} = q?##INFO=<ID=ESPMAF,Number=1,Type=Float,Description="MAF in the ESP database.">?;
 
 }
 
@@ -368,17 +369,17 @@ sub ReadInfileVCF {
 			
 			if ( ($vepFormatFieldColumn{'SYMBOL'}) && ($vepFormatFieldColumn{'HGVSc'}) && ($vepFormatFieldColumn{'HGVSp'})) {
 			    
-			    push(@metaData, '##INFO=<ID=HGVScp,Number=.,Type=String,Description="Transcript and protein functional annotation.;Delimiter:,;Format:{String}:{String}:{String}:{String}:{String}:{String}:{String},.,n">');
-			    push(@metaData, '##INFO=<ID=MostSevereConsequence,Number=.,Type=String,Description="Most severe transcript consequence.;Delimiter:,;Format:{String}:{String},.,n">');
-			    push(@metaData, '##INFO=<ID=GeneticRegionAnnotation,Number=.,Type=String,Description="Genetic region that variant falls into.;Delimiter:,;Format:{String}:{String},.,n">');
+			    push(@metaData, '##INFO=<ID=HGVScp,Number=.,Type=String,Description="Transcript and protein functional annotation.">');
+			    push(@metaData, '##INFO=<ID=MostSevereConsequence,Number=.,Type=String,Description="Most severe genomic consequence.">');
+			    push(@metaData, '##INFO=<ID=GeneticRegionAnnotation,Number=.,Type=String,Description="Genetic region that variant falls into.">');
 			}
 			if ($vepFormatFieldColumn{'SIFT'}) {
 			    
-			    push(@metaData, '##INFO=<ID=Sift,Number=.,Type=String,Description="Sift protein function prediction.;Delimiter:,;Format: {String}:{Float},.,n">');
+			    push(@metaData, '##INFO=<ID=Sift,Number=.,Type=String,Description="Sift protein function prediction term">');
 			}
 			if ($vepFormatFieldColumn{'PolyPhen'}) {
 			    
-			    push(@metaData, '##INFO=<ID=PolyPhen,Number=.,Type=String,Description="PolyPhen protein function prediction.;Delimiter:,;Format:{String}:{Float},.,n">');
+			    push(@metaData, '##INFO=<ID=PolyPhen,Number=.,Type=String,Description="PolyPhen protein function prediction term">');
 			}
 		    }
 		}
