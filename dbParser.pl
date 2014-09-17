@@ -7,6 +7,19 @@ use Getopt::Long;
 
 use vars qw($USAGE);
 
+#########
+##Tests##
+#########
+# - The file should contain a header line starting with "#".
+# - The number of headers should match the number of field elements for each entry.
+# - Do not use whitespace in headers.
+# - Do not use ";" in file.
+# - Separate elements in fields with ",". Do not use ", ".
+# - No whitespace in the beginning or end within fields.
+# - No entries should be duplicated within database.
+# - Length of gene coordinates should be greater than 0
+# - Only digits in gene coordinate entries
+ 
 BEGIN {
     $USAGE =
 	q?
@@ -75,7 +88,7 @@ sub ReadInfileDB {
 ##         : $infileName => The database file
 
     my $infileName = $_[0];
-    my @characterCheck = (";", ", ", "^\\s+");
+    my @characterCheck = (";", ", ", "^\\s+", "\\s+\$");  
 
     while (<>) {
 	
