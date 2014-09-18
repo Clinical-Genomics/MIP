@@ -504,11 +504,12 @@ my %referenceFileEndings = (
     'GATKTargetPaddedBedIntervalLists' => ".pad100.interval_list",
     );
 
+my %snpEffFile;  #Holds SnpEFF/SnpSift files and features
 
 ##Set supported annovar table name filtering options
 my @annovarSupportedTableNames = ("refGene", "knownGene", "ensGene", "mce46way", "gerp++elem", "segdup", "gwascatalog", "tfbs", "mirna", "snp137", "snp135", "snp132", "snp131", "snp130", "snp129", "snp137NonFlagged", "snp135NonFlagged", "snp132NonFlagged", "snp131NonFlagged", "snp130NonFlagged", "1000g2012apr_all", "1000g2012apr_amr", "1000g2012apr_eur", "1000g2012apr_asn", "1000g2012apr_afr", "1000g2012feb_all", "esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_ma", "ljb2_fathmm", "ljb2_siphy", "ljb2_lrt", "ljb_all", "ljb2_gerp++", "ljb2_phylop", "caddgt20", "caddgt10");  #Used to print list of supported table names
 
-my %annovarTables;  #Holds annovar tables
+my %annovarTables;  #Holds annovar tables and features
 
 ###User Options
 GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Comma separated list
@@ -776,13 +777,14 @@ if ($scriptParameter{'pVCFParser'} > 0) {
 ##pSnpEff
 if ($scriptParameter{'pSnpEff'} > 0) {
 
-    &DefineArrayParameters(\@{$parameter{'snpSiftAnnotationFiles'}{'value'}}, "snpSiftAnnotationFiles", "path", "yes", "pSnpEff", "");  #"yes" added to enable addition of default features in &AddToScriptParameters
+    &DefineArrayParameters(\@{$parameter{'snpSiftAnnotationFiles'}{'value'}}, "snpSiftAnnotationFiles", "path", "yes", "pSnpEff", "file");  #"yes" added to enable addition of default features in &AddToScriptParameters
     &DefineArrayParameters(\@{$parameter{'snpSiftDbNSFPAnnotations'}{'value'}}, "snpSiftDbNSFPAnnotations", "path", "yes", "pSnpEff", "");  #"yes" added to enable addition of default features in &AddToScriptParameters  
 }
 
 
 ##pAnnovar
 if ($scriptParameter{'pAnnovar'} > 0) {
+
     &DefineAnnovarTables(); #Set all AnnovarTables properties
     &DefineArrayParameters(\@{$parameter{'annovarTableNames'}{'value'}}, "annovarTableNames", "path", "yes", "pAnnovar", "file");  
 }
@@ -809,6 +811,13 @@ if ($scriptParameter{'pAnnovar'} > 0) {
 &DefineSupportedCosmidReferences("GATKVariantReCalibrationTrainingSetDbSNP", "dbsnp", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed");
 &DefineSupportedCosmidReferences("GATKVariantEvalGold", "mills", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed"); 
 &DefineSupportedCosmidReferences("GATKVariantEvalDbSNP", "dbsnpex", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed");
+
+##Flag -> array parameters to enable multiple download via Cosmid using the same flag 
+&DefineSupportedCosmidReferences("dbsnp_138.b37.vcf", "dbsnp", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed");
+&DefineSupportedCosmidReferences("dbsnp_138.b37.excluding_sites_after_129.vcf", "dbsnpex", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed");
+&DefineSupportedCosmidReferences("1000G_phase1.indels.b37.vcf", "1000g_omni", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed");
+&DefineSupportedCosmidReferences("1000G_phase1.snps.high_confidence.b37.vcf", "1000g_snps", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed");
+
 
 for my $references (keys %supportedCosmidReferences) {
 
@@ -911,16 +920,18 @@ if ($scriptParameter{'pMosaikAlign'} > 0) {  #Run MosaikAlign
 
     &PrintToFileHandles(\@printFilehandles, "\nMosaikAlign\n");
 
-    if ( ($parameter{'humanGenomeReference'}{'buildFile'} eq 1) || ($parameter{'mosaikAlignReference'}{'buildFile'} eq 1) || ($parameter{'mosaikJumpDbStub'}{'buildFile'} eq 1) ) {
-		
-	&BuildMosaikAlignPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "MosaikAlign");
-	
-    }
-    if ( ($parameter{'mosaikAlignNeuralNetworkPeFile'}{'buildFile'} eq 1) || ($parameter{'mosaikAlignNeuralNetworkSeFile'}{'buildFile'} eq 1) ){
+    if ($scriptParameter{'dryRunAll'} != 1) {
 
-	&MoveMosaikNN();
+	if ( ($parameter{'humanGenomeReference'}{'buildFile'} eq 1) || ($parameter{'mosaikAlignReference'}{'buildFile'} eq 1) || ($parameter{'mosaikJumpDbStub'}{'buildFile'} eq 1) ) {
+	    
+	    &BuildMosaikAlignPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "MosaikAlign");
+	    
+	}
+	if ( ($parameter{'mosaikAlignNeuralNetworkPeFile'}{'buildFile'} eq 1) || ($parameter{'mosaikAlignNeuralNetworkSeFile'}{'buildFile'} eq 1) ){
+	    
+	    &MoveMosaikNN();
+	}
     }
-
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
 	&MosaikAlign($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});	
@@ -931,11 +942,13 @@ if ($scriptParameter{'pBwaMem'} > 0) {  #Run BWA Mem
     
     &PrintToFileHandles(\@printFilehandles, "\nBWA Mem\n");
     
-    if ( ($parameter{'humanGenomeReference'}{'buildFile'} eq 1) || ($parameter{'bwaBuildReference'}{'buildFile'} eq 1) ) {
-	
-	&BuildBwaPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BwaMem");
-    }
+    if ($scriptParameter{'dryRunAll'} != 1) {
 
+	if ( ($parameter{'humanGenomeReference'}{'buildFile'} eq 1) || ($parameter{'bwaBuildReference'}{'buildFile'} eq 1) ) {
+	    
+	    &BuildBwaPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BwaMem");
+	}
+    }
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
 	&BWA_Mem($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});	
@@ -958,11 +971,13 @@ if ($scriptParameter{'pBwaAln'} > 0) {  #Run BWA Aln
     
     &PrintToFileHandles(\@printFilehandles, "\nBWA Aln\n");
 
-    if ( ($parameter{'humanGenomeReference'}{'buildFile'} eq 1) || ($parameter{'bwaBuildReference'}{'buildFile'} eq 1) ) {
-	
-	&BuildBwaPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BwaAln");
+    if ($scriptParameter{'dryRunAll'} != 1) {
+
+	if ( ($parameter{'humanGenomeReference'}{'buildFile'} eq 1) || ($parameter{'bwaBuildReference'}{'buildFile'} eq 1) ) {
+	    
+	    &BuildBwaPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BwaAln");
+	}
     }
-    
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
 	&BWA_Aln($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});	
@@ -973,11 +988,13 @@ if ($scriptParameter{'pBwaSampe'} > 0) {  #Run BWA Sampe
     
     &PrintToFileHandles(\@printFilehandles, "\nBWA Sampe\n");
 
-    if ( ($parameter{'humanGenomeReference'}{'buildFile'} eq 1) || ($parameter{'bwaBuildReference'}{'buildFile'} eq 1) ) {
-	
-	&BuildBwaPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BwaSampe");
-    }
+    if ($scriptParameter{'dryRunAll'} != 1) {
 
+	if ( ($parameter{'humanGenomeReference'}{'buildFile'} eq 1) || ($parameter{'bwaBuildReference'}{'buildFile'} eq 1) ) {
+	    
+	    &BuildBwaPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BwaSampe");
+	}
+    }
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
 	&BWA_Sampe($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});
@@ -1083,8 +1100,10 @@ if ($scriptParameter{'pPicardToolsCalculateHSMetrics'} > 0) {  #Run PicardToolsC
     &PrintToFileHandles(\@printFilehandles, "\nPicardToolsCalculateHSMetrics\n");   
     
     &CheckBuildHumanGenomePreRequisites("PicardToolsCalculateHSMetrics");
-    &CheckBuildPTCHSMetricPreRequisites("PicardToolsCalculateHSMetrics");
+    if ($scriptParameter{'dryRunAll'} != 1) {
 
+	&CheckBuildPTCHSMetricPreRequisites("PicardToolsCalculateHSMetrics");
+    }
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 
 	&PicardToolsCalculateHSMetrics($scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});
@@ -1133,14 +1152,19 @@ if ($scriptParameter{'pGATKHaploTypeCaller'} > 0) {  #Run GATK HaploTypeCaller
 
     &CheckBuildHumanGenomePreRequisites("GATKHaploTypeCaller");
     &CheckBuildDownLoadPreRequisites("GATKHaploTypeCaller");
-    &CheckBuildPTCHSMetricPreRequisites("GATKHaploTypeCaller");
+   
+    if ($scriptParameter{'dryRunAll'} != 1) {
 
+	&CheckBuildPTCHSMetricPreRequisites("GATKHaploTypeCaller");
+    }
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {
 	
 	if ( (defined($parameter{ $scriptParameter{'familyID'} }{$scriptParameter{'sampleIDs'}[$sampleIDCounter]}{'GATKTargetPaddedBedIntervalLists'}{'buildFile'})) && ($parameter{ $scriptParameter{'familyID'} }{$scriptParameter{'sampleIDs'}[$sampleIDCounter]}{'GATKTargetPaddedBedIntervalLists'}{'buildFile'} eq 1) ){
 	    
-	    &BuildPTCHSMetricPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "GATKHaploTypeCaller");
-	    last;  #Will handle all build per sampleID within sbatch script
+	    if ($scriptParameter{'dryRunAll'} != 1) {
+		&BuildPTCHSMetricPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "GATKHaploTypeCaller");
+		last;  #Will handle all build per sampleID within sbatch script
+	    }
 	}
     }
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {
@@ -1164,8 +1188,10 @@ if ($scriptParameter{'pGATKVariantRecalibration'} > 0) {  #Run GATK VariantRecal
 
     &CheckBuildHumanGenomePreRequisites("GATKVariantRecalibration");
     &CheckBuildDownLoadPreRequisites("GATKVariantRecalibration");
-    &CheckBuildPTCHSMetricPreRequisites("GATKVariantRecalibration");
+    if ($scriptParameter{'dryRunAll'} != 1) {
 
+	&CheckBuildPTCHSMetricPreRequisites("GATKVariantRecalibration");
+    }
     &GATKVariantReCalibration($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 }
 
@@ -1215,6 +1241,7 @@ if ($scriptParameter{'pSnpEff'} > 0) {  #Run snpEff. Done per family
 
     &PrintToFileHandles(\@printFilehandles, "\nSnpEff\n");
 
+    &CheckBuildDownLoadPreRequisites("SnpEff");
     &SnpEff($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 }
 
@@ -1226,7 +1253,7 @@ if ($scriptParameter{'pAnnovar'} > 0) {  #Run Annovar. Done per family
 
     for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@{$scriptParameter{'annovarTableNames'}});$tableNamesCounter++) {  #For all specified table names
 
-	if ($parameter{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'buildFile'} eq 1) {
+	if ($parameter{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'buildFile'} eq 1) {
 
 	&BuildAnnovarPreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "Annovar");
 	last;  #Will handle all build tables within sbatch script
@@ -1240,6 +1267,7 @@ if ($scriptParameter{'pGATKVariantEvalAll'} > 0) {  #Run GATK VariantEval for al
     &PrintToFileHandles(\@printFilehandles, "\nGATK VariantEval All\n");
 
     &CheckBuildHumanGenomePreRequisites("GATKVariantEvalAll");
+    &CheckBuildDownLoadPreRequisites("GATKVariantEvalAll");
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) { 
 	
@@ -4633,7 +4661,7 @@ sub BuildDownLoadablePreRequisites {
 
     for my $parameterName (keys %supportedCosmidReferences) {
 
-	if ( "p".$program eq $parameter{$parameterName}{'associatedProgram'}) {
+	if ($parameter{$parameterName}{'associatedProgram'} =~/$program/) {
 
 	    if ($parameter{$parameterName}{'buildFile'} eq 1) {
 	    
@@ -4646,7 +4674,7 @@ sub BuildDownLoadablePreRequisites {
     
     if ( ($scriptParameter{"p".$program} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
 	
-	&FIDSubmitJob(0, $familyID, 6, "MIP", $fileName, 0);
+	&FIDSubmitJob(0, $familyID, 6, $parameter{"p".$program}{'chain'}, $fileName, 0);
     }
 }
 
@@ -4890,7 +4918,7 @@ sub BuildMosaikAlignPreRequisites {
     my $randomInteger = int(rand(10000));  #Generate a random integer between 0-10,000.
 
     &ProgramPreRequisites($familyID, $program, $aligner, 0, $FILEHANDLE, 4, 2);
-
+    
     &BuildHumanGenomePreRequisites($familyID, $aligner, $program, $FILEHANDLE, $randomInteger);
 
     if ($parameter{'mosaikAlignReference'}{'buildFile'} eq 1) {
@@ -4950,7 +4978,7 @@ sub CheckBuildHumanGenomePreRequisites {
 	
 	if ( ($parameter{"humanGenomeReference".$humanGenomeReferenceFileEndings[$fileEndingsCounter]}{'buildFile'} eq 1) || ($humanGenomeCompressed eq "compressed") ) {
 	   
-	    if ($scriptParameter{"p".$program} == 1) {
+	    if ( ($scriptParameter{"p".$program} == 1) && ($scriptParameter{'dryRunAll'} != 1)) {
 	
 		&BuildHumanGenomePreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, $program);
 		last;#Will handle all meatfiles build within sbatch script
@@ -4998,8 +5026,15 @@ sub DownloadReference {
 
     if ($parameter{$parameterName}{'buildFile'} eq 1) {  #Reference need to be built a.k.a downloaded
 	
-	&PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to download ".$scriptParameter{$parameterName}." before executing ".$$programRef."\n\n");
+	##Use $parameter instead of $scriptParameter to cater for annotation files that are arrays and not supplied as flag => value
+	if (defined($scriptParameter{$parameterName})) {
 
+	    &PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to download ".$scriptParameter{$parameterName}." before executing ".$$programRef."\n\n");
+	}
+	else {
+
+	    &PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to download ".$parameterName." before executing ".$$programRef."\n\n");
+	}
 	print $FILEHANDLE "workon ".$scriptParameter{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
 
 	print $FILEHANDLE "cosmid ";  #Database download manager
@@ -5020,7 +5055,15 @@ sub DownloadReference {
 	    print $FILEHANDLE $$cosmidResourceDirectoryRef."/".$supportedCosmidReferences{$parameterName}{'cosmidName'}."/*.gz", "\n\n";
 	}
 
-	my $intendedFilePathRef = \($scriptParameter{'referencesDir'}."/".$scriptParameter{$parameterName});
+	my $intendedFilePathRef;
+	if (defined($scriptParameter{$parameterName})) {
+	  
+	    $intendedFilePathRef = \($scriptParameter{'referencesDir'}."/".$scriptParameter{$parameterName});
+	}
+	else {
+	    
+	    $intendedFilePathRef = \($scriptParameter{'referencesDir'}."/".$parameterName);
+	}
 	my $temporaryFilePathRef = \($$cosmidResourceDirectoryRef."/".$supportedCosmidReferences{$parameterName}{'cosmidName'}."/*");    
 	&PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
 	
@@ -6331,6 +6374,23 @@ sub AddToScriptParameter {
 			    undef($scriptParameter{$parameterName});  #Remove parameter to avoid unnecessary print to STDOUT and config
 			}
 		    }
+		    elsif ($parameterName eq "snpSiftAnnotationFiles"){
+			
+			my %snpEffFile = &DefineSnpEffFiles();
+			my $intendedFilePathRef;
+			
+			for (my $fileNameCounter=0;$fileNameCounter<scalar(@{$scriptParameter{'snpSiftAnnotationFiles'}});$fileNameCounter++) {  #
+			    
+			    #if (defined($snpEffFile{'snpSift'}{ $scriptParameter{'snpSiftAnnotationFiles'}[$fileNameCounter] }{'downloadble'})) {
+				
+			    #}
+			    #else {
+				
+				my $intendedFilePathRef = \($scriptParameter{'referencesDir'}."/".$scriptParameter{'snpSiftAnnotationFiles'}[$fileNameCounter]);
+				&CheckExistance($intendedFilePathRef, \$scriptParameter{'snpSiftAnnotationFiles'}[$fileNameCounter], "f");			    
+			 #   }
+			}
+		    }
 		    elsif ($parameterName eq "annovarTableNames") {
 			
 			my $intendedFilePathRef;
@@ -7548,7 +7608,7 @@ sub CheckExistance {
 		}
 	    }
 	    else {
-		 
+		
 		$parameter{$$parameterNameRef}{'buildFile'} = &CheckAutoBuild(\$$parameterNameRef);  #Check autoBuild or not and return value
 		 
 		if ($parameter{$$parameterNameRef}{'buildFile'} == 0) {  #No autobuild
@@ -8055,6 +8115,28 @@ sub PrintCheckExistandMoveFile {
 }
 
 
+sub DefineSnpEffFiles {
+
+##DefineSnpEffFiles
+
+##Function : Defines and adds snpEff/snpSift files and features to hash
+##Returns  : ""
+##Arguments:
+
+    my %snpEffFile;
+    my @snpSiftDownloadableFiles = ("dbsnp_138.b37.excluding_sites_after_129.vcf", "dbsnp_138.b37.vcf", "1000G_phase1.indels.b37.vcf", "1000G_phase1.snps.high_confidence.b37.vcf");
+
+    foreach my $file (@snpSiftDownloadableFiles) {
+
+	$snpEffFile{'snpSift'}{$file} = {  #Files that are downloadable via Cosmid
+	    'downloadable' => "yes",
+	};
+	$parameter{$file}{'associatedProgram'} = "pSnpEff";
+	$parameter{$file}{'buildFile'} = "yesAutoBuild";  #Allow autoDownLoad, but yesAutoBuild is set since the file is its own default, so no extra check is required (compared with yesAutoDownLoad)
+    }
+    return %snpEffFile;
+}
+
 sub DefineAnnovarTables {
     
 ##DefineAnnovarTables
@@ -8091,7 +8173,7 @@ sub DefineAnnovarTables {
 	
 	&AnnovarTableParameters(\$annovarSupportedTableNames[$tablesCounter], \@annovarSupportedTableNames, "dbtype", $annovarSupportedTableNames[$tablesCounter]);
 	&AnnovarTableParameters(\$annovarSupportedTableNames[$tablesCounter], \@annovarSupportedTableNames, "download", $annovarSupportedTableNames[$tablesCounter]);
-	$parameter{$annovarSupportedTableNames[$tablesCounter]}{'buildFile'} = "yesAutoBuild";
+	$parameter{$annovarSupportedTableNames[$tablesCounter]}{'buildFile'} = "yesAutoBuild";  #Allow autobuild
     }
 
 
@@ -8324,12 +8406,15 @@ sub CheckBuildDownLoadPreRequisites {
     
     for my $parameterName (keys %supportedCosmidReferences) {  #Supported cosmid references for MIP parameters
 	
-	if ( "p".$programName eq $parameter{$parameterName}{'associatedProgram'}) {  #If the cosmid supported parameter is associated with the MIP program
+	if ( $parameter{$parameterName}{'associatedProgram'} =~/$programName/) {  #If the cosmid supported parameter is associated with the MIP program
 	    
-	    if ($parameter{$parameterName}{'buildFile'} eq 1) {  #Enable autoBuild
-		
-		&BuildDownLoadablePreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, $programName);
-		last;  #Perform once
+	    if ( ($scriptParameter{"p".$programName} == 1) && ($scriptParameter{'dryRunAll'} != 1) ) {  #Only enable autoDownload for active programs
+
+		if ($parameter{$parameterName}{'buildFile'} eq 1) {  #Enable autoBuild
+		    
+		    &BuildDownLoadablePreRequisites($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, $programName);
+		    last;  #Perform once
+		}
 	    }
 	}
     }
