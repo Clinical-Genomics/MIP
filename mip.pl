@@ -1698,11 +1698,11 @@ sub RankVariants {
 	    
 	    if ($VEPOutputFilesCounter == 1) {
 	
-		$sampleInfo{$familyID}{$familyID}{'program'}{'RankVariants'}{'Clinical'}{'Path'} = $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".txt";   #Save clinical candidate list path
+		$sampleInfo{$familyID}{$familyID}{'program'}{'RankVariants'}{'Clinical'}{'Path'} = $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf";   #Save clinical candidate list path
 	    }
 	    else {
 
-		$sampleInfo{$familyID}{$familyID}{'program'}{'RankVariants'}{'Research'}{'Path'} = $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".txt";   #Save research candidate list path
+		$sampleInfo{$familyID}{$familyID}{'program'}{'RankVariants'}{'Research'}{'Path'} = $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf";   #Save research candidate list path
 	    }
 	}
     }
