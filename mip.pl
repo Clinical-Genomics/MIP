@@ -5372,22 +5372,33 @@ sub AddToJobID {
 
 
 sub PushToJobID {
+
+##PushToJobID
     
+##Function : Saves JobId to the correct hash array depending on chaintype.
+##Returns  : ""
+##Arguments: $familyIDChainKey, $sampleIDChainKey, $sampleID
+##         : $familyIDChainKey => Family ID chain hash key
+##         : $sampleIDChainKey => Sample ID chain hash key
+##         : $sampleID         => Sample ID
+##         : $path             => Trunk or branch
+##         : $chainKeyType     => "parallel", "merged" or "family_merged" (familyID_sampleID)
+
     my $familyIDChainKey = $_[0]; 
     my $sampleIDChainKey = $_[1];
     my $sampleID = $_[2];
     my $path = $_[3];
-    my $chainKeyType = $_[4];  #Single, parallel, merged (familyID_sampleID)
+    my $chainKeyType = $_[4];
     
     my $chainKey;
     
-    if ($chainKeyType eq "Parallel") {  #Push parallel jobs
+    if ($chainKeyType eq "parallel") {  #Push parallel jobs
 
 	if ($scriptParameter{'analysisType'} eq "rapid" && $sampleInfo{$scriptParameter{'familyID'}}{$sampleID}{'pBwaMem'}{'sbatchBatchProcesses'}) {
 
 	    for (my $sbatchCounter=0;$sbatchCounter<$sampleInfo{$scriptParameter{'familyID'}}{$sampleID}{'pBwaMem'}{'sbatchBatchProcesses'};$sbatchCounter++) {
 
-		$chainKey = $sampleID."_parallel_".$path.$sbatchCounter;  #Set key
+		$chainKey = $sampleID."_".$chainKeyType."_".$path.$sbatchCounter;  #Set key
 
 		if ($jobID{$familyIDChainKey}{$chainKey}) {  #Job exists
 		    
@@ -5403,7 +5414,7 @@ sub PushToJobID {
 
 	    for (my $infileCounter=0;$infileCounter<scalar( @{ $infilesLaneNoEnding{$sampleID} });$infileCounter++) {  #All infiles
 		
-		$chainKey = $sampleID."_parallel_".$path.$infileCounter;  #Set key
+		$chainKey = $sampleID."_".$chainKeyType."_".$path.$infileCounter;  #Set key
 		
 		if ($jobID{$familyIDChainKey}{$chainKey}) {  #Job exists
 		    
@@ -5415,7 +5426,7 @@ sub PushToJobID {
 	    }
 	}
     }
-    elsif ( ($chainKeyType eq "Merged") || ($chainKeyType eq "Family_Merged")  ) {  #Push merged jobs
+    elsif ( ($chainKeyType eq "merged") || ($chainKeyType eq "family_merged")  ) {  #Push merged jobs
 	
 	$chainKey = $familyIDChainKey."_".$sampleIDChainKey;  #Set key
 	
@@ -5423,7 +5434,7 @@ sub PushToJobID {
 	    
 	    for (my $jobCounter=0;$jobCounter<scalar( @{ $jobID{$familyIDChainKey}{$chainKey} });$jobCounter++) {  #All previous jobs i.e. jobs in this case equals to infiles in number
 		
-		if ($chainKeyType eq "Family_Merged") {  #Use $familyIDChainKey instead of $sampleIDChainKey
+		if ($chainKeyType eq "family_merged") {  #Use $familyIDChainKey instead of $sampleIDChainKey
 		    
 		    push ( @{ $jobID{$familyIDChainKey}{$familyIDChainKey} }, $jobID{$familyIDChainKey}{$chainKey}[$jobCounter]);  #Add jobID hash
 		}
@@ -5446,7 +5457,7 @@ sub FIDSubmitJob {
 ##         : $sampleID            => Sample id
 ##         : $familyID            => Family id
 ##         : $dependencies        => Job dependencies
-##         : $path                => Trunk or Branch
+##         : $path                => Trunk or Branch part of chainkey
 ##         : $sbatchFileName      => Sbatch filename to submit
 ##         : $sbatchScriptTracker => Track the number of parallel processes (e.g. sbatch scripts for a module)
 
@@ -5504,11 +5515,11 @@ sub FIDSubmitJob {
 	    
 	    if ($dependencies == 5) {  #Add familyID_sampleID jobs to current sampleID chain
 		
-		&PushToJobID($familyIDChainKey, $sampleIDChainKey, $sampleID, $path, "Merged");
+		&PushToJobID($familyIDChainKey, $sampleIDChainKey, $sampleID, $path, "merged");
 	    }
 	    if ( ($dependencies == 1) || ($dependencies == 2) ) {  #Not parallel jobs, but check if last job submission was parallel
 		
-		&PushToJobID($familyIDChainKey, $sampleIDChainKey, $sampleID, $path, "Parallel");
+		&PushToJobID($familyIDChainKey, $sampleIDChainKey, $sampleID, $path, "parallel");
 	    }
 	    if ($path eq "MAIN") {
 		
@@ -5581,7 +5592,7 @@ sub FIDSubmitJob {
 		for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #Check jobs for sampleID          
 		    
 		    my $sampleIDChainKey = $scriptParameter{'sampleIDs'}[$sampleIDCounter]."_".$path;  #Current chain
-		    &PushToJobID($familyIDChainKey, $sampleIDChainKey, $sampleID, $path, "Family_Merged");
+		    &PushToJobID($familyIDChainKey, $sampleIDChainKey, $sampleID, $path, "family_merged");
 		}
 	    }
 	    if ( ($dependencies == 1) || ($dependencies == 2) ) {  #Not parallel jobs, but check if last job submission was parallel
