@@ -199,11 +199,14 @@ my %scriptParameter;  #Holds all active parameters after the value has been set
 
 $scriptParameter{'MIP'} = 1;  #Enable/activate MIP
 
+my $logger;  #Will hold the logger object for the MIP log
 my @orderParameters;  #To add/write parameters in the correct order
 
-#Add timestamp for later use in mip_log and qcmetrics yaml file
-my $timeStamp = (`date +%Y%m%d_%Hh%Mm`);  #Catches current date and script name
-chomp($timeStamp);  #Remove \n
+##Add dateTimestamp for later use in log and qcmetrics yaml file
+my $dateTimeStamp = (`date +%Y%m%d_%Hh%Mm`);  #Catches current date, time and script name
+chomp($dateTimeStamp);  #Remove \n
+my ($base, $script) = (`date +%Y%m%d`,`basename $0`);  #Catches current date and script name
+chomp($base, $script);  #Remove \n;
 
 ####Set program parameters
 
@@ -213,21 +216,23 @@ chomp($timeStamp);  #Remove \n
 ##DefineParametersPath
 ##parameterName, parameterDefault, AssociatedProgram, Check directory/file existence, File Autovivication)
 
+&DefineParametersPath("familyID", "nodefault", "MIP", 0);
+
+&DefineParametersPath("outDataDir", "nodefault", "MIP", 0);
+
+&DefineParametersPath("logFile", "NotsetYet", "MIP", "file", "noAutoBuild");
+
 &DefineParameters("projectID", "MIP", "nodefault", "MIP");
 
 &DefineParameters("email", "MIP", 0, "MIP");
 
 &DefineParameters("emailType", "MIP", "F", "MIP");
 
-&DefineParametersPath("familyID", "nodefault", "MIP", 0);
-
 &DefineParameters("maximumCores", "MIP", 16, "MIP");
 
 &DefineParametersPath("configFile", 0, "MIP", "file");
 
 &DefineParameters("analysisType", "MIP", "exomes", "MIP");
-
-&DefineParametersPath("outDataDir", "nodefault", "MIP", 0);
 
 &DefineParametersPath("outScriptDir", "nodefault", "MIP", 0);
 
@@ -247,7 +252,7 @@ chomp($timeStamp);  #Remove \n
 
 &DefineParameters("dryRunAll", "MIP", 0, "MIP");
 
-&DefineParametersPath("logFile", "NotsetYet", "MIP", "file", "noAutoBuild");
+my @broadcasts;  #Holds all set parameters info after AddToScriptParameter
 
 ###Programs
 
@@ -299,7 +304,7 @@ my @bwaBuildReferenceFileEndings = (".amb", ".ann", ".bwt", ".pac", ".sa");
 ##PicardTools
 &DefineParameters("pPicardToolsSortSam", "program", 1, "MIP", "_sorted", "MAIN");
 
-&DefineParameters("pPicardToolsMergeRapidReads", "program", 0, "MIP", "_sorted", "MAIN");#Rapid mode special case
+&DefineParameters("pPicardToolsMergeRapidReads", "program", 0, "MIP", "_sorted", "MAIN");  #Rapid mode special case
 
 &DefineParameters("pPicardToolsMergeSamFiles", "program", 1, "MIP", "_merged", "MAIN");
 
@@ -668,14 +673,13 @@ if($help) {
     exit;
 }
 
-my $mipVersion = "v1.5.7";#Set version for log
+my $mipVersion = "v2.0.0";#Set version for log
 
 if($version) {
 
     print STDOUT "\nMip.pl ".$mipVersion, "\n\n";
     exit;
 }
-print STDOUT "MIP Version: ".$mipVersion, "\n";
 
 if ($parameter{'annovarSupportedTableNames'}{'value'} eq 1) {
 
@@ -699,15 +703,26 @@ if ($parameter{'configFile'}{'value'} ne "nocmdinput") {  #Input from cmd
 foreach my $orderParameterElement (@orderParameters) {
     
 ##3 type of variables: MIP, path or program/program_parameters each is handled in the &AddToScriptParameter subroutine.    
-    &AddToScriptParameter($orderParameterElement, $parameter{$orderParameterElement}{'value'}, $parameter{$orderParameterElement}{'type'}, $parameter{$orderParameterElement}{'default'}, $parameter{$orderParameterElement}{'associatedProgram'}, $parameter{$orderParameterElement}{'existsCheck'}, $parameter{$orderParameterElement}{'programNamePath'});
+    my $ret = &AddToScriptParameter($orderParameterElement, $parameter{$orderParameterElement}{'value'}, $parameter{$orderParameterElement}{'type'}, $parameter{$orderParameterElement}{'default'}, $parameter{$orderParameterElement}{'associatedProgram'}, $parameter{$orderParameterElement}{'existsCheck'}, $parameter{$orderParameterElement}{'programNamePath'});
+    if ($ret) {
+
+	push(@broadcasts, $ret);
+    }
    
     ##Special case for parameters that are dependent on other parameters values
     if ($orderParameterElement eq "outDataDir") {  #Set defaults depending on $scriptParameter{'outDataDir'} value that now has been set
 
 	$parameter{'sampleInfoFile'}{'default'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_qc_sampleInfo.yaml";
-	$parameter{'logFile'}{'default'} = &DeafultLog4perlFile(\$parameter{'logFile'}{'value'});
+	$parameter{'logFile'}{'default'} = &DeafultLog4perlFile(\$parameter{'logFile'}{'value'}, \$script, \$base, \$dateTimeStamp);
 
 	$parameter{'QCCollectSampleInfoFile'}{'default'} = $parameter{'sampleInfoFile'}{'default'};
+    }
+    if ($orderParameterElement eq "logFile") {
+
+	###Creates log for the master script
+	my $conf = &CreateLog4perlCongfig(\$scriptParameter{'logFile'});
+	Log::Log4perl->init(\$conf);
+	$logger = Log::Log4perl->get_logger("rootLogger");
     }
     if ($orderParameterElement eq "pedigreeFile") {  #Write QC for only pedigree data used in analysis                                                        
 	
@@ -744,6 +759,9 @@ for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs
 
 ##inFileDirs
 &DefineArrayParameters(\@{$parameter{'inFilesDirs'}{'value'}}, "inFilesDirs", "path", "notSetYet", "MIP", "directory");
+
+##Compares the number of elements in two arrays and exits if the elements are not equal
+&CompareArrayElements(\@{$scriptParameter{'sampleIDs'}}, \@{$scriptParameter{'inFilesDirs'}}, "sampleIDs", "inFileDirs");
 
 
 ##picardToolsMergeSamFilesPrevious
@@ -823,7 +841,13 @@ if ($scriptParameter{'pAnnovar'} > 0) {
  
 &PrepareArrayParameters(\@GATKTargetPaddedBedIntervalLists, "GATKTargetPaddedBedIntervalLists", "path", "notSetYet", "pGATKHaploTypeCaller,pGATKVariantRecalibration", "file");
 
-#Cosmid references
+##Broadcast set parameters info
+foreach my $parameterInfo (@broadcasts) {
+
+    $logger->info($parameterInfo, "\n");
+}
+
+##Cosmid references
 &DefineSupportedCosmidReferences("humanGenomeReference", "decoy", "5", \$humanGenomeReferenceVersion, "compressed");
 &DefineSupportedCosmidReferences("chanjoBuildDb", "ccds", "latest", \$humanGenomeReferenceVersion, "unCompressed");
 &DefineSupportedCosmidReferences("GATKReAlignerINDELKnownSet1", "indels", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$humanGenomeReferenceVersion, \$humanGenomeReferenceVersion, "unCompressed");
@@ -866,35 +890,11 @@ elsif ($scriptParameter{'humanGenomeReference'}=~/GRCh\d+/) {  #Ensembl - no pre
     @contigs = ("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","X","Y","MT");  #Chr for filtering of bam file
 }
 
-####Creates log for the master script 
-
-my $conf = &CreateLog4perlCongfig(\$scriptParameter{'logFile'});
-
-Log::Log4perl->init(\$conf);
-
-my $logger = Log::Log4perl->get_logger("rootLogger");
-$logger->error("Blah");
-
-my ($base, $script) = (`date +%Y%m%d`,`basename $0`);  #Catches current date and script name
-chomp($base,$script);  #Remove \n;
-`mkdir -p $scriptParameter{'outDataDir'}/$scriptParameter{'familyID'}/mip_log/$base;`;  #Creates the mip_log dir
-my $mipLogName = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/mip_log/".$base."/".$script."_".$timeStamp.".txt";  #concatenates mip_log filename
-
-my @printFilehandles = (*STDOUT, *MIPLOG);  #Used for printing to several FILEHANDLES
-open ($printFilehandles[1], ">>",$mipLogName) or die "Can't write to ".$mipLogName.":".$!, "\n";  #Open file masterLog
-
-
-##Add parameters
-print MIPLOG "\n".$script." ";  #Adds script name to recontruct command line
-
-&WriteCMDMipLog();
-
-print STDOUT "\nScript parameters and info from ".$script." are saved in file: ".$mipLogName, "\n";
+&WriteCMDMipLog(\$script, \$scriptParameter{'logFile'});
 
 ##Collect infiles
 &CollectInfiles();
 
-close(MIPLOG);
 
 my $uncompressedFileSwitch = &InfilesReFormat();  #Required to format infiles correctly for subsequent input into aligners
     
@@ -909,11 +909,9 @@ my $famFile = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/
 
 ####MAIN
 
-open ($printFilehandles[1], ">>", $mipLogName) or die "Can't write to ".$mipLogName.":".$!, "\n";  #Open file run log
-
 if ( ($scriptParameter{'pGZip'} > 0) && ($uncompressedFileSwitch eq "unCompressed") ) {  #GZip of fastq files
 
-    &PrintToFileHandles(\@printFilehandles, "\nGZip for fastq files\n");
+    $logger->info("\nGZip for fastq files\n");
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 
@@ -930,7 +928,7 @@ if ( ($scriptParameter{'pGZip'} > 0) && ($uncompressedFileSwitch eq "unCompresse
 
 if ($scriptParameter{'pFastQC'} > 0) {  #Run FastQC
     
-    &PrintToFileHandles(\@printFilehandles, "\nFastQC\n");
+    $logger->info("FastQC\n");
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
@@ -940,7 +938,7 @@ if ($scriptParameter{'pFastQC'} > 0) {  #Run FastQC
 
 if ($scriptParameter{'pMosaikBuild'} > 0) {  #Run MosaikBuild
     
-    &PrintToFileHandles(\@printFilehandles, "\nMosaikBuild\n");
+    $logger->info("MosaikBuild\n");
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
@@ -951,7 +949,7 @@ if ($scriptParameter{'pMosaikBuild'} > 0) {  #Run MosaikBuild
 
 if ($scriptParameter{'pMosaikAlign'} > 0) {  #Run MosaikAlign
 
-    &PrintToFileHandles(\@printFilehandles, "\nMosaikAlign\n");
+    $logger->info("MosaikAlign\n");
 
     if ($scriptParameter{'dryRunAll'} != 1) {
 
@@ -973,7 +971,7 @@ if ($scriptParameter{'pMosaikAlign'} > 0) {  #Run MosaikAlign
 
 if ($scriptParameter{'pBwaMem'} > 0) {  #Run BWA Mem
     
-    &PrintToFileHandles(\@printFilehandles, "\nBWA Mem\n");
+    $logger->info("BWA Mem\n");
     
     if ($scriptParameter{'dryRunAll'} != 1) {
 
@@ -991,7 +989,7 @@ if ($scriptParameter{'pBwaMem'} > 0) {  #Run BWA Mem
 
 if ($scriptParameter{'pPicardToolsMergeRapidReads'} > 0) {  #Run PicardToolsMergeRapidReads - Relevant only in rapid mode
     
-    &PrintToFileHandles(\@printFilehandles, "\nPicardToolsMergeRapidReads\n");
+    $logger->info("PicardToolsMergeRapidReads\n");
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
@@ -1002,7 +1000,7 @@ if ($scriptParameter{'pPicardToolsMergeRapidReads'} > 0) {  #Run PicardToolsMerg
 
 if ($scriptParameter{'pBwaAln'} > 0) {  #Run BWA Aln
     
-    &PrintToFileHandles(\@printFilehandles, "\nBWA Aln\n");
+    $logger->info("BWA Aln\n");
 
     if ($scriptParameter{'dryRunAll'} != 1) {
 
@@ -1019,7 +1017,7 @@ if ($scriptParameter{'pBwaAln'} > 0) {  #Run BWA Aln
 
 if ($scriptParameter{'pBwaSampe'} > 0) {  #Run BWA Sampe
     
-    &PrintToFileHandles(\@printFilehandles, "\nBWA Sampe\n");
+    $logger->info("BWA Sampe\n");
 
     if ($scriptParameter{'dryRunAll'} != 1) {
 
@@ -1038,7 +1036,7 @@ if ($scriptParameter{'pPicardToolsSortSam'} > 0) {  #Run Picardtools SortSam and
 
     if ($scriptParameter{'analysisType'} ne "rapid") {  #In rapid mode Sort and index is done for each batch of reads in the BWA_Mem call, since the link to infile is broken by the read batch processing. However pPicardToolsSortSam should be enabled to ensure correct fileending and merge the flow to ordinary modules.
 
-    &PrintToFileHandles(\@printFilehandles, "\nPicardTools SortSam & index\n");
+    $logger->info("PicardTools SortSam & index\n");
 	
 	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	    
@@ -1049,7 +1047,7 @@ if ($scriptParameter{'pPicardToolsSortSam'} > 0) {  #Run Picardtools SortSam and
 
 if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {  #Run picardtools merge
 
-    &PrintToFileHandles(\@printFilehandles, "\nPicardTool MergeSamFiles\n");
+    $logger->info("PicardTool MergeSamFiles\n");
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 
@@ -1062,7 +1060,7 @@ if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {  #Run picardtools merge
 
 if ($scriptParameter{'pPicardToolsMarkduplicates'} > 0) {  #PicardTools MarkDuplicates
 
-    &PrintToFileHandles(\@printFilehandles, "\nPicardTools MarkDuplicates\n");
+    $logger->info("PicardTools MarkDuplicates\n");
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
     
@@ -1072,7 +1070,7 @@ if ($scriptParameter{'pPicardToolsMarkduplicates'} > 0) {  #PicardTools MarkDupl
 
 if ($scriptParameter{'pChanjoSexCheck'} > 0) {
     
-    &PrintToFileHandles(\@printFilehandles, "\npChanjoSexCheck\n");
+    $logger->info("pChanjoSexCheck\n");
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #For all SampleIDs
 	
@@ -1082,7 +1080,7 @@ if ($scriptParameter{'pChanjoSexCheck'} > 0) {
 
 if ($scriptParameter{'pChanjoBuild'} > 0) {
     
-    &PrintToFileHandles(\@printFilehandles, "\nChanjoBuild\n");
+    $logger->info("ChanjoBuild\n");
 
     &CheckBuildDownLoadPreRequisites("ChanjoBuild");
        
@@ -1091,7 +1089,7 @@ if ($scriptParameter{'pChanjoBuild'} > 0) {
 
 if ($scriptParameter{'pChanjoAnnotate'} > 0) {
     
-    &PrintToFileHandles(\@printFilehandles, "\nChanjoAnnotate\n");
+    $logger->info("ChanjoAnnotate\n");
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #For all SampleIDs
 	
@@ -1101,14 +1099,14 @@ if ($scriptParameter{'pChanjoAnnotate'} > 0) {
 
 if ($scriptParameter{'pChanjoImport'} > 0) {
     
-    &PrintToFileHandles(\@printFilehandles, "\nChanjoImport\n");
+    $logger->info("ChanjoImport\n");
     
     &ChanjoImport($scriptParameter{'familyID'}, $scriptParameter{'aligner'});
 }
 
 if ($scriptParameter{'pGenomeCoverageBED'} > 0) {  #Run GenomeCoverageBED
     
-    &PrintToFileHandles(\@printFilehandles, "\nGenomeCoverageBED\n"); 
+    $logger->info("GenomeCoverageBED\n"); 
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 
@@ -1118,7 +1116,7 @@ if ($scriptParameter{'pGenomeCoverageBED'} > 0) {  #Run GenomeCoverageBED
 
 if ($scriptParameter{'pPicardToolsCollectMultipleMetrics'} > 0) {  #Run PicardToolsCollectMultipleMetrics
     
-    &PrintToFileHandles(\@printFilehandles, "\nPicardToolsCollectMultipleMetrics\n");   
+    $logger->info("PicardToolsCollectMultipleMetrics\n");   
     
     &CheckBuildHumanGenomePreRequisites("PicardToolsCollectMultipleMetrics");
 
@@ -1130,7 +1128,7 @@ if ($scriptParameter{'pPicardToolsCollectMultipleMetrics'} > 0) {  #Run PicardTo
 
 if ($scriptParameter{'pPicardToolsCalculateHSMetrics'} > 0) {  #Run PicardToolsCalculateHSMetrics
     
-    &PrintToFileHandles(\@printFilehandles, "\nPicardToolsCalculateHSMetrics\n");   
+    $logger->info("PicardToolsCalculateHSMetrics\n");   
     
     &CheckBuildHumanGenomePreRequisites("PicardToolsCalculateHSMetrics");
     if ($scriptParameter{'dryRunAll'} != 1) {
@@ -1145,7 +1143,7 @@ if ($scriptParameter{'pPicardToolsCalculateHSMetrics'} > 0) {  #Run PicardToolsC
 
 if ($scriptParameter{'pRCovPlots'} > 0) {  #Run Rcovplot scripts   
 
-    &PrintToFileHandles(\@printFilehandles, "\nRCovPlots\n");	
+    $logger->info("RCovPlots\n");	
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
@@ -1155,7 +1153,7 @@ if ($scriptParameter{'pRCovPlots'} > 0) {  #Run Rcovplot scripts
 
 if ($scriptParameter{'pGATKRealigner'} > 0) {  #Run GATK ReAlignerTargetCreator/IndelRealigner
 
-    &PrintToFileHandles(\@printFilehandles, "\nGATK ReAlignerTargetCreator/IndelRealigner\n");
+    $logger->info("GATK ReAlignerTargetCreator/IndelRealigner\n");
 
     &CheckBuildHumanGenomePreRequisites("GATKRealigner");
     &CheckBuildDownLoadPreRequisites("GATKRealigner");
@@ -1168,7 +1166,7 @@ if ($scriptParameter{'pGATKRealigner'} > 0) {  #Run GATK ReAlignerTargetCreator/
 
 if ($scriptParameter{'pGATKBaseRecalibration'} > 0) {  #Run GATK BaseRecalibrator/PrintReads
 
-    &PrintToFileHandles(\@printFilehandles, "\nGATK BaseRecalibrator/PrintReads\n");
+    $logger->info("GATK BaseRecalibrator/PrintReads\n");
 
     &CheckBuildHumanGenomePreRequisites("GATKBaseRecalibration");
     &CheckBuildDownLoadPreRequisites("GATKBaseRecalibration");
@@ -1181,7 +1179,7 @@ if ($scriptParameter{'pGATKBaseRecalibration'} > 0) {  #Run GATK BaseRecalibrato
 
 if ($scriptParameter{'pGATKHaploTypeCaller'} > 0) {  #Run GATK HaploTypeCaller
 
-    &PrintToFileHandles(\@printFilehandles, "\nGATK HaplotypeCaller\n");
+    $logger->info("GATK HaplotypeCaller\n");
 
     &CheckBuildHumanGenomePreRequisites("GATKHaploTypeCaller");
     &CheckBuildDownLoadPreRequisites("GATKHaploTypeCaller");
@@ -1208,7 +1206,7 @@ if ($scriptParameter{'pGATKHaploTypeCaller'} > 0) {  #Run GATK HaploTypeCaller
 
 if ($scriptParameter{'pGATKGenoTypeGVCFs'} > 0) {  #Run GATK GenoTypeGVCFs. Done per family
 
-    &PrintToFileHandles(\@printFilehandles, "\nGATK GenoTypeGVCFs\n");
+    $logger->info("GATK GenoTypeGVCFs\n");
 
     &CheckBuildHumanGenomePreRequisites("GATKGenoTypeGVCFs");
 
@@ -1217,7 +1215,7 @@ if ($scriptParameter{'pGATKGenoTypeGVCFs'} > 0) {  #Run GATK GenoTypeGVCFs. Done
 
 if ($scriptParameter{'pGATKVariantRecalibration'} > 0) {  #Run GATK VariantRecalibrator/ApplyRecalibration. Done per family
 
-    &PrintToFileHandles(\@printFilehandles, "\nGATK VariantRecalibrator/ApplyRecalibration\n");
+    $logger->info("GATK VariantRecalibrator/ApplyRecalibration\n");
 
     &CheckBuildHumanGenomePreRequisites("GATKVariantRecalibration");
     &CheckBuildDownLoadPreRequisites("GATKVariantRecalibration");
@@ -1230,14 +1228,14 @@ if ($scriptParameter{'pGATKVariantRecalibration'} > 0) {  #Run GATK VariantRecal
 
 if ($scriptParameter{'pSampleCheck'} > 0) {  #Run SampleCheck. Done per family
 
-    &PrintToFileHandles(\@printFilehandles, "\nSampleCheck\n");
+    $logger->info("SampleCheck\n");
 
     &SampleCheck($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 }
 
 if ($scriptParameter{'pGATKPhaseByTransmission'} > 0) {  #Run GATK PhaseByTransmission. Done per family
     
-    &PrintToFileHandles(\@printFilehandles, "\nGATK PhaseByTransmission\n");
+    $logger->info("GATK PhaseByTransmission\n");
     
     &CheckBuildHumanGenomePreRequisites("GATKPhaseByTransmission");
     &GATKPhaseByTransmission($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
@@ -1245,7 +1243,7 @@ if ($scriptParameter{'pGATKPhaseByTransmission'} > 0) {  #Run GATK PhaseByTransm
 
 if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) {  #Run GATK ReadBackedPhasing. Done per family. NOTE: Needs phased calls
     
-    &PrintToFileHandles(\@printFilehandles, "\nGATK ReadBackedPhasing\n");
+    $logger->info("GATK ReadBackedPhasing\n");
     
     &CheckBuildHumanGenomePreRequisites("GATKReadBackedPhasing");
     &GATKReadBackedPhasing($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
@@ -1253,14 +1251,14 @@ if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) {  #Run GATK ReadBackedPhasi
 
 if ($scriptParameter{'pVariantEffectPredictor'} > 0) {  #Run VariantEffectPredictor. Done per family
 
-    &PrintToFileHandles(\@printFilehandles, "\nVariantEffectPredictor\n");
+    $logger->info("VariantEffectPredictor\n");
 
     &VariantEffectPredictor($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 }
 
 if ($scriptParameter{'pVCFParser'} > 0) {  #Run VariantEffectPredictor. Done per family
 
-    &PrintToFileHandles(\@printFilehandles, "\nVCFParser\n");
+    $logger->info("VCFParser\n");
     
     &VCFParser($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 
@@ -1272,7 +1270,7 @@ if ($scriptParameter{'pVCFParser'} > 0) {  #Run VariantEffectPredictor. Done per
 
 if ($scriptParameter{'pSnpEff'} > 0) {  #Run snpEff. Done per family
 
-    &PrintToFileHandles(\@printFilehandles, "\nSnpEff\n");
+    $logger->info("SnpEff\n");
 
     &CheckBuildDownLoadPreRequisites("SnpEff");
     &SnpEff($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
@@ -1280,7 +1278,7 @@ if ($scriptParameter{'pSnpEff'} > 0) {  #Run snpEff. Done per family
 
 if ($scriptParameter{'pAnnovar'} > 0) {  #Run Annovar. Done per family
 
-    &PrintToFileHandles(\@printFilehandles, "\nAnnovar\n");
+    $logger->info("Annovar\n");
 
     &CheckBuildHumanGenomePreRequisites("Annovar");
 
@@ -1297,7 +1295,7 @@ if ($scriptParameter{'pAnnovar'} > 0) {  #Run Annovar. Done per family
 
 if ($scriptParameter{'pGATKVariantEvalAll'} > 0) {  #Run GATK VariantEval for all variants. Done per sampleID
 
-    &PrintToFileHandles(\@printFilehandles, "\nGATK VariantEval All\n");
+    $logger->info("GATK VariantEval All\n");
 
     &CheckBuildHumanGenomePreRequisites("GATKVariantEvalAll");
     &CheckBuildDownLoadPreRequisites("GATKVariantEvalAll");
@@ -1310,7 +1308,7 @@ if ($scriptParameter{'pGATKVariantEvalAll'} > 0) {  #Run GATK VariantEval for al
 
 if ($scriptParameter{'pGATKVariantEvalExome'} > 0) {  #Run GATK VariantEval for exome variants. Done per sampleID
 
-    &PrintToFileHandles(\@printFilehandles, "\nGATK VariantEval Exome\n");
+    $logger->info("GATK VariantEval Exome\n");
     
     &CheckBuildHumanGenomePreRequisites("GATKVariantEvalExome");
     &CheckBuildDownLoadPreRequisites("GATKVariantEvalExome");
@@ -1323,21 +1321,21 @@ if ($scriptParameter{'pGATKVariantEvalExome'} > 0) {  #Run GATK VariantEval for 
 
 if ($scriptParameter{'pRankVariants'} > 0) {  #Run RankVariants. Done per family
 
-    &PrintToFileHandles(\@printFilehandles, "\nRankVariants\n");
+    $logger->info("RankVariants\n");
 
     &RankVariants($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 }
 
 if ($scriptParameter{'pQCCollect'} > 0) {  #Run QCCollect. Done per family
 
-    &PrintToFileHandles(\@printFilehandles, "\nQCCollect\n");
+    $logger->info("QCCollect\n");
 
     &QCCollect($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 }
 
 if ($scriptParameter{'pRemoveRedundantFiles'} > 0) {  #Sbatch generation of removal of alignment files
     
-    &PrintToFileHandles(\@printFilehandles, "\nRemoval of alignment files\n");
+    $logger->info("Removal of alignment files\n");
 
     &RemoveRedundantFiles($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");	
 }
@@ -1349,12 +1347,10 @@ if ( ($scriptParameter{'pAnalysisRunStatus'} == 1) && ($scriptParameter{'dryRunA
 
 if ($scriptParameter{'pAnalysisRunStatus'} > 0) {
 
-    &PrintToFileHandles(\@printFilehandles, "\nAnalysisRunStatus\n");
+    $logger->info("AnalysisRunStatus\n");
 
     &AnalysisRunStatus($scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 }
-
-close(MIPLOG);  #Close mip_log file
 
 #Write QC for programs used in analysis                                                                                                                         
 if ($scriptParameter{'sampleInfoFile'} ne 0) {#Write SampleInfo to yaml file
@@ -4640,7 +4636,7 @@ sub BuildAnnovarPreRequisites {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     &ProgramPreRequisites($familyID, $program, $aligner, 0, $FILEHANDLE, 1, 3);
 
-    &PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to create required Annovar database files before executing ".$program."\n\n");
+    $logger->warn("Will try to create required Annovar database files before executing ".$program."\n");
 
     print $FILEHANDLE "#Make temporary download directory\n\n"; 
     print $FILEHANDLE "mkdir -p ".$annovarTemporaryDirectory."; ", "\n\n"; 
@@ -4854,7 +4850,7 @@ sub BuildPTCHSMetricPreRequisites {
 		
 		$sampleIDBuildFileNoEndingTemp = $sampleIDBuildFileNoEnding."_".$randomInteger;  #Add random integer	
 		
-		&PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to create required ".$sampleIDBuildFile." file before executing ".$program."\n\n");
+		$logger->warn("Will try to create required ".$sampleIDBuildFile." file before executing ".$program."\n");
 		
 		print $FILEHANDLE "#SampleID:".$scriptParameter{'sampleIDs'}[$sampleIDCounter], "\n\n";
 		print $FILEHANDLE "#CreateSequenceDictionary from reference", "\n";
@@ -4975,7 +4971,7 @@ sub BuildBwaPreRequisites {
 
     if ($parameter{'bwaBuildReference'}{'buildFile'} eq 1) {
 
-	&PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to create required ".$scriptParameter{'bwaBuildReference'}." index files before executing ".$program."\n\n");
+	$logger->warn("Will try to create required ".$scriptParameter{'bwaBuildReference'}." index files before executing ".$program."\n");
 	
 	print $FILEHANDLE "#Building BWA index", "\n\n";
 	print $FILEHANDLE "bwa index ";  #Index sequences in the FASTA format
@@ -5026,7 +5022,7 @@ sub BuildMosaikAlignPreRequisites {
 
     if ($parameter{'mosaikAlignReference'}{'buildFile'} eq 1) {  ##Begin autoBuild of MosaikAlignReference
 
-	&PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to create required ".$scriptParameter{'mosaikAlignReference'}." before executing ".$program."\n\n");
+	$logger->("Will try to create required ".$scriptParameter{'mosaikAlignReference'}." before executing ".$program."\n");
 
 	print $FILEHANDLE "#Building MosaikAligner Reference", "\n\n";
 	print $FILEHANDLE "MosaikBuild ";
@@ -5043,7 +5039,7 @@ sub BuildMosaikAlignPreRequisites {
     }
     if ($parameter{'mosaikJumpDbStub'}{'buildFile'} eq 1) {  ##Begin autoBuild of MosaikJump Database
 
-	&PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to create required ".$scriptParameter{'mosaikJumpDbStub'}." before executing ".$program."\n\n");
+	$logger->warn("Will try to create required ".$scriptParameter{'mosaikJumpDbStub'}." before executing ".$program."\n");
 
 	print $FILEHANDLE "#Building MosaikAligner JumpDatabase", "\n\n";
 	print $FILEHANDLE "mkdir -p /scratch/mosaik_tmp", "\n";
@@ -5160,11 +5156,11 @@ sub DownloadReference {
 	##Use $parameter instead of $scriptParameter to cater for annotation files that are arrays and not supplied as flag => value
 	if (defined($scriptParameter{$parameterName})) {
 
-	    &PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to download ".$scriptParameter{$parameterName}." before executing ".$$programRef."\n\n");
+	    $logger->warn("Will try to download ".$scriptParameter{$parameterName}." before executing ".$$programRef."\n");
 	}
 	else {
 
-	    &PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to download ".$parameterName." before executing ".$$programRef."\n\n");
+	    $logger->warn("Will try to download ".$parameterName." before executing ".$$programRef."\n");
 	}
 	print $FILEHANDLE "workon ".$scriptParameter{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
 
@@ -5259,13 +5255,13 @@ sub BuildHumanGenomePreRequisites {
     ## Check for compressed files
     if ($humanGenomeCompressed eq "compressed") {
 
-	&PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to decompres ".$scriptParameter{'humanGenomeReference'}." before executing ".$program."\n\n");
+	$logger->warn("Will try to decompres ".$scriptParameter{'humanGenomeReference'}." before executing ".$program."\n");
 
 	print $FILEHANDLE "gzip ";
 	print $FILEHANDLE "-d ";  #Decompress
 	print $FILEHANDLE $scriptParameter{'referencesDir'}."/".$scriptParameter{'humanGenomeReference'}, "\n\n";
 	$scriptParameter{'humanGenomeReference'} =~ s/.fasta.gz/.fasta/g;  #Replace the .fasta.gz ending with .fasta since this will execute before the analysis, hence changing the original file name ending from ".fastq" to ".fastq.gz".
-	print STDOUT "Set humanGenomeReference to: ".$scriptParameter{'humanGenomeReference'}, "\n\n";
+	$logger->info("Set humanGenomeReference to: ".$scriptParameter{'humanGenomeReference'}, "\n");
 	$humanGenomeCompressed = "unCompressed";
     }
 
@@ -5275,7 +5271,7 @@ sub BuildHumanGenomePreRequisites {
 	
 	if ($parameter{"humanGenomeReference.dict"}{'buildFile'} eq 1) {  #.dict file
 
-	    &PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to create dict file for ".$scriptParameter{'humanGenomeReference'}." before executing ".$program."\n\n");
+	   $logger->info("Will try to create dict file for ".$scriptParameter{'humanGenomeReference'}." before executing ".$program."\n");
 	    
 	    print $FILEHANDLE "#CreateSequenceDictionary from reference", "\n";
 	    print $FILEHANDLE "java -Xmx2g ";
@@ -5293,7 +5289,7 @@ sub BuildHumanGenomePreRequisites {
 	}
 	if ($parameter{"humanGenomeReference.fasta.fai"}{'buildFile'} eq 1) {
 
-	    &PrintToFileHandles(\@printFilehandles, "\nNOTE: Will try to create .fai file for ".$scriptParameter{'humanGenomeReference'}." before executing ".$program."\n\n");
+	    $logger->warn("Will try to create .fai file for ".$scriptParameter{'humanGenomeReference'}." before executing ".$program."\n");
 
 	    print $FILEHANDLE "#Fai file from reference", "\n";
 	    print $FILEHANDLE "ln -s ";  #Softlink
@@ -5334,27 +5330,28 @@ sub CheckCosmidInstallation {
 
     my $parameterNameRef = $_[0];
     
-    if ($parameter{$$parameterNameRef}{'buildFile'} eq 1) {
+    if ($parameter
+{$$parameterNameRef}{'buildFile'} eq 1) {
 	
 	if (defined($scriptParameter{'pythonVirtualEnvironment'})) {  #Use python virtualenv
 	
-	    &PrintToFileHandles(\@printFilehandles, "Checking your Cosmid installation in preparation for download of ".$scriptParameter{$$parameterNameRef}."\n");
+	    $logger->info("Checking your Cosmid installation in preparation for download of ".$scriptParameter{$$parameterNameRef}."\n");
  
 	    my $whichReturn = `source ~/.bash_profile; workon $scriptParameter{'pythonVirtualEnvironment'};which cosmid;deactivate;`;
 	    
 	    if ($whichReturn eq "") {
 
-		print STDERR "\nMIP uses cosmid to download ".$scriptParameter{$$parameterNameRef}." and MIP could not find a cosmid installation in your python virtualenvironment".$scriptParameter{'pythonVirtualEnvironment'}." ","\n"; 
+		$logger->fatal("MIP uses cosmid to download ".$scriptParameter{$$parameterNameRef}." and MIP could not find a cosmid installation in your python virtualenvironment".$scriptParameter{'pythonVirtualEnvironment'}." ","\n"); 
 		exit;
 	    }
 	    else {  #Test ok
 
-		&PrintToFileHandles(\@printFilehandles, "Found installation in ".$whichReturn."\n");
+		$logger->info("Found installation in ".$whichReturn."\n");
 	    }
 	}
 	else  {  #No python virtualenv
 	
-	    print STDERR "\nCannot download".$scriptParameter{$$parameterNameRef}." without a '-pythonVirtualEnvironment'";
+	    $logger->fatal("Cannot download".$scriptParameter{$$parameterNameRef}." without a '-pythonVirtualEnvironment'");
 	    exit;
 	}
     }
@@ -5385,7 +5382,7 @@ sub ReadPlinkPedigreeFile {
 
     my %plinkPedigree = &DefinePlinkPedigree();  #Holds allowed entries and positions to be checked for Plink pedigree files
 
-    open(my $PEDF, "<", $filePath) or die "Can't open ".$filePath.":$!, \n";    
+    open(my $PEDF, "<", $filePath) or $logger->logdie("Can't open '".$filePath."': ".$!."\n");    
      
     while (<$PEDF>) {
 	
@@ -5413,7 +5410,7 @@ sub ReadPlinkPedigreeFile {
 	    }
 	    else {
 
-		print STDERR "File: ".$filePath." at line ".$.." cannot find FamilyID in column 1\n";
+		$logger->("File: ".$filePath." at line ".$.." cannot find FamilyID in column 1\n");
 		exit;
 	    }
 	    if ($lineInfo[1] =~/\S+/) { #SampleID
@@ -5427,7 +5424,7 @@ sub ReadPlinkPedigreeFile {
 	    }
 	    else {
 
-		print STDERR "File: ".$filePath." at line ".$.." cannot find SampleID in column 2\n";
+		$logger->fatal("File: ".$filePath." at line ".$.." cannot find SampleID in column 2\n");
 		exit;
 	    }
 	    
@@ -5440,9 +5437,9 @@ sub ReadPlinkPedigreeFile {
 
 		    if ($foundElement == 1) {  #Invalid element found in file
 
-			print STDERR "\nFound illegal element: '".$lineInfo[$sampleElementsCounter]."' in column '".$sampleElementsCounter."' in pedigree file: '".$filePath."' at line '".$.."'\n";
-			print STDERR "\nPlease correct the entry before analysis.\n";
-			print STDERR "\nMIP: Aborting run.\n\n";
+			$logger->fatal("Found illegal element: '".$lineInfo[$sampleElementsCounter]."' in column '".$sampleElementsCounter."' in pedigree file: '".$filePath."' at line '".$.."'\n");
+			$logger->fatal("Please correct the entry before analysis.\n");
+			$logger->fatal("\nMIP: Aborting run.\n\n");
 			exit;
 		    }
 		    
@@ -5475,8 +5472,7 @@ sub ReadPlinkPedigreeFile {
 		    
 		    if ($sampleElementsCounter < 7) {  #Only check mandatory elements 
 
-			print STDERR $pedigreeFileElements[$sampleElementsCounter], "\t";
-			print STDERR "File: ".$filePath." at line ".$.."\tcannot find '".$pedigreeFileElements[$sampleElementsCounter]."' entry in column ".$sampleElementsCounter, "\n";
+			$logger->fatal($pedigreeFileElements[$sampleElementsCounter], "\t File: ".$filePath." at line ".$.."\tcannot find '".$pedigreeFileElements[$sampleElementsCounter]."' entry in column ".$sampleElementsCounter, "\n");
 			exit;
 		    }  
 		}
@@ -5487,7 +5483,7 @@ sub ReadPlinkPedigreeFile {
 
 	@{$scriptParameter{'sampleIDs'}} = sort(@{$scriptParameter{'sampleIDs'}});  #Lexiographical sort to determine the correct order of ids indata
     }
-    print STDOUT "Read pedigree file: ".$filePath, "\n";
+    $logger->info("Read pedigree file: ".$filePath, "\n");
     close($PEDF);
 }
 
@@ -5877,13 +5873,13 @@ sub FIDSubmitJob {
     }
     if ($jobIDsReturn !~/\d+/) {  #Catch errors since, propper sbatch submission should only return numbers
 
-	print STDERR $jobIDsReturn."\n";
-	print STDERR "\nMIP: Aborting run.\n\n";
+	$logger->fatal($jobIDsReturn."\n");
+	$logger->fatal("MIP: Aborting run.\n");
 	exit;
     }
-    &PrintToFileHandles(\@printFilehandles, "Sbatch script submitted, job id: $jobID\n");
-    &PrintToFileHandles(\@printFilehandles, "To check status of job, please run \'squeue -j $jobID\'\n");
-    &PrintToFileHandles(\@printFilehandles, "To cancel job, please run \'scancel $jobID\'\n");
+    $logger->info("Sbatch script submitted, job id: $jobID\n");
+    $logger->info("To check status of job, please run \'squeue -j $jobID\'\n");
+    $logger->info("To cancel job, please run \'scancel $jobID\'\n");
 }
 
 
@@ -5914,24 +5910,28 @@ sub CollectInfiles {
 ##Returns  : ""
 ##Arguments:
 ##         :
-    
+
+    $logger->info("Reads from Platform\n");
+
     for (my $inputDirectoryCounter=0;$inputDirectoryCounter<scalar(@{$scriptParameter{'sampleIDs'}});$inputDirectoryCounter++) {  #Collects inputfiles govern by sampleIDs
 	
 	my @infiles = `cd $scriptParameter{'inFilesDirs'}[ $inputDirectoryCounter ];ls *.fastq*;`;  #'cd' to input dir and collect fastq files and fastq.gz files
-	
+	chomp(@infiles);    #Remove newline from every entry in array
+
 	if (scalar(@infiles) == 0) {  #No "*.fastq*" infiles
 	    
-	    print STDERR "Could not find any '.fastq' files in supplied infiles directory ".$scriptParameter{'inFilesDirs'}[ $inputDirectoryCounter ], "\n";
+	    $logger->fatal("Could not find any '.fastq' files in supplied infiles directory ".$scriptParameter{'inFilesDirs'}[ $inputDirectoryCounter ], "\n");
 	    exit;
 	}
-	&PrintToFileHandles(\@printFilehandles, "\nReads from Platform\n");
-	&PrintToFileHandles(\@printFilehandles, "\nSample ID\t".$scriptParameter{'sampleIDs'}[$inputDirectoryCounter]."\n");
-	print STDOUT "Inputfiles:\n",@ { $infile{ $scriptParameter{'sampleIDs'}[$inputDirectoryCounter] } = [@infiles] }, "\n";  #Hash with sample id as key and inputfiles in dir as array 
-	print MIPLOG "Inputfiles:\n",@ { $infile{ $scriptParameter{'sampleIDs'}[$inputDirectoryCounter] } = [@infiles] }, "\n";
-	
+	$logger->info("Sample ID: ".$scriptParameter{'sampleIDs'}[$inputDirectoryCounter]."\n");
+	$logger->info("\tInputfiles:\n");
+	##Log each file from platform
+	foreach my $file (@infiles) {
+
+	    $logger->info("\t\t", $file, "\n");  #Indent for visability
+	}
 	$indirpath{$scriptParameter{'sampleIDs'}[$inputDirectoryCounter]} = $scriptParameter{'inFilesDirs'}[ $inputDirectoryCounter ];   #Catch inputdir path
-	chomp(@infiles);    #Remove newline from every entry in array
-	$infile{ $scriptParameter{'sampleIDs'}[$inputDirectoryCounter] }  =[@infiles];  #Reload files into hash (kept above newline just for print STDOUT)
+	$infile{ $scriptParameter{'sampleIDs'}[$inputDirectoryCounter] }  =[@infiles];  #Reload files into hash
     }
 }
 
@@ -5986,7 +5986,8 @@ sub InfilesReFormat {
 	    }
 	    else {  #No regexp match i.e. file does not follow filename convention 
 
-		print STDERR "Could not detect MIP file name convention for file: ".$infile{$sampleID}[$infileCounter].". \n\nPlease check that the file name follows the specified convention.", "\n";
+		$logger->fatal("Could not detect MIP file name convention for file: ".$infile{$sampleID}[$infileCounter].". \n");
+		$logger->fatal("Please check that the file name follows the specified convention.", "\n");
 		exit;
 	    }
         }
@@ -6019,7 +6020,7 @@ sub CheckSampleIDMatch {
     }
     unless ($seen{$infileSampleID} > 1) {
 
-	print STDOUT "\n".$sampleID." supplied and sampleID ".$infileSampleID." found in file : ".$infile{$sampleID}[$infileCounter]." does not match. Please rename file to match sampleID: ".$sampleID."\n\n";
+	$logger->fatal($sampleID." supplied and sampleID ".$infileSampleID." found in file : ".$infile{$sampleID}[$infileCounter]." does not match. Please rename file to match sampleID: ".$sampleID."\n");
 	exit;
     }
 }
@@ -6211,7 +6212,12 @@ sub DefineArrayParameters {
 	@{$scriptParameter{$parameterName}} = split(',', join(',',@{$arrayRef})); #If user supplied parameter a comma separated list
     }
     push(@orderParameters, $parameterName); #Add to enable later evaluation of parameters in proper order & write to master file
-    &AddToScriptParameter($parameterName, $parameter{$parameterName}{'value'}[0], $parameterType, $parameterDefault, $associatedPrograms, $parameterExistsCheck);
+
+    my $ret = &AddToScriptParameter($parameterName, $parameter{$parameterName}{'value'}[0], $parameterType, $parameterDefault, $associatedPrograms, $parameterExistsCheck);
+    if ($ret) {
+	
+	push(@broadcasts, $ret);
+    }
 }
 
 
@@ -6320,7 +6326,7 @@ sub AddToScriptParameter {
     my $parameterDefault = $_[3];
     my @associatedPrograms = split(/,/, $_[4]);
     my $parameterExistsCheck = $_[5];
-   
+    
 ##Validation
     #print "parameterName: ".$parameterName, "\n";
     #print "parameterValue: ".$parameterValue, "\n";
@@ -6329,7 +6335,7 @@ sub AddToScriptParameter {
     #foreach my $associatedProgram (@associatedPrograms) {
 #	print "associatedProgram: ".$associatedProgram, "\n";
  #   }
-    
+
     foreach my $associatedProgram (@associatedPrograms) {  #Check all programs that use parameter
 
 	my $parameterSetSwitch = 0;
@@ -6435,8 +6441,8 @@ sub AddToScriptParameter {
 			}
 			else {
 			    
-			    print STDERR $USAGE, "\n";
-			    print STDERR "\nSupply '-".$parameterName."' if you want to run ".$associatedProgram, "\n\n";
+			    $logger->fatal($USAGE, "\n");
+			    $logger->fatal("Supply '-".$parameterName."' if you want to run ".$associatedProgram, "\n");
 			    exit;
 			}
 		    }
@@ -6605,7 +6611,7 @@ sub AddToScriptParameter {
 			    }
 			    else {  #Annovar Table not supported by MIP
 				
-				print STDOUT "\nNOTE: You supplied Annovar database: ".$scriptParameter{'annovarTableNames'}[$tableNamesCounter]." which is not supported by MIP. MIP can only process supported annovar databases\n";
+				$logger->error("You supplied Annovar database: ".$scriptParameter{'annovarTableNames'}[$tableNamesCounter]." which is not supported by MIP. MIP can only process supported annovar databases\n");
 				&PrintSupportedAnnovarTableNames();
 			    }
 			}
@@ -6700,8 +6706,8 @@ sub AddToScriptParameter {
 			}
 			else {
 			    
-			    print STDERR $USAGE, "\n";
-			    print STDERR "\nSupply '-".$parameterName."' if you want to run ".$associatedProgram, "\n\n";
+			    $logger->fatal($USAGE, "\n");
+			    $logger->fatal("Supply '-".$parameterName."' if you want to run ".$associatedProgram, "\n");
 			    exit;
 			}
 		    }
@@ -6745,10 +6751,10 @@ sub AddToScriptParameter {
 			    
 			    if ( grep { -x "$_/".$parameter{$parameterName}{'programNamePath'}[$programNamePathCounter]} split(/:/,$ENV{PATH}) ) {
 				
-				print STDOUT "ProgramCheck: ".$parameter{$parameterName}{'programNamePath'}[$programNamePathCounter]." installed\n"; 
+				$logger->info("ProgramCheck: ".$parameter{$parameterName}{'programNamePath'}[$programNamePathCounter]." installed\n"); 
 			    }
 			    else {
-				print STDOUT "Warning: Could not detect ".$parameter{$parameterName}{'programNamePath'}[$programNamePathCounter]." in your Path\n";
+				$logger->info("Warning: Could not detect ".$parameter{$parameterName}{'programNamePath'}[$programNamePathCounter]." in your Path\n");
 				exit;
 			    }
 			}
@@ -6769,8 +6775,8 @@ sub AddToScriptParameter {
 		    }
 		    else {
 		
-			print STDERR $USAGE, "\n";
-			print STDERR "You have to choose either mosaik or bwa to perform alignments or specify which aligner (-aligner 'mosaik' or 'bwa') was used if you want to only run programs after alignment.", "\n\n";
+			$logger->fatal($USAGE, "\n");
+			$logger->fatal("You have to choose either mosaik or bwa to perform alignments or specify which aligner (-aligner 'mosaik' or 'bwa') was used if you want to only run programs after alignment.", "\n");
 			exit;
 		    }
 		}
@@ -6781,14 +6787,15 @@ sub AddToScriptParameter {
 			$scriptParameter{'aligner'} = "bwa";
 		    }
 		    else {
-			print STDERR $USAGE, "\n";
-			print STDERR "You have to choose either mosaik or bwa to perform alignments or specify which aligner (-aligner 'mosaik' or 'bwa') was used if you want to only run programs after alignment.", "\n\n";
+			$logger->fatal($USAGE, "\n");
+			$logger->fatal("You have to choose either mosaik or bwa to perform alignments or specify which aligner (-aligner 'mosaik' or 'bwa') was used if you want to only run programs after alignment.", "\n");
 			exit;
 		    }
 		}
 		elsif ($scriptParameter{'aligner'} eq "nocmdinput") {
-		    print STDERR $USAGE, "\n";
-		    print STDERR "You have to choose either mosaik or bwa to perform alignments or specify which aligner (-aligner 'mosaik' or 'bwa') was used if you want to only run programs after alignment.", "\n\n";
+
+		    $logger->fatal($USAGE, "\n");
+		    $logger->fatal("You have to choose either mosaik or bwa to perform alignments or specify which aligner (-aligner 'mosaik' or 'bwa') was used if you want to only run programs after alignment.", "\n");
 		    exit;
 		}
 	    }
@@ -6800,13 +6807,17 @@ sub AddToScriptParameter {
 ##Parameter set
     if (defined($scriptParameter{$parameterName})) {
 	
+	my $info = "";  #Hold parameters info
+
 	if (defined($parameter{$parameterName}{'array'})) {
 	 
-	    print STDOUT "Set ".$parameterName." to: ".join(',',@{$scriptParameter{$parameterName}}), "\n";   
+	    $info = "Set ".$parameterName." to: ".join(',',@{$scriptParameter{$parameterName}});
 	}
 	else {
-	    print STDOUT "Set ".$parameterName." to: ".$scriptParameter{$parameterName}, "\n";
+
+	    $info = "Set ".$parameterName." to: ".$scriptParameter{$parameterName};
 	}
+	return $info;
     }
 }
 
@@ -7013,22 +7024,22 @@ sub ProgramPreRequisites {
     elsif ($scriptParameter{"p".$programName} == 2) {  #Dry run single program
 
 	$fileName = $dryRunFilenamePath; 
-	&PrintToFileHandles(\@printFilehandles, "Dry Run:\n");
+	$logger->info("Dry Run:\n");
     }
     else {  #Dry run
 
 	$fileName = $dryRunFilenamePath;
-	&PrintToFileHandles(\@printFilehandles, "Dry Run:\n");
+	$logger->info("Dry Run:\n");
     }
 
     ($fileName, $fileNameTracker) = &CheckFileNameExists(\$fileName, \$fnend);
 
 ###Info and Log
-    &PrintToFileHandles(\@printFilehandles, "Creating sbatch script for ".$programName." and writing script file(s) to: ".$fileName."\n");
-    &PrintToFileHandles(\@printFilehandles, "Sbatch script ".$programName." data files will be written to: ".$programDataDirectory."\n");
+    $logger->info("Creating sbatch script for ".$programName." and writing script file(s) to: ".$fileName."\n");
+    $logger->info("Sbatch script ".$programName." data files will be written to: ".$programDataDirectory."\n");
 
 ###Sbatch header
-    open ($FILEHANDLE, ">",$fileName) or die "Can't write to ".$fileName.":".$!, "\n";
+    open ($FILEHANDLE, ">",$fileName) or $logger->logdie("Can't write to '".$fileName."' :".$!."\n");
     
     print $FILEHANDLE "#! /bin/bash -l", "\n";
     print $FILEHANDLE "#SBATCH -A ".$scriptParameter{'projectID'}, "\n";
@@ -7358,25 +7369,23 @@ sub CheckPedigreeMembers {
 	else {
 
 	    $scriptParameter{'pGATKPhaseByTransmission'} = 0;  #Override input since pedigree is not valid for analysis
-	    &PrintToFileHandles(\@printFilehandles, "Switched GATK PhaseByTransmission to 'no run' mode since MIP did not detect a valid pedigree for this type of analysis.");
+	    $logger->info("Switched GATK PhaseByTransmission to 'no run' mode since MIP did not detect a valid pedigree for this type of analysis.");
 	    
 	    if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) {  #Broadcast
 		
-		&PrintToFileHandles(\@printFilehandles, "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n");
+		$logger->info("MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n");
 	    }
-	    print STDOUT "\n";
 	}
     }
     else {
 	
 	$scriptParameter{'pGATKPhaseByTransmission'} = 0;  #Override input since pedigree is not valid for analysis
-	&PrintToFileHandles(\@printFilehandles, "Switched GATK PhaseByTransmission to 'no run' mode since MIP did not detect a valid pedigree for this type of analysis.");
+	$logger->info("Switched GATK PhaseByTransmission to 'no run' mode since MIP did not detect a valid pedigree for this type of analysis.");
 	
 	if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) {  #Broadcast
 	    
-	    &PrintToFileHandles(\@printFilehandles, "MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n");
+	    $logger->info("MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n");
 	}
-	print STDERR "\n";
     }
 }
 
@@ -7387,10 +7396,15 @@ sub WriteCMDMipLog {
     
 ##Function : Write CMD to MIP log file
 ##Returns  : ""
-##Arguments: 
-
-    open (my $MIPLOG, ">>", $mipLogName) or die "Can't write to ".$mipLogName.":".$!, "\n";  #Open file run log
+##Arguments: $scriptRef, $logFileRef
+##         : $scriptRef  => The script that is being executed {REF}
+##         : $logFileRef => The log file
     
+    my $scriptRef = $_[0];
+    my $logFileRef = $_[1];
+
+    my $cmdLine = $$scriptRef." ";
+
     foreach my $orderParameterElement (@orderParameters) {
 	
 	if (defined($scriptParameter{$orderParameterElement}) ) {
@@ -7401,17 +7415,17 @@ sub WriteCMDMipLog {
 
 		if (defined($parameter{$orderParameterElement}{'array'})) {  #Array parameters need to be comma sep 
 
-		    print MIPLOG "-".$orderParameterElement." ".join(',', @{$scriptParameter{$orderParameterElement}})." ";
+		    $cmdLine .= "-".$orderParameterElement." ".join(',', @{$scriptParameter{$orderParameterElement}})." ";
 		}
 		else {
-		    print MIPLOG "-".$orderParameterElement." ".$scriptParameter{$orderParameterElement}." ";
+		    $cmdLine .="-".$orderParameterElement." ".$scriptParameter{$orderParameterElement}." ";
 		}
 	    }
 	}
     }
-    print MIPLOG "\n\n";
-    print MIPLOG "MIP Version: ".$mipVersion, "\n";
-    ##Note FileHandle MIPLOG not closed
+    $logger->info($cmdLine,"\n");
+    $logger->info("MIP Version: ".$mipVersion, "\n");
+    $logger->info("Script parameters and info from ".$$scriptRef." are saved in file: ".$$logFileRef, "\n");
 }
 
 
@@ -7428,11 +7442,11 @@ sub WriteYAML {
     my $yamlFile = $_[0];  #Filename
     my $yamlHashRef = $_[1];  #Hash reference to write to file
     
-    open (my $YAML, ">", $yamlFile) or die "can't open ".$yamlFile.":".$!, "\n";
+    open (my $YAML, ">", $yamlFile) or $logger->logdie("Can't open '".$yamlFile."':".$!."\n");
     print $YAML Dump( $yamlHashRef ), "\n";
 
     close($YAML);
-    print STDOUT "Wrote: ".$yamlFile, "\n";
+    $logger->info("Wrote: ".$yamlFile, "\n");
 }
 
 
@@ -7449,12 +7463,15 @@ sub LoadYAML {
 
     my %yamlHash;
 
-    open (my $YAML, "<", $yamlFile) or die "can't open ".$yamlFile.":".$!, "\n";    
+    open (my $YAML, "<", $yamlFile) or die "can't open ".$yamlFile.":".$!, "\n";  #Log4perl not initialised yet, hence no logdie
     %yamlHash = %{ YAML::LoadFile($yamlFile) };  #Load hashreference as hash
         
     close($YAML);
     
-    print STDOUT "Read Yaml file: ". $yamlFile, "\n";
+    if (defined($scriptParameter{'logFile'})) {
+
+	$logger->info("Read Yaml file: ". $yamlFile, "\n");
+    }
     return %yamlHash;
 }
 
@@ -7537,25 +7554,25 @@ sub DetermineNrofRapidNodes {
 
 	$ReadNrofLines = 190000000;  #Read batch size
 	$numberNodes = floor($infileSize / (12 * $ReadNrofLines) );  #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.	
-	print STDOUT "Number of Nodes: ".$numberNodes, "\n";
+	$logger->info("Number of Nodes: ".$numberNodes, "\n");
     }
     if ($seqLength > 50 && $seqLength <= 75) {
 
 	$ReadNrofLines = 190000000;  #Read batch size
 	$numberNodes = floor($infileSize / (9.75 * $ReadNrofLines) );  #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.	
-	print STDOUT "Number of Nodes: ".$numberNodes, "\n";
+	$logger->info("Number of Nodes: ".$numberNodes, "\n");
     }
     if ($seqLength >= 50 && $seqLength < 75) {
 
 	$ReadNrofLines = 130000000;  #Read batch size
 	$numberNodes = floor($infileSize / (7 * $ReadNrofLines) );  #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.
-	print STDOUT "Number of Nodes: ".$numberNodes, "\n";
+	$logger->info("Number of Nodes: ".$numberNodes, "\n");
     }
     if ($seqLength >= 35 && $seqLength < 50) {
 
 	$ReadNrofLines = 95000000;  #Read batch size
 	$numberNodes = floor($infileSize / (6 * $ReadNrofLines) );  #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.
-	print STDOUT "Number of Nodes: ".$numberNodes, "\n";
+	$logger->info("Number of Nodes: ".$numberNodes, "\n");
     }
     if ($numberNodes <= 1) {
 	
@@ -7580,7 +7597,7 @@ sub CheckUniqueIDNs {
 
     if (scalar(@{$sampleIdArrayRef}) == 0) {
 
-	print STDOUT "\nPlease provide sampleID(s)\n\n";
+	$logger->fatal("Please provide sampleID(s)\n");
 	exit;
     }
 
@@ -7590,17 +7607,17 @@ sub CheckUniqueIDNs {
 	
 	if ($scriptParameter{'familyID'} eq ${$sampleIdArrayRef}[$sampleIDCounter]) {  #FamilyID cannot be the same as sampleID
 	    
-	    print STDERR "\nFamilyID: ".$scriptParameter{'familyID'}." equals sampleID: ".${$sampleIdArrayRef}[$sampleIDCounter].". Please make sure that the familyID and sampleID(s) are unique.\n";
+	    $logger->fatal("FamilyID: ".$scriptParameter{'familyID'}." equals sampleID: ".${$sampleIdArrayRef}[$sampleIDCounter].". Please make sure that the familyID and sampleID(s) are unique.\n");
 	    exit;
 	}
 	if ($seen{ ${$sampleIdArrayRef}[$sampleIDCounter] } > 1) {  #Check sampleID are unique
 	
-	    print STDERR "\nSampleID: ".${$sampleIdArrayRef}[$sampleIDCounter]." is not uniqe.\n\n";
+	    $logger->fatal("SampleID: ".${$sampleIdArrayRef}[$sampleIDCounter]." is not uniqe.\n");
 	    exit;
 	}
 	if (${$sampleIdArrayRef}[$sampleIDCounter] =~/_/) {  #SampleID contains "_", which is not allowed accrding to filename conventions
 
-	    print STDERR "\nSampleID: ".${$sampleIdArrayRef}[$sampleIDCounter]." contains '_'. Please rename sampleID according to MIP's filename convention, removing the '_'.\n\n";
+	    $logger->fatal("SampleID: ".${$sampleIdArrayRef}[$sampleIDCounter]." contains '_'. Please rename sampleID according to MIP's filename convention, removing the '_'.\n");
 	    exit;	    
 	}
     }
@@ -7690,12 +7707,13 @@ sub CheckAutoBuild {
 	    }
 	    else {
 		
-		print STDERR "\nCould not find file ".$scriptParameter{'referencesDir'}."/".$scriptParameter{$$parameterNameRef}, "\n";
-		print STDERR "\nMake sure that file exists or use the default for this parameter to enable automatic download via Cosmid", "\n";
+		$logger->fatal("Could not find file ".$scriptParameter{'referencesDir'}."/".$scriptParameter{$$parameterNameRef}, "\n");
+		$logger->fatal("Make sure that file exists or use the default for this parameter to enable automatic download via Cosmid", "\n");
 		exit;
 	    }
 	}
 	else {
+
 	    return "0";  #No autobuild is needed   
 	}
     }
@@ -7726,7 +7744,7 @@ sub ParseHumanGenomeReference {
 	$humanGenomeReferenceSource = "hg";  #Refseq
     }
     else {
-	print STDERR "MIP cannot detect what kind of humanGenomeReference you have supplied. If you want to automatically set the capture kits used please supply the refrence on this format: [Species].[Source][Version].", "\n\n";
+	$logger->warn("MIP cannot detect what kind of humanGenomeReference you have supplied. If you want to automatically set the capture kits used please supply the refrence on this format: [Species].[Source][Version].", "\n");
     }
     ($humanGenomeReferenceNameNoEnding) = &RemoveFileEnding(\$humanGenomeReference, ".fasta");
     ($humanGenomeCompressed) = &CheckGzipped(\$humanGenomeReference);
@@ -7775,8 +7793,8 @@ sub CheckExistance {
 
 	unless (-d $$itemNameRef) {  #Check existence of supplied directory
 	    
-	    print STDERR $USAGE, "\n";
-	    print STDERR "\nCould not find intended ".$$parameterNameRef." directory: ".$$itemNameRef, "\n\n";
+	    $logger->fatal($USAGE, "\n");
+	    $logger->fatal("Could not find intended ".$$parameterNameRef." directory: ".$$itemNameRef, "\n");
 	    exit;		
 	}
     }
@@ -7790,8 +7808,8 @@ sub CheckExistance {
 		
 		if ($parameter{ $scriptParameter{'familyID'} }{$$sampleIDRef}{$$parameterNameRef}{'buildFile'} == 0) {  #No autobuild
 		    
-		    print STDERR $USAGE, "\n";
-		    print STDERR "\nCould not find intended ".$$parameterNameRef." file: ".$$itemNameRef, "\n\n";
+		    $logger->fatal($USAGE, "\n");
+		    $logger->fatal("Could not find intended ".$$parameterNameRef." file: ".$$itemNameRef, "\n");
 		    exit;		
 		}
 	    }
@@ -7801,8 +7819,8 @@ sub CheckExistance {
 		 
 		if ($parameter{$$parameterNameRef}{'buildFile'} == 0) {  #No autobuild
 		    
-		    print STDERR $USAGE, "\n";
-		    print STDERR "\nCould not find intended ".$$parameterNameRef." file: ".$$itemNameRef, "\n\n";
+		    $logger->fatal($USAGE, "\n");
+		    $logger->fatal("Could not find intended ".$$parameterNameRef." file: ".$$itemNameRef, "\n");
 		    exit;		
 		}
 	    }
@@ -7844,7 +7862,7 @@ sub SetAutoBuildFeature {
 
 	 if ( (defined($printSwitch)) && ($printSwitch ne "noPrint") ) {
 
-	     print STDOUT "Set ".$parameterName." to: ".$scriptParameter{$parameterName}, "\n";
+	     $logger->info("Set ".$parameterName." to: ".$scriptParameter{$parameterName}, "\n");
 	 }
 	 if ($parameterName eq "bwaBuildReference") {
 
@@ -7878,8 +7896,8 @@ sub MoveMosaikNN {
 	    
 	   $paths[$pathsCounter] =~ s/bin\//src\/networkFile/g;  #Location of NN files
 
-	   print STDOUT "\nCould not find Mosaik Network Files in ".$scriptParameter{'referencesDir'},"\n";
-	   print STDOUT "\nCopying Mosaik Network Files ".$scriptParameter{'mosaikAlignNeuralNetworkSeFile'}." and ".$scriptParameter{'mosaikAlignNeuralNetworkPeFile'}." to ".$scriptParameter{'referencesDir'}." from ".$paths[$pathsCounter], "\n\n";
+	   $logger->warn("Could not find Mosaik Network Files in ".$scriptParameter{'referencesDir'},"\n");
+	   $logger->info("Copying Mosaik Network Files ".$scriptParameter{'mosaikAlignNeuralNetworkSeFile'}." and ".$scriptParameter{'mosaikAlignNeuralNetworkPeFile'}." to ".$scriptParameter{'referencesDir'}." from ".$paths[$pathsCounter], "\n");
 	   `cp $paths[$pathsCounter]/$scriptParameter{'mosaikAlignNeuralNetworkSeFile'} $scriptParameter{'referencesDir'}/`;  #Copying files in place
 	   `cp $paths[$pathsCounter]/$scriptParameter{'mosaikAlignNeuralNetworkPeFile'} $scriptParameter{'referencesDir'}/`;  #Copying files in place
 	   last;
@@ -7947,7 +7965,7 @@ sub SetTargetFiles {
 	
 	&CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef}), \$$parameterNameRef, "f", \$$sampleIDRef);
 
-	print STDOUT "Set ".$$parameterNameRef." to: ".$scriptParameter{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef}, "\n";
+	$logger->info("Set ".$$parameterNameRef." to: ".$scriptParameter{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef}, "\n");
     }
     else {
 	
@@ -7992,7 +8010,12 @@ sub PrepareArrayParameters {
 	@{$arrayRef} = join(',',@{$arrayRef});  #If user supplied parameter a comma separated list
     }
     push(@orderParameters, $parameterName);  #Add to enable later evaluation of parameters in proper order & write to master file
-    &AddToScriptParameter($parameterName, $parameter{$parameterName}{'value'}, $parameterType, $parameterDefault, $associatedPrograms, $parameterExistsCheck);
+    
+    my $ret = &AddToScriptParameter($parameterName, $parameter{$parameterName}{'value'}, $parameterType, $parameterDefault, $associatedPrograms, $parameterExistsCheck);
+    if ($ret) {
+	
+	push(@broadcasts, $ret);
+    }
 }
 
 
@@ -8039,7 +8062,7 @@ sub CheckTemplateFilesPaths {
     my $fileNameRef = $_[0];
     my $parameterName = $_[1];
 
-    open(my $TF, "<", $$fileNameRef) or die "Can't open ".$$fileNameRef.":$!, \n";  
+    open(my $TF, "<", $$fileNameRef) or $logger->logdie("Can't open '".$$fileNameRef."':".$!."\n");  
 
     while (<TF>) {
 
@@ -8196,12 +8219,12 @@ sub CheckTargetExistFileBed {
 
 	if ($$fileRef !~/.bed$/) {
 	
-	print STDERR "\nCould not find intendended 'file ending with .bed' for target file: ".$$fileRef." in parameter '-".$parameterName."'", "\n";
+	$logger->fatal("Could not find intendended 'file ending with .bed' for target file: ".$$fileRef." in parameter '-".$parameterName."'", "\n");
 	exit;
 	}
 	unless (-f $scriptParameter{'referencesDir'}."/".$$fileRef) {
 
-	    print STDERR "\nCould not find intendended '.bed' file for target file: ".$scriptParameter{'referencesDir'}."/".$$fileRef." in parameter '-".$parameterName."'", "\n\n";
+	    $logger->fatal("Could not find intendended '.bed' file for target file: ".$scriptParameter{'referencesDir'}."/".$$fileRef." in parameter '-".$parameterName."'", "\n");
 	    exit;
 	}
     }
@@ -8227,7 +8250,7 @@ sub CompareArrayElements {
     
     if (scalar(@{$arrayRef}) != scalar(@{$arrayQueryRef})) {
 	
-	print STDERR "\nThe supplied '-".$parameterNameQuery."' lists do not equal the number of elements in '-".$parameterName."'. Please specify a equal number of elements in both lists", "\n\n";
+	$logger->fatal("The number of supplied '-".$parameterNameQuery."' (=".scalar(@{$arrayQueryRef}).") do not equal the number of '-".$parameterName."' (=".scalar(@{$arrayRef})."). Please specify a equal number of elements for both parameters", "\n");
 	exit;
     }
 }
@@ -8594,7 +8617,7 @@ sub CheckBuildDownLoadPreRequisites {
     
     for my $parameterName (keys %supportedCosmidReferences) {  #Supported cosmid references for MIP parameters
 	
-	if ( $parameter{$parameterName}{'associatedProgram'} =~/$programName/) {  #If the cosmid supported parameter is associated with the MIP program
+	if ( (defined($parameter{$parameterName}{'associatedProgram'})) && ($parameter{$parameterName}{'associatedProgram'} =~/$programName/) ) {  #If the cosmid supported parameter is associated with the MIP program
 	    
 	    if ( ($scriptParameter{"p".$programName} == 1) && ($scriptParameter{'dryRunAll'} != 1) ) {  #Only enable autoDownload for active programs
 
@@ -8646,7 +8669,7 @@ sub CheckSupportedFileEnding {
 
     unless ( (defined($$fileNameRef)) && ($$fileNameRef =~/(\S+)$$fileEndingRef$/) ) {
 	
-	print STDERR "\nThe supplied file: ".$$fileNameRef." for parameter '".$$parameterNameRef."' does not have the supported file ending '".$$fileEndingRef."'.", "\n\n";
+	$logger->fatal("The supplied file: ".$$fileNameRef." for parameter '".$$parameterNameRef."' does not have the supported file ending '".$$fileEndingRef."'.", "\n");
 	exit;
     }
 }
@@ -8660,13 +8683,12 @@ sub PrintSupportedAnnovarTableNames {
 ##Returns  : ""
 ##Arguments: None
     
-    print STDOUT "\nThese Annovar databases are supported by MIP:\n";
+    $logger->info("These Annovar databases are supported by MIP:\n");
     
     foreach my $annovarSupportedTableName (@annovarSupportedTableNames) {
 	
-	print STDOUT $annovarSupportedTableName, "\n";
+	$logger->info($annovarSupportedTableName, "\n");
     }
-    print STDOUT "\n";
     exit;
 }
 
@@ -8889,20 +8911,21 @@ sub DeafultLog4perlFile {
     
 ##Function : Set the default Log4perl file using supplied dynamic parameters.
 ##Returns  : "$LogFile"
-##Arguments: $cmdInputRef
-##         : $cmdInputRef => User supplied info on cmd for logFile option {REF}
+##Arguments: $cmdInputRef, $scriptRef, $dateRef, $dateTimeStampRef
+##         : $cmdInputRef        => User supplied info on cmd for logFile option {REF}
+##         : $scriptRef          => The script that is executed
+##         : $dateRef            => The date
+##         : $dateTimeStampRef   => The date and time
    
     my $cmdInputRef = $_[0];
-
-    #Add timestamp
-    my $timeStamp = (`date +%Y%m%d_%Hh%Mm`);  #Catches current date inc hours and minutes
-    chomp($timeStamp);  #Remove \n
-    my ($base, $script) = (`date +%Y%m%d`,`basename $0`);  #Catches current date and script name
-    chomp($base,$script);  #Remove \n;
+    my $scriptRef = $_[1];
+    my $dateRef = $_[2];
+    my $dateTimeStampRef = $_[3];
+    
     if ($$cmdInputRef eq "nocmdinput") {  #No input from cmd i.e. do not create default logging directory or set default
 
-	`mkdir -p $scriptParameter{'outDataDir'}/$scriptParameter{'familyID'}/mip_log/$base;`;  #Creates the default log dir
-	my $LogFile = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/mip_log/".$base."/".$script."_".$timeStamp.".log";  #concatenates log filename	
+	`mkdir -p $scriptParameter{'outDataDir'}/$scriptParameter{'familyID'}/mip_log/$$dateRef;`;  #Creates the default log dir
+	my $LogFile = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/mip_log/".$$dateRef."/".$$scriptRef."_".$$dateTimeStampRef.".log";  #concatenates log filename	
 	return $LogFile;
     }
 }
