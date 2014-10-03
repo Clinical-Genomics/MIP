@@ -23,18 +23,22 @@ BEGIN {
 
     ##Check YAML dependecy
     eval { 
+
 	require YAML; 
     };
     if($@) {
+
 	print STDERR "NOTE: YAML not installed - Please install to run MIP.\n";
 	print STDERR "NOTE: Aborting!\n";
 	exit
     }
     ##Check LOG4perl dependency
     eval { 
+
 	require Log::Log4perl; 
     };
     if($@) {
+
 	print STDERR "NOTE: Log::Log4perl not installed - Please install to run MIP.\n";
 	print STDERR "NOTE: Aborting!\n";
 	exit
@@ -159,7 +163,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -vcpsf/--vcfParserSelectFile File containging list of genes to analyse seperately (defaults to "";tab-sep file and HGNC Symbol required)
                  -vcpsfm/--vcfParserSelectFileMatchingColumn Position of HGNC Symbol column in SelectFile (defaults to "")
                  -vcpsfa/--vcfParserSelectFeatureAnnotationColumns Feature columns to use in annotation (defaults to ""; comma sep)
-                -pSnE/--pSnpEff Variant annotation using snpEFF (defaults to "1" (=yes))
+               -pSnE/--pSnpEff Variant annotation using snpEFF (defaults to "1" (=yes))
                  -snep/--snpEffPath Path to snpEff. Mandatory for use of snpEff (defaults to "")
                  -snesaf/--snpSiftAnnotationFiles Annotation files to use with snpSift (comma sep)
                  -snesdbnsfp/--snpSiftDbNSFPFile DbNSFP File (defaults to "dbNSFP2.6.txt.gz")
@@ -201,6 +205,7 @@ $scriptParameter{'MIP'} = 1;  #Enable/activate MIP
 
 my $logger;  #Will hold the logger object for the MIP log
 my @orderParameters;  #To add/write parameters in the correct order
+my @broadcasts;  #Holds all set parameters info after AddToScriptParameter
 
 ##Add dateTimestamp for later use in log and qcmetrics yaml file
 my $dateTimeStamp = (`date +%Y%m%d_%Hh%Mm`);  #Catches current date, time and script name
@@ -216,288 +221,286 @@ chomp($base, $script);  #Remove \n;
 ##DefineParametersPath
 ##parameterName, parameterDefault, AssociatedProgram, Check directory/file existence, File Autovivication)
 
-&DefineParametersPath("familyID", "nodefault", "MIP", 0);
+&DefineParametersPath(\%parameter, \@orderParameters, "familyID", "nodefault", "MIP", 0);
 
-&DefineParametersPath("outDataDir", "nodefault", "MIP", 0);
+&DefineParametersPath(\%parameter, \@orderParameters, "outDataDir", "nodefault", "MIP", 0);
 
-&DefineParametersPath("logFile", "NotsetYet", "MIP", "file", "noAutoBuild");
+&DefineParametersPath(\%parameter, \@orderParameters, "logFile", "NotsetYet", "MIP", "file", "noAutoBuild");
 
-&DefineParameters("projectID", "MIP", "nodefault", "MIP");
+&DefineParameters(\%parameter, \@orderParameters, "projectID", "MIP", "nodefault", "MIP");
 
-&DefineParameters("email", "MIP", 0, "MIP");
+&DefineParameters(\%parameter, \@orderParameters, "email", "MIP", 0, "MIP");
 
-&DefineParameters("emailType", "MIP", "F", "MIP");
+&DefineParameters(\%parameter, \@orderParameters, "emailType", "MIP", "F", "MIP");
 
-&DefineParameters("maximumCores", "MIP", 16, "MIP");
+&DefineParameters(\%parameter, \@orderParameters, "maximumCores", "MIP", 16, "MIP");
 
-&DefineParametersPath("configFile", 0, "MIP", "file");
+&DefineParametersPath(\%parameter, \@orderParameters, "configFile", 0, "MIP", "file");
 
-&DefineParameters("analysisType", "MIP", "exomes", "MIP");
+&DefineParameters(\%parameter, \@orderParameters, "analysisType", "MIP", "exomes", "MIP");
 
-&DefineParametersPath("outScriptDir", "nodefault", "MIP", 0);
+&DefineParametersPath(\%parameter, \@orderParameters, "outScriptDir", "nodefault", "MIP", 0);
 
-&DefineParametersPath("writeConfigFile", 0, "MIP", 0);
+&DefineParametersPath(\%parameter, \@orderParameters, "writeConfigFile", 0, "MIP", 0);
 
-&DefineParametersPath("pedigreeFile", "nodefault", "MIP", "file", "noAutoBuild");
+&DefineParametersPath(\%parameter, \@orderParameters, "pedigreeFile", "nodefault", "MIP", "file", "noAutoBuild");
 
-&DefineParametersPath("sampleInfoFile", "NotsetYet", "MIP", "file", "noAutoBuild");
+&DefineParametersPath(\%parameter, \@orderParameters, "sampleInfoFile", "NotsetYet", "MIP", "file", "noAutoBuild");
 
-&DefineParameters("instanceTag", "MIP", "Unknown", "MIP");
+&DefineParameters(\%parameter, \@orderParameters, "instanceTag", "MIP", "Unknown", "MIP");
 
-&DefineParameters("researchEthicalApproval", "MIP", "notApproved", "MIP");
+&DefineParameters(\%parameter, \@orderParameters, "researchEthicalApproval", "MIP", "notApproved", "MIP");
 
-&DefineParametersPath("inScriptDir", "nodefault", "MIP", "directory");
+&DefineParametersPath(\%parameter, \@orderParameters, "inScriptDir", "nodefault", "MIP", "directory");
 
-&DefineParametersPath("referencesDir", "nodefault", "MIP", "directory");
+&DefineParametersPath(\%parameter, \@orderParameters, "referencesDir", "nodefault", "MIP", "directory");
 
-&DefineParameters("dryRunAll", "MIP", 0, "MIP");
-
-my @broadcasts;  #Holds all set parameters info after AddToScriptParameter
+&DefineParameters(\%parameter, \@orderParameters, "dryRunAll", "MIP", 0, "MIP");
 
 ###Programs
 
 ##GZip
-&DefineParameters("pGZip", "program", 1, "MIP", "nofileEnding", "MAIN", "gzip");
+&DefineParameters(\%parameter, \@orderParameters, "pGZip", "program", 1, "MIP", "nofileEnding", "MAIN", "gzip");
 
 
 ##FastQC
-&DefineParameters("pFastQC", "program", 1, "MIP", "nofileEnding", "RawSeqQC", "fastqc");
+&DefineParameters(\%parameter, \@orderParameters, "pFastQC", "program", 1, "MIP", "nofileEnding", "RawSeqQC", "fastqc");
 
 
 ##Mosaik
-&DefineParameters("pMosaikBuild", "program", 1, "MIP", "nofileEnding", "MAIN", "MosaikBuild");
+&DefineParameters(\%parameter, \@orderParameters, "pMosaikBuild", "program", 1, "MIP", "nofileEnding", "MAIN", "MosaikBuild");
 
-&DefineParameters("mosaikBuildMedianFragLength", "program", 375, "pMosaikBuild");
+&DefineParameters(\%parameter, \@orderParameters, "mosaikBuildMedianFragLength", "program", 375, "pMosaikBuild");
 
-&DefineParameters("pMosaikAlign", "program", 1, "MIP", "nofileEnding", "MAIN", "MosaikAligner");
+&DefineParameters(\%parameter, \@orderParameters, "pMosaikAlign", "program", 1, "MIP", "nofileEnding", "MAIN", "MosaikAligner");
 
-&DefineParametersPath("mosaikAlignReference", "notSetYet", "pMosaikAlign", "file", "yesAutoBuild");
+&DefineParametersPath(\%parameter, \@orderParameters, "mosaikAlignReference", "notSetYet", "pMosaikAlign", "file", "yesAutoBuild");
 
-&DefineParametersPath("mosaikAlignNeuralNetworkPeFile", "2.1.78.pe.ann", "pMosaikAlign", "file", "yesAutoBuild");
+&DefineParametersPath(\%parameter, \@orderParameters, "mosaikAlignNeuralNetworkPeFile", "2.1.78.pe.ann", "pMosaikAlign", "file", "yesAutoBuild");
 
-&DefineParametersPath("mosaikAlignNeuralNetworkSeFile", "2.1.78.se.ann", "pMosaikAlign", "file", "yesAutoBuild");
+&DefineParametersPath(\%parameter, \@orderParameters, "mosaikAlignNeuralNetworkSeFile", "2.1.78.se.ann", "pMosaikAlign", "file", "yesAutoBuild");
 
-&DefineParametersPath("mosaikJumpDbStub", "notSetYet", "pMosaikAlign", "file", "yesAutoBuild");
+&DefineParametersPath(\%parameter, \@orderParameters, "mosaikJumpDbStub", "notSetYet", "pMosaikAlign", "file", "yesAutoBuild");
 
 my @mosaikJumpDbStubFileEndings = ("_keys.jmp", "_meta.jmp", "_positions.jmp");
 
 
 ##BWA
-&DefineParameters("pBwaMem", "program", 0, "MIP", "nofileEnding", "MAIN", "bwa");
+&DefineParameters(\%parameter, \@orderParameters, "pBwaMem", "program", 0, "MIP", "nofileEnding", "MAIN", "bwa");
 
-&DefineParametersPath("bwaMemRapidDb", "nodefault", "pBwaMem", "file", "noAutoBuild");
+&DefineParametersPath(\%parameter, \@orderParameters, "bwaMemRapidDb", "nodefault", "pBwaMem", "file", "noAutoBuild");
 
-&DefineParameters("pBwaAln", "program", 0, "MIP", "nofileEnding", "MAIN", "bwa");
+&DefineParameters(\%parameter, \@orderParameters, "pBwaAln", "program", 0, "MIP", "nofileEnding", "MAIN", "bwa");
 
-&DefineParameters("bwaAlnQualityTrimming", "program", 20, "pBwaAln");
+&DefineParameters(\%parameter, \@orderParameters, "bwaAlnQualityTrimming", "program", 20, "pBwaAln");
 
-&DefineParameters("pBwaSampe", "program", 0, "MIP", "nofileEnding", "MAIN", "bwa");
+&DefineParameters(\%parameter, \@orderParameters, "pBwaSampe", "program", 0, "MIP", "nofileEnding", "MAIN", "bwa");
 
-&DefineParametersPath("bwaBuildReference", "notSetYet", "pBwaMem,pBwaAln,pBwaSampe", "file", "yesAutoBuild");
+&DefineParametersPath(\%parameter, \@orderParameters, "bwaBuildReference", "notSetYet", "pBwaMem,pBwaAln,pBwaSampe", "file", "yesAutoBuild");
 
 my @bwaBuildReferenceFileEndings = (".amb", ".ann", ".bwt", ".pac", ".sa");
 
 
 ##Choosen MIP Aligner
-&DefineParameters("aligner", "MIP", "mosaik", "MIP");
+&DefineParameters(\%parameter, \@orderParameters, "aligner", "MIP", "mosaik", "MIP");
 
 ##PicardTools
-&DefineParameters("pPicardToolsSortSam", "program", 1, "MIP", "_sorted", "MAIN");
+&DefineParameters(\%parameter, \@orderParameters, "pPicardToolsSortSam", "program", 1, "MIP", "_sorted", "MAIN");
 
-&DefineParameters("pPicardToolsMergeRapidReads", "program", 0, "MIP", "_sorted", "MAIN");  #Rapid mode special case
+&DefineParameters(\%parameter, \@orderParameters, "pPicardToolsMergeRapidReads", "program", 0, "MIP", "_sorted", "MAIN");  #Rapid mode special case
 
-&DefineParameters("pPicardToolsMergeSamFiles", "program", 1, "MIP", "_merged", "MAIN");
+&DefineParameters(\%parameter, \@orderParameters, "pPicardToolsMergeSamFiles", "program", 1, "MIP", "_merged", "MAIN");
 
-&DefineParameters("pPicardToolsMarkduplicates", "program", 1, "MIP", "_pmd", "MAIN");
+&DefineParameters(\%parameter, \@orderParameters, "pPicardToolsMarkduplicates", "program", 1, "MIP", "_pmd", "MAIN");
 
-&DefineParametersPath("PicardToolsTempDirectory", "/scratch/", "pBwaMem,pPicardToolsSortSam,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates", 0);  #Directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
+&DefineParametersPath(\%parameter, \@orderParameters, "PicardToolsTempDirectory", "/scratch/", "pBwaMem,pPicardToolsSortSam,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates", 0);  #Directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
 
 
 ##Coverage
-&DefineParameters("pChanjoSexCheck", "program", 1, "MIP",".sexcheck", "CoverageReport_Gender");
+&DefineParameters(\%parameter, \@orderParameters, "pChanjoSexCheck", "program", 1, "MIP",".sexcheck", "CoverageReport_Gender");
 
-&DefineParameters("pChanjoBuild", "program", 1, "MIP", "nofileEnding", "CoverageReport");
+&DefineParameters(\%parameter, \@orderParameters, "pChanjoBuild", "program", 1, "MIP", "nofileEnding", "CoverageReport");
 
-&DefineParametersPath("chanjoBuildDb", "CCDS.current.txt", "pChanjoBuild", "file", "yesAutoDownLoad");
+&DefineParametersPath(\%parameter, \@orderParameters, "chanjoBuildDb", "CCDS.current.txt", "pChanjoBuild", "file", "yesAutoDownLoad");
 
-&DefineParameters("pChanjoAnnotate", "program", 1, "MIP","_coverage", "CoverageReport");
+&DefineParameters(\%parameter, \@orderParameters, "pChanjoAnnotate", "program", 1, "MIP","_coverage", "CoverageReport");
 
-&DefineParameters("chanjoAnnotateCutoff", "program", 10, "pChanjoAnnotate");
+&DefineParameters(\%parameter, \@orderParameters, "chanjoAnnotateCutoff", "program", 10, "pChanjoAnnotate");
 
-&DefineParameters("pChanjoImport", "program", 0, "MIP", "nofileEnding", "CoverageReport");
+&DefineParameters(\%parameter, \@orderParameters, "pChanjoImport", "program", 0, "MIP", "nofileEnding", "CoverageReport");
 
-&DefineParameters("pGenomeCoverageBED", "program", 1, "MIP", "_genomeCoverageBed", "CoverageQC_GcovBed", "bedtools");
+&DefineParameters(\%parameter, \@orderParameters, "pGenomeCoverageBED", "program", 1, "MIP", "_genomeCoverageBed", "CoverageQC_GcovBed", "bedtools");
 
-&DefineParameters("pPicardToolsCollectMultipleMetrics", "program", 1, "MIP", "nofileEnding", "CoverageQC_PTCMM");
+&DefineParameters(\%parameter, \@orderParameters, "pPicardToolsCollectMultipleMetrics", "program", 1, "MIP", "nofileEnding", "CoverageQC_PTCMM");
 
-&DefineParameters("pPicardToolsCalculateHSMetrics", "program", 1, "MIP", "nofileEnding", "CoverageQC_PTCHSM");
+&DefineParameters(\%parameter, \@orderParameters, "pPicardToolsCalculateHSMetrics", "program", 1, "MIP", "nofileEnding", "CoverageQC_PTCHSM");
 
-&DefineParameters("GenomeCoverageBEDMaxCoverage", "program", 30, "pGenomeCoverageBED");
+&DefineParameters(\%parameter, \@orderParameters, "GenomeCoverageBEDMaxCoverage", "program", 30, "pGenomeCoverageBED");
 
-&DefineParameters("pRCovPlots", "program", 0, "MIP", "nofileEnding", "CoverageQC_RCOVP");
+&DefineParameters(\%parameter, \@orderParameters, "pRCovPlots", "program", 0, "MIP", "nofileEnding", "CoverageQC_RCOVP");
 
-&DefineParametersPath("picardToolsPath", "nodefault", "pBwaMem,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics,pGATKHaploTypeCaller,pGATKVariantRecalibration", "directory");  #pGATKHaploTypeCaller,pGATKVariantRecalibration since these jars can use merged interval_list files, which are created in MIP with picardTools
+&DefineParametersPath(\%parameter, \@orderParameters, "picardToolsPath", "nodefault", "pBwaMem,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics,pGATKHaploTypeCaller,pGATKVariantRecalibration", "directory");  #pGATKHaploTypeCaller,pGATKVariantRecalibration since these jars can use merged interval_list files, which are created in MIP with picardTools
 
 ##Target definition files
 my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists);  #Arrays for target bed infile lists
 
 
 ##GATK
-&DefineParameters("pGATKRealigner", "program", 1, "MIP", "_rreal", "MAIN");
+&DefineParameters(\%parameter, \@orderParameters, "pGATKRealigner", "program", 1, "MIP", "_rreal", "MAIN");
 
-&DefineParametersPath("GATKReAlignerINDELKnownSet1", "1000G_phase1.indels.b37.vcf", "pGATKRealigner", "file", "yesAutoDownLoad");
+&DefineParametersPath(\%parameter, \@orderParameters, "GATKReAlignerINDELKnownSet1", "1000G_phase1.indels.b37.vcf", "pGATKRealigner", "file", "yesAutoDownLoad");
 
-&DefineParametersPath("GATKReAlignerINDELKnownSet2", "Mills_and_1000G_gold_standard.indels.b37.vcf", "pGATKRealigner", "file", "yesAutoDownLoad");
-
-
-&DefineParameters("pGATKBaseRecalibration", "program", 1, "MIP", "_brecal", "MAIN");
-
-&DefineParametersPath("GATKBaseReCalibrationSNPKnownSet", "dbsnp_138.b37.vcf", "pGATKBaseRecalibration", "file", "yesAutoDownLoad");
+&DefineParametersPath(\%parameter, \@orderParameters, "GATKReAlignerINDELKnownSet2", "Mills_and_1000G_gold_standard.indels.b37.vcf", "pGATKRealigner", "file", "yesAutoDownLoad");
 
 
-&DefineParameters("pGATKHaploTypeCaller", "program", 1, "MIP", "_gvcf", "MAIN");
+&DefineParameters(\%parameter, \@orderParameters, "pGATKBaseRecalibration", "program", 1, "MIP", "_brecal", "MAIN");
 
-&DefineParametersPath("GATKHaploTypeCallerSNPKnownSet", "dbsnp_138.b37.vcf", "pGATKHaploTypeCaller", "file", "yesAutoDownLoad");
-
-
-&DefineParameters("pGATKGenoTypeGVCFs", "program", 1, "MIP", "_", "MAIN");
-
-&DefineParametersPath("GATKGenoTypeGVCFsRefGVCF", "nodefault", "pGATKGenoTypeGVCFs", "file", "noAutoBuild");
+&DefineParametersPath(\%parameter, \@orderParameters, "GATKBaseReCalibrationSNPKnownSet", "dbsnp_138.b37.vcf", "pGATKBaseRecalibration", "file", "yesAutoDownLoad");
 
 
-&DefineParameters("pGATKVariantRecalibration", "program", 1, "MIP", "vrecal_", "MAIN");
+&DefineParameters(\%parameter, \@orderParameters, "pGATKHaploTypeCaller", "program", 1, "MIP", "_gvcf", "MAIN");
 
-&DefineParametersPath("GATKVariantReCalibrationTrainingSetHapMap", "hapmap_3.3.b37.sites.vcf", "pGATKVariantRecalibration", "file", "yesAutoDownLoad");
+&DefineParametersPath(\%parameter, \@orderParameters, "GATKHaploTypeCallerSNPKnownSet", "dbsnp_138.b37.vcf", "pGATKHaploTypeCaller", "file", "yesAutoDownLoad");
 
-&DefineParametersPath("GATKVariantReCalibrationTrainingSetDbSNP", "dbsnp_138.b37.vcf", "pGATKVariantRecalibration", "file", "yesAutoDownLoad");
 
-&DefineParametersPath("GATKVariantReCalibrationTrainingSet1000GSNP", "1000G_phase1.snps.high_confidence.b37.vcf", "pGATKVariantRecalibration", "file", "yesAutoDownLoad");
+&DefineParameters(\%parameter, \@orderParameters, "pGATKGenoTypeGVCFs", "program", 1, "MIP", "_", "MAIN");
 
-&DefineParametersPath("GATKVariantReCalibrationTrainingSet1000GOmni", "1000G_omni2.5.b37.sites.vcf", "pGATKVariantRecalibration", "file", "yesAutoDownLoad");
+&DefineParametersPath(\%parameter, \@orderParameters, "GATKGenoTypeGVCFsRefGVCF", "nodefault", "pGATKGenoTypeGVCFs", "file", "noAutoBuild");
 
-&DefineParametersPath("GATKVariantReCalibrationTrainingSetMills", "Mills_and_1000G_gold_standard.indels.b37.vcf", "pGATKVariantRecalibration", "file", "yesAutoDownLoad");
 
-&DefineParameters("GATKVariantReCalibrationTSFilterLevel", "program", 99.9, "pGATKVariantRecalibration");
+&DefineParameters(\%parameter, \@orderParameters, "pGATKVariantRecalibration", "program", 1, "MIP", "vrecal_", "MAIN");
 
-&DefineParameters("GATKVariantReCalibrationexcludeNonVariantsFile", "program", "false", "pGATKVariantRecalibration");
+&DefineParametersPath(\%parameter, \@orderParameters, "GATKVariantReCalibrationTrainingSetHapMap", "hapmap_3.3.b37.sites.vcf", "pGATKVariantRecalibration", "file", "yesAutoDownLoad");
+
+&DefineParametersPath(\%parameter, \@orderParameters, "GATKVariantReCalibrationTrainingSetDbSNP", "dbsnp_138.b37.vcf", "pGATKVariantRecalibration", "file", "yesAutoDownLoad");
+
+&DefineParametersPath(\%parameter, \@orderParameters, "GATKVariantReCalibrationTrainingSet1000GSNP", "1000G_phase1.snps.high_confidence.b37.vcf", "pGATKVariantRecalibration", "file", "yesAutoDownLoad");
+
+&DefineParametersPath(\%parameter, \@orderParameters, "GATKVariantReCalibrationTrainingSet1000GOmni", "1000G_omni2.5.b37.sites.vcf", "pGATKVariantRecalibration", "file", "yesAutoDownLoad");
+
+&DefineParametersPath(\%parameter, \@orderParameters, "GATKVariantReCalibrationTrainingSetMills", "Mills_and_1000G_gold_standard.indels.b37.vcf", "pGATKVariantRecalibration", "file", "yesAutoDownLoad");
+
+&DefineParameters(\%parameter, \@orderParameters, "GATKVariantReCalibrationTSFilterLevel", "program", 99.9, "pGATKVariantRecalibration");
+
+&DefineParameters(\%parameter, \@orderParameters, "GATKVariantReCalibrationexcludeNonVariantsFile", "program", "false", "pGATKVariantRecalibration");
 
  
-&DefineParameters("pGATKPhaseByTransmission", "program", 1, "MIP", "phtr_", "Phasing");
+&DefineParameters(\%parameter, \@orderParameters, "pGATKPhaseByTransmission", "program", 1, "MIP", "phtr_", "Phasing");
 
-&DefineParameters("pGATKReadBackedPhasing", "program", 1, "MIP", "phrb_", "Phasing");
+&DefineParameters(\%parameter, \@orderParameters, "pGATKReadBackedPhasing", "program", 1, "MIP", "phrb_", "Phasing");
 
-&DefineParameters("GATKReadBackedPhasingPhaseQualityThreshold", "program", 20, "pGATKReadBackedPhasing");
+&DefineParameters(\%parameter, \@orderParameters, "GATKReadBackedPhasingPhaseQualityThreshold", "program", 20, "pGATKReadBackedPhasing");
 
 
-&DefineParameters("pGATKVariantEvalAll", "program", 1, "MIP", "nofileEnding", "AllVariantQC");
+&DefineParameters(\%parameter, \@orderParameters, "pGATKVariantEvalAll", "program", 1, "MIP", "nofileEnding", "AllVariantQC");
 
-&DefineParameters("pGATKVariantEvalExome", "program", 1, "MIP", "nofileEnding", "ExomeVarintQC", "bedtools");
+&DefineParameters(\%parameter, \@orderParameters, "pGATKVariantEvalExome", "program", 1, "MIP", "nofileEnding", "ExomeVarintQC", "bedtools");
 
-&DefineParametersPath("GATKVariantEvalDbSNP", "dbsnp_138.b37.excluding_sites_after_129.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file", "yesAutoDownLoad");
+&DefineParametersPath(\%parameter, \@orderParameters, "GATKVariantEvalDbSNP", "dbsnp_138.b37.excluding_sites_after_129.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file", "yesAutoDownLoad");
 
-&DefineParametersPath("GATKVariantEvalGold", "Mills_and_1000G_gold_standard.indels.b37.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file", "yesAutoDownLoad");
+&DefineParametersPath(\%parameter, \@orderParameters, "GATKVariantEvalGold", "Mills_and_1000G_gold_standard.indels.b37.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file", "yesAutoDownLoad");
 
-&DefineParametersPath("GATKTempDirectory", "/scratch/", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKReadBackedPhasing", 0);  #Depends on -projectID input, directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
+&DefineParametersPath(\%parameter, \@orderParameters, "GATKTempDirectory", "/scratch/", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKReadBackedPhasing", 0);  #Depends on -projectID input, directory created by sbatch script and '$SLURM_JOB_ID' is appended to TMP directory
 
-&DefineParameters("GATKDownSampleToCoverage", "program", 1000, "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller");
+&DefineParameters(\%parameter, \@orderParameters, "GATKDownSampleToCoverage", "program", 1000, "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller");
 
-&DefineParameters("GATKBundleDownLoadVersion", "program", "2.8", "pBwaMem,pBwaAln,pBwaSampe,pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKHaploTypeCallerCombineVariants,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pAnnovar,pAddDepth,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics");  #Sets the GATK FTP Bundle Download version. Needed for all programs that download the human genome reference
+&DefineParameters(\%parameter, \@orderParameters, "GATKBundleDownLoadVersion", "program", "2.8", "pBwaMem,pBwaAln,pBwaSampe,pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKHaploTypeCallerCombineVariants,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pAnnovar,pAddDepth,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics");  #Sets the GATK FTP Bundle Download version. Needed for all programs that download the human genome reference
 
 my (@GATKTargetPaddedBedIntervalLists);  #Array for target infile lists used in GATK
 
 
 ##VEP
-&DefineParameters("pVariantEffectPredictor", "program", 1, "MIP", "vep_", "MAIN");
+&DefineParameters(\%parameter, \@orderParameters, "pVariantEffectPredictor", "program", 1, "MIP", "vep_", "MAIN");
 
-&DefineParametersPath("vepDirectoryPath", "nodefault", "pVariantEffectPredictor", "directory");  #Note not projectID specific
+&DefineParametersPath(\%parameter, \@orderParameters, "vepDirectoryPath", "nodefault", "pVariantEffectPredictor", "directory");  #Note not projectID specific
 
-&DefineParametersPath("vepDirectoryCache", "nodefault", "pVariantEffectPredictor", "directory");
+&DefineParametersPath(\%parameter, \@orderParameters, "vepDirectoryCache", "nodefault", "pVariantEffectPredictor", "directory");
 
 
 ##VCFParser
-&DefineParameters("pVCFParser", "program", 1, "MIP", "parsed_", "MAIN");
+&DefineParameters(\%parameter, \@orderParameters, "pVCFParser", "program", 1, "MIP", "parsed_", "MAIN");
 
-&DefineParameters("vcfParserVepTranscripts", "program", 0, "pVCFParser");
+&DefineParameters(\%parameter, \@orderParameters, "vcfParserVepTranscripts", "program", 0, "pVCFParser");
 
-&DefineParametersPath("vcfParserRangeFeatureFile", "noUserInfo", "pVCFParser", "file"); 
+&DefineParametersPath(\%parameter, \@orderParameters, "vcfParserRangeFeatureFile", "noUserInfo", "pVCFParser", "file"); 
 
-&DefineParametersPath("vcfParserSelectFile", "noUserInfo", "pVCFParser", "file"); 
+&DefineParametersPath(\%parameter, \@orderParameters, "vcfParserSelectFile", "noUserInfo", "pVCFParser", "file"); 
 
-&DefineParameters("vcfParserSelectFileMatchingColumn", "program", "nodefault", "pVCFParser");
+&DefineParameters(\%parameter, \@orderParameters, "vcfParserSelectFileMatchingColumn", "program", "nodefault", "pVCFParser");
 
 my $VEPOutputFiles = 1;  #To track if VEPParser was used with a vcfParserSelectFile (=2) or not (=1)
 
 
 ##SnpEFF
-&DefineParameters("pSnpEff", "program", 1, "MIP", "snpeff_", "MAIN");
+&DefineParameters(\%parameter, \@orderParameters, "pSnpEff", "program", 1, "MIP", "snpeff_", "MAIN");
 
-&DefineParametersPath("snpEffPath", "nodefault", "pSnpEff", "directory");
+&DefineParametersPath(\%parameter, \@orderParameters, "snpEffPath", "nodefault", "pSnpEff", "directory");
 
-&DefineParametersPath("snpSiftDbNSFPFile", "dbNSFP2.6.txt.gz", "pSnpEff", "file");
+&DefineParametersPath(\%parameter, \@orderParameters, "snpSiftDbNSFPFile", "dbNSFP2.6.txt.gz", "pSnpEff", "file");
 
 
 ##Annovar
-&DefineParameters("pAnnovar", "program", 1, "MIP", "annovar_", "MAIN");
+&DefineParameters(\%parameter, \@orderParameters, "pAnnovar", "program", 1, "MIP", "annovar_", "MAIN");
 
-&DefineParametersPath("annovarPath", "nodefault", "pAnnovar", "directory");  #Note not projectID specific
+&DefineParametersPath(\%parameter, \@orderParameters, "annovarPath", "nodefault", "pAnnovar", "directory");  #Note not projectID specific
 
-&DefineParameters("annovarGenomeBuildVersion", "program", "hg19", "pAnnovar");
+&DefineParameters(\%parameter, \@orderParameters, "annovarGenomeBuildVersion", "program", "hg19", "pAnnovar");
 
-&DefineParameters("annovarSupportedTableNames", "program", 0, "pAnnovar");
+&DefineParameters(\%parameter, \@orderParameters, "annovarSupportedTableNames", "program", 0, "pAnnovar");
 
-&DefineParameters("annovarMAFThreshold", "program", 0, "pAnnovar");
+&DefineParameters(\%parameter, \@orderParameters, "annovarMAFThreshold", "program", 0, "pAnnovar");
 
 
 ##Special case GATKPath since in VEP, SnpEff and Annovar modules use GATK CombineVariants to merge vcfs 
-&DefineParametersPath("javaUseLargePages", "no", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKHaploTypeCallerCombineVariants,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pVariantEffectPredictor,pSnpEff,pAnnovar");
+&DefineParametersPath(\%parameter, \@orderParameters, "javaUseLargePages", "no", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKHaploTypeCallerCombineVariants,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pVariantEffectPredictor,pSnpEff,pAnnovar");
 
-&DefineParametersPath("genomeAnalysisToolKitPath", "nodefault", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pVariantEffectPredictor,pSnpEff", "directory");
+&DefineParametersPath(\%parameter, \@orderParameters, "genomeAnalysisToolKitPath", "nodefault", "pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pVariantEffectPredictor,pSnpEff", "directory");
 
 
 ##SChecks
-&DefineParameters("pSampleCheck", "program", 1, "MIP", "nofileEnding", "IDQC", "vcftools:plink");
+&DefineParameters(\%parameter, \@orderParameters, "pSampleCheck", "program", 1, "MIP", "nofileEnding", "IDQC", "vcftools:plink");
 
 
 ##RankVariants
-&DefineParameters("pRankVariants", "program", 1, "MIP", "ranked_", "MAIN");
+&DefineParameters(\%parameter, \@orderParameters, "pRankVariants", "program", 1, "MIP", "ranked_", "MAIN");
 
-&DefineParametersPath("geneFile", "hg19_refGene.txt", "pRankVariants", "file", "noAutoBuild");
+&DefineParametersPath(\%parameter, \@orderParameters, "geneFile", "hg19_refGene.txt", "pRankVariants", "file", "noAutoBuild");
 
-&DefineParameters("caddWGSSNVs", "program", 0, "pRankVariants");
+&DefineParameters(\%parameter, \@orderParameters, "caddWGSSNVs", "program", 0, "pRankVariants");
 
-&DefineParametersPath("caddWGSSNVsFile", "whole_genome_SNVs.tsv.gz", "pRankVariants", "file", "noAutoBuild");
+&DefineParametersPath(\%parameter, \@orderParameters, "caddWGSSNVsFile", "whole_genome_SNVs.tsv.gz", "pRankVariants", "file", "noAutoBuild");
 
-&DefineParameters("cadd1000Genomes", "program", 0, "pRankVariants");
+&DefineParameters(\%parameter, \@orderParameters, "cadd1000Genomes", "program", 0, "pRankVariants");
 
-&DefineParametersPath("cadd1000GenomesFile", "1000G.tsv.gz", "pRankVariants", "file", "noAutoBuild");
+&DefineParametersPath(\%parameter, \@orderParameters, "cadd1000GenomesFile", "1000G.tsv.gz", "pRankVariants", "file", "noAutoBuild");
 
-&DefineParameters("wholeGene", "program", 1, "pRankVariants");
+&DefineParameters(\%parameter, \@orderParameters, "wholeGene", "program", 1, "pRankVariants");
 
-&DefineParametersPath("rankModelFile", "noUserInfo", "pRankVariants", "file", "noAutoBuild");
+&DefineParametersPath(\%parameter, \@orderParameters, "rankModelFile", "noUserInfo", "pRankVariants", "file", "noAutoBuild");
 
-&DefineParametersPath("pythonVirtualEnvironment", "nodefault", "pChanjoBuild,pChanjoAnnotate,pChanjoImport,pRankVariants");
+&DefineParametersPath(\%parameter, \@orderParameters, "pythonVirtualEnvironment", "nodefault", "pChanjoBuild,pChanjoAnnotate,pChanjoImport,pRankVariants");
 
 
 ##QcCollect
-&DefineParameters("pQCCollect", "program", 1, "MIP", "nofileEnding", "MAIN");
+&DefineParameters(\%parameter, \@orderParameters, "pQCCollect", "program", 1, "MIP", "nofileEnding", "MAIN");
 
-&DefineParameters("QCCollectSampleInfoFile", "program", "notSetYet", "pQCCollect");  #No file check since file is created by MIP later
+&DefineParameters(\%parameter, \@orderParameters, "QCCollectSampleInfoFile", "program", "notSetYet", "pQCCollect");  #No file check since file is created by MIP later
 
-&DefineParametersPath("QCCollectRegExpFile", "qc_regexp.yaml", "pQCCollect", "file", "noAutoBuild");
+&DefineParametersPath(\%parameter, \@orderParameters, "QCCollectRegExpFile", "qc_regexp.yaml", "pQCCollect", "file", "noAutoBuild");
 
 
 ##RemoveRedundantFiles
-&DefineParameters("pRemoveRedundantFiles", "program", 1, "MIP", "nofileEnding", "MAIN");
+&DefineParameters(\%parameter, \@orderParameters, "pRemoveRedundantFiles", "program", 1, "MIP", "nofileEnding", "MAIN");
 
 
 ##AnalysisRunStatus
-&DefineParameters("pAnalysisRunStatus", "program", 1, "MIP", "", "MAIN");
+&DefineParameters(\%parameter, \@orderParameters, "pAnalysisRunStatus", "program", 1, "MIP", "", "MAIN");
 
 
 ##MIP
 
 ##humanGenomeReference
-&DefineParametersPath("humanGenomeReference", "Homo_sapiens.GRCh37.d5.fasta", "pBwaMem,pBwaAln,pBwaSampe,pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKHaploTypeCallerCombineVariants,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pAnnovar,pAddDepth,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "file", "yesAutoDownLoad");
+&DefineParametersPath(\%parameter, \@orderParameters, "humanGenomeReference", "Homo_sapiens.GRCh37.d5.fasta", "pBwaMem,pBwaAln,pBwaSampe,pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKHaploTypeCallerCombineVariants,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pAnnovar,pAddDepth,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "file", "yesAutoDownLoad");
 
 my @humanGenomeReferenceFileEndings = (".dict", ".fasta.fai");  #Meta files
 
@@ -532,12 +535,10 @@ my %referenceFileEndings = (
     'GATKTargetPaddedBedIntervalLists' => ".pad100.interval_list",
     );
 
-my %snpEffFile;  #Holds SnpEFF/SnpSift files and features
-
 ##Set supported annovar table name filtering options
 my @annovarSupportedTableNames = ("refGene", "knownGene", "ensGene", "mce46way", "gerp++elem", "segdup", "gwascatalog", "tfbs", "mirna", "snp137", "snp135", "snp132", "snp131", "snp130", "snp129", "snp137NonFlagged", "snp135NonFlagged", "snp132NonFlagged", "snp131NonFlagged", "snp130NonFlagged", "1000g2012apr_all", "1000g2012apr_amr", "1000g2012apr_eur", "1000g2012apr_asn", "1000g2012apr_afr", "1000g2012feb_all", "esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_ma", "ljb2_fathmm", "ljb2_siphy", "ljb2_lrt", "ljb_all", "ljb2_gerp++", "ljb2_phylop", "caddgt20", "caddgt10");  #Used to print list of supported table names
 
-my %annovarTables;  #Holds annovar tables and features
+my %annovarTable;  #Holds annovar tables and features
 
 ###User Options
 GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Comma separated list
@@ -673,7 +674,7 @@ if($help) {
     exit;
 }
 
-my $mipVersion = "v2.0.0";#Set version for log
+my $mipVersion = "v2.0.0";  #Set version
 
 if($version) {
 
@@ -699,15 +700,12 @@ if ($parameter{'configFile'}{'value'} ne "nocmdinput") {  #Input from cmd
     }
 }
 
-##Populate scriptParameters{'parameterName'} => 'Value'
+###Populate scriptParameters{'parameterName'} => 'Value'
 foreach my $orderParameterElement (@orderParameters) {
     
-##3 type of variables: MIP, path or program/program_parameters each is handled in the &AddToScriptParameter subroutine.    
-    my $ret = &AddToScriptParameter($orderParameterElement, $parameter{$orderParameterElement}{'value'}, $parameter{$orderParameterElement}{'type'}, $parameter{$orderParameterElement}{'default'}, $parameter{$orderParameterElement}{'associatedProgram'}, $parameter{$orderParameterElement}{'existsCheck'}, $parameter{$orderParameterElement}{'programNamePath'});
-    if ($ret) {
+##3 type of variables: MIP, path or program/program_parameters each is handled in the &AddToScriptParameter subroutine.
 
-	push(@broadcasts, $ret);
-    }
+    &AddToScriptParameter(\%parameter, \%scriptParameter, \@broadcasts, $orderParameterElement, $parameter{$orderParameterElement}{'value'}, $parameter{$orderParameterElement}{'type'}, $parameter{$orderParameterElement}{'default'}, $parameter{$orderParameterElement}{'associatedProgram'}, $parameter{$orderParameterElement}{'existsCheck'}, $parameter{$orderParameterElement}{'programNamePath'});
    
     ##Special case for parameters that are dependent on other parameters values
     if ($orderParameterElement eq "outDataDir") {  #Set defaults depending on $scriptParameter{'outDataDir'} value that now has been set
@@ -722,7 +720,7 @@ foreach my $orderParameterElement (@orderParameters) {
 	###Creates log for the master script
 	my $conf = &CreateLog4perlCongfig(\$scriptParameter{'logFile'});
 	Log::Log4perl->init(\$conf);
-	$logger = Log::Log4perl->get_logger("rootLogger");
+	$logger = Log::Log4perl->get_logger("MIPLogger");
     }
     if ($orderParameterElement eq "pedigreeFile") {  #Write QC for only pedigree data used in analysis                                                        
 	
@@ -746,7 +744,7 @@ foreach my $orderParameterElement (@orderParameters) {
 
 
 ##sampleIDs
-&DefineArrayParameters(\@{$parameter{'sampleIDs'}{'value'}}, "sampleIDs", "path", "nodefault", "MIP", "");
+&DefineArrayParameters(\@{$parameter{'sampleIDs'}{'value'}}, \@orderParameters, \@broadcasts, "sampleIDs", "path", "nodefault", "MIP", "");
 
 &CheckUniqueIDNs(\@{$scriptParameter{'sampleIDs'}});  #Test that sampleIDs are unique
 
@@ -758,7 +756,7 @@ for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs
 }
 
 ##inFileDirs
-&DefineArrayParameters(\@{$parameter{'inFilesDirs'}{'value'}}, "inFilesDirs", "path", "notSetYet", "MIP", "directory");
+&DefineArrayParameters(\@{$parameter{'inFilesDirs'}{'value'}}, \@orderParameters, \@broadcasts, "inFilesDirs", "path", "notSetYet", "MIP", "directory");
 
 ##Compares the number of elements in two arrays and exits if the elements are not equal
 &CompareArrayElements(\@{$scriptParameter{'sampleIDs'}}, \@{$scriptParameter{'inFilesDirs'}}, "sampleIDs", "inFileDirs");
@@ -769,7 +767,7 @@ if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
     
     if( (scalar(@{$parameter{'picardToolsMergeSamFilesPrevious'}{'value'}}) > 0) ) {
 
-	&DefineArrayParameters(\@{$parameter{'picardToolsMergeSamFilesPrevious'}{'value'}}, "picardToolsMergeSamFilesPrevious", "path", "nodefault", "pPicardToolsMergeSamFiles", "file");    
+	&DefineArrayParameters(\@{$parameter{'picardToolsMergeSamFilesPrevious'}{'value'}}, \@orderParameters, \@broadcasts, "picardToolsMergeSamFilesPrevious", "path", "nodefault", "pPicardToolsMergeSamFiles", "file");    
 	
 	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #Check all samples to check, which are to be merged with previous files later
 	    
@@ -806,40 +804,40 @@ if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
 ##pVariantEffectPredictor
 if ($scriptParameter{'pVariantEffectPredictor'} > 0) {
 
-    &DefineArrayParameters(\@{$parameter{'vepFeatures'}{'value'}}, "vepFeatures", "path", "yes", "pVariantEffectPredictor", "");
+    &DefineArrayParameters(\@{$parameter{'vepFeatures'}{'value'}}, \@orderParameters, \@broadcasts, "vepFeatures", "path", "yes", "pVariantEffectPredictor", "");
 }
 
 
 ##pVCFParser
 if ($scriptParameter{'pVCFParser'} > 0) {
     
-    &DefineArrayParameters(\@{$parameter{'vcfParserRangeFeatureAnnotationColumns'}{'value'}}, "vcfParserRangeFeatureAnnotationColumns", "path", "nodefault", "pVCFParser", "");
-    &DefineArrayParameters(\@{$parameter{'vcfParserSelectFeatureAnnotationColumns'}{'value'}}, "vcfParserSelectFeatureAnnotationColumns", "path", "nodefault", "pVCFParser", "");
+    &DefineArrayParameters(\@{$parameter{'vcfParserRangeFeatureAnnotationColumns'}{'value'}}, \@orderParameters, \@broadcasts, "vcfParserRangeFeatureAnnotationColumns", "path", "nodefault", "pVCFParser", "");
+    &DefineArrayParameters(\@{$parameter{'vcfParserSelectFeatureAnnotationColumns'}{'value'}}, \@orderParameters, \@broadcasts, "vcfParserSelectFeatureAnnotationColumns", "path", "nodefault", "pVCFParser", "");
 }
 
 
 ##pSnpEff
 if ($scriptParameter{'pSnpEff'} > 0) {
 
-    &DefineArrayParameters(\@{$parameter{'snpSiftAnnotationFiles'}{'value'}}, "snpSiftAnnotationFiles", "path", "yes", "pSnpEff", "file");  #"yes" added to enable addition of default features in &AddToScriptParameters
-    &DefineArrayParameters(\@{$parameter{'snpSiftDbNSFPAnnotations'}{'value'}}, "snpSiftDbNSFPAnnotations", "path", "yes", "pSnpEff", "");  #"yes" added to enable addition of default features in &AddToScriptParameters  
+    &DefineArrayParameters(\@{$parameter{'snpSiftAnnotationFiles'}{'value'}}, \@orderParameters, \@broadcasts, "snpSiftAnnotationFiles", "path", "yes", "pSnpEff", "file");  #"yes" added to enable addition of default features in &AddToScriptParameters
+    &DefineArrayParameters(\@{$parameter{'snpSiftDbNSFPAnnotations'}{'value'}}, \@orderParameters, \@broadcasts, "snpSiftDbNSFPAnnotations", "path", "yes", "pSnpEff", "");  #"yes" added to enable addition of default features in &AddToScriptParameters  
 }
 
 
 ##pAnnovar
 if ($scriptParameter{'pAnnovar'} > 0) {
 
-    &DefineAnnovarTables(); #Set all AnnovarTables properties
-    &DefineArrayParameters(\@{$parameter{'annovarTableNames'}{'value'}}, "annovarTableNames", "path", "yes", "pAnnovar", "file");  
+    %annovarTable = &DefineAnnovarTables(\$scriptParameter{'annovarGenomeBuildVersion'}); #Set all AnnovarTables properties
+    &DefineArrayParameters(\@{$parameter{'annovarTableNames'}{'value'}}, \@orderParameters, \@broadcasts, "annovarTableNames", "path", "yes", "pAnnovar", "file");  
 }
 
 
 ##Set Target files
-&PrepareArrayParameters(\@exomeTargetBedInfileLists, "exomeTargetBedInfileLists", "path", "notSetYet", "pPicardToolsCalculateHSMetrics", "file");
+&PrepareArrayParameters(\@exomeTargetBedInfileLists, \@orderParameters, \@broadcasts, "exomeTargetBedInfileLists", "path", "notSetYet", "pPicardToolsCalculateHSMetrics", "file");
 
-&PrepareArrayParameters(\@exomeTargetPaddedBedInfileLists, "exomeTargetPaddedBedInfileLists", "path", "notSetYet", "pPicardToolsCalculateHSMetrics", "file");
+&PrepareArrayParameters(\@exomeTargetPaddedBedInfileLists, \@orderParameters, \@broadcasts, "exomeTargetPaddedBedInfileLists", "path", "notSetYet", "pPicardToolsCalculateHSMetrics", "file");
  
-&PrepareArrayParameters(\@GATKTargetPaddedBedIntervalLists, "GATKTargetPaddedBedIntervalLists", "path", "notSetYet", "pGATKHaploTypeCaller,pGATKVariantRecalibration", "file");
+&PrepareArrayParameters(\@GATKTargetPaddedBedIntervalLists, \@orderParameters, \@broadcasts, "GATKTargetPaddedBedIntervalLists", "path", "notSetYet", "pGATKHaploTypeCaller,pGATKVariantRecalibration", "file");
 
 ##Broadcast set parameters info
 foreach my $parameterInfo (@broadcasts) {
@@ -2123,15 +2121,15 @@ sub Annovar {
 	print $FILEHANDLE "-operation ";  #Comma-delimited string specifying type of operation	
 	for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@{$scriptParameter{'annovarTableNames'}});$tableNamesCounter++) {  #For all specified table names
 
-	    if ($annovarTables{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'annotation'} eq "geneanno") {
+	    if ($annovarTable{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'annotation'} eq "geneanno") {
 	
 		print $FILEHANDLE "g";
 	    }
-	    elsif ($annovarTables{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'annotation'} eq "regionanno") {
+	    elsif ($annovarTable{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'annotation'} eq "regionanno") {
 		
 		print $FILEHANDLE "r";
 	    }
-	    elsif ($annovarTables{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'annotation'} eq "filter") {
+	    elsif ($annovarTable{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'annotation'} eq "filter") {
 		
 		print $FILEHANDLE "f";
 	    }
@@ -2145,7 +2143,7 @@ sub Annovar {
 	print $FILEHANDLE "-argument ";
 	for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@{$scriptParameter{'annovarTableNames'}});$tableNamesCounter++) {  #For all specified table names
 	    
-	    if ($annovarTables{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'annotation'} eq "geneanno" ) {  #Use hgvs output style
+	    if ($annovarTable{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'annotation'} eq "geneanno" ) {  #Use hgvs output style
 		
 		print $FILEHANDLE "'--hgvs ";  #Use hgvs annotation
 		print $FILEHANDLE "--exonicsplicing'";  #Annotate variants near intron/exonic borders
@@ -4649,9 +4647,9 @@ sub BuildAnnovarPreRequisites {
 	    
 	    print $FILEHANDLE "perl ".$scriptParameter{'annovarPath'}."/annotate_variation.pl ";  #Annovar script 
 	    print $FILEHANDLE "-buildver ".$scriptParameter{'annovarGenomeBuildVersion'}." ";  #GenomeBuild version
-	    print $FILEHANDLE "-downdb ".$annovarTables{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'download'}." ";  #Db to download
+	    print $FILEHANDLE "-downdb ".$annovarTable{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'download'}." ";  #Db to download
 	    
-	    if (defined($annovarTables{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'ucscAlias'})) {
+	    if (defined($annovarTable{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'ucscAlias'})) {
 		
 		print $FILEHANDLE "-webfrom ucsc ";  #Download from ucsc
 	    }
@@ -4674,32 +4672,32 @@ sub BuildAnnovarPreRequisites {
 	    my $intendedFilePathRef;
 	    my $temporaryFilePathRef;
 	    
-	    if (defined($annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'file'})) {
+	    if (defined($annovarTable{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'file'})) {
 		
-		for (my $filesCounter=0;$filesCounter<scalar(@{$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'file'}});$filesCounter++) {  #All annovarTables file(s), some tables have multiple files downloaded from the same call
+		for (my $filesCounter=0;$filesCounter<scalar(@{$annovarTable{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'file'}});$filesCounter++) {  #All annovarTable file(s), some tables have multiple files downloaded from the same call
 		    
-		    $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'file'}[$filesCounter]);  
-		    $temporaryFilePathRef = \($annovarTemporaryDirectory."/".$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'file'}[$filesCounter]);    
+		    $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$annovarTable{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'file'}[$filesCounter]);  
+		    $temporaryFilePathRef = \($annovarTemporaryDirectory."/".$annovarTable{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'file'}[$filesCounter]);    
 		    &PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
 		
-		    if (defined($annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'indexFile'})) {
+		    if (defined($annovarTable{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'indexFile'})) {
 		    
-			$intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'file'}[$filesCounter].".idx");  
-			$temporaryFilePathRef = \($annovarTemporaryDirectory."/".$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'file'}[$filesCounter].".idx");
+			$intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$annovarTable{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'file'}[$filesCounter].".idx");  
+			$temporaryFilePathRef = \($annovarTemporaryDirectory."/".$annovarTable{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'file'}[$filesCounter].".idx");
 			&PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);	
 		    }
 		}		
 	    }
-	    elsif ((defined($annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'}))){
+	    elsif ((defined($annovarTable{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'}))){
 	    
-		$intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'}.".txt");
-		$temporaryFilePathRef = \($annovarTemporaryDirectory."/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'}.".txt");
+		$intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTable{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'}.".txt");
+		$temporaryFilePathRef = \($annovarTemporaryDirectory."/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTable{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'}.".txt");
 		&PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
 	    
-		if (defined($annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'indexFile'})) {
+		if (defined($annovarTable{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'indexFile'})) {
 		    
-		    $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'}.".txt.idx");
-		    $temporaryFilePathRef = \($annovarTemporaryDirectory."/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'}.".txt.idx");
+		    $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTable{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'}.".txt.idx");
+		    $temporaryFilePathRef = \($annovarTemporaryDirectory."/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTable{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'}.".txt.idx");
 		    &PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
 		}
 	    }
@@ -4709,7 +4707,7 @@ sub BuildAnnovarPreRequisites {
 		$temporaryFilePathRef = \($annovarTemporaryDirectory."/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$scriptParameter{'annovarTableNames'}[$tableNamesCounter].".txt");    
 		&PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
 	    
-		if (defined($annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'indexFile'})) {
+		if (defined($annovarTable{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'indexFile'})) {
 	
 		    $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$scriptParameter{'annovarTableNames'}[$tableNamesCounter].".txt.idx");
 		    $temporaryFilePathRef = \($annovarTemporaryDirectory."/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$scriptParameter{'annovarTableNames'}[$tableNamesCounter].".txt.idx");    
@@ -6186,20 +6184,24 @@ sub DefineArrayParameters {
     
 ##Function : Check if user supplied cmd info and supplies arrayParameters to scriptParameters
 ##Returns : ""
-##Arguments: $arrayRef, $parameterName, $parameterType, $parameterDefault, $associatedPrograms, $parameterExistsCheck
-##         : $arrayRef             => Array to loop in for parameter {REF}
-##         : $parameterName        => MIP parameter to evaluate
-##         : $parameterType        => Type of MIP parameter
-##         : $parameterDefault     => The parameter default value
-##         : $associatedPrograms   => Programs that use the parameter. Comma separated string
-##         : $parameterExistsCheck => Check if intendent file exists in reference directory
+##Arguments: $arrayRef, $orderParametersArrayRef, $broadcastsArrayRef, $parameterName, $parameterType, $parameterDefault, $associatedPrograms, $parameterExistsCheck
+##         : $arrayRef                => Array to loop in for parameter {REF}
+##         : $orderParametersArrayRef => Order of addition to parameter Hash
+##         : $broadcastsArrayRef      => Holds the parameters info for broadcasting later
+##         : $parameterName           => MIP parameter to evaluate
+##         : $parameterType           => Type of MIP parameter
+##         : $parameterDefault        => The parameter default value
+##         : $associatedPrograms      => Programs that use the parameter. Comma separated string
+##         : $parameterExistsCheck    => Check if intendent file exists in reference directory
 
     my $arrayRef = $_[0];
-    my $parameterName = $_[1];
-    my $parameterType = $_[2];
-    my $parameterDefault = $_[3];
-    my $associatedPrograms = $_[4];
-    my $parameterExistsCheck = $_[5];
+    my $orderParametersArrayRef = $_[1];
+    my $broadcastsArrayRef = $_[2];
+    my $parameterName = $_[3];
+    my $parameterType = $_[4];
+    my $parameterDefault = $_[5];
+    my $associatedPrograms = $_[6];
+    my $parameterExistsCheck = $_[7];
 
     $parameter{$parameterName}{'array'} = "yes";  #To separate scalars from arrays
 
@@ -6211,13 +6213,9 @@ sub DefineArrayParameters {
 
 	@{$scriptParameter{$parameterName}} = split(',', join(',',@{$arrayRef})); #If user supplied parameter a comma separated list
     }
-    push(@orderParameters, $parameterName); #Add to enable later evaluation of parameters in proper order & write to master file
+    push(@{$orderParametersArrayRef}, $parameterName); #Add to enable later evaluation of parameters in proper order & write to MIP log file
 
-    my $ret = &AddToScriptParameter($parameterName, $parameter{$parameterName}{'value'}[0], $parameterType, $parameterDefault, $associatedPrograms, $parameterExistsCheck);
-    if ($ret) {
-	
-	push(@broadcasts, $ret);
-    }
+    &AddToScriptParameter(\%parameter, \%scriptParameter, \@{$broadcastsArrayRef}, $parameterName, $parameter{$parameterName}{'value'}[0], $parameterType, $parameterDefault, $associatedPrograms, $parameterExistsCheck);
 }
 
 
@@ -6226,20 +6224,24 @@ sub DefineParametersPath {
 ##DefineParametersPath
     
 ##Function : Defines all attributes of a parameter, so that the correct value can be set and added to %scriptparameter later.
-##Arguments: $parameterName, $parameterDefault, $associatedProgram, $existsCheck
+##Arguments: $parameterHashRef, $orderParametersArrayRef, $parameterName, $parameterDefault, $associatedProgram, $existsCheck
+##         : $parameterHashRef        => Parameter Hash {REF}
+##         : $orderParametersArrayRef => Order of addition to parameter Hash
 ##         : $parameterName     => Parameter name
 ##         : $parameterDefault  => Default setting
 ##         : $associatedProgram => The parameters program
 ##         : $existsCheck       => Check if intendent file exists in reference directory
 ##         : $buildFile         => Autovivication of file if it does not exists (yes or no)
 
-    my $parameterName = $_[0];
-    my $parameterDefault = $_[1];
-    my $associatedProgram = $_[2];
-    my $existsCheck = $_[3];
-    my $buildFile = $_[4];
+    my $parameterHashRef = $_[0];
+    my $orderParametersArrayRef = $_[1];
+    my $parameterName = $_[2];
+    my $parameterDefault = $_[3];
+    my $associatedProgram = $_[4];
+    my $existsCheck = $_[5];
+    my $buildFile = $_[6];
     
-    $parameter{$parameterName} = {
+    ${$parameterHashRef}{$parameterName} = {
 	'type' => "path",
 	'value' => "nocmdinput",
 	'default' => $parameterDefault,
@@ -6248,7 +6250,7 @@ sub DefineParametersPath {
 	'buildFile' => $buildFile,
     };
     
-    push(@orderParameters, $parameterName);  #Add to enable later evaluation of parameters in proper order & write to master file
+    push(@{$orderParametersArrayRef}, $parameterName);  #Add to enable later evaluation of parameters in proper order & write to master file
 }
 
 
@@ -6257,30 +6259,34 @@ sub DefineParameters {
 ##DefineParameters
     
 ##Function : Defines all attributes of a parameter, so that the correct value can be set and added to %scriptparameter later.
-##Arguments: $parameterName, $parameterType, $parameterDefault, $associatedProgram, $fileEnding, @programNamePath
-##         : $parameterName     => Parameter name
-##         : $parameterType     => MIP or program
-##         : $parameterDefault  => Default setting
-##         : $associatedProgram => The parameters program
-##         : $fileEnding        => The filending after the module has been run
-##         : $parameterChain    => The chain to which the program belongs to
-##         : @programNamePath   => The path name of the program(s) for each sbatch script
+##Arguments: $parameterHashRef, $orderParametersArrayRef, $parameterName, $parameterType, $parameterDefault, $associatedProgram, $fileEnding, @programNamePath
+##         : $parameterHashRef        => Parameter Hash {REF}
+##         : $orderParametersArrayRef => Order of addition to parameter Hash
+##         : $parameterName           => Parameter name
+##         : $parameterType           => MIP or program
+##         : $parameterDefault        => Default setting
+##         : $associatedProgram       => The parameters program
+##         : $fileEnding              => The filending after the module has been run
+##         : $parameterChain          => The chain to which the program belongs to
+##         : @programNamePath         => The path name of the program(s) for each sbatch script
 
-    my $parameterName = $_[0];
-    my $parameterType = $_[1];
-    my $parameterDefault = $_[2];
-    my $associatedProgram = $_[3];
-    my $fileEnding = $_[4];
-    my $parameterChain = $_[5];
+    my $parameterHashRef = $_[0];
+    my $orderParametersArrayRef = $_[1];
+    my $parameterName = $_[2];
+    my $parameterType = $_[3];
+    my $parameterDefault = $_[4];
+    my $associatedProgram = $_[5];
+    my $fileEnding = $_[6];
+    my $parameterChain = $_[7];
     my @programNamePath;
 
-    if (defined($_[6])) {
+    if (defined($_[8])) {
 
-	@programNamePath = split(":", $_[6]);
+	@programNamePath = split(":", $_[8]);
     }
     if (defined($programNamePath[0])) {
 	
-	$parameter{$parameterName} = {
+	${$parameterHashRef}{$parameterName} = {
 	    'type' => $parameterType,
 	    'value' => "nocmdinput",
 	    'default' => $parameterDefault,
@@ -6292,7 +6298,7 @@ sub DefineParameters {
     }
     else {
 	
-	$parameter{$parameterName} = {
+	${$parameterHashRef}{$parameterName} = {
 	    'type' => $parameterType,
 	    'value' => "nocmdinput",
 	    'default' => $parameterDefault,
@@ -6301,8 +6307,8 @@ sub DefineParameters {
 	    'chain' => $parameterChain,
 	};
     }
-    
-    push(@orderParameters, $parameterName);  #Add to enable later evaluation of parameters in proper order & write to master file
+
+    push(@{$orderParametersArrayRef}, $parameterName);  #Add to enable later evaluation of parameters in proper order & write to MIP log file
 }
 
 
@@ -6312,22 +6318,28 @@ sub AddToScriptParameter {
     
 ##Function : Checks and sets user input or default values to scriptParameters
 ##Returns  : ""
-##Arguments: $parameterName, $parameterValue, $parameterType, $parameterDefault, @associatedPrograms, $parameterExistsCheck
-##         : $parameterName        => Parameter name
-##         : $parameterValue       => Parameter value to evaluate
-##         : $parameterType        => Path, MIP or program
-##         : $parameterDefault     => Default setting
-##         : @associatedPrograms   => The parameters program(s)
-##         : $parameterExistsCheck => Check if intendent file exists in reference directory
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $broadcastsArrayRef, $parameterName, $parameterValue, $parameterType, $parameterDefault, @associatedPrograms, $parameterExistsCheck
+##         : $parameterHashRef       => Holds all parameters
+##         : $scriptParameterHashRef => Holds all set parameter for analysis
+##         : $broadcastsArrayRef     => Holds the parameters info for broadcasting later
+##         : $parameterName          => Parameter name
+##         : $parameterValue         => Parameter value to evaluate
+##         : $parameterType          => Path, MIP or program
+##         : $parameterDefault       => Default setting
+##         : @associatedPrograms     => The parameters program(s)
+##         : $parameterExistsCheck   => Check if intendent file exists in reference directory
     
-    my $parameterName = $_[0];
-    my $parameterValue = $_[1];
-    my $parameterType = $_[2];
-    my $parameterDefault = $_[3];
-    my @associatedPrograms = split(/,/, $_[4]);
-    my $parameterExistsCheck = $_[5];
-    
-##Validation
+    my $parameterHashRef = $_[0];
+    my $scriptParameterHashRef = $_[1];
+    my $broadcastsArrayRef = $_[2];
+    my $parameterName = $_[3];
+    my $parameterValue = $_[4];
+    my $parameterType = $_[5];
+    my $parameterDefault = $_[6];
+    my @associatedPrograms = split(/,/, $_[7]);
+    my $parameterExistsCheck = $_[8];
+
+##Validation##
     #print "parameterName: ".$parameterName, "\n";
     #print "parameterValue: ".$parameterValue, "\n";
     #print "parameterType: ".$parameterType, "\n";
@@ -6335,12 +6347,13 @@ sub AddToScriptParameter {
     #foreach my $associatedProgram (@associatedPrograms) {
 #	print "associatedProgram: ".$associatedProgram, "\n";
  #   }
+##############
 
     foreach my $associatedProgram (@associatedPrograms) {  #Check all programs that use parameter
 
 	my $parameterSetSwitch = 0;
 
-	if (defined($scriptParameter{$associatedProgram}) && ($scriptParameter{$associatedProgram} > 0) ) {  #Only add active programs parameters
+	if (defined(${$scriptParameterHashRef}{$associatedProgram}) && (${$scriptParameterHashRef}{$associatedProgram} > 0) ) {  #Only add active programs parameters
 	    
 	    $parameterSetSwitch = 1;
 
@@ -6348,96 +6361,96 @@ sub AddToScriptParameter {
 		
 		if ($parameterValue eq "nocmdinput") {  #No input from cmd
 		    
-		    if (defined($scriptParameter{$parameterName})) {  #Input from config file
+		    if (defined(${$scriptParameterHashRef}{$parameterName})) {  #Input from config file
 			 
 			if ($parameterName eq "exomeTargetBedInfileLists") {  #ExomeTargetBedInfileListss is a comma separated list 
 			   
-			    &SetTargetandAutoBuild(\@{$scriptParameter{'sampleIDs'}}, \$parameterName, \$referenceFileEndings{'exomeTargetBedInfileLists'});
+			    &SetTargetandAutoBuild(\@{${$scriptParameterHashRef}{'sampleIDs'}}, \$parameterName, \$referenceFileEndings{'exomeTargetBedInfileLists'});
 			}
 			if ($parameterName eq "exomeTargetPaddedBedInfileLists") {  #ExomeTargetPaddedBedInfileLists is a comma separated list 
 			    
-			    &SetTargetandAutoBuild(\@{$scriptParameter{'sampleIDs'}}, \$parameterName, \$referenceFileEndings{'exomeTargetPaddedBedInfileLists'});
+			    &SetTargetandAutoBuild(\@{${$scriptParameterHashRef}{'sampleIDs'}}, \$parameterName, \$referenceFileEndings{'exomeTargetPaddedBedInfileLists'});
 			}
-			if ( ($parameterName eq "GATKTargetPaddedBedIntervalLists") && ($scriptParameter{'analysisType'} ne "genomes") ) {  #GATKTargetPaddedBedIntervalLists is a comma separated list 
+			if ( ($parameterName eq "GATKTargetPaddedBedIntervalLists") && (${$scriptParameterHashRef}{'analysisType'} ne "genomes") ) {  #GATKTargetPaddedBedIntervalLists is a comma separated list 
 			    
-			    &SetTargetandAutoBuild(\@{$scriptParameter{'sampleIDs'}}, \$parameterName, \$referenceFileEndings{'GATKTargetPaddedBedIntervalLists'});
+			    &SetTargetandAutoBuild(\@{${$scriptParameterHashRef}{'sampleIDs'}}, \$parameterName, \$referenceFileEndings{'GATKTargetPaddedBedIntervalLists'});
 			}
 			if ($parameterName eq "humanGenomeReference") {
 			    
-			    ($humanGenomeReferenceVersion, $humanGenomeReferenceSource, $humanGenomeReferenceNameNoEnding) = &ParseHumanGenomeReference($scriptParameter{'humanGenomeReference'});
+			    &ParseHumanGenomeReference(\${$scriptParameterHashRef}{'humanGenomeReference'}, \$humanGenomeReferenceVersion, \$humanGenomeReferenceSource, \$humanGenomeReferenceNameNoEnding, \$humanGenomeCompressed);
 			}
 			if ($parameterName eq "pedigreeFile") {
 			    
-			    &ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'});
+			    &ReadPlinkPedigreeFile(${$scriptParameterHashRef}{'pedigreeFile'});
 			}
 		    }
 		    elsif ($parameterDefault ne "nodefault") {  #Add default value
 			
 			if ($parameterName eq "inFilesDirs") {
 			    
-			    for (my $indirectoryCount=0;$indirectoryCount<scalar(@{$scriptParameter{'sampleIDs'}});$indirectoryCount++) {
+			    for (my $indirectoryCount=0;$indirectoryCount<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$indirectoryCount++) {
 				
-				push(@{$scriptParameter{'inFilesDirs'}}, $scriptParameter{'clusterConstantPath'}."/".$scriptParameter{'analysisType'}."/".$scriptParameter{'sampleIDs'}[$indirectoryCount]."/fastq");					
+				push(@{${$scriptParameterHashRef}{'inFilesDirs'}}, ${$scriptParameterHashRef}{'clusterConstantPath'}."/".${$scriptParameterHashRef}{'analysisType'}."/".${$scriptParameterHashRef}{'sampleIDs'}[$indirectoryCount]."/fastq");					
 			    }
 			}
 			elsif ($parameterName eq "exomeTargetBedInfileLists") {  #Note that potential pedigree files entries will be updated with GenomeReferenceSource and version here
 			    
-			    &SetTargetandAutoBuild(\@{$scriptParameter{'sampleIDs'}}, \$parameterName, \$referenceFileEndings{'exomeTargetBedInfileLists'});
+			    &SetTargetandAutoBuild(\@{${$scriptParameterHashRef}{'sampleIDs'}}, \$parameterName, \$referenceFileEndings{'exomeTargetBedInfileLists'});
 			}
 			elsif ($parameterName eq "exomeTargetPaddedBedInfileLists") {  #Note that potential pedigree files entries will be updated with GenomeReferenceSource and version here
 			    
-			    &SetTargetandAutoBuild(\@{$scriptParameter{'sampleIDs'}}, \$parameterName, \$referenceFileEndings{'exomeTargetPaddedBedInfileLists'});
+			    &SetTargetandAutoBuild(\@{${$scriptParameterHashRef}{'sampleIDs'}}, \$parameterName, \$referenceFileEndings{'exomeTargetPaddedBedInfileLists'});
 			}
-			elsif ( ($parameterName eq "GATKTargetPaddedBedIntervalLists") && ($scriptParameter{'analysisType'} ne "genomes") ) {  #Note that potential pedigree files entries will be updated with GenomeReferenceSource and version here 
+			elsif ( ($parameterName eq "GATKTargetPaddedBedIntervalLists") && (${$scriptParameterHashRef}{'analysisType'} ne "genomes") ) {  #Note that potential pedigree files entries will be updated with GenomeReferenceSource and version here 
 			    
-			    &SetTargetandAutoBuild(\@{$scriptParameter{'sampleIDs'}}, \$parameterName, \$referenceFileEndings{'GATKTargetPaddedBedIntervalLists'});
+			    &SetTargetandAutoBuild(\@{${$scriptParameterHashRef}{'sampleIDs'}}, \$parameterName, \$referenceFileEndings{'GATKTargetPaddedBedIntervalLists'});
 			}
 			elsif ($parameterName eq "vepFeatures") {
 			    
-			    @{$scriptParameter{'vepFeatures'}} = ("refseq", "hgvs", "symbol", "numbers", "sift", "polyphen", "humdiv");  #Set default vep features
+			    @{${$scriptParameterHashRef}{'vepFeatures'}} = ("refseq", "hgvs", "symbol", "numbers", "sift", "polyphen", "humdiv");  #Set default vep features
 			}
 			elsif ($parameterName eq "snpSiftAnnotationFiles") {  #Input from config file
 			    
-			    @{$scriptParameter{'snpSiftAnnotationFiles'}} = ("dbsnp_138.b37.excluding_sites_after_129.vcf", "dbsnp_138.b37.vcf", "1000G_phase1.indels.b37.vcf", "1000G_phase1.snps.high_confidence.b37.vcf", "ESP6500SI-V2-SSA137.updatedProteinHgvs.snps_indels.vcf");  #Set default snpSiftAnnotationFiles
+			    @{${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}} = ("dbsnp_138.b37.excluding_sites_after_129.vcf", "dbsnp_138.b37.vcf", "1000G_phase1.indels.b37.vcf", "1000G_phase1.snps.high_confidence.b37.vcf", "ESP6500SI-V2-SSA137.updatedProteinHgvs.snps_indels.vcf");  #Set default snpSiftAnnotationFiles
 			}
 			elsif ($parameterName eq "snpSiftDbNSFPAnnotations") {  #Input from config file
     
-			    @{$scriptParameter{'snpSiftDbNSFPAnnotations'}} = ("SIFT_pred", "Polyphen2_HDIV_pred", "Polyphen2_HVAR_pred", "LRT_pred", "MutationTaster_pred", "GERP++_NR", "GERP++_RS", "phastCons100way_vertebrate", "1000Gp1_AF", "ESP6500_AA_AF");  #Set default snpSiftDbNSFPAnnotations
+			    @{${$scriptParameterHashRef}{'snpSiftDbNSFPAnnotations'}} = ("SIFT_pred", "Polyphen2_HDIV_pred", "Polyphen2_HVAR_pred", "LRT_pred", "MutationTaster_pred", "GERP++_NR", "GERP++_RS", "phastCons100way_vertebrate", "1000Gp1_AF", "ESP6500_AA_AF");  #Set default snpSiftDbNSFPAnnotations
 			}
 			elsif ($parameterName eq "annovarTableNames") {
 			    
-			    @{$scriptParameter{'annovarTableNames'}} = ("refGene", "mce46way", "gerp++elem", "segdup", "tfbs", "mirna", "snp137NonFlagged", "1000g2012apr_all", "esp6500si_all", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_lrt", "ljb2_gerp++", "ljb2_phylop");  #Set default annovar table names
+			    @{${$scriptParameterHashRef}{'annovarTableNames'}} = ("refGene", "mce46way", "gerp++elem", "segdup", "tfbs", "mirna", "snp137NonFlagged", "1000g2012apr_all", "esp6500si_all", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_lrt", "ljb2_gerp++", "ljb2_phylop");  #Set default annovar table names
 			}
 			else {
 			    
 			    if ($parameterName eq "humanGenomeReference") {
-				
-				($humanGenomeReferenceVersion, $humanGenomeReferenceSource, $humanGenomeReferenceNameNoEnding) = &ParseHumanGenomeReference($parameterDefault);
+
+				&ParseHumanGenomeReference(\${$scriptParameterHashRef}{'humanGenomeReference'}, \$humanGenomeReferenceVersion, \$humanGenomeReferenceSource, \$humanGenomeReferenceNameNoEnding, \$humanGenomeCompressed);
 			    }			    
-			    $scriptParameter{$parameterName} = $parameterDefault;  #Set default value
+			    ${$scriptParameterHashRef}{$parameterName} = $parameterDefault;  #Set default value
 			}
 		    }
 		    else {  #No default
 
 			if ($parameterName eq "mosaikAlignReference") {  #Special case - do nothing, since file can be created by MIP from the humanGenomeReference if required
 			}
-			elsif ( ($parameterName eq "bwaMemRapidDb") && ($scriptParameter{'analysisType'} ne "rapid")) {  #Do nothing since file is not required unless rapid mode is enabled
+			elsif ( ($parameterName eq "bwaMemRapidDb") && (${$scriptParameterHashRef}{'analysisType'} ne "rapid")) {  #Do nothing since file is not required unless rapid mode is enabled
 			}
-			elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCF") && ($scriptParameter{'analysisType'} =~/genomes/) ) {  #Do nothing since file is not required unless exome or rapid mode is enabled
+			elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCF") && (${$scriptParameterHashRef}{'analysisType'} =~/genomes/) ) {  #Do nothing since file is not required unless exome or rapid mode is enabled
 			}
-			elsif ( ($parameterName eq "vcfParserRangeFeatureAnnotationColumns") && ( $scriptParameter{'vcfParserRangeFeatureFile'} eq "noUserInfo") ) {  #Do nothing since no SelectFile was given
+			elsif ( ($parameterName eq "vcfParserRangeFeatureAnnotationColumns") && ( ${$scriptParameterHashRef}{'vcfParserRangeFeatureFile'} eq "noUserInfo") ) {  #Do nothing since no SelectFile was given
 			} 
-			elsif ( ($parameterName eq "vcfParserSelectFeatureAnnotationColumns") && ( $scriptParameter{'vcfParserSelectFile'} eq "noUserInfo") ) {  #Do nothing since no SelectFile was given
+			elsif ( ($parameterName eq "vcfParserSelectFeatureAnnotationColumns") && ( ${$scriptParameterHashRef}{'vcfParserSelectFile'} eq "noUserInfo") ) {  #Do nothing since no SelectFile was given
 			}
-			elsif ( ($parameterName eq "vcfParserSelectFileMatchingColumn") && ( $scriptParameter{'vcfParserSelectFile'} eq "noUserInfo") ) {  #Do nothing since no SelectFile was given
+			elsif ( ($parameterName eq "vcfParserSelectFileMatchingColumn") && ( ${$scriptParameterHashRef}{'vcfParserSelectFile'} eq "noUserInfo") ) {  #Do nothing since no SelectFile was given
 			}
-			elsif ( ($parameterName eq "geneFile") && ($scriptParameter{'pVariantEffectPredictor'} > 0) ) {  #Do nothing since VEP annotations can be used
+			elsif ( ($parameterName eq "geneFile") && (${$scriptParameterHashRef}{'pVariantEffectPredictor'} > 0) ) {  #Do nothing since VEP annotations can be used
 			}
-			elsif ( ($parameterName eq "caddWGSSNVsFile") && ( $scriptParameter{'caddWGSSNVs'} == 0) ) {  #Do nothing since no CADD annotation should be performed
+			elsif ( ($parameterName eq "caddWGSSNVsFile") && ( ${$scriptParameterHashRef}{'caddWGSSNVs'} == 0) ) {  #Do nothing since no CADD annotation should be performed
 			}
-			elsif ( ($parameterName eq "cadd1000GenomesFile") && ( $scriptParameter{'cadd1000Genomes'} == 0) ) {  #Do nothing since no CADD annotation should be performed
+			elsif ( ($parameterName eq "cadd1000GenomesFile") && ( ${$scriptParameterHashRef}{'cadd1000Genomes'} == 0) ) {  #Do nothing since no CADD annotation should be performed
 			}
-			elsif ( ($parameterName eq "rankModelFile") && ( $scriptParameter{'rankModelFile'} eq "noUserInfo") ) {  #Do nothing since no rank model was given i.e. use rank scripts deafult supplied with distribution
+			elsif ( ($parameterName eq "rankModelFile") && ( ${$scriptParameterHashRef}{'rankModelFile'} eq "noUserInfo") ) {  #Do nothing since no rank model was given i.e. use rank scripts deafult supplied with distribution
 			}
 			else {
 			    
@@ -6452,36 +6465,37 @@ sub AddToScriptParameter {
 		    if ($parameterName eq "exomeTargetBedInfileLists") {	    
 			
 			&EnableArrayParameter(\@exomeTargetBedInfileLists, \$parameterName);
-			&CompareArrayElements(\@{$scriptParameter{'sampleIDs'}}, \@exomeTargetBedInfileLists, "sampleIDs", $parameterName);
-			&SetAutoBuildAndScriptParameterPerSample(\@{$scriptParameter{'sampleIDs'}}, \@exomeTargetBedInfileLists, \$parameterName);
+			&CompareArrayElements(\@{${$scriptParameterHashRef}{'sampleIDs'}}, \@exomeTargetBedInfileLists, "sampleIDs", $parameterName);
+			&SetAutoBuildAndScriptParameterPerSample(\@{${$scriptParameterHashRef}{'sampleIDs'}}, \@exomeTargetBedInfileLists, \$parameterName);
 		    }
 		    elsif ($parameterName eq "exomeTargetPaddedBedInfileLists") {	    
 			
 			&EnableArrayParameter(\@exomeTargetPaddedBedInfileLists, \$parameterName);
-			&CompareArrayElements(\@{$scriptParameter{'sampleIDs'}}, \@exomeTargetPaddedBedInfileLists, "sampleIDs", $parameterName);
-			&SetAutoBuildAndScriptParameterPerSample(\@{$scriptParameter{'sampleIDs'}}, \@exomeTargetPaddedBedInfileLists, \$parameterName);
+			&CompareArrayElements(\@{${$scriptParameterHashRef}{'sampleIDs'}}, \@exomeTargetPaddedBedInfileLists, "sampleIDs", $parameterName);
+			&SetAutoBuildAndScriptParameterPerSample(\@{${$scriptParameterHashRef}{'sampleIDs'}}, \@exomeTargetPaddedBedInfileLists, \$parameterName);
 		    }
-		    elsif ( ($parameterName eq "GATKTargetPaddedBedIntervalLists") && ($scriptParameter{'analysisType'} ne "genomes") ) {	    
+		    elsif ( ($parameterName eq "GATKTargetPaddedBedIntervalLists") && (${$scriptParameterHashRef}{'analysisType'} ne "genomes") ) {	    
 			
 			&EnableArrayParameter(\@GATKTargetPaddedBedIntervalLists, \$parameterName);
-			&CompareArrayElements(\@{$scriptParameter{'sampleIDs'}}, \@GATKTargetPaddedBedIntervalLists, "sampleIDs", $parameterName);
-			&SetAutoBuildAndScriptParameterPerSample(\@{$scriptParameter{'sampleIDs'}}, \@GATKTargetPaddedBedIntervalLists, \$parameterName);
+			&CompareArrayElements(\@{${$scriptParameterHashRef}{'sampleIDs'}}, \@GATKTargetPaddedBedIntervalLists, "sampleIDs", $parameterName);
+			&SetAutoBuildAndScriptParameterPerSample(\@{${$scriptParameterHashRef}{'sampleIDs'}}, \@GATKTargetPaddedBedIntervalLists, \$parameterName);
 		    }
 		    elsif ($parameterName eq "pedigreeFile") {  #Must come after arrays that can be populated from pedigree file to not overwrite user cmd input 
 
-			$scriptParameter{$parameterName} = $parameterValue;
-			&ReadPlinkPedigreeFile($scriptParameter{'pedigreeFile'});
+			${$scriptParameterHashRef}{$parameterName} = $parameterValue;
+			&ReadPlinkPedigreeFile(${$scriptParameterHashRef}{'pedigreeFile'});
 		    }
 		    else {
 			
 			if ($parameterName eq "humanGenomeReference") {
 			    
-			    ($humanGenomeReferenceVersion, $humanGenomeReferenceSource, $humanGenomeReferenceNameNoEnding) = &ParseHumanGenomeReference($parameterValue);
+			    &ParseHumanGenomeReference(\${$scriptParameterHashRef}{'humanGenomeReference'}, \$humanGenomeReferenceVersion, \$humanGenomeReferenceSource, \$humanGenomeReferenceNameNoEnding, \$humanGenomeCompressed);
 			}
-			if (defined($parameter{$parameterName}{'array'})) {  #Do nothing			   
+			if (defined(${$parameterHashRef}{$parameterName}{'array'})) {  #Do nothing			   
 			}
 			else {
-			    $scriptParameter{$parameterName} = $parameterValue;
+			    
+			    ${$scriptParameterHashRef}{$parameterName} = $parameterValue;
 			}
 		    }
 		}
@@ -6489,32 +6503,32 @@ sub AddToScriptParameter {
 		    
 		    if ($parameterName eq "inFilesDirs") {
 			
-			for (my $indirectoryCount=0;$indirectoryCount<scalar(@{$scriptParameter{'inFilesDirs'}});$indirectoryCount++) {
+			for (my $indirectoryCount=0;$indirectoryCount<scalar(@{${$scriptParameterHashRef}{'inFilesDirs'}});$indirectoryCount++) {
 			    
-			    &CheckExistance(\$scriptParameter{'inFilesDirs'}[$indirectoryCount], \$parameterName, "d");
+			    &CheckExistance(\${$scriptParameterHashRef}{'inFilesDirs'}[$indirectoryCount], \$parameterName, "d");
 			}
 		    }
 		    else {
 			
-			&CheckExistance(\$scriptParameter{$parameterName}, \$parameterName, "d");
+			&CheckExistance(\${$scriptParameterHashRef}{$parameterName}, \$parameterName, "d");
 
 			if ($parameterName eq "genomeAnalysisToolKitPath") {  #To enable addition of version to sampleInfo
 			    
-			    if ($scriptParameter{$parameterName}=~/GenomeAnalysisTK-([^,]+)/) {
+			    if (${$scriptParameterHashRef}{$parameterName}=~/GenomeAnalysisTK-([^,]+)/) {
 				
-				$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'program'}{"GATK"}{'Version'} = $1;
+				$sampleInfo{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'program'}{"GATK"}{'Version'} = $1;
 			    }
 			}
-			if ($parameterName eq "picardToolsPath") {  #To enable addition of version to sampleInfo                                                                       
+			if ($parameterName eq "picardToolsPath") {  #To enable addition of version to sampleInfo
 
-                            if ($scriptParameter{$parameterName}=~/picard-tools-([^,]+)/) {
+                            if (${$scriptParameterHashRef}{$parameterName}=~/picard-tools-([^,]+)/) {
                                 
-				$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'program'}{"PicardTools"}{'Version'} = $1;
+				$sampleInfo{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'program'}{"PicardTools"}{'Version'} = $1;
                             }
                         }
 		    }
 		}
-		elsif ( ($parameterExistsCheck) && ($parameterExistsCheck eq "file") && (defined($scriptParameter{$parameterName})) ) {  #Check file existence in reference directory
+		elsif ( ($parameterExistsCheck) && ($parameterExistsCheck eq "file") && (defined(${$scriptParameterHashRef}{$parameterName})) ) {  #Check file existence in reference directory
 		    
 		    if ($parameterName eq "mosaikJumpDbStub") {
 			
@@ -6526,50 +6540,36 @@ sub AddToScriptParameter {
 		    }
 		    elsif ($parameterName eq "picardToolsMergeSamFilesPrevious") {
 
-			for (my $fileCounter=0;$fileCounter<scalar(@{$scriptParameter{'picardToolsMergeSamFilesPrevious'}});$fileCounter++) {  #All AnnovarTables
+			for (my $fileCounter=0;$fileCounter<scalar(@{${$scriptParameterHashRef}{'picardToolsMergeSamFilesPrevious'}});$fileCounter++) {  #All AnnovarTables
 
-			    &CheckExistance(\$scriptParameter{'picardToolsMergeSamFilesPrevious'}[$fileCounter], \$parameterName, "f");
+			    &CheckExistance(\${$scriptParameterHashRef}{'picardToolsMergeSamFilesPrevious'}[$fileCounter], \$parameterName, "f");
 			}
 		    }
 		    elsif ($parameterName eq "humanGenomeReference") {
 			
-			&CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{$parameterName}), \$parameterName, "f");#Check reference genome
-			$sampleInfo{$scriptParameter{'familyID'}}{$scriptParameter{'familyID'}}{"HumanGenomeBuild"}{'Path'} = $scriptParameter{'referencesDir'}."/".$scriptParameter{$parameterName};
-			$sampleInfo{$scriptParameter{'familyID'}}{$scriptParameter{'familyID'}}{"HumanGenomeBuild"}{'Source'} = $humanGenomeReferenceSource;
-			$sampleInfo{$scriptParameter{'familyID'}}{$scriptParameter{'familyID'}}{"HumanGenomeBuild"}{'Version'} = $humanGenomeReferenceVersion;
+			&CheckExistance(\(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName}), \$parameterName, "f");#Check reference genome
+			$sampleInfo{${$scriptParameterHashRef}{'familyID'}}{${$scriptParameterHashRef}{'familyID'}}{"HumanGenomeBuild"}{'Path'} = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName};
+			$sampleInfo{${$scriptParameterHashRef}{'familyID'}}{${$scriptParameterHashRef}{'familyID'}}{"HumanGenomeBuild"}{'Source'} = $humanGenomeReferenceSource;
+			$sampleInfo{${$scriptParameterHashRef}{'familyID'}}{${$scriptParameterHashRef}{'familyID'}}{"HumanGenomeBuild"}{'Version'} = $humanGenomeReferenceVersion;
 
-			##Enable autoBuild of metafiles 	       
-			$parameter{$parameterName.".dict"}{'buildFile'} = "yesAutoBuild";
-			$parameter{$parameterName.".fasta.fai"}{'buildFile'} = "yesAutoBuild";
 
-			for (my $fileEndingsCounter=0;$fileEndingsCounter<scalar(@humanGenomeReferenceFileEndings);$fileEndingsCounter++) {
-			
-			     my $intendedFilePathRef = \($scriptParameter{'referencesDir'}."/".$humanGenomeReferenceNameNoEnding.$humanGenomeReferenceFileEndings[$fileEndingsCounter]);
-			    
-			     &CheckExistance($intendedFilePathRef, \($parameterName.$humanGenomeReferenceFileEndings[$fileEndingsCounter]), "f");
-			}
-		
-			if ($parameter{$parameterName.".dict"}{'buildFile'} eq 0) {
-			  
-			    ##Collect sequence contigs from human reference ".dict" file since it exists
-			    &CollectSeqContigs();  #Preparation for future changes but not active yet
-			}
+			&CheckHumanGenomeFileEndings(\%parameter, \${$scriptParameterHashRef}{'referencesDir'}, \@humanGenomeReferenceFileEndings, \$humanGenomeReferenceNameNoEnding, \$parameterName);
 		    }
 		    elsif ( ($parameterName eq "exomeTargetBedInfileLists") || ($parameterName eq "exomeTargetPaddedBedInfileLists") || ($parameterName eq "GATKTargetPaddedBedIntervalLists") ) {
 			
-			if ( ($parameterName eq "GATKTargetPaddedBedIntervalLists") && ($scriptParameter{'analysisType'} eq "genomes") ) {  #No need to check since genomes does not use GATKTargetPaddedBedIntervalLists
+			if ( ($parameterName eq "GATKTargetPaddedBedIntervalLists") && (${$scriptParameterHashRef}{'analysisType'} eq "genomes") ) {  #No need to check since genomes does not use GATKTargetPaddedBedIntervalLists
 			}
 			else {
 			    
-			    for (my $sampleIDsCounter=0;$sampleIDsCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDsCounter++) {  #All sampleIDs
+			    for (my $sampleIDsCounter=0;$sampleIDsCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDsCounter++) {  #All sampleIDs
 				
-				 &CheckSupportedFileEnding(\($scriptParameter{'referencesDir'}."/".$scriptParameter{ $scriptParameter{'familyID'} }{$scriptParameter{'sampleIDs'}[$sampleIDsCounter]}{$parameterName}), \$referenceFileEndings{$parameterName}, \$parameterName);
-				 &CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{ $scriptParameter{'familyID'} }{$scriptParameter{'sampleIDs'}[$sampleIDsCounter]}{$parameterName}), \$parameterName, "f", \$scriptParameter{'sampleIDs'}[$sampleIDsCounter]);
+				 &CheckSupportedFileEnding(\(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDsCounter]}{$parameterName}), \$referenceFileEndings{$parameterName}, \$parameterName);
+				 &CheckExistance(\(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDsCounter]}{$parameterName}), \$parameterName, "f", \${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDsCounter]);
 			    
-				my $exomeTargetBedFileNoEnding = &RemoveFileEnding(\$scriptParameter{ $scriptParameter{'familyID'} }{$scriptParameter{'sampleIDs'}[$sampleIDsCounter]}{$parameterName} , $referenceFileEndings{$parameterName});  #Remove ".fileending" from reference filename
+				my $exomeTargetBedFileNoEnding = &RemoveFileEnding(\${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDsCounter]}{$parameterName} , $referenceFileEndings{$parameterName});  #Remove ".fileending" from reference filename
 				 &CheckTargetExistFileBed(\$exomeTargetBedFileNoEnding, $parameterName);
 			    }
-			    undef($scriptParameter{$parameterName});  #Remove parameter to avoid unnecessary print to STDOUT and config
+			    undef(${$scriptParameterHashRef}{$parameterName});  #Remove parameter to avoid unnecessary print to STDOUT and config
 			}
 		    }
 		    elsif ($parameterName eq "snpSiftAnnotationFiles"){
@@ -6577,41 +6577,41 @@ sub AddToScriptParameter {
 			my %snpEffFile = &DefineSnpEffFiles();
 			my $intendedFilePathRef;
 			
-			for (my $fileNameCounter=0;$fileNameCounter<scalar(@{$scriptParameter{'snpSiftAnnotationFiles'}});$fileNameCounter++) {  #
+			for (my $fileNameCounter=0;$fileNameCounter<scalar(@{${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}});$fileNameCounter++) {  #
 			    
-			    my $intendedFilePathRef = \($scriptParameter{'referencesDir'}."/".$scriptParameter{'snpSiftAnnotationFiles'}[$fileNameCounter]);
-			    &CheckExistance($intendedFilePathRef, \$scriptParameter{'snpSiftAnnotationFiles'}[$fileNameCounter], "f");			    
+			    my $intendedFilePathRef = \(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}[$fileNameCounter]);
+			    &CheckExistance($intendedFilePathRef, \${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}[$fileNameCounter], "f");			    
 			}
 		    }
 		    elsif ($parameterName eq "annovarTableNames") {
 			
 			my $intendedFilePathRef;
 
-			for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@{$scriptParameter{'annovarTableNames'}});$tableNamesCounter++) {  #All AnnovarTables
-		 
-			    if (defined($annovarTables{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]})) {  #Supported Annovar database
+			for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@{${$scriptParameterHashRef}{'annovarTableNames'}});$tableNamesCounter++) {  #All AnnovarTables
+			    if (defined($annovarTable{${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter]})) {  #Supported Annovar database
 				
-				if (defined($annovarTables{$scriptParameter{'annovarTableNames'}[$tableNamesCounter]}{'file'})) {
+				if (defined($annovarTable{ ${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter] }{'file'})) {
 				    
-				    for (my $filesCounter=0;$filesCounter<scalar(@{$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'file'}});$filesCounter++) {  #All annovarTables file(s), some tables have multiple files downloaded from the same call
-					 $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'file'}[$filesCounter]);
-					 &CheckExistance($intendedFilePathRef, \$scriptParameter{'annovarTableNames'}[$tableNamesCounter], "f");
+				    for (my $filesCounter=0;$filesCounter<scalar(@{$annovarTable{ ${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter] }{'file'}});$filesCounter++) {  #All annovarTable file(s), some tables have multiple files downloaded from the same call
+					 
+					$intendedFilePathRef = \(${$scriptParameterHashRef}{'annovarPath'}."/humandb/".$annovarTable{ ${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter] }{'file'}[$filesCounter]);
+					&CheckExistance($intendedFilePathRef, \${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter], "f");
 				    }
 				}
-				elsif (defined($annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'})){
+				elsif (defined($annovarTable{ ${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'})){
 				    
-				     $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$annovarTables{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'}.".txt");
-				     &CheckExistance($intendedFilePathRef, \$scriptParameter{'annovarTableNames'}[$tableNamesCounter], "f");
+				     $intendedFilePathRef = \(${$scriptParameterHashRef}{'annovarPath'}."/humandb/".${$scriptParameterHashRef}{'annovarGenomeBuildVersion'}."_".$annovarTable{ ${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'}.".txt");
+				     &CheckExistance($intendedFilePathRef, \${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter], "f");
 				}
 				else {
 				
-				     $intendedFilePathRef = \($scriptParameter{'annovarPath'}."/humandb/".$scriptParameter{'annovarGenomeBuildVersion'}."_".$scriptParameter{'annovarTableNames'}[$tableNamesCounter].".txt");
-				     &CheckExistance($intendedFilePathRef, \$scriptParameter{'annovarTableNames'}[$tableNamesCounter], "f");
+				     $intendedFilePathRef = \(${$scriptParameterHashRef}{'annovarPath'}."/humandb/".${$scriptParameterHashRef}{'annovarGenomeBuildVersion'}."_".${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter].".txt");
+				     &CheckExistance($intendedFilePathRef, \${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter], "f");
 				}
 			    }
 			    else {  #Annovar Table not supported by MIP
 				
-				$logger->error("You supplied Annovar database: ".$scriptParameter{'annovarTableNames'}[$tableNamesCounter]." which is not supported by MIP. MIP can only process supported annovar databases\n");
+				$logger->error("You supplied Annovar database: ".${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter]." which is not supported by MIP. MIP can only process supported annovar databases\n");
 				&PrintSupportedAnnovarTableNames();
 			    }
 			}
@@ -6622,68 +6622,68 @@ sub AddToScriptParameter {
 		    }
 		    elsif ($parameterName eq "sampleInfoFile") {
 
-			if (defined($scriptParameter{'sampleInfoFile'})) {
+			if (defined(${$scriptParameterHashRef}{'sampleInfoFile'})) {
 
-			    if (-f $scriptParameter{'sampleInfoFile'}) {
+			    if (-f ${$scriptParameterHashRef}{'sampleInfoFile'}) {
 
-				%sampleInfo = &LoadYAML($scriptParameter{'sampleInfoFile'});  #Load parameters from previous run from sampleInfoFile	  
+				%sampleInfo = &LoadYAML(${$scriptParameterHashRef}{'sampleInfoFile'});  #Load parameters from previous run from sampleInfoFile	  
 				
 			    }
-			    if (defined($scriptParameter{'pedigreeFile'}) ) {
+			    if (defined(${$scriptParameterHashRef}{'pedigreeFile'}) ) {
 				
-				$sampleInfo{$scriptParameter{'familyID'}}{$scriptParameter{'familyID'}}{'pedigreeFile'}{'Path'} = $scriptParameter{'pedigreeFile'};  #Add pedigreeFile to sampleInfo
-				$sampleInfo{$scriptParameter{'familyID'}}{$scriptParameter{'familyID'}}{'pedigreeFileAnalysis'}{'Path'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/qc_pedigree.yaml";  #Add pedigreeFile info used in this analysis to SampleInfoFile
+				$sampleInfo{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pedigreeFile'}{'Path'} = ${$scriptParameterHashRef}{'pedigreeFile'};  #Add pedigreeFile to sampleInfo
+				$sampleInfo{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pedigreeFileAnalysis'}{'Path'} = ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'familyID'}."/qc_pedigree.yaml";  #Add pedigreeFile info used in this analysis to SampleInfoFile
 			    }
 			} 
 		    }
 		    elsif ($parameterName eq "logFile") {  #Do nothing since file is to be created
 		    }
-		    elsif ( ($parameterName eq "bwaMemRapidDb") && ($scriptParameter{'analysisType'} ne "rapid")) {  #Do nothing since file is not required unless rapid mode is enabled
+		    elsif ( ($parameterName eq "bwaMemRapidDb") && (${$scriptParameterHashRef}{'analysisType'} ne "rapid")) {  #Do nothing since file is not required unless rapid mode is enabled
 		    }
-		    elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCF") && ($scriptParameter{'analysisType'} =~/genomes/) ) {  #Do nothing since file is not required unless exome mode is enabled
+		    elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCF") && (${$scriptParameterHashRef}{'analysisType'} =~/genomes/) ) {  #Do nothing since file is not required unless exome mode is enabled
 		    }
-                    elsif ( ($parameterName eq "vcfParserRangeFeatureFile") && ( $scriptParameter{'vcfParserRangeFeatureFile'} eq "noUserInfo") ) {  #Do nothing since no RangeFile was given
+                    elsif ( ($parameterName eq "vcfParserRangeFeatureFile") && ( ${$scriptParameterHashRef}{'vcfParserRangeFeatureFile'} eq "noUserInfo") ) {  #Do nothing since no RangeFile was given
 		    }
 		    elsif ($parameterName eq "vcfParserSelectFile") {
 			
-			if ($scriptParameter{'vcfParserSelectFile'} eq "noUserInfo") {  #Do nothing since no SelectFile was given
+			if (${$scriptParameterHashRef}{'vcfParserSelectFile'} eq "noUserInfo") {  #Do nothing since no SelectFile was given
 			    
 			}
 			else {  #To enable addition of selectFile to sampleInfo                                                                       
 			    
-			    &CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{$parameterName}), \$parameterName, "f");
+			    &CheckExistance(\(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName}), \$parameterName, "f");
 
-			    if ($scriptParameter{$parameterName}=~/v(\d+\.\d+)/) {
+			    if (${$scriptParameterHashRef}{$parameterName}=~/v(\d+\.\d+)/) {
 				
-				$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'database'}{"SelectFile"}{'Version'} = $1;
+				$sampleInfo{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'database'}{"SelectFile"}{'Version'} = $1;
 			    }
-			    $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'database'}{"SelectFile"}{'File'} = $scriptParameter{$parameterName};
+			    $sampleInfo{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'database'}{"SelectFile"}{'File'} = ${$scriptParameterHashRef}{$parameterName};
 			}
 		    }
-                    elsif ( ($parameterName eq "geneFile") && ($scriptParameter{'pVariantEffectPredictor'} > 0) ) {  #Do nothing since VEP annotations can be used			    
+                    elsif ( ($parameterName eq "geneFile") && (${$scriptParameterHashRef}{'pVariantEffectPredictor'} > 0) ) {  #Do nothing since VEP annotations can be used			    
 		    }
-		    elsif ( ($parameterName eq "caddWGSSNVsFile") && ( $scriptParameter{'caddWGSSNVs'} == 0) ) {  #Do nothing since no CADD annotation should be performed
+		    elsif ( ($parameterName eq "caddWGSSNVsFile") && ( ${$scriptParameterHashRef}{'caddWGSSNVs'} == 0) ) {  #Do nothing since no CADD annotation should be performed
 		    }
-		    elsif ( ($parameterName eq "cadd1000GenomesFile") && ( $scriptParameter{'cadd1000Genomes'} == 0) ) {  #Do nothing since no CADD annotation should be performed
+		    elsif ( ($parameterName eq "cadd1000GenomesFile") && ( ${$scriptParameterHashRef}{'cadd1000Genomes'} == 0) ) {  #Do nothing since no CADD annotation should be performed
 		    }
 		    elsif ($parameterName eq "rankModelFile") {  
 			
-			if ($scriptParameter{'rankModelFile'} eq "noUserInfo") {  #Do nothing since no rank model config file was given. Usse default supplied by ranking script
+			if (${$scriptParameterHashRef}{'rankModelFile'} eq "noUserInfo") {  #Do nothing since no rank model config file was given. Usse default supplied by ranking script
 			}
 			else {  #To enable addition of rankModel file and version to sampleInfo                                                                       
 			    
-			    &CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{$parameterName}), \$parameterName, "f");
+			    &CheckExistance(\(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName}), \$parameterName, "f");
 			    
-			    if ($scriptParameter{$parameterName}=~/v(\d+\.\d+)/) {
+			    if (${$scriptParameterHashRef}{$parameterName}=~/v(\d+\.\d+)/) {
 				
-				$sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'program'}{"RankVariants"}{'RankModel'}{'Version'} = $1;
+				$sampleInfo{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'program'}{"RankVariants"}{'RankModel'}{'Version'} = $1;
 			    }
-			    $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'program'}{"RankVariants"}{'RankModel'}{'File'} = $scriptParameter{$parameterName};
+			    $sampleInfo{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'program'}{"RankVariants"}{'RankModel'}{'File'} = ${$scriptParameterHashRef}{$parameterName};
 			}
 		    }
 		    else {
 			
-			 &CheckExistance(\($scriptParameter{'referencesDir'}."/".$scriptParameter{$parameterName}), \$parameterName, "f");
+			 &CheckExistance(\(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName}), \$parameterName, "f");
                     }		    
 		}
 	    }
@@ -6692,17 +6692,17 @@ sub AddToScriptParameter {
 		
 		if ($parameterValue eq "nocmdinput") {  #No input from cmd
 		    
-		    if (defined($scriptParameter{$parameterName})) {  #Input from config file - do nothing
+		    if (defined(${$scriptParameterHashRef}{$parameterName})) {  #Input from config file - do nothing
 		    }
 		    elsif ($parameterDefault ne "nodefault") {
 		
-			$scriptParameter{$parameterName} = $parameterDefault;  #Set default value
+			${$scriptParameterHashRef}{$parameterName} = $parameterDefault;  #Set default value
 		    }
 		    else {
 			
 			if ($parameterName eq "aligner") {  #Set to "nocmdinput"
 			
-			    $scriptParameter{'aligner'} = "nocmdinput";
+			    ${$scriptParameterHashRef}{'aligner'} = "nocmdinput";
 			}
 			else {
 			    
@@ -6714,15 +6714,15 @@ sub AddToScriptParameter {
 		}
 		else {  #Add to enable or overwrite info gathered from config and use in recreation of cmd line later
 		    
-		    $scriptParameter{$parameterName} = $parameterValue; 
+		    ${$scriptParameterHashRef}{$parameterName} = $parameterValue; 
 		}
 		if ($parameterName eq "instanceTag") {
 
-		    $sampleInfo{$scriptParameter{'familyID'}}{$scriptParameter{'familyID'}}{$parameterName} = $scriptParameter{$parameterName};
+		    $sampleInfo{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{$parameterName} = ${$scriptParameterHashRef}{$parameterName};
 		}
 		if ($parameterName eq "researchEthicalApproval") {
 
-		    $sampleInfo{$scriptParameter{'familyID'}}{$scriptParameter{'familyID'}}{$parameterName} = $scriptParameter{$parameterName};
+		    $sampleInfo{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{$parameterName} = ${$scriptParameterHashRef}{$parameterName};
 		}
 	    }
 	    
@@ -6730,31 +6730,31 @@ sub AddToScriptParameter {
 
 		if($parameterValue eq "nocmdinput") {  #No input from cmd
 		    
-		    if (defined($scriptParameter{$parameterName})) {  #Input from config file - do nothing
+		    if (defined(${$scriptParameterHashRef}{$parameterName})) {  #Input from config file - do nothing
 			
 		    }
 		    elsif ($parameterDefault ne "nodefault") {
 			    
-			$scriptParameter{$parameterName} = $parameterDefault;  #Set default value
+			${$scriptParameterHashRef}{$parameterName} = $parameterDefault;  #Set default value
 		    }
 		}
 		else {
 
-		    $scriptParameter{$parameterName} = $parameterValue;
+		    ${$scriptParameterHashRef}{$parameterName} = $parameterValue;
 		}
 		###Code for checking commands in your path and executable
-		if (defined($parameter{$parameterName}{'programNamePath'}[0])) {
+		if (defined(${$parameterHashRef}{$parameterName}{'programNamePath'}[0])) {
 		
-		    if ($scriptParameter{$parameterName} > 0) {  #Only check path(s) for active programs
+		    if (${$scriptParameterHashRef}{$parameterName} > 0) {  #Only check path(s) for active programs
 		
-			for (my $programNamePathCounter=0;$programNamePathCounter<scalar(@{$parameter{$parameterName}{'programNamePath'}});$programNamePathCounter++) {  #Check all binaries for sbatch program
+			for (my $programNamePathCounter=0;$programNamePathCounter<scalar(@{${$parameterHashRef}{$parameterName}{'programNamePath'}});$programNamePathCounter++) {  #Check all binaries for sbatch program
 			    
-			    if ( grep { -x "$_/".$parameter{$parameterName}{'programNamePath'}[$programNamePathCounter]} split(/:/,$ENV{PATH}) ) {
+			    if ( grep { -x "$_/".${$parameterHashRef}{$parameterName}{'programNamePath'}[$programNamePathCounter]} split(/:/,$ENV{PATH}) ) {
 				
-				$logger->info("ProgramCheck: ".$parameter{$parameterName}{'programNamePath'}[$programNamePathCounter]." installed\n"); 
+				$logger->info("ProgramCheck: ".${$parameterHashRef}{$parameterName}{'programNamePath'}[$programNamePathCounter]." installed\n"); 
 			    }
 			    else {
-				$logger->info("Warning: Could not detect ".$parameter{$parameterName}{'programNamePath'}[$programNamePathCounter]." in your Path\n");
+				$logger->info("Warning: Could not detect ".${$parameterHashRef}{$parameterName}{'programNamePath'}[$programNamePathCounter]." in your Path\n");
 				exit;
 			    }
 			}
@@ -6764,13 +6764,13 @@ sub AddToScriptParameter {
 	    
 	    if ($parameterName eq "aligner") {
 		
-		if ( ($scriptParameter{'pMosaikBuild'} > 0) || ($scriptParameter{'pMosaikAlign'} > 0)) {  #Mosaik track
+		if ( (${$scriptParameterHashRef}{'pMosaikBuild'} > 0) || (${$scriptParameterHashRef}{'pMosaikAlign'} > 0)) {  #Mosaik track
 		    
-		    if ( ($scriptParameter{'pBwaAln'} == 0) && ($scriptParameter{'pBwaSampe'} == 0) && ($scriptParameter{'pBwaMem'} == 0) ) {
+		    if ( (${$scriptParameterHashRef}{'pBwaAln'} == 0) && (${$scriptParameterHashRef}{'pBwaSampe'} == 0) && (${$scriptParameterHashRef}{'pBwaMem'} == 0) ) {
 			
-			if ($scriptParameter{'aligner'} eq "bwa") {
+			if (${$scriptParameterHashRef}{'aligner'} eq "bwa") {
 			    
-			    $scriptParameter{'aligner'} = "mosaik";
+			    ${$scriptParameterHashRef}{'aligner'} = "mosaik";
 			}
 		    }
 		    else {
@@ -6780,19 +6780,20 @@ sub AddToScriptParameter {
 			exit;
 		    }
 		}
-		elsif ( ($scriptParameter{'pBwaAln'} > 0) || ($scriptParameter{'pBwaSampe'} > 0) || ($scriptParameter{'pBwaMem'} > 0)) {  #BWA track
+		elsif ( (${$scriptParameterHashRef}{'pBwaAln'} > 0) || (${$scriptParameterHashRef}{'pBwaSampe'} > 0) || (${$scriptParameterHashRef}{'pBwaMem'} > 0)) {  #BWA track
 		    
-		    if ( ($scriptParameter{'aligner'} eq "mosaik") || ($scriptParameter{'aligner'} =~ /bwa/i) ) {
+		    if ( (${$scriptParameterHashRef}{'aligner'} eq "mosaik") || (${$scriptParameterHashRef}{'aligner'} =~ /bwa/i) ) {
 
-			$scriptParameter{'aligner'} = "bwa";
+			${$scriptParameterHashRef}{'aligner'} = "bwa";
 		    }
 		    else {
+
 			$logger->fatal($USAGE, "\n");
 			$logger->fatal("You have to choose either mosaik or bwa to perform alignments or specify which aligner (-aligner 'mosaik' or 'bwa') was used if you want to only run programs after alignment.", "\n");
 			exit;
 		    }
 		}
-		elsif ($scriptParameter{'aligner'} eq "nocmdinput") {
+		elsif (${$scriptParameterHashRef}{'aligner'} eq "nocmdinput") {
 
 		    $logger->fatal($USAGE, "\n");
 		    $logger->fatal("You have to choose either mosaik or bwa to perform alignments or specify which aligner (-aligner 'mosaik' or 'bwa') was used if you want to only run programs after alignment.", "\n");
@@ -6805,19 +6806,20 @@ sub AddToScriptParameter {
 	}
     }	
 ##Parameter set
-    if (defined($scriptParameter{$parameterName})) {
+    if (defined(${$scriptParameterHashRef}{$parameterName})) {
 	
 	my $info = "";  #Hold parameters info
 
-	if (defined($parameter{$parameterName}{'array'})) {
+	if (defined(${$parameterHashRef}{$parameterName}{'array'})) {
 	 
-	    $info = "Set ".$parameterName." to: ".join(',',@{$scriptParameter{$parameterName}});
+	    $info = "Set ".$parameterName." to: ".join(',',@{${$scriptParameterHashRef}{$parameterName}});
+	    push(@{$broadcastsArrayRef}, $info);  #Add info to broadcasts
 	}
 	else {
 
-	    $info = "Set ".$parameterName." to: ".$scriptParameter{$parameterName};
+	    $info = "Set ".$parameterName." to: ".${$scriptParameterHashRef}{$parameterName};
+	    push(@{$broadcastsArrayRef}, $info);  #Add info to broadcasts
 	}
-	return $info;
     }
 }
 
@@ -7725,30 +7727,36 @@ sub ParseHumanGenomeReference {
 ##ParseHumanGenomeReference
     
 ##Function : Detect version and source of the humanGenomeReference: Source (hg19 or GRCh).
-##Returns  : $humanGenomeReferenceVersion, $humanGenomeReferenceSource, $humanGenomeReferenceNameNoEnding 
-##Arguments: $humanGenomeReference
-##         : $humanGenomeReference => The human genome
+##Returns  : ""
+##Arguments: $humanGenomeReferenceRef, $humanGenomeReferenceVersionRef, $humanGenomeReferenceSourceRef, $humanGenomeReferenceNameNoEndingRef, $humanGenomeCompressedRef
+##         : $humanGenomeReferenceRef             => The human genome {REF}
+##         : $humanGenomeReferenceVersionRef      => The human genome build version {REF}
+##         : $humanGenomeReferenceSourceRef       => The human genome source {REF}
+##         : $humanGenomeReferenceNameNoEndingRef => The human reference filename without ".ending" {REF}
+##         : $humanGenomeCompressedRef            => Swith for test if file is compressed or not
     
-    my $humanGenomeReference = $_[0];
+    my $humanGenomeReferenceRef = $_[0];
+    my $humanGenomeReferenceVersionRef = $_[1];
+    my $humanGenomeReferenceSourceRef = $_[2];
+    my $humanGenomeReferenceNameNoEndingRef = $_[3];
+    my $humanGenomeCompressedRef = $_[4];
     
-    my $humanGenomeReferenceVersion;  #Version of GenomeBuild
-    my $humanGenomeReferenceSource;  #Ensembl or NCBI
-    my $humanGenomeReferenceNameNoEnding;
-    
-    if ($humanGenomeReference =~/^Homo_sapiens.GRCh(\d+\.\d+|\d+)/) {  #Used to change capture kit genome reference version later
-	$humanGenomeReferenceVersion = $1;
-	$humanGenomeReferenceSource = "GRCh";  #Ensembl
+    if ($$humanGenomeReferenceRef =~/^Homo_sapiens.GRCh(\d+\.\d+|\d+)/) {  #Used to change capture kit genome reference version later
+
+	$$humanGenomeReferenceVersionRef = $1;
+	$$humanGenomeReferenceSourceRef = "GRCh";  #Ensembl
     }
-    elsif ($humanGenomeReference =~/^Homo_sapiens.hg(\d+)/) {  #Used to change capture kit genome reference version later
-	$humanGenomeReferenceVersion = $1;
-	$humanGenomeReferenceSource = "hg";  #Refseq
+    elsif ($$humanGenomeReferenceRef =~/^Homo_sapiens.hg(\d+)/) {  #Used to change capture kit genome reference version later
+
+	$$humanGenomeReferenceVersionRef = $1;
+	$$humanGenomeReferenceSourceRef = "hg";  #Refseq
     }
     else {
+
 	$logger->warn("MIP cannot detect what kind of humanGenomeReference you have supplied. If you want to automatically set the capture kits used please supply the refrence on this format: [Species].[Source][Version].", "\n");
     }
-    ($humanGenomeReferenceNameNoEnding) = &RemoveFileEnding(\$humanGenomeReference, ".fasta");
-    ($humanGenomeCompressed) = &CheckGzipped(\$humanGenomeReference);
-    return ($humanGenomeReferenceVersion, $humanGenomeReferenceSource, $humanGenomeReferenceNameNoEnding);    
+    ($$humanGenomeReferenceNameNoEndingRef) = &RemoveFileEnding(\$$humanGenomeReferenceRef, ".fasta");
+    ($$humanGenomeCompressedRef) = &CheckGzipped(\$$humanGenomeReferenceRef);    
 }
 
 
@@ -7985,20 +7993,24 @@ sub PrepareArrayParameters {
     
 ##Function : Check if user supplied cmd info and supplies arrayParameters to scriptParameters
 ##Returns  : "" 
-##Arguments: $arrayRef, $parameterName, $parameterType, $parameterDefault, $associatedPrograms, $parameterExistsCheck
-##         : $arrayRef             => Array to loop in for parameter {REF}
-##         : $parameterName        => MIP parameter to evaluate
-##         : $parameterType        => Type of MIP parameter 
-##         : $parameterDefault     => The parameter default value
-##         : $associatedPrograms   => Programs that use the parameter. Comma separated string
-##         : $parameterExistsCheck => Check if intendent file exists in reference directory
+##Arguments: $arrayRef, $orderParametersArrayRef, $broadcastsArrayRef, $parameterName, $parameterType, $parameterDefault, $associatedPrograms, $parameterExistsCheck
+##         : $arrayRef                => Array to loop in for parameter {REF}
+##         : $orderParametersArrayRef => Order of addition to parameter Hash {REF}
+##         : $broadcastsArrayRef      => Holds the parameters info for broadcasting later {REF}
+##         : $parameterName           => MIP parameter to evaluate
+##         : $parameterType           => Type of MIP parameter 
+##         : $parameterDefault        => The parameter default value
+##         : $associatedPrograms      => Programs that use the parameter. Comma separated string
+##         : $parameterExistsCheck    => Check if intendent file exists in reference directory
 
     my $arrayRef = $_[0];
-    my $parameterName = $_[1];
-    my $parameterType = $_[2];
-    my $parameterDefault = $_[3];
-    my $associatedPrograms = $_[4]; 
-    my $parameterExistsCheck = $_[5];
+    my $orderParametersArrayRef = $_[1];
+    my $broadcastsArrayRef = $_[2];
+    my $parameterName = $_[3];
+    my $parameterType = $_[4];
+    my $parameterDefault = $_[5];
+    my $associatedPrograms = $_[6]; 
+    my $parameterExistsCheck = $_[7];
 
     if (scalar(@{$arrayRef}) == 0) {  #No input from cmd or from pedigree
 	
@@ -8009,13 +8021,9 @@ sub PrepareArrayParameters {
 	$parameter{$parameterName}{'value'} = "SetbyUser";
 	@{$arrayRef} = join(',',@{$arrayRef});  #If user supplied parameter a comma separated list
     }
-    push(@orderParameters, $parameterName);  #Add to enable later evaluation of parameters in proper order & write to master file
-    
-    my $ret = &AddToScriptParameter($parameterName, $parameter{$parameterName}{'value'}, $parameterType, $parameterDefault, $associatedPrograms, $parameterExistsCheck);
-    if ($ret) {
-	
-	push(@broadcasts, $ret);
-    }
+    push(@{$orderParametersArrayRef}, $parameterName);  #Add to enable later evaluation of parameters in proper order & write to master file
+  
+    &AddToScriptParameter(\%parameter, \%scriptParameter, \@{$broadcastsArrayRef}, $parameterName, $parameter{$parameterName}{'value'}, $parameterType, $parameterDefault, $associatedPrograms, $parameterExistsCheck);
 }
 
 
@@ -8046,52 +8054,6 @@ sub CheckUniqueTargetFiles {
 	    }
 	}
     }
-}
-
-
-sub CheckTemplateFilesPaths {
-
-##CheckTemplateFilesPaths
-    
-##Function : Checks that file paths in template files exist
-##Returns  : "" 
-##Arguments: $fileNameRef, $parameterName
-##         : $fileNameRef   => File name {REF}
-##         : $parameterName => MIP parameter name
-
-    my $fileNameRef = $_[0];
-    my $parameterName = $_[1];
-
-    open(my $TF, "<", $$fileNameRef) or $logger->logdie("Can't open '".$$fileNameRef."':".$!."\n");  
-
-    while (<TF>) {
-
-	chomp $_;
-
-	if (m/^\s+$/) {	 # Avoid blank lines
-            next;
-        }
-	if (m/^\#/) {  # Avoid "#"
-            next;
-        }	
-	if ($_ =~/(\S+)/) {	
-	    
-	    my $filePath = $_;
-
-	    if ($filePath=~/^(RD!)/) {  #intersectCollect file
-		
-		my @filePath = split('\t', $filePath);
-		$filePath[0] =~ s/^RD!/$scriptParameter{'referencesDir'}/g;
-
-		&CheckExistance(\$filePath[0], \$parameterName, "f");  #Only check paths that pointing to reference directory
-	    }
-	    if ($parameterName eq "GATKHaploTypeCallerRefBAMInfile") {  #Only Paths should be present i.e. check all lines
-	       
-		&CheckExistance(\$filePath, \$parameterName, "f");
-	    }
-	}
-    }
-    close(TF);
 }
 
 
@@ -8354,9 +8316,12 @@ sub DefineAnnovarTables {
     
 ##Function : Defines and adds annovar tables parameters to hash
 ##Returns  : ""
-##Arguments: 
+##Arguments: $annovarGenomeBuildVersionRef
+##         : $annovarGenomeBuildVersionRef => The current annovar genome build
 
-    my $annovarGenomeBuildVersion = $scriptParameter{'annovarGenomeBuildVersion'};  #Set the current annovar genome build
+    my $annovarGenomeBuildVersionRef = $_[0];
+
+    my %annovarTable;  #Holds all annovar tables parameters and features
 
     ##Define annovar tables
     my @annovarTablesGeneAnno = ("refGene", "knownGene", "ensGene");  #Tables using annotation option "geneanno"
@@ -8364,68 +8329,69 @@ sub DefineAnnovarTables {
     my @annovarTablesFilter = ("snp137", "snp135", "snp132", "snp131", "snp130", "snp129", "snp137NonFlagged", "snp135NonFlagged", "snp132NonFlagged", "snp131NonFlagged", "snp130NonFlagged", "1000g2012apr_all", "1000g2012apr_amr", "1000g2012apr_eur", "1000g2012apr_asn", "1000g2012apr_afr", "1000g2012feb_all", "esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_ma", "ljb2_fathmm", "ljb2_siphy", "ljb2_lrt", "ljb_all", "ljb2_gerp++", "ljb2_phylop", "caddgt20", "caddgt10");  #Tables using annotation option "filter"
     my @annovarTablesUrlUcsc = ("mce46way", "segdup", "tfbs", "mirna");  #Tables using urlAlias "ucsc"
     my @annovarGenericFiltering = ("esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105");  #Tables using generic option
-    my @annovarGenericFiles = ($annovarGenomeBuildVersion."_esp6500si_all.txt", $annovarGenomeBuildVersion."_esp6500_all.txt", $annovarGenomeBuildVersion."_esp6500_aa.txt", $annovarGenomeBuildVersion."_esp6500_ea.txt", $annovarGenomeBuildVersion."_esp5400_all.txt", $annovarGenomeBuildVersion."_esp5400_aa.txt", $annovarGenomeBuildVersion."_esp5400_ea.txt", $annovarGenomeBuildVersion."_clinvar_20131105.txt");  #Generic table files
-    my @annovarRefgeneFiles = ($annovarGenomeBuildVersion."_refGene.txt", $annovarGenomeBuildVersion."_refGeneMrna.fa", $annovarGenomeBuildVersion."_refLink.txt", "GRCh37_MT_ensGene.txt", "GRCh37_MT_ensGeneMrna.fa");  #Cater for multiple download
-    my @annovarKnownGeneFiles = ($annovarGenomeBuildVersion."_knownGene.txt", $annovarGenomeBuildVersion."_kgXref.txt", $annovarGenomeBuildVersion."_knownGeneMrna.fa");  #Cater for multiple download
-    my @annovarEnsGeneFiles = ($annovarGenomeBuildVersion."_ensGene.txt", $annovarGenomeBuildVersion."_ensGeneMrna.fa", "GRCh37_MT_ensGene.txt", "GRCh37_MT_ensGeneMrna.fa");  #Cater for multiple download
+    my @annovarGenericFiles = ($$annovarGenomeBuildVersionRef."_esp6500si_all.txt", $$annovarGenomeBuildVersionRef."_esp6500_all.txt", $$annovarGenomeBuildVersionRef."_esp6500_aa.txt", $$annovarGenomeBuildVersionRef."_esp6500_ea.txt", $$annovarGenomeBuildVersionRef."_esp5400_all.txt", $$annovarGenomeBuildVersionRef."_esp5400_aa.txt", $$annovarGenomeBuildVersionRef."_esp5400_ea.txt", $$annovarGenomeBuildVersionRef."_clinvar_20131105.txt");  #Generic table files
+    my @annovarRefgeneFiles = ($$annovarGenomeBuildVersionRef."_refGene.txt", $$annovarGenomeBuildVersionRef."_refGeneMrna.fa", $$annovarGenomeBuildVersionRef."_refLink.txt", "GRCh37_MT_ensGene.txt", "GRCh37_MT_ensGeneMrna.fa");  #Cater for multiple download
+    my @annovarKnownGeneFiles = ($$annovarGenomeBuildVersionRef."_knownGene.txt", $$annovarGenomeBuildVersionRef."_kgXref.txt", $$annovarGenomeBuildVersionRef."_knownGeneMrna.fa");  #Cater for multiple download
+    my @annovarEnsGeneFiles = ($$annovarGenomeBuildVersionRef."_ensGene.txt", $$annovarGenomeBuildVersionRef."_ensGeneMrna.fa", "GRCh37_MT_ensGene.txt", "GRCh37_MT_ensGeneMrna.fa");  #Cater for multiple download
 
     #Set UCSC alias for download from UCSC
-    $annovarTables{'mce46way'}{'ucscAlias'} = "phastConsElements46way";
-    $annovarTables{'segdup'}{'ucscAlias'} = "genomicSuperDups";
-    $annovarTables{'tfbs'}{'ucscAlias'} = "tfbsConsSites";
-    $annovarTables{'mirna'}{'ucscAlias'} = "wgRna";
+    $annovarTable{'mce46way'}{'ucscAlias'} = "phastConsElements46way";
+    $annovarTable{'segdup'}{'ucscAlias'} = "genomicSuperDups";
+    $annovarTable{'tfbs'}{'ucscAlias'} = "tfbsConsSites";
+    $annovarTable{'mirna'}{'ucscAlias'} = "wgRna";
 
     #Set GeneAnno files
-    push(@{$annovarTables{'refGene'}{'file'}}, @annovarRefgeneFiles);
-    push(@{$annovarTables{'knownGene'}{'file'}}, @annovarKnownGeneFiles);
-    push(@{$annovarTables{'ensGene'}{'file'}}, @annovarEnsGeneFiles); 
+    push(@{$annovarTable{'refGene'}{'file'}}, @annovarRefgeneFiles);
+    push(@{$annovarTable{'knownGene'}{'file'}}, @annovarKnownGeneFiles);
+    push(@{$annovarTable{'ensGene'}{'file'}}, @annovarEnsGeneFiles); 
 
     for (my $tablesCounter=0;$tablesCounter<scalar(@annovarSupportedTableNames);$tablesCounter++) {
 	
-	&AnnovarTableParameters(\$annovarSupportedTableNames[$tablesCounter], \@annovarSupportedTableNames, "dbtype", $annovarSupportedTableNames[$tablesCounter]);
-	&AnnovarTableParameters(\$annovarSupportedTableNames[$tablesCounter], \@annovarSupportedTableNames, "download", $annovarSupportedTableNames[$tablesCounter]);
+	&AnnovarTableParameters(\%annovarTable, \$annovarSupportedTableNames[$tablesCounter], \@annovarSupportedTableNames, "dbtype", $annovarSupportedTableNames[$tablesCounter]);
+	&AnnovarTableParameters(\%annovarTable, \$annovarSupportedTableNames[$tablesCounter], \@annovarSupportedTableNames, "download", $annovarSupportedTableNames[$tablesCounter]);
 	$parameter{$annovarSupportedTableNames[$tablesCounter]}{'buildFile'} = "yesAutoBuild";  #Allow autobuild
     }
 
 
     #Tables using different download call from dbtype call
-    $annovarTables{'1000g2012apr_all'}{'download'} = "ALL.sites.2012_04";
-    $annovarTables{'1000g2012feb_all'}{'download'} = "ALL.sites.2012_02";
-    $annovarTables{'1000g2012apr_afr'}{'download'} = "AFR.sites.2012_04";
-    $annovarTables{'1000g2012apr_amr'}{'download'} = "AMR.sites.2012_04";
-    $annovarTables{'1000g2012apr_eur'}{'download'} = "EUR.sites.2012_04";
-    $annovarTables{'1000g2012apr_asn'}{'download'} = "ASN.sites.2012_04";
+    $annovarTable{'1000g2012apr_all'}{'download'} = "ALL.sites.2012_04";
+    $annovarTable{'1000g2012feb_all'}{'download'} = "ALL.sites.2012_02";
+    $annovarTable{'1000g2012apr_afr'}{'download'} = "AFR.sites.2012_04";
+    $annovarTable{'1000g2012apr_amr'}{'download'} = "AMR.sites.2012_04";
+    $annovarTable{'1000g2012apr_eur'}{'download'} = "EUR.sites.2012_04";
+    $annovarTable{'1000g2012apr_asn'}{'download'} = "ASN.sites.2012_04";
 
     #Set 1000G Table filename
-    $annovarTables{'1000g2012apr_all'}{'file'}[0] = $annovarGenomeBuildVersion."_ALL.sites.2012_04.txt";
-    $annovarTables{'1000g2012feb_all'}{'file'}[0] = $annovarGenomeBuildVersion."_ALL.sites.2012_02.txt";
-    $annovarTables{'1000g2012apr_afr'}{'file'}[0] = $annovarGenomeBuildVersion."_AFR.sites.2012_04.txt";
-    $annovarTables{'1000g2012apr_amr'}{'file'}[0] = $annovarGenomeBuildVersion."_AMR.sites.2012_04.txt";
-    $annovarTables{'1000g2012apr_eur'}{'file'}[0] = $annovarGenomeBuildVersion."_EUR.sites.2012_04.txt";
-    $annovarTables{'1000g2012apr_asn'}{'file'}[0] = $annovarGenomeBuildVersion."_ASN.sites.2012_04.txt";
+    $annovarTable{'1000g2012apr_all'}{'file'}[0] = $$annovarGenomeBuildVersionRef."_ALL.sites.2012_04.txt";
+    $annovarTable{'1000g2012feb_all'}{'file'}[0] = $$annovarGenomeBuildVersionRef."_ALL.sites.2012_02.txt";
+    $annovarTable{'1000g2012apr_afr'}{'file'}[0] = $$annovarGenomeBuildVersionRef."_AFR.sites.2012_04.txt";
+    $annovarTable{'1000g2012apr_amr'}{'file'}[0] = $$annovarGenomeBuildVersionRef."_AMR.sites.2012_04.txt";
+    $annovarTable{'1000g2012apr_eur'}{'file'}[0] = $$annovarGenomeBuildVersionRef."_EUR.sites.2012_04.txt";
+    $annovarTable{'1000g2012apr_asn'}{'file'}[0] = $$annovarGenomeBuildVersionRef."_ASN.sites.2012_04.txt";
 
     for (my $tablesCounter=0;$tablesCounter<scalar(@annovarTablesGeneAnno);$tablesCounter++) {
 
-	&AnnovarTableParameters(\$annovarTablesGeneAnno[$tablesCounter], \@annovarTablesGeneAnno, "annotation", "geneanno");
-	&AnnovarTableParameters(\$annovarTablesGeneAnno[$tablesCounter], \@annovarTablesGeneAnno, "urlAlias", "annovar");
+	&AnnovarTableParameters(\%annovarTable, \$annovarTablesGeneAnno[$tablesCounter], \@annovarTablesGeneAnno, "annotation", "geneanno");
+	&AnnovarTableParameters(\%annovarTable, \$annovarTablesGeneAnno[$tablesCounter], \@annovarTablesGeneAnno, "urlAlias", "annovar");
     }
     for (my $tablesCounter=0;$tablesCounter<scalar(@annovarTablesRegionAnno);$tablesCounter++) {
 
-	&AnnovarTableParameters(\$annovarTablesRegionAnno[$tablesCounter], \@annovarTablesRegionAnno, "annotation", "regionanno");
-	&AnnovarTableParameters(\$annovarTablesRegionAnno[$tablesCounter], \@annovarTablesRegionAnno, "urlAlias", "annovar");
-	&AnnovarTableParameters(\$annovarTablesRegionAnno[$tablesCounter], \@annovarTablesUrlUcsc, "urlAlias", "ucsc");  #Replace for ucsc tables NOTE: not all in RegionAnno
+	&AnnovarTableParameters(\%annovarTable, \$annovarTablesRegionAnno[$tablesCounter], \@annovarTablesRegionAnno, "annotation", "regionanno");
+	&AnnovarTableParameters(\%annovarTable, \$annovarTablesRegionAnno[$tablesCounter], \@annovarTablesRegionAnno, "urlAlias", "annovar");
+	&AnnovarTableParameters(\%annovarTable, \$annovarTablesRegionAnno[$tablesCounter], \@annovarTablesUrlUcsc, "urlAlias", "ucsc");  #Replace for ucsc tables NOTE: not all in RegionAnno
     }
     for (my $tablesCounter=0;$tablesCounter<scalar(@annovarTablesFilter);$tablesCounter++) {
 
-	&AnnovarTableParameters(\$annovarTablesFilter[$tablesCounter], \@annovarTablesFilter, "annotation", "filter");
-	&AnnovarTableParameters(\$annovarTablesFilter[$tablesCounter], \@annovarTablesFilter, "urlAlias", "annovar");
-	&AnnovarTableParameters(\$annovarTablesFilter[$tablesCounter], \@annovarTablesFilter, "indexFile", ".idx"); 
+	&AnnovarTableParameters(\%annovarTable, \$annovarTablesFilter[$tablesCounter], \@annovarTablesFilter, "annotation", "filter");
+	&AnnovarTableParameters(\%annovarTable, \$annovarTablesFilter[$tablesCounter], \@annovarTablesFilter, "urlAlias", "annovar");
+	&AnnovarTableParameters(\%annovarTable, \$annovarTablesFilter[$tablesCounter], \@annovarTablesFilter, "indexFile", ".idx"); 
     }	
     for (my $tablesCounter=0;$tablesCounter<scalar(@annovarGenericFiltering);$tablesCounter++) {
 	
-	&AnnovarTableParameters(\$annovarGenericFiltering[$tablesCounter], \@annovarGenericFiltering, "dbtype", "generic");
-	&AnnovarTableParameters(\$annovarGenericFiltering[$tablesCounter], \@annovarGenericFiltering, "file", $annovarGenericFiles[$tablesCounter]);
+	&AnnovarTableParameters(\%annovarTable, \$annovarGenericFiltering[$tablesCounter], \@annovarGenericFiltering, "dbtype", "generic");
+	&AnnovarTableParameters(\%annovarTable, \$annovarGenericFiltering[$tablesCounter], \@annovarGenericFiltering, "file", $annovarGenericFiles[$tablesCounter]);
     }
+    return %annovarTable;
 }
 
 
@@ -8437,16 +8403,18 @@ sub AnnovarTableParameters {
 ##           Parameters of type "file" are added as a hash of array since multiple files can be downloaded
 
 ##Returns  : ""
-##Arguments: $tableNameRef, $arrayRef, $parameterType, $parameterValue
-##         : $tableNameRef   => Annovar table name {REF}
-##         : $arrayRef       => Array to search for membership {REF}
-##         : $parameterType  => Type of table parameter
-##         : $parameterValue => Parameter value
+##Arguments: $annovarTableHashRef, $tableNameRef, $arrayRef, $parameterType, $parameterValue
+##         : $annovarTableHashRef => annovarTableHashRef {REF}
+##         : $tableNameRef         => Annovar table name {REF}
+##         : $arrayRef             => Array to search for membership {REF}
+##         : $parameterType        => Type of table parameter
+##         : $parameterValue       => Parameter value
     
-    my $tableNameRef = $_[0];
-    my $arrayRef = $_[1];
-    my $parameterType = $_[2];
-    my $parameterValue = $_[3];
+    my $annovarTableHashRef = $_[0];
+    my $tableNameRef = $_[1];
+    my $arrayRef = $_[2];
+    my $parameterType = $_[3];
+    my $parameterValue = $_[4];
     
     for (my $tablesCounter=0;$tablesCounter<scalar(@{$arrayRef});$tablesCounter++) {
     
@@ -8454,11 +8422,11 @@ sub AnnovarTableParameters {
 	    
 	    if ($parameterType eq "file") {  #Add as array instead, since some annovar tables have multiple files downloaded for the same call
 		
-		push(@{$annovarTables{$$tableNameRef}{$parameterType}}, $parameterValue);  #Add as array
+		push(@{${$annovarTableHashRef}{$$tableNameRef}{$parameterType}}, $parameterValue);  #Add as array to hashRef
 	    }
 	    else {
 		
-		$annovarTables{$$tableNameRef}{$parameterType} = $parameterValue;
+		${$annovarTableHashRef}{$$tableNameRef}{$parameterType} = $parameterValue;
 	    }
 	    last;  #No table should be represented twice within the same array
 	}
@@ -8472,12 +8440,19 @@ sub CollectSeqContigs {
     
 ##Function : Collects sequences contigs used in analysis from human genome sequence dictionnary associated with $humanGenomeReference
 ##Returns  : ""
-##Arguments: 
+##Arguments: $contigsArrayRef, $referencesDirRef, $humanGenomeReferenceNameNoEndingRef
+##         : $contigsArrayRef                         => Contig array {REF}
+##         : $referencesDirRef                        => The MIP reference directory
+##         : $humanGenomeReferenceNameNoEndingRef     => The associated human genome file without file ending                        
+
+    my $contigsArrayRef = $_[0];
+    my $referencesDirRef = $_[1];
+    my $humanGenomeReferenceNameNoEndingRef = $_[2];
 
     my $pqSeqDict = q?perl -nae 'if($F[0]=~/^\@SQ/) { if($F[1]=~/SN\:(\S+)/) {print $1, ",";} }' ?; 
-    my $SeqDictLocation = $scriptParameter{'referencesDir'}."/".$humanGenomeReferenceNameNoEnding.".dict";
-    @contigs = `$pqSeqDict $SeqDictLocation `;  #Returns a comma seperated string of sequence contigs from dict file
-    @contigs = split(/,/,join(',', @contigs));
+    my $SeqDictLocation = $$referencesDirRef."/".$$humanGenomeReferenceNameNoEndingRef.".dict";
+    @{$contigsArrayRef} = `$pqSeqDict $SeqDictLocation `;  #Returns a comma seperated string of sequence contigs from dict file
+    @{$contigsArrayRef} = split(/,/,join(',', @{$contigsArrayRef}));
 }
 
 
@@ -8890,7 +8865,7 @@ sub CreateLog4perlCongfig {
     my $fileNameRef = $_[0];
 
     my $conf = q?
-        log4perl.category.rootLogger = TRACE, LogFile, ScreenApp
+        log4perl.category.MIPLogger = TRACE, LogFile, ScreenApp
         log4perl.appender.LogFile = Log::Log4perl::Appender::File
         log4perl.appender.LogFile.filename = ?.$$fileNameRef.q?
         log4perl.appender.LogFile.layout=PatternLayout
@@ -8930,6 +8905,89 @@ sub DeafultLog4perlFile {
     }
 }
 
+
+sub CheckHumanGenomeFileEndings {
+
+##CheckHumanGenomeFileEndings
+    
+##Function : Check the existance of associated Human genome files.
+##Returns  : ""
+##Arguments: $parameterHashRef, $referencesDirRef
+##         : $parameterHashRef                        => The parameter hash {REF}
+##         : $referencesDirRef                        => The MIP reference directory {REF}
+##         : $humanGenomeReferenceFileEndingsArrayRef => The associated human genome file endings {REF}
+##         : $humanGenomeReferenceNameNoEndingRef     => The associated human genome file without file ending {REF}
+##         : $parameterNameRef                        => The parameter under evaluation {REF}                   
+
+    my $parameterHashRef = $_[0];
+    my $referencesDirRef = $_[1];
+    my $humanGenomeReferenceFileEndingsArrayRef = $_[2];
+    my $humanGenomeReferenceNameNoEndingRef = $_[3];
+    my $parameterNameRef = $_[4];
+    
+##Enable autoBuild of metafiles 	       
+    ${$parameterHashRef}{$$parameterNameRef.".dict"}{'buildFile'} = "yesAutoBuild";
+    ${$parameterHashRef}{$$parameterNameRef.".fasta.fai"}{'buildFile'} = "yesAutoBuild";
+
+    for (my $fileEndingsCounter=0;$fileEndingsCounter<scalar(@{$humanGenomeReferenceFileEndingsArrayRef});$fileEndingsCounter++) {
+	
+	my $intendedFilePathRef = \($$referencesDirRef."/".$$humanGenomeReferenceNameNoEndingRef.${$humanGenomeReferenceFileEndingsArrayRef}[$fileEndingsCounter]);
+    
+	&CheckExistance($intendedFilePathRef, \($$parameterNameRef.${$humanGenomeReferenceFileEndingsArrayRef}[$fileEndingsCounter]), "f");
+    }
+    if (${$parameterHashRef}{$$parameterNameRef.".dict"}{'buildFile'} eq 0) {
+	
+	##Collect sequence contigs from human reference ".dict" file since it exists
+	&CollectSeqContigs(\@contigs, \$$referencesDirRef, \$$humanGenomeReferenceNameNoEndingRef);  #Preparation for future changes but not active yet
+    }
+}
+
+
 ####
 #Decommissioned
 ####
+
+sub CheckTemplateFilesPaths {
+
+##CheckTemplateFilesPaths
+    
+##Function : Checks that file paths in template files exist
+##Returns  : "" 
+##Arguments: $fileNameRef, $parameterName
+##         : $fileNameRef   => File name {REF}
+##         : $parameterName => MIP parameter name
+
+    my $fileNameRef = $_[0];
+    my $parameterName = $_[1];
+
+    open(my $TF, "<", $$fileNameRef) or $logger->logdie("Can't open '".$$fileNameRef."':".$!."\n");  
+
+    while (<TF>) {
+
+	chomp $_;
+
+	if (m/^\s+$/) {	 # Avoid blank lines
+            next;
+        }
+	if (m/^\#/) {  # Avoid "#"
+            next;
+        }	
+	if ($_ =~/(\S+)/) {	
+	    
+	    my $filePath = $_;
+
+	    if ($filePath=~/^(RD!)/) {  #intersectCollect file
+		
+		my @filePath = split('\t', $filePath);
+		$filePath[0] =~ s/^RD!/$scriptParameter{'referencesDir'}/g;
+
+		&CheckExistance(\$filePath[0], \$parameterName, "f");  #Only check paths that pointing to reference directory
+	    }
+	    if ($parameterName eq "GATKHaploTypeCallerRefBAMInfile") {  #Only Paths should be present i.e. check all lines
+	       
+		&CheckExistance(\$filePath, \$parameterName, "f");
+	    }
+	}
+    }
+    close(TF);
+}
