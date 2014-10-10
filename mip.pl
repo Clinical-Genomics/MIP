@@ -504,7 +504,7 @@ my $VEPOutputFiles = 1;  #To track if VEPParser was used with a vcfParserSelectF
 
 my @humanGenomeReferenceFileEndings = (".dict", ".fasta.fai");  #Meta files
 
-my ($humanGenomeReferenceSource, $humanGenomeReferenceVersion, $humanGenomeReferenceNameNoEnding, $humanGenomeCompressed, $fnend, $aligner, $fileName, $fileNameTracker, $version, $help) = ("nocmdinput", "nocmdinput", "nocmdinput", "nocmdinput", ".sh", "nocmdinput", "nocmdinput", 0);
+my ($humanGenomeReferenceSource, $humanGenomeReferenceVersion, $humanGenomeReferenceNameNoEnding, $humanGenomeCompressed, $aligner, $version, $help) = ("nocmdinput", "nocmdinput", "nocmdinput", "nocmdinput", "nocmdinput");
 
 my (@contigs);  #Holds all contigs, not just chromosomes
 
@@ -971,7 +971,7 @@ if ($scriptParameter{'pPicardToolsMergeRapidReads'} > 0) {  #Run PicardToolsMerg
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
         #Merge all read batch processes to 1 file again containing sorted & indexed reads matching clinical test genes
-	&PicardToolsMergeRapidReads(\%parameter, \%scriptParameter, \%sampleInfo, \%infilesLaneNoEnding, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});
+	&PicardToolsMergeRapidReads(\%parameter, \%scriptParameter, \%sampleInfo, \%infilesLaneNoEnding, \%lane, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});
     }    
 }
 
@@ -1030,7 +1030,7 @@ if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {  #Run picardtools merge
 
 	if ( ($sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} == 1) || (scalar( @{ $infilesLaneNoEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] } }) > 1) ) {  #Sanity Check that we have something to merge with
 	
-	    &PicardToolsMerge(\%parameter, \%scriptParameter, \%sampleInfo, \%infilesLaneNoEnding, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'}, $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'fileEnding'});	
+	    &PicardToolsMerge(\%parameter, \%scriptParameter, \%sampleInfo, \%infilesLaneNoEnding, \%lane, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'}, $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'fileEnding'});	
 	}
     }
 }
@@ -1363,10 +1363,34 @@ sub AnalysisRunStatus {
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "AnalysisRunStatus", "analysisrunstatus", 0, $FILEHANDLE, 1, 1);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "AnalysisRunStatus", "analysisrunstatus", 0, $FILEHANDLE, 1, 1);
 
-    print $FILEHANDLE q?perl -i -p -e 'if($_=~/AnalysisRunStatus\:/) { s/notFinished/finished/g }' ?.${$scriptParameterHashRef}{'sampleInfoFile'}.q? ?, "\n\n";  
-    
+    my @pathsArrayRef;
+    ###Test all file that are supposed to exists as they are present in the sampleInfo file
+
+    ## Collects all programs file path(s) created by MIP located in %sampleInfo
+    &CollectPathEntries(\%sampleInfo, \@pathsArrayRef);
+    ## Collects all programs outfile path(s) created by MIP as OutDirectory->value and outFile->value located in %sampleInfo.
+    &CollectOutDataPathsEntries(\%sampleInfo, \@pathsArrayRef);
+    print $FILEHANDLE q?files=(?;  #Create bash array
+    foreach my $path (@pathsArrayRef) {
+
+	print $FILEHANDLE q?"?.$path.q?" ?;  #Add to array
+    }
+    print $FILEHANDLE ")", "\n";  #Close bash array
+    print $FILEHANDLE q?for file in ${files[@]}?, "\n";  #loop over files
+    print $FILEHANDLE "do ", "\n";  #for each element in array do
+    print $FILEHANDLE "\t".q?if [ -s $file ]; then?, "\n";  #file exists and is larger than zero
+    print $FILEHANDLE "\t\t".q?echo "Found file $file"?, "\n";  #Echo
+    print $FILEHANDLE "\t".q?else?, "\n";
+    print $FILEHANDLE "\t\t".q?echo "Could not find $file" >&2?, "\n";  #Redirect to STDERR
+    print $FILEHANDLE "\t\t".q?status="1"?, "\n";  #Set status flagg so that perl notFinished remians in sampleInfoFile
+    print $FILEHANDLE "\t".q?fi?, "\n";
+    print $FILEHANDLE q?done ?, "\n";
+    print $FILEHANDLE q?if [ $status -ne 1 ]; then?, "\n";  #eval status flag
+    print $FILEHANDLE "\t".q?perl -i -p -e 'if($_=~/AnalysisRunStatus\:/) { s/notFinished/finished/g }' ?.${$scriptParameterHashRef}{'sampleInfoFile'}.q? ?, "\n\n";  
+    print $FILEHANDLE q?fi?, "\n";
+
     close($FILEHANDLE); 
     
     if ( (${$scriptParameterHashRef}{'pAnalysisRunStatus'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
@@ -1404,7 +1428,7 @@ sub RemoveRedundantFiles {
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "RemoveRedundantFiles", $aligner, 0, $FILEHANDLE, 1, 1);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "RemoveRedundantFiles", $aligner, 0, $FILEHANDLE, 1, 1);
     
     `mkdir -p ${$scriptParameterHashRef}{'outDataDir'}/$familyID/$aligner/info;`;  #Creates the aligner and info data file directory
     `mkdir -p ${$scriptParameterHashRef}{'outScriptDir'}/$familyID/$aligner;`;  #Creates the aligner script directory
@@ -1589,7 +1613,7 @@ sub SampleCheck {
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "SampleCheck", $aligner."/samplecheck", $callType, $FILEHANDLE, 1, 1);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "SampleCheck", $aligner."/samplecheck", $callType, $FILEHANDLE, 1, 1);
     
     my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/samplecheck";
@@ -1671,7 +1695,7 @@ sub QCCollect {
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "QCCollect", "qccollect", 0, $FILEHANDLE, 1, 1);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "QCCollect", "qccollect", 0, $FILEHANDLE, 1, 1);
     
     my $infile = ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'familyID'}."/qc_sampleinfo.yaml";
     my $inFamilyDirectory =  ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID;
@@ -1715,7 +1739,7 @@ sub RankVariants {
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
  
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "RankVariants", $aligner."/GATK/candidates/ranking", $callType, $FILEHANDLE, 1, 4);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "RankVariants", $aligner."/GATK/candidates/ranking", $callType, $FILEHANDLE, 1, 4);
 
     my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/GATK/candidates/ranking";
@@ -1828,7 +1852,7 @@ sub GATKVariantEvalExome {
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "GATKVariantEvalExome", $aligner."/GATK/varianteval", $callType, $FILEHANDLE, 1, 2);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "GATKVariantEvalExome", $aligner."/GATK/varianteval", $callType, $FILEHANDLE, 1, 2);
 
     my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
     my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/GATK/varianteval";
@@ -2057,7 +2081,7 @@ sub GATKVariantEvalAll {
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "GATKVariantEvalAll", $aligner."/GATK/varianteval", $callType, $FILEHANDLE, 1, 2);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "GATKVariantEvalAll", $aligner."/GATK/varianteval", $callType, $FILEHANDLE, 1, 2);
 
     my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
     my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/GATK/varianteval";
@@ -2190,7 +2214,7 @@ sub Annovar {
     my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar(@{${$scriptParameterHashRef}{'annovarTableNames'}}));  #Detect the number of cores to use from @annovarTableNames. 
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "Annovar", $aligner."/GATK", $callType, $FILEHANDLE, $nrCores, 7);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "Annovar", $aligner."/GATK", $callType, $FILEHANDLE, $nrCores, 7);
 
     my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
@@ -2320,7 +2344,7 @@ sub GATKReadBackedPhasing {
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "GATKReadBackedPhasing", $aligner."/GATK", $callType, $FILEHANDLE, 1, 3);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "GATKReadBackedPhasing", $aligner."/GATK", $callType, $FILEHANDLE, 1, 3);
     
     my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
@@ -2413,7 +2437,7 @@ sub GATKPhaseByTransmission {
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "GATKPhaseByTransmission", $aligner."/GATK", $callType, $FILEHANDLE, 1, 3);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "GATKPhaseByTransmission", $aligner."/GATK", $callType, $FILEHANDLE, 1, 3);
     
     my $FamilyFileDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID;
     my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
@@ -2476,7 +2500,7 @@ sub SnpEff {
     my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar(@{${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}}) + scalar(@contigs));  #Detect the number of cores to use from (snpSiftAnnotationFiles and dbNSFP (=+1)
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "SnpEff", $aligner."/GATK", $callType, $FILEHANDLE, $nrCores, 10);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "SnpEff", $aligner."/GATK", $callType, $FILEHANDLE, $nrCores, 10);
     
     my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
@@ -2623,7 +2647,7 @@ sub VCFParser {
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "VCFParser", $aligner."/GATK", $callType, $FILEHANDLE, 1, 1);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "VCFParser", $aligner."/GATK", $callType, $FILEHANDLE, 1, 1);
     
     my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
@@ -2699,7 +2723,7 @@ sub VariantEffectPredictor {
     my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar(@contigs));  #Detect the number of cores to use
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "VariantEffectPredictor", $aligner."/GATK", $callType, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, 10);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "VariantEffectPredictor", $aligner."/GATK", $callType, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, 10);
     
     my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
@@ -2782,7 +2806,7 @@ sub GATKVariantReCalibration {
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "GATKVariantRecalibration", $aligner."/GATK", $callType, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, 10);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "GATKVariantRecalibration", $aligner."/GATK", $callType, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, 10);
 
 #Special case
     `mkdir -p ${$scriptParameterHashRef}{'outDataDir'}/$familyID/$aligner/GATK/intermediary`;  #Creates the aligner folder, GATK data file directory
@@ -2989,7 +3013,7 @@ sub GATKGenoTypeGVCFs {
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "GATKGenoTypeGVCFs", $aligner."/GATK", $callType, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, 10);  #Activate when Haplotypecaller is multithreaded. 
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "GATKGenoTypeGVCFs", $aligner."/GATK", $callType, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, 10);  #Activate when Haplotypecaller is multithreaded. 
     
     my $outFamilyFileDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID;
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
@@ -3076,7 +3100,7 @@ sub GATKHaploTypeCaller {
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "GATKHaploTypeCaller", $aligner."/GATK", 0, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, 30);  #Activate when Haplotypecaller is multithreaded. 
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "GATKHaploTypeCaller", $aligner."/GATK", 0, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, 30);  #Activate when Haplotypecaller is multithreaded. 
     
     my $outFamilyFileDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'familyID'};
     my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
@@ -3181,7 +3205,7 @@ sub GATKBaseReCalibration {
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "GATKBaseRecalibration", $aligner."/GATK", 0, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, 50);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "GATKBaseRecalibration", $aligner."/GATK", 0, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, 50);
 
 #Special case
     `mkdir -p ${$scriptParameterHashRef}{'outDataDir'}/$sampleID/$aligner/GATK/intermediary`;  #Creates the aligner folder and GATK intermediary data file directory
@@ -3325,7 +3349,7 @@ sub GATKReAligner {
     my $FILEHANDLE = IO::Handle->new(); #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "GATKRealigner", $aligner."/GATK", 0, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, 40);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "GATKRealigner", $aligner."/GATK", 0, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, 40);
 
 #Special case
     `mkdir -p ${$scriptParameterHashRef}{'outDataDir'}/$sampleID/$aligner/GATK/intermediary`;  #Creates the aligner folder and GATK intermediary data file directory
@@ -3462,7 +3486,7 @@ sub RCoveragePlots {
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "RCovPlots", $aligner."/coverageReport", 0, $FILEHANDLE, 1, 1);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "RCovPlots", $aligner."/coverageReport", 0, $FILEHANDLE, 1, 1);
    
     my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport";
     my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport";
@@ -3536,7 +3560,7 @@ sub GenomeCoverageBED {
     my $aligner = $_[6]; 
     
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
-
+    my $fileName;
     my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner;
     my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport";
     my $infileEnding = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
@@ -3547,7 +3571,7 @@ sub GenomeCoverageBED {
     if ($PicardToolsMergeSwitch == 1) {  #Files was merged previously
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	&ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "GenomeCoverageBED", $aligner."/coverageReport", 0, $FILEHANDLE, 1, 4);
+	($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "GenomeCoverageBED", $aligner."/coverageReport", 0, $FILEHANDLE, 1, 4);
 	
 	print $FILEHANDLE "genomeCoverageBed ";
 	print $FILEHANDLE "-max ".${$scriptParameterHashRef}{'GenomeCoverageBEDMaxCoverage'}." ";  #Combine all positions with a depth >= max into a single bin in the histogram.
@@ -3561,7 +3585,7 @@ sub GenomeCoverageBED {
 	my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar( @{${$laneHashRef}{$sampleID}} ) );  #Detect the number of cores to from lanes	
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	&ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "GenomeCoverageBED", $aligner."/coverageReport", 0, $FILEHANDLE, $nrCores, 4);
+	($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "GenomeCoverageBED", $aligner."/coverageReport", 0, $FILEHANDLE, $nrCores, 4);
 	
 	for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all files from MosaikAlign or BWA_Sampe
 
@@ -3611,7 +3635,7 @@ sub PicardToolsCollectMultipleMetrics {
     my $aligner = $_[6];
     
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
-
+    my $fileName;
     my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner;
     my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport";
     my $infileEnding = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
@@ -3622,7 +3646,7 @@ sub PicardToolsCollectMultipleMetrics {
     if ($PicardToolsMergeSwitch == 1) {  #Files was merged previously
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	&ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "PicardToolsCollectMultipleMetrics", $aligner."/coverageReport", 0, $FILEHANDLE, 1, 4);
+	($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "PicardToolsCollectMultipleMetrics", $aligner."/coverageReport", 0, $FILEHANDLE, 1, 4);
 
 	print $FILEHANDLE "java -Xmx4g ";
 
@@ -3644,7 +3668,7 @@ sub PicardToolsCollectMultipleMetrics {
 	my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar( @{${$laneHashRef}{$sampleID}} ) );  #Detect the number of cores to from lanes	
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	&ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "PicardToolsCollectMultipleMetrics", $aligner."/coverageReport", 0, $FILEHANDLE, $nrCores, 4);
+	($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "PicardToolsCollectMultipleMetrics", $aligner."/coverageReport", 0, $FILEHANDLE, $nrCores, 4);
 	
 	for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all files from MosaikAlign or BWA_Sampe
 
@@ -3702,7 +3726,7 @@ sub PicardToolsCalculateHSMetrics {
     my $aligner = $_[6];
     
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
-   
+    my $fileName;
     my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner;
     my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/coverageReport";
     my $infileEnding = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
@@ -3713,7 +3737,7 @@ sub PicardToolsCalculateHSMetrics {
     if ($PicardToolsMergeSwitch == 1) {  #Files was merged previously
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	&ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "PicardToolsCalculateHSMetrics", $aligner."/coverageReport", 0, $FILEHANDLE, 1, 4);
+	($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "PicardToolsCalculateHSMetrics", $aligner."/coverageReport", 0, $FILEHANDLE, 1, 4);
 	
 	print $FILEHANDLE "java -Xmx4g ";
 
@@ -3736,7 +3760,7 @@ sub PicardToolsCalculateHSMetrics {
 	my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar( @{${$laneHashRef}{$sampleID}} ) );  #Detect the number of cores to from lanes	
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	&ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "PicardToolsCalculateHSMetrics", $aligner."/coverageReport", 0, $FILEHANDLE, $nrCores, 4);
+	($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "PicardToolsCalculateHSMetrics", $aligner."/coverageReport", 0, $FILEHANDLE, $nrCores, 4);
 	
 	for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all files from MosaikAlign or BWA_Sampe
 
@@ -3796,7 +3820,7 @@ sub ChanjoImport {
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "ChanjoImport", "chanjoimport", 0, $FILEHANDLE, 1, 3);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "ChanjoImport", "chanjoimport", 0, $FILEHANDLE, 1, 3);
 
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID;
 
@@ -3869,7 +3893,7 @@ sub ChanjoSexCheck {
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "ChanjoSexCheck", $aligner."/coverageReport", 0, $FILEHANDLE, 1, 2);      
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "ChanjoSexCheck", $aligner."/coverageReport", 0, $FILEHANDLE, 1, 2);      
                           
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'familyID'};
     my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner;
@@ -3948,7 +3972,7 @@ sub ChanjoAnnotate {
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "ChanjoAnnotate", $aligner."/coverageReport", 0, $FILEHANDLE, 1, 2);      
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "ChanjoAnnotate", $aligner."/coverageReport", 0, $FILEHANDLE, 1, 2);      
     
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'familyID'};
     my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner;
@@ -4035,7 +4059,7 @@ sub ChanjoBuild {
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "ChanjoBuild", "chanjobuild", 0, $FILEHANDLE, 1, 1);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "ChanjoBuild", "chanjobuild", 0, $FILEHANDLE, 1, 1);
 
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID;
 
@@ -4086,6 +4110,7 @@ sub PicardToolsMarkDuplicates {
     my $aligner = $_[7];
 
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
+    my $fileName;
     my $time;
     
     if (${$scriptParameterHashRef}{'pPicardToolsMergeSamFiles'} eq 0) {  #If No merge has been performed then time requirements goes down
@@ -4111,7 +4136,7 @@ sub PicardToolsMarkDuplicates {
     if ($PicardToolsMergeSwitch == 1) {  #Files was merged previously
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	&ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "PicardToolsMarkduplicates", $aligner, 0, $FILEHANDLE, 1, $time);
+	my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "PicardToolsMarkduplicates", $aligner, 0, $FILEHANDLE, 1, $time);
 
 	print $FILEHANDLE "java -Xmx4g ";
 
@@ -4138,7 +4163,7 @@ sub PicardToolsMarkDuplicates {
 	my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar( @{${$laneHashRef}{$sampleID}} ));  #Detect the number of cores to use from lanes
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	&ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "PicardToolsMarkduplicates", $aligner, 0, $FILEHANDLE, $nrCores, $time);
+	my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "PicardToolsMarkduplicates", $aligner, 0, $FILEHANDLE, $nrCores, $time);
 
 	for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all files from independent of merged or not
 	    
@@ -4207,7 +4232,7 @@ sub PicardToolsMerge {
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "PicardToolsMergeSamFiles", $aligner, 0, $FILEHANDLE, 1, 20);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "PicardToolsMergeSamFiles", $aligner, 0, $FILEHANDLE, 1, 20);
   
     my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner;
     my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner;
@@ -4387,7 +4412,7 @@ sub PicardToolsSortSamIndex {
 	}
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	&ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "PicardToolsSortSam", $aligner, 0, $FILEHANDLE, 1, $time);
+	my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "PicardToolsSortSam", $aligner, 0, $FILEHANDLE, 1, $time);
     
 ###	
 #PicardTools Sort and Index
@@ -4477,7 +4502,7 @@ sub BWA_Sampe {
 	my $sequenceRunMode = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'file'}{${$infilesLaneNoEndingHashRef}{ $sampleID }[$infileCounter]}{'sequenceRunType'};  #Collect paired-end or single-end sequence run mode
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	&ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "BwaSampe", $aligner, 0, $FILEHANDLE, 1, $time);
+	my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "BwaSampe", $aligner, 0, $FILEHANDLE, 1, $time);
 	
 	my $BWAinSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/bwa";
 	my $FASTQinSampleDirectory = ${$inDirPathHashRef}{$sampleID};
@@ -4562,7 +4587,7 @@ sub BWA_Aln {
     $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, $nrCores );  #Make sure that the number of cores does not exceed maximum after incrementing above
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "BwaAln", $aligner, 0, $FILEHANDLE, $nrCores, $time);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "BwaAln", $aligner, 0, $FILEHANDLE, $nrCores, $time);
 
     my $inSampleDirectory =  ${$inDirPathHashRef}{$sampleID};
     my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/bwa";
@@ -4616,7 +4641,7 @@ sub PicardToolsMergeRapidReads {
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "PicardToolsMergeRapidReads", $aligner, 0, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, 20);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "PicardToolsMergeRapidReads", $aligner, 0, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, 20);
   
     my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner;
     my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner;
@@ -4710,6 +4735,7 @@ sub BWA_Mem {
     my $aligner = $_[8];
  
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
+    my $fileName;
     my $infileSize;
     my $totalSbatchCounter = 0;
     my $pairedEndTracker = 0;
@@ -4745,7 +4771,7 @@ sub BWA_Mem {
 	    for (my $sbatchCounter=0;$sbatchCounter<$numberNodes-1;$sbatchCounter++) {  #Parallization for each file handled
 		
 		## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-		&ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "BwaMem", $aligner, 0, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, 5);	    
+		($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "BwaMem", $aligner, 0, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, 5);	    
 		
 		my $readStart = $sbatchCounter *  $ReadNrofLines;  #Constant for gz files
 		my $readStop = $readStart + ceil( $ReadNrofLines + 1);  #Constant for gz files	
@@ -4819,7 +4845,7 @@ sub BWA_Mem {
 	else {  #Not rapid mode align whole file
 
 	    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "BwaMem", $aligner, 0, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, 5);
+	    ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "BwaMem", $aligner, 0, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, 5);
 	    
 	    my $BWAinSampleDirectory = ${$inDirPathHashRef}{$sampleID};
 	    my $BWAoutSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/bwa"; 
@@ -4933,7 +4959,7 @@ sub MosaikAlign {
 	}
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	my ($stdoutPath) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "MosaikAlign", $aligner, 0, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, $time);
+	my ($fileName, $stdoutPath) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "MosaikAlign", $aligner, 0, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, $time);
 	my ($volume,$directories,$file) = File::Spec->splitpath($stdoutPath);  #Split to enable submission to &SampleInfoQC later
 
 	print $FILEHANDLE "mkdir -p /scratch/mosaik_tmp", "\n";
@@ -5032,7 +5058,7 @@ sub MosaikBuild {
     my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar( @{${$laneHashRef}{$sampleID}} ));  #Detect the number of cores to use from lanes
     
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "MosaikBuild", $aligner, 0, $FILEHANDLE, $nrCores, $time);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "MosaikBuild", $aligner, 0, $FILEHANDLE, $nrCores, $time);
     
     my $inSampleDirectory = ${$inDirPathHashRef}{$sampleID};
     my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/mosaik";
@@ -5112,7 +5138,7 @@ sub FastQC {
     $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, $nrCores );  #Make sure that the number of cores does not exceed maximum after incrementing above
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "FastQC", "fastqc", 0, $FILEHANDLE , $nrCores, $time);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "FastQC", "fastqc", 0, $FILEHANDLE , $nrCores, $time);
     
     my $inSampleDirectory = ${$inDirPathHashRef}{$sampleID};
     my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/fastqc";
@@ -5126,6 +5152,7 @@ sub FastQC {
 
 	print $FILEHANDLE "fastqc ";
 	print $FILEHANDLE $inSampleDirectory."/".$infile." ";  #InFile
+	print $FILEHANDLE "--extract ";  #the zipped output file will be uncompressed in the same directory after it has been created.
 	print $FILEHANDLE "-o ".$outSampleDirectory. " &", "\n\n";  #OutFile
 
 ##Collect QC metadata info for active program for later use
@@ -5167,7 +5194,7 @@ sub GZipFastq {
     my $time = ceil(1.5*scalar( @{ ${$infileHashRef}{$sampleID} }));  #One full lane on Hiseq takes approx. 1.5 h for gzip to process, round up to nearest full hour.
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "GZip", "gzip", 0, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, $time);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "GZip", "gzip", 0, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, $time);
    
     print $FILEHANDLE "cd ".${$inDirPathHashRef}{$sampleID}, "\n\n";
    
@@ -5228,7 +5255,7 @@ sub BuildAnnovarPreRequisites {
     my $annovarTemporaryDirectory = ${$scriptParameterHashRef}{'annovarPath'}."/humandb/Db_temporary";  #Temporary download directory
     
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, $program, $aligner, 0, $FILEHANDLE, 1, 3);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, $program, $aligner, 0, $FILEHANDLE, 1, 3);
 
     $logger->warn("Will try to create required Annovar database files before executing ".$program."\n");
 
@@ -5348,7 +5375,7 @@ sub BuildDownLoadablePreRequisites {
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
     
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, $program, $aligner, 0, $FILEHANDLE, 1, 4);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, $program, $aligner, 0, $FILEHANDLE, 1, 4);
 
     print $FILEHANDLE "cd ${$scriptParameterHashRef}{'referencesDir'}", "\n\n";  #Move to reference directory
 
@@ -5399,13 +5426,14 @@ sub BuildPTCHSMetricPreRequisites {
     my $FILEHANDLE = $_[6];  #Decides if a new sbatch script will be generated or handled by supplied FILEHANDLE
 
     my $parametersToEvaluate = 0;  #The number of parameters to evaluate
+    my $fileName;
 
     unless(defined($FILEHANDLE)) {  #No supplied FILEHANDLE i.e. create new sbatch script    
 	
 	$FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	&ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, $program, $aligner, 0, $FILEHANDLE, 1, 1);
+	($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, $program, $aligner, 0, $FILEHANDLE, 1, 1);
     }
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDCounter++) {  #All sampleIDs
@@ -5566,7 +5594,7 @@ sub BuildPTCHSMetricPreRequisites {
 	    }
 	}
     }
-    unless($_[3]) {  #Unless FILEHANDLE was supplied close it and submit 
+    unless($_[6]) {  #Unless FILEHANDLE was supplied close it and submit 
     
 	close($FILEHANDLE);
     
@@ -5603,7 +5631,7 @@ sub BuildBwaPreRequisites {
     my $randomInteger = int(rand(10000));  #Generate a random integer between 0-10,000.
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, $program, $aligner, 0, $FILEHANDLE, 1, 3);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, $program, $aligner, 0, $FILEHANDLE, 1, 3);
 
     &BuildHumanGenomePreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, $familyID, $aligner, $program, $FILEHANDLE, $randomInteger);
 
@@ -5663,7 +5691,7 @@ sub BuildMosaikAlignPreRequisites {
     my $randomInteger = int(rand(10000));  #Generate a random integer between 0-10,000.
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header.
-    &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, $program, $aligner, 0, $FILEHANDLE, 4, 2);
+    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, $program, $aligner, 0, $FILEHANDLE, 4, 2);
     
     ## Creates the humanGenomePreRequisites using scriptParameters{'humanGenomeReference'} as reference.
     &BuildHumanGenomePreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, $familyID, $aligner, $program, $FILEHANDLE, $randomInteger);
@@ -5907,13 +5935,15 @@ sub BuildHumanGenomePreRequisites {
     my $FILEHANDLE = $_[7];
     my $randomInteger = $_[8];
 
+    my $fileName;
+
     unless(defined($FILEHANDLE)) {  #No supplied FILEHANDLE i.e. create new sbatch script
 
 	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 	$randomInteger = int(rand(10000));  #Generate a random integer between 0-10,000.
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	&ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, $program, $aligner, 0, $FILEHANDLE, 1, 1);
+	($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, $program, $aligner, 0, $FILEHANDLE, 1, 1);
     }
 
     print $FILEHANDLE "cd ${$scriptParameterHashRef}{'referencesDir'}", "\n\n";  #Move to reference directory
@@ -5978,7 +6008,7 @@ sub BuildHumanGenomePreRequisites {
 	    ${$parameterHashRef}{"humanGenomeReference.fasta.fai"}{'buildFile'} = 0;  #Only create once	
 	}
     }
-    unless($_[3]) {  #Unless FILEHANDLE was supplied close it and submit 
+    unless($_[7]) {  #Unless FILEHANDLE was supplied close it and submit 
 	
 	close($FILEHANDLE);
     
@@ -6064,6 +6094,7 @@ sub ReadPlinkPedigreeFile {
     my $userExomeTargetPaddedBedInfileListSwitch = &CheckUserInfoArrays(\%{$scriptParameterHashRef}, \@exomeTargetPaddedBedInfileLists, "exomeTargetPaddedBedInfileLists");
     my $userExomeTargetPaddedBedIntervalListSwitch = &CheckUserInfoArrays(\%{$scriptParameterHashRef}, \@GATKTargetPaddedBedIntervalLists, "GATKTargetPaddedBedIntervalLists");
 
+    ## Defines which entries are allowed and links them to position.
     my %plinkPedigree = &DefinePlinkPedigree();  #Holds allowed entries and positions to be checked for Plink pedigree files
 
     open(my $PEDF, "<", $filePath) or $logger->logdie("Can't open '".$filePath."': ".$!."\n");    
@@ -6127,9 +6158,16 @@ sub ReadPlinkPedigreeFile {
 		    }
 		    
 		    my @elementInfo = split(";", $lineInfo[$sampleElementsCounter]);  #Split element (if required)
-		    
-		    &CheckUniqueArrayElement(\@{ ${$sampleInfoHashRef}{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]} }, \@elementInfo);  #Check if there are any new info and add it to sampleInfo if so. 
-		   
+
+		    if ($sampleElementsCounter < 6) {  #Mandatory elements known to be key->value
+			
+			${$sampleInfoHashRef}{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]} = $lineInfo[$sampleElementsCounter];
+		    }	
+		    else {  #Other elements treat as lists
+
+			## Detects if there are elements in arrayQueryRef that are not present in scalarQueryRef or arrayToCheckRef. If unique adds the unique element to arrayToCheckRef.
+			&CheckUniqueArrayElement(\@{ ${$sampleInfoHashRef}{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]} }, \@elementInfo);  #Check if there are any new info and add it to sampleInfo if so. 
+		    }
 		    if (${$sampleInfoHashRef}{$familyID}{$sampleID}{'Capture_kit'}) {  #Add latest capture kit for each individual
 			
 			my $captureKit = ${$sampleInfoHashRef}{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]}[-1];  #Use only the last capture kit since it should be the most interesting
@@ -6153,7 +6191,7 @@ sub ReadPlinkPedigreeFile {
 		}
 		else {  #No entry in pedigre file element
 		    
-		    if ($sampleElementsCounter < 7) {  #Only check mandatory elements 
+		    if ($sampleElementsCounter < 6) {  #Only check mandatory elements 
 
 			$logger->fatal($pedigreeFileElements[$sampleElementsCounter], "\t File: ".$filePath." at line ".$.."\tcannot find '".$pedigreeFileElements[$sampleElementsCounter]."' entry in column ".$sampleElementsCounter, "\n");
 			exit;
@@ -6879,8 +6917,8 @@ sub AddInfileInfo {
     my $seqLengthRegExp = q?perl -ne 'if ($_!~/@/) {chomp($_);my $seqLength = length($_);print $seqLength;last;}' ?;  #Prints sequence length and exits
 
     if ($direction == 1) {  #Read 1
-	
-	push( @{${$lane}{$sampleID}}, $lane);  #Lane
+
+	push( @{${$laneHashRef}{$sampleID}}, $lane);  #Lane
 	${$infilesLaneNoEndingHashRef}{$sampleID}[$$laneTrackerRef]= $sampleID.".".$date."_".$flowCell."_".$index.".lane".$1;  #Save new format (sampleID_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
 
 	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'file'}{ ${$infilesLaneNoEndingHashRef}{ $sampleID }[$$laneTrackerRef] }{'sequenceRunType'} = "Single-end";  #Single-end until proven otherwise
@@ -7743,6 +7781,8 @@ sub ProgramPreRequisites {
     my $nrofCores = $_[6];
     my $processTime = $_[7];
 
+    my $fileNameEnd = ".sh";
+    my $fileName;  #The sbatch script to be created filename
     my $fileNamePath;
     my $dryRunFilenamePath;
     my $programDataDirectory;
@@ -7792,7 +7832,7 @@ sub ProgramPreRequisites {
 	$logger->info("Dry Run:\n");
     }
 
-    ($fileName, $fileNameTracker) = &CheckFileNameExists(\$fileName, \$fnend);
+    ($fileName, $fileNameTracker) = &CheckFileNameExists(\$fileName, \$fileNameEnd);
 
 ###Info and Log
     $logger->info("Creating sbatch script for ".$programName." and writing script file(s) to: ".$fileName."\n");
@@ -7842,7 +7882,7 @@ sub ProgramPreRequisites {
     
     print $FILEHANDLE 'echo "Running on: $(hostname)"',"\n\n";
 
-    return ($fileInfoPath.$fileNameTracker.".stdout.txt");  #Return stdout path for QC check later
+    return ($fileName, $fileInfoPath.$fileNameTracker.".stdout.txt");  #Return stdout path for QC check later
 }
 
 sub CheckIfMergedFiles {
@@ -9898,6 +9938,145 @@ sub CheckAnnovarTables {
 	    $logger->error("You supplied Annovar database: ".${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter]." which is not supported by MIP. MIP can only process supported annovar databases\n");
 	    &PrintSupportedAnnovarTableNames(\%{$scriptParameterHashRef}, \@annovarSupportedTableNames);
 	}
+    }
+}
+
+
+sub CollectOutDataPathsEntries {
+    
+##CollectOutDataPathsEntries
+    
+##Function : Collects all programs outfile path(s) created by MIP as OutDirectory->value and outFile->value located in %sampleInfo.  
+##Returns  : ""
+##Arguments: $sampleInfoHashRef, $pathsArrayRef
+##         : $sampleInfoHashRef => Info on samples and family hash {REF}
+##         : $pathsArrayRef     => Holds the collected paths {REF}
+    
+    my $sampleInfoHashRef = $_[0];
+    my $pathsArrayRef = $_[1];
+    
+    for my $familyID ( keys %{$sampleInfoHashRef} ) {  #For every family id 
+	
+	for my $member ( keys %{ ${$sampleInfoHashRef}{$familyID} }) {  #For every familyID and sampleID
+	    
+	    if (${$sampleInfoHashRef}{$familyID}{$member}{'program'}) {  #Only examine programs     
+		
+		for my $program ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{'program'} } ) {  #For every programs           
+		    
+		    my @outDirectoryArray;  #Temporary array for collecting outDirectories within the same program
+		    my @outFileArray;  #Temporary array for collecting outFile within the same program
+		    
+		    for my $key ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{'program'}{$program} } ) { #For every key within program
+			
+			## Check if KeyName is "OutDirectory" or "OutFile"  and adds to @pathsArrayRef if true.
+			&CollectOutFile(\@{$pathsArrayRef}, \@outDirectoryArray, \@outFileArray, ${$sampleInfoHashRef}{$familyID}{$member}{'program'}{$program}{$key}, $key);
+			
+			if (ref(${$sampleInfoHashRef}{$familyID}{$member}{'program'}{$program}{$key}) eq "HASH" ) { #HASH reference indicating more levels
+			    
+			    for my $secondKey ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{'program'}{$program}{$key} } ) { #For every programs
+				
+				## Check if KeyName is "OutDirectory" or "OutFile"  and adds to @pathsArrayRef if true.
+				&CollectOutFile(\@{$pathsArrayRef}, \@outDirectoryArray, \@outFileArray, ${$sampleInfoHashRef}{$familyID}{$member}{'program'}{$program}{$key}{$secondKey}, $secondKey);
+			    }
+			}
+		    }
+		}
+	    }
+	}
+    }
+}
+
+
+sub CollectOutFile {
+    
+##CollectOutFile
+    
+##Function  : Check if KeyName is "OutDirectory" or "OutFile"  and adds to @pathsArrayRef if true.
+##Returns   : ""
+##Arguments: $pathsArrayRef, $outDirectoryArrayRef, $outFileArrayRef
+##         : $pathsArrayRef        => Holds the collected paths {REF}
+##         : $outDirectoryArrayRef => Holds temporary outDirectory path(s) {REF}
+##         : $outFileArrayRef      => Holds temporary outDirectory path(s) {REF}
+##         : $key                  => The hash key
+##         : $keyName              => The actual key  
+    
+    my $pathsArrayRef = $_[0];
+    my $outDirectoryArrayRef = $_[1];
+    my $outFileArrayRef = $_[2];
+    my $key = $_[3];
+    my $keyName = $_[4];	
+    
+    if ($keyName eq "OutDirectory") {
+	
+	push(@{$outDirectoryArrayRef}, $key);
+    }
+    if ($keyName eq "OutFile") {
+	
+	push(@{$outFileArrayRef}, $key);
+    }
+    if (scalar(@{$outDirectoryArrayRef}) == 1 && (scalar(@{$outFileArrayRef}) == 1) ) {  #Both outDirectory and outFile have been collected, time to join
+	
+	push(@{$pathsArrayRef}, ${$outDirectoryArrayRef}[0]."/".${$outFileArrayRef}[0]);
+	@{$outDirectoryArrayRef} = ();  #Restart
+	@{$outFileArrayRef} = ();  #Restart
+    }
+}
+
+
+sub CollectPathEntries {
+    
+##CollectPathEntries
+    
+##Function  : Collects all programs outfile path(s) created by MIP as Path->value located in %sampleInfo.
+##Returns   : ""
+##Arguments: $sampleInfoHashRef, $pathsArrayRef
+##         : $sampleInfoHashRef => Info on samples and family hash {REF}
+##         : $pathsArrayRef     => Holds the collected paths {REF}
+    
+    my $sampleInfoHashRef = $_[0];
+    my $pathsArrayRef = $_[1];
+    
+    for my $familyID ( keys %{$sampleInfoHashRef} ) {  #For every familyID 
+	
+	for my $member ( keys %{ ${$sampleInfoHashRef}{$familyID} }) {  #For every familyID and sampleID     
+	    
+	    for my $key ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member} } ) {  #For every key within member
+		
+		## Check if KeyName is "PATH" and adds to @pathsArrayRef if true.
+		&CheckAndAddToArray(\@{$pathsArrayRef}, ${$sampleInfoHashRef}{$familyID}{$member}{$key}, $key);
+		
+		if (ref(${$sampleInfoHashRef}{$familyID}{$member}{$key}) eq "HASH" ) {   #HASH reference indicating more levels
+		    
+		    for my $secondKey ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{$key} } ) { #For every secondkey with program
+			
+			## Check if KeyName is "PATH" and adds to @pathsArrayRef if true.
+			&CheckAndAddToArray(\@{$pathsArrayRef}, ${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey}, $secondKey);
+		    }
+		}
+	    }
+	}
+    } 
+}
+
+
+sub CheckAndAddToArray {
+    
+##CheckAndAddToArray
+    
+##Function  : Check if KeyName is "PATH" and adds to @pathsArrayRef if true.
+##Returns   : ""
+##Arguments: $pathsArrayRef, $key, $keyName
+##         : $pathsArrayRef => Holds the collected paths {REF}
+##         : $key           => The hash key
+##         : $keyName       => The actual key
+    
+    my $pathsArrayRef = $_[0];
+    my $key = $_[1];
+    my $keyName = $_[2];
+    
+    if ($keyName eq "Path") {
+	
+	push(@{$pathsArrayRef}, $key);
     }
 }
 

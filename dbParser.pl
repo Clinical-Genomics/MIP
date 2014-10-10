@@ -30,21 +30,14 @@ dbParser.pl dbfile.txt
               -fe/--featureEndColumn Feature end coordinate column number (defaults to "2")
               -h/--help Display this help message
               -v/--version Display version
-
         ?;    
 }
 
-my ($infile, $separator, $contigColumn, $featureStartColumn, $featureEndColumn) = ("", "\t", 0, 1, 2);
+my ($separator, $contigColumn, $featureStartColumn, $featureEndColumn) = ("\t", 0, 1, 2);
 my %validateMetric;
-
 my ($help, $version) = (0, 0);
 
-if (defined($ARGV) && $ARGV[0]!~/^-/) { #Collect potential infile - otherwise read from STDIN
-
-    $infile = $ARGV[0];
-
-}
-
+my $dbParserVersion = "0.0.1";
 
 ###User Options
 GetOptions('s|separator:s' => \$separator,
@@ -54,25 +47,36 @@ GetOptions('s|separator:s' => \$separator,
            'h|help' => \$help,  #Display help text
 	   'v|version' => \$version, #Display version number
     );
+if (scalar(@ARGV) eq 0) {
 
-if($help) {
-    
-    print STDOUT "\n".$USAGE, "\n";
+    print STDOUT "\ndbParser.pl v".$dbParserVersion;
+    print STDOUT $USAGE, "\n";
     exit;
+    
+}
+else {
+
+    foreach my $parameter (@ARGV) {
+
+	if( ($help) || ($parameter=~/-h/) ) {
+	    
+	    print STDOUT $USAGE, "\n";
+	    exit;
+	}
+	if( ($version) || ($parameter=~/-v/) ) {
+	    
+	    print STDOUT "\ndbParser.pl v".$dbParserVersion, "\n\n";
+	    exit
+	}
+    }
 }
 
-my $dbParserVersion = "0.0.1";
-if($version) {
-    
-    print STDOUT "\ndbParser.pl v".$dbParserVersion, "\n\n";
-    exit
-}
 
 ###
 #MAIN
 ###
 
-&ReadInfileDB($infile);
+&ReadInfileDB();
 
 ###
 #Sub Routines
@@ -87,7 +91,6 @@ sub ReadInfileDB {
 ##Arguments: $infileName
 ##         : $infileName => The database file
 
-    my $infileName = $_[0];
     my @characterCheck = (";", ", ", "^\\s+", "\\s+\$");  
 
     while (<>) {
