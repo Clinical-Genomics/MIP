@@ -1375,7 +1375,10 @@ sub AnalysisRunStatus {
     print $FILEHANDLE q?files=(?;  #Create bash array
     foreach my $path (@pathsArrayRef) {
 
-	print $FILEHANDLE q?"?.$path.q?" ?;  #Add to array
+	if (defined($path)) {  #First analysis and dry run will otherwise cause try to print uninitialized values
+	    
+	    print $FILEHANDLE q?"?.$path.q?" ?;  #Add to array
+	}
     }
     print $FILEHANDLE ")", "\n";  #Close bash array
     print $FILEHANDLE q?for file in ${files[@]}?, "\n";  #loop over files
@@ -4136,7 +4139,7 @@ sub PicardToolsMarkDuplicates {
     if ($PicardToolsMergeSwitch == 1) {  #Files was merged previously
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "PicardToolsMarkduplicates", $aligner, 0, $FILEHANDLE, 1, $time);
+       ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "PicardToolsMarkduplicates", $aligner, 0, $FILEHANDLE, 1, $time);
 
 	print $FILEHANDLE "java -Xmx4g ";
 
@@ -4163,7 +4166,7 @@ sub PicardToolsMarkDuplicates {
 	my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar( @{${$laneHashRef}{$sampleID}} ));  #Detect the number of cores to use from lanes
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "PicardToolsMarkduplicates", $aligner, 0, $FILEHANDLE, $nrCores, $time);
+	($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "PicardToolsMarkduplicates", $aligner, 0, $FILEHANDLE, $nrCores, $time);
 
 	for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all files from independent of merged or not
 	    
@@ -5291,7 +5294,7 @@ sub BuildAnnovarPreRequisites {
 		print $FILEHANDLE $annovarTemporaryDirectory."/ ", "\n\n";  #annovar/humandb directory is assumed
 	    }
 	    
-##Check file existance and move created file if lacking 
+	    ### Check file existance and move created file if lacking 
 	    my $intendedFilePathRef;
 	    my $temporaryFilePathRef;
 	    
@@ -5300,13 +5303,17 @@ sub BuildAnnovarPreRequisites {
 		for (my $filesCounter=0;$filesCounter<scalar(@{${$annovarTableHashRef}{ ${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter] }{'file'}});$filesCounter++) {  #All annovarTable file(s), some tables have multiple files downloaded from the same call
 		    
 		    $intendedFilePathRef = \(${$scriptParameterHashRef}{'annovarPath'}."/humandb/".${$annovarTableHashRef}{ ${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter] }{'file'}[$filesCounter]);  
-		    $temporaryFilePathRef = \($annovarTemporaryDirectory."/".${$annovarTableHashRef}{ ${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter] }{'file'}[$filesCounter]);    
+		    $temporaryFilePathRef = \($annovarTemporaryDirectory."/".${$annovarTableHashRef}{ ${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter] }{'file'}[$filesCounter]);
+	
+		    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
 		    &PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
 		
 		    if (defined(${$annovarTableHashRef}{ ${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter] }{'indexFile'})) {
 		    
 			$intendedFilePathRef = \(${$scriptParameterHashRef}{'annovarPath'}."/humandb/".${$annovarTableHashRef}{ ${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter] }{'file'}[$filesCounter].".idx");  
 			$temporaryFilePathRef = \($annovarTemporaryDirectory."/".${$annovarTableHashRef}{ ${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter] }{'file'}[$filesCounter].".idx");
+
+			## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
 			&PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);	
 		    }
 		}		
@@ -5315,12 +5322,16 @@ sub BuildAnnovarPreRequisites {
 	    
 		$intendedFilePathRef = \(${$scriptParameterHashRef}{'annovarPath'}."/humandb/".${$scriptParameterHashRef}{'annovarGenomeBuildVersion'}."_".${$annovarTableHashRef}{ ${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'}.".txt");
 		$temporaryFilePathRef = \($annovarTemporaryDirectory."/".${$scriptParameterHashRef}{'annovarGenomeBuildVersion'}."_".${$annovarTableHashRef}{ ${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'}.".txt");
+
+		## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
 		&PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
 	    
 		if (defined(${$annovarTableHashRef}{ ${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter] }{'indexFile'})) {
 		    
 		    $intendedFilePathRef = \(${$scriptParameterHashRef}{'annovarPath'}."/humandb/".${$scriptParameterHashRef}{'annovarGenomeBuildVersion'}."_".${$annovarTableHashRef}{ ${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'}.".txt.idx");
 		    $temporaryFilePathRef = \($annovarTemporaryDirectory."/".${$scriptParameterHashRef}{'annovarGenomeBuildVersion'}."_".${$annovarTableHashRef}{ ${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter] }{'ucscAlias'}.".txt.idx");
+
+		    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
 		    &PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
 		}
 	    }
@@ -5328,12 +5339,16 @@ sub BuildAnnovarPreRequisites {
 	    
 		$intendedFilePathRef = \(${$scriptParameterHashRef}{'annovarPath'}."/humandb/".${$scriptParameterHashRef}{'annovarGenomeBuildVersion'}."_".${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter].".txt");
 		$temporaryFilePathRef = \($annovarTemporaryDirectory."/".${$scriptParameterHashRef}{'annovarGenomeBuildVersion'}."_".${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter].".txt");    
+
+		## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
 		&PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
 	    
 		if (defined(${$annovarTableHashRef}{ ${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter] }{'indexFile'})) {
 	
 		    $intendedFilePathRef = \(${$scriptParameterHashRef}{'annovarPath'}."/humandb/".${$scriptParameterHashRef}{'annovarGenomeBuildVersion'}."_".${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter].".txt.idx");
 		    $temporaryFilePathRef = \($annovarTemporaryDirectory."/".${$scriptParameterHashRef}{'annovarGenomeBuildVersion'}."_".${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter].".txt.idx");    
+
+		    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
 		    &PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);	
 		}				
 	    }
@@ -5537,7 +5552,9 @@ sub BuildPTCHSMetricPreRequisites {
 		print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5_".${$referenceFileEndingsHashRef}{'exomeTargetBedInfileLists'}." ", "\n\n";
 		    
 		my $intendedFilePathRef = \(${$scriptParameterHashRef}{'referencesDir'}."/".$sampleIDBuildFileNoEnding.${$referenceFileEndingsHashRef}{'exomeTargetBedInfileLists'});
-		my $temporaryFilePathRef = \(${$scriptParameterHashRef}{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5_".${$referenceFileEndingsHashRef}{'exomeTargetBedInfileLists'});    
+		my $temporaryFilePathRef = \(${$scriptParameterHashRef}{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5_".${$referenceFileEndingsHashRef}{'exomeTargetBedInfileLists'});
+
+		## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
 		&PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
 	    }
 	    if ( (defined($sampleIDBuildSwitchPadded) && ($sampleIDBuildSwitchPadded eq 1)) || (defined($sampleIDBuildSwitchPaddedInterval) && ($sampleIDBuildSwitchPaddedInterval eq 1)) ) {
@@ -5554,6 +5571,8 @@ sub BuildPTCHSMetricPreRequisites {
 		
 		my $intendedFilePathRef = \(${$scriptParameterHashRef}{'referencesDir'}."/".$sampleIDBuildFileNoEnding.${$referenceFileEndingsHashRef}{'exomeTargetPaddedBedInfileLists'});
 		my $temporaryFilePathRef = \(${$scriptParameterHashRef}{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5".${$referenceFileEndingsHashRef}{'exomeTargetPaddedBedInfileLists'});    
+
+		## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
 		&PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
 		
 		if (defined($sampleIDBuildSwitchPaddedInterval) && ($sampleIDBuildSwitchPaddedInterval eq 1)) {
@@ -5649,6 +5668,8 @@ sub BuildBwaPreRequisites {
 	    
 	    my $intendedFilePathRef = \(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'bwaBuildReference'}.${$bwaBuildReferenceFileEndingsArrayRef}[$fileEndingsCounter]);
 	    my $temporaryFilePathRef = \(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'bwaBuildReference'}."_".$randomInteger.${$bwaBuildReferenceFileEndingsArrayRef}[$fileEndingsCounter]);    
+
+	    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
 	    &PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
 	}
 	${$parameterHashRef}{'bwaBuildReference'}{'buildFile'} = 0;  #Ensure that this subrutine is only executed once
@@ -5983,6 +6004,7 @@ sub BuildHumanGenomePreRequisites {
 	    print $FILEHANDLE "R=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference genome
 	    print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'referencesDir'}."/".$humanGenomeReferenceNameNoEnding."_".$randomInteger.".dict ", "\n\n";  #Output sequence dictionnary
 	    
+	    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
 	    &PrintCheckExistandMoveFile($FILEHANDLE, \(${$scriptParameterHashRef}{'referencesDir'}."/".$humanGenomeReferenceNameNoEnding.".dict"), \(${$scriptParameterHashRef}{'referencesDir'}."/".$humanGenomeReferenceNameNoEnding."_".$randomInteger.".dict"));
 	    
 	    ${$parameterHashRef}{"humanGenomeReference.dict"}{'buildFile'} = 0;  #Only create once
@@ -6000,6 +6022,7 @@ sub BuildHumanGenomePreRequisites {
 	    print $FILEHANDLE "samtools faidx ";#index/extract FASTA
 	    print $FILEHANDLE ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}."_".$randomInteger, "\n\n";  #Softlink to Reference genome
 	    
+	    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
 	    &PrintCheckExistandMoveFile($FILEHANDLE, \(${$scriptParameterHashRef}{'referencesDir'}."/".$humanGenomeReferenceNameNoEnding.".fasta.fai"), \(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}."_".$randomInteger.".fai"));
 	
 	    print $FILEHANDLE "rm ";  #Remove softLink
@@ -7374,7 +7397,7 @@ sub AddToScriptParameter {
 			    
 			    for (my $sampleIDsCounter=0;$sampleIDsCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDsCounter++) {  #All sampleIDs
 				
-				 &CheckSupportedFileEnding(\(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDsCounter]}{$parameterName}), \${$referenceFileEndingsHashRef}{$parameterName}, \$parameterName);
+				 &CheckSupportedFileEnding(\(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDsCounter] }{$parameterName}), \${$referenceFileEndingsHashRef}{$parameterName}, \$parameterName);
 				 &CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDsCounter]}{$parameterName}), \$parameterName, "f", \${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDsCounter]);
 			    
 				my $exomeTargetBedFileNoEnding = &RemoveFileEnding(\${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDsCounter]}{$parameterName} , ${$referenceFileEndingsHashRef}{$parameterName});  #Remove ".fileending" from reference filename
