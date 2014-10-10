@@ -932,12 +932,12 @@ if ($scriptParameter{'pMosaikAlign'} > 0) {  #Run MosaikAlign
 
 	if ( ($parameter{'humanGenomeReference'}{'buildFile'} eq 1) || ($parameter{'mosaikAlignReference'}{'buildFile'} eq 1) || ($parameter{'mosaikJumpDbStub'}{'buildFile'} eq 1) ) {
 	    
-	    &BuildMosaikAlignPreRequisites(\%parameter, \%scriptParameter, \@mosaikJumpDbStubFileEndings, \$humanGenomeReferenceSource, $humanGenomeReferenceVersion, $scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "MosaikAlign");
+	    &BuildMosaikAlignPreRequisites(\%parameter, \%scriptParameter, \@mosaikJumpDbStubFileEndings, \$humanGenomeReferenceSource, \$humanGenomeReferenceVersion, $scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "MosaikAlign");
 	    
 	}
 	if ( ($parameter{'mosaikAlignNeuralNetworkPeFile'}{'buildFile'} eq 1) || ($parameter{'mosaikAlignNeuralNetworkSeFile'}{'buildFile'} eq 1) ){
 	    
-	    &MoveMosaikNN();
+	    &MoveMosaikNN(\%scriptParameter);
 	}
     }
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
@@ -959,7 +959,7 @@ if ($scriptParameter{'pBwaMem'} > 0) {  #Run BWA Mem
     }
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
-	&BWA_Mem(\%parameter, \%scriptParameter, \%sampleInfo, \%infile, \%inDirPath, \%infilesLaneNoEnding, \%infilesBothStrandsNoEnding, \%infilesBothStrandsNoEnding, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});	
+	&BWA_Mem(\%parameter, \%scriptParameter, \%sampleInfo, \%infile, \%inDirPath, \%infilesLaneNoEnding, \%infilesBothStrandsNoEnding, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'});	
 	
     }    
 }
@@ -4733,7 +4733,7 @@ sub BWA_Mem {
     my $infilesBothStrandsNoEndingHashRef = $_[6];
     my $sampleID = $_[7];
     my $aligner = $_[8];
- 
+
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
     my $fileName;
     my $infileSize;
@@ -5388,7 +5388,7 @@ sub BuildDownLoadablePreRequisites {
 
 	    if (${$parameterHashRef}{$parameterName}{'buildFile'} eq 1) {
 	    
-		&DownloadReference(\%parameter, \%scriptParameter, \%{$supportedCosmidReferenceHashRef}, \$program, $FILEHANDLE, $parameterName, \$cosmidResourceDirectory);
+		&DownloadReference(\%parameter, \%scriptParameter, \%{$supportedCosmidReferenceHashRef}, \$cosmidResourceDirectory, \$program, $FILEHANDLE, $parameterName);
 	    }
 	}
     }
@@ -5632,8 +5632,8 @@ sub BuildBwaPreRequisites {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, $program, $aligner, 0, $FILEHANDLE, 1, 3);
-
-    &BuildHumanGenomePreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, $familyID, $aligner, $program, $FILEHANDLE, $randomInteger);
+ 
+    &BuildHumanGenomePreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \@humanGenomeReferenceFileEndings, \$humanGenomeCompressed, $familyID, $aligner, $program, $FILEHANDLE, $randomInteger);
 
     if (${$parameterHashRef}{'bwaBuildReference'}{'buildFile'} eq 1) {
 
@@ -5694,12 +5694,12 @@ sub BuildMosaikAlignPreRequisites {
     my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, $program, $aligner, 0, $FILEHANDLE, 4, 2);
     
     ## Creates the humanGenomePreRequisites using scriptParameters{'humanGenomeReference'} as reference.
-    &BuildHumanGenomePreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, $familyID, $aligner, $program, $FILEHANDLE, $randomInteger);
+    &BuildHumanGenomePreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \@humanGenomeReferenceFileEndings, \$humanGenomeCompressed, $familyID, $aligner, $program, $FILEHANDLE, $randomInteger);
 
     if (${$parameterHashRef}{'mosaikAlignReference'}{'buildFile'} eq 1) {  ##Begin autoBuild of MosaikAlignReference
-
-	$logger->("Will try to create required ".${$scriptParameterHashRef}{'mosaikAlignReference'}." before executing ".$program."\n");
-
+	
+	$logger->warn("Will try to create required ".${$scriptParameterHashRef}{'mosaikAlignReference'}." before executing ".$program."\n");
+	
 	print $FILEHANDLE "#Building MosaikAligner Reference", "\n\n";
 	print $FILEHANDLE "MosaikBuild ";
 	print $FILEHANDLE "-fr ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #The FASTA reference sequences file
@@ -5771,7 +5771,7 @@ sub CheckBuildHumanGenomePreRequisites {
 	    if ( (${$scriptParameterHashRef}{"p".$program} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} != 1)) {
 	
 		## Creates the humanGenomePreRequisites using scriptParameters{'humanGenomeReference'} as reference.
-		&BuildHumanGenomePreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, ${$scriptParameterHashRef}{'familyID'}, ${$scriptParameterHashRef}{'aligner'}, $program);
+		&BuildHumanGenomePreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \@humanGenomeReferenceFileEndings, \$humanGenomeCompressed, ${$scriptParameterHashRef}{'familyID'}, ${$scriptParameterHashRef}{'aligner'}, $program);
 		last;#Will handle all metafiles build within sbatch script
 	    }
 	}
@@ -5828,19 +5828,19 @@ sub DownloadReference {
 ##Arguments: $scriptParameterHashRef, $parameterHashRef, $supportedCosmidReferenceHashRef, $cosmidResourceDirectoryRef, $programRef, $FILEHANDLE, $parameterName, $cosmidResourceDirectoryRef
 ##         : $parameterHashRef                 => The parameter hash {REF}
 ##         : $scriptParameterHashRef           => The active parameters for this analysis hash {REF}
-##         : $supportedCosmidReferenceHashRef => The supported cosmid references hash {REF}
+##         : $supportedCosmidReferenceHashRef  => The supported cosmid references hash {REF}
 ##         : $cosmidResourceDirectoryRef       => Cosmid directory {REF}
 ##         : $programRef                       => Program under evaluation {REF}
 ##         : $FILEHANDLE                       => Filehandle to write to.
 ##         : $parameterName                    => Parameter to use for download
 
     my $parameterHashRef = $_[0];
-    my $scriptParameterHashRef = $_[0];
-    my $supportedCosmidReferenceHashRef = $_[1];
-    my $cosmidResourceDirectoryRef = $_[2];
-    my $programRef = $_[3];
-    my $FILEHANDLE = $_[4];
-    my $parameterName = $_[5];
+    my $scriptParameterHashRef = $_[1];
+    my $supportedCosmidReferenceHashRef = $_[2];
+    my $cosmidResourceDirectoryRef = $_[3];
+    my $programRef = $_[4];
+    my $FILEHANDLE = $_[5];
+    my $parameterName = $_[6];
 
     if (${$parameterHashRef}{$parameterName}{'buildFile'} eq 1) {  #Reference need to be built a.k.a downloaded
 	
@@ -5949,9 +5949,9 @@ sub BuildHumanGenomePreRequisites {
     print $FILEHANDLE "cd ${$scriptParameterHashRef}{'referencesDir'}", "\n\n";  #Move to reference directory
 
     ## Locates and sets the cosmid directory to download to
-    my $cosmidResourceDirectory = &CheckCosmidYAML();
+    my $cosmidResourceDirectory = &CheckCosmidYAML(\%{$scriptParameterHashRef});
 
-    &DownloadReference(\%parameter, \%{$scriptParameterHashRef}, \%supportedCosmidReference, \$program, $FILEHANDLE, "humanGenomeReference", \$cosmidResourceDirectory);
+    &DownloadReference(\%parameter, \%{$scriptParameterHashRef}, \%supportedCosmidReference, \$cosmidResourceDirectory, \$program, $FILEHANDLE, "humanGenomeReference");
 
     ## Check for compressed files
     if ($$humanGenomeCompressedRef eq "compressed") {
@@ -6050,7 +6050,7 @@ sub CheckCosmidInstallation {
 	    }
 	    else {  #Test ok
 
-		$logger->info("Found installation in ".$whichReturn."\n");
+		$logger->info("Found installation in ".$whichReturn);
 	    }
 	}
 	else  {  #No python virtualenv
@@ -7790,7 +7790,7 @@ sub ProgramPreRequisites {
     my $dryRunFileInfoPath;
     my $fileNameTracker;
 ###Sbatch script names and directory creation
-    
+
     $programDataDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$directoryID."/".$programDirectory;
     $fileNamePath = ${$scriptParameterHashRef}{'outScriptDir'}."/".$directoryID."/".$programDirectory."/".$programName."_".$directoryID;
     $dryRunFilenamePath = ${$scriptParameterHashRef}{'outScriptDir'}."/".$directoryID."/".$programDirectory."/dry_run_".$programName."_".$directoryID;
@@ -9127,12 +9127,12 @@ sub SetTargetFileGeneralBuildParameter {
 
     my $parameterHashRef = $_[0];
     my $scriptParameterHashRef = $_[1];
-    my $referenceFileEndingsHashRef = $_[0];
-    my $targetfileRef = $_[1];
-    my $parameterName = $_[2];
-    my $sampleIDBuildFileRef = $_[3];
-    my $sampleIDBuildFileNoEndingRef = $_[4];
-    my $sampleIDRef = $_[5];
+    my $referenceFileEndingsHashRef = $_[2];
+    my $targetfileRef = $_[3];
+    my $parameterName = $_[4];
+    my $sampleIDBuildFileRef = $_[5];
+    my $sampleIDBuildFileNoEndingRef = $_[6];
+    my $sampleIDRef = $_[7];
     
     $$sampleIDBuildFileNoEndingRef = &RemoveFileEnding(\$$targetfileRef, ${$referenceFileEndingsHashRef}{$parameterName});  #Remove ".fileending" from reference filename
     ${$parameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{$parameterName}{'buildFile'} = 0;  #Build once then done
