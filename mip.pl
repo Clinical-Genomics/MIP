@@ -2814,6 +2814,7 @@ sub GATKVariantReCalibration {
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "GATKVariantRecalibration", $aligner."/GATK", $callType, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, 10);
 
+    print $FILEHANDLE "mkdir -p ".${$scriptParameterHashRef}{'GATKTempDirectory'}.'$SLURM_JOB_ID', "\n\n";
 #Special case
     `mkdir -p ${$scriptParameterHashRef}{'outDataDir'}/$familyID/$aligner/GATK/intermediary`;  #Creates the aligner folder, GATK data file directory
  
@@ -2824,6 +2825,7 @@ sub GATKVariantReCalibration {
     my $outfileEnding = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
     
     unless (-e ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$familyID.".fam") {  #Check to see if file already exists
+
 	print $FILEHANDLE "#Generating '.fam' file for GATK VariantRecalibrator/ApplyRecalibration","\n\n";
 	print $FILEHANDLE q?perl -nae 'print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t", $F[5], "\n";' ?.${$scriptParameterHashRef}{'pedigreeFile'}." > ".$outFamilyFileDirectory."/".$familyID.".fam", "\n\n";
     }  
@@ -2848,6 +2850,7 @@ sub GATKVariantReCalibration {
 	
 	&WriteUseLargePages($FILEHANDLE, \${$scriptParameterHashRef}{'javaUseLargePages'});
 
+	print $FILEHANDLE "-Djava.io.tmpdir=".${$scriptParameterHashRef}{'GATKTempDirectory'}.'$SLURM_JOB_ID'." ";  #Temporary Directory
 	print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-T VariantRecalibrator ";  #Type of analysis to run
@@ -2902,6 +2905,7 @@ sub GATKVariantReCalibration {
 
 	&WriteUseLargePages($FILEHANDLE, \${$scriptParameterHashRef}{'javaUseLargePages'});
 
+	print $FILEHANDLE "-Djava.io.tmpdir=".${$scriptParameterHashRef}{'GATKTempDirectory'}.'$SLURM_JOB_ID'." ";  #Temporary Directory
 	print $FILEHANDLE  "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-T ApplyRecalibration ";
@@ -2942,6 +2946,7 @@ sub GATKVariantReCalibration {
 
 	&WriteUseLargePages($FILEHANDLE, \${$scriptParameterHashRef}{'javaUseLargePages'});
 
+	print $FILEHANDLE "-Djava.io.tmpdir=".${$scriptParameterHashRef}{'GATKTempDirectory'}.'$SLURM_JOB_ID'." ";  #Temporary Directory
 	print $FILEHANDLE  "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
