@@ -142,6 +142,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -gvrtsm/--GATKVariantReCalibrationTrainingSetMills GATK VariantRecalibrator Mills training set (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
                  -gvrtsf/--GATKVariantReCalibrationTSFilterLevel The truth sensitivity level at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
                  -gvrevf/--GATKVariantReCalibrationexcludeNonVariantsFile Produce a vcf containing non-variant loci alongside the vcf only containing non-variant loci after GATK VariantRecalibrator (defaults to "false")
+                 -gvrevf/--GATKVariantReCalibrationVCFBreakMulti If multiple alleles are specified in a single record, break the record into multiple lines (defaults to "1" (=yes))
                -pGpT/--pGATKPhaseByTransmission Computes the most likely genotype and phases calls were unamibigous using GATK PhaseByTransmission (defaults to "1" (=yes))
                -pGrP/--pGATKReadBackedPhasing Performs physical phasing of SNP calls, based on sequencing reads using GATK ReadBackedPhasing (defaults to "1" (=yes))
                  -grpqth/--GATKReadBackedPhasingPhaseQualityThreshold The minimum phasing quality score required to output phasing (defaults to "20")
@@ -183,12 +184,12 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -ravc1kgf/--cadd1000GenomesFile 1000 Genome cadd score file (defaults to "1000G.tsv.gz")
                  -ravwg/--wholeGene Allow compound pairs in intronic regions (defaults to "1" (=yes))
                  -ravrm/--rankModelFile Rank model config file (defaults to "")
+               
+               ##Utility
                -pScK/--pSampleCheck QC for samples gender and relationship (defaults to "1" (=yes) )
                -pQcC/--pQCCollect Collect QC metrics from programs processed (defaults to "1" (=yes) )
                  -qccsi/--QCCollectSampleInfoFile SampleInfo File containing info on what to parse from this analysis run (defaults to "{outDataDir}/{familyID}/{familyID}_qc_sampleInfo.yaml")
                  -qccref/--QCCollectRegExpFile Regular expression file containing the regular expression to be used for each program (defaults to "")
-               
-               ##Utility
                -pReM/--pRemoveRedundantFiles Generating sbatch script for deletion of redundant files (defaults to "1" (=yes);Note: Must be submitted manually)
                -pArS/--pAnalysisRunStatus Sets the analysis run status flag to finished in sampleInfoFile (defaults to "1" (=yes))
 	   };
@@ -383,6 +384,8 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists);  #Arrays for 
 
 &DefineParameters(\%parameter, \@orderParameters, "GATKVariantReCalibrationexcludeNonVariantsFile", "program", "false", "pGATKVariantRecalibration");
 
+&DefineParameters(\%parameter, \@orderParameters, "GATKVariantReCalibrationVCFBreakMulti", "program", 1, "pGATKVariantRecalibration", "nofileEnding", "MAIN", "vcfbreakmulti");
+
  
 &DefineParameters(\%parameter, \@orderParameters, "pGATKPhaseByTransmission", "program", 1, "MIP", "phtr_", "Phasing");
 
@@ -393,7 +396,7 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists);  #Arrays for 
 
 &DefineParameters(\%parameter, \@orderParameters, "pGATKVariantEvalAll", "program", 1, "MIP", "nofileEnding", "AllVariantQC");
 
-&DefineParameters(\%parameter, \@orderParameters, "pGATKVariantEvalExome", "program", 1, "MIP", "nofileEnding", "ExomeVarintQC", "bedtools");
+&DefineParameters(\%parameter, \@orderParameters, "pGATKVariantEvalExome", "program", 1, "MIP", "nofileEnding", "ExomeVariantQC", "bedtools");
 
 &DefineParametersPath(\%parameter, \@orderParameters, "GATKVariantEvalDbSNP", "dbsnp_138.b37.excluding_sites_after_129.vcf", "pGATKVariantEvalAll,pGATKVariantEvalExome", "file", "yesAutoDownLoad");
 
@@ -619,6 +622,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'gvrtsm|GATKVariantReCalibrationTrainingSetMills:s' => \$parameter{'GATKVariantReCalibrationTrainingSetMills'}{'value'},  #GATK VariantRecalibrator resource
 	   'gvrtsf|GATKVariantReCalibrationTSFilterLevel:s' => \$parameter{'GATKVariantReCalibrationTSFilterLevel'}{'value'},  #Truth sensativity level
 	   'gvrevf|GATKVariantReCalibrationexcludeNonVariantsFile:s' => \$parameter{'GATKVariantReCalibrationexcludeNonVariantsFile'}{'value'},  #Produce a vcf containing non-variant loci alongside the vcf only containing non-variant loci after GATK VariantRecalibrator (defaults to "false")
+	   'gvrevf|GATKVariantReCalibrationVCFBreakMulti:n' => \$parameter{'GATKVariantReCalibrationVCFBreakMulti'}{'value'},
 	   'pGpT|pGATKPhaseByTransmission:n' => \$parameter{'pGATKPhaseByTransmission'}{'value'},  #GATK PhaseByTransmission to produce phased genotype calls
 	   'pGrP|pGATKReadBackedPhasing:n' => \$parameter{'pGATKReadBackedPhasing'}{'value'},  #GATK ReadBackedPhasing
 	   'grpqth|GATKReadBackedPhasingPhaseQualityThreshold:n' => \$parameter{'GATKReadBackedPhasingPhaseQualityThreshold'}{'value'},  #quality score required to output phasing
@@ -3120,11 +3124,19 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "-L ".$contigIntervalListFile." ";#Target list file (merged or original)
 	print $FILEHANDLE "-env ";  #Don't include loci found to be non-variant after the subsetting procedure. 
 	print $FILEHANDLE "-V: ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType."_filtered.vcf ";  #InFile
-	print $FILEHANDLE "-o ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf ";  #OutFile
+	#print $FILEHANDLE "-o ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf ";  #OutFile
 
 	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDCounter++) {  #For all sampleIDs
 		
 	    print $FILEHANDLE "-sn ".${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter]." ";  #Include genotypes from this sample
+	}
+	print $FILEHANDLE "-o /dev/stdout ";  #OutStream
+	
+	if (${$scriptParameterHashRef}{'GATKVariantReCalibrationVCFBreakMulti'}) {
+
+	    print $FILEHANDLE "| ";  #Pipe
+	    print $FILEHANDLE "vcfbreakmulti ";  #If multiple alleles are specified in a single record, break the record into multiple lines, preserving allele-specific INFO fields.
+	    print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf ";  #OutFile
 	}
 	print $FILEHANDLE " &"; 
 	
