@@ -135,6 +135,8 @@ sub DefineSnpEffAnnotations {
     $snpEffCmd{'Frequency'}{'1000GMAF'}{'FIX_INFO'} = q?##INFO=<ID=SB,Number=4,Type=Integer,Description="Per-sample component statistics which comprise the Fisher's Exact Test to detect strand bias.">?;
     $snpEffCmd{'Frequency'}{'ESPMAF'}{'File'} = q?ESP\d+SI-V\d+-\w+.updatedProteinHgvs.snps_indels.vcf?;
     $snpEffCmd{'Frequency'}{'ESPMAF'}{'INFO'} = q?##INFO=<ID=ESPMAF,Number=1,Type=Float,Description="MAF in the ESP database.">?;
+    $snpEffCmd{'Frequency'}{'EXACMAF'}{'File'} = q?ExAC.r\d+.\d+.sites.vep.vcf?;
+    $snpEffCmd{'Frequency'}{'EXACMAF'}{'INFO'} = q?##INFO=<ID=EXACMAF,Number=1,Type=Float,Description="MAF in the ExAC database.">?;
 
 }
 
@@ -472,14 +474,14 @@ sub ReadInfileVCF {
 	    my $transcriptsCounter = 0; #Tracks the number of transcripts to enable print of ", and ;" at correct position
 	    my $selectedTranscriptCounter = 0; #Tracks the number of selected transcripts to enable print of ", and ;" at correct position
 
-	    my @lineElements = split("\t",$_); #Loads database elements description
+	    my @lineElements = split("\t",$_);  #Loads database elements description
 
 	    for (my $lineElementsCounter=0;$lineElementsCounter<scalar(@lineElements);$lineElementsCounter++) { #Add until INFO field
 			
 		if ($lineElementsCounter < 7) { #Save fields until INFO field
 
 		    $variantLine .= $lineElements[$lineElementsCounter]."\t";
-		    $selectedVariantLine .= $lineElements[$lineElementsCounter]."\t"; #Copy vcf info to enable selective print downstream;
+		    $selectedVariantLine .= $lineElements[$lineElementsCounter]."\t"; #Copy vcf info to enable selective print downstream; 
 		}
 		elsif ($lineElementsCounter > 7) { #Save GT:PL: and sample(s) GT Call fields and add to proper line last
 		    
@@ -492,14 +494,15 @@ sub ReadInfileVCF {
 
 		    if ($lineElements[7] =~/CAF=\[(.+)\]/) {
 			
-			my @tempMafs = sort {$a <=> $b} grep { $_ ne "." } split(",",$1); #Split on ",", remove entries containing only "." and sort remaining entries numerically
-			@tempMafs = split(",",$1); #Split on ","
-			
-			if (scalar(@tempMafs) > 0) {
-			    
-			    ##Save Minor Allele frequency info   
-			    $variantLine .= $frequencyDb."=".$tempMafs[1].";";
-			    $selectedVariantLine .= $frequencyDb."=".$tempMafs[1].";";
+			my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
+
+			my $tempMaf = &FindLCAF(\@tempArray, $1);  #Needed to remove "[]" in key=value pair
+
+			if (defined($tempMaf)) {
+
+			    ## Save Alternative Allele frequency info
+			    $variantLine .= $frequencyDb."=".$tempMaf.";";
+			    $selectedVariantLine .= $frequencyDb."=".$tempMaf.";";
 			}
 		    }
 		}
@@ -507,36 +510,51 @@ sub ReadInfileVCF {
 
 		    if ($lineElements[7] =~/pop=/ || $lineElements[7] =~/VT=/ ) {
 			
-			my $tempMaf;
+			my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
 
-			while ($lineElements[7] =~m/;AF=(\d+.\d+|\d+)/g) {
-			    
-			    $tempMaf = $1; #Last entry in string eventually    
-			}
-			if ($tempMaf > 0.5) {
+			my $tempMaf = &FindLCAF(\@tempArray, "AF=");
 
-			    $tempMaf = 1 - $tempMaf; #Calculate MAF
+			if (defined($tempMaf)) {
+
+			    ## Save Alternative Allele frequency info
+			    $variantLine .= $frequencyDb."=".$tempMaf.";";
+			    $selectedVariantLine .= $frequencyDb."=".$tempMaf.";";
 			}
-			##Save Minor Allele frequency info   
-			$variantLine .= $frequencyDb."=".$tempMaf.";";
-			$selectedVariantLine .= $frequencyDb."=".$tempMaf.";";
 		    }
 		}
 		elsif($frequencyDb eq "ESPMAF") {
 
 		    if ($lineElements[7] =~/MAF=(.+)\;PH/) {
 			
-			my @tempMafs = split(",",$1); #Split on ","
-			my $tempMaf = $tempMafs[2]; #ALL
+			my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
+
+			my $tempMaf = &FindLCAF(\@tempArray, $1);  #Needed to remove find correct MAF field
 	
-			if (defined($tempMaf) && ($tempMaf ne ".") ) {
+			if (defined($tempMaf)) {
 			
-			    $tempMaf = $tempMaf / 100; #fraction for consisten representation
-			    ##Save Minor Allele frequency info   
+			    $tempMaf = $tempMaf / 100; #fraction for consistent representation
+
+			    ## Save Alternative Allele frequency info  
 			    $variantLine .= $frequencyDb."=".$tempMaf.";";
 			    $selectedVariantLine .= $frequencyDb."=".$tempMaf.";";
 			}
 		    }   
+		}
+		elsif($frequencyDb eq "EXACMAF") {
+
+		    if ($lineElements[7] =~/Hom_FIN=/ || $lineElements[7] =~/=AN_AFR/ ) {
+			
+			my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
+
+			my $tempMaf = &FindLCAF(\@tempArray, "AF=");
+			
+			if (defined($tempMaf)) {
+			    
+			    ## Save Alternative Allele frequency info  
+			    $variantLine .= $frequencyDb."=".$tempMaf.";";
+			    $selectedVariantLine .= $frequencyDb."=".$tempMaf.";";
+			}
+		    }
 		}
 	    }
 	    &TreeAnnotations("SelectFile", \@lineElements, \%selectData, \$selectedVariantLine);
@@ -1219,4 +1237,37 @@ sub AddProgramToMeta {
     my ($base, $script) = (`date +%Y%m%d`,`basename $0`);  #Catches current date and script name
     chomp($base,$script);  #Remove \n;
     push(@{$arrayRef}, "##Software=<ID=".$script.",Version=".$vcfParserVersion.",Date=".$base);
+}
+
+
+sub FindLCAF {
+
+##FindLCAF
+    
+##Function : Adds the least common alternative allele frequency to each line
+##Returns  : ""
+##Arguments: $arrayRef, $regexp
+##         : $arrayRef => The INFO array {REF}
+##         : $regexp   => The regexp to used to locate correct ID field
+
+    my $arrayRef = $_[0];
+    my $regexp = $_[1];
+    
+    my $tempMaf;
+    
+    for my $element (@{$arrayRef}) {
+	
+	if ($element =~/$regexp/) {  #Find the key=value field
+	    
+	    my @value = split(/=/, $element);  #Split key=value pair
+	    my @tempMafs = sort {$a <=> $b} grep { $_ ne "." } split(",", $value[1]); #Split on ",", remove entries containing only "." and sort remaining entries numerically
+	    
+	    if (scalar(@tempMafs) > 0) {
+		
+		## We are interested in the least common allele listed for this position. We cannot connect the frequency position in the list and the multiple alternative alleles. So the best we can do is report the least common allele frequency for multiple alternative allels. Unless the least common frequency is lower than the frequency defined as pathogenic for rare disease (usually 0.01) then this will work. In that case this will be a false positive, but it is better than taking the actual MAF which would be a false negative if the pathogenic variant found in the patient(s) has a lower frequency than the MAF.
+		$tempMaf = $tempMafs[0];   
+	    }
+	}
+    }
+    return $tempMaf
 }
