@@ -72,7 +72,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -tmd/--tempDirectory Set the temporary directory for all programs (defaults to "/scratch/SLURM_JOB_ID";supply whole path)
                -jul/--javaUseLargePages Use large page memory. (-XX,hence option considered not stable and are subject to change without notice, but can be consiered when faced with Java Runtime Environment Memory issues)
                -pve/--pythonVirtualEnvironment Pyhton virtualenvironment (defaults to "")
-               -l/--logFile Mip log file (defaults to "{outDataDir}/{familyID}/mip_log/{timestamp}/{scriptname}_timestamp.log")
+               -l/--logFile Mip log file (defaults to "{outDataDir}/{familyID}/mip_log/{timestamp}/{scriptname}_{timestamp}.log")
                -h/--help Display this help message    
                -v/--version Display version of MIP            
 
@@ -142,7 +142,6 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -gvrtsm/--GATKVariantReCalibrationTrainingSetMills GATK VariantRecalibrator Mills training set (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
                  -gvrtsf/--GATKVariantReCalibrationTSFilterLevel The truth sensitivity level at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
                  -gvrevf/--GATKVariantReCalibrationexcludeNonVariantsFile Produce a vcf containing non-variant loci alongside the vcf only containing non-variant loci after GATK VariantRecalibrator (defaults to "false")
-                 -gvrevf/--GATKVariantReCalibrationVCFBreakMulti If multiple alleles are specified in a single record, break the record into multiple lines (defaults to "1" (=yes))
                -pGpT/--pGATKPhaseByTransmission Computes the most likely genotype and phases calls were unamibigous using GATK PhaseByTransmission (defaults to "1" (=yes))
                -pGrP/--pGATKReadBackedPhasing Performs physical phasing of SNP calls, based on sequencing reads using GATK ReadBackedPhasing (defaults to "1" (=yes))
                  -grpqth/--GATKReadBackedPhasingPhaseQualityThreshold The minimum phasing quality score required to output phasing (defaults to "20")
@@ -165,7 +164,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -vcpsfa/--vcfParserSelectFeatureAnnotationColumns Feature columns to use in annotation (defaults to ""; comma sep)
                -pSnE/--pSnpEff Variant annotation using snpEFF (defaults to "1" (=yes))
                  -snep/--snpEffPath Path to snpEff. Mandatory for use of snpEff (defaults to "")
-                 -snesaf/--snpSiftAnnotationFiles Annotation files to use with snpSift (comma sep)
+                 -snesaf2/--snpSiftAnnotationFiles Annotation files to use with snpSift (comma sep)
                  -snesdbnsfp/--snpSiftDbNSFPFile DbNSFP File (defaults to "dbNSFP2.6.txt.gz")
                  -snesdbnsfpa/--snpSiftDbNSFPAnnotations DbNSFP annotations to use with snpSift (defaults to ("SIFT_pred","Polyphen2_HDIV_pred","Polyphen2_HVAR_pred","LRT_pred","MutationTaster_pred","GERP++_NR","GERP++_RS","phastCons100way_vertebrate","1000Gp1_AF","ESP6500_AA_AF"); comma sep)
                -pAnV/--pAnnovar Annotate variants using Annovar (defaults to "1" (=yes))
@@ -384,8 +383,6 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists);  #Arrays for 
 
 &DefineParameters(\%parameter, \@orderParameters, "GATKVariantReCalibrationexcludeNonVariantsFile", "program", "false", "pGATKVariantRecalibration");
 
-&DefineParameters(\%parameter, \@orderParameters, "GATKVariantReCalibrationVCFBreakMulti", "program", 1, "pGATKVariantRecalibration", "nofileEnding", "MAIN", "vcfbreakmulti");
-
  
 &DefineParameters(\%parameter, \@orderParameters, "pGATKPhaseByTransmission", "program", 1, "MIP", "phtr_", "Phasing");
 
@@ -508,12 +505,12 @@ my ($humanGenomeReferenceSource, $humanGenomeReferenceVersion, $humanGenomeRefer
 
 my (@contigs);  #Holds all contigs, not just chromosomes
 
-my (%infile, %inDirPath, %infilesLaneNoEnding, %lane, %infilesBothStrandsNoEnding, %jobID, %sampleInfo); 
+my (%infile, %inDirPath, %infilesLaneNoEnding, %lane, %infilesBothStrandsNoEnding, %jobID, %sampleInfo, %fileInfo); 
 
 
 ####Staging/Sanity Check Area 
 
-##Capture kits supported from pedigree file.
+##Capture kit aliases supported from pedigree file.
 my %supportedCaptureKit = (
     'Nimblegen_SeqCapEZExome.V2' => "Nimblegen_SeqCapEZExome.V2.GenomeReferenceSourceVersion_targets.bed",
     'Nimblegen_SeqCapEZExome.V3' => "Nimblegen_SeqCapEZExome.V3.GenomeReferenceSourceVersion_targets.bed",
@@ -521,6 +518,7 @@ my %supportedCaptureKit = (
     'Agilent_SureSelect.V3' => "Agilent_SureSelect.V3.GenomeReferenceSourceVersion_targets.bed",
     'Agilent_SureSelect.V4' => "Agilent_SureSelect.V4.GenomeReferenceSourceVersion_targets.bed",
     'Agilent_SureSelect.V5' => "Agilent_SureSelect.V5.GenomeReferenceSourceVersion_targets.bed",
+    'Agilent_SureSelectCRE.V1' => "Agilent_SureSelectCRE.V1.GenomeReferenceSourceVersion_targets.bed",
     'Latest' => "Agilent_SureSelect.V5.GenomeReferenceSourceVersion_targets.bed",
     );
 
@@ -622,7 +620,6 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'gvrtsm|GATKVariantReCalibrationTrainingSetMills:s' => \$parameter{'GATKVariantReCalibrationTrainingSetMills'}{'value'},  #GATK VariantRecalibrator resource
 	   'gvrtsf|GATKVariantReCalibrationTSFilterLevel:s' => \$parameter{'GATKVariantReCalibrationTSFilterLevel'}{'value'},  #Truth sensativity level
 	   'gvrevf|GATKVariantReCalibrationexcludeNonVariantsFile:s' => \$parameter{'GATKVariantReCalibrationexcludeNonVariantsFile'}{'value'},  #Produce a vcf containing non-variant loci alongside the vcf only containing non-variant loci after GATK VariantRecalibrator (defaults to "false")
-	   'gvrevf|GATKVariantReCalibrationVCFBreakMulti:n' => \$parameter{'GATKVariantReCalibrationVCFBreakMulti'}{'value'},
 	   'pGpT|pGATKPhaseByTransmission:n' => \$parameter{'pGATKPhaseByTransmission'}{'value'},  #GATK PhaseByTransmission to produce phased genotype calls
 	   'pGrP|pGATKReadBackedPhasing:n' => \$parameter{'pGATKReadBackedPhasing'}{'value'},  #GATK ReadBackedPhasing
 	   'grpqth|GATKReadBackedPhasingPhaseQualityThreshold:n' => \$parameter{'GATKReadBackedPhasingPhaseQualityThreshold'}{'value'},  #quality score required to output phasing
@@ -643,7 +640,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'vcpsfa|vcfParserSelectFeatureAnnotationColumns:s'  => \@{$parameter{'vcfParserSelectFeatureAnnotationColumns'}{'value'}},  #Comma separated list
 	   'snep|snpEffPath:s'  => \$parameter{'snpEffPath'}{'value'},  #path to snpEff directory
 	   'pSnE|pSnpEff:n' => \$parameter{'pSnpEff'}{'value'},
-	   'snesaf|snpSiftAnnotationFiles:s'  => \@{$parameter{'snpSiftAnnotationFiles'}{'value'}},  #Comma separated list
+	   'snesaf2|snpSiftAnnotationFiles:s'  => \$parameter{'snpSiftAnnotationFiles'}{'value'},  #Comma separated list hash entry
 	   'snesdbnsfp|snpSiftDbNSFPFile:s'  => \$parameter{'snpSiftDbNSFPFile'}{'value'},  #DbNSFP file
 	   'snesdbnsfpa|snpSiftDbNSFPAnnotations:s'  => \@{$parameter{'snpSiftDbNSFPAnnotations'}{'value'}},  #Comma separated list
 	   'pAnV|pAnnovar:n' => \$parameter{'pAnnovar'}{'value'},  #Performs annovar filter gene, region and filter analysis
@@ -705,7 +702,7 @@ foreach my $orderParameterElement (@orderParameters) {
     
 ##3 type of variables: MIP, path or program/program_parameters each is handled in the &AddToScriptParameter subroutine.
 
-    &AddToScriptParameter(\%parameter, \%scriptParameter, \%sampleInfo, \%referenceFileEndings, \@broadcasts, $orderParameterElement, $parameter{$orderParameterElement}{'value'}, $parameter{$orderParameterElement}{'type'}, $parameter{$orderParameterElement}{'default'}, $parameter{$orderParameterElement}{'associatedProgram'}, $parameter{$orderParameterElement}{'existsCheck'}, $parameter{$orderParameterElement}{'programNamePath'});
+    &AddToScriptParameter(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%referenceFileEndings, \@broadcasts, $orderParameterElement, $parameter{$orderParameterElement}{'value'}, $parameter{$orderParameterElement}{'type'}, $parameter{$orderParameterElement}{'default'}, $parameter{$orderParameterElement}{'associatedProgram'}, $parameter{$orderParameterElement}{'existsCheck'}, $parameter{$orderParameterElement}{'programNamePath'});
    
     ##Special case for parameters that are dependent on other parameters values
     if ($orderParameterElement eq "outDataDir") {  #Set defaults depending on $scriptParameter{'outDataDir'} value that now has been set
@@ -762,7 +759,6 @@ for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs
 ##Compares the number of elements in two arrays and exits if the elements are not equal
 &CompareArrayElements(\@{$scriptParameter{'sampleIDs'}}, \@{$scriptParameter{'inFilesDirs'}}, "sampleIDs", "inFileDirs");
 
-
 ##picardToolsMergeSamFilesPrevious
 if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
     
@@ -800,7 +796,7 @@ if ($scriptParameter{'pVCFParser'} > 0) {
 ##pSnpEff
 if ($scriptParameter{'pSnpEff'} > 0) {
 
-    &DefineArrayParameters(\%parameter, \%scriptParameter, \@{$parameter{'snpSiftAnnotationFiles'}{'value'}}, \@orderParameters, \@broadcasts, "snpSiftAnnotationFiles", "path", "yes", "pSnpEff", "file");  #"yes" added to enable addition of default features in &AddToScriptParameters
+    &DefineHashParameters(\%parameter, \%scriptParameter, \@orderParameters, \@broadcasts, "snpSiftAnnotationFiles", "path", "yes", "pSnpEff", "file");
     &DefineArrayParameters(\%parameter, \%scriptParameter, \@{$parameter{'snpSiftDbNSFPAnnotations'}{'value'}}, \@orderParameters, \@broadcasts, "snpSiftDbNSFPAnnotations", "path", "yes", "pSnpEff", "");  #"yes" added to enable addition of default features in &AddToScriptParameters  
 }
 
@@ -1251,7 +1247,7 @@ if ($scriptParameter{'pSnpEff'} > 0) {  #Run snpEff. Done per family
     $logger->info("[SnpEff]\n");
 
     &CheckBuildDownLoadPreRequisites(\%parameter, \%scriptParameter, \%supportedCosmidReference, "SnpEff");
-    &SnpEff(\%parameter, \%scriptParameter, \%sampleInfo, $scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
+    &SnpEff(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, $scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 }
 
 if ($scriptParameter{'pAnnovar'} > 0) {  #Run Annovar. Done per family
@@ -2394,7 +2390,7 @@ sub Annovar {
 	##Merge vcf files to 1 
 	my @mitochondria = ("vcf.".${$scriptParameterHashRef}{'annovarGenomeBuildVersion'}."_multianno", "GRCh37_MT_multianno");
 
-	&CombineVariants(\%{$scriptParameterHashRef}, $FILEHANDLE, \@mitochondria, ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.$analysisType.".", ".vcf", ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf");
+	&ConcatenateVCFs(\%{$scriptParameterHashRef}, $FILEHANDLE, \@mitochondria, ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.$analysisType.".", ".vcf", ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf");
 
 	## Copies file from temporary directory.
 	print $FILEHANDLE "## Copy file from temporary directory\n";
@@ -2630,10 +2626,11 @@ sub SnpEff {
     
 ##Function : SnpEff annotates variants from different sources.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $familyID, $aligner, $callType
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $familyID, $aligner, $callType
 ##         : $parameterHashRef       => The parameter hash {REF}
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
+##         : $fileInfoHashRef        => The fileInfo hash {REF}
 ##         : $familyID               => The familyID
 ##         : $aligner                => The aligner used in the analysis
 ##         : $callType               => The variant call type
@@ -2641,14 +2638,15 @@ sub SnpEff {
     my $parameterHashRef = $_[0];
     my $scriptParameterHashRef = $_[1];
     my $sampleInfoHashRef = $_[2];
-    my $familyID = $_[3];  #familyID NOTE: not sampleid 
-    my $aligner = $_[4];
-    my $callType = $_[5];  #SNV,INDEL or BOTH
+    my $fileInfoHashRef = $_[3];
+    my $familyID = $_[4]; 
+    my $aligner = $_[5];
+    my $callType = $_[6];
     
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
 
     ## Set the number of cores to allocate per sbatch job.
-    my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar(@{${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}}) + scalar(@contigs));  #Detect the number of cores to use from (snpSiftAnnotationFiles and dbNSFP (=+1)
+    my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar(keys %{${$fileInfoHashRef}{'pSnpEff'}{'snpSiftAnnotationFiles'}}) + scalar(@contigs));  #Detect the number of cores to use from (snpSiftAnnotationFiles and dbNSFP (=+1)
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "SnpEff", $aligner."/GATK", $callType, $FILEHANDLE, $nrCores, 10, ${$scriptParameterHashRef}{'tempDirectory'});
@@ -2677,21 +2675,30 @@ sub SnpEff {
 
 	## SnpSift Annotation
 	print $FILEHANDLE "## SnpSift Annotation","\n";
+	my $annotationFileCounter = 0;
 
-	for (my $snpSiftAnnotationFilesCounter=0;$snpSiftAnnotationFilesCounter<scalar(@{${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}});$snpSiftAnnotationFilesCounter++) {
+	for my $annotationFile (keys %{${$fileInfoHashRef}{'pSnpEff'}{'snpSiftAnnotationFiles'}}) {
 
-	    &PrintWait(\$snpSiftAnnotationFilesCounter, \$nrCores, \$coreCounter, $FILEHANDLE);
+	    my $annotationFileNoEnding = &RemoveFileEnding(\$annotationFile, ".gz");
+
+	    &PrintWait(\$annotationFileCounter, \$nrCores, \$coreCounter, $FILEHANDLE);
 	    
 	    ## Writes java core commands to filehandle.
 	    &javaCore("Xmx4g", \${$scriptParameterHashRef}{'javaUseLargePages'}, $FILEHANDLE, ${$scriptParameterHashRef}{'tempDirectory'});
 	    
 	    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'snpEffPath'}."/SnpSift.jar ";
 	    print $FILEHANDLE "annotate ";
-	    print $FILEHANDLE ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}[$snpSiftAnnotationFilesCounter]." ";  #Database
+	    print $FILEHANDLE "-name SnpSift_ ";  #Prepend 'str' to all annotated INFO fields 
+	    if (defined(${$fileInfoHashRef}{'pSnpEff'}{'snpSiftAnnotationFiles'}{$annotationFile})) {
+
+		print $FILEHANDLE "-info ".join(',', @{${$fileInfoHashRef}{'pSnpEff'}{'snpSiftAnnotationFiles'}{$annotationFile}})." ";  #Database
+	    }
+	    print $FILEHANDLE ${$scriptParameterHashRef}{'referencesDir'}."/".$annotationFile." ";  #Database
 	    print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$infileEnding.$callType.$analysisType.".vcf ";  #Infile
 	    print $FILEHANDLE "| ";  #Pipe
 	    print $FILEHANDLE "perl ".${$scriptParameterHashRef}{'inScriptDir'}."/vcfParser.pl ";  #Parses the vcf output
-	    print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.$analysisType."_".${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}[$snpSiftAnnotationFilesCounter]." &","\n\n";  #outfile	       
+	    print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.$analysisType."_".$annotationFileNoEnding." &","\n\n";  #outfile
+	    $annotationFileCounter++;  #Increment counter
 	}
 
 	## SnpSift dbNSFP
@@ -2703,7 +2710,7 @@ sub SnpEff {
 
 	    for (my $contigsCounter=0;$contigsCounter<scalar(@contigs);$contigsCounter++) {
 		
-		$combinedNrCores = scalar(@{${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}}) + $contigsCounter;
+		$combinedNrCores = $annotationFileCounter + $contigsCounter;
 
 		&PrintWait(\$combinedNrCores, \$nrCores, \$coreCounter, $FILEHANDLE);
 
@@ -2712,13 +2719,13 @@ sub SnpEff {
 		
 		print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'snpEffPath'}."/SnpSift.jar ";
 		print $FILEHANDLE "dbnsfp ";
-		print $FILEHANDLE ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'snpSiftDbNSFPFile'}." ";  #DbNSFP file
+		print $FILEHANDLE "-db ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'snpSiftDbNSFPFile'}." ";  #DbNSFP file
 		print $FILEHANDLE "-f ";  #fields to add
 		print $FILEHANDLE join(',', @{${$scriptParameterHashRef}{'snpSiftDbNSFPAnnotations'}})." ";  #Databases
 		print $FILEHANDLE "<( ";  #Pipe into SnpSift
 		print $FILEHANDLE "cat ";  #Read infile
 		print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$infileEnding.$callType.$analysisType.".vcf ";  #Infile
-		print $FILEHANDLE "| ";
+		print $FILEHANDLE "| ";  #Pipe
 
 		## Writes java core commands to filehandle.
 		&javaCore("Xmx500m", \${$scriptParameterHashRef}{'javaUseLargePages'}, $FILEHANDLE, ${$scriptParameterHashRef}{'tempDirectory'});
@@ -2733,21 +2740,12 @@ sub SnpEff {
 	    
 	    ## Merge dbNSFP splitted vcfs 
 	    print $FILEHANDLE "## Merge dbNSFP splitted vcfs","\n";
-	    ## Writes java core commands to filehandle.
-	    &javaCore("Xmx4g", \${$scriptParameterHashRef}{'javaUseLargePages'}, $FILEHANDLE, ${$scriptParameterHashRef}{'tempDirectory'});
 
-	    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'snpEffPath'}."/SnpSift.jar ";
-	    print $FILEHANDLE "split -j ";  #Joinf VCFs together
-
-	    for (my $contigsCounter=0;$contigsCounter<scalar(@contigs);$contigsCounter++) {
-	
-		print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.$analysisType."_".$contigs[$contigsCounter]."_dbnsfp.vcf ";  #outfiles
-	    }
-	    print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.$analysisType."_dbnsfp.vcf ","\n\n";  #Merged outfile	  
+	    &ConcatenateVCFs(\%{$scriptParameterHashRef}, $FILEHANDLE, \@contigs, ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.$analysisType."_", "_dbnsfp.vcf", ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.$analysisType."_dbnsfp.vcf", "reOrderHeader");	  
 	}
 
-	## Merge vcf files to 1 
-	print $FILEHANDLE "## GATK CombineVariants","\n";
+	## GATK CombineVariants
+	print $FILEHANDLE "## GATK CombineVariants","\n";  #We will loose the AD:PL info but there is currently no way around this usng bcftools, snpSift split -j
 	
 	## Writes java core commands to filehandle.
 	&javaCore("Xmx4g", \${$scriptParameterHashRef}{'javaUseLargePages'}, $FILEHANDLE, ${$scriptParameterHashRef}{'tempDirectory'});
@@ -2756,16 +2754,17 @@ sub SnpEff {
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-T CombineVariants ";  #Type of analysis to run
 	print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
+	print $FILEHANDLE "-genotypeMergeOptions UNSORTED ";  #Take the genotypes in any order. Should be fine since the same order and number of samples exists in all files
+	for my $annotationFile (keys %{${$fileInfoHashRef}{'pSnpEff'}{'snpSiftAnnotationFiles'}}) {
 
-	for (my $snpSiftAnnotationFilesCounter=0;$snpSiftAnnotationFilesCounter<scalar(@{${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}});$snpSiftAnnotationFilesCounter++) {
-	    
-	    print $FILEHANDLE "-V: ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.$analysisType."_".${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}[$snpSiftAnnotationFilesCounter]." ";
+	    my $annotationFileNoEnding = &RemoveFileEnding(\$annotationFile, ".gz");
+	    print $FILEHANDLE "-V: ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.$analysisType."_".$annotationFileNoEnding." ";
 	}
 	if (scalar(@{${$scriptParameterHashRef}{'snpSiftDbNSFPAnnotations'}}) > 0) { #DbNSFP processed
 	    
 	    print $FILEHANDLE "-V: ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.$analysisType."_dbnsfp.vcf ";
 	}
-	print $FILEHANDLE "-o ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf", "\n\n";  #outfile
+	print $FILEHANDLE "-o ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.$analysisType.".vcf ", "\n\n";  #OutFile
 
 	## Copies file from temporary directory.
 	print $FILEHANDLE "## Copy file from temporary directory\n";
@@ -2936,7 +2935,7 @@ sub VariantEffectPredictor {
     }
     print $FILEHANDLE "wait", "\n\n";
 
-    ## Concatenate vcf files to 1
+    ## Combine vcf files to 1
     &CombineVariants(\%{$scriptParameterHashRef}, $FILEHANDLE, \@contigs, ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType."_", ".vcf", ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf");
 
     ## Copies file from temporary directory.
@@ -3124,20 +3123,12 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "-L ".$contigIntervalListFile." ";#Target list file (merged or original)
 	print $FILEHANDLE "-env ";  #Don't include loci found to be non-variant after the subsetting procedure. 
 	print $FILEHANDLE "-V: ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType."_filtered.vcf ";  #InFile
-	#print $FILEHANDLE "-o ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf ";  #OutFile
 
 	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDCounter++) {  #For all sampleIDs
 		
 	    print $FILEHANDLE "-sn ".${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter]." ";  #Include genotypes from this sample
 	}
-	print $FILEHANDLE "-o /dev/stdout ";  #OutStream
-	
-	if (${$scriptParameterHashRef}{'GATKVariantReCalibrationVCFBreakMulti'}) {
-
-	    print $FILEHANDLE "| ";  #Pipe
-	    print $FILEHANDLE "vcfbreakmulti ";  #If multiple alleles are specified in a single record, break the record into multiple lines, preserving allele-specific INFO fields.
-	    print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf ";  #OutFile
-	}
+	print $FILEHANDLE "-o ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf ";  #OutFile
 	print $FILEHANDLE " &"; 
 	
 	## Produces another vcf file containing non-variant loci (useful for example in MAF comparisons), but is not used downstream in MIP
@@ -3172,7 +3163,7 @@ sub GATKVariantReCalibration {
     ## Copies file from temporary directory.
     print $FILEHANDLE "## Copy file from temporary directory\n";
     &MigrateFileFromTemp(${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf*", $outFamilyDirectory."/", $FILEHANDLE);
-    &MigrateFileFromTemp($intermediarySampleDirectory."/".$familyID.$outfileEnding.$callType.".intervals.tranches.pdf", $outFamilyDirectory."/", $FILEHANDLE);
+    &MigrateFileFromTemp($intermediarySampleDirectory."/".$familyID.$infileEnding.$callType.".intervals.tranches.pdf", $outFamilyDirectory."/", $FILEHANDLE);
     print $FILEHANDLE "wait", "\n\n";
 
     &RemoveDirectory(\${$scriptParameterHashRef}{'tempDirectory'}, $FILEHANDLE);
@@ -3181,7 +3172,7 @@ sub GATKVariantReCalibration {
     	
     if ( (${$scriptParameterHashRef}{'pGATKVariantRecalibration'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
-	##Collect QC metadata info for later use
+	## Collect QC metadata info for later use
 	&SampleInfoQC(\%sampleInfo, $familyID, "noSampleID", "pedigreeCheck", "NoInfile", $outFamilyDirectory, $familyID.$outfileEnding.$callType.".vcf", "infileDependent");  #"noSampleID is used to select correct keys for %sampleInfo"
 	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'MostCompleteVCF'}{'Path'} = $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf";	
 	
@@ -5990,7 +5981,7 @@ sub BuildPTCHSMetricPreRequisites {
 ##Arguments: $parameterHashRef, $scriptParameterHashRef, $referenceFileEndingsHashRef, $familyID, $aligner, $program, $FILEHANDLE
 ##         : $parameterHashRef            => The parameter hash {REF}
 ##         : $scriptParameterHashRef      => The active parameters for this analysis hash {REF}
-##         : $referenceFileEndingsHashRef => The associated reference file endings 
+##         : $referenceFileEndingsHashRef => The associated reference file endings {REF}
 ##         : $familyID                    => Family ID
 ##         : $aligner                     => The aligner used in the analysis
 ##         : $program                     => The program under evaluation
@@ -6429,7 +6420,7 @@ sub DownloadReference {
 
     if (${$parameterHashRef}{$parameterName}{'buildFile'} eq 1) {  #Reference need to be built a.k.a downloaded
 	
-	##Use $parameter instead of $scriptParameter to cater for annotation files that are arrays and not supplied as flag => value
+	## Use $parameter instead of $scriptParameter to cater for annotation files that are arrays and not supplied as flag => value
 	if (defined(${$scriptParameterHashRef}{$parameterName})) {
 
 	    $logger->warn("Will try to download ".${$scriptParameterHashRef}{$parameterName}." before executing ".$$programRef."\n");
@@ -6443,6 +6434,7 @@ sub DownloadReference {
 	print $FILEHANDLE "cosmid ";  #Database download manager
 	print $FILEHANDLE "clone ";  #Clone resource
 	print $FILEHANDLE ${$supportedCosmidReferenceHashRef}{$parameterName}{'cosmidName'};  #The actual reference
+
 	unless (${$supportedCosmidReferenceHashRef}{$parameterName}{'version'} eq "latest") {  #Version to download
 
 	    print $FILEHANDLE "#".${$supportedCosmidReferenceHashRef}{$parameterName}{'version'},
@@ -6451,7 +6443,7 @@ sub DownloadReference {
 
 	print $FILEHANDLE "deactivate ", "\n\n";  #Deactivate python environment
 	
-	##Check if reference comes decompressed or not
+	## Check if reference comes decompressed or not
 	if (${$supportedCosmidReferenceHashRef}{$parameterName}{'compressedSwitch'} eq "compressed") {
 
 	    print $FILEHANDLE "gzip ";
@@ -6474,11 +6466,11 @@ sub DownloadReference {
 	## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
 	&PrintCheckExistandMoveFile($FILEHANDLE, $intendedFilePathRef, $temporaryFilePathRef);
 	
-	#Remove temporary Cosmid resources directory
+	## Remove temporary Cosmid resources directory
 	print $FILEHANDLE "rm -rf ";
 	print $FILEHANDLE $$cosmidResourceDirectoryRef."/".${$supportedCosmidReferenceHashRef}{$parameterName}{'cosmidName'}."/;", "\n\n";
 
-	#Remove temporary Cosmid ".cosmid.yaml" file
+	## Remove temporary Cosmid ".cosmid.yaml" file
 	print $FILEHANDLE "rm ";
 	print $FILEHANDLE $$cosmidResourceDirectoryRef."/.cosmid.yaml", "\n\n";
 	
@@ -6659,7 +6651,7 @@ sub ReadPlinkPedigreeFile {
 ##         : $parameterHashRef            => The parameter hash {REF}
 ##         : $scriptParameterHashRef      => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef           => Info on samples and family hash {REF}
-##         : $referenceFileEndingsHashRef => The associated reference file endings
+##         : $referenceFileEndingsHashRef => The associated reference file endings {REF}
 ##         : $supportedCaptureKitHashRef  => The supported capture kits hash {REF}
 ##         : $filePath                    => The pedigree file 
 ###FORMAT: FamliyID\tSampleID\tFather\tMother\tSex(1=male; 2=female; other=unknown)\tPhenotype(-9 missing, 0 missing, 1 unaffected, 2 affected)..n
@@ -6755,24 +6747,22 @@ sub ReadPlinkPedigreeFile {
 			## Detects if there are elements in arrayQueryRef that are not present in scalarQueryRef or arrayToCheckRef. If unique adds the unique element to arrayToCheckRef.
 			&CheckUniqueArrayElement(\@{ ${$sampleInfoHashRef}{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]} }, \@elementInfo);  #Check if there are any new info and add it to sampleInfo if so. 
 		    }
-		    if (${$sampleInfoHashRef}{$familyID}{$sampleID}{'Capture_kit'}) {  #Add latest capture kit for each individual
+		    if (${$sampleInfoHashRef}{$familyID}{$sampleID}{'Capture_kit'} && $pedigreeFileElements[$sampleElementsCounter] eq "Capture_kit") {  #Add latest capture kit for each individual
 			
 			my $captureKit = ${$sampleInfoHashRef}{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]}[-1];  #Use only the last capture kit since it should be the most interesting
 			
 			if (${$supportedCaptureKitHashRef}{$captureKit}) {
-
-			    if ($userExomeTargetBedInfileListsSwitch == 0) {
-				    
-				${$scriptParameterHashRef}{$familyID}{$sampleID}{'exomeTargetBedInfileLists'} = ${$supportedCaptureKitHashRef}{$captureKit}.${$referenceFileEndingsHashRef}{'exomeTargetBedInfileLists'};  #Capture kit target in file_list
-			    }
-			    if ($userExomeTargetPaddedBedInfileListSwitch == 0) {
-				
-				${$scriptParameterHashRef}{$familyID}{$sampleID}{'exomeTargetPaddedBedInfileLists'} = ${$supportedCaptureKitHashRef}{$captureKit}.${$referenceFileEndingsHashRef}{'exomeTargetPaddedBedInfileLists'};  #Capture kit padded target infile_list                               
-			    }
-			    if ($userExomeTargetPaddedBedIntervalListSwitch == 0) {
-				
-				${$scriptParameterHashRef}{$familyID}{$sampleID}{'GATKTargetPaddedBedIntervalLists'} = ${$supportedCaptureKitHashRef}{$captureKit}.${$referenceFileEndingsHashRef}{'GATKTargetPaddedBedIntervalLists'};  #Capture kit padded target interval_list                          
-			    }
+			    
+			    
+			    ${$scriptParameterHashRef}{$familyID}{$sampleID}{'exomeTargetBedInfileLists'} = &AddCaptureKit(\%{$referenceFileEndingsHashRef}, $captureKit, "exomeTargetBedInfileLists", \%{$supportedCaptureKitHashRef}, $userExomeTargetBedInfileListsSwitch);  #Capture kit target infile_list 
+			    ${$scriptParameterHashRef}{$familyID}{$sampleID}{'exomeTargetPaddedBedInfileLists'} = &AddCaptureKit(\%{$referenceFileEndingsHashRef}, $captureKit, "exomeTargetPaddedBedInfileLists", \%{$supportedCaptureKitHashRef}, $userExomeTargetPaddedBedInfileListSwitch);  #Capture kit padded target infile_list                             	
+			    ${$scriptParameterHashRef}{$familyID}{$sampleID}{'GATKTargetPaddedBedIntervalLists'} = &AddCaptureKit(\%{$referenceFileEndingsHashRef}, $captureKit, "GATKTargetPaddedBedIntervalLists", \%{$supportedCaptureKitHashRef}, $userExomeTargetPaddedBedIntervalListSwitch);  #Capture kit padded target interval_list                          
+			}
+			else {  #Not a supported capture kit alias
+			    
+			    ${$scriptParameterHashRef}{$familyID}{$sampleID}{'exomeTargetBedInfileLists'} = &AddCaptureKit(\%{$referenceFileEndingsHashRef}, $captureKit, "exomeTargetBedInfileLists", \%{$supportedCaptureKitHashRef}, $userExomeTargetBedInfileListsSwitch);  #Capture kit target infile_list 
+			    ${$scriptParameterHashRef}{$familyID}{$sampleID}{'exomeTargetPaddedBedInfileLists'} = &AddCaptureKit(\%{$referenceFileEndingsHashRef}, $captureKit, "exomeTargetPaddedBedInfileLists", \%{$supportedCaptureKitHashRef}, $userExomeTargetPaddedBedInfileListSwitch);  #Capture kit padded target infile_list                             	
+			    ${$scriptParameterHashRef}{$familyID}{$sampleID}{'GATKTargetPaddedBedIntervalLists'} = &AddCaptureKit(\%{$referenceFileEndingsHashRef}, $captureKit, "GATKTargetPaddedBedIntervalLists", \%{$supportedCaptureKitHashRef}, $userExomeTargetPaddedBedIntervalListSwitch);  #Capture kit padded target interval_list 
 			}
 		    }
 		}
@@ -6814,7 +6804,7 @@ sub DefinePlinkPedigree {
 }
 
 
-sub AddToJobID {
+sub AddTJobID {
 
 ##AddToJobID
     
@@ -7250,16 +7240,26 @@ sub CollectInfiles {
     for (my $inputDirectoryCounter=0;$inputDirectoryCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$inputDirectoryCounter++) {  #Collects inputfiles govern by sampleIDs
 	
 	my @infiles = `cd ${$scriptParameterHashRef}{'inFilesDirs'}[ $inputDirectoryCounter ];ls *.fastq*;`;  #'cd' to input dir and collect fastq files and fastq.gz files
-	chomp(@infiles);    #Remove newline from every entry in array
+	chomp(@infiles);   #Remove newline from every entry in array
 
 	if (scalar(@infiles) == 0) {  #No "*.fastq*" infiles
 	    
-	    $logger->fatal("Could not find any '.fastq' files in supplied infiles directory ".${$scriptParameterHashRef}{'inFilesDirs'}[ $inputDirectoryCounter ], "\n");
+	    $logger->fatal("Could not find any '.fastq' files in supplied infiles directory ".${$scriptParameterHashRef}{'inFilesDirs'}[$inputDirectoryCounter], "\n");
 	    exit;
+	}
+	foreach my $infile (@infiles) {  #Check that inFileDirs/infile contains sampleID in filename
+
+	    unless ( $infile =~/${$scriptParameterHashRef}{'sampleIDs'}[$inputDirectoryCounter]/) {
+
+		$logger->fatal("Could not detect sampleID: ".${$scriptParameterHashRef}{'sampleIDs'}[$inputDirectoryCounter]." in supplied infile: ".${$scriptParameterHashRef}{'inFilesDirs'}[$inputDirectoryCounter]."/".$infile, "\n");
+		$logger->fatal("Check that the order of supplied: '--sampleIDs' and '--inFilesDirs' correlate.", "\n");
+		$logger->fatal("NOTE: SampleIDs read from pedigree are lexiographically sorted and for instance '--inFileDirs' supplied need to be supplied in the same order to correlate", "\n");
+		exit;
+	    }
 	}
 	$logger->info("Sample ID: ".${$scriptParameterHashRef}{'sampleIDs'}[$inputDirectoryCounter]."\n");
 	$logger->info("\tInputfiles:\n");
-	##Log each file from platform
+	## Log each file from platform
 	foreach my $file (@infiles) {
 
 	    $logger->info("\t\t", $file, "\n");  #Indent for visability
@@ -7568,6 +7568,49 @@ sub CheckFileNameExists {
 }
 
 
+sub DefineHashParameters {
+
+##DefineHashParameters
+    
+##Function : Check if user supplied cmd info and supplies HashParameters to scriptParameters
+##Returns : ""
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $orderParametersArrayRef, $broadcastsArrayRef, $parameterName, $parameterType, $parameterDefault, $associatedPrograms, $parameterExistsCheck
+##         : $parameterHashRef        => The parameters hash {REF}
+##         : $scriptParameterHashRef  => The active parameters for this analysis hash
+##         : $orderParametersArrayRef => Order of addition to parameter array {REF}
+##         : $broadcastsArrayRef      => Holds the parameters info for broadcasting later
+##         : $parameterName           => MIP parameter to evaluate
+##         : $parameterType           => Type of MIP parameter
+##         : $parameterDefault        => The parameter default value
+##         : $associatedPrograms      => Programs that use the parameter. Comma separated string
+##         : $parameterExistsCheck    => Check if intendent file exists in reference directory
+
+    my $parameterHashRef = $_[0];
+    my $scriptParameterHashRef = $_[1];
+    my $orderParametersArrayRef = $_[2];
+    my $broadcastsArrayRef = $_[3];
+    my $parameterName = $_[4];
+    my $parameterType = $_[5];
+    my $parameterDefault = $_[6];
+    my $associatedPrograms = $_[7];
+    my $parameterExistsCheck = $_[8];
+
+    ${$parameterHashRef}{$parameterName}{'hash'} = "yes";  #To separate scalars and arrays from hashes
+
+    if (defined(${$parameterHashRef}{$parameterName}{'value'})) { #Input from cmd 
+
+	${$scriptParameterHashRef}{$parameterName} = ${$parameterHashRef}{$parameterName}{'value'};  #Save cmd supplied info	
+    }
+    else {
+
+	${$parameterHashRef}{$parameterName}{'value'} = "nocmdinput"; #To enable use of subroutine &AddToScriptParameter
+    }
+    push(@{$orderParametersArrayRef}, $parameterName); #Add to enable later evaluation of parameters in proper order & write to MIP log file
+
+    &AddToScriptParameter(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%sampleInfo, \%fileInfo, \%referenceFileEndings, \@{$broadcastsArrayRef}, $parameterName, ${$parameterHashRef}{$parameterName}{'value'}, $parameterType, $parameterDefault, $associatedPrograms, $parameterExistsCheck);
+}
+
+
 sub DefineArrayParameters {
 
 ##DefineArrayParameters
@@ -7605,11 +7648,11 @@ sub DefineArrayParameters {
     }
     else {
 
-	@{${$scriptParameterHashRef}{$parameterName}} = split(',', join(',',@{$arrayRef})); #If user supplied parameter a comma separated list
+	@{${$scriptParameterHashRef}{$parameterName}} = split(',', join(',', @{$arrayRef})); #If user supplied parameter a comma separated list
     }
     push(@{$orderParametersArrayRef}, $parameterName); #Add to enable later evaluation of parameters in proper order & write to MIP log file
 
-    &AddToScriptParameter(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%sampleInfo, \%referenceFileEndings, \@{$broadcastsArrayRef}, $parameterName, ${$parameterHashRef}{$parameterName}{'value'}[0], $parameterType, $parameterDefault, $associatedPrograms, $parameterExistsCheck);
+    &AddToScriptParameter(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%sampleInfo, \%fileInfo, \%referenceFileEndings, \@{$broadcastsArrayRef}, $parameterName, ${$parameterHashRef}{$parameterName}{'value'}[0], $parameterType, $parameterDefault, $associatedPrograms, $parameterExistsCheck);
 }
 
 
@@ -7712,11 +7755,12 @@ sub AddToScriptParameter {
     
 ##Function : Checks and sets user input or default values to scriptParameters
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $referenceFileEndingsHashRef, $broadcastsArrayRef, $parameterName, $parameterValue, $parameterType, $parameterDefault, @associatedPrograms, $parameterExistsCheck
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoRef, $referenceFileEndingsHashRef, $broadcastsArrayRef, $parameterName, $parameterValue, $parameterType, $parameterDefault, @associatedPrograms, $parameterExistsCheck
 ##         : $parameterHashRef            => Holds all parameters
 ##         : $scriptParameterHashRef      => Holds all set parameter for analysis
 ##         : $sampleInfoHashRef           => Info on samples and family hash {REF}
-##         : $referenceFileEndingsHashRef => The associated reference file endings
+##         : $fileInfoRef                 => The fileInfo hash {REF}
+##         : $referenceFileEndingsHashRef => The associated reference file endings {REF}
 ##         : $broadcastsArrayRef          => Holds the parameters info for broadcasting later
 ##         : $parameterName               => Parameter name
 ##         : $parameterValue              => Parameter value to evaluate
@@ -7728,14 +7772,15 @@ sub AddToScriptParameter {
     my $parameterHashRef = $_[0];
     my $scriptParameterHashRef = $_[1];
     my $sampleInfoHashRef = $_[2];
-    my $referenceFileEndingsHashRef = $_[3];
-    my $broadcastsArrayRef = $_[4];
-    my $parameterName = $_[5];
-    my $parameterValue = $_[6];
-    my $parameterType = $_[7];
-    my $parameterDefault = $_[8];
-    my @associatedPrograms = split(/,/, $_[9]);
-    my $parameterExistsCheck = $_[10];
+    my $fileInfoHashRef = $_[3];
+    my $referenceFileEndingsHashRef = $_[4];
+    my $broadcastsArrayRef = $_[5];
+    my $parameterName = $_[6];
+    my $parameterValue = $_[7];
+    my $parameterType = $_[8];
+    my $parameterDefault = $_[9];
+    my @associatedPrograms = split(/,/, $_[10]);
+    my $parameterExistsCheck = $_[11];
 
 ##Validation##
     #print "parameterName: ".$parameterName, "\n";
@@ -7773,6 +7818,10 @@ sub AddToScriptParameter {
 			    
 			    &SetTargetandAutoBuild(\%parameter, \%{$scriptParameterHashRef}, \@{${$scriptParameterHashRef}{'sampleIDs'}}, \$parameterName, \${$referenceFileEndingsHashRef}{'GATKTargetPaddedBedIntervalLists'});
 			}
+			if ($parameterName eq "snpSiftAnnotationFiles") {
+
+			    &BreakString(\%fileInfo, \${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}, \$parameterName, \$associatedProgram);
+			}
 			if ($parameterName eq "humanGenomeReference") {
 			    
 			    &ParseHumanGenomeReference(\${$scriptParameterHashRef}{'humanGenomeReference'}, \$humanGenomeReferenceVersion, \$humanGenomeReferenceSource, \$humanGenomeReferenceNameNoEnding, \$humanGenomeCompressed);
@@ -7807,11 +7856,12 @@ sub AddToScriptParameter {
 			    
 			    @{${$scriptParameterHashRef}{'vepFeatures'}} = ("refseq", "hgvs", "symbol", "numbers", "sift", "polyphen", "humdiv");  #Set default vep features
 			}
-			elsif ($parameterName eq "snpSiftAnnotationFiles") {  #Input from config file
+			elsif ($parameterName eq "snpSiftAnnotationFiles") {
 			    
-			    @{${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}} = ("dbsnp_138.b37.excluding_sites_after_129.vcf", "dbsnp_138.b37.vcf", "1000G_phase1.indels.b37.vcf", "1000G_phase1.snps.high_confidence.b37.vcf", "ESP6500SI-V2-SSA137.updatedProteinHgvs.snps_indels.vcf");  #Set default snpSiftAnnotationFiles
+			    ${$scriptParameterHashRef}{'snpSiftAnnotationFiles'} = "dbsnp_138.b37.excluding_sites_after_129.vcf.gz:CAF,ALL.wgs.phase3_shapeit2_mvncall_integrated_v5.20130502.sites.vcf.gz:AF,ExAC.r0.1.sites.vep.vcf:AF";  #Set default snpSiftAnnotationFiles
+			    &BreakString(\%fileInfo, \${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}, \$parameterName, \$associatedProgram);
 			}
-			elsif ($parameterName eq "snpSiftDbNSFPAnnotations") {  #Input from config file
+			elsif ($parameterName eq "snpSiftDbNSFPAnnotations") {
     
 			    @{${$scriptParameterHashRef}{'snpSiftDbNSFPAnnotations'}} = ("SIFT_pred", "Polyphen2_HDIV_pred", "Polyphen2_HVAR_pred", "LRT_pred", "MutationTaster_pred", "GERP++_NR", "GERP++_RS", "phastCons100way_vertebrate", "1000Gp1_AF", "ESP6500_AA_AF");  #Set default snpSiftDbNSFPAnnotations
 			}
@@ -7883,13 +7933,17 @@ sub AddToScriptParameter {
 			${$scriptParameterHashRef}{$parameterName} = $parameterValue;
 			&ReadPlinkPedigreeFile(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%sampleInfo, \%referenceFileEndings, \%supportedCaptureKit, ${$scriptParameterHashRef}{'pedigreeFile'});
 		    }
+		    elsif ($parameterName eq "snpSiftAnnotationFiles") {
+
+			&BreakString(\%fileInfo, \${$parameterHashRef}{$parameterName}{'value'}, \$parameterName, \$associatedProgram);
+		    }
 		    else {
 			
 			if ($parameterName eq "humanGenomeReference") {
 			    
 			    &ParseHumanGenomeReference(\${$scriptParameterHashRef}{'humanGenomeReference'}, \$humanGenomeReferenceVersion, \$humanGenomeReferenceSource, \$humanGenomeReferenceNameNoEnding, \$humanGenomeCompressed);
 			}
-			if (defined(${$parameterHashRef}{$parameterName}{'array'})) {  #Do nothing			   
+			if (defined(${$parameterHashRef}{$parameterName}{'array'})) {  #Do nothing
 			}
 			else {
 			    
@@ -7961,6 +8015,12 @@ sub AddToScriptParameter {
 			    
 			    for (my $sampleIDsCounter=0;$sampleIDsCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDsCounter++) {  #All sampleIDs
 				
+				unless (defined(${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDsCounter] }{$parameterName})) {  #No capture kit supplied
+
+				    my $captureKit = &AddCaptureKit(\%{$referenceFileEndingsHashRef}, "Latest", $parameterName, \%supportedCaptureKit, 0);
+				    $logger->warn("Could not detect a supplied capture kit. Will Try to use 'Latest' capture kit: ".$captureKit, "\n");
+				    ${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDsCounter] }{$parameterName} = $captureKit;
+				}
 				 &CheckSupportedFileEnding(\(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDsCounter] }{$parameterName}), \${$referenceFileEndingsHashRef}{$parameterName}, \$parameterName);
 				 &CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDsCounter]}{$parameterName}), \$parameterName, "f", \${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDsCounter]);
 			    
@@ -7970,15 +8030,22 @@ sub AddToScriptParameter {
 			    undef(${$scriptParameterHashRef}{$parameterName});  #Remove parameter to avoid unnecessary print to STDOUT and config
 			}
 		    }
-		    elsif ($parameterName eq "snpSiftAnnotationFiles"){
+                    elsif ($parameterName eq "snpSiftAnnotationFiles"){
 			
 			my %snpEffFile = &DefineSnpEffFiles(\%{$parameterHashRef});
 			my $intendedFilePathRef;
 			
-			for (my $fileNameCounter=0;$fileNameCounter<scalar(@{${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}});$fileNameCounter++) {  #
+			for my $file (keys %{${$fileInfoHashRef}{$associatedProgram}{'snpSiftAnnotationFiles'}}) {
 			    
-			    my $intendedFilePathRef = \(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}[$fileNameCounter]);
-			    &CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, $intendedFilePathRef, \${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}[$fileNameCounter], "f");			    
+			    my $intendedFilePathRef = \(${$scriptParameterHashRef}{'referencesDir'}."/".$file);
+			    &CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, $intendedFilePathRef, \$file, "f");
+
+			    if ($file =~/\.gz$/) {  #Check for tabix index as well
+
+				my $fileIndex = $file.".tbi";
+				my $intendedFilePathRef = \(${$scriptParameterHashRef}{'referencesDir'}."/".$fileIndex);
+				&CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, $intendedFilePathRef, \$fileIndex, "f");
+			    }
 			}
 		    }
 		    elsif ($parameterName eq "annovarTableNames") {
@@ -8022,7 +8089,7 @@ sub AddToScriptParameter {
 			    
 			    &CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName}), \$parameterName, "f");
 
-			    if (${$scriptParameterHashRef}{$parameterName}=~/v(\d+\.\d+)/) {
+			    if (${$scriptParameterHashRef}{$parameterName}=~/v(\d+\.\d+.\d+|\d+\.\d+)/) {
 				
 				${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'database'}{"SelectFile"}{'Version'} = $1;
 			    }
@@ -8043,7 +8110,7 @@ sub AddToScriptParameter {
 			    
 			    &CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName}), \$parameterName, "f");
 			    
-			    if (${$scriptParameterHashRef}{$parameterName}=~/v(\d+\.\d+)/) {
+			    if (${$scriptParameterHashRef}{$parameterName}=~/v(\d+\.\d+.\d+|\d+\.\d+)/) {
 				
 				${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'program'}{"RankVariants"}{'RankModel'}{'Version'} = $1;
 			    }
@@ -9124,6 +9191,7 @@ sub CheckAutoBuild {
     else {
 	
 	if ( (${$parameterHashRef}{$$parameterNameRef}{'buildFile'} eq "yesAutoBuild") || (${$parameterHashRef}{$$parameterNameRef}{'buildFile'} eq 1) ) {  #1 for arrays
+
 	    return "1";  #Flag that autobuild is needed
 	}
 	elsif ( (${$parameterHashRef}{$$parameterNameRef}{'buildFile'} eq "yesAutoDownLoad") || (${$parameterHashRef}{$$parameterNameRef}{'buildFile'} eq 1) ) {
@@ -9475,7 +9543,7 @@ sub PrepareArrayParameters {
     }
     push(@{$orderParametersArrayRef}, $parameterName);  #Add to enable later evaluation of parameters in proper order & write to master file
   
-    &AddToScriptParameter(\%{$parameterHashRef}, \%scriptParameter, \%sampleInfo, \%referenceFileEndings, \@{$broadcastsArrayRef}, $parameterName, ${$parameterHashRef}{$parameterName}{'value'}, $parameterType, $parameterDefault, $associatedPrograms, $parameterExistsCheck);
+    &AddToScriptParameter(\%{$parameterHashRef}, \%scriptParameter, \%sampleInfo, \%fileInfo, \%referenceFileEndings, \@{$broadcastsArrayRef}, $parameterName, ${$parameterHashRef}{$parameterName}{'value'}, $parameterType, $parameterDefault, $associatedPrograms, $parameterExistsCheck);
 }
 
 
@@ -9719,7 +9787,7 @@ sub SetTargetFileGeneralBuildParameter {
 ##Arguments: $parameterHashRef, $scriptParameterHashRef, $referenceFileEndingsHashRef, $targetfileRef, $parameterName, $sampleIDBuildFileRef, $sampleIDBuildFileNoEndingRef, $sampleIDRef
 ##         : $parameterHashRef             => The parameter hash {REF}
 ##         : $scriptParameterHashRef       => The active parameters for this analysis hash {REF}
-##         : $referenceFileEndingsHashRef  => The associated reference file endings 
+##         : $referenceFileEndingsHashRef  => The associated reference file endings {REF}
 ##         : $targetfileRef                => Final file {REF}
 ##         : $parameterName                => MIP parameter
 ##         : $sampleIDBuildFileRef         => File that will be created {REF}
@@ -10231,6 +10299,59 @@ sub CheckMostCompleteAndRemoveFile {
 }
 
 
+sub ConcatenateVCFs {
+
+##ConcatenateVCFs
+    
+##Function : Concatenate VCFs
+##Returns  : ""
+##Arguments: $scriptParameterHashRef, $FILEHANDLE, $arrayRef, $infilePrefix, $infilePostfix, $outfile, $reorderSwith
+##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $FILEHANDLE             => SBATCH script FILEHANDLE to print to
+##         : $arrayRef               => Holding the number and part of file names to be combined
+##         : $infilePrefix           => Will be combined with the each array element
+##         : $infilePostfix          => Will be combined with the each array element
+##         : $outfile                => The combined outfile
+##         : $reorderSwith           => Reorder header
+    
+    my $scriptParameterHashRef = $_[0];
+    my $FILEHANDLE = $_[1];
+    my $arrayRef = $_[2];
+    my $infilePrefix = $_[3];
+    my $infilePostfix = $_[4];
+    my $outfile = $_[5];
+    my $reorderSwith = $_[6];
+    
+    unless (defined($infilePostfix)) {
+	
+	$infilePostfix = "";  #No postfix
+    }
+    unless (defined($outfile)) {
+	
+	$outfile = $infilePrefix.".vcf";  
+    }
+    print $FILEHANDLE "## SNPSift Split -j","\n";
+
+    ## Writes java core commands to filehandle.
+    &javaCore("Xmx4g", \${$scriptParameterHashRef}{'javaUseLargePages'}, $FILEHANDLE, ${$scriptParameterHashRef}{'tempDirectory'});
+    
+    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'snpEffPath'}."/SnpSift.jar ";
+    print $FILEHANDLE "split -j ";  #Joinf VCFs together
+    
+    for (my $elementCounter=0;$elementCounter<scalar(@{$arrayRef});$elementCounter++) {
+	
+	print $FILEHANDLE $infilePrefix.${$arrayRef}[$elementCounter].$infilePostfix." ";  #files to combined
+    }
+    if ( (defined($_[6])) && $reorderSwith eq "reOrderHeader") {
+
+	print $FILEHANDLE "| ";  #Pipe
+	print $FILEHANDLE "perl ".${$scriptParameterHashRef}{'inScriptDir'}."/vcfParser.pl ";  #Parses the vcf output	
+    }
+    
+    print $FILEHANDLE "> ".$outfile, "\n\n";  #OutFile
+}
+
+
 sub CombineVariants {
 
 ##CombineVariants
@@ -10274,7 +10395,56 @@ sub CombineVariants {
 	
 	print $FILEHANDLE "-V: ".$infilePrefix.${$arrayRef}[$elementCounter].$infilePostfix." ";  #files to combined
     }
+    print $FILEHANDLE "-genotypeMergeOptions UNSORTED ";  #Take the genotypes in any order. Should be fine since the same order and number of samples exists in all files
+
     print $FILEHANDLE "-o ".$outfile, "\n\n";  #OutFile
+}
+
+
+sub ConcatenateVariants {
+
+##ConcatenateVariants
+    
+##Function : Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
+##Returns  : ""
+##Arguments: $scriptParameterHashRef, $FILEHANDLE, $arrayRef, $infilePrefix, $infilePostfix, $outfile
+##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $FILEHANDLE             => SBATCH script FILEHANDLE to print to
+##         : $arrayRef               => Holding the number and part of file names to be combined
+##         : $infilePrefix           => Will be combined with the each array element
+##         : $infilePostfix          => Will be combined with the each array element
+##         : $outfile                => The combined outfile
+
+    my $scriptParameterHashRef = $_[0];
+    my $FILEHANDLE = $_[1];
+    my $arrayRef = $_[2];
+    my $infilePrefix = $_[3];
+    my $infilePostfix = $_[4];
+    my $outfile = $_[5];
+    
+    unless (defined($infilePostfix)) {
+	
+	$infilePostfix = "";  #No postfix
+    }
+    unless (defined($outfile)) {
+	
+	$outfile = $infilePrefix.".vcf";  
+    }
+    print $FILEHANDLE "## GATK CatVariants","\n";
+
+    ## Writes java core commands to filehandle.
+    &javaCore("Xmx4g", \${$scriptParameterHashRef}{'javaUseLargePages'}, $FILEHANDLE);
+
+    print $FILEHANDLE "-cp ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar org.broadinstitute.gatk.tools.CatVariants ";  #Type of analysis to run
+    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
+    print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
+    print $FILEHANDLE "-assumeSorted ";  #assumeSorted should be true if the input files are already sorted
+
+    for (my $elementCounter=0;$elementCounter<scalar(@{$arrayRef});$elementCounter++) {
+	
+	print $FILEHANDLE "-V: ".$infilePrefix.${$arrayRef}[$elementCounter].$infilePostfix." ";  #files to combined
+    }
+    print $FILEHANDLE "-out ".$outfile, "\n\n";  #OutFile
 }
 
 
@@ -10904,12 +11074,85 @@ sub CheckEmailAddress {
 ##         : $emailRef => The email adress
 
     my $emailRef = $_[0];
+
     $$emailRef =~ /[ |\t|\r|\n]*\"?([^\"]+\"?@[^ <>\t]+\.[^ <>\t][^ <>\t]+)[ |\t|\r|\n]*/;
 
     unless (defined($1)) {
 	
 	$logger->fatal("The supplied email: ".$$emailRef." seem to be malformed. ", "\n");
 	exit;
+    }
+}
+
+
+sub BreakString {
+
+##BreakString
+    
+##Function : Breaks the string supplied on format key1:value1_value2,keyN:valueN_valueN,..n . Add key to %fileInfoHashRef and values as array. This enables association of values to key supplied in config or cmd.   
+##Returns  : ""
+##Arguments: $fileInfoHashRef, $parameterValueRef, $parameterName, $associatedProgram
+##         : $fileInfoHashRef   => The fileInfo hash {REF}
+##         : $parameterValueRef => MIP parameter value {REF}
+##         : $parameterName     => MIP parameter name {REF}
+##         : $associatedProgram => The parameters program {REF}
+
+    my $fileInfoHashRef = $_[0];
+    my $parameterValueRef = $_[1];
+    my $parameterNameRef = $_[2];
+    my $associatedProgramRef = $_[3];
+    
+    ## Break string into key value pairs
+    my @fileKeys = split(',', join(',', $$parameterValueRef));
+
+    foreach my $element (@fileKeys) {
+	
+	my @tempArray = split(/:/, $element);
+	@{${$fileInfoHashRef}{$$associatedProgramRef}{$$parameterNameRef}{$tempArray[0]}} = split('_', $tempArray[1]);  #Save infoKey associated with fileName
+    }
+}
+
+
+sub AddCaptureKit {
+
+##AddCaptureKit
+    
+##Function : Adds a capture kit to the scriptParameterHash. If argument $userSuppliedParameterswitchRef it will go a head and add no matter what the swith was.
+##Returns  : "Set capture kit or ''"
+##Arguments: $referenceFileEndingsHashRef, $sampleIDRef, $captureKit, $parameterName, $supportedCaptureKitHashRef, $userSuppliedParameterswitch
+##         : $referenceFileEndingsHashRef    => The associated reference file endings {REF}
+##         : $captureKit                     => The capture kit to add
+##         : $parameterName                  => The parameter name
+##         : $supportedCaptureKitHashRef     => The supported capture kits hash {REF}
+##         : $userSuppliedParameterswitch    => Has user supplied parameter {OPTIONAL}
+
+    my $referenceFileEndingsHashRef = $_[0];
+    my $captureKit = $_[1];
+    my $parameterName = $_[2];
+    my $supportedCaptureKitHashRef = $_[3];
+    my $userSuppliedParameterswitch = $_[4];
+
+    unless (defined($_[4])) {  #No detect supplied capture kit
+
+	if ( defined(${$supportedCaptureKitHashRef}{$captureKit}) ) {  #Supported capture kit alias
+
+	    return  ${$supportedCaptureKitHashRef}{$captureKit}.${$referenceFileEndingsHashRef}{$parameterName};
+	}
+	else {  #Return unchanged capture_kit string
+
+	    return $captureKit.${$referenceFileEndingsHashRef}{$parameterName};
+	}
+    }
+    if ( (defined($_[4])) && ($userSuppliedParameterswitch == 0)) {  #Only add if user supplied no info on parameter
+	
+	if ( defined(${$supportedCaptureKitHashRef}{$captureKit}) ) {  #Supported capture kit alias
+
+	    return  ${$supportedCaptureKitHashRef}{$captureKit}.${$referenceFileEndingsHashRef}{$parameterName};
+	}
+	else {  #Return unchanged capture_kit string
+
+	    return $captureKit.${$referenceFileEndingsHashRef}{$parameterName};
+	}                      
     }
 }
 

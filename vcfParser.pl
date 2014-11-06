@@ -28,7 +28,7 @@ BEGIN {
 
 my ($infile, $outputFormat, $parseVEP, $rangeFeatureFile, $selectFeatureFile, $selectFeatureMatchingColumn, $selectOutfile) = ("", "vcf", 0, 0, 0, "nocmdinput", "nocmdinput");
 my (@metaData, @selectMetaData, @rangeFeatureAnnotationColumns, @selectFeatureAnnotationColumns); 
-my (%geneAnnotation, %consequenceSeverity, %rangeData, %selectData, %snpEffCmd, %tree);
+my (%geneAnnotation, %consequenceSeverity, %rangeData, %selectData, %snpEffCmd, %tree, %metaData);
 
 my ($help, $version) = (0, 0);
 
@@ -56,7 +56,8 @@ if($help) {
     exit;
 }
 
-my $vcfParserVersion = "1.0.0";
+my $vcfParserVersion = "1.1.0";
+
 if($version) {
     
     print STDOUT "\nvcfParser.pl v".$vcfParserVersion, "\n\n";
@@ -103,13 +104,14 @@ if ($selectFeatureFile ne 0) {
 &DefineSnpEffAnnotations();
 &DefineConsequenceSeverity();
 
-&ReadInfileVCF($infile, $selectOutfile);
+&ReadInfileVCF(\%metaData, $infile, $selectOutfile);
 
 ###
 #Sub Routines
 ###
 
 sub DefineSelectData {
+
 ##Defines arbitrary INFO fields based on headers in selectFile
 
     $selectData{'SelectFile'}{'HGNC_symbol'}{'INFO'} = q?##INFO=<ID=HGNC_symbol,Number=.,Type=String,Description="The HGNC gene symbol">?;
@@ -124,19 +126,32 @@ sub DefineSelectData {
 }
 
 sub DefineSnpEffAnnotations {
-##Defines the snpEff annotations that can be parsed
+
+##Defines the snpEff annotations that can be parsed and modified
     
-    $snpEffCmd{'Frequency'}{'Dbsnp129MAF'}{'File'} = q?dbsnp_\S+.excluding_sites_after_129.vcf?;
-    $snpEffCmd{'Frequency'}{'Dbsnp129MAF'}{'INFO'} = q?##INFO=<ID=Dbsnp129MAF,Number=1,Type=Float,Description="dbSNP excluding sites after 129 minor allele frequency.>?;
-    $snpEffCmd{'Frequency'}{'DbsnpMAF'}{'File'} = q?dbsnp_\d+.\w\d+.vcf?;
-    $snpEffCmd{'Frequency'}{'DbsnpMAF'}{'INFO'} = q?##INFO=<ID=DbsnpMAF,Number=1,Type=Float,Description="MAF in the DbSNP database.">?;
-    $snpEffCmd{'Frequency'}{'1000GMAF'}{'File'} = q?1000G_phase\d+.\S+.\w\d+.vcf?;
-    $snpEffCmd{'Frequency'}{'1000GMAF'}{'INFO'} = q?##INFO=<ID=1000GMAF,Number=1,Type=Float,Description="MAF in the 1000G database.">?;
-    $snpEffCmd{'Frequency'}{'1000GMAF'}{'FIX_INFO'} = q?##INFO=<ID=SB,Number=4,Type=Integer,Description="Per-sample component statistics which comprise the Fisher's Exact Test to detect strand bias.">?;
+    $snpEffCmd{'Frequency'}{'Dbsnp129LCAF'}{'File'} = q?dbsnp_\S+.excluding_sites_after_129.vcf?;
+    $snpEffCmd{'Frequency'}{'Dbsnp129LCAF'}{'INFO'} = q?##INFO=<ID=Dbsnp129LCAF,Number=1,Type=Float,Description="Least common AF in dbSNP excluding sites after 129.>?;
+    $snpEffCmd{'Frequency'}{'Dbsnp129LCAF'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_CAF,Number=.,Type=String,Description="An ordered, comma delimited list of allele frequencies based on 1000Genomes, starting with the reference allele followed by alternate alleles as ordered in the ALT column. Where a 1000Genomes alternate allele is not in the dbSNPs alternate allele set, the allele is added to the ALT column.  The minor allele is the second largest value in the list, and was previuosly reported in VCF as the GMAF.  This is the GMAF reported on the RefSNP and EntrezSNP pages and VariationReporter">?;
+
+    $snpEffCmd{'Frequency'}{'DbsnpLCAF'}{'File'} = q?dbsnp_\d+.\w\d+.vcf?;
+    $snpEffCmd{'Frequency'}{'DbsnpLCAF'}{'INFO'} = q?##INFO=<ID=DbsnpLCAF,Number=1,Type=Float,Description="Least common AF in the DbSNP database.">?;
+    $snpEffCmd{'Frequency'}{'DbsnpLCAF'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_CAF,Number=.,Type=String,Description="An ordered, comma delimited list of allele frequencies based on 1000Genomes, starting with the reference allele followed by alternate alleles as ordered in the ALT column. Where a 1000Genomes alternate allele is not in the dbSNPs alternate allele set, the allele is added to the ALT column.  The minor allele is the second largest value in the list, and was previuosly reported in VCF as the GMAF.  This is the GMAF reported on the RefSNP and EntrezSNP pages and VariationReporter">?;
+
+    $snpEffCmd{'Frequency'}{'1000GAF'}{'File'} = q?1000G_phase\d+.\S+.vcf|ALL.wgs.phase\d+.\S+.vcf?;
+    $snpEffCmd{'Frequency'}{'1000GAF'}{'INFO'} = q?##INFO=<ID=1000GAF,Number=A,Type=Float,Description="Estimated allele frequency in the range (0,1) in the 1000G database.">?;
+    $snpEffCmd{'Frequency'}{'1000GAF'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_AF,Number=.,Type=String,Description="Estimated allele frequency in the range (0,1)">?;
+
     $snpEffCmd{'Frequency'}{'ESPMAF'}{'File'} = q?ESP\d+SI-V\d+-\w+.updatedProteinHgvs.snps_indels.vcf?;
-    $snpEffCmd{'Frequency'}{'ESPMAF'}{'INFO'} = q?##INFO=<ID=ESPMAF,Number=1,Type=Float,Description="MAF in the ESP database.">?;
-    $snpEffCmd{'Frequency'}{'EXACMAF'}{'File'} = q?ExAC.r\d+.\d+.sites.vep.vcf?;
-    $snpEffCmd{'Frequency'}{'EXACMAF'}{'INFO'} = q?##INFO=<ID=EXACMAF,Number=1,Type=Float,Description="MAF in the ExAC database.">?;
+    $snpEffCmd{'Frequency'}{'ESPMAF'}{'INFO'} = q?##INFO=<ID=ESPMAF,Number=1,Type=Float,Description="Global Minor Allele Frequency in the ESP database.">?;
+    $snpEffCmd{'Frequency'}{'ESPMAF'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_MAF,Number=.,Type=String,Description="Minor Allele Frequency in percent in the order of EA,AA,All">?;
+
+    $snpEffCmd{'Frequency'}{'EXACAF'}{'File'} = q?ExAC.r\d+.\d+.sites.vep.vcf?;
+    $snpEffCmd{'Frequency'}{'EXACAF'}{'INFO'} = q?##INFO=<ID=EXACAF,Number=A,Type=Float,Description="Estimated allele frequency in the range (0,1) in Exac">?;
+    $snpEffCmd{'Frequency'}{'EXACAF'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_AF,Number=.,Type=String,Description="Estimated allele frequency in the range (0,1)">?;
+
+    $snpEffCmd{'Frequency'}{'CLNSIG'}{'File'} = q?clinvar_\d+.vcf?;
+    $snpEffCmd{'Frequency'}{'CLNSIG'}{'INFO'} = q?##INFO=<ID=CLNSIG,Number=.,Type=String,Description="Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other">?;
+    $snpEffCmd{'Frequency'}{'CLNSIG'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_CLNSIG,Number=.,Type=String,Description="Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other">?;
 
 }
 
@@ -288,7 +303,7 @@ sub ReadSelectFile {
 	    $lineElements[$selectFeatureColumn] =~ s/\s/_/g; # Replace whitespace with "_"
 	    $selectData{$lineElements[$selectFeatureColumn]} = $lineElements[$selectFeatureColumn];
 
-##Create Interval Tree
+	    ## Create Interval Tree
 	    if (scalar(@selectFeatureAnnotationColumns) > 0) {#Annotate vcf with features from select file
 		
 		&RangeAnnotations(\@selectFeatureAnnotationColumns, \@lineElements, \%selectData, "SelectFile", \$selectFeatureFile, \@headers);
@@ -302,8 +317,9 @@ sub ReadSelectFile {
 sub ReadInfileVCF {
 #Reads infile vcf format 
 
-    my $infileName = $_[0];
-    my $selectOutFileName = $_[1];
+    my $metaDataHashRef = $_[0];
+    my $infileName = $_[1];
+    my $selectOutFileName = $_[2];
 
     my @vepFormatField;
     my %vepFormatFieldColumn;
@@ -320,16 +336,16 @@ sub ReadInfileVCF {
     
     while (<>) {
 	
-	chomp $_; #Remove newline
+	chomp $_;  # Remove newline
 	
-	if (m/^\s+$/) {		# Avoid blank lines
+	if (m/^\s+$/) {	# Avoid blank lines
 	    next;
 	}
-	if ($_=~/^##/) {#MetaData
+	if ($_=~/^##(\w+)=/) {  # MetaData
 
-	    push(@metaData, $_); #Save metadata string
-	    
-	    if ($_=~/INFO\=\<ID\=(\w+)/) { #Collect all INFO keys
+	    &ParseMetaData(\%{$metaDataHashRef}, $_);
+
+	    if ($_=~/INFO\=\<ID\=(\w+)/) { # Collect all INFO keys
 	    
 		$vcfHeader{'INFO'}{$1} = $1; #Save to hash
 	    }
@@ -343,11 +359,11 @@ sub ReadInfileVCF {
 			
 			unless (defined($vcfHeader{'INFO'}{$frequencyDb})) { #Unless INFO header is already present add to file 
 			    
-			    push(@metaData, $snpEffCmd{'Frequency'}{$frequencyDb}{'INFO'});
-			    
-			    if ( $frequencyDb eq "1000GMAF") { #Fix lacking SB INFO field after snpEFF processing 
+			    push(@{${$metaDataHashRef}{'INFO'}{$frequencyDb}}, $snpEffCmd{'Frequency'}{$frequencyDb}{'INFO'});
 
-				push(@metaData, $snpEffCmd{'Frequency'}{'1000GMAF'}{'FIX_INFO'});
+			    unless (defined($vcfHeader{'FIX_INFO'}{$frequencyDb})) { #Unless INFO header is already present add to file
+
+				push(@{${$metaDataHashRef}{'FIX_INFO'}{$frequencyDb}}, $snpEffCmd{'Frequency'}{$frequencyDb}{'FIX_INFO'});
 			    }
 			}
 		    }
@@ -371,17 +387,18 @@ sub ReadInfileVCF {
 			
 			if ( ($vepFormatFieldColumn{'SYMBOL'}) && ($vepFormatFieldColumn{'HGVSc'}) && ($vepFormatFieldColumn{'HGVSp'})) {
 			    
-			    push(@metaData, '##INFO=<ID=HGVScp,Number=.,Type=String,Description="Transcript and protein functional annotation.">');
-			    push(@metaData, '##INFO=<ID=MostSevereConsequence,Number=.,Type=String,Description="Most severe genomic consequence.">');
-			    push(@metaData, '##INFO=<ID=GeneticRegionAnnotation,Number=.,Type=String,Description="Genetic region that variant falls into.">');
+			    push(@{${$metaDataHashRef}{'INFO'}{'HGVScp'}}, '##INFO=<ID=HGVScp,Number=.,Type=String,Description="Transcript and protein functional annotation.">');
+			    push(@{${$metaDataHashRef}{'INFO'}{'MostSevereConsequence'}}, '##INFO=<ID=MostSevereConsequence,Number=.,Type=String,Description="Most severe genomic consequence.">');
+			    push(@{${$metaDataHashRef}{'INFO'}{'GeneticRegionAnnotation'}}, '##INFO=<ID=GeneticRegionAnnotation,Number=.,Type=String,Description="Genetic region that variant falls into.">');
+			    
 			}
 			if ($vepFormatFieldColumn{'SIFT'}) {
 			    
-			    push(@metaData, '##INFO=<ID=Sift,Number=.,Type=String,Description="Sift protein function prediction term">');
+			    push(@{${$metaDataHashRef}{'INFO'}{'Sift'}}, '##INFO=<ID=Sift,Number=.,Type=String,Description="Sift protein function prediction term">');
 			}
 			if ($vepFormatFieldColumn{'PolyPhen'}) {
 			    
-			    push(@metaData, '##INFO=<ID=PolyPhen,Number=.,Type=String,Description="PolyPhen protein function prediction term">');
+			    push(@{${$metaDataHashRef}{'INFO'}{'PolyPhen'}}, '##INFO=<ID=PolyPhen,Number=.,Type=String,Description="PolyPhen protein function prediction term">');
 			}
 		    }
 		}
@@ -391,35 +408,40 @@ sub ReadInfileVCF {
 	}
 	if ($_=~/^#CHROM/) {
 
-	    @selectMetaData = @metaData; #Transfer to selectMetaData
-
-	    if (scalar(@selectFeatureAnnotationColumns) > 0) { #SelectFile annotations
-		
-		for my $selectAnnotation (keys % {$selectData{'Present'}}) {
-		    
-		    unless (defined($vcfHeader{'INFO'}{$selectAnnotation})) { #Unless INFO header is already present add to file 
-			
-			push(@selectMetaData, $selectData{'Present'}{$selectAnnotation}{'INFO'}); #Save specific selectFile INFO
-			
-		    }
-		}
-	    }
 	    if (scalar(@rangeFeatureAnnotationColumns) > 0) { #RangeFile annotations
 		
 		for my $rangeAnnotation (keys % {$rangeData{'Present'}}) {
 		    
 		    unless (defined($vcfHeader{'INFO'}{$rangeAnnotation})) { #Unless INFO header is already present add to file 
 			
-			push(@metaData, $rangeData{'Present'}{$rangeAnnotation}{'INFO'}); #Save specific rangeFile INFO
+			push(@{${$metaDataHashRef}{'Range'}{'INFO'}{$rangeAnnotation}}, $rangeData{'Present'}{$rangeAnnotation}{'INFO'});  #Save specific rangeFile INFO
+		    }
+		}
+	    }
+	    ## Select MetaData
+	    if (scalar(@selectFeatureAnnotationColumns) > 0) { #SelectFile annotations
+		
+		for my $selectAnnotation (keys % {$selectData{'Present'}}) {
+		    
+		    unless (defined($vcfHeader{'INFO'}{$selectAnnotation})) { #Unless INFO header is already present add to file 
+
+			push(@{${$metaDataHashRef}{'Select'}{'INFO'}{$selectAnnotation}}, $selectData{'Present'}{$selectAnnotation}{'INFO'});  #Save specific selectFile INFO
 			
 		    }
 		}
 	    }
-	    &AddProgramToMeta(\@metaData);
-	    &AddProgramToMeta(\@selectMetaData);
+	    &AddProgramToMeta(\%{$metaDataHashRef});
+	    if (scalar(@selectFeatureAnnotationColumns) > 0) { #SelectFile annotations
 
-	    push(@metaData, $_); #Save string
-	    push(@selectMetaData, $_); #Save string
+		&WriteMetaData(\%{$metaDataHashRef}, *STDOUT, *WOSFTSV);
+		print STDOUT $_, "\n";  #Write header line
+		print WOSFTSV $_, "\n";  #Write header line
+	    }
+	    else {
+
+		&WriteMetaData(\%{$metaDataHashRef}, *STDOUT);
+		print STDOUT $_, "\n";  #Write header line
+	    }
 	    
 	    if ($parseVEP == 1) {
 
@@ -446,20 +468,6 @@ sub ReadInfileVCF {
 		    push(@featureFields, "PolyPhen");
 		}
 	    }
-	    if (@metaData) { #Print metaData if supplied
-		
-		for (my $metaDataCounter=0;$metaDataCounter<scalar(@metaData);$metaDataCounter++) {
-		    
-		    print STDOUT $metaData[$metaDataCounter],"\n";
-		}
-	    }
-	    if ($selectFeatureFile ne 0) {
-	
-		for (my $selectMetaDataCounter=0;$selectMetaDataCounter<scalar(@selectMetaData);$selectMetaDataCounter++) {
-		    
-		    print WOSFTSV $selectMetaData[$selectMetaDataCounter],"\n";
-		}	
-	    }
 	    next;
 	}
 	if ( $_ =~/^(\S+)/ ) {	
@@ -485,75 +493,71 @@ sub ReadInfileVCF {
 		}
 		elsif ($lineElementsCounter > 7) { #Save GT:PL: and sample(s) GT Call fields and add to proper line last
 		    
-		    $sampleIDInfo .= $lineElements[$lineElementsCounter]."\t";
+		    if ($lineElementsCounter == (scalar(@lineElements) - 1)) {
+
+			$sampleIDInfo .= $lineElements[$lineElementsCounter];
+		    }
+		    else {
+
+			$sampleIDInfo .= $lineElements[$lineElementsCounter]."\t";
+		    }
 		}
 	    }
 	    for my $frequencyDb (keys % {$snpEffCmd{'Present'}{'frequencyDb'}}) { #Note that the vcf should only contain 1 frequencyDb entry
 
-		if ( ($frequencyDb eq "Dbsnp129MAF") || ($frequencyDb eq "DbsnpMAF") ) {
+		if ( ($frequencyDb eq "Dbsnp129LCAF") || ($frequencyDb eq "DbsnpLCAF") ) {
 
-		    if ($lineElements[7] =~/CAF=\[(.+)\]/) {
+		    if ($lineElements[7] =~/\S+_CAF=\[(.+)\]/) {
 			
-			my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
+			my @tempMafs = sort {$a <=> $b} grep { $_ ne "." } split(",", $1); #Split on ",", remove entries containing only "." and sort remaining entries numerically
 
-			my $tempMaf = &FindLCAF(\@tempArray, $1);  #Needed to remove "[]" in key=value pair
-
-			if (defined($tempMaf)) {
+			if (scalar(@tempMafs) > 0) {
 
 			    ## Save Alternative Allele frequency info
-			    $variantLine .= $frequencyDb."=".$tempMaf.";";
-			    $selectedVariantLine .= $frequencyDb."=".$tempMaf.";";
+			    $variantLine .= $frequencyDb."=".$tempMafs[0].";";
+			    $selectedVariantLine .= $frequencyDb."=".$tempMafs[0].";";
 			}
 		    }
 		}
-		elsif($frequencyDb eq "1000GMAF") {
-
-		    if ($lineElements[7] =~/pop=/ || $lineElements[7] =~/VT=/ ) {
+		elsif($frequencyDb eq "1000GAF") {
 			
-			my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
+		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
 
-			my $tempMaf = &FindLCAF(\@tempArray, "AF=");
+		    my $tempMaf = &FindAF(\@tempArray, "\\S+_AF=");
 
-			if (defined($tempMaf)) {
-
-			    ## Save Alternative Allele frequency info
-			    $variantLine .= $frequencyDb."=".$tempMaf.";";
-			    $selectedVariantLine .= $frequencyDb."=".$tempMaf.";";
-			}
+		    if (defined($tempMaf)) {
+			
+			## Save Alternative Allele frequency info
+			$variantLine .= $frequencyDb."=".$tempMaf.";";
+			$selectedVariantLine .= $frequencyDb."=".$tempMaf.";";
 		    }
 		}
 		elsif($frequencyDb eq "ESPMAF") {
+		    
+		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
 
-		    if ($lineElements[7] =~/MAF=(.+)\;PH/) {
-			
-			my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
-
-			my $tempMaf = &FindLCAF(\@tempArray, $1);  #Needed to remove find correct MAF field
+		    my $tempMaf = &FindLCAF(\@tempArray, "\\S+_MAF=", "2");
 	
-			if (defined($tempMaf)) {
+		    if (defined($tempMaf)) {
 			
-			    $tempMaf = $tempMaf / 100; #fraction for consistent representation
-
-			    ## Save Alternative Allele frequency info  
-			    $variantLine .= $frequencyDb."=".$tempMaf.";";
-			    $selectedVariantLine .= $frequencyDb."=".$tempMaf.";";
-			}
+			$tempMaf = $tempMaf / 100; #fraction for consistent representation
+			
+			## Save Alternative Allele frequency info  
+			$variantLine .= $frequencyDb."=".$tempMaf.";";
+			$selectedVariantLine .= $frequencyDb."=".$tempMaf.";";
 		    }   
 		}
-		elsif($frequencyDb eq "EXACMAF") {
-
-		    if ($lineElements[7] =~/Hom_FIN=/ || $lineElements[7] =~/=AN_AFR/ ) {
+		elsif($frequencyDb eq "EXACAF") {
+		    
+		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
+		    
+		    my $tempMaf = &FindAF(\@tempArray, "\\S+_AF=");
+		    
+		    if (defined($tempMaf)) {
 			
-			my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
-
-			my $tempMaf = &FindLCAF(\@tempArray, "AF=");
-			
-			if (defined($tempMaf)) {
-			    
-			    ## Save Alternative Allele frequency info  
-			    $variantLine .= $frequencyDb."=".$tempMaf.";";
-			    $selectedVariantLine .= $frequencyDb."=".$tempMaf.";";
-			}
+			## Save Alternative Allele frequency info  
+			$variantLine .= $frequencyDb."=".$tempMaf.";";
+			$selectedVariantLine .= $frequencyDb."=".$tempMaf.";";
 		    }
 		}
 	    }
@@ -612,9 +616,11 @@ sub ReadInfileVCF {
 					}
 				    }	
 				}
-			    }				
-			    $selectedVariantLine .= ";";
-			    $variantLine .= ";";
+			    }
+			    if ( ($selectedTranscriptCounter == 0) && ($transcriptsCounter == 0) ) {
+
+				$variantLine .= "CSQ=".$CSQTranscripts;  #No transcript info
+			    }
 			}
 		    }
 		    else { #Not CSQ field from VEP 		    		    
@@ -649,17 +655,19 @@ sub ReadInfileVCF {
 		    $selectedVariantLine .= "\t".$sampleIDInfo;
 		    $variantLine .= "\t".$sampleIDInfo;	
 		}
-	    }	
+	    }
 	    if ($parseVEP == 1) {
 		
+		unless ( ($selectedTranscriptCounter == 0) && ($transcriptsCounter == 0) ) {  #No info to add from CSQ field
+		    
+		    $selectedVariantLine .= ";";
+		    $variantLine .= ";";
+		}
 		$transcriptsCounter = 0;
 		$selectedTranscriptCounter = 0;
-		
-		$selectedVariantLine .= ";";
-		$variantLine .= ";";
 
 		if (defined($CSQTranscripts)) {
-		    
+
 		    my @transcripts = split(/,/, $CSQTranscripts);
 		    
 		    for (my $fieldCounter=0;$fieldCounter<scalar(@transcripts);$fieldCounter++) { #CSQ field
@@ -816,6 +824,10 @@ sub ReadInfileVCF {
 		}
 		if ($transcriptsCounter > 0) { #Write to transcript file
 		    
+		    print STDOUT $variantLine, "\n";
+		}
+		elsif ( ($selectedTranscriptCounter == 0) && ($transcriptsCounter == 0) ) {
+
 		    print STDOUT $variantLine, "\n";
 		}
 	    }
@@ -1149,7 +1161,8 @@ sub RangeAnnotations {
 	    
 	    $features .= ";".$$lineElementsArrayRef[ $$rangeCoulumnsArrayRef[$extractColumnsCounter] ];
 	}
-	&AddMetaDataINFO($hashRef, $rangeFileKey, \$$headersArrayRef[ $$rangeCoulumnsArrayRef[$extractColumnsCounter] ], \$extractColumnsCounter, \$$rangeFileRef);#Add header to future INFO field
+	## Add header to future INFO field
+	&AddMetaDataINFO($hashRef, $rangeFileKey, \$$headersArrayRef[ $$rangeCoulumnsArrayRef[$extractColumnsCounter] ], \$extractColumnsCounter, \$$rangeFileRef);
     }
     unless(defined($tree{$rangeFileKey}{ $$lineElementsArrayRef[0] })) { #Only create once per firstKey
 	
@@ -1229,14 +1242,48 @@ sub AddProgramToMeta {
     
 ##Function : Adds the program version and run date to the vcf meta-information section
 ##Returns  : ""
-##Arguments: $arrayRef
-##         : $arrayRef => The array to store the meta data {REF}
+##Arguments: $hashRef
+##         : $hashRef => The hash to store the meta data {REF}
     
-    my $arrayRef = $_[0];
+    my $hashRef = $_[0];
     
     my ($base, $script) = (`date +%Y%m%d`,`basename $0`);  #Catches current date and script name
     chomp($base,$script);  #Remove \n;
-    push(@{$arrayRef}, "##Software=<ID=".$script.",Version=".$vcfParserVersion.",Date=".$base);
+    push(@{${$hashRef}{'Software'}{$script}}, "##Software=<ID=".$script.",Version=".$vcfParserVersion.",Date=".$base);
+}
+
+
+sub FindAF {
+
+##FindAF
+    
+##Function : Adds the least alternative allele(s) frequency to each line
+##Returns  : ""
+##Arguments: $arrayRef, $regexp
+##         : $arrayRef => The INFO array {REF}
+##         : $regexp   => The regexp to used to locate correct ID field
+
+    my $arrayRef = $_[0];
+    my $regexp = $_[1];
+
+    my $frequencyPosition = 0;
+
+    if ($_[2]) {
+
+	$frequencyPosition = $_[2];
+    }
+    my $tempMaf;
+    
+    for my $element (@{$arrayRef}) {
+	
+	if ($element =~/$regexp/) {  #Find the key=value field
+	    
+	    my @value = split(/=/, $element);  #Split key=value pair
+
+	    $tempMaf = $value[1];  #Collect whole string to represent all possible alleles
+	}
+    }
+    return $tempMaf
 }
 
 
@@ -1252,7 +1299,13 @@ sub FindLCAF {
 
     my $arrayRef = $_[0];
     my $regexp = $_[1];
-    
+
+    my $frequencyPosition = 0;
+
+    if ($_[2]) {
+
+	$frequencyPosition = $_[2];
+    }
     my $tempMaf;
     
     for my $element (@{$arrayRef}) {
@@ -1260,14 +1313,108 @@ sub FindLCAF {
 	if ($element =~/$regexp/) {  #Find the key=value field
 	    
 	    my @value = split(/=/, $element);  #Split key=value pair
+
 	    my @tempMafs = sort {$a <=> $b} grep { $_ ne "." } split(",", $value[1]); #Split on ",", remove entries containing only "." and sort remaining entries numerically
 	    
 	    if (scalar(@tempMafs) > 0) {
 		
 		## We are interested in the least common allele listed for this position. We cannot connect the frequency position in the list and the multiple alternative alleles. So the best we can do is report the least common allele frequency for multiple alternative allels. Unless the least common frequency is lower than the frequency defined as pathogenic for rare disease (usually 0.01) then this will work. In that case this will be a false positive, but it is better than taking the actual MAF which would be a false negative if the pathogenic variant found in the patient(s) has a lower frequency than the MAF.
-		$tempMaf = $tempMafs[0];   
+		$tempMaf = $tempMafs[$frequencyPosition];   
 	    }
 	}
     }
     return $tempMaf
+}
+
+
+sub ParseMetaData {
+
+##ParseMetaData
+    
+##Function : Writes metadata to filehandle speciied by order in metaDataOrders.
+##Returns  : ""
+##Arguments: $metaDataHashRef, $metaDataString
+##         : $metaDataHashRef => Hash for metaData {REF}
+##         : $metaDataString  => The metaData string from vcf header
+    
+    my $metaDataHashRef = $_[0];
+    my $metaDataString = $_[1];
+    
+    if ($metaDataString=~/^##fileformat/) {  #Catch fileformat as it has to be at the top of header
+	
+	push(@{${$metaDataHashRef}{'fileformat'}{'fileformat'}}, $metaDataString);  #Save metadata string
+    }
+    elsif ($metaDataString=~/^##(\w+)=(\S+)/) {  #FILTER, FORMAT, INFO etc and more custom records
+	
+	push(@{${$metaDataHashRef}{$1}{$2}}, $metaDataString);  #Save metadata string
+    }
+    else {  #All oddities
+	
+	push(@{${$metaDataHashRef}{'other'}{'other'}}, $metaDataString);  #Save metadata string
+    }
+}
+
+
+sub WriteMetaData {
+
+##WriteMetaData
+    
+##Function : Writes metadata to filehandle speciied by order in metaDataOrders.
+##Returns  : ""
+##Arguments: $hashRef, $FILEHANDLE, $SELECTFILEHANDLE
+##         : $hashRef          => Hash for metaData {REF}
+##         : $FILEHANDLE       => The filehandle to write to
+##         : $SELECTFILEHANDLE => The filehandle to write to
+
+    my $hashRef = $_[0];
+    my $FILEHANDLE = $_[1];
+    my $SELECTFILEHANDLE = $_[2];
+
+    my @metaDataOrders = ("fileformat", "FILTER", "FORMAT", "INFO", "FIX_INFO", "contig", "Software");  #Determine order to print for standard records
+
+    for (my $lineCounter=0;$lineCounter<scalar(@metaDataOrders);$lineCounter++) {
+
+	if (${$hashRef}{ $metaDataOrders[$lineCounter] }) {  #MetaDataRecordExists
+	    
+	    foreach my $line (sort( keys %{${$hashRef}{ $metaDataOrders[$lineCounter] }})) {
+		
+		print $FILEHANDLE @{${$hashRef}{ $metaDataOrders[$lineCounter] }{$line}}, "\n";
+		if (defined($_[2])) {
+
+		    print $SELECTFILEHANDLE @{${$hashRef}{ $metaDataOrders[$lineCounter] }{$line}}, "\n";
+		}
+	    }
+	    if (defined($_[2])) {
+
+		foreach my $line (sort( keys %{${$hashRef}{'Select'}{ $metaDataOrders[$lineCounter] }})) {
+		    
+		    print $SELECTFILEHANDLE @{${$hashRef}{'Select'}{ $metaDataOrders[$lineCounter] }{$line}}, "\n";
+		}
+	    }
+	    foreach my $line (sort( keys %{${$hashRef}{'Range'}{ $metaDataOrders[$lineCounter] }})) {
+		
+		print $FILEHANDLE @{${$hashRef}{'Range'}{ $metaDataOrders[$lineCounter] }{$line}}, "\n";
+	    }
+	    delete(${$hashRef}{ $metaDataOrders[$lineCounter] });  #Enable print of rest later
+	    if (${$hashRef}{'Select'}{ $metaDataOrders[$lineCounter] }) {
+
+		delete(${$hashRef}{'Select'}{ $metaDataOrders[$lineCounter] });
+	    }
+	    if (${$hashRef}{'Range'}{ $metaDataOrders[$lineCounter] }) {
+
+		delete(${$hashRef}{'Range'}{ $metaDataOrders[$lineCounter] });
+	    }
+	}
+    }
+    for my $keys (keys %{$hashRef}) {
+	
+	for my $line ( sort(keys %{${$hashRef}{$keys}}) ) {
+	    
+	    print $FILEHANDLE @{${$hashRef}{$keys}{$line}}, "\n";
+	    if (defined($_[2])) {
+
+	    print $SELECTFILEHANDLE @{${$hashRef}{$keys}{$line}}, "\n";
+	    }
+	}
+    }
 }
