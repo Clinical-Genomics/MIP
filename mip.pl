@@ -1323,7 +1323,7 @@ if ($scriptParameter{'pAnalysisRunStatus'} > 0) {
 
     $logger->info("[AnalysisRunStatus]\n");
 
-    &AnalysisRunStatus(\%parameter, \%scriptParameter, $scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
+    &AnalysisRunStatus(\%parameter, \%scriptParameter, \%sampleInfo, $scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH");
 }
 
 #Write QC for programs used in analysis                                                                                                                         
@@ -1343,31 +1343,35 @@ sub AnalysisRunStatus {
     
 ##Function : Execute last in MAIN chain and sets analysis run status flag to finished.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $familyID, $aligner, $callType
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $familyID, $aligner, $callType
 ##         : $parameterHashRef       => The parameter hash {REF}
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
 ##         : $familyID               => The familyID
 ##         : $aligner                => The aligner used in the analysis
 ##         : $callType               => The variant call type
 
     my $parameterHashRef = $_[0];
     my $scriptParameterHashRef = $_[1];
-    my $familyID = $_[2];  #familyID NOTE: not sampleid 
-    my $aligner = $_[3];
-    my $callType = $_[4];  #SNV,INDEL or BOTH
+    my $sampleInfoHashRef = $_[2];
+    my $familyID = $_[3];
+    my $aligner = $_[4];
+    my $callType = $_[5];
 
     my $FILEHANDLE = IO::Handle->new();#Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "AnalysisRunStatus", "analysisrunstatus", 0, $FILEHANDLE, 1, 1);
 
-    my @pathsArrayRef;
+    print $FILEHANDLE q?status="0"?, "\n";  #Set status flagg so that perl notFinished remains in sampleInfoFile
+
     ###Test all file that are supposed to exists as they are present in the sampleInfo file
+    my @pathsArrayRef;
 
     ## Collects all programs file path(s) created by MIP located in %sampleInfo
-    &CollectPathEntries(\%sampleInfo, \@pathsArrayRef);
+    &CollectPathEntries(\%{$sampleInfoHashRef}, \@pathsArrayRef);
     ## Collects all programs outfile path(s) created by MIP as OutDirectory->value and outFile->value located in %sampleInfo.
-    &CollectOutDataPathsEntries(\%sampleInfo, \@pathsArrayRef);
+    &CollectOutDataPathsEntries(\%{$sampleInfoHashRef}, \@pathsArrayRef);
     print $FILEHANDLE q?files=(?;  #Create bash array
     foreach my $path (@pathsArrayRef) {
 
@@ -1377,16 +1381,29 @@ sub AnalysisRunStatus {
 	}
     }
     print $FILEHANDLE ")", "\n";  #Close bash array
-    print $FILEHANDLE q?status="0"?, "\n";  #Set status flagg so that perl notFinished remians in sampleInfoFile
     print $FILEHANDLE q?for file in ${files[@]}?, "\n";  #loop over files
     print $FILEHANDLE "do ", "\n";  #for each element in array do
     print $FILEHANDLE "\t".q?if [ -s $file ]; then?, "\n";  #file exists and is larger than zero
     print $FILEHANDLE "\t\t".q?echo "Found file $file"?, "\n";  #Echo
     print $FILEHANDLE "\t".q?else?, "\n";
     print $FILEHANDLE "\t\t".q?echo "Could not find $file" >&2?, "\n";  #Redirect to STDERR
-    print $FILEHANDLE "\t\t".q?status="1"?, "\n";  #Set status flagg so that perl notFinished remians in sampleInfoFile
+    print $FILEHANDLE "\t\t".q?status="1"?, "\n";  #Set status flagg so that perl notFinished remains in sampleInfoFile
     print $FILEHANDLE "\t".q?fi?, "\n";
-    print $FILEHANDLE q?done ?, "\n";
+    print $FILEHANDLE q?done ?, "\n\n";
+
+    ## Test VariantEffectPredictor fork status. If VariantEffectPredictor is unable to fork it will prematurely end the analysis and we will lose variants. 
+    if (defined(${$sampleInfoHashRef}{$familyID}{$familyID}{'program'}{"VariantEffectPredictor"}{'OutFile'})) {
+
+	my $variantEffectPredictorFile = ${$sampleInfoHashRef}{$familyID}{$familyID}{'program'}{"VariantEffectPredictor"}{'OutDirectory'}."/".${$sampleInfoHashRef}{$familyID}{$familyID}{'program'}{"VariantEffectPredictor"}{'OutFile'};
+
+	print $FILEHANDLE q?if grep -q "WARNING Unable to fork" ?;  #not output the matched text only return the exit status code
+	print $FILEHANDLE $variantEffectPredictorFile.q?; then?, "\n";  #Infile
+	print $FILEHANDLE "\t".q?status="1"?, "\n";  #Found pattern
+	print $FILEHANDLE "\t".q?echo "VariantEffectorPredictor fork status=FAILED for file: ?.$variantEffectPredictorFile.q?" >&2?, "\n";  #Echo
+	print $FILEHANDLE q?else?, "\n";  #Infile is clean
+	print $FILEHANDLE "\t".q?echo "VariantEffectorPredictor fork status=PASSED for file: ?.$variantEffectPredictorFile.q?" >&2?, "\n";  #Echo
+	print $FILEHANDLE q?fi?, "\n\n";
+    }	
     print $FILEHANDLE q?if [ $status -ne 1 ]; then?, "\n";  #eval status flag
     print $FILEHANDLE "\t".q?perl -i -p -e 'if($_=~/AnalysisRunStatus\:/) { s/notFinished/finished/g }' ?.${$scriptParameterHashRef}{'sampleInfoFile'}.q? ?, "\n\n";  
     print $FILEHANDLE q?fi?, "\n";
@@ -2688,9 +2705,9 @@ sub SnpEff {
 	    
 	    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'snpEffPath'}."/SnpSift.jar ";
 	    print $FILEHANDLE "annotate ";
-	    print $FILEHANDLE "-name SnpSift_ ";  #Prepend 'str' to all annotated INFO fields 
 	    if (defined(${$fileInfoHashRef}{'pSnpEff'}{'snpSiftAnnotationFiles'}{$annotationFile})) {
 
+		print $FILEHANDLE "-name SnpSift_ ";  #Prepend 'str' to all annotated INFO fields 
 		print $FILEHANDLE "-info ".join(',', @{${$fileInfoHashRef}{'pSnpEff'}{'snpSiftAnnotationFiles'}{$annotationFile}})." ";  #Database
 	    }
 	    print $FILEHANDLE ${$scriptParameterHashRef}{'referencesDir'}."/".$annotationFile." ";  #Database
@@ -2885,10 +2902,11 @@ sub VariantEffectPredictor {
 
     ## Set the number of cores to allocate per sbatch job.
     my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar(@contigs));  #Detect the number of cores to use
-
     $nrCores = floor($nrCores / $nrForkes);  #Adjust for the number of forks 
+
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "VariantEffectPredictor", $aligner."/GATK", $callType, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, 10, ${$scriptParameterHashRef}{'tempDirectory'});
+    my ($fileName, $stdoutPath, $stderrPath) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $familyID, "VariantEffectPredictor", $aligner."/GATK", $callType, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, 10, ${$scriptParameterHashRef}{'tempDirectory'});
+    my ($volume, $directories, $stderrFile) = File::Spec->splitpath($stderrPath);  #Split to enable submission to &SampleInfoQC later
     
     ## Assign directories
     my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/GATK";
@@ -2949,6 +2967,9 @@ sub VariantEffectPredictor {
     close($FILEHANDLE);
 	
     if ( (${$scriptParameterHashRef}{'pVariantEffectPredictor'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+
+	## Collect QC metadata info for later use                     	
+	&SampleInfoQC(\%{$sampleInfoHashRef}, ${$scriptParameterHashRef}{'familyID'}, "noSampleID", "VariantEffectPredictor", "noInFile", $directories, $stderrFile, "infoDirectory");  #Stderr info
 
 	&FIDSubmitJob(\%{$scriptParameterHashRef}, \%jobID, \%infilesLaneNoEnding, 0,$familyID, 1, ${$parameterHashRef}{'pVariantEffectPredictor'}{'chain'}, $fileName,0);
     }
@@ -5485,7 +5506,7 @@ sub MosaikAlign {
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	my ($fileName, $stdoutPath) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $sampleID, "MosaikAlign", $aligner, 0, $FILEHANDLE, ${$scriptParameterHashRef}{'maximumCores'}, $time, ${$scriptParameterHashRef}{'tempDirectory'});
-	my ($volume,$directories,$file) = File::Spec->splitpath($stdoutPath);  #Split to enable submission to &SampleInfoQC later
+	my ($volume, $directories, $stdoutFile) = File::Spec->splitpath($stdoutPath);  #Split to enable submission to &SampleInfoQC later
 
 	## Assign directories
 	my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/mosaik";
@@ -5533,7 +5554,7 @@ sub MosaikAlign {
 	print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.".bam ";  #InFile
 	print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.".sam ", "\n\n";  #OutFile
 	
-	#SAM to BAM conversion
+	## SAM to BAM conversion
 	print $FILEHANDLE "## SAM to BAM conversion\n";
 	print $FILEHANDLE "java -Xmx4g ";
 
@@ -5554,9 +5575,11 @@ sub MosaikAlign {
 	close($FILEHANDLE);
 	
 	if ( (${$scriptParameterHashRef}{'pMosaikAlign'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
-##Collect QC metadata info for later use                     	
+	    
+	    ## Collect QC metadata info for later use                     	
 	    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'} = $outSampleDirectory."/".$infile.".bam";	
-	    &SampleInfoQC(\%{$sampleInfoHashRef}, ${$scriptParameterHashRef}{'familyID'}, $sampleID, "MosaikAligner", $infile , $directories, $file, "infoDirectory");  #Outdata
+	    &SampleInfoQC(\%{$sampleInfoHashRef}, ${$scriptParameterHashRef}{'familyID'}, $sampleID, "MosaikAligner", $infile , $directories, $stdoutFile, "infoDirectory");  #Outdata
+
 	    &FIDSubmitJob(\%{$scriptParameterHashRef}, \%jobID, \%infilesLaneNoEnding, $sampleID, ${$scriptParameterHashRef}{'familyID'}, 3, ${$parameterHashRef}{'pMosaikAlign'}{'chain'}, $fileName, $sbatchScriptTracker);
 	}
 	$sbatchScriptTracker++;  #Tracks nr of sbatch scripts
@@ -6804,7 +6827,7 @@ sub DefinePlinkPedigree {
 }
 
 
-sub AddTJobID {
+sub AddToJobID {
 
 ##AddToJobID
     
@@ -8550,7 +8573,7 @@ sub ProgramPreRequisites {
 	print $FILEHANDLE "## Create temporary directory\n";
 	print $FILEHANDLE "mkdir -p ".$tempDirectory, "\n\n";
     }
-    return ($fileName, $fileInfoPath.$fileNameTracker.".stdout.txt");  #Return stdout path for QC check later
+    return ($fileName, $fileInfoPath.$fileNameTracker.".stdout.txt", $fileInfoPath.$fileNameTracker.".stderr.txt");  #Return filen ame, stdout, stderr path for QC check later
 }
 
 sub CheckIfMergedFiles {
@@ -8630,7 +8653,7 @@ sub SampleInfoQC {
 ##         : $familyID          => The familyID
 ##         : $sampleID          => SampleID or "noSampleID" for family level data
 ##         : $programName       => The program
-##         : $infile            => Infile or "noInFile for family level data"
+##         : $infile            => Infile or "noInFile" for family level data
 ##         : $outDirectory      => The outdirectory of the QC file
 ##         : $outFileEnding     => The outfile ending. Actually complete outfile for "static" & "infoDirectory"
 ##         : $outDataType       => Type of data produced by program (infoDirectory|infileDependent|static) 
