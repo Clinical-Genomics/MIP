@@ -401,6 +401,7 @@ sub EvaluateQCParameters {
     }
 }
 
+
 sub RelationCheck {
 ##Uses the .mibs file produced by PLINK to test if family members are indeed related.
 
@@ -412,7 +413,7 @@ sub RelationCheck {
     my $sampleIDCounter = 0;
     my $incorrectRelation=0;
 
-##Splice all relationship extimations from regExp into pairwise comparisons calculated for each sampleID
+    ## Splice all relationship extimations from regExp into pairwise comparisons calculated for each sampleID
     for (my $realtionshipCounter=0;$realtionshipCounter<scalar(@{$relationshipValuesRef});$realtionshipCounter++) {
 	
 	my @pairwiseComparisons = splice(@{$relationshipValuesRef},0,scalar(@{$sampleOrderRef})); #Splices array into each sampleIDs line
@@ -429,11 +430,13 @@ sub RelationCheck {
     for my $sampleID ( keys %family ) { #For all sampleIDs
 	#Currently only 1 father or Mother per pedigree is supported
 
-	if ($sampleInfoFile{$$familyIDRef}{$sampleID}{'Father'}[0] ne 0) { #Save fatherID if not 0
-	    $fatherID = $sampleInfoFile{$$familyIDRef}{$sampleID}{'Father'}[0];
+	if ($sampleInfoFile{$$familyIDRef}{$sampleID}{'Father'} ne 0) { #Save fatherID if not 0
+
+	    $fatherID = $sampleInfoFile{$$familyIDRef}{$sampleID}{'Father'};
 	}
-	if ($sampleInfoFile{$$familyIDRef}{$sampleID}{'Mother'}[0] ne 0) { #Save motherID if not 0
-	    $motherID = $sampleInfoFile{$$familyIDRef}{$sampleID}{'Mother'}[0];
+	if ($sampleInfoFile{$$familyIDRef}{$sampleID}{'Mother'} ne 0) { #Save motherID if not 0
+
+	    $motherID = $sampleInfoFile{$$familyIDRef}{$sampleID}{'Mother'};
 	}
     }
     
@@ -476,7 +479,7 @@ sub RelationCheck {
 		    else {
 			$incorrectRelation++;
 			$qcData{$$familyIDRef}{$sampleID}{'RelationCheck'} = "FAIL:".$sampleID." not related to ".$members.";";
-			#print "Incorrect: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
+			print "Incorrect: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
 		    }
 		}
 	    }
@@ -496,12 +499,11 @@ sub GenderCheck {
     my $infileRef = $_[2]; #From SampleInfo
     my $chanjoSexCheckGenderRef = $_[3]; #From ChanjoSexCheck 
     
-    print $$chanjoSexCheckGenderRef."\t".$sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'}[0], "\n";
-    if ( ($$chanjoSexCheckGenderRef eq "female") && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'}[0] == 2) ) { #Female
+    if ( ($$chanjoSexCheckGenderRef eq "female") && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'} == 2) ) { #Female
 	
 	$qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "PASS";
     }
-    elsif ( ($$chanjoSexCheckGenderRef eq "male") && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'}[0] == 1) ) { #Male
+    elsif ( ($$chanjoSexCheckGenderRef eq "male") && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'} == 1) ) { #Male
 	
 	$qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "PASS";
     }

@@ -728,7 +728,7 @@ foreach my $orderParameterElement (@orderParameters) {
 	    `mkdir -p $scriptParameter{'outDataDir'}/$scriptParameter{'familyID'};`;  #Create family directory
 	    my $yamlFile = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/qc_pedigree.yaml";
 	    &WriteYAML(\%sampleInfo, \$yamlFile);
-	    &RemovePedigreeElements(\%sampleInfo);  #NOTE: Removes all elements at hash third level except 'Capture_kit'
+	    &RemovePedigreeElements(\%sampleInfo);  #NOTE: Removes all elements at hash third level except 'Capture_kit', 'Sex', 'Father', 'Mother'
 	}
     }
     if ($orderParameterElement eq "humanGenomeReference") {  #Supply humanGenomeReference to mosaikAlignReference if required
@@ -1411,7 +1411,22 @@ sub AnalysisRunStatus {
 	print $FILEHANDLE q?else?, "\n";  #Infile is clean
 	print $FILEHANDLE "\t".q?echo "VariantEffectorPredictor fork status=PASSED for file: ?.$variantEffectPredictorFile.q?" >&2?, "\n";  #Echo
 	print $FILEHANDLE q?fi?, "\n\n";
-    }	
+    }
+
+    ## Test if FAIL exists in QCCollect file i.e. issues with samples e.g. Sex and seq data correlation, relationship etc
+    if (defined(${$sampleInfoHashRef}{$familyID}{$familyID}{'program'}{"QCCollect"}{'OutFile'})) {
+
+	my $QCCollectFile = ${$sampleInfoHashRef}{$familyID}{$familyID}{'program'}{"QCCollect"}{'OutDirectory'}."/".${$sampleInfoHashRef}{$familyID}{$familyID}{'program'}{"QCCollect"}{'OutFile'};
+	
+	print $FILEHANDLE q?if grep -q "FAIL" ?;  #not output the matched text only return the exit status code
+	print $FILEHANDLE $QCCollectFile.q?; then?, "\n";  #Infile
+	print $FILEHANDLE "\t".q?status="1"?, "\n";  #Found pattern
+	print $FILEHANDLE "\t".q?echo "QCCollect status=FAILED for file: ?.$QCCollectFile.q?" >&2?, "\n";  #Echo
+	print $FILEHANDLE q?else?, "\n";  #Infile is clean
+	print $FILEHANDLE "\t".q?echo "QCCollect status=PASSED for file: ?.$QCCollectFile.q?" >&2?, "\n";  #Echo
+	print $FILEHANDLE q?fi?, "\n\n";
+	
+    }
     print $FILEHANDLE q?if [ $status -ne 1 ]; then?, "\n";  #eval status flag
     print $FILEHANDLE "\t".q?perl -i -p -e 'if($_=~/AnalysisRunStatus\:/) { s/notFinished/finished/g }' ?.${$scriptParameterHashRef}{'sampleInfoFile'}.q? ?, "\n\n";  
     print $FILEHANDLE q?fi?, "\n";
@@ -11579,7 +11594,7 @@ sub RemovePedigreeElements {
 
 ##RemovePedigreeElements
     
-##Function : Removes ALL keys at third level except 'Capture_kit'. 
+##Function : Removes ALL keys at third level except 'Capture_kit', 'Sex'. 
 ##Returns  : ""
 ##Arguments: $hashRef
 ##         : $hashRef => Hash {REF}
@@ -11587,16 +11602,15 @@ sub RemovePedigreeElements {
     my $hashRef = $_[0];
     
     for my $familyID (keys %{$hashRef}) {
-	
+
 	for my $sampleID (keys %{ ${$hashRef}{$familyID} })  {
-	    
+
 	    for my $pedigreeElements (keys %{ ${$hashRef}{$familyID}{$sampleID} })  {
 		
-		unless ($pedigreeElements eq 'Capture_kit') {
-		    
-		    delete(${$hashRef}{$familyID}{$sampleID}{$pedigreeElements})
+		if ( ($pedigreeElements ne 'Capture_kit') && ($pedigreeElements ne 'Sex') && ($pedigreeElements ne 'Mother') && ($pedigreeElements ne 'Father') ) {
+
+		    delete(${$hashRef}{$familyID}{$sampleID}{$pedigreeElements});
 		}
-		
 	    }
 	}
     }
