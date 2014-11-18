@@ -1849,7 +1849,7 @@ sub RankVariants {
     my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $FILEHANDLE,
 					   {'directoryID' => $familyID,
 					    'programName' => $programName,
-					    'programDirectory' => lc($aligner."/gatk/".$programName),
+					    'programDirectory' => lc($aligner."/gatk"),
 					    'processTime' => 4,
 					    'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
 					   });
@@ -2028,12 +2028,12 @@ sub GATKVariantEvalExome {
 	&JavaCore($FILEHANDLE,
 		  {'memoryAllocation' => "Xmx2g",
 		   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		   'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 		  });
 
-	print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
+	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	print $FILEHANDLE "-V: ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$infileEnding.$callType.".vcf ";  #FamilyID inFile
 	print $FILEHANDLE "-o ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding.$callType."_temp.vcf ";  #SampleID exome outFile
@@ -2112,12 +2112,12 @@ sub GATKVariantEvalExome {
 	&JavaCore($FILEHANDLE,
 		  {'memoryAllocation' => "Xmx2g",
 		   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		   'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 		  });
-	
-	print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
+
 	print $FILEHANDLE "-T VariantEval ";  #Type of analysis to run
+	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	print $FILEHANDLE "-D ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKVariantEvalDbSNP'}." ";  #dbSNP file
 	print $FILEHANDLE "-gold ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKVariantEvalGold'}." ";  #Evaluations that count calls at sites of true variation (e.g., indel calls) will use this argument as their gold standard for comparison
@@ -2158,12 +2158,12 @@ sub GATKVariantEvalExome {
 	    &JavaCore($FILEHANDLE,
 		      {'memoryAllocation' => "Xmx2g",
 		       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		       'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 		      });
-	    
-	    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+
+	    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run	    
 	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
 	    print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	    print $FILEHANDLE "-V: ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$infileEnding.$callType.".vcf ";  #FamilyID infile 
 	    print $FILEHANDLE "-o ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding.$callType."_temp.vcf ";  #SampleID outFile
@@ -2242,12 +2242,12 @@ sub GATKVariantEvalExome {
 	    &JavaCore($FILEHANDLE,
 		      {'memoryAllocation' => "Xmx2g",
 		       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		       'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 		      });
-	    
-	    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+
+	    print $FILEHANDLE "-T VariantEval ";  #Type of analysis to run	    
 	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	    print $FILEHANDLE "-T VariantEval ";  #Type of analysis to run
 	    print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	    print $FILEHANDLE "-D ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKVariantEvalDbSNP'}." ";  #dbSNP file
 	    print $FILEHANDLE "-gold ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKVariantEvalGold'}." ";  #Evaluations that count calls at sites of true variation (e.g., indel calls) will use this argument as their gold standard for comparison
@@ -2361,12 +2361,12 @@ sub GATKVariantEvalAll {
 	&JavaCore($FILEHANDLE,
 		  {'memoryAllocation' => "Xmx2g",
 		   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		   'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 		  });
-	
-	print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+
+	print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run	
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
 	print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	print $FILEHANDLE "-V: ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$infileEnding.$callType.".vcf ";  #FamilyID inFile
 	print $FILEHANDLE "-o ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding.$callType.".vcf ";  #SampleID outFile
@@ -2379,12 +2379,12 @@ sub GATKVariantEvalAll {
 	&JavaCore($FILEHANDLE,
 		  {'memoryAllocation' => "Xmx2g",
 		   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		   'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 		  });
-	
-	print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+
+	print $FILEHANDLE "-T VariantEval ";  #Type of analysis to run	
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	print $FILEHANDLE "-T VariantEval ";  #Type of analysis to run
 	print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	print $FILEHANDLE "-D ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKVariantEvalDbSNP'}." ";  #dbSNP file
 	print $FILEHANDLE "-gold ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKVariantEvalGold'}." ";  #Evaluations that count calls at sites of true variation (e.g., indel calls) will use this argument as their gold standard for comparison
@@ -2424,12 +2424,12 @@ sub GATKVariantEvalAll {
 	    &JavaCore($FILEHANDLE,
 		      {'memoryAllocation' => "Xmx2g",
 		       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		       'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 		      });
 
-	    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
+	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	    print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	    print $FILEHANDLE "-V: ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$infileEnding.$callType.".vcf ";  #FamilyID infile 
 	    print $FILEHANDLE "-o ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding.$callType.".vcf ";  #SampleID outFile
@@ -2442,12 +2442,12 @@ sub GATKVariantEvalAll {
 	    &JavaCore($FILEHANDLE,
 		      {'memoryAllocation' => "Xmx2g",
 		       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		       'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 		      });
-	    
-	    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
+
 	    print $FILEHANDLE "-T VariantEval ";  #Type of analysis to run
+	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	    print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	    print $FILEHANDLE "-D ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKVariantEvalDbSNP'}." ";  #dbSNP file
 	    print $FILEHANDLE "-gold ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKVariantEvalGold'}." ";  #Evaluations that count calls at sites of true variation (e.g., indel calls) will use this argument as their gold standard for comparison
@@ -2766,12 +2766,12 @@ sub GATKReadBackedPhasing {
     &JavaCore($FILEHANDLE,
 	      {'memoryAllocation' => "Xmx4g",
 	       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-	       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+	       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+	       'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 	      });
-    
-    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+
+    print $FILEHANDLE "-T ReadBackedPhasing ";  #Type of analysis to run    
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-T ReadBackedPhasing ";  #Type of analysis to run
     print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
     print $FILEHANDLE "--phaseQualityThresh ".${$scriptParameterHashRef}{'GATKReadBackedPhasingPhaseQualityThreshold'}." ";
 
@@ -2891,12 +2891,12 @@ sub GATKPhaseByTransmission {
     &JavaCore($FILEHANDLE,
 	      {'memoryAllocation' => "Xmx4g",
 	       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-	       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+	       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+	       'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 	      });
-    
-    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+
+    print $FILEHANDLE "-T PhaseByTransmission ";  #Type of analysis to run    
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-T PhaseByTransmission ";  #Type of analysis to run
     print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
     print $FILEHANDLE "-V: ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$infileEnding.$callType.".vcf ";  #InFile (family vcf)
 
@@ -3005,10 +3005,10 @@ sub SnpEff {
 	    &JavaCore($FILEHANDLE,
 		      {'memoryAllocation' => "Xmx4g",
 		       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		       'javaJar' => ${$scriptParameterHashRef}{'snpEffPath'}."/SnpSift.jar"
 		      });
 	    
-	    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'snpEffPath'}."/SnpSift.jar ";
 	    print $FILEHANDLE "annotate ";
 	    if (defined(${$fileInfoHashRef}{'pSnpEff'}{'snpSiftAnnotationFiles'}{$annotationFile})) {
 
@@ -3040,10 +3040,10 @@ sub SnpEff {
 		&JavaCore($FILEHANDLE,
 			  {'memoryAllocation' => "Xmx500m",
 			   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-			   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+			   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+			   'javaJar' => ${$scriptParameterHashRef}{'snpEffPath'}."/SnpSift.jar"
 			  });
 		
-		print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'snpEffPath'}."/SnpSift.jar ";
 		print $FILEHANDLE "dbnsfp ";
 		print $FILEHANDLE "-db ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'snpSiftDbNSFPFile'}." ";  #DbNSFP file
 		print $FILEHANDLE "-f ";  #fields to add
@@ -3057,10 +3057,10 @@ sub SnpEff {
 		&JavaCore($FILEHANDLE,
 			  {'memoryAllocation' => "Xmx500m",
 			   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-			   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+			   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+			   'javaJar' => ${$scriptParameterHashRef}{'snpEffPath'}."/SnpSift.jar"
 			  });
 		
-		print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'snpEffPath'}."/SnpSift.jar ";
 		print $FILEHANDLE "filter ";  #Parallalize per contig for speed
 		print $FILEHANDLE q?"( CHROM = '?.$contigs[$contigsCounter].q?' )"?;
 		print $FILEHANDLE ") ";  #End Pipe into SnpSift
@@ -3081,12 +3081,12 @@ sub SnpEff {
 	&JavaCore($FILEHANDLE,
 		  {'memoryAllocation' => "Xmx4g",
 		   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		   'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 		  });
 
-	print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-T CombineVariants ";  #Type of analysis to run
+	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	print $FILEHANDLE "-genotypeMergeOptions UNSORTED ";  #Take the genotypes in any order. Should be fine since the same order and number of samples exists in all files
 	for my $annotationFile (keys %{${$fileInfoHashRef}{'pSnpEff'}{'snpSiftAnnotationFiles'}}) {
@@ -3153,8 +3153,7 @@ sub VCFParser {
 					   {'directoryID' => $familyID,
 					    'programName' => $programName,
 					    'programDirectory' => lc($aligner."/gatk"),
-					    'callType' => $callType,
-					    'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+					    'callType' => $callType
 					   });
     
     ## Assign directories
@@ -3417,12 +3416,12 @@ sub GATKVariantReCalibration {
 	&JavaCore($FILEHANDLE,
 		  {'memoryAllocation' => "Xmx6g",
 		   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		   'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 		  });
 
-	print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-T VariantRecalibrator ";  #Type of analysis to run
+	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	print $FILEHANDLE "-recalFile ".$intermediarySampleDirectory."/".$familyID.$infileEnding.$callType.".intervals ";
 	print $FILEHANDLE "-rscriptFile ".$intermediarySampleDirectory."/".$familyID.$infileEnding.$callType.".intervals.plots.R ";
@@ -3474,12 +3473,12 @@ sub GATKVariantReCalibration {
 	&JavaCore($FILEHANDLE,
 		  {'memoryAllocation' => "Xmx6g",
 		   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		   'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 		  });
 
-	print $FILEHANDLE  "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-T ApplyRecalibration ";
+	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	print $FILEHANDLE "-recalFile ".$intermediarySampleDirectory."/".$familyID.$infileEnding.$callType.".intervals ";
 	print $FILEHANDLE "-tranchesFile ".$intermediarySampleDirectory."/".$familyID.$infileEnding.$callType.".intervals.tranches ";
@@ -3521,12 +3520,12 @@ sub GATKVariantReCalibration {
 	&JavaCore($FILEHANDLE,
 		   {'memoryAllocation' => "Xmx2g",
 		    'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		    'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		    'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		    'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 		   });
 
-	print $FILEHANDLE  "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
+	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file	
 	print $FILEHANDLE "-L ".$contigIntervalListFile." ";#Target list file (merged or original)
 	print $FILEHANDLE "-env ";  #Don't include loci found to be non-variant after the subsetting procedure. 
@@ -3548,12 +3547,12 @@ sub GATKVariantReCalibration {
 	    &JavaCore($FILEHANDLE,
 		      {'memoryAllocation' => "Xmx2g",
 		       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		       'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 		      });
-	    
-	    print $FILEHANDLE  "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+
+	    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run	    
 	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
 	    print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file	
 	    print $FILEHANDLE "-L ".$contigIntervalListFile." ";#Target list file (merged or original)
 	    print $FILEHANDLE "-V: ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType."_filtered.vcf ";  #InFile
@@ -3688,12 +3687,12 @@ sub GATKGenoTypeGVCFs {
     &JavaCore($FILEHANDLE,
 	      {'memoryAllocation' => "Xmx4g",
 	       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-	       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+	       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+	       'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 	      });
-    
-    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+
+    print $FILEHANDLE "-T GenotypeGVCFs ";  #Type of analysis to run    
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-T GenotypeGVCFs ";  #Type of analysis to run
     print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
     print $FILEHANDLE "-D ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKHaploTypeCallerSNPKnownSet'}." ";  #Known SNPs to use for annotation SNPs
     print $FILEHANDLE "-nt 16 ";  #How many data threads should be allocated to running this analysis.
@@ -3825,12 +3824,12 @@ sub GATKHaploTypeCaller {
     &JavaCore($FILEHANDLE,
 	      {'memoryAllocation' => "Xmx12g",
 	       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-	       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+	       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+	       'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 	      });
-    
-    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+
+    print $FILEHANDLE "-T HaplotypeCaller ";  #Type of analysis to run    
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-T HaplotypeCaller ";  #Type of analysis to run
     print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
     print $FILEHANDLE "-D ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKHaploTypeCallerSNPKnownSet'}." ";  #Known SNPs to use for annotation SNPs
     print $FILEHANDLE "-stand_call_conf 30.0 ";  #The minimum phred-scaled confidence threshold at which variants should be called
@@ -3969,13 +3968,12 @@ sub GATKBaseReCalibration {
 	&JavaCore($FILEHANDLE,
 		  {'memoryAllocation' => "Xmx24g",
 		   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		   'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 		  });
 
-	print $FILEHANDLE "-Djava.io.tmpdir=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temporary Directory per chr
-	print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-T BaseRecalibrator ";  #Type of analysis to run
+	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 
 	## Covariates to be used in the recalibration
 	print $FILEHANDLE "-cov ReadGroupCovariate ";
@@ -3998,12 +3996,12 @@ sub GATKBaseReCalibration {
 	&JavaCore($FILEHANDLE,
 		  {'memoryAllocation' => "Xmx24g",
 		   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		   'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 		  });
-	
-	print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+
+	print $FILEHANDLE "-T PrintReads ";  #Type of analysis to run	
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging"-jar $gatk_path/GenomeAnalysisTK.
-	print $FILEHANDLE "-T PrintReads ";  #Type of analysis to run
 	print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	print $FILEHANDLE "-nct ".${$scriptParameterHashRef}{'maximumCores'}." ";  #How many CPU threads should be allocated per data thread to running this analysis	  
 	print $FILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus  
@@ -4041,12 +4039,12 @@ sub GATKBaseReCalibration {
 	    &JavaCore($FILEHANDLE,
 		      {'memoryAllocation' => "Xmx24g",
 		       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		       'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 		      });
-	    
-	    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
+
 	    print $FILEHANDLE "-T BaseRecalibrator ";  #Type of analysis to run
+	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 
 	    ## Covariates to be used in the recalibration
 	    print $FILEHANDLE "-cov ReadGroupCovariate "; 
@@ -4069,12 +4067,12 @@ sub GATKBaseReCalibration {
 	    &JavaCore($FILEHANDLE,
 		      {'memoryAllocation' => "Xmx24g",
 		       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		       'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 		      });
-	    
-	    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging"-jar $gatk_path/GenomeAnalysisTK.
+
 	    print $FILEHANDLE "-T PrintReads ";  #Type of analysis to run
+	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging"-jar $gatk_path/GenomeAnalysisTK.
 	    print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	    print $FILEHANDLE "-nct ".${$scriptParameterHashRef}{'maximumCores'}." ";  #How many CPU threads should be allocated per data thread to running this analysis
 	    print $FILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus
@@ -4174,12 +4172,12 @@ sub GATKReAligner {
 	&JavaCore($FILEHANDLE,
 		  {'memoryAllocation' => "Xmx24g",
 		   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		   'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 		  });
 
-	print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-T RealignerTargetCreator ";  #Type of analysis to run
+	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file 
 	print $FILEHANDLE "-known ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKReAlignerINDELKnownSet1'}." ";  #Input VCF file with known indels
 	print $FILEHANDLE "-known ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKReAlignerINDELKnownSet2'}." ";  #Input VCF file with known indels
@@ -4195,12 +4193,12 @@ sub GATKReAligner {
 	&JavaCore($FILEHANDLE,
 		  {'memoryAllocation' => "Xmx24g",
 		   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		   'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 		  });
-	
-	print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-	print $FILEHANDLE "-l INFO ";
+
 	print $FILEHANDLE "-T IndelRealigner ";
+	print $FILEHANDLE "-l INFO ";
 	print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	print $FILEHANDLE "-known ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKReAlignerINDELKnownSet1'}." ";  #Input VCF file with known indels
 	print $FILEHANDLE "-known ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKReAlignerINDELKnownSet2'}." ";  #Input VCF file with known indels	 
@@ -4239,12 +4237,12 @@ sub GATKReAligner {
 	    &JavaCore($FILEHANDLE,
 		      {'memoryAllocation' => "Xmx24g",
 		       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		       'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 		      });
-	    
-	    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
+
+	    print $FILEHANDLE "-T RealignerTargetCreator ";  #Type of analysis to run	    
 	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	    print $FILEHANDLE "-T RealignerTargetCreator ";  #Type of analysis to run
 	    print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file 
 	    print $FILEHANDLE "-known ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKReAlignerINDELKnownSet1'}." ";  #Input VCF file with known indels
 	    print $FILEHANDLE "-known ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKReAlignerINDELKnownSet2'}." ";  #Input VCF file with known indels
@@ -4260,12 +4258,12 @@ sub GATKReAligner {
 	    &JavaCore($FILEHANDLE,
 		      {'memoryAllocation' => "Xmx24g",
 		       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		       'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 		      });
 
-	    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-	    print $FILEHANDLE "-l INFO ";
 	    print $FILEHANDLE "-T IndelRealigner ";
+	    print $FILEHANDLE "-l INFO ";
 	    print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	    print $FILEHANDLE "-known ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKReAlignerINDELKnownSet1'}." ";  #Input VCF file with known indels
 	    print $FILEHANDLE "-known ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKReAlignerINDELKnownSet2'}." ";  #Input VCF file with known indels
@@ -4593,10 +4591,11 @@ sub PicardToolsCalculateHSMetrics {
 	&JavaCore($FILEHANDLE,
 		  {'memoryAllocation' => "Xmx4g",
 		   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 		  });
 
-	print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'picardToolsPath'}."/CalculateHsMetrics.jar ";
+	print $FILEHANDLE "CalculateHsMetrics.jar ";
 	print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile
 	print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding."_CalculateHsMetrics ";  #OutFile
 	print $FILEHANDLE "REFERENCE_SEQUENCE=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
@@ -4655,10 +4654,11 @@ sub PicardToolsCalculateHSMetrics {
 	    &JavaCore($FILEHANDLE,
 		      {'memoryAllocation' => "Xmx4g",
 		       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		       'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 		      });
 
-	    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'picardToolsPath'}."/CalculateHsMetrics.jar ";
+	    print $FILEHANDLE "CalculateHsMetrics.jar ";
 	    print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile
 	    print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding."_CalculateHsMetrics ";  #OutFile
 	    print $FILEHANDLE "REFERENCE_SEQUENCE=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
@@ -4770,10 +4770,11 @@ sub PicardToolsCollectMultipleMetrics {
 	&JavaCore($FILEHANDLE,
 		  {'memoryAllocation' => "Xmx4g",
 		   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 		  });
 
-	print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'picardToolsPath'}."/CollectMultipleMetrics.jar ";
+	print $FILEHANDLE "CollectMultipleMetrics.jar ";
 	print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile
 	print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding." ";  #OutFile
 	print $FILEHANDLE "R=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}, "\n\n";  #Reference file
@@ -4833,10 +4834,11 @@ sub PicardToolsCollectMultipleMetrics {
 	    &JavaCore($FILEHANDLE,
 		      {'memoryAllocation' => "Xmx4g",
 		       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		       'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 		      }); 
 
-	    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'picardToolsPath'}."/CollectMultipleMetrics.jar ";
+	    print $FILEHANDLE "CollectMultipleMetrics.jar ";
 	    print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile
 	    print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding." ";  #outFile
 	    print $FILEHANDLE "R=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." &", "\n\n";  #Reference file
@@ -5423,10 +5425,11 @@ sub PicardToolsMarkDuplicates {
 	&JavaCore($FILEHANDLE,
 		  {'memoryAllocation' => "Xmx4g",
 		   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 		  });
 	
-	print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'picardToolsPath'}."/MarkDuplicates.jar ";
+	print $FILEHANDLE "MarkDuplicates.jar ";
 	print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp Directory
 	print $FILEHANDLE "ASSUME_SORTED=true ";
 	print $FILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
@@ -5491,10 +5494,11 @@ sub PicardToolsMarkDuplicates {
 	    &JavaCore($FILEHANDLE,
 		      {'memoryAllocation' => "Xmx4g",
 		       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		       'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 		      });
 
-	    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'picardToolsPath'}."/MarkDuplicates.jar ";
+	    print $FILEHANDLE "MarkDuplicates.jar ";
 	    print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp Directory
 	    print $FILEHANDLE "ASSUME_SORTED=true ";
 	    print $FILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
@@ -5623,10 +5627,11 @@ sub PicardToolsMerge {
 		&JavaCore($FILEHANDLE,
 			  {'memoryAllocation' => "Xmx4g",
 			   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-			   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+			   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+			   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 			  });
 
-		print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'picardToolsPath'}."/MergeSamFiles.jar ";
+		print $FILEHANDLE "MergeSamFiles.jar ";
 		print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp Directory
 		print $FILEHANDLE "CREATE_INDEX=TRUE ";  #create a BAM index when writing a coordinate-sorted BAM file.
 		print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$sampleID."_lanes_".$lanes.$outfileEnding.".bam ";  #OutFile
@@ -5666,10 +5671,11 @@ sub PicardToolsMerge {
 		    &JavaCore($FILEHANDLE,
 			      {'memoryAllocation' => "Xmx4g",
 			       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-			       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+			       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+			       'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 			      });
 
-		    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'picardToolsPath'}."/MergeSamFiles.jar ";
+		    print $FILEHANDLE "MergeSamFiles.jar ";
 		    print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp directory
 		    print $FILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
 		    print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$sampleID."_lanes_".$mergeLanes.$lanes.$outfileEnding.".bam ";  #OutFile
@@ -5714,10 +5720,11 @@ sub PicardToolsMerge {
 		&JavaCore($FILEHANDLE,
 			  {'memoryAllocation' => "Xmx4g",
 			   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-			   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+			   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+			   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 			  });
 		
-		print $FILEHANDLE "jar ".${$scriptParameterHashRef}{'picardToolsPath'}."/MergeSamFiles.jar ";
+		print $FILEHANDLE "MergeSamFiles.jar ";
 		print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp Directory
 		print $FILEHANDLE "CREATE_INDEX=TRUE ";  #create a BAM index when writing a coordinate-sorted BAM file.
 		print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$sampleID."_lanes_".$mergeLanes.$lanes.$outfileEnding.".bam ";  #OutFile
@@ -5834,10 +5841,11 @@ sub PicardToolsSortSamIndex {
 	&JavaCore($FILEHANDLE,
 		  {'memoryAllocation' => "Xmx4g",
 		   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 		  });
 	
-	print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'picardToolsPath'}."/SortSam.jar ";
+	print $FILEHANDLE "SortSam.jar ";
 	print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp Directory
 	print $FILEHANDLE "SORT_ORDER=coordinate"." ";  #Sort per contig and coordinate
 	print $FILEHANDLE "CREATE_INDEX=TRUE ";  #create a BAM index when writing a coordinate-sorted BAM file. 
@@ -6155,11 +6163,14 @@ sub PicardToolsMergeRapidReads {
 		
 		if ($readBatchProcessesCount eq 0) {
 		    
-		    print $FILEHANDLE "java -Xmx4g ";
-
-		    &WriteUseLargePages($FILEHANDLE, \${$scriptParameterHashRef}{'javaUseLargePages'});
+		    &JavaCore($FILEHANDLE,
+			      {'memoryAllocation' => "Xmx4g",
+			       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+			       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+			       'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
+			      });
 		    
-		    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'picardToolsPath'}."/MergeSamFiles.jar ";
+		    print $FILEHANDLE "MergeSamFiles.jar ";
 		    print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp Directory
 		    print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam ";  #OutFile
 		}
@@ -6171,11 +6182,14 @@ sub PicardToolsMergeRapidReads {
 	}
 	else {  #Still needs to rename file to be included in potential merge of BAM files in next step
 	    
-	    print $FILEHANDLE "java -Xmx4g ";
-
-	    &WriteUseLargePages($FILEHANDLE, \${$scriptParameterHashRef}{'javaUseLargePages'});
+	    &JavaCore($FILEHANDLE,
+		      {'memoryAllocation' => "Xmx4g",
+		       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		       'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
+		      });
 	    
-	    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'picardToolsPath'}."/MergeSamFiles.jar ";
+	    print $FILEHANDLE "MergeSamFiles.jar ";
 	    print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp Directory
 	    print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam ";  #OutFile
 	    
@@ -6554,27 +6568,32 @@ sub MosaikAlign {
 	print $FILEHANDLE "-j ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'mosaikJumpDbStub'}." ";  #JumpDatabase
 	print $FILEHANDLE "-p ".${$scriptParameterHashRef}{'maximumCores'}, "\n\n";  #Nr of cores
 
-	## BAM to SAM conversion
-	print $FILEHANDLE "## BAM to SAM conversion\n";
-	print $FILEHANDLE "java -Xmx4g ";
+	## BAM to SAM conversion. Make sure that the BAM file BIN field is correct (Mosaik v.2.2.3 does according to Picard not set the bin field correctly)
+	print $FILEHANDLE "## BAM to SAM\n";
+	&JavaCore($FILEHANDLE,
+		  {'memoryAllocation' => "Xmx2g",
+		   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
+		  });
 
-	&WriteUseLargePages($FILEHANDLE, \${$scriptParameterHashRef}{'javaUseLargePages'});
-
-	print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'picardToolsPath'}."/SamFormatConverter.jar ";  #Make sure that the BAM file BIN field is correct (Mosaik v.2.2.3 does according to Picard not set the bin field correctly)
+	print $FILEHANDLE "SamFormatConverter ";
 	print $FILEHANDLE "VALIDATION_STRINGENCY=SILENT ";  #Disable errors print 
 	print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.".bam ";  #InFile
-	print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.".sam ", "\n\n";  #OutFile
-	
+	print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.".sam ", "\n\n"; #OutFile
+
 	## SAM to BAM conversion
-	print $FILEHANDLE "## SAM to BAM conversion\n";
-	print $FILEHANDLE "java -Xmx4g ";
+	&JavaCore($FILEHANDLE,
+		  {'memoryAllocation' => "Xmx2g",
+		   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
+		  });
 
-	&WriteUseLargePages($FILEHANDLE, \${$scriptParameterHashRef}{'javaUseLargePages'});
+	print $FILEHANDLE "SamFormatConverter ";
+	print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.".sam "; #InFile
+	print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.".bam ", "\n\n"; #OutFile
 
-	print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'picardToolsPath'}."/SamFormatConverter.jar ";  #Make sure that the BAM file BIN field is correct (Mosaik v.2.2.3 does according to Picard not set the bin field correctly)
-	print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.".sam ";  #InFile
-	print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.".bam ", "\n\n";  #OutFile
-	
 	## Copies file from temporary directory.
 	print $FILEHANDLE "## Copy file from temporary directory\n"; 
 	&MigrateFileFromTemp(${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.".bam", $outSampleDirectory, $FILEHANDLE);
@@ -7215,11 +7234,15 @@ sub BuildPTCHSMetricPreRequisites {
 		
 		print $FILEHANDLE "#SampleID:".${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter], "\n\n";
 		print $FILEHANDLE "#CreateSequenceDictionary from reference", "\n";
-		print $FILEHANDLE "java -Xmx2g ";
 
-		&WriteUseLargePages($FILEHANDLE, \${$scriptParameterHashRef}{'javaUseLargePages'});
+		&JavaCore($FILEHANDLE,
+			  {'memoryAllocation' => "Xmx2g",
+			   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+			   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+			   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
+			  });
 		
-		print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'picardToolsPath'}."/CreateSequenceDictionary.jar ";
+		print $FILEHANDLE "CreateSequenceDictionary.jar ";
 		print $FILEHANDLE "R=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference genome
 		print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict ", "\n\n";  #Output sequence dictionnary
 		
@@ -7237,11 +7260,14 @@ sub BuildPTCHSMetricPreRequisites {
 		print $FILEHANDLE ${$scriptParameterHashRef}{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5", "\n\n";  #Remove unnecessary info and reformat 
 		
 		print $FILEHANDLE "#Create".${$fileInfoHashRef}{'exomeTargetBedInfileLists'}, "\n";
-		print $FILEHANDLE "java -Xmx2g ";
+		&JavaCore($FILEHANDLE,
+			  {'memoryAllocation' => "Xmx2g",
+			   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+			   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+			   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
+			  });
 
-		&WriteUseLargePages($FILEHANDLE, \${$scriptParameterHashRef}{'javaUseLargePages'});
-
-		print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'picardToolsPath'}."/IntervalListTools.jar ";
+		print $FILEHANDLE "IntervalListTools.jar ";
 		print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5 ";
 		print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5_".${$fileInfoHashRef}{'exomeTargetBedInfileLists'}." ", "\n\n";
 		    
@@ -7254,11 +7280,14 @@ sub BuildPTCHSMetricPreRequisites {
 	    if ( (defined($sampleIDBuildSwitchPadded) && ($sampleIDBuildSwitchPadded eq 1)) || (defined($sampleIDBuildSwitchPaddedInterval) && ($sampleIDBuildSwitchPaddedInterval eq 1)) ) {
 		
 		print $FILEHANDLE "#Create padded interval list", "\n";
-		print $FILEHANDLE "java -Xmx2g ";
-
-		&WriteUseLargePages($FILEHANDLE, \${$scriptParameterHashRef}{'javaUseLargePages'});
+		&JavaCore($FILEHANDLE,
+			  {'memoryAllocation' => "Xmx2g",
+			   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+			   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+			   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
+			  });
 		
-		print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'picardToolsPath'}."/IntervalListTools.jar ";
+		print $FILEHANDLE "IntervalListTools.jar ";
 		print $FILEHANDLE "PADDING=100 ";  #Add 100 nt on both sides of bed entry
 		print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5 ";
 		print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5".${$fileInfoHashRef}{'exomeTargetPaddedBedInfileLists'}." ", "\n\n";
@@ -7715,12 +7744,15 @@ sub BuildHumanGenomePreRequisites {
 
 	   $logger->warn("Will try to create dict file for ".${$scriptParameterHashRef}{'humanGenomeReference'}." before executing ".$program."\n");
 	    
-	    print $FILEHANDLE "#CreateSequenceDictionary from reference", "\n";
-	    print $FILEHANDLE "java -Xmx2g ";
+	   print $FILEHANDLE "#CreateSequenceDictionary from reference", "\n";
+	   &JavaCore($FILEHANDLE,
+		     {'memoryAllocation' => "Xmx2g",
+		      'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+		      'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		      'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
+		     });
 
-	    &WriteUseLargePages($FILEHANDLE, \${$scriptParameterHashRef}{'javaUseLargePages'});
-
-	    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'picardToolsPath'}."/CreateSequenceDictionary.jar ";
+	    print $FILEHANDLE "CreateSequenceDictionary.jar ";
 	    print $FILEHANDLE "R=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference genome
 	    print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'referencesDir'}."/".${$fileInfoHashRef}{'humanGenomeReferenceNameNoEnding'}."_".$randomInteger.".dict ", "\n\n";  #Output sequence dictionnary
 	    
@@ -9821,12 +9853,16 @@ sub GATKTargetListFlag {
 
     if (scalar(@GATKTargetPaddedBedIntervalListFiles) > 1) {  #Merge files
       
-	print $FILEHANDLE "\n#Generate merged interval_list\n\n"; 
-	print $FILEHANDLE "java -Xmx2g ";
+	print $FILEHANDLE "\n#Generate merged interval_list\n\n";
 
-	&WriteUseLargePages($FILEHANDLE, \${$scriptParameterHashRef}{'javaUseLargePages'});
-	
-	print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'picardToolsPath'}."/IntervalListTools.jar ";
+	&JavaCore($FILEHANDLE,
+		  {'memoryAllocation' => "Xmx2g",
+		   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
+		  });
+
+	print $FILEHANDLE "IntervalListTools.jar ";
 	print $FILEHANDLE "UNIQUE=TRUE ";  #Merge overlapping and adjacent intervals to create a list of unique intervals
     
 	for (my $fileCounter=0;$fileCounter<scalar(@GATKTargetPaddedBedIntervalListFiles);$fileCounter++) {
@@ -11443,10 +11479,10 @@ sub ConcatenateVCFs {
     &JavaCore($FILEHANDLE,
 	      {'memoryAllocation' => "Xmx4g",
 	       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-	       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+	       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+	       'javaJar' => ${$scriptParameterHashRef}{'snpEffPath'}."/SnpSift.jar"
 	      });
     
-    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'snpEffPath'}."/SnpSift.jar ";
     print $FILEHANDLE "split -j ";  #Joinf VCFs together
     
     for (my $elementCounter=0;$elementCounter<scalar(@{$arrayRef});$elementCounter++) {
@@ -11498,12 +11534,12 @@ sub CombineVariants {
     &JavaCore($FILEHANDLE,
 	      {'memoryAllocation' => "Xmx4g",
 	       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-	       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+	       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+	       'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
 	      });
 
-    print $FILEHANDLE "-jar ".${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar ";
-    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
     print $FILEHANDLE "-T CombineVariants ";  #Type of analysis to run
+    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
     print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
     
     for (my $elementCounter=0;$elementCounter<scalar(@{$arrayRef});$elementCounter++) {
@@ -12143,19 +12179,15 @@ sub JavaCore {
     
 ##Function : Writes java core commands to filehandle.  
 ##Returns  : ""
-##Arguments: $FILEHANDLE, $memoryAllocation, $javaUseLargePagesRef, $javaTemporaryDirectory
-##         : $FILEHANDLE             => Filehandle to write to
-##         : $memoryAllocation       => Memory allocation for java 
-##         : $javaUseLargePagesRef   => Use java large pages {REF}
-##         : $javaTemporaryDirectory => Redirect tmp files to java temp {Optional}
+##Arguments: $FILEHANDLE, $argHashRef
+##         : $FILEHANDLE                           => Filehandle to write to
+##         : $argHashRef{'memoryAllocation'}       => Memory allocation for java 
+##         : $argHashRef{'javaUseLargePagesRef'}   => Use java large pages {REF}
+##         : $argHashRef{'javaTemporaryDirectory'} => Redirect tmp files to java temp {Optional}
+##         : $argHashRef{'javaJar'}                => The JAR
 
     my $FILEHANDLE = shift;
     my ($argHashRef) = @_;
-
-    #my $memoryAllocation = $_[0];
-    #my $javaUseLargePagesRef = $_[1];
-    #my $FILEHANDLE = $_[2];
-    #my $javaTemporaryDirectory = $_[3];
     
     print $FILEHANDLE "java ";
     print $FILEHANDLE "-".${$argHashRef}{'memoryAllocation'}." "; 
@@ -12165,6 +12197,10 @@ sub JavaCore {
     if (defined(${$argHashRef}{'javaTemporaryDirectory'})) {
 
 	print $FILEHANDLE "-Djava.io.tmpdir=".${$argHashRef}{'javaTemporaryDirectory'}." ";  #Temporary Directory
+    }
+    if (defined(${$argHashRef}{'javaJar'})) {
+	
+	print $FILEHANDLE "-jar ".${$argHashRef}{'javaJar'}." ";
     }
 }
 
