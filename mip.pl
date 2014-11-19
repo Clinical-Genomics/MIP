@@ -1947,7 +1947,14 @@ sub RankVariants {
     close($FILEHANDLE);   
 
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
-	
+
+	&SampleInfoQC(\%{$sampleInfoHashRef},
+		      {'familyID' => ${$scriptParameterHashRef}{'familyID'},
+		       'programName' => $programName,
+		       'outDirectory' => $outFamilyDirectory,
+		       'outFileEnding' => $familyID.$outfileEnding.$callType.$analysisType.".vcf",
+		       'outDataType' => "static"
+		      });
 	&FIDSubmitJob(\%{$scriptParameterHashRef}, \%jobID, \%infilesLaneNoEnding,
 		       {'dependencies' => 1, 
 			'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
@@ -3109,9 +3116,16 @@ sub SnpEff {
     &RemoveDirectory(\${$scriptParameterHashRef}{'tempDirectory'}, $FILEHANDLE);
 
     close($FILEHANDLE);
-    
+
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 	
+	&SampleInfoQC(\%{$sampleInfoHashRef},
+		      {'familyID' => ${$scriptParameterHashRef}{'familyID'},
+		       'programName' => $programName,
+		       'outDirectory' => $outFamilyDirectory,
+		       'outFileEnding' => $familyID.$outfileEnding.$callType.$analysisType.".vcf",
+		       'outDataType' => "static"
+		      });
 	&FIDSubmitJob(\%{$scriptParameterHashRef}, \%jobID, \%infilesLaneNoEnding,
 		       {'dependencies' => 1, 
 			'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
@@ -4595,7 +4609,7 @@ sub PicardToolsCalculateHSMetrics {
 		   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 		  });
 
-	print $FILEHANDLE "CalculateHsMetrics.jar ";
+	print $FILEHANDLE "CalculateHsMetrics ";
 	print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile
 	print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding."_CalculateHsMetrics ";  #OutFile
 	print $FILEHANDLE "REFERENCE_SEQUENCE=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
@@ -4658,7 +4672,7 @@ sub PicardToolsCalculateHSMetrics {
 		       'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 		      });
 
-	    print $FILEHANDLE "CalculateHsMetrics.jar ";
+	    print $FILEHANDLE "CalculateHsMetrics ";
 	    print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile
 	    print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding."_CalculateHsMetrics ";  #OutFile
 	    print $FILEHANDLE "REFERENCE_SEQUENCE=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
@@ -4774,7 +4788,7 @@ sub PicardToolsCollectMultipleMetrics {
 		   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 		  });
 
-	print $FILEHANDLE "CollectMultipleMetrics.jar ";
+	print $FILEHANDLE "CollectMultipleMetrics ";
 	print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile
 	print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding." ";  #OutFile
 	print $FILEHANDLE "R=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}, "\n\n";  #Reference file
@@ -4838,7 +4852,7 @@ sub PicardToolsCollectMultipleMetrics {
 		       'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 		      }); 
 
-	    print $FILEHANDLE "CollectMultipleMetrics.jar ";
+	    print $FILEHANDLE "CollectMultipleMetrics ";
 	    print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile
 	    print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding." ";  #outFile
 	    print $FILEHANDLE "R=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." &", "\n\n";  #Reference file
@@ -5429,7 +5443,7 @@ sub PicardToolsMarkDuplicates {
 		   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 		  });
 	
-	print $FILEHANDLE "MarkDuplicates.jar ";
+	print $FILEHANDLE "MarkDuplicates ";
 	print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp Directory
 	print $FILEHANDLE "ASSUME_SORTED=true ";
 	print $FILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
@@ -5498,7 +5512,7 @@ sub PicardToolsMarkDuplicates {
 		       'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 		      });
 
-	    print $FILEHANDLE "MarkDuplicates.jar ";
+	    print $FILEHANDLE "MarkDuplicates ";
 	    print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp Directory
 	    print $FILEHANDLE "ASSUME_SORTED=true ";
 	    print $FILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
@@ -5631,7 +5645,7 @@ sub PicardToolsMerge {
 			   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 			  });
 
-		print $FILEHANDLE "MergeSamFiles.jar ";
+		print $FILEHANDLE "MergeSamFiles ";
 		print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp Directory
 		print $FILEHANDLE "CREATE_INDEX=TRUE ";  #create a BAM index when writing a coordinate-sorted BAM file.
 		print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$sampleID."_lanes_".$lanes.$outfileEnding.".bam ";  #OutFile
@@ -5675,7 +5689,7 @@ sub PicardToolsMerge {
 			       'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 			      });
 
-		    print $FILEHANDLE "MergeSamFiles.jar ";
+		    print $FILEHANDLE "MergeSamFiles ";
 		    print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp directory
 		    print $FILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
 		    print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$sampleID."_lanes_".$mergeLanes.$lanes.$outfileEnding.".bam ";  #OutFile
@@ -5724,7 +5738,7 @@ sub PicardToolsMerge {
 			   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 			  });
 		
-		print $FILEHANDLE "MergeSamFiles.jar ";
+		print $FILEHANDLE "MergeSamFiles ";
 		print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp Directory
 		print $FILEHANDLE "CREATE_INDEX=TRUE ";  #create a BAM index when writing a coordinate-sorted BAM file.
 		print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$sampleID."_lanes_".$mergeLanes.$lanes.$outfileEnding.".bam ";  #OutFile
@@ -5845,7 +5859,7 @@ sub PicardToolsSortSamIndex {
 		   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 		  });
 	
-	print $FILEHANDLE "SortSam.jar ";
+	print $FILEHANDLE "SortSam ";
 	print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp Directory
 	print $FILEHANDLE "SORT_ORDER=coordinate"." ";  #Sort per contig and coordinate
 	print $FILEHANDLE "CREATE_INDEX=TRUE ";  #create a BAM index when writing a coordinate-sorted BAM file. 
@@ -6170,7 +6184,7 @@ sub PicardToolsMergeRapidReads {
 			       'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 			      });
 		    
-		    print $FILEHANDLE "MergeSamFiles.jar ";
+		    print $FILEHANDLE "MergeSamFiles ";
 		    print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp Directory
 		    print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam ";  #OutFile
 		}
@@ -6189,7 +6203,7 @@ sub PicardToolsMergeRapidReads {
 		       'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 		      });
 	    
-	    print $FILEHANDLE "MergeSamFiles.jar ";
+	    print $FILEHANDLE "MergeSamFiles ";
 	    print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp Directory
 	    print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam ";  #OutFile
 	    
@@ -7242,7 +7256,7 @@ sub BuildPTCHSMetricPreRequisites {
 			   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 			  });
 		
-		print $FILEHANDLE "CreateSequenceDictionary.jar ";
+		print $FILEHANDLE "CreateSequenceDictionary ";
 		print $FILEHANDLE "R=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference genome
 		print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict ", "\n\n";  #Output sequence dictionnary
 		
@@ -7267,7 +7281,7 @@ sub BuildPTCHSMetricPreRequisites {
 			   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 			  });
 
-		print $FILEHANDLE "IntervalListTools.jar ";
+		print $FILEHANDLE "IntervalListTools ";
 		print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5 ";
 		print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5_".${$fileInfoHashRef}{'exomeTargetBedInfileLists'}." ", "\n\n";
 		    
@@ -7287,7 +7301,7 @@ sub BuildPTCHSMetricPreRequisites {
 			   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 			  });
 		
-		print $FILEHANDLE "IntervalListTools.jar ";
+		print $FILEHANDLE "IntervalListTools ";
 		print $FILEHANDLE "PADDING=100 ";  #Add 100 nt on both sides of bed entry
 		print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5 ";
 		print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'referencesDir'}."/".$sampleIDBuildFileNoEndingTemp.".dict_body_col_5".${$fileInfoHashRef}{'exomeTargetPaddedBedInfileLists'}." ", "\n\n";
@@ -7752,7 +7766,7 @@ sub BuildHumanGenomePreRequisites {
 		      'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 		     });
 
-	    print $FILEHANDLE "CreateSequenceDictionary.jar ";
+	    print $FILEHANDLE "CreateSequenceDictionary ";
 	    print $FILEHANDLE "R=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference genome
 	    print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'referencesDir'}."/".${$fileInfoHashRef}{'humanGenomeReferenceNameNoEnding'}."_".$randomInteger.".dict ", "\n\n";  #Output sequence dictionnary
 	    
@@ -9862,7 +9876,7 @@ sub GATKTargetListFlag {
 		   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 		  });
 
-	print $FILEHANDLE "IntervalListTools.jar ";
+	print $FILEHANDLE "IntervalListTools ";
 	print $FILEHANDLE "UNIQUE=TRUE ";  #Merge overlapping and adjacent intervals to create a list of unique intervals
     
 	for (my $fileCounter=0;$fileCounter<scalar(@GATKTargetPaddedBedIntervalListFiles);$fileCounter++) {
