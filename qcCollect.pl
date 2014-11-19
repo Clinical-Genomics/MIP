@@ -26,7 +26,7 @@ BEGIN {
                -v/--version Display version};
 }
 
-my ($sampleInfoFile, $regExpFile, $outfile, $printRegExp, $printRegExpOutFile, $version, $help) = (0,0,"qcmetrics.yaml", 0, "qc_regExp.yaml");
+my ($sampleInfoFile, $regExpFile, $outfile, $printRegExp, $printRegExpOutFile, $version, $help) = (0,0,"qcmetrics.yaml", 0, "qc_regExp.yaml", 0, 0);
 my (%sampleInfo, %regExp, %qcData, %evaluateMetric);
 my %qcHeader; #Save header(s) in each outfile
 my %qcProgramData; #Save data in each outFile
@@ -42,12 +42,14 @@ GetOptions('si|sampleInfoFile:s' => \$sampleInfoFile,
 
 if($help) {
 
-    print STDOUT $USAGE, "\n";
+    print STDOUT "\n".$USAGE, "\n";
     exit;
 }
+
+my $qcCollectVersion = "1.0.1";
 if($version) {
 
-    print STDOUT "\nqcCollect.pl v1.0\n\n";
+    print STDOUT "\nqcCollect.pl v".$qcCollectVersion,"\n\n";
     exit;
 }
 
@@ -86,6 +88,13 @@ my %regExpFile = &LoadYAML($regExpFile); #Load regExpFile (YAML) and transfer to
 &DefineEvaluateMetric(); #Defines programs, etrics and thresholds to evaluate
 
 &EvaluateQCParameters(); #Evaluate the metrics
+
+##Add qcCollect version to yaml file
+for my $familyID ( keys %sampleInfoFile ) { #For every family id
+
+    $qcData{$familyID}{$familyID}{'program'}{'QCCollect'}{'Version'} = $qcCollectVersion;
+    $qcData{$familyID}{$familyID}{'program'}{'QCCollect'}{'RegExpFile'} = $regExpFile;
+}
 
 &WriteYAML($outfile, \%qcData ); #Writes to YAML file
 
@@ -579,47 +588,49 @@ sub RegExpToYAML {
     my %regExp;
     #Add to %regExp to enable print in YAML
 
-    $regExp{'FastQC'}{'Encoding'} = q?perl -nae' if ($_=~/Encoding\s+(\S+\s\S+\s\S+\s\S+|\S+\s\S+)/) { my $encoding = $1;$encoding=~s/\s/\_/g; print $encoding;}' ?; #Collect Encoding
+    $regExp{'FastQC'}{'Version'} = q?perl -nae' if ($_=~/##FastQC\\s+(\\S+)/) {print $1;last;}' ?; #Collect FastQC version
+
+    $regExp{'FastQC'}{'Encoding'} = q?perl -nae' if ($_=~/Encoding\s+(\S+\s\S+\s\S+\s\S+|\S+\s\S+)/) { my $encoding = $1;$encoding=~s/\s/\_/g; print $encoding;last;}' ?; #Collect Encoding
     
-    $regExp{'FastQC'}{'Sequence_length'} = q?perl -nae' if ($_=~/Sequence length\s(\d+)/) {print $1;}' ?; #Collect Sequence length
+    $regExp{'FastQC'}{'Sequence_length'} = q?perl -nae' if ($_=~/Sequence length\s(\d+)/) {print $1;last;}' ?; #Collect Sequence length
     
-    $regExp{'FastQC'}{'Total_number_of_reads'} = q?perl -nae' if ($_=~/Total Sequences\s(\d+)/) {print $1;}' ?; #Collect Total sequences 
+    $regExp{'FastQC'}{'Total_number_of_reads'} = q?perl -nae' if ($_=~/Total Sequences\s(\d+)/) {print $1;last;}' ?; #Collect Total sequences 
     
-    $regExp{'FastQC'}{'GC'} = q?perl -nae' if ($_=~/%GC\s(\d+)/) {print $1;}' ?; #Collect GC content 
+    $regExp{'FastQC'}{'GC'} = q?perl -nae' if ($_=~/%GC\s(\d+)/) {print $1;last;}' ?; #Collect GC content 
     
-    $regExp{'FastQC'}{'Sequence_duplication'} = q?perl -nae' if ($_=~/#Total Duplicate Percentage\s+(\d+.\d)/) {print $1;}' ?; #Collect Sequence duplication level
+    $regExp{'FastQC'}{'Sequence_duplication'} = q?perl -nae' if ($_=~/#Total Duplicate Percentage\s+(\d+.\d)/) {print $1;last;}' ?; #Collect Sequence duplication level
     
-    $regExp{'FastQC'}{'Basic_statistics'} = q?perl -nae' if ($_=~/>>Basic Statistics\s+(\S+)/) {print $1;}' ?; #Collect Basic Statistics
+    $regExp{'FastQC'}{'Basic_statistics'} = q?perl -nae' if ($_=~/>>Basic Statistics\s+(\S+)/) {print $1;last;}' ?; #Collect Basic Statistics
     
-    $regExp{'FastQC'}{'Per_base_sequence_quality'} = q?perl -nae' if ($_=~/>>Per base sequence quality\s+(\S+)/) {print $1;}' ?; #Collect Per base sequence quality
+    $regExp{'FastQC'}{'Per_base_sequence_quality'} = q?perl -nae' if ($_=~/>>Per base sequence quality\s+(\S+)/) {print $1;last;}' ?; #Collect Per base sequence quality
     
-    $regExp{'FastQC'}{'Per_sequence_quality_scores'} = q?perl -nae' if ($_=~/>>Per sequence quality scores\s+(\S+)/) {print $1;}' ?; #Collect Per sequence quality scores
+    $regExp{'FastQC'}{'Per_sequence_quality_scores'} = q?perl -nae' if ($_=~/>>Per sequence quality scores\s+(\S+)/) {print $1;last;}' ?; #Collect Per sequence quality scores
     
-    $regExp{'FastQC'}{'Per_base_sequence_content'} = q?perl -nae' if ($_=~/>>Per base sequence content\s+(\S+)/) {print $1;}' ?; #Collect Per base sequence content
+    $regExp{'FastQC'}{'Per_base_sequence_content'} = q?perl -nae' if ($_=~/>>Per base sequence content\s+(\S+)/) {print $1;last;}' ?; #Collect Per base sequence content
     
-    $regExp{'FastQC'}{'Per_base_GC_content'} = q?perl -nae' if ($_=~/>>Per base GC content\s+(\S+)/) {print $1;}' ?; #Collect Per base GC content
+    $regExp{'FastQC'}{'Per_base_GC_content'} = q?perl -nae' if ($_=~/>>Per base GC content\s+(\S+)/) {print $1;last;}' ?; #Collect Per base GC content
     
-    $regExp{'FastQC'}{'Per_sequence_GC_content'} = q?perl -nae' if ($_=~/>>Per sequence GC content\s+(\S+)/) {print $1;}' ?; #Collect Per sequence GC content
+    $regExp{'FastQC'}{'Per_sequence_GC_content'} = q?perl -nae' if ($_=~/>>Per sequence GC content\s+(\S+)/) {print $1;last;}' ?; #Collect Per sequence GC content
     
-    $regExp{'FastQC'}{'Per_base_N_content'} = q?perl -nae' if ($_=~/>>Per base N content\s+(\S+)/) {print $1;}' ?; #Collect Per base N content
+    $regExp{'FastQC'}{'Per_base_N_content'} = q?perl -nae' if ($_=~/>>Per base N content\s+(\S+)/) {print $1;last;}' ?; #Collect Per base N content
     
-    $regExp{'FastQC'}{'Sequence_duplication_levels'} = q?perl -nae' if ($_=~/>>Sequence Duplication Levels\s+(\S+)/) {print $1;}' ?; #Collect Sequence Duplication Levels
+    $regExp{'FastQC'}{'Sequence_duplication_levels'} = q?perl -nae' if ($_=~/>>Sequence Duplication Levels\s+(\S+)/) {print $1;last;}' ?; #Collect Sequence Duplication Levels
     
-    $regExp{'FastQC'}{'Overrepresented_sequences'} = q?perl -nae' if ($_=~/>>Overrepresented sequences\s+(\S+)/) {print $1;}' ?; #Collect Overrepresented sequences
+    $regExp{'FastQC'}{'Overrepresented_sequences'} = q?perl -nae' if ($_=~/>>Overrepresented sequences\s+(\S+)/) {print $1;last;}' ?; #Collect Overrepresented sequences
     
-    $regExp{'FastQC'}{'Kmer_content'} = q?perl -nae' if ($_=~/>>Kmer Content\s+(\S+)/) {print $1;}' ?; #Collect Kmer Content
+    $regExp{'FastQC'}{'Kmer_content'} = q?perl -nae' if ($_=~/>>Kmer Content\s+(\S+)/) {print $1;last;}' ?; #Collect Kmer Content
     
-    $regExp{'MosaikAligner'}{'Version'} = q?perl -nae' if ($_=~/(\d+\.\d+\.\d+)\s/) {print $1;}' ?; #Collect Mosaik Version 
+    $regExp{'MosaikAligner'}{'Version'} = q?perl -nae' if ($_=~/(\d+\.\d+\.\d+)\s/) {print $1;last;}' ?; #Collect Mosaik Version 
     
-    $regExp{'MosaikAligner'}{'Unaligned_mates'} = q?perl -nae' if ($_=~/# unaligned mates\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;}' ?; #Collect Nr of unaligned mates
+    $regExp{'MosaikAligner'}{'Unaligned_mates'} = q?perl -nae' if ($_=~/# unaligned mates\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;last;}' ?; #Collect Nr of unaligned mates
     
-    $regExp{'MosaikAligner'}{'Filtered_out'} = q?perl -nae' if ($_=~/# filtered out\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;}' ?; #Collect Nr of filtered out reads 
+    $regExp{'MosaikAligner'}{'Filtered_out'} = q?perl -nae' if ($_=~/# filtered out\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;last;}' ?; #Collect Nr of filtered out reads 
     
-    $regExp{'MosaikAligner'}{'Uniquely_aligned_mates'} = q?perl -nae' if ($_=~/# uniquely aligned mates\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;}' ?; #Collect Uniquely aligned mates
+    $regExp{'MosaikAligner'}{'Uniquely_aligned_mates'} = q?perl -nae' if ($_=~/# uniquely aligned mates\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;last;}' ?; #Collect Uniquely aligned mates
     
-    $regExp{'MosaikAligner'}{'Multiply_aligned_mates'} = q?perl -nae' if ($_=~/# multiply aligned mates\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;}' ?; #Collect Multiply aligned mates
+    $regExp{'MosaikAligner'}{'Multiply_aligned_mates'} = q?perl -nae' if ($_=~/# multiply aligned mates\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;last;}' ?; #Collect Multiply aligned mates
     
-    $regExp{'MosaikAligner'}{'Total_aligned'} = q?perl -nae' if ($_=~/total aligned:\s+\S+\s+(\S+)\s\(\S+\s(\d+.\d+)/ ) {print $2;} elsif ($_=~/total aligned:\s+(\S+)\s\(\S+\s(\d+.\d+)/ ) { print $2}' ?; #Collect total aligned sequences
+    $regExp{'MosaikAligner'}{'Total_aligned'} = q?perl -nae' if ($_=~/total aligned:\s+\S+\s+(\S+)\s\(\S+\s(\d+.\d+)/ ) {print $2;last;} elsif ($_=~/total aligned:\s+(\S+)\s\(\S+\s(\d+.\d+)/ ) { print $2;last;}' ?; #Collect total aligned sequences
     $regExp{'ChanjoSexCheck'}{'gender'} = q?perl -nae 'if( ($F[0]!~/^#/) && ($F[2] =~/\S+/) ) {print $F[2];}' ?;  #Collect gender from ChanjoSexCheck
     $regExp{'pedigreeCheck'}{'Sample_order'} = q?perl -nae 'if ($_=~/^#CHROM/) {chomp $_; my @line = split(/\t/,$_); for (my $sample=9;$sample<scalar(@line);$sample++) { print $line[$sample], "\t";}last;}' ?; #Collect sample order from vcf file used to create ".ped", ".map" and hence ".mibs".
     
@@ -682,7 +693,18 @@ sub RegExpToYAML {
     $regExp{'VariantEval_All'}{'VariantSummary_header'}{'VariantSummary_data_all'} = q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?; #Note return whole line                                                                                                                                                                                                                   
     $regExp{'VariantEval_All'}{'VariantSummary_header'}{'VariantSummary_data_known'} = q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?; #Note return whole line                                                                                                                                                                                                                
     $regExp{'VariantEval_All'}{'VariantSummary_header'}{'VariantSummary_data_novel'} = q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?; #Note return whole line
-    $regExp{'VariantEval_Exome'} = $regExp{'VariantEval_All'};  
+
+    $regExp{'VariantEval_Exome'} = $regExp{'VariantEval_All'};
+
+    $regExp{'RankVariants'}{'Version'} = q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect Rankvariants version
+
+    $regExp{'SnpEff'}{'Version'} = q?perl -nae 'if($_=~/##SnpSiftVersion=\"(.+),/) {my $ret=$1; $ret=~s/\s/_/g;print $ret;last;}' ?; #Collect SnpEff version
+
+    $regExp{'VariantEffectPredictor'}{'Version'} = q?perl -nae 'if($_=~/##VEP=(\w+)/) {print $1;last;}' ?; #Collect VariantEffectPredictor version
+
+    $regExp{'VariantEffectPredictor'}{'Cache:'} = q?perl -nae 'if($_=~/##VEP=\w+\s+cache=(\S+)/) {print $1;last;}' ?; #Collect VariantEffectPredictor cache directory 
+
+    $regExp{'VCFParser'}{'Version'} = q?perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect VCFParser version
 #$regExp{''}{''} = ;
 
     

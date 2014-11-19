@@ -56,7 +56,7 @@ if($help) {
     exit;
 }
 
-my $vcfParserVersion = "1.1.0";
+my $vcfParserVersion = "1.1.1";
 
 if($version) {
     
@@ -150,17 +150,17 @@ sub DefineSnpEffAnnotations {
     $snpEffCmd{'SnpEff'}{'EXACAF'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_AF,Number=.,Type=String,Description="Estimated allele frequency in the range (0,1)">?;
 
     $snpEffCmd{'SnpEff'}{'CLNSIG'}{'File'} = q?clinvar_\d+.vcf?;
-    $snpEffCmd{'SnpEff'}{'CLNSIG'}{'INFO'} = q?##INFO=<ID=CLNSIG,Number=.,Type=String,Description="Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other">?;
-    $snpEffCmd{'SnpEff'}{'CLNSIG'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_CLNSIG,Number=.,Type=String,Description="Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other">?;
+    $snpEffCmd{'SnpEff'}{'CLNSIG'}{'INFO'} = q?##INFO=<ID=CLNSIG,Number=A,Type=String,Description="Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other">?;
+    $snpEffCmd{'SnpEff'}{'CLNSIG'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_CLNSIG,Number=A,Type=String,Description="Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other">?;
 
     $snpEffCmd{'SnpEff'}{'phastCons100way_vertebrate_prediction_term'}{'File'} = q?SnpSift dbnsfp?;
-    $snpEffCmd{'SnpEff'}{'phastCons100way_vertebrate_prediction_term'}{'INFO'} = q?##INFO=<ID=phastCons100way_vertebrate_prediction_term,Number=.,Type=String,Description="PhastCons conservation prediction term">?;
+    $snpEffCmd{'SnpEff'}{'phastCons100way_vertebrate_prediction_term'}{'INFO'} = q?##INFO=<ID=phastCons100way_vertebrate_prediction_term,Number=A,Type=String,Description="PhastCons conservation prediction term">?;
 
     $snpEffCmd{'SnpEff'}{'phyloP100way_vertebrate_prediction_term'}{'File'} = q?SnpSift dbnsfp?;
-    $snpEffCmd{'SnpEff'}{'phyloP100way_vertebrate_prediction_term'}{'INFO'} = q?##INFO=<ID=phyloP100way_vertebrate_prediction_term,Number=.,Type=String,Description="PhyloP conservation prediction term">?;
+    $snpEffCmd{'SnpEff'}{'phyloP100way_vertebrate_prediction_term'}{'INFO'} = q?##INFO=<ID=phyloP100way_vertebrate_prediction_term,Number=A,Type=String,Description="PhyloP conservation prediction term">?;
 
     $snpEffCmd{'SnpEff'}{'GERP++_RS_prediction_term'}{'File'} = q?SnpSift dbnsfp?;
-    $snpEffCmd{'SnpEff'}{'GERP++_RS_prediction_term'}{'INFO'} = q?##INFO=<ID=GERP++_RS_prediction_term,Number=.,Type=String,Description="GERP RS conservation prediction term">?;
+    $snpEffCmd{'SnpEff'}{'GERP++_RS_prediction_term'}{'INFO'} = q?##INFO=<ID=GERP++_RS_prediction_term,Number=A,Type=String,Description="GERP RS conservation prediction term">?;
 
 }
 
@@ -522,7 +522,7 @@ sub ReadInfileVCF {
 
 			if (scalar(@tempMafs) > 0) {
 
-			    ## Save Alternative Allele frequency info
+			    ## Save LCAF frequency info
 			    $variantLine .= $database."=".$tempMafs[0].";";
 			    $selectedVariantLine .= $database."=".$tempMafs[0].";";
 			}
@@ -551,7 +551,7 @@ sub ReadInfileVCF {
 			
 			$tempMaf = $tempMaf / 100; #fraction for consistent representation
 			
-			## Save Alternative Allele frequency info  
+			## Save MAF frequency info  
 			$variantLine .= $database."=".$tempMaf.";";
 			$selectedVariantLine .= $database."=".$tempMaf.";";
 		    }   
@@ -577,7 +577,7 @@ sub ReadInfileVCF {
 
 		    if (defined($conservationTerm)) {
 			
-			## Save Alternative Allele frequency info  
+			## Save database info  
 			$variantLine .= $database."=".$conservationTerm.";";
 			$selectedVariantLine .= $database."=".$conservationTerm.";";
 		    }
@@ -590,7 +590,7 @@ sub ReadInfileVCF {
 
 		    if (defined($conservationTerm)) {
 			
-			## Save Alternative Allele frequency info  
+			## Save database info
 			$variantLine .= $database."=".$conservationTerm.";";
 			$selectedVariantLine .= $database."=".$conservationTerm.";";
 		    }
@@ -604,7 +604,7 @@ sub ReadInfileVCF {
 
 		    if (defined($conservationTerm)) {
 			
-			## Save Alternative Allele frequency info  
+			## Save database info
 			$variantLine .= $database."=".$conservationTerm.";";
 			$selectedVariantLine .= $database."=".$conservationTerm.";";
 		    }
@@ -620,6 +620,7 @@ sub ReadInfileVCF {
 		
 		if ($parseVEP == 1) {
 		    
+		    ## Find CSQ field and extract transripts that belong to select genes
 		    if ($variantEffects[$variantEffectCounter]=~/CSQ\=(\S+)/) { #Find CSQ
 			
 			$CSQTranscripts = $1;
@@ -734,12 +735,13 @@ sub ReadInfileVCF {
 				if ($selectData{ $variantData{'Symbol'} }) { #Exists in selected Features
 				    
 				    $selectedTranscriptTracker = 1; #Record belongs to selected Features
-				    
-				    &AddFieldToElementCounter(\$selectedTranscriptCounter, \$selectedVariantLine, ",", \$variantData{'Symbol'}, \$outputFormat, "HGVScp=");
+				    my $alleleGeneEntry = $transcriptsEffects[ $vepFormatFieldColumn{'Allele'} ].":".$variantData{'Symbol'};
+				    &AddFieldToElementCounter(\$selectedTranscriptCounter, \$selectedVariantLine, ",", \$alleleGeneEntry, \$outputFormat, "HGVScp=");
 				}
 				else {
-				    
-				    &AddFieldToElementCounter(\$transcriptsCounter, \$variantLine, ",", \$variantData{'Symbol'}, \$outputFormat, "HGVScp=");
+
+				    my $alleleGeneEntry = $transcriptsEffects[ $vepFormatFieldColumn{'Allele'} ].":".$variantData{'Symbol'};
+				    &AddFieldToElementCounter(\$transcriptsCounter, \$variantLine, ",", \$alleleGeneEntry, \$outputFormat, "HGVScp=");
 				}				
 			    }
 			    &AddFieldToElement(\$selectedTranscriptTracker, \$selectedVariantLine, \$variantLine, ":", \$transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ]); #Save transcript

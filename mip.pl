@@ -3118,7 +3118,8 @@ sub SnpEff {
     close($FILEHANDLE);
 
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
-	
+
+	## Collect QC metadata info for later use
 	&SampleInfoQC(\%{$sampleInfoHashRef},
 		      {'familyID' => ${$scriptParameterHashRef}{'familyID'},
 		       'programName' => $programName,
@@ -3215,6 +3216,14 @@ sub VCFParser {
 
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
+	## Collect QC metadata info for later use
+	&SampleInfoQC(\%{$sampleInfoHashRef},
+		      {'familyID' => ${$scriptParameterHashRef}{'familyID'},
+		       'programName' => $programName,
+		       'outDirectory' => $outFamilyDirectory,
+		       'outFileEnding' => $familyID.$outfileEnding.$callType.".vcf",
+		       'outDataType' => "static"
+		      });
 	&FIDSubmitJob(\%{$scriptParameterHashRef}, \%jobID, \%infilesLaneNoEnding,
 		       {'dependencies' => 1, 
 			'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
@@ -3328,7 +3337,7 @@ sub VariantEffectPredictor {
     &RemoveDirectory(\${$scriptParameterHashRef}{'tempDirectory'}, $FILEHANDLE);
 
     close($FILEHANDLE);
-	
+
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
 	## Collect QC metadata info for later use                     	
@@ -3338,6 +3347,13 @@ sub VariantEffectPredictor {
 		       'outDirectory' => $directories,
 		       'outFileEnding' => $stderrFile,
 		       'outDataType' => "infoDirectory"
+		      });
+	&SampleInfoQC(\%{$sampleInfoHashRef},
+		      {'familyID' => ${$scriptParameterHashRef}{'familyID'},
+		       'programName' => $programName,
+		       'outDirectory' => $outFamilyDirectory,
+		       'outFileEnding' => $familyID.$outfileEnding.$callType.".vcf",
+		       'outDataType' => "static"
 		      });
 	
 	&FIDSubmitJob(\%{$scriptParameterHashRef}, \%jobID, \%infilesLaneNoEnding,
