@@ -103,7 +103,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pPtM/--pPicardToolsMergeSamFiles Merge (BAM file(s) ) using PicardTools MergeSamFiles (defaults to "1" (=yes))
                -pPtMR/--pPicardToolsMergeRapidReads Merge Read batch processed (BAM file(s)) using PicardTools MergeSamFiles (Only relevant in rapid mode;defaults to "0" (=no))
                  -ptmp/--picardToolsMergeSamFilesPrevious PicardTools MergeSamFiles on merged current files and previous BAM-file(s) (supply whole path and name, name must contain sample id, and lanes_Xn info)
-               -pPtMD/--pPicardToolsMarkduplicates Markduplicates using PicardTools MarkDuplicates (defaults to "1" (=yes))
+               -pPtMD/--pPicardToolsMarkduplicatesWithMateCigar Markduplicates using PicardTools MarkDuplicates (defaults to "1" (=yes))
                
                ##Coverage Calculations
                -pChS/--pChanjoSexCheck Predicts gender from sex chromosome coverage (defaults to "1")
@@ -308,7 +308,7 @@ chomp($base, $script);  #Remove \n;
 
 &DefineParameters(\%parameter, \@orderParameters, "pPicardToolsMergeSamFiles", "program", 1, "MIP", "_merged", "MAIN");
 
-&DefineParameters(\%parameter, \@orderParameters, "pPicardToolsMarkduplicates", "program", 1, "MIP", "_pmd", "MAIN");
+&DefineParameters(\%parameter, \@orderParameters, "pPicardToolsMarkduplicatesWithMateCigar", "program", 1, "MIP", "_pmd", "MAIN");
 
 
 ##Coverage
@@ -334,7 +334,7 @@ chomp($base, $script);  #Remove \n;
 
 &DefineParameters(\%parameter, \@orderParameters, "pRCovPlots", "program", 0, "MIP", "nofileEnding", "CoverageQC_RCOVP");
 
-&DefineParametersPath(\%parameter, \@orderParameters, "picardToolsPath", "nodefault", "pBwaMem,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicates,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics,pGATKHaploTypeCaller,pGATKVariantRecalibration", "directory");  #pGATKHaploTypeCaller,pGATKVariantRecalibration since these jars can use merged interval_list files, which are created in MIP with picardTools
+&DefineParametersPath(\%parameter, \@orderParameters, "picardToolsPath", "nodefault", "pBwaMem,pPicardToolsMergeSamFiles,pPicardToolsMarkduplicatesWithMateCigar,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics,pGATKHaploTypeCaller,pGATKVariantRecalibration", "directory");  #pGATKHaploTypeCaller,pGATKVariantRecalibration since these jars can use merged interval_list files, which are created in MIP with picardTools
 
 ##Target definition files
 my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists);  #Arrays for target bed infile lists
@@ -579,7 +579,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'pPtM|pPicardToolsMergeSamFiles:n' => \$parameter{'pPicardToolsMergeSamFiles'}{'value'},  #PicardTools mergeSamFiles
 	   'pPtMR|pPicardToolsMergeRapidReads:n' => \$parameter{'pPicardToolsMergeRapidReads'}{'value'},  #PicardTools mergeSamFiles - rapid mode
 	   'ptmp|picardToolsMergeSamFilesPrevious:s' => \@{$parameter{'picardToolsMergeSamFilesPrevious'}{'value'}},  #Comma separated list
-	   'pPtMD|pPicardToolsMarkduplicates:s' => \$parameter{'pPicardToolsMarkduplicates'}{'value'},  #PicardTools MarkDuplicates
+	   'pPtMD|pPicardToolsMarkduplicatesWithMateCigar:s' => \$parameter{'pPicardToolsMarkduplicatesWithMateCigar'}{'value'},  #PicardTools MarkDuplicates
 	   'ptp|picardToolsPath:s' => \$parameter{'picardToolsPath'}{'value'},  #Path to picardtools
 	   'pChS|pChanjoSexCheck:n' => \$parameter{'pChanjoSexCheck'}{'value'},   #Chanjo coverage analysis on sex chromosomes
 	   'pChB|pChanjoBuild:n' => \$parameter{'pChanjoBuild'}{'value'},   #Build central SQLiteDatabase
@@ -695,7 +695,7 @@ if ($parameter{'configFile'}{'value'} ne "nocmdinput") {  #Input from cmd
 ###Populate scriptParameters{'parameterName'} => 'Value'
 foreach my $orderParameterElement (@orderParameters) {
     
-##3 type of variables: MIP, path or program/program_parameters each is handled in the &AddToScriptParameter subroutine.
+    ## 3 type of variables: MIP, path or program/program_parameters each is handled in the &AddToScriptParameter subroutine.
     &AddToScriptParameter(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \@broadcasts,
 			   {'parameterName' => $orderParameterElement,
 			    'parameterValue' => $parameter{$orderParameterElement}{'value'},
@@ -706,7 +706,7 @@ foreach my $orderParameterElement (@orderParameters) {
 			    'programNamePath' => $parameter{$orderParameterElement}{'programNamePath'}
 			   });
 
-    ##Special case for parameters that are dependent on other parameters values
+    ## Special case for parameters that are dependent on other parameters values
     if ($orderParameterElement eq "outDataDir") {  #Set defaults depending on $scriptParameter{'outDataDir'} value that now has been set
 
 	$parameter{'sampleInfoFile'}{'default'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_qc_sampleInfo.yaml";
@@ -716,7 +716,7 @@ foreach my $orderParameterElement (@orderParameters) {
     }
     if ($orderParameterElement eq "logFile") {
 
-	###Creates log for the master script
+	## Creates log for the master script
 	my $conf = &CreateLog4perlCongfig(\$scriptParameter{'logFile'});
 	Log::Log4perl->init(\$conf);
 	$logger = Log::Log4perl->get_logger("MIPLogger");
@@ -732,18 +732,17 @@ foreach my $orderParameterElement (@orderParameters) {
 	}
     }
     if ($orderParameterElement eq "humanGenomeReference") {  #Supply humanGenomeReference to mosaikAlignReference if required
-	
+
 	if ( (defined($scriptParameter{'humanGenomeReference'})) && (defined($fileInfo{'humanGenomeReferenceNameNoEnding'})) ) {
 
 	    &SetAutoBuildFeature(\%scriptParameter, \%fileInfo, "mosaikAlignReference", \$fileInfo{'mosaikAlignReference'}, \$fileInfo{'humanGenomeReferenceNameNoEnding'});
 	    &SetAutoBuildFeature(\%scriptParameter, \%fileInfo, "mosaikJumpDbStub", \$fileInfo{'mosaikJumpDbStub'}, \$fileInfo{'humanGenomeReferenceNameNoEnding'});
-	    &SetAutoBuildFeature(\%scriptParameter, \%fileInfo, "bwaBuildReference", \$fileInfo{'bwaBuildReference'}, \$scriptParameter{'humanGenomeReference'});	
+	    &SetAutoBuildFeature(\%scriptParameter, \%fileInfo, "bwaBuildReference", \$fileInfo{'bwaBuildReference'}, \$scriptParameter{'humanGenomeReference'});
 	}
     }
 } 
 
-
-##sampleIDs
+## sampleIDs
 &DefineArrayParameters(\%parameter, \%scriptParameter, \@{$parameter{'sampleIDs'}{'value'}}, \@orderParameters, \@broadcasts, "sampleIDs", "path", "nodefault", "MIP", "");
 
 &CheckUniqueIDNs(\%scriptParameter, \@{$scriptParameter{'sampleIDs'}});  #Test that sampleIDs are unique
@@ -755,13 +754,13 @@ for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs
     &ScriptParameterPerSampleID(\%scriptParameter, \$scriptParameter{'familyID'}, \$scriptParameter{'sampleIDs'}[$sampleIDCounter], "GATKTargetPaddedBedIntervalLists");
 }
 
-##inFileDirs
+## inFileDirs
 &DefineArrayParameters(\%parameter, \%scriptParameter, \@{$parameter{'inFilesDirs'}{'value'}}, \@orderParameters, \@broadcasts, "inFilesDirs", "path", "notSetYet", "MIP", "directory");
 
-##Compares the number of elements in two arrays and exits if the elements are not equal
+## Compares the number of elements in two arrays and exits if the elements are not equal
 &CompareArrayElements(\@{$scriptParameter{'sampleIDs'}}, \@{$scriptParameter{'inFilesDirs'}}, "sampleIDs", "inFileDirs");
 
-##picardToolsMergeSamFilesPrevious
+## PicardToolsMergeSamFilesPrevious
 if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
     
     if( (scalar(@{$parameter{'picardToolsMergeSamFilesPrevious'}{'value'}}) > 0) ) {
@@ -875,8 +874,9 @@ elsif ($scriptParameter{'humanGenomeReference'}=~/GRCh\d+/) {  #Ensembl - no pre
 
 ## Reformat files for MIP output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames
 my $uncompressedFileSwitch = &InfilesReFormat(\%infile);  #Required to format infiles correctly for subsequent input into aligners
-    
-&CreateFileEndings(\%parameter, \%scriptParameter, \%fileInfo, \%infilesLaneNoEnding, \@orderParameters);  #Creates all fileendings as the samples is processed depending on the chain of modules activated
+
+## Creates all fileendings as the samples is processed depending on the chain of modules activated
+&CreateFileEndings(\%parameter, \%scriptParameter, \%fileInfo, \%infilesLaneNoEnding, \@orderParameters);
 
 ## Create .fam file to be used in variant calling analyses
 &CreateFamFile(\%scriptParameter);
@@ -1033,13 +1033,13 @@ if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {  #Run picardtools merge
     }
 }
 
-if ($scriptParameter{'pPicardToolsMarkduplicates'} > 0) {  #PicardTools MarkDuplicates
+if ($scriptParameter{'pPicardToolsMarkduplicatesWithMateCigar'} > 0) {  #PicardTools MarkDuplicates
 
-    $logger->info("[PicardTools MarkDuplicates]\n");
+    $logger->info("[PicardTools MarkDuplicatesWithMateCigar]\n");
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
     
-	&PicardToolsMarkDuplicates(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infilesLaneNoEnding, \%infilesBothStrandsNoEnding, \%lane, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'}, "PicardToolsMarkduplicates");	
+	&PicardToolsMarkduplicatesWithMateCigar(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infilesLaneNoEnding, \%infilesBothStrandsNoEnding, \%lane, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'}, "PicardToolsMarkduplicatesWithMateCigar");	
     }
 }
 
@@ -1542,9 +1542,9 @@ sub RemoveRedundantFiles {
 		
 		&CheckMostCompleteAndRemoveFile($FILEHANDLE, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam");  #merged BAM and bai file
 	    }	
-	    if (${$scriptParameterHashRef}{'pPicardToolsMarkduplicates'} > 0) {
+	    if (${$scriptParameterHashRef}{'pPicardToolsMarkduplicatesWithMateCigar'} > 0) {
 		
-		my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+		my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicatesWithMateCigar'}{'fileEnding'};
 		
 		&CheckMostCompleteAndRemoveFile($FILEHANDLE, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam");  #Dedupped BAM and bai file
 	    }
@@ -1577,9 +1577,9 @@ sub RemoveRedundantFiles {
 		
 		my $infile = ${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter];
 		
-		if (${$scriptParameterHashRef}{'pPicardToolsMarkduplicates'} > 0) {
+		if (${$scriptParameterHashRef}{'pPicardToolsMarkduplicatesWithMateCigar'} > 0) {
 		    
-		    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+		    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicatesWithMateCigar'}{'fileEnding'};
 
 		    &CheckMostCompleteAndRemoveFile($FILEHANDLE, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam");  #Dedupped BAM and bai file
 		}
@@ -3420,7 +3420,7 @@ sub GATKVariantReCalibration {
     }
 
     ## Detects if there are different capture kits across sampleIDs. Creates a temporary merged interval_list for all interval_list that have been supplied and returns temporary list. Will also extract specific contigs if requested and return that list if enabled.
-    my $contigIntervalListFile = &GATKTargetListFlag(\%scriptParameter, $FILEHANDLE);
+    my $contigIntervalListFile = &GATKTargetListFlag(\%{$scriptParameterHashRef}, $FILEHANDLE);
     
     ## Copy file(s) to temporary directory
     print $FILEHANDLE "## Copy file(s) to temporary directory\n"; 
@@ -3677,6 +3677,9 @@ sub GATKGenoTypeGVCFs {
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/gatk";
     my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{"p".$programName}{'fileEnding'}; 
 
+    ## Detects if there are different capture kits across sampleIDs. Creates a temporary merged interval_list for all interval_list that have been supplied and returns temporary list. Will also extract specific contigs if requested and return that list if enabled.
+    my $contigIntervalListFile = &GATKTargetListFlag(\%{$scriptParameterHashRef}, $FILEHANDLE);
+
     ## Collect infiles for all sampleIDs to enable migration to temporary directory
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDCounter++) {
 	
@@ -3729,6 +3732,7 @@ sub GATKGenoTypeGVCFs {
 
     if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) {
 
+	print $FILEHANDLE "-L ".$contigIntervalListFile." ";  #Target list file (merged or original)			
 	print $FILEHANDLE "-V ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKGenoTypeGVCFsRefGVCF'}." ";
     }
 
@@ -3980,7 +3984,10 @@ sub GATKBaseReCalibration {
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
     my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
-    
+
+    ## Detects if there are different capture kits across sampleIDs. Creates a temporary merged interval_list for all interval_list that have been supplied and returns temporary list. Will also extract specific contigs if requested and return that list if enabled.
+    my $contigIntervalListFile = &GATKTargetListFlag(\%{$scriptParameterHashRef}, $FILEHANDLE);
+
     if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
 
 	## Copy file(s) to temporary directory
@@ -4016,6 +4023,11 @@ sub GATKBaseReCalibration {
 	print $FILEHANDLE "-knownSites ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKBaseReCalibrationSNPKnownSet'}." ";
 	print $FILEHANDLE "-nct ".${$scriptParameterHashRef}{'maximumCores'}." ";  #How many CPU threads should be allocated per data thread to running this analysis
 	print $FILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus
+
+	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) {  #Exome/rapid analysis
+	    
+	    print $FILEHANDLE "-L ".$contigIntervalListFile." ";  #Target list file (merged or original)
+	}
 	print $FILEHANDLE "-I ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile
 	print $FILEHANDLE "-o ".$intermediarySampleDirectory."/".$infile.$infileEnding.".grp ", "\n\n";  #Recalibration table file
 	
@@ -4034,10 +4046,15 @@ sub GATKBaseReCalibration {
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging"-jar $gatk_path/GenomeAnalysisTK.
 	print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	print $FILEHANDLE "-nct ".${$scriptParameterHashRef}{'maximumCores'}." ";  #How many CPU threads should be allocated per data thread to running this analysis	  
-	print $FILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus  
+	print $FILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus
+	print $FILEHANDLE "-BQSR ".$intermediarySampleDirectory."/".$infile.$infileEnding.".grp ", "\n\n";  #Recalibration table file
+
+	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) {  #Exome/rapid analysis
+	    
+	    print $FILEHANDLE "-L ".$contigIntervalListFile." ";  #Target list file (merged or original)
+	}
 	print $FILEHANDLE "-I ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile
 	print $FILEHANDLE "-o ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding.".bam ";  #OutFile
-	print $FILEHANDLE "-BQSR ".$intermediarySampleDirectory."/".$infile.$infileEnding.".grp ", "\n\n";  #Recalibration table file
 
 	## Copies file from temporary directory.
 	print $FILEHANDLE "## Copy file from temporary directory\n"; 
@@ -4086,7 +4103,12 @@ sub GATKBaseReCalibration {
 	    print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	    print $FILEHANDLE "-knownSites ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKBaseReCalibrationSNPKnownSet'}." ";
 	    print $FILEHANDLE "-nct ".${$scriptParameterHashRef}{'maximumCores'}." ";  #How many CPU threads should be allocated per data thread to running this analysis
-	    print $FILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus	
+	    print $FILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus
+
+	    if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) {  #Exome/rapid analysis
+		
+		print $FILEHANDLE "-L ".$contigIntervalListFile." ";  #Target list file (merged or original)
+	    }	
 	    print $FILEHANDLE "-I ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile
 	    print $FILEHANDLE "-o ".$intermediarySampleDirectory."/".$infile.$infileEnding.".grp ", "\n\n";  #Recalibration table file
 
@@ -4106,9 +4128,14 @@ sub GATKBaseReCalibration {
 	    print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	    print $FILEHANDLE "-nct ".${$scriptParameterHashRef}{'maximumCores'}." ";  #How many CPU threads should be allocated per data thread to running this analysis
 	    print $FILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus
+	    print $FILEHANDLE "-BQSR ".$intermediarySampleDirectory."/".$infile.$infileEnding.".grp ", "\n\n";  #Recalibration table file
+
+	    if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) {  #Exome/rapid analysis
+	    
+	    print $FILEHANDLE "-L ".$contigIntervalListFile." ";  #Target list file (merged or original)
+	    }
 	    print $FILEHANDLE "-I ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile
 	    print $FILEHANDLE "-o ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding.".bam ";  #OutFile
-	    print $FILEHANDLE "-BQSR ".$intermediarySampleDirectory."/".$infile.$infileEnding.".grp ", "\n\n";  #Recalibration table file
 
 	    if ( (${$scriptParameterHashRef}{'pGATKBaseRecalibration'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) { 
 
@@ -4179,12 +4206,15 @@ sub GATKReAligner {
     my $intermediarySampleDirectory = ${$scriptParameterHashRef}{'tempDirectory'}."/gatk/intermediary";
     my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/gatk";
 
-    my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+    my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicatesWithMateCigar'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{"p".$programName}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
     my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
-    
+
+    ## Detects if there are different capture kits across sampleIDs. Creates a temporary merged interval_list for all interval_list that have been supplied and returns temporary list. Will also extract specific contigs if requested and return that list if enabled.
+    my $contigIntervalListFile = &GATKTargetListFlag(\%{$scriptParameterHashRef}, $FILEHANDLE);
+
     if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
 
 	## Copy file(s) to temporary directory
@@ -4213,6 +4243,11 @@ sub GATKReAligner {
 	print $FILEHANDLE "-known ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKReAlignerINDELKnownSet2'}." ";  #Input VCF file with known indels
 	print $FILEHANDLE "-nt ".$nrCores." ";  #How many data threads should be allocated to running this analysis.
 	print $FILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus
+
+	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) {  #Exome/rapid analysis
+	    
+	    print $FILEHANDLE "-L ".$contigIntervalListFile." ";  #Target list file (merged or original)
+	}
 	print $FILEHANDLE "-I ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile	    
 	print $FILEHANDLE "-o ".$intermediarySampleDirectory."/".$infile.$outfileEnding.".intervals ", "\n\n";  #Interval outFile
 	
@@ -4233,9 +4268,14 @@ sub GATKReAligner {
 	print $FILEHANDLE "-known ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKReAlignerINDELKnownSet1'}." ";  #Input VCF file with known indels
 	print $FILEHANDLE "-known ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKReAlignerINDELKnownSet2'}." ";  #Input VCF file with known indels	 
 	print $FILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus
+	print $FILEHANDLE "-targetIntervals ".$intermediarySampleDirectory."/".$infile.$outfileEnding.".intervals ", "\n\n";
+
+	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) {  #Exome/rapid analysis
+	    
+	    print $FILEHANDLE "-L ".$contigIntervalListFile." ";  #Target list file (merged or original)
+	}
 	print $FILEHANDLE "-I ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile	
 	print $FILEHANDLE "-o ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding.".bam ";  #OutFile
-	print $FILEHANDLE "-targetIntervals ".$intermediarySampleDirectory."/".$infile.$outfileEnding.".intervals ", "\n\n";
 
 	## Copies file from temporary directory.
 	print $FILEHANDLE "## Copy file from temporary directory\n"; 
@@ -4278,6 +4318,11 @@ sub GATKReAligner {
 	    print $FILEHANDLE "-known ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKReAlignerINDELKnownSet2'}." ";  #Input VCF file with known indels
 	    print $FILEHANDLE "-nt ".$nrCores." ";  #How many data threads should be allocated to running this analysis.
 	    print $FILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus	 
+
+	    if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) {  #Exome/rapid analysis
+	    
+		print $FILEHANDLE "-L ".$contigIntervalListFile." ";  #Target list file (merged or original)
+	    }
 	    print $FILEHANDLE "-I ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile
 	    print $FILEHANDLE "-o ".$intermediarySampleDirectory."/".$infile.$outfileEnding.".intervals ", "\n\n";  #Interval outFile
 	    
@@ -4298,9 +4343,14 @@ sub GATKReAligner {
 	    print $FILEHANDLE "-known ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKReAlignerINDELKnownSet1'}." ";  #Input VCF file with known indels
 	    print $FILEHANDLE "-known ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKReAlignerINDELKnownSet2'}." ";  #Input VCF file with known indels
 	    print $FILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus
+	    print $FILEHANDLE "-targetIntervals ".$intermediarySampleDirectory."/".$infile.$outfileEnding.".intervals ", "\n\n";
+
+	    if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) {  #Exome/rapid analysis
+		
+		print $FILEHANDLE "-L ".$contigIntervalListFile." ";  #Target list file (merged or original)
+	    }
 	    print $FILEHANDLE "-I ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile		
 	    print $FILEHANDLE "-o ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding.".bam ";  #OutFile
-	    print $FILEHANDLE "-targetIntervals ".$intermediarySampleDirectory."/".$infile.$outfileEnding.".intervals ", "\n\n";
 
 	    if ( (${$scriptParameterHashRef}{'pGATKRealigner'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 		
@@ -4367,7 +4417,7 @@ sub RCoveragePlots {
     my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/coveragereport";
     my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/coveragereport";
 
-    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicatesWithMateCigar'}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
     my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, $sampleID);    
@@ -4455,7 +4505,7 @@ sub GenomeCoverageBED {
     my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner;
     my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/coveragereport";
 
-    my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+    my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicatesWithMateCigar'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{"p".$programName}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
@@ -4586,8 +4636,8 @@ sub PicardToolsCalculateHSMetrics {
     my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner;
     my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/coveragereport";
 
-    my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
-    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+    my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicatesWithMateCigar'}{'fileEnding'};
+    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicatesWithMateCigar'}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
     my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
@@ -4765,8 +4815,8 @@ sub PicardToolsCollectMultipleMetrics {
     my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner;
     my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/coveragereport";
 
-    my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
-    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+    my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicatesWithMateCigar'}{'fileEnding'};
+    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicatesWithMateCigar'}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
     my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
@@ -5036,7 +5086,7 @@ sub ChanjoSexCheck {
     my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner;
     my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/coveragereport";
 
-    my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+    my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicatesWithMateCigar'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{"p".$programName}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
@@ -5171,7 +5221,7 @@ sub ChanjoAnnotate {
     my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner;
     my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/coveragereport";
 
-    my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicates'}{'fileEnding'};
+    my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicatesWithMateCigar'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{"p".$programName}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
@@ -5374,9 +5424,9 @@ sub ChanjoBuild {
 }
 
 
-sub PicardToolsMarkDuplicates { 
+sub PicardToolsMarkduplicatesWithMateCigar { 
 
-##PicardToolsMarkDuplicates
+##PicardToolsMarkduplicatesWithMateCigar
     
 ##Function : Mark duplicated reads using PicardTools MarkDuplicates in files generated from alignment (sorted, merged).
 ##Returns  : ""
@@ -5448,7 +5498,7 @@ sub PicardToolsMarkDuplicates {
 			    });
 	print $FILEHANDLE "wait", "\n\n";
 
-	## PicardToolsMarkDuplicates
+	## PicardToolsMarkduplicatesWithMateCigar
 	print $FILEHANDLE "## Marking Duplicates\n";
 
 	## Writes java core commands to filehandle.
@@ -5459,8 +5509,7 @@ sub PicardToolsMarkDuplicates {
 		   'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 		  });
 	
-	print $FILEHANDLE "MarkDuplicates ";
-	print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp Directory
+	print $FILEHANDLE "MarkDuplicatesWithMateCigar ";
 	print $FILEHANDLE "ASSUME_SORTED=true ";
 	print $FILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
 	print $FILEHANDLE "REMOVE_DUPLICATES=false ";
@@ -5475,7 +5524,7 @@ sub PicardToolsMarkDuplicates {
 	&MigrateFileFromTemp(${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding."metric", $outSampleDirectory."/".$infile.$outfileEnding."metric", $FILEHANDLE);
 	print $FILEHANDLE "wait", "\n\n";
 
-	if ( (${$scriptParameterHashRef}{'pPicardToolsMarkduplicates'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+	if ( (${$scriptParameterHashRef}{'pPicardToolsMarkduplicatesWithMateCigar'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
 	    ## Collect QC metadata info for later use
 	    &SampleInfoQC(\%{$sampleInfoHashRef}, 
@@ -5512,7 +5561,7 @@ sub PicardToolsMarkDuplicates {
 			     'fileEnding' => $infileEnding.".b*"
 			    });
 
-	## PicardToolsMarkDuplicates
+	## PicardToolsMarkduplicatesWithMateCigar
 	print $FILEHANDLE "## Marking Duplicates\n";
 	for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all files from independent of merged or not
 	    
@@ -5528,8 +5577,7 @@ sub PicardToolsMarkDuplicates {
 		       'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
 		      });
 
-	    print $FILEHANDLE "MarkDuplicates ";
-	    print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp Directory
+	    print $FILEHANDLE "MarkDuplicatesWithMateCigar ";
 	    print $FILEHANDLE "ASSUME_SORTED=true ";
 	    print $FILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
 	    print $FILEHANDLE "REMOVE_DUPLICATES=false ";
@@ -5538,7 +5586,7 @@ sub PicardToolsMarkDuplicates {
 	    print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding.".bam ";  #OutFile
 	    print $FILEHANDLE "METRICS_FILE=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding."metric &","\n\n";  #Metric file  
 
-	    if ( (${$scriptParameterHashRef}{'pPicardToolsMarkduplicates'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+	    if ( (${$scriptParameterHashRef}{'pPicardToolsMarkduplicatesWithMateCigar'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
 		## Collect QC metadata info for later use
 		&SampleInfoQC(\%{$sampleInfoHashRef}, 
@@ -5578,7 +5626,7 @@ sub PicardToolsMarkDuplicates {
 
 sub PicardToolsMerge { 
 #Merges all bam files using PicardTools MergeSamFiles within each sampleid and files generated previously (option if provided with '-picardToolsMergeSamFilesPrevious'). The merged files have to be sorted before attempting to merge.
-##PicardToolsMarkDuplicates
+##PicardToolsMerge
     
 ##Function : Mark duplicated reads using PicardTools MarkDuplicates in files generated from alignment (sorted, merged).
 ##Returns  : ""
@@ -5662,8 +5710,8 @@ sub PicardToolsMerge {
 			  });
 
 		print $FILEHANDLE "MergeSamFiles ";
-		print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp Directory
-		print $FILEHANDLE "CREATE_INDEX=TRUE ";  #create a BAM index when writing a coordinate-sorted BAM file.
+		print $FILEHANDLE "USE_THREADING=TRUE "; #Create a background thread to encode, compress and write to disk the output file
+		print $FILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
 		print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$sampleID."_lanes_".$lanes.$outfileEnding.".bam ";  #OutFile
 	    }
 	    print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile
@@ -5706,7 +5754,7 @@ sub PicardToolsMerge {
 			      });
 
 		    print $FILEHANDLE "MergeSamFiles ";
-		    print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp directory
+		    print $FILEHANDLE "USE_THREADING=TRUE "; #Create a background thread to encode, compress and write to disk the output file
 		    print $FILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
 		    print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$sampleID."_lanes_".$mergeLanes.$lanes.$outfileEnding.".bam ";  #OutFile
 		    print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$sampleID."_lanes_".$lanes.$outfileEnding.".bam ";  #InFile from previous merge
@@ -5755,7 +5803,7 @@ sub PicardToolsMerge {
 			  });
 		
 		print $FILEHANDLE "MergeSamFiles ";
-		print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp Directory
+		print $FILEHANDLE "USE_THREADING=TRUE "; #Create a background thread to encode, compress and write to disk the output file
 		print $FILEHANDLE "CREATE_INDEX=TRUE ";  #create a BAM index when writing a coordinate-sorted BAM file.
 		print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$sampleID."_lanes_".$mergeLanes.$lanes.$outfileEnding.".bam ";  #OutFile
 		print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile
@@ -5876,7 +5924,6 @@ sub PicardToolsSortSamIndex {
 		  });
 	
 	print $FILEHANDLE "SortSam ";
-	print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp Directory
 	print $FILEHANDLE "SORT_ORDER=coordinate"." ";  #Sort per contig and coordinate
 	print $FILEHANDLE "CREATE_INDEX=TRUE ";  #create a BAM index when writing a coordinate-sorted BAM file. 
 	print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.".bam ";  #InFile
@@ -6201,13 +6248,13 @@ sub PicardToolsMergeRapidReads {
 			      });
 		    
 		    print $FILEHANDLE "MergeSamFiles ";
-		    print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp Directory
+		    print $FILEHANDLE "USE_THREADING=TRUE "; #Create a background thread to encode, compress and write to disk the output file
+		    print $FILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
 		    print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam ";  #OutFile
 		}
 		print $FILEHANDLE "INPUT=".$inSampleDirectory."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter]."_".$readBatchProcessesCount."_sorted.bam ";  #InFile(s)
 	    }
-	    print $FILEHANDLE "CREATE_INDEX=TRUE &";  #Create a BAM index when writing a coordinate-sorted BAM file.
-	    print $FILEHANDLE "\n\n";
+	    print $FILEHANDLE "& ","\n\n";
 	    $coreTracker++;  #Track nr of merge calls for infiles so that wait can be printed at the correct intervals (dependent on ${$scriptParameterHashRef}{'maximumCores'})
 	}
 	else {  #Still needs to rename file to be included in potential merge of BAM files in next step
@@ -6220,11 +6267,10 @@ sub PicardToolsMergeRapidReads {
 		      });
 	    
 	    print $FILEHANDLE "MergeSamFiles ";
-	    print $FILEHANDLE "TMP_DIR=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Temp Directory
-	    print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam ";  #OutFile
-	    
+	    print $FILEHANDLE "USE_THREADING=TRUE "; #Create a background thread to encode, compress and write to disk the output file
+	    print $FILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
 	    print $FILEHANDLE "INPUT=".$inSampleDirectory."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter]."_0_sorted_rg.bam ";  #InFile
-	    print $FILEHANDLE "CREATE_INDEX=TRUE &";  #Create a BAM index when writing a coordinate-sorted BAM file.
+	    print $FILEHANDLE "OUTPUT=".$outSampleDirectory."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam &";  #OutFile
 	    print $FILEHANDLE "\n\n";
 	}
     }
@@ -6590,7 +6636,7 @@ sub MosaikAlign {
 
 	if (${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'file'}{${$infilesLaneNoEndingHashRef}{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") {  #Second read direction if present
 
-	    print $FILEHANDLE "-annpe ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'mosaikAlignNeuralNetworkPeFile'}." ";  #NerualNetworkPE
+	    print $FILEHANDLE "-annpe ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'mosaikAlignNeuralNetworkPeFile'}." ";  #NerualNetwork
 	    print $FILEHANDLE "-ls 100 "; #Enable local alignment search for PE reads
 	}
 	print $FILEHANDLE "-act ".$actParameter." ";  #The alignment candidate threshold (length)
@@ -8958,7 +9004,6 @@ sub AddToScriptParameter {
 	
 	@associatedPrograms = split(/,/, ${$argHashRef}{'associatedPrograms'});
     }
-
     foreach my $associatedProgram (@associatedPrograms) {  #Check all programs that use parameter
 
 	my $parameterSetSwitch = 0;
@@ -9154,7 +9199,7 @@ sub AddToScriptParameter {
 			&CheckFileEndingsToBeBuilt(\%{$scriptParameterHashRef}, \@{${$fileInfoHashRef}{'mosaikJumpDbStubFileEndings'}}, ${$argHashRef}{'parameterName'}); 
 		    }
 		    elsif (${$argHashRef}{'parameterName'} eq "bwaBuildReference") {
-			
+
 			&CheckFileEndingsToBeBuilt(\%{$scriptParameterHashRef}, \@{${$fileInfoHashRef}{'bwaBuildReferenceFileEndings'}}, ${$argHashRef}{'parameterName'});
 		    }
 		    elsif (${$argHashRef}{'parameterName'} eq "picardToolsMergeSamFilesPrevious") {
@@ -10432,7 +10477,7 @@ sub CheckFileEndingsToBeBuilt {
     my $parameterName = $_[2]; 
     
     for (my $fileEndingsRefCounter=0;$fileEndingsRefCounter<scalar(@{$fileEndingsRef});$fileEndingsRefCounter++) {  #All fileEndings
-	
+
 	&CheckExistance(\%parameter, \%{$scriptParameterHashRef}, \(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName}.${$fileEndingsRef}[$fileEndingsRefCounter]), \$parameterName, "f");
     }
 }
@@ -10486,7 +10531,7 @@ sub CheckExistance {
 	    else {
 		
 		${$parameterHashRef}{$$parameterNameRef}{'buildFile'} = &CheckAutoBuild(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \$$parameterNameRef);  #Check autoBuild or not and return value
-		 
+		
 		if (${$parameterHashRef}{$$parameterNameRef}{'buildFile'} == 0) {  #No autobuild
 		    
 		    $logger->fatal($USAGE, "\n");
@@ -10496,7 +10541,7 @@ sub CheckExistance {
 	    }
 	}
 	else {
-	    
+
 	    if (defined($sampleIDRef)) {
 		
 		${$parameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{$$parameterNameRef}{'buildFile'} = 0;  #File exist in this check
