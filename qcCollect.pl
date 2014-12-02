@@ -333,7 +333,6 @@ sub DefineEvaluateMetric {
     $evaluateMetric{"CalculateHsMetrics"}{"PCT_TARGET_BASES_10X"}{'threshold'} = 0.95;
     $evaluateMetric{"CalculateHsMetrics"}{"PCT_TARGET_BASES_30X"}{'threshold'} = 0.90;
     $evaluateMetric{"CalculateHsMetrics"}{"PCT_ADAPTER"}{'threshold'} = 0.0001;
-    $evaluateMetric{"MarkDuplicates"}{"PERCENT_DUPLICATION"}{'threshold'} = 0.30;
 }
 sub EvaluateQCParameters {
 
@@ -433,11 +432,12 @@ sub RelationCheck {
 	}
 	$sampleIDCounter++;
     }
-    my $fatherID; #fatherID for the family
-    my $motherID; #motherID for the family
+    my $fatherID = "YYY"; #fatherID for the family
+    my $motherID = "XXX"; #motherID for the family
 
     for my $sampleID ( keys %family ) { #For all sampleIDs
-	#Currently only 1 father or Mother per pedigree is supported
+
+	## Currently only 1 father or Mother per pedigree is supported
 
 	if ($sampleInfoFile{$$familyIDRef}{$sampleID}{'Father'} ne 0) { #Save fatherID if not 0
 
@@ -472,6 +472,7 @@ sub RelationCheck {
 			#print "Parent-to-child or child-to-child: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
 		    }
 		    else {
+
 			$incorrectRelation++;
 			$qcData{$$familyIDRef}{$sampleID}{'RelationCheck'} = "FAIL: Parents related?;";
 			#print "Incorrect: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
@@ -705,6 +706,8 @@ sub RegExpToYAML {
     $regExp{'VariantEffectPredictor'}{'Cache:'} = q?perl -nae 'if($_=~/##VEP=\w+\s+cache=(\S+)/) {print $1;last;}' ?; #Collect VariantEffectPredictor cache directory 
 
     $regExp{'VCFParser'}{'Version'} = q?perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect VCFParser version
+
+    $regExp{'ChanjoAnnotate'}{'Version'} = q?perl -nae 'if($_=~/version\s(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect Chanjo version
 #$regExp{''}{''} = ;
 
     

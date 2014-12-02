@@ -130,7 +130,7 @@ sub DefineSnpEffAnnotations {
 ##Defines the snpEff annotations that can be parsed and modified
     
     $snpEffCmd{'SnpEff'}{'Dbsnp129LCAF'}{'File'} = q?dbsnp_\S+.excluding_sites_after_129.vcf?;
-    $snpEffCmd{'SnpEff'}{'Dbsnp129LCAF'}{'INFO'} = q?##INFO=<ID=Dbsnp129LCAF,Number=1,Type=Float,Description="Least common AF in dbSNP excluding sites after 129.>?;
+    $snpEffCmd{'SnpEff'}{'Dbsnp129LCAF'}{'INFO'} = q?##INFO=<ID=Dbsnp129LCAF,Number=1,Type=Float,Description="Least common AF in dbSNP excluding sites after 129.">?;
     $snpEffCmd{'SnpEff'}{'Dbsnp129LCAF'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_CAF,Number=.,Type=String,Description="An ordered, comma delimited list of allele frequencies based on 1000Genomes, starting with the reference allele followed by alternate alleles as ordered in the ALT column. Where a 1000Genomes alternate allele is not in the dbSNPs alternate allele set, the allele is added to the ALT column.  The minor allele is the second largest value in the list, and was previuosly reported in VCF as the GMAF.  This is the GMAF reported on the RefSNP and EntrezSNP pages and VariationReporter">?;
 
     $snpEffCmd{'SnpEff'}{'DbsnpLCAF'}{'File'} = q?dbsnp_\d+.\w\d+.vcf?;
@@ -364,10 +364,9 @@ sub ReadInfileVCF {
 
 		    if ($_=~/$snpEffCmd{'SnpEff'}{$database}{'File'}/) { #SnpEff/Sift has been used to annotate input vcf
 			
-			$snpEffCmd{'Present'}{'database'}{$database} = $database; #Save which frequency db has been used for later
-			
 			unless (defined($vcfHeader{'INFO'}{$database})) { #Unless INFO header is already present add to metaDataHeader
 			    
+			    $snpEffCmd{'Present'}{'database'}{$database} = $database; #Save which frequency db has been used for later
 			    push(@{${$metaDataHashRef}{'INFO'}{$database}}, $snpEffCmd{'SnpEff'}{$database}{'INFO'});
 
 			    if (defined($snpEffCmd{'SnpEff'}{$database}{'FIX_INFO'})) { #If 'FIX_INFO' flag is present add to metaDataHeader
@@ -736,11 +735,13 @@ sub ReadInfileVCF {
 				    
 				    $selectedTranscriptTracker = 1; #Record belongs to selected Features
 				    my $alleleGeneEntry = $transcriptsEffects[ $vepFormatFieldColumn{'Allele'} ].":".$variantData{'Symbol'};
+				   
 				    &AddFieldToElementCounter(\$selectedTranscriptCounter, \$selectedVariantLine, ",", \$alleleGeneEntry, \$outputFormat, "HGVScp=");
 				}
 				else {
 
 				    my $alleleGeneEntry = $transcriptsEffects[ $vepFormatFieldColumn{'Allele'} ].":".$variantData{'Symbol'};
+				    
 				    &AddFieldToElementCounter(\$transcriptsCounter, \$variantLine, ",", \$alleleGeneEntry, \$outputFormat, "HGVScp=");
 				}				
 			    }
@@ -775,40 +776,41 @@ sub ReadInfileVCF {
 				
 				&AddFieldToElement(\$selectedTranscriptTracker, \$selectedVariantLine, \$variantLine, ":", \$transcriptsEffects[ $vepFormatFieldColumn{'Consequence'} ]);
 				my @consequences = split(/\&/, $transcriptsEffects[ $vepFormatFieldColumn{'Consequence'} ]); #Find "MostSevereConsequence
-				
+				my $allele = $transcriptsEffects[ $vepFormatFieldColumn{'Allele'} ];
+
 				for (my $consequencesCounter=0;$consequencesCounter<scalar(@consequences);$consequencesCounter++) {
 				    
-				    if ( defined($consequence{ $variantData{'Symbol'} }{'Score'}) ) { #Compare to previous record
+				    if ( defined($consequence{ $variantData{'Symbol'} }{$allele}{'Score'}) ) { #Compare to previous record
 					
-					if ($consequenceSeverity{$consequences[$consequencesCounter]}{'Rank'} < $consequence{ $variantData{'Symbol'} }{'Score'}) { #Collect most severe consequence for Gene_annotation
+					if ($consequenceSeverity{$consequences[$consequencesCounter]}{'Rank'} < $consequence{ $variantData{'Symbol'} }{$allele}{'Score'}) { #Collect most severe consequence
 					    
-					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'Score'}, \$consequenceSeverity{$consequences[$consequencesCounter]}{'Rank'});
-					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'GeneticRegionAnnotation'}, \$consequenceSeverity{$consequences[$consequencesCounter]}{'GeneticRegionAnnotation'});
-					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'MostSevereConsequence'}, \$consequences[$consequencesCounter]);
+					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'Score'}, \$consequenceSeverity{$consequences[$consequencesCounter]}{'Rank'});
+					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'GeneticRegionAnnotation'}, \$consequenceSeverity{$consequences[$consequencesCounter]}{'GeneticRegionAnnotation'});
+					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'MostSevereConsequence'}, \$consequences[$consequencesCounter]);
 					    
 					    if (defined($vepFormatFieldColumn{'SIFT'}) ) {    
 						
-						&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'Sift'}, \$transcriptsEffects[ $vepFormatFieldColumn{'SIFT'} ]);
+						&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'Sift'}, \$transcriptsEffects[ $vepFormatFieldColumn{'SIFT'} ]);
 					    }
 					    if (defined($vepFormatFieldColumn{'PolyPhen'}) ) {
 						
-						&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'PolyPhen'}, \$transcriptsEffects[ $vepFormatFieldColumn{'PolyPhen'} ]);
+						&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'PolyPhen'}, \$transcriptsEffects[ $vepFormatFieldColumn{'PolyPhen'} ]);
 					    }
 					}
 				    }
 				    else { #First pass
 					
-					&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'Score'}, \$consequenceSeverity{$consequences[$consequencesCounter]}{'Rank'});
-					&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'GeneticRegionAnnotation'}, \$consequenceSeverity{$consequences[$consequencesCounter]}{'GeneticRegionAnnotation'});
-					&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'MostSevereConsequence'}, \$consequences[$consequencesCounter]);    
+					&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'Score'}, \$consequenceSeverity{$consequences[$consequencesCounter]}{'Rank'});
+					&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'GeneticRegionAnnotation'}, \$consequenceSeverity{$consequences[$consequencesCounter]}{'GeneticRegionAnnotation'});
+					&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'MostSevereConsequence'}, \$consequences[$consequencesCounter]);    
 					
 					if (defined($vepFormatFieldColumn{'SIFT'}) ) {
 					    
-					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'Sift'}, \$transcriptsEffects[ $vepFormatFieldColumn{'SIFT'} ]);
+					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'Sift'}, \$transcriptsEffects[ $vepFormatFieldColumn{'SIFT'} ]);
 					}
 					if (defined($vepFormatFieldColumn{'PolyPhen'}) ) {
 					    
-					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{'PolyPhen'}, \$transcriptsEffects[ $vepFormatFieldColumn{'PolyPhen'} ]);
+					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'PolyPhen'}, \$transcriptsEffects[ $vepFormatFieldColumn{'PolyPhen'} ]);
 					}
 				    }
 				}
@@ -853,10 +855,6 @@ sub ReadInfileVCF {
 				
 				$transcriptsCounter++;
 			    }
-			    #for (my $transcriptsEffectsCounter=0;$transcriptsEffectsCounter<scalar(@transcriptsEffects);$transcriptsEffectsCounter++) {
-			    
-			    #print STDOUT $transcriptsEffects[$transcriptsEffectsCounter], "\t";
-			    #}
 			}   
 		    }
 		    &CollectConsequenceGenes(\%consequence, \@featureFields, \$selectedVariantLine, \$variantLine);
@@ -1044,27 +1042,40 @@ sub CollectConsequenceField {
     my $selectedArrayRef = $_[5];
     my $formatRef = $_[6];
 
+    my $alleleNumber = scalar(keys %{${$hashRef}{$$geneRef}});  #Enable tracking of multiple alleles
+
     if ($$hashCounterRef{$$fieldCounterRef} == 0) { #First time
 	
-	if (defined($$hashRef{$$geneRef}{$$fieldArrayRef[$$fieldCounterRef]}) && ($$hashRef{$$geneRef}{$$fieldArrayRef[$$fieldCounterRef]} ne "")) { #If feature exists - else do nothing
+	my $allelCounter = 1;
+	for my $allele (keys %{${$hashRef}{$$geneRef}}) {  #All alleles
 	    
-	    if ($$formatRef eq "vcf") {
-
-		$$selectedArrayRef[$$fieldCounterRef] .= ";".$$fieldArrayRef[$$fieldCounterRef]."=".$$geneRef.":".$$hashRef{$$geneRef}{$$fieldArrayRef[$$fieldCounterRef]};
-		$$hashCounterRef{$$fieldCounterRef}++;
-	    }
-	    if ($$formatRef eq "tsv") {
+	    if (defined($$hashRef{$$geneRef}{$allele}{$$fieldArrayRef[$$fieldCounterRef]}) && ($$hashRef{$$geneRef}{$allele}{$$fieldArrayRef[$$fieldCounterRef]} ne "")) { #If feature exists - else do nothing
 		
-		$$selectedArrayRef[$$fieldCounterRef] .= "\t".$$geneRef.":".$$hashRef{$$geneRef}{$$fieldArrayRef[$$fieldCounterRef]};
+		if ($allelCounter == 1) {
+		    
+		    $$selectedArrayRef[$$fieldCounterRef] .= ";".$$fieldArrayRef[$$fieldCounterRef]."=".$$geneRef.":".$allele."|".$$hashRef{$$geneRef}{$allele}{$$fieldArrayRef[$$fieldCounterRef]};
+		}
+		else {
+		    
+		    $$selectedArrayRef[$$fieldCounterRef] .= ",".$$geneRef.":".$allele."|".$$hashRef{$$geneRef}{$allele}{$$fieldArrayRef[$$fieldCounterRef]};
+		}
 		$$hashCounterRef{$$fieldCounterRef}++;
+		$allelCounter++;
 	    }
 	}
     }
     else { #Subsequent passes
 	
-	if (defined($$hashRef{$$geneRef}{$$fieldArrayRef[$$fieldCounterRef]}) && ($$hashRef{$$geneRef}{$$fieldArrayRef[$$fieldCounterRef]} ne "")) { #If feature exists - else do nothing
+	for my $allele (keys %{${$hashRef}{$$geneRef}}) {  #All alleles
 	    
-	    $$selectedArrayRef[$$fieldCounterRef] .= ",".$$geneRef.":".$$hashRef{$$geneRef}{$$fieldArrayRef[$$fieldCounterRef]};
+	    if (defined($$hashRef{$$geneRef}{$allele}{$$fieldArrayRef[$$fieldCounterRef]}) && ($$hashRef{$$geneRef}{$allele}{$$fieldArrayRef[$$fieldCounterRef]} ne "")) { #If feature exists - else do nothing
+		
+		#for my $allele (keys %{${$hashRef}{$$geneRef}}) {  #All alleles
+		    
+		$$selectedArrayRef[$$fieldCounterRef] .= ",".$$geneRef.":".$allele."|".$$hashRef{$$geneRef}{$allele}{$$fieldArrayRef[$$fieldCounterRef]};
+		#}
+		#last; #All alleles processed - skip rest of loop
+	    }
 	}
     }    
 }
