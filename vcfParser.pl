@@ -568,6 +568,19 @@ sub ReadInfileVCF {
 			$selectedVariantLine .= $database."=".$tempMaf.";";
 		    }
 		}
+		elsif($database eq "CLNSIG") {
+		    
+		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
+		    
+		    my $tempMaf = &FindAF(\@tempArray, "\\S+_CLNSIG=");
+		    
+		    if (defined($tempMaf)) {
+			
+			## Save Alternative Allele frequency info  
+			$variantLine .= $database."=".$tempMaf.";";
+			$selectedVariantLine .= $database."=".$tempMaf.";";
+		    }
+		}
 		elsif($database eq "phastCons100way_vertebrate_prediction_term") {
 		    
 		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
