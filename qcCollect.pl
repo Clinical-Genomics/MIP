@@ -1,4 +1,5 @@
 #!/usr/bin/perl - w                                                                                                                                                                                       
+
 use strict;
 use warnings;
 
@@ -25,8 +26,8 @@ BEGIN {
                -v/--version Display version};
 }
 
-my ($sampleInfoFile, $regExpFile, $outfile, $printRegExp, $printRegExpOutFile, $version, $help) = (0,0,"qcmetrics.yaml", 0, "qc_regExp.yaml");
-my (%sampleInfo, %regExp, %qcData);
+my ($sampleInfoFile, $regExpFile, $outfile, $printRegExp, $printRegExpOutFile, $version, $help) = (0,0,"qcmetrics.yaml", 0, "qc_regExp.yaml", 0, 0);
+my (%sampleInfo, %regExp, %qcData, %evaluateMetric);
 my %qcHeader; #Save header(s) in each outfile
 my %qcProgramData; #Save data in each outFile
 
@@ -41,12 +42,14 @@ GetOptions('si|sampleInfoFile:s' => \$sampleInfoFile,
 
 if($help) {
 
-    print STDOUT $USAGE, "\n";
+    print STDOUT "\n".$USAGE, "\n";
     exit;
 }
+
+my $qcCollectVersion = "1.0.1";
 if($version) {
 
-    print STDOUT "\nqcCollect.pl v1.0\n\n";
+    print STDOUT "\nqcCollect.pl v".$qcCollectVersion,"\n\n";
     exit;
 }
 
@@ -82,11 +85,28 @@ my %regExpFile = &LoadYAML($regExpFile); #Load regExpFile (YAML) and transfer to
 
 &FamilyQC(); #Extracts all qcdata on family level using information in %sampleInfoFile and %regExpFile
 
+&DefineEvaluateMetric(); #Defines programs, etrics and thresholds to evaluate
+
+&EvaluateQCParameters(); #Evaluate the metrics
+
+##Add qcCollect version to yaml file
+for my $familyID ( keys %sampleInfoFile ) { #For every family id
+
+    $qcData{$familyID}{$familyID}{'program'}{'QCCollect'}{'Version'} = $qcCollectVersion;
+    $qcData{$familyID}{$familyID}{'program'}{'QCCollect'}{'RegExpFile'} = $regExpFile;
+}
+
 &WriteYAML($outfile, \%qcData ); #Writes to YAML file
 
 ####SubRoutines
 
 sub FamilyQC {
+
+##FamilyQC
+
+##Function  : Extracts all qcdata on family level using information in %sampleInfoFile and %regExpFile
+##Returns   : ""
+##Arguments : 
 
     for my $familyID ( keys %sampleInfoFile ) { #For every family id 
 
@@ -119,7 +139,12 @@ sub FamilyQC {
 }
 
 sub SampleQC {
-###Collects all sample qc in files defined by sampleInfoFile and regular expressions defined by regExpFile.
+
+##SampleQC
+
+##Function  : Collects all sample qc in files defined by sampleInfoFile and regular expressions defined by regExpFile.
+##Returns   : ""
+##Arguments : 
     
     for my $familyID ( keys %sampleInfoFile ) { #For every family id
 	
@@ -149,11 +174,19 @@ sub SampleQC {
 }
 
 sub ParseRegExpHashAndCollect {
-###Parses the RegExpHash structure to identify if the info is 1) Paragraf section(s) (both header and data line(s)); 2) Seperate data line
 
-    my $program = $_[0]; #From SampleInfo
-    my $outDirectory = $_[1]; #From SampleInfo
-    my $outFile = $_[2]; #From SampleInfo
+##ParseRegExpHashAndCollect
+
+##Function  : Parses the RegExpHash structure to identify if the info is 1) Paragraf section(s) (both header and data line(s)); 2) Seperate data line.
+##Returns   : ""
+##Arguments : $program, $outDirectory, $outFile
+##          : $program      => The program to examine
+##          : $outDirectory => Programs out directory
+##          : $outFile      => Programs out file containing parameter to evaluate
+
+    my $program = $_[0];
+    my $outDirectory = $_[1];
+    my $outFile = $_[2]; 
     
     my $regExp; #Holds the current regExp
     my @separators = ('\s+','!',','); #Covers both whitespace and tab. Add other separators if required
@@ -173,13 +206,13 @@ sub ParseRegExpHashAndCollect {
                         
 			@{ $qcHeader{$program}{$regExpKey}{$regExpHeaderKey} } = split(/$separators[$separatorElement]/, `$regExp $outDirectory/$outFile`); #Collect paragraf header                           
 			if ( defined($qcHeader{$program}{$regExpKey}{$regExpHeaderKey})) { #Then split should have been successful                                                                                          
-			    last; #Found correct separator do not continue                                                                                         
+			    last; #Found correct separator - do not continue                                                                                         
 			}   
 		    }
 		    else { #For paragraf data line(s)                                                                                                                        
 			@{ $qcProgramData{$program}{$regExpKey}{$regExpHeaderKey} } = split(/$separators[$separatorElement]/, `$regExp $outDirectory/$outFile`); #Collect paragraf data
 			if ( defined($qcProgramData{$program}{$regExpKey}{$regExpHeaderKey}[1])) { #Then split should have been successful                                                                                                                           
-			    last; #Found correct separator do not continue                                                                                                                                      
+			    last; #Found correct separator - do not continue                                                                                                                                      
 			}
 		    }
 		}
@@ -194,21 +227,30 @@ sub ParseRegExpHashAndCollect {
 		@{ $qcProgramData{$program}{$regExpKey} } = split(/$separators[$separatorElement]/, `$regExp $outDirectory/$outFile`); #Collect data. Use regExpKey as element header
 
 		if ( defined($qcProgramData{$program}{$regExpKey}[1])) { #Then split should have been successful                                                     
+
 		    last; #Found correct separator do not continue                                                                                      
 		}
 	    }
 	}
     }
-    return;
 }
 
 sub AddToqcData {
-##Add to qcData hash to enable write to yaml format
+
+##AddToqcData
+
+##Function  : Add to qcData hash to enable write to yaml format
+##Returns   : ""
+##Arguments : $familyID, $sampleID, $program, $inFile
+##          : $familyID => FamilyID
+##          : $sampleID => SampleID
+##          : $program  => The program to examine 
+##          : $inFile   => infile to program
     
-    my $familyID = $_[0]; #From SampleInfo
-    my $sampleID = $_[1]; #From SampleInfo 
-    my $program = $_[2]; #From SampleInfo
-    my $infile = $_[3]; #From SampleInfo
+    my $familyID = $_[0]; 
+    my $sampleID = $_[1];  
+    my $program = $_[2]; 
+    my $infile = $_[3];
     
     for my $regExpKey ( keys %{ $regExpFile{$program} } ) { #All regExp per program 
 	
@@ -217,10 +259,17 @@ sub AddToqcData {
 	    if (scalar(@{ $qcProgramData{$program}{$regExpKey} }) == 1) { #Enable seperation of writing array or key-->value in qcData
 		
 		if ( ($familyID) && ($sampleID) && ($infile) ) {
+		    
 		    $qcData{$familyID}{$sampleID}{$infile}{$program}{$regExpKey} = $qcProgramData{$program}{$regExpKey}[0]; #key-->value for sampleID
 		}
 		elsif ($familyID) {
+		    
 		    $qcData{$familyID}{$familyID}{'program'}{$program}{$regExpKey} = $qcProgramData{$program}{$regExpKey}[0]; #key-->value for familyID
+		}
+		if ($program eq "ChanjoSexCheck") {#Check gender for sampleID
+		    
+		    my $ChanjoSexCheck = @{$qcProgramData{$program}{$regExpKey}}[0]; #ArrayRef
+		    &GenderCheck(\$familyID, \$sampleID, \$infile, \$ChanjoSexCheck); #Check that assumed gender is supported by coverage on chrX and chrY
 		}
 	    }
 	    else { #Write array to qcData
@@ -235,11 +284,6 @@ sub AddToqcData {
 
 			$qcData{$familyID}{$familyID}{'program'}{$program}{$regExpKey}[$regExpKeyCounter] = $qcProgramData{$program}{$regExpKey}[$regExpKeyCounter];			
 		    }
-		}
-		if ($program eq "QaCompute") {#Check gender for sampleID
-		    my $chrXCoverage = $qcData{$familyID}{$sampleID}{$infile}{$program}{$regExpKey}[0];
-		    my $chrYCoverage = $qcData{$familyID}{$sampleID}{$infile}{$program}{$regExpKey}[1];
-		    &GenderCheck(\$familyID,\$sampleID,\$infile, \$chrXCoverage, \$chrYCoverage); #Check that assumed gender is supported by coverage on chrX and chrY
 		}
 		if (defined($qcData{$familyID}{$familyID}{'program'}{'RelationCheck'}{'Sample_RelationCheck'}) && defined ($qcData{$familyID}{$familyID}{'program'}{'pedigreeCheck'}{'Sample_order'}) ) {
 		    
@@ -259,9 +303,11 @@ sub AddToqcData {
 			for (my $qcHeadersCounter=0;$qcHeadersCounter<scalar( @{ $qcHeader{$program}{$regExpKey}{$regExpHeaderKey} } );$qcHeadersCounter++) { #For all collected headers
                             
 			    if ( ($familyID) && ($sampleID) && ($infile)) {
+				
 				$qcData{$familyID}{$sampleID}{$infile}{$program}{$regExpHeaderKey}{$regExpKeyHeader}{ $qcHeader{$program}{$regExpKey}{$regExpHeaderKey}[$qcHeadersCounter] } = $qcProgramData{$program}{$regExpKey}{$regExpKeyHeader}[$qcHeadersCounter]; #Add to qcData using header element[X] --> data[X] to correctly position elements in qcData hash 
                             } 
                             elsif ($familyID) {
+				
 				$qcData{$familyID}{$familyID}{$program}{$regExpHeaderKey}{$regExpKeyHeader}{ $qcHeader{$program}{$regExpKey}{$regExpHeaderKey}[$qcHeadersCounter] } = $qcProgramData{$program}{$regExpKey}{$regExpKeyHeader}[$qcHeadersCounter]; #Add to qcData using header element[X] --> data[X] to correctly position elements in qcData hash
 				
                             }
@@ -272,6 +318,97 @@ sub AddToqcData {
 	}
     }
 }
+
+sub DefineEvaluateMetric {
+
+##DefineEvaluateMetric
+
+##Function  : Sets programs and program metrics and thresholds to be evaluated
+##Returns   : ""
+##Arguments : 
+
+    $evaluateMetric{"MosaikAligner"}{"Total_aligned"}{'threshold'} = 95;
+    $evaluateMetric{"MosaikAligner"}{"Uniquely_aligned_mates"}{'threshold'} = 90;
+    $evaluateMetric{"CalculateHsMetrics"}{"MEAN_TARGET_COVERAGE"}{'threshold'} = 100;
+    $evaluateMetric{"CalculateHsMetrics"}{"PCT_TARGET_BASES_10X"}{'threshold'} = 0.95;
+    $evaluateMetric{"CalculateHsMetrics"}{"PCT_TARGET_BASES_30X"}{'threshold'} = 0.90;
+    $evaluateMetric{"CalculateHsMetrics"}{"PCT_ADAPTER"}{'threshold'} = 0.0001;
+}
+sub EvaluateQCParameters {
+
+##EvaluateQCParameters
+
+##Function  : Evaluate parameters to detect parameters falling below threshold 
+##Returns   : ""
+##Arguments : 
+##          : 
+
+    my $status;
+
+    for my $familyID ( keys %qcData ) {
+
+	for my $ID ( keys %{$qcData{$familyID}} ) { #Can be both sampleID and familyID with current structure
+
+	    for my $infile ( keys %{$qcData{$familyID}{$ID}} ) {
+		
+		if ($infile =~/RelationCheck/) { #Special case
+		  
+		    if ($qcData{$familyID}{$ID}{$infile} ne "PASS") {
+
+			$status = "Status:".$infile.":".$qcData{$familyID}{$ID}{$infile};
+			push(@{$qcData{$familyID}{$familyID}{'Evaluation'}{$infile}}, $status); #Add to QC data at family level
+		    }
+		    next;
+		}
+		if ($infile =~/Evaluation/) { #Special case
+		    
+		    next;
+		}
+		for my $program ( keys %{$qcData{$familyID}{$ID}{$infile}} ) {
+
+		    if (defined($evaluateMetric{$program})) { #Program to be evaluated
+	
+			for my $metric ( keys %{$evaluateMetric{$program}}) { #Metric to be evaluated
+
+			    if (defined($qcData{$familyID}{$ID}{$infile}{$program}{$metric})) {
+
+				if ($qcData{$familyID}{$ID}{$infile}{$program}{$metric} < $evaluateMetric{$program}{$metric}{'threshold'}) { #Determine status - if below add to hash. otherwise PASS and do not include
+				    
+				    $status = "Status:".$ID."_".$program."_".$metric.":".$qcData{$familyID}{$ID}{$infile}{$program}{$metric};
+				    push(@{$qcData{$familyID}{$familyID}{'Evaluation'}{$program}}, $status);
+				}		
+				last;
+			    }
+			    else {
+
+				for my $key ( keys %{$qcData{$familyID}{$ID}{$infile}{$program}} ) {
+				    
+				    if ($key eq "Header") {
+					
+					for my $dataHeader ( keys %{$qcData{$familyID}{$ID}{$infile}{$program}{$key}} ) {
+				
+					    if (defined($qcData{$familyID}{$ID}{$infile}{$program}{$key}{$dataHeader}{$metric})) {
+						
+						if ($qcData{$familyID}{$ID}{$infile}{$program}{$key}{$dataHeader}{$metric} < $evaluateMetric{$program}{$metric}{'threshold'}) { #Determine status - if below add to hash. otherwise PASS and do not include
+	
+						    $status = "Status:".$ID."_".$program."_".$metric.":".$qcData{$familyID}{$ID}{$infile}{$program}{$key}{$dataHeader}{$metric};
+						    push(@{$qcData{$familyID}{$familyID}{'Evaluation'}{$program}}, $status);
+						}
+						next; #Metric go to next section
+					    }
+					}
+					last; #Metric found no need to continue
+				    }
+				}
+			    }
+			}
+		    }
+		}
+	    }
+	}
+    }
+}
+
 
 sub RelationCheck {
 ##Uses the .mibs file produced by PLINK to test if family members are indeed related.
@@ -284,7 +421,7 @@ sub RelationCheck {
     my $sampleIDCounter = 0;
     my $incorrectRelation=0;
 
-##Splice all relationship extimations from regExp into pairwise comparisons calculated for each sampleID
+    ## Splice all relationship extimations from regExp into pairwise comparisons calculated for each sampleID
     for (my $realtionshipCounter=0;$realtionshipCounter<scalar(@{$relationshipValuesRef});$realtionshipCounter++) {
 	
 	my @pairwiseComparisons = splice(@{$relationshipValuesRef},0,scalar(@{$sampleOrderRef})); #Splices array into each sampleIDs line
@@ -295,17 +432,20 @@ sub RelationCheck {
 	}
 	$sampleIDCounter++;
     }
-    my $fatherID; #fatherID for the family
-    my $motherID; #motherID for the family
+    my $fatherID = "YYY"; #fatherID for the family
+    my $motherID = "XXX"; #motherID for the family
 
     for my $sampleID ( keys %family ) { #For all sampleIDs
-	#Currently only 1 father or Mother per pedigree is supported
 
-	if ($sampleInfoFile{$$familyIDRef}{$sampleID}{'Father'}[0] ne 0) { #Save fatherID if not 0
-	    $fatherID = $sampleInfoFile{$$familyIDRef}{$sampleID}{'Father'}[0];
+	## Currently only 1 father or Mother per pedigree is supported
+
+	if ($sampleInfoFile{$$familyIDRef}{$sampleID}{'Father'} ne 0) { #Save fatherID if not 0
+
+	    $fatherID = $sampleInfoFile{$$familyIDRef}{$sampleID}{'Father'};
 	}
-	if ($sampleInfoFile{$$familyIDRef}{$sampleID}{'Mother'}[0] ne 0) { #Save motherID if not 0
-	    $motherID = $sampleInfoFile{$$familyIDRef}{$sampleID}{'Mother'}[0];
+	if ($sampleInfoFile{$$familyIDRef}{$sampleID}{'Mother'} ne 0) { #Save motherID if not 0
+
+	    $motherID = $sampleInfoFile{$$familyIDRef}{$sampleID}{'Mother'};
 	}
     }
     
@@ -332,6 +472,7 @@ sub RelationCheck {
 			#print "Parent-to-child or child-to-child: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
 		    }
 		    else {
+
 			$incorrectRelation++;
 			$qcData{$$familyIDRef}{$sampleID}{'RelationCheck'} = "FAIL: Parents related?;";
 			#print "Incorrect: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
@@ -348,7 +489,7 @@ sub RelationCheck {
 		    else {
 			$incorrectRelation++;
 			$qcData{$$familyIDRef}{$sampleID}{'RelationCheck'} = "FAIL:".$sampleID." not related to ".$members.";";
-			#print "Incorrect: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
+			print "Incorrect: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
 		    }
 		}
 	    }
@@ -361,37 +502,24 @@ sub RelationCheck {
 }
 
 sub GenderCheck {
-#Uses the coverage on chrX and chrY to check that the sample sequenced has the expected gender
+#Checks that the gender predicted by ChanjoSexCheck is confirmed in the pedigee for the sample
 
     my $familyIDRef = $_[0]; #From SampleInfo
     my $sampleIDRef = $_[1]; #From SampleInfo 
     my $infileRef = $_[2]; #From SampleInfo
-    my $chrXCoverageRef = $_[3];
-    my $chrYCoverageRef = $_[4];
-
-##Validation
-    #print "chrX xoverage: ".$$chrXCoverageRef, "\n";
-    #print "chrY xoverage: ".$$chrYCoverageRef, "\n";
-    #print "Gender: ".$sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'}[0]. "\n";
-   
-    if ( (defined($$chrXCoverageRef)) && (defined($$chrYCoverageRef)) ) {
+    my $chanjoSexCheckGenderRef = $_[3]; #From ChanjoSexCheck 
+    
+    if ( ($$chanjoSexCheckGenderRef eq "female") && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'} == 2) ) { #Female
 	
-	if ( ($$chrXCoverageRef / $$chrYCoverageRef >= 10) && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'}[0] == 2) ) { #Female
-	    
-	    $qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "PASS";
-	}
-	elsif ( ($$chrXCoverageRef / $$chrYCoverageRef < 10) && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'}[0] == 1) ) { #Male
-	    
-	    $qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "PASS";
-	}
-	else {
-	    
-	    $qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "FAIL";
-	}
+	$qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "PASS";
+    }
+    elsif ( ($$chanjoSexCheckGenderRef eq "male") && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'} == 1) ) { #Male
+	
+	$qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "PASS";
     }
     else {
-
-	$qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "Unknown";
+	
+	$qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "FAIL";
     }
     return;
 }
@@ -419,10 +547,12 @@ sub LoadYAML {
     open (YAML, "<". $yamlFile) or die "can't open ".$yamlFile.": $!\n";    
         
         if ($fileType eq "reference") {
-        %yamlHash = %{ YAML::LoadFile($yamlFile) }; #Load hashreference as hash
+
+	    %yamlHash = %{ YAML::LoadFile($yamlFile) }; #Load hashreference as hash
         }
         if ($fileType eq "hash") {
-        %yamlHash = YAML::LoadFile($yamlFile); #File contained a hash = no workup
+        
+	    %yamlHash = YAML::LoadFile($yamlFile); #File contained a hash = no workup
         }
     close(YAML);
 
@@ -459,50 +589,50 @@ sub RegExpToYAML {
     my %regExp;
     #Add to %regExp to enable print in YAML
 
-    $regExp{'FastQC'}{'Encoding'} = q?perl -nae' if ($_=~/Encoding\s+(\S+\s\S+\s\S+\s\S+|\S+\s\S+)/) { my $encoding = $1;$encoding=~s/\s/\_/g; print $encoding;}' ?; #Collect Encoding
+    $regExp{'FastQC'}{'Version'} = q?perl -nae' if ($_=~/##FastQC\\s+(\\S+)/) {print $1;last;}' ?; #Collect FastQC version
+
+    $regExp{'FastQC'}{'Encoding'} = q?perl -nae' if ($_=~/Encoding\s+(\S+\s\S+\s\S+\s\S+|\S+\s\S+)/) { my $encoding = $1;$encoding=~s/\s/\_/g; print $encoding;last;}' ?; #Collect Encoding
     
-    $regExp{'FastQC'}{'Sequence_length'} = q?perl -nae' if ($_=~/Sequence length\s(\d+)/) {print $1;}' ?; #Collect Sequence length
+    $regExp{'FastQC'}{'Sequence_length'} = q?perl -nae' if ($_=~/Sequence length\s(\d+)/) {print $1;last;}' ?; #Collect Sequence length
     
-    $regExp{'FastQC'}{'Total_number_of_reads'} = q?perl -nae' if ($_=~/Total Sequences\s(\d+)/) {print $1;}' ?; #Collect Total sequences 
+    $regExp{'FastQC'}{'Total_number_of_reads'} = q?perl -nae' if ($_=~/Total Sequences\s(\d+)/) {print $1;last;}' ?; #Collect Total sequences 
     
-    $regExp{'FastQC'}{'GC'} = q?perl -nae' if ($_=~/%GC\s(\d+)/) {print $1;}' ?; #Collect GC content 
+    $regExp{'FastQC'}{'GC'} = q?perl -nae' if ($_=~/%GC\s(\d+)/) {print $1;last;}' ?; #Collect GC content 
     
-    $regExp{'FastQC'}{'Sequence_duplication'} = q?perl -nae' if ($_=~/#Total Duplicate Percentage\s+(\d+.\d)/) {print $1;}' ?; #Collect Sequence duplication level
+    $regExp{'FastQC'}{'Sequence_duplication'} = q?perl -nae' if ($_=~/#Total Duplicate Percentage\s+(\d+.\d)/) {print $1;last;}' ?; #Collect Sequence duplication level
     
-    $regExp{'FastQC'}{'Basic_statistics'} = q?perl -nae' if ($_=~/>>Basic Statistics\s+(\S+)/) {print $1;}' ?; #Collect Basic Statistics
+    $regExp{'FastQC'}{'Basic_statistics'} = q?perl -nae' if ($_=~/>>Basic Statistics\s+(\S+)/) {print $1;last;}' ?; #Collect Basic Statistics
     
-    $regExp{'FastQC'}{'Per_base_sequence_quality'} = q?perl -nae' if ($_=~/>>Per base sequence quality\s+(\S+)/) {print $1;}' ?; #Collect Per base sequence quality
+    $regExp{'FastQC'}{'Per_base_sequence_quality'} = q?perl -nae' if ($_=~/>>Per base sequence quality\s+(\S+)/) {print $1;last;}' ?; #Collect Per base sequence quality
     
-    $regExp{'FastQC'}{'Per_sequence_quality_scores'} = q?perl -nae' if ($_=~/>>Per sequence quality scores\s+(\S+)/) {print $1;}' ?; #Collect Per sequence quality scores
+    $regExp{'FastQC'}{'Per_sequence_quality_scores'} = q?perl -nae' if ($_=~/>>Per sequence quality scores\s+(\S+)/) {print $1;last;}' ?; #Collect Per sequence quality scores
     
-    $regExp{'FastQC'}{'Per_base_sequence_content'} = q?perl -nae' if ($_=~/>>Per base sequence content\s+(\S+)/) {print $1;}' ?; #Collect Per base sequence content
+    $regExp{'FastQC'}{'Per_base_sequence_content'} = q?perl -nae' if ($_=~/>>Per base sequence content\s+(\S+)/) {print $1;last;}' ?; #Collect Per base sequence content
     
-    $regExp{'FastQC'}{'Per_base_GC_content'} = q?perl -nae' if ($_=~/>>Per base GC content\s+(\S+)/) {print $1;}' ?; #Collect Per base GC content
+    $regExp{'FastQC'}{'Per_base_GC_content'} = q?perl -nae' if ($_=~/>>Per base GC content\s+(\S+)/) {print $1;last;}' ?; #Collect Per base GC content
     
-    $regExp{'FastQC'}{'Per_sequence_GC_content'} = q?perl -nae' if ($_=~/>>Per sequence GC content\s+(\S+)/) {print $1;}' ?; #Collect Per sequence GC content
+    $regExp{'FastQC'}{'Per_sequence_GC_content'} = q?perl -nae' if ($_=~/>>Per sequence GC content\s+(\S+)/) {print $1;last;}' ?; #Collect Per sequence GC content
     
-    $regExp{'FastQC'}{'Per_base_N_content'} = q?perl -nae' if ($_=~/>>Per base N content\s+(\S+)/) {print $1;}' ?; #Collect Per base N content
+    $regExp{'FastQC'}{'Per_base_N_content'} = q?perl -nae' if ($_=~/>>Per base N content\s+(\S+)/) {print $1;last;}' ?; #Collect Per base N content
     
-    $regExp{'FastQC'}{'Sequence_duplication_levels'} = q?perl -nae' if ($_=~/>>Sequence Duplication Levels\s+(\S+)/) {print $1;}' ?; #Collect Sequence Duplication Levels
+    $regExp{'FastQC'}{'Sequence_duplication_levels'} = q?perl -nae' if ($_=~/>>Sequence Duplication Levels\s+(\S+)/) {print $1;last;}' ?; #Collect Sequence Duplication Levels
     
-    $regExp{'FastQC'}{'Overrepresented_sequences'} = q?perl -nae' if ($_=~/>>Overrepresented sequences\s+(\S+)/) {print $1;}' ?; #Collect Overrepresented sequences
+    $regExp{'FastQC'}{'Overrepresented_sequences'} = q?perl -nae' if ($_=~/>>Overrepresented sequences\s+(\S+)/) {print $1;last;}' ?; #Collect Overrepresented sequences
     
-    $regExp{'FastQC'}{'Kmer_content'} = q?perl -nae' if ($_=~/>>Kmer Content\s+(\S+)/) {print $1;}' ?; #Collect Kmer Content
+    $regExp{'FastQC'}{'Kmer_content'} = q?perl -nae' if ($_=~/>>Kmer Content\s+(\S+)/) {print $1;last;}' ?; #Collect Kmer Content
     
-    $regExp{'MosaikAligner'}{'Version'} = q?perl -nae' if ($_=~/(\d+\.\d+\.\d+)\s/) {print $1;}' ?; #Collect Mosaik Version 
+    $regExp{'MosaikAligner'}{'Version'} = q?perl -nae' if ($_=~/(\d+\.\d+\.\d+)\s/) {print $1;last;}' ?; #Collect Mosaik Version 
     
-    $regExp{'MosaikAligner'}{'Unaligned_mates'} = q?perl -nae' if ($_=~/# unaligned mates\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;}' ?; #Collect Nr of unaligned mates
+    $regExp{'MosaikAligner'}{'Unaligned_mates'} = q?perl -nae' if ($_=~/# unaligned mates\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;last;}' ?; #Collect Nr of unaligned mates
     
-    $regExp{'MosaikAligner'}{'Filtered_out'} = q?perl -nae' if ($_=~/# filtered out\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;}' ?; #Collect Nr of filtered out reads 
+    $regExp{'MosaikAligner'}{'Filtered_out'} = q?perl -nae' if ($_=~/# filtered out\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;last;}' ?; #Collect Nr of filtered out reads 
     
-    $regExp{'MosaikAligner'}{'Uniquely_aligned_mates'} = q?perl -nae' if ($_=~/# uniquely aligned mates\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;}' ?; #Collect Uniquely aligned mates
+    $regExp{'MosaikAligner'}{'Uniquely_aligned_mates'} = q?perl -nae' if ($_=~/# uniquely aligned mates\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;last;}' ?; #Collect Uniquely aligned mates
     
-    $regExp{'MosaikAligner'}{'Multiply_aligned_mates'} = q?perl -nae' if ($_=~/# multiply aligned mates\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;}' ?; #Collect Multiply aligned mates
+    $regExp{'MosaikAligner'}{'Multiply_aligned_mates'} = q?perl -nae' if ($_=~/# multiply aligned mates\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;last;}' ?; #Collect Multiply aligned mates
     
-    $regExp{'MosaikAligner'}{'Total_aligned'} = q?perl -nae' if ($_=~/total aligned:\s+\S+\s+(\S+)\s\(\S+\s(\d+.\d+)/ ) {print $2;} elsif ($_=~/total aligned:\s+(\S+)\s\(\S+\s(\d+.\d+)/ ) { print $2}' ?; #Collect total aligned sequences
-    
-    $regExp{'QaCompute'}{'X_Y_coverage'} = q?perl -nae' if ($F[0]=~/^X/ || $F[0]=~/^Y/ ) {print "$F[2],";}' ?; #Collect X and Y coverage. "," required for later split 
-    
+    $regExp{'MosaikAligner'}{'Total_aligned'} = q?perl -nae' if ($_=~/total aligned:\s+\S+\s+(\S+)\s\(\S+\s(\d+.\d+)/ ) {print $2;last;} elsif ($_=~/total aligned:\s+(\S+)\s\(\S+\s(\d+.\d+)/ ) { print $2;last;}' ?; #Collect total aligned sequences
+    $regExp{'ChanjoSexCheck'}{'gender'} = q?perl -nae 'if( ($F[0]!~/^#/) && ($F[2] =~/\S+/) ) {print $F[2];}' ?;  #Collect gender from ChanjoSexCheck
     $regExp{'pedigreeCheck'}{'Sample_order'} = q?perl -nae 'if ($_=~/^#CHROM/) {chomp $_; my @line = split(/\t/,$_); for (my $sample=9;$sample<scalar(@line);$sample++) { print $line[$sample], "\t";}last;}' ?; #Collect sample order from vcf file used to create ".ped", ".map" and hence ".mibs".
     
     $regExp{'InbreedingFactor'}{'Sample_InbreedingFactor'}  = q?perl -nae 'my @inbreedingFactor; if ($. > 1) {my @temp = split(/\s/,$_);push(@inbreedingFactor,$temp[0].":".$temp[4]); print $inbreedingFactor[0], "\t"; }' ?;
@@ -564,7 +694,20 @@ sub RegExpToYAML {
     $regExp{'VariantEval_All'}{'VariantSummary_header'}{'VariantSummary_data_all'} = q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/all\s/) ) {print $_;last;}' ?; #Note return whole line                                                                                                                                                                                                                   
     $regExp{'VariantEval_All'}{'VariantSummary_header'}{'VariantSummary_data_known'} = q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/known\s/) ) {print $_;last;}' ?; #Note return whole line                                                                                                                                                                                                                
     $regExp{'VariantEval_All'}{'VariantSummary_header'}{'VariantSummary_data_novel'} = q?perl -nae' if ( ($_ =~/^VariantSummary/) && ($_ =~/novel\s/) ) {print $_;last;}' ?; #Note return whole line
-    $regExp{'VariantEval_Exome'} = $regExp{'VariantEval_All'};  
+
+    $regExp{'VariantEval_Exome'} = $regExp{'VariantEval_All'};
+
+    $regExp{'RankVariants'}{'Version'} = q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect Rankvariants version
+
+    $regExp{'SnpEff'}{'Version'} = q?perl -nae 'if($_=~/##SnpSiftVersion=\"(.+),/) {my $ret=$1; $ret=~s/\s/_/g;print $ret;last;}' ?; #Collect SnpEff version
+
+    $regExp{'VariantEffectPredictor'}{'Version'} = q?perl -nae 'if($_=~/##VEP=(\w+)/) {print $1;last;}' ?; #Collect VariantEffectPredictor version
+
+    $regExp{'VariantEffectPredictor'}{'Cache:'} = q?perl -nae 'if($_=~/##VEP=\w+\s+cache=(\S+)/) {print $1;last;}' ?; #Collect VariantEffectPredictor cache directory 
+
+    $regExp{'VCFParser'}{'Version'} = q?perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect VCFParser version
+
+    $regExp{'ChanjoAnnotate'}{'Version'} = q?perl -nae 'if($_=~/version\s(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect Chanjo version
 #$regExp{''}{''} = ;
 
     
