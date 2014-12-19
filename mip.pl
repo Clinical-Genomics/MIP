@@ -73,6 +73,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -jul/--javaUseLargePages Use large page memory. (-XX,hence option considered not stable and are subject to change without notice, but can be consiered when faced with Java Runtime Environment Memory issues)
                -nrm/--nodeRamMemory The RAM memory size of the node(s) in GigaBytes (Defaults to 24)
                -pve/--pythonVirtualEnvironment Pyhton virtualenvironment (defaults to "")
+               -pvec/--pythonVirtualEnvironmentCommand Pyhton virtualenvironment (defaults to "workon")
                -ges/--genomicSet Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
                -rio/--reduceIO Run consecutive models  at nodes (defaults to "0")
                -l/--logFile Mip log file (defaults to "{outDataDir}/{familyID}/mip_log/{timestamp}/{scriptname}_{timestamp}.log")
@@ -217,10 +218,6 @@ chomp($base, $script);  #Remove \n;
 ####Set program parameters
 
 ###Project specific
-##DefineParameters
-##parameterName, parameterType, parameterDefault, AssociatedProgram, Check directory/file existence, parameterChain, programCheck)
-##DefineParametersPath
-##parameterName, parameterDefault, AssociatedProgram, Check directory/file existence, File Autovivication)
 
 &DefineParametersPath(\%parameter, \@orderParameters, "familyID", "nodefault", "MIP", 0);
 
@@ -483,8 +480,11 @@ my $VEPOutputFiles = 1;  #To track if VEPParser was used with a vcfParserSelectF
 
 &DefineParametersPath(\%parameter, \@orderParameters, "rankModelFile", "noUserInfo", "pRankVariants", "file", "noAutoBuild");
 
+
+##PythonVirtualEnvironment
 &DefineParametersPath(\%parameter, \@orderParameters, "pythonVirtualEnvironment", "nodefault", "pChanjoBuild,pChanjoAnnotate,pChanjoImport,pGATKVariantRecalibration,pRankVariants");
 
+&DefineParameters(\%parameter, \@orderParameters, "pythonVirtualEnvironmentCommand", "MIP", "workon", "MIP", 0);
 
 ##QcCollect
 &DefineParameters(\%parameter, \@orderParameters, "pQCCollect", "program", 1, "MIP", "nofileEnding", "MAIN");
@@ -576,6 +576,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'dra|dryRunAll:n' => \$parameter{'dryRunAll'}{'value'},
 	   'tmd|tempDirectory:s' => \$parameter{'tempDirectory'}{'value'},
 	   'pve|pythonVirtualEnvironment:s' => \$parameter{'pythonVirtualEnvironment'}{'value'},
+	   'pvec|pythonVirtualEnvironmentCommand:s' => \$parameter{'pythonVirtualEnvironmentCommand'}{'value'},
 	   'jul|javaUseLargePages:s' => \$parameter{'javaUseLargePages'}{'value'},
 	   'nrm|nodeRamMemory:n' => \$parameter{'nodeRamMemory'}{'value'},  #Per node
            'ges|genomicSet:s' => \$parameter{'genomicSet'}{'value'},  #Selection of relevant regions post alignment and sort
@@ -2017,7 +2018,7 @@ sub RankVariants {
 						 });
     
     ## Gene models and ranking  
-    print $FILEHANDLE "workon ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+    print $FILEHANDLE ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'}." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
     
     for (my $VEPOutputFilesCounter=0;$VEPOutputFilesCounter<$VEPOutputFiles;$VEPOutputFilesCounter++) {
 	
@@ -4083,7 +4084,7 @@ sub GATKVariantReCalibration {
     if (${$scriptParameterHashRef}{'GATKVariantReCalibrationSpliMultiRecord'} == 1) {
 
 	print $FILEHANDLE "## Split multi allelic records into single records\n";
-	print $FILEHANDLE "workon ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	print $FILEHANDLE ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'}." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
 	print $FILEHANDLE "vcf_parser ";
 	print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf ";
 	print $FILEHANDLE "--split ";
@@ -5007,7 +5008,7 @@ sub ChanjoImport {
 
     my $coreCounter=1;
 
-    print $FILEHANDLE "workon ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+    print $FILEHANDLE ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'}." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
     
     ##Build family database for coverage report
 
@@ -5109,7 +5110,7 @@ sub ChanjoSexCheck {
 					     'processTime' => 2,
 					    });
 
-	print $FILEHANDLE "workon ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	print $FILEHANDLE ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'}." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
 
 	## ChanjoSexCheck
 	print $FILEHANDLE "## Predicting sex from alignment\n";
@@ -5145,7 +5146,7 @@ sub ChanjoSexCheck {
 					     'processTime' => 2,
 					    });
 
-	print $FILEHANDLE "workon ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	print $FILEHANDLE ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'}." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
 
 	## ChanjoSexCheck
 	print $FILEHANDLE "## Predicting sex from alignment\n";
@@ -5254,7 +5255,7 @@ sub ChanjoAnnotate {
 			   });
 	print $FILEHANDLE "wait", "\n\n";
 
-	print $FILEHANDLE "workon ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	print $FILEHANDLE ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'}." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
 
 	## ChanjoAnnotate
 	print $FILEHANDLE "## Annotating bed from alignment\n";
@@ -5316,7 +5317,7 @@ sub ChanjoAnnotate {
 			      'nrCores' => $nrCores,
 			      'fileEnding' => $infileEnding.".b*"});
 
-	print $FILEHANDLE "workon ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	print $FILEHANDLE ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'}." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
 
 	## ChanjoAnnotate
 	print $FILEHANDLE "## Annotating bed from alignment\n";
@@ -5407,7 +5408,7 @@ sub ChanjoBuild {
     ## Assign directories
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID;
 
-    print $FILEHANDLE "workon ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+    print $FILEHANDLE ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'}." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
     
     ## ChanjoBuild
     print $FILEHANDLE "## Build new coverage database\n";
@@ -8037,7 +8038,7 @@ sub MosaikBuild {
     my $tempDirectoryRef = \${$scriptParameterHashRef}{'tempDirectory'};
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = ceil(2.5*scalar( @{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} }));  #Scale with the number of files to process
+    my $time = 10;
     
     ## Set the number of cores to allocate per sbatch job.
     my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar( @{ ${$laneHashRef}{$$sampleIDRef} } ));  #Detect the number of cores to use from lanes
@@ -8465,7 +8466,7 @@ sub FastQC {
     my $programName = $_[8];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = ceil(0.5*scalar( @{ ${$infileHashRef}{$sampleID} }));  #One full lane on Hiseq takes approx. 0.5 h for FASTQC to process, round up to nearest full hour.
+    my $time = 10;
 
     my $nrCores = 0;
 
@@ -9319,7 +9320,7 @@ sub DownloadReference {
 
 	    $logger->warn("Will try to download ".$parameterName." before executing ".$$programRef."\n");
 	}
-	print $FILEHANDLE "workon ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	print $FILEHANDLE ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'}." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
 
 	print $FILEHANDLE "cosmid ";  #Database download manager
 	print $FILEHANDLE "clone ";  #Clone resource
@@ -9519,7 +9520,7 @@ sub CheckCosmidInstallation {
 	
 	    $logger->info("Checking your Cosmid installation in preparation for download of ".${$scriptParameterHashRef}{$$parameterNameRef}."\n");
  
-	    my $whichReturn = `source ~/.bash_profile; workon ${$scriptParameterHashRef}{'pythonVirtualEnvironment'};which cosmid;deactivate;`;
+	    my $whichReturn = `source ~/.bash_profile; ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} ${$scriptParameterHashRef}{'pythonVirtualEnvironment'};which cosmid;deactivate;`;
 	    
 	    if ($whichReturn eq "") {
 

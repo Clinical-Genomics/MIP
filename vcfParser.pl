@@ -648,9 +648,9 @@ sub ReadInfileVCF {
 				    
 				    my $selectedTranscriptTracker = 0; #Track if any transcripts belong to selected features
 				    
-				    if (defined($transcriptsEffects[ $vepFormatFieldColumn{'SYMBOL'} ])) { #Save HGNC Symbol
+				    if (defined($transcriptsEffects[ $vepFormatFieldColumn{'SYMBOL'} ])) { 
 					
-					$variantData{'Symbol'} = $transcriptsEffects[ $vepFormatFieldColumn{'SYMBOL'} ];
+					$variantData{'Symbol'} = $transcriptsEffects[ $vepFormatFieldColumn{'SYMBOL'} ];  #Save HGNC Symbol
 					
 					if ($selectData{ $variantData{'Symbol'} }) { #Exists in selected Features
 
@@ -682,6 +682,11 @@ sub ReadInfileVCF {
 			    if ( ($selectedTranscriptCounter == 0) && ($transcriptsCounter == 0) ) {
 
 				$variantLine .= "CSQ=".$CSQTranscripts;  #No transcript info
+			    }
+			    unless ($variantEffectCounter == scalar(@variantEffects)-1) {  #Unless this is the last feature
+
+				$variantLine .= ";";
+				$selectedVariantLine .= ";";
 			    }
 			}
 		    }
@@ -720,7 +725,7 @@ sub ReadInfileVCF {
 	    }
 	    if ($parseVEP == 1) {
 		
-		unless ( ($selectedTranscriptCounter == 0) && ($transcriptsCounter == 0) ) {  #No info to add from CSQ field
+		unless ( ($selectedTranscriptCounter == 0) && ($transcriptsCounter == 0) ) {  #Info to add from CSQ field
 		    
 		    $selectedVariantLine .= ";";
 		    $variantLine .= ";";
