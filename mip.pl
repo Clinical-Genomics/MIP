@@ -2111,8 +2111,6 @@ sub RankVariants {
 	}
     }
 
-    print $FILEHANDLE "deactivate ", "\n\n";  #Deactivate python environment
-
     &RemoveDirectory($tempDirectoryRef, $FILEHANDLE);
 
     close($FILEHANDLE);   
@@ -5043,7 +5041,6 @@ sub ChanjoImport {
 	    }
 	}
     }
-    print $FILEHANDLE "\n\ndeactivate ", "\n\n";  #Deactivate python environment
 
     close($FILEHANDLE); 
 
@@ -5176,7 +5173,6 @@ sub ChanjoSexCheck {
 	}
 	print $FILEHANDLE "wait", "\n\n";
     }
-    print $FILEHANDLE "deactivate ", "\n\n";  #Deactivate python environment
 
     close($FILEHANDLE);
 
@@ -5359,7 +5355,6 @@ sub ChanjoAnnotate {
 	&MigrateFilesFromTemp(\@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, \@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, $outSampleDirectory, ${$scriptParameterHashRef}{'tempDirectory'}, $nrCores, $outfileEnding.".bed", $FILEHANDLE);
 	&MigrateFilesFromTemp(\@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, \@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, $outSampleDirectory, ${$scriptParameterHashRef}{'tempDirectory'}, $nrCores, $infileEnding."_chanjoAnnotate.log", $FILEHANDLE);
     }
-    print $FILEHANDLE "deactivate ", "\n\n";  #Deactivate python environment
 
     &RemoveDirectory(\${$scriptParameterHashRef}{'tempDirectory'}, $FILEHANDLE);
 
@@ -5418,8 +5413,6 @@ sub ChanjoBuild {
     print $FILEHANDLE "--dialect sqlite ";  #Type of SQL database
     print $FILEHANDLE "build ";  #Chanjo sub program argument
     print $FILEHANDLE "--force", "\n\n";  #Overwrite existing assets without warning
-
-    print $FILEHANDLE "deactivate ", "\n\n";  #Deactivate python environment
 
     close($FILEHANDLE); 
 
@@ -9332,8 +9325,6 @@ sub DownloadReference {
 	}
 	print $FILEHANDLE "\n\n"; 
 
-	print $FILEHANDLE "deactivate ", "\n\n";  #Deactivate python environment
-	
 	## Check if reference comes decompressed or not
 	if (${$supportedCosmidReferenceHashRef}{$parameterName}{'compressedSwitch'} eq "compressed") {
 
@@ -9520,7 +9511,7 @@ sub CheckCosmidInstallation {
 	
 	    $logger->info("Checking your Cosmid installation in preparation for download of ".${$scriptParameterHashRef}{$$parameterNameRef}."\n");
  
-	    my $whichReturn = `source ~/.bash_profile; ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} ${$scriptParameterHashRef}{'pythonVirtualEnvironment'};which cosmid;deactivate;`;
+	    my $whichReturn = `source ~/.bash_profile; ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} ${$scriptParameterHashRef}{'pythonVirtualEnvironment'};which cosmid;`;
 	    
 	    if ($whichReturn eq "") {
 
