@@ -3317,19 +3317,23 @@ sub VCFParser {
 	print $XARGSFILEHANDLE "\n";
     }
 
+    ## QC Data File(s)
+    &MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".${$fileInfoHashRef}{'contigsSizeOrdered'}[0].".vcf",
+			  'filePath' => $outFamilyDirectory."/",
+			  'FILEHANDLE' => $FILEHANDLE,
+			 });
+    print $FILEHANDLE "wait", "\n\n";
+    
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
-	
-	if ($$reduceIORef eq "0") {  #Run as individual sbatch script
-	    
-	    ## Collect QC metadata info for later use
-	    &SampleInfoQC(\%{$sampleInfoHashRef},
-			  {'familyID' => $$familyIDRef,
-			   'programName' => $programName,
-			   'outDirectory' => $outFamilyDirectory,
-			   'outFileEnding' => $$familyIDRef.$outfileEnding.$callType."_".${$fileInfoHashRef}{'contigsSizeOrdered'}[0].".vcf",
-			   'outDataType' => "static"
-			  });
-	}
+
+	## Collect QC metadata info for later use
+	&SampleInfoQC(\%{$sampleInfoHashRef},
+		      {'familyID' => $$familyIDRef,
+		       'programName' => $programName,
+		       'outDirectory' => $outFamilyDirectory,
+		       'outFileEnding' => $$familyIDRef.$outfileEnding.$callType."_".${$fileInfoHashRef}{'contigsSizeOrdered'}[0].".vcf",
+		       'outDataType' => "static"
+		      });
     }
 
     close($XARGSFILEHANDLE);
@@ -3353,6 +3357,7 @@ sub VCFParser {
 
 	close($FILEHANDLE);
     }
+    
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
 	if ($$reduceIORef eq "0") {  #Run as individual sbatch script
@@ -5277,6 +5282,7 @@ sub ChanjoAnnotate {
 			      'filePath' => $outSampleDirectory."/",
 			      'FILEHANDLE' => $FILEHANDLE,
 			     });
+	print $FILEHANDLE "wait", "\n\n";
 	
 	if ( (${$scriptParameterHashRef}{'pChanjoAnnotate'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
@@ -5354,6 +5360,7 @@ sub ChanjoAnnotate {
 	## Copies files from temporary folder to source. Loop over files specified by $arrayRef and collects files from $extractArrayRef.
 	&MigrateFilesFromTemp(\@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, \@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, $outSampleDirectory, ${$scriptParameterHashRef}{'tempDirectory'}, $nrCores, $outfileEnding.".bed", $FILEHANDLE);
 	&MigrateFilesFromTemp(\@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, \@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, $outSampleDirectory, ${$scriptParameterHashRef}{'tempDirectory'}, $nrCores, $infileEnding."_chanjoAnnotate.log", $FILEHANDLE);
+	print $FILEHANDLE "wait", "\n\n";
     }
 
     &RemoveDirectory(\${$scriptParameterHashRef}{'tempDirectory'}, $FILEHANDLE);
@@ -7527,6 +7534,7 @@ sub BWA_Mem {
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $fileName;
+    my $time = 30;
     my $infileSize;
     my $totalSbatchCounter = 0;
     my $pairedEndTracker = 0;
@@ -7572,7 +7580,7 @@ sub BWA_Mem {
 						     'programName' => $programName,
 						     'programDirectory' => lc($aligner),
 						     'nrofCores' => ${$scriptParameterHashRef}{'maximumCores'},
-						     'processTime' => 5,
+						     'processTime' => $time,
 						    });
 		
 		my $readStart = $sbatchCounter *  $ReadNrofLines;  #Constant for gz files
@@ -7663,7 +7671,7 @@ sub BWA_Mem {
 						 'programName' => $programName,
 						 'programDirectory' => lc($aligner),
 						 'nrofCores' => ${$scriptParameterHashRef}{'maximumCores'},
-						 'processTime' => 5,
+						 'processTime' => $time,
 						 'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
 						 });
 	
