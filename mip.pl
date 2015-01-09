@@ -6510,6 +6510,15 @@ sub PicardToolsMarkduplicatesWithMateCigar {
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pPicardToolsMergeSamFiles'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{"p".$programName}{'fileEnding'};
 
+    ## Finds the maximum sequence length of the reads for all sequencing file(s).
+    my $maxSequenceLength = &FindMaxSeqLengthPerSampleID({'scriptParameterHashRef' => $scriptParameterHashRef,
+							  'sampleInfoHashRef' => $sampleInfoHashRef,
+							  'infilesLaneNoEndingHashRef' => $infilesLaneNoEndingHashRef,
+							  'infilesBothStrandsNoEndingHashRef' => \%infilesBothStrandsNoEnding,
+							  'sampleIDRef' => $sampleIDRef,
+							 });
+    $maxSequenceLength = $maxSequenceLength * 2;  #Set to twice the maximum read length
+
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
     my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, $$sampleIDRef);
     
@@ -6566,6 +6575,7 @@ sub PicardToolsMarkduplicatesWithMateCigar {
 
 	    print $XARGSFILEHANDLE "MarkDuplicatesWithMateCigar ";
 	    print $XARGSFILEHANDLE "ASSUME_SORTED=true ";
+	    print $XARGSFILEHANDLE "MINIMUM_DISTANCE=".$maxSequenceLength." ";
 	    print $XARGSFILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
 	    print $XARGSFILEHANDLE "REMOVE_DUPLICATES=false ";
 	    print $XARGSFILEHANDLE "VALIDATION_STRINGENCY=STRICT ";
@@ -6685,6 +6695,7 @@ sub PicardToolsMarkduplicatesWithMateCigar {
 
 		print $XARGSFILEHANDLE "MarkDuplicatesWithMateCigar ";
 		print $XARGSFILEHANDLE "ASSUME_SORTED=true ";
+		print $XARGSFILEHANDLE "MINIMUM_DISTANCE=".$maxSequenceLength." ";
 		print $XARGSFILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
 		print $XARGSFILEHANDLE "REMOVE_DUPLICATES=false ";
 		print $XARGSFILEHANDLE "VALIDATION_STRINGENCY=STRICT ";
@@ -14475,6 +14486,41 @@ sub SplitBAM {
     return $xargsFileCounter; 
 }
 
+sub FindMaxSeqLengthPerSampleID {
+
+##FindMaxSeqLength
+    
+##Function : Finds the maximum sequence length of the reads for all sequencing file(s).   
+##Returns  : $maxSequenceLength
+##Arguments: $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $infilesBothStrandsNoEndingHashRef, $sampleIDRef 
+##         : $scriptParameterHashRef            => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef                 => Info on samples and family hash {REF}
+##         : $infilesLaneNoEndingHashRef        => The infile(s) without the ".ending" {REF}
+##         : $infilesBothStrandsNoEndingHashRef => The infile(s) without the ".ending" and strand info {REF}
+##         : $sampleIDRef                       => The sampleID {REF}
+
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
+    my $infilesBothStrandsNoEndingHashRef = ${$argHashRef}{'infilesBothStrandsNoEndingHashRef'};
+    my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
+
+    my $maxSequenceLength = 0;
+
+    for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} });$infileCounter++) {  #For all infiles per lane
+	
+	my $seqLength = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'file'}{${$infilesBothStrandsNoEndingHashRef}{$$sampleIDRef}[$infileCounter]}{'sequenceLength'};
+
+	if ($seqLength > $maxSequenceLength) {
+
+	    $maxSequenceLength = $seqLength;
+	}
+    }
+    return $maxSequenceLength;
+}
 
 ####
 #Decommissioned
