@@ -7533,7 +7533,6 @@ sub BWA_Mem {
     my $programName = $_[10];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $fileName;
     my $time = 30;
     my $infileSize;
     my $totalSbatchCounter = 0;
@@ -7575,14 +7574,15 @@ sub BWA_Mem {
 	    for (my $sbatchCounter=0;$sbatchCounter<$numberNodes-1;$sbatchCounter++) {  #Parallization for each file handled
 		
 		## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-		($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $FILEHANDLE,
-						    {'directoryID' => $sampleID,
-						     'programName' => $programName,
-						     'programDirectory' => lc($aligner),
-						     'nrofCores' => ${$scriptParameterHashRef}{'maximumCores'},
-						     'processTime' => $time,
-						    });
-		
+		my ($fileName, $stdoutPath, $stderrPath) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $FILEHANDLE,
+										 {'directoryID' => $sampleID,
+										  'programName' => $programName,
+										  'programDirectory' => lc($aligner),
+										  'nrofCores' => ${$scriptParameterHashRef}{'maximumCores'},
+										  'processTime' => $time,
+										 });
+		my ($volume, $directories, $stderrFile) = File::Spec->splitpath($stderrPath);  #Split to enable submission to &SampleInfoQC later
+
 		my $readStart = $sbatchCounter *  $ReadNrofLines;  #Constant for gz files
 		my $readStop = $readStart + ceil( $ReadNrofLines + 1);  #Constant for gz files	
 
@@ -7666,15 +7666,16 @@ sub BWA_Mem {
 	else {  #Not rapid mode align whole file
 
 	    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	    ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $FILEHANDLE,
-						{'directoryID' => $sampleID,
-						 'programName' => $programName,
-						 'programDirectory' => lc($aligner),
-						 'nrofCores' => ${$scriptParameterHashRef}{'maximumCores'},
-						 'processTime' => $time,
-						 'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
-						 });
-	
+	    my ($fileName, $stdoutPath, $stderrPath) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $FILEHANDLE,
+									     {'directoryID' => $sampleID,
+									      'programName' => $programName,
+									      'programDirectory' => lc($aligner),
+									      'nrofCores' => ${$scriptParameterHashRef}{'maximumCores'},
+									      'processTime' => $time,
+									      'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+									     });
+	    my ($volume, $directories, $stderrFile) = File::Spec->splitpath($stderrPath);  #Split to enable submission to &SampleInfoQC later
+
 	    ## Assign directories
 	    my $inSampleDirectory = ${$inDirPathHashRef}{$sampleID};
 	    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner; 
@@ -7744,7 +7745,15 @@ sub BWA_Mem {
 	    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
 		${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'} = $outSampleDirectory."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].".bam";
-
+		&SampleInfoQC(\%{$sampleInfoHashRef}, 
+			      {'familyID' => ${$scriptParameterHashRef}{'familyID'},
+			       'sampleID' => $sampleID,
+			       'programName' => "Bwa",
+			       'infile' => ${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter],
+			       'outDirectory' => $directories,
+			       'outFileEnding' => $stderrFile,
+			       'outDataType' => "infoDirectory"
+			      });
 		&FIDSubmitJob(\%{$scriptParameterHashRef}, \%jobID, \%infilesLaneNoEnding,
 			       {'sampleID' => $sampleID,
 				'dependencies' => 3, 
