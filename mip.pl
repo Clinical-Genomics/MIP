@@ -75,7 +75,8 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pve/--pythonVirtualEnvironment Pyhton virtualenvironment (defaults to "")
                -pvec/--pythonVirtualEnvironmentCommand Pyhton virtualenvironment (defaults to "workon")
                -ges/--genomicSet Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
-               -rio/--reduceIO Run consecutive models  at nodes (defaults to "0")
+               -exmt/--excludeMitoContigExomeAnalysis Exclude the mitochondrial contig in exome analysis (defaults to "1" (=yes))
+               -rio/--reduceIO Run consecutive models  at nodes (defaults to "0" (=no))
                -l/--logFile Mip log file (defaults to "{outDataDir}/{familyID}/mip_log/{timestamp}/{scriptname}_{timestamp}.log")
                -h/--help Display this help message    
                -v/--version Display version of MIP            
@@ -114,7 +115,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pChA/--pChanjoAnnotate Chanjo coverage analysis (defaults to "1" (=yes))
                  -chacut/--chanjoAnnotateCutoff Read depth cutoff (defaults to "10")
                -pChI/--pChanjoImport Chanjo import to collect sample info to family Db  (defaults to "0" (=no))
-               -pGcB/--pGenomeCoverageBED Genome coverage calculation using genomeCoverageBED (defaults to "1" (=yes))
+               -pGcB/--pGenomeCoverageBED Genome coverage calculation using genomeCoverageBED (defaults to "0" (=yes))
                 -gcbcov/--GenomeCoverageBEDMaxCoverage Max coverage depth when using '-pGenomeCoverageBED' (defaults to "30")
                -pPtCMM/--pPicardToolsCollectMultipleMetrics Metrics calculation using PicardTools collectMultipleMetrics (defaults to "1" (=yes))
                -pPtCHS/--pPicardToolsCalculateHSMetrics Capture calculation using PicardTools CalculateHSmetrics (defaults to "1" (=yes))
@@ -145,8 +146,8 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -gvrtsf/--GATKVariantReCalibrationTSFilterLevel The truth sensitivity level at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
                  -gvrevf/--GATKVariantReCalibrationexcludeNonVariantsFile Produce a vcf containing non-variant loci alongside the vcf only containing non-variant loci after GATK VariantRecalibrator (defaults to "false")
                  -gvrsmr/--GATKVariantReCalibrationSpliMultiRecord Split multi allelic records into single records (defaults to "1" (=yes))
-               -pGpT/--pGATKPhaseByTransmission Computes the most likely genotype and phases calls were unamibigous using GATK PhaseByTransmission (defaults to "1" (=yes))
-               -pGrP/--pGATKReadBackedPhasing Performs physical phasing of SNP calls, based on sequencing reads using GATK ReadBackedPhasing (defaults to "1" (=yes))
+               -pGpT/--pGATKPhaseByTransmission Computes the most likely genotype and phases calls were unamibigous using GATK PhaseByTransmission (defaults to "0" (=yes))
+               -pGrP/--pGATKReadBackedPhasing Performs physical phasing of SNP calls, based on sequencing reads using GATK ReadBackedPhasing (defaults to "0" (=yes))
                  -grpqth/--GATKReadBackedPhasingPhaseQualityThreshold The minimum phasing quality score required to output phasing (defaults to "20")
                -pGvEA/--pGATKVariantEvalAll Variant evaluation using GATK VariantEval for all variants  (defaults to "1" (=yes))
                -pGvEE/--pGATKVariantEvalExome Variant evaluation using GATK VariantEval for exonic variants  (defaults to "1" (=yes))
@@ -261,6 +262,8 @@ chomp($base, $script);  #Remove \n;
 
 &DefineParametersPath(\%parameter, \@orderParameters, "genomicSet", "noUserInfo", "MIP", "file");
 
+&DefineParameters(\%parameter, \@orderParameters, "excludeMitoContigExomeAnalysis", "MIP", 1, "MIP");
+
 &DefineParameters(\%parameter, \@orderParameters, "reduceIO", "MIP", 0, "MIP");
 
 ###Programs
@@ -344,7 +347,7 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists);  #Arrays for 
 
 &DefineParameters(\%parameter, \@orderParameters, "pChanjoImport", "program", 0, "MIP", "nofileEnding", "CoverageReport");
 
-&DefineParameters(\%parameter, \@orderParameters, "pGenomeCoverageBED", "program", 1, "MIP", "_genomeCoverageBed", "CoverageQC_GcovBed", "bedtools");
+&DefineParameters(\%parameter, \@orderParameters, "pGenomeCoverageBED", "program", 0, "MIP", "_genomeCoverageBed", "CoverageQC_GcovBed", "bedtools");
 
 &DefineParameters(\%parameter, \@orderParameters, "pPicardToolsCollectMultipleMetrics", "program", 1, "MIP", "nofileEnding", "CoverageQC_PTCMM");
 
@@ -389,9 +392,9 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists);  #Arrays for 
 &DefineParameters(\%parameter, \@orderParameters, "GATKVariantReCalibrationexcludeNonVariantsFile", "program", "false", "pGATKVariantRecalibration");
 
  
-&DefineParameters(\%parameter, \@orderParameters, "pGATKPhaseByTransmission", "program", 1, "MIP", "phtr_", "Phasing");
+&DefineParameters(\%parameter, \@orderParameters, "pGATKPhaseByTransmission", "program", 0, "MIP", "phtr_", "Phasing");
 
-&DefineParameters(\%parameter, \@orderParameters, "pGATKReadBackedPhasing", "program", 1, "MIP", "phrb_", "Phasing");
+&DefineParameters(\%parameter, \@orderParameters, "pGATKReadBackedPhasing", "program", 0, "MIP", "phrb_", "Phasing");
 
 &DefineParameters(\%parameter, \@orderParameters, "GATKReadBackedPhasingPhaseQualityThreshold", "program", 20, "pGATKReadBackedPhasing");
 
@@ -580,6 +583,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'jul|javaUseLargePages:s' => \$parameter{'javaUseLargePages'}{'value'},
 	   'nrm|nodeRamMemory:n' => \$parameter{'nodeRamMemory'}{'value'},  #Per node
            'ges|genomicSet:s' => \$parameter{'genomicSet'}{'value'},  #Selection of relevant regions post alignment and sort
+	   'exmt|excludeMitoContigExomeAnalysis:n' => \$parameter{'excludeMitoContigExomeAnalysis'}{'value'},  #Exclude the mitochondrial contig in exome analysis
 	   'rio|reduceIO:n' => \$parameter{'reduceIO'}{'value'},
 	   'l|logFile:s' => \$parameter{'logFile'}{'value'},
 	   'h|help' => \$help,  #Display help text
@@ -879,17 +883,10 @@ if ($scriptParameter{'writeConfigFile'} ne 0) {  #Write config file for family
     &WriteYAML(\%scriptParameter, \$scriptParameter{'writeConfigFile'});  #Write used settings to configfile
 }
 
-##Set chr prefix and chromosome names depending on reference used
-if ($scriptParameter{'humanGenomeReference'}=~/hg\d+/) {  #Refseq - prefix and M
-
-    @{$fileInfo{'contigs'}} = ("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY", "chrM");  #Chr for filtering of bam file
-    @{$fileInfo{'contigsSizeOrdered'}} = ("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chrX", "chr8", "chr9", "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrY", "chrM");  #Chr for filtering of bam file
-}
-elsif ($scriptParameter{'humanGenomeReference'}=~/GRCh\d+/) {  #Ensembl - no prefix and MT
-
-    @{$fileInfo{'contigs'}} = ("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "X", "Y", "MT");  #Chr for filtering of bam file
-    @{$fileInfo{'contigsSizeOrdered'}} = ("1", "2", "3", "4", "5", "6", "7", "X", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "Y", "MT");  #Chr for filtering of bam file
-}
+## Set contig prefix and contig names depending on reference used
+&SetContigs({'scriptParameterHashRef' => \%scriptParameter,
+	     'fileInfoHashRef' => \%fileInfo,
+	    });
 
 ## Write CMD to MIP log file
 &WriteCMDMipLog(\%parameter, \%scriptParameter, \@orderParameters, \$script, \$scriptParameter{'logFile'}, \$mipVersion);
@@ -2110,9 +2107,7 @@ sub RankVariants {
 	    }
 	}
     }
-
-    &RemoveDirectory($tempDirectoryRef, $FILEHANDLE);
-
+    
     close($FILEHANDLE);   
 
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
@@ -2457,8 +2452,6 @@ sub GATKVariantEvalExome {
 	}
     } 
 
-    &RemoveDirectory(\${$scriptParameterHashRef}{'tempDirectory'}, $FILEHANDLE);
-
     close($FILEHANDLE);   
  
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
@@ -2662,8 +2655,6 @@ sub GATKVariantEvalAll {
 	    }
 	} 
     }
-
-    &RemoveDirectory(\${$scriptParameterHashRef}{'tempDirectory'}, $FILEHANDLE);
 
     close($FILEHANDLE);   
 
@@ -2900,9 +2891,7 @@ sub SnpEff {
 						  'outDirectory' => $outFamilyDirectory,
 						  'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
 						 });
-    
-    &RemoveDirectory($tempDirectoryRef, $FILEHANDLE);
-    
+        
     close($FILEHANDLE);
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
@@ -3164,8 +3153,6 @@ sub Annovar {
 
     if ($$reduceIORef eq "0") {  #Run as individual sbatch script
 
-	&RemoveDirectory($tempDirectoryRef, $FILEHANDLE);
-
 	close($FILEHANDLE);
 
 	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
@@ -3353,8 +3340,6 @@ sub VCFParser {
 						      'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
 						     });
 
-	&RemoveDirectory($tempDirectoryRef, $FILEHANDLE);
-
 	close($FILEHANDLE);
     }
     
@@ -3539,8 +3524,6 @@ sub VariantEffectPredictor {
 			     });
 	print $FILEHANDLE "wait", "\n\n";
 
-	&RemoveDirectory($tempDirectoryRef, $FILEHANDLE);
-
 	close($FILEHANDLE);
     }
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
@@ -3612,7 +3595,7 @@ sub GATKReadBackedPhasing {
 					    'programDirectory' => lc($aligner."/gatk"),
 					    'callType' => $callType,
 					    'nrofCores' => $nrCores,
-					    'processTime' => 3,
+					    'processTime' => 15,
 					    'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
 					   });
 
@@ -3725,8 +3708,6 @@ sub GATKReadBackedPhasing {
 			 });
     print $FILEHANDLE "wait", "\n\n";
 
-    &RemoveDirectory(\${$scriptParameterHashRef}{'tempDirectory'}, $FILEHANDLE);
-   
     close($FILEHANDLE);
 
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
@@ -3773,7 +3754,7 @@ sub GATKPhaseByTransmission {
 					    'programName' => $programName,
 					    'programDirectory' => lc($aligner."/gatk"),
 					    'callType' => $callType,
-					    'processTime' => 3,
+					    'processTime' => 15,
 					    'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
 					   });
     
@@ -3827,8 +3808,6 @@ sub GATKPhaseByTransmission {
 			  'FILEHANDLE' => $FILEHANDLE,
 			 });
     print $FILEHANDLE "wait", "\n\n";
-
-    &RemoveDirectory(\${$scriptParameterHashRef}{'tempDirectory'}, $FILEHANDLE);
 
     close($FILEHANDLE);
 
@@ -4111,8 +4090,6 @@ sub GATKVariantReCalibration {
 			 });
     print $FILEHANDLE "wait", "\n\n";
 
-    &RemoveDirectory(\${$scriptParameterHashRef}{'tempDirectory'}, $FILEHANDLE);
-
     close($FILEHANDLE);   
     	
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
@@ -4205,8 +4182,6 @@ sub GATKConcatenateGenoTypeGVCFs {
 			  'FILEHANDLE' => $FILEHANDLE,
 			 });
     print $FILEHANDLE "wait", "\n\n";
-
-    &RemoveDirectory(\${$scriptParameterHashRef}{'tempDirectory'}, $FILEHANDLE);	
     
     close($FILEHANDLE);
     
@@ -4351,9 +4326,7 @@ sub GATKGenoTypeGVCFs {
 			      'FILEHANDLE' => $FILEHANDLE,
 			     });
 	print $FILEHANDLE "wait", "\n\n";
-	
-	&RemoveDirectory(\${$scriptParameterHashRef}{'tempDirectory'}, $FILEHANDLE);
-    
+	    
 	close($FILEHANDLE);  
 	
 	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
@@ -4516,7 +4489,7 @@ sub GenomeCoverageBED {
 					     'programName' => $programName,
 					     'programDirectory' => lc($aligner."/coveragereport"),
 					     'nrofCores' => $nrCores,
-					     'processTime' => 8,
+					     'processTime' => 16,
 					     'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
 					    });
 	
@@ -4554,7 +4527,7 @@ sub GenomeCoverageBED {
 					     'programName' => $programName,
 					     'programDirectory' => lc($aligner."/coveragereport"),
 					     'nrofCores' => $nrCores,
-					     'processTime' => 4,
+					     'processTime' => 16,
 					     'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
 					    });
 	
@@ -4583,8 +4556,6 @@ sub GenomeCoverageBED {
 	&MigrateFilesFromTemp(\@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, \@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, $outSampleDirectory, ${$scriptParameterHashRef}{'tempDirectory'}, $nrCores, $outfileEnding, $FILEHANDLE);
     }
     
-    &RemoveDirectory(\${$scriptParameterHashRef}{'tempDirectory'}, $FILEHANDLE);
-
     close($FILEHANDLE);
 
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
@@ -4713,7 +4684,7 @@ sub PicardToolsCalculateHSMetrics {
 					     'programName' => $programName,
 					     'programDirectory' => lc($aligner."/coveragereport"),
 					     'nrofCores' => $nrCores,
-					     'processTime' => 4,
+					     'processTime' => 16,
 					     'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
 					    });
 
@@ -4766,8 +4737,6 @@ sub PicardToolsCalculateHSMetrics {
 	&MigrateFilesFromTemp(\@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, \@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, $outSampleDirectory, ${$scriptParameterHashRef}{'tempDirectory'}, $nrCores, $outfileEnding."_CalculateHsMetrics", $FILEHANDLE);
     }
     
-    &RemoveDirectory(\${$scriptParameterHashRef}{'tempDirectory'}, $FILEHANDLE);
-
     close($FILEHANDLE);
 
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
@@ -4901,7 +4870,7 @@ sub PicardToolsCollectMultipleMetrics {
 					     'programName' => $programName,
 					     'programDirectory' => lc($aligner."/coveragereport"),
 					     'nrofCores' => $nrCores,
-					     'processTime' => 4,
+					     'processTime' => 16,
 					     'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
 					    });
 
@@ -4955,8 +4924,6 @@ sub PicardToolsCollectMultipleMetrics {
 	&MigrateFilesFromTemp(\@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, \@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, $outSampleDirectory, ${$scriptParameterHashRef}{'tempDirectory'}, $nrCores, $outfileEnding.".insert*", $FILEHANDLE);
     }
     
-    &RemoveDirectory(\${$scriptParameterHashRef}{'tempDirectory'}, $FILEHANDLE);
-
     close($FILEHANDLE);
 
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
@@ -5309,7 +5276,7 @@ sub ChanjoAnnotate {
 					     'programName' => $programName,
 					     'programDirectory' => lc($aligner."/coveragereport"),
 					     'nrofCores' => $nrCores,
-					     'processTime' => 2,
+					     'processTime' => 10,
 					     'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
 					    });	
 
@@ -5334,12 +5301,12 @@ sub ChanjoAnnotate {
 	    print $FILEHANDLE "-v -v  ";  #Incrementing "-v" for increased verbosity
 	    print $FILEHANDLE "--log ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding."_chanjoAnnotate.log ";
 	    print $FILEHANDLE "annotate ";
-	    print $FILEHANDLE $inSampleDirectory."/".$infile.$infileEnding.".bam ";  #InFile
+	    print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile
 	    print $FILEHANDLE "--cutoff ".${$scriptParameterHashRef}{'chanjoAnnotateCutoff'}." ";  #The “cutoff” is used for the completeness calculation
 	    print $FILEHANDLE "--sample ".$sampleID." ";  #A unique sample Id
 	    print $FILEHANDLE "--extendby 2 ";  #Dynamically extend intervals symetrically
 	    print $FILEHANDLE "--group ".${$scriptParameterHashRef}{'familyID'}." ";  #Grouping option for samples
-	    print $FILEHANDLE "> ".$outSampleDirectory."/".$infile.$outfileEnding.".bed &". "\n\n";  #OutFile
+	    print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding.".bed &". "\n\n";  #OutFile
 
 	    if ( (${$scriptParameterHashRef}{'pChanjoAnnotate'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
@@ -5362,8 +5329,6 @@ sub ChanjoAnnotate {
 	&MigrateFilesFromTemp(\@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, \@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, $outSampleDirectory, ${$scriptParameterHashRef}{'tempDirectory'}, $nrCores, $infileEnding."_chanjoAnnotate.log", $FILEHANDLE);
 	print $FILEHANDLE "wait", "\n\n";
     }
-
-    &RemoveDirectory(\${$scriptParameterHashRef}{'tempDirectory'}, $FILEHANDLE);
 
     close($FILEHANDLE);
 
@@ -5669,8 +5634,6 @@ sub GATKHaploTypeCaller {
 						     });
     }
 
-    &RemoveDirectory($tempDirectoryRef, $FILEHANDLE);
-
     close($FILEHANDLE);  
 
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
@@ -5876,7 +5839,6 @@ sub GATKBaseReCalibration {
 					      'fileEnding' => ".b*",
 					      'temporaryDirectory' => $$tempDirectoryRef,
 					     });
-	    &RemoveDirectory(\$gatkTemporaryDirectory, $FILEHANDLE);
 	}
 	else {
 	    
@@ -6056,16 +6018,13 @@ sub GATKBaseReCalibration {
 				'infileEnding' => $infileEnding,
 				'fileEnding' => ".b*",
 			       });
-	    &RemoveDirectory(\$gatkTemporaryDirectory, $FILEHANDLE);
 	}
     }
 
     close($XARGSFILEHANDLE);
     
     if ($$reduceIORef eq "0") {  #Run as individual sbatch script
-	
-	&RemoveDirectory($tempDirectoryRef, $FILEHANDLE);
-    
+	    
 	close($FILEHANDLE);
 
 	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) { 
@@ -6288,7 +6247,6 @@ sub GATKReAligner {
 					      'fileEnding' => ".b*",
 					      'temporaryDirectory' => $$tempDirectoryRef,
 					     });
-	    &RemoveDirectory(\$gatkTemporaryDirectory, $FILEHANDLE);
 	}
     }
     else  {  #No previous merge
@@ -6418,15 +6376,12 @@ sub GATKReAligner {
 				'fileEnding' => ".b*",
 			       });
 
-	    &RemoveDirectory(\$gatkTemporaryDirectory, $FILEHANDLE);
 	}
     }
 
     close($XARGSFILEHANDLE);
 
     if ($$reduceIORef eq "0") {  #Run as individual sbatch script
-
-	&RemoveDirectory($tempDirectoryRef, $FILEHANDLE);
 	
 	close($FILEHANDLE);
 	
@@ -6759,8 +6714,6 @@ sub PicardToolsMarkduplicatesWithMateCigar {
     close($XARGSFILEHANDLE);
 
     if ($$reduceIORef eq "0") {  #Run as individual sbatch script
-
-	&RemoveDirectory($tempDirectoryRef, $FILEHANDLE);
 	
 	close($FILEHANDLE);
 	
@@ -7141,8 +7094,6 @@ sub PicardToolsMerge {
     close($XARGSFILEHANDLE);
 
     if ($$reduceIORef eq "0") {
-
-	&RemoveDirectory($tempDirectoryRef, $FILEHANDLE);
 	
 	close($FILEHANDLE);
 	
@@ -7279,8 +7230,6 @@ sub BWA_Sampe {
 			     });
 	print $FILEHANDLE "wait", "\n\n";
 
-	&RemoveDirectory(\${$scriptParameterHashRef}{'tempDirectory'}, $FILEHANDLE);
-
 	close($FILEHANDLE);
 
 	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
@@ -7385,8 +7334,6 @@ sub BWA_Aln {
     ## Copies files from temporary folder to source. Loop over files specified by $arrayRef and collects files from $extractArrayRef.
     &MigrateFilesFromTemp(\@{ ${$infilesBothStrandsNoEndingHashRef}{$sampleID} }, \@{ ${$infilesBothStrandsNoEndingHashRef}{$sampleID} }, $outSampleDirectory, ${$scriptParameterHashRef}{'tempDirectory'}, $nrCores, ".sai", $FILEHANDLE);
     
-    &RemoveDirectory(\${$scriptParameterHashRef}{'tempDirectory'}, $FILEHANDLE);
-
     close($FILEHANDLE);
 
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {   
@@ -7749,8 +7696,6 @@ sub BWA_Mem {
 				 });
 	    print $FILEHANDLE "wait", "\n\n";
 	    
-	    &RemoveDirectory(\${$scriptParameterHashRef}{'tempDirectory'}, $FILEHANDLE);
-
 	    close($FILEHANDLE);
 
 	    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
@@ -7993,8 +7938,6 @@ sub MosaikAlign {
 			     });
 	print $FILEHANDLE "wait", "\n\n";
 	
-	&RemoveDirectory(\${$scriptParameterHashRef}{'tempDirectory'}, $FILEHANDLE);
-
 	close($FILEHANDLE);
 	
 	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
@@ -8119,9 +8062,7 @@ sub MosaikBuild {
 
     ## Copies files from temporary folder to source. Loop over files specified by $arrayRef and collects files from $extractArrayRef.
     &MigrateFilesFromTemp(\@{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} }, \@{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} }, $outSampleDirectory, $$tempDirectoryRef, $nrCores, ".dat", $FILEHANDLE);
-    
-    &RemoveDirectory($tempDirectoryRef, $FILEHANDLE);
-    
+        
     close($FILEHANDLE);
     
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) { 
@@ -11309,7 +11250,8 @@ sub ProgramPreRequisites {
 
     my %default = ('callType' => "",
 		   'nrofCores' => 1,
-		   'processTime' => 1
+		   'processTime' => 1,
+		   'pipefail' => 1,
 	);
     
     if (defined(${$argHashRef}{'callType'})) {
@@ -11371,6 +11313,11 @@ sub ProgramPreRequisites {
     open ($FILEHANDLE, ">",$fileName) or $logger->logdie("Can't write to '".$fileName."' :".$!."\n");
     
     print $FILEHANDLE "#! /bin/bash -l", "\n";
+
+    if (${$argHashRef}{'pipefail'} == 1) {
+
+	print $FILEHANDLE "set -o pipefail", "\n";  #Detect errors within pipes 
+    }
     print $FILEHANDLE "#SBATCH -A ".${$scriptParameterHashRef}{'projectID'}, "\n";
     print $FILEHANDLE "#SBATCH -n ".${$argHashRef}{'nrofCores'}, "\n";
     print $FILEHANDLE "#SBATCH -t ".${$argHashRef}{'processTime'}.":00:00", "\n";	
@@ -11409,13 +11356,32 @@ sub ProgramPreRequisites {
 	print $FILEHANDLE "#SBATCH --mail-user=".${$scriptParameterHashRef}{'email'}, "\n\n";	
     }
     
-    print $FILEHANDLE q?echo "Running on: $(hostname)"?,"\n\n";
-
+    print $FILEHANDLE q?echo "Running on: $(hostname)"?,"\n";
+    print $FILEHANDLE q?PROGNAME=$(basename $0)?,"\n\n";
+    
     if (defined(${$argHashRef}{'tempDirectory'})) {  #Not all programs need a temporary directory
 
 	print $FILEHANDLE "## Create temporary directory\n";
-	print $FILEHANDLE "mkdir -p ".${$argHashRef}{'tempDirectory'}, "\n\n";
+	print $FILEHANDLE q?tempDirectory="?.${$argHashRef}{'tempDirectory'}.q?"?, "\n";  #Assign batch variable
+	print $FILEHANDLE q?mkdir -p $tempDirectory?, "\n\n";
+	
+	##Create housekeeping function and trap
+	print $FILEHANDLE q?finish() {?, "\n\n";
+	print $FILEHANDLE "\t".q?## Perform sbatch exit housekeeping?, "\n";
+	print $FILEHANDLE "\t".q?rm -rf $tempDirectory?, "\n";
+	print $FILEHANDLE q?}?, "\n"; 
+	print $FILEHANDLE q?trap finish EXIT TERM INT?, "\n\n";
     }
+
+    ## Create error handling function and trap
+    print $FILEHANDLE q?error() {?, "\n\n";
+    print $FILEHANDLE "\t".q?## Display error message and exit?, "\n";
+    print $FILEHANDLE "\t".q{ret="$?"}, "\n";
+    print $FILEHANDLE "\t".q?echo "${PROGNAME}: ${1:-"Unknown Error - ExitCode="$ret}" 1>&2?, "\n\n";
+    print $FILEHANDLE "\t".q?exit 1?, "\n";
+    print $FILEHANDLE q?}?, "\n";
+    print $FILEHANDLE q?trap error ERR?, "\n\n";
+
     return ($fileName, $fileInfoPath.$fileNameTracker.".stdout.txt", $fileInfoPath.$fileNameTracker.".stderr.txt");  #Return filen ame, stdout, stderr path for QC check later
 }
 
@@ -14432,6 +14398,7 @@ sub SplitBAM {
 ##         : $scriptParameterHashRef           => The active parameters for this analysis hash {REF}
 ##         : $FILEHANDLE                       => Sbatch filehandle to write to
 ##         : $XARGSFILEHANDLE                  => XARGS filehandle to write to
+##         : $argHashRef}{'contigs'}           => The contigs to process
 ##         : $argHashRef{'filename'}           => File name - ususally sbatch
 ##         : $argHashRef{'nrCores'}            => The number of cores to use
 ##         : $argHashRef{'firstCommand'}       => The inital command
@@ -14520,6 +14487,41 @@ sub FindMaxSeqLengthPerSampleID {
 	}
     }
     return $maxSequenceLength;
+}
+
+sub SetContigs {
+
+##SetContigs
+
+##Function : Set contig prefix and contig names depending on reference used. Exclude mitochondrial contig if requested and analysisType is "exome".  
+##Returns  : ""
+##Arguments: $scriptParameterHashRef, $fileInfoHashRef
+##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $fileInfoHashRef        => The file info hash {REF}
+
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
+
+    if (${$scriptParameterHashRef}{'humanGenomeReference'}=~/hg\d+/) {  #Refseq - prefix and M
+	
+	@{${$fileInfoHashRef}{'contigs'}} = ("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chr8", "chr9", "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrX", "chrY", "chrM");  #Chr for filtering of bam file
+	@{${$fileInfoHashRef}{'contigsSizeOrdered'}} = ("chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", "chrX", "chr8", "chr9", "chr10", "chr11", "chr12", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", "chr22", "chrY", "chrM");  #Chr for filtering of bam file
+    }
+    elsif (${$scriptParameterHashRef}{'humanGenomeReference'}=~/GRCh\d+/) {  #Ensembl - no prefix and MT
+	
+	@{${$fileInfoHashRef}{'contigs'}} = ("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "X", "Y", "MT");  #Chr for filtering of bam file
+	@{${$fileInfoHashRef}{'contigsSizeOrdered'}} = ("1", "2", "3", "4", "5", "6", "7", "X", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "Y", "MT");  #Chr for filtering of bam file
+    }
+
+    ## Remove Mitochondria contig since it is ususally not included in capture arrays and will lead to sbatch errors in the variantannotation
+    if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") && (${$scriptParameterHashRef}{'excludeMitoContigExomeAnalysis'} eq 1) ) {
+	
+	pop(@{${$fileInfoHashRef}{'contigs'}});
+	pop(@{${$fileInfoHashRef}{'contigsSizeOrdered'}});
+    }
 }
 
 ####
