@@ -646,8 +646,6 @@ sub ReadInfileVCF {
 				
 				if ($transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ] =~/N\w_\d+\.\d/) { #RefSeq
 				    
-				    my $selectedTranscriptTracker = 0; #Track if any transcripts belong to selected features
-				    
 				    if (defined($transcriptsEffects[ $vepFormatFieldColumn{'SYMBOL'} ])) { 
 					
 					$variantData{'Symbol'} = $transcriptsEffects[ $vepFormatFieldColumn{'SYMBOL'} ];  #Save HGNC Symbol
@@ -664,18 +662,16 @@ sub ReadInfileVCF {
 					    }
 					    $selectedTranscriptCounter++;
 					}
-					else {
-					    
-					    if ($transcriptsCounter > 0) {
+					## Always include all Refseq transcripts in research list
+					if ($transcriptsCounter > 0) {
 						
-						$variantLine .= ",".$transcripts[$fieldCounter];
-					    }
-					    else {
-						
-						$variantLine .= "CSQ=".$transcripts[$fieldCounter];
-					    }
-					    $transcriptsCounter++;
+					    $variantLine .= ",".$transcripts[$fieldCounter];
 					}
+					else {
+						
+					    $variantLine .= "CSQ=".$transcripts[$fieldCounter];
+					}
+					$transcriptsCounter++;
 				    }	
 				}
 			    }
@@ -756,12 +752,10 @@ sub ReadInfileVCF {
 				   
 				    &AddFieldToElementCounter(\$selectedTranscriptCounter, \$selectedVariantLine, ",", \$alleleGeneEntry, \$outputFormat, "HGVScp=");
 				}
-				else {
-
-				    my $alleleGeneEntry = $transcriptsEffects[ $vepFormatFieldColumn{'Allele'} ].":".$variantData{'Symbol'};
+				## Always include all Refseq transcripts in research list
+				my $alleleGeneEntry = $transcriptsEffects[ $vepFormatFieldColumn{'Allele'} ].":".$variantData{'Symbol'};
 				    
-				    &AddFieldToElementCounter(\$transcriptsCounter, \$variantLine, ",", \$alleleGeneEntry, \$outputFormat, "HGVScp=");
-				}				
+				&AddFieldToElementCounter(\$transcriptsCounter, \$variantLine, ",", \$alleleGeneEntry, \$outputFormat, "HGVScp=");
 			    }
 			    &AddFieldToElement(\$selectedTranscriptTracker, \$selectedVariantLine, \$variantLine, ":", \$transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ]); #Save transcript
 
@@ -778,16 +772,14 @@ sub ReadInfileVCF {
 					$selectedVariantData{'FeatureType'} .= ",".$transcriptsEffects[ $vepFormatFieldColumn{'Feature_type'} ];
 				    }
 				}
-				else { #Not in selected genes
+				## Always include all Refseq transcripts in research list				    
+				if ($transcriptsCounter == 0) { #First Gene
 				    
-				    if ($transcriptsCounter == 0) { #First Gene
-					
-					$variantData{'FeatureType'} = $transcriptsEffects[ $vepFormatFieldColumn{'Feature_type'} ];
-				    }
-				    else {
-					
-					$variantData{'FeatureType'} .= ",".$transcriptsEffects[ $vepFormatFieldColumn{'Feature_type'} ];
-				    }
+				    $variantData{'FeatureType'} = $transcriptsEffects[ $vepFormatFieldColumn{'Feature_type'} ];
+				}
+				else {
+				    
+				    $variantData{'FeatureType'} .= ",".$transcriptsEffects[ $vepFormatFieldColumn{'Feature_type'} ];
 				}
 			    }
 			    if (defined($transcriptsEffects[ $vepFormatFieldColumn{'Consequence'} ])) { #Save Consequence
@@ -869,11 +861,9 @@ sub ReadInfileVCF {
 				
 				$selectedTranscriptCounter++;
 			    }
-			    else {
-				
-				$transcriptsCounter++;
-			    }
-			}   
+			    ## Always include all Refseq transcripts in research list	
+			    $transcriptsCounter++;
+			}
 		    }
 		    &CollectConsequenceGenes(\%consequence, \@featureFields, \$selectedVariantLine, \$variantLine);
 		}
@@ -1006,10 +996,8 @@ sub AddFieldToElement {
 	
 	$$selectedLineRef .= $separator.$$valueRef;
     }
-    else {
-	
-	$$lineRef .= $separator.$$valueRef;
-    }
+    ## Always include all Refseq transcripts in research list
+    $$lineRef .= $separator.$$valueRef;
 }
 
 sub CollectConsequenceGenes {
@@ -1038,10 +1026,9 @@ sub CollectConsequenceGenes {
 		
 		&CollectConsequenceField(\$fieldCounter, \%selectedGeneCounter, \%{$hashRef}, \$genes, \@{$arrayRef}, \@selectedTempFields, \$outputFormat);
 	    }
-	    else { #Not selected feature
-		
-		&CollectConsequenceField(\$fieldCounter, \%geneCounter, \%{$hashRef}, \$genes, \@{$arrayRef}, \@tempFields, \$outputFormat);
-	    }
+
+	    ## Always include all Refseq transcripts in research list
+	    &CollectConsequenceField(\$fieldCounter, \%geneCounter, \%{$hashRef}, \$genes, \@{$arrayRef}, \@tempFields, \$outputFormat);
 	}
     }
     
