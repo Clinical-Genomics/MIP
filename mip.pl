@@ -75,7 +75,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pve/--pythonVirtualEnvironment Pyhton virtualenvironment (defaults to "")
                -pvec/--pythonVirtualEnvironmentCommand Pyhton virtualenvironment (defaults to "workon")
                -ges/--genomicSet Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
-               -rio/--reduceIO Run consecutive models  at nodes (defaults to "0" (=no))
+               -rio/--reduceIO Run consecutive models  at nodes (defaults to "1" (=yes))
                -l/--logFile Mip log file (defaults to "{outDataDir}/{familyID}/mip_log/{timestamp}/{scriptname}_{timestamp}.log")
                -h/--help Display this help message    
                -v/--version Display version of MIP            
@@ -261,7 +261,7 @@ chomp($base, $script);  #Remove \n;
 
 &DefineParametersPath(\%parameter, \@orderParameters, "genomicSet", "noUserInfo", "MIP", "file");
 
-&DefineParameters(\%parameter, \@orderParameters, "reduceIO", "MIP", 0, "MIP");
+&DefineParameters(\%parameter, \@orderParameters, "reduceIO", "MIP", 1, "MIP");
 
 ###Programs
 
@@ -485,7 +485,7 @@ my (@GATKTargetPaddedBedIntervalLists);  #Array for target infile lists used in 
 &DefineParameters(\%parameter, \@orderParameters, "pythonVirtualEnvironmentCommand", "MIP", "workon", "MIP", 0);
 
 ##QcCollect
-&DefineParameters(\%parameter, \@orderParameters, "pQCCollect", "program", 1, "MIP", "nofileEnding", "MAIN");
+&DefineParameters(\%parameter, \@orderParameters, "pQCCollect", "program", 1, "MIP", "nofileEnding", "ALL");
 
 &DefineParameters(\%parameter, \@orderParameters, "QCCollectSampleInfoFile", "program", "notSetYet", "pQCCollect");  #No file check since file is created by MIP later
 
@@ -1920,7 +1920,7 @@ sub QCCollect {
 		      });
 	
 	&FIDSubmitJob(\%{$scriptParameterHashRef}, \%jobID, \%infilesLaneNoEnding,
-		       {'dependencies' => 1, 
+		       {'dependencies' => 7, 
 			'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
 			'sbatchFileName' => $fileName
 		       });
@@ -2017,7 +2017,7 @@ sub RankVariants {
 	## Calculate Gene Models
 	print $FILEHANDLE "## Calculate Gene Models", "\n";   
 
-	if (${$scriptParameterHashRef}{'analysisType'} eq "exomes") {
+	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VEPOutputFilesCounter > 0) ) {
 	    
 	    my @trapSignals = ("ERR");
 	    ## Clear trap for signal(s)
@@ -2091,7 +2091,7 @@ sub RankVariants {
 	print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_combined".$vcfParserAnalysisType.".vcf ";  #inFile
 	print $FILEHANDLE "\n\n";
 
-	if (${$scriptParameterHashRef}{'analysisType'} eq "exomes") {
+	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VEPOutputFilesCounter > 0) ) {
 
 	    my @trapSignals = ("ERR");
 	    ## Enable trap for signal(s) and function
@@ -2868,7 +2868,7 @@ sub SnpEff {
 	
 	close($XARGSFILEHANDLE);
 
-	if (${$scriptParameterHashRef}{'analysisType'} eq "exomes") {
+	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VEPOutputFilesCounter > 0) ) {
 
 	    my @trapSignals = ("ERR");
 	    ## Clear trap for signal(s)
@@ -2876,7 +2876,7 @@ sub SnpEff {
 	}
 	&ConcatenateVariants(\%{$scriptParameterHashRef}, $FILEHANDLE, \@{${$fileInfoHashRef}{'contigs'}}, $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_", $vcfParserAnalysisType.".vcf", $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf");
 
-	if (${$scriptParameterHashRef}{'analysisType'} eq "exomes") {
+	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VEPOutputFilesCounter > 0) ) {
 
 	    my @trapSignals = ("ERR");
 	    ## Enable trap for signal(s) and function
@@ -3109,58 +3109,6 @@ sub Annovar {
 	    print $XARGSFILEHANDLE "mv ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf.".${$scriptParameterHashRef}{'annovarGenomeBuildVersion'}."_multianno.vcf ";
 	    print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf";
 	    print $XARGSFILEHANDLE "\n";
-	}
-	unless ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) {  #Exome/rapid analysis
-
-	    ## MT 
-	    for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@{${$scriptParameterHashRef}{'annovarTableNames'}});$tableNamesCounter++) {  #For all specified table names
-		
-		if (${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter] =~/ensGene|refGene/) {  #Extra round to catch MT for refSeq as well
-		    
-		    ## Annovar MT annotation
-		    print $FILEHANDLE "## Annovar MT annotation\n";
-		    
-		    print $FILEHANDLE "perl ".${$scriptParameterHashRef}{'annovarPath'}."/table_annovar.pl ";  #Annovar script
-		    if ($scriptParameter{'humanGenomeReference'}=~/hg\d+/) {  #Refseq - prefix and M
-			
-			print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_chrM".$vcfParserAnalysisType.".vcf ";  #Infile
-		    }
-		    elsif ($scriptParameter{'humanGenomeReference'}=~/GRCh\d+/) {  #Ensembl - no prefix and MT
-			
-			print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_MT".$vcfParserAnalysisType.".vcf ";  #Infile
-		    }
-		    print $FILEHANDLE ${$scriptParameterHashRef}{'annovarPath'}."/humandb ";  #annovar/humandb directory is assumed
-		    print $FILEHANDLE "-vcfinput ";  #Input format
-		    print $FILEHANDLE "--remove ";  #Remove all temporary files
-		    print $FILEHANDLE "-buildver GRCh37_MT ";
-		    print $FILEHANDLE "-protocol ensGene ";  #Comma-delimited string specifying database protocol. NOTE: RefSeq does not have mitochondria gene definition. So ANNOVAR use either UCSC Known Gene or Ensembl Gene.
-		    print $FILEHANDLE "-operation g ";  #Comma-delimited string specifying type of operation	
-		    print $FILEHANDLE "-argument -exonicsplicing ";  #Annotate variants near intron/exonic borders 
-		    if ($scriptParameter{'humanGenomeReference'}=~/hg\d+/) {  #Refseq - prefix and M
-			
-			print $FILEHANDLE "-out ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_chrM".$vcfParserAnalysisType;  #OutFile prefix
-		    }
-		    elsif ($scriptParameter{'humanGenomeReference'}=~/GRCh\d+/) {  #Ensembl - no prefix and MT
-			
-			print $FILEHANDLE "-out ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_MT".$vcfParserAnalysisType;  #OutFile prefix
-		    }
-		    print $FILEHANDLE "\n\n";
-		}
-		
-		##Concatenate vcf files to 1 
-		my @mitochondria = ("vcf.".${$scriptParameterHashRef}{'annovarGenomeBuildVersion'}."_multianno", "GRCh37_MT_multianno");
-		
-		print $FILEHANDLE "##  Concatenate vcf MT files\n";
-		if ($scriptParameter{'humanGenomeReference'}=~/hg\d+/) {  #Refseq - prefix and M
-		    
-		    &ConcatenateVariants(\%{$scriptParameterHashRef}, $FILEHANDLE, \@mitochondria, $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_chrM".$vcfParserAnalysisType.".", ".vcf", $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_chrM".$vcfParserAnalysisType.".vcf");
-		}
-		elsif ($scriptParameter{'humanGenomeReference'}=~/GRCh\d+/) {  #Ensembl - no prefix and MT
-		    
-		    &ConcatenateVariants(\%{$scriptParameterHashRef}, $FILEHANDLE, \@mitochondria, $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_MT".$vcfParserAnalysisType.".", ".vcf", $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_MT".$vcfParserAnalysisType.".vcf");
-		}
-		print $FILEHANDLE "\n\n";
-	    }
 	}	
 	if ($$reduceIORef eq "0") {  #Run as individual sbatch script
 	
@@ -3909,15 +3857,13 @@ sub GATKVariantReCalibration {
 
     my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pGATKGenoTypeGVCFs'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{"p".$programName}{'fileEnding'};
+
     ## GATK ".fam" file check
     unless (-e ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$familyID.".fam") {  #Check to see if file already exists
 
 	print $FILEHANDLE "#Generating '.fam' file for GATK VariantRecalibrator/ApplyRecalibration","\n\n";
 	print $FILEHANDLE q?perl -nae 'print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t", $F[5], "\n";' ?.${$scriptParameterHashRef}{'pedigreeFile'}." > ".$outFamilyFileDirectory."/".$familyID.".fam", "\n\n";
     }
-
-    ## Detects if there are different capture kits across sampleIDs. Creates a temporary merged interval_list for all interval_list that have been supplied and returns temporary list. Will also extract specific contigs if requested and return that list if enabled.
-    my $contigIntervalListFile = &GATKTargetListFlag(\%{$scriptParameterHashRef}, $FILEHANDLE);
     
     ## Copy file(s) to temporary directory
     print $FILEHANDLE "## Copy file(s) to temporary directory\n"; 
@@ -3956,7 +3902,6 @@ sub GATKVariantReCalibration {
 
 	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) {  #Exome/rapid analysis use combined reference for more power
 	
-	    print $FILEHANDLE "-L ".$contigIntervalListFile." ";  #Target list file (merged or original)			
 	    print $FILEHANDLE "-input ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$infileEnding.$callType.".vcf ";  #Infile HaplotypeCaller combined vcf which used reference gVCFs to create combined vcf (30> samples gCVFs)
 	}
 	else {  #WGS
@@ -4012,7 +3957,6 @@ sub GATKVariantReCalibration {
 
 	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid")) {  #Exome/rapid analysis use combined reference for more power
 	    
-	    print $FILEHANDLE "-L ".$contigIntervalListFile." ";#Target list file (merged or original)		
 	    print $FILEHANDLE "-input ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$infileEnding.$callType.".vcf ";  #Infile HaplotypeCaller combined vcf which used reference gVCFs to create combined vcf file
 	    print $FILEHANDLE "-o ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType."_filtered.vcf ";
 	}
@@ -4054,7 +3998,6 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file	
-	print $FILEHANDLE "-L ".$contigIntervalListFile." ";#Target list file (merged or original)
 	print $FILEHANDLE "-env ";  #Don't include loci found to be non-variant after the subsetting procedure. 
 	print $FILEHANDLE "-V: ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType."_filtered.vcf ";  #InFile
 
@@ -4081,7 +4024,6 @@ sub GATKVariantReCalibration {
 	    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run	    
 	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	    print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file	
-	    print $FILEHANDLE "-L ".$contigIntervalListFile." ";#Target list file (merged or original)
 	    print $FILEHANDLE "-V: ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType."_filtered.vcf ";  #InFile
 	    print $FILEHANDLE "-o ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType."_incnonvariantloci.vcf ";  #OutFile
 	    
@@ -9991,6 +9933,11 @@ sub FIDSubmitJob {
 		push ( @{ ${$jobIDHashRef}{$familyIDChainKey}{$familyIDChainKey."_".$sampleIDChainKey} }, $jobID);  #Add jobID to hash
 	    }
 
+	    ## Keeps the jobID string dependecy within reasonable limits
+	    if ( (defined(${$jobIDHashRef}{"ALL"}{"ALL"})) && (scalar(@{ ${$jobIDHashRef}{"ALL"}{"ALL"} } >= 100)) ) {
+		
+		shift( @{ ${$jobIDHashRef}{"ALL"}{"ALL"} });  #Remove oldest jobID.
+	    }
 	    ## Job dependent on all jobs
 	    push ( @{ ${$jobIDHashRef}{"ALL"}{"ALL"} }, $jobID);  #Add jobID to hash
 	}
@@ -10109,8 +10056,13 @@ sub FIDSubmitJob {
 		}
 	    }
 
+	    ## Keeps the jobID string dependecy within reasonable limits
+	    if ( (defined(${$jobIDHashRef}{"ALL"}{"ALL"})) && (scalar(@{ ${$jobIDHashRef}{"ALL"}{"ALL"} } >= 100)) ) {
+
+		shift( @{ ${$jobIDHashRef}{"ALL"}{"ALL"} });  #Remove oldest jobID.
+	    }
 	    ## Job dependent on all jobs
-	    push ( @{ ${$jobIDHashRef}{"ALL"}{"ALL"} }, $jobID);  #Add jobID to hash
+	    push( @{ ${$jobIDHashRef}{"ALL"}{"ALL"} }, $jobID);  #Add jobID to hash
 	}
     }
     if ($jobIDsReturn !~/\d+/) {  #Catch errors since, propper sbatch submission should only return numbers
@@ -14564,19 +14516,14 @@ sub ClearTrap {
 ##Arguments: $trapSignalsRef, $FILEHANDLE, $analysisType
 ##         : $trapSignalsRef => Array with signals to clear trap for {REF}
 ##         : $FILEHANDLE     => The FILEHANDLE to write to
-##         : $analysisType   => The MIP analysis type
 
     my $trapSignalsRef = $_[0];
     my $FILEHANDLE = $_[1];
-    my $analysisType = $_[2];
 	    
     ## Clear trap for signal ERR in exome analysis since the might be no variants in MT or Y contigs. This will cause premature exit from sbatch
-    if ($analysisType eq "exomes") {
-		
-	print $FILEHANDLE "## Clear trap for signal(s) ".join(" ", @{$trapSignalsRef})." in exome analysis since the might be no variants in MT or Y contigs\n";
-	print $FILEHANDLE "trap - ".join(" ", @{$trapSignalsRef}), "\n";
-	print $FILEHANDLE "trap", "\n\n";
-    }
+    print $FILEHANDLE "## Clear trap for signal(s) ".join(" ", @{$trapSignalsRef})." in exome analysis since the might be no variants in MT or Y contigs\n";
+    print $FILEHANDLE "trap - ".join(" ", @{$trapSignalsRef}), "\n";
+    print $FILEHANDLE "trap", "\n\n";
 }
 
 
@@ -14590,18 +14537,13 @@ sub EnableTrap {
 ##         : $trapSignalsRef => Array with signals to clear trap for {REF}
 ##         : $trapFunction   => The trap function argument
 ##         : $FILEHANDLE     => The FILEHANDLE to write to
-##         : $analysisType   => The MIP analysis type
 
     my $trapSignalsRef = $_[0];
     my $trapFunction = $_[1];
     my $FILEHANDLE = $_[2];
-    my $analysisType = $_[3];
     
-    if ($analysisType eq "exomes") {
-	
-	print $FILEHANDLE "## Enable cleared trap for signal(s) ".join(" ", @{$trapSignalsRef})." again\n";
-	print $FILEHANDLE "trap ".$trapFunction." ".join(" ", @{$trapSignalsRef}), "\n\n";
-    }
+    print $FILEHANDLE "## Enable cleared trap for signal(s) ".join(" ", @{$trapSignalsRef})." again\n";
+    print $FILEHANDLE "trap ".$trapFunction." ".join(" ", @{$trapSignalsRef}), "\n\n";
 }
 
 
