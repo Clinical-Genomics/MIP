@@ -1968,7 +1968,8 @@ sub RankVariants {
     my $time = 20;
 
     ## Set the number of cores
-    my $nrCores = ${$scriptParameterHashRef}{'maximumCores'};  
+    my $nrCores = ${$scriptParameterHashRef}{'maximumCores'};
+    my $genModnrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, 4);  #Detect the number of cores to use per genmod process. 
     my $xargsFileCounter;
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -2028,7 +2029,7 @@ sub RankVariants {
 	$xargsFileCounter = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
 					   'XARGSFILEHANDLE' => $XARGSFILEHANDLE, 
 					   'fileName' => $fileName,
-					   'nrCores' => 1,
+					   'nrCores' => $genModnrCores,
 					   'xargsFileCounter' => $xargsFileCounter,
 					   'firstCommand' => "genmod",
 					  });
@@ -2041,6 +2042,7 @@ sub RankVariants {
 	    print $XARGSFILEHANDLE "annotate ";
 	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{'pedigreeFile'}." ";  #Pedigree file
 	    print $XARGSFILEHANDLE "--family_type mip ";  #Family type
+	    print $XARGSFILEHANDLE "--processes 4 ";  #Define how many processes that should be use for annotation 
 
 	    if (${$scriptParameterHashRef}{'pVariantEffectPredictor'} > 0) {  #Use VEP annotations in compound models
 		
