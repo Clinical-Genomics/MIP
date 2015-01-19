@@ -923,7 +923,16 @@ if ($scriptParameter{'pFastQC'} > 0) {  #Run FastQC
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
-	&FastQC(\%parameter, \%scriptParameter, \%sampleInfo, \%infile, \%inDirPath, \%infilesLaneNoEnding, \%infilesBothStrandsNoEnding, $scriptParameter{'sampleIDs'}[$sampleIDCounter], "FastQC");	
+	&FastQC({'parameterHashRef' => \%parameter,
+		 'scriptParameterHashRef' => \%scriptParameter,
+		 'sampleInfoHashRef' => \%sampleInfo,
+		 'infileHashRef' => \%infile, 
+		 'inDirPathHashRef' => \%inDirPath,
+		 'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+		 'infilesBothStrandsNoEndingHashRef' => \%infilesBothStrandsNoEnding,
+		 'sampleID' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
+		 'programName' => "FastQC",
+		});	
     }
 }
 
@@ -935,16 +944,16 @@ if ($scriptParameter{'pMosaikBuild'} > 0) {  #Run MosaikBuild
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
 	&MosaikBuild({'parameterHashRef' => \%parameter,
-		       'scriptParameterHashRef' => \%scriptParameter,
-		       'sampleInfoHashRef' => \%sampleInfo,
-		       'infileHashRef' => \%infile, 
-		       'inDirPathHashRef' => \%inDirPath,
-		       'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
-		       'laneHashRef' => \%lane,
-		       'sampleID' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
-		       'aligner' => \$scriptParameter{'aligner'}, 
-		       'programName' => "MosaikBuild",
-		      });	
+		      'scriptParameterHashRef' => \%scriptParameter,
+		      'sampleInfoHashRef' => \%sampleInfo,
+		      'infileHashRef' => \%infile, 
+		      'inDirPathHashRef' => \%inDirPath,
+		      'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+		      'laneHashRef' => \%lane,
+		      'sampleID' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
+		      'aligner' => \$scriptParameter{'aligner'}, 
+		      'programName' => "MosaikBuild",
+		     });	
     }
 }
 
@@ -1054,16 +1063,16 @@ else {
 	    if ( ($sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} == 1) || (scalar( @{ $infilesLaneNoEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] } }) > 1) ) {  #Sanity Check that we have something to merge with
 		
 		&PicardToolsMerge({'parameterHashRef' => \%parameter,
-				    'scriptParameterHashRef' => \%scriptParameter,
-				    'sampleInfoHashRef' => \%sampleInfo,
-				    'fileInfoHashRef' => \%fileInfo,
-				    'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
-				    'laneHashRef' => \%lane,
-				    'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
-				    'alignerRef' => \$scriptParameter{'aligner'}, 
-				    'fileEnding' => $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'fileEnding'},
-				    'programName' => "PicardToolsMergeSamFiles",
-				   });
+				   'scriptParameterHashRef' => \%scriptParameter,
+				   'sampleInfoHashRef' => \%sampleInfo,
+				   'fileInfoHashRef' => \%fileInfo,
+				   'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+				   'laneHashRef' => \%lane,
+				   'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
+				   'alignerRef' => \$scriptParameter{'aligner'}, 
+				   'fileEnding' => $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'fileEnding'},
+				   'programName' => "PicardToolsMergeSamFiles",
+				  });
 	    }
 	}
     }
@@ -7992,13 +8001,13 @@ sub MosaikBuild {
     
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $FILEHANDLE,
-					{'directoryID' => $$sampleIDRef,
-					 'programName' => $programName,
-					 'programDirectory' => lc($$alignerRef),
-					 'nrofCores' => $nrCores,
-					 'processTime' => $time,
-					 'tempDirectory' => $$tempDirectoryRef
-					});
+					   {'directoryID' => $$sampleIDRef,
+					    'programName' => $programName,
+					    'programDirectory' => lc($$alignerRef),
+					    'nrofCores' => $nrCores,
+					    'processTime' => $time,
+					    'tempDirectory' => $$tempDirectoryRef
+					   });
     
     ## Assign directories
     my $inSampleDirectory = ${$inDirPathHashRef}{$$sampleIDRef};
@@ -8384,7 +8393,7 @@ sub FastQC {
     
 ##Function : Raw sequence quality analysis using FASTQC.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $infilesBothStrandsNoEndingHashRef, $sampleID, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $infilesBothStrandsNoEndingHashRef, $sampleIDRef, $programName
 ##         : $parameterHashRef                  => The parameter hash {REF}
 ##         : $scriptParameterHashRef            => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef                 => Info on samples and family hash {REF}
@@ -8392,28 +8401,32 @@ sub FastQC {
 ##         : $inDirPathHashRef                  => The indirectories path(s) hash {REF}
 ##         : $infilesLaneNoEndingHashRef        => The infile(s) without the ".ending" {REF}
 ##         : $infilesBothStrandsNoEndingHashRef => The infile(s) without the ".ending" and strand info {REF}
-##         : $sampleID                          => The sampleID
+##         : $sampleIDREf                       => The sampleID {REF}
 ##         : $programName                       => The program name
 
-    my $parameterHashRef = $_[0];
-    my $scriptParameterHashRef = $_[1];
-    my $sampleInfoHashRef = $_[2];
-    my $infileHashRef = $_[3];
-    my $inDirPathHashRef = $_[4];
-    my $infilesLaneNoEndingHashRef = $_[5];
-    my $infilesBothStrandsNoEndingHashRef = $_[6];
-    my $sampleID = $_[7];
-    my $programName = $_[8];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $infileHashRef = ${$argHashRef}{'infileHashRef'};
+    my $inDirPathHashRef = ${$argHashRef}{'inDirPathHashRef'};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
+    my $infilesBothStrandsNoEndingHashRef = ${$argHashRef}{'infilesBothStrandsNoEndingHashRef'};
+    my $sampleIDRef = ${$argHashRef}{'sampleID'};
+    my $programName = ${$argHashRef}{'programName'};
+    my $tempDirectoryRef = \${$scriptParameterHashRef}{'tempDirectory'};
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 10;
 
     my $nrCores = 0;
 
-    for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all files   
+    for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} });$infileCounter++) {  #For all files   
 
 	## Adjust the number of cores to be used in the analysis according to sequencing mode requirements.
-	&AdjustNrCoresToSeqMode(\$nrCores, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'file'}{ ${$infilesLaneNoEndingHashRef}{ $sampleID }[$infileCounter] }{'sequenceRunType'});
+	&AdjustNrCoresToSeqMode(\$nrCores, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'file'}{ ${$infilesLaneNoEndingHashRef}{ $$sampleIDRef }[$infileCounter] }{'sequenceRunType'});
     }
 
     ## Set the number of cores to allocate per sbatch job.
@@ -8421,51 +8434,76 @@ sub FastQC {
     
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites(\%{$scriptParameterHashRef}, $FILEHANDLE,
-					   {'directoryID' => $sampleID,
+					   {'directoryID' => $$sampleIDRef,
 					    'programName' => $programName,
 					    'programDirectory' => lc($programName),
 					    'nrofCores' => $nrCores,
 					    'processTime' => $time,
+					    'tempDirectory' => $$tempDirectoryRef,
 					   });
 
     ## Assign directories
-    my $inSampleDirectory = ${$inDirPathHashRef}{$sampleID};
-    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".lc($programName);
+    my $inSampleDirectory = ${$inDirPathHashRef}{$$sampleIDRef};
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".lc($programName);
 
     my $coreCounter=1;
+
+    ## Copies files from source to temporary folder. Loop over files specified by $arrayRef and collects files from $extractArrayRef.
+    &MigrateFilesToTemp(\%{$scriptParameterHashRef}, \@{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} }, \@{ ${$infileHashRef}{$$sampleIDRef} }, $FILEHANDLE,
+			{'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+			 'inSampleDirectory' => $inSampleDirectory,
+			 'nrCores' => $nrCores,
+			 'sampleID' => $$sampleIDRef
+			});
     
-    for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infileHashRef}{$sampleID} });$infileCounter++) {
+    print $FILEHANDLE "## FASTQC\n";
+    for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infileHashRef}{$$sampleIDRef} });$infileCounter++) {
 
 	&PrintWait(\$infileCounter, \$nrCores, \$coreCounter, $FILEHANDLE);
 
-	my $infile = ${$infileHashRef}{$sampleID}[$infileCounter];
+	my $infile = ${$infileHashRef}{$$sampleIDRef}[$infileCounter];
 
 	print $FILEHANDLE "fastqc ";
-	print $FILEHANDLE $inSampleDirectory."/".$infile." ";  #InFile
+	print $FILEHANDLE $$tempDirectoryRef."/".$infile." ";  #InFile
 	print $FILEHANDLE "--extract ";  #the zipped output file will be uncompressed in the same directory after it has been created.
-	print $FILEHANDLE "-o ".$outSampleDirectory. " &", "\n\n";  #OutFile
+	print $FILEHANDLE "-o ".$$tempDirectoryRef." ";  #OutFile
+	print $FILEHANDLE "&", "\n\n";
 
-##Collect QC metadata info for active program for later use
+	## Collect QC metadata info for active program for later use
 	if ( (${$scriptParameterHashRef}{'pFastQC'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 	    
 	    &SampleInfoQC(\%{$sampleInfoHashRef},
 			  {'familyID' => ${$scriptParameterHashRef}{'familyID'},
-			   'sampleID' => $sampleID,
+			   'sampleID' => $$sampleIDRef,
 			   'programName' => "FastQC",
 			   'infile' => $infile,
-			   'outDirectory' => $outSampleDirectory."/".${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'file'}{${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter]}{'originalFileNameNoEnding'}."_fastqc",
+			   'outDirectory' => $outSampleDirectory."/".${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'file'}{${$infilesBothStrandsNoEndingHashRef}{ $$sampleIDRef }[$infileCounter]}{'originalFileNameNoEnding'}."_fastqc",
 			   'outFileEnding' => "fastqc_data.txt",
 			   'outDataType' => "static"
 			  });
 	}
     }
     print $FILEHANDLE "wait", "\n";    
+
+    ## Copies files from temporary folder to source.
+    for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infileHashRef}{$$sampleIDRef} });$infileCounter++) {
+
+	&PrintWait(\$infileCounter, \$nrCores, \$coreCounter, $FILEHANDLE);
+
+	## Copies files from temporary folder to source. Loop over files specified by $arrayRef and collects files from $extractArrayRef.
+	print $FILEHANDLE "cp -r ";
+	print $FILEHANDLE $$tempDirectoryRef."/".${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'file'}{${$infilesBothStrandsNoEndingHashRef}{ $$sampleIDRef }[$infileCounter]}{'originalFileNameNoEnding'}."_fastqc ";
+	print $FILEHANDLE $outSampleDirectory." ";
+	print $FILEHANDLE "&", "\n\n";
+    }
+    print $FILEHANDLE "wait", "\n"; 
+
     close($FILEHANDLE);
     
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
 	&FIDSubmitJob(\%{$scriptParameterHashRef}, \%jobID, \%{$infilesLaneNoEndingHashRef},
-		       {'sampleID' => $sampleID,
+		       {'sampleID' => $$sampleIDRef,
 			'dependencies' => 2, 
 			'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
 			'sbatchFileName' => $fileName
