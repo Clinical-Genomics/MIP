@@ -73,7 +73,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -jul/--javaUseLargePages Use large page memory. (-XX,hence option considered not stable and are subject to change without notice, but can be consiered when faced with Java Runtime Environment Memory issues)
                -nrm/--nodeRamMemory The RAM memory size of the node(s) in GigaBytes (Defaults to 24)
                -pve/--pythonVirtualEnvironment Pyhton virtualenvironment (defaults to "")
-               -pvec/--pythonVirtualEnvironmentCommand Pyhton virtualenvironment (defaults to "workon")
+               -pvec/--pythonVirtualEnvironmentCommand Pyhton virtualenvironment (defaults to "workon";whitespace sep)
                -ges/--genomicSet Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
                -rio/--reduceIO Run consecutive models  at nodes (defaults to "1" (=yes))
                -l/--logFile Mip log file (defaults to "{outDataDir}/{familyID}/mip_log/{timestamp}/{scriptname}_{timestamp}.log")
@@ -482,8 +482,6 @@ my (@GATKTargetPaddedBedIntervalLists);  #Array for target infile lists used in 
 ##PythonVirtualEnvironment
 &DefineParametersPath(\%parameter, \@orderParameters, "pythonVirtualEnvironment", "nodefault", "pChanjoBuild,pChanjoAnnotate,pChanjoImport,pGATKVariantRecalibration,pRankVariants");
 
-&DefineParameters(\%parameter, \@orderParameters, "pythonVirtualEnvironmentCommand", "MIP", "workon", "MIP", 0);
-
 ##QcCollect
 &DefineParameters(\%parameter, \@orderParameters, "pQCCollect", "program", 1, "MIP", "nofileEnding", "ALL");
 
@@ -574,7 +572,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'dra|dryRunAll:n' => \$parameter{'dryRunAll'}{'value'},
 	   'tmd|tempDirectory:s' => \$parameter{'tempDirectory'}{'value'},
 	   'pve|pythonVirtualEnvironment:s' => \$parameter{'pythonVirtualEnvironment'}{'value'},
-	   'pvec|pythonVirtualEnvironmentCommand:s' => \$parameter{'pythonVirtualEnvironmentCommand'}{'value'},
+	   'pvec|pythonVirtualEnvironmentCommand=s{,}' => \@{$parameter{'pythonVirtualEnvironmentCommand'}{'value'}},
 	   'jul|javaUseLargePages:s' => \$parameter{'javaUseLargePages'}{'value'},
 	   'nrm|nodeRamMemory:n' => \$parameter{'nodeRamMemory'}{'value'},  #Per node
            'ges|genomicSet:s' => \$parameter{'genomicSet'}{'value'},  #Selection of relevant regions post alignment and sort
@@ -763,8 +761,11 @@ foreach my $orderParameterElement (@orderParameters) {
     }
 } 
 
+## pythonVirtualEnvironmentCommand
+&DefineArrayParameters(\%parameter, \%scriptParameter, \@{$parameter{'pythonVirtualEnvironmentCommand'}{'value'}}, \@orderParameters, \@broadcasts, "pythonVirtualEnvironmentCommand", "MIP", "workon", "MIP", 0, " ");
+
 ## sampleIDs
-&DefineArrayParameters(\%parameter, \%scriptParameter, \@{$parameter{'sampleIDs'}{'value'}}, \@orderParameters, \@broadcasts, "sampleIDs", "path", "nodefault", "MIP", "");
+&DefineArrayParameters(\%parameter, \%scriptParameter, \@{$parameter{'sampleIDs'}{'value'}}, \@orderParameters, \@broadcasts, "sampleIDs", "path", "nodefault", "MIP", "", ",");
 
 &CheckUniqueIDNs(\%scriptParameter, \@{$scriptParameter{'sampleIDs'}});  #Test that sampleIDs are unique
 
@@ -776,7 +777,7 @@ for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs
 }
 
 ## inFileDirs
-&DefineArrayParameters(\%parameter, \%scriptParameter, \@{$parameter{'inFilesDirs'}{'value'}}, \@orderParameters, \@broadcasts, "inFilesDirs", "path", "notSetYet", "MIP", "directory");
+&DefineArrayParameters(\%parameter, \%scriptParameter, \@{$parameter{'inFilesDirs'}{'value'}}, \@orderParameters, \@broadcasts, "inFilesDirs", "path", "notSetYet", "MIP", "directory", ",");
 
 ## Compares the number of elements in two arrays and exits if the elements are not equal
 &CompareArrayElements(\@{$scriptParameter{'sampleIDs'}}, \@{$scriptParameter{'inFilesDirs'}}, "sampleIDs", "inFileDirs");
@@ -786,7 +787,7 @@ if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
     
     if( (scalar(@{$parameter{'picardToolsMergeSamFilesPrevious'}{'value'}}) > 0) ) {
 
-	&DefineArrayParameters(\%parameter, \%scriptParameter, \@{$parameter{'picardToolsMergeSamFilesPrevious'}{'value'}}, \@orderParameters, \@broadcasts, "picardToolsMergeSamFilesPrevious", "path", "nodefault", "pPicardToolsMergeSamFiles", "file");    
+	&DefineArrayParameters(\%parameter, \%scriptParameter, \@{$parameter{'picardToolsMergeSamFilesPrevious'}{'value'}}, \@orderParameters, \@broadcasts, "picardToolsMergeSamFilesPrevious", "path", "nodefault", "pPicardToolsMergeSamFiles", "file", ",");    
 	
 	&CheckMergePicardToolsMergeSamFilesPrevious(\%scriptParameter, \%sampleInfo);
     }
@@ -803,15 +804,15 @@ if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
 ##pVariantEffectPredictor
 if ($scriptParameter{'pVariantEffectPredictor'} > 0) {
 
-    &DefineArrayParameters(\%parameter, \%scriptParameter, \@{$parameter{'vepFeatures'}{'value'}}, \@orderParameters, \@broadcasts, "vepFeatures", "path", "yes", "pVariantEffectPredictor", "");
+    &DefineArrayParameters(\%parameter, \%scriptParameter, \@{$parameter{'vepFeatures'}{'value'}}, \@orderParameters, \@broadcasts, "vepFeatures", "path", "yes", "pVariantEffectPredictor", "", ",");
 }
 
 
 ##pVCFParser
 if ($scriptParameter{'pVCFParser'} > 0) {
     
-    &DefineArrayParameters(\%parameter, \%scriptParameter, \@{$parameter{'vcfParserRangeFeatureAnnotationColumns'}{'value'}}, \@orderParameters, \@broadcasts, "vcfParserRangeFeatureAnnotationColumns", "path", "nodefault", "pVCFParser", "");
-    &DefineArrayParameters(\%parameter, \%scriptParameter, \@{$parameter{'vcfParserSelectFeatureAnnotationColumns'}{'value'}}, \@orderParameters, \@broadcasts, "vcfParserSelectFeatureAnnotationColumns", "path", "nodefault", "pVCFParser", "");
+    &DefineArrayParameters(\%parameter, \%scriptParameter, \@{$parameter{'vcfParserRangeFeatureAnnotationColumns'}{'value'}}, \@orderParameters, \@broadcasts, "vcfParserRangeFeatureAnnotationColumns", "path", "nodefault", "pVCFParser", "", ",");
+    &DefineArrayParameters(\%parameter, \%scriptParameter, \@{$parameter{'vcfParserSelectFeatureAnnotationColumns'}{'value'}}, \@orderParameters, \@broadcasts, "vcfParserSelectFeatureAnnotationColumns", "path", "nodefault", "pVCFParser", "", ",");
 }
 
 
@@ -819,7 +820,7 @@ if ($scriptParameter{'pVCFParser'} > 0) {
 if ($scriptParameter{'pAnnovar'} > 0) {
 
     %annovarTable = &DefineAnnovarTables(\%parameter, \$scriptParameter{'annovarGenomeBuildVersion'}); #Set all AnnovarTables properties
-    &DefineArrayParameters(\%parameter, \%scriptParameter, \@{$parameter{'annovarTableNames'}{'value'}}, \@orderParameters, \@broadcasts, "annovarTableNames", "path", "yes", "pAnnovar", "file");  
+    &DefineArrayParameters(\%parameter, \%scriptParameter, \@{$parameter{'annovarTableNames'}{'value'}}, \@orderParameters, \@broadcasts, "annovarTableNames", "path", "yes", "pAnnovar", "file", ",");  
 }
 
 
@@ -827,7 +828,7 @@ if ($scriptParameter{'pAnnovar'} > 0) {
 if ($scriptParameter{'pSnpEff'} > 0) {
 
     &DefineHashParameters(\%parameter, \%scriptParameter, \@orderParameters, \@broadcasts, "snpSiftAnnotationFiles", "path", "yes", "pSnpEff", "file");
-    &DefineArrayParameters(\%parameter, \%scriptParameter, \@{$parameter{'snpSiftDbNSFPAnnotations'}{'value'}}, \@orderParameters, \@broadcasts, "snpSiftDbNSFPAnnotations", "path", "yes", "pSnpEff", "");  #"yes" added to enable addition of default features in &AddToScriptParameters  
+    &DefineArrayParameters(\%parameter, \%scriptParameter, \@{$parameter{'snpSiftDbNSFPAnnotations'}{'value'}}, \@orderParameters, \@broadcasts, "snpSiftDbNSFPAnnotations", "path", "yes", "pSnpEff", "", ",");  #"yes" added to enable addition of default features in &AddToScriptParameters  
 }
 
 
@@ -2001,7 +2002,7 @@ sub RankVariants {
     my $vcfParserAnalysisType = "";
     
     ## Gene models and ranking  
-    print $FILEHANDLE ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'}." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+    print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
     
     for (my $VEPOutputFilesCounter=0;$VEPOutputFilesCounter<${$scriptParameterHashRef}{'VEPOutputFileCount'};$VEPOutputFilesCounter++) {
 	
@@ -4058,7 +4059,7 @@ sub GATKVariantReCalibration {
     if (${$scriptParameterHashRef}{'GATKVariantReCalibrationSpliMultiRecord'} == 1) {
 
 	print $FILEHANDLE "## Split multi allelic records into single records\n";
-	print $FILEHANDLE ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'}." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
 	print $FILEHANDLE "vcf_parser ";
 	print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf ";
 	print $FILEHANDLE "--split ";
@@ -4970,7 +4971,7 @@ sub ChanjoImport {
 
     my $coreCounter=1;
 
-    print $FILEHANDLE ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'}." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+    print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
     
     ##Build family database for coverage report
 
@@ -5071,7 +5072,7 @@ sub ChanjoSexCheck {
 					     'processTime' => 2,
 					    });
 
-	print $FILEHANDLE ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'}." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
 
 	## ChanjoSexCheck
 	print $FILEHANDLE "## Predicting sex from alignment\n";
@@ -5107,7 +5108,7 @@ sub ChanjoSexCheck {
 					     'processTime' => 2,
 					    });
 
-	print $FILEHANDLE ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'}." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
 
 	## ChanjoSexCheck
 	print $FILEHANDLE "## Predicting sex from alignment\n";
@@ -5215,7 +5216,7 @@ sub ChanjoAnnotate {
 			   });
 	print $FILEHANDLE "wait", "\n\n";
 
-	print $FILEHANDLE ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'}." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
 
 	## ChanjoAnnotate
 	print $FILEHANDLE "## Annotating bed from alignment\n";
@@ -5278,7 +5279,7 @@ sub ChanjoAnnotate {
 			      'nrCores' => $nrCores,
 			      'fileEnding' => $infileEnding.".b*"});
 
-	print $FILEHANDLE ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'}." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
 
 	## ChanjoAnnotate
 	print $FILEHANDLE "## Annotating bed from alignment\n";
@@ -5367,7 +5368,7 @@ sub ChanjoBuild {
     ## Assign directories
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID;
 
-    print $FILEHANDLE ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'}." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+    print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
     
     ## ChanjoBuild
     print $FILEHANDLE "## Build new coverage database\n";
@@ -9298,7 +9299,7 @@ sub DownloadReference {
 
 	    $logger->warn("Will try to download ".$parameterName." before executing ".$$programRef."\n");
 	}
-	print $FILEHANDLE ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'}." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
 
 	print $FILEHANDLE "cosmid ";  #Database download manager
 	print $FILEHANDLE "clone ";  #Clone resource
@@ -9496,7 +9497,7 @@ sub CheckCosmidInstallation {
 	
 	    $logger->info("Checking your Cosmid installation in preparation for download of ".${$scriptParameterHashRef}{$$parameterNameRef}."\n");
  
-	    my $whichReturn = `source ~/.bash_profile; ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} ${$scriptParameterHashRef}{'pythonVirtualEnvironment'};which cosmid;`;
+	    my $whichReturn = `source ~/.bash_profile; join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} }) ${$scriptParameterHashRef}{'pythonVirtualEnvironment'};which cosmid;`;
 	    
 	    if ($whichReturn eq "") {
 
@@ -10475,8 +10476,10 @@ sub DefineArrayParameters {
     my $parameterDefault = $_[7];
     my $associatedPrograms = $_[8];
     my $parameterExistsCheck = $_[9];
+    my $arraySeparator = $_[10];
 
     ${$parameterHashRef}{$parameterName}{'array'} = "yes";  #To separate scalars from arrays
+    ${$parameterHashRef}{$parameterName}{'elementSeparator'} = $arraySeparator;  #Element separator used in input
 
     if (scalar(@{$arrayRef}) == 0) { #No input from cmd 
 
@@ -10484,7 +10487,7 @@ sub DefineArrayParameters {
     }
     else {
 
-	@{${$scriptParameterHashRef}{$parameterName}} = split(',', join(',', @{$arrayRef})); #If user supplied parameter a comma separated list
+	@{${$scriptParameterHashRef}{$parameterName}} = split($arraySeparator, join($arraySeparator, @{$arrayRef}));
     }
     push(@{$orderParametersArrayRef}, $parameterName); #Add to enable later evaluation of parameters in proper order & write to MIP log file
     
@@ -10971,7 +10974,17 @@ sub AddToScriptParameter {
 		    }
 		    elsif (${$argHashRef}{'parameterDefault'} ne "nodefault") {
 		
-			${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}} = ${$argHashRef}{'parameterDefault'};  #Set default value
+			if (defined(${$parameterHashRef}{${$argHashRef}{'parameterName'}}{'array'})) { #Set default value(s)
+		   	    	
+			    if (${$argHashRef}{'parameterName'} eq "pythonVirtualEnvironmentCommand") {
+ 
+				push(@{${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}}}, "workon");
+			    }
+			}
+			else {
+
+			    ${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}} = ${$argHashRef}{'parameterDefault'};  #Set default value
+			}
 		    }
 		    else {
 			
@@ -10988,8 +11001,13 @@ sub AddToScriptParameter {
 		    }
 		}
 		else {  #Add to enable or overwrite info gathered from config and use in recreation of cmd line later
-		    
-		    ${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}} = ${$argHashRef}{'parameterValue'}; 
+		  
+		    if (defined(${$parameterHashRef}{${$argHashRef}{'parameterName'}}{'array'})) {  #Do nothing, this is already set in sub DefineArrayParameters
+		    }
+		    else {
+
+			${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}} = ${$argHashRef}{'parameterValue'}; 
+		    }
 		}
                 if (${$argHashRef}{'parameterName'} eq "email") {
 
@@ -11024,7 +11042,8 @@ sub AddToScriptParameter {
 
 		    ${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}} = ${$argHashRef}{'parameterValue'};
 		}
-		###Code for checking commands in your path and executable
+
+		## Code for checking commands in your path and executable
 		if ( (defined(${$argHashRef}{'programNamePath'})) && (defined(${$parameterHashRef}{${$argHashRef}{'parameterName'}}{ ${$argHashRef}{'programNamePath'} }[0])) ) {
 		
 		    if (${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}} > 0) {  #Only check path(s) for active programs
@@ -11087,14 +11106,15 @@ sub AddToScriptParameter {
 	    last;
 	}
     }	
-##Parameter set
+
+    ## Parameter set
     if (defined(${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}})) {
 	
 	my $info = "";  #Hold parameters info
 
 	if (defined(${$parameterHashRef}{${$argHashRef}{'parameterName'}}{'array'})) {
-	 
-	    $info = "Set ".${$argHashRef}{'parameterName'}." to: ".join(',',@{${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}}});
+
+	    $info = "Set ".${$argHashRef}{'parameterName'}." to: ".join(${$parameterHashRef}{${$argHashRef}{'parameterName'}}{'elementSeparator'}, @{ ${$scriptParameterHashRef}{ ${$argHashRef}{'parameterName'} } });
 	    push(@{$broadcastsArrayRef}, $info);  #Add info to broadcasts
 	}
 	else {
@@ -11769,7 +11789,15 @@ sub WriteCMDMipLog {
 
 		if (defined(${$parameterHashRef}{$orderParameterElement}{'array'})) {  #Array parameters need to be comma sep 
 
-		    $cmdLine .= "-".$orderParameterElement." ".join(',', @{${$scriptParameterHashRef}{$orderParameterElement}})." ";
+		    if ($orderParameterElement eq "pythonVirtualEnvironmentCommand") {  #Separate on " "
+
+			my $separator = ${$parameterHashRef}{$orderParameterElement}{'elementSeparator'};
+			$cmdLine .= "-".$orderParameterElement." ".join($separator, @{${$scriptParameterHashRef}{$orderParameterElement}})." ";
+		    }
+		    else {
+
+			$cmdLine .= "-".$orderParameterElement." ".join(',', @{${$scriptParameterHashRef}{$orderParameterElement}})." ";
+		    }
 		}
 		else {
 		    $cmdLine .="-".$orderParameterElement." ".${$scriptParameterHashRef}{$orderParameterElement}." ";
