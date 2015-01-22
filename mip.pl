@@ -503,7 +503,9 @@ my (@GATKTargetPaddedBedIntervalLists);  #Array for target infile lists used in 
 ##humanGenomeReference
 &DefineParametersPath(\%parameter, \@orderParameters, "humanGenomeReference", "Homo_sapiens.GRCh37.d5.fasta", "pBwaMem,pBwaAln,pBwaSampe,pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKGenoTypeGVCFs,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pAnnovar,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "file", "yesAutoDownLoad");
 
-my ($aligner, $version, $help) = ("nocmdinput");
+my $mipVersion = "v2.0.0";  #Set version
+
+my ($aligner) = ("nocmdinput");
 
 my (@contigs);  #Holds all contigs, not just chromosomes
 
@@ -541,7 +543,7 @@ my @annovarSupportedTableNames = ("refGene", "knownGene", "ensGene", "mce46way",
 
 my %annovarTable;  #Holds annovar tables and features
 
-## Enables cmd "mip.pl" to print help 
+## Enables cmd "mip.pl" to print usage help 
 if(scalar(@ARGV) == 0) {
 
     print STDOUT $USAGE, "\n";
@@ -578,8 +580,8 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
            'ges|genomicSet:s' => \$parameter{'genomicSet'}{'value'},  #Selection of relevant regions post alignment and sort
 	   'rio|reduceIO:n' => \$parameter{'reduceIO'}{'value'},
 	   'l|logFile:s' => \$parameter{'logFile'}{'value'},
-	   'h|help' => \$help,  #Display help text
-	   'v|version' => \$version,  #Display version number
+	   'h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
+	   'v|version' => sub { print STDOUT "\nMip.pl ".$mipVersion, "\n\n"; exit;},  #Display version number
 	   'pGZ|pGZipFastq:n' => \$parameter{'pGZipFastq'}{'value'},
 	   'pFqC|pFastQC:n' => \$parameter{'pFastQC'}{'value'},
 	   'pMoB|pMosaikBuild:n' => \$parameter{'pMosaikBuild'}{'value'},
@@ -656,7 +658,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'anvp|annovarPath:s'  => \$parameter{'annovarPath'}{'value'},  #path to annovar script dir
 	   'anvgbv|annovarGenomeBuildVersion:s'  => \$parameter{'annovarGenomeBuildVersion'}{'value'},
 	   'anvtn|annovarTableNames:s'  => \@{$parameter{'annovarTableNames'}{'value'}},  #Comma separated list
-	   'anvstn|annovarSupportedTableNames:n' => \$parameter{'annovarSupportedTableNames'}{'value'},  #Generates a list of supported table names
+	   'anvstn|annovarSupportedTableNames' => sub { &PrintSupportedAnnovarTableNames(\%scriptParameter, \@annovarSupportedTableNames)},  #Generates a list of supported table names
 	   'anvarmafth|annovarMAFThreshold:n' => \$parameter{'annovarMAFThreshold'}{'value'},
 	   'snep|snpEffPath:s'  => \$parameter{'snpEffPath'}{'value'},  #path to snpEff directory
 	   'pSnE|pSnpEff:n' => \$parameter{'pSnpEff'}{'value'},
@@ -679,24 +681,6 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'pArS|pAnalysisRunStatus:n' => \$parameter{'pAnalysisRunStatus'}{'value'},  #AnalysisRunStatus change flag in sampleInfo file if allowed to execute
     );
 
-if($help) {
-
-    print STDOUT $USAGE, "\n";
-    exit;
-}
-
-my $mipVersion = "v2.0.0";  #Set version
-
-if($version) {
-
-    print STDOUT "\nMip.pl ".$mipVersion, "\n\n";
-    exit;
-}
-
-if ($parameter{'annovarSupportedTableNames'}{'value'} eq 1) {
-
-    &PrintSupportedAnnovarTableNames(\%scriptParameter, \@annovarSupportedTableNames);
-}
 
 if ($parameter{'configFile'}{'value'} ne "nocmdinput") {  #Input from cmd
 
@@ -10737,9 +10721,16 @@ sub AddToScriptParameter {
 			elsif ( (${$argHashRef}{'parameterName'} eq "rankModelFile") && ( ${$scriptParameterHashRef}{'rankModelFile'} eq "noUserInfo") ) {  #Do nothing since no rank model was given i.e. use rank scripts deafult supplied with distribution
 			}
 			else {
-			    
-			    $logger->fatal($USAGE, "\n");
-			    $logger->fatal("Supply '-".${$argHashRef}{'parameterName'}."' if you want to run ".$associatedProgram, "\n");
+
+			    if (defined($logger)) {  #We have a logg object and somewhere to write
+
+				$logger->fatal($USAGE, "\n");
+				$logger->fatal("Supply '-".${$argHashRef}{'parameterName'}."' if you want to run ".$associatedProgram, "\n");
+			    }
+			    else {
+				print STDERR ($USAGE, "\n");
+				print STDERR ("Supply '-".${$argHashRef}{'parameterName'}."' if you want to run ".$associatedProgram, "\n");
+			    }
 			    exit;
 			}
 		    }
