@@ -169,7 +169,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -anvp/--annovarPath  Path to Annovar script directory (supply whole path, defaults to "". NOTE: Assumes that the annovar db files are located in annovar/humandb)
                  -anvgbv/--annovarGenomeBuildVersion Annovar genome build version (defaults to "hg19")
                  -anvtn/--annovarTableNames Annovar table names (defaults to ("refGene","mce46way","gerp++elem","segdup","tfbs","mirna","snp137NonFlagged","1000g2012apr_all","esp6500si_all","ljb2_sift","ljb2_pp2hdiv","ljb2_pp2hvar","ljb2_mt","ljb2_lrt","ljb2_gerp++","ljb2_phylop"); comma sep)
-                 -anvstn/--annovarSupportedTableNames Print Annovar MIP supported table names (defaults 0 (=no))
+                 -anvstn/--annovarSupportedTableNames Print Annovar MIP supported table names
                  -anvarmafth/--annovarMAFThreshold Sets the minor allele frequency threshold in annovar (defaults to "0")
                -pSnE/--pSnpEff Variant annotation using snpEFF (defaults to "1" (=yes))
                  -snep/--snpEffPath Path to snpEff. Mandatory for use of snpEff (defaults to "")
@@ -2835,6 +2835,7 @@ sub SnpEff {
 		    
 		    print $XARGSFILEHANDLE "perl ".${$scriptParameterHashRef}{'inScriptDir'}."/vcfParser.pl ";  #Parses the vcf output
 		    print $XARGSFILEHANDLE "- ";  #InStream
+		    print $XARGSFILEHANDLE "-writeSoftwareTag 0 ";  #Do not print vcfParser software tag
 		    print $XARGSFILEHANDLE "| ";  #Pipe
 		}
 		$annotationFileCounter++;  #Increment counter

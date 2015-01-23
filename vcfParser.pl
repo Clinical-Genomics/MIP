@@ -21,12 +21,13 @@ BEGIN {
            -sf_mc/--selectFeatureMatchingColumn
            -sf_ac/--selectFeatureAnnotationColumns
            -sof/--selectOutfile selectOutfile (vcf)
+           -wst/--writeSoftwareTag (Default: "1")
            -h/--help Display this help message    
            -v/--version Display version
         };    
 }
 
-my ($infile, $outputFormat, $parseVEP, $rangeFeatureFile, $selectFeatureFile, $selectFeatureMatchingColumn, $selectOutfile) = ("", "vcf", 0, 0, 0, "nocmdinput", "nocmdinput");
+my ($infile, $outputFormat, $parseVEP, $rangeFeatureFile, $selectFeatureFile, $selectFeatureMatchingColumn, $selectOutfile, $writeSoftwareTag) = ("", "vcf", 0, 0, 0, "nocmdinput", "nocmdinput", "1");
 my (@metaData, @selectMetaData, @rangeFeatureAnnotationColumns, @selectFeatureAnnotationColumns); 
 my (%geneAnnotation, %consequenceSeverity, %rangeData, %selectData, %snpEffCmd, %tree, %metaData);
 
@@ -45,7 +46,8 @@ GetOptions('of|outputFormat:s' => \$outputFormat,
 	   'sf|selectFeatures:s' => \$selectFeatureFile,
 	   'sf_mc|selectFeatureMatchingColumn:n' => \$selectFeatureMatchingColumn,
 	   'sf_ac|selectFeatureAnnotationColumns:s'  => \@selectFeatureAnnotationColumns, #Comma separated list
-	   'sof|selectOutfile:s' => \$selectOutfile,	   
+	   'sof|selectOutfile:s' => \$selectOutfile,
+	   'wst|writeSoftwareTag:n' => \$writeSoftwareTag,
 	   'h|help' => \$help,  #Display help text
 	   'v|version' => \$version, #Display version number
     );
@@ -438,7 +440,10 @@ sub ReadInfileVCF {
 		    }
 		}
 	    }
-	    &AddProgramToMeta(\%{$metaDataHashRef});
+	    if ($writeSoftwareTag == 1) {
+
+		&AddProgramToMeta(\%{$metaDataHashRef});
+	    }
 	    if (scalar(@selectFeatureAnnotationColumns) > 0) { #SelectFile annotations
 
 		&WriteMetaData(\%{$metaDataHashRef}, *STDOUT, *WOSFTSV);
@@ -1284,7 +1289,10 @@ sub TreeAnnotations {
 			    
 			    if ($$hashRef{'Present'}{$rangeAnnotation}{'ColumnOrder'} eq $annotationsCounter) { #Correct feature
 				
-				$$printLineRef .= $rangeAnnotation."=".$collectedAnnotations{$annotationsCounter}.";"; #Add to corresponding line
+				if ($collectedAnnotations{$annotationsCounter} ne "") {
+
+				    $$printLineRef .= $rangeAnnotation."=".$collectedAnnotations{$annotationsCounter}.";"; #Add to corresponding line
+				}
 			    }
 			}
 		    }
@@ -1446,7 +1454,7 @@ sub ParseMetaData {
 
 ##ParseMetaData
     
-##Function : Writes metadata to filehandle speciied by order in metaDataOrders.
+##Function : Writes metadata to filehandle specified by order in metaDataOrders.
 ##Returns  : ""
 ##Arguments: $metaDataHashRef, $metaDataString
 ##         : $metaDataHashRef => Hash for metaData {REF}
@@ -1458,6 +1466,10 @@ sub ParseMetaData {
     if ($metaDataString=~/^##fileformat/) {  #Catch fileformat as it has to be at the top of header
 	
 	push(@{${$metaDataHashRef}{'fileformat'}{'fileformat'}}, $metaDataString);  #Save metadata string
+    }
+    elsif ($metaDataString=~/^##contig/) {  #catch contigs to not sort them later
+
+	push(@{${$metaDataHashRef}{'contig'}{'contig'}}, $metaDataString);  #Save metadata string
     }
     elsif ($metaDataString=~/^##(\w+)=(\S+)/) {  #FILTER, FORMAT, INFO etc and more custom records
 	
@@ -1486,38 +1498,56 @@ sub WriteMetaData {
     my $SELECTFILEHANDLE = $_[2];
 
     my @metaDataOrders = ("fileformat", "FILTER", "FORMAT", "INFO", "FIX_INFO", "contig", "Software");  #Determine order to print for standard records
+    my @lines;
 
     for (my $lineCounter=0;$lineCounter<scalar(@metaDataOrders);$lineCounter++) {
-
+	
 	if (${$hashRef}{ $metaDataOrders[$lineCounter] }) {  #MetaDataRecordExists
 	    
-	    foreach my $line (sort( keys %{${$hashRef}{ $metaDataOrders[$lineCounter] }})) {
+	    if ($metaDataOrders[$lineCounter] eq "contig") {  #Should not be sorted, but printed "as is"
 		
-		print $FILEHANDLE @{${$hashRef}{ $metaDataOrders[$lineCounter] }{$line}}, "\n";
-		if (defined($_[2])) {
-
-		    print $SELECTFILEHANDLE @{${$hashRef}{ $metaDataOrders[$lineCounter] }{$line}}, "\n";
-		}
-	    }
-	    if (defined($_[2])) {
-
-		foreach my $line (sort( keys %{${$hashRef}{'Select'}{ $metaDataOrders[$lineCounter] }})) {
+		foreach my $line (@{${$hashRef}{$metaDataOrders[$lineCounter]}{ $metaDataOrders[$lineCounter] }}) {
 		    
-		    print $SELECTFILEHANDLE @{${$hashRef}{'Select'}{ $metaDataOrders[$lineCounter] }{$line}}, "\n";
+		    print $FILEHANDLE $line, "\n";
+		    
+		    if (defined($_[2])) {
+			
+			print $SELECTFILEHANDLE $line, "\n";
+		    }
 		}
-	    }
-	    foreach my $line (sort( keys %{${$hashRef}{'Range'}{ $metaDataOrders[$lineCounter] }})) {
+		delete(${$hashRef}{ $metaDataOrders[$lineCounter] });  #Enable print of rest later
+	    }	    
+	    else {
 		
-		print $FILEHANDLE @{${$hashRef}{'Range'}{ $metaDataOrders[$lineCounter] }{$line}}, "\n";
-	    }
-	    delete(${$hashRef}{ $metaDataOrders[$lineCounter] });  #Enable print of rest later
-	    if (${$hashRef}{'Select'}{ $metaDataOrders[$lineCounter] }) {
-
-		delete(${$hashRef}{'Select'}{ $metaDataOrders[$lineCounter] });
-	    }
-	    if (${$hashRef}{'Range'}{ $metaDataOrders[$lineCounter] }) {
-
-		delete(${$hashRef}{'Range'}{ $metaDataOrders[$lineCounter] });
+		foreach my $line (sort( keys %{${$hashRef}{ $metaDataOrders[$lineCounter] }})) {
+		    
+		    print $FILEHANDLE @{${$hashRef}{ $metaDataOrders[$lineCounter] }{$line}}, "\n";
+		    
+		    if (defined($_[2])) {
+			
+			print $SELECTFILEHANDLE @{${$hashRef}{ $metaDataOrders[$lineCounter] }{$line}}, "\n";
+		    }
+		}
+		if (defined($_[2])) {
+		    
+		    foreach my $line (sort( keys %{${$hashRef}{'Select'}{ $metaDataOrders[$lineCounter] }})) {
+			
+			print $SELECTFILEHANDLE @{${$hashRef}{'Select'}{ $metaDataOrders[$lineCounter] }{$line}}, "\n";
+		    }
+		}
+		foreach my $line (sort( keys %{${$hashRef}{'Range'}{ $metaDataOrders[$lineCounter] }})) {
+		    
+		    print $FILEHANDLE @{${$hashRef}{'Range'}{ $metaDataOrders[$lineCounter] }{$line}}, "\n";
+		}
+		delete(${$hashRef}{ $metaDataOrders[$lineCounter] });  #Enable print of rest later
+		if (${$hashRef}{'Select'}{ $metaDataOrders[$lineCounter] }) {
+		    
+		    delete(${$hashRef}{'Select'}{ $metaDataOrders[$lineCounter] });
+		}
+		if (${$hashRef}{'Range'}{ $metaDataOrders[$lineCounter] }) {
+		    
+		    delete(${$hashRef}{'Range'}{ $metaDataOrders[$lineCounter] });
+		}
 	    }
 	}
     }
@@ -1527,9 +1557,10 @@ sub WriteMetaData {
 	    
 	    print $FILEHANDLE @{${$hashRef}{$keys}{$line}}, "\n";
 	    if (defined($_[2])) {
-
-	    print $SELECTFILEHANDLE @{${$hashRef}{$keys}{$line}}, "\n";
+		
+		print $SELECTFILEHANDLE @{${$hashRef}{$keys}{$line}}, "\n";
 	    }
 	}
     }
 }
+
