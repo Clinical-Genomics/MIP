@@ -1,4 +1,4 @@
-#!/usr/bin/perl - w
+#!/usr/bin/env perl
 
 use strict;
 use warnings;
@@ -21,13 +21,14 @@ BEGIN {
            -sf_mc/--selectFeatureMatchingColumn
            -sf_ac/--selectFeatureAnnotationColumns
            -sof/--selectOutfile selectOutfile (vcf)
+           -pad/--padding (Default: "5000" nucleotides)
            -wst/--writeSoftwareTag (Default: "1")
            -h/--help Display this help message    
            -v/--version Display version
         };    
 }
 
-my ($infile, $outputFormat, $parseVEP, $rangeFeatureFile, $selectFeatureFile, $selectFeatureMatchingColumn, $selectOutfile, $writeSoftwareTag) = ("", "vcf", 0, 0, 0, "nocmdinput", "nocmdinput", "1");
+my ($infile, $outputFormat, $parseVEP, $rangeFeatureFile, $selectFeatureFile, $selectFeatureMatchingColumn, $selectOutfile, $writeSoftwareTag, $padding) = ("", "vcf", 0, 0, 0, "nocmdinput", "nocmdinput", 1, 5000);
 my (@metaData, @selectMetaData, @rangeFeatureAnnotationColumns, @selectFeatureAnnotationColumns); 
 my (%geneAnnotation, %consequenceSeverity, %rangeData, %selectData, %snpEffCmd, %tree, %metaData);
 
@@ -48,6 +49,7 @@ GetOptions('of|outputFormat:s' => \$outputFormat,
 	   'sf_ac|selectFeatureAnnotationColumns:s'  => \@selectFeatureAnnotationColumns, #Comma separated list
 	   'sof|selectOutfile:s' => \$selectOutfile,
 	   'wst|writeSoftwareTag:n' => \$writeSoftwareTag,
+	   'pad|padding:n' => \$padding,
 	   'h|help' => \$help,  #Display help text
 	   'v|version' => \$version, #Display version number
     );
@@ -273,7 +275,7 @@ sub ReadRangeFile {
 ##Create Interval Tree
 	    if (scalar(@rangeFeatureAnnotationColumns) > 0) {#Annotate vcf with features from select file
 		
-		&RangeAnnotations(\@rangeFeatureAnnotationColumns, \@lineElements, \%rangeData, "RangeFile", \$infileName, \@headers);
+		&RangeAnnotations(\@rangeFeatureAnnotationColumns, \@lineElements, \%rangeData, "RangeFile", \$infileName, \@headers, \$padding);
 	    }
 	}
     }
@@ -317,7 +319,7 @@ sub ReadSelectFile {
 	    ## Create Interval Tree
 	    if (scalar(@selectFeatureAnnotationColumns) > 0) {#Annotate vcf with features from select file
 		
-		&RangeAnnotations(\@selectFeatureAnnotationColumns, \@lineElements, \%selectData, "SelectFile", \$selectFeatureFile, \@headers);
+		&RangeAnnotations(\@selectFeatureAnnotationColumns, \@lineElements, \%selectData, "SelectFile", \$selectFeatureFile, \@headers, \$padding);
 	    }
 	}
     }
@@ -1218,6 +1220,7 @@ sub RangeAnnotations {
     my $rangeFileKey = $_[3];
     my $rangeFileRef = $_[4];
     my $headersArrayRef = $_[5]; #Headers from rangeFile
+    my $paddingRef = $_[6];  #Nucleotides to pad the range
     
     my $features; #Features to collect (Format: ";" separated elements)
     
@@ -1240,7 +1243,9 @@ sub RangeAnnotations {
 	
 	$tree{$rangeFileKey}{ $$lineElementsArrayRef[0] } = Set::IntervalTree->new(); #Create tree
     }
-    $tree{$rangeFileKey}{ $$lineElementsArrayRef[0] }->insert($features, $$lineElementsArrayRef[1], $$lineElementsArrayRef[2]); #Store range and ";" sep string
+    my $paddedStart = $$lineElementsArrayRef[1] - $$paddingRef;
+    my $paddedStop = $$lineElementsArrayRef[2] + $$paddingRef;
+    $tree{$rangeFileKey}{ $$lineElementsArrayRef[0] }->insert($features, $paddedStart, $paddedStop); #Store range and ";" sep string
 }
 
 sub TreeAnnotations {
