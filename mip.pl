@@ -2157,6 +2157,15 @@ sub RankVariants {
 
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
+
+	if (${$scriptParameterHashRef}{'rankModelFile'} ne "noUserInfo") {  #Add to SampleInfo
+			    
+	    if (${$scriptParameterHashRef}{'rankModelFile'}=~/v(\d+\.\d+.\d+|\d+\.\d+)/) {
+				
+		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'program'}{"RankVariants"}{'RankModel'}{'Version'} = $1;
+	    }
+	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'program'}{"RankVariants"}{'RankModel'}{'File'} = ${$scriptParameterHashRef}{'rankModelFile'};
+	}
 	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 		       'familyID' => ${$scriptParameterHashRef}{'familyID'},
 		       'programName' => $programName,
@@ -11380,12 +11389,6 @@ sub AddToScriptParameter {
 			else {  #To enable addition of rankModel file and version to sampleInfo                                                                       
 			    
 			    &CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}}), \${$argHashRef}{'parameterName'}, "f");
-			    
-			    if (${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}}=~/v(\d+\.\d+.\d+|\d+\.\d+)/) {
-				
-				${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'program'}{"RankVariants"}{'RankModel'}{'Version'} = $1;
-			    }
-			    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'program'}{"RankVariants"}{'RankModel'}{'File'} = ${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}};
 			}
 		    }
 		    else {

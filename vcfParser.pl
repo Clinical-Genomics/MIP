@@ -209,10 +209,10 @@ sub DefineConsequenceSeverity {
     $consequenceSeverity{'5_prime_UTR_variant'}{'GeneticRegionAnnotation'} = "5UTR";
     $consequenceSeverity{'3_prime_UTR_variant'}{'Rank'} = 14;
     $consequenceSeverity{'3_prime_UTR_variant'}{'GeneticRegionAnnotation'} = "3UTR";
-    $consequenceSeverity{'non_coding_exon_variant'}{'Rank'} = 15;
-    $consequenceSeverity{'non_coding_exon_variant'}{'GeneticRegionAnnotation'} = "ncRNA_exonic";
-    $consequenceSeverity{'nc_transcript_variant'}{'Rank'} = 15;
-    $consequenceSeverity{'nc_transcript_variant'}{'GeneticRegionAnnotation'} = "ncRNA";
+    $consequenceSeverity{'non_coding_transcript_exon_variant'}{'Rank'} = 15;
+    $consequenceSeverity{'non_coding_transcript_exon_variant'}{'GeneticRegionAnnotation'} = "ncRNA_exonic";
+    $consequenceSeverity{'non_coding_transcript_variant'}{'Rank'} = 15;
+    $consequenceSeverity{'non_coding_transcript_variant'}{'GeneticRegionAnnotation'} = "ncRNA";
     $consequenceSeverity{'intron_variant'}{'Rank'} = 16;
     $consequenceSeverity{'intron_variant'}{'GeneticRegionAnnotation'} = "intronic";
     $consequenceSeverity{'NMD_transcript_variant'}{'Rank'} = 17;
