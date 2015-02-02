@@ -21,7 +21,7 @@ use vars qw($USAGE);
 
 BEGIN {
 
-    ##Check YAML dependecy
+    ## Check YAML dependecy
     eval { 
 
 	require YAML; 
@@ -32,7 +32,7 @@ BEGIN {
 	print STDERR "NOTE: Aborting!\n";
 	exit
     }
-    ##Check LOG4perl dependency
+    ## Check LOG4perl dependency
     eval { 
 
 	require Log::Log4perl; 
@@ -312,8 +312,6 @@ chomp($base, $script);  #Remove \n;
 
 &DefineParameters(\%parameter, \@orderParameters, "pPicardToolsMarkduplicatesWithMateCigar", "program", 1, "MIP", "_pmd", "MAIN");
 
-&DefineParameters(\%parameter, \@orderParameters, "pPicardToolsMarkduplicatesForQCMetrics", "program", 1, "MIP", "nofileEnding", "DuplicateMetrics");
-
 ##Target definition files
 my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists);  #Arrays for target bed infile lists
 
@@ -332,6 +330,8 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists);  #Arrays for 
 
 
 ##Coverage
+&DefineParameters(\%parameter, \@orderParameters, "pPicardToolsMarkduplicatesForQCMetrics", "program", 1, "MIP", "_metric", "DuplicateMetrics");
+
 &DefineParameters(\%parameter, \@orderParameters, "pChanjoSexCheck", "program", 1, "MIP",".sexcheck", "CoverageReport_Gender");
 
 &DefineParameters(\%parameter, \@orderParameters, "pChanjoBuild", "program", 1, "MIP", "nofileEnding", "CoverageReport");
@@ -348,7 +348,7 @@ my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists);  #Arrays for 
 
 &DefineParameters(\%parameter, \@orderParameters, "pPicardToolsCollectMultipleMetrics", "program", 1, "MIP", "nofileEnding", "CoverageQC_PTCMM");
 
-&DefineParameters(\%parameter, \@orderParameters, "pPicardToolsCalculateHSMetrics", "program", 1, "MIP", "nofileEnding", "CoverageQC_PTCHSM");
+&DefineParameters(\%parameter, \@orderParameters, "pPicardToolsCalculateHSMetrics", "program", 1, "MIP", "_CalculateHsMetrics", "CoverageQC_PTCHSM");
 
 &DefineParameters(\%parameter, \@orderParameters, "GenomeCoverageBEDMaxCoverage", "program", 30, "pGenomeCoverageBED");
 
@@ -4692,7 +4692,7 @@ sub PicardToolsCalculateHSMetrics {
     my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/coveragereport";
 
     my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
-    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
+    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{"p".$programName}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
     my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
@@ -4733,14 +4733,14 @@ sub PicardToolsCalculateHSMetrics {
 
 	print $FILEHANDLE "CalculateHsMetrics ";
 	print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile
-	print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding."_CalculateHsMetrics ";  #OutFile
+	print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding." ";  #OutFile
 	print $FILEHANDLE "REFERENCE_SEQUENCE=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	print $FILEHANDLE "BAIT_INTERVALS=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'exomeTargetPaddedBedInfileLists'}." ";  #Capture kit padded target infile_list file
 	print $FILEHANDLE "TARGET_INTERVALS=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'exomeTargetBedInfileLists'}, "\n\n";  #Capture kit target infile_list file
 	
 	## Copies file from temporary directory.
 	print $FILEHANDLE "## Copy file from temporary directory\n";
-	&MigrateFileFromTemp({'tempPath' => ${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding."_CalculateHsMetrics",
+	&MigrateFileFromTemp({'tempPath' => ${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding,
 			      'filePath' => $outSampleDirectory."/",
 			      'FILEHANDLE' => $FILEHANDLE,
 			     });
@@ -4755,7 +4755,7 @@ sub PicardToolsCalculateHSMetrics {
 			   'programName' => "CalculateHsMetrics",
 			   'infile' => $infile,
 			   'outDirectory' => $outSampleDirectory,
-			   'outFileEnding' => $outfileEnding."_CalculateHsMetrics",
+			   'outFileEnding' => $outfileEnding,
 			   'outDataType' => "infileDependent"
 			  });
 	}
@@ -4800,7 +4800,7 @@ sub PicardToolsCalculateHSMetrics {
 
 	    print $FILEHANDLE "CalculateHsMetrics ";
 	    print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile
-	    print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding."_CalculateHsMetrics ";  #OutFile
+	    print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding." ";  #OutFile
 	    print $FILEHANDLE "REFERENCE_SEQUENCE=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	    print $FILEHANDLE "BAIT_INTERVALS=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'exomeTargetPaddedBedInfileLists'}." ";  #Capture kit padded target infile_list file
 	    print $FILEHANDLE "TARGET_INTERVALS=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'exomeTargetBedInfileLists'}." &", "\n\n";  #Capture kit target infile_list file 
@@ -4814,7 +4814,7 @@ sub PicardToolsCalculateHSMetrics {
 			       'programName' => "CalculateHsMetrics",
 			       'infile' => $infile,
 			       'outDirectory' => $outSampleDirectory,
-			       'outFileEnding' => $outfileEnding."_CalculateHsMetrics",
+			       'outFileEnding' => $outfileEnding,
 			       'outDataType' => "infileDependent"
 			      });
 	    }
@@ -4822,7 +4822,7 @@ sub PicardToolsCalculateHSMetrics {
 	print $FILEHANDLE "wait", "\n\n";
 
 	## Copies files from temporary folder to source. Loop over files specified by $arrayRef and collects files from $extractArrayRef.
-	&MigrateFilesFromTemp(\@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, \@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, $outSampleDirectory, ${$scriptParameterHashRef}{'tempDirectory'}, $nrCores, $outfileEnding."_CalculateHsMetrics", $FILEHANDLE);
+	&MigrateFilesFromTemp(\@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, \@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, $outSampleDirectory, ${$scriptParameterHashRef}{'tempDirectory'}, $nrCores, $outfileEnding, $FILEHANDLE);
     }
     
     close($FILEHANDLE);
@@ -6917,12 +6917,12 @@ sub PicardToolsMarkduplicatesForQCMetrics {
     }
 
     ## Assign directories
-    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef;
-    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef;
+    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/coveragereport";
 
     ## Assign fileEndings
-    my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pPicardToolsMergeSamFiles'}{'fileEnding'};
-    my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pPicardToolsMarkduplicatesWithMateCigar'}{'fileEnding'};
+    my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pGATKBaseRecalibration'}{'fileEnding'};
+    my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{"p".$programName}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
     my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, $$sampleIDRef);
@@ -6934,32 +6934,16 @@ sub PicardToolsMarkduplicatesForQCMetrics {
 					     'FILEHANDLE' => $FILEHANDLE,
 					     'directoryID' => $$sampleIDRef,
 					     'programName' => $programName,
-					     'programDirectory' => lc($$alignerRef),
+					     'programDirectory' => lc($$alignerRef."/coveragereport"),
 					     'nrofCores' => $nrCores,
 					     'processTime' => $time,
 					     'tempDirectory' => $$tempDirectoryRef
 					    });
-
-	## Copy file(s) to temporary directory
-	print $FILEHANDLE "## Copy file(s) to temporary directory\n";
-	$xargsFileCounter = &XargsMigrateContigFiles({'FILEHANDLE' => $FILEHANDLE,
-						      'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
-						      'arrayRef' => \@{ ${$fileInfoHashRef}{'contigsSizeOrdered'} },
-						      'fileName' =>$fileName,
-						      'nrCores' => $nrCores,
-						      'xargsFileCounter' => $xargsFileCounter,
-						      'inFile' => $infile.$infileEnding,
-						      'inDirectory' => $inSampleDirectory,
-						      'fileEnding' => ".b*",
-						      'tempDirectory' => $$tempDirectoryRef,
-						     });
-
-	## Concatenates BAMs
-	&GatherBamFiles({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-			 'arrayRef' => \@{${$fileInfoHashRef}{'contigs'}},
-			 'FILEHANDLE' => $FILEHANDLE,
-			 'infile' => $infile.$infileEnding
-			});
+	
+	&MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE, 
+			    'path' => $inSampleDirectory."/".$infile.$infileEnding.".b*",
+			    'tempDirectory' => $$tempDirectoryRef
+			   });
 	
 	## PicardToolsMarkduplicates
 	print $FILEHANDLE "## Marking Duplicates\n";
@@ -6983,10 +6967,10 @@ sub PicardToolsMarkduplicatesForQCMetrics {
 	print $XARGSFILEHANDLE "VALIDATION_STRINGENCY=STRICT ";
 	print $XARGSFILEHANDLE "INPUT=".$$tempDirectoryRef."/".$infile.$infileEnding.".bam ";;  #InFile
 	print $XARGSFILEHANDLE "OUTPUT=".$$tempDirectoryRef."/".$infile.$outfileEnding.".bam ";  #OutFile
-	print $XARGSFILEHANDLE "METRICS_FILE=".$$tempDirectoryRef."/".$infile.$outfileEnding."_metric ";  #Metric file 
+	print $XARGSFILEHANDLE "METRICS_FILE=".$$tempDirectoryRef."/".$infile.$outfileEnding." ";  #Metric file 
 	print $XARGSFILEHANDLE "\n";
 	
-	&MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$infile.$outfileEnding."_metric",
+	&MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$infile.$outfileEnding,
 			      'filePath' => $outSampleDirectory."/",
 			      'FILEHANDLE' => $FILEHANDLE,
 			     });
@@ -7001,7 +6985,7 @@ sub PicardToolsMarkduplicatesForQCMetrics {
 			   'programName' => "MarkDuplicates",
 			   'infile' => $infile,
 			   'outDirectory' => $outSampleDirectory,
-			   'outFileEnding' => $outfileEnding."_metric",
+			   'outFileEnding' => $outfileEnding,
 			   'outDataType' => "infileDependent"
 			  });
 	}
@@ -7013,7 +6997,7 @@ sub PicardToolsMarkduplicatesForQCMetrics {
 					     'FILEHANDLE' => $FILEHANDLE,
 					     'directoryID' => $$sampleIDRef,
 					     'programName' => $programName,
-					     'programDirectory' => lc($$alignerRef),
+					     'programDirectory' => lc($$alignerRef."/coveragereport"),
 					     'nrofCores' => $nrCores,
 					     'processTime' => $time,
 					     'tempDirectory' => $$tempDirectoryRef
@@ -7051,10 +7035,10 @@ sub PicardToolsMarkduplicatesForQCMetrics {
 	    print $XARGSFILEHANDLE "VALIDATION_STRINGENCY=STRICT ";
 	    print $XARGSFILEHANDLE "INPUT=".$$tempDirectoryRef."/".$infile.$infileEnding.".bam ";  #InFile
 	    print $XARGSFILEHANDLE "OUTPUT=".$$tempDirectoryRef."/".$infile.$outfileEnding.".bam ";  #OutFile
-	    print $XARGSFILEHANDLE "METRICS_FILE=".$$tempDirectoryRef."/".$infile.$outfileEnding."_metric ";  #Metric file
+	    print $XARGSFILEHANDLE "METRICS_FILE=".$$tempDirectoryRef."/".$infile.$outfileEnding." ";  #Metric file
 	    print $XARGSFILEHANDLE "\n";		
 
-	    &MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$infile.$outfileEnding."_metric",
+	    &MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$infile.$outfileEnding,
 				  'filePath' => $outSampleDirectory."/",
 				  'FILEHANDLE' => $FILEHANDLE,
 				 });
@@ -7069,7 +7053,7 @@ sub PicardToolsMarkduplicatesForQCMetrics {
 			       'programName' => "MarkDuplicates",
 			       'infile' => $infile,
 			       'outDirectory' => $outSampleDirectory,
-			       'outFileEnding' => $outfileEnding."_metric",
+			       'outFileEnding' => $outfileEnding,
 			       'outDataType' => "infileDependent"
 			      });
 	    }
