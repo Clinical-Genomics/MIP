@@ -15058,16 +15058,28 @@ sub CollectSelectDatabases {
     my $programNameRef = $_[2];
     my $selectFile = $_[3];
     
-    my $subDatabaseRegExp = q?perl -nae 'if ($_=~/^##Database=<ID=(\S+)\,/) {print $1.","} if($_=~/^#\w/) {last;}'?;
+    my $subDatabaseRegExp = q?perl -nae 'if ($_=~/^##Database=<ID=/) {my @entries=split(/,/, $_); if($entries[0]=~/##Database=<ID=(\S+)/) {print $1.","} } if($_=~/^#\w/) {last;}'?;
     my $ret = `$subDatabaseRegExp $selectFile`;  #Collect databases(s)
     my @databases = split(/,/, $ret);
+
+    my $subDatabaseVersionRegExp = q?perl -nae 'if ($_=~/^##Database=<ID=/) { if ($_=~/Version=(\S+)\,/) {print $1.","} } if($_=~/^#\w/) {last;}'?;
+    $ret = `$subDatabaseVersionRegExp $selectFile`;  #Collect versions(s)
+    my @versions = split(/,/, $ret);
+
+    my $subDatabaseAcronymRegExp = q?perl -nae 'if ($_=~/^##Database=<ID=/) { if ($_=~/Acronym=(\S+)/) {print $1.","} } if($_=~/^#\w/) {last;}'?;
+    $ret = `$subDatabaseAcronymRegExp $selectFile`;  #Collect acronyms(s)
+    my @acronyms = split(/,/, $ret);
 
     ## Add new entries if found in merged list
     if (scalar(@databases) > 0 ) {
 	
-	foreach my $database (@databases) {
+	for(my $entryCounter=0;$entryCounter<scalar(@databases);$entryCounter++) {
 
-	    push(@{${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$$programNameRef}{"SelectFile"}{'DatabaseFile'}}, $database);
+	    my $databaseName = $databases[$entryCounter]."_".$acronyms[$entryCounter];  #Create unique memeber database ID
+
+	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$$programNameRef}{"SelectFile"}{'Database'}{$databaseName}{'FileName'} = $databases[$entryCounter];
+	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$$programNameRef}{"SelectFile"}{'Database'}{$databaseName}{'Version'} = $versions[$entryCounter];
+	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$$programNameRef}{"SelectFile"}{'Database'}{$databaseName}{'Acronym'} = $acronyms[$entryCounter];
 	}
     }
 }
