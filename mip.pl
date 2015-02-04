@@ -15058,29 +15058,48 @@ sub CollectSelectDatabases {
     my $programNameRef = $_[2];
     my $selectFile = $_[3];
     
-    my $subDatabaseRegExp = q?perl -nae 'if ($_=~/^##Database=<ID=/) {my @entries=split(/,/, $_); if($entries[0]=~/##Database=<ID=(\S+)/) {print $1.","} } if($_=~/^#\w/) {last;}'?;
-    my $ret = `$subDatabaseRegExp $selectFile`;  #Collect databases(s)
-    my @databases = split(/,/, $ret);
+    my %memberDatabase;  #Collect each member database features
+    my %header = ("##Database=<ID" => "FileName",
+		  "Version" => "Version",
+		  "Acronym" => "Acronym",
+		  "Clinical_db_genome_build" => "Genome_build",
+	);
 
-    my $subDatabaseVersionRegExp = q?perl -nae 'if ($_=~/^##Database=<ID=/) { if ($_=~/Version=(\S+)\,/) {print $1.","} } if($_=~/^#\w/) {last;}'?;
-    $ret = `$subDatabaseVersionRegExp $selectFile`;  #Collect versions(s)
-    my @versions = split(/,/, $ret);
+    my $subDatabaseRegExp = q?perl -nae 'if ($_=~/^##Database=<ID=/) {chomp($_);my @entries=split(/,/, $_); my $entry = join(",", $_); print $entry.":" } if($_=~/^#\w/) {last;}'?;
+    my $ret = `$subDatabaseRegExp $selectFile`;  #Collect databases(s) from selectFile header
+    my @databases = split(/:/, $ret);  #Split each member database into array element
 
-    my $subDatabaseAcronymRegExp = q?perl -nae 'if ($_=~/^##Database=<ID=/) { if ($_=~/Acronym=(\S+)/) {print $1.","} } if($_=~/^#\w/) {last;}'?;
-    $ret = `$subDatabaseAcronymRegExp $selectFile`;  #Collect acronyms(s)
-    my @acronyms = split(/,/, $ret);
+    foreach my $line (@databases) {
 
-    ## Add new entries if found in merged list
-    if (scalar(@databases) > 0 ) {
-	
-	for(my $entryCounter=0;$entryCounter<scalar(@databases);$entryCounter++) {
+	my @features = split(/,/, $line);  #Split each memeber database line into features
 
-	    my $databaseName = $databases[$entryCounter]."_".$acronyms[$entryCounter];  #Create unique memeber database ID
+	foreach my $featureElement (@features) {
 
-	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$$programNameRef}{"SelectFile"}{'Database'}{$databaseName}{'FileName'} = $databases[$entryCounter];
-	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$$programNameRef}{"SelectFile"}{'Database'}{$databaseName}{'Version'} = $versions[$entryCounter];
-	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$$programNameRef}{"SelectFile"}{'Database'}{$databaseName}{'Acronym'} = $acronyms[$entryCounter];
+	    foreach my $selectFileHeader (keys %header) {  #Parse the features using defined header keys
+
+		if ($featureElement=~/$selectFileHeader=(\S+)/) {
+		    
+		    $memberDatabase{ $header{$selectFileHeader} } = $1;
+		    last;
+		}
+	    }
 	}
+
+	if ( (defined($memberDatabase{'FileName'})) && (defined($memberDatabase{'Acronym'})) ) {
+
+	    my $databaseName = $memberDatabase{'FileName'}."_".$memberDatabase{'Acronym'};  #Create unique member database ID
+	
+	    ## Add new entries
+	    foreach my $feature (keys %memberDatabase) {
+
+		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$$programNameRef}{"SelectFile"}{'Database'}{$databaseName}{$feature} = $memberDatabase{$feature};
+	    }
+	}
+	else {
+
+	    $logger->warn("Unable to write clinical database to qc_sampleInfo. Lacking ##Database=<ID=[?] or Acronym=[?] in selectFile header."."\n");
+	}
+	%memberDatabase = ();  #Reset hash for next line
     }
 }
 
