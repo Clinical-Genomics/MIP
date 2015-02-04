@@ -1275,7 +1275,7 @@ sub TreeAnnotations {
 	    my %collectedAnnotations; #Collect all features before adding to line
 	    
 	    for (my $featureCounter=0;$featureCounter<scalar(@{$feature});$featureCounter++) { #All features
-		
+
 		my @annotations = split(/;/, @{$feature}[$featureCounter]); #Split feature array ref into annotations
 		
 		for (my $annotationsCounter=0;$annotationsCounter<scalar(@annotations);$annotationsCounter++) { #All annotations
@@ -1293,7 +1293,15 @@ sub TreeAnnotations {
 			for my $rangeAnnotation (keys % {$$hashRef{'Present'}}) { #All selected annotations
 			    
 			    if ($$hashRef{'Present'}{$rangeAnnotation}{'ColumnOrder'} eq $annotationsCounter) { #Correct feature
-				
+			
+				if ($rangeAnnotation eq "Clinical_db_gene_annotation") {  #Special case, which is global and not gene centric
+
+				    my $databaseAnnotationsRef = [ split(/,/, $collectedAnnotations{$annotationsCounter}) ];  #Create reference
+
+				    ## Collect unique elements from array reference and return array reference with unique elements
+				    my $uniqueRef = &UniqElements($databaseAnnotationsRef);
+				    $collectedAnnotations{$annotationsCounter} = join(",", @{$uniqueRef});  #Create string with distinct databaseAnnotations
+				}
 				if ($collectedAnnotations{$annotationsCounter} ne "") {
 
 				    $$printLineRef .= $rangeAnnotation."=".$collectedAnnotations{$annotationsCounter}.";"; #Add to corresponding line
@@ -1569,3 +1577,17 @@ sub WriteMetaData {
     }
 }
 
+
+sub UniqElements {
+    
+##UniqElements
+    
+##Function : Collect unique elements from array reference and return array reference with unique elements
+##Returns  : "array reference"
+##Arguments: $arrayRef, $familyIDRef, $selectFile
+##         : $arrayRef => The array whose elements are to be made distinct {REF}
+    
+    my $arrayRef = $_[0];
+    my %seen;
+    return [ grep { !$seen{$_}++ } @{$arrayRef} ];  #For each element in array, see if seen before and only return list distinct elements  
+}
