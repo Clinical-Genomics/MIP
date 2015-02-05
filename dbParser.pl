@@ -71,6 +71,29 @@ else {
     }
 }
 
+# print messages to STDERR
+
+{
+
+    my $had_errors = 0; # flag set on printing to STDERR
+
+    sub pr {
+        ## pr
+        ## Function: prints to STDERR and sets a flag
+        ## Returns: ""
+        ## Arguments: @_ will be printed to STDERR
+
+        print STDERR @_;
+        $had_errors = 1;
+    }
+
+    sub HadErrors {
+        ## HadErrors
+        ## Function: 
+        return $had_errors;
+    }
+
+}
 
 ###
 #MAIN
@@ -109,8 +132,8 @@ sub ReadInfileDB {
             }
             else {
 
-                print STDERR "Could not detect any header!\n";
-                print STDERR "Aborting\n";
+                pr("Could not detect any header!\n");
+                pr("Aborting\n");
                 exit;
             }
             next;
@@ -131,9 +154,10 @@ sub ReadInfileDB {
             }	    
         }
     }
+    my $exit_code = &HadErrors();
     close();
+    exit $exit_code;
 }
-
 
 sub CheckElementChar {
 
@@ -156,12 +180,11 @@ sub CheckElementChar {
 
             if ($element =~/$character/) {
 
-                print STDERR "LINE: ".$$lineCounterRef." Element contains '".$character."': ".$element, "\n";
+                pr("LINE: ".$$lineCounterRef." Element contains '".$character."': ".$element, "\n");
             }
         }
     }
 }
-
 
 sub CheckFeatureLength {
 
@@ -197,11 +220,10 @@ sub CheckFeatureLength {
 
         if ($featureLength <= 0) {
 
-            print STDERR "Line: ".$$lineCounterRef." Feature length is: ".$featureLength."\n";
+            pr("Line: ".$$lineCounterRef." Feature length is: ".$featureLength."\n");
         }
     }
 }
-
 
 sub CheckCoordinates {
 
@@ -222,13 +244,12 @@ sub CheckCoordinates {
 
         unless (@{$arrayRef}[$$coordinateRef] =~/^\d+$/) {
 
-            print STDERR "Line: ".$$lineCounterRef." Gene coordinate (column ".$$coordinateRef.") contains invalid characters at: ".@{$arrayRef}[$$coordinateRef]."\n";
+            pr("Line: ".$$lineCounterRef." Gene coordinate (column ".$$coordinateRef.") contains invalid characters at: ".@{$arrayRef}[$$coordinateRef]."\n");
             return 0;
         }
     }
     return 1;
 }
-
 
 sub CheckDuplicatedEntries {
 
@@ -247,8 +268,8 @@ sub CheckDuplicatedEntries {
 
     if (defined($$keyRef)) {  #Key already present, hence duplicated entry
 
-        print STDERR "LINE: ".$$lineCounterRef." Contains a duplicated entry:", "\n";
-        print STDERR $_, "\n";
+        pr("LINE: ".$$lineCounterRef." Contains a duplicated entry:", "\n");
+        pr($_, "\n");
     }
     else {  #No duplicated entry
 
@@ -274,7 +295,7 @@ sub CheckNumberofElements {
 
     if (scalar(@{$arrayRef}) ne $$headerElementCountRef) {
 
-        print STDERR "LINE: ".$$lineCounterRef." Does not contain as many fields as header: ".scalar(@{$arrayRef}). " vs ".$$headerElementCountRef, "\n";
+        pr("LINE: ".$$lineCounterRef." Does not contain as many fields as header: ".scalar(@{$arrayRef}). " vs ".$$headerElementCountRef, "\n");
     }
 
 
@@ -314,7 +335,8 @@ sub CheckHeaderBlanks {
 
         if ($element =~/\s/) {
 
-            print STDERR "LINE: ".$$lineCounterRef." Element contains whitespace: ".$element, "\n";
+            pr("LINE: ".$$lineCounterRef." Element contains whitespace: ".$element, "\n");
         }
     }
 }
+
