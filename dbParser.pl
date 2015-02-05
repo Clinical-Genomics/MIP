@@ -314,7 +314,8 @@ sub SplitLine {
     my $headerLineRef = $_[0];
     my $separatorRef = $_[1];
 
-    my @lineElements = split(/$$separatorRef/, $$headerLineRef);
+    # split LIMIT set to -1 to preserve trailing empty columns
+    my @lineElements = split(/$$separatorRef/, $$headerLineRef, -1);
     return @lineElements;
 }
 
