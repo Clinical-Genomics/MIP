@@ -19,18 +19,18 @@ use vars qw($USAGE);
 # - No entries should be duplicated within database.
 # - Length of gene coordinates should be greater than 0
 # - Only digits in gene coordinate entries
- 
+
 BEGIN {
     $USAGE =
-	q?
-dbParser.pl dbfile.txt
-              -s/--separator The db fields separator (defaults to "\t")
-              -c/--contigColumn Contig column number (defaults to "0")
-              -fs/--featureStartColumn Feature start coordinate column number (defaults to "1")
-              -fe/--featureEndColumn Feature end coordinate column number (defaults to "2")
-              -h/--help Display this help message
-              -v/--version Display version
-        ?;    
+    q?
+    dbParser.pl dbfile.txt
+    -s/--separator The db fields separator (defaults to "\t")
+    -c/--contigColumn Contig column number (defaults to "0")
+    -fs/--featureStartColumn Feature start coordinate column number (defaults to "1")
+    -fe/--featureEndColumn Feature end coordinate column number (defaults to "2")
+    -h/--help Display this help message
+    -v/--version Display version
+    ?;    
 }
 
 my ($separator, $contigColumn, $featureStartColumn, $featureEndColumn) = ("\t", 0, 1, 2);
@@ -41,33 +41,33 @@ my $dbParserVersion = "0.0.1";
 
 ###User Options
 GetOptions('s|separator:s' => \$separator,
-	   'c|contigColumn:s' => \$contigColumn,
-	   'fs|featureStartColumn:n' => \$featureStartColumn,
-	   'fe|featureEndColumn:n' => \$featureEndColumn,
-           'h|help' => \$help,  #Display help text
-	   'v|version' => \$version, #Display version number
-    );
+    'c|contigColumn:s' => \$contigColumn,
+    'fs|featureStartColumn:n' => \$featureStartColumn,
+    'fe|featureEndColumn:n' => \$featureEndColumn,
+    'h|help' => \$help,  #Display help text
+    'v|version' => \$version, #Display version number
+);
 if (scalar(@ARGV) eq 0) {
 
     print STDOUT "\ndbParser.pl v".$dbParserVersion;
     print STDOUT $USAGE, "\n";
     exit;
-    
+
 }
 else {
 
     foreach my $parameter (@ARGV) {
 
-	if( ($help) || ($parameter=~/-h/) ) {
-	    
-	    print STDOUT $USAGE, "\n";
-	    exit;
-	}
-	if( ($version) || ($parameter=~/-v/) ) {
-	    
-	    print STDOUT "\ndbParser.pl v".$dbParserVersion, "\n\n";
-	    exit
-	}
+        if( ($help) || ($parameter=~/-h/) ) {
+
+            print STDOUT $USAGE, "\n";
+            exit;
+        }
+        if( ($version) || ($parameter=~/-v/) ) {
+
+            print STDOUT "\ndbParser.pl v".$dbParserVersion, "\n\n";
+            exit
+        }
     }
 }
 
@@ -94,42 +94,42 @@ sub ReadInfileDB {
     my @characterCheck = (";", ", ", "^\\s+", "\\s+\$");  
 
     while (<>) {
-	
-	chomp $_; # Remove newline
-	
-	if ($. eq 1) {  # Header line
 
-	    if ($_=~/^#/) {  #Header present
+        chomp $_; # Remove newline
 
-		my @headerElements = &SplitLine(\$_, \$separator);
-		
-		&CheckHeaderBlanks(\@headerElements, \$.);
-		
-		$validateMetric{'Header'}{'NrofElements'} = scalar(@headerElements);
-	    }
-	    else {
+        if ($. eq 1) {  # Header line
 
-		print STDERR "Could not detect any header!\n";
-		print STDERR "Aborting\n";
-		exit;
-	    }
-	    next;
-	}
-	else {
+            if ($_=~/^#/) {  #Header present
 
-	    my @lineElements = &SplitLine(\$_, \$separator);
+                my @headerElements = &SplitLine(\$_, \$separator);
 
-	    &CheckNumberofElements(\@lineElements, \$., \$validateMetric{'Header'}{'NrofElements'});
-	    &CheckFeatureLength(\@lineElements, \$., \$featureStartColumn, \$featureEndColumn);
-	    &CheckElementChar(\@lineElements, \$., \@characterCheck);
+                &CheckHeaderBlanks(\@headerElements, \$.);
 
-	    if (@lineElements[$contigColumn, $featureStartColumn, $featureEndColumn]) {  #Check that we have chromosomal and feature coordinates
+                $validateMetric{'Header'}{'NrofElements'} = scalar(@headerElements);
+            }
+            else {
 
-		my $queryKey = @lineElements[$contigColumn, $featureStartColumn, $featureEndColumn];  #Create key for comparison
-		&CheckDuplicatedEntries(\$queryKey, \$validateMetric{'line'}{$queryKey}, \$.)
+                print STDERR "Could not detect any header!\n";
+                print STDERR "Aborting\n";
+                exit;
+            }
+            next;
+        }
+        else {
 
-	    }	    
-	}
+            my @lineElements = &SplitLine(\$_, \$separator);
+
+            &CheckNumberofElements(\@lineElements, \$., \$validateMetric{'Header'}{'NrofElements'});
+            &CheckFeatureLength(\@lineElements, \$., \$featureStartColumn, \$featureEndColumn);
+            &CheckElementChar(\@lineElements, \$., \@characterCheck);
+
+            if (@lineElements[$contigColumn, $featureStartColumn, $featureEndColumn]) {  #Check that we have chromosomal and feature coordinates
+
+                my $queryKey = @lineElements[$contigColumn, $featureStartColumn, $featureEndColumn];  #Create key for comparison
+                &CheckDuplicatedEntries(\$queryKey, \$validateMetric{'line'}{$queryKey}, \$.)
+
+            }	    
+        }
     }
     close();
 }
@@ -152,13 +152,13 @@ sub CheckElementChar {
 
     foreach my $element (@{$arrayRef}) {
 
-	foreach my $character (@{$characterArrayRef}) {
+        foreach my $character (@{$characterArrayRef}) {
 
-	    if ($element =~/$character/) {
+            if ($element =~/$character/) {
 
-		print STDERR "LINE: ".$$lineCounterRef." Element contains '".$character."': ".$element, "\n";
-	    }
-	}
+                print STDERR "LINE: ".$$lineCounterRef." Element contains '".$character."': ".$element, "\n";
+            }
+        }
     }
 }
 
@@ -185,20 +185,20 @@ sub CheckFeatureLength {
 
     if (defined(@{$arrayRef}[$$featureStartRef])) {
 
-	$featureStartisDigit = &CheckCoordinates($arrayRef, $lineCounterRef, $featureStartRef);
+        $featureStartisDigit = &CheckCoordinates($arrayRef, $lineCounterRef, $featureStartRef);
     }
     if (defined(@{$arrayRef}[$$featureEndRef])) {
 
-	$featureEndisDigit = &CheckCoordinates($arrayRef, $lineCounterRef, $featureEndRef);
+        $featureEndisDigit = &CheckCoordinates($arrayRef, $lineCounterRef, $featureEndRef);
     }
     if ( ($featureStartisDigit == 1) && ($featureEndisDigit == 1) ) {
 
-	my $featureLength = @{$arrayRef}[$$featureEndRef] - @{$arrayRef}[$$featureStartRef];
-	
-	if ($featureLength <= 0) {
-	    
-	    print STDERR "Line: ".$$lineCounterRef." Feature length is: ".$featureLength."\n";
-	}
+        my $featureLength = @{$arrayRef}[$$featureEndRef] - @{$arrayRef}[$$featureStartRef];
+
+        if ($featureLength <= 0) {
+
+            print STDERR "Line: ".$$lineCounterRef." Feature length is: ".$featureLength."\n";
+        }
     }
 }
 
@@ -219,12 +219,12 @@ sub CheckCoordinates {
     my $coordinateRef = $_[2];
 
     if (defined(@{$arrayRef}[$$coordinateRef])) {
-	
-	unless (@{$arrayRef}[$$coordinateRef] =~/^\d+$/) {
-	    
-	    print STDERR "Line: ".$$lineCounterRef." Gene coordinate (column ".$$coordinateRef.") contains invalid characters at: ".@{$arrayRef}[$$coordinateRef]."\n";
-	    return 0;
-	}
+
+        unless (@{$arrayRef}[$$coordinateRef] =~/^\d+$/) {
+
+            print STDERR "Line: ".$$lineCounterRef." Gene coordinate (column ".$$coordinateRef.") contains invalid characters at: ".@{$arrayRef}[$$coordinateRef]."\n";
+            return 0;
+        }
     }
     return 1;
 }
@@ -247,12 +247,12 @@ sub CheckDuplicatedEntries {
 
     if (defined($$keyRef)) {  #Key already present, hence duplicated entry
 
-	print STDERR "LINE: ".$$lineCounterRef." Contains a duplicated entry:", "\n";
-	print STDERR $_, "\n";
+        print STDERR "LINE: ".$$lineCounterRef." Contains a duplicated entry:", "\n";
+        print STDERR $_, "\n";
     }
     else {  #No duplicated entry
 
-	$validateMetric{'line'}{$$queryKeyRef} = $$queryKeyRef;
+        $validateMetric{'line'}{$$queryKeyRef} = $$queryKeyRef;
     }
 }
 
@@ -271,12 +271,12 @@ sub CheckNumberofElements {
     my $lineCounterRef = $_[1];
     my $headerElementCountRef = $_[2];
 
-    
+
     if (scalar(@{$arrayRef}) ne $$headerElementCountRef) {
 
-	print STDERR "LINE: ".$$lineCounterRef." Does not contain as many fields as header: ".scalar(@{$arrayRef}). " vs ".$$headerElementCountRef, "\n";
+        print STDERR "LINE: ".$$lineCounterRef." Does not contain as many fields as header: ".scalar(@{$arrayRef}). " vs ".$$headerElementCountRef, "\n";
     }
-    
+
 
 }
 
@@ -292,7 +292,7 @@ sub SplitLine {
 
     my $headerLineRef = $_[0];
     my $separatorRef = $_[1];
-    
+
     my @lineElements = split(/$$separatorRef/, $$headerLineRef);
     return @lineElements;
 }
@@ -312,9 +312,9 @@ sub CheckHeaderBlanks {
 
     foreach my $element (@{$arrayRef}) {
 
-	if ($element =~/\s/) {
+        if ($element =~/\s/) {
 
-	    print STDERR "LINE: ".$$lineCounterRef." Element contains whitespace: ".$element, "\n";
-	}
+            print STDERR "LINE: ".$$lineCounterRef." Element contains whitespace: ".$element, "\n";
+        }
     }
 }
