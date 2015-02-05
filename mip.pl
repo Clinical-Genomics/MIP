@@ -3349,10 +3349,18 @@ sub VCFParser {
     
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
-	## Clear old VCFPArser entry if present
+	## Clear old VCFParser entry if present
 	if (defined(${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$programName})) {
 	    
 	    delete(${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$programName});
+	}
+	if (${$scriptParameterHashRef}{'vcfParserRangeFeatureFile'} ne "noUserInfo") {
+
+	    if (${$scriptParameterHashRef}{'vcfParserRangeFeatureFile'}=~/v(\d+\.\d+.\d+|\d+\.\d+)/) {
+		
+		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$programName}{"RangeFile"}{'Version'} = $1;
+	    }
+	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$programName}{"RangeFile"}{'File'} = ${$scriptParameterHashRef}{'vcfParserRangeFeatureFile'};
 	}
 	if (${$scriptParameterHashRef}{'vcfParserSelectFile'} ne "noUserInfo") {
 

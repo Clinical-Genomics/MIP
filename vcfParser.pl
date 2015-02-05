@@ -120,9 +120,8 @@ sub DefineSelectData {
 
     $selectData{'SelectFile'}{'HGNC_symbol'}{'INFO'} = q?##INFO=<ID=HGNC_symbol,Number=.,Type=String,Description="The HGNC gene symbol">?;
     $selectData{'SelectFile'}{'Ensembl_gene_id'}{'INFO'} = q?##INFO=<ID=Ensembl_gene_id,Number=.,Type=String,Description="Ensembl gene identifier">?;
-    $selectData{'SelectFile'}{'Disease_group_pathway'}{'INFO'} = q?##INFO=<ID=Disease_group_pathway,Number=.,Type=String,Description="Disease group affected pathway">?;
-    $selectData{'SelectFile'}{'Clinical_db_genome_build'}{'INFO'} = q?##INFO=<ID=Clinical_db_genome_build,Number=.,Type=String,Description="Genome version used in clinical Db">?;
-    $selectData{'SelectFile'}{'Genetic_disease_model'}{'INFO'} = q?##INFO=<ID=Genetic_disease_model,Number=.,Type=String,Description="Known disease gene inheritance model">?;
+    $selectData{'SelectFile'}{'OMIM_morbid'}{'INFO'} = q?##INFO=<ID=OMIM_morbid,Number=.,Type=String,Description="OMIM morbid ID associated with gene(s)">?;
+    $selectData{'SelectFile'}{'Phenotypic_disease_model'}{'INFO'} = q?##INFO=<ID=Phenotypic_disease_model,Number=.,Type=String,Description="Known disease gene(s) phenotype inheritance model">?;
     $selectData{'SelectFile'}{'Clinical_db_gene_annotation'}{'INFO'} = q?##INFO=<ID=Clinical_db_gene_annotation,Number=.,Type=String,Description="Gene disease group association">?;
     $selectData{'SelectFile'}{'Reduced_penetrance'}{'INFO'} = q?##INFO=<ID=Reduced_penetrance,Number=.,Type=String,Description="Pathogenic gene which can exhibit reduced penetrance">?;
     $selectData{'SelectFile'}{'Disease_associated_transcript'}{'INFO'} = q?##INFO=<ID=Disease_associated_transcript,Number=.,Type=String,Description="Known pathogenic transcript(s) for gene">?;
@@ -1225,16 +1224,19 @@ sub RangeAnnotations {
     my $features; #Features to collect (Format: ";" separated elements)
     
     for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar(@{$rangeCoulumnsArrayRef});$extractColumnsCounter++) { #Defines what scalar to store
+
+	if(defined($$lineElementsArrayRef[ $$rangeCoulumnsArrayRef[$extractColumnsCounter] ])) {
+
+	    $$lineElementsArrayRef[ $$rangeCoulumnsArrayRef[$extractColumnsCounter] ] =~ tr/ /_/; #Remove whitespace since this is not allowed in vcf INFO field
 	
-	$$lineElementsArrayRef[ $$rangeCoulumnsArrayRef[$extractColumnsCounter] ] =~ tr/ /_/; #Remove whitespace since this is not allowed in vcf INFO field
-	
-	if ($extractColumnsCounter == 0) {
-	    
-	    $features .= $$lineElementsArrayRef[ $$rangeCoulumnsArrayRef[$extractColumnsCounter] ];
-	}		    
-	else {
-	    
-	    $features .= ";".$$lineElementsArrayRef[ $$rangeCoulumnsArrayRef[$extractColumnsCounter] ];
+	    if ($extractColumnsCounter == 0) {
+		
+		$features .= $$lineElementsArrayRef[ $$rangeCoulumnsArrayRef[$extractColumnsCounter] ];
+	    }		    
+	    else {
+		
+		$features .= ";".$$lineElementsArrayRef[ $$rangeCoulumnsArrayRef[$extractColumnsCounter] ];
+	    }
 	}
 	## Add header to future INFO field
 	&AddMetaDataINFO($hashRef, $rangeFileKey, \$$headersArrayRef[ $$rangeCoulumnsArrayRef[$extractColumnsCounter] ], \$extractColumnsCounter, \$$rangeFileRef);
@@ -1288,7 +1290,10 @@ sub TreeAnnotations {
 			}
 			else {
 			 
-			    $collectedAnnotations{$annotationsCounter} .= ",".$annotations[$annotationsCounter];
+			    if(defined($annotations[$annotationsCounter])) {
+
+				$collectedAnnotations{$annotationsCounter} .= ",".$annotations[$annotationsCounter];
+			    }
 			}
 			for my $rangeAnnotation (keys % {$$hashRef{'Present'}}) { #All selected annotations
 			    
@@ -1302,7 +1307,7 @@ sub TreeAnnotations {
 				    my $uniqueRef = &UniqElements($databaseAnnotationsRef);
 				    $collectedAnnotations{$annotationsCounter} = join(",", @{$uniqueRef});  #Create string with distinct databaseAnnotations
 				}
-				if ($collectedAnnotations{$annotationsCounter} ne "") {
+				if ( ($collectedAnnotations{$annotationsCounter} ne "") && ($collectedAnnotations{$annotationsCounter}!~/^,+$/) ) {
 
 				    $$printLineRef .= $rangeAnnotation."=".$collectedAnnotations{$annotationsCounter}.";"; #Add to corresponding line
 				}
@@ -1314,7 +1319,7 @@ sub TreeAnnotations {
 			$collectedAnnotations{$annotationsCounter} = $annotations[$annotationsCounter];
 		    }
 		    else {
-			
+
 			$collectedAnnotations{$annotationsCounter} .= ",".$annotations[$annotationsCounter];	
 		    }
 		}
