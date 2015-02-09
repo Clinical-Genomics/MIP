@@ -16,18 +16,58 @@ PMID:25495354
 
 ##Overview
 
-MIP performs whole genome or target region analysis of sequenced paired end
+MIP performs whole genome or target region analysis of sequenced single-end and/or paired-end
 reads from the Illumina plattform in fastq(.gz) format to generate annotated
 ranked potential disease causing variants. 
 
-MIP performs QC, aligns reads using Mosaik or BWA, variant discovery and
-annotation as well as ranking the found variants according to disease potential
-with a minimum of manual intervention.
+MIP performs QC, alignment, coverage analysis, variant discovery and
+annotation, sample checks as well as ranking the found variants according to disease potential
+with a minimum of manual intervention. MIP is compatible with Scout for visualization of
+identified variants.
 
 ##Example Usage
 ```
 perl mip.pl -pMosaikBuild 0 -configFile 1_config.yaml
 ```
+
+##Features
+ - Autonomous
+ 	* Checks that all dependencies are fulfilled before launching
+ 	* Builds/downloads references and/or files missing before launching
+ 	* Splits and merges files for samples and families when relevant
+ - Automatic
+	* A minimal amount of hands-on time
+ 	* Tracks and executes all module without manual intervention
+ 	* Creates internal queues at nodes to optimize processing
+ 	* Minimal IO between nodes and login node
+ - Flexible:
+ 	* Design your own workflow by turning on/off relevant modules 
+ 	* Restart an analysis from anywhere in your workflow
+ 	* Process one, or multiple samples using the module(s) of your choice
+ 	* Supply parameters on the command line, in a pedigree file or via config files
+ 	* Simulate your analysis before performing it
+ 	* Redirect each modules analysis process to a temporary directory (@nodes or @login)
+ 	* Limit a run to a specific set of genomic intervals
+ - Fast
+ 	* Analyses an exome trio in approximately 6 h
+ 	* Analyses a genome in approximately 35 h
+ 	* Rapid mode analyzes a WGS sample in approximately 4 h using a data reduction and parallelization scheme
+ - Traceability
+ 	* Recreate your analysis from the MIP log or generated config files
+ 	* Logs sample meta-data and sequence meta-data
+ 	* Logs version numbers of softwares and databases
+ 	* Checks sample integrity (sex and relationship)
+ - Annotation
+ 	* Gene annotation
+ 		* Summarise over all transcript and output on gene level
+ 	* Transcript level annotation
+ 		* Separate pathogenic transcripts for correct downstream annotation
+ 	* Annotate all alleles for a position
+ 		* Split multi-allelic records into single records to ease annotation
+ - Standardized
+ 	* Use standard formats whenever possible
+ - Visualization
+ 	* Output is directly compatibel with Scout
 
 ##Getting Started
 
@@ -38,7 +78,7 @@ MIP is written in perl and therfore requires that perl is installed on your OS.
 ####Prerequisites
 
 #####Programs/Modules
-- Perl YAML.pm module from CPAN, since this is not included in the perl standard
+- Perl YAML.pm module and Log4perl.pm from CPAN, since this is not included in the perl standard
   distribution (if you want to supply config files to MIP)
 - Simple Linux Utility for Resource Management (SLURM)
 - FastQC
@@ -47,11 +87,13 @@ MIP is written in perl and therfore requires that perl is installed on your OS.
 - SamTools
 - BedTools
 - PicardTools
+- Chanjo
 - GATK
-- ANNOVAR
-- intersectCollect.pl
-- add_depth.pl
-- rank_list_filter.pl
+- VEP
+- vcfParser.pl (Supplied with MIP)
+- SnpEff
+- Annovar
+- Genmod
 - VcfTools
 - PLINK
 
@@ -62,40 +104,40 @@ these programs to your `bashrc`:
 - Mosaik
 - BWA
 - SamTools
+- Tabix
 - BedTools
-- PicardTools
 - VcfTools
 - PLINK
 
+and these to your python ``virtualenvironment``:
+
+- Chanjo
+- GENMOD
+- Cosmid (version: 0.4.9.1) for automatic download
+
 #####Meta-Data
 - Pedigree file (PLINK-format)
-- Template files for intersectCollect.pl
-
-#####Infiles
-Needs to be on the format: `lane_date_flow-cellID_sampleID_indexX_direction.fastq`.
-For instance:
-
-```
-6_120313_AC0GTUACXX_9-1-1A_indexACTTGA_1.fastq.gz
-6_120313_AC0GTUACXX_9-1-1A_indexACTTGA_2.fastq.gz
-```
+- Configuration file (YAML-format)
 
 ###Usage
-MIP is called from the command line and takes input from the command line
-(precedence) or a config file (yaml-format).
+IP is called from the command line and takes input from the command line
+(precedence), a config file (yaml-format) or falls back on defaults where applicable.
 
-Lists are supplied as comma separated input or repeated flag entries. Only flags
-that will actually be used needs to be specified and MIP will check that all
+Lists are supplied as comma separated input, repeated flag entries on the command line or 
+in the config using the yaml format for arrays.
+Only flags that will actually be used needs to be specified and MIP will check that all
 required parameters are set before submitting to SLURM. 
 
-Program parameters always begins with "p". Program parameters can be set to "0"
-(=do not run), "1" (=run) and "2" (=dry run mode). Any progam can be set to dry
+Program parameters always begins with "p" followed by a capital letter. Program parameters can be set to "0"
+(=off), "1" (=on) and "2" (=dry run mode). Any progam can be set to dry
 run mode and MIP will create sbatch scripts, but not submit them to SLURM. MIP
 can be restarted from any module, but you need to supply previous dependent
 programs in dry run mode to ensure proper file handling. 
 
-MIP allows individual target file calculations if supplied with a pedigree file
-containing the supported capture kits.
+MIP will overwrite data files when reanalyzing, but keeps all "versioned" sbatch scripts for traceability.
+
+MIP allows individual target file calculations if supplied with a pedigree file or config file
+containing the supported capture kits for each sample.
 
 You can always supply ```perl mip.pl -h``` to list all availaible parameters and
 defaults.
@@ -111,8 +153,7 @@ has precedence.
 
 ####Input
 
-All MIP scripts (including mip.pl) should be placed in the script directory
-specified by `-inScriptDir`.
+MIP scripts locations are specified by `-inScriptDir`.
 
 All references and template files should be placed directly in the reference
 directory specified by `-referencesDir`, except for ANNOVAR db files, which
@@ -127,7 +168,8 @@ done including all samples can be found under the family directory
 MIP will create sbatch scripts (.sh) and submit them in proper order with
 attached dependencies to SLURM. These sbatch script are placed in the output
 script directory specified by `-outScriptDir`. The sbatch scripts are versioned
-and will not be overwritten if you begin a new analysis.
+and will not be overwritten if you begin a new analysis. Versioned "xargs" scripts will also
+be created where possible to maximize the use of the cores processing power.
 
 #####Data
 MIP will place any generated datafiles in the output data directory specified by
