@@ -503,7 +503,7 @@ my (@GATKTargetPaddedBedIntervalLists);  #Array for target infile lists used in 
 ##humanGenomeReference
 &DefineParametersPath(\%parameter, \@orderParameters, "humanGenomeReference", "Homo_sapiens.GRCh37.d5.fasta", "pBwaMem,pBwaAln,pBwaSampe,pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKGenoTypeGVCFs,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pAnnovar,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "file", "yesAutoDownLoad");
 
-my $mipVersion = "v2.0.0";  #Set version
+my $mipVersion = "v2.1.0";  #Set version
 
 my ($aligner) = ("nocmdinput");
 
