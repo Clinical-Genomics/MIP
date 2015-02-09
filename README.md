@@ -4,6 +4,15 @@ MIP enables identification of potential disease causing variants from sequencing
 data. 
 
 ![DOI](https://zenodo.org/badge/4091/henrikstranneheim/MIP.png)
+=======
+
+##Citing MIP
+```
+Rapid pulsed whole genome sequencing for comprehensive acute diagnostics of inborn errors of metabolism
+Stranneheim H, Engvall M, Naess K, Lesko N, Larsson P, Dahlberg M, Andeer R, Wredenberg A, Freyer C, Barbaro M, Bruhn H, Emahazion T, Magnusson M, Wibom R, Zetterström RH, Wirta V, von Döbeln U, Wedell A.
+BMC Genomics. 2014 Dec 11;15(1):1090. doi: 10.1186/1471-2164-15-1090.
+PMID:25495354
+```
 
 ##Overview
 

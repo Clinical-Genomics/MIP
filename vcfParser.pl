@@ -1,4 +1,4 @@
-#!/usr/bin/perl - w
+#!/usr/bin/env perl
 
 use strict;
 use warnings;
@@ -21,12 +21,14 @@ BEGIN {
            -sf_mc/--selectFeatureMatchingColumn
            -sf_ac/--selectFeatureAnnotationColumns
            -sof/--selectOutfile selectOutfile (vcf)
+           -pad/--padding (Default: "5000" nucleotides)
+           -wst/--writeSoftwareTag (Default: "1")
            -h/--help Display this help message    
            -v/--version Display version
         };    
 }
 
-my ($infile, $outputFormat, $parseVEP, $rangeFeatureFile, $selectFeatureFile, $selectFeatureMatchingColumn, $selectOutfile) = ("", "vcf", 0, 0, 0, "nocmdinput", "nocmdinput");
+my ($infile, $outputFormat, $parseVEP, $rangeFeatureFile, $selectFeatureFile, $selectFeatureMatchingColumn, $selectOutfile, $writeSoftwareTag, $padding) = ("", "vcf", 0, 0, 0, "nocmdinput", "nocmdinput", 1, 5000);
 my (@metaData, @selectMetaData, @rangeFeatureAnnotationColumns, @selectFeatureAnnotationColumns); 
 my (%geneAnnotation, %consequenceSeverity, %rangeData, %selectData, %snpEffCmd, %tree, %metaData);
 
@@ -45,7 +47,9 @@ GetOptions('of|outputFormat:s' => \$outputFormat,
 	   'sf|selectFeatures:s' => \$selectFeatureFile,
 	   'sf_mc|selectFeatureMatchingColumn:n' => \$selectFeatureMatchingColumn,
 	   'sf_ac|selectFeatureAnnotationColumns:s'  => \@selectFeatureAnnotationColumns, #Comma separated list
-	   'sof|selectOutfile:s' => \$selectOutfile,	   
+	   'sof|selectOutfile:s' => \$selectOutfile,
+	   'wst|writeSoftwareTag:n' => \$writeSoftwareTag,
+	   'pad|padding:n' => \$padding,
 	   'h|help' => \$help,  #Display help text
 	   'v|version' => \$version, #Display version number
     );
@@ -116,9 +120,8 @@ sub DefineSelectData {
 
     $selectData{'SelectFile'}{'HGNC_symbol'}{'INFO'} = q?##INFO=<ID=HGNC_symbol,Number=.,Type=String,Description="The HGNC gene symbol">?;
     $selectData{'SelectFile'}{'Ensembl_gene_id'}{'INFO'} = q?##INFO=<ID=Ensembl_gene_id,Number=.,Type=String,Description="Ensembl gene identifier">?;
-    $selectData{'SelectFile'}{'Disease_group_pathway'}{'INFO'} = q?##INFO=<ID=Disease_group_pathway,Number=.,Type=String,Description="Disease group affected pathway">?;
-    $selectData{'SelectFile'}{'Clinical_db_genome_build'}{'INFO'} = q?##INFO=<ID=Clinical_db_genome_build,Number=.,Type=String,Description="Genome version used in clinical Db">?;
-    $selectData{'SelectFile'}{'Genetic_disease_model'}{'INFO'} = q?##INFO=<ID=Genetic_disease_model,Number=.,Type=String,Description="Known disease gene inheritance model">?;
+    $selectData{'SelectFile'}{'OMIM_morbid'}{'INFO'} = q?##INFO=<ID=OMIM_morbid,Number=.,Type=String,Description="OMIM morbid ID associated with gene(s)">?;
+    $selectData{'SelectFile'}{'Phenotypic_disease_model'}{'INFO'} = q?##INFO=<ID=Phenotypic_disease_model,Number=.,Type=String,Description="Known disease gene(s) phenotype inheritance model">?;
     $selectData{'SelectFile'}{'Clinical_db_gene_annotation'}{'INFO'} = q?##INFO=<ID=Clinical_db_gene_annotation,Number=.,Type=String,Description="Gene disease group association">?;
     $selectData{'SelectFile'}{'Reduced_penetrance'}{'INFO'} = q?##INFO=<ID=Reduced_penetrance,Number=.,Type=String,Description="Pathogenic gene which can exhibit reduced penetrance">?;
     $selectData{'SelectFile'}{'Disease_associated_transcript'}{'INFO'} = q?##INFO=<ID=Disease_associated_transcript,Number=.,Type=String,Description="Known pathogenic transcript(s) for gene">?;
@@ -205,10 +208,10 @@ sub DefineConsequenceSeverity {
     $consequenceSeverity{'5_prime_UTR_variant'}{'GeneticRegionAnnotation'} = "5UTR";
     $consequenceSeverity{'3_prime_UTR_variant'}{'Rank'} = 14;
     $consequenceSeverity{'3_prime_UTR_variant'}{'GeneticRegionAnnotation'} = "3UTR";
-    $consequenceSeverity{'non_coding_exon_variant'}{'Rank'} = 15;
-    $consequenceSeverity{'non_coding_exon_variant'}{'GeneticRegionAnnotation'} = "ncRNA_exonic";
-    $consequenceSeverity{'nc_transcript_variant'}{'Rank'} = 15;
-    $consequenceSeverity{'nc_transcript_variant'}{'GeneticRegionAnnotation'} = "ncRNA";
+    $consequenceSeverity{'non_coding_transcript_exon_variant'}{'Rank'} = 15;
+    $consequenceSeverity{'non_coding_transcript_exon_variant'}{'GeneticRegionAnnotation'} = "ncRNA_exonic";
+    $consequenceSeverity{'non_coding_transcript_variant'}{'Rank'} = 15;
+    $consequenceSeverity{'non_coding_transcript_variant'}{'GeneticRegionAnnotation'} = "ncRNA";
     $consequenceSeverity{'intron_variant'}{'Rank'} = 16;
     $consequenceSeverity{'intron_variant'}{'GeneticRegionAnnotation'} = "intronic";
     $consequenceSeverity{'NMD_transcript_variant'}{'Rank'} = 17;
@@ -271,7 +274,7 @@ sub ReadRangeFile {
 ##Create Interval Tree
 	    if (scalar(@rangeFeatureAnnotationColumns) > 0) {#Annotate vcf with features from select file
 		
-		&RangeAnnotations(\@rangeFeatureAnnotationColumns, \@lineElements, \%rangeData, "RangeFile", \$infileName, \@headers);
+		&RangeAnnotations(\@rangeFeatureAnnotationColumns, \@lineElements, \%rangeData, "RangeFile", \$infileName, \@headers, \$padding);
 	    }
 	}
     }
@@ -315,7 +318,7 @@ sub ReadSelectFile {
 	    ## Create Interval Tree
 	    if (scalar(@selectFeatureAnnotationColumns) > 0) {#Annotate vcf with features from select file
 		
-		&RangeAnnotations(\@selectFeatureAnnotationColumns, \@lineElements, \%selectData, "SelectFile", \$selectFeatureFile, \@headers);
+		&RangeAnnotations(\@selectFeatureAnnotationColumns, \@lineElements, \%selectData, "SelectFile", \$selectFeatureFile, \@headers, \$padding);
 	    }
 	}
     }
@@ -438,7 +441,10 @@ sub ReadInfileVCF {
 		    }
 		}
 	    }
-	    &AddProgramToMeta(\%{$metaDataHashRef});
+	    if ($writeSoftwareTag == 1) {
+
+		&AddProgramToMeta(\%{$metaDataHashRef});
+	    }
 	    if (scalar(@selectFeatureAnnotationColumns) > 0) { #SelectFile annotations
 
 		&WriteMetaData(\%{$metaDataHashRef}, *STDOUT, *WOSFTSV);
@@ -646,11 +652,9 @@ sub ReadInfileVCF {
 				
 				if ($transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ] =~/N\w_\d+\.\d/) { #RefSeq
 				    
-				    my $selectedTranscriptTracker = 0; #Track if any transcripts belong to selected features
-				    
-				    if (defined($transcriptsEffects[ $vepFormatFieldColumn{'SYMBOL'} ])) { #Save HGNC Symbol
+				    if (defined($transcriptsEffects[ $vepFormatFieldColumn{'SYMBOL'} ])) { 
 					
-					$variantData{'Symbol'} = $transcriptsEffects[ $vepFormatFieldColumn{'SYMBOL'} ];
+					$variantData{'Symbol'} = $transcriptsEffects[ $vepFormatFieldColumn{'SYMBOL'} ];  #Save HGNC Symbol
 					
 					if ($selectData{ $variantData{'Symbol'} }) { #Exists in selected Features
 
@@ -664,24 +668,27 @@ sub ReadInfileVCF {
 					    }
 					    $selectedTranscriptCounter++;
 					}
-					else {
-					    
-					    if ($transcriptsCounter > 0) {
+					## Always include all Refseq transcripts in research list
+					if ($transcriptsCounter > 0) {
 						
-						$variantLine .= ",".$transcripts[$fieldCounter];
-					    }
-					    else {
-						
-						$variantLine .= "CSQ=".$transcripts[$fieldCounter];
-					    }
-					    $transcriptsCounter++;
+					    $variantLine .= ",".$transcripts[$fieldCounter];
 					}
+					else {
+						
+					    $variantLine .= "CSQ=".$transcripts[$fieldCounter];
+					}
+					$transcriptsCounter++;
 				    }	
 				}
 			    }
 			    if ( ($selectedTranscriptCounter == 0) && ($transcriptsCounter == 0) ) {
 
 				$variantLine .= "CSQ=".$CSQTranscripts;  #No transcript info
+			    }
+			    unless ($variantEffectCounter == scalar(@variantEffects)-1) {  #Unless this is the last feature
+
+				$variantLine .= ";";
+				$selectedVariantLine .= ";";
 			    }
 			}
 		    }
@@ -720,7 +727,7 @@ sub ReadInfileVCF {
 	    }
 	    if ($parseVEP == 1) {
 		
-		unless ( ($selectedTranscriptCounter == 0) && ($transcriptsCounter == 0) ) {  #No info to add from CSQ field
+		unless ( ($selectedTranscriptCounter == 0) && ($transcriptsCounter == 0) ) {  #Info to add from CSQ field
 		    
 		    $selectedVariantLine .= ";";
 		    $variantLine .= ";";
@@ -751,12 +758,10 @@ sub ReadInfileVCF {
 				   
 				    &AddFieldToElementCounter(\$selectedTranscriptCounter, \$selectedVariantLine, ",", \$alleleGeneEntry, \$outputFormat, "HGVScp=");
 				}
-				else {
-
-				    my $alleleGeneEntry = $transcriptsEffects[ $vepFormatFieldColumn{'Allele'} ].":".$variantData{'Symbol'};
+				## Always include all Refseq transcripts in research list
+				my $alleleGeneEntry = $transcriptsEffects[ $vepFormatFieldColumn{'Allele'} ].":".$variantData{'Symbol'};
 				    
-				    &AddFieldToElementCounter(\$transcriptsCounter, \$variantLine, ",", \$alleleGeneEntry, \$outputFormat, "HGVScp=");
-				}				
+				&AddFieldToElementCounter(\$transcriptsCounter, \$variantLine, ",", \$alleleGeneEntry, \$outputFormat, "HGVScp=");
 			    }
 			    &AddFieldToElement(\$selectedTranscriptTracker, \$selectedVariantLine, \$variantLine, ":", \$transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ]); #Save transcript
 
@@ -773,16 +778,14 @@ sub ReadInfileVCF {
 					$selectedVariantData{'FeatureType'} .= ",".$transcriptsEffects[ $vepFormatFieldColumn{'Feature_type'} ];
 				    }
 				}
-				else { #Not in selected genes
+				## Always include all Refseq transcripts in research list				    
+				if ($transcriptsCounter == 0) { #First Gene
 				    
-				    if ($transcriptsCounter == 0) { #First Gene
-					
-					$variantData{'FeatureType'} = $transcriptsEffects[ $vepFormatFieldColumn{'Feature_type'} ];
-				    }
-				    else {
-					
-					$variantData{'FeatureType'} .= ",".$transcriptsEffects[ $vepFormatFieldColumn{'Feature_type'} ];
-				    }
+				    $variantData{'FeatureType'} = $transcriptsEffects[ $vepFormatFieldColumn{'Feature_type'} ];
+				}
+				else {
+				    
+				    $variantData{'FeatureType'} .= ",".$transcriptsEffects[ $vepFormatFieldColumn{'Feature_type'} ];
 				}
 			    }
 			    if (defined($transcriptsEffects[ $vepFormatFieldColumn{'Consequence'} ])) { #Save Consequence
@@ -864,11 +867,9 @@ sub ReadInfileVCF {
 				
 				$selectedTranscriptCounter++;
 			    }
-			    else {
-				
-				$transcriptsCounter++;
-			    }
-			}   
+			    ## Always include all Refseq transcripts in research list	
+			    $transcriptsCounter++;
+			}
 		    }
 		    &CollectConsequenceGenes(\%consequence, \@featureFields, \$selectedVariantLine, \$variantLine);
 		}
@@ -1001,10 +1002,8 @@ sub AddFieldToElement {
 	
 	$$selectedLineRef .= $separator.$$valueRef;
     }
-    else {
-	
-	$$lineRef .= $separator.$$valueRef;
-    }
+    ## Always include all Refseq transcripts in research list
+    $$lineRef .= $separator.$$valueRef;
 }
 
 sub CollectConsequenceGenes {
@@ -1033,10 +1032,9 @@ sub CollectConsequenceGenes {
 		
 		&CollectConsequenceField(\$fieldCounter, \%selectedGeneCounter, \%{$hashRef}, \$genes, \@{$arrayRef}, \@selectedTempFields, \$outputFormat);
 	    }
-	    else { #Not selected feature
-		
-		&CollectConsequenceField(\$fieldCounter, \%geneCounter, \%{$hashRef}, \$genes, \@{$arrayRef}, \@tempFields, \$outputFormat);
-	    }
+
+	    ## Always include all Refseq transcripts in research list
+	    &CollectConsequenceField(\$fieldCounter, \%geneCounter, \%{$hashRef}, \$genes, \@{$arrayRef}, \@tempFields, \$outputFormat);
 	}
     }
     
@@ -1221,20 +1219,24 @@ sub RangeAnnotations {
     my $rangeFileKey = $_[3];
     my $rangeFileRef = $_[4];
     my $headersArrayRef = $_[5]; #Headers from rangeFile
+    my $paddingRef = $_[6];  #Nucleotides to pad the range
     
     my $features; #Features to collect (Format: ";" separated elements)
     
     for (my $extractColumnsCounter=0;$extractColumnsCounter<scalar(@{$rangeCoulumnsArrayRef});$extractColumnsCounter++) { #Defines what scalar to store
+
+	if(defined($$lineElementsArrayRef[ $$rangeCoulumnsArrayRef[$extractColumnsCounter] ])) {
+
+	    $$lineElementsArrayRef[ $$rangeCoulumnsArrayRef[$extractColumnsCounter] ] =~ tr/ /_/; #Remove whitespace since this is not allowed in vcf INFO field
 	
-	$$lineElementsArrayRef[ $$rangeCoulumnsArrayRef[$extractColumnsCounter] ] =~ tr/ /_/; #Remove whitespace since this is not allowed in vcf INFO field
-	
-	if ($extractColumnsCounter == 0) {
-	    
-	    $features .= $$lineElementsArrayRef[ $$rangeCoulumnsArrayRef[$extractColumnsCounter] ];
-	}		    
-	else {
-	    
-	    $features .= ";".$$lineElementsArrayRef[ $$rangeCoulumnsArrayRef[$extractColumnsCounter] ];
+	    if ($extractColumnsCounter == 0) {
+		
+		$features .= $$lineElementsArrayRef[ $$rangeCoulumnsArrayRef[$extractColumnsCounter] ];
+	    }		    
+	    else {
+		
+		$features .= ";".$$lineElementsArrayRef[ $$rangeCoulumnsArrayRef[$extractColumnsCounter] ];
+	    }
 	}
 	## Add header to future INFO field
 	&AddMetaDataINFO($hashRef, $rangeFileKey, \$$headersArrayRef[ $$rangeCoulumnsArrayRef[$extractColumnsCounter] ], \$extractColumnsCounter, \$$rangeFileRef);
@@ -1243,7 +1245,9 @@ sub RangeAnnotations {
 	
 	$tree{$rangeFileKey}{ $$lineElementsArrayRef[0] } = Set::IntervalTree->new(); #Create tree
     }
-    $tree{$rangeFileKey}{ $$lineElementsArrayRef[0] }->insert($features, $$lineElementsArrayRef[1], $$lineElementsArrayRef[2]); #Store range and ";" sep string
+    my $paddedStart = $$lineElementsArrayRef[1] - $$paddingRef;
+    my $paddedStop = $$lineElementsArrayRef[2] + $$paddingRef;
+    $tree{$rangeFileKey}{ $$lineElementsArrayRef[0] }->insert($features, $paddedStart, $paddedStop); #Store range and ";" sep string
 }
 
 sub TreeAnnotations {
@@ -1273,7 +1277,7 @@ sub TreeAnnotations {
 	    my %collectedAnnotations; #Collect all features before adding to line
 	    
 	    for (my $featureCounter=0;$featureCounter<scalar(@{$feature});$featureCounter++) { #All features
-		
+
 		my @annotations = split(/;/, @{$feature}[$featureCounter]); #Split feature array ref into annotations
 		
 		for (my $annotationsCounter=0;$annotationsCounter<scalar(@annotations);$annotationsCounter++) { #All annotations
@@ -1286,13 +1290,27 @@ sub TreeAnnotations {
 			}
 			else {
 			 
-			    $collectedAnnotations{$annotationsCounter} .= ",".$annotations[$annotationsCounter];
+			    if(defined($annotations[$annotationsCounter])) {
+
+				$collectedAnnotations{$annotationsCounter} .= ",".$annotations[$annotationsCounter];
+			    }
 			}
 			for my $rangeAnnotation (keys % {$$hashRef{'Present'}}) { #All selected annotations
 			    
 			    if ($$hashRef{'Present'}{$rangeAnnotation}{'ColumnOrder'} eq $annotationsCounter) { #Correct feature
-				
-				$$printLineRef .= $rangeAnnotation."=".$collectedAnnotations{$annotationsCounter}.";"; #Add to corresponding line
+			
+				if ($rangeAnnotation eq "Clinical_db_gene_annotation") {  #Special case, which is global and not gene centric
+
+				    my $databaseAnnotationsRef = [ split(/,/, $collectedAnnotations{$annotationsCounter}) ];  #Create reference
+
+				    ## Collect unique elements from array reference and return array reference with unique elements
+				    my $uniqueRef = &UniqElements($databaseAnnotationsRef);
+				    $collectedAnnotations{$annotationsCounter} = join(",", @{$uniqueRef});  #Create string with distinct databaseAnnotations
+				}
+				if ( ($collectedAnnotations{$annotationsCounter} ne "") && ($collectedAnnotations{$annotationsCounter}!~/^,+$/) ) {
+
+				    $$printLineRef .= $rangeAnnotation."=".$collectedAnnotations{$annotationsCounter}.";"; #Add to corresponding line
+				}
 			    }
 			}
 		    }
@@ -1301,7 +1319,7 @@ sub TreeAnnotations {
 			$collectedAnnotations{$annotationsCounter} = $annotations[$annotationsCounter];
 		    }
 		    else {
-			
+
 			$collectedAnnotations{$annotationsCounter} .= ",".$annotations[$annotationsCounter];	
 		    }
 		}
@@ -1454,7 +1472,7 @@ sub ParseMetaData {
 
 ##ParseMetaData
     
-##Function : Writes metadata to filehandle speciied by order in metaDataOrders.
+##Function : Writes metadata to filehandle specified by order in metaDataOrders.
 ##Returns  : ""
 ##Arguments: $metaDataHashRef, $metaDataString
 ##         : $metaDataHashRef => Hash for metaData {REF}
@@ -1466,6 +1484,10 @@ sub ParseMetaData {
     if ($metaDataString=~/^##fileformat/) {  #Catch fileformat as it has to be at the top of header
 	
 	push(@{${$metaDataHashRef}{'fileformat'}{'fileformat'}}, $metaDataString);  #Save metadata string
+    }
+    elsif ($metaDataString=~/^##contig/) {  #catch contigs to not sort them later
+
+	push(@{${$metaDataHashRef}{'contig'}{'contig'}}, $metaDataString);  #Save metadata string
     }
     elsif ($metaDataString=~/^##(\w+)=(\S+)/) {  #FILTER, FORMAT, INFO etc and more custom records
 	
@@ -1494,38 +1516,56 @@ sub WriteMetaData {
     my $SELECTFILEHANDLE = $_[2];
 
     my @metaDataOrders = ("fileformat", "FILTER", "FORMAT", "INFO", "FIX_INFO", "contig", "Software");  #Determine order to print for standard records
+    my @lines;
 
     for (my $lineCounter=0;$lineCounter<scalar(@metaDataOrders);$lineCounter++) {
-
+	
 	if (${$hashRef}{ $metaDataOrders[$lineCounter] }) {  #MetaDataRecordExists
 	    
-	    foreach my $line (sort( keys %{${$hashRef}{ $metaDataOrders[$lineCounter] }})) {
+	    if ($metaDataOrders[$lineCounter] eq "contig") {  #Should not be sorted, but printed "as is"
 		
-		print $FILEHANDLE @{${$hashRef}{ $metaDataOrders[$lineCounter] }{$line}}, "\n";
-		if (defined($_[2])) {
-
-		    print $SELECTFILEHANDLE @{${$hashRef}{ $metaDataOrders[$lineCounter] }{$line}}, "\n";
-		}
-	    }
-	    if (defined($_[2])) {
-
-		foreach my $line (sort( keys %{${$hashRef}{'Select'}{ $metaDataOrders[$lineCounter] }})) {
+		foreach my $line (@{${$hashRef}{$metaDataOrders[$lineCounter]}{ $metaDataOrders[$lineCounter] }}) {
 		    
-		    print $SELECTFILEHANDLE @{${$hashRef}{'Select'}{ $metaDataOrders[$lineCounter] }{$line}}, "\n";
+		    print $FILEHANDLE $line, "\n";
+		    
+		    if (defined($_[2])) {
+			
+			print $SELECTFILEHANDLE $line, "\n";
+		    }
 		}
-	    }
-	    foreach my $line (sort( keys %{${$hashRef}{'Range'}{ $metaDataOrders[$lineCounter] }})) {
+		delete(${$hashRef}{ $metaDataOrders[$lineCounter] });  #Enable print of rest later
+	    }	    
+	    else {
 		
-		print $FILEHANDLE @{${$hashRef}{'Range'}{ $metaDataOrders[$lineCounter] }{$line}}, "\n";
-	    }
-	    delete(${$hashRef}{ $metaDataOrders[$lineCounter] });  #Enable print of rest later
-	    if (${$hashRef}{'Select'}{ $metaDataOrders[$lineCounter] }) {
-
-		delete(${$hashRef}{'Select'}{ $metaDataOrders[$lineCounter] });
-	    }
-	    if (${$hashRef}{'Range'}{ $metaDataOrders[$lineCounter] }) {
-
-		delete(${$hashRef}{'Range'}{ $metaDataOrders[$lineCounter] });
+		foreach my $line (sort( keys %{${$hashRef}{ $metaDataOrders[$lineCounter] }})) {
+		    
+		    print $FILEHANDLE @{${$hashRef}{ $metaDataOrders[$lineCounter] }{$line}}, "\n";
+		    
+		    if (defined($_[2])) {
+			
+			print $SELECTFILEHANDLE @{${$hashRef}{ $metaDataOrders[$lineCounter] }{$line}}, "\n";
+		    }
+		}
+		if (defined($_[2])) {
+		    
+		    foreach my $line (sort( keys %{${$hashRef}{'Select'}{ $metaDataOrders[$lineCounter] }})) {
+			
+			print $SELECTFILEHANDLE @{${$hashRef}{'Select'}{ $metaDataOrders[$lineCounter] }{$line}}, "\n";
+		    }
+		}
+		foreach my $line (sort( keys %{${$hashRef}{'Range'}{ $metaDataOrders[$lineCounter] }})) {
+		    
+		    print $FILEHANDLE @{${$hashRef}{'Range'}{ $metaDataOrders[$lineCounter] }{$line}}, "\n";
+		}
+		delete(${$hashRef}{ $metaDataOrders[$lineCounter] });  #Enable print of rest later
+		if (${$hashRef}{'Select'}{ $metaDataOrders[$lineCounter] }) {
+		    
+		    delete(${$hashRef}{'Select'}{ $metaDataOrders[$lineCounter] });
+		}
+		if (${$hashRef}{'Range'}{ $metaDataOrders[$lineCounter] }) {
+		    
+		    delete(${$hashRef}{'Range'}{ $metaDataOrders[$lineCounter] });
+		}
 	    }
 	}
     }
@@ -1535,9 +1575,24 @@ sub WriteMetaData {
 	    
 	    print $FILEHANDLE @{${$hashRef}{$keys}{$line}}, "\n";
 	    if (defined($_[2])) {
-
-	    print $SELECTFILEHANDLE @{${$hashRef}{$keys}{$line}}, "\n";
+		
+		print $SELECTFILEHANDLE @{${$hashRef}{$keys}{$line}}, "\n";
 	    }
 	}
     }
+}
+
+
+sub UniqElements {
+    
+##UniqElements
+    
+##Function : Collect unique elements from array reference and return array reference with unique elements
+##Returns  : "array reference"
+##Arguments: $arrayRef, $familyIDRef, $selectFile
+##         : $arrayRef => The array whose elements are to be made distinct {REF}
+    
+    my $arrayRef = $_[0];
+    my %seen;
+    return [ grep { !$seen{$_}++ } @{$arrayRef} ];  #For each element in array, see if seen before and only return list distinct elements  
 }

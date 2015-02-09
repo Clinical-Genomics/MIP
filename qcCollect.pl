@@ -1,4 +1,4 @@
-#!/usr/bin/perl - w                                                                                                                                                                                       
+#!/usr/bin/env perl
 
 use strict;
 use warnings;
@@ -466,7 +466,7 @@ sub RelationCheck {
 			#print  "Incorrect should be self: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
 		    }
 		}
-		elsif ($family{$sampleID}{$members}[$membersCount] > 0.74 ) { #Should include parent to child and child to siblings unless inbreed parents
+		elsif ($family{$sampleID}{$members}[$membersCount] >= 0.63 ) { #Should include parent to child and child to siblings unless inbreed parents
 
 		    if ( ( ($sampleID ne $fatherID) && ($sampleID ne $motherID) ) || ( ($members ne $fatherID) && ($members ne $motherID) ) ) { #Correct
 			#print "Parent-to-child or child-to-child: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
@@ -478,7 +478,7 @@ sub RelationCheck {
 			#print "Incorrect: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
 		    }
 		}
-		elsif ($family{$sampleID}{$members}[$membersCount] < 0.70 ) { #Parents unless inbreed
+		elsif ($family{$sampleID}{$members}[$membersCount] < 0.63 ) { #Parents unless inbreed
 
 		    if ( ($sampleID eq $fatherID) && ($members eq $motherID) ) {
 			#print "Parents: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
@@ -643,7 +643,7 @@ sub RegExpToYAML {
 
     $regExp{'MarkDuplicates'}{'Header_info'}{'Header'} = q?perl -nae' if ($_ =~/^LIBRARY/ ) {print $_;last;}' ?; #Note return whole line (Header) 
     
-    $regExp{'MarkDuplicates'}{'Header_info'}{'Data'} = q?perl -nae' if ( ($. ==8) && ($_ =~/(\S+)/) ) {print $_;last;}' ?; #Note return whole line and only look at line 8, where the data action is               
+    $regExp{'MarkDuplicates'}{'Header_info'}{'Data'} = q?perl -nae' if ( ($. ==9) && ($_ =~/(\S+)/) ) {my @arr= split(/\s/, $_);shift(@arr); foreach my $element (@arr) {print $element, "\t"};last;}' ?; #Note return whole line and only look at line 8, where the data action is               
 
     $regExp{'CalculateHsMetrics'}{'Header_info'}{'Header'} = q?perl -nae' if ($_ =~/^BAIT_SET/ ) {print $_;last;}' ?; #Note return whole line (Header) 
     
@@ -708,6 +708,8 @@ sub RegExpToYAML {
     $regExp{'VCFParser'}{'Version'} = q?perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect VCFParser version
 
     $regExp{'ChanjoAnnotate'}{'Version'} = q?perl -nae 'if($_=~/version\s(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect Chanjo version
+
+    $regExp{'Bwa'}{'Version'} = q?perl -nae 'if($_=~/\[main\]\sVersion:\s(\S+)/) {print $1;last;}' ?; #Collect Bwa version
 #$regExp{''}{''} = ;
 
     
