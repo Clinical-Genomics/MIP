@@ -2233,6 +2233,8 @@ sub GATKVariantEvalExome {
     my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
 
+    my $exractExonicRegExp = q?perl -ne ' if ( ($_=~/exonic/) || ($_=~/splicing/) ) {print $_;}' ?;
+
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
     my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
 
@@ -2298,7 +2300,7 @@ sub GATKVariantEvalExome {
 
 	    ## Extract exonic variants
 	    print $FILEHANDLE "## Extract exonic variants\n";
-	    print $FILEHANDLE q?perl -ne ' if ( ($_=~/exonic/) || ($_=~/splicing/) ) {print $_;}' ?;
+	    print $FILEHANDLE $exractExonicRegExp;
 	    print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$infileEnding.$callType.$vcfParserAnalysisType.".vcf ";  #InFile
 	    print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$sampleID.$infileEnding.$callType."_exonic_variants".$vcfParserAnalysisType.".vcf", "\n\n";  #OutFile
 	    
@@ -2412,7 +2414,7 @@ sub GATKVariantEvalExome {
 
 	    ## Extract exonic variants
 	    print $FILEHANDLE "## Extract exonic variants\n";
-	    print $FILEHANDLE q?perl -ne ' if ( ($_=~/exonic/) || ($_=/splicing/) ) {print $_;}' ?;
+	    print $FILEHANDLE $exractExonicRegExp;
 	    print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$infileEnding.$callType.".vcf ";  #InFile
 	    print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$sampleID.$infileEnding.$callType."_exonic_variants.vcf", "\n\n";  #OutFile
 
@@ -2431,7 +2433,7 @@ sub GATKVariantEvalExome {
 
 		## Extract exonic variants
 		print $FILEHANDLE "## Extract exonic variants\n";
-		print $FILEHANDLE q?perl -ne ' if ( ($_=~/exonic/) || ($_=/splicing/) ) {print $_;}' ?;
+		print $FILEHANDLE $exractExonicRegExp;
 		print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$infileEnding.$callType.$vcfParserAnalysisType.".vcf ";  #InFile
 		print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$sampleID.$infileEnding.$callType."_exonic_variants".$vcfParserAnalysisType.".vcf", "\n\n";  #OutFile
 		
@@ -6952,6 +6954,7 @@ sub PicardToolsMarkduplicatesForQCMetrics {
 			    'path' => $inSampleDirectory."/".$infile.$infileEnding.".b*",
 			    'tempDirectory' => $$tempDirectoryRef
 			   });
+	print $FILEHANDLE "wait", "\n\n";
 	
 	## PicardToolsMarkduplicates
 	print $FILEHANDLE "## Marking Duplicates\n";
