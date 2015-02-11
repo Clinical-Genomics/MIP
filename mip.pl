@@ -6954,6 +6954,7 @@ sub PicardToolsMarkduplicatesForQCMetrics {
 			    'path' => $inSampleDirectory."/".$infile.$infileEnding.".b*",
 			    'tempDirectory' => $$tempDirectoryRef
 			   });
+	print $FILEHANDLE "wait", "\n\n";
 	
 	## PicardToolsMarkduplicates
 	print $FILEHANDLE "## Marking Duplicates\n";
