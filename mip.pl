@@ -2281,7 +2281,7 @@ sub GATKVariantEvalExome {
 
 	## Extract exonic variants
 	print $FILEHANDLE "## Extract exonic variants\n";
-	print $FILEHANDLE q?perl -ne ' if ( ($_=~/exonic/) || ($_=/splicing/) ) {print $_;}' ?;
+	print $FILEHANDLE $exractExonicRegExp;
 	print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$infileEnding.$callType.".vcf ";  #InFile
 	print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$sampleID.$infileEnding.$callType."_exonic_variants.vcf", "\n\n";  #OutFile
 
