@@ -83,6 +83,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                ####Programs
                -pGZ/--pGZipFastq GZip fastq files (defaults to "1" (=yes))
                -pFqC/--pFastQC Sequence quality analysis using FastQC (defaults to "1" (=yes))
+               -pMaD/--pMadeline Pedigree drawing engine (defaults to "0" (=no))
 
                ##Mosaik
                -pMoB/--pMosaikBuild  Convert reads to Mosaik format using MosaikBuild (defaults to "1" (=yes))
@@ -271,6 +272,9 @@ chomp($base, $script);  #Remove \n;
 ##FastQC
 &DefineParameters(\%parameter, \@orderParameters, "pFastQC", "program", 1, "MIP", "nofileEnding", "RawSeqQC", "fastqc");
 
+
+##Madeline
+&DefineParameters(\%parameter, \@orderParameters, "pMadeline", "program", 0, "MIP", "nofileEnding", "PedigreeDraw", "madeline2");
 
 ##Mosaik
 &DefineParameters(\%parameter, \@orderParameters, "pMosaikBuild", "program", 1, "MIP", "nofileEnding", "MAIN", "MosaikBuild");
@@ -584,6 +588,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'v|version' => sub { print STDOUT "\nMip.pl ".$mipVersion, "\n\n"; exit;},  #Display version number
 	   'pGZ|pGZipFastq:n' => \$parameter{'pGZipFastq'}{'value'},
 	   'pFqC|pFastQC:n' => \$parameter{'pFastQC'}{'value'},
+	   'pMaD|pMadeline:n' => \$parameter{'pMadeline'}{'value'},
 	   'pMoB|pMosaikBuild:n' => \$parameter{'pMosaikBuild'}{'value'},
 	   'mobmfl|mosaikBuildMedianFragLength:n' => \$parameter{'mosaikBuildMedianFragLength'}{'value'},  #for fragment length estimation and local search
 	   'pMoA|pMosaikAlign:n' => \$parameter{'pMosaikAlign'}{'value'},
@@ -715,7 +720,7 @@ foreach my $orderParameterElement (@orderParameters) {
 			   'parameterDefault' => $parameter{$orderParameterElement}{'default'},
 			   'associatedPrograms' => $parameter{$orderParameterElement}{'associatedProgram'},
 			   'parameterExistsCheck' => $parameter{$orderParameterElement}{'existsCheck'},
-			   'programNamePath' => $parameter{$orderParameterElement}{'programNamePath'}
+			   'programNamePath' => \@{$parameter{$orderParameterElement}{'programNamePath'}},
 			  });
 
     ## Special case for parameters that are dependent on other parameters values
@@ -948,6 +953,17 @@ if ($scriptParameter{'pFastQC'} > 0) {  #Run FastQC
     }
 }
 
+if ($scriptParameter{'pMadeline'} > 0) {  #Run Madeline
+    
+    $logger->info("[Madeline]\n");
+
+    &Madeline({'parameterHashRef' => \%parameter,
+	       'scriptParameterHashRef' => \%scriptParameter,
+	       'sampleInfoHashRef' => \%sampleInfo,
+	       'familyIDRef' => \$scriptParameter{'familyID'},
+	       'programName' => "Madeline",
+	      });	
+}
 
 if ($scriptParameter{'pMosaikBuild'} > 0) {  #Run MosaikBuild
     
@@ -2057,9 +2073,9 @@ sub RankVariants {
     ## Gene models and ranking  
     print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
     
-    for (my $VEPOutputFilesCounter=0;$VEPOutputFilesCounter<${$scriptParameterHashRef}{'VEPOutputFileCount'};$VEPOutputFilesCounter++) {
+    for (my $VcfParserOutputFileCounter=0;$VcfParserOutputFileCounter<${$scriptParameterHashRef}{'VcfParserOutputFileCount'};$VcfParserOutputFileCounter++) {
 	
-	if ($VEPOutputFilesCounter == 1) {
+	if ($VcfParserOutputFileCounter == 1) {
 	    
 	    $vcfParserAnalysisType = ".selected";  #SelectFile variants
 	}
@@ -2081,7 +2097,7 @@ sub RankVariants {
 	## Calculate Gene Models
 	print $FILEHANDLE "## Calculate Gene Models", "\n";   
 
-	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VEPOutputFilesCounter > 0) ) {
+	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VcfParserOutputFileCounter > 0) ) {
 	    
 	    my @trapSignals = ("ERR");
 	    ## Clear trap for signal(s)
@@ -2156,7 +2172,7 @@ sub RankVariants {
 	print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_combined".$vcfParserAnalysisType.".vcf ";  #inFile
 	print $FILEHANDLE "\n\n";
 
-	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VEPOutputFilesCounter > 0) ) {
+	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VcfParserOutputFileCounter > 0) ) {
 
 	    my @trapSignals = ("ERR");
 	    ## Enable trap for signal(s) and function
@@ -2168,13 +2184,13 @@ sub RankVariants {
 	&MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf",
 			      'filePath' => $outFamilyDirectory."/",
 			      'FILEHANDLE' => $FILEHANDLE,
-			      'VEPOutputFilesCounter' => $VEPOutputFilesCounter,
+			      'VcfParserOutputFileCounter' => $VcfParserOutputFileCounter,
 			     });
 	print $FILEHANDLE "wait", "\n\n";
 
 	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 	    
-	    if ($VEPOutputFilesCounter == 1) {
+	    if ($VcfParserOutputFileCounter == 1) {
 
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Clinical'}{'Path'} = $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf";
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'Program'}{'RankVariants'}{'Clinical'}{'Path'} = $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf";   #Save clinical candidate list path
@@ -2320,7 +2336,7 @@ sub GATKVariantEvalExome {
 	print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$sampleID.$infileEnding.$callType."_exonic_variants.vcf", "\n\n";  #OutFile
 
 	## Include potential SelectFile variants
-	if (${$scriptParameterHashRef}{'VEPOutputFileCount'} == 2) {
+	if (${$scriptParameterHashRef}{'VcfParserOutputFileCount'} == 2) {
 	    
 	    my $vcfParserAnalysisType = ".selected";  #SelectFile variants
 
@@ -2453,7 +2469,7 @@ sub GATKVariantEvalExome {
 	    print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$sampleID.$infileEnding.$callType."_exonic_variants.vcf", "\n\n";  #OutFile
 
 	    ## Include potential SelectFile variants
-	    if (${$scriptParameterHashRef}{'VEPOutputFileCount'} == 2) {
+	    if (${$scriptParameterHashRef}{'VcfParserOutputFileCount'} == 2) {
 
 		my $vcfParserAnalysisType = ".selected";  #SelectFile variants
 
@@ -2843,11 +2859,11 @@ sub SnpEff {
     
     my $snpSiftnrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, 8);  #Detect the number of cores to use. Currently there is only enough java threads for around 8 parallel pipes
 
-    for (my $VEPOutputFilesCounter=0;$VEPOutputFilesCounter<${$scriptParameterHashRef}{'VEPOutputFileCount'};$VEPOutputFilesCounter++) {
+    for (my $VcfParserOutputFileCounter=0;$VcfParserOutputFileCounter<${$scriptParameterHashRef}{'VcfParserOutputFileCount'};$VcfParserOutputFileCounter++) {
 
 	my $coreCounter = 1;
 
-	if ($VEPOutputFilesCounter == 1) {
+	if ($VcfParserOutputFileCounter == 1) {
     
 	    $vcfParserAnalysisType = ".selected";  #SelectFile variants
 	}
@@ -2957,7 +2973,7 @@ sub SnpEff {
 	
 	close($XARGSFILEHANDLE);
 
-	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VEPOutputFilesCounter > 0) ) {
+	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VcfParserOutputFileCounter > 0) ) {
 
 	    my @trapSignals = ("ERR");
 	    ## Clear trap for signal(s)
@@ -2965,7 +2981,7 @@ sub SnpEff {
 	}
 	&ConcatenateVariants(\%{$scriptParameterHashRef}, $FILEHANDLE, \@{${$fileInfoHashRef}{'contigs'}}, $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_", $vcfParserAnalysisType.".vcf", $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf");
 
-	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VEPOutputFilesCounter > 0) ) {
+	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VcfParserOutputFileCounter > 0) ) {
 
 	    my @trapSignals = ("ERR");
 	    ## Enable trap for signal(s) and function
@@ -2993,11 +3009,13 @@ sub SnpEff {
 						      'outDirectory' => $outFamilyDirectory,
 						      'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
 						     });
+
+	## Adds the most complete vcf file to sampleInfo
 	&AddMostCompleteVCF({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 			     'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 			     'programName' => $programName,
 			     'path' => $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf",
-			     'VEPOutputFilesCounter' => $VEPOutputFilesCounter,
+			     'VcfParserOutputFileCounter' => $VcfParserOutputFileCounter,
 			    });
     }
 
@@ -3108,9 +3126,9 @@ sub Annovar {
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"p".$programName}{'fileEnding'};
     my $vcfParserAnalysisType = "";
 
-    for (my $VEPOutputFilesCounter=0;$VEPOutputFilesCounter<${$scriptParameterHashRef}{'VEPOutputFileCount'};$VEPOutputFilesCounter++) {
+    for (my $VcfParserOutputFileCounter=0;$VcfParserOutputFileCounter<${$scriptParameterHashRef}{'VcfParserOutputFileCount'};$VcfParserOutputFileCounter++) {
 
-	if ($VEPOutputFilesCounter == 1) {
+	if ($VcfParserOutputFileCounter == 1) {
 
 	    $vcfParserAnalysisType = ".selected";  #SelectFile variants
 	}
@@ -3224,11 +3242,13 @@ sub Annovar {
 							  'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
 							 });
 	}
+
+	## Adds the most complete vcf file to sampleInfo
 	&AddMostCompleteVCF({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 			     'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 			     'programName' => $programName,
 			     'path' => $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf",
-			     'VEPOutputFilesCounter' => $VEPOutputFilesCounter,
+			     'VcfParserOutputFileCounter' => $VcfParserOutputFileCounter,
 			    });
     }
 
@@ -3440,9 +3460,9 @@ sub VCFParser {
 
 	my $vcfParserAnalysisType = "";
 
-	for (my $VEPOutputFilesCounter=0;$VEPOutputFilesCounter<${$scriptParameterHashRef}{'VEPOutputFileCount'};$VEPOutputFilesCounter++) {
+	for (my $VcfParserOutputFileCounter=0;$VcfParserOutputFileCounter<${$scriptParameterHashRef}{'VcfParserOutputFileCount'};$VcfParserOutputFileCounter++) {
 
-	    if ($VEPOutputFilesCounter == 1) {
+	    if ($VcfParserOutputFileCounter == 1) {
 		
 		$vcfParserAnalysisType = ".selected";  #SelectFile variants
 	    }
@@ -3461,11 +3481,12 @@ sub VCFParser {
 							  'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
 							 });
 
+	    ## Adds the most complete vcf file to sampleInfo
 	    &AddMostCompleteVCF({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 				 'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 				 'programName' => $programName,
 				 'path' => $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf",
-				 'VEPOutputFilesCounter' => $VEPOutputFilesCounter,
+				 'VcfParserOutputFileCounter' => $VcfParserOutputFileCounter,
 				});
 	}
 	close($FILEHANDLE);
@@ -8840,6 +8861,84 @@ sub BAMCalibrationAndGTBlock {
 }
 
 
+sub Madeline {
+
+##Madeline
+    
+##Function : Draw pedigree trees.
+##Returns  : ""
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $infilesBothStrandsNoEndingHashRef, $sampleIDRef, $programName
+##         : $parameterHashRef                  => The parameter hash {REF}
+##         : $scriptParameterHashRef            => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef                 => Info on samples and family hash {REF}
+##         : $sampleIDREf                       => The sampleID {REF}
+##         : $programName                       => The program name
+
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
+    my $programName = ${$argHashRef}{'programName'};
+
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $time = 1;
+    my $nrCores = 1;
+
+    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    my ($fileName) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+					    'FILEHANDLE' => $FILEHANDLE,
+					    'directoryID' => $$familyIDRef,
+					    'programName' => $programName,
+					    'programDirectory' => lc($programName),
+					    'nrofCores' => $nrCores,
+					    'processTime' => $time,
+					   });
+
+    ## Assign directories
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".lc($programName);
+
+    print $FILEHANDLE "## Reformat pedigree to Madeline format"."\n";
+    print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+
+    print $FILEHANDLE "ped_parser ";
+    print $FILEHANDLE "-t mip ";  #MIP pedigree format
+    print $FILEHANDLE "--to_madeline ";  #Print the ped file in madeline format
+    print $FILEHANDLE ${$scriptParameterHashRef}{'pedigreeFile'}." ";  #InFile
+    print $FILEHANDLE "-o ".$outFamilyDirectory."/madeline_pedigree.txt ";
+    print $FILEHANDLE "\n\n";
+
+    print $FILEHANDLE "## ".$programName."\n";
+
+    print $FILEHANDLE "madeline2 ";
+    print $FILEHANDLE "--color ";
+    print $FILEHANDLE "--outputprefix ".$outFamilyDirectory."/".$$familyIDRef."_madeline ";
+    print $FILEHANDLE $outFamilyDirectory."/madeline_pedigree.txt ";
+    print $FILEHANDLE "\n\n";
+
+    ## Collect QC metadata info for active program for later use
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+	
+	${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'Program'}{$programName}{'Path'} = $outFamilyDirectory."/".$$familyIDRef."_madeline.xml";
+    }
+
+    close($FILEHANDLE);
+    
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+
+	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		       'jobIDHashRef' => \%jobID,
+		       'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+		       'dependencies' => 2, 
+		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
+		       'sbatchFileName' => $fileName
+		      });
+    }
+}
+
+
 sub FastQC {
 
 ##FastQC
@@ -8910,7 +9009,7 @@ sub FastQC {
 			 'sampleID' => $$sampleIDRef
 			});
     
-    print $FILEHANDLE "## FASTQC\n";
+    print $FILEHANDLE "## ".$programName."\n";
     for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infileHashRef}{$$sampleIDRef} });$infileCounter++) {
 
 	&PrintWait(\$infileCounter, \$nrCores, \$coreCounter, $FILEHANDLE);
@@ -8924,7 +9023,7 @@ sub FastQC {
 	print $FILEHANDLE "&", "\n\n";
 
 	## Collect QC metadata info for active program for later use
-	if ( (${$scriptParameterHashRef}{'pFastQC'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 	    
 	    &SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 			   'familyID' => ${$scriptParameterHashRef}{'familyID'},
@@ -11424,13 +11523,13 @@ sub AddToScriptParameter {
 
 			if (${$scriptParameterHashRef}{'vcfParserSelectFile'} eq "noUserInfo") {  #No SelectFile was given
 			    
-			    ${$scriptParameterHashRef}{'VEPOutputFileCount'} = 1;  #To track if VCFParser was used with a vcfParserSelectFile (=2) or not (=1)
+			    ${$scriptParameterHashRef}{'VcfParserOutputFileCount'} = 1;  #To track if VCFParser was used with a vcfParserSelectFile (=2) or not (=1)
 			}
 			else {  #To enable addition of selectFile to sampleInfo                                                                       
 			    
 			    &CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}}), \${$argHashRef}{'parameterName'}, "f");
 
-			    ${$scriptParameterHashRef}{'VEPOutputFileCount'} = 2;  #To track if VCFParser was used with a vcfParserSelectFile (=2) or not (=1)
+			    ${$scriptParameterHashRef}{'VcfParserOutputFileCount'} = 2;  #To track if VCFParser was used with a vcfParserSelectFile (=2) or not (=1)
 			}
 		    }
                     elsif ( (${$argHashRef}{'parameterName'} eq "geneFile") && (${$scriptParameterHashRef}{'pVariantEffectPredictor'} > 0) ) {  #Do nothing since VEP annotations can be used			    
@@ -11532,24 +11631,8 @@ sub AddToScriptParameter {
 		    ${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}} = ${$argHashRef}{'parameterValue'};
 		}
 
-		## Code for checking commands in your path and executable
-		if ( (defined(${$argHashRef}{'programNamePath'})) && (defined(${$parameterHashRef}{${$argHashRef}{'parameterName'}}{ ${$argHashRef}{'programNamePath'} }[0])) ) {
-		
-		    if (${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}} > 0) {  #Only check path(s) for active programs
-		
-			for (my $programNamePathCounter=0;$programNamePathCounter<scalar(@{${$parameterHashRef}{${$argHashRef}{'parameterName'}}{ ${$argHashRef}{ ${$argHashRef}{'programNamePath'} } }});$programNamePathCounter++) {  #Check all binaries for sbatch program
-			    
-			    if ( grep { -x "$_/".${$parameterHashRef}{${$argHashRef}{'parameterName'}}{ ${$argHashRef}{'programNamePath'} }[$programNamePathCounter]} split(/:/,$ENV{PATH}) ) {
-				
-				$logger->info("ProgramCheck: ".${$parameterHashRef}{${$argHashRef}{'parameterName'}}{ ${$argHashRef}{'programNamePath'} }[$programNamePathCounter]." installed\n"); 
-			    }
-			    else {
-				$logger->fatal("Could not detect ".${$parameterHashRef}{${$argHashRef}{'parameterName'}}{ ${$argHashRef}{'programNamePath'} }[$programNamePathCounter]." in your Path\n");
-				exit 1;
-			    }
-			}
-		    }
-		}
+		## Checking commands in your path and executable
+		&CheckCommandinPath(\@{ ${$argHashRef}{'programNamePath'} }, \${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}});
 	    }
 	    
 	    if (${$argHashRef}{'parameterName'} eq "aligner") {
@@ -15201,11 +15284,23 @@ sub CollectSubDatabases {
 
 
 sub AddMostCompleteVCF {
-	    
+
+##AddMostCompleteVCF
+
+##Function : Adds the most complete vcf file to sampleInfo
+##Returns  : ""
+##Arguments: $scriptParameterHashRef, $sampleInfoHashRef, $familyIDRef, $path, $programName, $VcfParserOutputFileCounter
+##         : $scriptParameterHashRef      => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef           => Info on samples and family hash {REF}
+##         : $familyIDRef                 => The family ID {REF}
+##         : $path                        => Path to file
+##         : $programName                 => Program name
+##         : $VcfParserOutputFileCounter  => Number of outfile files from in vcfParser (select, range)
+
     my ($argHashRef) = @_;
     
     my %default = ('familyIDRef' => ${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
-		   'VEPOutputFilesCounter' => 0,
+		   'VcfParserOutputFileCounter' => 0,
 	);
 
    &SetDefaultArg(\%{$argHashRef}, \%default);
@@ -15216,13 +15311,44 @@ sub AddMostCompleteVCF {
     
     if ( (${$scriptParameterHashRef}{ "p".${$argHashRef}{'programName'} } == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 	
-	if (${$argHashRef}{'VEPOutputFilesCounter'} == 1) {
+	if (${$argHashRef}{'VcfParserOutputFileCounter'} == 1) {
 	    
 	    ${$sampleInfoHashRef}{ ${$argHashRef}{'familyIDRef'} }{ ${$argHashRef}{'familyIDRef'} }{'VCFFile'}{'Clinical'}{'Path'} = ${$argHashRef}{'path'};
 	}
 	else {
 	    
 	    ${$sampleInfoHashRef}{ ${$argHashRef}{'familyIDRef'} }{ ${$argHashRef}{'familyIDRef'} }{'VCFFile'}{'Research'}{'Path'} = ${$argHashRef}{'path'};
+	}
+    }
+}
+
+
+sub CheckCommandinPath {
+
+##CheckCommandinPath
+
+##Function : Checking commands in your path and executable
+##Returns  : ""
+##Arguments: $programNamePathsArrayRef, $parameterNameRef
+##         : $programNamePathsArrayRef => Program name(s) in path {REF}
+##         : $parameterNameRef         => MIP program {REF}
+
+    my $programNamePathsArrayRef = $_[0];
+    my $parameterNameRef = $_[1];
+
+    if ( (scalar(@{$programNamePathsArrayRef}) > 0) && ($$parameterNameRef > 0) ) {  #Only check path(s) for active programs
+
+	foreach my $program (@{ $programNamePathsArrayRef }) {
+	    
+	    if ( grep { -x "$_/".$program } split(/:/,$ENV{PATH}) ) {
+		
+		$logger->info("ProgramCheck: ".$program." installed\n"); 
+	    }
+	    else {
+		
+		$logger->fatal("Could not detect ".$program." in your Path\n");
+		exit 1;
+	    }
 	}
     }
 }
