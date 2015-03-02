@@ -82,6 +82,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                ##BWA
                -pMem/--pBwaMem Align reads using BWA Mem (defaults to "0" (=no))
                  -memrdb/--bwaMemRapidDb Selection of relevant regions post alignment (defaults to "")
+                 -memcrm/--bwaMemCram Use CRAM-format for output (defaults to "0" (=no))
                -pAln/--pBwaAln Index reads using BWA Aln (defaults to "0" (=no))
                  -alnq/--bwaAlnQualityTrimming BWA Aln quality threshold for read trimming (defaults to "20")
                -pSap/--pBwaSampe Align reads using BWA Sampe (defaults to "0" (=no))
@@ -312,9 +313,13 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 
 &DefineParametersPath(\%parameter, \@orderParameters, "bwaMemRapidDb", "nodefault", "pBwaMem", "file", "noAutoBuild");
 
+&DefineParameters(\%parameter, \@orderParameters, "bwaMemCram", "program", 0, "pBwaMem");
+
+
 &DefineParameters(\%parameter, \@orderParameters, "pBwaAln", "program", 0, "MIP", "nofileEnding", "MAIN", "bwa");
 
 &DefineParameters(\%parameter, \@orderParameters, "bwaAlnQualityTrimming", "program", 20, "pBwaAln");
+
 
 &DefineParameters(\%parameter, \@orderParameters, "pBwaSampe", "program", 0, "MIP", "nofileEnding", "MAIN", "bwa");
 
@@ -613,6 +618,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'mojdb|mosaikJumpDbStub:s' => \$parameter{'mosaikJumpDbStub'}{'value'},  #Stub for MosaikJump database
 	   'pMem|pBwaMem:n' => \$parameter{'pBwaMem'}{'value'},
 	   'memrdb|bwaMemRapidDb:s' => \$parameter{'bwaMemRapidDb'}{'value'},
+	   'memcrm|bwaMemCram:n' => \$parameter{'bwaMemCram'}{'value'},
 	   'pAln|pBwaAln:n' => \$parameter{'pBwaAln'}{'value'},
 	   'alnq|bwaAlnQualityTrimming:n' => \$parameter{'bwaAlnQualityTrimming'}{'value'},  #BWA aln quality threshold for read trimming down to 35bp
 	   'pSap|pBwaSampe:n' => \$parameter{'pBwaSampe'}{'value'},
@@ -3438,7 +3444,7 @@ sub VCFParser {
 			 });
     print $FILEHANDLE "wait", "\n\n";
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 2) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
 	## Clear old VCFParser entry if present
 	if (defined(${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$programName})) {
@@ -8165,8 +8171,18 @@ sub BWA_Mem {
 	    print $FILEHANDLE "SORT_ORDER=coordinate ";  #Sort per contig and coordinate
 	    print $FILEHANDLE "CREATE_INDEX=TRUE ";  #create a BAM index when writing a coordinate-sorted BAM file. 
 	    print $FILEHANDLE "INPUT=/dev/stdin ";  #InStream
-	    print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam", "\n\n";  #Outfile
+	    print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam ";  #Outfile
+	    print $FILEHANDLE "\n\n";
 
+	    if (${$scriptParameterHashRef}{'bwaMemCram'} == 1) {
+
+		print $FILEHANDLE "samtools view";
+		print $FILEHANDLE "-C "; #Write output to CRAM-format
+		print $FILEHANDLE "-T ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference
+		print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam";
+		print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".cram";
+		print $FILEHANDLE "\n\n";
+	    }
 	    ## Copies file from temporary directory.
 	    print $FILEHANDLE "## Copy file from temporary directory\n";
 	    &MigrateFileFromTemp({'tempPath' => ${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".b*",
