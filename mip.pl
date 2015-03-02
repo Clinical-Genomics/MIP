@@ -12,6 +12,7 @@ use Pod::Text;
 use Getopt::Long;
 use POSIX;
 use IO::File;
+use DateTime;
 
 ## Third party module(s)
 use YAML;
@@ -19,30 +20,14 @@ use Log::Log4perl;
 
 use vars qw($USAGE);
 
+
 BEGIN {
 
-    ## Check YAML dependecy
-    eval { 
 
-	require YAML; 
-    };
-    if($@) {
+    my @modules = ("YAML", "Log::Log4perl", "DateTime::Format::ISO8601", "DateTime::Format::HTTP", "DateTime::Format::Mail");	
 
-	warn("NOTE: YAML not installed - Please install to run MIP.\n");
-	warn("NOTE: Aborting!\n");
-	exit 1;
-    }
-    ## Check LOG4perl dependency
-    eval { 
-
-	require Log::Log4perl; 
-    };
-    if($@) {
-
-	warn("NOTE: Log::Log4perl not installed - Please install to run MIP.\n");
-	warn("NOTE: Aborting!\n");
-	exit 1;
-    }
+    ## Evaluate that all modules required are installed
+    &EvalModules(\@modules);
 
     $USAGE =
 	qq{
@@ -197,6 +182,35 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pReM/--pRemoveRedundantFiles Generating sbatch script for deletion of redundant files (defaults to "1" (=yes);Note: Must be submitted manually to SLURM)
                -pArS/--pAnalysisRunStatus Sets the analysis run status flag to finished in sampleInfoFile (defaults to "1" (=yes))
 	   };
+
+    sub EvalModules {
+	
+	##EvalModules
+	
+	##Function : Evaluate that all modules required are installed 
+	##Returns  : ""
+	##Arguments: $modulesArrayRef
+	##         : $modulesArrayRef => Array of module names
+	
+	my $modulesArrayRef = $_[0];
+	
+	foreach my $module (@{$modulesArrayRef}) {
+
+	    $module =~s/::/\//g;  #Replace "::" with "/" since the automatic replacement magic only occurs for barewords.
+	    $module .= ".pm";  #Add perl module ending for the same reason
+	    
+	    eval { 
+		
+		require $module; 
+	    };
+	    if($@) {
+		
+		warn("NOTE: ".$module." not installed - Please install to run MIP.\n");
+		warn("NOTE: Aborting!\n");
+		exit 1;
+	    }
+	}
+    }
 }
 
 
@@ -212,10 +226,11 @@ my @orderParameters;  #To add/write parameters in the correct order
 my @broadcasts;  #Holds all set parameters info after AddToScriptParameter
 
 ##Add dateTimestamp for later use in log and qcmetrics yaml file
-my $dateTimeStamp = (`date +%Y%m%d_%Hh%Mm`);  #Catches current date, time and script name
-chomp($dateTimeStamp);  #Remove \n
-my ($base, $script) = (`date +%Y%m%d`,`basename $0`);  #Catches current date and script name
-chomp($base, $script);  #Remove \n;
+my $dateTime = DateTime->now(time_zone=>'local');
+my $dateTimeStamp = $dateTime->datetime();
+my $date = $dateTime->ymd('-');  #Catches current date
+my $script = (`basename $0`);  #Catches script name
+chomp($dateTimeStamp, $date, $script);  #Remove \n;
 
 ####Set program parameters
 
@@ -729,7 +744,7 @@ foreach my $orderParameterElement (@orderParameters) {
 	$parameter{'sampleInfoFile'}{'default'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_qc_sampleInfo.yaml";
 
 	## Set the default Log4perl file using supplied dynamic parameters.
-	$parameter{'logFile'}{'default'} = &DeafultLog4perlFile(\%scriptParameter, \$parameter{'logFile'}{'value'}, \$script, \$base, \$dateTimeStamp);
+	$parameter{'logFile'}{'default'} = &DeafultLog4perlFile(\%scriptParameter, \$parameter{'logFile'}{'value'}, \$script, \$date, \$dateTimeStamp);
 
 	$parameter{'QCCollectSampleInfoFile'}{'default'} = $parameter{'sampleInfoFile'}{'default'};
     }
@@ -915,6 +930,11 @@ my $uncompressedFileSwitch = &InfilesReFormat(\%infile);  #Required to format in
 &CreateFamFile(\%scriptParameter);
 
 ####MAIN
+
+if ($scriptParameter{'dryRunAll'} == 2) {
+
+    $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'AnalysisDate'} = $dateTimeStamp;
+}
 
 if ( ($scriptParameter{'pGZipFastq'} > 0) && ($uncompressedFileSwitch eq "unCompressed") ) {  #GZip of fastq files
 
@@ -1742,7 +1762,10 @@ sub RemoveRedundantFiles {
 		my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
 		my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pGATKHaploTypeCaller'}{'fileEnding'};
 		
-		&CheckMostCompleteAndRemoveFile($FILEHANDLE, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'}{'ReadyVcf'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".vcf"), ".vcf");  #HaplotypeCaller gvcf file
+		if (defined(${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'})) {
+
+		    &CheckMostCompleteAndRemoveFile($FILEHANDLE, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'}{'ReadyVcf'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".vcf"), ".vcf");  #HaplotypeCaller gvcf file
+		}
 	    }
 	}
 	else {
@@ -3415,7 +3438,7 @@ sub VCFParser {
 			 });
     print $FILEHANDLE "wait", "\n\n";
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 2) ) {
 
 	## Clear old VCFParser entry if present
 	if (defined(${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$programName})) {
@@ -10900,6 +10923,9 @@ sub AddInfileInfo {
 
     my $readFile;
 
+    my $parsedDate = DateTime::Format::Multi->parse_datetime($date);  #Reparse to dateTime standard
+    $parsedDate = $parsedDate->ymd('-');  #Only date
+
     if ($compressedInfo eq "compressed") {
 
 	$readFile = "zcat";  #Read file in compressed format
@@ -10932,7 +10958,7 @@ sub AddInfileInfo {
 
     ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'Lane'} = $1;  #Save sample lane                  
 
-    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'Date'} = $date;  #Save Sequence run date          
+    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'Date'} = $parsedDate;  #Save Sequence run date
 
     ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'Flow-cell'} = $flowCell;  #Save Sequence flow-cell        
 
@@ -11497,10 +11523,10 @@ sub AddToScriptParameter {
 
 			    if (-f ${$scriptParameterHashRef}{'sampleInfoFile'}) {
 
-				my %tempHash = &LoadYAML(\%scriptParameter, ${$scriptParameterHashRef}{'sampleInfoFile'});  #Load parameters from previous run from sampleInfoFile	  
-				@tempHash{ keys %{$sampleInfoHashRef}} = values %{$sampleInfoHashRef};  #Hash slice. SampleInfoHash will overwrite keys present in tempHash
-				%{$sampleInfoHashRef} = %tempHash;  #Copy hash with updated keys from what was in sampleInfo (should be only pedigree %allowedEntries)
-				
+				my %tempHash = &LoadYAML(\%scriptParameter, ${$scriptParameterHashRef}{'sampleInfoFile'});  #Load parameters from previous run from sampleInfoFile
+
+				## Update sampleInfo with information from pedigree
+				&UpdateSampleInfoHash(\%sampleInfo, \%tempHash, \${$scriptParameterHashRef}{'familyID'});				
 			    }
 			    if (defined(${$scriptParameterHashRef}{'pedigreeFile'}) ) {
 				
@@ -15236,7 +15262,7 @@ sub CollectSubDatabases {
     my $databaseKey = $_[4];
     
     my %memberDatabase;  #Collect each member database features
-    my %header = ("##Database=<ID" => "FileName",
+    my %header = ("Database=<ID" => "FileName",
 		  "Version" => "Version",
 		  "Acronym" => "Acronym",
 		  "Clinical_db_genome_build" => "GenomeBuild",
@@ -15250,27 +15276,38 @@ sub CollectSubDatabases {
 
     foreach my $line (@databases) {
 
-	my @features = split(/,/, $line);  #Split each memeber database line into features
+	my @features = split(/,/, $line);  #Split each memember database line into features
 
 	foreach my $featureElement (@features) {
 
 	    foreach my $databaseFileHeader (keys %header) {  #Parse the features using defined header keys
 
-		if ($featureElement=~/$databaseFileHeader=(\S+)/) {
-		    
+		if ($featureElement=~/^##$databaseFileHeader=(\S+)/) {  #Special case to resolve that "=" occurs to times within featureElement
+
 		    $memberDatabase{ $header{$databaseFileHeader} } = $1;
+		    last;
+		}
+		elsif ($featureElement=~/$databaseFileHeader=/) {
+		    
+		    my @tempArray = split("=", $featureElement);
+		    $memberDatabase{ $header{$databaseFileHeader} } = $tempArray[1];  #Value
 		    last;
 		}
 	    }
 	}
 
 	if ( (defined($memberDatabase{'FileName'})) && (defined($memberDatabase{'Acronym'})) ) {
-
+	    
 	    my $databaseName = $memberDatabase{'FileName'}."_".$memberDatabase{'Acronym'};  #Create unique member database ID
 	
 	    ## Add new entries
 	    foreach my $feature (keys %memberDatabase) {
 
+		if ($feature eq "Date") {
+
+		       my $date = DateTime::Format::Multi->parse_datetime($memberDatabase{$feature});  #Reparse to dateTime standard
+		       $memberDatabase{$feature} = $date->ymd('-');  #Only date
+		}
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$$programNameRef}{$databaseKey}{'Database'}{$databaseName}{$feature} = $memberDatabase{$feature};
 	    }
 	}
@@ -15352,6 +15389,61 @@ sub CheckCommandinPath {
 	}
     }
 }
+
+
+sub UpdateSampleInfoHash {
+    
+##UpdateSampleInfoHash
+    
+##Function : Update sampleInfo with information from pedigree
+##Returns  : ""
+##Arguments: $sampleInfoHashRef, $tempHashRef, $familyIDRef
+##         : $tempHashRef       => Allowed parameters from pedigre file hash {REF}
+##         : $sampleInfoHashRef => Info on samples and family hash {REF}
+##         : $familyIDRef       => The family ID {REF}
+    
+    my $sampleInfoHashRef = $_[0];
+    my $tempHashRef = $_[1];
+    my $familyIDRef = $_[2];
+    
+    foreach my $sampleID (keys %{ ${$sampleInfoHashRef}{$$familyIDRef} }) {
+	
+	foreach my $key (keys %{ ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}}) {
+	    
+	    if (exists(${$tempHashRef}{$$familyIDRef}{$sampleID}{$key})) {
+		
+		${$tempHashRef}{$$familyIDRef}{$sampleID}{$key} = ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{$key};
+	    }
+	}
+    }
+    %{$sampleInfoHashRef} = %{$tempHashRef};  #Copy hash with updated keys from what was in sampleInfo (should be only pedigree %allowedEntries)
+}
+
+package DateTime::Format::Multi;
+
+#Package for testing multiple date formats
+
+## Third party module(s) on parsing date formats
+use DateTime::Format::ISO8601;
+use DateTime::Format::HTTP;
+use DateTime::Format::Mail;
+
+#Build the parsers
+use DateTime::Format::Builder (
+    parsers => {
+	parse_datetime => [
+	    sub {
+		eval { DateTime::Format::ISO8601->parse_datetime( $_[1] ) };
+	    },
+	    sub {
+		eval { DateTime::Format::Mail->parse_datetime( $_[1] ) };
+	    },
+	    sub {
+		eval { DateTime::Format::HTTP->parse_datetime( $_[1] ) };
+	    },
+	    ]
+    }
+    );
 
 ####
 #Decommissioned
