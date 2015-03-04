@@ -12,6 +12,7 @@ use Pod::Text;
 use Getopt::Long;
 use POSIX;
 use IO::File;
+use DateTime;
 
 ## Third party module(s)
 use YAML;
@@ -19,30 +20,14 @@ use Log::Log4perl;
 
 use vars qw($USAGE);
 
+
 BEGIN {
 
-    ## Check YAML dependecy
-    eval { 
 
-	require YAML; 
-    };
-    if($@) {
+    my @modules = ("YAML", "Log::Log4perl", "DateTime::Format::ISO8601", "DateTime::Format::HTTP", "DateTime::Format::Mail");	
 
-	warn("NOTE: YAML not installed - Please install to run MIP.\n");
-	warn("NOTE: Aborting!\n");
-	exit 1;
-    }
-    ## Check LOG4perl dependency
-    eval { 
-
-	require Log::Log4perl; 
-    };
-    if($@) {
-
-	warn("NOTE: Log::Log4perl not installed - Please install to run MIP.\n");
-	warn("NOTE: Aborting!\n");
-	exit 1;
-    }
+    ## Evaluate that all modules required are installed
+    &EvalModules(\@modules);
 
     $USAGE =
 	qq{
@@ -83,6 +68,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                ####Programs
                -pGZ/--pGZipFastq GZip fastq files (defaults to "1" (=yes))
                -pFqC/--pFastQC Sequence quality analysis using FastQC (defaults to "1" (=yes))
+               -pMaD/--pMadeline Pedigree drawing engine (defaults to "0" (=no))
 
                ##Mosaik
                -pMoB/--pMosaikBuild  Convert reads to Mosaik format using MosaikBuild (defaults to "1" (=yes))
@@ -96,6 +82,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                ##BWA
                -pMem/--pBwaMem Align reads using BWA Mem (defaults to "0" (=no))
                  -memrdb/--bwaMemRapidDb Selection of relevant regions post alignment (defaults to "")
+                 -memcrm/--bwaMemCram Use CRAM-format for output (defaults to "0" (=no))
                -pAln/--pBwaAln Index reads using BWA Aln (defaults to "0" (=no))
                  -alnq/--bwaAlnQualityTrimming BWA Aln quality threshold for read trimming (defaults to "20")
                -pSap/--pBwaSampe Align reads using BWA Sampe (defaults to "0" (=no))
@@ -196,6 +183,35 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pReM/--pRemoveRedundantFiles Generating sbatch script for deletion of redundant files (defaults to "1" (=yes);Note: Must be submitted manually to SLURM)
                -pArS/--pAnalysisRunStatus Sets the analysis run status flag to finished in sampleInfoFile (defaults to "1" (=yes))
 	   };
+
+    sub EvalModules {
+	
+	##EvalModules
+	
+	##Function : Evaluate that all modules required are installed 
+	##Returns  : ""
+	##Arguments: $modulesArrayRef
+	##         : $modulesArrayRef => Array of module names
+	
+	my $modulesArrayRef = $_[0];
+	
+	foreach my $module (@{$modulesArrayRef}) {
+
+	    $module =~s/::/\//g;  #Replace "::" with "/" since the automatic replacement magic only occurs for barewords.
+	    $module .= ".pm";  #Add perl module ending for the same reason
+	    
+	    eval { 
+		
+		require $module; 
+	    };
+	    if($@) {
+		
+		warn("NOTE: ".$module." not installed - Please install to run MIP.\n");
+		warn("NOTE: Aborting!\n");
+		exit 1;
+	    }
+	}
+    }
 }
 
 
@@ -211,10 +227,11 @@ my @orderParameters;  #To add/write parameters in the correct order
 my @broadcasts;  #Holds all set parameters info after AddToScriptParameter
 
 ##Add dateTimestamp for later use in log and qcmetrics yaml file
-my $dateTimeStamp = (`date +%Y%m%d_%Hh%Mm`);  #Catches current date, time and script name
-chomp($dateTimeStamp);  #Remove \n
-my ($base, $script) = (`date +%Y%m%d`,`basename $0`);  #Catches current date and script name
-chomp($base, $script);  #Remove \n;
+my $dateTime = DateTime->now(time_zone=>'local');
+my $dateTimeStamp = $dateTime->datetime();
+my $date = $dateTime->ymd('-');  #Catches current date
+my $script = (`basename $0`);  #Catches script name
+chomp($dateTimeStamp, $date, $script);  #Remove \n;
 
 ####Set program parameters
 
@@ -272,6 +289,9 @@ chomp($base, $script);  #Remove \n;
 &DefineParameters(\%parameter, \@orderParameters, "pFastQC", "program", 1, "MIP", "nofileEnding", "RawSeqQC", "fastqc");
 
 
+##Madeline
+&DefineParameters(\%parameter, \@orderParameters, "pMadeline", "program", 0, "MIP", "nofileEnding", "PedigreeDraw", "madeline2");
+
 ##Mosaik
 &DefineParameters(\%parameter, \@orderParameters, "pMosaikBuild", "program", 1, "MIP", "nofileEnding", "MAIN", "MosaikBuild");
 
@@ -293,9 +313,13 @@ chomp($base, $script);  #Remove \n;
 
 &DefineParametersPath(\%parameter, \@orderParameters, "bwaMemRapidDb", "nodefault", "pBwaMem", "file", "noAutoBuild");
 
+&DefineParameters(\%parameter, \@orderParameters, "bwaMemCram", "program", 0, "pBwaMem");
+
+
 &DefineParameters(\%parameter, \@orderParameters, "pBwaAln", "program", 0, "MIP", "nofileEnding", "MAIN", "bwa");
 
 &DefineParameters(\%parameter, \@orderParameters, "bwaAlnQualityTrimming", "program", 20, "pBwaAln");
+
 
 &DefineParameters(\%parameter, \@orderParameters, "pBwaSampe", "program", 0, "MIP", "nofileEnding", "MAIN", "bwa");
 
@@ -503,7 +527,7 @@ my (@GATKTargetPaddedBedIntervalLists);  #Array for target infile lists used in 
 ##humanGenomeReference
 &DefineParametersPath(\%parameter, \@orderParameters, "humanGenomeReference", "Homo_sapiens.GRCh37.d5.fasta", "pBwaMem,pBwaAln,pBwaSampe,pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKGenoTypeGVCFs,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pAnnovar,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "file", "yesAutoDownLoad");
 
-my $mipVersion = "v2.1.1";  #Set version
+my $mipVersion = "v2.2.0";  #Set version
 
 my ($aligner) = ("nocmdinput");
 
@@ -584,6 +608,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'v|version' => sub { print STDOUT "\nMip.pl ".$mipVersion, "\n\n"; exit;},  #Display version number
 	   'pGZ|pGZipFastq:n' => \$parameter{'pGZipFastq'}{'value'},
 	   'pFqC|pFastQC:n' => \$parameter{'pFastQC'}{'value'},
+	   'pMaD|pMadeline:n' => \$parameter{'pMadeline'}{'value'},
 	   'pMoB|pMosaikBuild:n' => \$parameter{'pMosaikBuild'}{'value'},
 	   'mobmfl|mosaikBuildMedianFragLength:n' => \$parameter{'mosaikBuildMedianFragLength'}{'value'},  #for fragment length estimation and local search
 	   'pMoA|pMosaikAlign:n' => \$parameter{'pMosaikAlign'}{'value'},
@@ -593,6 +618,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'mojdb|mosaikJumpDbStub:s' => \$parameter{'mosaikJumpDbStub'}{'value'},  #Stub for MosaikJump database
 	   'pMem|pBwaMem:n' => \$parameter{'pBwaMem'}{'value'},
 	   'memrdb|bwaMemRapidDb:s' => \$parameter{'bwaMemRapidDb'}{'value'},
+	   'memcrm|bwaMemCram:n' => \$parameter{'bwaMemCram'}{'value'},
 	   'pAln|pBwaAln:n' => \$parameter{'pBwaAln'}{'value'},
 	   'alnq|bwaAlnQualityTrimming:n' => \$parameter{'bwaAlnQualityTrimming'}{'value'},  #BWA aln quality threshold for read trimming down to 35bp
 	   'pSap|pBwaSampe:n' => \$parameter{'pBwaSampe'}{'value'},
@@ -715,7 +741,7 @@ foreach my $orderParameterElement (@orderParameters) {
 			   'parameterDefault' => $parameter{$orderParameterElement}{'default'},
 			   'associatedPrograms' => $parameter{$orderParameterElement}{'associatedProgram'},
 			   'parameterExistsCheck' => $parameter{$orderParameterElement}{'existsCheck'},
-			   'programNamePath' => $parameter{$orderParameterElement}{'programNamePath'}
+			   'programNamePath' => \@{$parameter{$orderParameterElement}{'programNamePath'}},
 			  });
 
     ## Special case for parameters that are dependent on other parameters values
@@ -724,7 +750,7 @@ foreach my $orderParameterElement (@orderParameters) {
 	$parameter{'sampleInfoFile'}{'default'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_qc_sampleInfo.yaml";
 
 	## Set the default Log4perl file using supplied dynamic parameters.
-	$parameter{'logFile'}{'default'} = &DeafultLog4perlFile(\%scriptParameter, \$parameter{'logFile'}{'value'}, \$script, \$base, \$dateTimeStamp);
+	$parameter{'logFile'}{'default'} = &DeafultLog4perlFile(\%scriptParameter, \$parameter{'logFile'}{'value'}, \$script, \$date, \$dateTimeStamp);
 
 	$parameter{'QCCollectSampleInfoFile'}{'default'} = $parameter{'sampleInfoFile'}{'default'};
     }
@@ -745,8 +771,8 @@ foreach my $orderParameterElement (@orderParameters) {
 	    ## Writes a YAML hash to file
 	    &WriteYAML(\%sampleInfo, \$yamlFile);
 
-	    ## Removes ALL keys at third level except 'Capture_kit', 'Sex'.
-	    &RemovePedigreeElements(\%sampleInfo);  #NOTE: Removes all elements at hash third level except 'Capture_kit', 'Sex', 'Father', 'Mother'
+	    ## Removes all elements at hash third level except keys in allowedEntries
+	    &RemovePedigreeElements(\%sampleInfo);
 	}
     }
     if ($orderParameterElement eq "humanGenomeReference") {  #Supply humanGenomeReference to mosaikAlignReference if required
@@ -795,13 +821,13 @@ if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
 	&DefineArrayParameters(\%parameter, \%scriptParameter, \@{$parameter{'picardToolsMergeSamFilesPrevious'}{'value'}}, \@orderParameters, \@broadcasts, "picardToolsMergeSamFilesPrevious", "path", "nodefault", "pPicardToolsMergeSamFiles", "file", ",");    
 	
 	## Checks if previous alignments have been supplied for each sampleID. Saves merge info in sampleInfo hash.
-	&CheckMergePicardToolsMergeSamFilesPrevious(\%scriptParameter, \%sampleInfo);
+	&CheckMergePicardToolsMergeSamFilesPrevious(\%scriptParameter, \%fileInfo);
     }
     else {  #Not supplied - Set to 0 to handle correctly in program subroutines 
 	
 	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #Set for all sampleIDs
 	    
-	    $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} = 0;
+	    $fileInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} = 0;
 	}
     }
 }
@@ -911,6 +937,11 @@ my $uncompressedFileSwitch = &InfilesReFormat(\%infile);  #Required to format in
 
 ####MAIN
 
+if ($scriptParameter{'dryRunAll'} == 2) {
+
+    $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'AnalysisDate'} = $dateTimeStamp;
+}
+
 if ( ($scriptParameter{'pGZipFastq'} > 0) && ($uncompressedFileSwitch eq "unCompressed") ) {  #GZip of fastq files
 
     $logger->info("\n[GZip for fastq files]\n");
@@ -948,6 +979,17 @@ if ($scriptParameter{'pFastQC'} > 0) {  #Run FastQC
     }
 }
 
+if ($scriptParameter{'pMadeline'} > 0) {  #Run Madeline
+    
+    $logger->info("[Madeline]\n");
+
+    &Madeline({'parameterHashRef' => \%parameter,
+	       'scriptParameterHashRef' => \%scriptParameter,
+	       'sampleInfoHashRef' => \%sampleInfo,
+	       'familyIDRef' => \$scriptParameter{'familyID'},
+	       'programName' => "Madeline",
+	      });	
+}
 
 if ($scriptParameter{'pMosaikBuild'} > 0) {  #Run MosaikBuild
     
@@ -1073,7 +1115,7 @@ else {
 	
 	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	    
-	    if ( ($sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} == 1) || (scalar( @{ $infilesLaneNoEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] } }) > 1) ) {  #Sanity Check that we have something to merge with
+	    if ( ($fileInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} == 1) || (scalar( @{ $infilesLaneNoEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] } }) > 1) ) {  #Sanity Check that we have something to merge with
 		
 		&PicardToolsMerge({'parameterHashRef' => \%parameter,
 				   'scriptParameterHashRef' => \%scriptParameter,
@@ -1690,7 +1732,7 @@ sub RemoveRedundantFiles {
 	}
 	
 	## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-	my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, $sampleID);        
+	my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, $sampleID);        
 	
 	if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
 	    
@@ -1726,7 +1768,10 @@ sub RemoveRedundantFiles {
 		my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/GATK";
 		my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pGATKHaploTypeCaller'}{'fileEnding'};
 		
-		&CheckMostCompleteAndRemoveFile($FILEHANDLE, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'}{'ReadyVcf'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".vcf"), ".vcf");  #HaplotypeCaller gvcf file
+		if (defined(${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'})) {
+
+		    &CheckMostCompleteAndRemoveFile($FILEHANDLE, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'}{'ReadyVcf'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".vcf"), ".vcf");  #HaplotypeCaller gvcf file
+		}
 	    }
 	}
 	else {
@@ -2057,9 +2102,9 @@ sub RankVariants {
     ## Gene models and ranking  
     print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
     
-    for (my $VEPOutputFilesCounter=0;$VEPOutputFilesCounter<${$scriptParameterHashRef}{'VEPOutputFileCount'};$VEPOutputFilesCounter++) {
+    for (my $VcfParserOutputFileCounter=0;$VcfParserOutputFileCounter<${$scriptParameterHashRef}{'VcfParserOutputFileCount'};$VcfParserOutputFileCounter++) {
 	
-	if ($VEPOutputFilesCounter == 1) {
+	if ($VcfParserOutputFileCounter == 1) {
 	    
 	    $vcfParserAnalysisType = ".selected";  #SelectFile variants
 	}
@@ -2081,7 +2126,7 @@ sub RankVariants {
 	## Calculate Gene Models
 	print $FILEHANDLE "## Calculate Gene Models", "\n";   
 
-	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VEPOutputFilesCounter > 0) ) {
+	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VcfParserOutputFileCounter > 0) ) {
 	    
 	    my @trapSignals = ("ERR");
 	    ## Clear trap for signal(s)
@@ -2156,7 +2201,7 @@ sub RankVariants {
 	print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_combined".$vcfParserAnalysisType.".vcf ";  #inFile
 	print $FILEHANDLE "\n\n";
 
-	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VEPOutputFilesCounter > 0) ) {
+	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VcfParserOutputFileCounter > 0) ) {
 
 	    my @trapSignals = ("ERR");
 	    ## Enable trap for signal(s) and function
@@ -2168,13 +2213,13 @@ sub RankVariants {
 	&MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf",
 			      'filePath' => $outFamilyDirectory."/",
 			      'FILEHANDLE' => $FILEHANDLE,
-			      'VEPOutputFilesCounter' => $VEPOutputFilesCounter,
+			      'VcfParserOutputFileCounter' => $VcfParserOutputFileCounter,
 			     });
 	print $FILEHANDLE "wait", "\n\n";
 
 	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 	    
-	    if ($VEPOutputFilesCounter == 1) {
+	    if ($VcfParserOutputFileCounter == 1) {
 
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Clinical'}{'Path'} = $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf";
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'Program'}{'RankVariants'}{'Clinical'}{'Path'} = $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf";   #Save clinical candidate list path
@@ -2270,7 +2315,7 @@ sub GATKVariantEvalExome {
     my $exractExonicRegExp = q?perl -ne ' if ( ($_=~/exonic/) || ($_=~/splicing/) ) {print $_;}' ?;
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
+    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
 
     ## Copy file(s) to temporary directory
     print $FILEHANDLE "## Copy file(s) to temporary directory\n";
@@ -2320,7 +2365,7 @@ sub GATKVariantEvalExome {
 	print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$sampleID.$infileEnding.$callType."_exonic_variants.vcf", "\n\n";  #OutFile
 
 	## Include potential SelectFile variants
-	if (${$scriptParameterHashRef}{'VEPOutputFileCount'} == 2) {
+	if (${$scriptParameterHashRef}{'VcfParserOutputFileCount'} == 2) {
 	    
 	    my $vcfParserAnalysisType = ".selected";  #SelectFile variants
 
@@ -2453,7 +2498,7 @@ sub GATKVariantEvalExome {
 	    print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$sampleID.$infileEnding.$callType."_exonic_variants.vcf", "\n\n";  #OutFile
 
 	    ## Include potential SelectFile variants
-	    if (${$scriptParameterHashRef}{'VEPOutputFileCount'} == 2) {
+	    if (${$scriptParameterHashRef}{'VcfParserOutputFileCount'} == 2) {
 
 		my $vcfParserAnalysisType = ".selected";  #SelectFile variants
 
@@ -2611,7 +2656,7 @@ sub GATKVariantEvalAll {
     my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
+    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
 
     ## Copy file(s) to temporary directory
     print $FILEHANDLE "## Copy file(s) to temporary directory\n"; 
@@ -2843,11 +2888,11 @@ sub SnpEff {
     
     my $snpSiftnrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, 8);  #Detect the number of cores to use. Currently there is only enough java threads for around 8 parallel pipes
 
-    for (my $VEPOutputFilesCounter=0;$VEPOutputFilesCounter<${$scriptParameterHashRef}{'VEPOutputFileCount'};$VEPOutputFilesCounter++) {
+    for (my $VcfParserOutputFileCounter=0;$VcfParserOutputFileCounter<${$scriptParameterHashRef}{'VcfParserOutputFileCount'};$VcfParserOutputFileCounter++) {
 
 	my $coreCounter = 1;
 
-	if ($VEPOutputFilesCounter == 1) {
+	if ($VcfParserOutputFileCounter == 1) {
     
 	    $vcfParserAnalysisType = ".selected";  #SelectFile variants
 	}
@@ -2957,7 +3002,7 @@ sub SnpEff {
 	
 	close($XARGSFILEHANDLE);
 
-	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VEPOutputFilesCounter > 0) ) {
+	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VcfParserOutputFileCounter > 0) ) {
 
 	    my @trapSignals = ("ERR");
 	    ## Clear trap for signal(s)
@@ -2965,7 +3010,7 @@ sub SnpEff {
 	}
 	&ConcatenateVariants(\%{$scriptParameterHashRef}, $FILEHANDLE, \@{${$fileInfoHashRef}{'contigs'}}, $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_", $vcfParserAnalysisType.".vcf", $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf");
 
-	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VEPOutputFilesCounter > 0) ) {
+	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VcfParserOutputFileCounter > 0) ) {
 
 	    my @trapSignals = ("ERR");
 	    ## Enable trap for signal(s) and function
@@ -2993,11 +3038,13 @@ sub SnpEff {
 						      'outDirectory' => $outFamilyDirectory,
 						      'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
 						     });
+
+	## Adds the most complete vcf file to sampleInfo
 	&AddMostCompleteVCF({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 			     'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 			     'programName' => $programName,
 			     'path' => $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf",
-			     'VEPOutputFilesCounter' => $VEPOutputFilesCounter,
+			     'VcfParserOutputFileCounter' => $VcfParserOutputFileCounter,
 			    });
     }
 
@@ -3108,9 +3155,9 @@ sub Annovar {
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"p".$programName}{'fileEnding'};
     my $vcfParserAnalysisType = "";
 
-    for (my $VEPOutputFilesCounter=0;$VEPOutputFilesCounter<${$scriptParameterHashRef}{'VEPOutputFileCount'};$VEPOutputFilesCounter++) {
+    for (my $VcfParserOutputFileCounter=0;$VcfParserOutputFileCounter<${$scriptParameterHashRef}{'VcfParserOutputFileCount'};$VcfParserOutputFileCounter++) {
 
-	if ($VEPOutputFilesCounter == 1) {
+	if ($VcfParserOutputFileCounter == 1) {
 
 	    $vcfParserAnalysisType = ".selected";  #SelectFile variants
 	}
@@ -3224,11 +3271,13 @@ sub Annovar {
 							  'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
 							 });
 	}
+
+	## Adds the most complete vcf file to sampleInfo
 	&AddMostCompleteVCF({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 			     'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 			     'programName' => $programName,
 			     'path' => $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf",
-			     'VEPOutputFilesCounter' => $VEPOutputFilesCounter,
+			     'VcfParserOutputFileCounter' => $VcfParserOutputFileCounter,
 			    });
     }
 
@@ -3404,6 +3453,9 @@ sub VCFParser {
 	}
 	if (${$scriptParameterHashRef}{'vcfParserRangeFeatureFile'} ne "noUserInfo") {
 
+	    ## Collect databases(s) from a potentially merged selectFile and adds them to sampleInfo
+	    &CollectSubDatabases(\%{$sampleInfoHashRef}, $familyIDRef, \$programName, ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'vcfParserRangeFeatureFile'}, "RangeFile");
+
 	    if (${$scriptParameterHashRef}{'vcfParserRangeFeatureFile'}=~/v(\d+\.\d+.\d+|\d+\.\d+)/) {
 		
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$programName}{"RangeFile"}{'Version'} = $1;
@@ -3413,7 +3465,7 @@ sub VCFParser {
 	if (${$scriptParameterHashRef}{'vcfParserSelectFile'} ne "noUserInfo") {
 
 	    ## Collect databases(s) from a potentially merged selectFile and adds them to sampleInfo
-	    &CollectSelectDatabases(\%{$sampleInfoHashRef}, $familyIDRef, \$programName, ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'vcfParserSelectFile'});
+	    &CollectSubDatabases(\%{$sampleInfoHashRef}, $familyIDRef, \$programName, ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'vcfParserSelectFile'}, "SelectFile");
 
 	    if (${$scriptParameterHashRef}{'vcfParserSelectFile'}=~/v(\d+\.\d+.\d+|\d+\.\d+)/) {
 		
@@ -3437,9 +3489,9 @@ sub VCFParser {
 
 	my $vcfParserAnalysisType = "";
 
-	for (my $VEPOutputFilesCounter=0;$VEPOutputFilesCounter<${$scriptParameterHashRef}{'VEPOutputFileCount'};$VEPOutputFilesCounter++) {
+	for (my $VcfParserOutputFileCounter=0;$VcfParserOutputFileCounter<${$scriptParameterHashRef}{'VcfParserOutputFileCount'};$VcfParserOutputFileCounter++) {
 
-	    if ($VEPOutputFilesCounter == 1) {
+	    if ($VcfParserOutputFileCounter == 1) {
 		
 		$vcfParserAnalysisType = ".selected";  #SelectFile variants
 	    }
@@ -3458,11 +3510,12 @@ sub VCFParser {
 							  'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
 							 });
 
+	    ## Adds the most complete vcf file to sampleInfo
 	    &AddMostCompleteVCF({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 				 'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 				 'programName' => $programName,
 				 'path' => $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf",
-				 'VEPOutputFilesCounter' => $VEPOutputFilesCounter,
+				 'VcfParserOutputFileCounter' => $VcfParserOutputFileCounter,
 				});
 	}
 	close($FILEHANDLE);
@@ -3766,7 +3819,7 @@ sub GATKReadBackedPhasing {
 	my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{'pGATKBaseRecalibration'}{'fileEnding'};
 
 	## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-	my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter]);
+	my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter]);
 
 	if ($PicardToolsMergeSwitch == 1) {  #Alignment BAM-files merged previously
 	    
@@ -3815,7 +3868,7 @@ sub GATKReadBackedPhasing {
 	my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{'pGATKBaseRecalibration'}{'fileEnding'};
 
 	## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-	my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter]);
+	my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter]);
 	
 	if ($PicardToolsMergeSwitch == 1) {  #Alignment BAM-files merged previously
 	    
@@ -4232,7 +4285,7 @@ sub GATKVariantReCalibration {
 	## Collect QC metadata info for later use
 	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 		       'familyID' => ${$scriptParameterHashRef}{'familyID'},
-		       'programName' => "pedigreeCheck",
+		       'programName' => "PedigreeCheck",
 		       'outDirectory' => $outFamilyDirectory,
 		       'outFileEnding' => $familyID.$outfileEnding.$callType.".vcf",
 		       'outDataType' => "infileDependent"
@@ -4390,7 +4443,7 @@ sub GATKGenoTypeGVCFs {
 	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDCounter++) {
 	    
 	    ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-	    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter]);
+	    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter]);
 	    
 	    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter]."/".$aligner."/gatk";
 	    my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{'pGATKHaploTypeCaller'}{'fileEnding'};
@@ -4444,7 +4497,7 @@ sub GATKGenoTypeGVCFs {
 	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDCounter++) {  #Collect infiles for all sampleIDs
 
 	    ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-	    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter]);
+	    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter]);
 	    
 	    my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{'pGATKHaploTypeCaller'}{'fileEnding'};
 	    
@@ -4532,7 +4585,7 @@ sub RCoveragePlots {
     my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, $sampleID);    
+    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, $sampleID);    
     
     if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
 	
@@ -4623,7 +4676,7 @@ sub GenomeCoverageBED {
     my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{"p".$programName}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
+    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
     my $coreCounter=1;
     my $nrCores=1;
 
@@ -4759,7 +4812,7 @@ sub PicardToolsCalculateHSMetrics {
     my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{"p".$programName}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
+    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
     my $coreCounter=1;
     my $nrCores=1;
 
@@ -4943,7 +4996,7 @@ sub PicardToolsCollectMultipleMetrics {
     my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
+    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
     my $nrCores = 1;
     my $coreCounter=1;
 
@@ -5148,7 +5201,7 @@ sub ChanjoImport {
 	my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pChanjoAnnotate'}{'fileEnding'};
 
 	## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-	my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, $sampleID);	
+	my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, $sampleID);	
 
 	if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
 	    print $FILEHANDLE "chanjo ";
@@ -5227,7 +5280,7 @@ sub ChanjoSexCheck {
     my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{"p".$programName}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
+    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
     my $coreCounter=1;	
 
     if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
@@ -5365,7 +5418,7 @@ sub ChanjoAnnotate {
     my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{"p".$programName}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
+    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
     my $coreCounter=1;	
 
     if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
@@ -5655,7 +5708,7 @@ sub GATKHaploTypeCaller {
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{"p".$programName}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, $$sampleIDRef);
+    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, $$sampleIDRef);
     
     if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
 
@@ -5905,7 +5958,7 @@ sub GATKBaseReCalibration {
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{"p".$programName}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, $$sampleIDRef);
+    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, $$sampleIDRef);
 
     if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
 
@@ -6307,7 +6360,7 @@ sub GATKReAligner {
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{"p".$programName}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%sampleInfo, \%lane, \%infilesLaneNoEnding, $$sampleIDRef);
+    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, $$sampleIDRef);
 
     if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
 
@@ -6660,7 +6713,7 @@ sub PicardToolsMarkduplicatesWithMateCigar {
     $maxSequenceLength = $maxSequenceLength * 2;  #Set to twice the maximum read length
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, $$sampleIDRef);
+    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, $$sampleIDRef);
     
     if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
 
@@ -6989,7 +7042,7 @@ sub PicardToolsMarkduplicatesForQCMetrics {
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{"p".$programName}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, $$sampleIDRef);
+    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, $$sampleIDRef);
     
     if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
 
@@ -7309,7 +7362,7 @@ sub PicardToolsMerge {
 	}
     }
     ## Merge previously merged files with merged files generated this run
-    if ( (${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'picardToolsMergeSamFilesPrevious'} == 1) && (scalar( @{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} }) > 1) ) {
+    if ( (${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'picardToolsMergeSamFilesPrevious'} == 1) && (scalar( @{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} }) > 1) ) {
 
 	for (my $mergeFileCounter=0;$mergeFileCounter<scalar(@{${$scriptParameterHashRef}{'picardToolsMergeSamFilesPrevious'}});$mergeFileCounter++) {
 	    
@@ -7400,7 +7453,7 @@ sub PicardToolsMerge {
 	}
     }
     ## Merge files previously merged to single file with single file generated this run
-    elsif (${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'picardToolsMergeSamFilesPrevious'} == 1) {
+    elsif (${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'picardToolsMergeSamFilesPrevious'} == 1) {
 
 	for (my $mergeFileCounter=0;$mergeFileCounter<scalar(@{${$scriptParameterHashRef}{'picardToolsMergeSamFilesPrevious'}});$mergeFileCounter++) {
 
@@ -7585,7 +7638,7 @@ sub BWA_Sampe {
 	}
 
 	my $nrCores = 2;
-	my $sequenceRunMode = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{${$infilesLaneNoEndingHashRef}{ $sampleID }[$infileCounter]}{'sequenceRunType'};  #Collect paired-end or single-end sequence run mode
+	my $sequenceRunMode = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{${$infilesLaneNoEndingHashRef}{ $sampleID }[$infileCounter]}{'SequenceRunType'};  #Collect paired-end or single-end sequence run mode
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	my ($fileName) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
@@ -7707,7 +7760,7 @@ sub BWA_Aln {
     for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all files   
 
 	## Adjust the number of cores to be used in the analysis according to sequencing mode requirements.
-	&AdjustNrCoresToSeqMode(\$nrCores, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{${$infilesLaneNoEndingHashRef}{ $sampleID }[$infileCounter]}{'sequenceRunType'});
+	&AdjustNrCoresToSeqMode(\$nrCores, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{${$infilesLaneNoEndingHashRef}{ $sampleID }[$infileCounter]}{'SequenceRunType'});
     }
 
     ## Set the number of cores to allocate per sbatch job.
@@ -7929,12 +7982,12 @@ sub BWA_Mem {
     ## Collect fastq file(s) size
     for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all infiles but process in the same command i.e. both reads per align call
 	
-	my $sequenceRunMode = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{${$infilesLaneNoEndingHashRef}{ $sampleID }[$infileCounter]}{'sequenceRunType'};  #Collect paired-end or single-end sequence run mode
+	my $sequenceRunMode = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{${$infilesLaneNoEndingHashRef}{ $sampleID }[$infileCounter]}{'SequenceRunType'};  #Collect paired-end or single-end sequence run mode
 	
 	## Fastq.gz
 	if (${$infileHashRef}{$sampleID}[$infileCounter] =~/.fastq.gz$/) {  #Files are already gz and presently the scalar for compression has not been investigated. Therefore no automatic time allocation can be performed.
 	
-	    if (${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{${$infilesLaneNoEndingHashRef}{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") {  #Second read direction if present
+	    if (${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{${$infilesLaneNoEndingHashRef}{ $sampleID }[$infileCounter]}{'SequenceRunType'} eq "Paired-end") {  #Second read direction if present
                 $infileSize = -s ${$inDirPathHashRef}{$sampleID}."/".${$infileHashRef}{$sampleID}[$infileCounter+$infileCounter];
 	    }
 	    else {  #Single-end
@@ -7943,7 +7996,7 @@ sub BWA_Mem {
         }
         else {  #Files are in fastq format
 	    
-	    if (${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{${$infilesLaneNoEndingHashRef}{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") {  #Second read direction if present        
+	    if (${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{${$infilesLaneNoEndingHashRef}{ $sampleID }[$infileCounter]}{'SequenceRunType'} eq "Paired-end") {  #Second read direction if present        
 		$infileSize = -s ${$inDirPathHashRef}{$sampleID}."/".${$infileHashRef}{$sampleID}[$infileCounter+$infileCounter];  # collect .fastq file size to enable estimation of time required for aligning, +1 for syncing multiple infiles per sampleID. Hence, filesize will be calculated on read2 (should not matter).
 	    }
 	    else {  #Single-end
@@ -7954,7 +8007,7 @@ sub BWA_Mem {
 	## Parallelize alignment by spliting of alignmnet processes as the files are read
 	if (${$scriptParameterHashRef}{'analysisType'} eq "rapid") {
 	    
-	    my $seqLength = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter]}{'sequenceLength'};
+	    my $seqLength = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter]}{'SequenceLength'};
 	    my ($numberNodes, $ReadNrofLines) = &DetermineNrofRapidNodes($seqLength, $infileSize);
 	    
 	    for (my $sbatchCounter=0;$sbatchCounter<$numberNodes-1;$sbatchCounter++) {  #Parallization for each file handled
@@ -8118,8 +8171,18 @@ sub BWA_Mem {
 	    print $FILEHANDLE "SORT_ORDER=coordinate ";  #Sort per contig and coordinate
 	    print $FILEHANDLE "CREATE_INDEX=TRUE ";  #create a BAM index when writing a coordinate-sorted BAM file. 
 	    print $FILEHANDLE "INPUT=/dev/stdin ";  #InStream
-	    print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam", "\n\n";  #Outfile
+	    print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam ";  #Outfile
+	    print $FILEHANDLE "\n\n";
 
+	    if (${$scriptParameterHashRef}{'bwaMemCram'} == 1) {
+
+		print $FILEHANDLE "samtools view";
+		print $FILEHANDLE "-C "; #Write output to CRAM-format
+		print $FILEHANDLE "-T ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference
+		print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam";
+		print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".cram";
+		print $FILEHANDLE "\n\n";
+	    }
 	    ## Copies file from temporary directory.
 	    print $FILEHANDLE "## Copy file from temporary directory\n";
 	    &MigrateFileFromTemp({'tempPath' => ${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".b*",
@@ -8205,7 +8268,7 @@ sub MosaikAlign {
 	}
 
 	## Set parameters depending on sequence length
-	my $seqLength = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter]}{'sequenceLength'};
+	my $seqLength = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter]}{'SequenceLength'};
 	my $actParameter = 35;  #The alignment candidate threshold (length)
 	my $bwParameter = 35;  #Specifies the Smith-Waterman bandwidth.
 
@@ -8260,7 +8323,7 @@ sub MosaikAlign {
 	print $FILEHANDLE "-ia ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'mosaikAlignReference'}." ";  #Mosaik Reference
 	print $FILEHANDLE "-annse ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'mosaikAlignNeuralNetworkSeFile'}." ";  #NerualNetworkSE
 
-	if (${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{${$infilesLaneNoEndingHashRef}{ $sampleID }[$infileCounter]}{'sequenceRunType'} eq "Paired-end") {  #Second read direction if present
+	if (${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{${$infilesLaneNoEndingHashRef}{ $sampleID }[$infileCounter]}{'SequenceRunType'} eq "Paired-end") {  #Second read direction if present
 
 	    print $FILEHANDLE "-annpe ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'mosaikAlignNeuralNetworkPeFile'}." ";  #NerualNetwork
 	    print $FILEHANDLE "-ls 100 "; #Enable local alignment search for PE reads
@@ -8475,7 +8538,7 @@ sub MosaikBuild {
     print $FILEHANDLE "## Generating .dat file from fastq files\n";    
     for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} });$infileCounter++) {  #For all files
 	
-	my $sequenceRunMode = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'File'}{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter] }{'sequenceRunType'};  #Collect paired-end or single-end sequence run mode
+	my $sequenceRunMode = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'File'}{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter] }{'SequenceRunType'};  #Collect paired-end or single-end sequence run mode
 	my $coreTracker=0;  #Required to portion out cores and files before wait and to track the outfiles to correct lane
 	
 	&PrintWait(\$infileCounter, \$nrCores, \$coreCounter, $FILEHANDLE);
@@ -8750,8 +8813,8 @@ sub BAMCalibrationAndGTBlock {
 					       });
 	
 	if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {  #Run picardtools merge
-	    
-	    if ( ($sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} == 1) || (scalar( @{ $infilesLaneNoEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] } }) > 1) ) {  #Sanity Check that we have something to merge with
+
+	    if ( (${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'picardToolsMergeSamFilesPrevious'} == 1) || (scalar( @{ $infilesLaneNoEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] } }) > 1) ) {  #Sanity Check that we have something to merge with
 		
 		$xargsFileCounter = &PicardToolsMerge({'parameterHashRef' => \%{$parameterHashRef},
 							'scriptParameterHashRef' => \%{$scriptParameterHashRef},
@@ -8837,6 +8900,84 @@ sub BAMCalibrationAndGTBlock {
 }
 
 
+sub Madeline {
+
+##Madeline
+    
+##Function : Draw pedigree trees.
+##Returns  : ""
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $infilesBothStrandsNoEndingHashRef, $sampleIDRef, $programName
+##         : $parameterHashRef                  => The parameter hash {REF}
+##         : $scriptParameterHashRef            => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef                 => Info on samples and family hash {REF}
+##         : $sampleIDREf                       => The sampleID {REF}
+##         : $programName                       => The program name
+
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
+    my $programName = ${$argHashRef}{'programName'};
+
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $time = 1;
+    my $nrCores = 1;
+
+    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    my ($fileName) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+					    'FILEHANDLE' => $FILEHANDLE,
+					    'directoryID' => $$familyIDRef,
+					    'programName' => $programName,
+					    'programDirectory' => lc($programName),
+					    'nrofCores' => $nrCores,
+					    'processTime' => $time,
+					   });
+
+    ## Assign directories
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".lc($programName);
+
+    print $FILEHANDLE "## Reformat pedigree to Madeline format"."\n";
+    print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+
+    print $FILEHANDLE "ped_parser ";
+    print $FILEHANDLE "-t mip ";  #MIP pedigree format
+    print $FILEHANDLE "--to_madeline ";  #Print the ped file in madeline format
+    print $FILEHANDLE ${$scriptParameterHashRef}{'pedigreeFile'}." ";  #InFile
+    print $FILEHANDLE "-o ".$outFamilyDirectory."/madeline_pedigree.txt ";
+    print $FILEHANDLE "\n\n";
+
+    print $FILEHANDLE "## ".$programName."\n";
+
+    print $FILEHANDLE "madeline2 ";
+    print $FILEHANDLE "--color ";
+    print $FILEHANDLE "--outputprefix ".$outFamilyDirectory."/".$$familyIDRef."_madeline ";
+    print $FILEHANDLE $outFamilyDirectory."/madeline_pedigree.txt ";
+    print $FILEHANDLE "\n\n";
+
+    ## Collect QC metadata info for active program for later use
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+	
+	${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'Program'}{$programName}{'Path'} = $outFamilyDirectory."/".$$familyIDRef."_madeline.xml";
+    }
+
+    close($FILEHANDLE);
+    
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+
+	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		       'jobIDHashRef' => \%jobID,
+		       'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+		       'dependencies' => 2, 
+		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
+		       'sbatchFileName' => $fileName
+		      });
+    }
+}
+
+
 sub FastQC {
 
 ##FastQC
@@ -8876,7 +9017,7 @@ sub FastQC {
     for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} });$infileCounter++) {  #For all files   
 
 	## Adjust the number of cores to be used in the analysis according to sequencing mode requirements.
-	&AdjustNrCoresToSeqMode(\$nrCores, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'File'}{ ${$infilesLaneNoEndingHashRef}{ $$sampleIDRef }[$infileCounter] }{'sequenceRunType'});
+	&AdjustNrCoresToSeqMode(\$nrCores, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'File'}{ ${$infilesLaneNoEndingHashRef}{ $$sampleIDRef }[$infileCounter] }{'SequenceRunType'});
     }
 
     ## Set the number of cores to allocate per sbatch job.
@@ -8907,7 +9048,7 @@ sub FastQC {
 			 'sampleID' => $$sampleIDRef
 			});
     
-    print $FILEHANDLE "## FASTQC\n";
+    print $FILEHANDLE "## ".$programName."\n";
     for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infileHashRef}{$$sampleIDRef} });$infileCounter++) {
 
 	&PrintWait(\$infileCounter, \$nrCores, \$coreCounter, $FILEHANDLE);
@@ -8921,14 +9062,14 @@ sub FastQC {
 	print $FILEHANDLE "&", "\n\n";
 
 	## Collect QC metadata info for active program for later use
-	if ( (${$scriptParameterHashRef}{'pFastQC'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 	    
 	    &SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 			   'familyID' => ${$scriptParameterHashRef}{'familyID'},
 			   'sampleID' => $$sampleIDRef,
 			   'programName' => "FastQC",
 			   'infile' => $infile,
-			   'outDirectory' => $outSampleDirectory."/".${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'File'}{${$infilesBothStrandsNoEndingHashRef}{ $$sampleIDRef }[$infileCounter]}{'originalFileNameNoEnding'}."_fastqc",
+			   'outDirectory' => $outSampleDirectory."/".${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'File'}{${$infilesBothStrandsNoEndingHashRef}{ $$sampleIDRef }[$infileCounter]}{'OriginalFileNameNoEnding'}."_fastqc",
 			   'outFileEnding' => "fastqc_data.txt",
 			   'outDataType' => "static"
 			  });
@@ -8943,7 +9084,7 @@ sub FastQC {
 
 	## Copies files from temporary folder to source. Loop over files specified by $arrayRef and collects files from $extractArrayRef.
 	print $FILEHANDLE "cp -r ";
-	print $FILEHANDLE $$tempDirectoryRef."/".${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'File'}{${$infilesBothStrandsNoEndingHashRef}{ $$sampleIDRef }[$infileCounter]}{'originalFileNameNoEnding'}."_fastqc ";
+	print $FILEHANDLE $$tempDirectoryRef."/".${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'File'}{${$infilesBothStrandsNoEndingHashRef}{ $$sampleIDRef }[$infileCounter]}{'OriginalFileNameNoEnding'}."_fastqc ";
 	print $FILEHANDLE $outSampleDirectory." ";
 	print $FILEHANDLE "&", "\n\n";
     }
@@ -8998,7 +9139,7 @@ sub GZipFastq {
     for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all files   
 	
 	## Adjust the number of cores to be used in the analysis according to sequencing mode requirements.
-	&AdjustNrCoresToSeqMode(\$nrCores, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesLaneNoEndingHashRef}{ $sampleID }[$infileCounter] }{'sequenceRunType'});
+	&AdjustNrCoresToSeqMode(\$nrCores, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesLaneNoEndingHashRef}{ $sampleID }[$infileCounter] }{'SequenceRunType'});
     }
 
     ## Set the number of cores to allocate per sbatch job.
@@ -10798,6 +10939,9 @@ sub AddInfileInfo {
 
     my $readFile;
 
+    my $parsedDate = DateTime::Format::Multi->parse_datetime($date);  #Reparse to dateTime standard
+    $parsedDate = $parsedDate->ymd('-');  #Only date
+
     if ($compressedInfo eq "compressed") {
 
 	$readFile = "zcat";  #Read file in compressed format
@@ -10814,33 +10958,33 @@ sub AddInfileInfo {
 	push( @{${$laneHashRef}{$sampleID}}, $lane);  #Lane
 	${$infilesLaneNoEndingHashRef}{$sampleID}[$$laneTrackerRef]= $sampleID.".".$date."_".$flowCell."_".$index.".lane".$1;  #Save new format (sampleID_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
 
-	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesLaneNoEndingHashRef}{ $sampleID }[$$laneTrackerRef] }{'sequenceRunType'} = "Single-end";  #Single-end until proven otherwise
+	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesLaneNoEndingHashRef}{ $sampleID }[$$laneTrackerRef] }{'SequenceRunType'} = "Single-end";  #Single-end until proven otherwise
 	$$laneTrackerRef++;
     }
     if ($direction == 2) {  #2nd read direction
 
-	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesLaneNoEndingHashRef}{ $sampleID }[$$laneTrackerRef-1] }{'sequenceRunType'} = "Paired-end";  #$laneTracker -1 since it gets incremented after direction eq 1. 
+	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesLaneNoEndingHashRef}{ $sampleID }[$$laneTrackerRef-1] }{'SequenceRunType'} = "Paired-end";  #$laneTracker -1 since it gets incremented after direction eq 1. 
     }
     
     ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter]= $sampleID.".".$date."_".$flowCell."_".$index.".lane".$1."_".$direction;  #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
 
-    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'originalFileName'} = ${$infileHashRef}{$sampleID}[$infileCounter];  #Original fileName
+    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'OriginalFileName'} = ${$infileHashRef}{$sampleID}[$infileCounter];  #Original fileName
 
-    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'originalFileNameNoEnding'} = $1."_".$date."_".$flowCell."_".$sampleID."_".$index."_".$direction;  #Original fileName, but no ending
+    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'OriginalFileNameNoEnding'} = $1."_".$date."_".$flowCell."_".$sampleID."_".$index."_".$direction;  #Original fileName, but no ending
 
-    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'lane'} = $1;  #Save sample lane                  
+    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'Lane'} = $1;  #Save sample lane                  
 
-    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'date'} = $date;  #Save Sequence run date          
+    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'Date'} = $parsedDate;  #Save Sequence run date
 
-    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'flow-cell'} = $flowCell;  #Save Sequence flow-cell        
+    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'Flow-cell'} = $flowCell;  #Save Sequence flow-cell        
 
-    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'sampleBarcode'} = $index;  #Save sample barcode
+    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'SampleBarcode'} = $index;  #Save sample barcode
 
-    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'runBarcode'} = $date."_".$flowCell."_".$1."_".$index;  #Save run barcode
+    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'RunBarcode'} = $date."_".$flowCell."_".$1."_".$index;  #Save run barcode
     
     ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'ReadDirection'} = $direction;   
 
-    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'sequenceLength'} = `cd ${$inDirPathHashRef}{$sampleID};$readFile ${$infileHashRef}{$sampleID}[$infileCounter] | $seqLengthRegExp;`;  #Collect sequence length
+    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'SequenceLength'} = `cd ${$inDirPathHashRef}{$sampleID};$readFile ${$infileHashRef}{$sampleID}[$infileCounter] | $seqLengthRegExp;`;  #Collect sequence length
 }
 
 
@@ -11395,13 +11539,15 @@ sub AddToScriptParameter {
 
 			    if (-f ${$scriptParameterHashRef}{'sampleInfoFile'}) {
 
-				%sampleInfo = &LoadYAML(\%scriptParameter, ${$scriptParameterHashRef}{'sampleInfoFile'});  #Load parameters from previous run from sampleInfoFile	  
-				
+				my %tempHash = &LoadYAML(\%scriptParameter, ${$scriptParameterHashRef}{'sampleInfoFile'});  #Load parameters from previous run from sampleInfoFile
+
+				## Update sampleInfo with information from pedigree
+				&UpdateSampleInfoHash(\%sampleInfo, \%tempHash, \${$scriptParameterHashRef}{'familyID'});				
 			    }
 			    if (defined(${$scriptParameterHashRef}{'pedigreeFile'}) ) {
 				
-				${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pedigreeFile'}{'Path'} = ${$scriptParameterHashRef}{'pedigreeFile'};  #Add pedigreeFile to sampleInfo
-				${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pedigreeFileAnalysis'}{'Path'} = ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'familyID'}."/qc_pedigree.yaml";  #Add pedigreeFile info used in this analysis to SampleInfoFile
+				${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'PedigreeFile'}{'Path'} = ${$scriptParameterHashRef}{'pedigreeFile'};  #Add pedigreeFile to sampleInfo
+				${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'PedigreeFileAnalysis'}{'Path'} = ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'familyID'}."/qc_pedigree.yaml";  #Add pedigreeFile info used in this analysis to SampleInfoFile
 			    }
 			} 
 		    }
@@ -11419,13 +11565,13 @@ sub AddToScriptParameter {
 
 			if (${$scriptParameterHashRef}{'vcfParserSelectFile'} eq "noUserInfo") {  #No SelectFile was given
 			    
-			    ${$scriptParameterHashRef}{'VEPOutputFileCount'} = 1;  #To track if VCFParser was used with a vcfParserSelectFile (=2) or not (=1)
+			    ${$scriptParameterHashRef}{'VcfParserOutputFileCount'} = 1;  #To track if VCFParser was used with a vcfParserSelectFile (=2) or not (=1)
 			}
 			else {  #To enable addition of selectFile to sampleInfo                                                                       
 			    
 			    &CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}}), \${$argHashRef}{'parameterName'}, "f");
 
-			    ${$scriptParameterHashRef}{'VEPOutputFileCount'} = 2;  #To track if VCFParser was used with a vcfParserSelectFile (=2) or not (=1)
+			    ${$scriptParameterHashRef}{'VcfParserOutputFileCount'} = 2;  #To track if VCFParser was used with a vcfParserSelectFile (=2) or not (=1)
 			}
 		    }
                     elsif ( (${$argHashRef}{'parameterName'} eq "geneFile") && (${$scriptParameterHashRef}{'pVariantEffectPredictor'} > 0) ) {  #Do nothing since VEP annotations can be used			    
@@ -11502,11 +11648,11 @@ sub AddToScriptParameter {
                 }
 		if (${$argHashRef}{'parameterName'} eq "instanceTag") {
 
-		    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{${$argHashRef}{'parameterName'}} = ${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}};
+		    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'InstanceTag'} = ${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}};
 		}
 		if (${$argHashRef}{'parameterName'} eq "researchEthicalApproval") {
 
-		    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{${$argHashRef}{'parameterName'}} = ${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}};
+		    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'ResearchEthicalApproval'} = ${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}};
 		}
 	    }
 	    
@@ -11527,24 +11673,8 @@ sub AddToScriptParameter {
 		    ${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}} = ${$argHashRef}{'parameterValue'};
 		}
 
-		## Code for checking commands in your path and executable
-		if ( (defined(${$argHashRef}{'programNamePath'})) && (defined(${$parameterHashRef}{${$argHashRef}{'parameterName'}}{ ${$argHashRef}{'programNamePath'} }[0])) ) {
-		
-		    if (${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}} > 0) {  #Only check path(s) for active programs
-		
-			for (my $programNamePathCounter=0;$programNamePathCounter<scalar(@{${$parameterHashRef}{${$argHashRef}{'parameterName'}}{ ${$argHashRef}{ ${$argHashRef}{'programNamePath'} } }});$programNamePathCounter++) {  #Check all binaries for sbatch program
-			    
-			    if ( grep { -x "$_/".${$parameterHashRef}{${$argHashRef}{'parameterName'}}{ ${$argHashRef}{'programNamePath'} }[$programNamePathCounter]} split(/:/,$ENV{PATH}) ) {
-				
-				$logger->info("ProgramCheck: ".${$parameterHashRef}{${$argHashRef}{'parameterName'}}{ ${$argHashRef}{'programNamePath'} }[$programNamePathCounter]." installed\n"); 
-			    }
-			    else {
-				$logger->fatal("Could not detect ".${$parameterHashRef}{${$argHashRef}{'parameterName'}}{ ${$argHashRef}{'programNamePath'} }[$programNamePathCounter]." in your Path\n");
-				exit 1;
-			    }
-			}
-		    }
-		}
+		## Checking commands in your path and executable
+		&CheckCommandinPath(\@{ ${$argHashRef}{'programNamePath'} }, \${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}});
 	    }
 	    
 	    if (${$argHashRef}{'parameterName'} eq "aligner") {
@@ -11929,13 +12059,13 @@ sub CheckIfMergedFiles {
 ##Returns  : "$infile, $PicardToolsMergeSwitch"
 ##Arguments: $scriptParameterHashRef, $sampleInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $sampleID
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
-##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $laneHashRef                => The lane info hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $sampleID                   => The sampleID
 
     my $scriptParameterHashRef = $_[0];
-    my $sampleInfoHashRef = $_[1];
+    my $fileInfoHashRef = $_[1];
     my $laneHashRef = $_[2];
     my $infilesLaneNoEndingHashRef = $_[3];
     my $sampleID = $_[4];
@@ -11944,7 +12074,7 @@ sub CheckIfMergedFiles {
     my $mergeLanes;  #To pick up merged lanes later 
     my $PicardToolsMergeSwitch = 0;  #0=no merge was previously performed
 
-    if (${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'picardToolsMergeSamFilesPrevious'} == 1) {  # Files merged this round with merged file from previous round
+    if (${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'picardToolsMergeSamFilesPrevious'} == 1) {  # Files merged this round with merged file from previous round
 	
 	for (my $mergeFileCounter=0;$mergeFileCounter<scalar(@{${$scriptParameterHashRef}{'picardToolsMergeSamFilesPrevious'}});$mergeFileCounter++) {
 	    
@@ -12855,14 +12985,24 @@ sub SetTargetFiles {
     my $sampleIDRef = $_[6];
     my $parameterNameRef = $_[7];
     my $referenceFileEndingRef = $_[8];
+
+    my %alias = ('exomeTargetBedInfileLists' => "ExomeTargetBedInfileLists",
+		 'exomeTargetPaddedBedInfileLists' => "ExomeTargetPaddedBedInfileLists",
+	);
     
     if (defined(${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef})) {  #Capture kit check
 
 	${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef} =~ s/GenomeReferenceSource/$$humanGenomeReferenceSourceRef/;  #Replace with Refseq genome or Ensembl genome
 	${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef} =~ s/Version/$$humanGenomeReferenceVersionRef/;  #Replace with actual version 
 	
-	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef} = ${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef};  #Add to sampleInfo for qc print later
-	
+	if (exists($alias{$$parameterNameRef})) {
+
+	    ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{$alias{$$parameterNameRef}} = ${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef};  #Add to sampleInfo for qc print later
+	}
+	else {
+
+	    ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef} = ${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef};  #Add to sampleInfo for qc print later
+	}
 	&CheckExistance(\%parameter, \%{$scriptParameterHashRef}, \(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef}), \$$parameterNameRef, "f", \$$sampleIDRef);
 
 	$logger->info("Set ".$$parameterNameRef." to: ".${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef}, "\n");
@@ -13926,12 +14066,19 @@ sub RemovePedigreeElements {
 
 ##RemovePedigreeElements
     
-##Function : Removes ALL keys at third level except 'Capture_kit', 'Sex'. 
+##Function : Removes ALL keys at third level except keys in allowedEntries hash. 
 ##Returns  : ""
 ##Arguments: $hashRef
 ##         : $hashRef => Hash {REF}
     
     my $hashRef = $_[0];
+    
+    my %allowedEntries = ('Capture_kit' => "Capture_kit",
+			  'Sex' => "Sex",
+			  'Mother' => "Mother",
+			  'Father' => "Father",
+			  'Clinical_db_gene_annotation' => "Clinical_db_gene_annotation",
+	);
     
     for my $familyID (keys %{$hashRef}) {
 
@@ -13939,7 +14086,7 @@ sub RemovePedigreeElements {
 
 	    for my $pedigreeElements (keys %{ ${$hashRef}{$familyID}{$sampleID} })  {
 		
-		if ( ($pedigreeElements ne 'Capture_kit') && ($pedigreeElements ne 'Sex') && ($pedigreeElements ne 'Mother') && ($pedigreeElements ne 'Father') ) {
+		unless (exists($allowedEntries{$pedigreeElements})) {
 
 		    delete(${$hashRef}{$familyID}{$sampleID}{$pedigreeElements});
 		}
@@ -14062,14 +14209,14 @@ sub CheckMergePicardToolsMergeSamFilesPrevious {
     
 ##CheckMergePicardToolsMergeSamFilesPrevious
     
-##Function : Checks if previous alignments have been supplied for each sampleID. Saves merge info in sampleInfo hash.
+##Function : Checks if previous alignments have been supplied for each sampleID. Saves merge info in fileInfo hash.
 ##Returns  : "" 
-##Arguments: $scriptParameterHashRef, $sampleInfoHashRef
+##Arguments: $scriptParameterHashRef, $fileInfoHashRef
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
-##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
+##         : $fileInfoHashRef        => The fileInfo hash {REF}
     
     my $scriptParameterHashRef = $_[0];
-    my $sampleInfoHashRef = $_[1];
+    my $fileInfoHashRef = $_[1];
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDCounter++) {  #Check all samples to check, which are to be merged with previous files later
 	
@@ -14079,17 +14226,17 @@ sub CheckMergePicardToolsMergeSamFilesPrevious {
 		
 		if (${$scriptParameterHashRef}{'picardToolsMergeSamFilesPrevious'}[$mergeFileCounter] =~ /${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter]/) {  #Look for sampleID in previously generated file to be merged with current run to be able to merge correct files
 		    
-		    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} = 1;
+		    ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} = 1;
 		}
 		else {
 		    
-		    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} = 0;
+		    ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} = 0;
 		}
 	    }
 	}
 	else {  #Not supplied - Set to 0 
 	    
-	    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} = 0;
+	    ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} = 0;
 	}
     }
 }
@@ -14333,7 +14480,7 @@ sub MigrateFilesToTemp {
 
 	if ( (defined(${$argHashRef}{'sampleInfoHashRef'})) && (defined(${$argHashRef}{'sampleID'})) ) {
 
-	    $sequenceRunMode = ${$argHashRef}{'sampleInfoHashRef'}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$argHashRef}{'sampleID'} }{'File'}{ ${$arrayRef}[$fileCounter] }{'sequenceRunType'}; #Collect paired-end or single-end sequence run mode
+	    $sequenceRunMode = ${$argHashRef}{'sampleInfoHashRef'}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$argHashRef}{'sampleID'} }{'File'}{ ${$arrayRef}[$fileCounter] }{'SequenceRunType'}; #Collect paired-end or single-end sequence run mode
 	}
 	&PrintWait(\$fileCounter, \${$argHashRef}{'nrCores'}, \$coreCounter, $FILEHANDLE);
 	
@@ -14395,7 +14542,7 @@ sub RemoveFilesAtTemp {
 
 	if ( (defined(${$argHashRef}{'sampleInfoHashRef'})) && (defined(${$argHashRef}{'sampleID'})) ) {
 	
-	    $sequenceRunMode = ${$argHashRef}{'sampleInfoHashRef'}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$argHashRef}{'sampleID'} }{'File'}{ ${$arrayRef}[$fileCounter] }{'sequenceRunType'};  #Collect paired-end or single-end sequence run mode
+	    $sequenceRunMode = ${$argHashRef}{'sampleInfoHashRef'}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$argHashRef}{'sampleID'} }{'File'}{ ${$arrayRef}[$fileCounter] }{'SequenceRunType'};  #Collect paired-end or single-end sequence run mode
 	}
 	
 	## Remove file(s) at temporary directory.
@@ -15034,7 +15181,7 @@ sub FindMaxSeqLengthForSampleID {
 
     for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} });$infileCounter++) {  #For all infiles per lane
 	
-	my $seqLength = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'File'}{${$infilesBothStrandsNoEndingHashRef}{$$sampleIDRef}[$infileCounter]}{'sequenceLength'};
+	my $seqLength = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'File'}{${$infilesBothStrandsNoEndingHashRef}{$$sampleIDRef}[$infileCounter]}{'SequenceLength'};
 
 	if ($seqLength > $maxSequenceLength) {
 
@@ -15113,62 +15260,76 @@ sub EnableTrap {
 }
 
 
-sub CollectSelectDatabases {
+sub CollectSubDatabases {
 
-##CollectSelectDatabases
+##CollectSubDatabases
 
-##Function : Collect databases(s) from a potentially merged selectFile and adds them to sampleInfo 
+##Function : Collect databases(s) from a database file and adds them to sampleInfo 
 ##Returns  : ""
-##Arguments: $sampleInfoHashRef, $familyIDRef, $selectFile
+##Arguments: $sampleInfoHashRef, $familyIDRef, $databaseFile
 ##         : $sampleInfoHashRef => Info on samples and family hash {REF}
 ##         : $familyIDRef       => The family ID {REF}
-##         : $selectFile        => The selectFile 
+##         : $databaseFile      => The database file 
 
     my $sampleInfoHashRef = $_[0];
     my $familyIDRef = $_[1];
     my $programNameRef = $_[2];
-    my $selectFile = $_[3];
+    my $databaseFile = $_[3];
+    my $databaseKey = $_[4];
     
     my %memberDatabase;  #Collect each member database features
-    my %header = ("##Database=<ID" => "FileName",
+    my %header = ("Database=<ID" => "FileName",
 		  "Version" => "Version",
 		  "Acronym" => "Acronym",
-		  "Clinical_db_genome_build" => "Genome_build",
+		  "Clinical_db_genome_build" => "GenomeBuild",
+		  "Date" => "Date",
+		  "Complete_name" => "CompleteName",
 	);
 
     my $subDatabaseRegExp = q?perl -nae 'if ($_=~/^##Database=<ID=/) {chomp($_);my @entries=split(/,/, $_); my $entry = join(",", $_); print $entry.":" } if($_=~/^#\w/) {last;}'?;
-    my $ret = `$subDatabaseRegExp $selectFile`;  #Collect databases(s) from selectFile header
+    my $ret = `$subDatabaseRegExp $databaseFile`;  #Collect databases(s) from selectFile header
     my @databases = split(/:/, $ret);  #Split each member database into array element
 
     foreach my $line (@databases) {
 
-	my @features = split(/,/, $line);  #Split each memeber database line into features
+	my @features = split(/,/, $line);  #Split each memember database line into features
 
 	foreach my $featureElement (@features) {
 
-	    foreach my $selectFileHeader (keys %header) {  #Parse the features using defined header keys
+	    foreach my $databaseFileHeader (keys %header) {  #Parse the features using defined header keys
 
-		if ($featureElement=~/$selectFileHeader=(\S+)/) {
+		if ($featureElement=~/^##$databaseFileHeader=(\S+)/) {  #Special case to resolve that "=" occurs to times within featureElement
+
+		    $memberDatabase{ $header{$databaseFileHeader} } = $1;
+		    last;
+		}
+		elsif ($featureElement=~/$databaseFileHeader=/) {
 		    
-		    $memberDatabase{ $header{$selectFileHeader} } = $1;
+		    my @tempArray = split("=", $featureElement);
+		    $memberDatabase{ $header{$databaseFileHeader} } = $tempArray[1];  #Value
 		    last;
 		}
 	    }
 	}
 
 	if ( (defined($memberDatabase{'FileName'})) && (defined($memberDatabase{'Acronym'})) ) {
-
+	    
 	    my $databaseName = $memberDatabase{'FileName'}."_".$memberDatabase{'Acronym'};  #Create unique member database ID
 	
 	    ## Add new entries
 	    foreach my $feature (keys %memberDatabase) {
 
-		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$$programNameRef}{"SelectFile"}{'Database'}{$databaseName}{$feature} = $memberDatabase{$feature};
+		if ($feature eq "Date") {
+
+		       my $date = DateTime::Format::Multi->parse_datetime($memberDatabase{$feature});  #Reparse to dateTime standard
+		       $memberDatabase{$feature} = $date->ymd('-');  #Only date
+		}
+		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$$programNameRef}{$databaseKey}{'Database'}{$databaseName}{$feature} = $memberDatabase{$feature};
 	    }
 	}
 	else {
 
-	    $logger->warn("Unable to write clinical database to qc_sampleInfo. Lacking ##Database=<ID=[?] or Acronym=[?] in selectFile header."."\n");
+	    $logger->warn("Unable to write ".$databaseKey." database to qc_sampleInfo. Lacking ##Database=<ID=[?] or Acronym=[?] in database header."."\n");
 	}
 	%memberDatabase = ();  #Reset hash for next line
     }
@@ -15176,11 +15337,23 @@ sub CollectSelectDatabases {
 
 
 sub AddMostCompleteVCF {
-	    
+
+##AddMostCompleteVCF
+
+##Function : Adds the most complete vcf file to sampleInfo
+##Returns  : ""
+##Arguments: $scriptParameterHashRef, $sampleInfoHashRef, $familyIDRef, $path, $programName, $VcfParserOutputFileCounter
+##         : $scriptParameterHashRef      => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef           => Info on samples and family hash {REF}
+##         : $familyIDRef                 => The family ID {REF}
+##         : $path                        => Path to file
+##         : $programName                 => Program name
+##         : $VcfParserOutputFileCounter  => Number of outfile files from in vcfParser (select, range)
+
     my ($argHashRef) = @_;
     
     my %default = ('familyIDRef' => ${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
-		   'VEPOutputFilesCounter' => 0,
+		   'VcfParserOutputFileCounter' => 0,
 	);
 
    &SetDefaultArg(\%{$argHashRef}, \%default);
@@ -15191,7 +15364,7 @@ sub AddMostCompleteVCF {
     
     if ( (${$scriptParameterHashRef}{ "p".${$argHashRef}{'programName'} } == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 	
-	if (${$argHashRef}{'VEPOutputFilesCounter'} == 1) {
+	if (${$argHashRef}{'VcfParserOutputFileCounter'} == 1) {
 	    
 	    ${$sampleInfoHashRef}{ ${$argHashRef}{'familyIDRef'} }{ ${$argHashRef}{'familyIDRef'} }{'VCFFile'}{'Clinical'}{'Path'} = ${$argHashRef}{'path'};
 	}
@@ -15201,6 +15374,92 @@ sub AddMostCompleteVCF {
 	}
     }
 }
+
+
+sub CheckCommandinPath {
+
+##CheckCommandinPath
+
+##Function : Checking commands in your path and executable
+##Returns  : ""
+##Arguments: $programNamePathsArrayRef, $parameterNameRef
+##         : $programNamePathsArrayRef => Program name(s) in path {REF}
+##         : $parameterNameRef         => MIP program {REF}
+
+    my $programNamePathsArrayRef = $_[0];
+    my $parameterNameRef = $_[1];
+
+    if ( (scalar(@{$programNamePathsArrayRef}) > 0) && ($$parameterNameRef > 0) ) {  #Only check path(s) for active programs
+
+	foreach my $program (@{ $programNamePathsArrayRef }) {
+	    
+	    if ( grep { -x "$_/".$program } split(/:/,$ENV{PATH}) ) {
+		
+		$logger->info("ProgramCheck: ".$program." installed\n"); 
+	    }
+	    else {
+		
+		$logger->fatal("Could not detect ".$program." in your Path\n");
+		exit 1;
+	    }
+	}
+    }
+}
+
+
+sub UpdateSampleInfoHash {
+    
+##UpdateSampleInfoHash
+    
+##Function : Update sampleInfo with information from pedigree
+##Returns  : ""
+##Arguments: $sampleInfoHashRef, $tempHashRef, $familyIDRef
+##         : $tempHashRef       => Allowed parameters from pedigre file hash {REF}
+##         : $sampleInfoHashRef => Info on samples and family hash {REF}
+##         : $familyIDRef       => The family ID {REF}
+    
+    my $sampleInfoHashRef = $_[0];
+    my $tempHashRef = $_[1];
+    my $familyIDRef = $_[2];
+    
+    foreach my $sampleID (keys %{ ${$sampleInfoHashRef}{$$familyIDRef} }) {
+	
+	foreach my $key (keys %{ ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}}) {
+	    
+	    if (exists(${$tempHashRef}{$$familyIDRef}{$sampleID}{$key})) {
+		
+		${$tempHashRef}{$$familyIDRef}{$sampleID}{$key} = ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{$key};
+	    }
+	}
+    }
+    %{$sampleInfoHashRef} = %{$tempHashRef};  #Copy hash with updated keys from what was in sampleInfo (should be only pedigree %allowedEntries)
+}
+
+package DateTime::Format::Multi;
+
+#Package for testing multiple date formats
+
+## Third party module(s) on parsing date formats
+use DateTime::Format::ISO8601;
+use DateTime::Format::HTTP;
+use DateTime::Format::Mail;
+
+#Build the parsers
+use DateTime::Format::Builder (
+    parsers => {
+	parse_datetime => [
+	    sub {
+		eval { DateTime::Format::ISO8601->parse_datetime( $_[1] ) };
+	    },
+	    sub {
+		eval { DateTime::Format::Mail->parse_datetime( $_[1] ) };
+	    },
+	    sub {
+		eval { DateTime::Format::HTTP->parse_datetime( $_[1] ) };
+	    },
+	    ]
+    }
+    );
 
 ####
 #Decommissioned
