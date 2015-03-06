@@ -34,35 +34,35 @@ BEGIN {
 	qq{
 mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [project ID] -s [sample ID,.,.,.,n] -em [e-mail] -osd [outdirscripts] -odd [outDataDir] -f [familyID] -p[program]
                ####MIP
-               -ifd/--inFilesDirs Infile directory(s) (comma sep; mandatory: supply whole path,)
-               -isd/--inScriptDir The pipeline custom script in directory (mandatory: supply whole path)
-               -rd/--referencesDir Reference(s) directory (mandatory: supply whole path)
+               -ifd/--inFilesDirs Infile directory(s) (comma sep; mandatory)
+               -isd/--inScriptDir The pipeline custom script in directory (mandatory)
+               -rd/--referencesDir Reference(s) directory (mandatory)
                -p/--projectID The project ID  (mandatory)
                -s/--sampleIDs The sample ID(s)(comma sep; mandatory)
                -em/--email E-mail (defaults to "")
                -emt/--emailType E-mail type (defaults to F (=FAIL);Options: B (=BEGIN) and/or F (=FAIL) and/or E=(END))
-               -odd/--outDataDir The data files output directory (mandatory: supply whole path)
-               -osd/--outScriptDir The script files (.sh) output directory (mandatory: supply whole path)
+               -odd/--outDataDir The data files output directory (mandatory)
+               -osd/--outScriptDir The script files (.sh) output directory (mandatory)
                -f/--familyID Group id of samples to be compared (defaults to "0" (=no), (Ex: 1 for IDN 1-1-1A))
-               -ped/--pedigreeFile (defaults to ""; supply whole path)
+               -ped/--pedigreeFile (defaults to "")
                -hgr/--humanGenomeReference Fasta file for the human genome reference (defaults to "Homo_sapiens.GRCh37.d5.fasta;1000G decoy version 5")
                -al/--aligner Setting which aligner was used for alignment in previous analysis (defaults to "")
                -at/--analysisType Type of analysis to perform (defaults to "exomes";Valid entries: "genomes", "exomes", "rapid")
                -mc/--maximumCores The maximum number of cores per node used in the analysis (defaults to "8")
                -c/--configFile YAML config file for script parameters (defaults to "")
-               -wc/--writeConfigFile Write YAML configuration file for script parameters (defaults to "";supply whole path)
+               -wc/--writeConfigFile Write YAML configuration file for script parameters (defaults to "")
                -int/--instanceTag Tag family with instance association in sampleInfo file (comma sep; defaults to "")
                -rea/--researchEthicalApproval Tag for displaying research candidates in Scout (defaults to "notApproved")
                -sif/--sampleInfoFile YAML file for sample info used in the analysis (defaults to "{outDataDir}/{familyID}/{familyID}_qc_sampleInfo.yaml")
                -dra/--dryRunAll Sets all programs to dry run mode i.e. no sbatch submission (defaults to "0" (=no))
                -tmd/--tempDirectory Set the temporary directory for all programs (defaults to "/scratch/SLURM_JOB_ID";supply whole path)
-               -jul/--javaUseLargePages Use large page memory. (-XX,hence option considered not stable and are subject to change without notice, but can be consiered when faced with Java Runtime Environment Memory issues)
+               -jul/--javaUseLargePages Use large page memory. (-XX, hence option considered not stable and are subject to change without notice, but can be consiered when faced with Java Runtime Environment Memory issues)
                -nrm/--nodeRamMemory The RAM memory size of the node(s) in GigaBytes (Defaults to 24)
                -pve/--pythonVirtualEnvironment Pyhton virtualenvironment (defaults to "")
                -pvec/--pythonVirtualEnvironmentCommand Pyhton virtualenvironment (defaults to "workon";whitespace sep)
                -ges/--genomicSet Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
                -rio/--reduceIO Run consecutive models at nodes (defaults to "1" (=yes))
-               -l/--logFile Mip log file (defaults to "{outDataDir}/{familyID}/mip_log/{timestamp}/{scriptname}_{timestamp}.log")
+               -l/--logFile Mip log file (defaults to "{outDataDir}/{familyID}/mip_log/{date}/{scriptname}_{timestamp}.log")
                -h/--help Display this help message    
                -v/--version Display version of MIP            
                
@@ -144,8 +144,8 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                
                ###Anotation
                -pVeP/--pVariantEffectPredictor Annotate variants using VEP (defaults to "1" (=yes))
-                 -vepp/--vepDirectoryPath Path to VEP script directory (defaults to ""; supply whole path)
-                 -vepc/vepDirectoryCache Specify the cache directory to use (supply whole path, defaults to "") 
+                 -vepp/--vepDirectoryPath Path to VEP script directory (defaults to "")
+                 -vepc/--vepDirectoryCache Specify the cache directory to use (defaults to "") 
                  -vepf/--vepFeatures VEP features (defaults to ("hgvs","symbol","numbers","sift","polyphen","humdiv","domains","protein","ccds","uniprot","biotype","regulatory"); comma sep)
                -pVcP/--pVCFParser Parse variants using vcfParser.pl (defaults to "1" (=yes))
                  -vcpvt/--vcfParserVepTranscripts Parse VEP transcript specific entries (defaults to "0" (=no))
@@ -155,7 +155,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -vcpsfm/--vcfParserSelectFileMatchingColumn Position of HGNC Symbol column in SelectFile (defaults to "")
                  -vcpsfa/--vcfParserSelectFeatureAnnotationColumns Feature columns to use in annotation (defaults to ""; comma sep)
                -pAnV/--pAnnovar Annotate variants using Annovar (defaults to "0" (=no))
-                 -anvp/--annovarPath  Path to Annovar script directory (supply whole path, defaults to "". NOTE: Assumes that the annovar db files are located in annovar/humandb)
+                 -anvp/--annovarPath  Path to Annovar script directory (defaults to "". NOTE: Assumes that the annovar db files are located in annovar/humandb)
                  -anvgbv/--annovarGenomeBuildVersion Annovar genome build version (defaults to "hg19")
                  -anvtn/--annovarTableNames Annovar table names (defaults to ("refGene","mce46way","gerp++elem","segdup","tfbs","mirna","snp137NonFlagged","1000g2012apr_all","esp6500si_all","ljb2_sift","ljb2_pp2hdiv","ljb2_pp2hvar","ljb2_mt","ljb2_lrt","ljb2_gerp++","ljb2_phylop"); comma sep)
                  -anvstn/--annovarSupportedTableNames Print Annovar MIP supported table names
@@ -709,6 +709,8 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'pArS|pAnalysisRunStatus:n' => \$parameter{'pAnalysisRunStatus'}{'value'},  #AnalysisRunStatus change flag in sampleInfo file if allowed to execute
     );
 
+## Change relative path to absolute pathfor certain flags 
+&UpdateToAbsolutePath(\%parameter);
 
 if ($parameter{'configFile'}{'value'} ne "nocmdinput") {  #Input from cmd
 
@@ -15435,6 +15437,39 @@ sub UpdateSampleInfoHash {
 	}
     }
     %{$sampleInfoHashRef} = %{$tempHashRef};  #Copy hash with updated keys from what was in sampleInfo (should be only pedigree %allowedEntries)
+}
+
+
+sub UpdateToAbsolutePath {
+
+##UpdateToAbsolutePath
+
+##Function : Change relative path to absolute pathfor certain flags 
+##Returns  : ""
+##Arguments: $parameterHashRef
+##         : $parameterHashRef => The parameter hash {REF}
+
+    my $parameterHashRef = $_[0];
+
+    my @flags = ("inFilesDirs", "inScriptDir", "referencesDir", "outDataDir", "outScriptDir", "pedigreeFile", "writeConfigFile", "sampleInfoFile", "logFile", "picardToolsPath", "genomeAnalysisToolKitPath", "vepDirectoryPath", "vepDirectoryCache", "snpEffPath", "annovarPath", "QCCollectSampleInfoFile");
+
+    foreach my $flag (@flags) {
+	
+	if (ref(${$parameterHashRef}{$flag}{'value'}) eq "ARRAY") {  #Array reference
+	    
+	    for(my $elementCounter=0;$elementCounter<scalar(@{${$parameterHashRef}{$flag}{'value'}});$elementCounter++) {
+
+		if (${$parameterHashRef}{$flag}{'value'}[$elementCounter] ne "nocmdinput") {
+		    
+		    ${$parameterHashRef}{$flag}{'value'}[$elementCounter] = abs_path(${$parameterHashRef}{$flag}{'value'}[$elementCounter]);
+		}
+	    }
+	}
+	elsif (${$parameterHashRef}{$flag}{'value'} ne "nocmdinput") {
+	    
+	    ${$parameterHashRef}{$flag}{'value'} = abs_path(${$parameterHashRef}{$flag}{'value'});
+	}
+    }
 }
 
 package DateTime::Format::Multi;
