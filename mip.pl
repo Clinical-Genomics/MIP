@@ -13,6 +13,7 @@ use Getopt::Long;
 use POSIX;
 use IO::File;
 use DateTime;
+use Cwd 'abs_path';  #Export absolute path function
 
 ## Third party module(s)
 use YAML;
@@ -527,7 +528,7 @@ my (@GATKTargetPaddedBedIntervalLists);  #Array for target infile lists used in 
 ##humanGenomeReference
 &DefineParametersPath(\%parameter, \@orderParameters, "humanGenomeReference", "Homo_sapiens.GRCh37.d5.fasta", "pBwaMem,pBwaAln,pBwaSampe,pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKGenoTypeGVCFs,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pAnnovar,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "file", "yesAutoDownLoad");
 
-my $mipVersion = "v2.2.0";  #Set version
+my $mipVersion = "v2.2.1";  #Set version
 
 my ($aligner) = ("nocmdinput");
 
@@ -711,6 +712,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 
 if ($parameter{'configFile'}{'value'} ne "nocmdinput") {  #Input from cmd
 
+    $parameter{'configFile'}{'value'} = abs_path($parameter{'configFile'}{'value'});  #Get absolute path to relay correctly in config
     ## Loads a YAML file into an arbitrary hash and returns it.
     %scriptParameter = &LoadYAML(\%scriptParameter, $parameter{'configFile'}{'value'});  #Load parameters from configfile
 
