@@ -463,8 +463,6 @@ my (@GATKTargetPaddedBedIntervalLists);  #Array for target infile lists used in 
 
 &DefineParameters(\%parameter, \@orderParameters, "annovarGenomeBuildVersion", "program", "hg19", "pAnnovar");
 
-&DefineParameters(\%parameter, \@orderParameters, "annovarSupportedTableNames", "program", 0, "pAnnovar");
-
 &DefineParameters(\%parameter, \@orderParameters, "annovarMAFThreshold", "program", 0, "pAnnovar");
 
 
@@ -15444,32 +15442,57 @@ sub UpdateToAbsolutePath {
 
 ##UpdateToAbsolutePath
 
-##Function : Change relative path to absolute pathfor certain flags 
+##Function : Change relative path to absolute pathfor certain parameterNames 
 ##Returns  : ""
 ##Arguments: $parameterHashRef
 ##         : $parameterHashRef => The parameter hash {REF}
 
     my $parameterHashRef = $_[0];
 
-    my @flags = ("inFilesDirs", "inScriptDir", "referencesDir", "outDataDir", "outScriptDir", "pedigreeFile", "writeConfigFile", "sampleInfoFile", "logFile", "picardToolsPath", "genomeAnalysisToolKitPath", "vepDirectoryPath", "vepDirectoryCache", "snpEffPath", "annovarPath", "QCCollectSampleInfoFile");
+    my @parameterNames = ("inFilesDirs", "inScriptDir", "referencesDir", "outDataDir", "outScriptDir", "pedigreeFile", "writeConfigFile", "sampleInfoFile", "logFile", "picardToolsPath", "genomeAnalysisToolKitPath", "vepDirectoryPath", "vepDirectoryCache", "snpEffPath", "annovarPath", "QCCollectSampleInfoFile");
 
-    foreach my $flag (@flags) {
+    foreach my $parameterName (@parameterNames) {
 	
-	if (ref(${$parameterHashRef}{$flag}{'value'}) eq "ARRAY") {  #Array reference
+	if (ref(${$parameterHashRef}{$parameterName}{'value'}) eq "ARRAY") {  #Array reference
 	    
-	    for(my $elementCounter=0;$elementCounter<scalar(@{${$parameterHashRef}{$flag}{'value'}});$elementCounter++) {
+	    for(my $elementCounter=0;$elementCounter<scalar(@{${$parameterHashRef}{$parameterName}{'value'}});$elementCounter++) {
 
-		if (${$parameterHashRef}{$flag}{'value'}[$elementCounter] ne "nocmdinput") {
-		    
-		    ${$parameterHashRef}{$flag}{'value'}[$elementCounter] = abs_path(${$parameterHashRef}{$flag}{'value'}[$elementCounter]);
+		if (${$parameterHashRef}{$parameterName}{'value'}[$elementCounter] ne "nocmdinput") {
+		  
+		    ${$parameterHashRef}{$parameterName}{'value'}[$elementCounter] = &FindAbsolutePath(${$parameterHashRef}{$parameterName}{'value'}[$elementCounter], $parameterName);
 		}
 	    }
 	}
-	elsif (${$parameterHashRef}{$flag}{'value'} ne "nocmdinput") {
+	elsif (${$parameterHashRef}{$parameterName}{'value'} ne "nocmdinput") {
 	    
-	    ${$parameterHashRef}{$flag}{'value'} = abs_path(${$parameterHashRef}{$flag}{'value'});
+	    ${$parameterHashRef}{$parameterName}{'value'} = &FindAbsolutePath(${$parameterHashRef}{$parameterName}{'value'}, $parameterName);
 	}
     }
+}
+
+sub FindAbsolutePath {
+
+##FindAbsolutePath
+    
+##Function : Find aboslute path for supplied path or craoks and exists if path does not exists
+##Returns  : "$path - absolute path"
+##Arguments: $path, $parameterName
+##         : $path          => The supplied path to be updated/evaluated
+##         : $parameterName => The parameter to be evaluated
+
+    my $path = $_[0];
+    my $parameterName = $_[1];
+
+    my $temporaryPath = $path;
+    
+    $path = abs_path($path);
+    
+    unless(defined($path)) {
+	
+	warn("Could not find absolute path for ".$parameterName.": ".$temporaryPath.". Please check the supplied path!\n");
+	exit 1;
+    }
+    return $path;
 }
 
 package DateTime::Format::Multi;
