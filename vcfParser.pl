@@ -30,7 +30,7 @@ my ($infile, $parseVEP, $rangeFeatureFile, $selectFeatureFile, $selectFeatureMat
 my (@metaData, @selectMetaData, @rangeFeatureAnnotationColumns, @selectFeatureAnnotationColumns); 
 my (%geneAnnotation, %consequenceSeverity, %rangeData, %selectData, %snpEffCmd, %tree, %metaData);
 
-my $vcfParserVersion = "1.2.0";
+my $vcfParserVersion = "1.2.1";
 
 ## Enables cmd "vcfParser.pl" to print usage help 
 if(scalar(@ARGV) == 0) {
@@ -800,6 +800,11 @@ sub ReadInfileVCF {
 
 				for (my $consequencesCounter=0;$consequencesCounter<scalar(@consequences);$consequencesCounter++) {
 				    
+				    unless (exists(${$consequenceSeverityHashRef}{$consequences[$consequencesCounter]})) {
+					
+					warn("Could not find SO-term from vcf in consequneceSeverity hash. Update hash to contain SO-term: '".$consequences[$consequencesCounter]."'\n");
+					exit 1;
+				    }
 				    if ( defined($consequence{ $variantData{'Symbol'} }{$allele}{'Score'}) ) { #Compare to previous record
 					
 					if (${$consequenceSeverityHashRef}{$consequences[$consequencesCounter]}{'Rank'} < $consequence{ $variantData{'Symbol'} }{$allele}{'Score'}) { #Collect most severe consequence

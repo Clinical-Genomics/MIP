@@ -526,7 +526,7 @@ my (@GATKTargetPaddedBedIntervalLists);  #Array for target infile lists used in 
 ##humanGenomeReference
 &DefineParametersPath(\%parameter, \@orderParameters, "humanGenomeReference", "Homo_sapiens.GRCh37.d5.fasta", "pBwaMem,pBwaAln,pBwaSampe,pGATKRealigner,pGATKBaseRecalibration,pGATKHaploTypeCaller,pGATKGenoTypeGVCFs,pGATKVariantRecalibration,pGATKPhaseByTransmission,pGATKReadBackedPhasing,pGATKVariantEvalAll,pGATKVariantEvalExome,pAnnovar,pPicardToolsCalculateHSMetrics,pPicardToolsCollectMultipleMetrics", "file", "yesAutoDownLoad");
 
-my $mipVersion = "v2.2.2";  #Set version
+my $mipVersion = "v2.2.3";  #Set version
 
 my ($aligner) = ("nocmdinput");
 
@@ -566,7 +566,7 @@ my @annovarSupportedTableNames = ("refGene", "knownGene", "ensGene", "mce46way",
 
 my %annovarTable;  #Holds annovar tables and features
 
-## Enables cmd "mip.pl" to print usage help 
+## Enables cmd "mip.pl" to print usage help
 if(scalar(@ARGV) == 0) {
 
     print STDOUT $USAGE, "\n";
