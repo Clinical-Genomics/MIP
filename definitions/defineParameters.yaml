@@ -1,0 +1,1048 @@
+---
+### Project specific
+familyID:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  type: path
+outDataDir:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  type: path
+logFile:
+  associatedProgram:
+   - MIP
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  default: NotsetYet
+  type: path
+projectID:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  type: MIP
+email:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  type: MIP
+emailType:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  default: F
+  type: MIP
+maximumCores:
+  associatedProgram: 
+   - MIP
+  dataType: SCALAR
+  default: 16
+  type: MIP
+configFile:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  default: 0
+  type: path
+analysisType:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  default: exomes
+  type: MIP
+outScriptDir:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  type: path
+writeConfigFile:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  default: 0
+  type: path
+pedigreeFile:
+  associatedProgram:
+   - MIP
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  type: path
+sampleInfoFile:
+  associatedProgram:
+   - MIP
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  default: NotsetYet
+  existsCheck: file
+  type: path
+researchEthicalApproval:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  default: notApproved
+  type: MIP
+inScriptDir:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  existsCheck: directory
+  type: path
+referencesDir:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  existsCheck: directory
+  type: path
+dryRunAll:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  default: 0
+  type: MIP
+nodeRamMemory:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  default: 128
+  type: MIP
+tempDirectory:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  default: /scratch/$SLURM_JOB_ID
+  type: path
+genomicSet:
+  associatedProgram:
+   - MIP
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  default: noUserInfo
+  existsCheck: file
+  type: path
+reduceIO:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  default: 1
+  type: MIP
+###Programs
+## GZip
+pGZipFastq:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileEnding: nofileEnding
+  programNamePath: 
+   - gzip
+  type: program
+## FastQC
+pFastQC:
+  associatedProgram:
+   - MIP
+  chain: RawSeqQC
+  dataType: SCALAR
+  default: 1
+  fileEnding: nofileEnding
+  programNamePath:
+   - fastqc
+  type: program
+## Madeline
+pMadeline:
+  associatedProgram:
+   - MIP
+  chain: PedigreeDraw
+  dataType: SCALAR
+  default: 0
+  fileEnding: nofileEnding
+  programNamePath:
+   - madeline2
+  type: program
+## Mosaik
+pMosaikBuild:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileEnding: nofileEnding
+  programNamePath:
+   - MosaikBuild
+  type: program
+mosaikBuildMedianFragLength:
+  associatedProgram:
+   - pMosaikBuild
+  dataType: SCALAR
+  default: 375
+  type: program
+pMosaikAlign:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileEnding: _sorted
+  programNamePath:
+   - MosaikAligner
+  type: program
+mosaikAlignReference:
+  associatedProgram:
+   - pMosaikAlign
+  buildFile: yesAutoBuild
+  dataType: SCALAR
+  default: notSetYet
+  existsCheck: file
+  type: program
+mosaikAlignNeuralNetworkPeFile:
+  associatedProgram:
+   - pMosaikAlign
+  buildFile: yesAutoBuild
+  dataType: SCALAR
+  default: 2.1.78.pe.ann
+  existsCheck: file
+  type: path
+mosaikAlignNeuralNetworkSeFile:
+  associatedProgram:
+   - pMosaikAlign
+  buildFile: yesAutoBuild
+  dataType: SCALAR
+  default: 2.1.78.se.ann
+  existsCheck: file
+  type: path
+mosaikJumpDbStub:
+  associatedProgram:
+   - pMosaikAlign
+  buildFile: yesAutoBuild
+  dataType: SCALAR
+  default: notSetYet
+  existsCheck: file
+  type: path
+## BWA
+pBwaMem:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 0
+  fileEnding: _sorted
+  programNamePath:
+   - bwa
+  type: program
+bwaMemRapidDb:
+  associatedProgram:
+   - pBwaMem
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  existsCheck: file
+  type: path
+bwaMemCram:
+  associatedProgram:
+   - pBwaMem
+  dataType: SCALAR
+  default: 0
+  type: program
+pBwaAln:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 0
+  fileEnding: nofileEnding
+  programNamePath:
+   - bwa
+  type: program
+bwaAlnQualityTrimming:
+  associatedProgram:
+   - pBwaAln
+  dataType: SCALAR
+  default: 20
+  type: program
+pBwaSampe:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 0
+  fileEnding: nofileEnding
+  programNamePath:
+   - bwa
+  type: program
+bwaBuildReference:
+  associatedProgram:
+   - pBwaMem
+   - pBwaAln
+   - pBwaSampe
+  buildFile: yesAutoBuild
+  dataType: SCALAR
+  default: notSetYet
+  existsCheck: file
+  type: path
+## Choosen MIP Aligner
+aligner:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  default: mosaik
+  type: MIP
+## PicardTools
+pPicardToolsMergeRapidReads:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 0
+  fileEnding: nofileEnding
+  type: program
+pPicardToolsMergeSamFiles:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileEnding: _merged
+  type: program
+pPicardToolsMarkduplicatesWithMateCigar:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileEnding: _pmd
+  type: program
+## GATK BAM Calibration
+pGATKRealigner:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileEnding: _rreal
+  type: program
+GATKReAlignerINDELKnownSet1:
+  associatedProgram:
+   - pGATKRealigner
+  buildFile: yesAutoDownLoad
+  dataType: SCALAR
+  default: 1000G_phase1.indels.b37.vcf
+  existsCheck: file
+  type: path
+GATKReAlignerINDELKnownSet2:
+  associatedProgram:
+   - pGATKRealigner
+  buildFile: yesAutoDownLoad
+  dataType: SCALAR
+  default: Mills_and_1000G_gold_standard.indels.b37.vcf
+  existsCheck: file
+  type: path
+pGATKBaseRecalibration:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileEnding: _brecal
+  type: program
+GATKBaseReCalibrationSNPKnownSet:
+  associatedProgram:
+   - pGATKBaseRecalibration
+  buildFile: yesAutoDownLoad
+  dataType: SCALAR
+  default: dbsnp_138.b37.vcf
+  existsCheck: file
+  type: path
+## GATK Genotype
+pGATKHaploTypeCaller:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileEnding: _gvcf
+  type: program
+GATKHaploTypeCallerSNPKnownSet:
+  associatedProgram:
+   - pGATKHaploTypeCaller
+  buildFile: yesAutoDownLoad
+  dataType: SCALAR
+  default: dbsnp_138.b37.vcf
+  existsCheck: file
+  type: path
+## Coverage
+pPicardToolsMarkduplicatesForQCMetrics:
+  associatedProgram:
+   - MIP
+  chain: DuplicateMetrics
+  dataType: SCALAR
+  default: 1
+  fileEnding: _metric
+  type: program
+pChanjoSexCheck:
+  associatedProgram:
+   - MIP
+  chain: CoverageReportGender
+  dataType: SCALAR
+  default: 1
+  fileEnding: .sexcheck
+  type: program
+pChanjoBuild:
+  associatedProgram:
+   - MIP
+  chain: CoverageReport
+  dataType: SCALAR
+  default: 1
+  fileEnding: nofileEnding
+  type: program
+chanjoBuildDb:
+  associatedProgram:
+   - pChanjoBuild
+  buildFile: yesAutoDownLoad
+  dataType: SCALAR
+  default: CCDS.current.txt
+  existsCheck: file
+  type: path
+pChanjoAnnotate:
+  associatedProgram:
+   - MIP
+  chain: CoverageReport
+  dataType: SCALAR
+  default: 1
+  fileEnding: _coverage
+  type: program
+chanjoAnnotateCutoff:
+  associatedProgram:
+   - pChanjoAnnotate
+  dataType: SCALAR
+  default: 10
+  type: program
+pChanjoImport:
+  associatedProgram:
+   - MIP
+  chain: CoverageReport
+  dataType: SCALAR
+  default: 0
+  fileEnding: nofileEnding
+  type: program
+pGenomeCoverageBED:
+  associatedProgram:
+   - MIP
+  chain: CoverageQCGCovBed
+  dataType: SCALAR
+  default: 0
+  fileEnding: _genomeCoverageBed
+  programNamePath:
+   - bedtools
+  type: program
+GenomeCoverageBEDMaxCoverage:
+  associatedProgram:
+   - pGenomeCoverageBED
+  dataType: SCALAR
+  default: 30
+  type: program
+pPicardToolsCollectMultipleMetrics:
+  associatedProgram:
+   - MIP
+  chain: CoverageQCPTCMM
+  dataType: SCALAR
+  default: 1
+  fileEnding: nofileEnding
+  type: program
+pPicardToolsCalculateHSMetrics:
+  associatedProgram:
+   - MIP
+  chain: CoverageQCPTCHSM
+  dataType: SCALAR
+  default: 1
+  fileEnding: _CalculateHsMetrics
+  type: program
+pRCovPlots:
+  associatedProgram:
+   - MIP
+  chain: CoverageQCRCOVP
+  dataType: SCALAR
+  default: 0
+  fileEnding: nofileEnding
+  type: program
+picardToolsPath:
+  associatedProgram:
+   - pMosaikAlign
+   - pBwaMem
+   - pPicardToolsMergeSamFiles
+   - pPicardToolsMarkduplicatesWithMateCigar
+   - pPicardToolsCalculateHSMetrics
+   - pPicardToolsCollectMultipleMetrics
+  dataType: SCALAR
+  existsCheck: directory
+  type: path
+## GATK Genotype Calibration
+pGATKGenoTypeGVCFs:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileEnding: _
+  type: program
+GATKGenoTypeGVCFsRefGVCF:
+  associatedProgram:
+   - pGATKGenoTypeGVCFs
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  existsCheck: file
+  type: path
+pGATKVariantRecalibration:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileEnding: vrecal_
+  type: program
+GATKVariantReCalibrationTrainingSetHapMap:
+  associatedProgram:
+   - pGATKVariantRecalibration
+  buildFile: yesAutoDownLoad
+  dataType: SCALAR
+  default: hapmap_3.3.b37.sites.vcf
+  existsCheck: file
+  type: path
+GATKVariantReCalibrationTrainingSetDbSNP:
+  associatedProgram:
+   - pGATKVariantRecalibration
+  buildFile: yesAutoDownLoad
+  dataType: SCALAR
+  default: dbsnp_138.b37.vcf
+  existsCheck: file
+  type: path
+GATKVariantReCalibrationTrainingSet1000GSNP:
+  associatedProgram:
+   - pGATKVariantRecalibration
+  buildFile: yesAutoDownLoad
+  dataType: SCALAR
+  default: 1000G_phase1.snps.high_confidence.b37.vcf
+  existsCheck: file
+  type: path
+GATKVariantReCalibrationTrainingSet1000GOmni:
+  associatedProgram:
+   - pGATKVariantRecalibration
+  buildFile: yesAutoDownLoad
+  dataType: SCALAR
+  default: 1000G_omni2.5.b37.sites.vcf
+  existsCheck: file
+  type: path
+GATKVariantReCalibrationTrainingSetMills:
+  associatedProgram:
+   - pGATKVariantRecalibration
+  buildFile: yesAutoDownLoad
+  dataType: SCALAR
+  default: Mills_and_1000G_gold_standard.indels.b37.vcf
+  existsCheck: file
+  type: path
+GATKVariantReCalibrationTSFilterLevel:
+  associatedProgram:
+   - pGATKVariantRecalibration
+  dataType: SCALAR
+  default: 99.9
+  type: program
+GATKVariantReCalibrationSpliMultiRecord:
+  associatedProgram:
+   - pGATKVariantRecalibration
+  dataType: SCALAR
+  default: 1
+  type: program
+GATKVariantReCalibrationexcludeNonVariantsFile:
+  associatedProgram:
+   - pGATKVariantRecalibration
+  dataType: SCALAR
+  default: 0
+  type: program
+pGATKPhaseByTransmission:
+  associatedProgram:
+   - MIP
+  chain: Phasing
+  dataType: SCALAR
+  default: 0
+  fileEnding: phtr_
+  type: program
+pGATKReadBackedPhasing:
+  associatedProgram:
+   - MIP
+  chain: Phasing
+  dataType: SCALAR
+  default: 0
+  fileEnding: phrb_
+  type: program
+GATKReadBackedPhasingPhaseQualityThreshold:
+  associatedProgram:
+   - pGATKReadBackedPhasing
+  dataType: SCALAR
+  default: 20
+  type: program
+pGATKVariantEvalAll:
+  associatedProgram:
+   - MIP
+  chain: AllVariantQC
+  dataType: SCALAR
+  default: 1
+  fileEnding: nofileEnding
+  type: program
+pGATKVariantEvalExome:
+  associatedProgram:
+   - MIP
+  chain: ExomeVariantQC
+  dataType: SCALAR
+  default: 1
+  fileEnding: nofileEnding
+  programNamePath:
+   - bedtools
+  type: program
+GATKVariantEvalDbSNP:
+  associatedProgram:
+   - pGATKVariantEvalAll
+   - pGATKVariantEvalExome
+  buildFile: yesAutoDownLoad
+  dataType: SCALAR
+  default: dbsnp_138.b37.excluding_sites_after_129.vcf
+  existsCheck: file
+  type: path
+GATKVariantEvalGold:
+  associatedProgram:
+   - pGATKVariantEvalAll
+   - pGATKVariantEvalExome
+  buildFile: yesAutoDownLoad
+  dataType: SCALAR
+  default: Mills_and_1000G_gold_standard.indels.b37.vcf
+  existsCheck: file
+  type: path
+GATKDownSampleToCoverage:
+  associatedProgram: 
+   - pGATKRealigner
+   - pGATKBaseRecalibration
+   - pGATKHaploTypeCaller
+  dataType: SCALAR
+  default: 1000
+  type: program
+## GATK FTP Bundle Download version. Needed for all programs that download the human genome reference
+GATKBundleDownLoadVersion:
+  associatedProgram:
+   - pMosaikAlign
+   - pBwaMem
+   - pBwaAln
+   - pBwaSampe
+   - pGATKRealigner
+   - pGATKBaseRecalibration
+   - pGATKHaploTypeCaller
+   - pGATKGenoTypeGVCFs
+   - pGATKVariantRecalibration
+   - pGATKPhaseByTransmission
+   - pGATKReadBackedPhasing
+   - pGATKVariantEvalAll
+   - pGATKVariantEvalExome
+   - pAnnovar
+   - pPicardToolsCalculateHSMetrics
+   - pPicardToolsCollectMultipleMetrics
+  dataType: SCALAR
+  default: 2.8
+  type: program
+## VEP
+pVariantEffectPredictor:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileEnding: vep_
+  type: program
+vepDirectoryPath:
+  associatedProgram:
+   - pVariantEffectPredictor
+  dataType: SCALAR
+  existsCheck: directory
+  type: path
+vepDirectoryCache:
+  associatedProgram:
+   - pVariantEffectPredictor
+  dataType: SCALAR
+  existsCheck: directory
+  type: path
+## VCFParser
+pVCFParser:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileEnding: parsed_
+  type: program
+vcfParserVepTranscripts:
+  associatedProgram:
+   - pVCFParser
+  dataType: SCALAR
+  default: 0
+  type: program
+vcfParserRangeFeatureFile:
+  associatedProgram:
+   - pVCFParser
+  dataType: SCALAR
+  existsCheck: file
+  type: path
+vcfParserSelectFile:
+  associatedProgram:
+   - pVCFParser
+  dataType: SCALAR
+  existsCheck: file
+  type: path
+vcfParserSelectFileMatchingColumn:
+  associatedProgram:
+   - pVCFParser
+  dataType: SCALAR
+  type: program
+## Annovar
+pAnnovar:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 0
+  fileEnding: annovar_
+  type: program
+annovarPath:
+  associatedProgram:
+   - pAnnovar
+  dataType: SCALAR
+  existsCheck: directory
+  type: path
+annovarGenomeBuildVersion:
+  associatedProgram:
+   - pAnnovar
+  dataType: SCALAR
+  default: hg19
+  type: program
+annovarMAFThreshold:
+  associatedProgram:
+   - pAnnovar
+  dataType: SCALAR
+  default: 0
+  type: program
+## SnpEFF
+pSnpEff:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileEnding: snpeff_
+  type: program
+snpEffPath:
+  associatedProgram:
+   - pSnpEff
+  dataType: SCALAR
+  existsCheck: directory
+  type: path
+snpSiftDbNSFPFile:
+  associatedProgram:
+   - pSnpEff
+  dataType: SCALAR
+  default: dbNSFP2.6.txt.gz
+  existsCheck: file
+  type: path
+## java large pages - effects all modules using java
+javaUseLargePages:
+  associatedProgram:
+   - pGATKRealigner
+   - pGATKBaseRecalibration
+   - pGATKHaploTypeCaller
+   - pGATKGenoTypeGVCFs
+   - pGATKVariantRecalibration
+   - pGATKPhaseByTransmission
+   - pGATKReadBackedPhasing
+   - pGATKVariantEvalAll
+   - pGATKVariantEvalExome
+   - pVariantEffectPredictor
+   - pSnpEff
+   - pAnnovar
+  dataType: SCALAR
+  default: no
+  type: program
+## genomeAnalysisToolKitPath
+genomeAnalysisToolKitPath:
+  associatedProgram:
+   - pGATKRealigner
+   - pGATKBaseRecalibration
+   - pGATKHaploTypeCaller
+   - pGATKGenoTypeGVCFs
+   - pGATKVariantRecalibration
+   - pGATKPhaseByTransmission
+   - pGATKReadBackedPhasing
+   - pGATKVariantEvalAll
+   - pGATKVariantEvalExome
+   - pVariantEffectPredictor
+   - pSnpEff
+  dataType: SCALAR
+  existsCheck: directory
+  type: path
+## SampleCheck
+pSampleCheck:
+  associatedProgram:
+   - MIP
+  chain: IDQC
+  dataType: SCALAR
+  default: 1
+  fileEnding: nofileEnding
+  programNamePath:
+   - vcftools
+   - plink
+  type: program
+## RankVariants
+pRankVariants:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileEnding: ranked_
+  type: program
+geneFile:
+  associatedProgram:
+   - pRankVariants
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  existsCheck: file
+  type: path
+caddWGSSNVs:
+  associatedProgram:
+   - pRankVariants
+  dataType: SCALAR
+  default: 0
+  type: program
+caddWGSSNVsFile:
+  associatedProgram:
+   - pRankVariants
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  default: whole_genome_SNVs.v1.1.tsv.gz
+  existsCheck: file
+  type: path
+cadd1000Genomes:  
+  associatedProgram:
+   - pRankVariants
+  dataType: SCALAR
+  default: 0
+  type: program
+cadd1000GenomesFile:
+  associatedProgram:
+   - pRankVariants
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  default: 1000G.v1.1.tsv.gz
+  existsCheck: file
+  type: path
+wholeGene:
+  associatedProgram:
+   - pRankVariants
+  dataType: SCALAR
+  default: 1
+  type: program
+rankModelFile:
+  associatedProgram:
+   - pRankVariants
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  existsCheck: file
+  type: path
+## PythonVirtualEnvironment
+pythonVirtualEnvironment:
+  associatedProgram:
+   - pChanjoBuild
+   - pChanjoAnnotate
+   - pChanjoImport
+   - pGATKVariantRecalibration
+   - pRankVariants
+  dataType: SCALAR
+  type: program
+## QCCollect
+pQCCollect:
+  associatedProgram:
+   - MIP
+  chain: ALL
+  dataType: SCALAR
+  default: 1
+  fileEnding: nofileEnding
+  type: program
+QCCollectSampleInfoFile:
+  associatedProgram:
+   - pQCCollect
+  dataType: SCALAR
+  default: notSetYet
+  type: program
+QCCollectRegExpFile:
+  associatedProgram:
+   - pQCCollect
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  default: qc_regexp.yaml
+  existsCheck: file
+  type: path
+## RemoveRedundantFiles
+pRemoveRedundantFiles:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileEnding: nofileEnding
+  type: program
+## AnalysisRunStatus
+pAnalysisRunStatus:
+  associatedProgram:
+   - MIP
+  chain: ALL
+  dataType: SCALAR
+  default: 1
+  fileEnding: nofileEnding
+  type: program
+## HumanGenomeReference
+humanGenomeReference:
+  associatedProgram:
+   - pBwaMem
+   - pBwaAln
+   - pBwaSampe
+   - pGATKRealigner
+   - pGATKBaseRecalibration
+   - pGATKHaploTypeCaller
+   - pGATKGenoTypeGVCFs
+   - pGATKVariantRecalibration
+   - pGATKPhaseByTransmission
+   - pGATKReadBackedPhasing
+   - pGATKVariantEvalAll
+   - pGATKVariantEvalExome
+   - pAnnovar
+   - pPicardToolsCalculateHSMetrics
+   - pPicardToolsCollectMultipleMetrics
+  buildFile: yesAutoDownLoad
+  dataType: SCALAR
+  default: Homo_sapiens.GRCh37.d5.fasta
+  existsCheck: file
+  type: path
+pythonVirtualEnvironmentCommand:
+  associatedProgram:
+   - MIP
+  elementSeparator: " "
+  dataType: ARRAY
+  default:
+   - workon
+  type: MIP
+instanceTag:
+  associatedProgram:
+   - MIP
+  elementSeparator: ,
+  dataType: ARRAY
+  type: MIP
+sampleIDs:
+  associatedProgram:
+   - MIP
+  elementSeparator: ,
+  dataType: ARRAY
+  type: path
+inFilesDirs:
+  associatedProgram:
+   - MIP
+  elementSeparator: ,
+  existsCheck: directory
+  dataType: ARRAY
+  default:
+   - notSetYet
+  type: path
+picardToolsMergeSamFilesPrevious:
+  associatedProgram:
+   - pPicardToolsMergeSamFiles
+  elementSeparator: ,
+  existsCheck: file
+  dataType: ARRAY
+  mandatory: no
+  type: path
+vepFeatures:
+  associatedProgram:
+   - pVariantEffectPredictor
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - hgvs
+   - symbol
+   - numbers
+   - sift
+   - polyphen
+   - humdiv
+   - domains
+   - protein
+   - ccds
+   - uniprot
+   - biotype
+   - regulatory
+   - tsl
+  type: program
+vcfParserRangeFeatureAnnotationColumns:
+  associatedProgram:
+   - pVCFParser
+  elementSeparator: ,
+  dataType: ARRAY
+  type: program
+vcfParserSelectFeatureAnnotationColumns:
+  associatedProgram:
+   - pVCFParser
+  elementSeparator: ,
+  dataType: ARRAY
+  type: program
+annovarTableNames:
+  associatedProgram:
+   - pAnnovar
+  elementSeparator: ,
+  existsCheck: file
+  dataType: ARRAY
+  default:
+   - refGene
+   - mce46way
+   - gerp++elem
+   - segdup
+   - tfbs
+   - mirna
+   - snp137NonFlagged
+   - 1000g2012apr_all
+   - esp6500si_all
+   - ljb2_sift
+   - ljb2_pp2hdiv
+   - ljb2_pp2hvar
+   - ljb2_mt
+   - ljb2_lt
+   - ljb2_gerp++
+   - ljb2_phylop
+  type: path
+snpSiftDbNSFPAnnotations:
+  associatedProgram:
+   - pSnpEff
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - SIFT_pred
+   - Polyphen2_HDIV_pred
+   - Polyphen2_HVAR_pred
+   - LRT_pred
+   - MutationTaster_pred
+   - GERP++_NR
+   - GERP++_RS
+   - phastCons100way_vertebrate
+   - 1000Gp1_AF
+   - ESP6500_AA_F
+  type: path
+snpSiftAnnotationFiles:
+  associatedProgram:
+   - pSnpEff
+  buildFile: yesAutoBuild
+  dataType: HASH
+  default:
+     dbsnp_138.b37.excluding_sites_after_129.vcf.gz: CAF
+     ALL.wgs.phase3_shapeit2_mvncall_integrated_v5.20130502.sites.vcf.gz: AF
+     ExAC.r0.1.sites.vep.vcf: AF
+  existsCheck: file
+  type: path
