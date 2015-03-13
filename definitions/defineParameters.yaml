@@ -26,6 +26,7 @@ email:
   associatedProgram:
    - MIP
   dataType: SCALAR
+  mandatory: no
   type: MIP
 emailType:
   associatedProgram:
@@ -166,7 +167,7 @@ pMosaikBuild:
    - MIP
   chain: MAIN
   dataType: SCALAR
-  default: 1
+  default: 0
   fileEnding: nofileEnding
   programNamePath:
    - MosaikBuild
@@ -182,7 +183,7 @@ pMosaikAlign:
    - MIP
   chain: MAIN
   dataType: SCALAR
-  default: 1
+  default: 0
   fileEnding: _sorted
   programNamePath:
    - MosaikAligner
@@ -225,7 +226,7 @@ pBwaMem:
    - MIP
   chain: MAIN
   dataType: SCALAR
-  default: 0
+  default: 1
   fileEnding: _sorted
   programNamePath:
    - bwa
@@ -284,7 +285,7 @@ aligner:
   associatedProgram:
    - MIP
   dataType: SCALAR
-  default: mosaik
+  default: bwa
   type: MIP
 ## PicardTools
 pPicardToolsMergeRapidReads:

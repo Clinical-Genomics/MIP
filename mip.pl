@@ -47,7 +47,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -f/--familyID Group id of samples to be compared (defaults to "0" (=no), (Ex: 1 for IDN 1-1-1A))
                -ped/--pedigreeFile (defaults to "")
                -hgr/--humanGenomeReference Fasta file for the human genome reference (defaults to "Homo_sapiens.GRCh37.d5.fasta;1000G decoy version 5")
-               -al/--aligner Setting which aligner was used for alignment in previous analysis (defaults to "")
+               -al/--aligner Setting which aligner was used for alignment in previous analysis (defaults to "bwa")
                -at/--analysisType Type of analysis to perform (defaults to "exomes";Valid entries: "genomes", "exomes", "rapid")
                -mc/--maximumCores The maximum number of cores per node used in the analysis (defaults to "8")
                -c/--configFile YAML config file for script parameters (defaults to "")
@@ -10974,7 +10974,7 @@ sub AddToScriptParameter {
 		${$scriptParameterHashRef}{$parameterName} = ${$parameterHashRef}{$parameterName}{'value'};
 	    }
 	    elsif (defined(${$parameterHashRef}{$parameterName}{'value'}) && (ref(${$parameterHashRef}{$parameterName}{'value'})!~/ARRAY|HASH/)) {  #Scalar input from cmd			    
-		
+
 		${$scriptParameterHashRef}{$parameterName} = ${$parameterHashRef}{$parameterName}{'value'};
 	    }
 	    else {
@@ -11532,7 +11532,7 @@ sub ProgramPreRequisites {
 	print $FILEHANDLE "#SBATCH -o ".$dryRunFileInfoPath.$fileNameTracker.".stdout.txt", "\n";
     }
     
-    unless (${$scriptParameterHashRef}{'email'} eq 0) {
+    if (exists(${$scriptParameterHashRef}{'email'})) {
 	
 	if (${$scriptParameterHashRef}{'emailType'} =~/B/i) {
 
@@ -13079,9 +13079,13 @@ sub ReplaceConfigParamWithCMDInfo {
     my $scriptParameterHashRef = $_[1];
     my $parameterName = $_[2];
 
-    unless (exists(${$parameterHashRef}{$parameterName}{'value'})) {  #Replace config parameter with cmd info for parameter
-	
+    if (defined(${$parameterHashRef}{$parameterName}{'value'})) {  #Replace config parameter with cmd info for parameter
+
 	${$scriptParameterHashRef}{$parameterName} = ${$parameterHashRef}{$parameterName}{'value'};  #Transfer to active parameter
+    }
+    elsif (exists(${$parameterHashRef}{$parameterName}{'default'})) {
+
+	${$scriptParameterHashRef}{$parameterName} = ${$parameterHashRef}{$parameterName}{'default'};  #Transfer to active parameter
     }
 }
 
@@ -15134,13 +15138,16 @@ sub CheckAligner {
     }
     elsif ( (${$scriptParameterHashRef}{'pBwaAln'} > 0) || (${$scriptParameterHashRef}{'pBwaSampe'} > 0) || (${$scriptParameterHashRef}{'pBwaMem'} > 0)) {  #BWA track
 	
-	if ( (${$scriptParameterHashRef}{'aligner'} eq "mosaik") || (${$scriptParameterHashRef}{'aligner'} =~ /bwa/i) ) {
-	    
-	    ${$scriptParameterHashRef}{'aligner'} = "bwa";
-	    $logger->warn("Changed aligner to bwa based on your supplied parameters", "\n");
+	if ( (${$scriptParameterHashRef}{'pMosaikBuild'} == 0) || (${$scriptParameterHashRef}{'pMosaikAlign'} == 0)) {
+
+	    if (${$scriptParameterHashRef}{'aligner'} eq "mosaik") {
+		
+		${$scriptParameterHashRef}{'aligner'} = "bwa";
+		$logger->warn("Changed aligner to bwa based on your supplied parameters", "\n");
+	    }
 	}
 	else {
-		
+
 	    $logger->fatal($USAGE, "\n");
 	    $logger->fatal("You have to choose either mosaik or bwa to perform alignments or specify which aligner (-aligner 'mosaik' or 'bwa') was used if you want to only run programs after alignment.", "\n");
 	    exit 1;
