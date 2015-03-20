@@ -11970,6 +11970,7 @@ sub WriteYAML {
     my $yamlFileRef = $_[1];  #Filename
     
     open (my $YAML, ">", $$yamlFileRef) or $logger->logdie("Can't open '".$$yamlFileRef."':".$!."\n");
+    local $YAML::QuoteNumericStrings=1;  #Force numemric values to strings in YAML representation
     print $YAML Dump( $yamlHashRef ), "\n";
     close($YAML);
 
@@ -11993,6 +11994,7 @@ sub LoadYAML {
     my %yamlHash;
 
     open (my $YAML, "<", $yamlFile) or die "can't open ".$yamlFile.":".$!, "\n";  #Log4perl not initialised yet, hence no logdie
+    local $YAML::QuoteNumericStrings=1;  #Force numemric values to strings in YAML representation
     %yamlHash = %{ YAML::LoadFile($yamlFile) };  #Load hashreference as hash
         
     close($YAML);
