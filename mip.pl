@@ -246,7 +246,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ## Adds the order of first level keys from yaml file to array
 &OrderParameterNames(\@orderParameters, $Bin."/definitions/defineParameters.yaml");
 
-my $mipVersion = "v2.3.0";  #Set version
+my $mipVersion = "v2.3.1";  #Set version
 my $aligner;
 
 
