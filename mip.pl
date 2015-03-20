@@ -51,6 +51,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -at/--analysisType Type of analysis to perform (defaults to "exomes";Valid entries: "genomes", "exomes", "rapid")
                -mc/--maximumCores The maximum number of cores per node used in the analysis (defaults to "8")
                -c/--configFile YAML config file for script parameters (defaults to "")
+               -ccp/--clusterConstantPath Set the cluster constant path in config (defaults to "")
                -wc/--writeConfigFile Write YAML configuration file for script parameters (defaults to "")
                -int/--instanceTag Tag family with instance association in sampleInfo file (comma sep; defaults to "")
                -rea/--researchEthicalApproval Tag for displaying research candidates in Scout (defaults to "notApproved")
@@ -314,6 +315,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'at|analysisType:s' => \$parameter{'analysisType'}{'value'},  #Type of analysis
 	   'mc|maximumCores:n' => \$parameter{'maximumCores'}{'value'},  #Per node
 	   'c|configFile:s' => \$parameter{'configFile'}{'value'},
+	   'ccp|clusterConstantPath:s' => \$parameter{'clusterConstantPath'}{'value'},
 	   'wc|writeConfigFile:s' => \$parameter{'writeConfigFile'}{'value'},
 	   'sif|sampleInfoFile:s' => \$parameter{'sampleInfoFile'}{'value'},  #Write all info on samples and run to YAML file
 	   'int|instanceTag:s' => \@{$parameter{'instanceTag'}{'value'}},
@@ -440,6 +442,7 @@ if (exists($parameter{'configFile'}{'value'})) {  #Input from cmd
     %scriptParameter = &LoadYAML(\%scriptParameter, $parameter{'configFile'}{'value'});  #Load parameters from configfile
 
     ## Replace config parameter with cmd info for active parameter
+    &ReplaceConfigParamWithCMDInfo(\%parameter, \%scriptParameter, "clusterConstantPath");
     &ReplaceConfigParamWithCMDInfo(\%parameter, \%scriptParameter, "analysisType");
     &ReplaceConfigParamWithCMDInfo(\%parameter, \%scriptParameter, "aligner");
 

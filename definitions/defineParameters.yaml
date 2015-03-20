@@ -1,4 +1,9 @@
 ---
+clusterConstantPath:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  type: path
 ### Project specific
 familyID:
   associatedProgram:
