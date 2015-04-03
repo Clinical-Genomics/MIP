@@ -686,7 +686,7 @@ my $uncompressedFileSwitch = &InfilesReFormat(\%infile);  #Required to format in
 
 ####MAIN
 
-if ($scriptParameter{'dryRunAll'} == 2) {
+if ($scriptParameter{'dryRunAll'} == 0) {
 
     $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'AnalysisDate'} = $dateTimeStamp;
 }
