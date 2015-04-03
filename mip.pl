@@ -246,6 +246,46 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ## Adds the order of first level keys from yaml file to array
 &OrderParameterNames(\@orderParameters, $Bin."/definitions/defineParameters.yaml");
 
+##Eval parameter hash
+&EvalParameterHash(\%parameter, $Bin."/definitions/defineParameters.yaml");
+
+sub EvalParameterHash {
+
+##EvalParameterHash
+    
+##Function : Evaluate paremeters in parameters hash
+##Returns  : ""
+##Arguments: $parameterHashRef, $filePath
+##         : $parameterHashRef => Hash with paremters from yaml file {REF}
+##         : $filePath         => Path to yaml file
+
+    my $parameterHashRef = $_[0];
+    my $filePath = $_[1];
+
+    my %mandatoryKey;
+    $mandatoryKey{'associatedProgram'}{'keyDataType'} = "ARRAY";
+    $mandatoryKey{'dataType'}{'keyDataType'} = "SCALAR";
+    $mandatoryKey{'dataType'}{'values'} = ["SCALAR", "ARRAY", "HASH"];
+    $mandatoryKey{'type'}{'keyDataType'} = "SCALAR";
+    $mandatoryKey{'type'}{'values'} = ["MIP", "path", "program"];
+ 
+    my %nonMandatoryKey;
+    $nonMandatoryKey{'buildFile'}{'keyDataType'} = "SCALAR";
+    $nonMandatoryKey{'buildFile'}{'values'} = ["noAutoBuild", "yesAutoBuild", "yesAutoDownLoad"];
+    $nonMandatoryKey{'mandatory'}{'keyDataType'} = "SCALAR";
+    $nonMandatoryKey{'mandatory'}{'values'} = ["no"];
+    $nonMandatoryKey{'existsCheck'}{'keyDataType'} = "SCALAR";
+    $nonMandatoryKey{'existsCheck'}{'values'} = ["file", "directory"];
+    $nonMandatoryKey{'chain'}{'keyDataType'} = "SCALAR";
+    $nonMandatoryKey{'fileEnding'}{'keyDataType'} = "SCALAR";
+    $nonMandatoryKey{'programNamePath'}{'keyDataType'} = "ARRAY";
+    $nonMandatoryKey{'elementSeparator'}{'keyDataType'} = "SCALAR";
+
+    &CheckKeys($parameterHashRef, \%mandatoryKey, \%nonMandatoryKey, \$filePath);
+
+}
+
+
 my $mipVersion = "v2.3.1";  #Set version
 my $aligner;
 
@@ -15162,6 +15202,125 @@ sub CheckAligner {
 	
 	$logger->fatal($USAGE, "\n");
 	$logger->fatal("You have to choose either mosaik or bwa to perform alignments or specify which aligner (-aligner 'mosaik' or 'bwa') was used if you want to only run programs after alignment.", "\n");
+	exit 1;
+    }
+}
+
+
+sub CheckKeys {
+
+##CheckKeys
+    
+##Function : Evaluate keys in hash
+##Returns  : ""
+##Arguments: $parameterHashRef, $mandatoryKeyHashRef, $nonMandatoryKeyHashRef, $filePath
+##         : $parameterHashRef       => Hash with paremters from yaml file {REF}
+##         : $mandatoryKeyHashRef    => Hash with mandatory key {REF}
+##         : $nonMandatoryKeyHashRef => Hash with non mandatory key {REF}
+##         : $filePathRef            => Path to yaml file {REF}
+
+    my $parameterHashRef = $_[0];
+    my $mandatoryKeyHashRef = $_[1];
+    my $nonMandatoryKeyHashRef = $_[2];
+    my $filePathRef = $_[3];
+
+    foreach my $parameter (keys %{$parameterHashRef}) {
+
+	foreach my $mandatoryKey (keys %{$mandatoryKeyHashRef}) {
+	    
+	    ## Mandatory key exists
+	    if (exists(${$parameterHashRef}{$parameter}{$mandatoryKey})) {
+
+		&CheckDataType($parameterHashRef, $mandatoryKeyHashRef, $parameter, $mandatoryKey, $filePathRef);
+
+		&CheckValues($parameterHashRef, $mandatoryKeyHashRef, $parameter, $mandatoryKey, $filePathRef);
+	    }	    
+	    else {
+		
+		warn("Missing mandatory key: '".$mandatoryKey."' for parameter: '".$parameter."' in file: '".$$filePathRef."'\n");
+		exit 1;
+	    }
+	}
+	foreach my $nonMandatoryKey (keys %{$nonMandatoryKeyHashRef}) {
+	    
+	    ## NonMandatory key exists
+	    if (exists(${$parameterHashRef}{$parameter}{$nonMandatoryKey})) {
+
+		&CheckDataType($parameterHashRef, $nonMandatoryKeyHashRef, $parameter, $nonMandatoryKey, $filePathRef);
+
+		&CheckValues($parameterHashRef, $nonMandatoryKeyHashRef, $parameter, $nonMandatoryKey, $filePathRef);
+	    }	    
+	}
+    }
+}
+
+
+sub CheckValues {
+
+##CheckValues
+    
+##Function : Evaluate key values 
+##Returns  : ""
+##Arguments: $parameterHashRef, $keyHashRef, $key, $filePathRef
+##         : $parameterHashRef => Hash with paremters from yaml file {REF}
+##         : $keyHashRef       => Hash with  key {REF}
+##         : $key              => Hash with non  key
+##         : $filePathRef      => Path to yaml file {REF}
+
+    my $parameterHashRef = $_[0];
+    my $keyHashRef = $_[1];
+    my $parameter = $_[2];
+    my $key = $_[3];
+    my $filePathRef = $_[4];
+    
+    ## Check value(s)
+    if (${$keyHashRef}{$key}{'values'}) {
+	
+	my $valueRef = \${$parameterHashRef}{$parameter}{$key};
+	if ( ! grep /$$valueRef/, @{${$keyHashRef}{$key}{'values'}} ) {
+	    
+	    warn("Found illegal value '".$$valueRef."' for parameter: '".$parameter."' in key: '".$key."' in file: '".$$filePathRef."'\n");
+	    warn("Allowed entries: '".join("', '", @{${$keyHashRef}{$key}{'values'}})."'\n");
+	    exit 1;
+	}
+    }
+}
+
+
+sub CheckDataType {
+
+##CheckDataType
+
+##Function : Check key data type 
+##Returns  : ""
+##Arguments: $parameterHashRef, $keyHashRef, $key, $filePathRef
+##         : $parameterHashRef => Hash with paremters from yaml file {REF}
+##         : $keyHashRef       => Hash with  key {REF}
+##         : $key              => Hash with non  key
+##         : $filePathRef      => Path to yaml file {REF}
+
+    my $parameterHashRef = $_[0];
+    my $keyHashRef = $_[1];
+    my $parameter = $_[2];
+    my $key = $_[3];
+    my $filePathRef = $_[4];
+    
+    ## Check dataType
+    my $dataType = ref(${$parameterHashRef}{$parameter}{$key});
+    
+    if ($dataType) {  #Array or hash
+	
+	## Wrong dataType
+	unless ($dataType eq ${$keyHashRef}{$key}{'keyDataType'}) {
+	    
+	    warn("Found '".$dataType."' but expected datatype '".${$keyHashRef}{$key}{'keyDataType'}."' for parameter: '".$parameter."' in key: '".$key."' in file: '".$$filePathRef."'\n");
+	    exit 1;
+	}
+    }
+    elsif (${$keyHashRef}{$key}{'keyDataType'} ne "SCALAR") {
+	
+	## Wrong dataType
+	warn("Found 'SCALAR' but expected datatype '".${$keyHashRef}{$key}{'keyDataType'}."' for parameter: '".$parameter."' in key: '".$key."' in file: '".$$filePathRef."'\n");
 	exit 1;
     }
 }

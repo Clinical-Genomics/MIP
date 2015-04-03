@@ -141,7 +141,7 @@ pGZipFastq:
   dataType: SCALAR
   default: 1
   fileEnding: nofileEnding
-  programNamePath: 
+  programNamePath:
    - gzip
   type: program
 ## FastQC
