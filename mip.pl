@@ -249,44 +249,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ##Eval parameter hash
 &EvalParameterHash(\%parameter, $Bin."/definitions/defineParameters.yaml");
 
-sub EvalParameterHash {
-
-##EvalParameterHash
-    
-##Function : Evaluate paremeters in parameters hash
-##Returns  : ""
-##Arguments: $parameterHashRef, $filePath
-##         : $parameterHashRef => Hash with paremters from yaml file {REF}
-##         : $filePath         => Path to yaml file
-
-    my $parameterHashRef = $_[0];
-    my $filePath = $_[1];
-
-    my %mandatoryKey;
-    $mandatoryKey{'associatedProgram'}{'keyDataType'} = "ARRAY";
-    $mandatoryKey{'dataType'}{'keyDataType'} = "SCALAR";
-    $mandatoryKey{'dataType'}{'values'} = ["SCALAR", "ARRAY", "HASH"];
-    $mandatoryKey{'type'}{'keyDataType'} = "SCALAR";
-    $mandatoryKey{'type'}{'values'} = ["MIP", "path", "program"];
- 
-    my %nonMandatoryKey;
-    $nonMandatoryKey{'buildFile'}{'keyDataType'} = "SCALAR";
-    $nonMandatoryKey{'buildFile'}{'values'} = ["noAutoBuild", "yesAutoBuild", "yesAutoDownLoad"];
-    $nonMandatoryKey{'mandatory'}{'keyDataType'} = "SCALAR";
-    $nonMandatoryKey{'mandatory'}{'values'} = ["no"];
-    $nonMandatoryKey{'existsCheck'}{'keyDataType'} = "SCALAR";
-    $nonMandatoryKey{'existsCheck'}{'values'} = ["file", "directory"];
-    $nonMandatoryKey{'chain'}{'keyDataType'} = "SCALAR";
-    $nonMandatoryKey{'fileEnding'}{'keyDataType'} = "SCALAR";
-    $nonMandatoryKey{'programNamePath'}{'keyDataType'} = "ARRAY";
-    $nonMandatoryKey{'elementSeparator'}{'keyDataType'} = "SCALAR";
-
-    &CheckKeys($parameterHashRef, \%mandatoryKey, \%nonMandatoryKey, \$filePath);
-
-}
-
-
-my $mipVersion = "v2.3.1";  #Set version
+my $mipVersion = "v2.3.2";  #Set version
 my $aligner;
 
 
@@ -15207,6 +15170,43 @@ sub CheckAligner {
 }
 
 
+sub EvalParameterHash {
+
+##EvalParameterHash
+    
+##Function : Evaluate paremeters in parameters hash
+##Returns  : ""
+##Arguments: $parameterHashRef, $filePath
+##         : $parameterHashRef => Hash with paremters from yaml file {REF}
+##         : $filePath         => Path to yaml file
+
+    my $parameterHashRef = $_[0];
+    my $filePath = $_[1];
+
+    my %mandatoryKey;
+    $mandatoryKey{'associatedProgram'}{'keyDataType'} = "ARRAY";
+    $mandatoryKey{'dataType'}{'keyDataType'} = "SCALAR";
+    $mandatoryKey{'dataType'}{'values'} = ["SCALAR", "ARRAY", "HASH"];
+    $mandatoryKey{'type'}{'keyDataType'} = "SCALAR";
+    $mandatoryKey{'type'}{'values'} = ["MIP", "path", "program"];
+ 
+    my %nonMandatoryKey;
+    $nonMandatoryKey{'buildFile'}{'keyDataType'} = "SCALAR";
+    $nonMandatoryKey{'buildFile'}{'values'} = ["noAutoBuild", "yesAutoBuild", "yesAutoDownLoad"];
+    $nonMandatoryKey{'mandatory'}{'keyDataType'} = "SCALAR";
+    $nonMandatoryKey{'mandatory'}{'values'} = ["no"];
+    $nonMandatoryKey{'existsCheck'}{'keyDataType'} = "SCALAR";
+    $nonMandatoryKey{'existsCheck'}{'values'} = ["file", "directory"];
+    $nonMandatoryKey{'chain'}{'keyDataType'} = "SCALAR";
+    $nonMandatoryKey{'fileEnding'}{'keyDataType'} = "SCALAR";
+    $nonMandatoryKey{'programNamePath'}{'keyDataType'} = "ARRAY";
+    $nonMandatoryKey{'elementSeparator'}{'keyDataType'} = "SCALAR";
+
+    &CheckKeys($parameterHashRef, \%mandatoryKey, \%nonMandatoryKey, \$filePath);
+
+}
+
+
 sub CheckKeys {
 
 ##CheckKeys
@@ -15324,6 +15324,7 @@ sub CheckDataType {
 	exit 1;
     }
 }
+
 
 package DateTime::Format::Multi;
 
