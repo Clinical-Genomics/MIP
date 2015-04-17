@@ -249,7 +249,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ##Eval parameter hash
 &EvalParameterHash(\%parameter, $Bin."/definitions/defineParameters.yaml");
 
-my $mipVersion = "v2.3.2";  #Set version
+my $mipVersion = "v2.3.3";  #Set version
 my $aligner;
 
 
@@ -1383,8 +1383,10 @@ sub AnalysisRunStatus {
 	
     }
     print $FILEHANDLE q?if [ $status -ne 1 ]; then?, "\n";  #eval status flag
-    print $FILEHANDLE "\t".q?perl -i -p -e 'if($_=~/AnalysisRunStatus\:/) { s/notFinished/Finished/g }' ?.${$scriptParameterHashRef}{'sampleInfoFile'}.q? ?, "\n\n";  
-    print $FILEHANDLE q?fi?, "\n";
+    print $FILEHANDLE "\t".q?perl -i -p -e 'if($_=~/AnalysisRunStatus\:/) { s/notFinished/Finished/g }' ?.${$scriptParameterHashRef}{'sampleInfoFile'}.q? ?, "\n";
+    print $FILEHANDLE q?else?, "\n";  #Found discrepancies - exit
+    print $FILEHANDLE "\t".q?exit 1?, "\n";
+    print $FILEHANDLE q?fi?, "\n\n";
 
     close($FILEHANDLE); 
     
