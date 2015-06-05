@@ -249,7 +249,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ##Eval parameter hash
 &EvalParameterHash(\%parameter, $Bin."/definitions/defineParameters.yaml");
 
-my $mipVersion = "v2.3.3";  #Set version
+my $mipVersion = "v2.3.4";  #Set version
 my $aligner;
 
 

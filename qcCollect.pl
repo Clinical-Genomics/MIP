@@ -509,11 +509,11 @@ sub GenderCheck {
     my $infileRef = $_[2]; #From SampleInfo
     my $chanjoSexCheckGenderRef = $_[3]; #From ChanjoSexCheck 
     
-    if ( ($$chanjoSexCheckGenderRef eq "female") && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'} == 2) ) { #Female
+    if ( ($$chanjoSexCheckGenderRef eq "female") && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'} eq 2) ) { #Female
 	
 	$qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "PASS";
     }
-    elsif ( ($$chanjoSexCheckGenderRef eq "male") && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'} == 1) ) { #Male
+    elsif ( ($$chanjoSexCheckGenderRef eq "male") && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'} eq 1) ) { #Male
 	
 	$qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "PASS";
     }
