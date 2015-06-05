@@ -665,7 +665,7 @@ sub ReadInfileVCF {
 				
 			    my @transcriptsEffects = split(/\|/, $transcripts[$fieldCounter]); #Split in "|"
 				
-			    if (defined($transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ]) ) {
+			    if ( (defined($transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ])) && ($transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ] ne "") ) {
 				    
 				if (defined($transcriptsEffects[ $vepFormatFieldColumn{'SYMBOL'} ])) { 
 					
@@ -752,7 +752,7 @@ sub ReadInfileVCF {
 			
 			my @transcriptsEffects = split(/\|/, $transcripts[$fieldCounter]); #Split in "|"
 			
-			if ( (defined($transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ]) ) && ($transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ] !~/ENSR\d+/) ) { #All but regulatory regions, since there currently is no HGNC_Symbol annotated for them
+			if ( (defined($transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ]) ) && ($transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ] ne "") && ($transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ] !~/ENSR\d+/) ) { #All but regulatory regions, since there currently is no HGNC_Symbol annotated for them
 			    
 			    my $selectedTranscriptTracker = 0; #Track if any transcripts belong to selected features
 			    
