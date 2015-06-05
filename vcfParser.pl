@@ -30,7 +30,7 @@ my ($infile, $parseVEP, $rangeFeatureFile, $selectFeatureFile, $selectFeatureMat
 my (@metaData, @selectMetaData, @rangeFeatureAnnotationColumns, @selectFeatureAnnotationColumns); 
 my (%geneAnnotation, %consequenceSeverity, %rangeData, %selectData, %snpEffCmd, %tree, %metaData);
 
-my $vcfParserVersion = "1.2.1";
+my $vcfParserVersion = "1.2.2";
 
 ## Enables cmd "vcfParser.pl" to print usage help 
 if(scalar(@ARGV) == 0) {
@@ -143,6 +143,7 @@ sub DefineSelectData {
     $selectData{'SelectFile'}{'Disease_associated_transcript'}{'INFO'} = q?##INFO=<ID=Disease_associated_transcript,Number=.,Type=String,Description="Known pathogenic transcript(s) for gene">?;
     $selectData{'SelectFile'}{'Ensembl_transcript_to_refseq_transcript'}{'INFO'} = q?##INFO=<ID=Ensembl_transcript_to_refseq_transcript,Number=.,Type=String,Description="The link between ensembl transcript and refSeq transcript IDs">?;
     $selectData{'SelectFile'}{'Gene_description'}{'INFO'} = q?##INFO=<ID=Gene_description,Number=.,Type=String,Description="The HGNC gene description">?;
+    $selectData{'SelectFile'}{'Genetic_disease_model'}{'INFO'} = q?##INFO=<ID=Genetic_disease_model,Number=.,Type=String,Description="Known disease gene(s) inheritance model">?;
 }
 
 sub DefineSnpEffAnnotations {
@@ -176,6 +177,10 @@ sub DefineSnpEffAnnotations {
     $snpEffCmd{'SnpEff'}{'CLNSIG'}{'File'} = q?clinvar_\d+.vcf?;
     $snpEffCmd{'SnpEff'}{'CLNSIG'}{'INFO'} = q?##INFO=<ID=CLNSIG,Number=A,Type=String,Description="Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other">?;
     $snpEffCmd{'SnpEff'}{'CLNSIG'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_CLNSIG,Number=A,Type=String,Description="Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other">?;
+
+    $snpEffCmd{'SnpEff'}{'CLNACC'}{'File'} = q?clinvar_\d+.vcf?;
+    $snpEffCmd{'SnpEff'}{'CLNACC'}{'INFO'} = q?##INFO=<ID=CLNACC,Number=.,Type=String,Description="Variant Accession and Versions">?;
+    $snpEffCmd{'SnpEff'}{'CLNACC'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_CLNACC,Number=.,Type=String,Description="Variant Accession and Versions">?;
 
     $snpEffCmd{'SnpEff'}{'phastCons100way_vertebrate_prediction_term'}{'File'} = q?SnpSift dbnsfp?;
     $snpEffCmd{'SnpEff'}{'phastCons100way_vertebrate_prediction_term'}{'INFO'} = q?##INFO=<ID=phastCons100way_vertebrate_prediction_term,Number=A,Type=String,Description="PhastCons conservation prediction term">?;
@@ -660,7 +665,7 @@ sub ReadInfileVCF {
 				
 			    my @transcriptsEffects = split(/\|/, $transcripts[$fieldCounter]); #Split in "|"
 				
-			    if ($transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ] ne "") {
+			    if ( (defined($transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ])) && ($transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ] ne "") ) {
 				    
 				if (defined($transcriptsEffects[ $vepFormatFieldColumn{'SYMBOL'} ])) { 
 					
@@ -747,7 +752,7 @@ sub ReadInfileVCF {
 			
 			my @transcriptsEffects = split(/\|/, $transcripts[$fieldCounter]); #Split in "|"
 			
-			if ($transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ] ne "" && $transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ] !~/ENSR\d+/) { #All but regulatory regions, since there currently is no HGNC_Symbol annotated for them
+			if ( (defined($transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ]) ) && ($transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ] ne "") && ($transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ] !~/ENSR\d+/) ) { #All but regulatory regions, since there currently is no HGNC_Symbol annotated for them
 			    
 			    my $selectedTranscriptTracker = 0; #Track if any transcripts belong to selected features
 			    
@@ -802,18 +807,36 @@ sub ReadInfileVCF {
 				    
 				    unless (exists(${$consequenceSeverityHashRef}{$consequences[$consequencesCounter]})) {
 					
-					warn("Could not find SO-term from vcf in consequneceSeverity hash. Update hash to contain SO-term: '".$consequences[$consequencesCounter]."'\n");
+					warn("Could not find SO-term from vcf in consequenceSeverity hash. Update hash to contain SO-term: '".$consequences[$consequencesCounter]."'\n");
 					exit 1;
 				    }
-				    if ( defined($consequence{ $variantData{'Symbol'} }{$allele}{'Score'}) ) { #Compare to previous record
+				    if (defined($variantData{'Symbol'})) {
+
+					if(defined($consequence{ $variantData{'Symbol'} }{$allele}{'Score'})) { #Compare to previous record
 					
-					if (${$consequenceSeverityHashRef}{$consequences[$consequencesCounter]}{'Rank'} < $consequence{ $variantData{'Symbol'} }{$allele}{'Score'}) { #Collect most severe consequence
-					    
+					    if (${$consequenceSeverityHashRef}{$consequences[$consequencesCounter]}{'Rank'} < $consequence{ $variantData{'Symbol'} }{$allele}{'Score'}) { #Collect most severe consequence
+						
+						&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'Score'}, \${$consequenceSeverityHashRef}{$consequences[$consequencesCounter]}{'Rank'});
+						&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'GeneticRegionAnnotation'}, \${$consequenceSeverityHashRef}{$consequences[$consequencesCounter]}{'GeneticRegionAnnotation'});
+						&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'MostSevereConsequence'}, \$consequences[$consequencesCounter]);
+						
+						if (defined($vepFormatFieldColumn{'SIFT'}) ) {    
+						    
+						    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'Sift'}, \$transcriptsEffects[ $vepFormatFieldColumn{'SIFT'} ]);
+						}
+						if (defined($vepFormatFieldColumn{'PolyPhen'}) ) {
+						    
+						    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'PolyPhen'}, \$transcriptsEffects[ $vepFormatFieldColumn{'PolyPhen'} ]);
+						}
+					    }
+					}
+					else { #First pass
+					
 					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'Score'}, \${$consequenceSeverityHashRef}{$consequences[$consequencesCounter]}{'Rank'});
 					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'GeneticRegionAnnotation'}, \${$consequenceSeverityHashRef}{$consequences[$consequencesCounter]}{'GeneticRegionAnnotation'});
-					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'MostSevereConsequence'}, \$consequences[$consequencesCounter]);
+					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'MostSevereConsequence'}, \$consequences[$consequencesCounter]);    
 					    
-					    if (defined($vepFormatFieldColumn{'SIFT'}) ) {    
+					    if (defined($vepFormatFieldColumn{'SIFT'}) ) {
 						
 						&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'Sift'}, \$transcriptsEffects[ $vepFormatFieldColumn{'SIFT'} ]);
 					    }
@@ -821,21 +844,6 @@ sub ReadInfileVCF {
 						
 						&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'PolyPhen'}, \$transcriptsEffects[ $vepFormatFieldColumn{'PolyPhen'} ]);
 					    }
-					}
-				    }
-				    else { #First pass
-					
-					&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'Score'}, \${$consequenceSeverityHashRef}{$consequences[$consequencesCounter]}{'Rank'});
-					&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'GeneticRegionAnnotation'}, \${$consequenceSeverityHashRef}{$consequences[$consequencesCounter]}{'GeneticRegionAnnotation'});
-					&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'MostSevereConsequence'}, \$consequences[$consequencesCounter]);    
-					
-					if (defined($vepFormatFieldColumn{'SIFT'}) ) {
-					    
-					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'Sift'}, \$transcriptsEffects[ $vepFormatFieldColumn{'SIFT'} ]);
-					}
-					if (defined($vepFormatFieldColumn{'PolyPhen'}) ) {
-					    
-					    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'PolyPhen'}, \$transcriptsEffects[ $vepFormatFieldColumn{'PolyPhen'} ]);
 					}
 				    }
 				}
