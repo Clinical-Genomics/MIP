@@ -563,6 +563,12 @@ GATKVariantReCalibrationexcludeNonVariantsFile:
   dataType: SCALAR
   default: 0
   type: program
+GATKVariantReCalibrationMaxGaussians:
+  associatedProgram:
+   - pGATKVariantRecalibration
+  dataType: SCALAR
+  default: 0
+  type: program
 pGATKPhaseByTransmission:
   associatedProgram:
    - MIP
