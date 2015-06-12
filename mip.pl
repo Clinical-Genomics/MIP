@@ -14805,7 +14805,7 @@ sub SplitBAM {
 	print $XARGSFILEHANDLE "-b ";  #BAM output
 	print $XARGSFILEHANDLE ${$argHashRef}{'temporaryDirectory'}."/".${$argHashRef}{'infile'}.".bam ";  #InFile
 	print $XARGSFILEHANDLE $$contigRef." ";
-	print $XARGSFILEHANDLE "> ".${$argHashRef}{'temporaryDirectory'}."/".${$argHashRef}{'infile'}."_".$$contigRef.".bam";  #Write to file
+	print $XARGSFILEHANDLE "> ".${$argHashRef}{'temporaryDirectory'}."/".${$argHashRef}{'infile'}."_".$$contigRef.".bam ";  #Write to file
 	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	print $XARGSFILEHANDLE "; ";  #Wait
 
@@ -14818,7 +14818,7 @@ sub SplitBAM {
 		  }); 
 
 	print $XARGSFILEHANDLE "BuildBamIndex ";
-	print $XARGSFILEHANDLE "INPUT=".${$argHashRef}{'temporaryDirectory'}."/".${$argHashRef}{'infile'}."_".$$contigRef.".bam";  #InFile
+	print $XARGSFILEHANDLE "INPUT=".${$argHashRef}{'temporaryDirectory'}."/".${$argHashRef}{'infile'}."_".$$contigRef.".bam ";  #InFile
 	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	print $XARGSFILEHANDLE "\n";
     }
