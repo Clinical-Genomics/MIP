@@ -136,6 +136,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -gvrtsf/--GATKVariantReCalibrationTSFilterLevel The truth sensitivity level at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
                  -gvrevf/--GATKVariantReCalibrationexcludeNonVariantsFile Produce a vcf containing non-variant loci alongside the vcf only containing non-variant loci after GATK VariantRecalibrator (defaults to "0" (=no))
                  -gvrsmr/--GATKVariantReCalibrationSpliMultiRecord Split multi allelic records into single records (defaults to "1" (=yes))
+                 -gvrmga/--GATKVariantReCalibrationMaxGaussians Use hard filtering for indels (defaults to "0" (=no))
                -pGpT/--pGATKPhaseByTransmission Computes the most likely genotype and phases calls were unamibigous using GATK PhaseByTransmission (defaults to "0" (=yes))
                -pGrP/--pGATKReadBackedPhasing Performs physical phasing of SNP calls, based on sequencing reads using GATK ReadBackedPhasing (defaults to "0" (=yes))
                  -grpqth/--GATKReadBackedPhasingPhaseQualityThreshold The minimum phasing quality score required to output phasing (defaults to "20")
@@ -249,7 +250,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ##Eval parameter hash
 &EvalParameterHash(\%parameter, $Bin."/definitions/defineParameters.yaml");
 
-my $mipVersion = "v2.3.4";  #Set version
+my $mipVersion = "v2.3.5";  #Set version
 my $aligner;
 
 
@@ -391,6 +392,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'gvrtsf|GATKVariantReCalibrationTSFilterLevel:s' => \$parameter{'GATKVariantReCalibrationTSFilterLevel'}{'value'},  #Truth sensativity level
 	   'gvrsmr|GATKVariantReCalibrationSpliMultiRecord:n' => \$parameter{'GATKVariantReCalibrationSpliMultiRecord'}{'value'},  #Split multi allelic records into single records
 	   'gvrevf|GATKVariantReCalibrationexcludeNonVariantsFile:n' => \$parameter{'GATKVariantReCalibrationexcludeNonVariantsFile'}{'value'},  #Produce a vcf containing non-variant loci alongside the vcf only containing non-variant loci after GATK VariantRecalibrator (defaults to "false")
+	   'gvrmga|GATKVariantReCalibrationMaxGaussians:n' => \$parameter{'GATKVariantReCalibrationMaxGaussians'}{'value'},
 	   'pGpT|pGATKPhaseByTransmission:n' => \$parameter{'pGATKPhaseByTransmission'}{'value'},  #GATK PhaseByTransmission to produce phased genotype calls
 	   'pGrP|pGATKReadBackedPhasing:n' => \$parameter{'pGATKReadBackedPhasing'}{'value'},  #GATK ReadBackedPhasing
 	   'grpqth|GATKReadBackedPhasingPhaseQualityThreshold:n' => \$parameter{'GATKReadBackedPhasingPhaseQualityThreshold'}{'value'},  #quality score required to output phasing
@@ -3874,6 +3876,11 @@ sub GATKVariantReCalibration {
 	    if ($modes[$modeCounter] eq "INDEL") {#Use created recalibrated snp vcf as input
 	
 		print $FILEHANDLE "-input ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".SNV.vcf ";
+
+		if (${$scriptParameterHashRef}{'GATKVariantReCalibrationMaxGaussians'} ne 0) {
+
+		    print $FILEHANDLE "--maxGaussians 4 ";  #Use hard filtering
+		}
 	    }
 	    print $FILEHANDLE "-an DP ";  #The names of the annotations which should used for calculations. NOTE: Not to be used with hybrid capture
 	}
@@ -3939,6 +3946,7 @@ sub GATKVariantReCalibration {
 	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
 	&GATKPedigreeFlag(\%{$scriptParameterHashRef}, $FILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKVariantRecalibration");  #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family    
 	print $FILEHANDLE "--mode ".$modes[$modeCounter]." ";  #Recalibration mode to employ (SNP|INDEL|BOTH)
+	print $FILEHANDLE "\n\n";
     }
 
     ## GATK SelectVariants
@@ -3946,7 +3954,7 @@ sub GATKVariantReCalibration {
     ## Removes all genotype information for exome ref and recalulates meta-data info for remaining samples in new file.
     if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) {  #Exome/rapid analysis
 	
-	print $FILEHANDLE "\n\n## GATK SelectVariants","\n";
+	print $FILEHANDLE "## GATK SelectVariants","\n";
 
 	## Writes java core commands to filehandle.
 	&JavaCore({'FILEHANDLE' => $FILEHANDLE,
