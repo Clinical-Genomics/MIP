@@ -1,4 +1,5 @@
 ---
+## Version: 1.0.0
 clusterConstantPath:
   associatedProgram:
    - MIP
@@ -497,6 +498,12 @@ GATKGenoTypeGVCFsRefGVCF:
   dataType: SCALAR
   existsCheck: file
   type: path
+GATKGenoTypeGVCFsAllSites:
+  associatedProgram:
+   - pGATKGenoTypeGVCFs
+  dataType: SCALAR
+  default: 0
+  type: program
 pGATKVariantRecalibration:
   associatedProgram:
    - MIP

@@ -60,8 +60,8 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -tmd/--tempDirectory Set the temporary directory for all programs (defaults to "/scratch/SLURM_JOB_ID";supply whole path)
                -jul/--javaUseLargePages Use large page memory. (-XX, hence option considered not stable and are subject to change without notice, but can be consiered when faced with Java Runtime Environment Memory issues)
                -nrm/--nodeRamMemory The RAM memory size of the node(s) in GigaBytes (Defaults to 24)
-               -pve/--pythonVirtualEnvironment Pyhton virtualenvironment (defaults to "")
-               -pvec/--pythonVirtualEnvironmentCommand Pyhton virtualenvironment (defaults to "workon";whitespace sep)
+               -pve/--pythonVirtualEnvironment Python virtualenvironment (defaults to "")
+               -pvec/--pythonVirtualEnvironmentCommand Python virtualenvironment (defaults to "workon";whitespace sep)
                -ges/--genomicSet Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
                -rio/--reduceIO Run consecutive models at nodes (defaults to "1" (=yes))
                -l/--logFile Mip log file (defaults to "{outDataDir}/{familyID}/mip_log/{date}/{scriptname}_{timestamp}.log")
@@ -127,6 +127,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -ghckse/--GATKHaploTypeCallerSNPKnownSet GATK HaplotypeCaller dbSNP set for annotating ID columns (defaults to "dbsnp_138.b37.vcf")
                -pGgT/--pGATKGenoTypeGVCFs Merge gVCF records using GATK GenotypeGVCFs (defaults to "1" (=yes))
                  -ggtgrl/--GATKGenoTypeGVCFsRefGVCF GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping (defaults to "")
+                 -ggtals/--GATKGenoTypeGVCFsAllSites Emit non-variant sites to the output VCF
                -pGvR/--pGATKVariantRecalibration Variant recalibration using GATK VariantRecalibrator/ApplyRecalibration (defaults to "1" (=yes))
                  -gvrtsh/--GATKVariantReCalibrationTrainingSetHapMap GATK VariantRecalibrator HapMap training set (defaults to "hapmap_3.3.b37.sites.vcf")
                  -gvrtss/--GATKVariantReCalibrationTrainingSetDbSNP GATK VariantRecalibrator dbSNP training set (defaults to "dbsnp_138.b37.vcf")
@@ -383,6 +384,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'ghckse|GATKHaploTypeCallerSNPKnownSet:s' => \$parameter{'GATKHaploTypeCallerSNPKnownSet'}{'value'},  #Known SNP set to be used in GATK HaplotypeCaller
 	   'pGgT|pGATKGenoTypeGVCFs:n' => \$parameter{'pGATKGenoTypeGVCFs'}{'value'},  #Merge gVCF records using GATK GenotypeGVCFs
 	   'ggtgrl|GATKGenoTypeGVCFsRefGVCF:s' => \$parameter{'GATKGenoTypeGVCFsRefGVCF'}{'value'},  #GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping
+	   'ggtals|GATKGenoTypeGVCFsAllSites:n' => \$parameter{'GATKGenoTypeGVCFsAllSites'}{'value'},  #Emit non-variant sites to the output VCF
 	   'pGvR|pGATKVariantRecalibration:n' => \$parameter{'pGATKVariantRecalibration'}{'value'},  #GATK VariantRecalibrator/ApplyRecalibration
 	   'gvrtsh|GATKVariantReCalibrationTrainingSetHapMap:s' => \$parameter{'GATKVariantReCalibrationTrainingSetHapMap'}{'value'},  #GATK VariantRecalibrator resource
 	   'gvrtss|GATKVariantReCalibrationTrainingSetDbSNP:s' => \$parameter{'GATKVariantReCalibrationTrainingSetDbSNP'}{'value'},  #GATK VariantRecalibrator resource
@@ -684,7 +686,10 @@ my $uncompressedFileSwitch = &InfilesReFormat(\%infile);  #Required to format in
 &CreateFileEndings(\%parameter, \%scriptParameter, \%fileInfo, \%infilesLaneNoEnding, \@orderParameters);
 
 ## Create .fam file to be used in variant calling analyses
-&CreateFamFile(\%scriptParameter);
+&CreateFamFile({'scriptParameterHashRef' => \%scriptParameter,
+		'executionMode' => "system",
+		'famFilePath' => $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}.".fam",
+	       });
 
 ##Add to SampleInfo
 &AddToSampleInfo(\%scriptParameter, \%sampleInfo, \%fileInfo);
@@ -3735,19 +3740,20 @@ sub GATKPhaseByTransmission {
 					   });
     
     ## Assign directories
-    my $familyFileDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID;
+    my $outFamilyFileDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID;
     my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/gatk";
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/gatk";
 
     my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{"p".$programName}{'fileEnding'};
     
-    unless (-f $familyFileDirectory."/".$familyID.".fam") {  #Check to see if file already exists
-
-	print $FILEHANDLE "#Generating '.fam' file for GATK PhaseByTransmission","\n\n";
-	print $FILEHANDLE q?perl -nae 'print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t", $F[5], "\n";' ?.${$scriptParameterHashRef}{'pedigreeFile'}." > ".$familyFileDirectory."/".$familyID.".fam", "\n\n";
-    }
-
+    ## GATK ".fam" file creation/check
+    &CreateFamFile({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		    'FILEHANDLE' => $FILEHANDLE,
+		    'executionMode' => "sbatch",
+		    'famFilePath' => $outFamilyFileDirectory."/".$familyID.".fam",
+		   });
+    
     ## Copy file(s) to temporary directory
     print $FILEHANDLE "## Copy file(s) to temporary directory\n"; 
     &MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE,
@@ -3773,7 +3779,7 @@ sub GATKPhaseByTransmission {
     print $FILEHANDLE "-V: ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$infileEnding.$callType.".vcf ";  #InFile (family vcf)
 
     ## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-    &GATKPedigreeFlag(\%{$scriptParameterHashRef}, $FILEHANDLE, $familyFileDirectory, "SILENT", "GATKPhaseByTransmission");
+    &GATKPedigreeFlag(\%{$scriptParameterHashRef}, $FILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKPhaseByTransmission");
 
     print $FILEHANDLE "-o ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf", "\n\n";  #OutFile
 
@@ -3850,12 +3856,12 @@ sub GATKVariantReCalibration {
     my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pGATKGenoTypeGVCFs'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{"p".$programName}{'fileEnding'};
 
-    ## GATK ".fam" file check
-    unless (-e ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$familyID.".fam") {  #Check to see if file already exists
-
-	print $FILEHANDLE "#Generating '.fam' file for GATK VariantRecalibrator/ApplyRecalibration","\n\n";
-	print $FILEHANDLE q?perl -nae 'print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t", $F[5], "\n";' ?.${$scriptParameterHashRef}{'pedigreeFile'}." > ".$outFamilyFileDirectory."/".$familyID.".fam", "\n\n";
-    }
+    ## GATK ".fam" file creation/check
+    &CreateFamFile({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		    'FILEHANDLE' => $FILEHANDLE,
+		    'executionMode' => "sbatch",
+		    'famFilePath' => $outFamilyFileDirectory."/".$familyID.".fam",
+		   });
     
     ## Copy file(s) to temporary directory
     print $FILEHANDLE "## Copy file(s) to temporary directory\n"; 
@@ -4278,6 +4284,12 @@ sub GATKGenoTypeGVCFs {
 	print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	print $FILEHANDLE "-D ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKHaploTypeCallerSNPKnownSet'}." ";  #Known SNPs to use for annotation SNPs
 	print $FILEHANDLE "-nt 16 ";  #How many data threads should be allocated to running this analysis.
+
+	if (${$scriptParameterHashRef}{'GATKGenoTypeGVCFsAllSites'} eq 1) {
+
+	    print $FILEHANDLE "-allSites ";  #Include loci found to be non-variant after genotyping
+	}
+
 	print $FILEHANDLE "-L ".${$fileInfoHashRef}{'contigs'}[$contigsCounter]." ";  #Per contig
 
 	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) {
@@ -5595,7 +5607,6 @@ sub GATKHaploTypeCaller {
 	print $XARGSFILEHANDLE "--annotation TandemRepeatAnnotator " ;
 	print $XARGSFILEHANDLE "--annotation DepthPerAlleleBySample ";
 	
-	print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus
 	print $XARGSFILEHANDLE "--emitRefConfidence GVCF ";  #Mode for emitting experimental reference confidence scores. GVCF generates block summarized version of the BP_RESOLUTION data 
 	print $XARGSFILEHANDLE "--variant_index_type LINEAR "; 
 	print $XARGSFILEHANDLE "--variant_index_parameter 128000 ";
@@ -13899,16 +13910,54 @@ sub CreateFamFile {
 
 ##CreateFamFile
 
-##Function : Create .fam file to be used in variant calling analyses.
+##Function : Create .fam file to be used in variant calling analyses. Also checks if file already exists when using executionMode=sbatch.
 ##Returns  : "" 
-##Arguments: $scriptParameterHashRef
+##Arguments: $scriptParameterHashRef, $executionMode, $pedigreeFile, $FILEHANDLE
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $pedigreeFile           => The supplied pedigree file to create the reduced ".fam" file from
+##         : $executionMode          => Either system (direct) or via sbatch
+##         : $FILEHANDLE             => Filehandle to write to {Optional unless executionMode=sbatch}
 
-    my $scriptParameterHashRef = $_[0];
+    my ($argHashRef) = @_;
+    
+    my %default = ('pedigreeFile' => ${$argHashRef}{'scriptParameterHashRef'}{'pedigreeFile'},
+		   'executionMode' => "sbatch",
+	);
+    
+   &SetDefaultArg(\%{$argHashRef}, \%default);
+    
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $pedigreeFile = ${$argHashRef}{'pedigreeFile'};
+    my $executionMode = ${$argHashRef}{'executionMode'};
+    my $famFilePath = ${$argHashRef}{'famFilePath'};
 
-    my $pqFamFile = q?perl -nae 'print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t", $F[5], "\n";'?;
-    my $famFile = ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'familyID'}."/".${$scriptParameterHashRef}{'familyID'}.".fam";
-    `$pqFamFile ${$scriptParameterHashRef}{'pedigreeFile'} > $famFile;`;
+    my $pqFamFile = q?perl -nae 'print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t", $F[5], "\n";' ?;
+
+    if ($executionMode eq "system") {  #Execute directly 
+
+	`$pqFamFile $pedigreeFile > $famFilePath;`;
+	$logger->info("Wrote: ".$famFilePath, "\n");
+    }
+    if ($executionMode eq "sbatch") {
+
+	unless (-f $famFilePath) {  #Check to see if file already exists
+
+	    if (${$argHashRef}{'FILEHANDLE'}) {
+	    
+		my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+		
+		print $FILEHANDLE "#Generating '.fam' file for use with GATK ","\n\n";
+		print $FILEHANDLE $pqFamFile.$pedigreeFile." > ".$famFilePath." ";
+		print $FILEHANDLE "\n\n";
+	    }
+	    else {
+		
+		$logger->fatal("CreateFamFile[SubRoutine]:Using 'executionMode=sbatch' requires a filehandle to write to. Please supply filehandle to subroutine call.", "\n");
+		exit 1;
+	    }
+	}
+    }
 }
 
 
