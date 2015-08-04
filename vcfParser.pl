@@ -30,7 +30,7 @@ my ($infile, $parseVEP, $rangeFeatureFile, $selectFeatureFile, $selectFeatureMat
 my (@metaData, @selectMetaData, @rangeFeatureAnnotationColumns, @selectFeatureAnnotationColumns); 
 my (%geneAnnotation, %consequenceSeverity, %rangeData, %selectData, %snpEffCmd, %tree, %metaData);
 
-my $vcfParserVersion = "1.2.2";
+my $vcfParserVersion = "1.2.3";
 
 ## Enables cmd "vcfParser.pl" to print usage help 
 if(scalar(@ARGV) == 0) {
@@ -394,7 +394,7 @@ sub ReadInfileVCF {
 	if (m/^\s+$/) {	# Avoid blank lines
 	    next;
 	}
-	if ($_=~/^##(\w+)=/) {  # MetaData
+	if ($_=~/^##(\S+)=/) {  # MetaData
 
 	    &ParseMetaData(\%{$metaDataHashRef}, $_);
 
@@ -649,6 +649,12 @@ sub ReadInfileVCF {
 	    &TreeAnnotations("RangeFile", \@lineElements, $rangeDataHashRef, \$variantLine);
 	    
 	    my @variantEffects = split(/;/, $lineElements[7]); #Split INFO field
+	    ##Temporary check
+	    unless ($lineElements[7]) {
+
+		print STDERR "FAulty LIne:".$_, "\n";
+		die;
+	    }
 	    my $CSQTranscripts;
 	    
 	    for (my $variantEffectCounter=0;$variantEffectCounter<scalar(@variantEffects);$variantEffectCounter++) {

@@ -4216,6 +4216,12 @@ sub GATKGenoTypeGVCFs {
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $sbatchScriptTracker=0;
     my $nrCores = ${$scriptParameterHashRef}{'maximumCores'};
+    my $processTime = 10;
+
+    if (${$scriptParameterHashRef}{'GATKGenoTypeGVCFsAllSites'} eq 1) {
+	
+	$processTime = 50;  #Including all sites requires longer processing time
+    }
 
     ## Split per contig
     for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{'contigs'}});$contigsCounter++) {    
@@ -4228,7 +4234,7 @@ sub GATKGenoTypeGVCFs {
 						'programDirectory' => lc($aligner."/gatk"),
 						'callType' => $callType,
 						'nrofCores' => $nrCores,
-						'processTime' => 10,
+						'processTime' => $processTime,
 						'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
 					       });
 	
