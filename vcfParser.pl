@@ -538,12 +538,26 @@ sub ReadInfileVCF {
 
 		if ( ($database eq "Dbsnp129LCAF") || ($database eq "DbsnpLCAF") ) {
 
-		    if ($lineElements[7] =~/\S+_CAF=\[(.+)\]/) {
+		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
+
+		     my $tempMafList = &FindAF(\@tempArray, "\\S+_CAF=");
+
+		    if (defined($tempMafList)) {
+
+			my $tempMaf;
+
+			if ($tempMafList =~/^\[(.+)\],/) {  #Multiple entries in database for variant
+
+			    $tempMafList = $';  #Pick last block as they should be identical. '			    
+			}
+			if ($tempMafList =~/\[(.+)\]/) {  #Single entry in database for variant
+
+			    $tempMaf = $1;
+			}
 			
-			my @tempMafs = sort {$a <=> $b} grep { $_ ne "." } split(",", $1); #Split on ",", remove entries containing only "." and sort remaining entries numerically
-
+			my @tempMafs = sort {$a <=> $b} grep { $_ ne "." } split(",", $tempMaf); #Split on ",", remove entries containing only "." and sort remaining entries numerically
 			if (scalar(@tempMafs) > 0) {
-
+			    
 			    ## Save LCAF frequency info
 			    $variantLine .= $database."=".$tempMafs[0].";";
 			    $selectedVariantLine .= $database."=".$tempMafs[0].";";
@@ -649,11 +663,13 @@ sub ReadInfileVCF {
 	    &TreeAnnotations("RangeFile", \@lineElements, $rangeDataHashRef, \$variantLine);
 	    
 	    my @variantEffects = split(/;/, $lineElements[7]); #Split INFO field
-	    ##Temporary check
+
+	    ##Check that we have an INFO field
 	    unless ($lineElements[7]) {
 
-		print STDERR "FAulty LIne:".$_, "\n";
-		die;
+		print STDERR "No INFO field at line number: ".$.."\n";
+		print STDERR "Displaying malformed line: ".$_, "\n";
+		exit 1;
 	    }
 	    my $CSQTranscripts;
 	    
