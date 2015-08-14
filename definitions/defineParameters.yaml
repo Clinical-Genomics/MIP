@@ -1,11 +1,24 @@
 ---
 ## Version: 1.0.0
+##Enable/activate MIP
+MIP:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  default: 1
+  type: MIP
 clusterConstantPath:
   associatedProgram:
    - MIP
   dataType: SCALAR
   type: path
 ### Project specific
+analysisConstantPath:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  default: analysis
+  type: path
 familyID:
   associatedProgram:
    - MIP
@@ -1061,7 +1074,17 @@ snpSiftAnnotationFiles:
   dataType: HASH
   default:
      dbsnp_138.b37.excluding_sites_after_129.vcf.gz: CAF
-     ALL.wgs.phase3_shapeit2_mvncall_integrated_v5.20130502.sites.vcf.gz: AF
-     ExAC.r0.1.sites.vep.vcf: AF
+     ALL.wgs.phase3_shapeit2_mvncall_integrated_v5a.20130502.sites.vcf.gz: AF
+     ExAC.r0.3.sites.vep.vcf.gz: AF   
+  existsCheck: file
+  type: path
+snpSiftAnnotationOutInfoKey:
+  associatedProgram:
+   - pSnpEff
+  buildFile: yesAutoBuild
+  dataType: HASH
+  default:
+     ALL.wgs.phase3_shapeit2_mvncall_integrated_v5a.20130502.sites.vcf.gz: 1000GAF
+     ExAC.r0.3.sites.vep.vcf.gz: EXACAF
   existsCheck: file
   type: path
