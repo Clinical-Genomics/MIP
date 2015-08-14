@@ -30,7 +30,7 @@ my ($infile, $parseVEP, $rangeFeatureFile, $selectFeatureFile, $selectFeatureMat
 my (@metaData, @selectMetaData, @rangeFeatureAnnotationColumns, @selectFeatureAnnotationColumns); 
 my (%geneAnnotation, %consequenceSeverity, %rangeData, %selectData, %snpEffCmd, %tree, %metaData);
 
-my $vcfParserVersion = "1.2.2";
+my $vcfParserVersion = "1.2.3";
 
 ## Enables cmd "vcfParser.pl" to print usage help 
 if(scalar(@ARGV) == 0) {
@@ -394,7 +394,7 @@ sub ReadInfileVCF {
 	if (m/^\s+$/) {	# Avoid blank lines
 	    next;
 	}
-	if ($_=~/^##(\w+)=/) {  # MetaData
+	if ($_=~/^##(\S+)=/) {  # MetaData
 
 	    &ParseMetaData(\%{$metaDataHashRef}, $_);
 
@@ -538,12 +538,26 @@ sub ReadInfileVCF {
 
 		if ( ($database eq "Dbsnp129LCAF") || ($database eq "DbsnpLCAF") ) {
 
-		    if ($lineElements[7] =~/\S+_CAF=\[(.+)\]/) {
+		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
+
+		     my $tempMafList = &FindAF(\@tempArray, "\\S+_CAF=");
+
+		    if (defined($tempMafList)) {
+
+			my $tempMaf;
+
+			if ($tempMafList =~/^\[(.+)\],/) {  #Multiple entries in database for variant
+
+			    $tempMafList = $';  #Pick last block as they should be identical. '			    
+			}
+			if ($tempMafList =~/\[(.+)\]/) {  #Single entry in database for variant
+
+			    $tempMaf = $1;
+			}
 			
-			my @tempMafs = sort {$a <=> $b} grep { $_ ne "." } split(",", $1); #Split on ",", remove entries containing only "." and sort remaining entries numerically
-
+			my @tempMafs = sort {$a <=> $b} grep { $_ ne "." } split(",", $tempMaf); #Split on ",", remove entries containing only "." and sort remaining entries numerically
 			if (scalar(@tempMafs) > 0) {
-
+			    
 			    ## Save LCAF frequency info
 			    $variantLine .= $database."=".$tempMafs[0].";";
 			    $selectedVariantLine .= $database."=".$tempMafs[0].";";
@@ -649,6 +663,14 @@ sub ReadInfileVCF {
 	    &TreeAnnotations("RangeFile", \@lineElements, $rangeDataHashRef, \$variantLine);
 	    
 	    my @variantEffects = split(/;/, $lineElements[7]); #Split INFO field
+
+	    ##Check that we have an INFO field
+	    unless ($lineElements[7]) {
+
+		print STDERR "No INFO field at line number: ".$.."\n";
+		print STDERR "Displaying malformed line: ".$_, "\n";
+		exit 1;
+	    }
 	    my $CSQTranscripts;
 	    
 	    for (my $variantEffectCounter=0;$variantEffectCounter<scalar(@variantEffects);$variantEffectCounter++) {
