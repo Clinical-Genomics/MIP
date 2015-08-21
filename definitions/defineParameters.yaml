@@ -577,6 +577,12 @@ GATKVariantReCalibrationSpliMultiRecord:
   dataType: SCALAR
   default: 1
   type: program
+GATKVariantReCalibrationNormalize:
+  associatedProgram:
+   - pGATKVariantRecalibration
+  dataType: SCALAR
+  default: 1
+  type: program
 GATKVariantReCalibrationexcludeNonVariantsFile:
   associatedProgram:
    - pGATKVariantRecalibration

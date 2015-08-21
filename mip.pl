@@ -138,6 +138,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -gvrtsf/--GATKVariantReCalibrationTSFilterLevel The truth sensitivity level at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
                  -gvrevf/--GATKVariantReCalibrationexcludeNonVariantsFile Produce a vcf containing non-variant loci alongside the vcf only containing non-variant loci after GATK VariantRecalibrator (defaults to "0" (=no))
                  -gvrsmr/--GATKVariantReCalibrationSpliMultiRecord Split multi allelic records into single records (defaults to "1" (=yes))
+                 -gvrnor/--GATKVariantReCalibrationNormalize Normalize variants (defaults to "1" (=yes))
                  -gvrmga/--GATKVariantReCalibrationMaxGaussians Use hard filtering for indels (defaults to "0" (=no))
                -pGpT/--pGATKPhaseByTransmission Computes the most likely genotype and phases calls were unamibigous using GATK PhaseByTransmission (defaults to "0" (=yes))
                -pGrP/--pGATKReadBackedPhasing Performs physical phasing of SNP calls, based on sequencing reads using GATK ReadBackedPhasing (defaults to "0" (=yes))
@@ -393,7 +394,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'gvrtsm|GATKVariantReCalibrationTrainingSetMills:s' => \$parameter{'GATKVariantReCalibrationTrainingSetMills'}{'value'},  #GATK VariantRecalibrator resource
 	   'gvrtsf|GATKVariantReCalibrationTSFilterLevel:s' => \$parameter{'GATKVariantReCalibrationTSFilterLevel'}{'value'},  #Truth sensativity level
 	   'gvrsmr|GATKVariantReCalibrationSpliMultiRecord:n' => \$parameter{'GATKVariantReCalibrationSpliMultiRecord'}{'value'},  #Split multi allelic records into single records
-	   'gvrevf|GATKVariantReCalibrationexcludeNonVariantsFile:n' => \$parameter{'GATKVariantReCalibrationexcludeNonVariantsFile'}{'value'},  #Produce a vcf containing non-variant loci alongside the vcf only containing non-variant loci after GATK VariantRecalibrator (defaults to "false")
+	   'gvrnor|GATKVariantReCalibrationNormalize:n' => \$parameter{'GATKVariantReCalibrationNormalize'}{'value'},  #Normalize variants (defaults to "1" (=yes))
 	   'gvrmga|GATKVariantReCalibrationMaxGaussians:n' => \$parameter{'GATKVariantReCalibrationMaxGaussians'}{'value'},
 	   'pGpT|pGATKPhaseByTransmission:n' => \$parameter{'pGATKPhaseByTransmission'}{'value'},  #GATK PhaseByTransmission to produce phased genotype calls
 	   'pGrP|pGATKReadBackedPhasing:n' => \$parameter{'pGATKReadBackedPhasing'}{'value'},  #GATK ReadBackedPhasing
@@ -3954,7 +3955,7 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "-nt ".${$scriptParameterHashRef}{'maximumCores'}." ";  #How many data threads should be allocated to running this analysis    
 
 	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-	&GATKPedigreeFlag(\%{$scriptParameterHashRef}, $FILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKVariantRecalibration");  #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family
+	&GATKPedigreeFlag(\%{$scriptParameterHashRef}, $FILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKVariantRecalibration");  #Sub routine prints "--pedigree file" for family
 	
 	## GATK ApplyRecalibration
 	print $FILEHANDLE "\n\n## GATK ApplyRecalibration","\n";
@@ -4062,17 +4063,29 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "\n\nwait\n\n";
     }
 
-    ##Split multi allelic records into single records
+    ##Split multi allelic records into single records and normalize
     if (${$scriptParameterHashRef}{'GATKVariantReCalibrationSpliMultiRecord'} == 1) {
-
-	print $FILEHANDLE "## Split multi allelic records into single records\n";
-	print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
-	print $FILEHANDLE "vcf_parser ";
-	print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf ";
-	print $FILEHANDLE "--split ";
-	print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf_splitted ";
+	
+	print $FILEHANDLE "## Decompose(split multi allelic records into single records) and normalize variants\n";
+	print $FILEHANDLE "cat ";
+	print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf ";  #Infile
+	print $FILEHANDLE "| ";  #Pipe
+	print $FILEHANDLE q?sed 's/ID=AD,Number=./ID=AD,Number=R/' ?;
+	print $FILEHANDLE "| ";  #Pipe
+	print $FILEHANDLE "vt decompose ";  #Decompose multiallelic variants
+	print $FILEHANDLE "-s ";  #smart decomposition
+	print $FILEHANDLE "- ";  #InStream
+    
+	if (${$scriptParameterHashRef}{'GATKVariantReCalibrationNormalize'} == 1) {
+	    
+	    print $FILEHANDLE "| ";  #Pipe
+	    print $FILEHANDLE "vt normalize ";  #Normalize variants in a VCF.The normalized variants are reordered and output in an ordered fashion
+	    print $FILEHANDLE "- ";  #InStream
+	    print $FILEHANDLE "-r ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
+	}
+	print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf_splitted ";  #Temporary outfile
 	print $FILEHANDLE "\n\n";
-
+	
 	print $FILEHANDLE "mv ";
 	print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf_splitted ";
 	print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf ";
@@ -4238,6 +4251,16 @@ sub GATKGenoTypeGVCFs {
 	$processTime = 50;  #Including all sites requires longer processing time
     }
 
+     ## Assign directories
+    my $outFamilyFileDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'familyID'};  #For ".fam" file
+
+    ## GATK ".fam" file creation/check
+    &CreateFamFile({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		    'FILEHANDLE' => $FILEHANDLE,
+		    'executionMode' => "sbatch",
+		    'famFilePath' => $outFamilyFileDirectory."/".${$scriptParameterHashRef}{'familyID'}.".fam",
+		   });
+
     ## Split per contig
     for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{'contigs'}});$contigsCounter++) {    
 
@@ -4305,6 +4328,9 @@ sub GATKGenoTypeGVCFs {
 	print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	print $FILEHANDLE "-D ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKHaploTypeCallerSNPKnownSet'}." ";  #Known SNPs to use for annotation SNPs
 	print $FILEHANDLE "-nt 16 ";  #How many data threads should be allocated to running this analysis.
+
+	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
+	&GATKPedigreeFlag(\%{$scriptParameterHashRef}, $FILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKHaploTypeCaller");  #Sub routine prints "--pedigree file" for family
 
 	if (${$scriptParameterHashRef}{'GATKGenoTypeGVCFsAllSites'} eq 1) {
 
@@ -5528,11 +5554,19 @@ sub GATKHaploTypeCaller {
     $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, $nrCores);  #To not exceed maximum
 
     ## Assign directories
+    my $outFamilyFileDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'familyID'};  #For ".fam" file
     my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
     my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
 
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pGATKBaseRecalibration'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{"p".$programName}{'fileEnding'};
+
+    ## GATK ".fam" file creation/check
+    &CreateFamFile({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		    'FILEHANDLE' => $FILEHANDLE,
+		    'executionMode' => "sbatch",
+		    'famFilePath' => $outFamilyFileDirectory."/".${$scriptParameterHashRef}{'familyID'}.".fam",
+		   });
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
     my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, $$sampleIDRef);
@@ -5612,13 +5646,15 @@ sub GATKHaploTypeCaller {
 	print $XARGSFILEHANDLE "-stand_call_conf 30.0 ";  #The minimum phred-scaled confidence threshold at which variants should be called
 	print $XARGSFILEHANDLE "-stand_emit_conf 30.0 ";  #The minimum phred-scaled confidence threshold at which variants should be emitted
 	print $XARGSFILEHANDLE "-nct 1 ";  #Number of CPU Threads per data thread
+
+	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
+	&GATKPedigreeFlag(\%{$scriptParameterHashRef}, $XARGSFILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKHaploTypeCaller");  #Sub routine prints "--pedigree file" for family
 	
 	## Annotations to apply to variant calls
 	print $XARGSFILEHANDLE "--annotation BaseQualityRankSumTest ";  
 	print $XARGSFILEHANDLE "--annotation ChromosomeCounts ";
 	print $XARGSFILEHANDLE "--annotation Coverage ";
 	print $XARGSFILEHANDLE "--annotation FisherStrand ";
-	print $XARGSFILEHANDLE "--annotation InbreedingCoeff ";
 	print $XARGSFILEHANDLE "--annotation MappingQualityRankSumTest ";
 	print $XARGSFILEHANDLE "--annotation MappingQualityZero ";
 	print $XARGSFILEHANDLE "--annotation QualByDepth ";
@@ -5627,7 +5663,11 @@ sub GATKHaploTypeCaller {
 	print $XARGSFILEHANDLE "--annotation SpanningDeletions ";
 	print $XARGSFILEHANDLE "--annotation TandemRepeatAnnotator " ;
 	print $XARGSFILEHANDLE "--annotation DepthPerAlleleBySample ";
-	
+
+	if (scalar(@{$scriptParameter{'sampleIDs'}}) >= 10) {
+
+	    print $XARGSFILEHANDLE "--annotation InbreedingCoeff ";  #Only meningful with at least 10 founder samples
+	}
 	print $XARGSFILEHANDLE "--emitRefConfidence GVCF ";  #Mode for emitting experimental reference confidence scores. GVCF generates block summarized version of the BP_RESOLUTION data 
 	print $XARGSFILEHANDLE "--variant_index_type LINEAR "; 
 	print $XARGSFILEHANDLE "--variant_index_parameter 128000 ";
