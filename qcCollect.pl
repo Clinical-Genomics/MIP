@@ -710,6 +710,8 @@ sub RegExpToYAML {
     $regExp{'ChanjoAnnotate'}{'Version'} = q?perl -nae 'if($_=~/version\s(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect Chanjo version
 
     $regExp{'Bwa'}{'Version'} = q?perl -nae 'if($_=~/\[main\]\sVersion:\s(\S+)/) {print $1;last;}' ?; #Collect Bwa version
+
+    $regExp{'vt'}{'Version'} = q?perl -nae 'if($_=~/decompose\sv(\S+)/) {print $1;last;}' ?; #Collect vt version
 #$regExp{''}{''} = ;
 
     

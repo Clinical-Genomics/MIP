@@ -3852,16 +3852,17 @@ sub GATKVariantReCalibration {
     my $nrCores = ${$scriptParameterHashRef}{'maximumCores'};
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($fileName) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-					    'FILEHANDLE' => $FILEHANDLE,
-					    'directoryID' => $familyID,
-					    'programName' => $programName,
-					    'programDirectory' => lc($aligner."/gatk"),
-					    'callType' => $callType,
-					    'nrofCores' => $nrCores,
-					    'processTime' => 10,
-					    'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}."/gatk/intermediary"
-					   });
+    my ($fileName, $programInfoPath) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+							      'FILEHANDLE' => $FILEHANDLE,
+							      'directoryID' => $familyID,
+							      'programName' => $programName,
+							      'programDirectory' => lc($aligner."/gatk"),
+							      'callType' => $callType,
+							      'nrofCores' => $nrCores,
+							      'processTime' => 10,
+							      'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}."/gatk/intermediary"
+							     });
+    my ($volume, $directories, $stderrFile) = File::Spec->splitpath($programInfoPath.".stderr.txt");  #Split to enable submission to &SampleInfoQC later
 
     ## Assign directories
     my $outFamilyFileDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID;  #For ".fam" file
@@ -4114,6 +4115,13 @@ sub GATKVariantReCalibration {
 		       'outDirectory' => $outFamilyDirectory,
 		       'outFileEnding' => $familyID.$outfileEnding.$callType.".vcf",
 		       'outDataType' => "infileDependent"
+		      });
+	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		       'familyID' => ${$scriptParameterHashRef}{'familyID'},
+		       'programName' => "vt",
+		       'outDirectory' => $directories,
+		       'outFileEnding' => $stderrFile,
+		       'outDataType' => "infoDirectory"
 		      });
 	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'}{'ReadyVcf'}{'Path'} = $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf";	
 	
@@ -7950,13 +7958,13 @@ sub BWA_Mem {
 		
 		## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 		my ($fileName, $programInfoPath) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-								   'FILEHANDLE' => $FILEHANDLE,
-								   'directoryID' => $sampleID,
-								   'programName' => $programName,
-								   'programDirectory' => lc($aligner),
-								   'nrofCores' => ${$scriptParameterHashRef}{'maximumCores'},
-								   'processTime' => $time,
-								  });
+									  'FILEHANDLE' => $FILEHANDLE,
+									  'directoryID' => $sampleID,
+									  'programName' => $programName,
+									  'programDirectory' => lc($aligner),
+									  'nrofCores' => ${$scriptParameterHashRef}{'maximumCores'},
+									  'processTime' => $time,
+									 });
 		my ($volume, $directories, $stderrFile) = File::Spec->splitpath($programInfoPath.".stderr.txt");  #Split to enable submission to &SampleInfoQC later
 
 		my $readStart = $sbatchCounter *  $ReadNrofLines;  #Constant for gz files
