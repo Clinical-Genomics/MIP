@@ -568,7 +568,7 @@ sub ReadInfileVCF {
 			
 		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
 
-		    my $tempMaf = &FindAF(\@tempArray, "\\S+_AF=");
+		    my $tempMaf = &FindAF(\@tempArray, "\\S+_1000GAF_AF=");
 
 		    if (defined($tempMaf)) {
 			
@@ -596,7 +596,7 @@ sub ReadInfileVCF {
 		    
 		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
 		    
-		    my $tempMaf = &FindAF(\@tempArray, "\\S+_AF=");
+		    my $tempMaf = &FindAF(\@tempArray, "\\S+_EXACAF_AF=");
 		    
 		    if (defined($tempMaf)) {
 			

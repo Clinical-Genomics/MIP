@@ -51,7 +51,8 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -at/--analysisType Type of analysis to perform (defaults to "exomes";Valid entries: "genomes", "exomes", "rapid")
                -mc/--maximumCores The maximum number of cores per node used in the analysis (defaults to "8")
                -c/--configFile YAML config file for script parameters (defaults to "")
-               -ccp/--clusterConstantPath Set the cluster constant path in config (defaults to "")
+               -ccp/--clusterConstantPath Set the cluster constant path (defaults to "")
+               -acp/--analysisConstantPath Set the analysis constant path (defaults to "analysis")
                -wc/--writeConfigFile Write YAML configuration file for script parameters (defaults to "")
                -int/--instanceTag Tag family with instance association in sampleInfo file (comma sep; defaults to "")
                -rea/--researchEthicalApproval Tag for displaying research candidates in Scout (defaults to "notApproved")
@@ -137,6 +138,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -gvrtsf/--GATKVariantReCalibrationTSFilterLevel The truth sensitivity level at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
                  -gvrevf/--GATKVariantReCalibrationexcludeNonVariantsFile Produce a vcf containing non-variant loci alongside the vcf only containing non-variant loci after GATK VariantRecalibrator (defaults to "0" (=no))
                  -gvrsmr/--GATKVariantReCalibrationSpliMultiRecord Split multi allelic records into single records (defaults to "1" (=yes))
+                 -gvrnor/--GATKVariantReCalibrationNormalize Normalize variants (defaults to "1" (=yes))
                  -gvrmga/--GATKVariantReCalibrationMaxGaussians Use hard filtering for indels (defaults to "0" (=no))
                -pGpT/--pGATKPhaseByTransmission Computes the most likely genotype and phases calls were unamibigous using GATK PhaseByTransmission (defaults to "0" (=yes))
                -pGrP/--pGATKReadBackedPhasing Performs physical phasing of SNP calls, based on sequencing reads using GATK ReadBackedPhasing (defaults to "0" (=yes))
@@ -166,7 +168,8 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -anvarmafth/--annovarMAFThreshold Sets the minor allele frequency threshold in annovar (defaults to "0")
                -pSnE/--pSnpEff Variant annotation using snpEFF (defaults to "1" (=yes))
                  -snep/--snpEffPath Path to snpEff. Mandatory for use of snpEff (defaults to "")
-                 -snesaf2/--snpSiftAnnotationFiles Annotation files to use with snpSift (default to (dbsnp_138.b37.excluding_sites_after_129.vcf.gz=CAF ALL.wgs.phase3_shapeit2_mvncall_integrated_v5.20130502.sites.vcf.gz=AF ExAC.r0.1.sites.vep.vcf=AF); Hash flag i.e. --Flag key=value)
+                 -snesaf/--snpSiftAnnotationFiles Annotation files to use with snpSift (default to (dbsnp_138.b37.excluding_sites_after_129.vcf.gz=CAF ALL.wgs.phase3_shapeit2_mvncall_integrated_v5a.20130502.sites.vcf.gz=AF ExAC.r0.3.sites.vep.vcf=AF); Hash flag i.e. --Flag key=value)
+                 -snesaoi/--snpSiftAnnotationOutInfoKey snpSift output INFO key (default to (ALL.wgs.phase3_shapeit2_mvncall_integrated_v5a.20130502.sites.vcf.gz=1000GAF ExAC.r0.3.sites.vep.vcf=EXACAF); Hash flag i.e. --Flag key=value)
                  -snesdbnsfp/--snpSiftDbNSFPFile DbNSFP File (defaults to "dbNSFP2.6.txt.gz")
                  -snesdbnsfpa/--snpSiftDbNSFPAnnotations DbNSFP annotations to use with snpSift (defaults to ("SIFT_pred","Polyphen2_HDIV_pred","Polyphen2_HVAR_pred","LRT_pred","MutationTaster_pred","GERP++_NR","GERP++_RS","phastCons100way_vertebrate","1000Gp1_AF","ESP6500_AA_AF"); comma sep)
 
@@ -225,8 +228,6 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
 my %parameter;  #Holds all parameters for MIP
 my %scriptParameter;  #Holds all active parameters after the value has been set
 
-$scriptParameter{'MIP'} = 1;  #Enable/activate MIP
-
 my $logger;  #Will hold the logger object for the MIP log
 my @orderParameters;  #To add/write parameters in the correct order
 my @broadcasts;  #Holds all set parameters info after AddToScriptParameter
@@ -253,7 +254,6 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 
 my $mipVersion = "v2.3.5";  #Set version
 my $aligner;
-
 
 ## Target definition files
 my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists);  #Arrays for target bed infile lists
@@ -321,6 +321,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'mc|maximumCores:n' => \$parameter{'maximumCores'}{'value'},  #Per node
 	   'c|configFile:s' => \$parameter{'configFile'}{'value'},
 	   'ccp|clusterConstantPath:s' => \$parameter{'clusterConstantPath'}{'value'},
+	   'acp|analysisConstantPath:s' => \$parameter{'analysisConstantPath'}{'value'},
 	   'wc|writeConfigFile:s' => \$parameter{'writeConfigFile'}{'value'},
 	   'sif|sampleInfoFile:s' => \$parameter{'sampleInfoFile'}{'value'},  #Write all info on samples and run to YAML file
 	   'int|instanceTag:s' => \@{$parameter{'instanceTag'}{'value'}},
@@ -393,7 +394,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'gvrtsm|GATKVariantReCalibrationTrainingSetMills:s' => \$parameter{'GATKVariantReCalibrationTrainingSetMills'}{'value'},  #GATK VariantRecalibrator resource
 	   'gvrtsf|GATKVariantReCalibrationTSFilterLevel:s' => \$parameter{'GATKVariantReCalibrationTSFilterLevel'}{'value'},  #Truth sensativity level
 	   'gvrsmr|GATKVariantReCalibrationSpliMultiRecord:n' => \$parameter{'GATKVariantReCalibrationSpliMultiRecord'}{'value'},  #Split multi allelic records into single records
-	   'gvrevf|GATKVariantReCalibrationexcludeNonVariantsFile:n' => \$parameter{'GATKVariantReCalibrationexcludeNonVariantsFile'}{'value'},  #Produce a vcf containing non-variant loci alongside the vcf only containing non-variant loci after GATK VariantRecalibrator (defaults to "false")
+	   'gvrnor|GATKVariantReCalibrationNormalize:n' => \$parameter{'GATKVariantReCalibrationNormalize'}{'value'},  #Normalize variants (defaults to "1" (=yes))
 	   'gvrmga|GATKVariantReCalibrationMaxGaussians:n' => \$parameter{'GATKVariantReCalibrationMaxGaussians'}{'value'},
 	   'pGpT|pGATKPhaseByTransmission:n' => \$parameter{'pGATKPhaseByTransmission'}{'value'},  #GATK PhaseByTransmission to produce phased genotype calls
 	   'pGrP|pGATKReadBackedPhasing:n' => \$parameter{'pGATKReadBackedPhasing'}{'value'},  #GATK ReadBackedPhasing
@@ -421,7 +422,8 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'anvarmafth|annovarMAFThreshold:n' => \$parameter{'annovarMAFThreshold'}{'value'},
 	   'snep|snpEffPath:s'  => \$parameter{'snpEffPath'}{'value'},  #path to snpEff directory
 	   'pSnE|pSnpEff:n' => \$parameter{'pSnpEff'}{'value'},
-	   'snesaf2|snpSiftAnnotationFiles=s'  => \%{$parameter{'snpSiftAnnotationFiles'}{'value'}},
+	   'snesaf|snpSiftAnnotationFiles=s'  => \%{$parameter{'snpSiftAnnotationFiles'}{'value'}},
+	   'snesaoi|snpSiftAnnotationOutInfoKey=s'  => \%{$parameter{'snpSiftAnnotationOutInfoKey'}{'value'}},
 	   'snesdbnsfp|snpSiftDbNSFPFile:s'  => \$parameter{'snpSiftDbNSFPFile'}{'value'},  #DbNSFP file
 	   'snesdbnsfpa|snpSiftDbNSFPAnnotations:s'  => \@{$parameter{'snpSiftDbNSFPAnnotations'}{'value'}},  #Comma separated list
 	   'pRaV|pRankVariants:n' => \$parameter{'pRankVariants'}{'value'},  #Ranking variants
@@ -448,8 +450,14 @@ if (exists($parameter{'configFile'}{'value'})) {  #Input from cmd
     ## Loads a YAML file into an arbitrary hash and returns it.
     %scriptParameter = &LoadYAML(\%scriptParameter, $parameter{'configFile'}{'value'});  #Load parameters from configfile
 
+    ##Special case:Enable/activate MIP. Cannot be changed from cmd or config
+    $scriptParameter{'MIP'} = $parameter{'MIP'}{'default'};
+
+    &CompareHashKeys(\%scriptParameter, \%parameter);
+
     ## Replace config parameter with cmd info for active parameter
     &ReplaceConfigParamWithCMDInfo(\%parameter, \%scriptParameter, "clusterConstantPath");
+    &ReplaceConfigParamWithCMDInfo(\%parameter, \%scriptParameter, "analysisConstantPath");
     &ReplaceConfigParamWithCMDInfo(\%parameter, \%scriptParameter, "analysisType");
     &ReplaceConfigParamWithCMDInfo(\%parameter, \%scriptParameter, "aligner");
 
@@ -476,7 +484,7 @@ foreach my $orderParameterElement (@orderParameters) {
 			   'parameterExistsCheck' => $parameter{$orderParameterElement}{'existsCheck'},
 			   'programNamePath' => \@{$parameter{$orderParameterElement}{'programNamePath'}},
 			  });
-    
+
     ## Special case for parameters that are dependent on other parameters values
     if ($orderParameterElement eq "outDataDir") {  #Set defaults depending on $scriptParameter{'outDataDir'} value that now has been set
 
@@ -2722,7 +2730,15 @@ sub SnpEff {
 		
 		if (defined(${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}{$annotationFile})) {
 		    
-		    print $XARGSFILEHANDLE "-name SnpSift_ ";  #Prepend 'str' to all annotated INFO fields 
+		    ##Apply specific INFO field output key for easier downstream processing
+		    if (defined(${$scriptParameterHashRef}{'snpSiftAnnotationOutInfoKey'}{$annotationFile})) {
+		
+			print $XARGSFILEHANDLE "-name SnpSift_".${$scriptParameterHashRef}{'snpSiftAnnotationOutInfoKey'}{$annotationFile}."_ ";
+		    }
+		    else {  ##Prepend 'str' to all annotated INFO fields
+
+			print $XARGSFILEHANDLE "-name SnpSift_ ";
+		    }
 		    print $XARGSFILEHANDLE "-info ".${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}{$annotationFile}." ";  #Database
 		}
 		print $XARGSFILEHANDLE ${$scriptParameterHashRef}{'referencesDir'}."/".$annotationFile." ";  #Database
@@ -3836,16 +3852,17 @@ sub GATKVariantReCalibration {
     my $nrCores = ${$scriptParameterHashRef}{'maximumCores'};
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($fileName) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-					    'FILEHANDLE' => $FILEHANDLE,
-					    'directoryID' => $familyID,
-					    'programName' => $programName,
-					    'programDirectory' => lc($aligner."/gatk"),
-					    'callType' => $callType,
-					    'nrofCores' => $nrCores,
-					    'processTime' => 10,
-					    'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}."/gatk/intermediary"
-					   });
+    my ($fileName, $programInfoPath) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+							      'FILEHANDLE' => $FILEHANDLE,
+							      'directoryID' => $familyID,
+							      'programName' => $programName,
+							      'programDirectory' => lc($aligner."/gatk"),
+							      'callType' => $callType,
+							      'nrofCores' => $nrCores,
+							      'processTime' => 10,
+							      'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}."/gatk/intermediary"
+							     });
+    my ($volume, $directories, $stderrFile) = File::Spec->splitpath($programInfoPath.".stderr.txt");  #Split to enable submission to &SampleInfoQC later
 
     ## Assign directories
     my $outFamilyFileDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID;  #For ".fam" file
@@ -3939,7 +3956,7 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "-nt ".${$scriptParameterHashRef}{'maximumCores'}." ";  #How many data threads should be allocated to running this analysis    
 
 	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-	&GATKPedigreeFlag(\%{$scriptParameterHashRef}, $FILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKVariantRecalibration");  #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family
+	&GATKPedigreeFlag(\%{$scriptParameterHashRef}, $FILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKVariantRecalibration");  #Sub routine prints "--pedigree file" for family
 	
 	## GATK ApplyRecalibration
 	print $FILEHANDLE "\n\n## GATK ApplyRecalibration","\n";
@@ -4047,17 +4064,29 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "\n\nwait\n\n";
     }
 
-    ##Split multi allelic records into single records
+    ##Split multi allelic records into single records and normalize
     if (${$scriptParameterHashRef}{'GATKVariantReCalibrationSpliMultiRecord'} == 1) {
-
-	print $FILEHANDLE "## Split multi allelic records into single records\n";
-	print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
-	print $FILEHANDLE "vcf_parser ";
-	print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf ";
-	print $FILEHANDLE "--split ";
-	print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf_splitted ";
+	
+	print $FILEHANDLE "## Decompose(split multi allelic records into single records) and normalize variants\n";
+	print $FILEHANDLE "cat ";
+	print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf ";  #Infile
+	print $FILEHANDLE "| ";  #Pipe
+	print $FILEHANDLE q?sed 's/ID=AD,Number=./ID=AD,Number=R/' ?;
+	print $FILEHANDLE "| ";  #Pipe
+	print $FILEHANDLE "vt decompose ";  #Decompose multiallelic variants
+	print $FILEHANDLE "-s ";  #smart decomposition
+	print $FILEHANDLE "- ";  #InStream
+    
+	if (${$scriptParameterHashRef}{'GATKVariantReCalibrationNormalize'} == 1) {
+	    
+	    print $FILEHANDLE "| ";  #Pipe
+	    print $FILEHANDLE "vt normalize ";  #Normalize variants in a VCF.The normalized variants are reordered and output in an ordered fashion
+	    print $FILEHANDLE "- ";  #InStream
+	    print $FILEHANDLE "-r ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
+	}
+	print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf_splitted ";  #Temporary outfile
 	print $FILEHANDLE "\n\n";
-
+	
 	print $FILEHANDLE "mv ";
 	print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf_splitted ";
 	print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf ";
@@ -4086,6 +4115,13 @@ sub GATKVariantReCalibration {
 		       'outDirectory' => $outFamilyDirectory,
 		       'outFileEnding' => $familyID.$outfileEnding.$callType.".vcf",
 		       'outDataType' => "infileDependent"
+		      });
+	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		       'familyID' => ${$scriptParameterHashRef}{'familyID'},
+		       'programName' => "vt",
+		       'outDirectory' => $directories,
+		       'outFileEnding' => $stderrFile,
+		       'outDataType' => "infoDirectory"
 		      });
 	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'}{'ReadyVcf'}{'Path'} = $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf";	
 	
@@ -4223,6 +4259,16 @@ sub GATKGenoTypeGVCFs {
 	$processTime = 50;  #Including all sites requires longer processing time
     }
 
+     ## Assign directories
+    my $outFamilyFileDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'familyID'};  #For ".fam" file
+
+    ## GATK ".fam" file creation/check
+    &CreateFamFile({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		    'FILEHANDLE' => $FILEHANDLE,
+		    'executionMode' => "sbatch",
+		    'famFilePath' => $outFamilyFileDirectory."/".${$scriptParameterHashRef}{'familyID'}.".fam",
+		   });
+
     ## Split per contig
     for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{'contigs'}});$contigsCounter++) {    
 
@@ -4290,6 +4336,9 @@ sub GATKGenoTypeGVCFs {
 	print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	print $FILEHANDLE "-D ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKHaploTypeCallerSNPKnownSet'}." ";  #Known SNPs to use for annotation SNPs
 	print $FILEHANDLE "-nt 16 ";  #How many data threads should be allocated to running this analysis.
+
+	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
+	&GATKPedigreeFlag(\%{$scriptParameterHashRef}, $FILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKHaploTypeCaller");  #Sub routine prints "--pedigree file" for family
 
 	if (${$scriptParameterHashRef}{'GATKGenoTypeGVCFsAllSites'} eq 1) {
 
@@ -5513,11 +5562,19 @@ sub GATKHaploTypeCaller {
     $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, $nrCores);  #To not exceed maximum
 
     ## Assign directories
+    my $outFamilyFileDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'familyID'};  #For ".fam" file
     my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
     my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
 
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pGATKBaseRecalibration'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{"p".$programName}{'fileEnding'};
+
+    ## GATK ".fam" file creation/check
+    &CreateFamFile({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		    'FILEHANDLE' => $FILEHANDLE,
+		    'executionMode' => "sbatch",
+		    'famFilePath' => $outFamilyFileDirectory."/".${$scriptParameterHashRef}{'familyID'}.".fam",
+		   });
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
     my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, $$sampleIDRef);
@@ -5597,13 +5654,15 @@ sub GATKHaploTypeCaller {
 	print $XARGSFILEHANDLE "-stand_call_conf 30.0 ";  #The minimum phred-scaled confidence threshold at which variants should be called
 	print $XARGSFILEHANDLE "-stand_emit_conf 30.0 ";  #The minimum phred-scaled confidence threshold at which variants should be emitted
 	print $XARGSFILEHANDLE "-nct 1 ";  #Number of CPU Threads per data thread
+
+	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
+	&GATKPedigreeFlag(\%{$scriptParameterHashRef}, $XARGSFILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKHaploTypeCaller");  #Sub routine prints "--pedigree file" for family
 	
 	## Annotations to apply to variant calls
 	print $XARGSFILEHANDLE "--annotation BaseQualityRankSumTest ";  
 	print $XARGSFILEHANDLE "--annotation ChromosomeCounts ";
 	print $XARGSFILEHANDLE "--annotation Coverage ";
 	print $XARGSFILEHANDLE "--annotation FisherStrand ";
-	print $XARGSFILEHANDLE "--annotation InbreedingCoeff ";
 	print $XARGSFILEHANDLE "--annotation MappingQualityRankSumTest ";
 	print $XARGSFILEHANDLE "--annotation MappingQualityZero ";
 	print $XARGSFILEHANDLE "--annotation QualByDepth ";
@@ -5612,7 +5671,11 @@ sub GATKHaploTypeCaller {
 	print $XARGSFILEHANDLE "--annotation SpanningDeletions ";
 	print $XARGSFILEHANDLE "--annotation TandemRepeatAnnotator " ;
 	print $XARGSFILEHANDLE "--annotation DepthPerAlleleBySample ";
-	
+
+	if (scalar(@{$scriptParameter{'sampleIDs'}}) >= 10) {
+
+	    print $XARGSFILEHANDLE "--annotation InbreedingCoeff ";  #Only meningful with at least 10 founder samples
+	}
 	print $XARGSFILEHANDLE "--emitRefConfidence GVCF ";  #Mode for emitting experimental reference confidence scores. GVCF generates block summarized version of the BP_RESOLUTION data 
 	print $XARGSFILEHANDLE "--variant_index_type LINEAR "; 
 	print $XARGSFILEHANDLE "--variant_index_parameter 128000 ";
@@ -7895,13 +7958,13 @@ sub BWA_Mem {
 		
 		## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 		my ($fileName, $programInfoPath) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-								   'FILEHANDLE' => $FILEHANDLE,
-								   'directoryID' => $sampleID,
-								   'programName' => $programName,
-								   'programDirectory' => lc($aligner),
-								   'nrofCores' => ${$scriptParameterHashRef}{'maximumCores'},
-								   'processTime' => $time,
-								  });
+									  'FILEHANDLE' => $FILEHANDLE,
+									  'directoryID' => $sampleID,
+									  'programName' => $programName,
+									  'programDirectory' => lc($aligner),
+									  'nrofCores' => ${$scriptParameterHashRef}{'maximumCores'},
+									  'processTime' => $time,
+									 });
 		my ($volume, $directories, $stderrFile) = File::Spec->splitpath($programInfoPath.".stderr.txt");  #Split to enable submission to &SampleInfoQC later
 
 		my $readStart = $sbatchCounter *  $ReadNrofLines;  #Constant for gz files
@@ -12283,7 +12346,7 @@ sub CheckUniqueIDNs {
 	    $logger->fatal("SampleID: ".${$sampleIdArrayRef}[$sampleIDCounter]." is not uniqe.\n");
 	    exit 1;
 	}
-	if (${$sampleIdArrayRef}[$sampleIDCounter] =~/_/) {  #SampleID contains "_", which is not allowed accrding to filename conventions
+	if (${$sampleIdArrayRef}[$sampleIDCounter] =~/_/) {  #SampleID contains "_", which is not allowed according to filename conventions
 
 	    $logger->fatal("SampleID: ".${$sampleIdArrayRef}[$sampleIDCounter]." contains '_'. Please rename sampleID according to MIP's filename convention, removing the '_'.\n");
 	    exit 1;
@@ -13205,11 +13268,10 @@ sub ReplaceConfigParamWithCMDInfo {
 ##ReplaceConfigParamWithCMDInfo
     
 ##Function : Replace config parameter with cmd info for active parameter
-##Returns  : Path to Cosmid Resource directory for current analysis
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $parameter, $parameterName
+##Returns  : 
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $parameterName
 ##         : $parameterHashRef       => The parameter hash {REF}
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
-##         : $parameter              => The parameter hash {REF}
 ##         : $parameterName          => MIP parameter name
 
     my $parameterHashRef = $_[0];
@@ -15407,7 +15469,7 @@ sub CheckKeys {
 ##Function : Evaluate keys in hash
 ##Returns  : ""
 ##Arguments: $parameterHashRef, $mandatoryKeyHashRef, $nonMandatoryKeyHashRef, $filePath
-##         : $parameterHashRef       => Hash with paremters from yaml file {REF}
+##         : $parameterHashRef       => Hash with parameters from yaml file {REF}
 ##         : $mandatoryKeyHashRef    => Hash with mandatory key {REF}
 ##         : $nonMandatoryKeyHashRef => Hash with non mandatory key {REF}
 ##         : $filePathRef            => Path to yaml file {REF}
@@ -15455,7 +15517,7 @@ sub CheckValues {
 ##Function : Evaluate key values 
 ##Returns  : ""
 ##Arguments: $parameterHashRef, $keyHashRef, $key, $filePathRef
-##         : $parameterHashRef => Hash with paremters from yaml file {REF}
+##         : $parameterHashRef => Hash with parameters from yaml file {REF}
 ##         : $keyHashRef       => Hash with  key {REF}
 ##         : $key              => Hash with non  key
 ##         : $filePathRef      => Path to yaml file {REF}
@@ -15515,6 +15577,40 @@ sub CheckDataType {
 	## Wrong dataType
 	warn("Found 'SCALAR' but expected datatype '".${$keyHashRef}{$key}{'keyDataType'}."' for parameter: '".$parameter."' in key: '".$key."' in file: '".$$filePathRef."'\n");
 	exit 1;
+    }
+}
+
+
+sub CompareHashKeys {
+
+##CompareHashKeys
+    
+##Function : Compare keys in two hashes
+##Returns  : ""
+##Arguments: $referenceHashRef, $comparisonHashRef
+##         : $referenceHashRef  => Reference hash {REF}
+##         : $comparisonHashRef => Hash to be compared to reference {REF}
+
+    my $referenceHashRef = $_[0];
+    my $comparisonHashRef = $_[1];
+
+    my @allowedUniqueKeys = ("VcfParserOutputFileCount", "exomeTargetBedInfileLists", "GATKTargetPaddedBedIntervalLists", "exomeTargetPaddedBedInfileLists", ${$referenceHashRef}{'familyID'});
+    my @unique = ();
+
+    foreach my $key (keys %{$referenceHashRef}) {
+	 
+	unless (exists(${$comparisonHashRef}{$key})) {
+	    
+	    push(@unique, $key);
+	}
+    }
+    foreach my $element (@unique) {
+
+	if ( ! ( grep /$element/, @allowedUniqueKeys ) ) { #Do not print if allowedUniqueKeys that have been created dynamically from previous runs
+
+	    warn("Found illegal key: ".$element." in config file that is not defined in definitions.yaml\n");
+	    exit 1;
+	}
     }
 }
 
