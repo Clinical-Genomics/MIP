@@ -1946,7 +1946,6 @@ sub RankVariants {
 	    }
 	    print $XARGSFILEHANDLE "-o /dev/stdout ";  #OutStream
 	    print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf ";  #InFile
-	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    
 	    ## Ranking
 	    print $XARGSFILEHANDLE "| ";  #Pipe
@@ -1968,6 +1967,7 @@ sub RankVariants {
 	    }
 	    print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf ";  #OutFile
 	    print $XARGSFILEHANDLE "- ";  #InStream
+	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    print $XARGSFILEHANDLE "\n";
 	    
 	}
