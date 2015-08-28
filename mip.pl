@@ -3460,8 +3460,7 @@ sub VariantEffectPredictor {
 	print $XARGSFILEHANDLE "--vcf ";  #Writes output in VCF format.
 	print $XARGSFILEHANDLE "--fork ".$nrForkes." ";  #Enable forking, using the specified number of forks.
 	print $XARGSFILEHANDLE "--buffer_size 20000 ";  #Sets the internal buffer size, corresponding to the number of variations that are read in to memory simultaneously 
-	print $XARGSFILEHANDLE "--offline ";  #Use installed assembly version
-	print $XARGSFILEHANDLE "--fasta ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Use local fasta reference file
+	print $XARGSFILEHANDLE "--offline ";  #Use installed assembly 
 	print $XARGSFILEHANDLE "--chr ".$$contigRef." ";
 
 	for (my $vepFeatureCounter=0;$vepFeatureCounter<scalar(@{${$scriptParameterHashRef}{'vepFeatures'}});$vepFeatureCounter++) {
