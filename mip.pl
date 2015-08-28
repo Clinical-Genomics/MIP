@@ -250,7 +250,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ##Eval parameter hash
 &EvalParameterHash(\%parameter, $Bin."/definitions/defineParameters.yaml");
 
-my $mipVersion = "v2.3.5";  #Set version
+my $mipVersion = "v2.3.6";  #Set version
 my $aligner;
 
 
@@ -1928,31 +1928,38 @@ sub RankVariants {
 		
 		print $XARGSFILEHANDLE "--whole_gene "; 
 	    }
-	    print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf ";  #OutFile
+	    print $XARGSFILEHANDLE "-o /dev/stdout ";  #OutStream
 	    print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf ";  #InFile
+	    
+	    ## Ranking
+	    print $XARGSFILEHANDLE "| ";  #Pipe
+	    print $XARGSFILEHANDLE "genmod score ";
+	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{'pedigreeFile'}." ";  #Pedigree file
+	    print $XARGSFILEHANDLE "--family_type mip ";  #Family type
+	    
+	    if (${$scriptParameterHashRef}{'rankModelFile'} ne "noUserInfo") {
+		
+		print $XARGSFILEHANDLE "--plugin_file ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'rankModelFile'}." ";  #Rank model config.ini file 
+	    }
+	    if (${$scriptParameterHashRef}{'pVariantEffectPredictor'} > 0) {  #Use VEP annotations in compound models
+		
+		print $XARGSFILEHANDLE "--vep "; 
+	    }
+	    else {
+		
+		print $XARGSFILEHANDLE ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'geneFile'}." ";  #Gene file used for annotating AR_compounds
+	    }
+	    print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf ";  #OutFile
+	    print $XARGSFILEHANDLE "- ";  #InStream
 	    print $XARGSFILEHANDLE "\n";
+	    
 	}
 
 	## Combine vcf files to 1
 	&ConcatenateVariants(\%{$scriptParameterHashRef}, $FILEHANDLE, \@{${$fileInfoHashRef}{'contigs'}}, $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_", $vcfParserAnalysisType.".vcf", $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_combined".$vcfParserAnalysisType.".vcf");
 
-	## Ranking
-	print $FILEHANDLE "genmod score ";
-	print $FILEHANDLE "--family_file ".${$scriptParameterHashRef}{'pedigreeFile'}." ";  #Pedigree file
-	print $FILEHANDLE "--family_type mip ";  #Family type
-
-	if (${$scriptParameterHashRef}{'rankModelFile'} ne "noUserInfo") {
-
-	    print $FILEHANDLE "--plugin_file ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'rankModelFile'}." ";  #Rank model config.ini file 
-	}
-	if (${$scriptParameterHashRef}{'pVariantEffectPredictor'} > 0) {  #Use VEP annotations in compound models
-		
-	    print $FILEHANDLE "--vep "; 
-	}
-	else {
-		
-	    print $FILEHANDLE ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'geneFile'}." ";  #Gene file used for annotating AR_compounds
-	}
+	##Sort on Rank score
+	print $FILEHANDLE "genmod sort ";
 	print $FILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf ";  #Outfile
 	print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_combined".$vcfParserAnalysisType.".vcf ";  #inFile
 	print $FILEHANDLE "\n\n";
