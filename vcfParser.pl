@@ -213,6 +213,8 @@ sub DefineConsequenceSeverity {
     $consequenceSeverity{'frameshift_variant'}{'GeneticRegionAnnotation'} = "exonic";
     $consequenceSeverity{'stop_lost'}{'Rank'} = 5;
     $consequenceSeverity{'stop_lost'}{'GeneticRegionAnnotation'} = "exonic";
+    $consequenceSeverity{'start_lost'}{'Rank'} = 5;
+    $consequenceSeverity{'start_lost'}{'GeneticRegionAnnotation'} = "exonic";
     $consequenceSeverity{'initiator_codon_variant'}{'Rank'} = 6;
     $consequenceSeverity{'initiator_codon_variant'}{'GeneticRegionAnnotation'} = "exonic";
     $consequenceSeverity{'inframe_insertion'}{'Rank'} = 6;
@@ -221,6 +223,8 @@ sub DefineConsequenceSeverity {
     $consequenceSeverity{'inframe_deletion'}{'GeneticRegionAnnotation'} = "exonic";
     $consequenceSeverity{'missense_variant'}{'Rank'} = 6;
     $consequenceSeverity{'missense_variant'}{'GeneticRegionAnnotation'} = "exonic";
+    $consequenceSeverity{'protein_altering_variant'}{'Rank'} = 6;
+    $consequenceSeverity{'protein_altering_variant'}{'GeneticRegionAnnotation'} = "exonic";
     $consequenceSeverity{'transcript_amplification'}{'Rank'} = 7;
     $consequenceSeverity{'transcript_amplification'}{'GeneticRegionAnnotation'} = "exonic";
     $consequenceSeverity{'splice_region_variant'}{'Rank'} = 8;

@@ -148,7 +148,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -gveedbs/--GATKVariantEvalDbSNP DbSNP file used in GATK VariantEval (defaults to "dbsnp_138.b37.excluding_sites_after_129.vcf")
                  -gveedbg/--GATKVariantEvalGold Gold Indel file used in GATK VariantEval (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
                
-               ###Anotation
+               ###Annotation
                -pVeP/--pVariantEffectPredictor Annotate variants using VEP (defaults to "1" (=yes))
                  -vepp/--vepDirectoryPath Path to VEP script directory (defaults to "")
                  -vepc/--vepDirectoryCache Specify the cache directory to use (defaults to "") 
@@ -680,6 +680,9 @@ if ($scriptParameter{'writeConfigFile'} ne 0) {  #Write config file for family
 &SetContigs({'scriptParameterHashRef' => \%scriptParameter,
 	     'fileInfoHashRef' => \%fileInfo,
 	    });
+
+@{$fileInfo{"SelectFileContigs"}} = &SizeSortSelectFileContigs(\%fileInfo, "SelectFileContigs", "contigsSizeOrdered");
+
 
 ## Write CMD to MIP log file
 &WriteCMDMipLog(\%parameter, \%scriptParameter, \@orderParameters, \$script, \$scriptParameter{'logFile'}, \$mipVersion);
@@ -1868,7 +1871,8 @@ sub RankVariants {
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pSnpEff'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"p".$programName}{'fileEnding'};
     my $vcfParserAnalysisType = "";
-    
+    my $vcfParserContigsArrayRef = \@{ ${$fileInfoHashRef}{'contigsSizeOrdered'} };  #Set default
+
     ## Gene models and ranking  
     print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
     
@@ -1877,13 +1881,14 @@ sub RankVariants {
 	if ($VcfParserOutputFileCounter == 1) {
 	    
 	    $vcfParserAnalysisType = ".selected";  #SelectFile variants
+	    $vcfParserContigsArrayRef = \@{${$fileInfoHashRef}{'SelectFileContigs'}};  #Selectfile contigs
 	}
 
 	## Copy file(s) to temporary directory
 	print $FILEHANDLE "## Copy file(s) to temporary directory\n";
 	$xargsFileCounter = &XargsMigrateContigFiles({'FILEHANDLE' => $FILEHANDLE,
 						      'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
-						      'arrayRef' => \@{ ${$fileInfoHashRef}{'contigsSizeOrdered'} },
+						      'arrayRef' => $vcfParserContigsArrayRef,
 						      'fileName' => $fileName,
 						      'programInfoPath' => $programInfoPath,
 						      'nrCores' => $nrCores,
@@ -1915,9 +1920,9 @@ sub RankVariants {
 							    });
 	 
 	## Process per contig
-	for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{'contigsSizeOrdered'}});$contigsCounter++) {
+	for (my $contigsCounter=0;$contigsCounter<scalar(@{$vcfParserContigsArrayRef});$contigsCounter++) {
 	     
-	    my $contigRef = \${$fileInfoHashRef}{'contigsSizeOrdered'}[$contigsCounter];
+	    my $contigRef = \${$vcfParserContigsArrayRef}[$contigsCounter];
 
 	    print $XARGSFILEHANDLE "annotate ";
 	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{'pedigreeFile'}." ";  #Pedigree file
@@ -1973,7 +1978,7 @@ sub RankVariants {
 	}
 
 	## Combine vcf files to 1
-	&ConcatenateVariants(\%{$scriptParameterHashRef}, $FILEHANDLE, \@{${$fileInfoHashRef}{'contigs'}}, $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_", $vcfParserAnalysisType.".vcf", $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_combined".$vcfParserAnalysisType.".vcf");
+	&ConcatenateVariants(\%{$scriptParameterHashRef}, $FILEHANDLE, \@{$vcfParserContigsArrayRef}, $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_", $vcfParserAnalysisType.".vcf", $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_combined".$vcfParserAnalysisType.".vcf");
 
 	##Sort on Rank score
 	print $FILEHANDLE "genmod sort ";
@@ -1981,7 +1986,7 @@ sub RankVariants {
 	print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_combined".$vcfParserAnalysisType.".vcf ";  #inFile
 	print $FILEHANDLE "\n\n";
 
-	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VcfParserOutputFileCounter > 0) ) {
+	if (${$scriptParameterHashRef}{'analysisType'} eq "exomes") {
 
 	    my @trapSignals = ("ERR");
 	    ## Enable trap for signal(s) and function
@@ -2015,7 +2020,6 @@ sub RankVariants {
     close($FILEHANDLE);   
 
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
-
 
 	if (${$scriptParameterHashRef}{'rankModelFile'} ne "noUserInfo") {  #Add to SampleInfo
 			    
@@ -2667,6 +2671,7 @@ sub SnpEff {
     my $infileEnding = ${$fileInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{'pAnnovar'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{"p".$programName}{'fileEnding'};
     my $vcfParserAnalysisType = "";
+    my $vcfParserContigsArrayRef = \@{ ${$fileInfoHashRef}{'contigsSizeOrdered'} };  #Set default
     
     my $snpSiftnrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, 8);  #Detect the number of cores to use. Currently there is only enough java threads for around 8 parallel pipes
 
@@ -2677,6 +2682,7 @@ sub SnpEff {
 	if ($VcfParserOutputFileCounter == 1) {
     
 	    $vcfParserAnalysisType = ".selected";  #SelectFile variants
+	    $vcfParserContigsArrayRef = \@{${$fileInfoHashRef}{'SelectFileContigs'}};  #Selectfile contigs
 	}
 
 	if ($$reduceIORef eq "0") {  #Run as individual sbatch script
@@ -2685,7 +2691,7 @@ sub SnpEff {
 	    print $FILEHANDLE "## Copy file(s) to temporary directory\n";
 	    ($xargsFileCounter, $xargsFileName) = &XargsMigrateContigFiles({'FILEHANDLE' => $FILEHANDLE,
 									    'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
-									    'arrayRef' => \@{ ${$fileInfoHashRef}{'contigsSizeOrdered'} },
+									    'arrayRef' => $vcfParserContigsArrayRef,
 									    'fileName' =>$fileName,
 									    'programInfoPath' => $programInfoPath,
 									    'nrCores' => $nrCores,
@@ -2714,9 +2720,9 @@ sub SnpEff {
 							     'javaJar' => ${$scriptParameterHashRef}{'snpEffPath'}."/SnpSift.jar"
 							    });
 	
-	for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{'contigsSizeOrdered'}});$contigsCounter++) {
+	for (my $contigsCounter=0;$contigsCounter<scalar(@{$vcfParserContigsArrayRef});$contigsCounter++) {
 	    
-	    my $contigRef = \${$fileInfoHashRef}{'contigsSizeOrdered'}[$contigsCounter];	
+	    my $contigRef = \${$vcfParserContigsArrayRef}[$contigsCounter];
 	    
 	    my $annotationFileCounter = 0;
 	    for my $annotationFile (keys %{${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}}) {
@@ -2795,15 +2801,15 @@ sub SnpEff {
 	
 	close($XARGSFILEHANDLE);
 
-	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VcfParserOutputFileCounter > 0) ) {
+	if (${$scriptParameterHashRef}{'analysisType'} eq "exomes") {
 
 	    my @trapSignals = ("ERR");
 	    ## Clear trap for signal(s)
 	    &ClearTrap(\@trapSignals, $FILEHANDLE, ${$scriptParameterHashRef}{'analysisType'});
 	}
-	&ConcatenateVariants(\%{$scriptParameterHashRef}, $FILEHANDLE, \@{${$fileInfoHashRef}{'contigs'}}, $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_", $vcfParserAnalysisType.".vcf", $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf");
+	&ConcatenateVariants(\%{$scriptParameterHashRef}, $FILEHANDLE, \@{$vcfParserContigsArrayRef}, $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_", $vcfParserAnalysisType.".vcf", $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf");
 
-	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VcfParserOutputFileCounter > 0) ) {
+	if (${$scriptParameterHashRef}{'analysisType'} eq "exomes") {
 
 	    my @trapSignals = ("ERR");
 	    ## Enable trap for signal(s) and function
@@ -2822,7 +2828,7 @@ sub SnpEff {
 	print $FILEHANDLE "## Copy file from temporary directory\n";
 	($xargsFileCounter, $xargsFileName) = &XargsMigrateContigFiles({'FILEHANDLE' => $FILEHANDLE,
 									'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
-									'arrayRef' => \@{ ${$fileInfoHashRef}{'contigsSizeOrdered'} },
+									'arrayRef' => $vcfParserContigsArrayRef,
 									'fileName' =>$fileName,
 									'programInfoPath' => $programInfoPath,
 									'nrCores' => ${$scriptParameterHashRef}{'maximumCores'},
@@ -2951,12 +2957,14 @@ sub Annovar {
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pVCFParser'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"p".$programName}{'fileEnding'};
     my $vcfParserAnalysisType = "";
+    my $vcfParserContigsArrayRef = \@{ ${$fileInfoHashRef}{'contigsSizeOrdered'} };  #Set default
 
     for (my $VcfParserOutputFileCounter=0;$VcfParserOutputFileCounter<${$scriptParameterHashRef}{'VcfParserOutputFileCount'};$VcfParserOutputFileCounter++) {
 
 	if ($VcfParserOutputFileCounter == 1) {
 
 	    $vcfParserAnalysisType = ".selected";  #SelectFile variants
+	    $vcfParserContigsArrayRef = \@{${$fileInfoHashRef}{'SelectFileContigs'}};  #Selectfile contigs
 	}
 	my $coreCounter=1;   	    	
 
@@ -2966,7 +2974,7 @@ sub Annovar {
 	    print $FILEHANDLE "## Copy file(s) to temporary directory\n"; 
 	    ($xargsFileCounter, $xargsFileName) = &XargsMigrateContigFiles({'FILEHANDLE' => $FILEHANDLE,
 									    'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
-									    'arrayRef' => \@{ ${$fileInfoHashRef}{'contigsSizeOrdered'} },
+									    'arrayRef' => $vcfParserContigsArrayRef,
 									    'fileName' =>$fileName,
 									    'programInfoPath' => $programInfoPath,
 									    'nrCores' => $nrCores,
@@ -2991,9 +2999,9 @@ sub Annovar {
 							     'firstCommand' => "perl",
 							    });
 	
-	for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{'contigsSizeOrdered'}});$contigsCounter++) {
+	for (my $contigsCounter=0;$contigsCounter<scalar(@{$vcfParserContigsArrayRef});$contigsCounter++) {
 	    
-	    my $contigRef = \${$fileInfoHashRef}{'contigsSizeOrdered'}[$contigsCounter];
+	    my $contigRef = \${$vcfParserContigsArrayRef}[$contigsCounter];
 	    
 	    print $XARGSFILEHANDLE ${$scriptParameterHashRef}{'annovarPath'}."/table_annovar.pl ";  #Annovar script 
 	    print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf ";  #Infile
@@ -3061,7 +3069,7 @@ sub Annovar {
 	    print $FILEHANDLE "## Copy file from temporary directory\n";
 	    ($xargsFileCounter, $xargsFileName) = &XargsMigrateContigFiles({'FILEHANDLE' => $FILEHANDLE,
 									    'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
-									    'arrayRef' => \@{ ${$fileInfoHashRef}{'contigsSizeOrdered'} },
+									    'arrayRef' => $vcfParserContigsArrayRef,
 									    'fileName' =>$fileName,
 									    'programInfoPath' => $programInfoPath,
 									    'nrCores' => $nrCores,
@@ -3228,16 +3236,19 @@ sub VCFParser {
 	    }
 	}
 	if (${$scriptParameterHashRef}{'vcfParserSelectFile'} ne "noUserInfo") {
-	    
-	    print $XARGSFILEHANDLE "-sf ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'vcfParserSelectFile'}." ";  #List of genes to analyse separately
-	    print $XARGSFILEHANDLE "-sf_mc ".${$scriptParameterHashRef}{'vcfParserSelectFileMatchingColumn'}." ";  #Column of HGNC Symbol in SelectFile (-sf)
-	    
-	    if (scalar(@{${$scriptParameterHashRef}{'vcfParserSelectFeatureAnnotationColumns'}}) > 0) {
+	 
+	    if (! &CheckEntryHashofArray(\%{$fileInfoHashRef}, \("SelectFileContigs"), $contigRef)) {
+
+		print $XARGSFILEHANDLE "-sf ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'vcfParserSelectFile'}." ";  #List of genes to analyse separately
+		print $XARGSFILEHANDLE "-sf_mc ".${$scriptParameterHashRef}{'vcfParserSelectFileMatchingColumn'}." ";  #Column of HGNC Symbol in SelectFile (-sf)
 		
-		print $XARGSFILEHANDLE "-sf_ac ";  #Select annotation columns
-		print $XARGSFILEHANDLE join(',', @{${$scriptParameterHashRef}{'vcfParserSelectFeatureAnnotationColumns'}})." ";	    
+		if (scalar(@{${$scriptParameterHashRef}{'vcfParserSelectFeatureAnnotationColumns'}}) > 0) {
+		    
+		    print $XARGSFILEHANDLE "-sf_ac ";  #Select annotation columns
+		    print $XARGSFILEHANDLE join(',', @{${$scriptParameterHashRef}{'vcfParserSelectFeatureAnnotationColumns'}})." ";	    
+		}
+		print $XARGSFILEHANDLE "-sof ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".selected.vcf ";
 	    }
-	    print $XARGSFILEHANDLE "-sof ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".selected.vcf ";
 	}
 	print $XARGSFILEHANDLE "> ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf ";  #outfile
 	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
@@ -3295,19 +3306,21 @@ sub VCFParser {
     if ($$reduceIORef eq "0") {  #Run as individual sbatch script
 
 	my $vcfParserAnalysisType = "";
+	my @vcfParserContigsRef = \@{ ${$fileInfoHashRef}{'contigsSizeOrdered'} };
 
 	for (my $VcfParserOutputFileCounter=0;$VcfParserOutputFileCounter<${$scriptParameterHashRef}{'VcfParserOutputFileCount'};$VcfParserOutputFileCounter++) {
 
 	    if ($VcfParserOutputFileCounter == 1) {
 		
 		$vcfParserAnalysisType = ".selected";  #SelectFile variants
+		@vcfParserContigsRef = \@{${$fileInfoHashRef}{'SelectFileContigs'}};
 	    }
 
 	    ## Copies file from temporary directory.
 	    print $FILEHANDLE "## Copy file(s) from temporary directory\n";
 	    ($xargsFileCounter, $xargsFileName) = &XargsMigrateContigFiles({'FILEHANDLE' => $FILEHANDLE,
 									    'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
-									    'arrayRef' => \@{ ${$fileInfoHashRef}{'contigsSizeOrdered'} },
+									    'arrayRef' => @vcfParserContigsRef,
 									    'fileName' =>$fileName,
 									    'programInfoPath' => $programInfoPath,
 									    'nrCores' => $nrCores,
@@ -8146,6 +8159,7 @@ sub BWA_Mem {
 	    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
 		${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'} = $outSampleDirectory."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].".bam";
+
 		&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 			       'familyID' => ${$scriptParameterHashRef}{'familyID'},
 			       'sampleID' => $sampleID,
@@ -10184,9 +10198,7 @@ sub ReadPlinkPedigreeFile {
 		if ( defined($lineInfo[$sampleElementsCounter]) && ($lineInfo[$sampleElementsCounter] =~/\S+/) ) {  #Check that we have an non blank entry
 		    
 		    ## Test element for being part of hash of array at supplied key.
-		    my $foundElement =  &CheckEntryHashofArray(\%plinkPedigree, \$sampleElementsCounter, \$lineInfo[$sampleElementsCounter]);
-
-		    if ($foundElement == 1) {  #Invalid element found in file
+		    if (&CheckEntryHashofArray(\%plinkPedigree, \$sampleElementsCounter, \$lineInfo[$sampleElementsCounter])) {
 
 			$logger->fatal("Found illegal element: '".$lineInfo[$sampleElementsCounter]."' in column '".$sampleElementsCounter."' in pedigree file: '".$filePath."' at line '".$.."'\n");
 			$logger->fatal("Please correct the entry before analysis.\n");
@@ -11432,6 +11444,9 @@ sub CheckParameterFiles {
 			
 			my $path = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{${$argHashRef}{'parameterName'}};
 			&CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \$path, \${$argHashRef}{'parameterName'}, "f");
+	
+			## Collects sequences contigs used in select file
+			&CollectSelectFileContigs(\@{${$fileInfoHashRef}{'SelectFileContigs'}}, ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'vcfParserSelectFile'});
 			
 			${$scriptParameterHashRef}{'VcfParserOutputFileCount'} = 2;  #To track if VCFParser was used with a vcfParserSelectFile (=2) or not (=1)
 		    }
@@ -13268,6 +13283,73 @@ sub CollectSeqContigs {
     @{$contigsArrayRef} = split(/,/,join(',', @{$contigsArrayRef}));
 }
 
+
+sub CollectSelectFileContigs {
+
+##CollectSelectFileContigs
+    
+##Function : Collects sequences contigs used in select file
+##Returns  : ""
+##Arguments: $contigsArrayRef, $selectFilePath
+##         : $contigsArrayRef => Contig array {REF}
+##         : $selectFilePath  => The select file path
+
+    my $contigsArrayRef = $_[0];
+    my $selectFilePath = $_[1];
+
+    my $pqSeqDict = q?perl -nae 'if ($_=~/contig\=\<ID\=(\w+)/) {print $1, ",";} if($_=~/#CHROM/) {last;}' ?; 
+    @{$contigsArrayRef} = `$pqSeqDict $selectFilePath `;  #Returns a comma seperated string of sequence contigs from file
+    @{$contigsArrayRef} = split(/,/,join(',', @{$contigsArrayRef}));
+
+    if (scalar(@{$contigsArrayRef}) == 0) {
+
+	$logger->fatal("Could not detect any '##contig' in meta data header in select file: ".$selectFilePath."\n");
+	exit 1;
+    }
+}
+
+
+sub SizeSortSelectFileContigs {
+
+##SizeSortSelectFileContigs
+    
+##Function : Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
+##Returns  : "@sortedArray"
+##Arguments: $contigsArrayRef, $selectFilePath
+##         : $contigsArrayRef => Contig array {REF}
+
+    my $fileInfoHashRef = $_[0];
+    my $hashKeyToSort = $_[1];
+    my $hashKeySortReference = $_[2];
+    
+    my @sortedArray = ();
+ 
+    ##Sort the contigs depending on reference array
+    if (${$fileInfoHashRef}{$hashKeyToSort}) {
+	
+	foreach my $element (@{${$fileInfoHashRef}{$hashKeySortReference}}) {
+
+	    if (! &CheckEntryHashofArray(\%{$fileInfoHashRef}, \$hashKeyToSort, \$element)) {
+	    
+		push(@sortedArray, $element);
+	    }
+	}
+    }
+    ## Test if all contigs collected from select file was sorted by reference contig array
+    if (scalar(@{${$fileInfoHashRef}{$hashKeyToSort}}) != scalar(@sortedArray)) {
+	
+	foreach my $element (@{${$fileInfoHashRef}{$hashKeyToSort}}) {
+
+	    if ( ! ( grep /$element/, @sortedArray ) ) {  #If element is not part of array
+		
+		$logger->fatal("Could not detect all '##contig'= ".$element." from meta data header in '-vcfParserSelectFile' in reference contigs collected from '-humanGenomeReference'\n");
+		exit 1;
+	    }
+	    
+	}
+    }
+    return @sortedArray;
+}
 
 sub ReplaceConfigParamWithCMDInfo {
 
