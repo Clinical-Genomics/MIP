@@ -372,6 +372,12 @@ GATKBaseReCalibrationSNPKnownSet:
   default: dbsnp_138.b37.vcf
   existsCheck: file
   type: path
+GATKBaseReCalibrationOverClippedRead:
+  associatedProgram:
+   - pGATKBaseRecalibration
+  dataType: SCALAR
+  default: 1
+  type: program
 ## GATK Genotype
 pGATKHaploTypeCaller:
   associatedProgram:

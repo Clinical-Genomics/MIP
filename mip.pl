@@ -123,7 +123,8 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -graks1/--GATKReAlignerINDELKnownSet1 GATK ReAlignerTargetCreator/IndelRealigner known INDEL set 1 (defaults to "1000G_phase1.indels.b37.vcf")
                  -graks2/--GATKReAlignerINDELKnownSet2 GATK ReAlignerTargetCreator/IndelRealigner known INDEL set 2 (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
                -pGbR/--pGATKBaseRecalibration Recalibration of bases using GATK BaseRecalibrator/PrintReads (defaults to "1" (=yes))
-                 -gbrkse/--GATKBaseReCalibrationSNPKnownSet GATK BaseReCalinbration known SNP set (defaults to "dbsnp_138.b37.vcf")                
+                 -gbrkse/--GATKBaseReCalibrationSNPKnownSet GATK BaseReCalibration known SNP set (defaults to "dbsnp_138.b37.vcf")
+                 -gbrocr/--GATKBaseReCalibrationOverClippedRead Filter out reads that are over-soft-clipped (defaults to "1" (=yes))             
                -pGhC/--pGATKHaploTypeCaller Variant discovery using GATK HaplotypeCaller (defaults to "1" (=yes))
                  -ghckse/--GATKHaploTypeCallerSNPKnownSet GATK HaplotypeCaller dbSNP set for annotating ID columns (defaults to "dbsnp_138.b37.vcf")
                  -ghcscb/--GATKHaploTypeCallerSoftClippedBases Do not include soft clipped bases in the variant calling (defaults to "1" (=yes))
@@ -380,6 +381,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'graks2|GATKReAlignerINDELKnownSet2:s' => \$parameter{'GATKReAlignerINDELKnownSet2'}{'value'},  #Known INDEL set to be used in GATK ReAlignerTargetCreator/IndelRealigner
 	   'pGbR|pGATKBaseRecalibration:n' => \$parameter{'pGATKBaseRecalibration'}{'value'},  #GATK BaseRecalibrator/PrintReads
 	   'gbrkse|GATKBaseReCalibrationSNPKnownSet:s' => \$parameter{'GATKBaseReCalibrationSNPKnownSet'}{'value'},  #Known SNP set to be used in GATK BaseRecalibrator/PrintReads
+	   'gbrocr|GATKBaseReCalibrationOverClippedRead:n' => \$parameter{'GATKBaseReCalibrationOverClippedRead'}{'value'},  #Filter out reads that are over-soft-clipped
 	   'pGhC|pGATKHaploTypeCaller:n' => \$parameter{'pGATKHaploTypeCaller'}{'value'},  #GATK Haplotypecaller
 	   'ghckse|GATKHaploTypeCallerSNPKnownSet:s' => \$parameter{'GATKHaploTypeCallerSNPKnownSet'}{'value'},  #Known SNP set to be used in GATK HaplotypeCaller
 	   'ghcscb|GATKHaploTypeCallerSoftClippedBases:n' => \$parameter{'GATKHaploTypeCallerSoftClippedBases'}{'value'},  #Do not include soft clipped bases in the variant calling
@@ -5964,7 +5966,13 @@ sub GATKBaseReCalibration {
 	    print $XARGSFILEHANDLE "-T PrintReads ";  #Type of analysis to run	
 	    print $XARGSFILEHANDLE "-l INFO ";  #Set the minimum level of logging"
 	    print $XARGSFILEHANDLE "-R ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
-	    print $XARGSFILEHANDLE "-nct ".${$scriptParameterHashRef}{'maximumCores'}." ";  #How many CPU threads should be allocated per data thread to running this analysis	  
+	    print $XARGSFILEHANDLE "-nct ".${$scriptParameterHashRef}{'maximumCores'}." ";  #How many CPU threads should be allocated per data thread to running this analysis
+
+	    ##Extra read filters
+	    if (${$scriptParameterHashRef}{'GATKBaseReCalibrationOverClippedRead'} == 1) {
+
+		print $XARGSFILEHANDLE "-rf OverclippedRead ";  #Filter out reads that are over-soft-clipped
+	    }
 	    print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus
 	    print $XARGSFILEHANDLE "-BQSR ".$intermediarySampleDirectory."/".$infile.$infileEnding."_".$$contigRef.".grp ";  #Recalibration table file
 	    print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
