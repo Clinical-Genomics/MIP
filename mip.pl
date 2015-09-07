@@ -232,7 +232,7 @@ my $logger;  #Will hold the logger object for the MIP log
 my @orderParameters;  #To add/write parameters in the correct order
 my @broadcasts;  #Holds all set parameters info after AddToScriptParameter
 
-##Add dateTimestamp for later use in log and qcmetrics yaml file
+## Add dateTimestamp for later use in log and qcmetrics yaml file
 my $dateTime = DateTime->now(time_zone=>'local');
 my $dateTimeStamp = $dateTime->datetime();
 my $date = $dateTime->ymd('-');  #Catches current date
@@ -249,19 +249,17 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ## Adds the order of first level keys from yaml file to array
 &OrderParameterNames(\@orderParameters, $Bin."/definitions/defineParameters.yaml");
 
-##Eval parameter hash
+## Eval parameter hash
 &EvalParameterHash(\%parameter, $Bin."/definitions/defineParameters.yaml");
 
-my $mipVersion = "v2.3.6";  #Set version
+my $mipVersion = "v2.3.6";  #Set MIP version
 my $aligner;
 
 ## Target definition files
 my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists);  #Arrays for target bed infile lists
 my (@GATKTargetPaddedBedIntervalLists);  #Array for target infile lists used in GATK (currently removed)
 
-
-my (@contigs);  #Holds all contigs, not just chromosomes
-
+## Directories, files, sampleInfo and jobIDs
 my (%infile, %inDirPath, %infilesLaneNoEnding, %lane, %infilesBothStrandsNoEnding, %jobID, %sampleInfo); 
 
 
@@ -531,7 +529,7 @@ foreach my $orderParameterElement (@orderParameters) {
 
 ###Checks
 
-##Check Existance of files and directories
+## Check Existance of files and directories
 foreach my $parameterName (keys %parameter) {
 
     if (exists($parameter{$parameterName}{'existsCheck'})) {
@@ -566,9 +564,8 @@ foreach my $parameterName (keys %scriptParameter) {
     }
 }
 
-##Check aligner options
+## Check aligner options
 &CheckAligner(\%scriptParameter);
-
 
 ## Test that the familyID and the sampleID(s) exists and are unique. Check if id sampleID contains "_".
 &CheckUniqueIDNs(\%scriptParameter, \@{$scriptParameter{'sampleIDs'}});  #Test that sampleIDs are unique
@@ -583,6 +580,9 @@ for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs
 
 ## Compares the number of elements in two arrays and exits if the elements are not equal
 &CompareArrayElements(\@{$scriptParameter{'sampleIDs'}}, \@{$scriptParameter{'inFilesDirs'}}, "sampleIDs", "inFileDirs");
+
+## Check that VEP directory and VEP cache match
+&CheckVEPDirectories(\$scriptParameter{'vepDirectoryPath'}, \$scriptParameter{'vepDirectoryCache'});
 
 ## PicardToolsMergeSamFilesPrevious
 if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
@@ -15700,6 +15700,32 @@ sub CompareHashKeys {
 	    exit 1;
 	}
     }
+}
+
+sub CheckVEPDirectories {
+    
+##CheckVEPDirectories
+    
+##Function : Compare VEP directory and VEP chache versions
+##Returns  : ""
+##Arguments: $vepDirectoryPathRef, $vepDirectoryCacheRef
+##         : $vepDirectoryPathRef  => VEP directory path {REF}
+##         : $vepDirectoryCacheRef => VEP cache directory path {REF}
+
+    my $vepDirectoryPathRef = $_[0];
+    my $vepDirectoryCacheRef = $_[1];
+    
+    if ($$vepDirectoryPathRef=~/ensembl-tools-release-(\d+)/) {
+	
+	my $vepDirectoryPathVersion = $1;
+
+	unless ($$vepDirectoryCacheRef=~/ensembl-tools-release-$vepDirectoryPathVersion/) {
+	    
+	    print $logger->fatal("Differing versions between '-vepDirectoryPath': ".$$vepDirectoryPathRef." and '-vepDirectoryCache': ".$$vepDirectoryCacheRef, "\n");
+	    exit 1;
+	}
+    }
+
 }
 
 
