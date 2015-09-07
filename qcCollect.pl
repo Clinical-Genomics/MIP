@@ -697,7 +697,7 @@ sub RegExpToYAML {
 
     $regExp{'VariantEval_Exome'} = $regExp{'VariantEval_All'};
 
-    $regExp{'RankVariants'}{'Version'} = q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect Rankvariants version
+    $regExp{'Genmod'}{'Version'} = q?perl -nae 'if($_=~/##Software=<ID=genmod\w+,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect Genmod version
 
     $regExp{'SnpEff'}{'Version'} = q?perl -nae 'if($_=~/##SnpSiftVersion=\"(.+),/) {my $ret=$1; $ret=~s/\s/_/g;print $ret;last;}' ?; #Collect SnpEff version
 

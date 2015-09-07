@@ -2031,7 +2031,7 @@ sub RankVariants {
 	}
 	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 		       'familyID' => ${$scriptParameterHashRef}{'familyID'},
-		       'programName' => $programName,
+		       'programName' => "Genmod",
 		       'outDirectory' => $outFamilyDirectory,
 		       'outFileEnding' => $$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf",
 		       'outDataType' => "static"
