@@ -126,6 +126,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -gbrkse/--GATKBaseReCalibrationSNPKnownSet GATK BaseReCalinbration known SNP set (defaults to "dbsnp_138.b37.vcf")                
                -pGhC/--pGATKHaploTypeCaller Variant discovery using GATK HaplotypeCaller (defaults to "1" (=yes))
                  -ghckse/--GATKHaploTypeCallerSNPKnownSet GATK HaplotypeCaller dbSNP set for annotating ID columns (defaults to "dbsnp_138.b37.vcf")
+                 -ghcscb/--GATKHaploTypeCallerSoftClippedBases Do not include soft clipped bases in the variant calling (defaults to "1" (=yes))
                -pGgT/--pGATKGenoTypeGVCFs Merge gVCF records using GATK GenotypeGVCFs (defaults to "1" (=yes))
                  -ggtgrl/--GATKGenoTypeGVCFsRefGVCF GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping (defaults to "")
                  -ggtals/--GATKGenoTypeGVCFsAllSites Emit non-variant sites to the output VCF
@@ -5676,7 +5677,13 @@ sub GATKHaploTypeCaller {
 
 	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
 	&GATKPedigreeFlag(\%{$scriptParameterHashRef}, $XARGSFILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKHaploTypeCaller");  #Sub routine prints "--pedigree file" for family
-	
+
+	## Filter
+	if (${$scriptParameterHashRef}{'GATKHaploTypeCallerSoftClippedBases'} == 1) { #Do not analyze soft clipped bases in the reads
+
+	    print $XARGSFILEHANDLE "--dontUseSoftClippedBases ";  #Do not analyze soft clipped bases in the reads
+	}
+
 	## Annotations to apply to variant calls
 	print $XARGSFILEHANDLE "--annotation BaseQualityRankSumTest ";  
 	print $XARGSFILEHANDLE "--annotation ChromosomeCounts ";

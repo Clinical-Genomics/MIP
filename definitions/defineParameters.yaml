@@ -389,6 +389,12 @@ GATKHaploTypeCallerSNPKnownSet:
   default: dbsnp_138.b37.vcf
   existsCheck: file
   type: path
+GATKHaploTypeCallerSoftClippedBases:
+  associatedProgram:
+   - pGATKHaploTypeCaller
+  dataType: SCALAR
+  default: 1
+  type: program
 ## Coverage
 pPicardToolsMarkduplicatesForQCMetrics:
   associatedProgram:
