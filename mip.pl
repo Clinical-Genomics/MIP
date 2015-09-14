@@ -1391,7 +1391,7 @@ sub AnalysisRunStatus {
     &CollectPathEntries(\%{$sampleInfoHashRef}, \@pathsArrayRef);
 
     ## Collects all programs outfile path(s) created by MIP as OutDirectory->value and outFile->value located in %sampleInfo.
-    &CollectOutDataPathsEntries(\%{$sampleInfoHashRef}, \@pathsArrayRef);
+    &CollectOutDataPathsEntries(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \@pathsArrayRef);
 
     print $FILEHANDLE q?files=(?;  #Create bash array
     foreach my $path (@pathsArrayRef) {
@@ -11679,7 +11679,7 @@ sub CheckParameterFiles {
 			if (-f ${$scriptParameterHashRef}{'sampleInfoFile'}) {
 			    
 			    my %tempHash = &LoadYAML(\%scriptParameter, ${$scriptParameterHashRef}{'sampleInfoFile'});  #Load parameters from previous run from sampleInfoFile
-			    
+
 			    ## Update sampleInfo with information from pedigree
 			    &UpdateSampleInfoHash(\%sampleInfo, \%tempHash, \${$scriptParameterHashRef}{'familyID'});				
 			}
@@ -14159,6 +14159,7 @@ sub RemovePedigreeElements {
 			  'Sex' => "Sex",
 			  'Mother' => "Mother",
 			  'Father' => "Father",
+			  'Phenotype' => "Phenotype",
 			  'Clinical_db_gene_annotation' => "Clinical_db_gene_annotation",
 	);
     
@@ -14438,31 +14439,36 @@ sub CollectOutDataPathsEntries {
 ##         : $sampleInfoHashRef => Info on samples and family hash {REF}
 ##         : $pathsArrayRef     => Holds the collected paths {REF}
     
-    my $sampleInfoHashRef = $_[0];
-    my $pathsArrayRef = $_[1];
+    my $parameterHashRef = $_[0];
+    my $scriptParameterHashRef = $_[1];
+    my $sampleInfoHashRef = $_[2];
+    my $pathsArrayRef = $_[3];
     
     for my $familyID ( keys %{$sampleInfoHashRef} ) {  #For every family id 
 	
 	for my $member ( keys %{ ${$sampleInfoHashRef}{$familyID} }) {  #For every familyID and sampleID
 	    
-	    if (${$sampleInfoHashRef}{$familyID}{$member}{'Program'}) {  #Only examine programs     
-		
+	    if (${$sampleInfoHashRef}{$familyID}{$member}{'Program'}) {  #Only examine programs
+
 		for my $program ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{'Program'} } ) {  #For every programs           
 		    
-		    my @outDirectoryArray;  #Temporary array for collecting outDirectories within the same program
-		    my @outFileArray;  #Temporary array for collecting outFile within the same program
-		    
-		    for my $key ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{'Program'}{$program} } ) { #For every key within program
+		    if ( (!defined(${$parameterHashRef}{"p".$program}{'reduceIO'})) || ${$parameterHashRef}{"p".$program}{'reduceIO'} ==  ${$scriptParameterHashRef}{'reduceIO'}) {  #Only include program that have the correct ReduceIO flag or no does not belog to a reduceIO block
+
+			my @outDirectoryArray;  #Temporary array for collecting outDirectories within the same program
+			my @outFileArray;  #Temporary array for collecting outFile within the same program
 			
-			## Check if KeyName is "OutDirectory" or "OutFile"  and adds to @pathsArrayRef if true.
-			&CollectOutFile(\@{$pathsArrayRef}, \@outDirectoryArray, \@outFileArray, ${$sampleInfoHashRef}{$familyID}{$member}{'Program'}{$program}{$key}, $key);
-			
-			if (ref(${$sampleInfoHashRef}{$familyID}{$member}{'Program'}{$program}{$key}) eq "HASH" ) { #HASH reference indicating more levels
+			for my $key ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{'Program'}{$program} } ) { #For every key within program
 			    
-			    for my $secondKey ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{'Program'}{$program}{$key} } ) { #For every programs
+			    ## Check if KeyName is "OutDirectory" or "OutFile"  and adds to @pathsArrayRef if true.
+			    &CollectOutFile(\@{$pathsArrayRef}, \@outDirectoryArray, \@outFileArray, ${$sampleInfoHashRef}{$familyID}{$member}{'Program'}{$program}{$key}, $key);
+			    
+			    if (ref(${$sampleInfoHashRef}{$familyID}{$member}{'Program'}{$program}{$key}) eq "HASH" ) { #HASH reference indicating more levels
 				
-				## Check if KeyName is "OutDirectory" or "OutFile"  and adds to @pathsArrayRef if true.
-				&CollectOutFile(\@{$pathsArrayRef}, \@outDirectoryArray, \@outFileArray, ${$sampleInfoHashRef}{$familyID}{$member}{'Program'}{$program}{$key}{$secondKey}, $secondKey);
+				for my $secondKey ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{'Program'}{$program}{$key} } ) { #For every programs
+				    
+				    ## Check if KeyName is "OutDirectory" or "OutFile"  and adds to @pathsArrayRef if true.
+				    &CollectOutFile(\@{$pathsArrayRef}, \@outDirectoryArray, \@outFileArray, ${$sampleInfoHashRef}{$familyID}{$member}{'Program'}{$program}{$key}{$secondKey}, $secondKey);
+				}
 			    }
 			}
 		    }
@@ -14528,14 +14534,14 @@ sub CollectPathEntries {
 	    
 	    for my $key ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member} } ) {  #For every key within member
 		
-		## Check if KeyName is "PATH" and adds to @pathsArrayRef if true.
+		## Check if KeyName is "Path" and adds to @pathsArrayRef if true.
 		&CheckAndAddToArray(\@{$pathsArrayRef}, ${$sampleInfoHashRef}{$familyID}{$member}{$key}, $key);
 		
 		if (ref(${$sampleInfoHashRef}{$familyID}{$member}{$key}) eq "HASH" ) {   #HASH reference indicating more levels
 		    
 		    for my $secondKey ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{$key} } ) { #For every secondkey with program
 			
-			## Check if KeyName is "PATH" and adds to @pathsArrayRef if true.
+			## Check if KeyName is "Path" and adds to @pathsArrayRef if true.
 			&CheckAndAddToArray(\@{$pathsArrayRef}, ${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey}, $secondKey);
 		    }
 		}
@@ -14549,7 +14555,7 @@ sub CheckAndAddToArray {
     
 ##CheckAndAddToArray
     
-##Function  : Check if KeyName is "PATH" and adds to @pathsArrayRef if true.
+##Function  : Check if KeyName is "Path" and adds to @pathsArrayRef if true.
 ##Returns   : ""
 ##Arguments: $pathsArrayRef, $key, $keyName
 ##         : $pathsArrayRef => Holds the collected paths {REF}
@@ -15596,8 +15602,12 @@ sub UpdateSampleInfoHash {
 	
 	foreach my $key (keys %{ ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}}) {
 	    
-	    if (exists(${$tempHashRef}{$$familyIDRef}{$sampleID}{$key})) {
-		
+	    if (exists(${$tempHashRef}{$$familyIDRef}{$sampleID}{$key})) {  #Previous run information
+	
+		${$tempHashRef}{$$familyIDRef}{$sampleID}{$key} = ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{$key};
+	    }
+	    else {
+
 		${$tempHashRef}{$$familyIDRef}{$sampleID}{$key} = ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{$key};
 	    }
 	}
@@ -15830,6 +15840,7 @@ sub EvalParameterHash {
     $nonMandatoryKey{'fileEnding'}{'keyDataType'} = "SCALAR";
     $nonMandatoryKey{'programNamePath'}{'keyDataType'} = "ARRAY";
     $nonMandatoryKey{'elementSeparator'}{'keyDataType'} = "SCALAR";
+    $nonMandatoryKey{'reduceIO'}{'keyDataType'} = "SCALAR";
 
     &CheckKeys($parameterHashRef, \%mandatoryKey, \%nonMandatoryKey, \$filePath);
 
@@ -16478,6 +16489,7 @@ sub Tabix {
     print $FILEHANDLE "\n\n";
 } 
 
+
 package DateTime::Format::Multi;
 
 #Package for testing multiple date formats
@@ -16507,7 +16519,6 @@ use DateTime::Format::Builder (
 ####
 #Decommissioned
 ####
-
 
 sub CheckTemplateFilesPaths {
 

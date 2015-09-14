@@ -315,6 +315,16 @@ pPicardToolsMergeRapidReads:
   default: 0
   fileEnding: nofileEnding
   type: program
+## BAMCalibrationAndGTBlock
+pBAMCalibrationAndGTBlock:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 0
+  fileEnding: nofileEnding
+  reduceIO: 1
+  type: program
 pPicardToolsMergeSamFiles:
   associatedProgram:
    - MIP
@@ -594,6 +604,16 @@ GATKVariantReCalibrationMaxGaussians:
    - pGATKVariantRecalibration
   dataType: SCALAR
   default: 0
+  type: program
+## VariantAnnotationBlock
+pVariantAnnotationBlock:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 0
+  fileEnding: nofileEnding
+  reduceIO: 1
   type: program
 ##VT
 pVT:
