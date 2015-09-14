@@ -536,8 +536,6 @@ pGATKVariantRecalibration:
   dataType: SCALAR
   default: 1
   fileEnding: vrecal_
-  programNamePath:
-   - vt
   type: program
 GATKVariantReCalibrationTrainingSetHapMap:
   associatedProgram:
@@ -585,18 +583,6 @@ GATKVariantReCalibrationTSFilterLevel:
   dataType: SCALAR
   default: 99.9
   type: program
-GATKVariantReCalibrationSpliMultiRecord:
-  associatedProgram:
-   - pGATKVariantRecalibration
-  dataType: SCALAR
-  default: 1
-  type: program
-GATKVariantReCalibrationNormalize:
-  associatedProgram:
-   - pGATKVariantRecalibration
-  dataType: SCALAR
-  default: 1
-  type: program
 GATKVariantReCalibrationexcludeNonVariantsFile:
   associatedProgram:
    - pGATKVariantRecalibration
@@ -608,6 +594,32 @@ GATKVariantReCalibrationMaxGaussians:
    - pGATKVariantRecalibration
   dataType: SCALAR
   default: 0
+  type: program
+##VT
+pVT:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileEnding: vt_
+  programNamePath:
+   - vt
+   - sed
+   - bgzip
+   - tabix
+  type: program
+VTDecompose:
+  associatedProgram:
+   - pVT
+  dataType: SCALAR
+  default: 1
+  type: program
+VTNormalize:
+  associatedProgram:
+   - pVT
+  dataType: SCALAR
+  default: 1
   type: program
 pGATKPhaseByTransmission:
   associatedProgram:
