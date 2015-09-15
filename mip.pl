@@ -1322,7 +1322,15 @@ if ($scriptParameter{'pRemoveRedundantFiles'} > 0) {  #Sbatch generation of remo
     
     $logger->info("[Removal of redundant files]\n");
 
-    &RemoveRedundantFiles(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infilesLaneNoEnding, \%lane, $scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH", "RemoveRedundantFiles");	
+    &RemoveRedundantFiles2({'parameterHashRef' => \%parameter,
+			   'scriptParameterHashRef' => \%scriptParameter,
+			   'sampleInfoHashRef' => \%sampleInfo,
+			   'fileInfoHashRef' => \%fileInfo,
+			   'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+			   'laneHashRef' => \%lane,
+			   'alignerRef' => \$scriptParameter{'aligner'}, 
+			   'programName' => "RemoveRedundantFiles",
+			  });	
 }
 
 if ( ($scriptParameter{'pAnalysisRunStatus'} == 1) && ($scriptParameter{'dryRunAll'} == 0) ) {
@@ -1479,31 +1487,57 @@ sub RemoveRedundantFiles {
 ##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 
-    my $parameterHashRef = $_[0];
-    my $scriptParameterHashRef = $_[1];
-    my $sampleInfoHashRef = $_[2];
-    my $fileInfoHashRef = $_[3];
-    my $infilesLaneNoEndingHashRef = $_[4];
-    my $laneHashRef = $_[5];
-    my $familyID = $_[6];
-    my $aligner = $_[7];
-    my $callType = $_[8];
-    my $programName = $_[9];
+    my ($argHashRef) = @_;
+    
+    my %default = ('familyID' => ${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+		   'callType' => "BOTH",
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+    
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
+    my $laneHashRef = ${$argHashRef}{'laneHashRef'};
+    my $familyIDRef = \${$scriptParameterHashRef}{'familyID'};
+    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $callType = ${$argHashRef}{'callType'};
+    my $programName = ${$argHashRef}{'programName'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
+			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'alignerRef' => $$alignerRef,
+			     'programName' => $programName,
+	);
+
+    my $reduceIORef = \${$scriptParameterHashRef}{'reduceIO'};
+
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $time = 10;
+    my $xargsFileName;
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 					    'FILEHANDLE' => $FILEHANDLE,
-					    'directoryID' => $familyID,
+					    'directoryID' => $$familyIDRef,
 					    'programName' => $programName,
-					    'programDirectory' => $aligner,
+					    'programDirectory' => $$alignerRef,
 					   });
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDCounter++) { 
 	
 	my $sampleID = ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter];
-	my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner;
+	my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerRef;
 	
 ###Single files
 	
@@ -1511,39 +1545,54 @@ sub RemoveRedundantFiles {
 	    
 	    my $infile = ${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter]; 
 	    
-##MosaikBuild	
+	    ## MosaikBuild	
 	    if ( (${$scriptParameterHashRef}{'pMosaikBuild'} > 0) || (${$scriptParameterHashRef}{'aligner'} eq "mosaik") ) {
 		
 		print $FILEHANDLE "rm ";
 		print $FILEHANDLE $inSampleDirectory."/".$infile.".dat", "\n\n";  #MosaikBuild
 		
 	    }
-##MosaikAlign
+	    ## MosaikAlign
 	    if ( (${$scriptParameterHashRef}{'pMosaikAlign'} > 0) || (${$scriptParameterHashRef}{'aligner'} eq "mosaik") ) {
 		
 		print $FILEHANDLE "rm ";
 		print $FILEHANDLE $inSampleDirectory."/".$infile.".stat", "\n\n";  #MosaikAlign Stats
 		
+		my $filePath = $inSampleDirectory."/".$infile.".bam";
+		
 		## Checks if the file is recorded as the "MostCompleteBAM|VCF". If false writes removal of file(s) to supplied filehandle
-		&CheckMostCompleteAndRemoveFile($FILEHANDLE, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.".bam"), ".bam");	    
+		&CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+						 'mostCompleteRef' => \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'},
+						 'filePathRef' => \$filePath,
+						 'fileEnding' => ".bam"});
 	    }
-##Remove BWA files
+	    ## Remove BWA files
 	    if (${$scriptParameterHashRef}{'pBwaAln'} > 0) {
 		
 		print $FILEHANDLE "rm ";
 		print $FILEHANDLE $inSampleDirectory."/".$infile.".sai", "\n\n";  #BWA_Aln
 	    }
-	    if (${$scriptParameterHashRef}{'pBwaSampe'} >0) {
-
+	    if (${$scriptParameterHashRef}{'pBwaSampe'} > 0) {
+		
 		my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pBwaSampe'}{'fileEnding'};
-
-		&CheckMostCompleteAndRemoveFile($FILEHANDLE, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam");
+		my $filePath = $inSampleDirectory."/".$infile.$outfileEnding.".bam";
+		
+		## Checks if the file is recorded as the "MostCompleteBAM|VCF". If false writes removal of file(s) to supplied filehandle
+		&CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+						 'mostCompleteRef' => \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'},
+						 'filePathRef' => \$filePath,
+						 'fileEnding' => ".bam"});
 	    }  
-	    if (${$scriptParameterHashRef}{'pBwaMem'} >0) {
+	    if (${$scriptParameterHashRef}{'pBwaMem'} > 0) {
 		
 		my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pBwaMem'}{'fileEnding'};
-
-		&CheckMostCompleteAndRemoveFile($FILEHANDLE, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam");
+		my $filePath = $inSampleDirectory."/".$infile.$outfileEnding.".bam";
+		
+		## Checks if the file is recorded as the "MostCompleteBAM|VCF". If false writes removal of file(s) to supplied filehandle
+		&CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+						 'mostCompleteRef' => \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'},
+						 'filePathRef' => \$filePath,
+						 'fileEnding' => ".bam"});
 	    }    	    
 	}
 	
@@ -1552,79 +1601,121 @@ sub RemoveRedundantFiles {
 	
 	if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
 	    
-	    if (${$scriptParameterHashRef}{'pPicardToolsMergeSamFiles'} > 0) {
+	    if ($$reduceIORef == 0) {  #Delete intermediate files
 		
-		my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMergeSamFiles'}{'fileEnding'};
-		
-		&CheckMostCompleteAndRemoveFile($FILEHANDLE, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam");  #merged BAM and bai file
-	    }	
-	    if (${$scriptParameterHashRef}{'pPicardToolsMarkduplicatesWithMateCigar'} > 0) {
-		
-		my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicatesWithMateCigar'}{'fileEnding'};
-		
-		&CheckMostCompleteAndRemoveFile($FILEHANDLE, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam");  #Dedupped BAM and bai file
-	    }
-	    if (${$scriptParameterHashRef}{'pGATKRealigner'} > 0) {
-		
-		my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/gatk";   
-		my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pGATKRealigner'}{'fileEnding'};
-	   
-		&CheckMostCompleteAndRemoveFile($FILEHANDLE, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam");  #ReAligned BAM and bai file
-	    }
-	    if (${$scriptParameterHashRef}{'pGATKBaseRecalibration'} > 0) {
-		
-		my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/gatk";
-		my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
-
-		&CheckMostCompleteAndRemoveFile($FILEHANDLE, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam");  #BaseRecalibrated BAM and bai file
-	    }
-	    if (${$scriptParameterHashRef}{'pGATKHaploTypeCaller'} > 0) {  #Always collapses all files even if there is only one
-		
-		my $lanes = join("",@{${$laneHashRef}{$sampleID}});  #Extract lanes
-		my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/gatk";
-		my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pGATKHaploTypeCaller'}{'fileEnding'};
-		
-		if (defined(${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'})) {
-
-		    &CheckMostCompleteAndRemoveFile($FILEHANDLE, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'}{'ReadyVcf'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".vcf"), ".vcf");  #HaplotypeCaller gvcf file
+		if (${$scriptParameterHashRef}{'pPicardToolsMergeSamFiles'} > 0) {
+		    
+		    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMergeSamFiles'}{'fileEnding'};
+		    my $filePath = $inSampleDirectory."/".$infile.$outfileEnding.".bam";
+		    
+		    &CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+						     'mostCompleteRef' => \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'},
+						     'filePathRef' => \$filePath,
+						     'fileEnding' => ".bam"});
+		}	
+		if (${$scriptParameterHashRef}{'pPicardToolsMarkduplicatesWithMateCigar'} > 0) {
+		    
+		    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicatesWithMateCigar'}{'fileEnding'};
+		    my $filePath = $inSampleDirectory."/".$infile.$outfileEnding.".bam";
+		    
+		    &CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+						     'mostCompleteRef' => \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'},
+						     'filePathRef' => \$filePath,
+						     'fileEnding' => ".bam"});
+		}
+		if (${$scriptParameterHashRef}{'pGATKRealigner'} > 0) {
+		    
+		    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerRef."/gatk";   
+		    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pGATKRealigner'}{'fileEnding'};
+		    my $filePath = $inSampleDirectory."/".$infile.$outfileEnding.".bam";
+		    
+		    &CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+						     'mostCompleteRef' => \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'},
+						     'filePathRef' => \$filePath,
+						     'fileEnding' => ".bam"});
+		}
+		if (${$scriptParameterHashRef}{'pGATKBaseRecalibration'} > 0) {
+		    
+		    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerRef."/gatk";
+		    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
+		    my $filePath = $inSampleDirectory."/".$infile.$outfileEnding.".bam";
+		    
+		    &CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+						     'mostCompleteRef' => \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'},
+						     'filePathRef' => \$filePath,
+						     'fileEnding' => ".bam"});
+		}
+		if (${$scriptParameterHashRef}{'pGATKHaploTypeCaller'} > 0) {  #Always collapses all files even if there is only one
+		    
+		    my $lanes = join("",@{${$laneHashRef}{$sampleID}});  #Extract lanes
+		    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerRef."/gatk";
+		    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pGATKHaploTypeCaller'}{'fileEnding'};
+		    my $filePath = $inSampleDirectory."/".$infile.$outfileEnding.".vcf";
+		    
+		    if (defined(${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'})) {
+			
+			&CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+							 'mostCompleteRef' => \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'}{'ReadyVcf'}{'Path'},
+							 'filePathRef' => \$filePath,
+							 'fileEnding' => ".vcf"});  #HaplotypeCaller gvcf file
+		    }
 		}
 	    }
 	}
 	else {
 	    
-	    for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all infiles per lane
+	    if ($$reduceIORef == 0) {  #Delete intermediate files
 		
-		my $infile = ${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter];
-		
-		if (${$scriptParameterHashRef}{'pPicardToolsMarkduplicatesWithMateCigar'} > 0) {
+		for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all infiles per lane
 		    
-		    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicatesWithMateCigar'}{'fileEnding'};
-
-		    &CheckMostCompleteAndRemoveFile($FILEHANDLE, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam");  #Dedupped BAM and bai file
-		}
-		if (${$scriptParameterHashRef}{'pGATKRealigner'} > 0) {
+		    my $infile = ${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter];
 		    
-		    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/gatk";
-		    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pGATKRealigner'}{'fileEnding'};
-		    
-		    &CheckMostCompleteAndRemoveFile($FILEHANDLE, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam");  #ReAligned BAM and bai file
-		}
-		if (${$scriptParameterHashRef}{'pGATKBaseRecalibration'} > 0) {
-		    
-		    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/gatk";
-		    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
-
-		    &CheckMostCompleteAndRemoveFile($FILEHANDLE, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'}, \($inSampleDirectory."/".$infile.$outfileEnding.".bam"), ".bam");  #BaseRecalibrated BAM and bai file
-		}
-		if (${$scriptParameterHashRef}{'pGATKHaploTypeCaller'} > 0) {  #Always collapses all files even if there is only one
-		    
-		    my $lanes = join("",@{${$laneHashRef}{$sampleID}});  #Extract lanes
-		    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/gatk";
-		    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pGATKHaploTypeCaller'}{'fileEnding'};
-		    
-		    if (defined(${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'})) {
-
-			&CheckMostCompleteAndRemoveFile($FILEHANDLE, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'}{'ReadyVcf'}{'Path'}, \($inSampleDirectory."/".$sampleID."_lanes_".$lanes.$outfileEnding.".vcf"), ".vcf");  #HaplotypeCaller gvcf file
+		    if (${$scriptParameterHashRef}{'pPicardToolsMarkduplicatesWithMateCigar'} > 0) {
+			
+			my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pPicardToolsMarkduplicatesWithMateCigar'}{'fileEnding'};
+			my $filePath = $inSampleDirectory."/".$infile.$outfileEnding.".bam";
+			
+			&CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+							 'mostCompleteRef' => \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'},
+							 'filePathRef' => \$filePath,
+							 'fileEnding' => ".bam"});
+		    }
+		    if (${$scriptParameterHashRef}{'pGATKRealigner'} > 0) {
+			
+			my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerRef."/gatk";
+			my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pGATKRealigner'}{'fileEnding'};
+			my $filePath = $inSampleDirectory."/".$infile.$outfileEnding.".bam";
+			
+			&CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+							 'mostCompleteRef' => \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'},
+							 'filePathRef' => \$filePath,
+							 'fileEnding' => ".bam"});
+		    }
+		    if (${$scriptParameterHashRef}{'pGATKBaseRecalibration'} > 0) {
+			
+			my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerRef."/gatk";
+			my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
+			my $filePath = $inSampleDirectory."/".$infile.$outfileEnding.".bam";
+			
+			&CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+							 'mostCompleteRef' => \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'},
+							 'filePathRef' => \$filePath,
+							 'fileEnding' => ".bam"});  #BaseRecalibrated BAM and bai file
+		    }
+		    if (${$scriptParameterHashRef}{'pGATKHaploTypeCaller'} > 0) {  #Always collapses all files even if there is only one
+			
+			my $lanes = join("",@{${$laneHashRef}{$sampleID}});  #Extract lanes
+			my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerRef."/gatk";
+			my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pGATKHaploTypeCaller'}{'fileEnding'};
+			my $filePath = $inSampleDirectory."/".$sampleID."_lanes_".$lanes.$outfileEnding.".vcf";
+			
+			if (defined(${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'})) {
+			    
+			    &CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+							     'mostCompleteRef' => \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'}{'ReadyVcf'}{'Path'},
+							     'filePathRef' => \$filePath,
+							     'fileEnding' => ".vcf"});  #HaplotypeCaller gvcf file
+			}
 		    }
 		}
 	    }
@@ -1633,36 +1724,225 @@ sub RemoveRedundantFiles {
 ###Family files
     if (${$scriptParameterHashRef}{'pGATKGenoTypeGVCFs'} > 0) {
 
-	my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/gatk";  #New outfile directory
+	my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";  #New outfile directory
 	my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pGATKGenoTypeGVCFs'}{'fileEnding'};
-	
+	my $filePath = $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType.".vcf";
+
 	if (defined(${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'})) {
 	 
-	    &CheckMostCompleteAndRemoveFile($FILEHANDLE, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'}{'ReadyVcf'}{'Path'}, \($outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf"), ".vcf");  #GATKGenoTypeGVCFs vcf file
+	    &CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+					     'mostCompleteRef' => \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'}{'ReadyVcf'}{'Path'},
+					     'filePathRef' => \$filePath,
+					     'fileEnding' => ".vcf"});  #GATKGenoTypeGVCFs vcf file
 	}
     }
     if (${$scriptParameterHashRef}{'pGATKVariantRecalibration'} > 0) {
 	
-	my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/gatk";  #New outfile directory
+	my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";  #New outfile directory
 	my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
-	
+	my $filePath = $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType.".vcf";
+
 	if (defined(${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'})) {
 
-	    &CheckMostCompleteAndRemoveFile($FILEHANDLE, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'}{'ReadyVcf'}{'Path'}, \($outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf"), ".vcf");  #pGATKVariantRecalibration vcf file
+	    &CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+					     'mostCompleteRef' => \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'}{'ReadyVcf'}{'Path'},
+					     'filePathRef' => \$filePath,
+					     'fileEnding' => ".vcf"});  #GATKVariantRecalibration vcf file
 	}
     }
-    if (${$scriptParameterHashRef}{'pAnnovar'} > 0) {
+
+    if ($$reduceIORef == 0) {  #Delete intermediate files
+
+	if (${$scriptParameterHashRef}{'pVT'} > 0) {
+	    
+	    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";  #New outfile directory
+	    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pVT'}{'fileEnding'};
+	    my $filePath = $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType."_*.vcf";
+	    
+	    if (defined(${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'})) {
+		
+		&CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+						 'mostCompleteRef' => \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'}{'ReadyVcf'}{'Path'},
+						 'filePathRef' => \$filePath,
+						 'fileEnding' => ".vcf"});  #VT vcf file(s)
+	    }
+	}
+	if (${$scriptParameterHashRef}{'pVariantEffectPredictor'} > 0) {
+	    
+	    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";  #New outfile directory
+	    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pVariantEffectPredictor'}{'fileEnding'};
+	    my $filePath = $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType."_*.vcf";
+	    
+	    if (defined(${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'})) {
+		
+		&CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+						 'mostCompleteRef' => \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'}{'ReadyVcf'}{'Path'},
+						 'filePathRef' => \$filePath,
+						 'fileEnding' => ".vcf"});  #VariantEffectPredictor vcf file(s)
+	    }
+	}
+	if (${$scriptParameterHashRef}{'pVCFParser'} > 0) {
+	    
+	    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";  #New outfile directory
+	    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pVCFParser'}{'fileEnding'};
+	    my $filePath = $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType."_*.vcf";
+	    
+	    if (defined(${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'})) {
+		
+		&CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+						 'mostCompleteRef' => \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'}{'ReadyVcf'}{'Path'},
+						 'filePathRef' => \$filePath,
+						 'fileEnding' => ".vcf"});  #VCFParser vcf file(s)
+	    }
+	}
+	if (${$scriptParameterHashRef}{'pAnnovar'} > 0) {
+	    
+	    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
+	    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pAnnovar'}{'fileEnding'};
+	    my $filePath = $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType."_*.vcf";
+
+
+	    if (defined(${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'})) {
+
+		&CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+						 'mostCompleteRef' => \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'}{'ReadyVcf'}{'Path'},
+						 'filePathRef' => \$filePath,
+						 'fileEnding' => ".vcf"});  #Annovar vcf file(s)
+	    }
+	}
+	if (${$scriptParameterHashRef}{'pSnpEff'} > 0) {
+	    
+	    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";  #New outfile directory
+	    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pSnpEff'}{'fileEnding'};
+	    my $filePath = $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType."_*.vcf";
+	    
+	    if (defined(${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'})) {
+		
+		&CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+						 'mostCompleteRef' => \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'}{'ReadyVcf'}{'Path'},
+						 'filePathRef' => \$filePath,
+						 'fileEnding' => ".vcf"});  #SnpEff vcf file(s)
+	    }
+	}
+    }
+    else {  #Last module in VariantAnnotationBlock
 	
-	my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/gatk";
-	my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pAnnovar'}{'fileEnding'};
-	
-	print $FILEHANDLE "rm ";
-	print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType."*".${$scriptParameterHashRef}{'annovarGenomeBuildVersion'}."_*", "\n\n";  #Annovar data files
-	print $FILEHANDLE "rm ";
-	print $FILEHANDLE $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".*", "\n\n";  #Annovar data files
-    }  
+	if (${$scriptParameterHashRef}{'pSnpEff'} > 0) {
+	    
+	    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";  #New outfile directory
+	    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pSnpEff'}{'fileEnding'};
+	    my $filePath = $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType.".*";
+	    
+	    if (defined(${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'})) {
+		
+		&CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+						 'mostCompleteRef' => \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'}{'ReadyVcf'}{'Path'},
+						 'filePathRef' => \$filePath,
+						 'fileEnding' => ".vcf"});  #SnpEff vcf file(s)
+	    }
+	}
+    }
     close($FILEHANDLE);
 }
+
+
+sub RemoveRedundantFiles2 {
+
+##RemoveRedundantFiles
+    
+##Function : Generates a sbatch script, which removes redundant files.
+##Returns  : ""
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $familyID, $aligner, $callType, $programName
+##         : $parameterHashRef           => The parameter hash {REF}
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $fileInfoHashRef            => The fileInfo hash {REF}
+##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $laneHashRef                => The lane info hash {REF}
+##         : $familyID                   => The familyID
+##         : $aligner                    => The aligner used in the analysis
+##         : $callType                   => The variant call type
+##         : $programName                => The program name
+
+    my ($argHashRef) = @_;
+    
+    my %default = ('familyID' => ${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+		   'callType' => "BOTH",
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+    
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
+    my $laneHashRef = ${$argHashRef}{'laneHashRef'};
+    my $familyID = ${$argHashRef}{'familyID'};
+    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $callType = ${$argHashRef}{'callType'};
+    my $programName = ${$argHashRef}{'programName'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$familyID},  #Any MIP mandatory key will do
+			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
+			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'alignerRef' => $$alignerRef,
+			     'programName' => $programName,
+	);
+     &CheckMandatoryArguments(\%mandatoryArgument, "RemoveRedundantFiles");
+
+    my $reduceIORef = \${$scriptParameterHashRef}{'reduceIO'};
+
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $time = 10;
+    my $xargsFileName;
+
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+
+    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    my ($fileName) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+					    'FILEHANDLE' => $FILEHANDLE,
+					    'directoryID' => $familyID,
+					    'programName' => $programName,
+					    'programDirectory' => $$alignerRef,
+					   });
+
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDCounter++) { 
+	
+	my $sampleID = ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter];
+	
+	## Sample files
+	##Removes intermediate files from the MIP analysis depending on set MIP parameters
+	&RemoveFiles({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		      'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
+		      'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		      'fileInfoHashRef' => \%{$fileInfoHashRef},
+		      'laneHashRef' => \%{$laneHashRef},
+		      'FILEHANDLE' => $FILEHANDLE,
+		      'sampleID' => $sampleID,
+		      'reduceIORef' => $reduceIORef,
+		      'alignerRef' => $alignerRef,
+		     });
+    }	
+    ## Family files
+    ##Removes intermediate files from the MIP analysis depending on set MIP parameters
+    &RemoveFiles({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		  'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
+		  'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		  'fileInfoHashRef' => \%{$fileInfoHashRef},
+		  'laneHashRef' => \%{$laneHashRef},
+		  'FILEHANDLE' => $FILEHANDLE,
+		  'reduceIORef' => $reduceIORef,
+		  'alignerRef' => $alignerRef,
+		 });
+    close($FILEHANDLE);
+}
+
 
 sub QCCollect { 
 
@@ -3951,9 +4231,7 @@ sub VT {
 	);
 
     my $tempDirectoryRef = \${$scriptParameterHashRef}{'tempDirectory'};
-    my $referencesDirectoryRef = \${$scriptParameterHashRef}{'referencesDir'};
     my $reduceIORef = \${$scriptParameterHashRef}{'reduceIO'};
-    my $gatkTemporaryDirectory = $$tempDirectoryRef."/gatk/intermediary";
 
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 10;
@@ -3978,7 +4256,7 @@ sub VT {
 							       'callType' => $callType,
 							       'nrofCores' => $nrCores,
 							       'processTime' => $time,
-							       'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+							       'tempDirectory' => $$tempDirectoryRef,
 							      });
 	$stderrPath = $programInfoPath.".stderr.txt";
     }
@@ -3995,20 +4273,20 @@ sub VT {
     print $FILEHANDLE "## Copy file(s) to temporary directory\n"; 
     &MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE,
 			'path' => $inFamilyDirectory."/".$$familyIDRef.$infileEnding.$callType.".vcf*",
-			'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+			'tempDirectory' => $$tempDirectoryRef
 		       });
     print $FILEHANDLE "wait", "\n\n";
 
     ## Compress or decompress original file or stream to outfile (if supplied)
     &Bgzip({'FILEHANDLE' => $FILEHANDLE,
-	    'infilePath' => ${$scriptParameterHashRef}{'tempDirectory'}."/".$$familyIDRef.$infileEnding.$callType.".vcf",
-	    'outfilePath' => ${$scriptParameterHashRef}{'tempDirectory'}."/".$$familyIDRef.$infileEnding.$callType.".vcf.gz",
+	    'infilePath' => $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType.".vcf",
+	    'outfilePath' => $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType.".vcf.gz",
 	   });
     print $FILEHANDLE "\n";
 
     ## Index file using tabix 
     &Tabix({'FILEHANDLE' => $FILEHANDLE,
-	    'infilePath' => ${$scriptParameterHashRef}{'tempDirectory'}."/".$$familyIDRef.$infileEnding.$callType.".vcf.gz",
+	    'infilePath' => $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType.".vcf.gz",
 	   });
 
     ## Create file commands for xargs
@@ -4026,15 +4304,15 @@ sub VT {
 	my $contigRef = \${$fileInfoHashRef}{'contigsSizeOrdered'}[$contigsCounter];
 	
 	print $XARGSFILEHANDLE "-h ";  #Include header
-	print $XARGSFILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$$familyIDRef.$infileEnding.$callType.".vcf.gz ";
+	print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType.".vcf.gz ";
 	print $XARGSFILEHANDLE $$contigRef." ";
 	print $XARGSFILEHANDLE "| ";  #Pipe
 
 	## VT - Split multi allelic records into single records and normalize
 	&VTCore({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 		 'FILEHANDLE' => $XARGSFILEHANDLE,
-		 'infilePath' => ${$scriptParameterHashRef}{'tempDirectory'}."/".$$familyIDRef.$infileEnding.$callType.".vcf",
-		 'outfilePath' => ${$scriptParameterHashRef}{'tempDirectory'}."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf",
+		 'infilePath' => $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType.".vcf",
+		 'outfilePath' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf",
 		 'sed' => 1,
 		 'inStream' => 1,
 		 'cmdbreak' => ";",
@@ -12080,8 +12358,9 @@ sub CheckIfMergedFiles {
     my $infile;
     my $mergeLanes;  #To pick up merged lanes later 
     my $PicardToolsMergeSwitch = 0;  #0=no merge was previously performed
+    my $picardToolsMergeSamFilesPrevious = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'picardToolsMergeSamFilesPrevious'};  #Alias
 
-    if (${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'picardToolsMergeSamFilesPrevious'} == 1) {  # Files merged this round with merged file from previous round
+    if ( (defined($picardToolsMergeSamFilesPrevious)) && ($picardToolsMergeSamFilesPrevious == 1) ) {  # Files merged this round with merged file from previous round
 	
 	for (my $mergeFileCounter=0;$mergeFileCounter<scalar(@{${$scriptParameterHashRef}{'picardToolsMergeSamFilesPrevious'}});$mergeFileCounter++) {
 	    
@@ -13872,22 +14151,32 @@ sub CheckMostCompleteAndRemoveFile {
 	
 ##Function  : Checks if the file is recorded as the "MostCompleteBAM|VCF". If false writes removal of file(s) to supplied filehandle
 ##Returns   : ""
-##Arguments : $FILEHANDLE, $mostCompleteRef, $fileRef, $fileEnding
+##Arguments : $FILEHANDLE, $mostCompleteRef, $filePathRef, $fileEnding
 ##          : $FILEHANDLE      => SBATCH script FILEHANDLE to print to 
 ##          : $mostCompleteRef => The mostComplete file (BAM|VCF) {REF}
-##          : $fileRef         => Current file {REF}
-##          : $fileEnding      => File ending of $fileRef
-    
-    my $FILEHANDLE = $_[0];
-    my $mostCompleteRef = $_[1];
-    my $fileRef = $_[2];
-    my $fileEnding = $_[3];
-    
-    if ( (defined($$mostCompleteRef)) && (defined($$fileRef)) ) {  #Not to disturb first dry_run of analysis
+##          : $filePathRef         => Current file {REF}
+##          : $fileEnding      => File ending of $filePathRef
 
-	unless ($$mostCompleteRef eq $$fileRef) {  #Do not remove mostCompleteBAM|VCF
+    my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $mostCompleteRef = ${$argHashRef}{'mostCompleteRef'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $filePathRef = ${$argHashRef}{'filePathRef'};
+    my $fileEnding = ${$argHashRef}{'fileEnding'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('mostCompleteRef' => $$mostCompleteRef,
+			     'FILEHANDLE' => $FILEHANDLE,
+			     'filePathRef' => $$filePathRef,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "CheckMostCompleteAndRemoveFile");
+    
+    if ( (defined($$mostCompleteRef)) && (defined($$filePathRef)) ) {  #Not to disturb first dry_run of analysis
+
+	unless ($$mostCompleteRef eq $$filePathRef) {  #Do not remove mostCompleteBAM|VCF
 		
-	    my $fileName = &RemoveFileEnding(\$$fileRef, $fileEnding);
+	    my $fileName = &RemoveFileEnding(\$$filePathRef, $fileEnding);
 
 	    if (defined($fileName)) {  #Successfully removed file ending using &RemoveFileEnding
 	    
@@ -13901,9 +14190,16 @@ sub CheckMostCompleteAndRemoveFile {
 		
 		    $end = ".vcf*";  #Removes both .vcf and .vcf.idx
 		}
+
 		##Print removal of file to sbatch script 
 		print $FILEHANDLE "rm ";
 		print $FILEHANDLE $fileName.$end, "\n\n";  #Remove file(s)
+	    }
+	    else {
+
+		##Print removal of file to sbatch script 
+		print $FILEHANDLE "rm ";
+		print $FILEHANDLE $$filePathRef, "\n\n";  #Remove file(s)
 	    }
 	}
     }
@@ -16219,7 +16515,7 @@ sub CheckMandatoryArguments {
     
     foreach my $key (keys (%{$mandatoryArgumentHashRef})) {
 	
-	unless (${$mandatoryArgumentHashRef}{$key}) {
+	unless (defined(${$mandatoryArgumentHashRef}{$key})) {
 	    
 	    warn("Mandatory argument: '".$key."' missing in function: '".$functionName."'\n");
 	    exit 1;
@@ -16488,6 +16784,340 @@ sub Tabix {
     print $FILEHANDLE $infilePath." ";  #Temporary outfile
     print $FILEHANDLE "\n\n";
 } 
+
+
+sub RemoveFiles {
+    
+##RemoveFiles
+    
+##Function : Removes intermediate files from the MIP analysis depending on set MIP parameters
+##Returns  : ""
+##Arguments: $scriptParameterHashRef, $sampleInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $FILEHANDLE, $familyID, $sampleID, $aligner, $callType, $programName, $reduceIORef
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $fileInfoHashRef            => The fileInfo hash {REF}
+##         : $laneHashRef                => The lane info hash {REF}
+##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $FILEHANDLE                 => Filehandle to write to
+##         : $familyID                   => The familyID
+##         : $sampleID                   => The sampleID
+##         : $aligner                    => The aligner used in the analysis
+##         : $callType                   => The variant call type
+##         : $programName                => The program name
+##         : $reduceIORef                => Reduce IO - modulates processBlocks {REF}
+    
+    my ($argHashRef) = @_;
+    
+    my %default = ('familyID' => ${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+		   'callType' => "BOTH",
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+    
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
+    my $laneHashRef = ${$argHashRef}{'laneHashRef'};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $familyID = ${$argHashRef}{'familyID'};
+    my $sampleID = ${$argHashRef}{'sampleID'};
+    my $inSampleDirectory = ${$argHashRef}{'inSampleDirectory'};
+    my $reduceIORef = ${$argHashRef}{'reduceIORef'};
+    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $callType = ${$argHashRef}{'callType'};
+    
+    ## Mandatory arguments
+    my %mandatoryArgument = ('scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} },  #Any MIP mandatory key will do
+			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
+			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'FILEHANDLE' => $FILEHANDLE,
+			     'reduceIORef' => $$reduceIORef,
+			     'alignerRef' => $$alignerRef,
+	);
+    
+    &CheckMandatoryArguments(\%mandatoryArgument, "RemoveFiles");
+    
+    my %removeProgramFile;
+    
+    ## Last modules in each processing block should have have the output data deleted
+    my $lastModuleBAMCalibrationBlock = "pGATKHaploTypeCaller";
+    my $lastModuleVariantAnnotationBlock = "pSnpEff";
+    
+    if (defined($sampleID)) {
+
+	## Single files
+	$removeProgramFile{'pMosaikBuild'}{'fileEnding'} = [".dat"];
+	$removeProgramFile{'pMosaikBuild'}{'setting'} = "single";
+	$removeProgramFile{'pMosaikBuild'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerRef;
+	$removeProgramFile{'pMosaikAlign'}{'fileEnding'} = [".stat", ".bam"];
+	$removeProgramFile{'pMosaikAlign'}{'setting'} = "single";
+	$removeProgramFile{'pMosaikAlign'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerRef;
+	$removeProgramFile{'pBwaAln'}{'fileEnding'} = [".sai"];
+	$removeProgramFile{'pBwaAln'}{'setting'} = "single";
+	$removeProgramFile{'pBwaAln'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerRef;
+	$removeProgramFile{'pBwaSampe'}{'fileEnding'} = [".bam"];
+	$removeProgramFile{'pBwaSampe'}{'setting'} = "single";
+	$removeProgramFile{'pBwaSampe'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerRef;
+	$removeProgramFile{'pBwaMem'}{'fileEnding'} = [".bam"];
+	$removeProgramFile{'pBwaMem'}{'setting'} = "single";
+	$removeProgramFile{'pBwaMem'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerRef;
+	
+	## Potentially merged files
+	$removeProgramFile{'pPicardToolsMergeSamFiles'}{'fileEnding'} = [".bam"];
+	$removeProgramFile{'pPicardToolsMergeSamFiles'}{'setting'} = "merged";
+	$removeProgramFile{'pPicardToolsMergeSamFiles'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerRef;
+	$removeProgramFile{'pPicardToolsMarkduplicatesWithMateCigar'}{'fileEnding'} = [".bam"];
+	$removeProgramFile{'pPicardToolsMarkduplicatesWithMateCigar'}{'setting'} = "merged";
+	$removeProgramFile{'pPicardToolsMarkduplicatesWithMateCigar'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerRef;
+	$removeProgramFile{'pGATKRealigner'}{'fileEnding'} = [".bam"];
+	$removeProgramFile{'pGATKRealigner'}{'setting'} = "merged";
+	$removeProgramFile{'pGATKRealigner'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerRef."/gatk";
+	$removeProgramFile{'pGATKBaseRecalibration'}{'fileEnding'} = [".bam"];
+	$removeProgramFile{'pGATKBaseRecalibration'}{'setting'} = "merged";
+	$removeProgramFile{'pGATKBaseRecalibration'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerRef."/gatk";
+	$removeProgramFile{'pGATKHaploTypeCaller'}{'fileEnding'} = [".vcf"];
+	$removeProgramFile{'pGATKHaploTypeCaller'}{'setting'} = "merged";
+	$removeProgramFile{'pGATKHaploTypeCaller'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerRef."/gatk";
+    }
+
+    ## Family files
+    $removeProgramFile{'pGATKGenoTypeGVCFs'}{'fileEnding'} = [".vcf"];
+    $removeProgramFile{'pGATKGenoTypeGVCFs'}{'setting'} = "family";
+    $removeProgramFile{'pGATKGenoTypeGVCFs'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$$alignerRef."/gatk";
+    $removeProgramFile{'pGATKVariantRecalibration'}{'fileEnding'} = [".vcf"];
+    $removeProgramFile{'pGATKVariantRecalibration'}{'setting'} = "family";
+    $removeProgramFile{'pGATKVariantRecalibration'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$$alignerRef."/gatk";
+    
+    ## VariantAnnotation
+    $removeProgramFile{'pVT'}{'fileEnding'} = [".vcf"];
+    $removeProgramFile{'pVT'}{'setting'} = "variantAnnotation";
+    $removeProgramFile{'pVT'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$$alignerRef."/gatk";
+    $removeProgramFile{'pVariantEffectPredictor'}{'fileEnding'} = [".vcf"];
+    $removeProgramFile{'pVariantEffectPredictor'}{'setting'} = "variantAnnotation";
+    $removeProgramFile{'pVariantEffectPredictor'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$$alignerRef."/gatk";
+    $removeProgramFile{'pVCFParser'}{'fileEnding'} = [".vcf"];
+    $removeProgramFile{'pVCFParser'}{'setting'} = "variantAnnotation";
+    $removeProgramFile{'pVCFParser'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$$alignerRef."/gatk";
+    $removeProgramFile{'pAnnovar'}{'fileEnding'} = [".vcf"];
+    $removeProgramFile{'pAnnovar'}{'setting'} = "variantAnnotation";
+    $removeProgramFile{'pAnnovar'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$$alignerRef."/gatk";
+    $removeProgramFile{'pSnpEff'}{'fileEnding'} = [".vcf"];
+    $removeProgramFile{'pSnpEff'}{'setting'} = "variantAnnotation";
+    $removeProgramFile{'pSnpEff'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$$alignerRef."/gatk";
+    
+    foreach my $program (keys %removeProgramFile) {
+	
+	if (${$scriptParameterHashRef}{$program} > 0) {
+
+	    my $inDirectory =  $removeProgramFile{$program}{'inDirectory'};
+
+	    if (defined($sampleID)) {
+
+		my $outfileEnding = ${$fileInfoHashRef}{$familyID}{$sampleID}{$program}{'fileEnding'};
+		
+		## Single files
+		if ($removeProgramFile{$program}{'setting'} eq "single") {  #Infiles for prior to potential merge
+		    
+		    for (my $infileCounter=0;$infileCounter < scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {
+			
+			my $infile = ${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter]; 
+			
+			for (my $fileEndingCounter=0;$fileEndingCounter < scalar( @{ $removeProgramFile{$program}{'fileEnding'} });$fileEndingCounter++) {
+			    
+			    my $filePath = $inDirectory."/".$infile.$outfileEnding.$removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter];
+			    
+			    ## Detect which mostCompletePath to use depending on fileEnding
+			    my $mostCompleteRef = &DetectMostCompleteFile({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+									   'fileEndingRef' => \$removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter],
+									   'sampleIDRef' => \$sampleID,
+									   'familyIDRef' => \${$scriptParameterHashRef}{'familyID'},
+									  });
+			    
+			    ## Checks if the file is recorded as the "MostCompleteBAM|VCF". If false writes removal of file(s) to supplied filehandle
+			    &CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+							     'mostCompleteRef' => $mostCompleteRef,
+							     'filePathRef' => \$filePath,
+							     'fileEnding' => $removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter],
+							    });		    
+			}
+		    }
+		}
+		## Merged files
+		if ($removeProgramFile{$program}{'setting'} eq "merged") {  #Potential merge infiles
+		    
+		    ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
+		    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
+		    
+		    if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
+			
+			if ( ($$reduceIORef == 0) || ($program eq $lastModuleBAMCalibrationBlock) ) {  #Delete intermediate files or last module in processBlock
+			    
+			    for (my $fileEndingCounter=0;$fileEndingCounter < scalar( @{ $removeProgramFile{$program}{'fileEnding'} });$fileEndingCounter++) {
+				
+				my $filePath = $inDirectory."/".$infile.$outfileEnding.$removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter];
+				
+				if ($program eq "pGATKHaploTypeCaller") {  #Special case - always collapses all files even if there is only one
+				    
+				    $filePath = $inDirectory."/".$infile.$outfileEnding."_*".$removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter];
+				}
+				## Detect which mostCompletePath to use depending on fileEnding
+				my $mostCompleteRef = &DetectMostCompleteFile({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+									       'fileEndingRef' => \$removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter],
+									       'sampleIDRef' => \$sampleID,
+									       'familyIDRef' => \${$scriptParameterHashRef}{'familyID'},
+									      });
+				
+				## Checks if the file is recorded as the "MostCompleteBAM|VCF". If false writes removal of file(s) to supplied filehandle
+				&CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+								 'mostCompleteRef' => $mostCompleteRef,
+								 'filePathRef' => \$filePath,
+								 'fileEnding' => $removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter],
+								});
+			    }
+			}
+		    }
+		    else {  #No merge performed on files - treat as singles
+			
+			if ( ($$reduceIORef == 0) || ($program eq $lastModuleBAMCalibrationBlock) ) {  #Delete intermediate files or last module in processBlock
+			    
+			    for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all infiles per lane
+				
+				my $infile = ${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter];
+				
+				for (my $fileEndingCounter=0;$fileEndingCounter < scalar( @{ $removeProgramFile{$program}{'fileEnding'} });$fileEndingCounter++) {
+				    
+				    my $filePath = $inDirectory."/".$infile.$outfileEnding.$removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter];
+				    
+				    if ($program eq "pGATKHaploTypeCaller") {  #Special case - always collapses all files even if there is only one
+					
+					my $lanes = join("",@{${$laneHashRef}{$sampleID}});  #Extract lanes
+					$filePath = $inDirectory."/".$sampleID."_lanes_".$lanes.$outfileEnding."_*.vcf";
+					$infileCounter = scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} }); ##Perform only once - all infiles are merged to single vcf
+				    }
+				    ## Detect which mostCompletePath to use depending on fileEnding
+				    my $mostCompleteRef = &DetectMostCompleteFile({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+										   'fileEndingRef' => \$removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter],
+										   'sampleIDRef' => \$sampleID,
+										   'familyIDRef' => \${$scriptParameterHashRef}{'familyID'},
+									      });
+				    
+				    ## Checks if the file is recorded as the "MostCompleteBAM|VCF". If false writes removal of file(s) to supplied filehandle
+				    &CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+								     'mostCompleteRef' => $mostCompleteRef,
+								     'filePathRef' => \$filePath,
+								 'fileEnding' => $removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter],
+								    });		    
+				}
+			    }
+			}
+		    }
+		}
+	    }
+	    else {  #Otherwise these files would be removed for every sampleID
+		
+		my $outfileEnding = ${$fileInfoHashRef}{$familyID}{$familyID}{$program}{'fileEnding'};
+
+		## Family files
+		if ($removeProgramFile{$program}{'setting'} eq "family") {
+		    		    
+		    for (my $fileEndingCounter=0;$fileEndingCounter < scalar( @{ $removeProgramFile{$program}{'fileEnding'} });$fileEndingCounter++) {
+			
+			my $filePath = $inDirectory."/".$familyID.$outfileEnding.$callType."*".$removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter];
+			
+			## Detect which mostCompletePath to use depending on fileEnding
+			my $mostCompleteRef = &DetectMostCompleteFile({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+								       'fileEndingRef' => \$removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter],
+								       'familyIDRef' => \${$scriptParameterHashRef}{'familyID'},
+								      });
+			
+			## Checks if the file is recorded as the "MostCompleteBAM|VCF". If false writes removal of file(s) to supplied filehandle
+			&CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+							 'mostCompleteRef' => $mostCompleteRef,
+							 'filePathRef' => \$filePath,
+							 'fileEnding' => $removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter],
+							});
+		    }
+		}
+		elsif ($removeProgramFile{$program}{'setting'} eq "variantAnnotation") {
+		    
+		    if ( ($$reduceIORef == 0) || ($program eq $lastModuleVariantAnnotationBlock) ) {  #Delete intermediate files or last module in processBlock
+			
+			$outfileEnding = ${$fileInfoHashRef}{$familyID}{$familyID}{$program}{'fileEnding'};
+			
+			for (my $fileEndingCounter=0;$fileEndingCounter < scalar( @{ $removeProgramFile{$program}{'fileEnding'} });$fileEndingCounter++) {
+			    
+			    my $filePath = $inDirectory."/".$familyID.$outfileEnding.$callType."*".$removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter];
+			    
+			    ## Detect which mostCompletePath to use depending on fileEnding
+			    my $mostCompleteRef = &DetectMostCompleteFile({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+									   'fileEndingRef' => \$removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter],
+									   'familyIDRef' => \${$scriptParameterHashRef}{'familyID'},
+									  });
+			    
+			    ## Checks if the file is recorded as the "MostCompleteBAM|VCF". If false writes removal of file(s) to supplied filehandle
+			    &CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+							     'mostCompleteRef' => $mostCompleteRef,
+							     'filePathRef' => \$filePath,
+							     'fileEnding' => $removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter],
+							    });
+			}
+		    }
+		}
+	    }
+	}
+    }
+}
+
+sub DetectMostCompleteFile {
+
+##DetectMostCompleteFile
+
+##Function : Detect which mostCompletePath to use depending on fileEnding
+##Returns  : ""
+##Arguments: $scriptParameterHashRef,
+##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $fileEndingRef          => FileEnding (.fileEnding){REF}
+##         : $familyIDRef            => Family ID {REF}
+##         : $sampleIDRef            => Sample ID {REF}
+
+    my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $fileEndingRef =  ${$argHashRef}{'fileEndingRef'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
+    my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
+    
+    ## Mandatory arguments
+    my %mandatoryArgument = ('sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
+			     'fileEnding' => $$fileEndingRef,
+			     'familyIDRef'=> $$familyIDRef,
+	);
+    
+    &CheckMandatoryArguments(\%mandatoryArgument, "DetectMostCompleteFile");
+    
+    ## Set mostcompletePaths
+    my $mostcompleteBamRef;
+    my $mostcompleteVCFRef =  \${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'ReadyVcf'}{'Path'};
+    
+    if (defined($$sampleIDRef)) {
+	
+	$mostcompleteBamRef = \${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'MostCompleteBAM'}{'Path'};
+    }
+    ## Decide which mostcompleteOaths to use
+    if ($$fileEndingRef eq ".bam") {
+	
+	return $mostcompleteBamRef;
+    }
+    if ($$fileEndingRef eq ".vcf") {
+	
+	return $mostcompleteVCFRef;
+    }
+}
 
 
 package DateTime::Format::Multi;
