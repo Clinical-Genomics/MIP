@@ -546,6 +546,8 @@ pGATKVariantRecalibration:
   dataType: SCALAR
   default: 1
   fileEnding: vrecal_
+  programNamePath:
+   - bcftools
   type: program
 GATKVariantReCalibrationTrainingSetHapMap:
   associatedProgram:
@@ -593,13 +595,19 @@ GATKVariantReCalibrationTSFilterLevel:
   dataType: SCALAR
   default: 99.9
   type: program
+GATKVariantReCalibrationMaxGaussians:
+  associatedProgram:
+   - pGATKVariantRecalibration
+  dataType: SCALAR
+  default: 0
+  type: program
 GATKVariantReCalibrationexcludeNonVariantsFile:
   associatedProgram:
    - pGATKVariantRecalibration
   dataType: SCALAR
   default: 0
   type: program
-GATKVariantReCalibrationMaxGaussians:
+GATKVariantReCalibrationBCFFile:
   associatedProgram:
    - pGATKVariantRecalibration
   dataType: SCALAR

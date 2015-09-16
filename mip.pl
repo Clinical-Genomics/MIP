@@ -139,8 +139,9 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -gvrtso/--GATKVariantReCalibrationTrainingSet1000GOmni GATK VariantRecalibrator 1000G_omni training set (defaults to "1000G_omni2.5.b37.sites.vcf")
                  -gvrtsm/--GATKVariantReCalibrationTrainingSetMills GATK VariantRecalibrator Mills training set (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
                  -gvrtsf/--GATKVariantReCalibrationTSFilterLevel The truth sensitivity level at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
-                 -gvrevf/--GATKVariantReCalibrationexcludeNonVariantsFile Produce a vcf containing non-variant loci alongside the vcf only containing non-variant loci after GATK VariantRecalibrator (defaults to "0" (=no))
                  -gvrmga/--GATKVariantReCalibrationMaxGaussians Use hard filtering for indels (defaults to "0" (=no))
+                 -gvrevf/--GATKVariantReCalibrationexcludeNonVariantsFile Produce a vcf containing non-variant loci alongside the vcf only containing non-variant loci after GATK VariantRecalibrator (defaults to "0" (=no))
+                 -gvrbcf/--GATKVariantReCalibrationBCFFile Produce a bcf from the GATK VariantRecalibrator vcf (defaults to "0" (=no))
                -pGpT/--pGATKPhaseByTransmission Computes the most likely genotype and phases calls were unamibigous using GATK PhaseByTransmission (defaults to "0" (=yes))
                -pGrP/--pGATKReadBackedPhasing Performs physical phasing of SNP calls, based on sequencing reads using GATK ReadBackedPhasing (defaults to "0" (=yes))
                  -grpqth/--GATKReadBackedPhasingPhaseQualityThreshold The minimum phasing quality score required to output phasing (defaults to "20")
@@ -413,6 +414,8 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'gvrtsm|GATKVariantReCalibrationTrainingSetMills:s' => \$parameter{'GATKVariantReCalibrationTrainingSetMills'}{'value'},  #GATK VariantRecalibrator resource
 	   'gvrtsf|GATKVariantReCalibrationTSFilterLevel:s' => \$parameter{'GATKVariantReCalibrationTSFilterLevel'}{'value'},  #Truth sensativity level
 	   'gvrmga|GATKVariantReCalibrationMaxGaussians:n' => \$parameter{'GATKVariantReCalibrationMaxGaussians'}{'value'},
+	   'gvrevf|GATKVariantReCalibrationexcludeNonVariantsFile:n' => \$parameter{'GATKVariantReCalibrationexcludeNonVariantsFile'}{'value'},
+	   'gvrbcf|GATKVariantReCalibrationBCFFile:n' => \$parameter{'GATKVariantReCalibrationBCFFile'}{'value'},  #Produce compressed vcf
 	   'pGpT|pGATKPhaseByTransmission:n' => \$parameter{'pGATKPhaseByTransmission'}{'value'},  #GATK PhaseByTransmission to produce phased genotype calls
 	   'pGrP|pGATKReadBackedPhasing:n' => \$parameter{'pGATKReadBackedPhasing'}{'value'},  #GATK ReadBackedPhasing
 	   'grpqth|GATKReadBackedPhasingPhaseQualityThreshold:n' => \$parameter{'GATKReadBackedPhasingPhaseQualityThreshold'}{'value'},  #quality score required to output phasing
@@ -4225,8 +4228,28 @@ sub GATKVariantReCalibration {
 				  'filePath' => $outFamilyDirectory."/",
 				  'FILEHANDLE' => $FILEHANDLE,
 				 });
+	    print $FILEHANDLE "\n\nwait\n\n";
 	}
-	print $FILEHANDLE "\n\nwait\n\n";
+
+	## Produce a bcf compressed vcf
+	if (${$scriptParameterHashRef}{'GATKVariantReCalibrationBCFFile'} eq 1) {
+
+	    print $FILEHANDLE "\n\n#Compress vcf to bcf","\n";
+	    print $FILEHANDLE "bcftools ";
+	    print $FILEHANDLE "view ";  #VCF/BCF conversion
+	    print $FILEHANDLE "-O b ";  #Output type - b: compressed BCF
+	    print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf ";  #Infile
+	    print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".bcf ";  #Outfile
+	    print $FILEHANDLE "\n\n";
+
+	    ## Copies file from temporary directory.
+	    print $FILEHANDLE "## Copy file from temporary directory\n";
+	    &MigrateFileFromTemp({'tempPath' => ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".bcf*",
+				  'filePath' => $outFamilyDirectory."/",
+				  'FILEHANDLE' => $FILEHANDLE,
+				 });
+	}
+	print $FILEHANDLE "wait\n\n";
     }
     
     ## Copies file from temporary directory.
@@ -4253,7 +4276,12 @@ sub GATKVariantReCalibration {
 		       'outFileEnding' => $familyID.$outfileEnding.$callType.".vcf",
 		       'outDataType' => "infileDependent"
 		      });
-	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'VCFFile'}{'ReadyVcf'}{'Path'} = $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf";	
+	${$sampleInfoHashRef}{$familyID}{$familyID}{'VCFFile'}{'ReadyVcf'}{'Path'} = $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".vcf";	
+
+	if (${$scriptParameterHashRef}{'GATKVariantReCalibrationBCFFile'} eq 1) {
+
+	    ${$sampleInfoHashRef}{$familyID}{$familyID}{'BCFFile'}{'Path'} = $outFamilyDirectory."/".$familyID.$outfileEnding.$callType.".bcf";
+	}
 	
 	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 		       'jobIDHashRef' => \%jobID,
@@ -8262,12 +8290,21 @@ sub BWA_Mem {
 
 	    if (${$scriptParameterHashRef}{'bwaMemCram'} == 1) {
 
-		print $FILEHANDLE "samtools view";
+		print $FILEHANDLE "## Create CRAM file from BAM\n";
+		print $FILEHANDLE "samtools view ";
 		print $FILEHANDLE "-C "; #Write output to CRAM-format
 		print $FILEHANDLE "-T ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference
 		print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam";
 		print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".cram";
 		print $FILEHANDLE "\n\n";
+		
+		## Copies file from temporary directory.
+		print $FILEHANDLE "## Copy file from temporary directory\n";
+		&MigrateFileFromTemp({'tempPath' => ${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".cram",
+				      'filePath' => $outSampleDirectory."/",
+				      'FILEHANDLE' => $FILEHANDLE,
+				     });
+		print $FILEHANDLE "wait", "\n\n";
 	    }
 	    ## Copies file from temporary directory.
 	    print $FILEHANDLE "## Copy file from temporary directory\n";
@@ -8283,6 +8320,10 @@ sub BWA_Mem {
 
 		${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'} = $outSampleDirectory."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].".bam";
 
+		if (${$scriptParameterHashRef}{'bwaMemCram'} eq 1) {
+		    
+		    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'CRAM'}{'Path'} = ${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".cram";
+		}
 		&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 			       'familyID' => ${$scriptParameterHashRef}{'familyID'},
 			       'sampleID' => $sampleID,
