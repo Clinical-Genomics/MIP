@@ -836,7 +836,7 @@ snpSiftDbNSFPFile:
   associatedProgram:
    - pSnpEff
   dataType: SCALAR
-  default: dbNSFP2.6.txt.gz
+  default: dbNSFP2.9.txt.gz
   existsCheck: file
   type: path
 ## java large pages - effects all modules using java
@@ -913,7 +913,7 @@ caddWGSSNVsFile:
    - pRankVariants
   buildFile: noAutoBuild
   dataType: SCALAR
-  default: whole_genome_SNVs.v1.1.tsv.gz
+  default: whole_genome_SNVs.v1.3.tsv.gz
   existsCheck: file
   type: path
 cadd1000Genomes:  
@@ -927,7 +927,7 @@ cadd1000GenomesFile:
    - pRankVariants
   buildFile: noAutoBuild
   dataType: SCALAR
-  default: 1000G.v1.1.tsv.gz
+  default: 1000G.v1.3.tsv.gz
   existsCheck: file
   type: path
 wholeGene:

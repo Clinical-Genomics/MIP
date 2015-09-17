@@ -27,7 +27,7 @@ use vars qw($USAGE);
 BEGIN {
 
 
-    my @modules = ("YAML", "Log::Log4perl", "DateTime::Format::ISO8601", "DateTime::Format::HTTP", "DateTime::Format::Mail");	
+    my @modules = ("YAML", "Log::Log4perl", "List::MoreUtils", "DateTime::Format::ISO8601", "DateTime::Format::HTTP", "DateTime::Format::Mail");	
 
     ## Evaluate that all modules required are installed
     &EvalModules(\@modules);
@@ -1736,7 +1736,7 @@ sub RankVariants {
 	    
 	    my @trapSignals = ("ERR");
 	    ## Clear trap for signal(s)
-	    &ClearTrap(\@trapSignals, $FILEHANDLE, ${$scriptParameterHashRef}{'analysisType'});
+	    &ClearTrap(\@trapSignals, $FILEHANDLE);
 	}
 
 	## Create file commands for xargs
@@ -1820,7 +1820,7 @@ sub RankVariants {
 
 	    my @trapSignals = ("ERR");
 	    ## Enable trap for signal(s) and function
-	    &EnableTrap(\@trapSignals, "error", $FILEHANDLE, ${$scriptParameterHashRef}{'analysisType'});
+	    &EnableTrap(\@trapSignals, "error", $FILEHANDLE);
 	}
 
 	## Copies file from temporary directory.
@@ -2635,7 +2635,7 @@ sub SnpEff {
 
 	    my @trapSignals = ("ERR");
 	    ## Clear trap for signal(s)
-	    &ClearTrap(\@trapSignals, $FILEHANDLE, ${$scriptParameterHashRef}{'analysisType'});
+	    &ClearTrap(\@trapSignals, $FILEHANDLE);
 	}
 	&ConcatenateVariants(\%{$scriptParameterHashRef}, $FILEHANDLE, \@{$vcfParserContigsArrayRef}, $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_", $vcfParserAnalysisType.".vcf", $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf");
 
@@ -2643,7 +2643,7 @@ sub SnpEff {
 
 	    my @trapSignals = ("ERR");
 	    ## Enable trap for signal(s) and function
-	    &EnableTrap(\@trapSignals, "error", $FILEHANDLE, ${$scriptParameterHashRef}{'analysisType'});
+	    &EnableTrap(\@trapSignals, "error", $FILEHANDLE);
 	}
 
 	## Copies file from temporary directory. Concatenated file
@@ -10089,9 +10089,16 @@ sub DownloadReference {
 	## Check if reference comes decompressed or not
 	if (${$supportedCosmidReferenceHashRef}{$parameterName}{'compressedSwitch'} eq "compressed") {
 
+	    my @trapSignals = ("ERR");
+	    ## Clear trap for signal(s)
+	    &ClearTrap(\@trapSignals, $FILEHANDLE);
+	    
 	    print $FILEHANDLE "gzip ";
 	    print $FILEHANDLE "-d ";  #Decompress
 	    print $FILEHANDLE $$cosmidResourceDirectoryRef."/".${$supportedCosmidReferenceHashRef}{$parameterName}{'cosmidName'}."/*.gz", "\n\n";
+
+	    ## Enable trap for signal(s) and function
+	    &EnableTrap(\@trapSignals, "error", $FILEHANDLE);
 	}
 
 	my $temporaryFilePath = $$cosmidResourceDirectoryRef."/".${$supportedCosmidReferenceHashRef}{$parameterName}{'cosmidName'}."/*";
@@ -10125,9 +10132,16 @@ sub DownloadReference {
 	print $FILEHANDLE "rm -rf ";
 	print $FILEHANDLE $$cosmidResourceDirectoryRef."/".${$supportedCosmidReferenceHashRef}{$parameterName}{'cosmidName'}."/;", "\n\n";
 
+	my @trapSignals = ("ERR");
+	## Clear trap for signal(s)
+	&ClearTrap(\@trapSignals, $FILEHANDLE);
+
 	## Remove temporary Cosmid ".cosmid.yaml" file
 	print $FILEHANDLE "rm ";
 	print $FILEHANDLE $$cosmidResourceDirectoryRef."/.cosmid.yaml", "\n\n";
+
+	## Enable trap for signal(s) and function
+	&EnableTrap(\@trapSignals, "error", $FILEHANDLE);
 
 	for my $supportedParameterName (keys %supportedCosmidReference) {
 
@@ -10193,9 +10207,17 @@ sub BuildHumanGenomePreRequisites {
 
 	$logger->warn("Will try to decompres ".${$scriptParameterHashRef}{'humanGenomeReference'}." before executing ".$program."\n");
 
+	my @trapSignals = ("ERR");
+	## Clear trap for signal(s)
+	&ClearTrap(\@trapSignals, $FILEHANDLE);
+
 	print $FILEHANDLE "gzip ";
 	print $FILEHANDLE "-d ";  #Decompress
 	print $FILEHANDLE ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}, "\n\n";
+
+	## Enable trap for signal(s) and function
+	&EnableTrap(\@trapSignals, "error", $FILEHANDLE);
+	
 	${$scriptParameterHashRef}{'humanGenomeReference'} =~ s/.fasta.gz/.fasta/g;  #Replace the .fasta.gz ending with .fasta since this will execute before the analysis, hence changing the original file name ending from ".fastq" to ".fastq.gz".
 	$logger->info("Set humanGenomeReference to: ".${$scriptParameterHashRef}{'humanGenomeReference'}, "\n");
 	${$fileInfoHashRef}{'humanGenomeCompressedRef'} = "unCompressed";
@@ -11868,11 +11890,11 @@ sub ProgramPreRequisites {
 
     my ($argHashRef) = @_;
 
-
     my %default = ('callType' => "",
 		   'nrofCores' => 1,
 		   'processTime' => 1,
 		   'pipefail' => 1,
+		   'errorTrap' => 1,
 	);
     
     if (defined(${$argHashRef}{'callType'})) {
@@ -11987,15 +12009,17 @@ sub ProgramPreRequisites {
 	print $FILEHANDLE q?trap finish EXIT TERM INT?, "\n\n";
     }
 
-    ## Create error handling function and trap
-    print $FILEHANDLE q?error() {?, "\n\n";
-    print $FILEHANDLE "\t".q?## Display error message and exit?, "\n";
-    print $FILEHANDLE "\t".q{ret="$?"}, "\n";
-    print $FILEHANDLE "\t".q?echo "${PROGNAME}: ${1:-"Unknown Error - ExitCode="$ret}" 1>&2?, "\n\n";
-    print $FILEHANDLE "\t".q?exit 1?, "\n";
-    print $FILEHANDLE q?}?, "\n";
-    print $FILEHANDLE q?trap error ERR?, "\n\n";
+    if (${$argHashRef}{'errorTrap'} == 1) {
 
+	## Create error handling function and trap
+	print $FILEHANDLE q?error() {?, "\n\n";
+	print $FILEHANDLE "\t".q?## Display error message and exit?, "\n";
+	print $FILEHANDLE "\t".q{ret="$?"}, "\n";
+	print $FILEHANDLE "\t".q?echo "${PROGNAME}: ${1:-"Unknown Error - ExitCode="$ret}" 1>&2?, "\n\n";
+	print $FILEHANDLE "\t".q?exit 1?, "\n";
+	print $FILEHANDLE q?}?, "\n";
+	print $FILEHANDLE q?trap error ERR?, "\n\n";
+    }
     return ($fileName, $fileInfoPath.$fileNameTracker);  #Return filen name, file path for stdout/stderr for QC check later
 }
 
@@ -13831,42 +13855,67 @@ sub CheckMostCompleteAndRemoveFile {
     my $fileEnding = ${$argHashRef}{'fileEnding'};
 
     ## Mandatory arguments
-    my %mandatoryArgument = ('mostCompleteRef' => $$mostCompleteRef,
-			     'FILEHANDLE' => $FILEHANDLE,
+    my %mandatoryArgument = ('FILEHANDLE' => $FILEHANDLE,
 			     'filePathRef' => $$filePathRef,
 	);
     &CheckMandatoryArguments(\%mandatoryArgument, "CheckMostCompleteAndRemoveFile");
     
     if ( (defined($$mostCompleteRef)) && (defined($$filePathRef)) ) {  #Not to disturb first dry_run of analysis
-
+	
 	unless ($$mostCompleteRef eq $$filePathRef) {  #Do not remove mostCompleteBAM|VCF
-		
-	    my $fileName = &RemoveFileEnding(\$$filePathRef, $fileEnding);
-
-	    if (defined($fileName)) {  #Successfully removed file ending using &RemoveFileEnding
 	    
-		my $end = ".*";  #Remove all files with ending with ".*"
-
-		if ($fileEnding eq ".bam") {  #For BAM files 
-		
-		    $end = ".ba*";  #Removes both .bam and .bai
-		}
-		if ($fileEnding eq ".vcf") {  #For VCF files
-		
-		    $end = ".vcf*";  #Removes both .vcf and .vcf.idx
-		}
-
-		##Print removal of file to sbatch script 
-		print $FILEHANDLE "rm ";
-		print $FILEHANDLE $fileName.$end, "\n\n";  #Remove file(s)
-	    }
-	    else {
-
-		##Print removal of file to sbatch script 
-		print $FILEHANDLE "rm ";
-		print $FILEHANDLE $$filePathRef, "\n\n";  #Remove file(s)
-	    }
+	    ## Modify fileending of file to include e.g. .bai for bams
+	    my $fileName = &ModifyFileEnding($filePathRef, $fileEnding);
+	    
+	    ##Print removal of file to sbatch script 
+	    print $FILEHANDLE "rm ";
+	    print $FILEHANDLE $fileName, "\n\n";  #Remove file(s)
 	}
+    }
+    else {
+	
+	## Modify fileending of file to include e.g. .bai for bams
+	my $fileName = &ModifyFileEnding($filePathRef, $fileEnding);
+	
+	##Print removal of file to sbatch script 
+	print $FILEHANDLE "rm ";
+	print $FILEHANDLE $fileName, "\n\n";  #Remove file(s)
+    }
+}
+
+
+sub ModifyFileEnding {
+
+##ModifyFileEnding
+	
+##Function  : Modify fileending of file to include e.g. .bai for bams
+##Returns   : ""
+##Arguments : $filePathRef, $fileEnding
+##          : $filePathRef => Current file {REF}
+##          : $fileEnding  => File ending of $filePathRef
+
+    my $filePathRef = $_[0];
+    my $fileEnding = $_[1];
+
+    my $fileName = &RemoveFileEnding(\$$filePathRef, $fileEnding);
+
+    if (defined($fileName)) {  #Successfully removed file ending using &RemoveFileEnding
+	
+	my $end = ".*";  #Remove all files with ending with ".*"
+	
+	if ($fileEnding eq ".bam") {  #For BAM files 
+	    
+	    $end = ".ba*";  #Removes both .bam and .bai
+	}
+	if ($fileEnding eq ".vcf") {  #For VCF files
+	    
+	    $end = ".vcf*";  #Removes both .vcf and .vcf.idx
+	}
+	return $fileName.$end;
+    }
+    else {
+
+	return $$filePathRef;
     }
 }
 
@@ -15337,7 +15386,7 @@ sub ClearTrap {
 
 ##ClearTrap
 
-##Function : Clear trap for signal(s).  
+##Function : Clear trap for signal(s), e.g. in exome analysis since the might be no variants in MT or Y contigs. This will cause premature exit from sbatch
 ##Returns  : ""
 ##Arguments: $trapSignalsRef, $FILEHANDLE, $analysisType
 ##         : $trapSignalsRef => Array with signals to clear trap for {REF}
@@ -15346,8 +15395,8 @@ sub ClearTrap {
     my $trapSignalsRef = $_[0];
     my $FILEHANDLE = $_[1];
 	    
-    ## Clear trap for signal ERR in exome analysis since the might be no variants in MT or Y contigs. This will cause premature exit from sbatch
-    print $FILEHANDLE "## Clear trap for signal(s) ".join(" ", @{$trapSignalsRef})." in exome analysis since the might be no variants in MT or Y contigs\n";
+    ## Clear trap for signal ERR
+    print $FILEHANDLE "## Clear trap for signal(s) ".join(" ", @{$trapSignalsRef})."\n";
     print $FILEHANDLE "trap - ".join(" ", @{$trapSignalsRef}), "\n";
     print $FILEHANDLE "trap", "\n\n";
 }
@@ -16599,9 +16648,9 @@ sub RemoveFiles {
 			    my $mostCompleteRef = &DetectMostCompleteFile({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 									   'fileEndingRef' => \$removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter],
 									   'sampleIDRef' => \$sampleID,
-									   'familyIDRef' => \${$scriptParameterHashRef}{'familyID'},
+									   'familyIDRef' => \$familyID,
 									  });
-			    
+
 			    ## Checks if the file is recorded as the "MostCompleteBAM|VCF". If false writes removal of file(s) to supplied filehandle
 			    &CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
 							     'mostCompleteRef' => $mostCompleteRef,
@@ -16674,7 +16723,7 @@ sub RemoveFiles {
 				    &CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
 								     'mostCompleteRef' => $mostCompleteRef,
 								     'filePathRef' => \$filePath,
-								 'fileEnding' => $removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter],
+								     'fileEnding' => $removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter],
 								    });		    
 				}
 			    }
