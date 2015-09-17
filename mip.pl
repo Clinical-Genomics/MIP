@@ -1734,9 +1734,9 @@ sub RankVariants {
 
 	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VcfParserOutputFileCounter > 0) ) {
 	    
-	    my @trapSignals = ("ERR");
 	    ## Clear trap for signal(s)
-	    &ClearTrap(\@trapSignals, $FILEHANDLE);
+	    &ClearTrap({'FILEHANDLE' => $FILEHANDLE,
+		       });
 	}
 
 	## Create file commands for xargs
@@ -1818,9 +1818,9 @@ sub RankVariants {
 
 	if (${$scriptParameterHashRef}{'analysisType'} eq "exomes") {
 
-	    my @trapSignals = ("ERR");
 	    ## Enable trap for signal(s) and function
-	    &EnableTrap(\@trapSignals, "error", $FILEHANDLE);
+	    &EnableTrap({'FILEHANDLE' => $FILEHANDLE,
+			});
 	}
 
 	## Copies file from temporary directory.
@@ -2636,17 +2636,17 @@ sub SnpEff {
 
 	if (${$scriptParameterHashRef}{'analysisType'} eq "exomes") {
 
-	    my @trapSignals = ("ERR");
 	    ## Clear trap for signal(s)
-	    &ClearTrap(\@trapSignals, $FILEHANDLE);
+	    &ClearTrap({'FILEHANDLE' => $FILEHANDLE,
+		       });
 	}
 	&ConcatenateVariants(\%{$scriptParameterHashRef}, $FILEHANDLE, \@{$vcfParserContigsArrayRef}, $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_", $vcfParserAnalysisType.".vcf", $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf");
 
 	if (${$scriptParameterHashRef}{'analysisType'} eq "exomes") {
 
-	    my @trapSignals = ("ERR");
 	    ## Enable trap for signal(s) and function
-	    &EnableTrap(\@trapSignals, "error", $FILEHANDLE);
+	    &EnableTrap({'FILEHANDLE' => $FILEHANDLE,
+			});
 	}
 
 	## Copies file from temporary directory. Concatenated file
@@ -10092,16 +10092,17 @@ sub DownloadReference {
 	## Check if reference comes decompressed or not
 	if (${$supportedCosmidReferenceHashRef}{$parameterName}{'compressedSwitch'} eq "compressed") {
 
-	    my @trapSignals = ("ERR");
 	    ## Clear trap for signal(s)
-	    &ClearTrap(\@trapSignals, $FILEHANDLE);
+	    &ClearTrap({'FILEHANDLE' => $FILEHANDLE,
+		       });
 	    
 	    print $FILEHANDLE "gzip ";
 	    print $FILEHANDLE "-d ";  #Decompress
 	    print $FILEHANDLE $$cosmidResourceDirectoryRef."/".${$supportedCosmidReferenceHashRef}{$parameterName}{'cosmidName'}."/*.gz", "\n\n";
 
 	    ## Enable trap for signal(s) and function
-	    &EnableTrap(\@trapSignals, "error", $FILEHANDLE);
+	    &EnableTrap({'FILEHANDLE' => $FILEHANDLE,
+			});
 	}
 
 	my $temporaryFilePath = $$cosmidResourceDirectoryRef."/".${$supportedCosmidReferenceHashRef}{$parameterName}{'cosmidName'}."/*";
@@ -10135,16 +10136,17 @@ sub DownloadReference {
 	print $FILEHANDLE "rm -rf ";
 	print $FILEHANDLE $$cosmidResourceDirectoryRef."/".${$supportedCosmidReferenceHashRef}{$parameterName}{'cosmidName'}."/;", "\n\n";
 
-	my @trapSignals = ("ERR");
 	## Clear trap for signal(s)
-	&ClearTrap(\@trapSignals, $FILEHANDLE);
+	&ClearTrap({'FILEHANDLE' => $FILEHANDLE,
+		   });
 
 	## Remove temporary Cosmid ".cosmid.yaml" file
 	print $FILEHANDLE "rm ";
 	print $FILEHANDLE $$cosmidResourceDirectoryRef."/.cosmid.yaml", "\n\n";
 
 	## Enable trap for signal(s) and function
-	&EnableTrap(\@trapSignals, "error", $FILEHANDLE);
+	&EnableTrap({'FILEHANDLE' => $FILEHANDLE,
+		    });
 
 	for my $supportedParameterName (keys %supportedCosmidReference) {
 
@@ -10210,16 +10212,17 @@ sub BuildHumanGenomePreRequisites {
 
 	$logger->warn("Will try to decompres ".${$scriptParameterHashRef}{'humanGenomeReference'}." before executing ".$program."\n");
 
-	my @trapSignals = ("ERR");
 	## Clear trap for signal(s)
-	&ClearTrap(\@trapSignals, $FILEHANDLE);
+	&ClearTrap({'FILEHANDLE' => $FILEHANDLE,
+		   });
 
 	print $FILEHANDLE "gzip ";
 	print $FILEHANDLE "-d ";  #Decompress
 	print $FILEHANDLE ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}, "\n\n";
 
 	## Enable trap for signal(s) and function
-	&EnableTrap(\@trapSignals, "error", $FILEHANDLE);
+	&EnableTrap({'FILEHANDLE' => $FILEHANDLE,
+		    });
 	
 	${$scriptParameterHashRef}{'humanGenomeReference'} =~ s/.fasta.gz/.fasta/g;  #Replace the .fasta.gz ending with .fasta since this will execute before the analysis, hence changing the original file name ending from ".fastq" to ".fastq.gz".
 	$logger->info("Set humanGenomeReference to: ".${$scriptParameterHashRef}{'humanGenomeReference'}, "\n");
@@ -15395,9 +15398,23 @@ sub ClearTrap {
 ##         : $trapSignalsRef => Array with signals to clear trap for {REF}
 ##         : $FILEHANDLE     => The FILEHANDLE to write to
 
-    my $trapSignalsRef = $_[0];
-    my $FILEHANDLE = $_[1];
-	    
+    my ($argHashRef) = @_;
+    
+    my %default = ('trapSignalsRef' => ["ERR"],
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+    
+    ## Flatten argument(s)
+    my $trapSignalsRef = ${$argHashRef}{'trapSignalsRef'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+ 
+    ## Mandatory arguments
+    my %mandatoryArgument = ('FILEHANDLE' => $FILEHANDLE,
+	);
+    
+    &CheckMandatoryArguments(\%mandatoryArgument, "ClearTrap");
+
     ## Clear trap for signal ERR
     print $FILEHANDLE "## Clear trap for signal(s) ".join(" ", @{$trapSignalsRef})."\n";
     print $FILEHANDLE "trap - ".join(" ", @{$trapSignalsRef}), "\n";
@@ -15415,11 +15432,26 @@ sub EnableTrap {
 ##         : $trapSignalsRef => Array with signals to clear trap for {REF}
 ##         : $trapFunction   => The trap function argument
 ##         : $FILEHANDLE     => The FILEHANDLE to write to
-
-    my $trapSignalsRef = $_[0];
-    my $trapFunction = $_[1];
-    my $FILEHANDLE = $_[2];
     
+    my ($argHashRef) = @_;
+    
+    my %default = ('trapSignalsRef' => ["ERR"],
+		   'trapFunction' => "error",
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+    
+    ## Flatten argument(s)
+    my $trapSignalsRef = ${$argHashRef}{'trapSignalsRef'};
+    my $trapFunction = ${$argHashRef}{'trapFunction'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+ 
+    ## Mandatory arguments
+    my %mandatoryArgument = ('FILEHANDLE' => $FILEHANDLE,
+	);
+    
+    &CheckMandatoryArguments(\%mandatoryArgument, "EnableTrap");
+
     print $FILEHANDLE "## Enable cleared trap for signal(s) ".join(" ", @{$trapSignalsRef})." again\n";
     print $FILEHANDLE "trap ".$trapFunction." ".join(" ", @{$trapSignalsRef}), "\n\n";
 }
