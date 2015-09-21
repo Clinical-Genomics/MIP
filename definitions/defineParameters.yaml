@@ -895,13 +895,12 @@ pRankVariants:
   default: 1
   fileEnding: ranked_
   type: program
-geneFile:
+genmodModelsFamilyType:
   associatedProgram:
    - pRankVariants
-  buildFile: noAutoBuild
   dataType: SCALAR
-  existsCheck: file
-  type: path
+  default: mip
+  type: program
 caddWGSSNVs:
   associatedProgram:
    - pRankVariants

@@ -180,7 +180,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
 
                ##RankVariants
                -pRaV/--pRankVariants Ranking of annotated variants (defaults to "1" (=yes))
-                 -ravgf/--geneFile Defines genes to use when calculating compounds (defaults to "hg19_refGene.txt")
+                 -ravgft/--genmodModelsFamilyType Use one of the known setups (defaults to "mip")
                  -ravcs/--caddWGSSNVs Annotate whole genome sequencing CADD score (defaults to "0" (=no))
                  -ravcsf/--caddWGSSNVsFile Whole genome sequencing CADD score file (defaults to "whole_genome_SNVs.tsv.gz")
                  -ravc1kg/--cadd1000Genomes 1000 Genome cadd score file (defaults to "0" (=no))
@@ -450,7 +450,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'snesdbnsfp|snpSiftDbNSFPFile:s'  => \$parameter{'snpSiftDbNSFPFile'}{'value'},  #DbNSFP file
 	   'snesdbnsfpa|snpSiftDbNSFPAnnotations:s'  => \@{$parameter{'snpSiftDbNSFPAnnotations'}{'value'}},  #Comma separated list
 	   'pRaV|pRankVariants:n' => \$parameter{'pRankVariants'}{'value'},  #Ranking variants
-	   'ravgf|geneFile:s' => \$parameter{'geneFile'}{'value'},
+	   'ravgft|genmodModelsFamilyType:s' => \$parameter{'genmodModelsFamilyType'}{'value'},
 	   'ravcs|caddWGSSNVs:n' => \$parameter{'caddWGSSNVs'}{'value'},
 	   'ravcsf|caddWGSSNVsFile:s' => \$parameter{'caddWGSSNVsFile'}{'value'},
 	   'ravc1kg|cadd1000Genomes:n' => \$parameter{'cadd1000Genomes'}{'value'},
@@ -1290,10 +1290,24 @@ else {
 		 'programName' => "SnpEff",
 		});
     }
+    if ($scriptParameter{'pRankVariants'} > 0) {  #Run RankVariants. Done per family
+	
+	$logger->info("[RankVariants]\n");
+	
+	&RankVariants({'parameterHashRef' => \%parameter,
+		       'scriptParameterHashRef' => \%scriptParameter,
+		       'sampleInfoHashRef' => \%sampleInfo,
+		       'fileInfoHashRef' => \%fileInfo,
+		       'familyIDRef' => \$scriptParameter{'familyID'},
+		       'alignerRef' => \$scriptParameter{'aligner'}, 
+		       'callType' => "BOTH",
+		       'programName' => "RankVariants",
+		      });
+    }
 }
 
 if ($scriptParameter{'pGATKVariantEvalExome'} > 0) {  #Run GATK VariantEval for exome variants. Done per sampleID
-
+    
     $logger->info("[GATK VariantEval Exome]\n");
     
     &CheckBuildHumanGenomePreRequisites(\%parameter, \%scriptParameter, \%fileInfo, "GATKVariantEvalExome");
@@ -1303,21 +1317,6 @@ if ($scriptParameter{'pGATKVariantEvalExome'} > 0) {  #Run GATK VariantEval for 
 	
 	&GATKVariantEvalExome(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infilesLaneNoEnding, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'}, "BOTH", $scriptParameter{'familyID'}, "GATKVariantEvalExome");
     }
-}
-
-if ($scriptParameter{'pRankVariants'} > 0) {  #Run RankVariants. Done per family
-    
-    $logger->info("[RankVariants]\n");
-    
-    &RankVariants({'parameterHashRef' => \%parameter,
-		   'scriptParameterHashRef' => \%scriptParameter,
-		   'sampleInfoHashRef' => \%sampleInfo,
-		   'fileInfoHashRef' => \%fileInfo,
-		   'familyIDRef' => \$scriptParameter{'familyID'},
-		   'alignerRef' => \$scriptParameter{'aligner'}, 
-		   'callType' => "BOTH",
-		   'programName' => "RankVariants",
-		  });
 }
 
 if ($scriptParameter{'pQCCollect'} > 0) {  #Run QCCollect. Done per family
@@ -1648,8 +1647,8 @@ sub RankVariants {
 ##RankVariants
     
 ##Function : Annotate and score variants depending on mendelian inheritance, frequency and phenotype etc.
-##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $familyID, $aligner, $callType, $programName
+##Returns  : "|$xargsFileCounter"
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $familyID, $aligner, $callType, $programName, $programInfoPath, $fileName, $FILEHANDLE, $xargsFileCounter
 ##         : $parameterHashRef       => The parameter hash {REF}
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
@@ -1658,10 +1657,15 @@ sub RankVariants {
 ##         : $aligner                => The aligner used in the analysis
 ##         : $callType               => The variant call type
 ##         : $programName            => The program name
+##         : $programInfoPath        => The program info path
+##         : $fileName               => File name
+##         : $FILEHANDLE             => Sbatch filehandle to write to
+##         : $xargsFileCounter       => The xargs file counter
 
     my ($argHashRef) = @_;
     
-    my %default = ('callType' => "BOTH",
+    my %default = ('xargsFileCounter' => 0,
+		   'callType' => "BOTH",
 	);
     
     &SetDefaultArg(\%{$argHashRef}, \%default);
@@ -1675,6 +1679,10 @@ sub RankVariants {
     my $alignerRef = ${$argHashRef}{'alignerRef'};
     my $callType = ${$argHashRef}{'callType'};
     my $programName = ${$argHashRef}{'programName'};
+    my $programInfoPath = ${$argHashRef}{'programInfoPath'};
+    my $fileName = ${$argHashRef}{'fileName'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $xargsFileCounter = ${$argHashRef}{'xargsFileCounter'};
     
     my $tempDirectoryRef = \${$scriptParameterHashRef}{'tempDirectory'};
     my $reduceIORef = \${$scriptParameterHashRef}{'reduceIO'};
@@ -1684,22 +1692,25 @@ sub RankVariants {
 
     ## Set the number of cores
     my $nrCores = ${$scriptParameterHashRef}{'maximumCores'};
-    my $genModnrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, 4);  #Detect the number of cores to use per genmod process. 
-    my $xargsFileCounter;
+    my $genModnrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, 16);  #Detect the number of cores to use per genmod process.
     my $xargsFileName;
 
-    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
+	
+	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($fileName, $programInfoPath) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-							      'FILEHANDLE' => $FILEHANDLE,
-							      'directoryID' => $$familyIDRef,
-							      'programName' => $programName,
-							      'programDirectory' => lc($$alignerRef."/gatk"),
-							      'nrofCores' => $nrCores,
-							      'processTime' => 10,
-							      'tempDirectory' => $$tempDirectoryRef
-							     });
+	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+	($fileName, $programInfoPath) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+							       'FILEHANDLE' => $FILEHANDLE,
+							       'directoryID' => $$familyIDRef,
+							       'programName' => $programName,
+							       'programDirectory' => lc($$alignerRef."/gatk"),
+							       'nrofCores' => $nrCores,
+							       'processTime' => 10,
+							       'tempDirectory' => $$tempDirectoryRef
+							      });
+    }
+
     ## Assign directories
     my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
@@ -1720,25 +1731,28 @@ sub RankVariants {
 	    $vcfParserContigsArrayRef = \@{${$fileInfoHashRef}{'SelectFileContigs'}};  #Selectfile contigs
 	}
 
-	## Copy file(s) to temporary directory
-	print $FILEHANDLE "## Copy file(s) to temporary directory\n";
-	$xargsFileCounter = &XargsMigrateContigFiles({'FILEHANDLE' => $FILEHANDLE,
-						      'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
-						      'arrayRef' => $vcfParserContigsArrayRef,
-						      'fileName' => $fileName,
-						      'programInfoPath' => $programInfoPath,
-						      'nrCores' => $nrCores,
-						      'xargsFileCounter' => $xargsFileCounter,
-						      'inFile' => $$familyIDRef.$infileEnding.$callType,
-						      'fileEnding' => $vcfParserAnalysisType.".vcf*",
-						      'inDirectory' => $inFamilyDirectory,
-						      'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
-						     });
+	if ($$reduceIORef eq "0") { #Run as individual sbatch script
+	    
+	    ## Copy file(s) to temporary directory
+	    print $FILEHANDLE "## Copy file(s) to temporary directory\n";
+	    $xargsFileCounter = &XargsMigrateContigFiles({'FILEHANDLE' => $FILEHANDLE,
+							  'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
+							  'arrayRef' => $vcfParserContigsArrayRef,
+							  'fileName' => $fileName,
+							  'programInfoPath' => $programInfoPath,
+							  'nrCores' => $nrCores,
+							  'xargsFileCounter' => $xargsFileCounter,
+							  'inFile' => $$familyIDRef.$infileEnding.$callType,
+							  'fileEnding' => $vcfParserAnalysisType.".vcf*",
+							  'inDirectory' => $inFamilyDirectory,
+							  'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+							 });
+	}
 	
 	## Calculate Gene Models
 	print $FILEHANDLE "## Calculate Gene Models", "\n";   
 
-	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || ($VcfParserOutputFileCounter > 0) ) {
+	if (${$scriptParameterHashRef}{'analysisType'} eq "exomes") {
 	    
 	    ## Clear trap for signal(s)
 	    &ClearTrap({'FILEHANDLE' => $FILEHANDLE,
@@ -1764,16 +1778,12 @@ sub RankVariants {
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "models ";  #Annotate genetic models for vcf variants
 	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{'pedigreeFile'}." ";  #Pedigree file
-	    print $XARGSFILEHANDLE "--family_type mip ";  #Family type
+	    print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{'genmodModelsFamilyType'}." ";  #Family type
 	    print $XARGSFILEHANDLE "--processes 4 ";  #Define how many processes that should be use for annotation 
 
 	    if (${$scriptParameterHashRef}{'pVariantEffectPredictor'} > 0) {  #Use VEP annotations in compound models
 		
 		print $XARGSFILEHANDLE "--vep "; 
-	    }
-	    else {
-		
-		print $XARGSFILEHANDLE ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'geneFile'}." ";  #Gene file used for annotating AR_compounds
 	    }
 	    if (${$scriptParameterHashRef}{'wholeGene'} == 1) {
 		
@@ -1828,39 +1838,22 @@ sub RankVariants {
 		
 		print $XARGSFILEHANDLE "--vep "; 
 	    }
-	    else {
-		
-		print $XARGSFILEHANDLE ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'geneFile'}." ";  #Gene file used for annotating AR_compounds
-	    }
 
 	    print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType."_models_annotate_score_compound.vcf ";  #OutFile
 	    print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType."_models_annotate_score.vcf ";  #InFile
 	    print $XARGSFILEHANDLE "\n";
 	}
+	
+	## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
+	&ConcatenateVariants({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+			      'FILEHANDLE' => $FILEHANDLE,
+			      'arrayRef' => \@{$vcfParserContigsArrayRef},
+			      'infilePrefix' => $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_", 
+			      'infilePostfix' => $vcfParserAnalysisType."_models_annotate_score_compound.vcf",
+			      'outfile' => $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_combined".$vcfParserAnalysisType.".vcf",
+			     });
 
-	if ($VcfParserOutputFileCounter == 1) {  #Check for males in analysis for selected files
-
-	    ## Combine vcf files to 1
-	    &ConcatenateVariants({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-				  'FILEHANDLE' => $FILEHANDLE,
-				  'arrayRef' => \@{$vcfParserContigsArrayRef},
-				  'infilePrefix' => $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_", 
-				  'infilePostfix' => $vcfParserAnalysisType."_models_annotate_score_compound.vcf",
-				  'outfile' => $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_combined".$vcfParserAnalysisType.".vcf",
-				 });
-	}
-	else {
-
-	    ## Combine vcf files to 1
-	    &ConcatenateVariants({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-				  'FILEHANDLE' => $FILEHANDLE,
-				  'arrayRef' => \@{$vcfParserContigsArrayRef},
-				  'infilePrefix' => $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_", 
-				  'infilePostfix' => $vcfParserAnalysisType."_models_annotate_score_compound.vcf",
-				  'outfile' => $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_combined".$vcfParserAnalysisType.".vcf",
-				 });
-	}
 	## Genmod sort
 	print $FILEHANDLE "genmod ";
 	print $FILEHANDLE "-v ";  #Increase output verbosity
@@ -1926,6 +1919,10 @@ sub RankVariants {
 		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
 		       'sbatchFileName' => $fileName
 		      });
+    }
+    if ($$reduceIORef eq "1") {
+	
+	return $xargsFileCounter;  #Track the number of created xargs scripts per module for Block algorithm
     }
 }
 
@@ -2485,7 +2482,7 @@ sub SnpEff {
     
 ##Function : SnpEff annotates variants from different sources.
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $familyID, $aligner, $callType, $programName, $fileName, $FILEHANDLE, $xargsFileCounter
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $familyID, $aligner, $callType, $programName, $programInfoPath, $fileName, $FILEHANDLE, $xargsFileCounter
 ##         : $parameterHashRef       => The parameter hash {REF}
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
@@ -2494,6 +2491,7 @@ sub SnpEff {
 ##         : $alignerRef             => The aligner used in the analysis {REF}
 ##         : $callType               => The variant call type
 ##         : $programName            => The program name
+##         : $programInfoPath        => The program info path
 ##         : $fileName               => File name
 ##         : $FILEHANDLE             => Sbatch filehandle to write to
 ##         : $xargsFileCounter       => The xargs file counter
@@ -2626,12 +2624,12 @@ sub SnpEff {
 		
 		if (defined(${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}{$annotationFile})) {
 		    
-		    ##Apply specific INFO field output key for easier downstream processing
+		    ## Apply specific INFO field output key for easier downstream processing
 		    if (defined(${$scriptParameterHashRef}{'snpSiftAnnotationOutInfoKey'}{$annotationFile})) {
 		
 			print $XARGSFILEHANDLE "-name SnpSift_".${$scriptParameterHashRef}{'snpSiftAnnotationOutInfoKey'}{$annotationFile}."_ ";
 		    }
-		    else {  ##Prepend 'str' to all annotated INFO fields
+		    else {  ## Prepend 'str' to all annotated INFO fields
 
 			print $XARGSFILEHANDLE "-name SnpSift_ ";
 		    }
@@ -2687,61 +2685,32 @@ sub SnpEff {
 	
 	close($XARGSFILEHANDLE);
 
-	if (${$scriptParameterHashRef}{'analysisType'} eq "exomes") {
+	if ($$reduceIORef eq "0") {  #Run as individual sbatch script
 
-	    ## Clear trap for signal(s)
-	    &ClearTrap({'FILEHANDLE' => $FILEHANDLE,
-		       });
-	}
-	if ($VcfParserOutputFileCounter == 1) {  #Check for males in analysis for selected files
-
-	    &ConcatenateVariants({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-				  'FILEHANDLE' => $FILEHANDLE,
-				  'arrayRef' => \@{$vcfParserContigsArrayRef},
-				  'infilePrefix' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_", 
-				  'infilePostfix' => $vcfParserAnalysisType.".vcf",
-				  'outfile' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf",
-				 });
+	    ## Copies file from temporary directory. Per contig
+	    print $FILEHANDLE "## Copy file from temporary directory\n";
+	    ($xargsFileCounter, $xargsFileName) = &XargsMigrateContigFiles({'FILEHANDLE' => $FILEHANDLE,
+									    'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
+									    'arrayRef' => $vcfParserContigsArrayRef,
+									    'fileName' =>$fileName,
+									    'programInfoPath' => $programInfoPath,
+									    'nrCores' => ${$scriptParameterHashRef}{'maximumCores'},
+									    'xargsFileCounter' => $xargsFileCounter,
+									    'outFile' => $$familyIDRef.$outfileEnding.$callType,
+									    'fileEnding' => $vcfParserAnalysisType.".vcf*",
+									    'outDirectory' => $outFamilyDirectory,
+									    'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+									   });
 	}
 	else {
 
-	    &ConcatenateVariants({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+	    ## QC Data File(s)
+	    &MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".${$fileInfoHashRef}{'contigsSizeOrdered'}[0].$vcfParserAnalysisType.".vcf",
+				  'filePath' => $outFamilyDirectory."/",
 				  'FILEHANDLE' => $FILEHANDLE,
-				  'arrayRef' => \@{$vcfParserContigsArrayRef},
-				  'infilePrefix' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_", 
-				  'infilePostfix' => $vcfParserAnalysisType.".vcf",
-				  'outfile' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf",
 				 });
+	    print $FILEHANDLE "wait", "\n\n";   
 	}
-	if (${$scriptParameterHashRef}{'analysisType'} eq "exomes") {
-
-	    ## Enable trap for signal(s) and function
-	    &EnableTrap({'FILEHANDLE' => $FILEHANDLE,
-			});
-	}
-
-	## Copies file from temporary directory. Concatenated file
-	print $FILEHANDLE "## Copy file from temporary directory\n";
-	&MigrateFileFromTemp({'tempPath' => ${$scriptParameterHashRef}{'tempDirectory'}."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf*",
-			      'filePath' => $outFamilyDirectory."/",
-			      'FILEHANDLE' => $FILEHANDLE,
-			     });
-	print $FILEHANDLE "wait", "\n\n";
-
-	## Copies file from temporary directory. Per contig
-	print $FILEHANDLE "## Copy file from temporary directory\n";
-	($xargsFileCounter, $xargsFileName) = &XargsMigrateContigFiles({'FILEHANDLE' => $FILEHANDLE,
-									'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
-									'arrayRef' => $vcfParserContigsArrayRef,
-									'fileName' =>$fileName,
-									'programInfoPath' => $programInfoPath,
-									'nrCores' => ${$scriptParameterHashRef}{'maximumCores'},
-									'xargsFileCounter' => $xargsFileCounter,
-									'outFile' => $$familyIDRef.$outfileEnding.$callType,
-									'fileEnding' => $vcfParserAnalysisType.".vcf*",
-									'outDirectory' => $outFamilyDirectory,
-									'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
-								       });
 
 	## Adds the most complete vcf file to sampleInfo
 	&AddMostCompleteVCF({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
@@ -2763,18 +2732,21 @@ sub SnpEff {
 		       'outDataType' => "static"
 		      });
     }
-        
-    close($FILEHANDLE);
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
-
-	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-		       'jobIDHashRef' => \%jobID,
-		       'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
-		       'dependencies' => 1, 
-		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
-		       'sbatchFileName' => $fileName
-		      });
+    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+	
+	close($FILEHANDLE);
+	
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+	    
+	    &FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+			   'jobIDHashRef' => \%jobID,
+			   'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+			   'dependencies' => 1, 
+			   'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
+			   'sbatchFileName' => $fileName
+			  });
+	}
     }
     if ($$reduceIORef eq "1") {
 	
@@ -3266,7 +3238,7 @@ sub VCFParser {
 }
 
 sub VariantEffectPredictor {
- 
+    
 ##VariantEffectPredictor
     
 ##Function : VariantEffectPredictor performs annotation of variants.
@@ -4440,6 +4412,7 @@ sub GATKConcatenateGenoTypeGVCFs {
     }
      print $FILEHANDLE "wait", "\n\n";
 
+    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
     &ConcatenateVariants({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 			  'FILEHANDLE' => $FILEHANDLE,
 			  'arrayRef' => \@{${$fileInfoHashRef}{'contigs'}},
@@ -8831,11 +8804,11 @@ sub VariantAnnotationBlock {
     my $nrCores = ${$scriptParameterHashRef}{'maximumCores'};
     my $xargsFileCounter = 0;
     my $xargsFileName;
-
+    
     if (${$scriptParameterHashRef}{'pVT'} > 0) {
-
+	
 	$logger->info("\t[VT]\n");  #Run VT. Done per family
-
+	
 	&CheckBuildHumanGenomePreRequisites(\%parameter, \%scriptParameter, \%fileInfo, "VT");
     }
     if (${$scriptParameterHashRef}{'pVariantEffectPredictor'} > 0) {  #Run VariantEffectPredictor. Done per family
@@ -8867,7 +8840,11 @@ sub VariantAnnotationBlock {
 	
 	&CheckBuildDownLoadPreRequisites(\%parameter, \%scriptParameter, \%supportedCosmidReference, "SnpEff");
     }
-
+    if (${$scriptParameterHashRef}{'pRankVariants'} > 0) { #Run RankVariants. Done per family
+	
+	$logger->info("[RankVariants]\n");
+    }
+    
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName, $programInfoPath) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 							      'FILEHANDLE' => $FILEHANDLE,
@@ -8880,7 +8857,7 @@ sub VariantAnnotationBlock {
 							     });
     
     if (${$scriptParameterHashRef}{'pVT'} > 0) {  #Run VT. Done per family
-		
+	
 	($xargsFileCounter, $xargsFileName) = &VT({'parameterHashRef' => \%{$parameterHashRef},
 						   'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 						   'sampleInfoHashRef' => \%{$sampleInfoHashRef},
@@ -8947,7 +8924,7 @@ sub VariantAnnotationBlock {
 						       });
     }
     if (${$scriptParameterHashRef}{'pSnpEff'} > 0) {  #Run snpEff. Done per family
-
+	
 	($xargsFileCounter, $xargsFileName) = &SnpEff({'parameterHashRef' => \%{$parameterHashRef},
 						       'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 						       'sampleInfoHashRef' => \%{$sampleInfoHashRef},
@@ -8961,6 +8938,22 @@ sub VariantAnnotationBlock {
 						       'FILEHANDLE' => $FILEHANDLE,
 						       'xargsFileCounter' => $xargsFileCounter,
 						      });
+    }
+    if (${$scriptParameterHashRef}{'pRankVariants'} > 0) {  #Run RankVariants. Done per family
+	
+	($xargsFileCounter, $xargsFileName) = &RankVariants({'parameterHashRef' => \%{$parameterHashRef},
+							     'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+							     'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+							     'fileInfoHashRef' => \%{$fileInfoHashRef},
+							     'familyIDRef' => \$familyID,
+							     'alignerRef' => \$aligner, 
+							     'callType' => $callType,
+							     'programName' => "RankVariants",
+							     'fileName' => $fileName,
+							     'programInfoPath' => $programInfoPath,
+							     'FILEHANDLE' => $FILEHANDLE,
+							     'xargsFileCounter' => $xargsFileCounter,
+							    });
     }
 }
 
@@ -11570,8 +11563,6 @@ sub AddToScriptParameter {
 			}
 			elsif ( (${$argHashRef}{'parameterName'} eq "vcfParserSelectFileMatchingColumn") && ( ${$scriptParameterHashRef}{'vcfParserSelectFile'} eq "noUserInfo") ) {  #Do nothing since no SelectFile was given
 			}
-			elsif ( (${$argHashRef}{'parameterName'} eq "geneFile") && (${$scriptParameterHashRef}{'pVariantEffectPredictor'} > 0) ) {  #Do nothing since VEP annotations can be used
-			}
 			elsif ( (${$argHashRef}{'parameterName'} eq "caddWGSSNVsFile") && ( ${$scriptParameterHashRef}{'caddWGSSNVs'} == 0) ) {  #Do nothing since no CADD annotation should be performed
 			}
 			elsif ( (${$argHashRef}{'parameterName'} eq "cadd1000GenomesFile") && ( ${$scriptParameterHashRef}{'cadd1000Genomes'} == 0) ) {  #Do nothing since no CADD annotation should be performed
@@ -11768,8 +11759,6 @@ sub CheckParameterFiles {
 			
 			${$scriptParameterHashRef}{'VcfParserOutputFileCount'} = 2;  #To track if VCFParser was used with a vcfParserSelectFile (=2) or not (=1)
 		    }
-		}
-		elsif ( (${$argHashRef}{'parameterName'} eq "geneFile") && (${$scriptParameterHashRef}{'pVariantEffectPredictor'} > 0) ) {  #Do nothing since VEP annotations can be used			    
 		}
 		elsif ( (${$argHashRef}{'parameterName'} eq "caddWGSSNVsFile") && ( ${$scriptParameterHashRef}{'caddWGSSNVs'} == 0) ) {  #Do nothing since no CADD annotation should be performed
 		}
