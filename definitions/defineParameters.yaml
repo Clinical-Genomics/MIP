@@ -261,7 +261,7 @@ bwaMemCram:
   associatedProgram:
    - pBwaMem
   dataType: SCALAR
-  default: 0
+  default: 1
   type: program
 pBwaAln:
   associatedProgram:
@@ -611,7 +611,7 @@ GATKVariantReCalibrationBCFFile:
   associatedProgram:
    - pGATKVariantRecalibration
   dataType: SCALAR
-  default: 0
+  default: 1
   type: program
 ## VariantAnnotationBlock
 pVariantAnnotationBlock:

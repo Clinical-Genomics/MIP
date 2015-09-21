@@ -87,7 +87,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                ##BWA
                -pMem/--pBwaMem Align reads using BWA Mem (defaults to "0" (=no))
                  -memrdb/--bwaMemRapidDb Selection of relevant regions post alignment (defaults to "")
-                 -memcrm/--bwaMemCram Use CRAM-format for output (defaults to "0" (=no))
+                 -memcrm/--bwaMemCram Use CRAM-format for output (defaults to "1" (=yes))
                -pAln/--pBwaAln Index reads using BWA Aln (defaults to "0" (=no))
                  -alnq/--bwaAlnQualityTrimming BWA Aln quality threshold for read trimming (defaults to "20")
                -pSap/--pBwaSampe Align reads using BWA Sampe (defaults to "0" (=no))
@@ -141,7 +141,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -gvrtsf/--GATKVariantReCalibrationTSFilterLevel The truth sensitivity level at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
                  -gvrmga/--GATKVariantReCalibrationMaxGaussians Use hard filtering for indels (defaults to "0" (=no))
                  -gvrevf/--GATKVariantReCalibrationexcludeNonVariantsFile Produce a vcf containing non-variant loci alongside the vcf only containing non-variant loci after GATK VariantRecalibrator (defaults to "0" (=no))
-                 -gvrbcf/--GATKVariantReCalibrationBCFFile Produce a bcf from the GATK VariantRecalibrator vcf (defaults to "0" (=no))
+                 -gvrbcf/--GATKVariantReCalibrationBCFFile Produce a bcf from the GATK VariantRecalibrator vcf (defaults to "1" (=yes))
                -pGpT/--pGATKPhaseByTransmission Computes the most likely genotype and phases calls were unamibigous using GATK PhaseByTransmission (defaults to "0" (=yes))
                -pGrP/--pGATKReadBackedPhasing Performs physical phasing of SNP calls, based on sequencing reads using GATK ReadBackedPhasing (defaults to "0" (=yes))
                  -grpqth/--GATKReadBackedPhasingPhaseQualityThreshold The minimum phasing quality score required to output phasing (defaults to "20")
@@ -551,7 +551,6 @@ foreach my $orderParameterElement (@orderParameters) {
     }
 } 
 
-
 ###Checks
 
 ## Check Existance of files and directories
@@ -601,6 +600,7 @@ for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs
 
 ## Compares the number of elements in two arrays and exits if the elements are not equal
 &CompareArrayElements(\@{$scriptParameter{'sampleIDs'}}, \@{$scriptParameter{'inFilesDirs'}}, "sampleIDs", "inFileDirs");
+
 
 ## Check that VEP directory and VEP cache match
 &CheckVEPDirectories(\$scriptParameter{'vepDirectoryPath'}, \$scriptParameter{'vepDirectoryCache'});
@@ -702,8 +702,14 @@ if ($scriptParameter{'writeConfigFile'} ne 0) {  #Write config file for family
 	     'fileInfoHashRef' => \%fileInfo,
 	    });
 
+## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
 @{$fileInfo{"SelectFileContigs"}} = &SizeSortSelectFileContigs(\%fileInfo, "SelectFileContigs", "contigsSizeOrdered");
 
+## Detect if the current analysis involves any males
+my $maleFound = &DetectSampleIdMale(\%scriptParameter, \%sampleInfo);
+
+## Removes contigY|chrY from SelectFileContigs if no males or 'other' found in analysis
+&UpdateSelectFileContigs(\@{${fileInfo}{'SelectFileContigs'}}, \$maleFound);
 
 ## Write CMD to MIP log file
 &WriteCMDMipLog(\%parameter, \%scriptParameter, \@orderParameters, \$script, \$scriptParameter{'logFile'}, \$mipVersion);
@@ -1754,7 +1760,9 @@ sub RankVariants {
 	     
 	    my $contigRef = \${$vcfParserContigsArrayRef}[$contigsCounter];
 
-	    print $XARGSFILEHANDLE "annotate ";
+	    ## Genmod Models
+	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
+	    print $XARGSFILEHANDLE "models ";  #Annotate genetic models for vcf variants
 	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{'pedigreeFile'}." ";  #Pedigree file
 	    print $XARGSFILEHANDLE "--family_type mip ";  #Family type
 	    print $XARGSFILEHANDLE "--processes 4 ";  #Define how many processes that should be use for annotation 
@@ -1767,6 +1775,21 @@ sub RankVariants {
 		
 		print $XARGSFILEHANDLE ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'geneFile'}." ";  #Gene file used for annotating AR_compounds
 	    }
+	    if (${$scriptParameterHashRef}{'wholeGene'} == 1) {
+		
+		print $XARGSFILEHANDLE "--whole_gene "; 
+	    }
+	
+	    print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType."_models.vcf ";  #OutFile
+	    print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf ";  #InFile
+	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    print $XARGSFILEHANDLE "; ";  #End command
+
+	    ## Genmod Annotate
+	    print $XARGSFILEHANDLE "genmod ";
+	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
+	    print $XARGSFILEHANDLE "annotate ";  #Annotate vcf variants
+
 	    if (${$scriptParameterHashRef}{'caddWGSSNVs'} == 1) {
 		
 		print $XARGSFILEHANDLE "--cadd_file ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'caddWGSSNVsFile'}." ";  #Whole genome sequencing CADD score file
@@ -1775,23 +1798,32 @@ sub RankVariants {
 		
 		print $XARGSFILEHANDLE "--cadd_1000g ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'cadd1000GenomesFile'}." ";  #1000G CADD score file
 	    }
-	    if (${$scriptParameterHashRef}{'wholeGene'} == 1) {
-		
-		print $XARGSFILEHANDLE "--whole_gene "; 
-	    }
-	    print $XARGSFILEHANDLE "-o /dev/stdout ";  #OutStream
-	    print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf ";  #InFile
-	    
-	    ## Ranking
-	    print $XARGSFILEHANDLE "| ";  #Pipe
-	    print $XARGSFILEHANDLE "genmod score ";
-	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{'pedigreeFile'}." ";  #Pedigree file
-	    print $XARGSFILEHANDLE "--family_type mip ";  #Family type
+
+	    print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType."_models_annotate.vcf ";  #OutFile
+	    print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType."_models.vcf ";  #InFile
+	    print $XARGSFILEHANDLE "; ";  #End command
+
+	    ## Genmod Score
+	    print $XARGSFILEHANDLE "genmod ";
+	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
+	    print $XARGSFILEHANDLE "score ";  #Score variants in a vcf file using Weighted sums
 	    
 	    if (${$scriptParameterHashRef}{'rankModelFile'} ne "noUserInfo") {
 		
-		print $XARGSFILEHANDLE "--plugin_file ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'rankModelFile'}." ";  #Rank model config.ini file 
+		print $XARGSFILEHANDLE "--score_config ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'rankModelFile'}." ";  #Rank model config.ini file 
 	    }
+	    
+	    print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType."_models_annotate_score.vcf ";  #OutFile
+	    print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType."_models_annotate.vcf ";  #InFile
+	    print $XARGSFILEHANDLE "; ";  #End command
+
+	    ##Genmod Compound
+	    print $XARGSFILEHANDLE "genmod ";
+	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
+	    print $XARGSFILEHANDLE "compound ";  #Adjust score for compound variants in a vcf file
+
 	    if (${$scriptParameterHashRef}{'pVariantEffectPredictor'} > 0) {  #Use VEP annotations in compound models
 		
 		print $XARGSFILEHANDLE "--vep "; 
@@ -1800,20 +1832,41 @@ sub RankVariants {
 		
 		print $XARGSFILEHANDLE ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'geneFile'}." ";  #Gene file used for annotating AR_compounds
 	    }
-	    print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf ";  #OutFile
-	    print $XARGSFILEHANDLE "- ";  #InStream
-	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+
+	    print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType."_models_annotate_score_compound.vcf ";  #OutFile
+	    print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType."_models_annotate_score.vcf ";  #InFile
 	    print $XARGSFILEHANDLE "\n";
-	    
 	}
 
-	## Combine vcf files to 1
-	&ConcatenateVariants(\%{$scriptParameterHashRef}, $FILEHANDLE, \@{$vcfParserContigsArrayRef}, $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_", $vcfParserAnalysisType.".vcf", $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_combined".$vcfParserAnalysisType.".vcf");
+	if ($VcfParserOutputFileCounter == 1) {  #Check for males in analysis for selected files
 
-	##Sort on Rank score
-	print $FILEHANDLE "genmod sort ";
+	    ## Combine vcf files to 1
+	    &ConcatenateVariants({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+				  'FILEHANDLE' => $FILEHANDLE,
+				  'arrayRef' => \@{$vcfParserContigsArrayRef},
+				  'infilePrefix' => $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_", 
+				  'infilePostfix' => $vcfParserAnalysisType."_models_annotate_score_compound.vcf",
+				  'outfile' => $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_combined".$vcfParserAnalysisType.".vcf",
+				 });
+	}
+	else {
+
+	    ## Combine vcf files to 1
+	    &ConcatenateVariants({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+				  'FILEHANDLE' => $FILEHANDLE,
+				  'arrayRef' => \@{$vcfParserContigsArrayRef},
+				  'infilePrefix' => $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_", 
+				  'infilePostfix' => $vcfParserAnalysisType."_models_annotate_score_compound.vcf",
+				  'outfile' => $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_combined".$vcfParserAnalysisType.".vcf",
+				 });
+	}
+	## Genmod sort
+	print $FILEHANDLE "genmod ";
+	print $FILEHANDLE "-v ";  #Increase output verbosity
+	print $FILEHANDLE "sort ";  #Sort a VCF file based on rank score
 	print $FILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf ";  #Outfile
-	print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_combined".$vcfParserAnalysisType.".vcf ";  #inFile
+	print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_combined".$vcfParserAnalysisType.".vcf ";  #inFile
 	print $FILEHANDLE "\n\n";
 
 	if (${$scriptParameterHashRef}{'analysisType'} eq "exomes") {
@@ -2640,8 +2693,26 @@ sub SnpEff {
 	    &ClearTrap({'FILEHANDLE' => $FILEHANDLE,
 		       });
 	}
-	&ConcatenateVariants(\%{$scriptParameterHashRef}, $FILEHANDLE, \@{$vcfParserContigsArrayRef}, $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_", $vcfParserAnalysisType.".vcf", $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf");
+	if ($VcfParserOutputFileCounter == 1) {  #Check for males in analysis for selected files
 
+	    &ConcatenateVariants({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+				  'FILEHANDLE' => $FILEHANDLE,
+				  'arrayRef' => \@{$vcfParserContigsArrayRef},
+				  'infilePrefix' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_", 
+				  'infilePostfix' => $vcfParserAnalysisType.".vcf",
+				  'outfile' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf",
+				 });
+	}
+	else {
+
+	    &ConcatenateVariants({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+				  'FILEHANDLE' => $FILEHANDLE,
+				  'arrayRef' => \@{$vcfParserContigsArrayRef},
+				  'infilePrefix' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_", 
+				  'infilePostfix' => $vcfParserAnalysisType.".vcf",
+				  'outfile' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf",
+				 });
+	}
 	if (${$scriptParameterHashRef}{'analysisType'} eq "exomes") {
 
 	    ## Enable trap for signal(s) and function
@@ -3928,6 +3999,9 @@ sub VT {
 							 'xargsFileCounter' => $xargsFileCounter,
 							 'firstCommand' => "tabix",
 							});
+
+    my $removeStarRegExp = q?perl -nae \'unless\($F\[4\] eq \"\*\") \{print $_\}\' ?;  #VEP does not annotate '*' since the alt allele does not exist, this is captured in the upsream indel and SNV record associated with '*'
+
     ## Split vcf into contigs
     for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{'contigsSizeOrdered'}});$contigsCounter++) {
 	
@@ -3949,9 +4023,17 @@ sub VT {
 		 'xargsFileName' => $xargsFileName,
 		 'contigRef' => $contigRef,
 		});
+
+	print $XARGSFILEHANDLE $removeStarRegExp.$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf ";
+	print $XARGSFILEHANDLE "> ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf_noStar ";
+	print $XARGSFILEHANDLE "; ";
+	print $XARGSFILEHANDLE "mv ";
+	print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf_noStar ";
+	print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf ";
 	print $XARGSFILEHANDLE "\n";
     }
 
+    ## Remove decomposed '*' entries
     if ($$reduceIORef eq "0") { #Run as individual sbatch script
 
 	## Copies file from temporary directory.
@@ -4231,13 +4313,13 @@ sub GATKVariantReCalibration {
 				  'filePath' => $outFamilyDirectory."/",
 				  'FILEHANDLE' => $FILEHANDLE,
 				 });
-	    print $FILEHANDLE "\n\nwait\n\n";
 	}
+	print $FILEHANDLE "\n\nwait\n\n";
 
 	## Produce a bcf compressed vcf
 	if (${$scriptParameterHashRef}{'GATKVariantReCalibrationBCFFile'} eq 1) {
 
-	    print $FILEHANDLE "\n\n#Compress vcf to bcf","\n";
+	    print $FILEHANDLE "#Compress vcf to bcf","\n";
 	    print $FILEHANDLE "bcftools ";
 	    print $FILEHANDLE "view ";  #VCF/BCF conversion
 	    print $FILEHANDLE "-O b ";  #Output type - b: compressed BCF
@@ -4251,8 +4333,8 @@ sub GATKVariantReCalibration {
 				  'filePath' => $outFamilyDirectory."/",
 				  'FILEHANDLE' => $FILEHANDLE,
 				 });
+	    print $FILEHANDLE "wait\n\n";
 	}
-	print $FILEHANDLE "wait\n\n";
     }
     
     ## Copies file from temporary directory.
@@ -4358,8 +4440,14 @@ sub GATKConcatenateGenoTypeGVCFs {
     }
      print $FILEHANDLE "wait", "\n\n";
 
-    &ConcatenateVariants(\%{$scriptParameterHashRef}, $FILEHANDLE, \@{${$fileInfoHashRef}{'contigs'}}, ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$infileEnding.$callType."_", ".vcf", ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf");
-	
+    &ConcatenateVariants({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+			  'FILEHANDLE' => $FILEHANDLE,
+			  'arrayRef' => \@{${$fileInfoHashRef}{'contigs'}},
+			  'infilePrefix' => ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$infileEnding.$callType."_", 
+			  'infilePostfix' => ".vcf",
+			  'outfile' => ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf",
+			 });
+    
     ## Copies file from temporary directory.
     print $FILEHANDLE "## Copy file from temporary directory\n";
     &MigrateFileFromTemp({'tempPath' => ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf*",
@@ -11652,7 +11740,7 @@ sub CheckParameterFiles {
 			    my %tempHash = &LoadYAML(\%scriptParameter, ${$scriptParameterHashRef}{'sampleInfoFile'});  #Load parameters from previous run from sampleInfoFile
 
 			    ## Update sampleInfo with information from pedigree
-			    &UpdateSampleInfoHash(\%sampleInfo, \%tempHash, \${$scriptParameterHashRef}{'familyID'});				
+			    &UpdateSampleInfoHash(\%sampleInfo, \%tempHash, \${$scriptParameterHashRef}{'familyID'});							    
 			}
 		    } 
 		}
@@ -13548,8 +13636,10 @@ sub SizeSortSelectFileContigs {
     
 ##Function : Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
 ##Returns  : "@sortedArray"
-##Arguments: $contigsArrayRef, $selectFilePath
-##         : $contigsArrayRef => Contig array {REF}
+##Arguments: $fileInfoHashRef, $hashKeyToSort, $hashKeySortReference
+##         : $fileInfoHashRef      => The fileInfo hash {REF}
+##         : $hashKeyToSort        => The keys to sort
+##         : $hashKeySortReference => The hash keys sort reference
 
     my $fileInfoHashRef = $_[0];
     my $hashKeyToSort = $_[1];
@@ -14100,12 +14190,30 @@ sub ConcatenateVariants {
 ##         : $infilePostfix          => Will be combined with the each array element
 ##         : $outfile                => The combined outfile
 
-    my $scriptParameterHashRef = $_[0];
-    my $FILEHANDLE = $_[1];
-    my $arrayRef = $_[2];
-    my $infilePrefix = $_[3];
-    my $infilePostfix = $_[4];
-    my $outfile = $_[5];
+    my ($argHashRef) = @_;
+    
+    my %default = ('familyID' => ${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+		   'callType' => "BOTH",
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+    
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $arrayRef = ${$argHashRef}{'arrayRef'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $infilePrefix = ${$argHashRef}{'infilePrefix'};
+    my $infilePostfix = ${$argHashRef}{'infilePostfix'};
+    my $outfile = ${$argHashRef}{'outfile'};
+    
+    ## Mandatory arguments
+    my %mandatoryArgument = ('scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'FILEHANDLE' => $FILEHANDLE,
+			     'infilePrefix' => $infilePrefix,
+			     'infilePostfix' => $infilePostfix,
+	);
+    
+    &CheckMandatoryArguments(\%mandatoryArgument, "ConcatenateVariants");
     
     unless (defined($infilePostfix)) {
 	
@@ -14115,6 +14223,7 @@ sub ConcatenateVariants {
 	
 	$outfile = $infilePrefix.".vcf";  
     }
+    
     print $FILEHANDLE "## GATK CatVariants","\n";
 
     ## Writes java core commands to filehandle.
@@ -14136,6 +14245,31 @@ sub ConcatenateVariants {
     print $FILEHANDLE "-out ".$outfile, "\n\n";  #OutFile
 }
 
+
+sub DetectSampleIdMale {
+
+##DetectSampleIdMale
+    
+##Function : Detect if the current analysis involves any males
+##Returns  : "$maleFound"
+##Arguments: $scriptParameterHashRef, $sampleInfoHashRef
+##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
+
+    my $scriptParameterHashRef = $_[0];
+    my $sampleInfoHashRef = $_[1];
+
+    my $maleFound = 0;
+
+    foreach my $sampleID (@{${$scriptParameterHashRef}{'sampleIDs'}}) {
+
+	unless (${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'Sex'} == '2') {  #Female
+
+	    $maleFound = 1;  #Male and 'other'
+	}
+    }
+    return $maleFound;
+}
 
 sub ChanjoConvert {
     
@@ -15647,9 +15781,11 @@ sub UpdateSampleInfoHash {
 	
 	foreach my $key (keys %{ ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}}) {
 	    
-	    if (exists(${$tempHashRef}{$$familyIDRef}{$sampleID}{$key})) {  #Previous run information
+	    if (exists(${$tempHashRef}{$$familyIDRef}{$sampleID}{$key})) {  #Previous run information, which should be updated using pedigree from current analysis
 	
 		${$tempHashRef}{$$familyIDRef}{$sampleID}{$key} = ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{$key};
+		delete(${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{$key});  #Required to update info
+		
 	    }
 	    else {
 
@@ -16865,6 +17001,31 @@ sub DetectMostCompleteFile {
     if ($$fileEndingRef eq ".vcf") {
 	
 	return $mostcompleteVCFRef;
+    }
+}
+
+
+sub UpdateSelectFileContigs {
+
+##UpdateSelectFileContigs
+    
+##Function : Removes contigY|chrY from SelectFileContigs if no males or 'other' found in analysis
+##Returns  : ""
+##Arguments: $selectFileContigsArrayRef, $hashKeyToSort, $hashKeySortReference
+##         : $selectFileContigsArrayRef => The select file contigs {REF}
+##         : $maleFoundRef              => If male or 'other' is included in current analysis {REF}
+
+    my $selectFileContigsArrayRef = $_[0];
+    my $maleFoundRef = $_[1];
+
+    if ($$maleFoundRef != 1) {
+	
+	my $index = 0;
+	until( (${$selectFileContigsArrayRef}[$index] eq "Y") || (${$selectFileContigsArrayRef}[$index] eq "chrY") ) {
+
+	    $index++;
+	}
+	splice(@{$selectFileContigsArrayRef}, $index, 1);  #Remove $element from array
     }
 }
 
