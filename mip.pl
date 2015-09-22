@@ -1789,11 +1789,11 @@ sub RankVariants {
 		
 		print $XARGSFILEHANDLE "--whole_gene "; 
 	    }
-	
-	    print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType."_models.vcf ";  #OutFile
+
+	    print $XARGSFILEHANDLE "-o /dev/stdout ";  #OutFile
 	    print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf ";  #InFile
-	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-	    print $XARGSFILEHANDLE "; ";  #End command
+	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef."_models.stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    print $XARGSFILEHANDLE "| ";  #Pipe
 
 	    ## Genmod Annotate
 	    print $XARGSFILEHANDLE "genmod ";
@@ -1806,13 +1806,13 @@ sub RankVariants {
 	    }
 	    if (${$scriptParameterHashRef}{'cadd1000Genomes'} == 1) {
 		
-		print $XARGSFILEHANDLE "--cadd_1000g ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'cadd1000GenomesFile'}." ";  #1000G CADD score file
+		print $XARGSFILEHANDLE "--cadd_file ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'cadd1000GenomesFile'}." ";  #1000G CADD score file
 	    }
 
-	    print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType."_models_annotate.vcf ";  #OutFile
-	    print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-	    print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType."_models.vcf ";  #InFile
-	    print $XARGSFILEHANDLE "; ";  #End command
+	    print $XARGSFILEHANDLE "-o /dev/stdout ";  #OutFile
+	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef."_models_annotate.stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    print $XARGSFILEHANDLE "- ";  #InStream
+	    print $XARGSFILEHANDLE "| ";  #Pipe
 
 	    ## Genmod Score
 	    print $XARGSFILEHANDLE "genmod ";
@@ -1824,10 +1824,10 @@ sub RankVariants {
 		print $XARGSFILEHANDLE "--score_config ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'rankModelFile'}." ";  #Rank model config.ini file 
 	    }
 	    
-	    print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType."_models_annotate_score.vcf ";  #OutFile
-	    print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-	    print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType."_models_annotate.vcf ";  #InFile
-	    print $XARGSFILEHANDLE "; ";  #End command
+	    print $XARGSFILEHANDLE "-o /dev/stdout ";  #OutFile
+	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef."_models_annotate_score.stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    print $XARGSFILEHANDLE "- ";  #InStream
+	    print $XARGSFILEHANDLE "| ";  #Pipe
 
 	    ##Genmod Compound
 	    print $XARGSFILEHANDLE "genmod ";
@@ -1840,8 +1840,8 @@ sub RankVariants {
 	    }
 
 	    print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType."_models_annotate_score_compound.vcf ";  #OutFile
-	    print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-	    print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType."_models_annotate_score.vcf ";  #InFile
+	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef."_models_annotate_score_compound.stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    print $XARGSFILEHANDLE "- ";  #InStream
 	    print $XARGSFILEHANDLE "\n";
 	}
 	
