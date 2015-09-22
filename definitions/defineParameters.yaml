@@ -1,10 +1,24 @@
 ---
+## Version: 1.0.0
+##Enable/activate MIP
+MIP:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  default: 1
+  type: MIP
 clusterConstantPath:
   associatedProgram:
    - MIP
   dataType: SCALAR
   type: path
 ### Project specific
+analysisConstantPath:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  default: analysis
+  type: path
 familyID:
   associatedProgram:
    - MIP
@@ -247,7 +261,7 @@ bwaMemCram:
   associatedProgram:
    - pBwaMem
   dataType: SCALAR
-  default: 0
+  default: 1
   type: program
 pBwaAln:
   associatedProgram:
@@ -300,6 +314,16 @@ pPicardToolsMergeRapidReads:
   dataType: SCALAR
   default: 0
   fileEnding: nofileEnding
+  type: program
+## BAMCalibrationAndGTBlock
+pBAMCalibrationAndGTBlock:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 0
+  fileEnding: nofileEnding
+  reduceIO: 1
   type: program
 pPicardToolsMergeSamFiles:
   associatedProgram:
@@ -358,6 +382,12 @@ GATKBaseReCalibrationSNPKnownSet:
   default: dbsnp_138.b37.vcf
   existsCheck: file
   type: path
+GATKBaseReCalibrationOverClippedRead:
+  associatedProgram:
+   - pGATKBaseRecalibration
+  dataType: SCALAR
+  default: 1
+  type: program
 ## GATK Genotype
 pGATKHaploTypeCaller:
   associatedProgram:
@@ -375,6 +405,12 @@ GATKHaploTypeCallerSNPKnownSet:
   default: dbsnp_138.b37.vcf
   existsCheck: file
   type: path
+GATKHaploTypeCallerSoftClippedBases:
+  associatedProgram:
+   - pGATKHaploTypeCaller
+  dataType: SCALAR
+  default: 1
+  type: program
 ## Coverage
 pPicardToolsMarkduplicatesForQCMetrics:
   associatedProgram:
@@ -497,6 +533,12 @@ GATKGenoTypeGVCFsRefGVCF:
   dataType: SCALAR
   existsCheck: file
   type: path
+GATKGenoTypeGVCFsAllSites:
+  associatedProgram:
+   - pGATKGenoTypeGVCFs
+  dataType: SCALAR
+  default: 0
+  type: program
 pGATKVariantRecalibration:
   associatedProgram:
    - MIP
@@ -504,6 +546,8 @@ pGATKVariantRecalibration:
   dataType: SCALAR
   default: 1
   fileEnding: vrecal_
+  programNamePath:
+   - bcftools
   type: program
 GATKVariantReCalibrationTrainingSetHapMap:
   associatedProgram:
@@ -551,11 +595,11 @@ GATKVariantReCalibrationTSFilterLevel:
   dataType: SCALAR
   default: 99.9
   type: program
-GATKVariantReCalibrationSpliMultiRecord:
+GATKVariantReCalibrationMaxGaussians:
   associatedProgram:
    - pGATKVariantRecalibration
   dataType: SCALAR
-  default: 1
+  default: 0
   type: program
 GATKVariantReCalibrationexcludeNonVariantsFile:
   associatedProgram:
@@ -563,11 +607,47 @@ GATKVariantReCalibrationexcludeNonVariantsFile:
   dataType: SCALAR
   default: 0
   type: program
-GATKVariantReCalibrationMaxGaussians:
+GATKVariantReCalibrationBCFFile:
   associatedProgram:
    - pGATKVariantRecalibration
   dataType: SCALAR
+  default: 1
+  type: program
+## VariantAnnotationBlock
+pVariantAnnotationBlock:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
   default: 0
+  fileEnding: nofileEnding
+  reduceIO: 1
+  type: program
+##VT
+pVT:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileEnding: vt_
+  programNamePath:
+   - vt
+   - sed
+   - bgzip
+   - tabix
+  type: program
+VTDecompose:
+  associatedProgram:
+   - pVT
+  dataType: SCALAR
+  default: 1
+  type: program
+VTNormalize:
+  associatedProgram:
+   - pVT
+  dataType: SCALAR
+  default: 1
   type: program
 pGATKPhaseByTransmission:
   associatedProgram:
@@ -756,7 +836,7 @@ snpSiftDbNSFPFile:
   associatedProgram:
    - pSnpEff
   dataType: SCALAR
-  default: dbNSFP2.6.txt.gz
+  default: dbNSFP2.9.txt.gz
   existsCheck: file
   type: path
 ## java large pages - effects all modules using java
@@ -815,13 +895,12 @@ pRankVariants:
   default: 1
   fileEnding: ranked_
   type: program
-geneFile:
+genmodModelsFamilyType:
   associatedProgram:
    - pRankVariants
-  buildFile: noAutoBuild
   dataType: SCALAR
-  existsCheck: file
-  type: path
+  default: mip
+  type: program
 caddWGSSNVs:
   associatedProgram:
    - pRankVariants
@@ -833,7 +912,7 @@ caddWGSSNVsFile:
    - pRankVariants
   buildFile: noAutoBuild
   dataType: SCALAR
-  default: whole_genome_SNVs.v1.1.tsv.gz
+  default: whole_genome_SNVs.v1.3.tsv.gz
   existsCheck: file
   type: path
 cadd1000Genomes:  
@@ -847,7 +926,7 @@ cadd1000GenomesFile:
    - pRankVariants
   buildFile: noAutoBuild
   dataType: SCALAR
-  default: 1000G.v1.1.tsv.gz
+  default: 1000G.v1.3.tsv.gz
   existsCheck: file
   type: path
 wholeGene:
@@ -1054,7 +1133,17 @@ snpSiftAnnotationFiles:
   dataType: HASH
   default:
      dbsnp_138.b37.excluding_sites_after_129.vcf.gz: CAF
-     ALL.wgs.phase3_shapeit2_mvncall_integrated_v5.20130502.sites.vcf.gz: AF
-     ExAC.r0.1.sites.vep.vcf: AF
+     ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz: AF
+     ExAC.r0.3.sites.vep.vcf.gz: AF   
+  existsCheck: file
+  type: path
+snpSiftAnnotationOutInfoKey:
+  associatedProgram:
+   - pSnpEff
+  buildFile: yesAutoBuild
+  dataType: HASH
+  default:
+     ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz: 1000GAF
+     ExAC.r0.3.sites.vep.vcf.gz: EXACAF
   existsCheck: file
   type: path

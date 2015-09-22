@@ -697,7 +697,7 @@ sub RegExpToYAML {
 
     $regExp{'VariantEval_Exome'} = $regExp{'VariantEval_All'};
 
-    $regExp{'RankVariants'}{'Version'} = q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect Rankvariants version
+    $regExp{'Genmod'}{'Version'} = q?perl -nae 'if($_=~/##Software=<ID=genmod\w+,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect Genmod version
 
     $regExp{'SnpEff'}{'Version'} = q?perl -nae 'if($_=~/##SnpSiftVersion=\"(.+),/) {my $ret=$1; $ret=~s/\s/_/g;print $ret;last;}' ?; #Collect SnpEff version
 
@@ -710,6 +710,8 @@ sub RegExpToYAML {
     $regExp{'ChanjoAnnotate'}{'Version'} = q?perl -nae 'if($_=~/version\s(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect Chanjo version
 
     $regExp{'Bwa'}{'Version'} = q?perl -nae 'if($_=~/\[main\]\sVersion:\s(\S+)/) {print $1;last;}' ?; #Collect Bwa version
+
+    $regExp{'vt'}{'Version'} = q?perl -nae 'if($_=~/decompose\sv(\S+)/) {print $1;last;}' ?; #Collect vt version
 #$regExp{''}{''} = ;
 
     
