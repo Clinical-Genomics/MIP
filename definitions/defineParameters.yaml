@@ -146,6 +146,12 @@ reduceIO:
   dataType: SCALAR
   default: 1
   type: MIP
+sambambaVersion:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  default: v0.5.8
+  type: MIP
 ###Programs
 ## GZip
 pGZipFastq:
@@ -249,6 +255,8 @@ pBwaMem:
   fileEnding: _sorted
   programNamePath:
    - bwa
+   - samtools
+   - sambamba
   type: program
 bwaMemRapidDb:
   associatedProgram:

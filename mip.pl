@@ -16,6 +16,7 @@ use DateTime;
 use Cwd 'abs_path';  #Export absolute path function
 use FindBin qw($Bin);  #Find directory of script
 use List::MoreUtils qw(any);
+use IPC::Cmd qw[can_run run];
 
 ## Third party module(s)
 use YAML;
@@ -64,6 +65,8 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -nrm/--nodeRamMemory The RAM memory size of the node(s) in GigaBytes (Defaults to 24)
                -pve/--pythonVirtualEnvironment Python virtualenvironment (defaults to "")
                -pvec/--pythonVirtualEnvironmentCommand Python virtualenvironment (defaults to "workon";whitespace sep)
+               -sab/--sambambaVersion Version of sambamba (defaults to "v0.5.8")
+
                -ges/--genomicSet Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
                -rio/--reduceIO Run consecutive models at nodes (defaults to "1" (=yes))
                -l/--logFile Mip log file (defaults to "{outDataDir}/{familyID}/mip_log/{date}/{scriptname}_{timestamp}.log")
@@ -348,6 +351,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'tmd|tempDirectory:s' => \$parameter{'tempDirectory'}{'value'},
 	   'pve|pythonVirtualEnvironment:s' => \$parameter{'pythonVirtualEnvironment'}{'value'},
 	   'pvec|pythonVirtualEnvironmentCommand=s{,}' => \@{$parameter{'pythonVirtualEnvironmentCommand'}{'value'}},
+	   'sab|sambambaVersion:s' => \$parameter{'sambambaVersion'}{'value'},
 	   'jul|javaUseLargePages:s' => \$parameter{'javaUseLargePages'}{'value'},
 	   'nrm|nodeRamMemory:n' => \$parameter{'nodeRamMemory'}{'value'},  #Per node
            'ges|genomicSet:s' => \$parameter{'genomicSet'}{'value'},  #Selection of relevant regions post alignment and sort
@@ -15730,10 +15734,14 @@ sub CheckCommandinPath {
 	    if ( (scalar(@{$programNamePathsArrayRef}) > 0) && (${$scriptParameterHashRef}{$parameterName} > 0) ) {  #Only check path(s) for active programs
 
 		foreach my $program (@{ $programNamePathsArrayRef }) {
-		    
+		  
 		    unless($seen{$program}) { 
-			
-			if ( grep { -x "$_/".$program } split(/:/,$ENV{PATH}) ) {
+		
+			if($program eq "sambamba") {
+
+			    $program .= "_".${$scriptParameterHashRef}{'sambambaVersion'};
+			}
+			if(can_run($program)) {  #IPC::Cmd
 			    
 			    $logger->info("ProgramCheck: ".$program." installed\n");
 			    $seen{$program} = 1;
