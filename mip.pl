@@ -7774,7 +7774,7 @@ sub PicardToolsMerge {
 }
 
 
-sub BWA_Sampe {
+sub BWASampe {
 
 ##BWA_Sampe
     
@@ -8343,29 +8343,19 @@ sub BWA_Mem {
 	    print $FILEHANDLE "-@ ".${$scriptParameterHashRef}{'maximumCores'}." ";  #Number of threads 
 	    print $FILEHANDLE "- ";  #/dev/stdin
 	    print $FILEHANDLE "| ";
-	    print $FILEHANDLE "sambamba_v0.5.8 sort ";
-	    print $FILEHANDLE "--tmpdir=".${$scriptParameterHashRef}{'tempDirectory'}." ";
-	    print $FILEHANDLE "--show-progress ";
+	    print $FILEHANDLE "sambamba_".${$scriptParameterHashRef}{'sambambaVersion'}." ";  #Program
+	    print $FILEHANDLE "sort ";  #Command
+	    print $FILEHANDLE "--tmpdir=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Directory for storing intermediate files
+	    print $FILEHANDLE "--show-progress ";  #Show progressbar in STDERR
 	    print $FILEHANDLE "--out=".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam ";  #Outfile
 	    print $FILEHANDLE "/dev/stdin ";
-#	    &JavaCore({'FILEHANDLE' => $FILEHANDLE,
-#		       'memoryAllocation' => "Xmx4g",
-#		       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-#		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
-#		       'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
-#		      });
-	    
-#	    print $FILEHANDLE "SortSam ";
-#	    print $FILEHANDLE "SORT_ORDER=coordinate ";  #Sort per contig and coordinate
-#	    print $FILEHANDLE "CREATE_INDEX=TRUE ";  #create a BAM index when writing a coordinate-sorted BAM file. 
-#	    print $FILEHANDLE "INPUT=/dev/stdin ";  #InStream
-#	    print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam ";  #Outfile
 	    print $FILEHANDLE "\n\n";
 
 	    if (${$scriptParameterHashRef}{'bwaMemCram'} == 1) {
 
 		print $FILEHANDLE "## Create CRAM file from BAM\n";
-		print $FILEHANDLE "sambamba_v0.5.8 view ";
+		print $FILEHANDLE "sambamba_".${$scriptParameterHashRef}{'sambambaVersion'}." ";  #Program
+		print $FILEHANDLE "view ";  #Commmand
 		print $FILEHANDLE "-f cram "; #Write output to CRAM-format
 		print $FILEHANDLE "-h ";  #print header before reads
 		print $FILEHANDLE "-T ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference
@@ -8391,7 +8381,7 @@ sub BWA_Mem {
 	    
 	    close($FILEHANDLE);
 
-	    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 2) ) {
+	    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
 		${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'} = $outSampleDirectory."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].".bam";
 
@@ -15744,7 +15734,7 @@ sub CheckCommandinPath {
 		  
 		    unless($seen{$program}) { 
 		
-			if($program eq "sambamba") {
+			if($program eq "sambamba") {  #Special case
 
 			    $program .= "_".${$scriptParameterHashRef}{'sambambaVersion'};
 			}
