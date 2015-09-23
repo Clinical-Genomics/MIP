@@ -257,7 +257,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ## Eval parameter hash
 &EvalParameterHash(\%parameter, $Bin."/definitions/defineParameters.yaml");
 
-my $mipVersion = "v2.4.2";	#Set MIP version
+my $mipVersion = "v2.4.3";	#Set MIP version
 my $aligner;
 
 ## Target definition files
@@ -8380,7 +8380,7 @@ sub BWA_Mem {
 	    
 	    close($FILEHANDLE);
 
-	    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 2) ) {
+	    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
 		${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'} = $outSampleDirectory."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].".bam";
 
