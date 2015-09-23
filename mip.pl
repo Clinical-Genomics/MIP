@@ -7017,17 +7017,17 @@ sub PicardToolsMarkduplicatesWithMateCigar {
 
 	    ## Split BAMs using Samtools
 	    print $FILEHANDLE "## Split alignment files per contig\n";
-	    ($xargsFileCounter, $xargsFileName) = &SplitBAM({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-							     'FILEHANDLE' => $FILEHANDLE,
-							     'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
-							     'contigs' => \@{${$fileInfoHashRef}{'contigsSizeOrdered'}},
-							     'fileName' => $fileName,
-							     'programInfoPath' => $programInfoPath,
-							     'nrCores' => $nrCores,
-							     'xargsFileCounter' => $xargsFileCounter,
-							     'temporaryDirectory' => $$tempDirectoryRef,
-							     'infile' => $infile.$infileEnding
-							    });
+	    ($xargsFileCounter, $xargsFileName) = &SplitBAMSambamba({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+								     'FILEHANDLE' => $FILEHANDLE,
+								     'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
+								     'contigs' => \@{${$fileInfoHashRef}{'contigsSizeOrdered'}},
+								     'fileName' => $fileName,
+								     'programInfoPath' => $programInfoPath,
+								     'nrCores' => $nrCores,
+								     'xargsFileCounter' => $xargsFileCounter,
+								     'temporaryDirectory' => $$tempDirectoryRef,
+								     'infile' => $infile.$infileEnding
+								    });
 
 	    ## PicardToolsMarkduplicatesWithMateCigar
 	    print $FILEHANDLE "## Marking Duplicates\n";
@@ -7473,18 +7473,18 @@ sub PicardToolsMerge {
 
 	    ## Split BAMs using Samtools
 	    print $FILEHANDLE "## Split alignment files per contig\n";
-	    ($xargsFileCounter, $xargsFileName) = &SplitBAM({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-							     'FILEHANDLE' => $FILEHANDLE,
-							     'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
-							     'contigs' => \@{${$fileInfoHashRef}{'contigsSizeOrdered'}},
-							     'fileName' => $fileName,
-							     'programInfoPath' => $programInfoPath,
-							     'nrCores' => $nrCores,
-							     'xargsFileCounter' => $xargsFileCounter,
-							     'temporaryDirectory' => $$tempDirectoryRef,
-							     'xargsFileCounter' => $xargsFileCounter,
-							     'infile' => $infile.$infileEnding
-							    });
+	    ($xargsFileCounter, $xargsFileName) = &SplitBAMSambamba({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+								     'FILEHANDLE' => $FILEHANDLE,
+								     'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
+								     'contigs' => \@{${$fileInfoHashRef}{'contigsSizeOrdered'}},
+								     'fileName' => $fileName,
+								     'programInfoPath' => $programInfoPath,
+								     'nrCores' => $nrCores,
+								     'xargsFileCounter' => $xargsFileCounter,
+								     'temporaryDirectory' => $$tempDirectoryRef,
+								     'xargsFileCounter' => $xargsFileCounter,
+								     'infile' => $infile.$infileEnding
+								    });
 	}
 
 	## PicardToolsMergeSamFiles
@@ -7557,17 +7557,17 @@ sub PicardToolsMerge {
 
 		    ## Split BAMs using Samtools
 		    print $FILEHANDLE "## Split alignment files per contig\n";
-		    ($xargsFileCounter, $xargsFileName) = &SplitBAM({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-								     'FILEHANDLE' => $FILEHANDLE,
-								     'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
-								     'contigs' => \@{${$fileInfoHashRef}{'contigsSizeOrdered'}},
-								     'fileName' => $fileName,
-								     'programInfoPath' => $programInfoPath,
-								     'nrCores' => $nrCores,
-								     'xargsFileCounter' => $xargsFileCounter,
-								     'temporaryDirectory' => $$tempDirectoryRef,
-								     'infile' => $picardToolsMergeSamFilesPreviousFileNoEnding
-								    });
+		    ($xargsFileCounter, $xargsFileName) = &SplitBAMSambamba({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+									     'FILEHANDLE' => $FILEHANDLE,
+									     'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
+									     'contigs' => \@{${$fileInfoHashRef}{'contigsSizeOrdered'}},
+									     'fileName' => $fileName,
+									     'programInfoPath' => $programInfoPath,
+									     'nrCores' => $nrCores,
+									     'xargsFileCounter' => $xargsFileCounter,
+									     'temporaryDirectory' => $$tempDirectoryRef,
+									     'infile' => $picardToolsMergeSamFilesPreviousFileNoEnding
+									    });
 
 		    ## PicardToolsMergeSamFiles
 		    print $FILEHANDLE "## Merging alignment files\n";
@@ -7657,17 +7657,17 @@ sub PicardToolsMerge {
 
 		## Split BAMs using Samtools
 		print $FILEHANDLE "## Split alignment files per contig\n";
-		($xargsFileCounter, $xargsFileName) = &SplitBAM({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-								 'FILEHANDLE' => $FILEHANDLE,
-								 'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
-								 'contigs' => \@{${$fileInfoHashRef}{'contigsSizeOrdered'}},
-								 'fileName' => $fileName,
-								 'programInfoPath' => $programInfoPath,
-								 'nrCores' => $nrCores,
-								 'xargsFileCounter' => $xargsFileCounter,
-								 'temporaryDirectory' => $$tempDirectoryRef,
-								 'infile' => $picardToolsMergeSamFilesPreviousFileNoEnding
-								});
+		($xargsFileCounter, $xargsFileName) = &SplitBAMSambamba({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+									 'FILEHANDLE' => $FILEHANDLE,
+									 'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
+									 'contigs' => \@{${$fileInfoHashRef}{'contigsSizeOrdered'}},
+									 'fileName' => $fileName,
+									 'programInfoPath' => $programInfoPath,
+									 'nrCores' => $nrCores,
+									 'xargsFileCounter' => $xargsFileCounter,
+									 'temporaryDirectory' => $$tempDirectoryRef,
+									 'infile' => $picardToolsMergeSamFilesPreviousFileNoEnding
+									});
 
 		## Create file commands for xargs
 		($xargsFileCounter, $xargsFileName) = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
@@ -15440,6 +15440,74 @@ sub SplitBAM {
 
 	print $XARGSFILEHANDLE "BuildBamIndex ";
 	print $XARGSFILEHANDLE "INPUT=".${$argHashRef}{'temporaryDirectory'}."/".${$argHashRef}{'infile'}."_".$$contigRef.".bam ";  #InFile
+	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE "\n";
+    }
+    return $xargsFileCounter; 
+}
+
+
+sub SplitBAMSambamba {
+
+##SplitBAMSambamba
+    
+##Function : Split BAM file per contig and index new BAM. Creates the command line for xargs. Writes to sbatch FILEHANDLE and opens xargs FILEHANDLE
+##Returns  : ""
+##Arguments: $FILEHANDLE, $XARGSFILEHANDLE, $argHashRef
+##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $FILEHANDLE             => Sbatch filehandle to write to
+##         : $XARGSFILEHANDLE        => XARGS filehandle to write to
+##         : $contigs                => The contigs to process
+##         : $filename               => File name - ususally sbatch
+##         : $programInfoPath        => The program info path
+##         : $nrCores                => The number of cores to use
+##         : $firstCommand           => The inital command
+##         : $infile                 => The infile
+##         : $temporaryDirectory     => The temporary directory
+
+    my ($argHashRef) = @_;
+
+    my %default = ('firstCommand' => "sambamba_".${$argHashRef}{'scriptParameterHashRef'}{'sambambaVersion'},
+		   'xargsFileCounter' => 0,
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $XARGSFILEHANDLE = ${$argHashRef}{'XARGSFILEHANDLE'};
+
+    ## Create file commands for xargs
+    my ($xargsFileCounter, $xargsFileName) = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
+							    'XARGSFILEHANDLE' => $XARGSFILEHANDLE, 
+							    'fileName' => ${$argHashRef}{'fileName'},
+							    'programInfoPath' => ${$argHashRef}{'programInfoPath'},
+							    'nrCores' => ${$argHashRef}{'nrCores'},
+							    'firstCommand' => ${$argHashRef}{'firstCommand'},
+							    'xargsFileCounter' => ${$argHashRef}{'xargsFileCounter'},
+							   });
+    
+    ## Split by contig
+    for (my $contigsCounter=0;$contigsCounter<scalar(@{${$argHashRef}{'contigs'}});$contigsCounter++) {
+	
+	my $contigRef = \${$argHashRef}{'contigs'}[$contigsCounter];
+
+	print $XARGSFILEHANDLE "view ";  #Command
+	print $XARGSFILEHANDLE "-h ";  #Include header
+	print $XARGSFILEHANDLE "--format bam ";  #BAM output
+	print $XARGSFILEHANDLE "--show-progress ";  #Show progress bar in STDERR
+	print $XARGSFILEHANDLE "--output-filename=".${$argHashRef}{'temporaryDirectory'}."/".${$argHashRef}{'infile'}."_".$$contigRef.".bam ";  #Write to file
+	print $XARGSFILEHANDLE ${$argHashRef}{'temporaryDirectory'}."/".${$argHashRef}{'infile'}.".bam ";  #InFile
+	print $XARGSFILEHANDLE $$contigRef." ";
+	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE "; ";  #Wait
+
+	## Index
+	print $XARGSFILEHANDLE ${$argHashRef}{'firstCommand'}." ";  #Program
+	print $XARGSFILEHANDLE "index ";  #Command
+	print $XARGSFILEHANDLE "--show-progress ";  #Show progress bar in STDERR
+	print $XARGSFILEHANDLE ${$argHashRef}{'temporaryDirectory'}."/".${$argHashRef}{'infile'}."_".$$contigRef.".bam ";  #InFile
 	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	print $XARGSFILEHANDLE "\n";
     }
