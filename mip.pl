@@ -8340,30 +8340,37 @@ sub BWA_Mem {
 	    print $FILEHANDLE "-S ";  #Input is SAM
 	    print $FILEHANDLE "-h ";  #Print header for the SAM output
 	    print $FILEHANDLE "-u ";  #Uncompressed BAM output
+	    print $FILEHANDLE "-@ ".${$scriptParameterHashRef}{'maximumCores'}." ";  #Number of threads 
 	    print $FILEHANDLE "- ";  #/dev/stdin
 	    print $FILEHANDLE "| ";
-	    &JavaCore({'FILEHANDLE' => $FILEHANDLE,
-		       'memoryAllocation' => "Xmx4g",
-		       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
-		       'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
-		      });
+	    print $FILEHANDLE "sambamba_v0.5.8 sort ";
+	    print $FILEHANDLE "--tmpdir=".${$scriptParameterHashRef}{'tempDirectory'}." ";
+	    print $FILEHANDLE "--show-progress ";
+	    print $FILEHANDLE "--out=".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam ";  #Outfile
+	    print $FILEHANDLE "/dev/stdin ";
+#	    &JavaCore({'FILEHANDLE' => $FILEHANDLE,
+#		       'memoryAllocation' => "Xmx4g",
+#		       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+#		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+#		       'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
+#		      });
 	    
-	    print $FILEHANDLE "SortSam ";
-	    print $FILEHANDLE "SORT_ORDER=coordinate ";  #Sort per contig and coordinate
-	    print $FILEHANDLE "CREATE_INDEX=TRUE ";  #create a BAM index when writing a coordinate-sorted BAM file. 
-	    print $FILEHANDLE "INPUT=/dev/stdin ";  #InStream
-	    print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam ";  #Outfile
+#	    print $FILEHANDLE "SortSam ";
+#	    print $FILEHANDLE "SORT_ORDER=coordinate ";  #Sort per contig and coordinate
+#	    print $FILEHANDLE "CREATE_INDEX=TRUE ";  #create a BAM index when writing a coordinate-sorted BAM file. 
+#	    print $FILEHANDLE "INPUT=/dev/stdin ";  #InStream
+#	    print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam ";  #Outfile
 	    print $FILEHANDLE "\n\n";
 
 	    if (${$scriptParameterHashRef}{'bwaMemCram'} == 1) {
 
 		print $FILEHANDLE "## Create CRAM file from BAM\n";
-		print $FILEHANDLE "samtools view ";
-		print $FILEHANDLE "-C "; #Write output to CRAM-format
+		print $FILEHANDLE "sambamba_v0.5.8 view ";
+		print $FILEHANDLE "-f cram "; #Write output to CRAM-format
+		print $FILEHANDLE "-h ";  #print header before reads
 		print $FILEHANDLE "-T ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference
-		print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam";
-		print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".cram";
+		print $FILEHANDLE "--output-filename ".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".cram ";
+		print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam ";
 		print $FILEHANDLE "\n\n";
 		
 		## Copies file from temporary directory.
