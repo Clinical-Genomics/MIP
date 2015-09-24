@@ -157,6 +157,10 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pVT/--pVT VT decompose and normalize (defaults to "1" (=yes))
                 -vtdec/--VTDecompose Split multi allelic records into single records (defaults to "1" (=yes))
                 -vtnor/--VTNormalize Normalize variants (defaults to "1" (=yes))
+                -vtmaa/--VTmissingAltAllele Remove missing alternative alleles '*' (defaults to "1" (=yes))
+                -vtgmf/--VTgenmodFilter Remove common variants from vcf (defaults to "1" (=yes))
+                -vtgfr/--VTgenmodFilter1000G Genmod annotate 1000G reference (defaults to "ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz")
+                -vtgft/--VTgenmodFilterThreshold Threshold for filtering variants (defaults to "0.10")
                -pVeP/--pVariantEffectPredictor Annotate variants using VEP (defaults to "1" (=yes))
                  -vepp/--vepDirectoryPath Path to VEP script directory (defaults to "")
                  -vepc/--vepDirectoryCache Specify the cache directory to use (defaults to "") 
@@ -430,6 +434,10 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'pVT|pVT:n' => \$parameter{'pVT'}{'value'},  #VT program
 	   'vtddec|VTDecompose:n' => \$parameter{'VTDecompose'}{'value'},  #VT decompose (split multiallelic variants)
 	   'vtdnor|VTNormalize:n' => \$parameter{'VTNormalize'}{'value'},  #VT normalize varaints according to genomic reference
+	   'vtmaa|VTmissingAltAllele:n'  => \$parameter{'VTmissingAltAllele'}{'value'},  #VT remove '*' entries from vcf
+	   'vtgmf|VTgenmodFilter:n'  => \$parameter{'VTgenmodFilter'}{'value'},  #VT Remove common variants from vcf 
+	   'vtgfr|VTgenmodFilter1000G:s'  => \$parameter{'VTgenmodFilter1000G'}{'value'},  #VT Genmod annotate 1000G reference
+	   'vtgft|VTgenmodFilterThreshold:s'  => \$parameter{'VTgenmodFilterThreshold'}{'value'},  #VT Threshold for filtering variants
 	   'pVeP|pVariantEffectPredictor:n' => \$parameter{'pVariantEffectPredictor'}{'value'},  #Annotation of variants using vep
 	   'vepp|vepDirectoryPath:s'  => \$parameter{'vepDirectoryPath'}{'value'},  #path to vep script dir
 	   'vepc|vepDirectoryCache:s'  => \$parameter{'vepDirectoryCache'}{'value'},  #path to vep cache dir
@@ -1724,7 +1732,7 @@ sub RankVariants {
     my $vcfParserAnalysisType = "";
     my $vcfParserContigsArrayRef = \@{ ${$fileInfoHashRef}{'contigsSizeOrdered'} };  #Set default
 
-    ## Gene models and ranking  
+    ## GenMod uses python virtualenvironment
     print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
     
     for (my $VcfParserOutputFileCounter=0;$VcfParserOutputFileCounter<${$scriptParameterHashRef}{'VcfParserOutputFileCount'};$VcfParserOutputFileCounter++) {
@@ -3966,6 +3974,11 @@ sub VT {
 	    'infilePath' => $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType.".vcf.gz",
 	   });
 
+    if (${$scriptParameterHashRef}{'VTgenmodFilter'} > 0) {
+	
+	print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+    }
+    
     ## Create file commands for xargs
     ($xargsFileCounter, $xargsFileName) = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
 							 'XARGSFILEHANDLE' => $XARGSFILEHANDLE, 
@@ -4000,16 +4013,46 @@ sub VT {
 		 'contigRef' => $contigRef,
 		});
 
-	print $XARGSFILEHANDLE $removeStarRegExp.$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf ";
-	print $XARGSFILEHANDLE "> ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf_noStar ";
-	print $XARGSFILEHANDLE "; ";
+	my $altFileEnding = "";
+	## Remove decomposed '*' entries
+	if (${$scriptParameterHashRef}{'VTmissingAltAllele'} == 1) {
+
+	    $altFileEnding = "_noStar";
+	    print $XARGSFILEHANDLE $removeStarRegExp.$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf ";
+	    print $XARGSFILEHANDLE "> ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf".$altFileEnding." ";
+	    print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    print $XARGSFILEHANDLE "; ";
+	}
+	## Remove common variants
+	if (${$scriptParameterHashRef}{'VTgenmodFilter'} > 0) {
+
+	    print $XARGSFILEHANDLE "genmod ";  #Program
+	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
+	    print $XARGSFILEHANDLE "annotate ";  #Command
+	    print $XARGSFILEHANDLE "--thousand_g ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'VTgenmodFilter1000G'}." ";  #1000G reference
+	    print $XARGSFILEHANDLE "-o /dev/stdout ";  #OutStream
+	    print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf".$altFileEnding." ";
+	    print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    print $XARGSFILEHANDLE "| ";
+
+	    $altFileEnding .= "_genmodFilter";  #Update ending
+
+	    print $XARGSFILEHANDLE "genmod ";  #Program
+	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
+	    print $XARGSFILEHANDLE "filter ";  #Command
+	    print $XARGSFILEHANDLE "-t ".${$scriptParameterHashRef}{'VTgenmodFilterThreshold'}." ";  #Threshold for filtering variants
+	    print $XARGSFILEHANDLE "- ";  #InStream
+	    print $XARGSFILEHANDLE "> ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf".$altFileEnding." ";  #OutFile
+	    print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    print $XARGSFILEHANDLE "; ";
+	}
+
 	print $XARGSFILEHANDLE "mv ";
-	print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf_noStar ";
+	print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf".$altFileEnding." ";
 	print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf ";
 	print $XARGSFILEHANDLE "\n";
     }
 
-    ## Remove decomposed '*' entries
     if ($$reduceIORef eq "0") { #Run as individual sbatch script
 
 	## Copies file from temporary directory.

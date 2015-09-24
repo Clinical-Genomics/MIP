@@ -657,6 +657,32 @@ VTNormalize:
   dataType: SCALAR
   default: 1
   type: program
+VTmissingAltAllele:
+  associatedProgram:
+   - pVT
+  dataType: SCALAR
+  default: 1
+  type: program
+VTgenmodFilter:
+  associatedProgram:
+   - pVT
+  dataType: SCALAR
+  default: 1
+  type: program
+VTgenmodFilter1000G:
+  associatedProgram:
+   - pVT
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  default: ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
+  existsCheck: file
+  type: path
+VTgenmodFilterThreshold:
+  associatedProgram:
+   - pVT
+  dataType: SCALAR
+  default: 0.10
+  type: program
 pGATKPhaseByTransmission:
   associatedProgram:
    - MIP
