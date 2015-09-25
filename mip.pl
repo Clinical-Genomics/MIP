@@ -8391,18 +8391,6 @@ sub BWA_Mem {
 	    print $FILEHANDLE "--show-progress ";
 	    print $FILEHANDLE "--out=".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam ";  #Outfile
 	    print $FILEHANDLE "/dev/stdin ";
-#	    &JavaCore({'FILEHANDLE' => $FILEHANDLE,
-#		       'memoryAllocation' => "Xmx4g",
-#		       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-#		       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
-#		       'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
-#		      });
-	    
-#	    print $FILEHANDLE "SortSam ";
-#	    print $FILEHANDLE "SORT_ORDER=coordinate ";  #Sort per contig and coordinate
-#	    print $FILEHANDLE "CREATE_INDEX=TRUE ";  #create a BAM index when writing a coordinate-sorted BAM file. 
-#	    print $FILEHANDLE "INPUT=/dev/stdin ";  #InStream
-#	    print $FILEHANDLE "OUTPUT=".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam ";  #Outfile
 	    print $FILEHANDLE "\n\n";
 
 	    if (${$scriptParameterHashRef}{'bwaMemCram'} == 1) {
@@ -8439,8 +8427,9 @@ sub BWA_Mem {
 		${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'MostCompleteBAM'}{'Path'} = $outSampleDirectory."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].".bam";
 
 		if (${$scriptParameterHashRef}{'bwaMemCram'} eq 1) {
-		    
-		    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter]}{'Cram'} = $outSampleDirectory."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".cram";
+
+		    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'Program'}{'Bwa'}{ ${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter]}{'Path'} = $outSampleDirectory."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".cram";  #Required for analysisRunStatus check downstream
+		    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter]}{'CramFile'} = $outSampleDirectory."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".cram";  #Fastreference to cram file
 		}
 		&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 			       'familyID' => ${$scriptParameterHashRef}{'familyID'},
@@ -14736,6 +14725,24 @@ sub CollectPathEntries {
 			
 			## Check if KeyName is "Path" and adds to @pathsArrayRef if true.
 			&CheckAndAddToArray(\@{$pathsArrayRef}, ${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey}, $secondKey);
+		    
+			if (ref(${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey}) eq "HASH" ) {   #HASH reference indicating more levels
+		    
+			    for my $thirdKey ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey} } ) { #For every thirdkey with program
+				
+				## Check if KeyName is "Path" and adds to @pathsArrayRef if true.
+				&CheckAndAddToArray(\@{$pathsArrayRef}, ${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey}{$thirdKey}, $thirdKey);
+
+				if (ref(${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey}{$thirdKey}) eq "HASH" ) {   #HASH reference indicating more levels
+				    
+				    for my $fourthKey ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey}{$thirdKey} } ) { #For every forthkey with program
+					
+					## Check if KeyName is "Path" and adds to @pathsArrayRef if true.
+					&CheckAndAddToArray(\@{$pathsArrayRef}, ${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey}{$thirdKey}{$fourthKey}, $fourthKey);
+				    }
+				}
+			    }
+			}
 		    }
 		}
 	    }
