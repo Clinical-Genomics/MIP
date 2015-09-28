@@ -706,10 +706,10 @@ if ($scriptParameter{'writeConfigFile'} ne 0) {  #Write config file for family
 @{$fileInfo{"SelectFileContigs"}} = &SizeSortSelectFileContigs(\%fileInfo, "SelectFileContigs", "contigsSizeOrdered");
 
 ## Detect if the current analysis involves any males
-my $maleFound = &DetectSampleIdMale(\%scriptParameter, \%sampleInfo);
+$scriptParameter{'maleFound'} = &DetectSampleIdMale(\%scriptParameter, \%sampleInfo);
 
 ## Removes contigY|chrY from SelectFileContigs if no males or 'other' found in analysis
-&UpdateSelectFileContigs(\@{${fileInfo}{'SelectFileContigs'}}, \$maleFound);
+&UpdateFileContigs(\@{${fileInfo}{'SelectFileContigs'}}, \$scriptParameter{'maleFound'});
 
 ## Write CMD to MIP log file
 &WriteCMDMipLog(\%parameter, \%scriptParameter, \@orderParameters, \$script, \$scriptParameter{'logFile'}, \$mipVersion);
@@ -1196,6 +1196,10 @@ if ($scriptParameter{'pGATKVariantEvalAll'} > 0) {  #Run GATK VariantEval for al
 	&GATKVariantEvalAll(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infilesLaneNoEnding, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'}, "BOTH", $scriptParameter{'familyID'}, "GATKVariantEvalAll");
     }
 }
+
+### If no males or 'other' remove contig Y from all downstream analysis
+## Removes contigY|chrY from SelectFileContigs if no males or 'other' found in analysis
+&UpdateFileContigs(\@{${fileInfo}{'contigsSizeOrdered'}}, \$scriptParameter{'maleFound'});
 
 if ($scriptParameter{'reduceIO'} == 1) {  #Run consecutive models
     
@@ -4287,26 +4291,26 @@ sub GATKVariantReCalibration {
 				 });
 	}
 	print $FILEHANDLE "\n\nwait\n\n";
+    }
 
-	## Produce a bcf compressed vcf
-	if (${$scriptParameterHashRef}{'GATKVariantReCalibrationBCFFile'} eq 1) {
-
-	    print $FILEHANDLE "#Compress vcf to bcf","\n";
-	    print $FILEHANDLE "bcftools ";
-	    print $FILEHANDLE "view ";  #VCF/BCF conversion
-	    print $FILEHANDLE "-O b ";  #Output type - b: compressed BCF
-	    print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf ";  #Infile
-	    print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".bcf ";  #Outfile
-	    print $FILEHANDLE "\n\n";
-
-	    ## Copies file from temporary directory.
-	    print $FILEHANDLE "## Copy file from temporary directory\n";
-	    &MigrateFileFromTemp({'tempPath' => ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".bcf*",
-				  'filePath' => $outFamilyDirectory."/",
-				  'FILEHANDLE' => $FILEHANDLE,
-				 });
-	    print $FILEHANDLE "wait\n\n";
-	}
+    ## Produce a bcf compressed vcf
+    if (${$scriptParameterHashRef}{'GATKVariantReCalibrationBCFFile'} == 1) {
+	
+	print $FILEHANDLE "#Compress vcf to bcf","\n";
+	print $FILEHANDLE "bcftools ";
+	print $FILEHANDLE "view ";  #VCF/BCF conversion
+	print $FILEHANDLE "-O b ";  #Output type - b: compressed BCF
+	print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf ";  #Infile
+	print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".bcf ";  #Outfile
+	print $FILEHANDLE "\n\n";
+	
+	## Copies file from temporary directory.
+	print $FILEHANDLE "## Copy file from temporary directory\n";
+	&MigrateFileFromTemp({'tempPath' => ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".bcf*",
+			      'filePath' => $outFamilyDirectory."/",
+			      'FILEHANDLE' => $FILEHANDLE,
+			     });
+	print $FILEHANDLE "wait\n\n";
     }
     
     ## Copies file from temporary directory.
@@ -16994,9 +16998,9 @@ sub DetectMostCompleteFile {
 }
 
 
-sub UpdateSelectFileContigs {
+sub UpdateFileContigs {
 
-##UpdateSelectFileContigs
+##UpdateFileContigs
     
 ##Function : Removes contigY|chrY from SelectFileContigs if no males or 'other' found in analysis
 ##Returns  : ""
@@ -17009,12 +17013,14 @@ sub UpdateSelectFileContigs {
 
     if ($$maleFoundRef != 1) {
 	
-	my $index = 0;
-	until( (${$selectFileContigsArrayRef}[$index] eq "Y") || (${$selectFileContigsArrayRef}[$index] eq "chrY") ) {
+	for (my $index=0;$index<scalar(@{$selectFileContigsArrayRef});$index++) {
 
-	    $index++;
+	    if( (${$selectFileContigsArrayRef}[$index] eq "Y") || (${$selectFileContigsArrayRef}[$index] eq "chrY") ) {
+
+		splice(@{$selectFileContigsArrayRef}, $index, 1);  #Remove $element from array
+		last;  #Will nor occur more than once
+	    }
 	}
-	splice(@{$selectFileContigsArrayRef}, $index, 1);  #Remove $element from array
     }
 }
 
