@@ -341,13 +341,13 @@ pPicardToolsMergeSamFiles:
   default: 1
   fileEnding: _merged
   type: program
-pPicardToolsMarkduplicatesWithMateCigar:
+pSambambaMarkduplicates:
   associatedProgram:
    - MIP
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: _pmd
+  fileEnding: _smd
   type: program
 ## GATK BAM Calibration
 pGATKRealigner:
@@ -420,14 +420,6 @@ GATKHaploTypeCallerSoftClippedBases:
   default: 1
   type: program
 ## Coverage
-pPicardToolsMarkduplicatesForQCMetrics:
-  associatedProgram:
-   - MIP
-  chain: DuplicateMetrics
-  dataType: SCALAR
-  default: 1
-  fileEnding: _metric
-  type: program
 pChanjoSexCheck:
   associatedProgram:
    - MIP
@@ -1006,7 +998,7 @@ QCCollectRegExpFile:
    - pQCCollect
   buildFile: noAutoBuild
   dataType: SCALAR
-  default: qc_regexp.yaml
+  default: qc_regExp_v1.4.yaml
   existsCheck: file
   type: path
 ## RemoveRedundantFiles

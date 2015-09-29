@@ -100,9 +100,10 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pPtM/--pPicardToolsMergeSamFiles Merge (BAM file(s) ) using PicardTools MergeSamFiles (defaults to "1" (=yes))
                -pPtMR/--pPicardToolsMergeRapidReads Merge Read batch processed (BAM file(s)) using PicardTools MergeSamFiles (Only relevant in rapid mode;defaults to "0" (=no))
                  -ptmp/--picardToolsMergeSamFilesPrevious PicardTools MergeSamFiles on merged current files and previous BAM-file(s) (supply whole path and name, name must contain sample id, and lanes_Xn info)
-               -pPtMD/--pPicardToolsMarkduplicatesWithMateCigar Markduplicates using PicardTools MarkDuplicatesWithMateCigar (defaults to "1" (=yes))
-               -pPtMQ/--pPicardToolsMarkduplicatesForQCMetrics Markduplicates using PicardTools MarkDuplicates on complete file to procude accurate metrics (defaults to "1" (=yes))
-               
+
+               ##Sambamba
+               -pSmd/--pSambambaMarkduplicates Markduplicates using Sambamba Markduplicates (defaults to "1" (=yes))
+
                ###CoverageCalculations
                -pChS/--pChanjoSexCheck Predicts gender from sex chromosome coverage (defaults to "1")
                -pChB/--pChanjoBuild Chanjo build central SQLite database file (defaults to "1" (=yes))
@@ -199,7 +200,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pScK/--pSampleCheck QC for samples gender and relationship (defaults to "1" (=yes) )
                -pQcC/--pQCCollect Collect QC metrics from programs processed (defaults to "1" (=yes) )
                  -qccsi/--QCCollectSampleInfoFile SampleInfo File containing info on what to parse from this analysis run (defaults to "{outDataDir}/{familyID}/{familyID}_qc_sampleInfo.yaml")
-                 -qccref/--QCCollectRegExpFile Regular expression file containing the regular expression to be used for each program (defaults to "")
+                 -qccref/--QCCollectRegExpFile Regular expression file containing the regular expression to be used for each program (defaults to "qc_regExp_v1.4.yaml")
                -pReM/--pRemoveRedundantFiles Generating sbatch script for deletion of redundant files (defaults to "1" (=yes);Note: Must be submitted manually to SLURM)
                -pArS/--pAnalysisRunStatus Sets the analysis run status flag to finished in sampleInfoFile (defaults to "1" (=yes))
 	   };
@@ -382,9 +383,8 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'pPtM|pPicardToolsMergeSamFiles:n' => \$parameter{'pPicardToolsMergeSamFiles'}{'value'},  #PicardTools mergeSamFiles
 	   'pPtMR|pPicardToolsMergeRapidReads:n' => \$parameter{'pPicardToolsMergeRapidReads'}{'value'},  #PicardTools mergeSamFiles - rapid mode
 	   'ptmp|picardToolsMergeSamFilesPrevious:s' => \@{$parameter{'picardToolsMergeSamFilesPrevious'}{'value'}},  #Comma separated list
-	   'pPtMD|pPicardToolsMarkduplicatesWithMateCigar:s' => \$parameter{'pPicardToolsMarkduplicatesWithMateCigar'}{'value'},  #PicardTools MarkDuplicates
-	   'pPtMQ|pPicardToolsMarkduplicatesForQCMetrics:s' => \$parameter{'pPicardToolsMarkduplicatesForQCMetrics'}{'value'},  #PicardTools MarkDuplicates for QC metrics
 	   'ptp|picardToolsPath:s' => \$parameter{'picardToolsPath'}{'value'},  #Path to picardtools
+	   'pSmd|pSambambaMarkduplicates:s' => \$parameter{'pSambambaMarkduplicates'}{'value'},  #Sambamba Markduplicates
 	   'pChS|pChanjoSexCheck:n' => \$parameter{'pChanjoSexCheck'}{'value'},   #Chanjo coverage analysis on sex chromosomes
 	   'pChB|pChanjoBuild:n' => \$parameter{'pChanjoBuild'}{'value'},   #Build central SQLiteDatabase
 	   'chbdb|chanjoBuildDb:s' => \$parameter{'chanjoBuildDb'}{'value'},  #Chanjo reference database
@@ -949,22 +949,22 @@ else {
 	}
     }
 
-    if ($scriptParameter{'pPicardToolsMarkduplicatesWithMateCigar'} > 0) {  #PicardTools MarkDuplicates
+    if ($scriptParameter{'pSambambaMarkduplicates'} > 0) {  #Sambamba Markduplicates
 	
-	$logger->info("[PicardTools MarkDuplicatesWithMateCigar]\n");
+	$logger->info("[Sambamba Markduplicates]\n");
 	
 	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	    
-	    &PicardToolsMarkduplicatesWithMateCigar({'parameterHashRef' => \%parameter,
-						      'scriptParameterHashRef' => \%scriptParameter,
-						      'sampleInfoHashRef' => \%sampleInfo,
-						      'fileInfoHashRef' => \%fileInfo,
-						      'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
-						      'laneHashRef' => \%lane,
-						      'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
-						      'alignerRef' => \$scriptParameter{'aligner'}, 
-						      'programName' => "PicardToolsMarkduplicatesWithMateCigar",
-						     });
+	    &SambambaMarkduplicates({'parameterHashRef' => \%parameter,
+				     'scriptParameterHashRef' => \%scriptParameter,
+				     'sampleInfoHashRef' => \%sampleInfo,
+				     'fileInfoHashRef' => \%fileInfo,
+				     'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+				     'laneHashRef' => \%lane,
+				     'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
+				     'alignerRef' => \$scriptParameter{'aligner'}, 
+				     'programName' => "SambambaMarkduplicates",
+				    });
 	}
     }
 
@@ -1047,24 +1047,6 @@ else {
     }
 }
 
-if ($scriptParameter{'pPicardToolsMarkduplicatesForQCMetrics'} > 0) {  #PicardTools MarkDuplicates
-	
-	$logger->info("[PicardTools MarkDuplicatesForQCMetrics]\n");
-	
-	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
-
-	    &PicardToolsMarkduplicatesForQCMetrics({'parameterHashRef' => \%parameter,
-						    'scriptParameterHashRef' => \%scriptParameter,
-						    'sampleInfoHashRef' => \%sampleInfo,
-						    'fileInfoHashRef' => \%fileInfo,
-						    'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
-						    'laneHashRef' => \%lane,
-						    'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
-						    'alignerRef' => \$scriptParameter{'aligner'}, 
-						    'programName' => "PicardToolsMarkduplicatesForQCMetrics",
-						   });
-	}
-}
 
 if ($scriptParameter{'pChanjoSexCheck'} > 0) {
     
@@ -6540,7 +6522,7 @@ sub GATKReAligner {
     my $intermediarySampleDirectory = $gatkTemporaryDirectory;
     my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
 
-    my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pPicardToolsMarkduplicatesWithMateCigar'}{'fileEnding'};
+    my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pSambambaMarkduplicates'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{"p".$programName}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
@@ -6836,11 +6818,11 @@ sub GATKReAligner {
 }
 
 
-sub PicardToolsMarkduplicatesWithMateCigar { 
+sub SambambaMarkduplicates { 
 
-##PicardToolsMarkduplicatesWithMateCigar
+##SambambaMarkduplicates
     
-##Function : Mark duplicated reads using PicardTools MarkDuplicates in files generated from alignment (sorted, merged).
+##Function : Mark duplicated reads using Sambamba Markduplicates in files generated from alignment (sorted, merged).
 ##Returns  : "|$xargsFileCounter"
 ##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $sampleID, $aligner, $programName, $fileName, $programInfoPath, $FILEHANDLE, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
@@ -6902,14 +6884,8 @@ sub PicardToolsMarkduplicatesWithMateCigar {
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pPicardToolsMergeSamFiles'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{"p".$programName}{'fileEnding'};
 
-    ## Finds the maximum sequence length of the reads for all sequencing file(s).
-    my $maxSequenceLength = &FindMaxSeqLengthForSampleID({'scriptParameterHashRef' => $scriptParameterHashRef,
-							  'sampleInfoHashRef' => $sampleInfoHashRef,
-							  'infilesLaneNoEndingHashRef' => $infilesLaneNoEndingHashRef,
-							  'infilesBothStrandsNoEndingHashRef' => \%infilesBothStrandsNoEnding,
-							  'sampleIDRef' => $sampleIDRef,
-							 });
-    $maxSequenceLength = $maxSequenceLength * 2;  #Set to twice the maximum read length
+    ## Sums all mapped and duoplicate reads and takes fraction of before finishing
+    my $regExp = q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$feature{'dup'} = $feature{'dup'} + $1} if($_=~/\d+\smapped/ && $_=~/^(\d+)/) {$feature{'map'} = $feature{'map'} + $1} } print "Read Mapped: ".$feature{'map'}."\nDuplicates: ".$feature{'dup'}."\n"."Fraction Duplicates: ".$feature{'dup'}/$feature{'map'}, "\n"; last;'?; 
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
     my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, $$sampleIDRef);
@@ -6945,49 +6921,58 @@ sub PicardToolsMarkduplicatesWithMateCigar {
 									   });
 	}
 	
-	## PicardToolsMarkduplicatesWithMateCigar
+	## SambambaMarkduplicates
 	print $FILEHANDLE "## Marking Duplicates\n";
-
-	$nrCores = floor(${$scriptParameterHashRef}{'nodeRamMemory'} / 2);  #Division by X according to java Heap size
-	$nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, $nrCores);  #To not exceed maximum
-
+	
 	($xargsFileCounter, $xargsFileName) = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
 							     'XARGSFILEHANDLE' => $XARGSFILEHANDLE, 
 							     'fileName' => $fileName,
 							     'programInfoPath' => $programInfoPath,
 							     'nrCores' => $nrCores,
 							     'xargsFileCounter' => $xargsFileCounter,
-							     'firstCommand' => "java",
-							     'memoryAllocation' => "Xmx2g",
-							     'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-							     'javaTemporaryDirectory' => $$tempDirectoryRef,
-							     'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
+							     'firstCommand' => "sambamba_".${$scriptParameterHashRef}{'sambambaVersion'}." ",  #Program
 							    });
 	
 	for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{'contigsSizeOrdered'}});$contigsCounter++) {
 	    
 	    my $contigRef = \${$fileInfoHashRef}{'contigsSizeOrdered'}[$contigsCounter];
 
-	    print $XARGSFILEHANDLE "MarkDuplicatesWithMateCigar ";
-	    print $XARGSFILEHANDLE "ASSUME_SORTED=true ";
-	    print $XARGSFILEHANDLE "MINIMUM_DISTANCE=".$maxSequenceLength." ";
-	    print $XARGSFILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
-	    print $XARGSFILEHANDLE "REMOVE_DUPLICATES=false ";
-	    print $XARGSFILEHANDLE "VALIDATION_STRINGENCY=STRICT ";
-	    print $XARGSFILEHANDLE "INPUT=".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";;  #InFile
-	    print $XARGSFILEHANDLE "OUTPUT=".$$tempDirectoryRef."/".$infile.$outfileEnding."_".$$contigRef.".bam ";  #OutFile
-	    print $XARGSFILEHANDLE "METRICS_FILE=".$$tempDirectoryRef."/".$infile.$outfileEnding."_".$$contigRef."_metric ";  #Metric file 
+	    print $XARGSFILEHANDLE "markdup ";
+	    print $XARGSFILEHANDLE "--tmpdir=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Directory for storing intermediate files
+	    print $XARGSFILEHANDLE "--show-progress ";  #Show progressbar in STDERR
+	    print $XARGSFILEHANDLE $$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";;  #InFile
+	    print $XARGSFILEHANDLE $$tempDirectoryRef."/".$infile.$outfileEnding."_".$$contigRef.".bam ";  #OutFile
 	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    print $XARGSFILEHANDLE "; ";
+
+	    print $XARGSFILEHANDLE "sambamba_".${$scriptParameterHashRef}{'sambambaVersion'}." ";  #Program
+	    print $XARGSFILEHANDLE "flagstat ";
+	    print $XARGSFILEHANDLE $$tempDirectoryRef."/".$infile.$outfileEnding."_".$$contigRef.".bam ";  #OutFile
+	    print $XARGSFILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileEnding."_".$$contigRef."_metric ";  #Metric file 
+	    print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    print $XARGSFILEHANDLE "\n";
 	}
 	
-	&MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$infile.$outfileEnding."_*_metric",
+	## Concatenate all metric files
+	print $FILEHANDLE "cat ";
+	print $FILEHANDLE $$tempDirectoryRef."/".$infile.$outfileEnding."_*_metric ";
+	print $FILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileEnding."_metricAll ";  #Metric file for all files
+	print $FILEHANDLE "\n\n";
+
+	## Sum metric over concatenated file
+	print $FILEHANDLE $regExp." ";
+	print $FILEHANDLE $$tempDirectoryRef."/".$infile.$outfileEnding."_metricAll ";
+	print $FILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileEnding."_metric ";  #Sum of all original metric files
+	print $FILEHANDLE "\n\n";
+
+
+	&MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$infile.$outfileEnding."_metric",
 			      'filePath' => $outSampleDirectory."/",
 			      'FILEHANDLE' => $FILEHANDLE,
 			     });
 	print $FILEHANDLE "wait", "\n\n";
 
-	if ( (${$scriptParameterHashRef}{'pPicardToolsMarkduplicatesWithMateCigar'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+	if ( (${$scriptParameterHashRef}{'pSambambaMarkduplicates'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 	    
 	    ## Collect QC metadata info for later use
 	    &SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
@@ -6996,10 +6981,10 @@ sub PicardToolsMarkduplicatesWithMateCigar {
 			   'programName' => "MarkDuplicates",
 			   'infile' => $infile,
 			   'outDirectory' => $outSampleDirectory,
-			   'outFileEnding' => $outfileEnding."_".${$fileInfoHashRef}{'contigsSizeOrdered'}[0]."_metric",
+			   'outFileEnding' => $outfileEnding."_metric",
 			   'outDataType' => "infileDependent"
 			  });
-	    ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'MostCompleteBAM'}{'Path'} = $outSampleDirectory."/".$infile.$outfileEnding.".bam";
+	    ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'MostCompleteBAM'}{'Path'} = $outSampleDirectory."/".$infile.$outfileEnding."_".${$fileInfoHashRef}{'contigsSizeOrdered'}[0].".bam";
 	}
 
 	if ($$reduceIORef eq "0") {  #Run as individual sbatch script
@@ -7043,7 +7028,7 @@ sub PicardToolsMarkduplicatesWithMateCigar {
 								   'programDirectory' => lc($$alignerRef),
 								   'nrofCores' => $nrCores,
 								   'processTime' => $time,
-								   'tempDirectory' => $$tempDirectoryRef
+								   'tempDirectory' => $$tempDirectoryRef,
 								  });
 	    
 	}
@@ -7064,19 +7049,19 @@ sub PicardToolsMarkduplicatesWithMateCigar {
 
 	    ## Split BAMs using Samtools
 	    print $FILEHANDLE "## Split alignment files per contig\n";
-	    ($xargsFileCounter, $xargsFileName) = &SplitBAM({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-							     'FILEHANDLE' => $FILEHANDLE,
-							     'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
-							     'contigs' => \@{${$fileInfoHashRef}{'contigsSizeOrdered'}},
-							     'fileName' => $fileName,
-							     'programInfoPath' => $programInfoPath,
-							     'nrCores' => $nrCores,
-							     'xargsFileCounter' => $xargsFileCounter,
-							     'temporaryDirectory' => $$tempDirectoryRef,
-							     'infile' => $infile.$infileEnding
-							    });
+	    ($xargsFileCounter, $xargsFileName) = &SplitBAMSambamba({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+								     'FILEHANDLE' => $FILEHANDLE,
+								     'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
+								     'contigs' => \@{${$fileInfoHashRef}{'contigsSizeOrdered'}},
+								     'fileName' => $fileName,
+								     'programInfoPath' => $programInfoPath,
+								     'nrCores' => $nrCores,
+								     'xargsFileCounter' => $xargsFileCounter,
+								     'temporaryDirectory' => $$tempDirectoryRef,
+								     'infile' => $infile.$infileEnding
+								    });
 
-	    ## PicardToolsMarkduplicatesWithMateCigar
+	    ## SambambaMarkduplicates
 	    print $FILEHANDLE "## Marking Duplicates\n";
 	    ($xargsFileCounter, $xargsFileName) = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
 								 'XARGSFILEHANDLE' => $XARGSFILEHANDLE, 
@@ -7084,37 +7069,48 @@ sub PicardToolsMarkduplicatesWithMateCigar {
 								 'programInfoPath' => $programInfoPath,
 								 'nrCores' => $nrCores,
 								 'xargsFileCounter' => $xargsFileCounter,
-								 'firstCommand' => "java",
-								 'memoryAllocation' => "Xmx2g",
-								 'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-								 'javaTemporaryDirectory' => $$tempDirectoryRef,
-								 'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
+								 'firstCommand' => "sambamba_".${$scriptParameterHashRef}{'sambambaVersion'}." ",  #Program
 								});
 	    
 	    for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{'contigsSizeOrdered'}});$contigsCounter++) {
 
 		my $contigRef = \${$fileInfoHashRef}{'contigsSizeOrdered'}[$contigsCounter];
 
-		print $XARGSFILEHANDLE "MarkDuplicatesWithMateCigar ";
-		print $XARGSFILEHANDLE "ASSUME_SORTED=true ";
-		print $XARGSFILEHANDLE "MINIMUM_DISTANCE=".$maxSequenceLength." ";
-		print $XARGSFILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
-		print $XARGSFILEHANDLE "REMOVE_DUPLICATES=false ";
-		print $XARGSFILEHANDLE "VALIDATION_STRINGENCY=STRICT ";
-		print $XARGSFILEHANDLE "INPUT=".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile
-		print $XARGSFILEHANDLE "OUTPUT=".$$tempDirectoryRef."/".$infile.$outfileEnding."_".$$contigRef.".bam ";  #OutFile
-		print $XARGSFILEHANDLE "METRICS_FILE=".$$tempDirectoryRef."/".$infile.$outfileEnding."_".$$contigRef."_metric ";  #Metric file
+		print $XARGSFILEHANDLE "markdup ";
+		print $XARGSFILEHANDLE "--tmpdir=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Directory for storing intermediate files
+		print $XARGSFILEHANDLE "--show-progress ";  #Show progressbar in STDERR
+		print $XARGSFILEHANDLE $$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile
+		print $XARGSFILEHANDLE $$tempDirectoryRef."/".$infile.$outfileEnding."_".$$contigRef.".bam ";  #OutFile
 		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-		print $XARGSFILEHANDLE "\n";		
+		print $XARGSFILEHANDLE "; ";
+
+		print $XARGSFILEHANDLE "sambamba_".${$scriptParameterHashRef}{'sambambaVersion'}." ";  #Program
+		print $XARGSFILEHANDLE "flagstat ";
+		print $XARGSFILEHANDLE $$tempDirectoryRef."/".$infile.$outfileEnding."_".$$contigRef.".bam ";  #OutFile
+		print $XARGSFILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileEnding."_".$$contigRef."_metric ";  #Metric file 
+		print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		print $XARGSFILEHANDLE "\n";
 	    }
 
-	    &MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$infile.$outfileEnding."_*_metric",
+	    ## Concatenate all metric files
+	    print $FILEHANDLE "cat ";
+	    print $FILEHANDLE $$tempDirectoryRef."/".$infile.$outfileEnding."_*_metric ";
+	    print $FILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileEnding."_metricAll ";  #Metric file for all files
+	    print $FILEHANDLE "\n\n";
+	    
+	    ## Sum metric over concatenated file
+	    print $FILEHANDLE $regExp." ";
+	    print $FILEHANDLE $$tempDirectoryRef."/".$infile.$outfileEnding."_metricAll ";
+	    print $FILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileEnding."_metric ";  #Sum of all original metric files
+	    print $FILEHANDLE "\n\n";
+
+	    &MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$infile.$outfileEnding."_metric",
 				  'filePath' => $outSampleDirectory."/",
 				  'FILEHANDLE' => $FILEHANDLE,
 				 });
 	    print $FILEHANDLE "wait", "\n\n";
 
-	    if ( (${$scriptParameterHashRef}{'pPicardToolsMarkduplicatesWithMateCigar'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+	    if ( (${$scriptParameterHashRef}{'pSambambaMarkduplicates'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 		    
 		    ## Collect QC metadata info for later use
 		    &SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
@@ -7123,10 +7119,10 @@ sub PicardToolsMarkduplicatesWithMateCigar {
 				   'programName' => "MarkDuplicates",
 				   'infile' => $infile,
 				   'outDirectory' => $outSampleDirectory,
-				   'outFileEnding' => $outfileEnding."_".${$fileInfoHashRef}{'contigsSizeOrdered'}[0]."_metric",
+				   'outFileEnding' => $outfileEnding."_metric",
 				   'outDataType' => "infileDependent"
 				  });
-		    ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'MostCompleteBAM'}{'Path'} = $outSampleDirectory."/".$infile.$outfileEnding.".bam";
+		    ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'MostCompleteBAM'}{'Path'} = $outSampleDirectory."/".$infile.$outfileEnding."_".${$fileInfoHashRef}{'contigsSizeOrdered'}[0].".bam";
 		}
 
 	    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
@@ -7182,232 +7178,6 @@ sub PicardToolsMarkduplicatesWithMateCigar {
 	
 	return $xargsFileCounter;  #Track the number of created xargs scripts per module for Block algorithm
     }
-}
-
-
-sub PicardToolsMarkduplicatesForQCMetrics { 
-
-##PicardToolsMarkduplicatesWithMateCigarQCMetrics
-    
-##Function : Mark duplicated reads using PicardTools MarkDuplicates in files generated from alignment (sorted, merged). Runs on complete file to produce accurate metrics
-##Returns  : "$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $sampleID, $aligner, $programName, $fileName, $programInfoPath, $FILEHANDLE, $xargsFileCounter
-##         : $parameterHashRef           => The parameter hash {REF}
-##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
-##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
-##         : $fileInfoHashRef            => The fileInfo hash {REF}
-##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
-##         : $laneHashRef                => The lane info hash {REF}
-##         : $sampleIDRef                => The sampleID {REF}
-##         : $alignerRef                 => The aligner used in the analysis {REF}
-##         : $programName                => The program name
-##         : $programInfoPath            => The program info path
-##         : $fileName                   => File name
-##         : $FILEHANDLE                 => Filehandle to write to
-##         : $xargsFileCounter           => The xargs file counter
-
-    my ($argHashRef) = @_;
-    
-    my %default = ('xargsFileCounter' => 0,
-	);
-    
-    &SetDefaultArg(\%{$argHashRef}, \%default);
-
-    ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
-    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
-    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
-    my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
-    my $laneHashRef = ${$argHashRef}{'laneHashRef'};
-    my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
-    my $fileName = ${$argHashRef}{'fileName'};
-    my $programName = ${$argHashRef}{'programName'};
-    my $programInfoPath = ${$argHashRef}{'programInfoPath'};
-    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
-    my $xargsFileCounter = ${$argHashRef}{'xargsFileCounter'};
-
-    my $tempDirectoryRef = \${$scriptParameterHashRef}{'tempDirectory'};
-    my $familyIDRef = \${$scriptParameterHashRef}{'familyID'};
-    my $nrCores = 1;
-    my $reduceIORef = \${$scriptParameterHashRef}{'reduceIO'};
-    my $lanes = join("",@{ ${$laneHashRef}{$$sampleIDRef} });  #Extract lanes
-
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 20;
-    my $xargsFileName;
-
-    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
-
-	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    }
-
-    ## Assign directories
-    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
-    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/coveragereport";
-
-    ## Assign fileEndings
-    my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pGATKBaseRecalibration'}{'fileEnding'};
-    my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{"p".$programName}{'fileEnding'};
-
-    ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, $$sampleIDRef);
-    
-    if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
-
-	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	($fileName, $programInfoPath) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-							       'FILEHANDLE' => $FILEHANDLE,
-							       'directoryID' => $$sampleIDRef,
-							       'programName' => $programName,
-							       'programDirectory' => lc($$alignerRef."/coveragereport"),
-							       'nrofCores' => $nrCores,
-							       'processTime' => $time,
-							       'tempDirectory' => $$tempDirectoryRef
-							      });
-	
-	&MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE, 
-			    'path' => $inSampleDirectory."/".$infile.$infileEnding.".b*",
-			    'tempDirectory' => $$tempDirectoryRef
-			   });
-	print $FILEHANDLE "wait", "\n\n";
-	
-	## PicardToolsMarkduplicates
-	print $FILEHANDLE "## Marking Duplicates\n";
-	
-	($xargsFileCounter, $xargsFileName) = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
-							     'XARGSFILEHANDLE' => $XARGSFILEHANDLE, 
-							     'fileName' => $fileName,
-							     'programInfoPath' => $programInfoPath,
-							     'nrCores' => $nrCores,
-							     'xargsFileCounter' => $xargsFileCounter,
-							     'firstCommand' => "java",
-							     'memoryAllocation' => "Xmx2g",
-							     'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-							     'javaTemporaryDirectory' => $$tempDirectoryRef,
-							     'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
-							    });
-	
-	print $XARGSFILEHANDLE "MarkDuplicates ";
-	print $XARGSFILEHANDLE "ASSUME_SORTED=true ";
-	print $XARGSFILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
-	print $XARGSFILEHANDLE "REMOVE_DUPLICATES=false ";
-	print $XARGSFILEHANDLE "VALIDATION_STRINGENCY=STRICT ";
-	print $XARGSFILEHANDLE "INPUT=".$$tempDirectoryRef."/".$infile.$infileEnding.".bam ";;  #InFile
-	print $XARGSFILEHANDLE "OUTPUT=".$$tempDirectoryRef."/".$infile.$outfileEnding.".bam ";  #OutFile
-	print $XARGSFILEHANDLE "METRICS_FILE=".$$tempDirectoryRef."/".$infile.$outfileEnding." ";  #Metric file 
-	print $XARGSFILEHANDLE "2> ".$xargsFileName.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-	print $XARGSFILEHANDLE "\n";
-	
-	&MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$infile.$outfileEnding,
-			      'filePath' => $outSampleDirectory."/",
-			      'FILEHANDLE' => $FILEHANDLE,
-			     });
-	print $FILEHANDLE "wait", "\n\n";
-
-	if ( (${$scriptParameterHashRef}{'pPicardToolsMarkduplicatesWithMateCigar'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
-	    
-	    ## Collect QC metadata info for later use
-	    &SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
-			   'familyID' => $$familyIDRef,
-			   'sampleID' => $$sampleIDRef,
-			   'programName' => "MarkDuplicates",
-			   'infile' => $infile,
-			   'outDirectory' => $outSampleDirectory,
-			   'outFileEnding' => $outfileEnding,
-			   'outDataType' => "infileDependent"
-			  });
-	}
-    }
-    else {  #No merged files
-	
-	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	($fileName, $programInfoPath) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-							       'FILEHANDLE' => $FILEHANDLE,
-							       'directoryID' => $$sampleIDRef,
-							       'programName' => $programName,
-							       'programDirectory' => lc($$alignerRef."/coveragereport"),
-							       'nrofCores' => $nrCores,
-							       'processTime' => $time,
-							       'tempDirectory' => $$tempDirectoryRef
-							      });
-	
-	## Copies files from source to temporary folder. Loop over files specified by $arrayRef and collects files from $extractArrayRef.
-	&MigrateFilesToTemp(\%{$scriptParameterHashRef}, \@{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} }, \@{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} }, $FILEHANDLE,
-			    {'inSampleDirectory' => $inSampleDirectory,
-			     'nrCores' => $nrCores,
-			     'fileEnding' => $infileEnding.".b*"
-			    });
-
-	for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} });$infileCounter++) {  #For all files from independent of merged or not
-	    
-	    my $infile = ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter];
-
-	    ## PicardToolsMarkduplicatesWithMateCigar
-	    print $FILEHANDLE "## Marking Duplicates\n";
-	    ($xargsFileCounter, $xargsFileName) = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
-								 'XARGSFILEHANDLE' => $XARGSFILEHANDLE, 
-								 'fileName' => $fileName,
-								 'programInfoPath' => $programInfoPath,
-								 'nrCores' => $nrCores,
-								 'xargsFileCounter' => $xargsFileCounter,
-								 'firstCommand' => "java",
-								 'memoryAllocation' => "Xmx2g",
-								 'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-								 'javaTemporaryDirectory' => $$tempDirectoryRef,
-								 'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
-								});
-	    
-	    print $XARGSFILEHANDLE "MarkDuplicates ";
-	    print $XARGSFILEHANDLE "ASSUME_SORTED=true ";
-	    print $XARGSFILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
-	    print $XARGSFILEHANDLE "REMOVE_DUPLICATES=false ";
-	    print $XARGSFILEHANDLE "VALIDATION_STRINGENCY=STRICT ";
-	    print $XARGSFILEHANDLE "INPUT=".$$tempDirectoryRef."/".$infile.$infileEnding.".bam ";  #InFile
-	    print $XARGSFILEHANDLE "OUTPUT=".$$tempDirectoryRef."/".$infile.$outfileEnding.".bam ";  #OutFile
-	    print $XARGSFILEHANDLE "METRICS_FILE=".$$tempDirectoryRef."/".$infile.$outfileEnding." ";  #Metric file
-	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$infile.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-	    print $XARGSFILEHANDLE "\n";		
-
-	    &MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$infile.$outfileEnding,
-				  'filePath' => $outSampleDirectory."/",
-				  'FILEHANDLE' => $FILEHANDLE,
-				 });
-	    print $FILEHANDLE "wait", "\n\n";
-	    
-	    if ( (${$scriptParameterHashRef}{'pPicardToolsMarkduplicatesWithMateCigar'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
-		    
-		## Collect QC metadata info for later use
-		&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
-			       'familyID' => $$familyIDRef,
-			       'sampleID' => $$sampleIDRef,
-			       'programName' => "MarkDuplicates",
-			       'infile' => $infile,
-			       'outDirectory' => $outSampleDirectory,
-			       'outFileEnding' => $outfileEnding,
-			       'outDataType' => "infileDependent"
-			      });
-	    }
-	}
-    }
-
-    close($XARGSFILEHANDLE);
-    
-    close($FILEHANDLE);
-	
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
-	
-	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-		       'jobIDHashRef' => \%jobID,
-		       'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
-		       'sampleID' => $$sampleIDRef,
-		       'dependencies' => 2, 
-		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
-		       'sbatchFileName' => $fileName
-		      });
-    }
-    return $xargsFileCounter;  #Track the number of created xargs scripts per module for Block algorithm
 }
 
 
@@ -7520,18 +7290,18 @@ sub PicardToolsMerge {
 
 	    ## Split BAMs using Samtools
 	    print $FILEHANDLE "## Split alignment files per contig\n";
-	    ($xargsFileCounter, $xargsFileName) = &SplitBAM({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-							     'FILEHANDLE' => $FILEHANDLE,
-							     'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
-							     'contigs' => \@{${$fileInfoHashRef}{'contigsSizeOrdered'}},
-							     'fileName' => $fileName,
-							     'programInfoPath' => $programInfoPath,
-							     'nrCores' => $nrCores,
-							     'xargsFileCounter' => $xargsFileCounter,
-							     'temporaryDirectory' => $$tempDirectoryRef,
-							     'xargsFileCounter' => $xargsFileCounter,
-							     'infile' => $infile.$infileEnding
-							    });
+	    ($xargsFileCounter, $xargsFileName) = &SplitBAMSambamba({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+								     'FILEHANDLE' => $FILEHANDLE,
+								     'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
+								     'contigs' => \@{${$fileInfoHashRef}{'contigsSizeOrdered'}},
+								     'fileName' => $fileName,
+								     'programInfoPath' => $programInfoPath,
+								     'nrCores' => $nrCores,
+								     'xargsFileCounter' => $xargsFileCounter,
+								     'temporaryDirectory' => $$tempDirectoryRef,
+								     'xargsFileCounter' => $xargsFileCounter,
+								     'infile' => $infile.$infileEnding
+								    });
 	}
 
 	## PicardToolsMergeSamFiles
@@ -7604,17 +7374,17 @@ sub PicardToolsMerge {
 
 		    ## Split BAMs using Samtools
 		    print $FILEHANDLE "## Split alignment files per contig\n";
-		    ($xargsFileCounter, $xargsFileName) = &SplitBAM({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-								     'FILEHANDLE' => $FILEHANDLE,
-								     'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
-								     'contigs' => \@{${$fileInfoHashRef}{'contigsSizeOrdered'}},
-								     'fileName' => $fileName,
-								     'programInfoPath' => $programInfoPath,
-								     'nrCores' => $nrCores,
-								     'xargsFileCounter' => $xargsFileCounter,
-								     'temporaryDirectory' => $$tempDirectoryRef,
-								     'infile' => $picardToolsMergeSamFilesPreviousFileNoEnding
-								    });
+		    ($xargsFileCounter, $xargsFileName) = &SplitBAMSambamba({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+									     'FILEHANDLE' => $FILEHANDLE,
+									     'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
+									     'contigs' => \@{${$fileInfoHashRef}{'contigsSizeOrdered'}},
+									     'fileName' => $fileName,
+									     'programInfoPath' => $programInfoPath,
+									     'nrCores' => $nrCores,
+									     'xargsFileCounter' => $xargsFileCounter,
+									     'temporaryDirectory' => $$tempDirectoryRef,
+									     'infile' => $picardToolsMergeSamFilesPreviousFileNoEnding
+									    });
 
 		    ## PicardToolsMergeSamFiles
 		    print $FILEHANDLE "## Merging alignment files\n";
@@ -7704,17 +7474,17 @@ sub PicardToolsMerge {
 
 		## Split BAMs using Samtools
 		print $FILEHANDLE "## Split alignment files per contig\n";
-		($xargsFileCounter, $xargsFileName) = &SplitBAM({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-								 'FILEHANDLE' => $FILEHANDLE,
-								 'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
-								 'contigs' => \@{${$fileInfoHashRef}{'contigsSizeOrdered'}},
-								 'fileName' => $fileName,
-								 'programInfoPath' => $programInfoPath,
-								 'nrCores' => $nrCores,
-								 'xargsFileCounter' => $xargsFileCounter,
-								 'temporaryDirectory' => $$tempDirectoryRef,
-								 'infile' => $picardToolsMergeSamFilesPreviousFileNoEnding
-								});
+		($xargsFileCounter, $xargsFileName) = &SplitBAMSambamba({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+									 'FILEHANDLE' => $FILEHANDLE,
+									 'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
+									 'contigs' => \@{${$fileInfoHashRef}{'contigsSizeOrdered'}},
+									 'fileName' => $fileName,
+									 'programInfoPath' => $programInfoPath,
+									 'nrCores' => $nrCores,
+									 'xargsFileCounter' => $xargsFileCounter,
+									 'temporaryDirectory' => $$tempDirectoryRef,
+									 'infile' => $picardToolsMergeSamFilesPreviousFileNoEnding
+									});
 
 		## Create file commands for xargs
 		($xargsFileCounter, $xargsFileName) = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
@@ -7821,7 +7591,7 @@ sub PicardToolsMerge {
 }
 
 
-sub BWA_Sampe {
+sub BWASampe {
 
 ##BWA_Sampe
     
@@ -8390,9 +8160,10 @@ sub BWA_Mem {
 	    print $FILEHANDLE "-@ ".${$scriptParameterHashRef}{'maximumCores'}." ";  #Number of threads 
 	    print $FILEHANDLE "- ";  #/dev/stdin
 	    print $FILEHANDLE "| ";
-	    print $FILEHANDLE "sambamba_v0.5.8 sort ";
-	    print $FILEHANDLE "--tmpdir=".${$scriptParameterHashRef}{'tempDirectory'}." ";
-	    print $FILEHANDLE "--show-progress ";
+	    print $FILEHANDLE "sambamba_".${$scriptParameterHashRef}{'sambambaVersion'}." ";  #Program
+	    print $FILEHANDLE "sort ";  #Command
+	    print $FILEHANDLE "--tmpdir=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Directory for storing intermediate files
+	    print $FILEHANDLE "--show-progress ";  #Show progressbar in STDERR
 	    print $FILEHANDLE "--out=".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam ";  #Outfile
 	    print $FILEHANDLE "/dev/stdin ";
 	    print $FILEHANDLE "\n\n";
@@ -8400,7 +8171,8 @@ sub BWA_Mem {
 	    if (${$scriptParameterHashRef}{'bwaMemCram'} == 1) {
 
 		print $FILEHANDLE "## Create CRAM file from BAM\n";
-		print $FILEHANDLE "sambamba_v0.5.8 view ";
+		print $FILEHANDLE "sambamba_".${$scriptParameterHashRef}{'sambambaVersion'}." ";  #Program
+		print $FILEHANDLE "view ";  #Commmand
 		print $FILEHANDLE "-f cram "; #Write output to CRAM-format
 		print $FILEHANDLE "-h ";  #print header before reads
 		print $FILEHANDLE "-T ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference
@@ -9042,9 +8814,9 @@ sub BAMCalibrationAndGTBlock {
 	
 	$logger->info("\t[PicardTool MergeSamFiles]\n");
     }
-    if ($scriptParameter{'pPicardToolsMarkduplicatesWithMateCigar'} > 0) {  #PicardTools MarkDuplicates
+    if ($scriptParameter{'pSambambaMarkduplicates'} > 0) {  #Sambamba Markduplicates
 	
-	$logger->info("\t[PicardTools MarkDuplicatesWithMateCigar]\n");
+	$logger->info("\t[Sambamba Markduplicates]\n");
     }
     if ($scriptParameter{'pGATKRealigner'} > 0) {  #Run GATK ReAlignerTargetCreator/IndelRealigner
 	
@@ -9120,22 +8892,22 @@ sub BAMCalibrationAndGTBlock {
 									});
 	    }
 	}
-	if ($scriptParameter{'pPicardToolsMarkduplicatesWithMateCigar'} > 0) {  #PicardTools MarkDuplicates
+	if ($scriptParameter{'pSambambaMarkduplicates'} > 0) {  #Sambamba Markduplicates
 	    
-	    ($xargsFileCounter, $xargsFileName) = &PicardToolsMarkduplicatesWithMateCigar({'parameterHashRef' => \%{$parameterHashRef},
-											   'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-											   'sampleInfoHashRef' => \%{$sampleInfoHashRef},
-											   'fileInfoHashRef' => \%{$fileInfoHashRef},
-											   'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
-											   'laneHashRef' => \%{$laneHashRef},
-											   'sampleIDRef' => $sampleIDRef,
-											   'alignerRef' => \$aligner, 
-											   'programName' => "PicardToolsMarkduplicatesWithMateCigar",
-											   'fileName' => $fileName,
-											   'programInfoPath' => $programInfoPath,
-											   'FILEHANDLE' => $FILEHANDLE,
-											   'xargsFileCounter' => $xargsFileCounter,
-											  });
+	    ($xargsFileCounter, $xargsFileName) = &SambambaMarkduplicates({'parameterHashRef' => \%{$parameterHashRef},
+									   'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+									   'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+									   'fileInfoHashRef' => \%{$fileInfoHashRef},
+									   'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
+									   'laneHashRef' => \%{$laneHashRef},
+									   'sampleIDRef' => $sampleIDRef,
+									   'alignerRef' => \$aligner, 
+									   'programName' => "SambambaMarkduplicates",
+									   'fileName' => $fileName,
+									   'programInfoPath' => $programInfoPath,
+									   'FILEHANDLE' => $FILEHANDLE,
+									   'xargsFileCounter' => $xargsFileCounter,
+									  });
 	}
 	if ($scriptParameter{'pGATKRealigner'} > 0) {  #Run GATK ReAlignerTargetCreator/IndelRealigner
 	       
@@ -15511,6 +15283,74 @@ sub SplitBAM {
 }
 
 
+sub SplitBAMSambamba {
+
+##SplitBAMSambamba
+    
+##Function : Split BAM file per contig and index new BAM. Creates the command line for xargs. Writes to sbatch FILEHANDLE and opens xargs FILEHANDLE
+##Returns  : ""
+##Arguments: $FILEHANDLE, $XARGSFILEHANDLE, $argHashRef
+##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $FILEHANDLE             => Sbatch filehandle to write to
+##         : $XARGSFILEHANDLE        => XARGS filehandle to write to
+##         : $contigs                => The contigs to process
+##         : $filename               => File name - ususally sbatch
+##         : $programInfoPath        => The program info path
+##         : $nrCores                => The number of cores to use
+##         : $firstCommand           => The inital command
+##         : $infile                 => The infile
+##         : $temporaryDirectory     => The temporary directory
+
+    my ($argHashRef) = @_;
+
+    my %default = ('firstCommand' => "sambamba_".${$argHashRef}{'scriptParameterHashRef'}{'sambambaVersion'},
+		   'xargsFileCounter' => 0,
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $XARGSFILEHANDLE = ${$argHashRef}{'XARGSFILEHANDLE'};
+
+    ## Create file commands for xargs
+    my ($xargsFileCounter, $xargsFileName) = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
+							    'XARGSFILEHANDLE' => $XARGSFILEHANDLE, 
+							    'fileName' => ${$argHashRef}{'fileName'},
+							    'programInfoPath' => ${$argHashRef}{'programInfoPath'},
+							    'nrCores' => ${$argHashRef}{'nrCores'},
+							    'firstCommand' => ${$argHashRef}{'firstCommand'},
+							    'xargsFileCounter' => ${$argHashRef}{'xargsFileCounter'},
+							   });
+    
+    ## Split by contig
+    for (my $contigsCounter=0;$contigsCounter<scalar(@{${$argHashRef}{'contigs'}});$contigsCounter++) {
+	
+	my $contigRef = \${$argHashRef}{'contigs'}[$contigsCounter];
+
+	print $XARGSFILEHANDLE "view ";  #Command
+	print $XARGSFILEHANDLE "-h ";  #Include header
+	print $XARGSFILEHANDLE "--format bam ";  #BAM output
+	print $XARGSFILEHANDLE "--show-progress ";  #Show progress bar in STDERR
+	print $XARGSFILEHANDLE "--output-filename=".${$argHashRef}{'temporaryDirectory'}."/".${$argHashRef}{'infile'}."_".$$contigRef.".bam ";  #Write to file
+	print $XARGSFILEHANDLE ${$argHashRef}{'temporaryDirectory'}."/".${$argHashRef}{'infile'}.".bam ";  #InFile
+	print $XARGSFILEHANDLE $$contigRef." ";
+	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE "; ";  #Wait
+
+	## Index
+	print $XARGSFILEHANDLE ${$argHashRef}{'firstCommand'}." ";  #Program
+	print $XARGSFILEHANDLE "index ";  #Command
+	print $XARGSFILEHANDLE "--show-progress ";  #Show progress bar in STDERR
+	print $XARGSFILEHANDLE ${$argHashRef}{'temporaryDirectory'}."/".${$argHashRef}{'infile'}."_".$$contigRef.".bam ";  #InFile
+	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE "\n";
+    }
+    return $xargsFileCounter; 
+}
+
+
 sub FindMaxSeqLengthForSampleID {
 
 ##FindMaxSeqLengthForSampleID
@@ -15798,7 +15638,7 @@ sub CheckCommandinPath {
 		  
 		    unless($seen{$program}) { 
 		
-			if($program eq "sambamba") {
+			if($program eq "sambamba") {  #Special case
 
 			    $program .= "_".${$scriptParameterHashRef}{'sambambaVersion'};
 			}
@@ -16813,9 +16653,9 @@ sub RemoveFiles {
 	$removeProgramFile{'pPicardToolsMergeSamFiles'}{'fileEnding'} = [".bam"];
 	$removeProgramFile{'pPicardToolsMergeSamFiles'}{'setting'} = "merged";
 	$removeProgramFile{'pPicardToolsMergeSamFiles'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerRef;
-	$removeProgramFile{'pPicardToolsMarkduplicatesWithMateCigar'}{'fileEnding'} = [".bam"];
-	$removeProgramFile{'pPicardToolsMarkduplicatesWithMateCigar'}{'setting'} = "merged";
-	$removeProgramFile{'pPicardToolsMarkduplicatesWithMateCigar'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerRef;
+	$removeProgramFile{'pSambambaMarkduplicates'}{'fileEnding'} = [".bam"];
+	$removeProgramFile{'pSambambaMarkduplicates'}{'setting'} = "merged";
+	$removeProgramFile{'pSambambaMarkduplicates'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerRef;
 	$removeProgramFile{'pGATKRealigner'}{'fileEnding'} = [".bam"];
 	$removeProgramFile{'pGATKRealigner'}{'setting'} = "merged";
 	$removeProgramFile{'pGATKRealigner'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerRef."/gatk";
