@@ -641,10 +641,8 @@ sub RegExpToYAML {
 
     $regExp{'RelationCheck'}{'Sample_RelationCheck'}  = q?perl -nae 'print $_;' ?; #Note will return whole file
 
-    $regExp{'MarkDuplicates'}{'Header_info'}{'Header'} = q?perl -nae' if ($_ =~/^LIBRARY/ ) {print $_;last;}' ?; #Note return whole line (Header) 
+    $regExp{'MarkDuplicates'}{'Fraction_duplicates'} = q?perl -nae 'if($_=~/Fraction Duplicates\: (\S+)/) {print $1;}' ?; #Collect fraction duplicates
     
-    $regExp{'MarkDuplicates'}{'Header_info'}{'Data'} = q?perl -nae' if ( ($. ==9) && ($_ =~/(\S+)/) ) {my @arr= split(/\s/, $_);shift(@arr); foreach my $element (@arr) {print $element, "\t"};last;}' ?; #Note return whole line and only look at line 8, where the data action is               
-
     $regExp{'CalculateHsMetrics'}{'Header_info'}{'Header'} = q?perl -nae' if ($_ =~/^BAIT_SET/ ) {print $_;last;}' ?; #Note return whole line (Header) 
     
     $regExp{'CalculateHsMetrics'}{'Header_info'}{'Data'} = q?perl -nae' if ( ($. ==8) && ($_ =~/(\S+)/) ) {print $_;last;}' ?; #Note return whole line and only look at line 8, where the data action is
