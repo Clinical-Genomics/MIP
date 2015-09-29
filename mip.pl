@@ -6876,9 +6876,6 @@ sub SambambaMarkduplicates {
 	
 	## SambambaMarkduplicates
 	print $FILEHANDLE "## Marking Duplicates\n";
-
-	$nrCores = floor(${$scriptParameterHashRef}{'nodeRamMemory'} / 2);  #Division by X according to java Heap size
-	$nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, $nrCores);  #To not exceed maximum
 	
 	($xargsFileCounter, $xargsFileName) = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
 							     'XARGSFILEHANDLE' => $XARGSFILEHANDLE, 
@@ -6984,7 +6981,7 @@ sub SambambaMarkduplicates {
 								   'programDirectory' => lc($$alignerRef),
 								   'nrofCores' => $nrCores,
 								   'processTime' => $time,
-								   'tempDirectory' => $$tempDirectoryRef
+								   'tempDirectory' => $$tempDirectoryRef,
 								  });
 	    
 	}
@@ -7025,7 +7022,7 @@ sub SambambaMarkduplicates {
 								 'programInfoPath' => $programInfoPath,
 								 'nrCores' => $nrCores,
 								 'xargsFileCounter' => $xargsFileCounter,
-								 'firstCommand' => "java",
+								 'firstCommand' => "sambamba_".${$scriptParameterHashRef}{'sambambaVersion'}." ",  #Program
 								});
 	    
 	    for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{'contigsSizeOrdered'}});$contigsCounter++) {
