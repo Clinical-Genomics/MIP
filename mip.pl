@@ -265,7 +265,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ## Eval parameter hash
 &EvalParameterHash(\%parameter, $Bin."/definitions/defineParameters.yaml");
 
-my $mipVersion = "v2.4.6";	#Set MIP version
+my $mipVersion = "v2.4.7";	#Set MIP version
 my $aligner;
 
 ## Target definition files
@@ -1816,7 +1816,9 @@ sub RankVariants {
 	    print $XARGSFILEHANDLE "genmod ";
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "score ";  #Score variants in a vcf file using Weighted sums
-	    
+	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{'pedigreeFile'}." ";  #Pedigree file
+	    print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{'genmodModelsFamilyType'}." ";  #Family type
+
 	    if (${$scriptParameterHashRef}{'rankModelFile'} ne "noUserInfo") {
 		
 		print $XARGSFILEHANDLE "--score_config ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'rankModelFile'}." ";  #Rank model config.ini file 
