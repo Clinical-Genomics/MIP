@@ -1822,7 +1822,9 @@ sub RankVariants {
 	    print $XARGSFILEHANDLE "genmod ";
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "score ";  #Score variants in a vcf file using Weighted sums
-	    
+	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{'pedigreeFile'}." ";  #Pedigree file
+	    print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{'genmodModelsFamilyType'}." ";  #Family type
+
 	    if (${$scriptParameterHashRef}{'rankModelFile'} ne "noUserInfo") {
 		
 		print $XARGSFILEHANDLE "--score_config ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'rankModelFile'}." ";  #Rank model config.ini file 
