@@ -165,6 +165,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pVeP/--pVariantEffectPredictor Annotate variants using VEP (defaults to "1" (=yes))
                  -vepp/--vepDirectoryPath Path to VEP script directory (defaults to "")
                  -vepc/--vepDirectoryCache Specify the cache directory to use (defaults to "") 
+                 -vepr/--vepReference Use Human reference file with VEP (defaults to "0" (=no))
                  -vepf/--vepFeatures VEP features (defaults to ("hgvs","symbol","numbers","sift","polyphen","humdiv","domains","protein","ccds","uniprot","biotype","regulatory"); comma sep)
                -pVcP/--pVCFParser Parse variants using vcfParser.pl (defaults to "1" (=yes))
                  -vcpvt/--vcfParserVepTranscripts Parse VEP transcript specific entries (defaults to "0" (=no))
@@ -441,6 +442,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'pVeP|pVariantEffectPredictor:n' => \$parameter{'pVariantEffectPredictor'}{'value'},  #Annotation of variants using vep
 	   'vepp|vepDirectoryPath:s'  => \$parameter{'vepDirectoryPath'}{'value'},  #path to vep script dir
 	   'vepc|vepDirectoryCache:s'  => \$parameter{'vepDirectoryCache'}{'value'},  #path to vep cache dir
+	   'vepr|vepReference:s'  => \$parameter{'vepReference'}{'value'},  #Use Human reference file with VEP
 	   'vepf|vepFeatures:s'  => \@{$parameter{'vepFeatures'}{'value'}},  #Comma separated list
 	   'pVcP|pVCFParser:n' => \$parameter{'pVCFParser'}{'value'},
 	   'vcpvt|vcfParserVepTranscripts:n' => \$parameter{'vcfParserVepTranscripts'}{'value'},
@@ -3361,8 +3363,13 @@ sub VariantEffectPredictor {
 	print $XARGSFILEHANDLE ${$scriptParameterHashRef}{'vepDirectoryPath'}."/variant_effect_predictor.pl ";  #VEP script 
 	print $XARGSFILEHANDLE "--dir_cache ".${$scriptParameterHashRef}{'vepDirectoryCache'}." ";  #Specify the cache directory to use
 	print $XARGSFILEHANDLE "--cache ";  #Enables use of the cache.
+	if (${$scriptParameterHashRef}{'vepReference'} == 1 ) {  #Use reference file for analysis with vep
+
+	    print $XARGSFILEHANDLE "--fasta ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
+	}
 	print $XARGSFILEHANDLE "--force_overwrite ";  #force the overwrite of the existing file
 	print $XARGSFILEHANDLE "--vcf ";  #Writes output in VCF format.
+	print $XARGSFILEHANDLE "--no_progress ";  #Do not show progress in stderr
 	print $XARGSFILEHANDLE "--fork ".$nrForkes." ";  #Enable forking, using the specified number of forks.
 	print $XARGSFILEHANDLE "--buffer_size 20000 ";  #Sets the internal buffer size, corresponding to the number of variations that are read in to memory simultaneously 
 	print $XARGSFILEHANDLE "--offline ";  #Use installed assembly 

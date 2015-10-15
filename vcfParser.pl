@@ -21,7 +21,7 @@ BEGIN {
            -sof/--selectOutfile selectOutfile (vcf)
            -pad/--padding (Default: "5000" nucleotides)
            -wst/--writeSoftwareTag (Default: "1")
-           -h/--help Display this help message    
+           -h/--help Display this help message   
            -v/--version Display version
         };    
 }
@@ -30,7 +30,7 @@ my ($infile, $parseVEP, $rangeFeatureFile, $selectFeatureFile, $selectFeatureMat
 my (@metaData, @selectMetaData, @rangeFeatureAnnotationColumns, @selectFeatureAnnotationColumns); 
 my (%geneAnnotation, %consequenceSeverity, %rangeData, %selectData, %snpEffCmd, %tree, %metaData);
 
-my $vcfParserVersion = "1.2.3";
+my $vcfParserVersion = "1.2.4";
 
 ## Enables cmd "vcfParser.pl" to print usage help 
 if(scalar(@ARGV) == 0) {
@@ -1355,13 +1355,13 @@ sub TreeAnnotations {
 	
 	if ($start eq $stop) { #SNV
 	    
-	    $feature =$tree{$rangeFileKey}{ $$lineElementsArrayRef[0] }->fetch($start, $stop+1); #Add 1 to SNV to create range input.
+	    $feature = $tree{$rangeFileKey}{ $$lineElementsArrayRef[0] }->fetch($start, $stop+1); #Add 1 to SNV to create range input.
 	}
 	else {#Range input
 	    
 	    $feature = $tree{$rangeFileKey}{ $$lineElementsArrayRef[0] }->fetch($start, $stop);
 	}
-	if (defined(@{$feature})) { #Features found in tree
+	if (@{$feature}) { #Features found in tree
 	    
 	    my %collectedAnnotations; #Collect all features before adding to line
 	    
@@ -1387,7 +1387,7 @@ sub TreeAnnotations {
 				    my $uniqueRef = &UniqElements(\@{$collectedAnnotations{$annotationsCounter}});
 				    @{$collectedAnnotations{$annotationsCounter}} = @{$uniqueRef};
 				}
-				if (defined(@{$collectedAnnotations{$annotationsCounter}})) {
+				if ( (defined($collectedAnnotations{$annotationsCounter})) && (@{$collectedAnnotations{$annotationsCounter}}) ) {
 				
 				    $$printLineRef .= $rangeAnnotation."=".join(",", @{$collectedAnnotations{$annotationsCounter}}).";"; #Add to corresponding line
 				}

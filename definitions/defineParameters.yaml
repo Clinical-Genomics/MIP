@@ -784,6 +784,12 @@ vepDirectoryCache:
   dataType: SCALAR
   existsCheck: directory
   type: path
+vepReference:
+  associatedProgram:
+   - pVariantEffectPredictor
+  dataType: SCALAR
+  default: 0
+  type: program
 ## VCFParser
 pVCFParser:
   associatedProgram:
