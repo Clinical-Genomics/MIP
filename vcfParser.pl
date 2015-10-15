@@ -28,9 +28,9 @@ BEGIN {
 
 my ($infile, $parseVEP, $rangeFeatureFile, $selectFeatureFile, $selectFeatureMatchingColumn, $selectOutfile, $writeSoftwareTag, $padding) = ("", 0, 0, 0, "nocmdinput", "nocmdinput", 1, 5000);
 my (@metaData, @selectMetaData, @rangeFeatureAnnotationColumns, @selectFeatureAnnotationColumns); 
-my (%geneAnnotation, %consequenceSeverity, %rangeData, %selectData, %snpEffCmd, %tree, %metaData);
+my (%geneAnnotation, %consequenceSeverity, %rangeData, %selectData, %snpEffCmd, %tree, %metaData, %siftTerm, %polyPhenTerm);
 
-my $vcfParserVersion = "1.2.4";
+my $vcfParserVersion = "1.2.5";
 
 ## Enables cmd "vcfParser.pl" to print usage help 
 if(scalar(@ARGV) == 0) {
@@ -110,12 +110,16 @@ if ($selectFeatureFile ne 0) {
 
 &DefineSnpEffAnnotations();
 &DefineConsequenceSeverity();
+&DefineSiftTerms();
+&DefinePolyPhenTerms();
 
 &ReadInfileVCF({'metaData' => \%metaData,
 		'snpEffCmdHashRef' => \%snpEffCmd,
 		'rangeDataHashRef' => \%rangeData,
 		'selectDataHashRef' => \%selectData,
 		'consequenceSeverityHashRef' => \%consequenceSeverity,
+		'siftTermHashRef' => \%siftTerm,
+		'polyPhenTermHashRef' => \%polyPhenTerm,
 		'rangeFeatureAnnotationColumnsArrayRef' => \@rangeFeatureAnnotationColumns,
 		'selectFeatureAnnotationColumnsArrayRef' => \@selectFeatureAnnotationColumns,
 		'selectOutFilePath' => $selectOutfile,
@@ -277,6 +281,36 @@ sub DefineConsequenceSeverity {
 }
 
 
+sub DefineSiftTerms {
+
+##DefineSiftTerms
+
+##Function : Defines the allowed sift terms
+##Returns  : ""
+##Arguments: None
+
+    $siftTerm{'deleterious'} = "";
+    $siftTerm{'tolerated'} = "";
+    $siftTerm{'tolerated_low_confidence'} = "";
+    $siftTerm{'deleterious_low_confidence'} = "";
+
+}
+
+sub DefinePolyPhenTerms {
+
+##DefinePolyPhenTerms
+
+##Function : Defines the allowed polyPhen terms
+##Returns  : ""
+##Arguments: None
+
+    $polyPhenTerm{'probably_damaging'} = "";
+    $polyPhenTerm{'possibly_damaging'} = "";
+    $polyPhenTerm{'benign'} = "";
+    $polyPhenTerm{'unknown'} = "";
+
+}
+
 sub ReadRangeFile {
 
 ##ReadRangeFile
@@ -351,12 +385,14 @@ sub ReadInfileVCF {
 
 ##Function : Reads infile in vcf format and adds and parses annotations
 ##Returns  : ""
-##Arguments: $metaDataHashRef, $snpEffCmdHashRef, $rangeDataHashRef, $selectDataHashRef, $consequenceSeverityHashRef, $rangeFeatureAnnotationColumnsArrayRef, $selectOutFilePath 
+##Arguments: $metaDataHashRef, $snpEffCmdHashRef, $rangeDataHashRef, $selectDataHashRef, $consequenceSeverityHashRef, $siftTermHashRef, $polyPhenTermHashRef, $rangeFeatureAnnotationColumnsArrayRef, $selectOutFilePath 
 ##         : $metaDataHashRef                        => Vcf meta data {REF}
 ##         : $snpEffCmdHashRef                       => SnpEff meta data {REF}
 ##         : $rangeDataHashRef                       => Range file data {REF}
 ##         : $selectDataHashRef                      => Select file data {REF}
-##         : $consequenceSeverityHashRef             => Consequence severity for SO-terms {REF} 
+##         : $consequenceSeverityHashRef             => Consequence severity for SO-terms {REF}
+##         : $siftTermHashRef                        => Sift prediction terms {REF}
+##         : $polyPhenTermHashRef                    => PolyPhen prediction terms {REF}
 ##         : $rangeFeatureAnnotationColumnsArrayRef  => Range feature columns {REF}
 ##         : $selectFeatureAnnotationColumnsArrayRef => Select feature columns {REF}
 ##         : writeSoftwareTag                        => Write software tag to vcf header switch
@@ -377,6 +413,8 @@ sub ReadInfileVCF {
     my $consequenceSeverityHashRef = ${$argHashRef}{'consequenceSeverityHashRef'};
     my $rangeFeatureAnnotationColumnsArrayRef = ${$argHashRef}{'rangeFeatureAnnotationColumnsArrayRef'};
     my $selectFeatureAnnotationColumnsArrayRef = ${$argHashRef}{'selectFeatureAnnotationColumnsArrayRef'};
+    my $siftTermHashRef = ${$argHashRef}{'siftTermHashRef'};
+    my $polyPhenTermHashRef = ${$argHashRef}{'polyPhenTermHashRef'};
 
     my @vepFormatField;
     my %vepFormatFieldColumn;
@@ -831,11 +869,8 @@ sub ReadInfileVCF {
 
 				for (my $consequencesCounter=0;$consequencesCounter<scalar(@consequences);$consequencesCounter++) {
 				    
-				    unless (exists(${$consequenceSeverityHashRef}{$consequences[$consequencesCounter]})) {
-					
-					warn("Could not find SO-term from vcf in consequenceSeverity hash. Update hash to contain SO-term: '".$consequences[$consequencesCounter]."'\n");
-					exit 1;
-				    }
+				    &CheckTerms($consequenceSeverityHashRef, \$consequences[$consequencesCounter], "SO");
+				    
 				    if (defined($variantData{'Symbol'})) {
 
 					if(defined($consequence{ $variantData{'Symbol'} }{$allele}{'Score'})) { #Compare to previous record
@@ -846,12 +881,14 @@ sub ReadInfileVCF {
 						&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'GeneticRegionAnnotation'}, \${$consequenceSeverityHashRef}{$consequences[$consequencesCounter]}{'GeneticRegionAnnotation'});
 						&AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'MostSevereConsequence'}, \$consequences[$consequencesCounter]);
 						
-						if (defined($vepFormatFieldColumn{'SIFT'}) ) {    
-						    
+						if (defined($vepFormatFieldColumn{'SIFT'}) ) {
+
+						    &CheckTerms($siftTermHashRef, \$transcriptsEffects[ $vepFormatFieldColumn{'SIFT'} ], "Sift");
 						    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'Sift'}, \$transcriptsEffects[ $vepFormatFieldColumn{'SIFT'} ]);
 						}
 						if (defined($vepFormatFieldColumn{'PolyPhen'}) ) {
 						    
+						    &CheckTerms($polyPhenTermHashRef, \$transcriptsEffects[ $vepFormatFieldColumn{'PolyPhen'} ], "polyPhen");
 						    &AddToConsequenceHash(\$consequence{ $variantData{'Symbol'} }{$allele}{'PolyPhen'}, \$transcriptsEffects[ $vepFormatFieldColumn{'PolyPhen'} ]);
 						}
 					    }
@@ -1724,3 +1761,30 @@ sub SetDefaultArg {
 	}
     }
 }
+
+
+sub CheckTerms {
+
+##CheckTerms
+    
+##Function : Check that the found terms in the vcf corresond to known terms - otherwise croak and exit.
+##Returns  : ""
+##Arguments: $termHashRef, $termRef, 
+##         : $termHashRef => The term hash {REF}
+##         : $termRef => The found term {REF}
+##         : $termName => The origin of the term i.e Sift, PolyPhen, SO
+
+    my $termHashRef = $_[0];
+    my $termRef = $_[1];
+    my $termName = $_[2];
+    
+    if ( (defined($$termRef)) && ($$termRef ne "") ) {
+	
+	unless (exists(${$termHashRef}{ $$termRef })) {
+	    
+	    warn("Could not find ".$termName." term from vcf in corresponding hash. Update hash to contain term: '".$$termRef."'\n");
+	    exit 1;
+	}
+    }   
+}
+
