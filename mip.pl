@@ -4339,7 +4339,7 @@ sub GATKVariantReCalibration {
     }
 
     ## GenotypeRefinement
-    if (exists(${$scriptParameterHashRef}{'trio'})) {
+    if (${$scriptParameterHashRef}{'trio'}) {
 
 	print $FILEHANDLE "## GATK CalculateGenotypePosteriors","\n\n";
 	
