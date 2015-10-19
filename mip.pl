@@ -143,7 +143,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -gvrtso/--GATKVariantReCalibrationTrainingSet1000GOmni GATK VariantRecalibrator 1000G_omni training set (defaults to "1000G_omni2.5.b37.sites.vcf")
                  -gvrtsm/--GATKVariantReCalibrationTrainingSetMills GATK VariantRecalibrator Mills training set (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
                  -gvrtsf/--GATKVariantReCalibrationTSFilterLevel The truth sensitivity level at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
-                 -gvrmga/--GATKVariantReCalibrationMaxGaussians Use hard filtering for indels (defaults to "0" (=no))
+                 -gvrmga/--GATKVariantReCalibrationMaxGaussians Use hard filtering for indels (defaults to "1" (=yes))
                  -gvrevf/--GATKVariantReCalibrationexcludeNonVariantsFile Produce a vcf containing non-variant loci alongside the vcf only containing non-variant loci after GATK VariantRecalibrator (defaults to "0" (=no))
                  -gvrbcf/--GATKVariantReCalibrationBCFFile Produce a bcf from the GATK VariantRecalibrator vcf (defaults to "1" (=yes))
                -pGpT/--pGATKPhaseByTransmission Computes the most likely genotype and phases calls were unamibigous using GATK PhaseByTransmission (defaults to "0" (=yes))
@@ -4195,11 +4195,6 @@ sub GATKVariantReCalibration {
 	    if ($modes[$modeCounter] eq "INDEL") {#Use created recalibrated snp vcf as input
 	
 		print $FILEHANDLE "-input ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".SNV.vcf ";
-
-		if (${$scriptParameterHashRef}{'GATKVariantReCalibrationMaxGaussians'} ne 0) {
-
-		    print $FILEHANDLE "--maxGaussians 4 ";  #Use hard filtering
-		}
 	    }
 	    print $FILEHANDLE "-an DP ";  #The names of the annotations which should used for calculations. NOTE: Not to be used with hybrid capture
 	}
@@ -4208,17 +4203,25 @@ sub GATKVariantReCalibration {
 	    print $FILEHANDLE "-resource:hapmap,VCF,known=false,training=true,truth=true,prior=15.0 ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKVariantReCalibrationTrainingSetHapMap'}." ";  #A list of sites for which to apply a prior probability of being correct but which aren't used by the algorithm
 	    print $FILEHANDLE "-resource:omni,VCF,known=false,training=true,truth=false,prior=12.0 ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKVariantReCalibrationTrainingSet1000GOmni'}." ";  #A list of sites for which to apply a prior probability of being correct but which aren't used by the algorithm
 	    print $FILEHANDLE "-resource:1000G,known=false,training=true,truth=false,prior=10.0 ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKVariantReCalibrationTrainingSet1000GSNP'}." ";  #A list of sites for which to apply a prior probability of being correct but which aren't used by the algorithm
-	    print $FILEHANDLE "-an QD ";  #The names of the annotations which should used for calculations
+	    print $FILEHANDLE "-an MQ ";  #The names of the annotations which should used for calculations.
+
 	}
 	if ( ($modes[$modeCounter] eq "INDEL") || ($modes[$modeCounter] eq "BOTH") ) {
 	    
 	    print $FILEHANDLE "-resource:mills,VCF,known=true,training=true,truth=true,prior=12.0 ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKVariantReCalibrationTrainingSetMills'}." ";  #A list of sites for which to apply a prior probability of being correct but which aren't used by the algorithm
+
+	    if (${$scriptParameterHashRef}{'GATKVariantReCalibrationMaxGaussians'} ne 0) {
+		
+		print $FILEHANDLE "--maxGaussians 4 ";  #Use hard filtering
+	    }
 	}
 	print $FILEHANDLE "-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKVariantReCalibrationTrainingSetDbSNP'}." ";  #A list of sites for which to apply a prior probability of being correct but which aren't used by the algorithm
     
+	print $FILEHANDLE "-an QD ";  #The names of the annotations which should used for calculations
 	print $FILEHANDLE "-an MQRankSum ";  #The names of the annotations which should used for calculations
 	print $FILEHANDLE "-an ReadPosRankSum ";  #The names of the annotations which should used for calculations
 	print $FILEHANDLE "-an FS ";  #The names of the annotations which should used for calculations
+	print $FILEHANDLE "-an SOR ";  #The names of the annotations which should used for calculations
 	print $FILEHANDLE "--mode ".$modes[$modeCounter]." ";  #Recalibration mode to employ (SNP|INDEL|BOTH)
 	print $FILEHANDLE "-nt ".${$scriptParameterHashRef}{'maximumCores'}." ";  #How many data threads should be allocated to running this analysis    
 
@@ -5929,22 +5932,20 @@ sub GATKHaploTypeCaller {
 	}
 
 	## Annotations to apply to variant calls
-	print $XARGSFILEHANDLE "--annotation BaseQualityRankSumTest ";  
-	print $XARGSFILEHANDLE "--annotation ChromosomeCounts ";
-	print $XARGSFILEHANDLE "--annotation Coverage ";
-	print $XARGSFILEHANDLE "--annotation FisherStrand ";
-	print $XARGSFILEHANDLE "--annotation MappingQualityRankSumTest ";
-	print $XARGSFILEHANDLE "--annotation MappingQualityZero ";
-	print $XARGSFILEHANDLE "--annotation QualByDepth ";
-	print $XARGSFILEHANDLE "--annotation RMSMappingQuality ";
-	print $XARGSFILEHANDLE "--annotation ReadPosRankSumTest ";
-	print $XARGSFILEHANDLE "--annotation SpanningDeletions ";
-	print $XARGSFILEHANDLE "--annotation TandemRepeatAnnotator " ;
-	print $XARGSFILEHANDLE "--annotation DepthPerAlleleBySample ";
+	print $XARGSFILEHANDLE "--annotation BaseQualityRankSumTest ";  #Rank Sum Test of REF versus ALT base quality scores
+	print $XARGSFILEHANDLE "--annotation ChromosomeCounts ";  #Counts and frequency of alleles in called genotypes
+	print $XARGSFILEHANDLE "--annotation Coverage ";  #Total depth of coverage per sample and over all samples
+	print $XARGSFILEHANDLE "--annotation DepthPerAlleleBySample ";  #Depth of coverage of each allele per sample
+	print $XARGSFILEHANDLE "--annotation FisherStrand ";  #Strand bias estimated using Fisher's Exact Test
+	print $XARGSFILEHANDLE "--annotation MappingQualityRankSumTest ";  #Rank Sum Test for mapping qualities of REF versus ALT reads
+	print $XARGSFILEHANDLE "--annotation QualByDepth ";  #Variant confidence normalized by unfiltered depth of variant samples
+	print $XARGSFILEHANDLE "--annotation RMSMappingQuality ";  #Root Mean Square of the mapping quality of reads across all samples
+	print $XARGSFILEHANDLE "--annotation ReadPosRankSumTest ";  #Rank Sum Test for relative positioning of REF versus ALT alleles within reads
+	print $XARGSFILEHANDLE "--annotation StrandOddsRatio ";  #Strand bias estimated by the Symmetric Odds Ratio test
 
 	if (scalar(@{$scriptParameter{'sampleIDs'}}) >= 10) {
 
-	    print $XARGSFILEHANDLE "--annotation InbreedingCoeff ";  #Only meningful with at least 10 founder samples
+	    print $XARGSFILEHANDLE "--annotation InbreedingCoeff ";  #Likelihood-based test for the inbreeding among samples (Only meningful with at least 10 founder samples)
 	}
 	print $XARGSFILEHANDLE "--emitRefConfidence GVCF ";  #Mode for emitting experimental reference confidence scores. GVCF generates block summarized version of the BP_RESOLUTION data 
 	print $XARGSFILEHANDLE "--variant_index_type LINEAR "; 
