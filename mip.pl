@@ -111,7 +111,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pChA/--pChanjoAnnotate Chanjo coverage analysis (defaults to "1" (=yes))
                  -chacut/--chanjoAnnotateCutoff Read depth cutoff (defaults to "10")
                -pChI/--pChanjoImport Chanjo import to collect sample info to family Db  (defaults to "0" (=no))
-               -pGcB/--pGenomeCoverageBED Genome coverage calculation using genomeCoverageBED (defaults to "0" (=yes))
+               -pGcB/--pGenomeCoverageBED Genome coverage calculation using genomeCoverageBED (defaults to "0" (=no))
                 -gcbcov/--GenomeCoverageBEDMaxCoverage Max coverage depth when using '-pGenomeCoverageBED' (defaults to "30")
                -pPtCMM/--pPicardToolsCollectMultipleMetrics Metrics calculation using PicardTools collectMultipleMetrics (defaults to "1" (=yes))
                -pPtCHS/--pPicardToolsCalculateHSMetrics Capture calculation using PicardTools CalculateHSmetrics (defaults to "1" (=yes))
@@ -5926,6 +5926,10 @@ sub GATKHaploTypeCaller {
 	if (${$scriptParameterHashRef}{'GATKHaploTypeCallerSoftClippedBases'} == 1) { #Do not analyze soft clipped bases in the reads
 
 	    print $XARGSFILEHANDLE "--dontUseSoftClippedBases ";  #Do not analyze soft clipped bases in the reads
+	}
+	if (${$scriptParameterHashRef}{'analysisType'} eq "genomes") {
+
+	    print $XARGSFILEHANDLE "--pcr_indel_model None ";  #Assume that we run pcr-free sequencing (true for Rapid and X-ten) 
 	}
 
 	## Annotations to apply to variant calls
