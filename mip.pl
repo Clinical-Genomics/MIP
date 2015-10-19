@@ -4378,6 +4378,7 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "-V ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType."_refined.vcf ";  #Infile
 	print $FILEHANDLE q?-G_filter "GQ < 20.0" -G_filterName lowGQ ?;
 	print $FILEHANDLE "-o ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType."_refined_filtered.vcf ";  #Outfile
+	print $FILEHANDLE "\n\n";
 
 	## Change name of file to accomodate downstream
 	print $FILEHANDLE "mv ";
