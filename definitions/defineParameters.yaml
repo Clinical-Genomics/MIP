@@ -419,6 +419,12 @@ GATKHaploTypeCallerSoftClippedBases:
   dataType: SCALAR
   default: 1
   type: program
+GATKHaploTypeCallerPcrIndelModel:
+  associatedProgram:
+   - pGATKHaploTypeCaller
+  dataType: SCALAR
+  default: None
+  type: program
 ## Coverage
 pChanjoSexCheck:
   associatedProgram:
@@ -594,6 +600,12 @@ GATKVariantReCalibrationTSFilterLevel:
    - pGATKVariantRecalibration
   dataType: SCALAR
   default: 99.9
+  type: program
+GATKVariantReCalibrationDPAnnotation:
+  associatedProgram:
+   - pGATKVariantRecalibration
+  dataType: SCALAR
+  default: 1
   type: program
 GATKVariantReCalibrationMaxGaussians:
   associatedProgram:
