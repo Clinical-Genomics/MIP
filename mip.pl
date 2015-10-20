@@ -4362,27 +4362,9 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "-o ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType."_refined.vcf ";  #Outfile
 	print $FILEHANDLE "\n\n";
 
-	print $FILEHANDLE "## GATK VariantFiltration","\n\n";
-	
-	## Writes java core commands to filehandle.
-	&JavaCore({'FILEHANDLE' => $FILEHANDLE,
-		   'memoryAllocation' => "Xmx6g",
-		   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
-		   'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
-		  });
-
-	print $FILEHANDLE "-T VariantFiltration ";  #Type of analysis to run	    
-	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
-	print $FILEHANDLE "-V ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType."_refined.vcf ";  #Infile
-	print $FILEHANDLE q?-G_filter "GQ < 20.0" -G_filterName lowGQ ?;
-	print $FILEHANDLE "-o ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType."_refined_filtered.vcf ";  #Outfile
-	print $FILEHANDLE "\n\n";
-
 	## Change name of file to accomodate downstream
 	print $FILEHANDLE "mv ";
-	print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType."_refined_filtered.vcf ";
+	print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType."_refined.vcf ";
 	print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf";
 	print $FILEHANDLE "\n\n";
     }
