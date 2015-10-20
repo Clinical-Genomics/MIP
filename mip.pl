@@ -16994,7 +16994,7 @@ sub DetectTrio {
 ##DetectTrio
     
 ##Function : Detect family constellation based on pedigree file
-##Returns  : "Set"
+##Returns  : ""|1
 ##Arguments: $scriptParameterHashRef,
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
