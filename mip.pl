@@ -148,6 +148,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -gvrmga/--GATKVariantReCalibrationMaxGaussians Use hard filtering for indels (defaults to "1" (=yes))
                  -gvrevf/--GATKVariantReCalibrationexcludeNonVariantsFile Produce a vcf containing non-variant loci alongside the vcf only containing non-variant loci after GATK VariantRecalibrator (defaults to "0" (=no))
                  -gvrbcf/--GATKVariantReCalibrationBCFFile Produce a bcf from the GATK VariantRecalibrator vcf (defaults to "1" (=yes))
+                 -gcgpss/--GATKCalculateGenotypePosteriorsSupportSet GATK CalculateGenotypePosteriors support set (defaults to "1000G_phase3_v4_20130502.sites.vcf")
                -pGpT/--pGATKPhaseByTransmission Computes the most likely genotype and phases calls were unamibigous using GATK PhaseByTransmission (defaults to "0" (=yes))
                -pGrP/--pGATKReadBackedPhasing Performs physical phasing of SNP calls, based on sequencing reads using GATK ReadBackedPhasing (defaults to "0" (=yes))
                  -grpqth/--GATKReadBackedPhasingPhaseQualityThreshold The minimum phasing quality score required to output phasing (defaults to "20")
@@ -429,6 +430,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'gvrmga|GATKVariantReCalibrationMaxGaussians:n' => \$parameter{'GATKVariantReCalibrationMaxGaussians'}{'value'},
 	   'gvrevf|GATKVariantReCalibrationexcludeNonVariantsFile:n' => \$parameter{'GATKVariantReCalibrationexcludeNonVariantsFile'}{'value'},
 	   'gvrbcf|GATKVariantReCalibrationBCFFile:n' => \$parameter{'GATKVariantReCalibrationBCFFile'}{'value'},  #Produce compressed vcf
+	   'gcgpss|GATKCalculateGenotypePosteriorsSupportSet:s' => \$parameter{'GATKCalculateGenotypePosteriorsSupportSet'}{'value'},  #GATK CalculateGenotypePosteriors support set
 	   'pGpT|pGATKPhaseByTransmission:n' => \$parameter{'pGATKPhaseByTransmission'}{'value'},  #GATK PhaseByTransmission to produce phased genotype calls
 	   'pGrP|pGATKReadBackedPhasing:n' => \$parameter{'pGATKReadBackedPhasing'}{'value'},  #GATK ReadBackedPhasing
 	   'grpqth|GATKReadBackedPhasingPhaseQualityThreshold:n' => \$parameter{'GATKReadBackedPhasingPhaseQualityThreshold'}{'value'},  #quality score required to output phasing
@@ -590,6 +592,10 @@ foreach my $parameterName (keys %parameter) {
     }
 }
 
+
+## Detect family constellation based on pedigree file
+$scriptParameter{'trio'} = &DetectTrio(\%scriptParameter, \%sampleInfo);
+
 ## Check email adress format
 if (exists($scriptParameter{'email'})) {  #Allow no malformed email adress
     
@@ -728,6 +734,7 @@ $scriptParameter{'maleFound'} = &DetectSampleIdMale(\%scriptParameter, \%sampleI
 
 ## Removes contigY|chrY from SelectFileContigs if no males or 'other' found in analysis
 &UpdateFileContigs(\@{${fileInfo}{'SelectFileContigs'}}, \$scriptParameter{'maleFound'});
+
 
 ## Write CMD to MIP log file
 &WriteCMDMipLog(\%parameter, \%scriptParameter, \@orderParameters, \$script, \$scriptParameter{'logFile'}, \$mipVersion);
@@ -4341,10 +4348,41 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "\n\nwait\n\n";
     }
 
+    ## GenotypeRefinement
+    if (${$scriptParameterHashRef}{'trio'}) {
+
+	print $FILEHANDLE "## GATK CalculateGenotypePosteriors","\n\n";
+	
+	## Writes java core commands to filehandle.
+	&JavaCore({'FILEHANDLE' => $FILEHANDLE,
+		   'memoryAllocation' => "Xmx6g",
+		   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+		   'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+		   'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
+		  });
+
+	print $FILEHANDLE "-T CalculateGenotypePosteriors ";  #Type of analysis to run	    
+	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
+	print $FILEHANDLE "-R ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
+	
+	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
+	&GATKPedigreeFlag(\%{$scriptParameterHashRef}, $FILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKVariantRecalibration");  #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family
+	print $FILEHANDLE "--supporting ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'GATKCalculateGenotypePosteriorsSupportSet'}." ";  #Supporting data set
+	print $FILEHANDLE "-V ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf ";  #Infile
+	print $FILEHANDLE "-o ".${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType."_refined.vcf ";  #Outfile
+	print $FILEHANDLE "\n\n";
+
+	## Change name of file to accomodate downstream
+	print $FILEHANDLE "mv ";
+	print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType."_refined.vcf ";
+	print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$familyID.$outfileEnding.$callType.".vcf";
+	print $FILEHANDLE "\n\n";
+    }
+
     ## Produce a bcf compressed vcf
     if (${$scriptParameterHashRef}{'GATKVariantReCalibrationBCFFile'} == 1) {
 	
-	print $FILEHANDLE "#Compress vcf to bcf","\n";
+	print $FILEHANDLE "## Compress vcf to bcf","\n";
 	print $FILEHANDLE "bcftools ";
 	print $FILEHANDLE "view ";  #VCF/BCF conversion
 	print $FILEHANDLE "-O b ";  #Output type - b: compressed BCF
@@ -16946,6 +16984,56 @@ sub UpdateFileContigs {
 		splice(@{$selectFileContigsArrayRef}, $index, 1);  #Remove $element from array
 		last;  #Will nor occur more than once
 	    }
+	}
+    }
+}
+
+
+sub DetectTrio {
+
+##DetectTrio
+    
+##Function : Detect family constellation based on pedigree file
+##Returns  : "Set"
+##Arguments: $scriptParameterHashRef,
+##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
+
+    my $scriptParameterHashRef = $_[0];
+    my $sampleInfoHashRef = $_[1];
+
+    my %trio;
+
+    if (scalar(@{${$scriptParameterHashRef}{'sampleIDs'}}) eq 1) {
+
+	$logger->info("Found single sample: ".${$scriptParameterHashRef}{'sampleIDs'}[0], "\n");
+	return
+    }
+    elsif (scalar(@{${$scriptParameterHashRef}{'sampleIDs'}}) eq 3) {
+
+	foreach my $sampleID (@{${$scriptParameterHashRef}{'sampleIDs'}}) {
+    
+	    my $fatherInfo = ${$sampleInfoHashRef}{${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'Father'};  #Alias
+	    my $motherInfo = ${$sampleInfoHashRef}{${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'Mother'};  #Alias
+
+	    if ( ($fatherInfo ne 0) && ($motherInfo ne 0) ) {  #Child
+		
+		$trio{'child'} = $sampleID;
+
+		if (any {$_ eq $fatherInfo} @{${$scriptParameterHashRef}{'sampleIDs'}}) {  #If element is part of array
+		    
+		    $trio{'father'} = $fatherInfo;
+		}
+		if (any {$_ eq $motherInfo} @{${$scriptParameterHashRef}{'sampleIDs'}} ) {  #If element is part of array
+
+		    $trio{'mother'} = $motherInfo;
+		}
+	    }
+	}
+	if (scalar( keys %trio) == 3) {
+
+	    $logger->info("Found trio: Child = ".$trio{'child'}.", Father = ".$trio{'father'}.", Mother = ".$trio{'mother'}, "\n");
+	    return 1
 	}
     }
 }

@@ -625,6 +625,14 @@ GATKVariantReCalibrationBCFFile:
   dataType: SCALAR
   default: 1
   type: program
+GATKCalculateGenotypePosteriorsSupportSet:
+  associatedProgram:
+   - pGATKVariantRecalibration
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  default: 1000G_phase3_v4_20130502.sites.vcf
+  existsCheck: file
+  type: path
 ## VariantAnnotationBlock
 pVariantAnnotationBlock:
   associatedProgram:
