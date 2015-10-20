@@ -611,7 +611,7 @@ GATKVariantReCalibrationMaxGaussians:
   associatedProgram:
    - pGATKVariantRecalibration
   dataType: SCALAR
-  default: 0
+  default: 1
   type: program
 GATKVariantReCalibrationexcludeNonVariantsFile:
   associatedProgram:
