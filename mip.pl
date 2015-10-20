@@ -111,7 +111,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pChA/--pChanjoAnnotate Chanjo coverage analysis (defaults to "1" (=yes))
                  -chacut/--chanjoAnnotateCutoff Read depth cutoff (defaults to "10")
                -pChI/--pChanjoImport Chanjo import to collect sample info to family Db  (defaults to "0" (=no))
-               -pGcB/--pGenomeCoverageBED Genome coverage calculation using genomeCoverageBED (defaults to "0" (=yes))
+               -pGcB/--pGenomeCoverageBED Genome coverage calculation using genomeCoverageBED (defaults to "0" (=no))
                 -gcbcov/--GenomeCoverageBEDMaxCoverage Max coverage depth when using '-pGenomeCoverageBED' (defaults to "30")
                -pPtCMM/--pPicardToolsCollectMultipleMetrics Metrics calculation using PicardTools collectMultipleMetrics (defaults to "1" (=yes))
                -pPtCHS/--pPicardToolsCalculateHSMetrics Capture calculation using PicardTools CalculateHSmetrics (defaults to "1" (=yes))
@@ -133,6 +133,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pGhC/--pGATKHaploTypeCaller Variant discovery using GATK HaplotypeCaller (defaults to "1" (=yes))
                  -ghckse/--GATKHaploTypeCallerSNPKnownSet GATK HaplotypeCaller dbSNP set for annotating ID columns (defaults to "dbsnp_138.b37.vcf")
                  -ghcscb/--GATKHaploTypeCallerSoftClippedBases Do not include soft clipped bases in the variant calling (defaults to "1" (=yes))
+                 -ghcpim/--GATKHaploTypeCallerPcrIndelModel The PCR indel model to use (defaults to "None"; Set to "0" to disable)
                -pGgT/--pGATKGenoTypeGVCFs Merge gVCF records using GATK GenotypeGVCFs (defaults to "1" (=yes))
                  -ggtgrl/--GATKGenoTypeGVCFsRefGVCF GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping (defaults to "")
                  -ggtals/--GATKGenoTypeGVCFsAllSites Emit non-variant sites to the output VCF
@@ -143,6 +144,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -gvrtso/--GATKVariantReCalibrationTrainingSet1000GOmni GATK VariantRecalibrator 1000G_omni training set (defaults to "1000G_omni2.5.b37.sites.vcf")
                  -gvrtsm/--GATKVariantReCalibrationTrainingSetMills GATK VariantRecalibrator Mills training set (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
                  -gvrtsf/--GATKVariantReCalibrationTSFilterLevel The truth sensitivity level at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
+                 -gvrdpa/--GATKVariantReCalibrationDPAnnotation Use the DP annotation in variant recalibration. (defaults to "1" (=yes))
                  -gvrmga/--GATKVariantReCalibrationMaxGaussians Use hard filtering for indels (defaults to "0" (=no))
                  -gvrevf/--GATKVariantReCalibrationexcludeNonVariantsFile Produce a vcf containing non-variant loci alongside the vcf only containing non-variant loci after GATK VariantRecalibrator (defaults to "0" (=no))
                  -gvrbcf/--GATKVariantReCalibrationBCFFile Produce a bcf from the GATK VariantRecalibrator vcf (defaults to "1" (=yes))
@@ -412,6 +414,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'pGhC|pGATKHaploTypeCaller:n' => \$parameter{'pGATKHaploTypeCaller'}{'value'},  #GATK Haplotypecaller
 	   'ghckse|GATKHaploTypeCallerSNPKnownSet:s' => \$parameter{'GATKHaploTypeCallerSNPKnownSet'}{'value'},  #Known SNP set to be used in GATK HaplotypeCaller
 	   'ghcscb|GATKHaploTypeCallerSoftClippedBases:n' => \$parameter{'GATKHaploTypeCallerSoftClippedBases'}{'value'},  #Do not include soft clipped bases in the variant calling
+	   'ghcpim|GATKHaploTypeCallerPcrIndelModel:s' => \$parameter{'GATKHaploTypeCallerPcrIndelModel'}{'value'},  #The PCR indel model to use
 	   'pGgT|pGATKGenoTypeGVCFs:n' => \$parameter{'pGATKGenoTypeGVCFs'}{'value'},  #Merge gVCF records using GATK GenotypeGVCFs
 	   'ggtgrl|GATKGenoTypeGVCFsRefGVCF:s' => \$parameter{'GATKGenoTypeGVCFsRefGVCF'}{'value'},  #GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping
 	   'ggtals|GATKGenoTypeGVCFsAllSites:n' => \$parameter{'GATKGenoTypeGVCFsAllSites'}{'value'},  #Emit non-variant sites to the output VCF
@@ -422,6 +425,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'gvrtso|GATKVariantReCalibrationTrainingSet1000GOmni:s' => \$parameter{'GATKVariantReCalibrationTrainingSet1000GOmni'}{'value'},  #GATK VariantRecalibrator resource
 	   'gvrtsm|GATKVariantReCalibrationTrainingSetMills:s' => \$parameter{'GATKVariantReCalibrationTrainingSetMills'}{'value'},  #GATK VariantRecalibrator resource
 	   'gvrtsf|GATKVariantReCalibrationTSFilterLevel:s' => \$parameter{'GATKVariantReCalibrationTSFilterLevel'}{'value'},  #Truth sensativity level
+	   'gvrdpa|GATKVariantReCalibrationDPAnnotation:n' => \$parameter{'GATKVariantReCalibrationDPAnnotation'}{'value'},
 	   'gvrmga|GATKVariantReCalibrationMaxGaussians:n' => \$parameter{'GATKVariantReCalibrationMaxGaussians'}{'value'},
 	   'gvrevf|GATKVariantReCalibrationexcludeNonVariantsFile:n' => \$parameter{'GATKVariantReCalibrationexcludeNonVariantsFile'}{'value'},
 	   'gvrbcf|GATKVariantReCalibrationBCFFile:n' => \$parameter{'GATKVariantReCalibrationBCFFile'}{'value'},  #Produce compressed vcf
@@ -4201,7 +4205,10 @@ sub GATKVariantReCalibration {
 		    print $FILEHANDLE "--maxGaussians 4 ";  #Use hard filtering
 		}
 	    }
-	    print $FILEHANDLE "-an DP ";  #The names of the annotations which should used for calculations. NOTE: Not to be used with hybrid capture
+	    if (${$scriptParameterHashRef}{'GATKVariantReCalibrationDPAnnotation'} == 1) {  #Special case: Not to be used with hybrid capture. NOTE: Disable when analysing exom + genomes using '-at genomes' 
+
+		print $FILEHANDLE "-an DP ";  #The names of the annotations which should used for calculations.
+	    }
 	}
 	if ( ($modes[$modeCounter] eq "SNP") || ($modes[$modeCounter] eq "BOTH") ) {
 	    
@@ -5926,6 +5933,10 @@ sub GATKHaploTypeCaller {
 	if (${$scriptParameterHashRef}{'GATKHaploTypeCallerSoftClippedBases'} == 1) { #Do not analyze soft clipped bases in the reads
 
 	    print $XARGSFILEHANDLE "--dontUseSoftClippedBases ";  #Do not analyze soft clipped bases in the reads
+	}
+	if ( (${$scriptParameterHashRef}{'analysisType'} eq "genomes") && (${$scriptParameterHashRef}{'GATKHaploTypeCallerPcrIndelModel'} ne 0) ) {
+
+	    print $XARGSFILEHANDLE "--pcr_indel_model ".${$scriptParameterHashRef}{'GATKHaploTypeCallerPcrIndelModel'}." ";  #Assume that we run pcr-free sequencing (true for Rapid WGS and X-ten) 
 	}
 
 	## Annotations to apply to variant calls
