@@ -270,7 +270,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ## Eval parameter hash
 &EvalParameterHash(\%parameter, $Bin."/definitions/defineParameters.yaml");
 
-my $mipVersion = "v2.4.7";	#Set MIP version
+my $mipVersion = "v2.4.8";	#Set MIP version
 my $aligner;
 
 ## Target definition files
