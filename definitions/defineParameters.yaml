@@ -146,6 +146,12 @@ reduceIO:
   dataType: SCALAR
   default: 1
   type: MIP
+sambambaVersion:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  default: v0.5.8
+  type: MIP
 ###Programs
 ## GZip
 pGZipFastq:
@@ -249,6 +255,8 @@ pBwaMem:
   fileEnding: _sorted
   programNamePath:
    - bwa
+   - samtools
+   - sambamba
   type: program
 bwaMemRapidDb:
   associatedProgram:
@@ -333,13 +341,13 @@ pPicardToolsMergeSamFiles:
   default: 1
   fileEnding: _merged
   type: program
-pPicardToolsMarkduplicatesWithMateCigar:
+pSambambaMarkduplicates:
   associatedProgram:
    - MIP
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: _pmd
+  fileEnding: _smd
   type: program
 ## GATK BAM Calibration
 pGATKRealigner:
@@ -411,15 +419,13 @@ GATKHaploTypeCallerSoftClippedBases:
   dataType: SCALAR
   default: 1
   type: program
-## Coverage
-pPicardToolsMarkduplicatesForQCMetrics:
+GATKHaploTypeCallerPcrIndelModel:
   associatedProgram:
-   - MIP
-  chain: DuplicateMetrics
+   - pGATKHaploTypeCaller
   dataType: SCALAR
-  default: 1
-  fileEnding: _metric
+  default: None
   type: program
+## Coverage
 pChanjoSexCheck:
   associatedProgram:
    - MIP
@@ -595,11 +601,17 @@ GATKVariantReCalibrationTSFilterLevel:
   dataType: SCALAR
   default: 99.9
   type: program
+GATKVariantReCalibrationDPAnnotation:
+  associatedProgram:
+   - pGATKVariantRecalibration
+  dataType: SCALAR
+  default: 1
+  type: program
 GATKVariantReCalibrationMaxGaussians:
   associatedProgram:
    - pGATKVariantRecalibration
   dataType: SCALAR
-  default: 0
+  default: 1
   type: program
 GATKVariantReCalibrationexcludeNonVariantsFile:
   associatedProgram:
@@ -613,6 +625,14 @@ GATKVariantReCalibrationBCFFile:
   dataType: SCALAR
   default: 1
   type: program
+GATKCalculateGenotypePosteriorsSupportSet:
+  associatedProgram:
+   - pGATKVariantRecalibration
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  default: 1000G_phase3_v4_20130502.sites.vcf
+  existsCheck: file
+  type: path
 ## VariantAnnotationBlock
 pVariantAnnotationBlock:
   associatedProgram:
@@ -648,6 +668,32 @@ VTNormalize:
    - pVT
   dataType: SCALAR
   default: 1
+  type: program
+VTmissingAltAllele:
+  associatedProgram:
+   - pVT
+  dataType: SCALAR
+  default: 1
+  type: program
+VTgenmodFilter:
+  associatedProgram:
+   - pVT
+  dataType: SCALAR
+  default: 1
+  type: program
+VTgenmodFilter1000G:
+  associatedProgram:
+   - pVT
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  default: ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
+  existsCheck: file
+  type: path
+VTgenmodFilterThreshold:
+  associatedProgram:
+   - pVT
+  dataType: SCALAR
+  default: 0.10
   type: program
 pGATKPhaseByTransmission:
   associatedProgram:
@@ -758,6 +804,12 @@ vepDirectoryCache:
   dataType: SCALAR
   existsCheck: directory
   type: path
+vepReference:
+  associatedProgram:
+   - pVariantEffectPredictor
+  dataType: SCALAR
+  default: 0
+  type: program
 ## VCFParser
 pVCFParser:
   associatedProgram:
@@ -972,7 +1024,7 @@ QCCollectRegExpFile:
    - pQCCollect
   buildFile: noAutoBuild
   dataType: SCALAR
-  default: qc_regexp.yaml
+  default: qc_regExp_v1.4.yaml
   existsCheck: file
   type: path
 ## RemoveRedundantFiles
