@@ -63,6 +63,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -tmd/--tempDirectory Set the temporary directory for all programs (defaults to "/scratch/SLURM_JOB_ID";supply whole path)
                -jul/--javaUseLargePages Use large page memory. (-XX, hence option considered not stable and are subject to change without notice, but can be consiered when faced with Java Runtime Environment Memory issues)
                -nrm/--nodeRamMemory The RAM memory size of the node(s) in GigaBytes (Defaults to 24)
+               -uve/--usePythonVirtualEnvironment Decides if MIP should try to activate a python virtual environment (Defaults to "1" (=yes))
                -pve/--pythonVirtualEnvironment Python virtualenvironment (defaults to "")
                -pvec/--pythonVirtualEnvironmentCommand Python virtualenvironment (defaults to "workon";whitespace sep)
                -sab/--sambambaVersion Version of sambamba (defaults to "v0.5.8")
@@ -358,6 +359,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'rea|researchEthicalApproval:s' => \$parameter{'researchEthicalApproval'}{'value'},
 	   'dra|dryRunAll:n' => \$parameter{'dryRunAll'}{'value'},
 	   'tmd|tempDirectory:s' => \$parameter{'tempDirectory'}{'value'},
+	   'uve|usePythonVirtualEnvironment:n' => \$parameter{'usePythonVirtualEnvironment'}{'value'},
 	   'pve|pythonVirtualEnvironment:s' => \$parameter{'pythonVirtualEnvironment'}{'value'},
 	   'pvec|pythonVirtualEnvironmentCommand=s{,}' => \@{$parameter{'pythonVirtualEnvironmentCommand'}{'value'}},
 	   'sab|sambambaVersion:s' => \$parameter{'sambambaVersion'}{'value'},
@@ -708,12 +710,9 @@ foreach my $parameterInfo (@broadcasts) {
 &DefineSupportedCosmidReferences(\%supportedCosmidReference, "1000G_phase1.snps.high_confidence.b37.vcf", "1000g_snps", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'}, \$fileInfo{'humanGenomeReferenceVersion'}, "unCompressed");
 
 
-for my $references (keys %supportedCosmidReference) {
+## Check that a Cosmid installation exists
+&CheckCosmidInstallation(\%parameter, \%scriptParameter, \%supportedCosmidReference);
 
-    ## Check that a Cosmid installation exists
-    &CheckCosmidInstallation(\%parameter, \%scriptParameter, \$references);
-    last;  #Only need to check once per analysis run
-}
 
 if ($scriptParameter{'writeConfigFile'} ne 0) {  #Write config file for family
 
@@ -1739,9 +1738,12 @@ sub RankVariants {
     my $vcfParserAnalysisType = "";
     my $vcfParserContigsArrayRef = \@{ ${$fileInfoHashRef}{'contigsSizeOrdered'} };  #Set default
 
-    ## GenMod uses python virtualenvironment
-    print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
-    
+    if (${$scriptParameterHashRef}{'usePythonVirtualEnvironment'} == 1) {
+
+	## GenMod uses python virtualenvironment
+	print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+    }
+
     for (my $VcfParserOutputFileCounter=0;$VcfParserOutputFileCounter<${$scriptParameterHashRef}{'VcfParserOutputFileCount'};$VcfParserOutputFileCounter++) {
 	
 	if ($VcfParserOutputFileCounter == 1) {
@@ -3990,7 +3992,10 @@ sub VT {
 
     if (${$scriptParameterHashRef}{'VTgenmodFilter'} > 0) {
 	
-	print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	if (${$scriptParameterHashRef}{'usePythonVirtualEnvironment'} == 1) {
+
+	    print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	}
     }
     
     ## Create file commands for xargs
@@ -5368,8 +5373,10 @@ sub ChanjoImport {
 
     my $coreCounter=1;
 
-    print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
-    
+    if (${$scriptParameterHashRef}{'usePythonVirtualEnvironment'} == 1) {
+
+	print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+    }
     ##Build family database for coverage report
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDCounter++) {   
@@ -5472,7 +5479,10 @@ sub ChanjoSexCheck {
 					     'processTime' => 2,
 					    });
 
-	print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	if (${$scriptParameterHashRef}{'usePythonVirtualEnvironment'} == 1) {
+
+	    print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	}
 
 	## ChanjoSexCheck
 	print $FILEHANDLE "## Predicting sex from alignment\n";
@@ -5509,7 +5519,10 @@ sub ChanjoSexCheck {
 					     'processTime' => 2,
 					    });
 
-	print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	if (${$scriptParameterHashRef}{'usePythonVirtualEnvironment'} == 1) {
+
+	    print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	}
 
 	## ChanjoSexCheck
 	print $FILEHANDLE "## Predicting sex from alignment\n";
@@ -5620,7 +5633,10 @@ sub ChanjoAnnotate {
 			   });
 	print $FILEHANDLE "wait", "\n\n";
 
-	print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	if (${$scriptParameterHashRef}{'usePythonVirtualEnvironment'} == 1) {
+
+	    print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	}
 
 	## ChanjoAnnotate
 	print $FILEHANDLE "## Annotating bed from alignment\n";
@@ -5684,8 +5700,10 @@ sub ChanjoAnnotate {
 			      'nrCores' => $nrCores,
 			      'fileEnding' => $infileEnding.".b*"});
 
-	print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	if (${$scriptParameterHashRef}{'usePythonVirtualEnvironment'} == 1) {
 
+	    print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	}
 	## ChanjoAnnotate
 	print $FILEHANDLE "## Annotating bed from alignment\n";
 	for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all files from independent of merged or not
@@ -5776,8 +5794,11 @@ sub ChanjoBuild {
     ## Assign directories
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID;
 
-    print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
-    
+    if (${$scriptParameterHashRef}{'usePythonVirtualEnvironment'} == 1) {
+
+	print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+    }
+
     ## ChanjoBuild
     print $FILEHANDLE "## Build new coverage database\n";
     &ChanjoConvert($FILEHANDLE, ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'chanjoBuildDb'});
@@ -9072,7 +9093,11 @@ sub Madeline {
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".lc($programName);
 
     print $FILEHANDLE "## Reformat pedigree to Madeline format"."\n";
-    print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+
+    if (${$scriptParameterHashRef}{'usePythonVirtualEnvironment'} == 1) {
+
+	print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+    }
 
     print $FILEHANDLE "ped_parser ";
     print $FILEHANDLE "-t mip ";  #MIP pedigree format
@@ -10044,7 +10069,10 @@ sub DownloadReference {
 
 	    $logger->warn("Will try to download ".$parameterName." before executing ".$$programRef."\n");
 	}
-	print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	if (${$scriptParameterHashRef}{'usePythonVirtualEnvironment'} == 1) {
+
+	    print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	}
 
 	print $FILEHANDLE "cosmid ";  #Database download manager
 	print $FILEHANDLE "clone ";  #Clone resource
@@ -10268,37 +10296,49 @@ sub CheckCosmidInstallation {
 ##Function : Check that a Cosmid installation exists
 ##Returns  : ""
 ##Arguments: $parameterHashRef, $scriptParameterHashRef, $parameterNameRef
-##         : $parameterHashRef       => The parameter hash {REF}
-##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
-##         : $parameterNameRef       => Parameter that uses Cosmid
+##         : $parameterHashRef                => The parameter hash {REF}
+##         : $scriptParameterHashRef          => The active parameters for this analysis hash {REF}
+##         : $supportedCosmidReferenceHashRef => Suported Cosmid references {REF}
 
     my $parameterHashRef = $_[0];
     my $scriptParameterHashRef = $_[1];
-    my $parameterNameRef = $_[2];
+    my $supportedCosmidReferenceHashRef = $_[2];
     
-    if (${$parameterHashRef}{$$parameterNameRef}{'buildFile'} eq 1) {
-	
-	if (defined(${$scriptParameterHashRef}{'pythonVirtualEnvironment'})) {  #Use python virtualenv
-	
-	    $logger->info("Checking your Cosmid installation in preparation for download of ".${$scriptParameterHashRef}{$$parameterNameRef}."\n");
- 
-	    my $pythonEnvironmentCommand = join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} });
-	    my $whichReturn = `source ~/.bash_profile; $pythonEnvironmentCommand ${$scriptParameterHashRef}{'pythonVirtualEnvironment'};which cosmid;`;
-	    
-	    if ($whichReturn eq "") {
+    my $whichReturn;
 
-		$logger->fatal("MIP uses cosmid to download ".${$scriptParameterHashRef}{$$parameterNameRef}." and MIP could not find a cosmid installation in your python virtualenvironment".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}." ","\n"); 
+    for my $parameterName (keys %{$supportedCosmidReferenceHashRef}) {
+
+	if (${$parameterHashRef}{$parameterName}{'buildFile'} eq 1) {
+	 
+	    $logger->info("Checking your Cosmid installation in preparation for download of ".${$scriptParameterHashRef}{$parameterName}."\n");
+	    
+	    if (${$scriptParameterHashRef}{'usePythonVirtualEnvironment'} == 1) {
+		
+		if (defined(${$scriptParameterHashRef}{'pythonVirtualEnvironment'})) {  #Use python virtualenv
+		    
+		    my $pythonEnvironmentCommand = join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} });
+		    $whichReturn = `source ~/.bash_profile; $pythonEnvironmentCommand ${$scriptParameterHashRef}{'pythonVirtualEnvironment'};which cosmid;`;
+		}
+		else  {  #No python virtualenv
+		    
+		    $logger->fatal("Cannot download".${$scriptParameterHashRef}{$parameterName}." without a '-pythonVirtualEnvironment'");
+		    exit 1;
+		}
+	    }
+	    elsif (${$scriptParameterHashRef}{'usePythonVirtualEnvironment'} == 0) {  #Proceed without a python environment
+		
+		$whichReturn = `which cosmid;`;
+	    }
+	    if ($whichReturn eq "") {
+		
+		$logger->fatal("MIP uses cosmid to download ".${$scriptParameterHashRef}{$parameterName}." and MIP could not find a cosmid installation in your environment ","\n"); 
 		exit 1;
 	    }
 	    else {  #Test ok
-
+		
 		$logger->info("Found installation in ".$whichReturn);
 	    }
-	}
-	else  {  #No python virtualenv
-	
-	    $logger->fatal("Cannot download".${$scriptParameterHashRef}{$$parameterNameRef}." without a '-pythonVirtualEnvironment'");
-	    exit 1;
+	    last;  #Only need to check once per analysis run
 	}
     }
 }
@@ -10679,8 +10719,8 @@ sub FIDSubmitJob {
 
 	    my $sampleIDChainKey =  ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter]."_".${$argHashRef}{'path'};
 	    push ( @{ ${$jobIDHashRef}{$familyIDChainKey}{$sampleIDChainKey} }, $jobID);  #Add jobID to hash
+	    &PushToJobID(\%{$scriptParameterHashRef}, \%sampleInfo, \%jobID, \%infilesLaneNoEnding, $familyIDChainKey, $sampleIDChainKey, ${$argHashRef}{'sampleID'}, ${$argHashRef}{'path'}, "family_merged");
 	}
-	push ( @{ ${$jobIDHashRef}{$familyIDChainKey}{$familyIDChainKey} }, $jobID);  #Add jobID to hash{$familyID}[]
     }
     elsif (${$argHashRef}{'dependencies'} == 0) {  #Initiate chain - No dependencies, initiate Trunk (Main or other)
 	

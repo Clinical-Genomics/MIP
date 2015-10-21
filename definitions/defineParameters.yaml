@@ -995,6 +995,16 @@ rankModelFile:
   existsCheck: file
   type: path
 ## PythonVirtualEnvironment
+usePythonVirtualEnvironment:
+  associatedProgram:
+   - pChanjoBuild
+   - pChanjoAnnotate
+   - pChanjoImport
+   - pGATKVariantRecalibration
+   - pRankVariants
+  dataType: SCALAR
+  default: 1
+  type: program
 pythonVirtualEnvironment:
   associatedProgram:
    - pChanjoBuild
