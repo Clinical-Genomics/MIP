@@ -729,8 +729,10 @@ if ($scriptParameter{'writeConfigFile'} ne 0) {  #Write config file for family
 ## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
 @{$fileInfo{"SelectFileContigs"}} = &SizeSortSelectFileContigs(\%fileInfo, "SelectFileContigs", "contigsSizeOrdered");
 
+
 ## Detect if the current analysis involves any males
 $scriptParameter{'maleFound'} = &DetectSampleIdMale(\%scriptParameter, \%sampleInfo);
+
 
 ## Removes contigY|chrY from SelectFileContigs if no males or 'other' found in analysis
 &UpdateFileContigs(\@{${fileInfo}{'SelectFileContigs'}}, \$scriptParameter{'maleFound'});
@@ -739,14 +741,18 @@ $scriptParameter{'maleFound'} = &DetectSampleIdMale(\%scriptParameter, \%sampleI
 ## Write CMD to MIP log file
 &WriteCMDMipLog(\%parameter, \%scriptParameter, \@orderParameters, \$script, \$scriptParameter{'logFile'}, \$mipVersion);
 
+
 ## Collects the ".fastq(.gz)" files from the supplied infiles directory. Checks if any of the files exist
 &CollectInfiles(\%scriptParameter, \%inDirPath, \%infile);
+
 
 ## Reformat files for MIP output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames
 my $uncompressedFileSwitch = &InfilesReFormat(\%infile);  #Required to format infiles correctly for subsequent input into aligners
 
+
 ## Creates all fileendings as the samples is processed depending on the chain of modules activated
 &CreateFileEndings(\%parameter, \%scriptParameter, \%fileInfo, \%infilesLaneNoEnding, \@orderParameters);
+
 
 ## Create .fam file to be used in variant calling analyses
 &CreateFamFile({'scriptParameterHashRef' => \%scriptParameter,
@@ -754,8 +760,10 @@ my $uncompressedFileSwitch = &InfilesReFormat(\%infile);  #Required to format in
 		'famFilePath' => $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}.".fam",
 	       });
 
+
 ## Add to SampleInfo
 &AddToSampleInfo(\%scriptParameter, \%sampleInfo, \%fileInfo);
+
 
 ####MAIN
 
@@ -15890,6 +15898,12 @@ sub AddToSampleInfo {
 	
 	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'PedigreeFile'}{'Path'} = ${$scriptParameterHashRef}{'pedigreeFile'};  #Add pedigreeFile to sampleInfo
 	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'PedigreeFileAnalysis'}{'Path'} = ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'familyID'}."/qc_pedigree.yaml";  #Add pedigreeFile info used in this analysis to SampleInfoFile
+    }
+    if (defined(${$scriptParameterHashRef}{'logFile'})) {
+
+	my (@dirs) = File::Spec->splitdir(${$scriptParameterHashRef}{'logFile'});
+	my $path = "/".join("/", splice(@dirs, 1, -2) );  #Remove leading and trailing '' as well as move up 1 directory since we want all mip logs not just per date and add leading "/" and join on "/"
+	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'logFileDir'} = $path;  #Add logFileDir to SampleInfoFile
     }
 }
 
