@@ -1635,9 +1635,10 @@ sub QCCollect {
     print $FILEHANDLE "-o ".$outFamilyDirectory."/".$familyID."_qcmetrics.yaml ", "\n\n";     
     
     close($FILEHANDLE); 
-    
+
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
+	
 	## Collect QC metadata info for later use
 	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 		       'familyID' => ${$scriptParameterHashRef}{'familyID'},
@@ -1646,6 +1647,9 @@ sub QCCollect {
 		       'outFileEnding' => $familyID."_qcmetrics.yaml",
 		       'outDataType' => "infileDependent"
 		      });
+
+	${$sampleInfoHashRef}{$familyID}{$familyID}{'Program'}{'QCCollect'}{'QCCollectMetricsFile'}{'Path'} = $outFamilyDirectory."/".$familyID."_qcmetrics.yaml";
+
 	
 	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 		       'jobIDHashRef' => \%jobID,
