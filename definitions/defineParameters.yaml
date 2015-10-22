@@ -987,6 +987,19 @@ wholeGene:
   dataType: SCALAR
   default: 1
   type: program
+genmodModelsReducePenetrance:
+  associatedProgram:
+   - pRankVariants
+  dataType: SCALAR
+  default: 1
+  type: program
+genmodModelsReducedPenetranceFile:
+  associatedProgram:
+   - pRankVariants
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  existsCheck: file
+  type: path
 rankModelFile:
   associatedProgram:
    - pRankVariants
