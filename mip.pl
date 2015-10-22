@@ -194,12 +194,9 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                ##RankVariants
                -pRaV/--pRankVariants Ranking of annotated variants (defaults to "1" (=yes))
                  -ravgft/--genmodModelsFamilyType Use one of the known setups (defaults to "mip")
-                 -ravcs/--caddWGSSNVs Annotate whole genome sequencing CADD score (defaults to "0" (=no))
-                 -ravcsf/--caddWGSSNVsFile Whole genome sequencing CADD score file (defaults to "whole_genome_SNVs.tsv.gz")
-                 -ravc1kg/--cadd1000Genomes 1000 Genome cadd score file (defaults to "0" (=no))
-                 -ravc1kgf/--cadd1000GenomesFile 1000 Genome cadd score file (defaults to "1000G.tsv.gz")
+                 -ravcsf/--caddWGSSNVsFile Whole genome sequencing CADD score file (defaults to "")
+                 -ravc1kgf/--cadd1000GenomesFile 1000 Genome cadd score file (defaults to "")
                  -ravwg/--wholeGene Allow compound pairs in intronic regions (defaults to "1" (=yes))
-                 -ravrp/--genmodModelsReducePenetrance Use the reduced penetrance model for supplied genes (defaults to "1" (=yes))
                  -ravrpf/--genmodModelsReducedPenetranceFile File containg genes with reduced penetrance (defaults to "")
                  -ravrm/--rankModelFile Rank model config file (defaults to "")
                
@@ -475,12 +472,9 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'snesdbnsfpa|snpSiftDbNSFPAnnotations:s'  => \@{$parameter{'snpSiftDbNSFPAnnotations'}{'value'}},  #Comma separated list
 	   'pRaV|pRankVariants:n' => \$parameter{'pRankVariants'}{'value'},  #Ranking variants
 	   'ravgft|genmodModelsFamilyType:s' => \$parameter{'genmodModelsFamilyType'}{'value'},
-	   'ravcs|caddWGSSNVs:n' => \$parameter{'caddWGSSNVs'}{'value'},
 	   'ravcsf|caddWGSSNVsFile:s' => \$parameter{'caddWGSSNVsFile'}{'value'},
-	   'ravc1kg|cadd1000Genomes:n' => \$parameter{'cadd1000Genomes'}{'value'},
 	   'ravc1kgf|cadd1000GenomesFile:s' => \$parameter{'cadd1000GenomesFile'}{'value'},
 	   'ravwg|wholeGene:n'  => \$parameter{'wholeGene'}{'value'},  #Allow compound pairs in intronic regions
-	   'ravrp|genmodModelsReducePenetrance:n'  => \$parameter{'genmodModelsReducePenetrance'}{'value'},  #Use reduced model for genes
 	   'ravrpf|genmodModelsReducedPenetranceFile:s' => \$parameter{'genmodModelsReducedPenetranceFile'}{'value'},
 	   'ravrm|rankModelFile:s' => \$parameter{'rankModelFile'}{'value'},  #The rank modell config.ini path
 	   'pScK|pSampleCheck:n' => \$parameter{'pSampleCheck'}{'value'},  #QC for samples gender and relationship
@@ -1805,7 +1799,7 @@ sub RankVariants {
 	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{'pedigreeFile'}." ";  #Pedigree file
 	    print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{'genmodModelsFamilyType'}." ";  #Family type
 
-	    if (${$scriptParameterHashRef}{'genmodModelsReducePenetrance'} == 1) {
+	    if (${$scriptParameterHashRef}{'genmodModelsReducedPenetranceFile'} ne "noUserInfo") {
 
 		print $XARGSFILEHANDLE "--reduced_penetrance ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'genmodModelsReducedPenetranceFile'}." ";  #Use list of genes that have been shown to display reduced penetrance
 	    }
@@ -1830,11 +1824,11 @@ sub RankVariants {
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "annotate ";  #Annotate vcf variants
 
-	    if (${$scriptParameterHashRef}{'caddWGSSNVs'} == 1) {
+	    if (${$scriptParameterHashRef}{'caddWGSSNVsFile'} ne "noUserInfo") {
 		
 		print $XARGSFILEHANDLE "--cadd_file ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'caddWGSSNVsFile'}." ";  #Whole genome sequencing CADD score file
 	    }
-	    if (${$scriptParameterHashRef}{'cadd1000Genomes'} == 1) {
+	    if (${$scriptParameterHashRef}{'cadd1000GenomesFile'} ne "noUserInfo") {
 		
 		print $XARGSFILEHANDLE "--cadd_file ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'cadd1000GenomesFile'}." ";  #1000G CADD score file
 	    }
@@ -11500,13 +11494,13 @@ sub AddToScriptParameter {
 			}
 			elsif ( (${$argHashRef}{'parameterName'} eq "vcfParserSelectFileMatchingColumn") && ( ${$scriptParameterHashRef}{'vcfParserSelectFile'} eq "noUserInfo") ) {  #Do nothing since no SelectFile was given
 			}
-			elsif ( (${$argHashRef}{'parameterName'} eq "caddWGSSNVsFile") && ( ${$scriptParameterHashRef}{'caddWGSSNVs'} == 0) ) {  #Do nothing since no CADD annotation should be performed
+			elsif ( (${$argHashRef}{'parameterName'} eq "caddWGSSNVsFile") && ( ${$scriptParameterHashRef}{'caddWGSSNVsFile'} eq "noUserInfo") ) {  #Do nothing since no CADD annotation should be performed
 			}
-			elsif ( (${$argHashRef}{'parameterName'} eq "cadd1000GenomesFile") && ( ${$scriptParameterHashRef}{'cadd1000Genomes'} == 0) ) {  #Do nothing since no CADD annotation should be performed
+			elsif ( (${$argHashRef}{'parameterName'} eq "cadd1000GenomesFile") && ( ${$scriptParameterHashRef}{'cadd1000GenomesFile'} eq "noUserInfo") ) {  #Do nothing since no CADD annotation should be performed
 			}
 			elsif ( (${$argHashRef}{'parameterName'} eq "rankModelFile") && ( ${$scriptParameterHashRef}{'rankModelFile'} eq "noUserInfo") ) {  #Do nothing since no rank model was given i.e. use rank scripts deafult supplied with distribution
 			}
-			elsif ( (${$argHashRef}{'parameterName'} eq "genmodModelsReducedPenetranceFile") && ( ${$scriptParameterHashRef}{'genmodModelsReducePenetrance'} == 0) ) {  #Do nothing since no reduced penetrance  should be performed
+			elsif ( (${$argHashRef}{'parameterName'} eq "genmodModelsReducedPenetranceFile") && ( ${$scriptParameterHashRef}{'genmodModelsReducedPenetranceFile'} eq "noUserInfo") ) {  #Do nothing since no reduced penetrance should be performed
 			}
 			else {
 			    
@@ -11699,9 +11693,11 @@ sub CheckParameterFiles {
 			${$scriptParameterHashRef}{'VcfParserOutputFileCount'} = 2;  #To track if VCFParser was used with a vcfParserSelectFile (=2) or not (=1)
 		    }
 		}
-		elsif ( (${$argHashRef}{'parameterName'} eq "caddWGSSNVsFile") && ( ${$scriptParameterHashRef}{'caddWGSSNVs'} == 0) ) {  #Do nothing since no CADD annotation should be performed
+		elsif ( (${$argHashRef}{'parameterName'} eq "caddWGSSNVsFile") && ( ${$scriptParameterHashRef}{'caddWGSSNVsFile'} eq "noUserInfo") ) {  #Do nothing since no CADD annotation should be performed
 		}
-		elsif ( (${$argHashRef}{'parameterName'} eq "cadd1000GenomesFile") && ( ${$scriptParameterHashRef}{'cadd1000Genomes'} == 0) ) {  #Do nothing since no CADD annotation should be performed
+		elsif ( (${$argHashRef}{'parameterName'} eq "cadd1000GenomesFile") && ( ${$scriptParameterHashRef}{'cadd1000GenomesFile'} eq "noUserInfo") ) {  #Do nothing since no CADD annotation should be performed
+		}
+		elsif ( (${$argHashRef}{'parameterName'} eq "genmodModelsReducedPenetranceFile") && ( ${$scriptParameterHashRef}{'genmodModelsReducedPenetranceFile'} eq "noUserInfo") ) {  #Do nothing since no reduced penetrance should be performed
 		}
 		elsif (${$argHashRef}{'parameterName'} eq "rankModelFile") {  
 		    

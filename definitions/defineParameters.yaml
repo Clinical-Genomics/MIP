@@ -953,41 +953,23 @@ genmodModelsFamilyType:
   dataType: SCALAR
   default: mip
   type: program
-caddWGSSNVs:
-  associatedProgram:
-   - pRankVariants
-  dataType: SCALAR
-  default: 0
-  type: program
 caddWGSSNVsFile:
   associatedProgram:
    - pRankVariants
   buildFile: noAutoBuild
   dataType: SCALAR
-  default: whole_genome_SNVs.v1.3.tsv.gz
+  default: noUserInfo
   existsCheck: file
   type: path
-cadd1000Genomes:  
-  associatedProgram:
-   - pRankVariants
-  dataType: SCALAR
-  default: 0
-  type: program
 cadd1000GenomesFile:
   associatedProgram:
    - pRankVariants
   buildFile: noAutoBuild
   dataType: SCALAR
-  default: 1000G.v1.3.tsv.gz
+  default: noUserInfo
   existsCheck: file
   type: path
 wholeGene:
-  associatedProgram:
-   - pRankVariants
-  dataType: SCALAR
-  default: 1
-  type: program
-genmodModelsReducePenetrance:
   associatedProgram:
    - pRankVariants
   dataType: SCALAR
@@ -999,6 +981,7 @@ genmodModelsReducedPenetranceFile:
   buildFile: noAutoBuild
   dataType: SCALAR
   existsCheck: file
+  default: noUserInfo
   type: path
 rankModelFile:
   associatedProgram:
