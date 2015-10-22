@@ -1936,6 +1936,8 @@ sub RankVariants {
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'Program'}{"RankVariants"}{'RankModel'}{'Version'} = $1;
 	    }
 	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'Program'}{"RankVariants"}{'RankModel'}{'File'} = ${$scriptParameterHashRef}{'rankModelFile'};
+	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'Program'}{"RankVariants"}{'RankModel'}{'Path'} = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'rankModelFile'};
+
 	}
 	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 		       'familyID' => ${$scriptParameterHashRef}{'familyID'},
