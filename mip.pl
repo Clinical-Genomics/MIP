@@ -1804,7 +1804,7 @@ sub RankVariants {
 	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{'pedigreeFile'}." ";  #Pedigree file
 	    print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{'genmodModelsFamilyType'}." ";  #Family type
 
-	    if (${$scriptParameterHashRef}{'genmodModelsReducedPenetranceFile'} ne "noUserInfo") {
+	    if (defined(${$scriptParameterHashRef}{'genmodModelsReducedPenetranceFile'})) {
 
 		print $XARGSFILEHANDLE "--reduced_penetrance ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'genmodModelsReducedPenetranceFile'}." ";  #Use list of genes that have been shown to display reduced penetrance
 	    }
@@ -1829,11 +1829,11 @@ sub RankVariants {
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "annotate ";  #Annotate vcf variants
 
-	    if (${$scriptParameterHashRef}{'caddWGSSNVsFile'} ne "noUserInfo") {
+	    if (defined(${$scriptParameterHashRef}{'caddWGSSNVsFile'}) ) {
 		
 		print $XARGSFILEHANDLE "--cadd_file ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'caddWGSSNVsFile'}." ";  #Whole genome sequencing CADD score file
 	    }
-	    if (${$scriptParameterHashRef}{'cadd1000GenomesFile'} ne "noUserInfo") {
+	    if (defined(${$scriptParameterHashRef}{'cadd1000GenomesFile'})) {
 		
 		print $XARGSFILEHANDLE "--cadd_file ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'cadd1000GenomesFile'}." ";  #1000G CADD score file
 	    }
@@ -1850,7 +1850,7 @@ sub RankVariants {
 	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{'pedigreeFile'}." ";  #Pedigree file
 	    print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{'genmodModelsFamilyType'}." ";  #Family type
 
-	    if (${$scriptParameterHashRef}{'rankModelFile'} ne "noUserInfo") {
+	    if (defined(${$scriptParameterHashRef}{'rankModelFile'})) {
 		
 		print $XARGSFILEHANDLE "--score_config ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'rankModelFile'}." ";  #Rank model config.ini file 
 	    }
@@ -1928,7 +1928,7 @@ sub RankVariants {
 
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
-	if (${$scriptParameterHashRef}{'rankModelFile'} ne "noUserInfo") {  #Add to SampleInfo
+	if (defined(${$scriptParameterHashRef}{'rankModelFile'})) {  #Add to SampleInfo
 			    
 	    if (${$scriptParameterHashRef}{'rankModelFile'}=~/v(\d+\.\d+.\d+|\d+\.\d+)/) {
 				
@@ -11499,13 +11499,13 @@ sub AddToScriptParameter {
 			}
 			elsif ( (${$argHashRef}{'parameterName'} eq "vcfParserSelectFileMatchingColumn") && ( ${$scriptParameterHashRef}{'vcfParserSelectFile'} eq "noUserInfo") ) {  #Do nothing since no SelectFile was given
 			}
-			elsif ( (${$argHashRef}{'parameterName'} eq "caddWGSSNVsFile") && ( ${$scriptParameterHashRef}{'caddWGSSNVsFile'} eq "noUserInfo") ) {  #Do nothing since no CADD annotation should be performed
+			elsif ( (${$argHashRef}{'parameterName'} eq "caddWGSSNVsFile") && (!defined(${$scriptParameterHashRef}{'caddWGSSNVsFile'}) ) ) {  #Do nothing since no CADD annotation should be performed
 			}
-			elsif ( (${$argHashRef}{'parameterName'} eq "cadd1000GenomesFile") && ( ${$scriptParameterHashRef}{'cadd1000GenomesFile'} eq "noUserInfo") ) {  #Do nothing since no CADD annotation should be performed
+			elsif ( (${$argHashRef}{'parameterName'} eq "cadd1000GenomesFile") && (!defined(${$scriptParameterHashRef}{'cadd1000GenomesFile'}) ) ) {  #Do nothing since no CADD annotation should be performed
 			}
-			elsif ( (${$argHashRef}{'parameterName'} eq "rankModelFile") && ( ${$scriptParameterHashRef}{'rankModelFile'} eq "noUserInfo") ) {  #Do nothing since no rank model was given i.e. use rank scripts deafult supplied with distribution
+			elsif ( (${$argHashRef}{'parameterName'} eq "rankModelFile") && (!defined(${$scriptParameterHashRef}{'rankModelFile'}) ) ) {  #Do nothing since no rank model was given i.e. use rank scripts deafult supplied with distribution
 			}
-			elsif ( (${$argHashRef}{'parameterName'} eq "genmodModelsReducedPenetranceFile") && ( ${$scriptParameterHashRef}{'genmodModelsReducedPenetranceFile'} eq "noUserInfo") ) {  #Do nothing since no reduced penetrance should be performed
+			elsif ( (${$argHashRef}{'parameterName'} eq "genmodModelsReducedPenetranceFile") && (!defined(${$scriptParameterHashRef}{'genmodModelsReducedPenetranceFile'}) ) ) {  #Do nothing since no reduced penetrance should be performed
 			}
 			else {
 			    
@@ -11698,15 +11698,15 @@ sub CheckParameterFiles {
 			${$scriptParameterHashRef}{'VcfParserOutputFileCount'} = 2;  #To track if VCFParser was used with a vcfParserSelectFile (=2) or not (=1)
 		    }
 		}
-		elsif ( (${$argHashRef}{'parameterName'} eq "caddWGSSNVsFile") && ( ${$scriptParameterHashRef}{'caddWGSSNVsFile'} eq "noUserInfo") ) {  #Do nothing since no CADD annotation should be performed
+		elsif ( (${$argHashRef}{'parameterName'} eq "caddWGSSNVsFile") && (!defined(${$scriptParameterHashRef}{'caddWGSSNVsFile'}) ) ) {  #Do nothing since no CADD annotation should be performed
 		}
-		elsif ( (${$argHashRef}{'parameterName'} eq "cadd1000GenomesFile") && ( ${$scriptParameterHashRef}{'cadd1000GenomesFile'} eq "noUserInfo") ) {  #Do nothing since no CADD annotation should be performed
+		elsif ( (${$argHashRef}{'parameterName'} eq "cadd1000GenomesFile") && (!defined(${$scriptParameterHashRef}{'cadd1000GenomesFile'}) ) ) {  #Do nothing since no CADD annotation should be performed
 		}
-		elsif ( (${$argHashRef}{'parameterName'} eq "genmodModelsReducedPenetranceFile") && ( ${$scriptParameterHashRef}{'genmodModelsReducedPenetranceFile'} eq "noUserInfo") ) {  #Do nothing since no reduced penetrance should be performed
+		elsif ( (${$argHashRef}{'parameterName'} eq "genmodModelsReducedPenetranceFile") && (!defined(${$scriptParameterHashRef}{'genmodModelsReducedPenetranceFile'}) ) ) {  #Do nothing since no reduced penetrance should be performed
 		}
 		elsif (${$argHashRef}{'parameterName'} eq "rankModelFile") {  
 		    
-		    if (${$scriptParameterHashRef}{'rankModelFile'} eq "noUserInfo") {  #Do nothing since no rank model config file was given. Usse default supplied by ranking script
+		    if (!defined(${$scriptParameterHashRef}{'rankModelFile'})) {  #Do nothing since no rank model config file was given. Usse default supplied by ranking script
 		    }
 		    else {  #To enable addition of rankModel file and version to sampleInfo                                                                       
 			

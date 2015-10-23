@@ -958,7 +958,6 @@ caddWGSSNVsFile:
    - pRankVariants
   buildFile: noAutoBuild
   dataType: SCALAR
-  default: noUserInfo
   existsCheck: file
   type: path
 cadd1000GenomesFile:
@@ -966,7 +965,6 @@ cadd1000GenomesFile:
    - pRankVariants
   buildFile: noAutoBuild
   dataType: SCALAR
-  default: noUserInfo
   existsCheck: file
   type: path
 wholeGene:
@@ -981,7 +979,6 @@ genmodModelsReducedPenetranceFile:
   buildFile: noAutoBuild
   dataType: SCALAR
   existsCheck: file
-  default: noUserInfo
   type: path
 rankModelFile:
   associatedProgram:
