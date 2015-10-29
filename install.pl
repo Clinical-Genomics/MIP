@@ -178,6 +178,11 @@ sub CreateCondaEnvironment {
     my $parameterHashRef = $_[0];
     my $FILEHANDLE = $_[1];
 
+    ## Update Conda
+    print $FILEHANDLE "### Update Conda\n";
+    print $FILEHANDLE "conda update -y conda ";
+    print $FILEHANDLE "\n\n";
+
     ## Create MIP environment
     print $FILEHANDLE "### Creating Conda Environment: ".${$parameterHashRef}{'condaEnvironment'}."\n";
     print $FILEHANDLE "conda create ";
