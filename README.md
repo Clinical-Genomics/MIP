@@ -32,6 +32,7 @@ perl mip.pl -pMosaikBuild 0 -configFile 1_config.yaml
 
 ##Features
  - Autonomous
+	* Automated install of dependencies via install script
  	* Checks that all dependencies are fulfilled before launching
  	* Builds/downloads references and/or files missing before launching
  	* Splits and merges files for samples and families when relevant
@@ -78,17 +79,18 @@ MIP is written in perl and therfore requires that perl is installed on your OS.
 ####Prerequisites
 
 #####Programs/Modules
-- Perl YAML.pm module and Log4perl.pm from CPAN, since this is not included in the perl standard
-  distribution (if you want to supply config files to MIP)
+- Perl modules: YAML.pm, Log4perl.pm, List::MoreUtils, DateTime, DateTime::Format::ISO8601, DateTime::Format::HTTP, DateTime::Format::Mail, Set::IntervalTree from CPAN, since these are not included in the perl standard distribution
 - Simple Linux Utility for Resource Management (SLURM)
 - FastQC
 - Mosaik
 - BWA
+- Sambamba
 - SamTools
 - BedTools
 - PicardTools
 - Chanjo
 - GATK
+- vt
 - VEP
 - vcfParser.pl (Supplied with MIP)
 - SnpEff
