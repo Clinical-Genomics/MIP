@@ -47,6 +47,7 @@ $parameter{'bioConda'}{'bedtools'} = "2.25";
 $parameter{'bioConda'}{'mosaik'} = "2.2.26";
 
 ##Perl Modules
+$parameter{'perl'} = "5.18.2";
 $parameter{'perlModules'} = ["YAML",
 			     "Log::Log4perl",
 			     "List::MoreUtils",
@@ -61,6 +62,7 @@ $parameter{'perlModules'} = ["YAML",
 			     "DBI",  # VEP
 			     "JSON",  # VEP
 			     "DBD::mysql",  # VEP
+			     "CGI",  #VEP
     ];
 
 ## PIP
@@ -72,7 +74,7 @@ $parameter{'pip'}{'python-Levenshtein'} = "0.12.0";
 ## Programs currently not supported by conda or other packet manager
 $parameter{'sambamba'} = "0.5.9";
 $parameter{'vcfTools'} = "0.1.14";
-$parameter{'vt'} = "0.57";
+$parameter{'vt'} = "gitRepo";
 $parameter{'plink'} = "1.07";
 $parameter{'VariantEffectPredictor'} = "82";
 $parameter{'vepDirectoryCache'} = q?~/miniconda/envs/?.$parameter{'condaEnvironment'}.q?/ensembl-tools-release-?.$parameter{'VariantEffectPredictor'}.q?/cache?;  #Cache directory;
@@ -204,24 +206,89 @@ sub InstallCpanmAndModules {
     my $parameterHashRef = $_[0];
     my $FILEHANDLE = $_[1];
 
-    &ActivateCondaEnvironment($parameterHashRef, $FILEHANDLE);
+     my $pwd = cwd();
     
-    ## Install Cpanm
-    print $FILEHANDLE "### Install Cpanm in conda environment: ".${$parameterHashRef}{'condaEnvironment'}."\n";
-    print $FILEHANDLE "conda install ";
-    print $FILEHANDLE "-y ";
-    print $FILEHANDLE "-c https://conda.anaconda.org/dan_blanchard perl-app-cpanminus ";
-    print $FILEHANDLE "\n\n";
+    if ($ENV{PATH}=~/perl-${$parameterHashRef}{'perl'}/) {
 
+	print STDOUT "Found perl-".${$parameterHashRef}{'perl'}.". in your path\n";
+    }
+    else {
+
+	## Install specific Perl version
+	print $FILEHANDLE "### Install specific Perl version\n";
+	
+	## Move to Home
+	print $FILEHANDLE "## Move HOME\n";
+	print $FILEHANDLE q?cd $HOME?;
+	print $FILEHANDLE "\n\n";
+	
+	## Download
+	print $FILEHANDLE "## Download Perl\n";
+	print $FILEHANDLE "wget --quiet http://www.cpan.org/src/5.0/perl-".${$parameterHashRef}{'perl'}.".tar.gz ";
+	print $FILEHANDLE "-O perl-".${$parameterHashRef}{'perl'}.".tar.gz";  #Dowload outfile
+	print $FILEHANDLE "\n\n";
+	
+	## Extract
+	print $FILEHANDLE "## Extract\n";
+	print $FILEHANDLE "tar xzf perl-".${$parameterHashRef}{'perl'}.".tar.gz";
+	print $FILEHANDLE "\n\n";
+	
+	## Move to perl directory
+	print $FILEHANDLE "## Move to perl directory\n";
+	print $FILEHANDLE "cd perl-".${$parameterHashRef}{'perl'};
+	print $FILEHANDLE "\n\n";
+	
+	## Configure
+	print $FILEHANDLE "## Configure\n";
+	print $FILEHANDLE q?./Configure -des -Dprefix=$HOME/perl-?.${$parameterHashRef}{'perl'};
+	print $FILEHANDLE "\n";
+	
+	print $FILEHANDLE "make";
+	print $FILEHANDLE "\n";
+	
+	print $FILEHANDLE "make test";
+	print $FILEHANDLE "\n";
+	
+	print $FILEHANDLE "make install";
+	print $FILEHANDLE "\n\n";
+	
+	## Export path
+	print $FILEHANDLE "## Export path\n";
+	print $FILEHANDLE q?echo 'export PATH=$HOME/perl-?.${$parameterHashRef}{'perl'}.q?/:$PATH' >> ~/.bashrc?;
+	print $FILEHANDLE "\n\n";
+	
+	## Remove tar file
+	print $FILEHANDLE "## Remove tar file\n";
+	print $FILEHANDLE "cd && rm perl-".${$parameterHashRef}{'perl'}.".tar.gz";
+	print $FILEHANDLE "\n\n";
+
+	## Move to back
+	print $FILEHANDLE "## Move to original working directory\n";
+	print $FILEHANDLE "cd ".$pwd;
+	print $FILEHANDLE "\n\n";
+
+	## Use newly installed perl
+	print $FILEHANDLE q?eval `perl -I ~/perl-?.${$parameterHashRef}{'perl'}.q?/lib/perl5/ -Mlocal::lib=~/perl-?.${$parameterHashRef}{'perl'}.q?/` ?;
+	print $FILEHANDLE "\n";
+	print $FILEHANDLE q?echo 'eval `perl -I ~/perl-?.${$parameterHashRef}{'perl'}.q?/lib/perl5/ -Mlocal::lib=~/perl-?.${$parameterHashRef}{'perl'}.q?/`' >> ~/.bash_profile ?;  #Add at start-up
+	print $FILEHANDLE "\n\n";
+
+	print $FILEHANDLE q?PERL5LIB=~/perl-?.${$parameterHashRef}{'perl'}.q?/lib/perl5?;
+	print $FILEHANDLE "\n\n";
+
+	## Install Perl modules via cpanm
+	print $FILEHANDLE "## Install cpanm\n";
+	print $FILEHANDLE q?wget -O- http://cpanmin.us | perl - -l $HOME/perl-?.${$parameterHashRef}{'perl'}.q?/bin App::cpanminus --local-lib=~/perl-?.${$parameterHashRef}{'perl'}.q?/ local::lib ?;
+	print $FILEHANDLE "\n\n";
+    }
+    	
     ## Install Perl modules via cpanm
     print $FILEHANDLE "## Install Perl modules via cpanm\n";
     print $FILEHANDLE "cpanm ";
     print $FILEHANDLE join(" ", @{${$parameterHashRef}{'perlModules'}})." ";
     print $FILEHANDLE "\n\n";
-
-    &DeactivateCondaEnvironment($FILEHANDLE);
 }
-
+    
 
 sub PipInstall {
 
@@ -341,6 +408,10 @@ sub VcfTools {
     print $FILEHANDLE "\n\n";
 
     &CleanUpModuleInstall($FILEHANDLE, $pwd);
+
+    ## Reset perl envionment
+    print $FILEHANDLE q?PERL5LIB=~/perl-?.${$parameterHashRef}{'perl'}.q?/lib/perl5?;
+    print $FILEHANDLE "\n\n";
 }
 
 
@@ -359,22 +430,16 @@ sub VT {
     ## Download
     print $FILEHANDLE "## Download VT\n";
 
-    print $FILEHANDLE "wget --quiet https://github.com/atks/vt/archive/".${$parameterHashRef}{'vt'}.".tar.gz ";
-    print $FILEHANDLE "-O vt-".${$parameterHashRef}{'vt'}.".tar.gz";  #Dowload outfile
-    print $FILEHANDLE "\n\n";
-
-    ## Extract
-    print $FILEHANDLE "## Extract\n";
-    print $FILEHANDLE "tar xvf vt-".${$parameterHashRef}{'vt'}.".tar.gz";
+    print $FILEHANDLE "git clone https://github.com/atks/vt.git ";
     print $FILEHANDLE "\n\n";
 
     ## Move to vt directory
     print $FILEHANDLE "## Move to vt directory\n";
-    print $FILEHANDLE "cd vt-".${$parameterHashRef}{'vt'};
+    print $FILEHANDLE "cd vt ";
     print $FILEHANDLE "\n\n";
 
     ## Configure
-
+    print $FILEHANDLE "## Configure\n";
     print $FILEHANDLE "make";
     print $FILEHANDLE "\n";
 
