@@ -17,10 +17,12 @@ BEGIN {
            -env/--condaEnvironment Conda environment (Default: "mip")
            -cdp/--condaPath The conda path (Default: "HOME/miniconda")
            -bvc/--bioConda Set the module version of the programs that can be installed with bioConda (i.e. 'bwa=0.7.12')
+           -per/--perl Set the perl version (defaults: "5.18.2")
            -pm/perlModules Set the perl modules to be installed via cpanm (comma sep)
            -pip/--pip Set the module version of the programs that can be installed with pip (i.e. 'genmod=3.3.3')
            -sbb/sambamba Set the sambamba version (Default: "0.5.9")
            -vct/--vcfTools Set the vcftools version (Default: "0.1.14")
+           -bet/--bedTools Set the bedtools version (Default: "2.25.0")
            -vt/--vt Set the vt version (Default: "0.57")
            -plk/--plink  Set the plink version (Default: "1.07")
            -vep/--VariantEffectPredictor Set the VEP version (Default: "82")
@@ -47,7 +49,6 @@ $parameter{'bioConda'}{'samtools'} = "1.2";
 $parameter{'bioConda'}{'bcftools'} = "1.2";
 $parameter{'bioConda'}{'snpeff'} = "4.1";
 $parameter{'bioConda'}{'picard'} = "1.139";
-$parameter{'bioConda'}{'bedtools'} = "2.25";
 $parameter{'bioConda'}{'mosaik'} = "2.2.26";
 
 ##Perl Modules
@@ -78,6 +79,7 @@ $parameter{'pip'}{'python-Levenshtein'} = "0.12.0";
 ## Programs currently not supported by conda or other packet manager
 $parameter{'sambamba'} = "0.5.9";
 $parameter{'vcfTools'} = "0.1.14";
+$parameter{'bedTools'} = "2.25.0";
 $parameter{'vt'} = "gitRepo";
 $parameter{'plink'} = "1.07";
 $parameter{'VariantEffectPredictor'} = "82";
@@ -89,10 +91,12 @@ my $installVersion = "0.0.1";
 GetOptions('env|condaEnvironment:s'  => \$parameter{'condaEnvironment'},
 	   'cdp|condaPath:s' => \$parameter{'condaPath'},
 	   'bcv|bioConda=s'  => \%{$parameter{'bioConda'}},
+	   'per|perl=s' => \$parameter{'perl'},
 	   'pm|perlModules:s'  => \@{$parameter{'perlModules'}},  #Comma separated list
 	   'pip|pip=s'  => \%{$parameter{'pip'}},
 	   'sbb|sambamba:s'  => \$parameter{'sambamba'},
 	   'vct|vcfTools:s'  => \$parameter{'vcfTools'},
+	   'bet|bedTools:s' =>\$parameter{'bedTools'}, 
 	   'vt|vt:s'  => \$parameter{'vt'},
 	   'plk|plink:s'  => \$parameter{'plink'},
 	   'vep|VariantEffectPredictor:s'  => \$parameter{'VariantEffectPredictor'},
@@ -119,6 +123,8 @@ my $BASHFILEHANDLE = &CreateBashFile("mip.sh");
 &Sambamba(\%parameter, $BASHFILEHANDLE);
 
 &VcfTools(\%parameter, $BASHFILEHANDLE);
+
+&BedTools(\%parameter, $BASHFILEHANDLE);
 
 &VT(\%parameter, $BASHFILEHANDLE);
 
@@ -483,6 +489,54 @@ sub VcfTools {
     ## Reset perl envionment
     print $FILEHANDLE q?PERL5LIB=~/perl-?.${$parameterHashRef}{'perl'}.q?/lib/perl5?;
     print $FILEHANDLE "\n\n";
+}
+
+
+sub BedTools {
+    
+    my $parameterHashRef = $_[0];
+    my $FILEHANDLE = $_[1];
+    
+    my $pwd = cwd();
+    
+    if(&CheckCondaBinFileExists($parameterHashRef, "bedtools")) {
+	
+	return
+    }
+
+    my $bedToolsMainVersion = substr(${$parameterHashRef}{'bedTools'}, 0, 1);
+
+    ## Install bedTools
+    print $FILEHANDLE "### Install bedTools\n\n";
+    
+    &CreateInstallDirectory($FILEHANDLE);
+    
+    ## Download
+    print $FILEHANDLE "## Download bedTools\n";
+    print $FILEHANDLE "wget --quiet https://github.com/arq5x/bedtools".$bedToolsMainVersion."/releases/download/v".${$parameterHashRef}{'bedTools'}."/bedtools-".${$parameterHashRef}{'bedTools'}.".tar.gz ";
+    print $FILEHANDLE "-O bedtools-".${$parameterHashRef}{'bedTools'}.".tar.gz";  #Dowload outfile
+    print $FILEHANDLE "\n\n";
+    
+    ## Extract
+    print $FILEHANDLE "## Extract\n";
+    print $FILEHANDLE "tar xvf bedtools-".${$parameterHashRef}{'bedTools'}.".tar.gz";
+    print $FILEHANDLE "\n\n";
+
+    ## Move to bedtools directory
+    print $FILEHANDLE "## Move to bedtools directory\n";
+    print $FILEHANDLE "cd bedtools".$bedToolsMainVersion;
+    print $FILEHANDLE "\n\n";
+
+    print $FILEHANDLE "make";
+    print $FILEHANDLE "\n\n";
+       
+    ## Make available from conda environment
+    print $FILEHANDLE "## Make available from conda environment\n";
+    print $FILEHANDLE "mv ";
+    print $FILEHANDLE q?./bin/* ?.$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/bin/?;
+    print $FILEHANDLE "\n\n";
+    
+    &CleanUpModuleInstall($FILEHANDLE, $pwd);
 }
 
 
