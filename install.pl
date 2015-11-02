@@ -412,7 +412,17 @@ sub Sambamba {
     print $FILEHANDLE q?sambamba_v?.${$parameterHashRef}{'sambamba'}.q? ?.$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/bin/?;
     print $FILEHANDLE "\n\n";
 
+    ## Add softlink
+    print $FILEHANDLE "## Add soflink\n";
+    print $FILEHANDLE "cd ".$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/bin/?;
+    print $FILEHANDLE "\n";
+
+    print $FILEHANDLE "ln -s ";
+    print $FILEHANDLE q?sambamba_v?.${$parameterHashRef}{'sambamba'}.q? sambamba?;
+    print $FILEHANDLE "\n\n";
+
     &CleanUpModuleInstall($FILEHANDLE, $pwd);
+
 }
 
 

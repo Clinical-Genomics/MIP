@@ -434,22 +434,6 @@ pChanjoSexCheck:
   default: 1
   fileEnding: .sexcheck
   type: program
-pChanjoBuild:
-  associatedProgram:
-   - MIP
-  chain: CoverageReport
-  dataType: SCALAR
-  default: 1
-  fileEnding: nofileEnding
-  type: program
-chanjoBuildDb:
-  associatedProgram:
-   - pChanjoBuild
-  buildFile: yesAutoDownLoad
-  dataType: SCALAR
-  default: CCDS.current.txt
-  existsCheck: file
-  type: path
 pChanjoAnnotate:
   associatedProgram:
    - MIP
@@ -458,20 +442,14 @@ pChanjoAnnotate:
   default: 1
   fileEnding: _coverage
   type: program
-chanjoAnnotateCutoff:
+chanjoAnnotateBed:
   associatedProgram:
    - pChanjoAnnotate
+  buildFile: yesAutoDownLoad
   dataType: SCALAR
-  default: 10
-  type: program
-pChanjoImport:
-  associatedProgram:
-   - MIP
-  chain: CoverageReport
-  dataType: SCALAR
-  default: 0
-  fileEnding: nofileEnding
-  type: program
+  default: CCDS.current.bed
+  existsCheck: file
+  type: path
 pGenomeCoverageBED:
   associatedProgram:
    - MIP
@@ -990,9 +968,8 @@ rankModelFile:
 ## PythonVirtualEnvironment
 usePythonVirtualEnvironment:
   associatedProgram:
-   - pChanjoBuild
+   - pChanjoSexCheck
    - pChanjoAnnotate
-   - pChanjoImport
    - pGATKVariantRecalibration
    - pRankVariants
   dataType: SCALAR
@@ -1000,9 +977,8 @@ usePythonVirtualEnvironment:
   type: program
 pythonVirtualEnvironment:
   associatedProgram:
-   - pChanjoBuild
+   - pChanjoSexCheck
    - pChanjoAnnotate
-   - pChanjoImport
    - pGATKVariantRecalibration
    - pRankVariants
   dataType: SCALAR
@@ -1108,6 +1084,15 @@ picardToolsMergeSamFilesPrevious:
   dataType: ARRAY
   mandatory: no
   type: path
+chanjoAnnotateCutoffs:
+  associatedProgram:
+   - pChanjoAnnotate
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - 10
+   - 20
+  type: program
 vepFeatures:
   associatedProgram:
    - pVariantEffectPredictor
