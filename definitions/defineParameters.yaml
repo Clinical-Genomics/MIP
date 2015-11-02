@@ -463,6 +463,8 @@ chanjoAnnotateCutoff:
    - pChanjoAnnotate
   dataType: SCALAR
   default: 10
+  programNamePath:
+   - sambamba
   type: program
 pChanjoImport:
   associatedProgram:

@@ -730,7 +730,8 @@ sub CheckCondaBinFileExists {
 
 		print STDERR q?Skipping writting installation process for ?.$programName.q? ?.$programVersion,"\n";  
 		return 1;
-	    }	
+	    }
+	    print STDERR "Writting install instructions for ".$programName, "\n";
 	}   
 	else {
 	    
@@ -741,6 +742,7 @@ sub CheckCondaBinFileExists {
 		print STDERR q?Skipping writting installation process for ?.$programName,"\n";  	    
 		return 1;
 	    }
+	    print STDERR "Writting install instructions for ".$programName, "\n";
 	}
 	return 0;
     }
