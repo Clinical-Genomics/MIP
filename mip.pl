@@ -107,11 +107,9 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
 
                ###CoverageCalculations
                -pChS/--pChanjoSexCheck Predicts gender from sex chromosome coverage (defaults to "1")
-               -pChB/--pChanjoBuild Chanjo build central SQLite database file (defaults to "1" (=yes))
-                 -chbdb/--chanjoBuildDb  Reference database (defaults to "CCDS.current.txt")
                -pChA/--pChanjoAnnotate Chanjo coverage analysis (defaults to "1" (=yes))
-                 -chacut/--chanjoAnnotateCutoff Read depth cutoff (defaults to "10")
-               -pChI/--pChanjoImport Chanjo import to collect sample info to family Db  (defaults to "0" (=no))
+                 -chacut/--chanjoAnnotateCutoffs Read depth cutoff (comma sep; defaults to "10", "20")
+                 -chabed/--chanjoAnnotateBed Reference database (defaults to "CCDS.current.bed")
                -pGcB/--pGenomeCoverageBED Genome coverage calculation using genomeCoverageBED (defaults to "0" (=no))
                 -gcbcov/--GenomeCoverageBEDMaxCoverage Max coverage depth when using '-pGenomeCoverageBED' (defaults to "30")
                -pPtCMM/--pPicardToolsCollectMultipleMetrics Metrics calculation using PicardTools collectMultipleMetrics (defaults to "1" (=yes))
@@ -392,11 +390,9 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'ptp|picardToolsPath:s' => \$parameter{'picardToolsPath'}{'value'},  #Path to picardtools
 	   'pSmd|pSambambaMarkduplicates:s' => \$parameter{'pSambambaMarkduplicates'}{'value'},  #Sambamba Markduplicates
 	   'pChS|pChanjoSexCheck:n' => \$parameter{'pChanjoSexCheck'}{'value'},   #Chanjo coverage analysis on sex chromosomes
-	   'pChB|pChanjoBuild:n' => \$parameter{'pChanjoBuild'}{'value'},   #Build central SQLiteDatabase
-	   'chbdb|chanjoBuildDb:s' => \$parameter{'chanjoBuildDb'}{'value'},  #Chanjo reference database
 	   'pChA|pChanjoAnnotate:n' => \$parameter{'pChanjoAnnotate'}{'value'},   #Chanjo coverage analysis
-	   'chacut|chanjoAnnotateCutoff:n' => \$parameter{'chanjoAnnotateCutoff'}{'value'},   # Cutoff used for completeness
-	   'pChI|pChanjoImport:n' => \$parameter{'pChanjoImport'}{'value'},   #Build family SQLiteDatabase
+	   'chacut|chanjoAnnotateCutoffs:n' => \$parameter{'chanjoAnnotateCutoffs'}{'value'},   # Cutoff used for completeness
+	   'chabed|chanjoAnnotateBed:s' => \$parameter{'chanjoAnnotateBed'}{'value'},
 	   'pGcB|pGenomeCoverageBED:n' => \$parameter{'pGenomeCoverageBED'}{'value'},
 	   'xcov|GenomeCoverageBEDMaxCoverage:n' => \$parameter{'GenomeCoverageBEDMaxCoverage'}{'value'},  #Sets max depth to calculate coverage
 	   'pPtCMM|pPicardToolsCollectMultipleMetrics:n' => \$parameter{'pPicardToolsCollectMultipleMetrics'}{'value'},
@@ -1077,15 +1073,6 @@ if ($scriptParameter{'pChanjoSexCheck'} > 0) {
     }
 }
 
-if ($scriptParameter{'pChanjoBuild'} > 0) {
-    
-    $logger->info("[ChanjoBuild]\n");
-
-    &CheckBuildDownLoadPreRequisites(\%parameter, \%scriptParameter, \%supportedCosmidReference, "ChanjoBuild");
-       
-    &ChanjoBuild(\%parameter, \%scriptParameter, \%sampleInfo, $scriptParameter{'familyID'}, "ChanjoBuild");
-}
-
 if ($scriptParameter{'pChanjoAnnotate'} > 0) {
     
     $logger->info("[ChanjoAnnotate]\n");
@@ -1096,12 +1083,6 @@ if ($scriptParameter{'pChanjoAnnotate'} > 0) {
     }
 }
 
-if ($scriptParameter{'pChanjoImport'} > 0) {
-    
-    $logger->info("[ChanjoImport]\n");
-    
-    &ChanjoImport(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, $scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "ChanjoImport");
-}
 
 if ($scriptParameter{'pGenomeCoverageBED'} > 0) {  #Run GenomeCoverageBED
     
@@ -5342,100 +5323,6 @@ sub PicardToolsCollectMultipleMetrics {
 }
 
 
-sub ChanjoImport { 
- 
-##ChanjoImport
-    
-##Function : Loads the calculated coverage to family database
-##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $familyID, $aligner, $programName
-##         : $parameterHashRef           => The parameter hash {REF}
-##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
-##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
-##         : $fileInfoHashRef            => The fileInfo hash {REF}
-##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
-##         : $familyID                   => The familyID
-##         : $aligner                    => The aligner used in the analysis
-##         : $programName                => The program name
-
-    my $parameterHashRef = $_[0];
-    my $scriptParameterHashRef = $_[1];
-    my $sampleInfoHashRef = $_[2];
-    my $fileInfoHashRef = $_[3];
-    my $infilesLaneNoEndingHashRef = $_[4];
-    my $familyID = $_[5];
-    my $aligner = $_[6];
-    my $programName = $_[7];
-
-    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($fileName) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-					    'FILEHANDLE' => $FILEHANDLE,
-					    'directoryID' => $familyID,
-					    'programName' => $programName,
-					    'programDirectory' => lc($programName),
-					    'processTime' => 3,
-					    'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
-					   });
-
-    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID;
-
-    my $coreCounter=1;
-
-    if (${$scriptParameterHashRef}{'usePythonVirtualEnvironment'} == 1) {
-
-	print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
-    }
-    ##Build family database for coverage report
-
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDCounter++) {   
-	
-	my $sampleID = ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter];
-	my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/coveragereport";
-	my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pChanjoAnnotate'}{'fileEnding'};
-
-	## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-	my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, $sampleID);	
-
-	if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
-	    print $FILEHANDLE "chanjo ";
-	    print $FILEHANDLE "import ";
-	    print $FILEHANDLE $inSampleDirectory."/".$infile.$infileEnding.".bed ";
-	    print $FILEHANDLE "--db=".$outFamilyDirectory."/".$familyID.".sqlite ","\n\n";  #Central Db for family
-      	
-	}
-	else {
-	    
-	    for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all files from independent of merged or not
-
-		&PrintWait(\$infileCounter, \${$scriptParameterHashRef}{'maximumCores'}, \$coreCounter, $FILEHANDLE);		
-		
-		my $infile = ${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter];
-		print $FILEHANDLE "chanjo ";
-		print $FILEHANDLE "import ";
-		print $FILEHANDLE $inSampleDirectory."/".$infile.$infileEnding.".bed ";
-		print $FILEHANDLE "--db=".$outFamilyDirectory."/".$familyID.".sqlite ","\n\n";  #Central Db for family
-		
-	    }
-	}
-    }
-
-    close($FILEHANDLE); 
-
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
-
-	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-		       'jobIDHashRef' => \%jobID,
-		       'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
-		       'dependencies' => 5, 
-		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
-		       'sbatchFileName' => $fileName
-		      });
-    }
-}
-
-
 sub ChanjoSexCheck {
 
 ##ChanjoSexCheck
@@ -5650,16 +5537,18 @@ sub ChanjoAnnotate {
 
 	## ChanjoAnnotate
 	print $FILEHANDLE "## Annotating bed from alignment\n";
-	&ChanjoConvert($FILEHANDLE, ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'chanjoBuildDb'});
 	print $FILEHANDLE "chanjo ";
-	print $FILEHANDLE "-v -v  ";  #Incrementing "-v" for increased verbosity
-	print $FILEHANDLE "--log ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding."_chanjoAnnotate.log ";
-	print $FILEHANDLE "annotate ";
+	print $FILEHANDLE "-vv  ";  #Incrementing "-v" for increased verbosity
+	print $FILEHANDLE "--log_file ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding."_chanjo.log ";
+	print $FILEHANDLE "sambamba ";
+	print $FILEHANDLE "--exon_bed=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'chanjoAnnotateBed'}." ";
 	print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile
-	print $FILEHANDLE "--cutoff ".${$scriptParameterHashRef}{'chanjoAnnotateCutoff'}." ";  #The “cutoff” is used for the completeness calculation
-	print $FILEHANDLE "--sample ".$sampleID." ";  #A unique sample Id
-	print $FILEHANDLE "--extendby 2 ";  #Dynamically extend intervals symetrically
-	print $FILEHANDLE "--group ".${$scriptParameterHashRef}{'familyID'}." ";  #Grouping option for samples
+	
+	foreach my $cutoff (@{${$scriptParameterHashRef}{'chanjoAnnotateCutoffs'}}) {
+
+	    print $FILEHANDLE "--cov_treshold ".$cutoff." ";  #The “cutoff” is used for the completeness calculation    
+	} 
+	
 	print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding.".bed". "\n\n";  #OutFile
 
 	## Copies file from temporary directory.
@@ -5668,7 +5557,7 @@ sub ChanjoAnnotate {
 			      'filePath' => $outSampleDirectory."/",
 			      'FILEHANDLE' => $FILEHANDLE,
 			     });
-	&MigrateFileFromTemp({'tempPath' => ${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding."_chanjoAnnotate.log",
+	&MigrateFileFromTemp({'tempPath' => ${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding."_chanjo.log",
 			      'filePath' => $outSampleDirectory."/",
 			      'FILEHANDLE' => $FILEHANDLE,
 			     });
@@ -5683,7 +5572,7 @@ sub ChanjoAnnotate {
 			   'programName' => "ChanjoAnnotate",
 			   'infile' => $infile,
 			   'outDirectory' => $outSampleDirectory,
-			   'outFileEnding' => $infileEnding."_chanjoAnnotate.log",
+			   'outFileEnding' => $infileEnding."_chanjo.log",
 			   'outDataType' => "infileDependent"
 			  });
 	}
@@ -5722,16 +5611,18 @@ sub ChanjoAnnotate {
 	    
 	    my $infile = ${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter];
 	    
-	    &ChanjoConvert($FILEHANDLE, ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'chanjoBuildDb'});
 	    print $FILEHANDLE "chanjo ";
-	    print $FILEHANDLE "-v -v  ";  #Incrementing "-v" for increased verbosity
-	    print $FILEHANDLE "--log ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding."_chanjoAnnotate.log ";
-	    print $FILEHANDLE "annotate ";
+	    print $FILEHANDLE "-vv  ";  #Incrementing "-v" for increased verbosity
+	    print $FILEHANDLE "--log_file ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding."_chanjo.log ";
+	    print $FILEHANDLE "sambamba ";
+	    print $FILEHANDLE "--exon_bed=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'chanjoAnnotateBed<'}." ";
 	    print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile
-	    print $FILEHANDLE "--cutoff ".${$scriptParameterHashRef}{'chanjoAnnotateCutoff'}." ";  #The “cutoff” is used for the completeness calculation
-	    print $FILEHANDLE "--sample ".$sampleID." ";  #A unique sample Id
-	    print $FILEHANDLE "--extendby 2 ";  #Dynamically extend intervals symetrically
-	    print $FILEHANDLE "--group ".${$scriptParameterHashRef}{'familyID'}." ";  #Grouping option for samples
+
+
+	    foreach my $cutoff (@{${$scriptParameterHashRef}{'chanjoAnnotateCutoffs'}}) {
+		
+		print $FILEHANDLE "--cov_treshold ".$cutoff." ";  #The “cutoff” is used for the completeness calculation    
+	    } 	    
 	    print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding.".bed &". "\n\n";  #OutFile
 
 	    if ( (${$scriptParameterHashRef}{'pChanjoAnnotate'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
@@ -5743,7 +5634,7 @@ sub ChanjoAnnotate {
 			       'programName' => "ChanjoAnnotate",
 			       'infile' => $infile,
 			       'outDirectory' => $outSampleDirectory,
-			       'outFileEnding' => $infileEnding."_chanjoAnnotate.log",
+			       'outFileEnding' => $infileEnding."_chanjo.log",
 			       'outDataType' => "infileDependent"
 			      });
 	    }
@@ -5752,7 +5643,7 @@ sub ChanjoAnnotate {
 
 	## Copies files from temporary folder to source. Loop over files specified by $arrayRef and collects files from $extractArrayRef.
 	&MigrateFilesFromTemp(\@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, \@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, $outSampleDirectory, ${$scriptParameterHashRef}{'tempDirectory'}, $nrCores, $outfileEnding.".bed", $FILEHANDLE);
-	&MigrateFilesFromTemp(\@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, \@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, $outSampleDirectory, ${$scriptParameterHashRef}{'tempDirectory'}, $nrCores, $infileEnding."_chanjoAnnotate.log", $FILEHANDLE);
+	&MigrateFilesFromTemp(\@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, \@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, $outSampleDirectory, ${$scriptParameterHashRef}{'tempDirectory'}, $nrCores, $infileEnding."_chanjo.log", $FILEHANDLE);
 	print $FILEHANDLE "wait", "\n\n";
     }
 
@@ -5770,77 +5661,6 @@ sub ChanjoAnnotate {
 		      });
     }
 }
-
-
-sub ChanjoBuild { 
-
-##ChanjoBuild
-    
-##Function : Build database for downstream coverage analsysis.
-##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $familyID, $programName
-##         : $parameterHashRef       => The parameter hash {REF}
-##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
-##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
-##         : $familyID               => The familyID
-##         : $programName            => The program name
-
-    my $parameterHashRef = $_[0];
-    my $scriptParameterHashRef = $_[1];
-    my $sampleInfoHashRef = $_[2];
-    my $familyID = $_[3];
-    my $programName = $_[4];
-
-    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($fileName) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-					    'FILEHANDLE' => $FILEHANDLE,
-					    'directoryID' => $familyID,
-					    'programName' => $programName,
-					    'programDirectory' => lc($programName),
-					   });
-
-    ## Assign directories
-    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID;
-
-    if (${$scriptParameterHashRef}{'usePythonVirtualEnvironment'} == 1) {
-
-	print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
-    }
-
-    ## ChanjoBuild
-    print $FILEHANDLE "## Build new coverage database\n";
-    &ChanjoConvert($FILEHANDLE, ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'chanjoBuildDb'});
-    print $FILEHANDLE "chanjo ";
-    print $FILEHANDLE "--db ".$outFamilyDirectory."/".$familyID.".sqlite ";  #Path/URI of the SQL database
-    print $FILEHANDLE "--dialect sqlite ";  #Type of SQL database
-    print $FILEHANDLE "build ";  #Chanjo sub program argument
-    print $FILEHANDLE "--force", "\n\n";  #Overwrite existing assets without warning
-
-    close($FILEHANDLE); 
-
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
-
-	## Collect QC metadata info for later use
-	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
-		       'familyID' => ${$scriptParameterHashRef}{'familyID'},
-		       'programName' => "ChanjoBuild",
-		       'outDirectory' => $outFamilyDirectory,
-		       'outFileEnding' => $familyID.".sqlite",
-		       'outDataType' => "infileDependent"
-		      });
-
-	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-		       'jobIDHashRef' => \%jobID,
-		       'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
-		       'dependencies' => 5, 
-		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
-		       'sbatchFileName' => $fileName
-		      });
-    }
-}
-
 
 
 sub GATKHaploTypeCaller { 
@@ -14198,28 +14018,6 @@ sub DetectSampleIdMale {
 	}
     }
     return $maleFound;
-}
-
-sub ChanjoConvert {
-    
-##ChanjoConvert
-    
-##Function : Writes sbatch code to supplied filehandle to convert a database file into a sorted bed file and piping it
-##Returns  : ""
-##Arguments: $FILEHANDLE, $chanjoDatabase
-##         : $FILEHANDLE => SBATCH script FILEHANDLE to print to
-##         : $chanjoDatabase => The database to convert and pipe
-    
-    my $FILEHANDLE = $_[0];
-    my $chanjoDatabase = $_[1];
-    
-    print $FILEHANDLE "sort ";  #Unix sort
-    print $FILEHANDLE "-k1,1 -k2,2n ";  #Sort numerically 
-    print $FILEHANDLE $chanjoDatabase." ";  #Chanjo Db file to be sorted
-    print $FILEHANDLE "| ";  #Pipe
-    print $FILEHANDLE "chanjo convert ";  #Convert ccds to bed
-    print $FILEHANDLE "| ";  #Pipe
-    
 }
 
 
