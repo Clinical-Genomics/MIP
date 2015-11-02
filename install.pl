@@ -238,17 +238,15 @@ sub Perl {
 	    print $FILEHANDLE "\n\n";
 	    
 	    &InstallPerlCpnam($parameterHashRef, $BASHFILEHANDLE); 
+
+	    &PerlModules($parameterHashRef, $BASHFILEHANDLE,);
 	}
     }
     else {
     	
 	&InstallPerlCpnam($parameterHashRef, $BASHFILEHANDLE, "AddPath");
 
-	## Install Perl modules via cpanm
-	print $FILEHANDLE "## Install Perl modules via cpanm\n";
-	print $FILEHANDLE "cpanm ";
-	print $FILEHANDLE join(" ", @{${$parameterHashRef}{'perlModules'}})." ";
-	print $FILEHANDLE "\n\n";
+	&PerlModules($parameterHashRef, $BASHFILEHANDLE,);
     }
 }
 
@@ -338,6 +336,19 @@ sub InstallPerlCpnam {
     print $FILEHANDLE "\n\n";
 }
     
+
+sub PerlModules {
+    
+    my $parameterHashRef = $_[0];
+    my $FILEHANDLE = $_[1];
+    
+    ## Install Perl modules via cpanm
+    print $FILEHANDLE "## Install Perl modules via cpanm\n";
+    print $FILEHANDLE "cpanm ";
+    print $FILEHANDLE join(" ", @{${$parameterHashRef}{'perlModules'}})." ";
+    print $FILEHANDLE "\n\n";
+}
+
 
 sub PipInstall {
 
