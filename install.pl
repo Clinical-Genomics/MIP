@@ -494,6 +494,11 @@ sub VcfTools {
     print $FILEHANDLE "make install";
     print $FILEHANDLE "\n\n";
 
+    ## Move Perl Module
+    print $FILEHANDLE "## Move Perl Module\n";
+    print $FILEHANDLE q?cp src/perl/Vcf.pm $HOME/perl-?.${$parameterHashRef}{'perl'}.q?/lib/perl5/?;
+    print $FILEHANDLE "\n\n";
+
     &CleanUpModuleInstall($FILEHANDLE, $pwd);
 
     ## Reset perl envionment
