@@ -1069,7 +1069,16 @@ if ($scriptParameter{'pChanjoSexCheck'} > 0) {
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #For all SampleIDs
 	
-	&ChanjoSexCheck(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infilesLaneNoEnding, \%lane, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'}, "ChanjoSexCheck");
+	&ChanjoSexCheck({'parameterHashRef' => \%parameter,
+			 'scriptParameterHashRef' => \%scriptParameter,
+			 'sampleInfoHashRef' => \%sampleInfo,
+			 'fileInfoHashRef' => \%fileInfo,
+			 'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+			 'laneHashRef' => \%lane,
+			 'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
+			 'alignerRef' => \$scriptParameter{'aligner'}, 
+			 'programName' => "ChanjoSexCheck",
+			});
     }
 }
 
@@ -1079,7 +1088,16 @@ if ($scriptParameter{'pChanjoAnnotate'} > 0) {
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #For all SampleIDs
 	
-	&ChanjoAnnotate(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infilesLaneNoEnding, \%lane, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'}, "ChanjoAnnotate");
+	&ChanjoAnnotate({'parameterHashRef' => \%parameter,
+			 'scriptParameterHashRef' => \%scriptParameter,
+			 'sampleInfoHashRef' => \%sampleInfo,
+			 'fileInfoHashRef' => \%fileInfo,
+			 'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+			 'laneHashRef' => \%lane,
+			 'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
+			 'alignerRef' => \$scriptParameter{'aligner'}, 
+			 'programName' => "ChanjoAnnotate",
+			});
     }
 }
 
@@ -5329,40 +5347,48 @@ sub ChanjoSexCheck {
     
 ##Function : Predict gender from BAM files.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $sampleID, $aligner, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $sampleIDRef, $alignerRef, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $laneHashRef                => The lane info hash {REF}
-##         : $sampleID                   => The sampleID
-##         : $aligner                    => The aligner used in the analysis
+##         : $sampleIDRef                => The sampleID {REF}
+##         : $alignerRef                 => The aligner used in the analysis {REF}
 ##         : $programName                => The program name
 
-    my $parameterHashRef = $_[0];
-    my $scriptParameterHashRef = $_[1];
-    my $sampleInfoHashRef = $_[2];
-    my $fileInfoHashRef = $_[3];
-    my $infilesLaneNoEndingHashRef = $_[4];
-    my $laneHashRef = $_[5];
-    my $sampleID = $_[6];
-    my $aligner = $_[7];
-    my $programName = $_[8];
+  my ($argHashRef) = @_;
+    
+    
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
+    my $laneHashRef = ${$argHashRef}{'laneHashRef'};
+    my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
+    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $programName = ${$argHashRef}{'programName'};
+
+    my $tempDirectoryRef = \${$scriptParameterHashRef}{'tempDirectory'};
+    my $referencesDirectoryRef = \${$scriptParameterHashRef}{'referencesDir'};
+    my $familyIDRef = \${$scriptParameterHashRef}{'familyID'};
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $fileName;      
 
     ## Assign directories               
-    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'familyID'};
-    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/gatk";
-    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/coveragereport";
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef;
+    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/coveragereport";
 
-    my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
-    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{"p".$programName}{'fileEnding'};
+    my $infileEnding = ${$fileInfoHashRef}{ $$familyIDRef }{$$sampleIDRef}{'pGATKBaseRecalibration'}{'fileEnding'};
+    my $outfileEnding = ${$fileInfoHashRef}{ $$familyIDRef }{$$sampleIDRef}{"p".$programName}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
+    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, $$sampleIDRef);
     my $coreCounter=1;	
 
     if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
@@ -5370,9 +5396,9 @@ sub ChanjoSexCheck {
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 					     'FILEHANDLE' => $FILEHANDLE,
-					     'directoryID' => $sampleID,
+					     'directoryID' => $$sampleIDRef,
 					     'programName' => $programName,
-					     'programDirectory' => lc($aligner."/coveragereport"),
+					     'programDirectory' => lc($$alignerRef."/coveragereport"),
 					     'processTime' => 2,
 					    });
 
@@ -5391,8 +5417,8 @@ sub ChanjoSexCheck {
 
 	    ## Collect QC metadata info for later use
 	    &SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
-			   'familyID' => ${$scriptParameterHashRef}{'familyID'},
-			   'sampleID' => $sampleID,
+			   'familyID' => $$familyIDRef,
+			   'sampleID' => $$sampleIDRef,
 			   'programName' => "ChanjoSexCheck",
 			   'infile' => $infile,
 			   'outDirectory' => $outSampleDirectory,
@@ -5404,14 +5430,14 @@ sub ChanjoSexCheck {
     else {  #No merged files
 	
 	## Set the number of cores to allocate per sbatch job.
-	my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar( @{${$laneHashRef}{$sampleID}} ));  #Detect the number of cores to use from lanes
+	my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar( @{${$laneHashRef}{$$sampleIDRef}} ));  #Detect the number of cores to use from lanes
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 					     'FILEHANDLE' => $FILEHANDLE,
-					     'directoryID' => $sampleID,
+					     'directoryID' => $$sampleIDRef,
 					     'programName' => $programName,
-					     'programDirectory' => lc($aligner."/coveragereport"),
+					     'programDirectory' => lc($$alignerRef."/coveragereport"),
 					     'nrofCores' => $nrCores,
 					     'processTime' => 2,
 					    });
@@ -5423,11 +5449,11 @@ sub ChanjoSexCheck {
 
 	## ChanjoSexCheck
 	print $FILEHANDLE "## Predicting sex from alignment\n";
-	for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all files from independent of merged or not
+	for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} });$infileCounter++) {  #For all files from independent of merged or not
 	    
 	    &PrintWait(\$infileCounter, \${$scriptParameterHashRef}{'maximumCores'}, \$coreCounter, $FILEHANDLE);
 	    
-	    my $infile = ${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter];
+	    my $infile = ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter];
 	    
 	    print $FILEHANDLE "sex-check ";
 	    print $FILEHANDLE $inSampleDirectory."/".$infile.$infileEnding.".bam ";  #InFile
@@ -5437,8 +5463,8 @@ sub ChanjoSexCheck {
 		
 		## Collect QC metadata info for later use
 		&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
-			       'familyID' => ${$scriptParameterHashRef}{'familyID'},
-			       'sampleID' => $sampleID,
+			       'familyID' => $$familyIDRef,
+			       'sampleID' => $$sampleIDRef,
 			       'programName' => "ChanjoSexCheck",
 			       'infile' => $infile,
 			       'outDirectory' => $outSampleDirectory,
@@ -5457,7 +5483,7 @@ sub ChanjoSexCheck {
 	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 		       'jobIDHashRef' => \%jobID,
 		       'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
-		       'sampleID' => $sampleID,
+		       'sampleID' => $$sampleIDRef,
 		       'dependencies' => 1, 
 		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
 		       'sbatchFileName' => $fileName
@@ -5472,41 +5498,50 @@ sub ChanjoAnnotate {
     
 ##Function : Generate coverage bed outfile for each individual.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $sampleID, $aligner, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $sampleIDRef, $alignerRef, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $laneHashRef                => The lane info hash {REF}
-##         : $sampleID                   => The sampleID
-##         : $aligner                    => The aligner used in the analysis
+##         : $sampleIDRef                => The sampleID {REF}
+##         : alignerRef                  => The aligner used in the analysis {REF}
 ##         : $programName                => The program name
 
-    my $parameterHashRef = $_[0];
-    my $scriptParameterHashRef = $_[1];
-    my $sampleInfoHashRef = $_[2];
-    my $fileInfoHashRef = $_[3];
-    my $infilesLaneNoEndingHashRef = $_[4];
-    my $laneHashRef = $_[5];
-    my $sampleID = $_[6];
-    my $aligner = $_[7];
-    my $programName = $_[8];
+    my ($argHashRef) = @_;
+    
+    
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
+    my $laneHashRef = ${$argHashRef}{'laneHashRef'};
+    my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
+    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $programName = ${$argHashRef}{'programName'};
+
+    my $tempDirectoryRef = \${$scriptParameterHashRef}{'tempDirectory'};
+    my $referencesDirectoryRef = \${$scriptParameterHashRef}{'referencesDir'};
+    my $familyIDRef = \${$scriptParameterHashRef}{'familyID'};
+
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $fileName;
     my $nrCores = 1;      
 
     ## Assign directories
-    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'familyID'};
-    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/gatk";
-    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/coveragereport";
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef;
+    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/coveragereport";
 
-    my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
-    my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{"p".$programName}{'fileEnding'};
+    my $infileEnding = ${$fileInfoHashRef}{ $$familyIDRef }{$$sampleIDRef}{'pGATKBaseRecalibration'}{'fileEnding'};
+    my $outfileEnding = ${$fileInfoHashRef}{ $$familyIDRef }{$$sampleIDRef}{"p".$programName}{'fileEnding'};
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
-    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, $sampleID);
+    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%fileInfo, \%lane, \%infilesLaneNoEnding, $$sampleIDRef);
     my $coreCounter=1;	
 
     if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
@@ -5514,19 +5549,19 @@ sub ChanjoAnnotate {
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 					     'FILEHANDLE' => $FILEHANDLE,
-					     'directoryID' => $sampleID,
+					     'directoryID' => $$sampleIDRef,
 					     'programName' => $programName,
-					     'programDirectory' => lc($aligner."/coveragereport"),
+					     'programDirectory' => lc($$alignerRef."/coveragereport"),
 					     'nrofCores' => $nrCores,
 					     'processTime' => 10,
-					     'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+					     'tempDirectory' => $$tempDirectoryRef,
 					    });
 
 	## Copy file(s) to temporary directory
 	print $FILEHANDLE "## Copy file(s) to temporary directory\n"; 
 	&MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE, 
 			    'path' => $inSampleDirectory."/".$infile.$infileEnding.".b*",
-			    'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+			    'tempDirectory' => $$tempDirectoryRef
 			   });
 	print $FILEHANDLE "wait", "\n\n";
 
@@ -5539,25 +5574,25 @@ sub ChanjoAnnotate {
 	print $FILEHANDLE "## Annotating bed from alignment\n";
 	print $FILEHANDLE "chanjo ";
 	print $FILEHANDLE "-vv  ";  #Incrementing "-v" for increased verbosity
-	print $FILEHANDLE "--log_file ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding."_chanjo.log ";
+	print $FILEHANDLE "--log_file ".$$tempDirectoryRef."/".$infile.$infileEnding."_chanjo.log ";
 	print $FILEHANDLE "sambamba ";
-	print $FILEHANDLE "--exon_bed=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'chanjoAnnotateBed'}." ";
-	print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile
+	print $FILEHANDLE "--exon_bed=".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'chanjoAnnotateBed'}." ";
+	print $FILEHANDLE $$tempDirectoryRef."/".$infile.$infileEnding.".bam ";  #InFile
 	
 	foreach my $cutoff (@{${$scriptParameterHashRef}{'chanjoAnnotateCutoffs'}}) {
 
 	    print $FILEHANDLE "--cov_treshold ".$cutoff." ";  #The “cutoff” is used for the completeness calculation    
 	} 
 	
-	print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding.".bed". "\n\n";  #OutFile
+	print $FILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileEnding.".bed". "\n\n";  #OutFile
 
 	## Copies file from temporary directory.
 	print $FILEHANDLE "## Copy file from temporary directory\n";
-	&MigrateFileFromTemp({'tempPath' => ${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding.".bed",
+	&MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$infile.$outfileEnding.".bed",
 			      'filePath' => $outSampleDirectory."/",
 			      'FILEHANDLE' => $FILEHANDLE,
 			     });
-	&MigrateFileFromTemp({'tempPath' => ${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding."_chanjo.log",
+	&MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$infile.$infileEnding."_chanjo.log",
 			      'filePath' => $outSampleDirectory."/",
 			      'FILEHANDLE' => $FILEHANDLE,
 			     });
@@ -5565,10 +5600,10 @@ sub ChanjoAnnotate {
 	
 	if ( (${$scriptParameterHashRef}{'pChanjoAnnotate'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
-	    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'Program'}{$programName}{$infile}{'Bed'}{'Path'} = $outSampleDirectory."/".$infile.$outfileEnding.".bed";
+	    ${$sampleInfoHashRef}{ $$familyIDRef }{$$sampleIDRef}{'Program'}{$programName}{$infile}{'Bed'}{'Path'} = $outSampleDirectory."/".$infile.$outfileEnding.".bed";
 	    &SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
-			   'familyID' => ${$scriptParameterHashRef}{'familyID'},
-			   'sampleID' => $sampleID,
+			   'familyID' => $$familyIDRef,
+			   'sampleID' => $$sampleIDRef,
 			   'programName' => "ChanjoAnnotate",
 			   'infile' => $infile,
 			   'outDirectory' => $outSampleDirectory,
@@ -5580,21 +5615,21 @@ sub ChanjoAnnotate {
     else {  #No merged files
 	
 	## Set the number of cores to allocate per sbatch job.
-	my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar( @{${$laneHashRef}{$sampleID}} ));  #Detect the number of cores to use from lanes
+	my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar( @{${$laneHashRef}{$$sampleIDRef}} ));  #Detect the number of cores to use from lanes
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 					     'FILEHANDLE' => $FILEHANDLE,
-					     'directoryID' => $sampleID,
+					     'directoryID' => $$sampleIDRef,
 					     'programName' => $programName,
-					     'programDirectory' => lc($aligner."/coveragereport"),
+					     'programDirectory' => lc($$alignerRef."/coveragereport"),
 					     'nrofCores' => $nrCores,
 					     'processTime' => 10,
-					     'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+					     'tempDirectory' => $$tempDirectoryRef
 					    });	
 
 	## Copies files from source to temporary folder. Loop over files specified by $arrayRef and collects files from $extractArrayRef.
-	&MigrateFilesToTemp(\%{$scriptParameterHashRef}, \@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, \@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, $FILEHANDLE,
+	&MigrateFilesToTemp(\%{$scriptParameterHashRef}, \@{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} }, \@{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} }, $FILEHANDLE,
 			     {'inSampleDirectory' => $inSampleDirectory,
 			      'nrCores' => $nrCores,
 			      'fileEnding' => $infileEnding.".b*"});
@@ -5605,32 +5640,32 @@ sub ChanjoAnnotate {
 	}
 	## ChanjoAnnotate
 	print $FILEHANDLE "## Annotating bed from alignment\n";
-	for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all files from independent of merged or not
+	for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} });$infileCounter++) {  #For all files from independent of merged or not
 	    
 	    &PrintWait(\$infileCounter, \$nrCores, \$coreCounter, $FILEHANDLE);
 	    
-	    my $infile = ${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter];
+	    my $infile = ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter];
 	    
 	    print $FILEHANDLE "chanjo ";
 	    print $FILEHANDLE "-vv  ";  #Incrementing "-v" for increased verbosity
-	    print $FILEHANDLE "--log_file ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding."_chanjo.log ";
+	    print $FILEHANDLE "--log_file ".$$tempDirectoryRef."/".$infile.$infileEnding."_chanjo.log ";
 	    print $FILEHANDLE "sambamba ";
-	    print $FILEHANDLE "--exon_bed=".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'chanjoAnnotateBed<'}." ";
-	    print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$infileEnding.".bam ";  #InFile
+	    print $FILEHANDLE "--exon_bed=".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'chanjoAnnotateBed<'}." ";
+	    print $FILEHANDLE $$tempDirectoryRef."/".$infile.$infileEnding.".bam ";  #InFile
 
 
 	    foreach my $cutoff (@{${$scriptParameterHashRef}{'chanjoAnnotateCutoffs'}}) {
 		
 		print $FILEHANDLE "--cov_treshold ".$cutoff." ";  #The “cutoff” is used for the completeness calculation    
 	    } 	    
-	    print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding.".bed &". "\n\n";  #OutFile
+	    print $FILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileEnding.".bed &". "\n\n";  #OutFile
 
 	    if ( (${$scriptParameterHashRef}{'pChanjoAnnotate'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
-		${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'Program'}{$programName}{$infile}{'Bed'}{'Path'} = $outSampleDirectory."/".$infile.$outfileEnding.".bed";
+		${$sampleInfoHashRef}{ $$familyIDRef }{$$sampleIDRef}{'Program'}{$programName}{$infile}{'Bed'}{'Path'} = $outSampleDirectory."/".$infile.$outfileEnding.".bed";
 		&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
-			       'familyID' => ${$scriptParameterHashRef}{'familyID'},
-			       'sampleID' => $sampleID,
+			       'familyID' => $$familyIDRef,
+			       'sampleID' => $$sampleIDRef,
 			       'programName' => "ChanjoAnnotate",
 			       'infile' => $infile,
 			       'outDirectory' => $outSampleDirectory,
@@ -5642,8 +5677,8 @@ sub ChanjoAnnotate {
 	print $FILEHANDLE "wait", "\n\n";
 
 	## Copies files from temporary folder to source. Loop over files specified by $arrayRef and collects files from $extractArrayRef.
-	&MigrateFilesFromTemp(\@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, \@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, $outSampleDirectory, ${$scriptParameterHashRef}{'tempDirectory'}, $nrCores, $outfileEnding.".bed", $FILEHANDLE);
-	&MigrateFilesFromTemp(\@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, \@{ ${$infilesLaneNoEndingHashRef}{$sampleID} }, $outSampleDirectory, ${$scriptParameterHashRef}{'tempDirectory'}, $nrCores, $infileEnding."_chanjo.log", $FILEHANDLE);
+	&MigrateFilesFromTemp(\@{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} }, \@{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} }, $outSampleDirectory, $$tempDirectoryRef, $nrCores, $outfileEnding.".bed", $FILEHANDLE);
+	&MigrateFilesFromTemp(\@{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} }, \@{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} }, $outSampleDirectory, $$tempDirectoryRef, $nrCores, $infileEnding."_chanjo.log", $FILEHANDLE);
 	print $FILEHANDLE "wait", "\n\n";
     }
 
@@ -5654,7 +5689,7 @@ sub ChanjoAnnotate {
 	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 		       'jobIDHashRef' => \%jobID,
 		       'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
-		       'sampleID' => $sampleID,
+		       'sampleID' => $$sampleIDRef,
 		       'dependencies' => 5, 
 		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
 		       'sbatchFileName' => $fileName
