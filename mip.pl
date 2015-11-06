@@ -5357,10 +5357,16 @@ sub ChanjoSexCheck {
 ##         : $sampleIDRef                => The sampleID {REF}
 ##         : $alignerRef                 => The aligner used in the analysis {REF}
 ##         : $programName                => The program name
+    
+    my ($argHashRef) = @_;
+    
+    my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+		   'referencesDirRef' => \${$argHashRef}{'scriptParameterHashRef'}{'referencesDir'},
+		   'tempDirectoryRef' =>\ ${$argHashRef}{'scriptParameterHashRef'}{'tempDirectory'},
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
 
-  my ($argHashRef) = @_;
-    
-    
     ## Flatten argument(s)
     my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
     my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
@@ -5371,14 +5377,25 @@ sub ChanjoSexCheck {
     my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
     my $alignerRef = ${$argHashRef}{'alignerRef'};
     my $programName = ${$argHashRef}{'programName'};
+    my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
+    my $referencesDirectoryRef =  ${$argHashRef}{'referencesDirRef'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
 
-    my $tempDirectoryRef = \${$scriptParameterHashRef}{'tempDirectory'};
-    my $referencesDirectoryRef = \${$scriptParameterHashRef}{'referencesDir'};
-    my $familyIDRef = \${$scriptParameterHashRef}{'familyID'};
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
+			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
+			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'alignerRef' => $$alignerRef,
+			     'programName' => $programName,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "ChanjoSexCheck");
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $fileName;      
-
+    
     ## Assign directories               
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef;
     my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
@@ -5511,6 +5528,11 @@ sub ChanjoAnnotate {
 
     my ($argHashRef) = @_;
     
+     my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+		   'referencesDirRef' => \${$argHashRef}{'scriptParameterHashRef'}{'referencesDir'},
+		   'tempDirectoryRef' =>\ ${$argHashRef}{'scriptParameterHashRef'}{'tempDirectory'},
+	);
+    &SetDefaultArg(\%{$argHashRef}, \%default);
     
     ## Flatten argument(s)
     my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
@@ -5522,11 +5544,21 @@ sub ChanjoAnnotate {
     my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
     my $alignerRef = ${$argHashRef}{'alignerRef'};
     my $programName = ${$argHashRef}{'programName'};
-
-    my $tempDirectoryRef = \${$scriptParameterHashRef}{'tempDirectory'};
-    my $referencesDirectoryRef = \${$scriptParameterHashRef}{'referencesDir'};
-    my $familyIDRef = \${$scriptParameterHashRef}{'familyID'};
-
+    my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
+    my $referencesDirectoryRef =  ${$argHashRef}{'referencesDirRef'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
+    
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
+			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
+			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'alignerRef' => $$alignerRef,
+			     'programName' => $programName,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "ChanjoAnnotate");
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $fileName;
