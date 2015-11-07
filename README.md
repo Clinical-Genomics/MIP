@@ -76,7 +76,7 @@ perl mip.pl -pMosaikBuild 0 -configFile 1_config.yaml
 
 MIP is written in perl and therfore requires that perl is installed on your OS. 
 
-####Automated Installation
+####Automated Installation (Linux x86_64)
 This installation procedure assumes that you have a working perl version and a `Miniconda`
 installation.
 
