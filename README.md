@@ -76,6 +76,45 @@ perl mip.pl -pMosaikBuild 0 -configFile 1_config.yaml
 
 MIP is written in perl and therfore requires that perl is installed on your OS. 
 
+####Automated Installation (Linux x86_64)
+This installation procedure assumes that you have a working perl version and a `Miniconda`
+installation.
+
+1. "Install" MIP
+
+ ```
+ $ git clone https://github.com/henrikstranneheim/MIP.git
+ $ cd MIP
+ ```
+
+ After this you can decide whether to make MIP an "executable" by either adding the install directory to the ``$PATH`` in e.g.  "``~/.bash_profile``" or move all the files from this directory to somewhere already in your path like "``~/usr/bin``". 
+ Remember to make the file(s) executable by ``chmod +x file``.
+2. Create the install instructions for MIP
+
+ ```
+ $ perl install.pl
+ ```
+This will generate a batch script "mip.sh" for the install in your working directory.
+3. Run the bash script
+
+ ```
+ $ . mip.sh
+ ```
+ This will install all the dependencies of MIP and other modules included in MIP into a conda environment (defaults to "mip"). 
+ However a fresh version of perl and cpanm is installed outside of the conda environment, but are activated through bashrc and  bash_profile.
+
+ **NOTE**: This will add the following lines to bashrc and bash_profile if the install perl version is not found in your path:
+ ```   
+ 'export PATH=$HOME/perl-PERLVERSION/:$PATH' >> ~/.bashrc
+ 'eval `perl -I ~/perl-PERLVERSION/lib/perl5/ -Mlocal::lib=~/perl-PERLVERSION/`' >> ~/.bash_profile
+ ```
+4. Run MIP
+
+ ```    
+ $ source activate mip
+ $ perl mip.pl -h
+ ``` 
+
 ####Prerequisites
 
 #####Programs/Modules
@@ -122,7 +161,7 @@ and these to your python ``virtualenvironment``:
 - Configuration file (YAML-format)
 
 ###Usage
-IP is called from the command line and takes input from the command line
+MIP is called from the command line and takes input from the command line
 (precedence), a config file (yaml-format) or falls back on defaults where applicable.
 
 Lists are supplied as comma separated input, repeated flag entries on the command line or 
