@@ -107,9 +107,13 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
 
                ###CoverageCalculations
                -pChS/--pChanjoSexCheck Predicts gender from sex chromosome coverage (defaults to "1")
-               -pChA/--pChanjoAnnotate Chanjo coverage analysis (defaults to "1" (=yes))
-                 -chacut/--chanjoAnnotateCutoffs Read depth cutoff (comma sep; defaults to "10", "20")
-                 -chabed/--chanjoAnnotateBed Reference database (defaults to "CCDS.current.bed")
+               -pSdt/--pSambambaDepth Sambamba depth coverage analysis (defaults to "1" (=yes))
+                 -sdtcut/--sambambaDepthCutOffs Read depth cutoff (comma sep; defaults to "10", "20")
+                 -sdtbed/--sambambaDepthBed Reference database (defaults to "CCDS.current.bed")
+                 -sdtbaq/--sambambaDepthBaseQuality Do not count bases with lower base quality (defaults to "10")
+                 -stdmaq/--sambambaDepthMappingQuality  Do not count reads with lower mapping quality (defaults to "10")
+                 -stdndu/--sambambaDepthNoDuplicates Do not include duplicates in coverage calculation (defaults to "1" (=yes))
+                 -stdfqc/--sambambaDepthNoFailedQualityControl Do not include reads with failed quality control (defaults to "1" (=yes))
                -pGcB/--pGenomeCoverageBED Genome coverage calculation using genomeCoverageBED (defaults to "0" (=no))
                 -gcbcov/--GenomeCoverageBEDMaxCoverage Max coverage depth when using '-pGenomeCoverageBED' (defaults to "30")
                -pPtCMM/--pPicardToolsCollectMultipleMetrics Metrics calculation using PicardTools collectMultipleMetrics (defaults to "1" (=yes))
@@ -390,9 +394,13 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'ptp|picardToolsPath:s' => \$parameter{'picardToolsPath'}{'value'},  #Path to picardtools
 	   'pSmd|pSambambaMarkduplicates:s' => \$parameter{'pSambambaMarkduplicates'}{'value'},  #Sambamba Markduplicates
 	   'pChS|pChanjoSexCheck:n' => \$parameter{'pChanjoSexCheck'}{'value'},   #Chanjo coverage analysis on sex chromosomes
-	   'pChA|pChanjoAnnotate:n' => \$parameter{'pChanjoAnnotate'}{'value'},   #Chanjo coverage analysis
-	   'chacut|chanjoAnnotateCutoffs:n' => \$parameter{'chanjoAnnotateCutoffs'}{'value'},   # Cutoff used for completeness
-	   'chabed|chanjoAnnotateBed:s' => \$parameter{'chanjoAnnotateBed'}{'value'},
+	   'pSdt|pSambambaDepth:n' => \$parameter{'pSambambaDepth'}{'value'},   #Chanjo coverage analysis
+	   'sdtcut|sambambaDepthCutOffs:n' => \$parameter{'sambambaDepthCutOffs'}{'value'},   # Cutoff used for completeness
+	   'sdtbed|sambambaDepthBed:s' => \$parameter{'sambambaDepthBed'}{'value'},
+	   'sdtbaq|sambambaDepthBaseQuality:n' => \$parameter{'sambambaDepthBaseQuality'}{'value'},
+	   'sdtmaq|sambambaDepthMappingQuality:n' => \$parameter{'sambambaDepthMappingQuality'}{'value'},
+	   'sdtndu|sambambaDepthNoDuplicates:n' => \$parameter{'sambambaDepthNoDuplicates'}{'value'},
+	   'sdtfqc|sambambaDepthNoFailedQualityControl:n' => \$parameter{'sambambaDepthNoFailedQualityControl'}{'value'},
 	   'pGcB|pGenomeCoverageBED:n' => \$parameter{'pGenomeCoverageBED'}{'value'},
 	   'xcov|GenomeCoverageBEDMaxCoverage:n' => \$parameter{'GenomeCoverageBEDMaxCoverage'}{'value'},  #Sets max depth to calculate coverage
 	   'pPtCMM|pPicardToolsCollectMultipleMetrics:n' => \$parameter{'pPicardToolsCollectMultipleMetrics'}{'value'},
@@ -1097,13 +1105,13 @@ if ($scriptParameter{'pChanjoSexCheck'} > 0) {
     }
 }
 
-if ($scriptParameter{'pChanjoAnnotate'} > 0) {
+if ($scriptParameter{'pSambambaDepth'} > 0) {
     
-    $logger->info("[ChanjoAnnotate]\n");
+    $logger->info("[SambambaDepth]\n");
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #For all SampleIDs
 	
-	&ChanjoAnnotate({'parameterHashRef' => \%parameter,
+	&SambambaDepth({'parameterHashRef' => \%parameter,
 			 'scriptParameterHashRef' => \%scriptParameter,
 			 'sampleInfoHashRef' => \%sampleInfo,
 			 'fileInfoHashRef' => \%fileInfo,
@@ -1111,7 +1119,7 @@ if ($scriptParameter{'pChanjoAnnotate'} > 0) {
 			 'laneHashRef' => \%lane,
 			 'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
 			 'alignerRef' => \$scriptParameter{'aligner'}, 
-			 'programName' => "ChanjoAnnotate",
+			 'programName' => "SambambaDepth",
 			});
     }
 }
@@ -5532,9 +5540,9 @@ sub ChanjoSexCheck {
 }
 
 
-sub ChanjoAnnotate { 
+sub SambambaDepth { 
 
-##ChanjoAnnotate
+##SambambaDepth
     
 ##Function : Generate coverage bed outfile for each individual.
 ##Returns  : ""
@@ -5581,7 +5589,7 @@ sub ChanjoAnnotate {
 			     'alignerRef' => $$alignerRef,
 			     'programName' => $programName,
 	);
-    &CheckMandatoryArguments(\%mandatoryArgument, "ChanjoAnnotate");
+    &CheckMandatoryArguments(\%mandatoryArgument, "SambambaDepth");
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $fileName;
@@ -5620,25 +5628,33 @@ sub ChanjoAnnotate {
 			   });
 	print $FILEHANDLE "wait", "\n\n";
 
-	if (${$scriptParameterHashRef}{'usePythonVirtualEnvironment'} == 1) {
+	## SambambaDepth
+	print $FILEHANDLE "## Annotating bed from alignment\n";
+	print $FILEHANDLE "sambamba_".${$scriptParameterHashRef}{'sambambaVersion'}." ";  #Program
+	print $FILEHANDLE "depth ";  #Sub command
+	print $FILEHANDLE "region "; #Mode
+	print $FILEHANDLE "--regions ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'sambambaDepthBed'}." ";  #Region to calculate coverage on
+	print $FILEHANDLE "--min-base-quality ".${$scriptParameterHashRef}{'sambambaDepthBaseQuality'}." ";  #The minimum base quality to include in analysis
+	print $FILEHANDLE q?--filter '?;
+	print $FILEHANDLE "mapping_quality >= ".${$scriptParameterHashRef}{'sambambaDepthMappingQuality'}." ";  #The minimum mapping quality to include in analysis
+	
+	if (${$scriptParameterHashRef}{'sambambaDepthNoDuplicates'} == 1) {  #Do not include duplicates in coverage calculation
 
-	    print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+	    print $FILEHANDLE "and not duplicate ";
+	}
+	if (${$scriptParameterHashRef}{'sambambaDepthNoFailedQualityControl'} == 1) {  #Do not include failed quality control reads in coverage calculation
+
+	    print $FILEHANDLE "and not failed_quality_control";
 	}
 
-	## ChanjoAnnotate
-	print $FILEHANDLE "## Annotating bed from alignment\n";
-	print $FILEHANDLE "chanjo ";
-	print $FILEHANDLE "-vv  ";  #Incrementing "-v" for increased verbosity
-	print $FILEHANDLE "--log_file ".$$tempDirectoryRef."/".$infile.$infileEnding."_chanjo.log ";
-	print $FILEHANDLE "sambamba ";
-	print $FILEHANDLE "--exon_bed=".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'chanjoAnnotateBed'}." ";
-	print $FILEHANDLE $$tempDirectoryRef."/".$infile.$infileEnding.".bam ";  #InFile
-	
-	foreach my $cutoff (@{${$scriptParameterHashRef}{'chanjoAnnotateCutoffs'}}) {
+	print $FILEHANDLE q?' ?;
 
-	    print $FILEHANDLE "--cov_treshold ".$cutoff." ";  #The “cutoff” is used for the completeness calculation    
+	foreach my $cutoff (@{${$scriptParameterHashRef}{'sambambaDepthCutOffs'}}) {
+
+	    print $FILEHANDLE "--cov-threshold ".$cutoff." ";  #The “cutoff” is used for the completeness calculation    
 	} 
-	
+
+	print $FILEHANDLE $$tempDirectoryRef."/".$infile.$infileEnding.".bam ";  #InFile
 	print $FILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileEnding.".bed". "\n\n";  #OutFile
 
 	## Copies file from temporary directory.
@@ -5647,24 +5663,11 @@ sub ChanjoAnnotate {
 			      'filePath' => $outSampleDirectory."/",
 			      'FILEHANDLE' => $FILEHANDLE,
 			     });
-	&MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$infile.$infileEnding."_chanjo.log",
-			      'filePath' => $outSampleDirectory."/",
-			      'FILEHANDLE' => $FILEHANDLE,
-			     });
 	print $FILEHANDLE "wait", "\n\n";
 	
-	if ( (${$scriptParameterHashRef}{'pChanjoAnnotate'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+	if ( (${$scriptParameterHashRef}{'pSambambaDepth'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
 	    ${$sampleInfoHashRef}{ $$familyIDRef }{$$sampleIDRef}{'Program'}{$programName}{$infile}{'Bed'}{'Path'} = $outSampleDirectory."/".$infile.$outfileEnding.".bed";
-	    &SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
-			   'familyID' => $$familyIDRef,
-			   'sampleID' => $$sampleIDRef,
-			   'programName' => "ChanjoAnnotate",
-			   'infile' => $infile,
-			   'outDirectory' => $outSampleDirectory,
-			   'outFileEnding' => $infileEnding."_chanjo.log",
-			   'outDataType' => "infileDependent"
-			  });
 	}
     }
     else {  #No merged files
@@ -5693,7 +5696,7 @@ sub ChanjoAnnotate {
 
 	    print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
 	}
-	## ChanjoAnnotate
+	## SambambaDepth
 	print $FILEHANDLE "## Annotating bed from alignment\n";
 	for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} });$infileCounter++) {  #For all files from independent of merged or not
 	    
@@ -5701,39 +5704,42 @@ sub ChanjoAnnotate {
 	    
 	    my $infile = ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter];
 	    
-	    print $FILEHANDLE "chanjo ";
-	    print $FILEHANDLE "-vv  ";  #Incrementing "-v" for increased verbosity
-	    print $FILEHANDLE "--log_file ".$$tempDirectoryRef."/".$infile.$infileEnding."_chanjo.log ";
-	    print $FILEHANDLE "sambamba ";
-	    print $FILEHANDLE "--exon_bed=".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'chanjoAnnotateBed<'}." ";
-	    print $FILEHANDLE $$tempDirectoryRef."/".$infile.$infileEnding.".bam ";  #InFile
-
-
-	    foreach my $cutoff (@{${$scriptParameterHashRef}{'chanjoAnnotateCutoffs'}}) {
+	    print $FILEHANDLE "## Annotating bed from alignment\n";
+	    print $FILEHANDLE "sambamba_".${$scriptParameterHashRef}{'sambambaVersion'}." ";  #Program
+	    print $FILEHANDLE "depth ";  #Sub command
+	    print $FILEHANDLE "region "; #Mode
+	    print $FILEHANDLE "--regions ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'sambambaDepthBed'}." ";  #Region to calculate coverage on
+	    print $FILEHANDLE "--min-base-quality ".${$scriptParameterHashRef}{'sambambaDepthBaseQuality'}." ";  #The minimum base quality to include in analysis
+	    print $FILEHANDLE q?--filter '?;
+	    print $FILEHANDLE "mapping_quality >= ".${$scriptParameterHashRef}{'sambambaDepthMappingQuality'}." ";  #The minimum mapping quality to include in analysis
+	    
+	    if (${$scriptParameterHashRef}{'sambambaDepthNoDuplicates'} == 1) {  #Do not include duplicates in coverage calculation
 		
-		print $FILEHANDLE "--cov_treshold ".$cutoff." ";  #The “cutoff” is used for the completeness calculation    
-	    } 	    
+		print $FILEHANDLE "and not duplicate ";
+	    }
+	    if (${$scriptParameterHashRef}{'sambambaDepthNoFailedQualityControl'} == 1) {  #Do not include failed quality control reads in coverage calculation
+		
+		print $FILEHANDLE "and not failed_quality_control";
+	    }
+	    
+	    print $FILEHANDLE q?' ?;
+
+	    foreach my $cutoff (@{${$scriptParameterHashRef}{'sambambaDepthCutOffs'}}) {
+		
+		print $FILEHANDLE "--cov-threshold ".$cutoff." ";  #The “cutoff” is used for the completeness calculationin Chanjo
+	    }
+	    print $FILEHANDLE $$tempDirectoryRef."/".$infile.$infileEnding.".bam ";  #InFile
 	    print $FILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileEnding.".bed &". "\n\n";  #OutFile
 
-	    if ( (${$scriptParameterHashRef}{'pChanjoAnnotate'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+	    if ( (${$scriptParameterHashRef}{'pSambambaDepth'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
 		${$sampleInfoHashRef}{ $$familyIDRef }{$$sampleIDRef}{'Program'}{$programName}{$infile}{'Bed'}{'Path'} = $outSampleDirectory."/".$infile.$outfileEnding.".bed";
-		&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
-			       'familyID' => $$familyIDRef,
-			       'sampleID' => $$sampleIDRef,
-			       'programName' => "ChanjoAnnotate",
-			       'infile' => $infile,
-			       'outDirectory' => $outSampleDirectory,
-			       'outFileEnding' => $infileEnding."_chanjo.log",
-			       'outDataType' => "infileDependent"
-			      });
 	    }
 	}
 	print $FILEHANDLE "wait", "\n\n";
 
 	## Copies files from temporary folder to source. Loop over files specified by $arrayRef and collects files from $extractArrayRef.
 	&MigrateFilesFromTemp(\@{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} }, \@{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} }, $outSampleDirectory, $$tempDirectoryRef, $nrCores, $outfileEnding.".bed", $FILEHANDLE);
-	&MigrateFilesFromTemp(\@{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} }, \@{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} }, $outSampleDirectory, $$tempDirectoryRef, $nrCores, $infileEnding."_chanjo.log", $FILEHANDLE);
 	print $FILEHANDLE "wait", "\n\n";
     }
 

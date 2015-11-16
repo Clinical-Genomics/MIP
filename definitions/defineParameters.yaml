@@ -434,7 +434,7 @@ pChanjoSexCheck:
   default: 1
   fileEnding: .sexcheck
   type: program
-pChanjoAnnotate:
+pSambambaDepth:
   associatedProgram:
    - MIP
   chain: CoverageReport
@@ -442,14 +442,38 @@ pChanjoAnnotate:
   default: 1
   fileEnding: _coverage
   type: program
-chanjoAnnotateBed:
+sambambaDepthBed:
   associatedProgram:
-   - pChanjoAnnotate
+   - pSambambaDepth
   buildFile: yesAutoDownLoad
   dataType: SCALAR
   default: CCDS.current.bed
   existsCheck: file
   type: path
+sambambaDepthBaseQuality:
+  associatedProgram:
+   - pSambambaDepth
+  dataType: SCALAR
+  default: 10
+  type: program
+sambambaDepthMappingQuality:
+  associatedProgram:
+   - pSambambaDepth
+  dataType: SCALAR
+  default: 10
+  type: program
+sambambaDepthNoDuplicates:
+  associatedProgram:
+   - pSambambaDepth
+  dataType: SCALAR
+  default: 1
+  type: program
+sambambaDepthNoFailedQualityControl:
+  associatedProgram:
+   - pSambambaDepth
+  dataType: SCALAR
+  default: 1
+  type: program
 pGenomeCoverageBED:
   associatedProgram:
    - MIP
@@ -969,7 +993,6 @@ rankModelFile:
 usePythonVirtualEnvironment:
   associatedProgram:
    - pChanjoSexCheck
-   - pChanjoAnnotate
    - pGATKVariantRecalibration
    - pRankVariants
   dataType: SCALAR
@@ -978,7 +1001,6 @@ usePythonVirtualEnvironment:
 pythonVirtualEnvironment:
   associatedProgram:
    - pChanjoSexCheck
-   - pChanjoAnnotate
    - pGATKVariantRecalibration
    - pRankVariants
   dataType: SCALAR
@@ -1084,14 +1106,17 @@ picardToolsMergeSamFilesPrevious:
   dataType: ARRAY
   mandatory: no
   type: path
-chanjoAnnotateCutoffs:
+sambambaDepthCutOffs:
   associatedProgram:
-   - pChanjoAnnotate
+   - pSambambaDepth
   elementSeparator: ,
   dataType: ARRAY
   default:
    - 10
    - 20
+   - 30
+   - 50
+   - 100
   type: program
 vepFeatures:
   associatedProgram:
