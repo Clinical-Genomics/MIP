@@ -5457,7 +5457,10 @@ sub ChanjoSexCheck {
 
 	## ChanjoSexCheck
 	print $FILEHANDLE "## Predicting sex from alignment\n";
-	print $FILEHANDLE "sex-check ";
+	print $FILEHANDLE "chanjo ";  #Program
+	print $FILEHANDLE "-v -v ";  #Incrementing "-v" for increased verbosity
+	print $FILEHANDLE "--log_file ".$outSampleDirectory."/".$infile.$infileEnding."_chanjoSexCheck.log ";
+	print $FILEHANDLE "sex ";  #Sub command
 	print $FILEHANDLE $inSampleDirectory."/".$infile.$infileEnding.".bam ";  #InFile
 	print $FILEHANDLE "> ".$outSampleDirectory."/".$infile.$outfileEnding, "\n\n";  #OutFile
 	
@@ -5471,6 +5474,15 @@ sub ChanjoSexCheck {
 			   'infile' => $infile,
 			   'outDirectory' => $outSampleDirectory,
 			   'outFileEnding' => $outfileEnding,
+			   'outDataType' => "infileDependent"
+			  });
+	    &SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+			   'familyID' => ${$scriptParameterHashRef}{'familyID'},
+			   'sampleID' => $$sampleIDRef,
+			   'programName' => "Chanjo",
+			   'infile' => $infile,
+			   'outDirectory' => $outSampleDirectory,
+			   'outFileEnding' => $infileEnding."_chanjoSexCheck.log",
 			   'outDataType' => "infileDependent"
 			  });
 	}
@@ -5503,7 +5515,10 @@ sub ChanjoSexCheck {
 	    
 	    my $infile = ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter];
 	    
-	    print $FILEHANDLE "sex-check ";
+	    print $FILEHANDLE "chanjo ";  #Program
+	    print $FILEHANDLE "-v -v ";  #Incrementing "-v" for increased verbosity
+	    print $FILEHANDLE "--log_file ".$outSampleDirectory."/".$infile.$infileEnding."_chanjoSexCheck.log ";
+	    print $FILEHANDLE "sex ";  #Sub command
 	    print $FILEHANDLE $inSampleDirectory."/".$infile.$infileEnding.".bam ";  #InFile
 	    print $FILEHANDLE "> ".$outSampleDirectory."/".$infile.$outfileEnding." &", "\n\n";  #OutFile
 
@@ -5517,6 +5532,15 @@ sub ChanjoSexCheck {
 			       'infile' => $infile,
 			       'outDirectory' => $outSampleDirectory,
 			       'outFileEnding' => $outfileEnding,
+			       'outDataType' => "infileDependent"
+			      });
+		&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+			       'familyID' => ${$scriptParameterHashRef}{'familyID'},
+			       'sampleID' => $$sampleIDRef,
+			       'programName' => "Chanjo",
+			       'infile' => $infile,
+			       'outDirectory' => $outSampleDirectory,
+			       'outFileEnding' => $infileEnding."_chanjoSexCheck.log",
 			       'outDataType' => "infileDependent"
 			      });
 	    }
