@@ -396,36 +396,7 @@ GATKBaseReCalibrationOverClippedRead:
   dataType: SCALAR
   default: 1
   type: program
-## GATK Genotype
-pGATKHaploTypeCaller:
-  associatedProgram:
-   - MIP
-  chain: MAIN
-  dataType: SCALAR
-  default: 1
-  fileEnding: _gvcf
-  type: program
-GATKHaploTypeCallerSNPKnownSet:
-  associatedProgram:
-   - pGATKHaploTypeCaller
-  buildFile: yesAutoDownLoad
-  dataType: SCALAR
-  default: dbsnp_138.b37.vcf
-  existsCheck: file
-  type: path
-GATKHaploTypeCallerSoftClippedBases:
-  associatedProgram:
-   - pGATKHaploTypeCaller
-  dataType: SCALAR
-  default: 1
-  type: program
-GATKHaploTypeCallerPcrIndelModel:
-  associatedProgram:
-   - pGATKHaploTypeCaller
-  dataType: SCALAR
-  default: None
-  type: program
-## Coverage
+## Coverage Analysis
 pChanjoSexCheck:
   associatedProgram:
    - MIP
@@ -513,6 +484,35 @@ pRCovPlots:
   dataType: SCALAR
   default: 0
   fileEnding: nofileEnding
+  type: program
+## GATK Genotype
+pGATKHaploTypeCaller:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileEnding: _gvcf
+  type: program
+GATKHaploTypeCallerSNPKnownSet:
+  associatedProgram:
+   - pGATKHaploTypeCaller
+  buildFile: yesAutoDownLoad
+  dataType: SCALAR
+  default: dbsnp_138.b37.vcf
+  existsCheck: file
+  type: path
+GATKHaploTypeCallerSoftClippedBases:
+  associatedProgram:
+   - pGATKHaploTypeCaller
+  dataType: SCALAR
+  default: 1
+  type: program
+GATKHaploTypeCallerPcrIndelModel:
+  associatedProgram:
+   - pGATKHaploTypeCaller
+  dataType: SCALAR
+  default: None
   type: program
 picardToolsPath:
   associatedProgram:
