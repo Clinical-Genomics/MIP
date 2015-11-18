@@ -131,7 +131,7 @@ sub FamilyQC {
                 }  
 		
                 &ParseRegExpHashAndCollect($program, $outDirectory, $outFile); #Loads qcHeader and qcProgramData
-		
+
                 &AddToqcData($familyID, "", $program, ""); #Add extracted information to qcData
             }
         }
@@ -255,7 +255,7 @@ sub AddToqcData {
     for my $regExpKey ( keys %{ $regExpFile{$program} } ) { #All regExp per program 
 	
 	if ($regExpKey !~/^header|header$/i) { #For info contained in Entry --> Value i.e. same line 
-	    
+
 	    if (scalar(@{ $qcProgramData{$program}{$regExpKey} }) == 1) { #Enable seperation of writing array or key-->value in qcData
 		
 		if ( ($familyID) && ($sampleID) && ($infile) ) {
@@ -273,19 +273,25 @@ sub AddToqcData {
 		}
 	    }
 	    else { #Write array to qcData
-		
+
 		for (my $regExpKeyCounter=0;$regExpKeyCounter<scalar(@{ $qcProgramData{$program}{$regExpKey} });$regExpKeyCounter++ ) {
 		    
 		    if ( ($familyID) && ($sampleID) && ($infile) ) {
 		
 			$qcData{$familyID}{$sampleID}{$infile}{$program}{$regExpKey}[$regExpKeyCounter] = $qcProgramData{$program}{$regExpKey}[$regExpKeyCounter];
+
 		    }
 		    elsif ($familyID) {
 
 			$qcData{$familyID}{$familyID}{'Program'}{$program}{$regExpKey}[$regExpKeyCounter] = $qcProgramData{$program}{$regExpKey}[$regExpKeyCounter];			
 		    }
+		    if ($program eq "SexCheck") {#Check gender for sampleID
+			
+			my @sexChecks = split(":", @{$qcProgramData{$program}{$regExpKey}}[$regExpKeyCounter]); #ArrayRef
+			&PlinkGenderCheck(\$familyID, \$sexChecks[0], \$sexChecks[1]); #Check that assumed gender is supported by variants on chrX and chrY
+		    }
 		}
-		if (defined($qcData{$familyID}{$familyID}{'Program'}{'RelationCheck'}{'Sample_RelationCheck'}) && defined ($qcData{$familyID}{$familyID}{'Program'}{'pedigreeCheck'}{'Sample_order'}) ) {
+		if (defined($qcData{$familyID}{$familyID}{'Program'}{'RelationCheck'}{'Sample_RelationCheck'}) && (defined($qcData{$familyID}{$familyID}{'Program'}{'pedigreeCheck'}{'Sample_order'}) ) ) {
 		    
 		    &RelationCheck(\$familyID, \@{$qcData{$familyID}{$familyID}{'Program'}{'RelationCheck'}{'Sample_RelationCheck'}}, \@{$qcData{$familyID}{$familyID}{'Program'}{'pedigreeCheck'}{'Sample_order'}});
 		    delete($qcData{$familyID}{$familyID}{'Program'}{'RelationCheck'}); #Not of any use anymore
@@ -420,6 +426,7 @@ sub RelationCheck {
     my %family; #Stores family relations and pairwise comparisons family{$sampleID}{$sampleID}["column"] -> [pairwise]
     my $sampleIDCounter = 0;
     my $incorrectRelation=0;
+    my @pairwiseComparisons;
 
     ## Splice all relationship extimations from regExp into pairwise comparisons calculated for each sampleID
     for (my $realtionshipCounter=0;$realtionshipCounter<scalar(@{$relationshipValuesRef});$realtionshipCounter++) {
@@ -466,7 +473,7 @@ sub RelationCheck {
 			#print  "Incorrect should be self: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
 		    }
 		}
-		elsif ($family{$sampleID}{$members}[$membersCount] >= 0.63 ) { #Should include parent to child and child to siblings unless inbreed parents
+		elsif ($family{$sampleID}{$members}[$membersCount] >= 0.60 ) { #Should include parent to child and child to siblings unless inbreed parents
 
 		    if ( ( ($sampleID ne $fatherID) && ($sampleID ne $motherID) ) || ( ($members ne $fatherID) && ($members ne $motherID) ) ) { #Correct
 			#print "Parent-to-child or child-to-child: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
@@ -489,7 +496,7 @@ sub RelationCheck {
 		    else {
 			$incorrectRelation++;
 			$qcData{$$familyIDRef}{$sampleID}{'RelationCheck'} = "FAIL:".$sampleID." not related to ".$members.";";
-			print "Incorrect: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
+			#print "Incorrect: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
 		    }
 		}
 	    }
@@ -503,7 +510,7 @@ sub RelationCheck {
 
 sub GenderCheck {
 #Checks that the gender predicted by ChanjoSexCheck is confirmed in the pedigee for the sample
-
+    
     my $familyIDRef = $_[0]; #From SampleInfo
     my $sampleIDRef = $_[1]; #From SampleInfo 
     my $infileRef = $_[2]; #From SampleInfo
@@ -520,6 +527,30 @@ sub GenderCheck {
     else {
 	
 	$qcData{$$familyIDRef}{$$sampleIDRef}{$$infileRef}{'GenderCheck'} = "FAIL";
+    }
+    return;
+}
+
+
+sub PlinkGenderCheck {
+    
+    #Checks that the gender predicted by Plink SexCheck is confirmed in the pedigee for the sample
+    
+    my $familyIDRef = $_[0]; #From SampleInfo
+    my $sampleIDRef = $_[1]; #From plink sex check output 
+    my $plinkSexCheckGenderRef = $_[2]; #From Plink SexCheck 
+    
+    if ( ($$plinkSexCheckGenderRef eq "2") && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'} eq 2) ) { #Female
+	
+	push(@{$qcData{$$familyIDRef}{$$familyIDRef}{'Program'}{'PlinkGenderCheck'}}, $$sampleIDRef.":PASS");
+    }
+    elsif ( ($$plinkSexCheckGenderRef eq "1") && ($sampleInfoFile{$$familyIDRef}{$$sampleIDRef}{'Sex'} eq 1) ) { #Male
+	
+	push(@{$qcData{$$familyIDRef}{$$familyIDRef}{'Program'}{'PlinkGenderCheck'}}, $$sampleIDRef.":PASS");
+    }
+    else {
+	
+	push(@{$qcData{$$familyIDRef}{$$familyIDRef}{'Program'}{'PlinkGenderCheck'}}, $$sampleIDRef.":FAIL");
     }
     return;
 }
@@ -637,7 +668,7 @@ sub RegExpToYAML {
     
     $regExp{'InbreedingFactor'}{'Sample_InbreedingFactor'}  = q?perl -nae 'my @inbreedingFactor; if ($. > 1) {my @temp = split(/\s/,$_);push(@inbreedingFactor,$temp[0].":".$temp[4]); print $inbreedingFactor[0], "\t"; }' ?;
 
-    $regExp{'SexCheck'}{'Sample_SexCheck'}  = q?perl -nae 'my @sexCheckFactor; if ($. > 1) {my @temp = split(/\s+/,$_);push(@sexCheckFactor,$temp[1].":".$temp[4]); print $sexCheckFactor[0], "\t"; }' ?;
+    $regExp{'SexCheck'}{'Sample_SexCheck'}  = q?perl -nae 'my @sexCheckFactor; if ($. > 1) {my @temp = split(/\s+/,$_);push(@sexCheckFactor,$temp[2].":".$temp[4]); print $sexCheckFactor[0], "\t"; }' ?;
 
     $regExp{'RelationCheck'}{'Sample_RelationCheck'}  = q?perl -nae 'print $_;' ?; #Note will return whole file
 

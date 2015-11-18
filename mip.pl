@@ -601,6 +601,9 @@ foreach my $parameterName (keys %parameter) {
 ## Detect family constellation based on pedigree file
 $scriptParameter{'trio'} = &DetectTrio(\%scriptParameter, \%sampleInfo);
 
+## Detect number of founders (i.e. parents ) based on pedigree file
+&DetectFounders(\%scriptParameter, \%sampleInfo);
+
 ## Check email adress format
 if (exists($scriptParameter{'email'})) {  #Allow no malformed email adress
     
@@ -738,8 +741,8 @@ if ($scriptParameter{'writeConfigFile'} ne 0) {  #Write config file for family
 @{$fileInfo{"SelectFileContigs"}} = &SizeSortSelectFileContigs(\%fileInfo, "SelectFileContigs", "contigsSizeOrdered");
 
 
-## Detect if the current analysis involves any males
-$scriptParameter{'maleFound'} = &DetectSampleIdMale(\%scriptParameter, \%sampleInfo);
+## Detect the gender included in current analysis
+($scriptParameter{'maleFound'}, $scriptParameter{'femaleFound'}, $scriptParameter{'otherFound'})  = &DetectSampleIdGender(\%scriptParameter, \%sampleInfo);
 
 
 ## Removes contigY|chrY from SelectFileContigs if no males or 'other' found in analysis
@@ -3834,6 +3837,75 @@ sub SampleCheck {
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/".lc($programName);
     my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pGATKVariantRecalibration'}{'fileEnding'};
 
+
+    my $founderCount = &DetectFounders(\%{$scriptParameterHashRef}, \%{$sampleInfoHashRef});
+
+    ## Generate Plink bed and bim (as well as fam) files
+    print $FILEHANDLE "plink ";
+    print $FILEHANDLE "--vcf ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf ";  #InFile
+    print $FILEHANDLE "--chr 23-24 ";  #Only analyse sex chromosomes
+    print $FILEHANDLE "--out ".$outFamilyDirectory."/".$familyID."_vcf_data_unsplit ";  #OutFile (.ped and .map)
+    print $FILEHANDLE "\n\n";
+
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDCounter++) {  #Collect infiles for all sampleIDs
+
+	my $sampleID = ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter];  #Alias
+	my $lineCounter = 2 + $sampleIDCounter;  #Skip header line
+
+	## Add a subsetet and correct .fam file for analysis
+	print $FILEHANDLE q?perl -nae 'if($F[1]=~/?.$sampleID.q?/) {print $F[0]."\t".$F[1]."\t0\t0\t".$F[4]."\t".$F[5]}' ?;  #Include 1 line and remove founders
+	print $FILEHANDLE ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'familyID'}."/".${$scriptParameterHashRef}{'familyID'}.".fam ";
+	print $FILEHANDLE "> "; 
+	print $FILEHANDLE $outFamilyDirectory."/".$familyID."_vcf_data_unsplit.fam ";
+	print $FILEHANDLE "\n\n";
+	
+	## Split X to remove PAR regions
+	print $FILEHANDLE "plink ";
+	print $FILEHANDLE "--bfile ".$outFamilyDirectory."/".$familyID."_vcf_data_unsplit ";
+	print $FILEHANDLE "--split-x b37 ";
+	print $FILEHANDLE "--make-bed ";
+	print $FILEHANDLE "--out ".$outFamilyDirectory."/".$familyID."_vcf_data ";
+	print $FILEHANDLE "\n\n";
+
+	print $FILEHANDLE "plink ";
+	print $FILEHANDLE "--bfile ".$outFamilyDirectory."/".$familyID."_vcf_data ";
+	print $FILEHANDLE "--check-sex ";
+	
+	unless (${$sampleInfoHashRef}{${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'Sex'} == 2) {
+	
+	    print $FILEHANDLE "y-only ";
+	}
+	print $FILEHANDLE "--out ".$outFamilyDirectory."/".$sampleID."_vcf_data ";
+	print $FILEHANDLE "\n\n";
+    }
+    
+    ## Concatenate files for qc downsteam 
+    print $FILEHANDLE "cat ";
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDCounter++) {  #Collect infiles for all sampleIDs
+
+	my $sampleID = ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter];  #Alias
+
+	print $FILEHANDLE $outFamilyDirectory."/".$sampleID."_vcf_data.sexcheck ";
+    }
+    print $FILEHANDLE "| ";  #Pipe
+    print $FILEHANDLE q?perl -nae 'if ($.==1) {chomp($_);  print $_; if ($F[5] eq "F") {print "/YCOUNT\n"} else {print "/F\n"} } elsif ($_!~/FID/) {print $_}' ?;  #Print first header and sampleId lines
+    print $FILEHANDLE "> ".$outFamilyDirectory."/".$familyID.".sexcheck ";
+    print $FILEHANDLE "\n\n";
+
+   
+    if ( (${$scriptParameterHashRef}{'pSampleCheck'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+
+	## Collect QC metadata info for later use                                                                                               
+	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		       'familyID' => ${$scriptParameterHashRef}{'familyID'},
+		       'programName' => "SexCheck",
+		       'outDirectory' => $outFamilyDirectory,
+		       'outFileEnding' => $familyID.".sexcheck",
+		       'outDataType' => "infileDependent"
+		      });
+    }
+
+
     print $FILEHANDLE "#Create Plink .ped and .map file per family using vcfTools","\n";
     print $FILEHANDLE "vcftools ";
     print $FILEHANDLE "--vcf ".$inFamilyDirectory."/".$familyID.$infileEnding.$callType.".vcf ";  #InFile
@@ -3875,26 +3947,6 @@ sub SampleCheck {
 		       'programName' => "RelationCheck",
 		       'outDirectory' => $outFamilyDirectory,
 		       'outFileEnding' => $familyID.".mibs",
-		       'outDataType' => "infileDependent"
-		      });
-    }
-
-    print $FILEHANDLE "#Create Plink sexcheck per family","\n"; 
-    print $FILEHANDLE "plink ";
-    print $FILEHANDLE "--noweb ";  #No web check
-    print $FILEHANDLE "--ped ".$outFamilyDirectory."/".$familyID.".ped ";  #InFile
-    print $FILEHANDLE "--map ".$outFamilyDirectory."/".$familyID.".map ";  #InFile
-    print $FILEHANDLE "--check-sex ";  #uses X chromosome data to determine sex (i.e. based on heterozygosity rates) 
-    print $FILEHANDLE "--out ".$outFamilyDirectory."/".$familyID, "\n\n";  #OutFile
-
-    if ( (${$scriptParameterHashRef}{'pSampleCheck'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
-
-	## Collect QC metadata info for later use                                                                                               
-	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
-		       'familyID' => ${$scriptParameterHashRef}{'familyID'},
-		       'programName' => "SexCheck",
-		       'outDirectory' => $outFamilyDirectory,
-		       'outFileEnding' => $familyID.".sexcheck",
 		       'outDataType' => "infileDependent"
 		      });
     }
@@ -4470,7 +4522,7 @@ sub GATKVariantReCalibration {
 	## Collect QC metadata info for later use
 	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 		       'familyID' => ${$scriptParameterHashRef}{'familyID'},
-		       'programName' => "PedigreeCheck",
+		       'programName' => "PedigreeCheck",  #Disabled pedigreeCheck to not include relationship test is qcCollect
 		       'outDirectory' => $outFamilyDirectory,
 		       'outFileEnding' => $familyID.$outfileEnding.$callType.".vcf",
 		       'outDataType' => "infileDependent"
@@ -14207,12 +14259,12 @@ sub ConcatenateVariants {
 }
 
 
-sub DetectSampleIdMale {
+sub DetectSampleIdGender {
 
-##DetectSampleIdMale
+##DetectSampleIdGender
     
-##Function : Detect if the current analysis involves any males
-##Returns  : "$maleFound"
+##Function : Detect gender of the current analysis
+##Returns  : "$maleFound $femaleFound $otherFound"
 ##Arguments: $scriptParameterHashRef, $sampleInfoHashRef
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
@@ -14221,15 +14273,26 @@ sub DetectSampleIdMale {
     my $sampleInfoHashRef = $_[1];
 
     my $maleFound = 0;
+    my $femaleFound = 0;
+    my $otherFound = 0;
 
     foreach my $sampleID (@{${$scriptParameterHashRef}{'sampleIDs'}}) {
 
-	unless (${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'Sex'} == '2') {  #Female
+	if (${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'Sex'} == '1') {  #Female
+	    
+	    $maleFound = 1;  #Male
+	}
+	if (${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'Sex'} == '2') {  #Female
 
-	    $maleFound = 1;  #Male and 'other'
+	    $femaleFound = 1;
+	}
+	else {  #Other
+
+	    $maleFound = 1;  #Include since it might be male to enable analysis of Y.
+	    $otherFound = 1;
 	}
     }
-    return $maleFound;
+    return $maleFound, $femaleFound, $otherFound;
 }
 
 
@@ -17069,6 +17132,43 @@ sub UpdateFileContigs {
 }
 
 
+sub DetectFounders {
+
+##DetectFounders
+    
+##Function : Detect number of founders (i.e. parents ) based on pedigree file
+##Returns  : ""|1
+##Arguments: $scriptParameterHashRef,
+##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
+
+    my $scriptParameterHashRef = $_[0];
+    my $sampleInfoHashRef = $_[1];
+
+    my @founders;
+    my $founderCounter = 0;
+    
+    foreach my $sampleID (@{${$scriptParameterHashRef}{'sampleIDs'}}) {
+	
+	my $fatherInfo = ${$sampleInfoHashRef}{${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'Father'};  #Alias
+	my $motherInfo = ${$sampleInfoHashRef}{${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'Mother'};  #Alias
+	
+	if ( ($fatherInfo ne 0) && ($motherInfo ne 0) ) {  #Child
+	    
+	    if (any {$_ eq $fatherInfo} @{${$scriptParameterHashRef}{'sampleIDs'}}) {  #If element is part of array
+		
+		push(@founders, $fatherInfo);
+	    }
+	    if (any {$_ eq $motherInfo} @{${$scriptParameterHashRef}{'sampleIDs'}} ) {  #If element is part of array
+		
+		push(@founders, $motherInfo);
+	    }
+	}
+    }
+    return scalar(@founders);
+}
+
+
 sub DetectTrio {
 
 ##DetectTrio
@@ -17110,7 +17210,7 @@ sub DetectTrio {
 		}
 	    }
 	}
-	if (scalar( keys %trio) == 3) {
+	if (scalar(keys %trio) == 3) {
 
 	    $logger->info("Found trio: Child = ".$trio{'child'}.", Father = ".$trio{'father'}.", Mother = ".$trio{'mother'}, "\n");
 	    return 1
