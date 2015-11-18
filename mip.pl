@@ -3213,7 +3213,7 @@ sub VCFParser {
 		
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$programName}{"RangeFile"}{'Version'} = $1;
 	    }
-	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$programName}{"RangeFile"}{'File'} = ${$scriptParameterHashRef}{'vcfParserRangeFeatureFile'};
+	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$programName}{"RangeFile"}{'Path'} = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'vcfParserRangeFeatureFile'};
 	}
 	if (${$scriptParameterHashRef}{'vcfParserSelectFile'} ne "noUserInfo") {
 
@@ -3224,8 +3224,9 @@ sub VCFParser {
 		
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$programName}{"SelectFile"}{'Version'} = $1;
 	    }
-	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$programName}{"SelectFile"}{'File'} = ${$scriptParameterHashRef}{'vcfParserSelectFile'};
+	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$programName}{"SelectFile"}{'Path'} = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'vcfParserSelectFile'};
 	}
+
 	## Collect QC metadata info for later use
 	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 		       'familyID' => $$familyIDRef,
