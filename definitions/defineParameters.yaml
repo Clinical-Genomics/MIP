@@ -396,36 +396,7 @@ GATKBaseReCalibrationOverClippedRead:
   dataType: SCALAR
   default: 1
   type: program
-## GATK Genotype
-pGATKHaploTypeCaller:
-  associatedProgram:
-   - MIP
-  chain: MAIN
-  dataType: SCALAR
-  default: 1
-  fileEnding: _gvcf
-  type: program
-GATKHaploTypeCallerSNPKnownSet:
-  associatedProgram:
-   - pGATKHaploTypeCaller
-  buildFile: yesAutoDownLoad
-  dataType: SCALAR
-  default: dbsnp_138.b37.vcf
-  existsCheck: file
-  type: path
-GATKHaploTypeCallerSoftClippedBases:
-  associatedProgram:
-   - pGATKHaploTypeCaller
-  dataType: SCALAR
-  default: 1
-  type: program
-GATKHaploTypeCallerPcrIndelModel:
-  associatedProgram:
-   - pGATKHaploTypeCaller
-  dataType: SCALAR
-  default: None
-  type: program
-## Coverage
+## Coverage Analysis
 pChanjoSexCheck:
   associatedProgram:
    - MIP
@@ -434,23 +405,7 @@ pChanjoSexCheck:
   default: 1
   fileEnding: .sexcheck
   type: program
-pChanjoBuild:
-  associatedProgram:
-   - MIP
-  chain: CoverageReport
-  dataType: SCALAR
-  default: 1
-  fileEnding: nofileEnding
-  type: program
-chanjoBuildDb:
-  associatedProgram:
-   - pChanjoBuild
-  buildFile: yesAutoDownLoad
-  dataType: SCALAR
-  default: CCDS.current.txt
-  existsCheck: file
-  type: path
-pChanjoAnnotate:
+pSambambaDepth:
   associatedProgram:
    - MIP
   chain: CoverageReport
@@ -458,19 +413,37 @@ pChanjoAnnotate:
   default: 1
   fileEnding: _coverage
   type: program
-chanjoAnnotateCutoff:
+sambambaDepthBed:
   associatedProgram:
-   - pChanjoAnnotate
+   - pSambambaDepth
+  buildFile: yesAutoDownLoad
+  dataType: SCALAR
+  default: CCDS.current.bed
+  existsCheck: file
+  type: path
+sambambaDepthBaseQuality:
+  associatedProgram:
+   - pSambambaDepth
   dataType: SCALAR
   default: 10
   type: program
-pChanjoImport:
+sambambaDepthMappingQuality:
   associatedProgram:
-   - MIP
-  chain: CoverageReport
+   - pSambambaDepth
   dataType: SCALAR
-  default: 0
-  fileEnding: nofileEnding
+  default: 10
+  type: program
+sambambaDepthNoDuplicates:
+  associatedProgram:
+   - pSambambaDepth
+  dataType: SCALAR
+  default: 1
+  type: program
+sambambaDepthNoFailedQualityControl:
+  associatedProgram:
+   - pSambambaDepth
+  dataType: SCALAR
+  default: 1
   type: program
 pGenomeCoverageBED:
   associatedProgram:
@@ -511,6 +484,35 @@ pRCovPlots:
   dataType: SCALAR
   default: 0
   fileEnding: nofileEnding
+  type: program
+## GATK Genotype
+pGATKHaploTypeCaller:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileEnding: _gvcf
+  type: program
+GATKHaploTypeCallerSNPKnownSet:
+  associatedProgram:
+   - pGATKHaploTypeCaller
+  buildFile: yesAutoDownLoad
+  dataType: SCALAR
+  default: dbsnp_138.b37.vcf
+  existsCheck: file
+  type: path
+GATKHaploTypeCallerSoftClippedBases:
+  associatedProgram:
+   - pGATKHaploTypeCaller
+  dataType: SCALAR
+  default: 1
+  type: program
+GATKHaploTypeCallerPcrIndelModel:
+  associatedProgram:
+   - pGATKHaploTypeCaller
+  dataType: SCALAR
+  default: None
   type: program
 picardToolsPath:
   associatedProgram:
@@ -953,32 +955,25 @@ genmodModelsFamilyType:
   dataType: SCALAR
   default: mip
   type: program
-caddWGSSNVs:
-  associatedProgram:
-   - pRankVariants
-  dataType: SCALAR
-  default: 0
-  type: program
 caddWGSSNVsFile:
   associatedProgram:
    - pRankVariants
   buildFile: noAutoBuild
   dataType: SCALAR
-  default: whole_genome_SNVs.v1.3.tsv.gz
   existsCheck: file
   type: path
-cadd1000Genomes:  
-  associatedProgram:
-   - pRankVariants
-  dataType: SCALAR
-  default: 0
-  type: program
 cadd1000GenomesFile:
   associatedProgram:
    - pRankVariants
   buildFile: noAutoBuild
   dataType: SCALAR
-  default: 1000G.v1.3.tsv.gz
+  existsCheck: file
+  type: path
+spidexFile:
+  associatedProgram:
+   - pRankVariants
+  buildFile: noAutoBuild
+  dataType: SCALAR
   existsCheck: file
   type: path
 wholeGene:
@@ -987,6 +982,13 @@ wholeGene:
   dataType: SCALAR
   default: 1
   type: program
+genmodModelsReducedPenetranceFile:
+  associatedProgram:
+   - pRankVariants
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  existsCheck: file
+  type: path
 rankModelFile:
   associatedProgram:
    - pRankVariants
@@ -995,11 +997,17 @@ rankModelFile:
   existsCheck: file
   type: path
 ## PythonVirtualEnvironment
+usePythonVirtualEnvironment:
+  associatedProgram:
+   - pChanjoSexCheck
+   - pGATKVariantRecalibration
+   - pRankVariants
+  dataType: SCALAR
+  default: 1
+  type: program
 pythonVirtualEnvironment:
   associatedProgram:
-   - pChanjoBuild
-   - pChanjoAnnotate
-   - pChanjoImport
+   - pChanjoSexCheck
    - pGATKVariantRecalibration
    - pRankVariants
   dataType: SCALAR
@@ -1105,6 +1113,18 @@ picardToolsMergeSamFilesPrevious:
   dataType: ARRAY
   mandatory: no
   type: path
+sambambaDepthCutOffs:
+  associatedProgram:
+   - pSambambaDepth
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - 10
+   - 20
+   - 30
+   - 50
+   - 100
+  type: program
 vepFeatures:
   associatedProgram:
    - pVariantEffectPredictor
