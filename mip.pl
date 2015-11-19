@@ -92,6 +92,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pMem/--pBwaMem Align reads using BWA Mem (defaults to "0" (=no))
                  -memrdb/--bwaMemRapidDb Selection of relevant regions post alignment (defaults to "")
                  -memcrm/--bwaMemCram Use CRAM-format for output (defaults to "1" (=yes))
+                 -memsts/--bwaMembamStats Collect statistics from BAM files (defaults to "1" (=yes))
                -pAln/--pBwaAln Index reads using BWA Aln (defaults to "0" (=no))
                  -alnq/--bwaAlnQualityTrimming BWA Aln quality threshold for read trimming (defaults to "20")
                -pSap/--pBwaSampe Align reads using BWA Sampe (defaults to "0" (=no))
@@ -272,7 +273,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ## Eval parameter hash
 &EvalParameterHash(\%parameter, $Bin."/definitions/defineParameters.yaml");
 
-my $mipVersion = "v2.5.0";	#Set MIP version
+my $mipVersion = "v2.5.1";	#Set MIP version
 my $aligner;
 
 ## Target definition files
@@ -386,6 +387,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'pMem|pBwaMem:n' => \$parameter{'pBwaMem'}{'value'},
 	   'memrdb|bwaMemRapidDb:s' => \$parameter{'bwaMemRapidDb'}{'value'},
 	   'memcrm|bwaMemCram:n' => \$parameter{'bwaMemCram'}{'value'},
+	   'memsts|bwaMembamStats:n' => \$parameter{'bwaMembamStats'}{'value'},
 	   'pAln|pBwaAln:n' => \$parameter{'pBwaAln'}{'value'},
 	   'alnq|bwaAlnQualityTrimming:n' => \$parameter{'bwaAlnQualityTrimming'}{'value'},  #BWA aln quality threshold for read trimming down to 35bp
 	   'pSap|pBwaSampe:n' => \$parameter{'pBwaSampe'}{'value'},
@@ -8270,6 +8272,29 @@ sub BWA_Mem {
 	    print $FILEHANDLE "/dev/stdin ";
 	    print $FILEHANDLE "\n\n";
 
+	    if (${$scriptParameterHashRef}{'bwaMembamStats'} == 1) {
+
+		print $FILEHANDLE "samtools stats ";
+		print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".bam ";
+		print $FILEHANDLE "| ";
+		print $FILEHANDLE "grep ^SN "; 
+		print $FILEHANDLE "| "; 
+		print $FILEHANDLE "cut -f 2- ";
+		print $FILEHANDLE "| "; 
+		print $FILEHANDLE q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\s+(\d+)/) {$raw = $1;} elsif($_=~/reads mapped:\s+(\d+)/) {$map = $1; $p = ($map / $raw ) * 100; print "percentag mapped reads:\t".$p."\n"}' ?;
+		print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".stats ";
+		#print $FILEHANDLE q?perl -ne '$raw; $map; chomp($_); if($_=~/raw total sequences:\s+(\d+)/) {$raw = $1;} if($_=~/reads mapped:\s+(\d+)/) {$map = $1; $p = ($map / $raw ) * 100; print "Percentag mapped reads:\t".$p."\n"}' ?; 
+		print $FILEHANDLE "\n\n";
+
+		## Copies file from temporary directory.
+		print $FILEHANDLE "## Copy file from temporary directory\n";
+		&MigrateFileFromTemp({'tempPath' => ${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".stats",
+				      'filePath' => $outSampleDirectory."/",
+				      'FILEHANDLE' => $FILEHANDLE,
+				     });
+		print $FILEHANDLE "wait", "\n\n";
+	    }
+
 	    if (${$scriptParameterHashRef}{'bwaMemCram'} == 1) {
 
 		print $FILEHANDLE "## Create CRAM file from BAM\n";
@@ -8309,6 +8334,20 @@ sub BWA_Mem {
 		    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'Program'}{'Bwa'}{ ${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter]}{'Path'} = $outSampleDirectory."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".cram";  #Required for analysisRunStatus check downstream
 		    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter]}{'CramFile'} = $outSampleDirectory."/".${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].$outfileEnding.".cram";  #Fastreference to cram file
 		}
+		if (${$scriptParameterHashRef}{'bwaMembamStats'} == 1) {
+
+		    ## Collect QC metadata info for later use                                                                                               
+		    &SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+				   'familyID' => ${$scriptParameterHashRef}{'familyID'},
+				   'sampleID' => $sampleID,
+				   'programName' => "BamStats",
+				   'infile' => ${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter],
+				   'outDirectory' => $outSampleDirectory,
+				   'outFileEnding' => $outfileEnding.".stats",
+				   'outDataType' => "infileDependent"
+				  });
+		}
+
 		&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 			       'familyID' => ${$scriptParameterHashRef}{'familyID'},
 			       'sampleID' => $sampleID,

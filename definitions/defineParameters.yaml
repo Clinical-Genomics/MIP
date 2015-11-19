@@ -271,6 +271,12 @@ bwaMemCram:
   dataType: SCALAR
   default: 1
   type: program
+bwaMembamStats:
+  associatedProgram:
+   - pBwaMem
+  dataType: SCALAR
+  default: 1
+  type: program
 pBwaAln:
   associatedProgram:
    - MIP
