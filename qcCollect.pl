@@ -473,7 +473,7 @@ sub RelationCheck {
 			#print  "Incorrect should be self: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
 		    }
 		}
-		elsif ($family{$sampleID}{$members}[$membersCount] >= 0.60 ) { #Should include parent to child and child to siblings unless inbreed parents
+		elsif ($family{$sampleID}{$members}[$membersCount] >= 0.63 ) { #Should include parent to child and child to siblings unless inbreed parents
 
 		    if ( ( ($sampleID ne $fatherID) && ($sampleID ne $motherID) ) || ( ($members ne $fatherID) && ($members ne $motherID) ) ) { #Correct
 			#print "Parent-to-child or child-to-child: ".$sampleID,"\t", $members, "\t", $family{$sampleID}{$members}[$membersCount], "\n";
