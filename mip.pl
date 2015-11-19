@@ -272,7 +272,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ## Eval parameter hash
 &EvalParameterHash(\%parameter, $Bin."/definitions/defineParameters.yaml");
 
-my $mipVersion = "v2.4.8";	#Set MIP version
+my $mipVersion = "v2.5.0";	#Set MIP version
 my $aligner;
 
 ## Target definition files
@@ -783,6 +783,7 @@ my $uncompressedFileSwitch = &InfilesReFormat(\%scriptParameter, \%infile, \%lan
 if ($scriptParameter{'dryRunAll'} == 0) {
 
     $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'AnalysisDate'} = $dateTimeStamp;
+    $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'familyID'} }{'MIPVersion'} = $mipVersion;
 }
 
 ## Check if vt has processed references, if not try to reprocesses them before launcinh modules
