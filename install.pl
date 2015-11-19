@@ -24,7 +24,7 @@ BEGIN {
            -vct/--vcfTools Set the vcftools version (Default: "0.1.14")
            -bet/--bedTools Set the bedtools version (Default: "2.25.0")
            -vt/--vt Set the vt version (Default: "0.57")
-           -plk/--plink  Set the plink version (Default: "1.07")
+           -plk/--plink  Set the plink version (Default: "151117")
            -vep/--VariantEffectPredictor Set the VEP version (Default: "82")
 	   -vepc/--vepDirectoryCache Specify the cache directory to use (whole path; defaults to "~/miniconda/envs/condaEnvironment/ensembl-tools-release-VariantEffectPredictorVersion/cache")
            -ppd/--printParameterDefaults Print the parameter defaults
@@ -81,7 +81,7 @@ $parameter{'sambamba'} = "0.5.9";
 $parameter{'vcfTools'} = "0.1.14";
 $parameter{'bedTools'} = "2.25.0";
 $parameter{'vt'} = "gitRepo";
-$parameter{'plink'} = "1.07";
+$parameter{'plink'} = "151117";
 $parameter{'VariantEffectPredictor'} = "82";
 $parameter{'vepDirectoryCache'} = $parameter{'condaPath'}.q?/envs/?.$parameter{'condaEnvironment'}.q?/ensembl-tools-release-?.$parameter{'VariantEffectPredictor'}.q?/cache?;  #Cache directory;
 
@@ -620,19 +620,13 @@ sub Plink {
     
     ## Download
     print $FILEHANDLE "## Download Plink\n";
-
-    print $FILEHANDLE "wget --quiet http://pngu.mgh.harvard.edu/~purcell/plink/dist/plink-".${$parameterHashRef}{'plink'}."-x86_64.zip ";
+    print $FILEHANDLE "wget https://www.cog-genomics.org/static/bin/plink".${$parameterHashRef}{'plink'}."/plink_linux_x86_64.zip ";
     print $FILEHANDLE "-O plink-".${$parameterHashRef}{'plink'}."-x86_64.zip";  #Dowload outfile
     print $FILEHANDLE "\n\n";
 
     ## Extract
     print $FILEHANDLE "## Extract\n";
     print $FILEHANDLE "unzip plink-".${$parameterHashRef}{'plink'}."-x86_64.zip";
-    print $FILEHANDLE "\n\n";
-
-    ## Move to plink directory
-    print $FILEHANDLE "## Move to plink directory\n";
-    print $FILEHANDLE "cd plink-".${$parameterHashRef}{'plink'}."-x86_64";
     print $FILEHANDLE "\n\n";
 
     ## Make available from conda environment
