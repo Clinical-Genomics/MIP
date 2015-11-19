@@ -198,6 +198,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -ravgft/--genmodModelsFamilyType Use one of the known setups (defaults to "mip")
                  -ravcsf/--caddWGSSNVsFile Whole genome sequencing CADD score file (defaults to "")
                  -ravc1kgf/--cadd1000GenomesFile 1000 Genome cadd score file (defaults to "")
+                 -ravspi/--spidexFile Spidex database for alternative splicing (defaults to "")
                  -ravwg/--wholeGene Allow compound pairs in intronic regions (defaults to "1" (=yes))
                  -ravrpf/--genmodModelsReducedPenetranceFile File containg genes with reduced penetrance (defaults to "")
                  -ravrm/--rankModelFile Rank model config file (defaults to "")
@@ -479,6 +480,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'ravgft|genmodModelsFamilyType:s' => \$parameter{'genmodModelsFamilyType'}{'value'},
 	   'ravcsf|caddWGSSNVsFile:s' => \$parameter{'caddWGSSNVsFile'}{'value'},
 	   'ravc1kgf|cadd1000GenomesFile:s' => \$parameter{'cadd1000GenomesFile'}{'value'},
+	   'ravspi|spidexFile:s' => \$parameter{'spidexFile'}{'value'},
 	   'ravwg|wholeGene:n'  => \$parameter{'wholeGene'}{'value'},  #Allow compound pairs in intronic regions
 	   'ravrpf|genmodModelsReducedPenetranceFile:s' => \$parameter{'genmodModelsReducedPenetranceFile'}{'value'},
 	   'ravrm|rankModelFile:s' => \$parameter{'rankModelFile'}{'value'},  #The rank modell config.ini path
@@ -1861,6 +1863,10 @@ sub RankVariants {
 	    if (defined(${$scriptParameterHashRef}{'cadd1000GenomesFile'})) {
 		
 		print $XARGSFILEHANDLE "--cadd_file ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'cadd1000GenomesFile'}." ";  #1000G CADD score file
+	    }
+	    if (defined(${$scriptParameterHashRef}{'spidexFile'})) {
+		
+		print $XARGSFILEHANDLE "--spidex ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'spidexFile'}." ";  #Spidex file
 	    }
 
 	    print $XARGSFILEHANDLE "-o /dev/stdout ";  #OutFile
