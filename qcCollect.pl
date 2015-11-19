@@ -339,6 +339,7 @@ sub DefineEvaluateMetric {
     $evaluateMetric{"CalculateHsMetrics"}{"PCT_TARGET_BASES_10X"}{'threshold'} = 0.95;
     $evaluateMetric{"CalculateHsMetrics"}{"PCT_TARGET_BASES_30X"}{'threshold'} = 0.90;
     $evaluateMetric{"CalculateHsMetrics"}{"PCT_ADAPTER"}{'threshold'} = 0.0001;
+    $evaluateMetric{"CollectMultipleMetrics"}{"PCT_PF_READS_ALIGNED"}{'threshold'} = 0.95;
 }
 sub EvaluateQCParameters {
 
@@ -380,7 +381,7 @@ sub EvaluateQCParameters {
 
 				if ($qcData{$familyID}{$ID}{$infile}{$program}{$metric} < $evaluateMetric{$program}{$metric}{'threshold'}) { #Determine status - if below add to hash. otherwise PASS and do not include
 				    
-				    $status = "Status:".$ID."_".$program."_".$metric.":".$qcData{$familyID}{$ID}{$infile}{$program}{$metric};
+				    $status = "FAILED:".$ID."_".$program."_".$metric.":".$qcData{$familyID}{$ID}{$infile}{$program}{$metric};
 				    push(@{$qcData{$familyID}{$familyID}{'Evaluation'}{$program}}, $status);
 				}		
 				last;
@@ -397,7 +398,7 @@ sub EvaluateQCParameters {
 						
 						if ($qcData{$familyID}{$ID}{$infile}{$program}{$key}{$dataHeader}{$metric} < $evaluateMetric{$program}{$metric}{'threshold'}) { #Determine status - if below add to hash. otherwise PASS and do not include
 	
-						    $status = "Status:".$ID."_".$program."_".$metric.":".$qcData{$familyID}{$ID}{$infile}{$program}{$key}{$dataHeader}{$metric};
+						    $status = "FAILED:".$ID."_".$program."_".$metric.":".$qcData{$familyID}{$ID}{$infile}{$program}{$key}{$dataHeader}{$metric};
 						    push(@{$qcData{$familyID}{$familyID}{'Evaluation'}{$program}}, $status);
 						}
 						next; #Metric go to next section
