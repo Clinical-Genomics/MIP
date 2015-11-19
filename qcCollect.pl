@@ -335,6 +335,7 @@ sub DefineEvaluateMetric {
 
     $evaluateMetric{"MosaikAligner"}{"Total_aligned"}{'threshold'} = 95;
     $evaluateMetric{"MosaikAligner"}{"Uniquely_aligned_mates"}{'threshold'} = 90;
+    $evaluateMetric{"BamStats"}{"percentag_mapped_reads"}{'threshold'} = 95;
     $evaluateMetric{"CalculateHsMetrics"}{"MEAN_TARGET_COVERAGE"}{'threshold'} = 100;
     $evaluateMetric{"CalculateHsMetrics"}{"PCT_TARGET_BASES_10X"}{'threshold'} = 0.95;
     $evaluateMetric{"CalculateHsMetrics"}{"PCT_TARGET_BASES_30X"}{'threshold'} = 0.90;
@@ -664,7 +665,11 @@ sub RegExpToYAML {
     $regExp{'MosaikAligner'}{'Multiply_aligned_mates'} = q?perl -nae' if ($_=~/# multiply aligned mates\S+\s+(\d+)\s\(\s+(\d+\.\d+)/) {print $2;last;}' ?; #Collect Multiply aligned mates
     
     $regExp{'MosaikAligner'}{'Total_aligned'} = q?perl -nae' if ($_=~/total aligned:\s+\S+\s+(\S+)\s\(\S+\s(\d+.\d+)/ ) {print $2;last;} elsif ($_=~/total aligned:\s+(\S+)\s\(\S+\s(\d+.\d+)/ ) { print $2;last;}' ?; #Collect total aligned sequences
+
+    $regExp{'BamStats'}{'percentag_mapped_reads'} = q?perl -nae 'if($_=~/percentag mapped reads:\s+(\S+)/) {print $1;last}' ?; #Collect % mapped reads from BAm alignment
+
     $regExp{'ChanjoSexCheck'}{'gender'} = q?perl -nae 'if( ($F[0]!~/^#/) && ($F[2] =~/\S+/) ) {print $F[2];}' ?;  #Collect gender from ChanjoSexCheck
+
     $regExp{'pedigreeCheck'}{'Sample_order'} = q?perl -nae 'if ($_=~/^#CHROM/) {chomp $_; my @line = split(/\t/,$_); for (my $sample=9;$sample<scalar(@line);$sample++) { print $line[$sample], "\t";}last;}' ?; #Collect sample order from vcf file used to create ".ped", ".map" and hence ".mibs".
     
     $regExp{'InbreedingFactor'}{'Sample_InbreedingFactor'}  = q?perl -nae 'my @inbreedingFactor; if ($. > 1) {my @temp = split(/\s/,$_);push(@inbreedingFactor,$temp[0].":".$temp[4]); print $inbreedingFactor[0], "\t"; }' ?;
