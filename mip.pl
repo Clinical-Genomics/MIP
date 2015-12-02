@@ -16049,6 +16049,10 @@ sub AddToSampleInfo {
 
 	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'ResearchEthicalApproval'} = ${$scriptParameterHashRef}{'researchEthicalApproval'};
     }
+    if (defined(${$scriptParameterHashRef}{'analysisType'})) {
+
+	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'AnalysisType'} = ${$scriptParameterHashRef}{'analysisType'};
+    }
     if (defined(${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'})) {
 
 	if (${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}=~/GenomeAnalysisTK-([^,]+)/) {
