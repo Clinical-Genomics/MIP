@@ -46,7 +46,7 @@ if($help) {
     exit;
 }
 
-my $qcCollectVersion = "1.0.1";
+my $qcCollectVersion = "1.0.2";
 if($version) {
 
     print STDOUT "\nqcCollect.pl v".$qcCollectVersion,"\n\n";
@@ -85,16 +85,16 @@ my %regExpFile = &LoadYAML($regExpFile); #Load regExpFile (YAML) and transfer to
 
 &FamilyQC(); #Extracts all qcdata on family level using information in %sampleInfoFile and %regExpFile
 
-&DefineEvaluateMetric(); #Defines programs, etrics and thresholds to evaluate
-
-&EvaluateQCParameters(); #Evaluate the metrics
-
 ##Add qcCollect version to yaml file
 for my $familyID ( keys %sampleInfoFile ) { #For every family id
 
     $qcData{$familyID}{$familyID}{'Program'}{'QCCollect'}{'Version'} = $qcCollectVersion;
     $qcData{$familyID}{$familyID}{'Program'}{'QCCollect'}{'RegExpFile'} = $regExpFile;
+
+    &DefineEvaluateMetric($familyID); #Defines programs, etrics and thresholds to evaluate
 }
+
+&EvaluateQCParameters(); #Evaluate the metrics
 
 &WriteYAML($outfile, \%qcData ); #Writes to YAML file
 
@@ -331,16 +331,27 @@ sub DefineEvaluateMetric {
 
 ##Function  : Sets programs and program metrics and thresholds to be evaluated
 ##Returns   : ""
-##Arguments : 
+##Arguments : $familyID
+##          : $familyID => FamilyID
+
+    my $familyID = $_[0];
 
     $evaluateMetric{"MosaikAligner"}{"Total_aligned"}{'threshold'} = 95;
     $evaluateMetric{"MosaikAligner"}{"Uniquely_aligned_mates"}{'threshold'} = 90;
     $evaluateMetric{"BamStats"}{"percentag_mapped_reads"}{'threshold'} = 95;
-    $evaluateMetric{"CalculateHsMetrics"}{"MEAN_TARGET_COVERAGE"}{'threshold'} = 100;
     $evaluateMetric{"CalculateHsMetrics"}{"PCT_TARGET_BASES_10X"}{'threshold'} = 0.95;
-    $evaluateMetric{"CalculateHsMetrics"}{"PCT_TARGET_BASES_30X"}{'threshold'} = 0.90;
-    $evaluateMetric{"CalculateHsMetrics"}{"PCT_ADAPTER"}{'threshold'} = 0.0001;
     $evaluateMetric{"CollectMultipleMetrics"}{"PCT_PF_READS_ALIGNED"}{'threshold'} = 0.95;
+    $evaluateMetric{"CalculateHsMetrics"}{"PCT_ADAPTER"}{'threshold'} = 0.0001;
+
+    if ($sampleInfoFile{$familyID}{$familyID}{'AnalysisType'} eq "exomes") {
+
+	$evaluateMetric{"CalculateHsMetrics"}{"MEAN_TARGET_COVERAGE"}{'threshold'} = 100;
+	$evaluateMetric{"CalculateHsMetrics"}{"PCT_TARGET_BASES_30X"}{'threshold'} = 0.90;
+    }
+    else {
+
+	$evaluateMetric{"CalculateHsMetrics"}{"MEAN_TARGET_COVERAGE"}{'threshold'} = 20;
+    }    
 }
 sub EvaluateQCParameters {
 
@@ -349,7 +360,6 @@ sub EvaluateQCParameters {
 ##Function  : Evaluate parameters to detect parameters falling below threshold 
 ##Returns   : ""
 ##Arguments : 
-##          : 
 
     my $status;
 

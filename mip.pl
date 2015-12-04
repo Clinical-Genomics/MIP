@@ -273,7 +273,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ## Eval parameter hash
 &EvalParameterHash(\%parameter, $Bin."/definitions/defineParameters.yaml");
 
-my $mipVersion = "v2.5.1";	#Set MIP version
+my $mipVersion = "v2.5.3";	#Set MIP version
 my $aligner;
 
 ## Target definition files
@@ -3939,25 +3939,28 @@ sub SampleCheck {
 		      });
     }
 
-    print $FILEHANDLE "#Create Plink .mibs per family","\n"; 
-    print $FILEHANDLE "plink ";
-    print $FILEHANDLE "--noweb ";  #No web check
-    print $FILEHANDLE "--ped ".$outFamilyDirectory."/".$familyID.".ped ";  #InFile
-    print $FILEHANDLE "--map ".$outFamilyDirectory."/".$familyID.".map ";  #InFile
-    print $FILEHANDLE "--cluster ";  #Perform IBS clustering
-    print $FILEHANDLE "--matrix ";  #Create a N x N matrix of genome-wide average IBS pairwise identities
-    print $FILEHANDLE "--out ".$outFamilyDirectory."/".$familyID, "\n\n";  #OutFile
-
-    if ( (${$scriptParameterHashRef}{'pSampleCheck'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
-
-	## Collect QC metadata info for later use                                                                                               
-	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
-		       'familyID' => ${$scriptParameterHashRef}{'familyID'},
-		       'programName' => "RelationCheck",
-		       'outDirectory' => $outFamilyDirectory,
-		       'outFileEnding' => $familyID.".mibs",
-		       'outDataType' => "infileDependent"
-		      });
+    if (scalar(@{${$scriptParameterHashRef}{'sampleIDs'}}) > 1) {  #Only perform is more than 1 sample
+	
+	print $FILEHANDLE "#Create Plink .mibs per family","\n"; 
+	print $FILEHANDLE "plink ";
+	print $FILEHANDLE "--noweb ";  #No web check
+	print $FILEHANDLE "--ped ".$outFamilyDirectory."/".$familyID.".ped ";  #InFile
+	print $FILEHANDLE "--map ".$outFamilyDirectory."/".$familyID.".map ";  #InFile
+	print $FILEHANDLE "--cluster ";  #Perform IBS clustering
+	print $FILEHANDLE "--matrix ";  #Create a N x N matrix of genome-wide average IBS pairwise identities
+	print $FILEHANDLE "--out ".$outFamilyDirectory."/".$familyID, "\n\n";  #OutFile
+	
+	if ( (${$scriptParameterHashRef}{'pSampleCheck'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+	    
+	    ## Collect QC metadata info for later use                                                                                               
+	    &SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+			   'familyID' => ${$scriptParameterHashRef}{'familyID'},
+			   'programName' => "RelationCheck",
+			   'outDirectory' => $outFamilyDirectory,
+			   'outFileEnding' => $familyID.".mibs",
+			   'outDataType' => "infileDependent"
+			  });
+	}
     }
     
     print $FILEHANDLE "wait", "\n\n";    
@@ -16048,6 +16051,10 @@ sub AddToSampleInfo {
     if (defined(${$scriptParameterHashRef}{'researchEthicalApproval'})) {
 
 	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'ResearchEthicalApproval'} = ${$scriptParameterHashRef}{'researchEthicalApproval'};
+    }
+    if (defined(${$scriptParameterHashRef}{'analysisType'})) {
+
+	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'AnalysisType'} = ${$scriptParameterHashRef}{'analysisType'};
     }
     if (defined(${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'})) {
 
