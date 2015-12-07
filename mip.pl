@@ -134,6 +134,8 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pGbR/--pGATKBaseRecalibration Recalibration of bases using GATK BaseRecalibrator/PrintReads (defaults to "1" (=yes))
                  -gbrkse/--GATKBaseReCalibrationSNPKnownSet GATK BaseReCalibration known SNP set (defaults to "dbsnp_138.b37.vcf")
                  -gbrocr/--GATKBaseReCalibrationOverClippedRead Filter out reads that are over-soft-clipped (defaults to "1" (=yes))             
+                 -gbrdiq/--GATKBaseReCalibrationDisableIndelQual Disable indel quality scores (defaults to "1" (=yes))
+                 -gbrsqq/--GATKBaseReCalibrationStaticQuantizedQuals Static binning of base quality scores (defaults to "10,20,30,40"; comma sep)
                -pGhC/--pGATKHaploTypeCaller Variant discovery using GATK HaplotypeCaller (defaults to "1" (=yes))
                  -ghckse/--GATKHaploTypeCallerSNPKnownSet GATK HaplotypeCaller dbSNP set for annotating ID columns (defaults to "dbsnp_138.b37.vcf")
                  -ghcscb/--GATKHaploTypeCallerSoftClippedBases Do not include soft clipped bases in the variant calling (defaults to "1" (=yes))
@@ -421,6 +423,8 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'pGbR|pGATKBaseRecalibration:n' => \$parameter{'pGATKBaseRecalibration'}{'value'},  #GATK BaseRecalibrator/PrintReads
 	   'gbrkse|GATKBaseReCalibrationSNPKnownSet:s' => \$parameter{'GATKBaseReCalibrationSNPKnownSet'}{'value'},  #Known SNP set to be used in GATK BaseRecalibrator/PrintReads
 	   'gbrocr|GATKBaseReCalibrationOverClippedRead:n' => \$parameter{'GATKBaseReCalibrationOverClippedRead'}{'value'},  #Filter out reads that are over-soft-clipped
+	   'gbrdiq|GATKBaseReCalibrationDisableIndelQual:n' => \$parameter{'GATKBaseReCalibrationDisableIndelQual'}{'value'},  #Disable indel quality scores
+	   'gbrsqq|GATKBaseReCalibrationStaticQuantizedQuals:s'  => \@{$parameter{'GATKBaseReCalibrationStaticQuantizedQuals'}{'value'}},  #Comma separated list
 	   'pGhC|pGATKHaploTypeCaller:n' => \$parameter{'pGATKHaploTypeCaller'}{'value'},  #GATK Haplotypecaller
 	   'ghckse|GATKHaploTypeCallerSNPKnownSet:s' => \$parameter{'GATKHaploTypeCallerSNPKnownSet'}{'value'},  #Known SNP set to be used in GATK HaplotypeCaller
 	   'ghcscb|GATKHaploTypeCallerSoftClippedBases:n' => \$parameter{'GATKHaploTypeCallerSoftClippedBases'}{'value'},  #Do not include soft clipped bases in the variant calling
@@ -6207,6 +6211,23 @@ sub GATKBaseReCalibration {
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pGATKRealigner'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{"p".$programName}{'fileEnding'};
 
+    if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
+
+	## Copies file to temporary directory.
+	&MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE,
+			    'path' => ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'exomeTargetBedInfileLists'},
+			    'tempDirectory' => $$tempDirectoryRef,
+			   });
+	print $FILEHANDLE "wait ";
+	print $FILEHANDLE "\n\n";
+
+	## Add the by GATK required ".interval" ending
+	print $FILEHANDLE "mv ";
+	print $FILEHANDLE $$tempDirectoryRef."/".${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'exomeTargetBedInfileLists'}." ";
+	print $FILEHANDLE $$tempDirectoryRef."/".${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'exomeTargetBedInfileLists'}.".intervals ";
+	print $FILEHANDLE "\n\n";
+    }
+
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
     my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, \%{$laneHashRef}, \%infilesLaneNoEnding, $$sampleIDRef);
 
@@ -6272,6 +6293,12 @@ sub GATKBaseReCalibration {
 	    print $XARGSFILEHANDLE "-nct ".${$scriptParameterHashRef}{'maximumCores'}." ";  #How many CPU threads should be allocated per data thread to running this analysis
 	    print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus	    	    
 	    print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
+
+	    if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
+
+		print $XARGSFILEHANDLE "-L ".$$tempDirectoryRef."/".${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'exomeTargetBedInfileLists'}.".intervals "; #Limit base score recalibration to targets kit target ".interval" file
+	    }
+
 	    print $XARGSFILEHANDLE "-I ".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile
 	    print $XARGSFILEHANDLE "-o ".$intermediarySampleDirectory."/".$infile.$infileEnding."_".$$contigRef.".grp ";  #Recalibration table file
 	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
@@ -6304,15 +6331,29 @@ sub GATKBaseReCalibration {
 	    print $XARGSFILEHANDLE "-l INFO ";  #Set the minimum level of logging"
 	    print $XARGSFILEHANDLE "-R ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	    print $XARGSFILEHANDLE "-nct ".${$scriptParameterHashRef}{'maximumCores'}." ";  #How many CPU threads should be allocated per data thread to running this analysis
+	    print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus
+	    print $XARGSFILEHANDLE "-BQSR ".$intermediarySampleDirectory."/".$infile.$infileEnding."_".$$contigRef.".grp ";  #Recalibration table file
 
 	    ##Extra read filters
 	    if (${$scriptParameterHashRef}{'GATKBaseReCalibrationOverClippedRead'} == 1) {
 
 		print $XARGSFILEHANDLE "-rf OverclippedRead ";  #Filter out reads that are over-soft-clipped
 	    }
-	    print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus
-	    print $XARGSFILEHANDLE "-BQSR ".$intermediarySampleDirectory."/".$infile.$infileEnding."_".$$contigRef.".grp ";  #Recalibration table file
+	    foreach my $level (@{${$scriptParameterHashRef}{'GATKBaseReCalibrationStaticQuantizedQuals'}}) {
+		
+		print $XARGSFILEHANDLE "--static_quantized_quals ".$level." ";  #Use discrete levels of quality base recalibration
+	    }
+	    if (${$scriptParameterHashRef}{'GATKBaseReCalibrationDisableIndelQual'} == 1) {
+	
+		print $XARGSFILEHANDLE "--disable_indel_quals  ";  #Do not recalibrate indel base quality (should be done for Pacbio reads)
+	    }
 	    print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
+
+	    if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
+		
+		print $XARGSFILEHANDLE "-L ".$$tempDirectoryRef."/".${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'exomeTargetBedInfileLists'}.".intervals "; #Limit base score recalibration to targets kit target .interval file
+	    }
+
 	    print $XARGSFILEHANDLE "-I ".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile per contig
 	    print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$infile.$outfileEnding."_".$$contigRef.".bam ";  #OutFile
 	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
@@ -6469,6 +6510,20 @@ sub GATKBaseReCalibration {
 		print $XARGSFILEHANDLE "-nct ".${$scriptParameterHashRef}{'maximumCores'}." ";  #How many CPU threads should be allocated per data thread to running this analysis
 		print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus
 		print $XARGSFILEHANDLE "-BQSR ".$intermediarySampleDirectory."/".$infile.$infileEnding."_".$$contigRef.".grp ";  #Recalibration table file
+
+		##Extra read filters
+		if (${$scriptParameterHashRef}{'GATKBaseReCalibrationOverClippedRead'} == 1) {
+		    
+		    print $XARGSFILEHANDLE "-rf OverclippedRead ";  #Filter out reads that are over-soft-clipped
+		}
+		foreach my $level (@{${$scriptParameterHashRef}{'GATKBaseReCalibrationStaticQuantizedQuals'}}) {
+		    
+		    print $XARGSFILEHANDLE "--static_quantized_quals ".$level." ";  #Use discrete levels of quality base recalibration
+		}
+		if (${$scriptParameterHashRef}{'GATKBaseReCalibrationDisableIndelQual'} == 1) {
+		    
+		    print $XARGSFILEHANDLE "--disable_indel_quals  ";  #Do not recalibrate indel base quality (should be done for Pacbio reads)
+		}
 		print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 		print $XARGSFILEHANDLE "-I ".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile
 		print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$infile.$outfileEnding."_".$$contigRef.".bam ";  #OutFile
