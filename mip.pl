@@ -607,7 +607,7 @@ foreach my $parameterName (keys %parameter) {
 
 
 ## Detect family constellation based on pedigree file
-$scriptParameter{'trio'} = &DetectTrio(\%scriptParameter, \%sampleInfo);
+$parameter{'trio'} = &DetectTrio(\%scriptParameter, \%sampleInfo);
 
 ## Detect number of founders (i.e. parents ) based on pedigree file
 &DetectFounders(\%scriptParameter, \%sampleInfo);
@@ -4469,7 +4469,7 @@ sub GATKVariantReCalibration {
     }
 
     ## GenotypeRefinement
-    if (${$scriptParameterHashRef}{'trio'}) {
+    if (${$parameterHashRef}{'trio'}) {
 
 	print $FILEHANDLE "## GATK CalculateGenotypePosteriors","\n\n";
 	
