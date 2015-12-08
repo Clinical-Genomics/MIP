@@ -402,6 +402,12 @@ GATKBaseReCalibrationOverClippedRead:
   dataType: SCALAR
   default: 1
   type: program
+GATKBaseReCalibrationDisableIndelQual:
+  associatedProgram:
+   - pGATKBaseRecalibration
+  dataType: SCALAR
+  default: 1
+  type: program
 ## Coverage Analysis
 pChanjoSexCheck:
   associatedProgram:
@@ -1119,6 +1125,18 @@ picardToolsMergeSamFilesPrevious:
   dataType: ARRAY
   mandatory: no
   type: path
+GATKBaseReCalibrationStaticQuantizedQuals:
+  associatedProgram:
+   - pGATKBaseRecalibration
+  elementSeparator: ,
+  dataType: ARRAY
+  mandatory: no
+  default:
+   - 10
+   - 20
+   - 30
+   - 40
+  type: program
 sambambaDepthCutOffs:
   associatedProgram:
    - pSambambaDepth
