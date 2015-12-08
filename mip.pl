@@ -2723,6 +2723,7 @@ sub SnpEff {
 		}
 		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		print $XARGSFILEHANDLE "| ";  #Pipe
+
 		if ( ($infoKey =~/AF/) && ($annotationFileCounter<scalar(keys %{${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}}) - 1) ) {
 		    
 		    print $XARGSFILEHANDLE "perl ".${$scriptParameterHashRef}{'inScriptDir'}."/vcfParser.pl ";  #Parses the vcf output

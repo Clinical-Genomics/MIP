@@ -195,6 +195,10 @@ sub DefineSnpEffAnnotations {
     $snpEffCmd{'SnpEff'}{'GERP++_RS_prediction_term'}{'File'} = q?SnpSift dbnsfp?;
     $snpEffCmd{'SnpEff'}{'GERP++_RS_prediction_term'}{'INFO'} = q?##INFO=<ID=GERP++_RS_prediction_term,Number=A,Type=String,Description="GERP RS conservation prediction term">?;
 
+    $snpEffCmd{'SnpEff'}{'MTAF'}{'File'} = q?genbank_haplogroup_\d+_\S+.vcf?;
+    $snpEffCmd{'SnpEff'}{'MTAF'}{'INFO'} = q?##INFO=<ID=MTAF,Number=A,Type=Float,Description="Allele Frequency, for each ALT allele, in the same order as listed">?;
+    $snpEffCmd{'SnpEff'}{'MTAF'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_MTAF,Number=A,Type=Float,Description="Allele Frequency, for each ALT allele, in the same order as listed">?;
+
 }
 
 sub DefineConsequenceSeverity {
@@ -643,6 +647,19 @@ sub ReadInfileVCF {
 		    if (defined($tempMaf)) {
 			
 			## Save Alternative Allele frequency info  
+			$variantLine .= $database."=".$tempMaf.";";
+			$selectedVariantLine .= $database."=".$tempMaf.";";
+		    }
+		}
+		elsif($database eq "MTAF") {
+			
+		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
+
+		    my $tempMaf = &FindAF(\@tempArray, "\\S+_MTAF=");
+
+		    if (defined($tempMaf)) {
+			
+			## Save Alternative Allele frequency info
 			$variantLine .= $database."=".$tempMaf.";";
 			$selectedVariantLine .= $database."=".$tempMaf.";";
 		    }
