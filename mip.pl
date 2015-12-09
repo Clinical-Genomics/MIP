@@ -66,7 +66,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -uve/--usePythonVirtualEnvironment Decides if MIP should try to activate a python virtual environment (Defaults to "1" (=yes))
                -pve/--pythonVirtualEnvironment Python virtualenvironment (defaults to "")
                -pvec/--pythonVirtualEnvironmentCommand Python virtualenvironment (defaults to "workon";whitespace sep)
-               -sab/--sambambaVersion Version of sambamba (defaults to "v0.5.8")
+               -sab/--sambambaVersion Version of sambamba (defaults to "v0.5.9")
 
                -ges/--genomicSet Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
                -rio/--reduceIO Run consecutive models at nodes (defaults to "1" (=yes))
@@ -275,7 +275,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ## Eval parameter hash
 &EvalParameterHash(\%parameter, $Bin."/definitions/defineParameters.yaml");
 
-my $mipVersion = "v2.5.3";	#Set MIP version
+my $mipVersion = "v2.5.4";	#Set MIP version
 my $aligner;
 
 ## Target definition files
