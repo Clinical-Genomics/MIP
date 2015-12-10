@@ -264,6 +264,14 @@ sub CreateCondaEnvironment {
 		      'softLink' => "sambamba_v".${$parameterHashRef}{'bioConda'}{'sambamba'},
 		     });
     }
+    if (! -f $parameter{'condaPath'}."/envs/".$parameter{'condaEnvironment'}."/bin/picard.jar") {
+	
+	&AddSoftLink({'parameterHashRef' => $parameterHashRef,
+		      'FILEHANDLE' => $BASHFILEHANDLE,
+		      'binary' => q?../share/picard-?.${$parameterHashRef}{'bioConda'}{'picard'}.q?-1/picard.jar?,
+		      'softLink' => "picard.jar",
+		     });
+    }
 }
 
 
