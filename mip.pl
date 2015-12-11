@@ -2661,47 +2661,38 @@ sub SnpEff {
 
 	## SnpSift Annotation
 	print $FILEHANDLE "## SnpSift Annotation","\n";
-	
-	## Create file commands for xargs
-	($xargsFileCounter, $xargsFileName) = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
-							     'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
-							     'fileName' => $fileName,
-							     'programInfoPath' => $programInfoPath,
-							     'nrCores' => $snpSiftnrCores,
-							     'xargsFileCounter' => $xargsFileCounter,
-							     'firstCommand' => "java",
-							     'memoryAllocation' => "Xmx500m",
-							     'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-							     'javaTemporaryDirectory' => $$tempDirectoryRef,
-							     'javaJar' => ${$scriptParameterHashRef}{'snpEffPath'}."/SnpSift.jar"
-							    });
-	
-	for (my $contigsCounter=0;$contigsCounter<scalar(@{$vcfParserContigsArrayRef});$contigsCounter++) {
-	    
-	    my $contigRef = \${$vcfParserContigsArrayRef}[$contigsCounter];
-	    
-	    my $annotationFileCounter = 0;
-	    for my $annotationFile (keys %{${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}}) {
+
+	my $annotationFileCounter = 0;
+
+	for my $annotationFile (keys %{${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}}) {
 		
-		my $infoKey = ${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}{$annotationFile};
-		
-		unless ($annotationFileCounter == 0) {  #Not for first file per contig
-		    
-		    ## Writes java core commands to filehandle.
-		    &JavaCore({'FILEHANDLE' => $XARGSFILEHANDLE,
-			       'memoryAllocation' => "Xmx500m",
-			       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-			       'javaTemporaryDirectory' => $$tempDirectoryRef,
-			       'javaJar' => ${$scriptParameterHashRef}{'snpEffPath'}."/SnpSift.jar"
-			      });
-		}
+	    my $infoKey = ${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}{$annotationFile};
+
+	    ## Create file commands for xargs
+	    ($xargsFileCounter, $xargsFileName) = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
+								 'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
+								 'fileName' => $fileName,
+								 'programInfoPath' => $programInfoPath,
+								 'nrCores' => $nrCores,
+								 'xargsFileCounter' => $xargsFileCounter,
+								 'firstCommand' => "java",
+								 'memoryAllocation' => "Xmx2g -XX:-UseConcMarkSweepGC",
+								 'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+								 'javaTemporaryDirectory' => $$tempDirectoryRef,
+								 'javaJar' => ${$scriptParameterHashRef}{'snpEffPath'}."/SnpSift.jar"
+								});
+	    
+	    for (my $contigsCounter=0;$contigsCounter<scalar(@{$vcfParserContigsArrayRef});$contigsCounter++) {
+	    
+		my $contigRef = \${$vcfParserContigsArrayRef}[$contigsCounter];
+	    
 		print $XARGSFILEHANDLE "annotate ";
 		
 		if (defined(${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}{$annotationFile})) {
 		    
 		    ## Apply specific INFO field output key for easier downstream processing
 		    if (defined(${$scriptParameterHashRef}{'snpSiftAnnotationOutInfoKey'}{$annotationFile})) {
-		
+			
 			print $XARGSFILEHANDLE "-name SnpSift_".${$scriptParameterHashRef}{'snpSiftAnnotationOutInfoKey'}{$annotationFile}."_ ";
 		    }
 		    else {  ## Prepend 'str' to all annotated INFO fields
@@ -2718,48 +2709,81 @@ sub SnpEff {
 		}
 		else {
 		    
-		    print $XARGSFILEHANDLE "- ";  #InStream
+		    my $annotationInfileNumber = $xargsFileCounter - 1;
+		    print $XARGSFILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf.".$annotationInfileNumber." ";  #Infile from previous round
 		    
 		}
 		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-		print $XARGSFILEHANDLE "| ";  #Pipe
+		print $XARGSFILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf.".$xargsFileCounter." ";  #Outfile
 
-		if ( ($infoKey =~/AF/) && ($annotationFileCounter<scalar(keys %{${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}}) - 1) ) {
-		    
-		    print $XARGSFILEHANDLE "perl ".${$scriptParameterHashRef}{'inScriptDir'}."/vcfParser.pl ";  #Parses the vcf output
-		    print $XARGSFILEHANDLE "- ";  #InStream
-		    print $XARGSFILEHANDLE "-writeSoftwareTag 0 ";  #Do not print vcfParser software tag
-		    print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-		    print $XARGSFILEHANDLE "| ";  #Pipe
-		}
-		$annotationFileCounter++;  #Increment counter
+		print $XARGSFILEHANDLE "\n";
 	    }
-	    if (scalar(@{${$scriptParameterHashRef}{'snpSiftDbNSFPAnnotations'}}) > 0) {
-		
-		## Writes java core commands to filehandle.
-		&JavaCore({'FILEHANDLE' => $XARGSFILEHANDLE,
-			   'memoryAllocation' => "Xmx500m",
-			   'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
-			   'javaTemporaryDirectory' => $$tempDirectoryRef,
-			   'javaJar' => ${$scriptParameterHashRef}{'snpEffPath'}."/SnpSift.jar"
-			  });
+	    $annotationFileCounter++;  #Increment counter
+	    close($XARGSFILEHANDLE);
+	}
+
+	if (scalar(@{${$scriptParameterHashRef}{'snpSiftDbNSFPAnnotations'}}) > 0) {
+	
+	    ## SnpSiftDbNSFP Annotation
+	    print $FILEHANDLE "## SnpSiftDnNSFP Annotation","\n";
+
+	    ## Create file commands for xargs
+	    ($xargsFileCounter, $xargsFileName) = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
+								 'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
+								 'fileName' => $fileName,
+								 'programInfoPath' => $programInfoPath,
+								 'nrCores' => $nrCores,
+								 'xargsFileCounter' => $xargsFileCounter,
+								 'firstCommand' => "java",
+								 'memoryAllocation' => "Xmx2g -XX:-UseConcMarkSweepGC",
+								 'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+								 'javaTemporaryDirectory' => $$tempDirectoryRef,
+								 'javaJar' => ${$scriptParameterHashRef}{'snpEffPath'}."/SnpSift.jar"
+								});
+	    
+	    my $annotationInfileNumber = $xargsFileCounter - 1;
+
+	    for (my $contigsCounter=0;$contigsCounter<scalar(@{$vcfParserContigsArrayRef});$contigsCounter++) {
+	    
+		my $contigRef = \${$vcfParserContigsArrayRef}[$contigsCounter];
 		
 		print $XARGSFILEHANDLE "dbnsfp ";
 		print $XARGSFILEHANDLE "-db ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'snpSiftDbNSFPFile'}." ";  #DbNSFP file
 		print $XARGSFILEHANDLE "-f ";  #fields to add
 		print $XARGSFILEHANDLE join(',', @{${$scriptParameterHashRef}{'snpSiftDbNSFPAnnotations'}})." ";  #Databases
-		print $XARGSFILEHANDLE "- ";  #InStream
+		print $XARGSFILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf.".$annotationInfileNumber." ";  #Infile
 		print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-		print $XARGSFILEHANDLE "| ";  #Pipe
-		
+		print $XARGSFILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf.".$xargsFileCounter." ";  #Outfile
+		print $XARGSFILEHANDLE "\n";
 	    }
-	    print $XARGSFILEHANDLE "perl ".${$scriptParameterHashRef}{'inScriptDir'}."/vcfParser.pl - ";  #Parses the vcf output
+	    close($XARGSFILEHANDLE);
+	}
+	
+	## Add INFO headers and FIX_INFO for annotations using vcfparser
+	print $FILEHANDLE "## Add INFO headers and FIX_INFO for annotations using vcfparser","\n";
+
+	## Create file commands for xargs
+	($xargsFileCounter, $xargsFileName) = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
+							     'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
+							     'fileName' => $fileName,
+							     'programInfoPath' => $programInfoPath,
+							     'nrCores' => $nrCores,
+							     'xargsFileCounter' => $xargsFileCounter,
+							     'firstCommand' => "perl",
+							    });
+	    
+	my $annotationInfileNumber = $xargsFileCounter - 1;
+
+	for (my $contigsCounter=0;$contigsCounter<scalar(@{$vcfParserContigsArrayRef});$contigsCounter++) {
+	    
+	    my $contigRef = \${$vcfParserContigsArrayRef}[$contigsCounter];
+
+	    print $XARGSFILEHANDLE ${$scriptParameterHashRef}{'inScriptDir'}."/vcfParser.pl ";  #Parses the vcf output
+	    print $XARGSFILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf.".$annotationInfileNumber." ";  #Infile
 	    print $XARGSFILEHANDLE "> ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf ";  #Outfile
 	    print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    print $XARGSFILEHANDLE "\n";
 	}
-	
-	close($XARGSFILEHANDLE);
 
 	if ($$reduceIORef eq "0") {  #Run as individual sbatch script
 
