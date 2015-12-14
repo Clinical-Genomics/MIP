@@ -364,6 +364,8 @@ sub InstallPerlCpnam {
 	print $FILEHANDLE "## Export path\n";
 	print $FILEHANDLE q?echo 'export PATH=$HOME/perl-?.${$parameterHashRef}{'perl'}.q?/:$PATH' >> ~/.bashrc?;
 	print $FILEHANDLE "\n\n";
+	print $FILEAHNDLE ". ~/.bashrc";  #Use newly installed perl
+	print $FILEAHNDLE "\n\n";
     }
 
     ## Remove tar file
@@ -383,9 +385,9 @@ sub InstallPerlCpnam {
     }
     
     ## Clear old local::lib environments
-    print $FILEHANDLE "## Clear old local::lib environments\n";
-    print $FILEHANDLE q?eval $(perl -Mlocal::lib=--deactivate-all)?;
-    print $FILEHANDLE "\n\n";
+    #print $FILEHANDLE "## Clear old local::lib environments\n";
+    #print $FILEHANDLE q?eval `perl -Mlocal::lib=--deactivate-all`?;
+    #print $FILEHANDLE "\n\n";
 
     ## Install Perl modules via cpanm
     print $FILEHANDLE "## Install cpanm\n";
