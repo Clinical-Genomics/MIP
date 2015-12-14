@@ -382,12 +382,9 @@ sub InstallPerlCpnam {
 	print $FILEHANDLE "\n\n";
     }
     
-    ## Use newly installed perl
-    print $FILEHANDLE q?eval `perl -I ~/perl-?.${$parameterHashRef}{'perl'}.q?/lib/perl5/ -Mlocal::lib=~/perl-?.${$parameterHashRef}{'perl'}.q?/` ?;
-    print $FILEHANDLE "\n\n";
-
-    ## Use newly installed perl
-    print $FILEHANDLE q?PERL5LIB=~/perl-?.${$parameterHashRef}{'perl'}.q?/lib/perl5?;
+    ## Clear old local::lib environments
+    print $FILEHANDLE "## Clear old local::lib environments\n";
+    print $FILEHANDLE q?eval $(perl -Mlocal::lib=--deactivate-all)?;
     print $FILEHANDLE "\n\n";
 
     ## Install Perl modules via cpanm
