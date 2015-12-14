@@ -92,7 +92,7 @@ $parameter{'bedTools'} = "2.25.0";
 $parameter{'vt'} = "gitRepo";
 $parameter{'plink'} = "151204";
 $parameter{'snpEff'} = "v4_2";
-$parameter{'variantEffectPredictor'} = "83";
+$parameter{'variantEffectPredictor'} = "82";
 $parameter{'vepDirectoryCache'} = $parameter{'condaPath'}.q?/envs/?.$parameter{'condaEnvironment'}.q?/ensembl-tools-release-?.$parameter{'variantEffectPredictor'}.q?/cache?;  #Cache directory;
 
 my $installVersion = "0.0.2";
@@ -382,6 +382,10 @@ sub InstallPerlCpnam {
 	print $FILEHANDLE "\n\n";
     }
     
+    ## Use newly installed perl
+    print $FILEHANDLE q?PERL5LIB=~/perl-?.${$parameterHashRef}{'perl'}.q?/lib/perl5?;
+    print $FILEHANDLE "\n\n";
+
     ## Install Perl modules via cpanm
     print $FILEHANDLE "## Install cpanm\n";
     print $FILEHANDLE q?wget -O- http://cpanmin.us | perl - -l $HOME/perl-?.${$parameterHashRef}{'perl'}.q?/bin App::cpanminus --local-lib=~/perl-?.${$parameterHashRef}{'perl'}.q?/ local::lib ?;
@@ -390,9 +394,6 @@ sub InstallPerlCpnam {
     ## Use newly installed perl
     print $FILEHANDLE q?eval `perl -I ~/perl-?.${$parameterHashRef}{'perl'}.q?/lib/perl5/ -Mlocal::lib=~/perl-?.${$parameterHashRef}{'perl'}.q?/` ?;
     print $FILEHANDLE "\n";
-
-    print $FILEHANDLE q?PERL5LIB=~/perl-?.${$parameterHashRef}{'perl'}.q?/lib/perl5?;
-    print $FILEHANDLE "\n\n";
 }
     
 
