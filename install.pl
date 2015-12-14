@@ -364,8 +364,8 @@ sub InstallPerlCpnam {
 	print $FILEHANDLE "## Export path\n";
 	print $FILEHANDLE q?echo 'export PATH=$HOME/perl-?.${$parameterHashRef}{'perl'}.q?/:$PATH' >> ~/.bashrc?;
 	print $FILEHANDLE "\n\n";
-	print $FILEAHNDLE ". ~/.bashrc";  #Use newly installed perl
-	print $FILEAHNDLE "\n\n";
+	print $FILEHANDLE ". ~/.bashrc";  #Use newly installed perl
+	print $FILEHANDLE "\n\n";
     }
 
     ## Remove tar file
