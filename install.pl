@@ -383,6 +383,10 @@ sub InstallPerlCpnam {
     }
     
     ## Use newly installed perl
+    print $FILEHANDLE q?eval `perl -I ~/perl-?.${$parameterHashRef}{'perl'}.q?/lib/perl5/ -Mlocal::lib=~/perl-?.${$parameterHashRef}{'perl'}.q?/` ?;
+    print $FILEHANDLE "\n\n";
+
+    ## Use newly installed perl
     print $FILEHANDLE q?PERL5LIB=~/perl-?.${$parameterHashRef}{'perl'}.q?/lib/perl5?;
     print $FILEHANDLE "\n\n";
 
@@ -393,6 +397,10 @@ sub InstallPerlCpnam {
 
     ## Use newly installed perl
     print $FILEHANDLE q?eval `perl -I ~/perl-?.${$parameterHashRef}{'perl'}.q?/lib/perl5/ -Mlocal::lib=~/perl-?.${$parameterHashRef}{'perl'}.q?/` ?;
+    print $FILEHANDLE "\n\n";
+
+    ## Use newly installed perl
+    print $FILEHANDLE q?PERL5LIB=~/perl-?.${$parameterHashRef}{'perl'}.q?/lib/perl5?;
     print $FILEHANDLE "\n\n";
 }
     
