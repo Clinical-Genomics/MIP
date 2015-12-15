@@ -160,12 +160,16 @@ sub CreateBashFile {
     my $fileName = $_[0];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    
+    my $pwd = cwd();
+
     ## Open batch file
-    open ($FILEHANDLE, ">",$fileName) or die("Can't write to '".$fileName."' :".$!."\n");
+    open ($FILEHANDLE, ">",$pwd."/".$fileName) or die("Can't write to '".$pwd."/".$fileName."' :".$!."\n");
 
     print $FILEHANDLE "#!/usr/bin/env bash", "\n\n";
-    return $FILEHANDLE;
+ 
+    print STDOUT "Will write install instructions to '".$pwd."/".$fileName, "'\n";
+
+   return $FILEHANDLE;
 }
 
 sub OpenLogFile {
@@ -364,7 +368,7 @@ sub InstallPerlCpnam {
 	print $FILEHANDLE "## Export path\n";
 	print $FILEHANDLE q?echo 'export PATH=$HOME/perl-?.${$parameterHashRef}{'perl'}.q?/:$PATH' >> ~/.bashrc?;
 	print $FILEHANDLE "\n\n";
-	print $FILEHANDLE ". ~/.bashrc";  #Use newly installed perl
+	print $FILEHANDLE q?export PATH=$HOME/perl-?.${$parameterHashRef}{'perl'}.q?/:$PATH.q?;  #Use newly installed perl
 	print $FILEHANDLE "\n\n";
     }
 
@@ -383,11 +387,6 @@ sub InstallPerlCpnam {
 	print $FILEHANDLE q?echo 'eval `perl -I ~/perl-?.${$parameterHashRef}{'perl'}.q?/lib/perl5/ -Mlocal::lib=~/perl-?.${$parameterHashRef}{'perl'}.q?/`' >> ~/.bash_profile ?;  #Add at start-up
 	print $FILEHANDLE "\n\n";
     }
-    
-    ## Clear old local::lib environments
-    #print $FILEHANDLE "## Clear old local::lib environments\n";
-    #print $FILEHANDLE q?eval `perl -Mlocal::lib=--deactivate-all`?;
-    #print $FILEHANDLE "\n\n";
 
     ## Install Perl modules via cpanm
     print $FILEHANDLE "## Install cpanm\n";
