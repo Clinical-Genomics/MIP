@@ -822,6 +822,11 @@ sub VariantEffectPredictor {
     print $FILEHANDLE "rm -rf VariantEffectPredictor-".${$parameterHashRef}{'variantEffectPredictor'}.".zip";;
     print $FILEHANDLE "\n\n";
 
+    ## Moving up
+    print $FILEHANDLE "## Moving back to original working directory\n";
+    print $FILEHANDLE "cd ".$pwd;  #Go back to subroutine origin
+    print $FILEHANDLE "\n\n";
+
     &DeactivateCondaEnvironment($FILEHANDLE);
 }
 
