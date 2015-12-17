@@ -273,7 +273,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ## Eval parameter hash
 &EvalParameterHash(\%parameter, $Bin."/definitions/defineParameters.yaml");
 
-my $mipVersion = "v2.5.4";	#Set MIP version
+my $mipVersion = "v2.5.5";	#Set MIP version
 my $aligner;
 
 ## Target definition files
@@ -2081,7 +2081,7 @@ sub GATKVariantEvalExome {
 	print $FILEHANDLE "-o ".${$scriptParameterHashRef}{'tempDirectory'}."/".$infile.$outfileEnding.$callType."_temp.vcf ";  #SampleID exome outFile
 	print $FILEHANDLE "-sn ".$sampleID, "\n\n";  #Include genotypes from this sample
  
-	my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pSnpEff'}{'fileEnding'};
+	my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pRankVariants'}{'fileEnding'};
 
 	## Copy file(s) to temporary directory
 	print $FILEHANDLE "## Copy file(s) to temporary directory\n";
