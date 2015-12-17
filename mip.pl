@@ -16960,6 +16960,8 @@ sub RemoveFiles {
     &CheckMandatoryArguments(\%mandatoryArgument, "RemoveFiles");
     
     my %removeProgramFile;
+
+    my $vcfParserContigsArrayRef = \@{ ${$fileInfoHashRef}{'contigsSizeOrdered'} };  #Set default
     
     ## Last modules in each processing block should have have the output data deleted
     my $lastModuleBAMCalibrationBlock = "pGATKHaploTypeCaller";
@@ -17076,25 +17078,27 @@ sub RemoveFiles {
 			    
 			    for (my $fileEndingCounter=0;$fileEndingCounter < scalar( @{ $removeProgramFile{$program}{'fileEnding'} });$fileEndingCounter++) {
 				
-				my $filePath = $inDirectory."/".$infile.$outfileEnding.$removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter];
-				
-				if ($program eq "pGATKHaploTypeCaller") {  #Special case - always collapses all files even if there is only one
+				## Process per contig
+				for (my $contigsCounter=0;$contigsCounter<scalar(@{$vcfParserContigsArrayRef});$contigsCounter++) {
 				    
-				    $filePath = $inDirectory."/".$infile.$outfileEnding."_*".$removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter];
+				    my $contigRef = \${$vcfParserContigsArrayRef}[$contigsCounter];
+
+				    my $filePath = $inDirectory."/".$infile.$outfileEnding."_".$$contigRef.$removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter];
+				    
+				    ## Detect which mostCompletePath to use depending on fileEnding
+				    my $mostCompleteRef = &DetectMostCompleteFile({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+										   'fileEndingRef' => \$removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter],
+										   'sampleIDRef' => \$sampleID,
+										   'familyIDRef' => \${$scriptParameterHashRef}{'familyID'},
+										  });
+				    
+				    ## Checks if the file is recorded as the "MostCompleteBAM|VCF". If false writes removal of file(s) to supplied filehandle
+				    &CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+								     'mostCompleteRef' => $mostCompleteRef,
+								     'filePathRef' => \$filePath,
+								     'fileEnding' => $removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter],
+								    });
 				}
-				## Detect which mostCompletePath to use depending on fileEnding
-				my $mostCompleteRef = &DetectMostCompleteFile({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
-									       'fileEndingRef' => \$removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter],
-									       'sampleIDRef' => \$sampleID,
-									       'familyIDRef' => \${$scriptParameterHashRef}{'familyID'},
-									      });
-				
-				## Checks if the file is recorded as the "MostCompleteBAM|VCF". If false writes removal of file(s) to supplied filehandle
-				&CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
-								 'mostCompleteRef' => $mostCompleteRef,
-								 'filePathRef' => \$filePath,
-								 'fileEnding' => $removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter],
-								});
 			    }
 			}
 		    }
@@ -17108,27 +17112,32 @@ sub RemoveFiles {
 				
 				for (my $fileEndingCounter=0;$fileEndingCounter < scalar( @{ $removeProgramFile{$program}{'fileEnding'} });$fileEndingCounter++) {
 				    
-				    my $filePath = $inDirectory."/".$infile.$outfileEnding.$removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter];
+				    ## Process per contig
+				    for (my $contigsCounter=0;$contigsCounter<scalar(@{$vcfParserContigsArrayRef});$contigsCounter++) {
 				    
-				    if ($program eq "pGATKHaploTypeCaller") {  #Special case - always collapses all files even if there is only one
+					my $contigRef = \${$vcfParserContigsArrayRef}[$contigsCounter];
+					my $filePath = $inDirectory."/".$infile.$outfileEnding."_".$$contigRef.$removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter];
+				    
+					if ($program eq "pGATKHaploTypeCaller") {  #Special case - always collapses all files even if there is only one
+					    
+					    my $lanes = join("",@{${$laneHashRef}{$sampleID}});  #Extract lanes
+					    $filePath = $inDirectory."/".$sampleID."_lanes_".$lanes.$outfileEnding."_*.vcf";
+					    $infileCounter = scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} }); ##Perform only once - all infiles are merged to single vcf
+					}
+					## Detect which mostCompletePath to use depending on fileEnding
+					my $mostCompleteRef = &DetectMostCompleteFile({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+										       'fileEndingRef' => \$removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter],
+										       'sampleIDRef' => \$sampleID,
+										       'familyIDRef' => \${$scriptParameterHashRef}{'familyID'},
+										      });
 					
-					my $lanes = join("",@{${$laneHashRef}{$sampleID}});  #Extract lanes
-					$filePath = $inDirectory."/".$sampleID."_lanes_".$lanes.$outfileEnding."_*.vcf";
-					$infileCounter = scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} }); ##Perform only once - all infiles are merged to single vcf
+					## Checks if the file is recorded as the "MostCompleteBAM|VCF". If false writes removal of file(s) to supplied filehandle
+					&CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
+									 'mostCompleteRef' => $mostCompleteRef,
+									 'filePathRef' => \$filePath,
+									 'fileEnding' => $removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter],
+									});		    
 				    }
-				    ## Detect which mostCompletePath to use depending on fileEnding
-				    my $mostCompleteRef = &DetectMostCompleteFile({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
-										   'fileEndingRef' => \$removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter],
-										   'sampleIDRef' => \$sampleID,
-										   'familyIDRef' => \${$scriptParameterHashRef}{'familyID'},
-									      });
-				    
-				    ## Checks if the file is recorded as the "MostCompleteBAM|VCF". If false writes removal of file(s) to supplied filehandle
-				    &CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
-								     'mostCompleteRef' => $mostCompleteRef,
-								     'filePathRef' => \$filePath,
-								     'fileEnding' => $removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter],
-								    });		    
 				}
 			    }
 			}
