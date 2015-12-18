@@ -275,7 +275,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ## Eval parameter hash
 &EvalParameterHash(\%parameter, $Bin."/definitions/defineParameters.yaml");
 
-my $mipVersion = "v2.5.5";	#Set MIP version
+my $mipVersion = "v2.5.6";	#Set MIP version
 my $aligner;
 
 ## Target definition files
@@ -17118,10 +17118,14 @@ sub RemoveFiles {
 					my $contigRef = \${$vcfParserContigsArrayRef}[$contigsCounter];
 					my $filePath = $inDirectory."/".$infile.$outfileEnding."_".$$contigRef.$removeProgramFile{$program}{'fileEnding'}[$fileEndingCounter];
 				    
+					if ( ($program eq "pPicardToolsMergeSamFiles") && (scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} }) < 2) ) {
+					    
+					    next;  #Skip as these files are not created since there is no merge for this sampleID
+					}
 					if ($program eq "pGATKHaploTypeCaller") {  #Special case - always collapses all files even if there is only one
 					    
 					    my $lanes = join("",@{${$laneHashRef}{$sampleID}});  #Extract lanes
-					    $filePath = $inDirectory."/".$sampleID."_lanes_".$lanes.$outfileEnding."_*.vcf";
+					    $filePath = $inDirectory."/".$sampleID."_lanes_".$lanes.$outfileEnding."_".$$contigRef.".vcf";
 					    $infileCounter = scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} }); ##Perform only once - all infiles are merged to single vcf
 					}
 					## Detect which mostCompletePath to use depending on fileEnding
