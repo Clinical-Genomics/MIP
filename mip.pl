@@ -213,6 +213,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -qccref/--QCCollectRegExpFile Regular expression file containing the regular expression to be used for each program (defaults to "qc_regExp_v1.4.yaml")
                -pReM/--pRemoveRedundantFiles Generating sbatch script for deletion of redundant files (defaults to "1" (=yes);Note: Must be submitted manually to SLURM)
                -pArS/--pAnalysisRunStatus Sets the analysis run status flag to finished in sampleInfoFile (defaults to "1" (=yes))
+               -pSac/--pSacct Generating sbatch script for SLURM info on each submitted job (defaults to "1" (=yes);Note: Must be submitted manually to SLURM)
 	   };
 
     sub EvalModules {
@@ -496,6 +497,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'qccref|QCCollectRegExpFile:s' => \$parameter{'QCCollectRegExpFile'}{'value'},  #Regular expression yaml file
 	   'pReM|pRemoveRedundantFiles:n' => \$parameter{'pRemoveRedundantFiles'}{'value'},
 	   'pArS|pAnalysisRunStatus:n' => \$parameter{'pAnalysisRunStatus'}{'value'},  #AnalysisRunStatus change flag in sampleInfo file if allowed to execute
+	   'pSac|pSacct:n' => \$parameter{'pSacct'}{'value'},
     );
 
 ## Change relative path to absolute path for certain parameters 
@@ -1404,6 +1406,18 @@ if ($scriptParameter{'pAnalysisRunStatus'} > 0) {
     &AnalysisRunStatus(\%parameter, \%scriptParameter, \%sampleInfo, $scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH", "AnalysisRunStatus");
 }
 
+if ( ($scriptParameter{'pSacct'} > 0) && ($scriptParameter{'dryRunAll'} == 0) ) {  #Sbatch generation of sacct jobID data info
+
+    $logger->info("[Sacct]\n");
+
+    &Sacct({'parameterHashRef' => \%parameter,
+	    'scriptParameterHashRef' => \%scriptParameter,
+	    'jobIDHashRef' => \%jobID,
+	    'alignerRef' => \$scriptParameter{'aligner'}, 
+	    'programName' => "Sacct",
+	   });
+}
+
 #Write QC for programs used in analysis                                                                                                                         
 if ($scriptParameter{'sampleInfoFile'} ne 0) {#Write SampleInfo to yaml file
     
@@ -1415,6 +1429,64 @@ if ($scriptParameter{'sampleInfoFile'} ne 0) {#Write SampleInfo to yaml file
 ######################
 ####SubRoutines#######
 ######################
+
+sub Sacct {
+
+##Sacct
+    
+##Function : Output SLURM info on each job via Sacct command
+##Returns  : ""
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $jobIDHashRef, $familyID, $aligner, $programName
+##         : $parameterHashRef       => The parameter hash {REF}
+##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $jobIDHashRef           => The jobID hash {REF}
+##         : $familyID               => The familyID
+##         : $aligner                => The aligner used in the analysis
+##         : $programName            => The program name
+
+    my ($argHashRef) = @_;
+    
+    my %default = ('familyID' => ${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+    
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
+    my $familyID = ${$argHashRef}{'familyID'};
+    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $programName = ${$argHashRef}{'programName'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'jobIDHashRef' => ${$jobIDHashRef}{'Pan'}{'Pan'},
+			     'alignerRef' => $$alignerRef,
+			     'programName' => $programName,
+	);
+     &CheckMandatoryArguments(\%mandatoryArgument, "Sacct");
+
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $time = 1;
+
+    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    my ($fileName) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+					    'FILEHANDLE' => $FILEHANDLE,
+					    'directoryID' => $familyID,
+					    'programName' => $programName,
+					    'programDirectory' => $$alignerRef,
+					   });
+
+    print $FILEHANDLE "sacct --format=jobid,jobname%50,account,partition,alloccpus,TotalCPU,elapsed,start,end,state,exitcode -j ";
+
+    print $FILEHANDLE join(',', @{${$jobIDHashRef}{'Pan'}{'Pan'}});
+    print $FILEHANDLE "\n";
+
+    close($FILEHANDLE);
+}
+
 
 sub AnalysisRunStatus { 
 
@@ -11145,6 +11217,8 @@ sub FIDSubmitJob {
     $logger->info("Sbatch script submitted, job id: $jobID\n");
     $logger->info("To check status of job, please run \'squeue -j $jobID\'\n");
     $logger->info("To cancel job, please run \'scancel $jobID\'\n");
+
+    push( @{ ${$jobIDHashRef}{"Pan"}{"Pan"} }, $jobID);  #Add jobID to hash for sacct processing downstream
 }
 
 

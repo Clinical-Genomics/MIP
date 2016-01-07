@@ -1065,6 +1065,15 @@ pAnalysisRunStatus:
   default: 1
   fileEnding: nofileEnding
   type: program
+## Sacct
+pSacct:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileEnding: nofileEnding
+  type: program
 ## HumanGenomeReference
 humanGenomeReference:
   associatedProgram:
