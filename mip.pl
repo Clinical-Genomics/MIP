@@ -109,7 +109,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                ###CoverageCalculations
                -pChS/--pChanjoSexCheck Predicts gender from sex chromosome coverage (defaults to "1")
                -pSdt/--pSambambaDepth Sambamba depth coverage analysis (defaults to "1" (=yes))
-                 -sdtcut/--sambambaDepthCutOffs Read depth cutoff (comma sep; defaults to "10", "20")
+                 -sdtcut/--sambambaDepthCutOffs Read depth cutoff (comma sep; defaults to "10", "20", "30", "50", "100")
                  -sdtbed/--sambambaDepthBed Reference database (defaults to "CCDS.current.bed")
                  -sdtbaq/--sambambaDepthBaseQuality Do not count bases with lower base quality (defaults to "10")
                  -stdmaq/--sambambaDepthMappingQuality  Do not count reads with lower mapping quality (defaults to "10")
@@ -401,7 +401,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'pSmd|pSambambaMarkduplicates:s' => \$parameter{'pSambambaMarkduplicates'}{'value'},  #Sambamba Markduplicates
 	   'pChS|pChanjoSexCheck:n' => \$parameter{'pChanjoSexCheck'}{'value'},   #Chanjo coverage analysis on sex chromosomes
 	   'pSdt|pSambambaDepth:n' => \$parameter{'pSambambaDepth'}{'value'},   #Chanjo coverage analysis
-	   'sdtcut|sambambaDepthCutOffs:n' => \$parameter{'sambambaDepthCutOffs'}{'value'},   # Cutoff used for completeness
+	   'sdtcut|sambambaDepthCutOffs:s' => \@{$parameter{'sambambaDepthCutOffs'}{'value'}},   # Cutoff used for completeness
 	   'sdtbed|sambambaDepthBed:s' => \$parameter{'sambambaDepthBed'}{'value'},
 	   'sdtbaq|sambambaDepthBaseQuality:n' => \$parameter{'sambambaDepthBaseQuality'}{'value'},
 	   'sdtmaq|sambambaDepthMappingQuality:n' => \$parameter{'sambambaDepthMappingQuality'}{'value'},
@@ -1485,6 +1485,17 @@ sub Sacct {
     print $FILEHANDLE "\n";
 
     close($FILEHANDLE);
+
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+	
+	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		       'jobIDHashRef' => \%jobID,
+		       'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+		       'dependencies' => 7, 
+		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
+		       'sbatchFileName' => $fileName
+		      });
+    }
 }
 
 
@@ -12670,6 +12681,8 @@ sub WriteCMDMipLog {
 
     my $cmdLine = $$scriptRef." ";
 
+    my @noWrite = ("MIP", "bwaBuildReference", "pBAMCalibrationAndGTBlock", "pVariantAnnotationBlock");
+
     foreach my $orderParameterElement (@{$orderParametersArrayRef}) {
 	
 	if (defined(${$scriptParameterHashRef}{$orderParameterElement}) ) {
@@ -12678,7 +12691,9 @@ sub WriteCMDMipLog {
 	    }
 	    else {
 
-		if ( (exists(${$parameterHashRef}{$orderParameterElement}{'dataType'})) && (${$parameterHashRef}{$orderParameterElement}{'dataType'} eq "ARRAY")) {  #Array reference
+		if ( ( any {$_ eq $orderParameterElement} @noWrite ) ) {  #If element is part of array - do nothing
+		}
+		elsif ( (exists(${$parameterHashRef}{$orderParameterElement}{'dataType'})) && (${$parameterHashRef}{$orderParameterElement}{'dataType'} eq "ARRAY")) {  #Array reference
 
 			my $separator = ${$parameterHashRef}{$orderParameterElement}{'elementSeparator'};
 			$cmdLine .= "-".$orderParameterElement." ".join($separator, @{${$scriptParameterHashRef}{$orderParameterElement}})." ";
@@ -16098,7 +16113,7 @@ sub UpdateToAbsolutePath {
 
 ##UpdateToAbsolutePath
 
-##Function : Change relative path to absolute pathfor certain parameterNames 
+##Function : Change relative path to absolute path for certain parameterNames 
 ##Returns  : ""
 ##Arguments: $parameterHashRef
 ##         : $parameterHashRef => The parameter hash {REF}
@@ -16110,12 +16125,20 @@ sub UpdateToAbsolutePath {
     foreach my $parameterName (@parameterNames) {
 	
 	if (ref(${$parameterHashRef}{$parameterName}{'value'}) eq "ARRAY") {  #Array reference
-	    
-	    for(my $elementCounter=0;$elementCounter<scalar(@{${$parameterHashRef}{$parameterName}{'value'}});$elementCounter++) {
+
+	    for (my $elementCounter=0;$elementCounter<scalar(@{${$parameterHashRef}{$parameterName}{'value'}});$elementCounter++) {
 
 		if ( (defined(${$parameterHashRef}{$parameterName}{'value'})) && (${$parameterHashRef}{$parameterName}{'value'}[$elementCounter] ne "nocmdinput") ) {
 		  
-		    ${$parameterHashRef}{$parameterName}{'value'}[$elementCounter] = &FindAbsolutePath(${$parameterHashRef}{$parameterName}{'value'}[$elementCounter], $parameterName);
+		    my $elementSeparatorRef = \${$parameterHashRef}{$parameterName}{'elementSeparator'};  #Find what seperates array
+		    my @seperateElements = split($$elementSeparatorRef, ${$parameterHashRef}{$parameterName}{'value'}[$elementCounter]);  #Split into seperate elements if written in 1 string on cmd
+		    my @absolutePathElements;
+
+		    foreach my $element (@seperateElements) {
+
+			push(@absolutePathElements, &FindAbsolutePath($element, $parameterName));  #Add absolute path to array
+		    }
+		    ${$parameterHashRef}{$parameterName}{'value'}[$elementCounter] = join(",", @absolutePathElements);  #Replace original input with abolute path entries
 		}
 	    }
 	}

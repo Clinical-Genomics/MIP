@@ -1069,7 +1069,7 @@ pAnalysisRunStatus:
 pSacct:
   associatedProgram:
    - MIP
-  chain: MAIN
+  chain: ALL
   dataType: SCALAR
   default: 1
   fileEnding: nofileEnding
