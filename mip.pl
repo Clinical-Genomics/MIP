@@ -3557,6 +3557,11 @@ sub VariantEffectPredictor {
 	print $XARGSFILEHANDLE "--offline ";  #Use installed assembly 
 	print $XARGSFILEHANDLE "--chr ".$$contigRef." ";
 
+	if ($$contigRef =~ /MT|M/) {
+
+	    print $XARGSFILEHANDLE "--plugin UpDownDistance,10,10 ";  #Special case for mitochondrial contig annotation
+	}
+
 	for (my $vepFeatureCounter=0;$vepFeatureCounter<scalar(@{${$scriptParameterHashRef}{'vepFeatures'}});$vepFeatureCounter++) {
 
 	    print $XARGSFILEHANDLE "--".${$scriptParameterHashRef}{'vepFeatures'}[$vepFeatureCounter]." ";  #Add VEP features to the output.
