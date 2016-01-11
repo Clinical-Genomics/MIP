@@ -25,9 +25,10 @@ BEGIN {
            -bet/--bedTools Set the bedtools version (Default: "2.25.0")
            -vt/--vt Set the vt version (Default: "0.57")
            -plk/--plink  Set the plink version (Default: "151117")
-           -vep/--variantEffectPredictor Set the VEP version (Default: "82")
+           -vep/--variantEffectPredictor Set the VEP version (Default: "83")
 	   -vepc/--vepDirectoryCache Specify the cache directory to use (whole path; defaults to "~/miniconda/envs/condaEnvironment/ensembl-tools-release-variantEffectPredictorVersion/cache")
-           -pbc/--preferBioConda Bioconda will used for overlapping shell and biconda installlations (Default: 1 (=yes))
+           -vepp/--variantEffectPredictorPlugin Supply a comma separated list of VEP plugins (Default: "UpDownDistance")
+           -pbc/--preferBioConda Bioconda will used for overlapping shell and biconda installations (Default: 1 (=yes))
            -ppd/--printParameterDefaults Print the parameter defaults
            -u/--update Always install program (Default: 1 (=yes))
            -h/--help Display this help message   
@@ -92,8 +93,9 @@ $parameter{'bedTools'} = "2.25.0";
 $parameter{'vt'} = "gitRepo";
 $parameter{'plink'} = "151204";
 $parameter{'snpEff'} = "v4_2";
-$parameter{'variantEffectPredictor'} = "82";
+$parameter{'variantEffectPredictor'} = "83";
 $parameter{'vepDirectoryCache'} = $parameter{'condaPath'}.q?/envs/?.$parameter{'condaEnvironment'}.q?/ensembl-tools-release-?.$parameter{'variantEffectPredictor'}.q?/cache?;  #Cache directory;
+$parameter{'variantEffectPredictorPlugin'} = "UpDownDistance";
 
 my $installVersion = "0.0.2";
 
@@ -111,6 +113,7 @@ GetOptions('env|condaEnvironment:s'  => \$parameter{'condaEnvironment'},
 	   'plk|plink:s'  => \$parameter{'plink'},
 	   'vep|variantEffectPredictor:s'  => \$parameter{'variantEffectPredictor'},
 	   'vepc|vepDirectoryCache:s'  => \$parameter{'vepDirectoryCache'},  #path to vep cache dir
+	   'vepp|variantEffectPredictorPlugin:s'  => \$parameter{'variantEffectPredictorPlugin'},  #Comma sep string
 	   'pbc|preferBioConda:s'  => \$parameter{'preferBioConda'},  # Bioconda will used for overlapping shell and biconda installlations
 	   'ppd|printParameterDefaults'  => sub { &PrintParameters(\%parameter); exit;},  #Display parameter defaults
 	   'u|update:n' => \$parameter{'update'},
@@ -808,7 +811,8 @@ sub VariantEffectPredictor {
     ## Install VEP
     print $FILEHANDLE "## Install VEP\n";
     print $FILEHANDLE "perl INSTALL.pl ";
-    print $FILEHANDLE "--AUTO alcf ";  #a (API), l (FAIDX/htslib), c (cache), f (FASTA), p (plugins)
+    print $FILEHANDLE "--AUTO alcfp ";  #a (API), l (FAIDX/htslib), c (cache), f (FASTA), p (plugins)
+    print $FILEHANDLE "-g ".$parameter{'variantEffectPredictorPlugin'}." ";  #Plugins 
     print $FILEHANDLE "-c ".${$parameterHashRef}{'vepDirectoryCache'}." ";  #Cache directory
     print $FILEHANDLE "-s homo_sapiens ";
     print $FILEHANDLE "--ASSEMBLY GRCh37 ";
