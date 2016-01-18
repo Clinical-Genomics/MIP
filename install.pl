@@ -10,6 +10,7 @@ use IO::File;
 use Cwd;
 use FindBin qw($Bin); #Find directory of script
 use vars qw($USAGE);
+use IPC::Cmd qw[can_run run];
 
 BEGIN {
     $USAGE =
@@ -51,7 +52,7 @@ $parameter{'bioConda'}{'bwa'} = "0.7.12";
 $parameter{'bioConda'}{'fastqc'} = "0.11.4";
 $parameter{'bioConda'}{'samtools'} = "1.2";
 $parameter{'bioConda'}{'bcftools'} = "1.2";
-#$parameter{'bioConda'}{'snpeff'} = "4.1";
+$parameter{'bioConda'}{'snpeff'} = "4.1";
 $parameter{'bioConda'}{'picard'} = "1.141";
 $parameter{'bioConda'}{'mosaik'} = "2.2.26";
 $parameter{'bioConda'}{'htslib'} = "1.2.1";
@@ -217,6 +218,18 @@ sub CreateConda {
     my $parameterHashRef = $_[0];
     my $FILEHANDLE = $_[1];
 
+    my $program = "conda";
+
+    if(can_run($program)) {  #IPC::Cmd
+	
+	print STDERR "ProgramCheck: ".$program." installed", "\n";
+    }
+    else {
+	
+	print STDERR "Could not detect ".$program." in your PATH\n";
+	exit 1;
+    }
+
     ## Check Conda path
     if (! -d $parameter{'condaPath'}) {
 
@@ -230,7 +243,6 @@ sub CreateConda {
     print $FILEHANDLE "### Update Conda\n";
     print $FILEHANDLE "conda update -y conda ";
     print $FILEHANDLE "\n\n";
-
 }
 
 sub CreateCondaEnvironment {
@@ -277,6 +289,22 @@ sub CreateCondaEnvironment {
 		      'FILEHANDLE' => $BASHFILEHANDLE,
 		      'binary' => q?../share/picard-?.${$parameterHashRef}{'bioConda'}{'picard'}.q?-1/picard.jar?,
 		      'softLink' => "picard.jar",
+		     });
+    }
+    if (! -f $parameter{'condaPath'}."/envs/".$parameter{'condaEnvironment'}."/bin/snpEff.jar") {
+	
+	&AddSoftLink({'parameterHashRef' => $parameterHashRef,
+		      'FILEHANDLE' => $BASHFILEHANDLE,
+		      'binary' => q?../share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.q?l-2/snpEff.jar?,
+		      'softLink' => "snpEff.jar",
+		     });
+    }
+    if (! -f $parameter{'condaPath'}."/envs/".$parameter{'condaEnvironment'}."/bin/SnpSift.jar ") {
+	
+	&AddSoftLink({'parameterHashRef' => $parameterHashRef,
+		      'FILEHANDLE' => $BASHFILEHANDLE,
+		      'binary' => q?../share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.q?l-2/SnpSift.jar?,
+		      'softLink' => "SnpSift.jar",
 		     });
     }
 }
