@@ -275,38 +275,29 @@ sub CreateCondaEnvironment {
     }
     print $FILEHANDLE "\n\n";
 
-    if (! -f $parameter{'condaPath'}."/envs/".$parameter{'condaEnvironment'}."/bin/sambamba_v".${$parameterHashRef}{'bioConda'}{'sambamba'}) {
-	
-	&AddSoftLink({'parameterHashRef' => $parameterHashRef,
-		      'FILEHANDLE' => $BASHFILEHANDLE,
-		      'binary' => "sambamba",
-		      'softLink' => "sambamba_v".${$parameterHashRef}{'bioConda'}{'sambamba'},
-		     });
-    }
-    if (! -f $parameter{'condaPath'}."/envs/".$parameter{'condaEnvironment'}."/bin/picard.jar") {
-	
-	&AddSoftLink({'parameterHashRef' => $parameterHashRef,
-		      'FILEHANDLE' => $BASHFILEHANDLE,
-		      'binary' => q?../share/picard-?.${$parameterHashRef}{'bioConda'}{'picard'}.q?-1/picard.jar?,
-		      'softLink' => "picard.jar",
-		     });
-    }
-    if (! -f $parameter{'condaPath'}."/envs/".$parameter{'condaEnvironment'}."/bin/snpEff.jar") {
-	
-	&AddSoftLink({'parameterHashRef' => $parameterHashRef,
-		      'FILEHANDLE' => $BASHFILEHANDLE,
-		      'binary' => q?../share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.q?l-2/snpEff.jar?,
-		      'softLink' => "snpEff.jar",
-		     });
-    }
-    if (! -f $parameter{'condaPath'}."/envs/".$parameter{'condaEnvironment'}."/bin/SnpSift.jar ") {
-	
-	&AddSoftLink({'parameterHashRef' => $parameterHashRef,
-		      'FILEHANDLE' => $BASHFILEHANDLE,
-		      'binary' => q?../share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.q?l-2/SnpSift.jar?,
-		      'softLink' => "SnpSift.jar",
-		     });
-    }
+    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
+		  'FILEHANDLE' => $BASHFILEHANDLE,
+		  'binary' => "sambamba",
+		  'softLink' => "sambamba_v".${$parameterHashRef}{'bioConda'}{'sambamba'},
+		 });
+    
+    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
+		  'FILEHANDLE' => $BASHFILEHANDLE,
+		  'binary' => q?../share/picard-?.${$parameterHashRef}{'bioConda'}{'picard'}.q?-1/picard.jar?,
+		  'softLink' => "picard.jar",
+		 });
+    
+    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
+		  'FILEHANDLE' => $BASHFILEHANDLE,
+		  'binary' => q?../share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.q?l-2/snpEff.jar?,
+		  'softLink' => "snpEff.jar",
+		 });
+    
+    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
+		  'FILEHANDLE' => $BASHFILEHANDLE,
+		  'binary' => q?../share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.q?l-2/SnpSift.jar?,
+		  'softLink' => "SnpSift.jar",
+		 });
 }
 
 
@@ -520,14 +511,11 @@ sub Sambamba {
     print $FILEHANDLE q?sambamba_v?.${$parameterHashRef}{'sambamba'}.q? ?.$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/bin/?;
     print $FILEHANDLE "\n\n";
 
-    if (! -f $parameter{'condaPath'}."/envs/".$parameter{'condaEnvironment'}."/bin/sambamba") {
-	
-	&AddSoftLink({'parameterHashRef' => $parameterHashRef,
-		      'FILEHANDLE' => $BASHFILEHANDLE,
-		      'binary' => "sambamba_v".${$parameterHashRef}{'bioConda'}{'sambamba'},
-		      'softLink' => "sambamba",
-		     });
-    }
+    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
+		  'FILEHANDLE' => $BASHFILEHANDLE,
+		  'binary' => "sambamba_v".${$parameterHashRef}{'bioConda'}{'sambamba'},
+		  'softLink' => "sambamba",
+		 });
 
     &CleanUpModuleInstall($FILEHANDLE, $pwd);
 
@@ -987,6 +975,12 @@ sub AddSoftLink {
     print $FILEHANDLE "## Add softlink\n";
     print $FILEHANDLE "cd ".$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/bin/?;
     print $FILEHANDLE "\n";
+
+    if (-f $parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/bin/?.$softLink) {  #If already exists remove to recreate if software version changed
+
+	 print $FILEHANDLE "rm ".$softLink;
+	 print $FILEHANDLE "\n";
+    }
 
     print $FILEHANDLE "ln -s ";
     print $FILEHANDLE $binary.q? ?.$softLink;
