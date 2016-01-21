@@ -50,12 +50,12 @@ $parameter{'condaPath'} = $ENV{HOME}."/miniconda";
 
 $parameter{'bioConda'}{'bwa'} = "0.7.12";
 $parameter{'bioConda'}{'fastqc'} = "0.11.4";
-$parameter{'bioConda'}{'samtools'} = "1.2";
-$parameter{'bioConda'}{'bcftools'} = "1.2";
+$parameter{'bioConda'}{'samtools'} = "1.3";
+$parameter{'bioConda'}{'bcftools'} = "1.3";
 $parameter{'bioConda'}{'snpeff'} = "4.1";
 $parameter{'bioConda'}{'picard'} = "1.141";
 $parameter{'bioConda'}{'mosaik'} = "2.2.26";
-$parameter{'bioConda'}{'htslib'} = "1.2.1";
+$parameter{'bioConda'}{'htslib'} = "1.3";
 $parameter{'bioConda'}{'bedtools'} = "2.25.0";
 $parameter{'bioConda'}{'vt'} = "2015.11.10";
 $parameter{'bioConda'}{'sambamba'} = "0.5.9";

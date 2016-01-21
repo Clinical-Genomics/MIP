@@ -1015,7 +1015,7 @@ usePythonVirtualEnvironment:
    - pGATKVariantRecalibration
    - pRankVariants
   dataType: SCALAR
-  default: 1
+  default: 0
   type: program
 pythonVirtualEnvironment:
   associatedProgram:

@@ -63,7 +63,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -tmd/--tempDirectory Set the temporary directory for all programs (defaults to "/scratch/SLURM_JOB_ID";supply whole path)
                -jul/--javaUseLargePages Use large page memory. (-XX, hence option considered not stable and are subject to change without notice, but can be consiered when faced with Java Runtime Environment Memory issues)
                -nrm/--nodeRamMemory The RAM memory size of the node(s) in GigaBytes (Defaults to 24)
-               -uve/--usePythonVirtualEnvironment Decides if MIP should try to activate a python virtual environment (Defaults to "1" (=yes))
+               -uve/--usePythonVirtualEnvironment Decides if MIP should try to activate a python virtual environment (Defaults to "0" (=no))
                -pve/--pythonVirtualEnvironment Python virtualenvironment (defaults to "")
                -pvec/--pythonVirtualEnvironmentCommand Python virtualenvironment (defaults to "workon";whitespace sep)
                -sab/--sambambaVersion Version of sambamba (defaults to "v0.5.9")
@@ -6210,6 +6210,7 @@ sub PicardToolsCollectMultipleMetrics {
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
 	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		       'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 		       'jobIDHashRef' => \%{$jobIDHashRef},
 		       'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
 		       'sampleID' => $$sampleIDRef,
