@@ -5155,6 +5155,12 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "> ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.".bcf ";  #Outfile
 	print $FILEHANDLE "\n\n";
 	
+	print $FILEHANDLE "## Index bcf","\n";
+	print $FILEHANDLE "bcftools ";
+	print $FILEHANDLE "index ";  #VCF/BCF conversion
+	print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.".bcf ";  #Outfile
+	print $FILEHANDLE "\n\n";
+	
 	## Copies file from temporary directory.
 	print $FILEHANDLE "## Copy file from temporary directory\n";
 	&MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.".bcf*",
