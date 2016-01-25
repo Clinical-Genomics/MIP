@@ -12,23 +12,22 @@ use Pod::Text;
 use Getopt::Long;
 use POSIX;
 use IO::File;
-use DateTime;
 use Cwd 'abs_path';  #Export absolute path function
 use FindBin qw($Bin);  #Find directory of script
-use List::MoreUtils qw(any);
 use IPC::Cmd qw[can_run run];
+use vars qw($USAGE);
+
 
 ## Third party module(s)
 use YAML;
 use Log::Log4perl;
-
-use vars qw($USAGE);
-
+use DateTime;
+use List::MoreUtils qw(any);
 
 BEGIN {
 
 
-    my @modules = ("YAML", "Log::Log4perl", "List::MoreUtils", "DateTime::Format::ISO8601", "DateTime::Format::HTTP", "DateTime::Format::Mail");	
+    my @modules = ("YAML", "Log::Log4perl", "DateTime", "List::MoreUtils", "DateTime::Format::ISO8601", "DateTime::Format::HTTP", "DateTime::Format::Mail");	
 
     ## Evaluate that all modules required are installed
     &EvalModules(\@modules);
@@ -726,7 +725,7 @@ foreach my $parameterInfo (@broadcasts) {
 ### Cosmid references
 ## Defines the Cosmid manager hash keys and populates it from arguments
 &DefineSupportedCosmidReferences(\%supportedCosmidReference, "humanGenomeReference", "decoy", "5", \$fileInfo{'humanGenomeReferenceVersion'}, "compressed");
-&DefineSupportedCosmidReferences(\%supportedCosmidReference, "chanjoBuildDb", "ccds", "latest", \$fileInfo{'humanGenomeReferenceVersion'}, "unCompressed");
+&DefineSupportedCosmidReferences(\%supportedCosmidReference, "sambambaDepthBed", "ccds", "latest", \$fileInfo{'humanGenomeReferenceVersion'}, "unCompressed");
 &DefineSupportedCosmidReferences(\%supportedCosmidReference, "GATKReAlignerINDELKnownSet1", "indels", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'}, \$fileInfo{'humanGenomeReferenceVersion'}, "unCompressed");
 &DefineSupportedCosmidReferences(\%supportedCosmidReference, "GATKReAlignerINDELKnownSet2", "mills", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'}, \$fileInfo{'humanGenomeReferenceVersion'}, "unCompressed");
 &DefineSupportedCosmidReferences(\%supportedCosmidReference, "GATKBaseReCalibrationSNPKnownSet", "dbsnp", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'}, \$fileInfo{'humanGenomeReferenceVersion'}, "unCompressed");
@@ -1737,7 +1736,7 @@ sub AnalysisRunStatus {
 
 ##AnalysisRunStatus
     
-##Function : Execute last in MAIN chain and sets analysis run status flag to finished.
+##Function : Execute last in MAIN chain, tests that all recorded files exists, have a file sixe greater than zero, checks QC-metrics for PASS or FAIL and sets analysis run status flag to finished.
 ##Returns  : ""
 ##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $callType, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
@@ -1847,6 +1846,17 @@ sub AnalysisRunStatus {
 	print $FILEHANDLE q?fi?, "\n\n";
 	
     }
+    ## Test integrity of vcf data keys in header and body using
+    print $FILEHANDLE q?perl ?.$Bin.q?/test.pl ?;
+    print $FILEHANDLE q?-i ?.${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Clinical'}{'Path'}.q? ?;
+    print $FILEHANDLE q?-c ?.${$scriptParameterHashRef}{'writeConfigFile'}.q? ?;
+    print $FILEHANDLE "\n\n";
+
+    print $FILEHANDLE q?perl ?.$Bin.q?/test.pl ?;
+    print $FILEHANDLE q?-i ?.${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Research'}{'Path'}.q? ?;
+    print $FILEHANDLE q?-c ?.${$scriptParameterHashRef}{'writeConfigFile'}.q? ?;
+    print $FILEHANDLE "\n\n";
+
     print $FILEHANDLE q?if [ $status -ne 1 ]; then?, "\n";  #eval status flag
     print $FILEHANDLE "\t".q?perl -i -p -e 'if($_=~/AnalysisRunStatus\:/) { s/notFinished/Finished/g }' ?.${$scriptParameterHashRef}{'sampleInfoFile'}.q? ?, "\n";
     print $FILEHANDLE q?else?, "\n";  #Found discrepancies - exit

@@ -170,7 +170,7 @@ sub TestModules {
 ##Arguments: 
 ##         : 
 
-    print STDERR "\nTesting perl modules and selected functions\n\n";
+    print STDOUT "\nTesting perl modules and selected functions\n\n";
 
     use FindBin qw($Bin); #Find directory of script
     
@@ -279,7 +279,7 @@ sub ReadInfileVCF {
     my %vcfHeader;
     my %vcfInfoKey;
 
-    print STDERR "\nTesting VCF Header:\n\n";
+    print STDOUT "\nTesting VCF Header:\n\n";
     
     open(VCF, "<".${$argHashRef}{'infile'}) or die "Can't open ".${$argHashRef}{'infile'}.":".$!, "\n"; 
 
@@ -424,7 +424,7 @@ sub ReadInfileVCF {
 
     ##Check keys found in INFO field
 
-    print STDERR "\nTesting VCF INFO fields and presence in header:\n\n";
+    print STDOUT "\nTesting VCF INFO fields and presence in header:\n\n";
 
     foreach my $key (keys %vcfInfoKey) {
 
@@ -481,7 +481,7 @@ sub ReadRangeFile {
 	}
     }
     close(RRF);
-    print STDERR "\nFinished Reading ".${$argHashRef}{'rangeFileKey'}." file: ".${$argHashRef}{'infilePath'},"\n";
+    print STDOUT "\nFinished Reading ".${$argHashRef}{'rangeFileKey'}." file: ".${$argHashRef}{'infilePath'},"\n";
 }
 
 
