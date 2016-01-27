@@ -30,7 +30,7 @@ my ($infile, $parseVEP, $rangeFeatureFile, $selectFeatureFile, $selectFeatureMat
 my (@metaData, @selectMetaData, @rangeFeatureAnnotationColumns, @selectFeatureAnnotationColumns); 
 my (%geneAnnotation, %consequenceSeverity, %rangeData, %selectData, %snpEffCmd, %tree, %metaData, %siftTerm, %polyPhenTerm);
 
-my $vcfParserVersion = "1.2.5";
+my $vcfParserVersion = "1.2.6";
 
 ## Enables cmd "vcfParser.pl" to print usage help 
 if(scalar(@ARGV) == 0) {
@@ -148,6 +148,7 @@ sub DefineSelectData {
     $selectData{'SelectFile'}{'Ensembl_transcript_to_refseq_transcript'}{'INFO'} = q?##INFO=<ID=Ensembl_transcript_to_refseq_transcript,Number=.,Type=String,Description="The link between ensembl transcript and refSeq transcript IDs">?;
     $selectData{'SelectFile'}{'Gene_description'}{'INFO'} = q?##INFO=<ID=Gene_description,Number=.,Type=String,Description="The HGNC gene description">?;
     $selectData{'SelectFile'}{'Genetic_disease_model'}{'INFO'} = q?##INFO=<ID=Genetic_disease_model,Number=.,Type=String,Description="Known disease gene(s) inheritance model">?;
+    $selectData{'SelectFile'}{'No_hgnc_symbol'}{'INFO'} = q?##INFO=<ID=No_hgnc_symbol,Number=.,Type=String,Description="Clinically relevant genetic regions lacking a HGNC_symbol or Ensembl gene ">?;
 }
 
 sub DefineSnpEffAnnotations {
@@ -552,6 +553,7 @@ sub ReadInfileVCF {
 	    my %variantData;
 	    my %selectedVariantData;
 	    my %consequence;
+	    my %noIDRegion;
 	    my $variantLine;
 	    my $selectedVariantLine;
 	    my $sampleIDInfo;
@@ -718,7 +720,7 @@ sub ReadInfileVCF {
 		    }
 		}
 	    }
-	    &TreeAnnotations("SelectFile", \@lineElements, $selectDataHashRef, \$selectedVariantLine);
+	    %noIDRegion = &TreeAnnotations("SelectFile", \@lineElements, $selectDataHashRef, \$selectedVariantLine);  #Only for selectfile since all variants are passed to research file
 	    &TreeAnnotations("RangeFile", \@lineElements, $rangeDataHashRef, \$variantLine);
 	    
 	    my @variantEffects = split(/;/, $lineElements[7]); #Split INFO field
@@ -983,10 +985,18 @@ sub ReadInfileVCF {
 		}
 		if ($transcriptsCounter > 0) { #Write to transcript file
 		    
+		    if (%noIDRegion) {  #No HGNC_symbol or EnsemblGeneID, but clinically relevant
+		
+			print WOSFTSV $selectedVariantLine, "\n";
+		    }
 		    print STDOUT $variantLine, "\n";
 		}
 		elsif ( ($selectedTranscriptCounter == 0) && ($transcriptsCounter == 0) ) {
 
+		    if (%noIDRegion) {  #No HGNC_symbol or EnsemblGeneID, but clinically relevant
+
+			print WOSFTSV $selectedVariantLine, "\n";
+		    }
 		    print STDOUT $variantLine, "\n";
 		}
 	    }
@@ -1401,6 +1411,8 @@ sub TreeAnnotations {
     my $hashRef = $_[2];
     my $printLineRef = $_[3];
     
+    my %noIDRegion;  #No HGNC_symbol or ensemblGeneID, but still clinically releveant e.g. mtD-loop
+
     if(defined($tree{$rangeFileKey}{ $$lineElementsArrayRef[0] }) ) { #Range annotations
 	
 	my $feature; #Features to be collected
@@ -1432,7 +1444,7 @@ sub TreeAnnotations {
 		    if ($featureCounter == (scalar(@{$feature}-1)) ) { #Last for this feature tuple
 
 			for my $rangeAnnotation (keys % {$$hashRef{'Present'}}) { #All selected annotations
-			    
+			
 			    if ($$hashRef{'Present'}{$rangeAnnotation}{'ColumnOrder'} eq $annotationsCounter) { #Correct feature
 			
 				if ($rangeAnnotation eq "Clinical_db_gene_annotation") {  #Special case, which is global and not gene centric
@@ -1440,6 +1452,10 @@ sub TreeAnnotations {
 				    ## Collect unique elements from array reference and return array reference with unique elements
 				    my $uniqueRef = &UniqElements(\@{$collectedAnnotations{$annotationsCounter}});
 				    @{$collectedAnnotations{$annotationsCounter}} = @{$uniqueRef};
+				}
+				if ($rangeAnnotation eq "No_hgnc_symbol") {  #Special case, where there is no HGNC or Ensembl gene ID but the region should be included in the select file anyway
+				    my $idKey = join ("_", @{$lineElementsArrayRef}[0..1, 3..4]);
+				    $noIDRegion{$idKey}++;
 				}
 				if ( (defined($collectedAnnotations{$annotationsCounter})) && (@{$collectedAnnotations{$annotationsCounter}}) ) {
 				
@@ -1452,6 +1468,7 @@ sub TreeAnnotations {
 	    }
 	}
     }
+    return %noIDRegion;
 }
 
 

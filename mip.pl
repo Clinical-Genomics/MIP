@@ -3720,6 +3720,10 @@ sub VCFParser {
 	    
 	    print $XARGSFILEHANDLE "--parseVEP ".${$scriptParameterHashRef}{'vcfParserVepTranscripts'}." ";  #Parse VEP transcript specific entries
 	}
+	if ($$contigRef =~ /MT|M/) {
+	    
+	    print $XARGSFILEHANDLE "--padding 10 ";  #Special case for mitochondrial contig annotation
+	}
 	if (${$scriptParameterHashRef}{'vcfParserRangeFeatureFile'} ne "noUserInfo") {
 	    
 	    print $XARGSFILEHANDLE "-rf ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'vcfParserRangeFeatureFile'}." ";  #List of genes to analyse separately	
