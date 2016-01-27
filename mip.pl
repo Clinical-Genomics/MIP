@@ -9288,16 +9288,19 @@ sub BWAMem {
 		}
 		if (${$scriptParameterHashRef}{'bwaMembamStats'} == 1) {
 
-		    ## Collect QC metadata info for later use                                                                                               
-		    &SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
-				   'familyID' => ${$scriptParameterHashRef}{'familyID'},
-				   'sampleID' => $$sampleIDRef,
-				   'programName' => "BamStats",
-				   'infile' => ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter],
-				   'outDirectory' => $outSampleDirectory,
-				   'outFileEnding' => $outfileEnding.".stats",
-				   'outDataType' => "infileDependent"
-				  });
+		    if (! exists(${$fileInfoHashRef}{'undeterminedInFileName'}{ ${$infileHashRef}{$$sampleIDRef}[$infileCounter] }) ) {  #Do not add to SampleInfo and hence skip test of "UndeterminedInFileName" files in QCCollect
+
+			## Collect QC metadata info for later use                                                                                               
+			&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+				       'familyID' => ${$scriptParameterHashRef}{'familyID'},
+				       'sampleID' => $$sampleIDRef,
+				       'programName' => "BamStats",
+				       'infile' => ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter],
+				       'outDirectory' => $outSampleDirectory,
+				       'outFileEnding' => $outfileEnding.".stats",
+				       'outDataType' => "infileDependent"
+				      });
+		    }
 		}
 
 		&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
@@ -12302,11 +12305,6 @@ sub InfilesReFormat {
 
     my ($argHashRef) = @_;
     
-    my %default = ('tempDirectoryRef' => \${$argHashRef}{'scriptParameterHashRef'}{'tempDirectory'},
-	);
-    
-    &SetDefaultArg(\%{$argHashRef}, \%default);
-    
     ## Flatten argument(s)
     my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
     my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
@@ -12319,7 +12317,6 @@ sub InfilesReFormat {
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $alignerRef = ${$argHashRef}{'alignerRef'};
     my $programName = ${$argHashRef}{'programName'};
-    my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
     
     ## Mandatory arguments
     my %mandatoryArgument = ('scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
@@ -12352,7 +12349,30 @@ sub InfilesReFormat {
 		}
 		## Check that the sampleID provided and sampleID in infile name match.
 		&CheckSampleIDMatch(\%{$scriptParameterHashRef}, \%{$infileHashRef}, $sampleID, $4, $infileCounter);   #$4 = SampleID from filename
-		&AddInfileInfo(\%{$scriptParameterHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, \%{$sampleInfoHashRef}, \%{$infilesBothStrandsNoEndingHashRef}, \%{$infileHashRef}, \%{$inDirPathHashRef}, $1, $2, $3, $4, $5, $6, \$laneTracker, $infileCounter, $compressedSwitch);		
+
+		## Detect "regExp" in string
+		${$fileInfoHashRef}{'undeterminedInFileName'}{ ${$infileHashRef}{$sampleID}[$infileCounter] } = &CheckString({'string' => $3,  #$3 = FlowCell from filename
+															      'regExp' => "Undetermined",
+															     });
+
+		## Adds information derived from infile name to sampleInfo hash. Tracks the number of lanes sequenced and checks unique array elementents.
+		&AddInfileInfo({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+				'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+				'laneHashRef' => \%{$laneHashRef},
+				'infileHashRef' => \%{$infileHashRef},
+				'inDirPathHashRef' => \%{$inDirPathHashRef},
+				'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
+				'infilesBothStrandsNoEndingHashRef' => \%{$infilesBothStrandsNoEndingHashRef},
+				'lane' => $1,
+				'date' => $2,
+				'flowCell' => $3,
+				'sampleID' => $4,
+				'index' => $5,
+				'direction' => $6,
+				'laneTrackerRef' => \$laneTracker,
+				'infileCounter' => $infileCounter,
+				'compressedInfo' => $compressedSwitch,
+			       });		
 	    }
             elsif (${$infileHashRef}{$sampleID}[$infileCounter] =~/(\d+)_(\d+)_([^_]+)_([^_]+)_([^_]+)_(\d).fastq/) {  #Parse 'new' no "index" format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                             
 		
@@ -12365,7 +12385,30 @@ sub InfilesReFormat {
 		}
 		## Check that the sampleID provided and sampleID in infile name match.
 		&CheckSampleIDMatch(\%{$scriptParameterHashRef}, \%{$infileHashRef}, $sampleID, $4, $infileCounter);  #$4 = SampleID from filename
-		&AddInfileInfo(\%{$scriptParameterHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, \%{$sampleInfoHashRef}, \%{$infilesBothStrandsNoEndingHashRef}, \%{$infileHashRef}, \%{$inDirPathHashRef}, $1, $2, $3, $4, $5, $6, \$laneTracker, $infileCounter, $compressedSwitch);		
+
+		## Detect "regExp" in string
+		${$fileInfoHashRef}{'undeterminedInFileName'}{ ${$infileHashRef}{$sampleID}[$infileCounter] } = &CheckString({'string' => $3,  #$3 = FlowCell from filename
+															      'regExp' => "Undetermined",
+															     });
+
+		## Adds information derived from infile name to sampleInfo hash. Tracks the number of lanes sequenced and checks unique array elementents.
+		&AddInfileInfo({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+				'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+				'laneHashRef' => \%{$laneHashRef},
+				'infileHashRef' => \%{$infileHashRef},
+				'inDirPathHashRef' => \%{$inDirPathHashRef},
+				'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
+				'infilesBothStrandsNoEndingHashRef' => \%{$infilesBothStrandsNoEndingHashRef},
+				'lane' => $1,
+				'date' => $2,
+				'flowCell' => $3,
+				'sampleID' => $4,
+				'index' => $5,
+				'direction' => $6,
+				'laneTrackerRef' => \$laneTracker,
+				'infileCounter' => $infileCounter,
+				'compressedSwitch' => $compressedSwitch,
+			       });		
 	    }
 	    else {  #No regexp match i.e. file does not follow filename convention 
 
@@ -12418,14 +12461,14 @@ sub AddInfileInfo {
     
 ##Function : Adds information derived from infile name to sampleInfo hash. Tracks the number of lanes sequenced and checks unique array elementents.
 ##Returns  : ""
-##Arguments: $scriptParameterHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $sampleInfoHashRef, $infilesBothStrandsNoEndingHashRef, $infileHashRef, $inDirPathHashRef, $lane, $date, $flowCell, $sampleID, $index, $direction, $laneTrackerRef, $infileCounter, $compressedInfo
+##Arguments: $scriptParameterHashRef, $sampleInfoHashRef, $infileHashRef, $infilesLaneNoEndingHashRef, $infilesBothStrandsNoEndingHashRef, $inDirPathHashRef, $laneHashRef, $lane, $date, $flowCell, $sampleID, $index, $direction, $laneTrackerRef, $infileCounter, $compressedSwitch
 ##         : $scriptParameterHashRef            => The active parameters for this analysis hash {REF}
-##         : $laneHashRef                       => The lane info hash {REF}
-##         : $infilesLaneNoEndingHashRef        => The infile(s) without the ".ending" {REF}
 ##         : $sampleInfoHashRef                 => Info on samples and family hash {REF}
-##         : $infilesBothStrandsNoEndingHashRef => The infile(s) without the ".ending" and strand info {REF}
 ##         : $infileHashRef                     => The infiles hash {REF}
+##         : $infilesLaneNoEndingHashRef        => The infile(s) without the ".ending" {REF}
+##         : $infilesBothStrandsNoEndingHashRef => The infile(s) without the ".ending" and strand info {REF}
 ##         : $inDirPathHashRef                  => The indirectories path(s) hash {REF}
+##         : $laneHashRef                       => The lane info hash {REF}
 ##         : $lane                              => Flow-cell lane
 ##         : $date                              => Flow-cell sequencing date
 ##         : $flowCell                          => Flow-cell id
@@ -12434,31 +12477,53 @@ sub AddInfileInfo {
 ##         : $direction                         => Sequencing read direction
 ##         : $laneTrackerRef                    => Counts the number of lanes sequenced {REF}
 ##         : $infileCounter                     => Counts the number of infiles
-##         : $compressedInfo                    => ".fastq.gz" or ".fastq" info governs zcat or cat downstream
+##         : $compressedSwitch                  => ".fastq.gz" or ".fastq" info governs zcat or cat downstream
 
-    my $scriptParameterHashRef = $_[0];
-    my $laneHashRef = $_[1];
-    my $infilesLaneNoEndingHashRef = $_[2];
-    my $sampleInfoHashRef = $_[3];
-    my $infilesBothStrandsNoEndingHashRef = $_[4];
-    my $infileHashRef = $_[5];
-    my $inDirPathHashRef = $_[6];
-    my $lane = $_[7];
-    my $date = $_[8];
-    my $flowCell = $_[9];
-    my $sampleID = $_[10];
-    my $index = $_[11];
-    my $direction = $_[12];
-    my $laneTrackerRef = $_[13];
-    my $infileCounter = $_[14];
-    my $compressedInfo = $_[15];
+    my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $infileHashRef = ${$argHashRef}{'infileHashRef'};
+    my $inDirPathHashRef = ${$argHashRef}{'inDirPathHashRef'};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
+    my $infilesBothStrandsNoEndingHashRef = ${$argHashRef}{'infilesBothStrandsNoEndingHashRef'};
+    my $laneHashRef = ${$argHashRef}{'laneHashRef'};
+    my $sampleID = ${$argHashRef}{'sampleID'};
+    my $lane = ${$argHashRef}{'lane'};
+    my $date = ${$argHashRef}{'date'};
+    my $flowCell = ${$argHashRef}{'flowCell'};
+    my $index = ${$argHashRef}{'index'};
+    my $direction = ${$argHashRef}{'direction'};
+    my $laneTrackerRef = ${$argHashRef}{'laneTrackerRef'};
+    my $infileCounter = ${$argHashRef}{'infileCounter'};
+    my $compressedSwitch = ${$argHashRef}{'compressedSwitch'};
+    
+    ## Mandatory arguments
+    my %mandatoryArgument = ('scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} },  #Any MIP mandatory key will do
+			     'infileHashRef' => ${$infileHashRef}{$sampleID}, #Any MIP mandatory key will do
+			     'inDirPathHashRef' => ${$inDirPathHashRef}{$sampleID}, #Any MIP mandatory key will do
+			     'sampleID' => $sampleID,
+			     'lane' => $lane,
+			     'date' => $date,
+			     'flowCell' => $flowCell,
+			     'index' => $index,
+			     'direction' => $direction,
+			     'laneTrackerRef' => $$laneTrackerRef,
+			     'infileCounter' => $infileCounter,
+			     'compressedSwitch' => $compressedSwitch,
+
+	);
+    
+    &CheckMandatoryArguments(\%mandatoryArgument, "AddInfileInfo");
 
     my $readFile;
 
     my $parsedDate = DateTime::Format::Multi->parse_datetime($date);  #Reparse to dateTime standard
     $parsedDate = $parsedDate->ymd('-');  #Only date
 
-    if ($compressedInfo eq "compressed") {
+    if ($compressedSwitch eq "compressed") {
 
 	$readFile = "zcat";  #Read file in compressed format
     }
@@ -18558,6 +18623,36 @@ sub DetectTrio {
 	    $logger->info("Found trio: Child = ".$trio{'child'}.", Father = ".$trio{'father'}.", Mother = ".$trio{'mother'}, "\n");
 	    return 1
 	}
+    }
+}
+
+
+sub CheckString {
+
+##CheckString
+    
+##Function : Detect "regExp" in string
+##Returns  : ""|1
+##Arguments: $string
+##         : $string => String to be searched
+##         : $regExp => RegExp to use on string
+
+    my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $string = ${$argHashRef}{'string'};
+    my $regExp = ${$argHashRef}{'regExp'};
+    
+    ## Mandatory arguments
+    my %mandatoryArgument = ('string' => $string,
+			     'regExp' => $regExp,
+	);
+    
+    &CheckMandatoryArguments(\%mandatoryArgument, "CheckString");
+
+    if ($string=~/$regExp/) {
+
+	return 1
     }
 }
 
