@@ -325,7 +325,20 @@ sub ReadInfileVCF {
 
 	    ### Check Header now that we read all
 
-	    ##VCFParser
+	    ## VT
+	    if (${$scriptParameterHashRef}{'pVT'} > 0) {
+		
+		if (${$scriptParameterHashRef}{'VTDecompose'} > 0) {
+       
+		    ok( defined($vcfHeader{'INFO'}{'OLD_MULTIALLELIC'}), "VTDecompose key: OLD_MULTIALLELIC");
+		}
+		if (${$scriptParameterHashRef}{'VTNormalize'} > 0) {
+		    
+		    ok( defined($vcfHeader{'INFO'}{'OLD_VARIANT'}), "VTNormalize key: OLD_VARIANT");
+		}
+	    }
+
+	    ## VCFParser
 	    if (${$scriptParameterHashRef}{'pVCFParser'} > 0) {
 		
 		for my $key (keys %{$vcfParserDataHashRef}) {
@@ -347,7 +360,7 @@ sub ReadInfileVCF {
 		}
 	    }
 
-	    ##  SnpEff
+	    ## SnpEff
 	    if (${$scriptParameterHashRef}{'pSnpEff'} > 0) {
 		
 		my @splittedKeys;
