@@ -129,7 +129,7 @@ if($infile =~/.selected.vcf/) {
     ## Reads a file containg features to be annotated using range queries
     &ReadRangeFile({'vcfParserDataHashRef' => \%vcfParserData,
 		    'rangeCoulumnsArrayRef' => \@{$scriptParameter{'vcfParserSelectFeatureAnnotationColumns'}},
-		    'infilePath' => $scriptParameter{'vcfParserSelectFile'},
+		    'infilePath' => $scriptParameter{'referencesDir'}."/".$scriptParameter{'vcfParserSelectFile'},
 		    'rangeFileKey' => "SelectFile",
 		   });
 }
@@ -138,7 +138,7 @@ else {  #Range file
     ## Reads a file containg features to be annotated using range queries
     &ReadRangeFile({'vcfParserDataHashRef' => \%vcfParserData,
 		    'rangeCoulumnsArrayRef' => \@{$scriptParameter{'vcfParserRangeFeatureAnnotationColumns'}},
-		    'infilePath' => $scriptParameter{'vcfParserRangeFeatureFile'},
+		    'infilePath' => $scriptParameter{'referencesDir'}."/".$scriptParameter{'vcfParserRangeFeatureFile'},
 		    'rangeFileKey' => "RangeFile",
 		   });
 }

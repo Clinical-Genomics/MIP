@@ -1846,16 +1846,22 @@ sub AnalysisRunStatus {
 	print $FILEHANDLE q?fi?, "\n\n";
 	
     }
-    ## Test integrity of vcf data keys in header and body using
-    print $FILEHANDLE q?perl ?.$Bin.q?/test.pl ?;
-    print $FILEHANDLE q?-i ?.${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Clinical'}{'Path'}.q? ?;
-    print $FILEHANDLE q?-c ?.${$scriptParameterHashRef}{'writeConfigFile'}.q? ?;
-    print $FILEHANDLE "\n\n";
 
-    print $FILEHANDLE q?perl ?.$Bin.q?/test.pl ?;
-    print $FILEHANDLE q?-i ?.${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Research'}{'Path'}.q? ?;
-    print $FILEHANDLE q?-c ?.${$scriptParameterHashRef}{'writeConfigFile'}.q? ?;
-    print $FILEHANDLE "\n\n";
+    ## Test integrity of vcf data keys in header and body
+    if (defined(${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Clinical'}{'Path'})) {
+
+	print $FILEHANDLE q?perl ?.$Bin.q?/test.pl ?;
+	print $FILEHANDLE q?-i ?.${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Clinical'}{'Path'}.q? ?;
+	print $FILEHANDLE q?-c ?.${$scriptParameterHashRef}{'writeConfigFile'}.q? ?;
+	print $FILEHANDLE "\n\n";
+    }
+    if (defined(${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Research'}{'Path'})) {
+
+	print $FILEHANDLE q?perl ?.$Bin.q?/test.pl ?;
+	print $FILEHANDLE q?-i ?.${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Research'}{'Path'}.q? ?;
+	print $FILEHANDLE q?-c ?.${$scriptParameterHashRef}{'writeConfigFile'}.q? ?;
+	print $FILEHANDLE "\n\n";
+    }
 
     print $FILEHANDLE q?if [ $status -ne 1 ]; then?, "\n";  #eval status flag
     print $FILEHANDLE "\t".q?perl -i -p -e 'if($_=~/AnalysisRunStatus\:/) { s/notFinished/Finished/g }' ?.${$scriptParameterHashRef}{'sampleInfoFile'}.q? ?, "\n";
@@ -4743,7 +4749,6 @@ sub VT {
 	print $XARGSFILEHANDLE "-h ";  #Include header
 	print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType.".vcf.gz ";
 	print $XARGSFILEHANDLE $$contigRef." ";
-	print $XARGSFILEHANDLE "| ";  #Pipe
 
 	## VT - Split multi allelic records into single records and normalize
 	&VTCore({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
@@ -4753,6 +4758,8 @@ sub VT {
 		 'FILEHANDLE' => $XARGSFILEHANDLE,
 		 'infilePath' => $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType.".vcf",
 		 'outfilePath' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf",
+		 'decompose' => ${$scriptParameterHashRef}{'VTDecompose'},
+		 'normalize' => ${$scriptParameterHashRef}{'VTNormalize'},
 		 'sed' => 1,
 		 'inStream' => 1,
 		 'cmdbreak' => ";",
@@ -9194,7 +9201,7 @@ sub BWAMem {
 	    print $FILEHANDLE "wait", "\n\n";
 
 	    ## BWA MEM
-	    print $FILEHANDLE "## Aligning reads and converting to BAM via samtools and sorting via PicardToolsSortSam\n";
+	    print $FILEHANDLE "## Aligning reads and converting to BAM via samtools and sorting via Sambamba\n";
 	    print $FILEHANDLE "bwa mem ";
 	    print $FILEHANDLE "-M ";  #Mark shorter split hits as secondary (for Picard compatibility). 
 	    print $FILEHANDLE "-t ".${$scriptParameterHashRef}{'maximumCores'}." ";  #Number of threads 
@@ -9235,7 +9242,6 @@ sub BWAMem {
 		print $FILEHANDLE "| "; 
 		print $FILEHANDLE q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\s+(\d+)/) {$raw = $1;} elsif($_=~/reads mapped:\s+(\d+)/) {$map = $1; $p = ($map / $raw ) * 100; print "percentag mapped reads:\t".$p."\n"}' ?;
 		print $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileEnding.".stats ";
-		#print $FILEHANDLE q?perl -ne '$raw; $map; chomp($_); if($_=~/raw total sequences:\s+(\d+)/) {$raw = $1;} if($_=~/reads mapped:\s+(\d+)/) {$map = $1; $p = ($map / $raw ) * 100; print "Percentag mapped reads:\t".$p."\n"}' ?; 
 		print $FILEHANDLE "\n\n";
 
 		## Copies file from temporary directory.
@@ -11342,6 +11348,8 @@ sub DownloadReference {
 		     'FILEHANDLE' => $FILEHANDLE,
 		     'infilePath' => $$cosmidResourceDirectoryRef."/".${$supportedCosmidReferenceHashRef}{$parameterName}{'cosmidName'}."/*",
 		     'outfilePath' => $$cosmidResourceDirectoryRef."/".${$supportedCosmidReferenceHashRef}{$parameterName}{'cosmidName'}."/".${$scriptParameterHashRef}{$parameterName},
+		     'decompose' => ${$scriptParameterHashRef}{'VTDecompose'},
+		     'normalize' => ${$scriptParameterHashRef}{'VTNormalize'},
 		    });
 	    $temporaryFilePath = $$cosmidResourceDirectoryRef."/".${$supportedCosmidReferenceHashRef}{$parameterName}{'cosmidName'}."/".${$scriptParameterHashRef}{$parameterName};
 	}
@@ -17673,7 +17681,7 @@ sub VTCore {
 
 ##Function : Split multi allelic records into single records and normalize
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $infilePath, $outfilePath, $familyID, $FILEHANDLE, $nrCores, $decompose, $normalize, $sed, $program, $programDirectory, $bgzip, $tabix, $InStream, $cmdBreak, $xargsFileName, $contigRef
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $infilePath, $outfilePath, $familyID, $FILEHANDLE, $nrCores, $decompose, $normalize, $maxAF, $sed, $program, $programDirectory, $bgzip, $tabix, $InStream, $cmdBreak, $xargsFileName, $contigRef
 ##         : $parameterHashRef           => Hash with paremters from yaml file {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -17686,6 +17694,7 @@ sub VTCore {
 ##         : $nrCores                    => The number of cores to allocate
 ##         : $decompose                  => Vt program decomnpose for splitting multiallelic variants
 ##         : $normalize                  => Vt program normalize for normalizing to reference used in analysis
+##         : $maxAF                      => MIP script for adding MAX_AF to frequency reference used in analysis
 ##         : $sed                        => Sed program for changing vcf #FORMAT field in variant vcfs
 ##         : $program                    => The program name
 ##         : $programDirectory           => Program directory to write to in sbatch script
@@ -17701,8 +17710,9 @@ sub VTCore {
     my %default = ('familyID' => ${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
 		   'outfilePath' => ${$argHashRef}{'infilePath'},
 		   'nrCores' => 1,
-		   'decompose' => 1,
-		   'normalize' => 1,
+		   'decompose' => 0,
+		   'normalize' => 0,
+		   'maxAF' => 0,
 		   'sed' => 0,
 		   'program' => "VT",
 		   'programDirectory' => "vt",
@@ -17727,6 +17737,7 @@ sub VTCore {
     my $nrCores = ${$argHashRef}{'nrCores'};
     my $decompose = ${$argHashRef}{'decompose'};
     my $normalize = ${$argHashRef}{'normalize'};
+    my $maxAF = ${$argHashRef}{'maxAF'};
     my $sed = ${$argHashRef}{'sed'};
     my $bgzip = ${$argHashRef}{'bgzip'};
     my $tabix = ${$argHashRef}{'tabix'};
@@ -17765,22 +17776,22 @@ sub VTCore {
     }
     
     ## Split multi allelic records into single records and normalize
-    if ( (${$scriptParameterHashRef}{'VTDecompose'} > 0) || ((${$scriptParameterHashRef}{'VTNormalize'} > 0) ) ) { 
+    if ( (${$scriptParameterHashRef}{'VTDecompose'} > 0) || ((${$scriptParameterHashRef}{'VTNormalize'} > 0)) || ((defined(${$scriptParameterHashRef}{'VTgenmodFilter1000G'})) ) ) { 
 	
 	if ($inStream == 0) {  #Use less to initate processing
 
-	    print $FILEHANDLE "## VT - Decompose (split multi allelic records into single records) and normalize variants\n";
+	    print $FILEHANDLE "## VT - Decompose (split multi allelic records into single records) and/or normalize variants and/or add MAX_AF\n";
 	    print $FILEHANDLE "less ";
 	    print $FILEHANDLE $infilePath." ";  #Infile
-	    print $FILEHANDLE "| ";  #Pipe
 	}
 	if ($sed == 1) {  #Replace #FORMAT field prior to smart decomposition (variant vcfs)
-		
-	    print $FILEHANDLE q?sed 's/ID=AD,Number=./ID=AD,Number=R/' ?;
-	    print $FILEHANDLE "| ";  #Pipe
-	}
-	if ( (${$scriptParameterHashRef}{'VTDecompose'} > 0) || ($decompose ==1) ) {
 
+	    print $FILEHANDLE "| ";  #Pipe		
+	    print $FILEHANDLE q?sed 's/ID=AD,Number=./ID=AD,Number=R/' ?;
+	}
+	if ( (${$scriptParameterHashRef}{'VTDecompose'} > 0) && ($decompose == 1) ) {
+
+	    print $FILEHANDLE "| ";  #Pipe
 	    print $FILEHANDLE "vt decompose ";  #Decomposes multiallelic variants into biallelic in a VCF file
 	    print $FILEHANDLE "-s ";  #Smart decomposition
 	    print $FILEHANDLE "- ";  #InStream
@@ -17790,8 +17801,8 @@ sub VTCore {
 		print $FILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    }
 	}
-	if ( (${$scriptParameterHashRef}{'VTNormalize'} > 0) || ($normalize ==1) ) {  #Write stderr for xargs process
-	    
+	if ( (${$scriptParameterHashRef}{'VTNormalize'} > 0) && ($normalize == 1) ) {  #Write stderr for xargs process
+
 	    print $FILEHANDLE "| ";  #Pipe
 	    print $FILEHANDLE "vt normalize ";  #Normalize variants in a VCF.The normalized variants are reordered and output in an ordered fashion
 	    print $FILEHANDLE "-n ";  #Do not fail when REF is inconsistent with reference sequence for non SNPs
@@ -17802,7 +17813,17 @@ sub VTCore {
 
 		print $FILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    }
+	}
+	if ( (exists(${$scriptParameterHashRef}{'VTgenmodFilter1000G'})) && ($maxAF == 1) ) {
 
+	    print $FILEHANDLE "| ";  #Pipe
+	    print $FILEHANDLE "perl ".$Bin."/maxAF.pl ";  #Add MAX_AF
+	    print $FILEHANDLE "- ";  #InStream
+
+	    if ( (defined($xargsFileName)) && (defined($$contigRef)) ) {  #Write stderr for xargs process
+
+		print $FILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    }
 	}
 	if ( (-e $infilePath.".tbi") || ($bgzip == 1) ) {  #Tabix has been/will be used on file, compress again
 	
@@ -17852,6 +17873,7 @@ sub VTCore {
 	}
     }
 }
+
 
 sub CheckMandatoryArguments {
 
@@ -17970,6 +17992,7 @@ sub CheckVTForReferences {
     }
 }
 
+
 sub CheckVT {
 
 ##CheckVT
@@ -18011,9 +18034,15 @@ sub CheckVT {
 
     $vtRegExp{'decompose'}{'VTDecompose'} = "OLD_MULTIALLELIC";
     $vtRegExp{'normalize'}{'VTNormalize'} = "OLD_VARIANT";
+    $vtRegExp{'maxAF'}{'VTgenmodFilter'} = "MAX_AF";
+
+    my @maxAFReferences = ($scriptParameter{'referencesDir'}."/".${$scriptParameterHashRef}{'VTgenmodFilter1000G'});
+
+    #$maxAFReference{ $scriptParameter{'referencesDir'}."/".${$scriptParameterHashRef}{'VTgenmodFilter1000G'} } ="";
 
     my $decompose = 0;
     my $normalize = 0;
+    my $maxAF = 0;
 
     if (-e $referenceFilePath) {  #Downloaded and vt later (for downloadable references otherwise file existens error is thrown downstream)
 	
@@ -18024,21 +18053,26 @@ sub CheckVT {
 		if (${$scriptParameterHashRef}{$associatedProgram} > 0) {  #Active or dry run for associated program
 
 		    foreach my $vtParameterName (keys %{$vtRegExp{$vtProgram}}) {  #MIP flags
-			
+		
 			my $regExp = q?perl -nae 'if($_=~/ID\=?.$vtRegExp{$vtProgram}{$vtParameterName}.q?/) {print $_} if($_=~/#CHROM/) {last}'?;
-			my $ret = `less $referenceFilePath | $regExp`;  #Detect if vt program has processed reference
-			
+			my $ret = `less $referenceFilePath | $regExp`; #Detect if vt program has processed reference
+
 			unless ($ret) {  #No tracks of vt processing found
-			    
-			    $logger->warn("Cannot detect that vt ".$vtProgram." has processed reference: ".$referenceFilePath."\n");
 			    
 			    if ($vtProgram eq "decompose") {
 				
 				$decompose = 1;  #Turn on vt processing of reference downstream
+				$logger->warn("Cannot detect that ".$vtProgram." has processed reference: ".$referenceFilePath."\n");
 			    }
 			    if ($vtProgram eq "normalize") {
 				
 				$normalize = 1;  #Turn on vt processing of reference downstream
+				$logger->warn("Cannot detect that ".$vtProgram." has processed reference: ".$referenceFilePath."\n");
+			    }
+			    if ( ($vtProgram eq "maxAF") && (any {$_ eq $referenceFilePath} @maxAFReferences) ) {
+
+				$maxAF = 1;
+				$logger->warn("Cannot detect that ".$vtProgram." has processed reference: ".$referenceFilePath."\n");
 			    }
 			}
 			else {  #Found vt processing track
@@ -18050,7 +18084,7 @@ sub CheckVT {
 		}
 	    }
 	}
-	if ( ($decompose == 1) || ($normalize == 1) ) {
+	if ( ($decompose == 1) || ($normalize == 1) || ($maxAF == 1) ) {
 
 	    ## Split multi allelic records into single records and normalize
 	    &VTCore({'parameterHashRef' => \%{$parameterHashRef},
@@ -18062,6 +18096,7 @@ sub CheckVT {
 		     'programDirectory' => "VT",
 		     'decompose' => $decompose,
 		     'normalize' => $normalize,
+		     'maxAF' => $maxAF,
 		    });
 	}
     }
