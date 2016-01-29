@@ -18086,7 +18086,7 @@ sub VTCore {
 
 ##Function : Split multi allelic records into single records and normalize
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $infilePath, $outfilePath, $familyID, $FILEHANDLE, $nrCores, $decompose, $normalize, $maxAF, $sed, $program, $programDirectory, $bgzip, $tabix, $InStream, $cmdBreak, $xargsFileName, $contigRef
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $infilePath, $outfilePath, $familyID, $FILEHANDLE, $nrCores, $decompose, $normalize, $maxAF, $calculateAF, $sed, $program, $programDirectory, $bgzip, $tabix, $InStream, $cmdBreak, $xargsFileName, $contigRef
 ##         : $parameterHashRef           => Hash with paremters from yaml file {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -18100,6 +18100,7 @@ sub VTCore {
 ##         : $decompose                  => Vt program decomnpose for splitting multiallelic variants
 ##         : $normalize                  => Vt program normalize for normalizing to reference used in analysis
 ##         : $maxAF                      => MIP script for adding MAX_AF to frequency reference used in analysis
+##         : $calculateAF                => MIP script for adding AF_ to frequency reference used in analysis
 ##         : $sed                        => Sed program for changing vcf #FORMAT field in variant vcfs
 ##         : $program                    => The program name
 ##         : $programDirectory           => Program directory to write to in sbatch script
@@ -18118,6 +18119,7 @@ sub VTCore {
 		   'decompose' => 0,
 		   'normalize' => 0,
 		   'maxAF' => 0,
+		   'calculateAF' => 0,
 		   'sed' => 0,
 		   'program' => "VT",
 		   'programDirectory' => "vt",
@@ -18143,6 +18145,7 @@ sub VTCore {
     my $decompose = ${$argHashRef}{'decompose'};
     my $normalize = ${$argHashRef}{'normalize'};
     my $maxAF = ${$argHashRef}{'maxAF'};
+    my $calculateAF = ${$argHashRef}{'calculateAF'};
     my $sed = ${$argHashRef}{'sed'};
     my $bgzip = ${$argHashRef}{'bgzip'};
     my $tabix = ${$argHashRef}{'tabix'};
@@ -18176,12 +18179,12 @@ sub VTCore {
 							       'programName' => $program,
 							       'programDirectory' => lc($programDirectory),
 							       'nrofCores' => $nrCores,
-							       'processTime' => 5,
+							       'processTime' => 20,
 							      });
     }
     
     ## Split multi allelic records into single records and normalize
-    if ( (${$scriptParameterHashRef}{'VTDecompose'} > 0) || ((${$scriptParameterHashRef}{'VTNormalize'} > 0)) || ((defined(${$scriptParameterHashRef}{'VTgenmodFilter1000G'})) ) ) { 
+    if ( (${$scriptParameterHashRef}{'VTDecompose'} > 0) || (${$scriptParameterHashRef}{'VTNormalize'} > 0) || (defined(${$scriptParameterHashRef}{'VTgenmodFilter1000G'})) || (${$scriptParameterHashRef}{'pSnpEff'} > 0) ) { 
 	
 	if ($inStream == 0) {  #Use less to initate processing
 
@@ -18217,6 +18220,17 @@ sub VTCore {
 	    if ( (defined($xargsFileName)) && (defined($$contigRef)) ) {  #Write stderr for xargs process
 
 		print $FILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    }
+	}
+	if ( (${$scriptParameterHashRef}{'pSnpEff'} > 0) && ($calculateAF == 1) ) {  #$calculateAf should not be set to 1 if reference was not part of SnpEff parameter
+	    
+	    print $FILEHANDLE "| ";  #Pipe
+	    print $FILEHANDLE "perl ".$Bin."/calculateAF.pl ";  #Add AF_
+	    print $FILEHANDLE "- ";  #InStream
+	    
+	    if ( (defined($xargsFileName)) && (defined($$contigRef)) ) {  #Write stderr for xargs process
+
+		print $FILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    }
 	}
 	if ( (exists(${$scriptParameterHashRef}{'VTgenmodFilter1000G'})) && ($maxAF == 1) ) {
@@ -18440,14 +18454,17 @@ sub CheckVT {
     $vtRegExp{'decompose'}{'VTDecompose'} = "OLD_MULTIALLELIC";
     $vtRegExp{'normalize'}{'VTNormalize'} = "OLD_VARIANT";
     $vtRegExp{'maxAF'}{'VTgenmodFilter'} = "MAX_AF";
+    $vtRegExp{'calulateAF'}{'VTgenmodFilter'} = "calculateAF";
 
-    my @maxAFReferences = ($scriptParameter{'referencesDir'}."/".${$scriptParameterHashRef}{'VTgenmodFilter1000G'});
+    my @maxAFReferences = (q?ALL.wgs.phase\d+.\S+.vcf?, q?ExAC.r\d+.\d+.sites.vep.vcf?);
+    my @calulateAFReferences = (q?ExAC.r\d+.\d+.sites.vep.vcf?);
 
     #$maxAFReference{ $scriptParameter{'referencesDir'}."/".${$scriptParameterHashRef}{'VTgenmodFilter1000G'} } ="";
 
     my $decompose = 0;
     my $normalize = 0;
     my $maxAF = 0;
+    my $calculateAF = 0;
 
     if (-e $referenceFilePath) {  #Downloaded and vt later (for downloadable references otherwise file existens error is thrown downstream)
 	
@@ -18474,11 +18491,17 @@ sub CheckVT {
 				$normalize = 1;  #Turn on vt processing of reference downstream
 				$logger->warn("Cannot detect that ".$vtProgram." has processed reference: ".$referenceFilePath."\n");
 			    }
-			    if ( ($vtProgram eq "maxAF") && (any {$_ eq $referenceFilePath} @maxAFReferences) ) {
+			    if ( ($vtProgram eq "maxAF") && (any {$referenceFilePath=~/$_/} @maxAFReferences) ) {
 
 				$maxAF = 1;
 				$logger->warn("Cannot detect that ".$vtProgram." has processed reference: ".$referenceFilePath."\n");
 			    }
+			    if ( ($vtProgram eq "calulateAF") && (any {$referenceFilePath=~/$_/} @calulateAFReferences) ) {
+				
+				$calculateAF = 1;
+				$logger->warn("Cannot detect that ".$vtProgram." has processed reference: ".$referenceFilePath."\n");
+			    }
+			    
 			}
 			else {  #Found vt processing track
 			    
@@ -18489,7 +18512,7 @@ sub CheckVT {
 		}
 	    }
 	}
-	if ( ($decompose == 1) || ($normalize == 1) || ($maxAF == 1) ) {
+	if ( ($decompose == 1) || ($normalize == 1) || ($maxAF == 1) || ($calculateAF == 1) ) {
 
 	    ## Split multi allelic records into single records and normalize
 	    &VTCore({'parameterHashRef' => \%{$parameterHashRef},
@@ -18502,6 +18525,7 @@ sub CheckVT {
 		     'decompose' => $decompose,
 		     'normalize' => $normalize,
 		     'maxAF' => $maxAF,
+		     'calculateAF' => $calculateAF,
 		    });
 	}
     }

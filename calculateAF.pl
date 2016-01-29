@@ -42,7 +42,7 @@ GetOptions('h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help t
 #MAIN
 ###
 
-&ReadInfile($infile);
+&ReadInfile($infile, $calculateAFVersion);
 
 
 
@@ -54,7 +54,7 @@ GetOptions('h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help t
 sub ReadInfile {
 
     my $infile = $_[0];
-    my $reference = $_[1];
+    my $calculateAFVersion = $_[1];
 
     my %afKey;
 
@@ -88,8 +88,13 @@ sub ReadInfile {
 	    foreach my $key (keys %{$afKey{'AN'}}) {  #Either "AN" or "AC" keys will do
 
 		## Write vcf Header
-		print '##INFO=<ID='.$key.'_AF,Number=A,Type=Float,Description="Allele frequency in the '.$key.' populations calculated from AC and AN, in the range (0,1)">', "\n"
+		print '##INFO=<ID='.$key.'_AF,Number=A,Type=Float,Description="Allele frequency in the '.$key.' populations calculated from AC and AN, in the range (0,1)">', "\n";
 	    }
+
+	    ## Write program cmd
+	    my ($base, $script) = (`date +%Y%m%d`,`basename $0`);  #Catches current date and script name
+	    chomp($base,$script);  #Remove \n;
+	    print "##Software=<ID=".$script.",Version=".$calculateAFVersion.",Date=".$base, "\n";
 
 	    print $_, "\n";  #Write to STDOUT
 	    next;
