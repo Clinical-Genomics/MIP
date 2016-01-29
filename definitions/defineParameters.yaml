@@ -497,6 +497,15 @@ pRCovPlots:
   default: 0
   fileEnding: nofileEnding
   type: program
+##Samtools
+pSamToolsMpileUp:
+  associatedProgram:
+   - MIP
+  chain: SAMMP
+  dataType: SCALAR
+  default: 1
+  fileEnding: _mpileup_
+  type: program
 ## GATK Genotype
 pGATKHaploTypeCaller:
   associatedProgram:
@@ -647,6 +656,14 @@ GATKCalculateGenotypePosteriorsSupportSet:
   default: 1000G_phase3_v4_20130502.sites.vcf
   existsCheck: file
   type: path
+pGATKCombineVariantCallSets:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileEnding: comb_
+  type: program
 ## VariantAnnotationBlock
 pVariantAnnotationBlock:
   associatedProgram:

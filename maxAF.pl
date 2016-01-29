@@ -115,10 +115,21 @@ sub ReadInfile {
 			$maxAF = $keys[1];
 		    }
 		}
+		elsif ($keys[0]=~/^AF_/) {  #Allele frequency key
+		    
+		    if ($keys[1] > $maxAF) {
+			
+			$maxAF = $keys[1];
+		    }
+		}
 	    }
 	    if ($maxAF != 0) {
 
 		$variantLine .= join(";", "MAX_AF=".$maxAF, $lineElements[7]);
+	    }
+	    else {
+
+		$variantLine .= join("", $lineElements[7]);
 	    }
 	    if (defined($sampleIDInfo)) {
 
