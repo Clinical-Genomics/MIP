@@ -388,9 +388,12 @@ sub ReadInfileVCF {
 	    }
 	    ## GENMOD
 	    ## 1000G key from genmodFilter
-	    if ( (${$scriptParameterHashRef}{'pVT'} > 0) && (defined(${$scriptParameterHashRef}{'VTgenmodFilter1000G'})) ) {
+	    if ( (${$scriptParameterHashRef}{'pVT'} > 0) && (${$scriptParameterHashRef}{'VTgenmodFilter'} > 0) ) {
 
-		ok( defined($vcfHeader{'INFO'}{'1000GAF'}), "GENMODFilter: 1000GAF key");
+		if (defined(${$scriptParameterHashRef}{'VTgenmodFilter1000G'})) {
+		    
+		    ok( defined($vcfHeader{'INFO'}{'1000GAF'}), "GENMODFilter: 1000GAF key");
+		}
 	    }	    
 	    if (${$scriptParameterHashRef}{'pRankVariants'} > 0) {
 
