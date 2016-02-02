@@ -1,5 +1,5 @@
 ---
-## Version: 1.0.0
+## Version: 1.1.0
 ##Enable/activate MIP
 MIP:
   associatedProgram:
@@ -202,7 +202,7 @@ mosaikBuildMedianFragLength:
    - pMosaikBuild
   dataType: SCALAR
   default: 375
-  type: program
+  type: programArgument
 pMosaikAlign:
   associatedProgram:
    - MIP
@@ -220,7 +220,7 @@ mosaikAlignReference:
   dataType: SCALAR
   default: notSetYet
   existsCheck: file
-  type: program
+  type: programArgument
 mosaikAlignNeuralNetworkPeFile:
   associatedProgram:
    - pMosaikAlign
@@ -270,13 +270,13 @@ bwaMemCram:
    - pBwaMem
   dataType: SCALAR
   default: 1
-  type: program
+  type: programArgument
 bwaMembamStats:
   associatedProgram:
    - pBwaMem
   dataType: SCALAR
   default: 1
-  type: program
+  type: programArgument
 pBwaAln:
   associatedProgram:
    - MIP
@@ -292,7 +292,7 @@ bwaAlnQualityTrimming:
    - pBwaAln
   dataType: SCALAR
   default: 20
-  type: program
+  type: programArgument
 pBwaSampe:
   associatedProgram:
    - MIP
@@ -354,6 +354,8 @@ pSambambaMarkduplicates:
   dataType: SCALAR
   default: 1
   fileEnding: _smd
+  programNamePath:
+   - sambamba
   type: program
 ## GATK BAM Calibration
 pGATKRealigner:
@@ -401,13 +403,13 @@ GATKBaseReCalibrationOverClippedRead:
    - pGATKBaseRecalibration
   dataType: SCALAR
   default: 1
-  type: program
+  type: programArgument
 GATKBaseReCalibrationDisableIndelQual:
   associatedProgram:
    - pGATKBaseRecalibration
   dataType: SCALAR
   default: 1
-  type: program
+  type: programArgument
 ## Coverage Analysis
 pChanjoSexCheck:
   associatedProgram:
@@ -424,6 +426,8 @@ pSambambaDepth:
   dataType: SCALAR
   default: 1
   fileEnding: _coverage
+  programNamePath:
+   - sambamba
   type: program
 sambambaDepthBed:
   associatedProgram:
@@ -438,25 +442,25 @@ sambambaDepthBaseQuality:
    - pSambambaDepth
   dataType: SCALAR
   default: 10
-  type: program
+  type: programArgument
 sambambaDepthMappingQuality:
   associatedProgram:
    - pSambambaDepth
   dataType: SCALAR
   default: 10
-  type: program
+  type: programArgument
 sambambaDepthNoDuplicates:
   associatedProgram:
    - pSambambaDepth
   dataType: SCALAR
   default: 1
-  type: program
+  type: programArgument
 sambambaDepthNoFailedQualityControl:
   associatedProgram:
    - pSambambaDepth
   dataType: SCALAR
   default: 1
-  type: program
+  type: programArgument
 pGenomeCoverageBED:
   associatedProgram:
    - MIP
@@ -472,7 +476,7 @@ GenomeCoverageBEDMaxCoverage:
    - pGenomeCoverageBED
   dataType: SCALAR
   default: 30
-  type: program
+  type: programArgument
 pPicardToolsCollectMultipleMetrics:
   associatedProgram:
    - MIP
@@ -505,7 +509,11 @@ pSamToolsMpileUp:
   dataType: SCALAR
   default: 1
   fileEnding: _mpileup_
+  programNamePath:
+   - samtools
   type: program
+  outDirectoryName: samtools
+  programType: variantCaller
 ## GATK Genotype
 pGATKHaploTypeCaller:
   associatedProgram:
@@ -528,13 +536,13 @@ GATKHaploTypeCallerSoftClippedBases:
    - pGATKHaploTypeCaller
   dataType: SCALAR
   default: 1
-  type: program
+  type: programArgument
 GATKHaploTypeCallerPcrIndelModel:
   associatedProgram:
    - pGATKHaploTypeCaller
   dataType: SCALAR
   default: None
-  type: program
+  type: programArgument
 picardToolsPath:
   associatedProgram:
    - pMosaikAlign
@@ -567,7 +575,7 @@ GATKGenoTypeGVCFsAllSites:
    - pGATKGenoTypeGVCFs
   dataType: SCALAR
   default: 0
-  type: program
+  type: programArgument
 pGATKVariantRecalibration:
   associatedProgram:
    - MIP
@@ -578,6 +586,8 @@ pGATKVariantRecalibration:
   programNamePath:
    - bcftools
   type: program
+  outDirectoryName: gatk
+  programType: variantCaller
 GATKVariantReCalibrationTrainingSetHapMap:
   associatedProgram:
    - pGATKVariantRecalibration
@@ -623,31 +633,31 @@ GATKVariantReCalibrationTSFilterLevel:
    - pGATKVariantRecalibration
   dataType: SCALAR
   default: 99.9
-  type: program
+  type: programArgument
 GATKVariantReCalibrationDPAnnotation:
   associatedProgram:
    - pGATKVariantRecalibration
   dataType: SCALAR
   default: 1
-  type: program
+  type: programArgument
 GATKVariantReCalibrationMaxGaussians:
   associatedProgram:
    - pGATKVariantRecalibration
   dataType: SCALAR
   default: 1
-  type: program
+  type: programArgument
 GATKVariantReCalibrationexcludeNonVariantsFile:
   associatedProgram:
    - pGATKVariantRecalibration
   dataType: SCALAR
   default: 0
-  type: program
+  type: programArgument
 GATKVariantReCalibrationBCFFile:
   associatedProgram:
    - pGATKVariantRecalibration
   dataType: SCALAR
   default: 1
-  type: program
+  type: programArgument
 GATKCalculateGenotypePosteriorsSupportSet:
   associatedProgram:
    - pGATKVariantRecalibration
@@ -693,25 +703,25 @@ VTDecompose:
    - pVT
   dataType: SCALAR
   default: 1
-  type: program
+  type: programArgument
 VTNormalize:
   associatedProgram:
    - pVT
   dataType: SCALAR
   default: 1
-  type: program
+  type: programArgument
 VTmissingAltAllele:
   associatedProgram:
    - pVT
   dataType: SCALAR
   default: 1
-  type: program
+  type: programArgument
 VTgenmodFilter:
   associatedProgram:
    - pVT
   dataType: SCALAR
   default: 1
-  type: program
+  type: programArgument
 VTgenmodFilter1000G:
   associatedProgram:
    - pVT
@@ -725,7 +735,7 @@ VTgenmodFilterThreshold:
    - pVT
   dataType: SCALAR
   default: 0.10
-  type: program
+  type: programArgument
 pGATKPhaseByTransmission:
   associatedProgram:
    - MIP
@@ -747,7 +757,7 @@ GATKReadBackedPhasingPhaseQualityThreshold:
    - pGATKReadBackedPhasing
   dataType: SCALAR
   default: 20
-  type: program
+  type: programArgument
 pGATKVariantEvalAll:
   associatedProgram:
    - MIP
@@ -791,7 +801,7 @@ GATKDownSampleToCoverage:
    - pGATKHaploTypeCaller
   dataType: SCALAR
   default: 1000
-  type: program
+  type: programArgument
 ## GATK FTP Bundle Download version. Needed for all programs that download the human genome reference
 GATKBundleDownLoadVersion:
   associatedProgram:
@@ -803,6 +813,7 @@ GATKBundleDownLoadVersion:
    - pGATKBaseRecalibration
    - pGATKHaploTypeCaller
    - pGATKGenoTypeGVCFs
+   - pSamToolsMpileUp
    - pGATKVariantRecalibration
    - pGATKPhaseByTransmission
    - pGATKReadBackedPhasing
@@ -813,7 +824,7 @@ GATKBundleDownLoadVersion:
    - pPicardToolsCollectMultipleMetrics
   dataType: SCALAR
   default: 2.8
-  type: program
+  type: programArgument
 ## VEP
 pVariantEffectPredictor:
   associatedProgram:
@@ -840,7 +851,7 @@ vepReference:
    - pVariantEffectPredictor
   dataType: SCALAR
   default: 0
-  type: program
+  type: programArgument
 ## VCFParser
 pVCFParser:
   associatedProgram:
@@ -855,7 +866,7 @@ vcfParserVepTranscripts:
    - pVCFParser
   dataType: SCALAR
   default: 0
-  type: program
+  type: programArgument
 vcfParserRangeFeatureFile:
   associatedProgram:
    - pVCFParser
@@ -872,7 +883,7 @@ vcfParserSelectFileMatchingColumn:
   associatedProgram:
    - pVCFParser
   dataType: SCALAR
-  type: program
+  type: programArgument
 ## Annovar
 pAnnovar:
   associatedProgram:
@@ -893,13 +904,13 @@ annovarGenomeBuildVersion:
    - pAnnovar
   dataType: SCALAR
   default: hg19
-  type: program
+  type: programArgument
 annovarMAFThreshold:
   associatedProgram:
    - pAnnovar
   dataType: SCALAR
   default: 0
-  type: program
+  type: programArgument
 ## SnpEFF
 pSnpEff:
   associatedProgram:
@@ -930,6 +941,7 @@ javaUseLargePages:
    - pGATKHaploTypeCaller
    - pGATKGenoTypeGVCFs
    - pGATKVariantRecalibration
+   - pGATKCombineVariantCallSets
    - pGATKPhaseByTransmission
    - pGATKReadBackedPhasing
    - pGATKVariantEvalAll
@@ -939,7 +951,7 @@ javaUseLargePages:
    - pAnnovar
   dataType: SCALAR
   default: no
-  type: program
+  type: programArgument
 ## genomeAnalysisToolKitPath
 genomeAnalysisToolKitPath:
   associatedProgram:
@@ -947,13 +959,15 @@ genomeAnalysisToolKitPath:
    - pGATKBaseRecalibration
    - pGATKHaploTypeCaller
    - pGATKGenoTypeGVCFs
+   - pSamToolsMpileUp
    - pGATKVariantRecalibration
+   - pGATKCombineVariantCallSets
    - pGATKPhaseByTransmission
    - pGATKReadBackedPhasing
    - pGATKVariantEvalAll
    - pGATKVariantEvalExome
    - pVariantEffectPredictor
-   - pSnpEff
+   - pRankVariants
   dataType: SCALAR
   existsCheck: directory
   type: path
@@ -983,7 +997,7 @@ genmodModelsFamilyType:
    - pRankVariants
   dataType: SCALAR
   default: mip
-  type: program
+  type: programArgument
 caddWGSSNVsFile:
   associatedProgram:
    - pRankVariants
@@ -1010,7 +1024,7 @@ wholeGene:
    - pRankVariants
   dataType: SCALAR
   default: 1
-  type: program
+  type: programArgument
 genmodModelsReducedPenetranceFile:
   associatedProgram:
    - pRankVariants
@@ -1029,18 +1043,20 @@ rankModelFile:
 usePythonVirtualEnvironment:
   associatedProgram:
    - pChanjoSexCheck
+   - pVT
    - pGATKVariantRecalibration
    - pRankVariants
   dataType: SCALAR
   default: 0
-  type: program
+  type: programArgument
 pythonVirtualEnvironment:
   associatedProgram:
    - pChanjoSexCheck
+   - pVT
    - pGATKVariantRecalibration
    - pRankVariants
   dataType: SCALAR
-  type: program
+  type: programArgument
 ## QCCollect
 pQCCollect:
   associatedProgram:
@@ -1055,7 +1071,7 @@ QCCollectSampleInfoFile:
    - pQCCollect
   dataType: SCALAR
   default: notSetYet
-  type: program
+  type: programArgument
 QCCollectRegExpFile:
   associatedProgram:
    - pQCCollect
@@ -1101,6 +1117,7 @@ humanGenomeReference:
    - pGATKBaseRecalibration
    - pGATKHaploTypeCaller
    - pGATKGenoTypeGVCFs
+   - pSamToolsMpileUp
    - pGATKVariantRecalibration
    - pGATKPhaseByTransmission
    - pGATKReadBackedPhasing
@@ -1162,7 +1179,7 @@ GATKBaseReCalibrationStaticQuantizedQuals:
    - 20
    - 30
    - 40
-  type: program
+  type: programArgument
 sambambaDepthCutOffs:
   associatedProgram:
    - pSambambaDepth
@@ -1174,7 +1191,7 @@ sambambaDepthCutOffs:
    - 30
    - 50
    - 100
-  type: program
+  type: programArgument
 vepFeatures:
   associatedProgram:
    - pVariantEffectPredictor
@@ -1194,19 +1211,19 @@ vepFeatures:
    - biotype
    - regulatory
    - tsl
-  type: program
+  type: programArgument
 vcfParserRangeFeatureAnnotationColumns:
   associatedProgram:
    - pVCFParser
   elementSeparator: ,
   dataType: ARRAY
-  type: program
+  type: programArgument
 vcfParserSelectFeatureAnnotationColumns:
   associatedProgram:
    - pVCFParser
   elementSeparator: ,
   dataType: ARRAY
-  type: program
+  type: programArgument
 annovarTableNames:
   associatedProgram:
    - pAnnovar

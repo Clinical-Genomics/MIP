@@ -616,7 +616,7 @@ foreach my $parameterName (keys %parameter) {
 
 
 ## Detect family constellation based on pedigree file
-$parameter{'trio'} = &DetectTrio(\%scriptParameter, \%sampleInfo);
+$parameter{'dynamicParameters'}{'trio'} = &DetectTrio(\%scriptParameter, \%sampleInfo);
 
 ## Detect number of founders (i.e. parents ) based on pedigree file
 &DetectFounders(\%scriptParameter, \%sampleInfo);
@@ -760,6 +760,13 @@ if ($scriptParameter{'writeConfigFile'} ne 0) {  #Write config file for family
     ## Writes a YAML hash to file
     &WriteYAML(\%scriptParameter, \$scriptParameter{'writeConfigFile'});  #Write used settings to configfile
 }
+
+## Adds dynamic aggregate information from definitions to parameterHash
+&AddToParameter({'parameterHashRef' => \%parameter,
+		 'aggregateArrayRef' => ["type:program",  #Collects all programs that MIP can handle
+					 "programType:variantCaller"],  #Collect all programs that are variantCallers
+		});
+
 
 ## Set contig prefix and contig names depending on reference used
 &SetContigs({'scriptParameterHashRef' => \%scriptParameter,
@@ -4383,7 +4390,7 @@ sub GATKPhaseByTransmission {
     my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pGATKCombineVariantCallSets'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{"p".$programName}{'fileEnding'};
     
-    ## GATK ".fam" file creation/check
+    ## Create .fam file to be used in variant calling analyses
     &CreateFamFile({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 		    'FILEHANDLE' => $FILEHANDLE,
 		    'executionMode' => "sbatch",
@@ -4964,38 +4971,31 @@ sub GATKCombineVariantCallSets {
 
     ## Assign directories
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
-
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pGATKCombineVariantCallSets'}{'fileEnding'};
 
-    if (${$scriptParameterHashRef}{'pGATKVariantRecalibration'} > 0) {  #Expect GATKVariantRecalibration vcf
+    foreach my $variantCaller (@{${$parameterHashRef}{'dynamicParameters'}{'variantCaller'}}) {
+	
+	if (${$scriptParameterHashRef}{$variantCaller} > 0) {  #Expect vcf
+	    
+	    my $programOutDirectoryName = ${$parameterHashRef}{$variantCaller}{'outDirectoryName'};   
+	    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/".$programOutDirectoryName;
+	    my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$variantCaller}{'fileEnding'};
+	    
+	    unshift(@variantCallers, $programOutDirectoryName);  #To prioritize downstream - 1. gatk 2. samtools determined by orderParameters order
 
-	my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
-	my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pGATKVariantRecalibration'}{'fileEnding'};
+	    unless (${$parameterHashRef}{$variantCaller}{'chain'} eq "MAIN") {  #Do not add MAIN chains
 
-	push(@variantCallers, "gatk");  #To prioritize downstream
+		push(@parallelChains, ${$parameterHashRef}{$variantCaller}{'chain'});
+	    }
 
-	## Copy file(s) to temporary directory
-	print $FILEHANDLE "## Copy file(s) to temporary directory\n"; 
-	&MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE,
-			    'path' => $inFamilyDirectory."/".$$familyIDRef.$infileEnding.$callType.".vcf*",
-			    'tempDirectory' => $$tempDirectoryRef
-			   });
+	    ## Copy file(s) to temporary directory
+	    print $FILEHANDLE "## Copy file(s) to temporary directory\n"; 
+	    &MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE,
+				'path' => $inFamilyDirectory."/".$$familyIDRef.$infileEnding.$callType.".vcf*",
+				'tempDirectory' => $$tempDirectoryRef
+			       });
+	}
     }
-    if (${$scriptParameterHashRef}{'pSamToolsMpileUp'} > 0) {  #Expect SamToolsMpileUp vcf
-
-	my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/samtools";
-	my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pSamToolsMpileUp'}{'fileEnding'};
-
-	push(@variantCallers, "samtools"); #To prioritize downstream
-	push(@parallelChains, ${$parameterHashRef}{"pSamToolsMpileUp"}{'chain'});
-	## Copy file(s) to temporary directory
-	print $FILEHANDLE "## Copy file(s) to temporary directory\n"; 
-	&MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE,
-			    'path' => $inFamilyDirectory."/".$$familyIDRef.$infileEnding.$callType.".vcf*",
-			    'tempDirectory' => $$tempDirectoryRef
-			   });
-    }
-    print $FILEHANDLE "wait", "\n\n";
 
     ## GATK CombineVariants
     print $FILEHANDLE "## GATK CombineVariants","\n";
@@ -5013,16 +5013,16 @@ sub GATKCombineVariantCallSets {
     print $FILEHANDLE "-R ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
     print $FILEHANDLE "-env ";  #Don't include loci found to be non-variant after the subsetting procedure.
 
-    if (${$scriptParameterHashRef}{'pGATKVariantRecalibration'} > 0) {  #Expect GATKVariantRecalibration vcf
+    foreach my $variantCaller (@{${$parameterHashRef}{'dynamicParameters'}{'variantCaller'}}) {
+	
+	if (${$scriptParameterHashRef}{$variantCaller} > 0) {  #Expect vcf
 
-	my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pGATKVariantRecalibration'}{'fileEnding'};
-	print $FILEHANDLE "-V:gatk ".$$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType.".vcf ";  #FamilyID inFile
+	    my $programOutDirectoryName = ${$parameterHashRef}{$variantCaller}{'outDirectoryName'};
+	    my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$variantCaller}{'fileEnding'};
+	    print $FILEHANDLE "-V:".$programOutDirectoryName." ".$$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType.".vcf ";  #FamilyID inFile
+	}
     }
-    if (${$scriptParameterHashRef}{'pSamToolsMpileUp'} > 0) {  #Expect SamToolsMpileUp vcf
 
-	my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pSamToolsMpileUp'}{'fileEnding'};
-	print $FILEHANDLE "-V:samtools ".$$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType.".vcf ";  #FamilyID inFile
-    }
     print $FILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.".vcf ";  #Union of variant call sets outFile
     print $FILEHANDLE "-genotypeMergeOptions PRIORITIZE ";
     print $FILEHANDLE "-priority ".join(",", @variantCallers);
@@ -5107,13 +5107,14 @@ sub GATKVariantReCalibration {
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $nrCores = ${$scriptParameterHashRef}{'maximumCores'};
+    my $programOutDirectoryName = ${$parameterHashRef}{"p".$programName}{'outDirectoryName'};
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName, $programInfoPath) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 							      'FILEHANDLE' => $FILEHANDLE,
 							      'directoryID' => $$familyIDRef,
 							      'programName' => $programName,
-							      'programDirectory' => lc($$alignerRef."/gatk"),
+							      'programDirectory' => lc($$alignerRef."/".$programOutDirectoryName),
 							      'callType' => $callType,
 							      'nrofCores' => $nrCores,
 							      'processTime' => 10,
@@ -5123,14 +5124,14 @@ sub GATKVariantReCalibration {
 
     ## Assign directories
     my $outFamilyFileDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef;  #For ".fam" file
-    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
+    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/".$programOutDirectoryName;
     my $intermediarySampleDirectory = $$tempDirectoryRef."/gatk/intermediary";
-    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/".$programOutDirectoryName;
 
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pGATKGenoTypeGVCFs'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"p".$programName}{'fileEnding'};
 
-    ## GATK ".fam" file creation/check
+    ## Create .fam file to be used in variant calling analyses
     &CreateFamFile({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 		    'FILEHANDLE' => $FILEHANDLE,
 		    'executionMode' => "sbatch",
@@ -5328,7 +5329,7 @@ sub GATKVariantReCalibration {
     }
 
     ## GenotypeRefinement
-    if (${$parameterHashRef}{'trio'}) {
+    if (${$parameterHashRef}{'dynamicParameters'}{'trio'}) {
 
 	print $FILEHANDLE "## GATK CalculateGenotypePosteriors","\n\n";
 	
@@ -5618,7 +5619,7 @@ sub GATKGenoTypeGVCFs {
      ## Assign directories
     my $outFamilyFileDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef;  #For ".fam" file
 
-    ## GATK ".fam" file creation/check
+    ## Create .fam file to be used in variant calling analyses
     &CreateFamFile({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 		    'FILEHANDLE' => $FILEHANDLE,
 		    'executionMode' => "sbatch",
@@ -6932,6 +6933,7 @@ sub SamToolsMpileUp {
 
     my $nrCores = ${$scriptParameterHashRef}{'maximumCores'};
     my $reduceIORef = \${$scriptParameterHashRef}{'reduceIO'};
+    my $programOutDirectoryName = ${$parameterHashRef}{"p".$programName}{'outDirectoryName'};
 
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 30;
@@ -6946,7 +6948,7 @@ sub SamToolsMpileUp {
 							       'FILEHANDLE' => $FILEHANDLE,
 							       'directoryID' => $$familyIDRef,
 							       'programName' => $programName,
-							       'programDirectory' => lc($$alignerRef."/samtools"),
+							       'programDirectory' => lc($$alignerRef."/".$programOutDirectoryName),
 							       'nrofCores' => $nrCores,
 							       'processTime' => $time,
 							       'tempDirectory' => $$tempDirectoryRef
@@ -6957,13 +6959,13 @@ sub SamToolsMpileUp {
     $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, $nrCores);  #To not exceed maximum
 
     ## Assign directories
-    my $outFamilyFileDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/samtools";  #For ".fam" file
-    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/samtools";
+    my $outFamilyFileDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/".$programOutDirectoryName;  #For ".fam" file
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/".$programOutDirectoryName;
 
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"p".$programName}{'fileEnding'};
     my $coreCounter=1;
 
-    ## GATK ".fam" file creation/check
+    ## Create .fam file to be used in variant calling analyses
     &CreateFamFile({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 		    'FILEHANDLE' => $FILEHANDLE,
 		    'executionMode' => "sbatch",
@@ -7079,7 +7081,7 @@ sub SamToolsMpileUp {
 	print $XARGSFILEHANDLE "-v ";  #Output variant sites only
 	print $XARGSFILEHANDLE "-m ";  #Alternative model for multiallelic and rare-variant calling
 
-	if (${$parameterHashRef}{'trio'}) {
+	if (${$parameterHashRef}{'dynamicParameters'}{'trio'}) {
 
 	    print $XARGSFILEHANDLE "--samples-file ".$outFamilyFileDirectory."/".$$familyIDRef.".fam "; 
 	    print $XARGSFILEHANDLE "--constrain trio "; 
@@ -7217,7 +7219,7 @@ sub GATKHaploTypeCaller {
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pGATKBaseRecalibration'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{"p".$programName}{'fileEnding'};
 
-    ## GATK ".fam" file creation/check
+    ## Create .fam file to be used in variant calling analyses
     &CreateFamFile({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 		    'FILEHANDLE' => $FILEHANDLE,
 		    'executionMode' => "sbatch",
@@ -17899,7 +17901,7 @@ sub EvalParameterHash {
     $mandatoryKey{'dataType'}{'keyDataType'} = "SCALAR";
     $mandatoryKey{'dataType'}{'values'} = ["SCALAR", "ARRAY", "HASH"];
     $mandatoryKey{'type'}{'keyDataType'} = "SCALAR";
-    $mandatoryKey{'type'}{'values'} = ["MIP", "path", "program"];
+    $mandatoryKey{'type'}{'values'} = ["MIP", "path", "program", "programArgument"];
  
     my %nonMandatoryKey;
     $nonMandatoryKey{'buildFile'}{'keyDataType'} = "SCALAR";
@@ -17913,6 +17915,8 @@ sub EvalParameterHash {
     $nonMandatoryKey{'programNamePath'}{'keyDataType'} = "ARRAY";
     $nonMandatoryKey{'elementSeparator'}{'keyDataType'} = "SCALAR";
     $nonMandatoryKey{'reduceIO'}{'keyDataType'} = "SCALAR";
+    $nonMandatoryKey{'programType'}{'keyDataType'} = "SCALAR";
+    $nonMandatoryKey{'outDirectoryName'}{'keyDataType'} = "SCALAR";
 
     &CheckKeys($parameterHashRef, \%mandatoryKey, \%nonMandatoryKey, \$filePath);
 
@@ -19136,6 +19140,46 @@ sub CheckString {
     if ($string=~/$regExp/) {
 
 	return 1
+    }
+}
+
+
+sub AddToParameter {
+    
+##AddToParameter
+    
+##Function : Adds dynamic aggregate information from definitions to parameterHash
+##Returns  : ""
+##Arguments: $parameterHashRef, $aggregateArrayRef
+##         : $parameterHashRef  => The parameter hash {REF}
+##         : $aggregateArrayRef => The data to aggregate and add to parameter hash{REF}
+
+    my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $aggregateArrayRef = ${$argHashRef}{'aggregateArrayRef'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'aggregateArrayRef' => ${$aggregateArrayRef}[0],  #Any element will do
+	);
+
+    &CheckMandatoryArguments(\%mandatoryArgument, "AddToParameter");
+
+    foreach my $key (keys %{$parameterHashRef}) {
+	
+	foreach my $aggregateElement (@{$aggregateArrayRef}) {
+
+	    my @tmpArray = split(":", $aggregateElement);
+	    my $secondkey = $tmpArray[0];
+	    my $stringToMatch = $tmpArray[1];
+
+	    if ( (defined(${$parameterHashRef}{$key}{$secondkey})) && (${$parameterHashRef}{$key}{$secondkey} eq $stringToMatch) ) {
+		
+		push(@{${$parameterHashRef}{'dynamicParameters'}{$stringToMatch}}, $key);
+	    }
+	}
     }
 }
 
