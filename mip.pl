@@ -4542,7 +4542,7 @@ sub SampleCheck {
 	## Split X to remove PAR regions
 	print $FILEHANDLE "plink ";
 	print $FILEHANDLE "--bfile ".$outFamilyDirectory."/".$$familyIDRef."_vcf_data_unsplit ";
-	print $FILEHANDLE "--split-x b37 ";
+	print $FILEHANDLE "--split-x b37 no-fail ";  #By default, PLINK errors out when no variants would be affected by --split-x;the 'no-fail' modifier overrides this.
 	print $FILEHANDLE "--make-bed ";
 	print $FILEHANDLE "--out ".$outFamilyDirectory."/".$$familyIDRef."_vcf_data ";
 	print $FILEHANDLE "\n\n";
