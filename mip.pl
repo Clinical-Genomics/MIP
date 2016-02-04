@@ -1901,14 +1901,14 @@ sub AnalysisRunStatus {
     ## Test integrity of vcf data keys in header and body
     if (defined(${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Clinical'}{'Path'})) {
 
-	print $FILEHANDLE q?perl ?.$Bin.q?/test.pl ?;
+	print $FILEHANDLE q?perl ?.$Bin.q?/t/test.t ?;
 	print $FILEHANDLE q?-i ?.${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Clinical'}{'Path'}.q? ?;
 	print $FILEHANDLE q?-c ?.${$scriptParameterHashRef}{'writeConfigFile'}.q? ?;
 	print $FILEHANDLE "\n\n";
     }
     if (defined(${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Research'}{'Path'})) {
 
-	print $FILEHANDLE q?perl ?.$Bin.q?/test.pl ?;
+	print $FILEHANDLE q?perl ?.$Bin.q?/t/test.t ?;
 	print $FILEHANDLE q?-i ?.${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Research'}{'Path'}.q? ?;
 	print $FILEHANDLE q?-c ?.${$scriptParameterHashRef}{'writeConfigFile'}.q? ?;
 	print $FILEHANDLE "\n\n";
