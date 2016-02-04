@@ -1899,18 +1899,43 @@ sub AnalysisRunStatus {
     }
 
     ## Test integrity of vcf data keys in header and body
-    if (defined(${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Clinical'}{'Path'})) {
+    if ( (defined(${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Clinical'}{'Path'})) || (defined(${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Research'}{'Path'})) ) {
 
-	print $FILEHANDLE q?perl ?.$Bin.q?/t/test.t ?;
-	print $FILEHANDLE q?-i ?.${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Clinical'}{'Path'}.q? ?;
-	print $FILEHANDLE q?-c ?.${$scriptParameterHashRef}{'writeConfigFile'}.q? ?;
-	print $FILEHANDLE "\n\n";
-    }
-    if (defined(${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Research'}{'Path'})) {
+	print $FILEHANDLE q?perl -MTest::Harness -e ' ?;  #Execute on cmd
+	print $FILEHANDLE q?my %args = (?;  #Adjust arguments to harness object
+	print $FILEHANDLE q?verbosity => 1, ?;  #Print individual test results to STDOUT
+	print $FILEHANDLE q?test_args => { ?;  #Argument to test script 
 
-	print $FILEHANDLE q?perl ?.$Bin.q?/t/test.t ?;
-	print $FILEHANDLE q?-i ?.${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Research'}{'Path'}.q? ?;
-	print $FILEHANDLE q?-c ?.${$scriptParameterHashRef}{'writeConfigFile'}.q? ?;
+	if (defined(${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Clinical'}{'Path'})) {
+
+	    print $FILEHANDLE q?"test select file" => [ ?;  #Add test for select file using alias
+	    print $FILEHANDLE q?"?.${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Clinical'}{'Path'}.q?", ?;  #Infile
+	    print $FILEHANDLE q?"?.${$scriptParameterHashRef}{'writeConfigFile'}.q?", ?;  #ConfigFile
+	    print $FILEHANDLE q?], ?;
+	}
+
+	if (defined(${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Research'}{'Path'})) {
+
+	    print $FILEHANDLE q?"test research file" => [ ?;  #Add test research file using alias
+	    print $FILEHANDLE q?"?.${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Research'}{'Path'}.q?", ?;  #Infile
+	    print $FILEHANDLE q?"?.${$scriptParameterHashRef}{'writeConfigFile'}.q?", ?;  #ConfigFile
+	    print $FILEHANDLE q?], ?;
+	}
+
+	print $FILEHANDLE q?}); ?;
+	print $FILEHANDLE q?my $harness = TAP::Harness->new( \%args ); ?;  #Create harness using arguments provided
+	print $FILEHANDLE q?$harness->runtests( ?;  #Execute test(s)  
+
+	if (defined(${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Clinical'}{'Path'})) {
+
+	    print $FILEHANDLE q?["?.$Bin.q?/t/test.t", "test select file"], ?;
+	}
+
+	if (defined(${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'Research'}{'Path'})) {
+
+	    print $FILEHANDLE q?["?.$Bin.q?/t/test.t", "test research file"], ?;
+	}
+	print $FILEHANDLE q?)'?;
 	print $FILEHANDLE "\n\n";
     }
 

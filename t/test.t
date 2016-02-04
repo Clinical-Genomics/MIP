@@ -75,9 +75,7 @@ use vars qw($USAGE);
 
 BEGIN {
     $USAGE =
-	qq{test.pl infile.vcf
-           -1/--infile The vcf that you wish to test (mandatory)
-           -c/--configFile YAML config file for script parameters (mandatory; defaults to "")
+	qq{test.pl infile.vcf [VCF] configFile [YAML]
            -h/--help Display this help message   
            -v/--version Display version
         };    
@@ -86,7 +84,7 @@ BEGIN {
 my ($infile, $configFile);
 my (%scriptParameter, %vcfParserData, %consequenceSeverity, %metaData, %siftTerm, %polyPhenTerm);
 
-my $testVersion = "0.0.1";
+my $testVersion = "1.0.0";
 
 if(scalar(@ARGV) == 0) {
 
@@ -99,10 +97,11 @@ if(scalar(@ARGV) == 0) {
 ####MAIN####
 ############
 
+$infile = $ARGV[0];
+$configFile = $ARGV[1];
+
 ###User Options
-GetOptions('i|infile:s' => \$infile,
-	   'c|configFile:s' => \$configFile,
-	   'h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
+GetOptions('h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
 	   'v|version' => sub { print STDOUT "\nvcfParser.pl ".$testVersion, "\n\n"; exit;},  #Display version number
     );
 
@@ -111,6 +110,7 @@ unless (defined($infile)) {
     print STDERR "Please supply an infile\n";
     exit;
 }
+
 unless (defined($configFile)) {
     
     print STDERR "Please supply a configFile\n";
