@@ -2010,7 +2010,8 @@ sub RemoveRedundantFiles {
 	
 	## Sample files
 	##Removes intermediate files from the MIP analysis depending on set MIP parameters
-	&RemoveFiles({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+	&RemoveFiles({'parameterHashRef' => \%{$parameterHashRef},
+		      'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 		      'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
 		      'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 		      'fileInfoHashRef' => \%{$fileInfoHashRef},
@@ -2024,7 +2025,8 @@ sub RemoveRedundantFiles {
     }	
     ## Family files
     ##Removes intermediate files from the MIP analysis depending on set MIP parameters
-    &RemoveFiles({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+    &RemoveFiles({'parameterHashRef' => \%{$parameterHashRef},
+		  'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 		  'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
 		  'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 		  'fileInfoHashRef' => \%{$fileInfoHashRef},
@@ -18680,7 +18682,8 @@ sub RemoveFiles {
     
 ##Function : Removes intermediate files from the MIP analysis depending on set MIP parameters
 ##Returns  : ""
-##Arguments: $scriptParameterHashRef, $sampleInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $FILEHANDLE, $familyID, $sampleID, $aligner, $callType, $programName, $reduceIORef
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $FILEHANDLE, $familyID, $sampleID, $aligner, $callType, $programName, $reduceIORef
+##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
@@ -18703,6 +18706,7 @@ sub RemoveFiles {
     &SetDefaultArg(\%{$argHashRef}, \%default);
     
     ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
     my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
     my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
     my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
@@ -18718,7 +18722,8 @@ sub RemoveFiles {
     my $programName = ${$argHashRef}{'programName'};
 
     ## Mandatory arguments
-    my %mandatoryArgument = ('scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
 			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} },  #Any MIP mandatory key will do
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
@@ -18777,12 +18782,15 @@ sub RemoveFiles {
     }
 
     ## Family files
+    $removeProgramFile{'pSamToolsMpileUp'}{'fileEnding'} = [".vcf"];
+    $removeProgramFile{'pSamToolsMpileUp'}{'setting'} = "family";
+    $removeProgramFile{'pSamToolsMpileUp'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$$alignerRef."/".${$parameterHashRef}{'pSamToolsMpileUp'}{'outDirectoryName'};
     $removeProgramFile{'pGATKGenoTypeGVCFs'}{'fileEnding'} = [".vcf"];
     $removeProgramFile{'pGATKGenoTypeGVCFs'}{'setting'} = "family";
     $removeProgramFile{'pGATKGenoTypeGVCFs'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$$alignerRef."/gatk";
     $removeProgramFile{'pGATKVariantRecalibration'}{'fileEnding'} = [".vcf"];
     $removeProgramFile{'pGATKVariantRecalibration'}{'setting'} = "family";
-    $removeProgramFile{'pGATKVariantRecalibration'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$$alignerRef."/gatk";
+    $removeProgramFile{'pGATKVariantRecalibration'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$$alignerRef."/".${$parameterHashRef}{'pGATKVariantRecalibration'}{'outDirectoryName'};
     
     ## VariantAnnotation
     $removeProgramFile{'pVT'}{'fileEnding'} = [".vcf"];
