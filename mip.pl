@@ -7046,6 +7046,7 @@ sub SamToolsMpileUp {
 	print $XARGSFILEHANDLE "-g ";  #Generate genotype likelihoods in BCF format
 	print $XARGSFILEHANDLE "-C 50 ";  #Adjust mapping quality
 	print $XARGSFILEHANDLE "-p ";  #Apply -m and -F per-sample for increased sensitivity
+	print $XARGSFILEHANDLE "-t DV "; #Optional tags to output; high-quality non-reference bases
 	print $XARGSFILEHANDLE "-f ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 
 	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDCounter++) { #Collect infiles for all sampleIDs
@@ -7086,7 +7087,14 @@ sub SamToolsMpileUp {
 	    print $XARGSFILEHANDLE "--samples-file ".$outFamilyFileDirectory."/".$$familyIDRef.".fam "; 
 	    print $XARGSFILEHANDLE "--constrain trio "; 
 	}
-
+	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE "| ";  #Pipe
+	print $XARGSFILEHANDLE "bcftools "; 
+	print $XARGSFILEHANDLE "filter ";  #SNP/indel variant calling filtering.
+	print $XARGSFILEHANDLE "-sLowQual ";  #Filter on lowQual
+	print $XARGSFILEHANDLE "-g3 ";  #Filter SNPs within <int> base pairs of an indel
+	print $XARGSFILEHANDLE "-G10 ";  #Filter clusters of indels separated by <int> or fewer base pairs allowing only one to pass
+	print $XARGSFILEHANDLE q?-e \'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %MAX(DV)/%MAX(DP)<=0.3\' ?;  #exclude sites for which the expression is true
 	print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf "; #OutFile
 	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	print $XARGSFILEHANDLE "\n";
