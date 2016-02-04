@@ -7117,9 +7117,24 @@ sub SamToolsMpileUp {
 			 });
     print $FILEHANDLE "wait", "\n\n";
   
-    close($FILEHANDLE);  
+    close($FILEHANDLE);     
     
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+
+	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		       'familyID' => $$familyIDRef,
+		       'programName' => "Samtools",
+		       'outDirectory' => $outFamilyDirectory,
+		       'outFileEnding' => $$familyIDRef.$outfileEnding.$callType.".vcf",
+		       'outDataType' => "static"
+		      });
+	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		       'familyID' => $$familyIDRef,
+		       'programName' => "Bcftools",
+		       'outDirectory' => $outFamilyDirectory,
+		       'outFileEnding' => $$familyIDRef.$outfileEnding.$callType.".vcf",
+		       'outDataType' => "static"
+		      });
 	
 	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 		       'sampleInfoHashRef' => \%{$sampleInfoHashRef},
