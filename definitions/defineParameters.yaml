@@ -511,8 +511,23 @@ pSamToolsMpileUp:
   fileEnding: _mpileup_
   programNamePath:
    - samtools
+   - bcftools
   type: program
   outDirectoryName: samtools
+  programType: variantCaller
+##Freebayes
+pFreebayes:
+  associatedProgram:
+   - MIP
+  chain: FREEB
+  dataType: SCALAR
+  default: 1
+  fileEnding: _freebayes_
+  programNamePath:
+   - freebayes
+   - bcftools
+  type: program
+  outDirectoryName: freebayes
   programType: variantCaller
 ## GATK Genotype
 pGATKHaploTypeCaller:
