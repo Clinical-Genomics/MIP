@@ -686,6 +686,12 @@ pGATKCombineVariantCallSets:
   default: 1
   fileEnding: comb_
   type: program
+GATKCombineVariantsPrioritizeCaller:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  mandatory: no
+  type: program
 ## VariantAnnotationBlock
 pVariantAnnotationBlock:
   associatedProgram:

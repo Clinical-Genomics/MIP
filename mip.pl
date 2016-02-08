@@ -160,6 +160,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -gvrbcf/--GATKVariantReCalibrationBCFFile Produce a bcf from the GATK VariantRecalibrator vcf (defaults to "1" (=yes))
                  -gcgpss/--GATKCalculateGenotypePosteriorsSupportSet GATK CalculateGenotypePosteriors support set (defaults to "1000G_phase3_v4_20130502.sites.vcf")
                -pGcv/--pGATKCombineVariantCallSets Combine variant call sets (defaults to "1" (=yes))
+                 -gcvpc/GATKCombineVariantsPrioritizeCaller The prioritization order of variant callers.(defaults to ""; comma sep; Options: gatk|samtools)
                -pGpT/--pGATKPhaseByTransmission Computes the most likely genotype and phases calls were unamibigous using GATK PhaseByTransmission (defaults to "0" (=yes))
                -pGrP/--pGATKReadBackedPhasing Performs physical phasing of SNP calls, based on sequencing reads using GATK ReadBackedPhasing (defaults to "0" (=yes))
                  -grpqth/--GATKReadBackedPhasingPhaseQualityThreshold The minimum phasing quality score required to output phasing (defaults to "20")
@@ -454,6 +455,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'gvrbcf|GATKVariantReCalibrationBCFFile:n' => \$parameter{'GATKVariantReCalibrationBCFFile'}{'value'},  #Produce compressed vcf
 	   'gcgpss|GATKCalculateGenotypePosteriorsSupportSet:s' => \$parameter{'GATKCalculateGenotypePosteriorsSupportSet'}{'value'},  #GATK CalculateGenotypePosteriors support set
 	   'pGcv|pGATKCombineVariantCallSets:n' => \$parameter{'pGATKCombineVariantCallSets'}{'value'},  #Combine variant call sets
+	   'gcvpc|GATKCombineVariantsPrioritizeCaller:s' => \$parameter{'GATKCombineVariantsPrioritizeCaller'}{'value'},  #Prioritize variant calls
 	   'pGpT|pGATKPhaseByTransmission:n' => \$parameter{'pGATKPhaseByTransmission'}{'value'},  #GATK PhaseByTransmission to produce phased genotype calls
 	   'pGrP|pGATKReadBackedPhasing:n' => \$parameter{'pGATKReadBackedPhasing'}{'value'},  #GATK ReadBackedPhasing
 	   'grpqth|GATKReadBackedPhasingPhaseQualityThreshold:n' => \$parameter{'GATKReadBackedPhasingPhaseQualityThreshold'}{'value'},  #quality score required to output phasing
@@ -5056,7 +5058,15 @@ sub GATKCombineVariantCallSets {
 
     print $FILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.".vcf ";  #Union of variant call sets outFile
     print $FILEHANDLE "-genotypeMergeOptions PRIORITIZE ";
-    print $FILEHANDLE "-priority ".join(",", @variantCallers);
+
+    if (defined(${$scriptParameterHashRef}{'GATKCombineVariantsPrioritizeCaller'})) {
+
+	print $FILEHANDLE "-priority ".${$scriptParameterHashRef}{'GATKCombineVariantsPrioritizeCaller'};
+    }
+    else {
+
+	print $FILEHANDLE "-priority ".join(",", @variantCallers);
+    }
     print $FILEHANDLE "\n\n";
     
     ## Copies file from temporary directory.
