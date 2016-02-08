@@ -151,9 +151,11 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -gvrtsg/--GATKVariantReCalibrationTrainingSet1000GSNP GATK VariantRecalibrator 1000G high confidence SNP training set (defaults to "1000G_phase1.snps.high_confidence.b37.vcf")
                  -gvrtso/--GATKVariantReCalibrationTrainingSet1000GOmni GATK VariantRecalibrator 1000G_omni training set (defaults to "1000G_omni2.5.b37.sites.vcf")
                  -gvrtsm/--GATKVariantReCalibrationTrainingSetMills GATK VariantRecalibrator Mills training set (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
-                 -gvrtsf/--GATKVariantReCalibrationTSFilterLevel The truth sensitivity level at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
+                 -gvrstf/--GATKVariantReCalibrationSnvTSFilterLevel The truth sensitivity level for snvs at which to start filtering used in GATK VariantRecalibrator (defaults to "99.5")
+                 -gvritf/--GATKVariantReCalibrationIndelTSFilterLevel The truth sensitivity level for indels at which to start filtering used in GATK VariantRecalibrator (defaults to "99.0")
                  -gvrdpa/--GATKVariantReCalibrationDPAnnotation Use the DP annotation in variant recalibration. (defaults to "1" (=yes))
-                 -gvrmga/--GATKVariantReCalibrationMaxGaussians Use hard filtering for indels (defaults to "1" (=yes))
+                 -gvrsmg/--GATKVariantReCalibrationSnvMaxGaussians Use hard filtering for snvs (defaults to "0" (=no))
+                 -gvrimg/--GATKVariantReCalibrationIndelMaxGaussians Use hard filtering for indels (defaults to "1" (=yes))
                  -gvrevf/--GATKVariantReCalibrationexcludeNonVariantsFile Produce a vcf containing non-variant loci alongside the vcf only containing non-variant loci after GATK VariantRecalibrator (defaults to "0" (=no))
                  -gvrbcf/--GATKVariantReCalibrationBCFFile Produce a bcf from the GATK VariantRecalibrator vcf (defaults to "1" (=yes))
                  -gcgpss/--GATKCalculateGenotypePosteriorsSupportSet GATK CalculateGenotypePosteriors support set (defaults to "1000G_phase3_v4_20130502.sites.vcf")
@@ -443,9 +445,11 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'gvrtsg|GATKVariantReCalibrationTrainingSet1000GSNP:s' => \$parameter{'GATKVariantReCalibrationTrainingSet1000GSNP'}{'value'},  #GATK VariantRecalibrator resource
 	   'gvrtso|GATKVariantReCalibrationTrainingSet1000GOmni:s' => \$parameter{'GATKVariantReCalibrationTrainingSet1000GOmni'}{'value'},  #GATK VariantRecalibrator resource
 	   'gvrtsm|GATKVariantReCalibrationTrainingSetMills:s' => \$parameter{'GATKVariantReCalibrationTrainingSetMills'}{'value'},  #GATK VariantRecalibrator resource
-	   'gvrtsf|GATKVariantReCalibrationTSFilterLevel:s' => \$parameter{'GATKVariantReCalibrationTSFilterLevel'}{'value'},  #Truth sensativity level
+	   'gvrstf|GATKVariantReCalibrationSnvTSFilterLevel:s' => \$parameter{'GATKVariantReCalibrationSnvTSFilterLevel'}{'value'},  #Snv truth sensativity level
+	   'gvritf|GATKVariantReCalibrationIndelTSFilterLevel:s' => \$parameter{'GATKVariantReCalibrationIndelTSFilterLevel'}{'value'},  #Indel truth sensativity level
 	   'gvrdpa|GATKVariantReCalibrationDPAnnotation:n' => \$parameter{'GATKVariantReCalibrationDPAnnotation'}{'value'},
-	   'gvrmga|GATKVariantReCalibrationMaxGaussians:n' => \$parameter{'GATKVariantReCalibrationMaxGaussians'}{'value'},
+	   'gvrsmg|GATKVariantReCalibrationSnvMaxGaussians:n' => \$parameter{'GATKVariantReCalibrationSnvMaxGaussians'}{'value'},
+	   'gvrimg|GATKVariantReCalibrationIndelMaxGaussians:n' => \$parameter{'GATKVariantReCalibrationIndelMaxGaussians'}{'value'},
 	   'gvrevf|GATKVariantReCalibrationexcludeNonVariantsFile:n' => \$parameter{'GATKVariantReCalibrationexcludeNonVariantsFile'}{'value'},
 	   'gvrbcf|GATKVariantReCalibrationBCFFile:n' => \$parameter{'GATKVariantReCalibrationBCFFile'}{'value'},  #Produce compressed vcf
 	   'gcgpss|GATKCalculateGenotypePosteriorsSupportSet:s' => \$parameter{'GATKCalculateGenotypePosteriorsSupportSet'}{'value'},  #GATK CalculateGenotypePosteriors support set
@@ -5209,6 +5213,11 @@ sub GATKVariantReCalibration {
 	    if ($modes[$modeCounter] eq "SNP") {
 	
 		print $FILEHANDLE "-input ".$$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType.".vcf ";
+
+		if (${$scriptParameterHashRef}{'GATKVariantReCalibrationSnvMaxGaussians'} ne 0) {
+		    
+		    print $FILEHANDLE "--maxGaussians 4 ";  #Use hard filtering
+		}
 	    }
 	    if ($modes[$modeCounter] eq "INDEL") {#Use created recalibrated snp vcf as input
 	
@@ -5225,13 +5234,12 @@ sub GATKVariantReCalibration {
 	    print $FILEHANDLE "-resource:omni,VCF,known=false,training=true,truth=false,prior=12.0 ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'GATKVariantReCalibrationTrainingSet1000GOmni'}." ";  #A list of sites for which to apply a prior probability of being correct but which aren't used by the algorithm
 	    print $FILEHANDLE "-resource:1000G,known=false,training=true,truth=false,prior=10.0 ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'GATKVariantReCalibrationTrainingSet1000GSNP'}." ";  #A list of sites for which to apply a prior probability of being correct but which aren't used by the algorithm
 	    print $FILEHANDLE "-an MQ ";  #The names of the annotations which should used for calculations.
-
 	}
 	if ( ($modes[$modeCounter] eq "INDEL") || ($modes[$modeCounter] eq "BOTH") ) {
 	    
 	    print $FILEHANDLE "-resource:mills,VCF,known=true,training=true,truth=true,prior=12.0 ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'GATKVariantReCalibrationTrainingSetMills'}." ";  #A list of sites for which to apply a prior probability of being correct but which aren't used by the algorithm
 
-	    if (${$scriptParameterHashRef}{'GATKVariantReCalibrationMaxGaussians'} ne 0) {
+	    if (${$scriptParameterHashRef}{'GATKVariantReCalibrationIndelMaxGaussians'} ne 0) {
 		
 		print $FILEHANDLE "--maxGaussians 4 ";  #Use hard filtering
 	    }
@@ -5277,14 +5285,15 @@ sub GATKVariantReCalibration {
 		
 		print $FILEHANDLE "-input ".$$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType.".vcf ";
 		print $FILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.".SNV.vcf ";
+		print $FILEHANDLE "--ts_filter_level ".${$scriptParameterHashRef}{'GATKVariantReCalibrationSnvTSFilterLevel'}." ";
 	    }
 	    if ($modes[$modeCounter] eq "INDEL") {#Use created recalibrated snp vcf as input
 	
 		print $FILEHANDLE "-input ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.".SNV.vcf ";
 		print $FILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.".vcf ";
+		print $FILEHANDLE "--ts_filter_level ".${$scriptParameterHashRef}{'GATKVariantReCalibrationIndelTSFilterLevel'}." ";
 	    }
 	}
-	print $FILEHANDLE "--ts_filter_level ".${$scriptParameterHashRef}{'GATKVariantReCalibrationTSFilterLevel'}." ";
 
 	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
 	&GATKPedigreeFlag(\%{$scriptParameterHashRef}, $FILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKVariantRecalibration");  #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family    
@@ -7121,7 +7130,7 @@ sub SamToolsMpileUp {
 	print $XARGSFILEHANDLE "-sLowQual ";  #Filter on lowQual
 	print $XARGSFILEHANDLE "-g3 ";  #Filter SNPs within <int> base pairs of an indel
 	print $XARGSFILEHANDLE "-G10 ";  #Filter clusters of indels separated by <int> or fewer base pairs allowing only one to pass
-	print $XARGSFILEHANDLE q?-e \'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %MAX(DV)/%MAX(DP)<=0.3\' ?;  #exclude sites for which the expression is true
+	print $XARGSFILEHANDLE q?-e \'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %MAX(DV)/%MAX(DP)<=0.25\' ?;  #exclude sites for which the expression is true
 	print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf "; #OutFile
 	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	print $XARGSFILEHANDLE "\n";

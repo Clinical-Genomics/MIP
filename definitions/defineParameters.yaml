@@ -628,11 +628,17 @@ GATKVariantReCalibrationTrainingSetMills:
   default: Mills_and_1000G_gold_standard.indels.b37.vcf
   existsCheck: file
   type: path
-GATKVariantReCalibrationTSFilterLevel:
+GATKVariantReCalibrationSnvTSFilterLevel:
   associatedProgram:
    - pGATKVariantRecalibration
   dataType: SCALAR
-  default: 99.9
+  default: 99.5
+  type: programArgument
+GATKVariantReCalibrationIndelTSFilterLevel:
+  associatedProgram:
+   - pGATKVariantRecalibration
+  dataType: SCALAR
+  default: 99.0
   type: programArgument
 GATKVariantReCalibrationDPAnnotation:
   associatedProgram:
@@ -640,7 +646,13 @@ GATKVariantReCalibrationDPAnnotation:
   dataType: SCALAR
   default: 1
   type: programArgument
-GATKVariantReCalibrationMaxGaussians:
+GATKVariantReCalibrationSnvMaxGaussians:
+  associatedProgram:
+   - pGATKVariantRecalibration
+  dataType: SCALAR
+  default: 0
+  type: programArgument
+GATKVariantReCalibrationIndelMaxGaussians:
   associatedProgram:
    - pGATKVariantRecalibration
   dataType: SCALAR
