@@ -778,6 +778,8 @@ if ($scriptParameter{'writeConfigFile'} ne 0) {  #Write config file for family
 					 "programType:variantCaller"],  #Collect all programs that are variantCallers
 		});
 
+&CheckPrioritizeVariantCallers(\%parameter, \%scriptParameter);
+
 
 ## Set contig prefix and contig names depending on reference used
 &SetContigs({'scriptParameterHashRef' => \%scriptParameter,
@@ -12089,7 +12091,7 @@ sub DownloadReference {
 
 	my $temporaryFilePath = $$cosmidResourceDirectoryRef."/".${$supportedCosmidReferenceHashRef}{$parameterName}{'cosmidName'}."/*";
 
-	if ( ( any {$_ eq ${$supportedCosmidReferenceHashRef}{$parameterName}{'cosmidName'}} @vtReferences ) ) {  #If element is not part of array
+	if ( ( any {$_ eq ${$supportedCosmidReferenceHashRef}{$parameterName}{'cosmidName'}} @vtReferences ) ) {  #If element is part of array
 
 	    ## Split multi allelic records into single records and normalize
 	    &VTCore({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
@@ -19556,6 +19558,49 @@ sub AddToParameter {
 		
 		push(@{${$parameterHashRef}{'dynamicParameters'}{$stringToMatch}}, $key);
 	    }
+	}
+    }
+}
+
+
+sub CheckPrioritizeVariantCallers {
+
+##CheckPrioritizeVariantCallers
+    
+##Function : Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
+##Returns  : ""
+##Arguments: $parameterHashRef, $scriptParameterHashRef
+##         : $parameterHashRef       => The parameter hash {REF}
+##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+
+    my $parameterHashRef = $_[0];
+    my $scriptParameterHashRef = $_[1];
+
+    my @priorityCalls = split(",", ${$scriptParameterHashRef}{'GATKCombineVariantsPrioritizeCaller'});
+    my @variantCallerAliases;  #No matching variant caller
+
+    ## Check that all active variant callers have a priority order
+    foreach my $variantCaller (@{${$parameterHashRef}{'dynamicParameters'}{'variantCaller'}}) {
+
+	my $programOutDirectoryNameRef = \${$parameterHashRef}{$variantCaller}{'outDirectoryName'};
+	push(@variantCallerAliases, $$programOutDirectoryNameRef);
+
+	if (${$scriptParameterHashRef}{$variantCaller} > 0) { #Only active programs
+
+	    if (! ( any {$_ eq $$programOutDirectoryNameRef} @priorityCalls ) ) {  #If element is not part of string
+
+		$logger->fatal("GATKCombineVariantsPrioritizeCaller does not contain active variant caller: '".$$programOutDirectoryNameRef."'");
+		exit 1;
+	    }
+	}
+    }
+    ## Check that prioritize string contains valid variant call names
+    foreach my $prioritizeCall (@priorityCalls) {
+	
+	if (! ( any {$_ eq $prioritizeCall} @variantCallerAliases ) ) {  #If element is not part of string
+	    
+	    $logger->fatal("GATKCombineVariantsPrioritizeCaller: '".$prioritizeCall."' does not match any supported variant caller: '".join(",", @variantCallerAliases)."'");
+	    exit 1;
 	}
     }
 }
