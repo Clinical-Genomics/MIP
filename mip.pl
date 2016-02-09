@@ -657,6 +657,7 @@ for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs
     &ScriptParameterPerSampleID(\%scriptParameter, \$scriptParameter{'familyID'}, \$scriptParameter{'sampleIDs'}[$sampleIDCounter], "GATKTargetPaddedBedIntervalLists");
 }
 
+
 ## Compares the number of elements in two arrays and exits if the elements are not equal
 &CompareArrayElements(\@{$scriptParameter{'sampleIDs'}}, \@{$scriptParameter{'inFilesDirs'}}, "sampleIDs", "inFileDirs");
 
@@ -12373,34 +12374,35 @@ sub ReadPlinkPedigreeFile {
     my $filePath = $_[8];
     
     my @pedigreeFileElements = ("FamilyID", "SampleID", "Father", "Mother", "Sex", "Phenotype", );
+    my @pedigreeSampleIDs;
     my $familyID;
     my $sampleID;
     
     ## Determine if the user supplied info on array parameter
     my $userSampleIDsSwitch = &CheckUserInfoArrays(\%{$scriptParameterHashRef}, \@{${$parameterHashRef}{'sampleIDs'}{'value'}}, "sampleIDs");
-    my $userExomeTargetBedInfileListsSwitch = &CheckUserInfoArrays(\%{$scriptParameterHashRef}, \@{$exomeTargetBedInfileListsArrayRef}, "exomeTargetBedInfileLists"); 
+    my $userExomeTargetBedInfileListsSwitch = &CheckUserInfoArrays(\%{$scriptParameterHashRef}, \@{$exomeTargetBedInfileListsArrayRef}, "exomeTargetBedInfileLists");
     my $userExomeTargetPaddedBedInfileListSwitch = &CheckUserInfoArrays(\%{$scriptParameterHashRef}, \@{$exomeTargetPaddedBedInfileListsArrayRef}, "exomeTargetPaddedBedInfileLists");
     my $userExomeTargetPaddedBedIntervalListSwitch = &CheckUserInfoArrays(\%{$scriptParameterHashRef}, \@{$GATKTargetPaddedBedIntervalListsArrayRef}, "GATKTargetPaddedBedIntervalLists");
-
+    
     ## Defines which entries are allowed and links them to position.
     my %plinkPedigree = &DefinePlinkPedigree();  #Holds allowed entries and positions to be checked for Plink pedigree files
-
+    
     open(my $PEDF, "<", $filePath) or $logger->logdie("Can't open '".$filePath."': ".$!."\n");    
-     
+    
     while (<$PEDF>) {
 	
 	chomp $_;  #Remove newline
 	
 	if ( ($. == 1) && ($_ =~/^\#/) ) {  #Header present overwrite @pedigreeFileElements with header info
-	
-	    @pedigreeFileElements = split("\t", $'); #'
-	    next;
+	    
+	    @pedigreeFileElements = split("\t", $'); #')
+		next;
 	}
 	if (m/^\s+$/) {  # Avoid blank lines
-            next;
-        }
+	    next;
+	}
 	if (m/^\#/) {  # Avoid "#"
-            next;
+	    next;
         }		
 	if ($_ =~/(\S+)/) {	
 	    
@@ -12408,7 +12410,7 @@ sub ReadPlinkPedigreeFile {
 	    
 	    ##Need to parse familyID and sampleID separately since these have not been set yet
 	    if ($lineInfo[0] =~/\S+/) {  #FamilyID
-
+		
 		$familyID = $lineInfo[0];
 		if ($familyID ne ${$scriptParameterHashRef}{'familyID'}) {
 
@@ -12427,7 +12429,11 @@ sub ReadPlinkPedigreeFile {
 
 		if ($userSampleIDsSwitch == 0) {
 
-		    push(@{${$scriptParameterHashRef}{'sampleIDs'}}, $lineInfo[1]);  #Save sampleid info
+		    push(@{${$scriptParameterHashRef}{'sampleIDs'}}, $lineInfo[1]);  #Save sampleID info
+		}
+		else {  #Save sampleIDs in pedigree to check that user supplied info and sampleID in pedigree match
+
+		    push(@pedigreeSampleIDs, $lineInfo[1]); #Save pedigree sampleID info 
 		}
 	    }
 	    else {
@@ -12441,7 +12447,7 @@ sub ReadPlinkPedigreeFile {
 		    
 		    ## Test element for being part of hash of array at supplied key.
 		    if (&CheckEntryHashofArray(\%plinkPedigree, $sampleElementsCounter, $lineInfo[$sampleElementsCounter])) {
-
+			
 			$logger->fatal("Found illegal element: '".$lineInfo[$sampleElementsCounter]."' in column '".$sampleElementsCounter."' in pedigree file: '".$filePath."' at line '".$.."'\n");
 			$logger->fatal("Please correct the entry before analysis.\n");
 			$logger->fatal("\nMIP: Aborting run.\n\n");
@@ -12462,12 +12468,12 @@ sub ReadPlinkPedigreeFile {
 		    if (${$sampleInfoHashRef}{$familyID}{$sampleID}{'Capture_kit'} && $pedigreeFileElements[$sampleElementsCounter] eq "Capture_kit") {  #Add latest capture kit for each individual
 			
 			my $captureKit = ${$sampleInfoHashRef}{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]}[-1];  #Use only the last capture kit since it should be the most interesting
-
-			${$scriptParameterHashRef}{$familyID}{$sampleID}{'exomeTargetBedInfileLists'} = &AddCaptureKit(\%{$fileInfoHashRef}, \%{$supportedCaptureKitHashRef}, 
+			${$scriptParameterHashRef}{$familyID}{$sampleID}{'exomeTargetBedInfileLists'} = &AddCaptureKit(\%{$fileInfoHashRef},
+														       \%{$supportedCaptureKitHashRef}, 
 														       {'captureKit' => $captureKit, 
 															'parameterName' => "exomeTargetBedInfileLists", 
 															'userSuppliedParameterswitch' => $userExomeTargetBedInfileListsSwitch,
-														       });  #Capture kit target infile_list 
+														       });  #Capture kit target infile_list
 			${$scriptParameterHashRef}{$familyID}{$sampleID}{'exomeTargetPaddedBedInfileLists'} = &AddCaptureKit(\%{$fileInfoHashRef}, \%{$supportedCaptureKitHashRef}, 
 															     {'captureKit' => $captureKit,
 															      'parameterName' => "exomeTargetPaddedBedInfileLists",
@@ -12483,7 +12489,7 @@ sub ReadPlinkPedigreeFile {
 		else {  #No entry in pedigre file element
 		    
 		    if ($sampleElementsCounter < 6) {  #Only check mandatory elements 
-
+			
 			$logger->fatal($pedigreeFileElements[$sampleElementsCounter], "\t File: ".$filePath." at line ".$.."\tcannot find '".$pedigreeFileElements[$sampleElementsCounter]."' entry in column ".$sampleElementsCounter, "\n");
 			exit 1;
 		    }  
@@ -12492,8 +12498,24 @@ sub ReadPlinkPedigreeFile {
 	}	
     }
     if ($userSampleIDsSwitch == 0) {
-
+	
 	@{${$scriptParameterHashRef}{'sampleIDs'}} = sort(@{${$scriptParameterHashRef}{'sampleIDs'}});  #Lexiographical sort to determine the correct order of ids indata
+    }
+    else { #Check that CLI supplied sampleID exists in pedigree
+
+	## Prepare CLI supplied sampleIDs if comma sep
+	my $valuesArrayRef = \@{${$parameterHashRef}{'sampleIDs'}{'value'}};
+	my $elementSeparatorRef = \${$parameterHashRef}{'sampleIDs'}{'elementSeparator'};
+	my @tempSampleIDs = split($$elementSeparatorRef, join($$elementSeparatorRef, @{$valuesArrayRef}) );
+
+	foreach my $sampleID (@tempSampleIDs) {  
+	    
+	    if (! ( any {$_ eq $sampleID} @pedigreeSampleIDs ) ) {  #If element is not part of array
+		
+		$logger->fatal("Provided sampleID: ".$sampleID." is not present in pedigree file: ".$filePath, "\n");
+		exit 1;
+	    }
+	}
     }
     $logger->info("Read pedigree file: ".$filePath, "\n");
     close($PEDF);
@@ -13419,7 +13441,7 @@ sub AddTargetlistsToScriptParameter {
 		unless (defined(${$argHashRef}{'parameterValue'})) {  #Input from cmd
 		    
 		    if (defined(${$scriptParameterHashRef}{$parameterName})) {  #Input from config file
-			
+
 			if ($parameterName eq "exomeTargetBedInfileLists") {  #ExomeTargetBedInfileLists is a comma separated list 
 
 			    &SetTargetandAutoBuild(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$fileInfoHashRef}, \%{$supportedCaptureKitHashRef}, \@{${$scriptParameterHashRef}{'sampleIDs'}}, \$parameterName, \${$fileInfoHashRef}{'exomeTargetBedInfileLists'});
@@ -13434,7 +13456,7 @@ sub AddTargetlistsToScriptParameter {
 			}
 		    }
 		    elsif (${$argHashRef}{'parameterDefault'} ne "nodefault") {  #Add default value
-			
+
 			if ($parameterName eq "exomeTargetBedInfileLists") {
 			    
 			    &SetTargetandAutoBuild(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$fileInfoHashRef}, \%{$supportedCaptureKitHashRef}, \@{${$scriptParameterHashRef}{'sampleIDs'}}, \$parameterName, \${$fileInfoHashRef}{'exomeTargetBedInfileLists'});
@@ -15233,7 +15255,7 @@ sub PrepareArrayParameters {
     unless (scalar(@{$arrayRef}) == 0) {  #No input from cmd	    
 
 	${$parameterHashRef}{ ${$argHashRef}{'parameterName'} }{'value'} = "SetbyUser";
-	@{$arrayRef} = join(',',@{$arrayRef});  #If user supplied parameter a comma separated list
+	@{$arrayRef} = join(',',@{$arrayRef});  #If user supplied parameter as comma separated list
     }
     push(@{$orderParametersArrayRef}, ${$argHashRef}{'parameterName'});  #Add to enable later evaluation of parameters in proper order & write to master file
 
@@ -19400,12 +19422,15 @@ sub DetectFounders {
 	my $fatherInfo = ${$sampleInfoHashRef}{${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'Father'};  #Alias
 	my $motherInfo = ${$sampleInfoHashRef}{${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'Mother'};  #Alias
 	
-	if ( ($fatherInfo ne 0) && ($motherInfo ne 0) ) {  #Child
+	if ( (defined($fatherInfo)) && ($fatherInfo ne 0) ) {  #Child
 	    
 	    if (any {$_ eq $fatherInfo} @{${$scriptParameterHashRef}{'sampleIDs'}}) {  #If element is part of array
 		
 		push(@founders, $fatherInfo);
 	    }
+	}
+	if ( (defined($motherInfo)) && ($motherInfo ne 0) ) {  #Child
+	    
 	    if (any {$_ eq $motherInfo} @{${$scriptParameterHashRef}{'sampleIDs'}} ) {  #If element is part of array
 		
 		push(@founders, $motherInfo);
