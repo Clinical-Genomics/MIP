@@ -12,6 +12,9 @@ use FindBin qw($Bin); #Find directory of script
 use vars qw($USAGE);
 use IPC::Cmd qw[can_run run];
 
+## Third party module(s)
+use List::MoreUtils qw(any);
+
 BEGIN {
     $USAGE =
 	qq{install.pl [options]
@@ -36,7 +39,8 @@ BEGIN {
            ## Utility
            -pbc/--preferBioConda Bioconda will used for overlapping shell and biconda installations (Default: 1 (=yes))
            -ppd/--printParameterDefaults Print the parameter defaults
-           -u/--update Always install program (Default: 1 (=yes))
+           -u/--update Always install all programs (Default: 1 (=yes))
+           -sp/--selectPrograms Install supplied programs e.g. -sp perl -sp bedTools (Default: "";)
            -h/--help Display this help message   
            -v/--version Display version
         };    
@@ -47,8 +51,9 @@ my %parameter;
 
 ### Set parameter default
 
-##Conda
 $parameter{'update'} = 1;
+
+##Conda
 $parameter{'preferBioConda'} = 1;
 $parameter{'condaEnvironment'} = "mip";
 $parameter{'condaPath'} = $ENV{HOME}."/miniconda";
@@ -104,7 +109,7 @@ $parameter{'variantEffectPredictor'} = "83";
 $parameter{'vepDirectoryCache'} = $parameter{'condaPath'}.q?/envs/?.$parameter{'condaEnvironment'}.q?/ensembl-tools-release-?.$parameter{'variantEffectPredictor'}.q?/cache?;  #Cache directory;
 $parameter{'variantEffectPredictorPlugin'} = "UpDownDistance";
 
-my $installVersion = "0.0.2";
+my $installVersion = "0.0.3";
 
 ###User Options
 GetOptions('env|condaEnvironment:s'  => \$parameter{'condaEnvironment'},
@@ -125,12 +130,12 @@ GetOptions('env|condaEnvironment:s'  => \$parameter{'condaEnvironment'},
 	   'pbc|preferBioConda:s' => \$parameter{'preferBioConda'},  # Bioconda will used for overlapping shell and biconda installlations
 	   'ppd|printParameterDefaults' => sub { &PrintParameters(\%parameter); exit;},  #Display parameter defaults
 	   'u|update:n' => \$parameter{'update'},
+	   'sp|selectPrograms:s' => \@{$parameter{'selectPrograms'}},  #Comma sep string
 	   'h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
 	   'v|version' => sub { print STDOUT "\ninstall.pl ".$installVersion, "\n\n"; exit;},  #Display version number
     );
 
 ###MAIN###
-
 
 #my $LOGFILEHANDLE = &OpenLogFile("MIP_installation.log");
 
@@ -140,28 +145,81 @@ my $BASHFILEHANDLE = &CreateBashFile("mip.sh");
 
 &CreateCondaEnvironment(\%parameter, $BASHFILEHANDLE);
 
-&Perl(\%parameter, $BASHFILEHANDLE);
+if (scalar(@{$parameter{'selectPrograms'}}) > 0) {
+	
+    if ( ( any {$_ eq "perl"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 
+	&Perl(\%parameter, $BASHFILEHANDLE);
+    }
+}
+else {
+
+    &Perl(\%parameter, $BASHFILEHANDLE);
+}
 &PipInstall(\%parameter, $BASHFILEHANDLE);
 
 if ($parameter{'preferBioConda'} != 1) {
 
-    &PicardTools(\%parameter, $BASHFILEHANDLE);
+    if (scalar(@{$parameter{'selectPrograms'}}) > 0) {
+	
+	if ( ( any {$_ eq "picardTools"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+	    
+	    &PicardTools(\%parameter, $BASHFILEHANDLE);
+	}
+	if ( ( any {$_ eq "sambamba"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 
-    &Sambamba(\%parameter, $BASHFILEHANDLE);
+	    &Sambamba(\%parameter, $BASHFILEHANDLE);
+	}
+	if ( ( any {$_ eq "bedTools"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 
-    &BedTools(\%parameter, $BASHFILEHANDLE);
+	    &BedTools(\%parameter, $BASHFILEHANDLE);
+	}
+	if ( ( any {$_ eq "vt"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 
-    &VT(\%parameter, $BASHFILEHANDLE);
+	    &VT(\%parameter, $BASHFILEHANDLE);
+	}
+	if ( ( any {$_ eq "snpEff"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 
-    &SnpEff(\%parameter, $BASHFILEHANDLE);
+	    &SnpEff(\%parameter, $BASHFILEHANDLE);
+	}
+    }
+    else {
+	
+	&PicardTools(\%parameter, $BASHFILEHANDLE);
+	
+	&Sambamba(\%parameter, $BASHFILEHANDLE);
+	
+	&BedTools(\%parameter, $BASHFILEHANDLE);
+	
+	&VT(\%parameter, $BASHFILEHANDLE);
+	
+	&SnpEff(\%parameter, $BASHFILEHANDLE);
+    }
 }
 
-&VcfTools(\%parameter, $BASHFILEHANDLE);
+if (scalar(@{$parameter{'selectPrograms'}}) > 0) {
+	
+	if ( ( any {$_ eq "vcfTools"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 
-&Plink(\%parameter, $BASHFILEHANDLE);
+	    &VcfTools(\%parameter, $BASHFILEHANDLE);
+	}
+	if ( ( any {$_ eq "plink"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+	    
+	    &Plink(\%parameter, $BASHFILEHANDLE);
+	}
+	if ( ( any {$_ eq "variantEffectPredictor"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 
-&VariantEffectPredictor(\%parameter, $BASHFILEHANDLE);
+	    &VariantEffectPredictor(\%parameter, $BASHFILEHANDLE);
+	}
+}
+else {
+
+    &VcfTools(\%parameter, $BASHFILEHANDLE);
+    
+    &Plink(\%parameter, $BASHFILEHANDLE);
+    
+    &VariantEffectPredictor(\%parameter, $BASHFILEHANDLE);
+}
 
 close($BASHFILEHANDLE);
 #close($LOGFILEHANDLE);
@@ -279,9 +337,10 @@ sub CreateCondaEnvironment {
     
     ## Install all bioConda packages
     foreach my $program (keys %{${$parameterHashRef}{'bioConda'}}) {
-	
+	    
 	print $FILEHANDLE $program."=".${$parameterHashRef}{'bioConda'}{$program}." ";
     }
+
     print $FILEHANDLE "\n\n";
 
     &AddSoftLink({'parameterHashRef' => $parameterHashRef,
