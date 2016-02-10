@@ -683,7 +683,7 @@ GATKVariantReCalibrationBCFFile:
   associatedProgram:
    - pGATKVariantRecalibration
   dataType: SCALAR
-  default: 1
+  default: 0
   type: programArgument
 GATKCalculateGenotypePosteriorsSupportSet:
   associatedProgram:
@@ -703,10 +703,16 @@ pGATKCombineVariantCallSets:
   type: program
 GATKCombineVariantsPrioritizeCaller:
   associatedProgram:
-   - MIP
+   - pGATKCombineVariantCallSets
   dataType: SCALAR
   mandatory: no
   type: program
+GATKCombineVariantCallSetsBCFFile:
+  associatedProgram:
+   - pGATKCombineVariantCallSets
+  dataType: SCALAR
+  default: 1
+  type: programArgument
 ## VariantAnnotationBlock
 pVariantAnnotationBlock:
   associatedProgram:

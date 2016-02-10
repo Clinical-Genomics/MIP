@@ -163,6 +163,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -gvrbcf/--GATKVariantReCalibrationBCFFile Produce a bcf from the GATK VariantRecalibrator vcf (defaults to "1" (=yes))
                  -gcgpss/--GATKCalculateGenotypePosteriorsSupportSet GATK CalculateGenotypePosteriors support set (defaults to "1000G_phase3_v4_20130502.sites.vcf")
                -pGcv/--pGATKCombineVariantCallSets Combine variant call sets (defaults to "1" (=yes))
+                 -gcvbcf/--GATKCombineVariantCallSetsBCFFile Produce a bcf from the GATK CombineVariantCallSet vcf (defaults to "1" (=yes))
                  -gcvpc/GATKCombineVariantsPrioritizeCaller The prioritization order of variant callers.(defaults to ""; comma sep; Options: gatk|samtools)
                -pGpT/--pGATKPhaseByTransmission Computes the most likely genotype and phases calls were unamibigous using GATK PhaseByTransmission (defaults to "0" (=yes))
                -pGrP/--pGATKReadBackedPhasing Performs physical phasing of SNP calls, based on sequencing reads using GATK ReadBackedPhasing (defaults to "0" (=yes))
@@ -460,6 +461,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'gcgpss|GATKCalculateGenotypePosteriorsSupportSet:s' => \$parameter{'GATKCalculateGenotypePosteriorsSupportSet'}{'value'},  #GATK CalculateGenotypePosteriors support set
 	   'pGcv|pGATKCombineVariantCallSets:n' => \$parameter{'pGATKCombineVariantCallSets'}{'value'},  #Combine variant call sets
 	   'gcvpc|GATKCombineVariantsPrioritizeCaller:s' => \$parameter{'GATKCombineVariantsPrioritizeCaller'}{'value'},  #Prioritize variant calls
+	   'gcvbcf|GATKCombineVariantCallSetsBCFFile:n' => \$parameter{'GATKCombineVariantCallSetsBCFFile'}{'value'},  #Produce compressed vcf
 	   'pGpT|pGATKPhaseByTransmission:n' => \$parameter{'pGATKPhaseByTransmission'}{'value'},  #GATK PhaseByTransmission to produce phased genotype calls
 	   'pGrP|pGATKReadBackedPhasing:n' => \$parameter{'pGATKReadBackedPhasing'}{'value'},  #GATK ReadBackedPhasing
 	   'grpqth|GATKReadBackedPhasingPhaseQualityThreshold:n' => \$parameter{'GATKReadBackedPhasingPhaseQualityThreshold'}{'value'},  #quality score required to output phasing
@@ -5096,6 +5098,20 @@ sub GATKCombineVariantCallSets {
     }
     print $FILEHANDLE "\n\n";
     
+    if (${$scriptParameterHashRef}{'GATKCombineVariantCallSetsBCFFile'} == 1) {
+	
+	&VcfToBcf({'infile' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType,
+		   'FILEHANDLE' => $FILEHANDLE,
+		  });
+	
+	## Copies file from temporary directory.
+	print $FILEHANDLE "## Copy file from temporary directory\n";
+	&MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.".bcf*",
+			      'filePath' => $outFamilyDirectory."/",
+			      'FILEHANDLE' => $FILEHANDLE,
+			     });
+    }
+
     ## Copies file from temporary directory.
     print $FILEHANDLE "## Copy file from temporary directory\n";
     &MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.".vcf",
@@ -5108,6 +5124,13 @@ sub GATKCombineVariantCallSets {
 
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 	
+	${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'VCFFile'}{'ReadyVcf'}{'Path'} = $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType.".vcf";	
+
+	if (${$scriptParameterHashRef}{'GATKCombineVariantCallSetsBCFFile'} eq 1) {
+
+	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'BCFFile'}{'Path'} = $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType.".bcf";
+	}
+
 	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 		       'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 		       'jobIDHashRef' => \%{$jobIDHashRef},
@@ -5432,22 +5455,12 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "\n\n";
     }
 
-    ## Produce a bcf compressed vcf
+    ## Produce a bcf compressed and index from vcf
     if (${$scriptParameterHashRef}{'GATKVariantReCalibrationBCFFile'} == 1) {
 	
-	print $FILEHANDLE "## Compress vcf to bcf","\n";
-	print $FILEHANDLE "bcftools ";
-	print $FILEHANDLE "view ";  #VCF/BCF conversion
-	print $FILEHANDLE "-O b ";  #Output type - b: compressed BCF
-	print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.".vcf ";  #Infile
-	print $FILEHANDLE "> ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.".bcf ";  #Outfile
-	print $FILEHANDLE "\n\n";
-	
-	print $FILEHANDLE "## Index bcf","\n";
-	print $FILEHANDLE "bcftools ";
-	print $FILEHANDLE "index ";  #VCF/BCF conversion
-	print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.".bcf ";  #Outfile
-	print $FILEHANDLE "\n\n";
+	&VcfToBcf({'infile' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType,
+		   'FILEHANDLE' => $FILEHANDLE,
+		  });
 	
 	## Copies file from temporary directory.
 	print $FILEHANDLE "## Copy file from temporary directory\n";
@@ -7167,6 +7180,11 @@ sub SamToolsMpileUp {
 	print $XARGSFILEHANDLE "-g3 ";  #Filter SNPs within <int> base pairs of an indel
 	print $XARGSFILEHANDLE "-G10 ";  #Filter clusters of indels separated by <int> or fewer base pairs allowing only one to pass
 	print $XARGSFILEHANDLE q?-e \'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %MAX(DV)/%MAX(DP)<=0.25\' ?;  #exclude sites for which the expression is true
+	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE "| ";  #Pipe
+	print $XARGSFILEHANDLE "bcftools "; 
+	print $XARGSFILEHANDLE "norm ";  #
+	print $XARGSFILEHANDLE "-f ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf "; #OutFile
 	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	print $XARGSFILEHANDLE "\n";
@@ -7421,6 +7439,11 @@ sub Freebayes {
 	print $XARGSFILEHANDLE "-g3 ";  #Filter SNPs within <int> base pairs of an indel
 	print $XARGSFILEHANDLE "-G10 ";  #Filter clusters of indels separated by <int> or fewer base pairs allowing only one to pass
 	print $XARGSFILEHANDLE q?-e \'%QUAL<10 || (AC<2 && %QUAL<15)\' ?;  #exclude sites for which the expression is true
+	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE "| ";  #Pipe
+	print $XARGSFILEHANDLE "bcftools "; 
+	print $XARGSFILEHANDLE "norm ";  #
+	print $XARGSFILEHANDLE "-f ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 	print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf "; #OutFile
 	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	print $XARGSFILEHANDLE "\n";
@@ -19608,6 +19631,43 @@ sub CheckPrioritizeVariantCallers {
 	    exit 1;
 	}
     }
+}
+
+sub VcfToBcf {
+    
+##VcfToBcf
+    
+##Function : Compress vcf to bcf and index.
+##Returns  : ""
+##Arguments: $infile, $FILEHANDLE
+##         : $infile     => The file to compress and index (no fileEnding)
+##         : $FILEHANDLE => SBATCH script FILEHANDLE to print to
+    
+    my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $infile = ${$argHashRef}{'infile'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    
+    ## Mandatory arguments
+    my %mandatoryArgument = ('infile' => $infile,
+			     'FILEHANDLE' => $FILEHANDLE,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "VcfToBcf");
+    
+    print $FILEHANDLE "## Compress vcf to bcf","\n";
+    print $FILEHANDLE "bcftools ";
+    print $FILEHANDLE "view ";  #VCF/BCF conversion
+    print $FILEHANDLE "-O b ";  #Output type - b: compressed BCF
+    print $FILEHANDLE $infile.".vcf ";  #Infile
+    print $FILEHANDLE "> ".$infile.".bcf ";  #Outfile
+    print $FILEHANDLE "\n\n";
+    
+    print $FILEHANDLE "## Index bcf","\n";
+    print $FILEHANDLE "bcftools ";
+    print $FILEHANDLE "index ";  #VCF/BCF conversion
+    print $FILEHANDLE $infile.".bcf ";  #Bcf file to index
+    print $FILEHANDLE "\n\n";
 }
 
 
