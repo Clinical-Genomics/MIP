@@ -69,6 +69,7 @@ $parameter{'bioConda'}{'htslib'} = "1.3";
 $parameter{'bioConda'}{'bedtools'} = "2.25.0";
 $parameter{'bioConda'}{'vt'} = "2015.11.10";
 $parameter{'bioConda'}{'sambamba'} = "0.5.9";
+$parameter{'bioConda'}{'freebayes'} = "1.0.2";
 
 ##Perl Modules
 $parameter{'perl'} = "5.18.2";
