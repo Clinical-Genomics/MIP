@@ -7449,7 +7449,7 @@ sub Freebayes {
 
 	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 		       'familyID' => $$familyIDRef,
-		       'programName' => "Samtools",
+		       'programName' => "Freebayes",
 		       'outDirectory' => $outFamilyDirectory,
 		       'outFileEnding' => $$familyIDRef.$outfileEnding.$callType.".vcf",
 		       'outDataType' => "static"
@@ -19126,10 +19126,15 @@ sub RemoveFiles {
 	$removeProgramFile{'pGATKHaploTypeCaller'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerRef."/gatk";
     }
 
-    ## Family files
+    ### Family files
     $removeProgramFile{'pSamToolsMpileUp'}{'fileEnding'} = [".vcf"];
     $removeProgramFile{'pSamToolsMpileUp'}{'setting'} = "family";
     $removeProgramFile{'pSamToolsMpileUp'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$$alignerRef."/".${$parameterHashRef}{'pSamToolsMpileUp'}{'outDirectoryName'};
+
+    $removeProgramFile{'pFreebayes'}{'fileEnding'} = [".vcf"];
+    $removeProgramFile{'pFreebayes'}{'setting'} = "family";
+    $removeProgramFile{'pFreebayes'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$$alignerRef."/".${$parameterHashRef}{'pFreebayes'}{'outDirectoryName'};
+
     $removeProgramFile{'pGATKGenoTypeGVCFs'}{'fileEnding'} = [".vcf"];
     $removeProgramFile{'pGATKGenoTypeGVCFs'}{'setting'} = "family";
     $removeProgramFile{'pGATKGenoTypeGVCFs'}{'inDirectory'} = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$$alignerRef."/gatk";
