@@ -196,6 +196,10 @@ pMosaikBuild:
   fileEnding: nofileEnding
   programNamePath:
    - MosaikBuild
+  removalFileEnding:
+   - .dat
+  removeRedundantFiles: yes
+  removalSetting: single
   type: program
 mosaikBuildMedianFragLength:
   associatedProgram:
@@ -212,6 +216,11 @@ pMosaikAlign:
   fileEnding: _sorted
   programNamePath:
    - MosaikAligner
+  removalFileEnding:
+   - .stat
+   - .bam
+  removeRedundantFiles: yes
+  removalSetting: single
   type: program
 mosaikAlignReference:
   associatedProgram:
@@ -257,6 +266,10 @@ pBwaMem:
    - bwa
    - samtools
    - sambamba
+  removalFileEnding:
+   - .bam
+  removeRedundantFiles: yes
+  removalSetting: single
   type: program
 bwaMemRapidDb:
   associatedProgram:
@@ -286,6 +299,10 @@ pBwaAln:
   fileEnding: nofileEnding
   programNamePath:
    - bwa
+  removalFileEnding:
+   - .sai
+  removeRedundantFiles: yes
+  removalSetting: single
   type: program
 bwaAlnQualityTrimming:
   associatedProgram:
@@ -302,6 +319,10 @@ pBwaSampe:
   fileEnding: nofileEnding
   programNamePath:
    - bwa
+  removalFileEnding:
+   - .bam
+  removeRedundantFiles: yes
+  removalSetting: single
   type: program
 bwaBuildReference:
   associatedProgram:
@@ -346,6 +367,10 @@ pPicardToolsMergeSamFiles:
   dataType: SCALAR
   default: 1
   fileEnding: _merged
+  removalFileEnding:
+   - .bam
+  removeRedundantFiles: yes
+  removalSetting: merged
   type: program
 pSambambaMarkduplicates:
   associatedProgram:
@@ -356,6 +381,10 @@ pSambambaMarkduplicates:
   fileEnding: _smd
   programNamePath:
    - sambamba
+  removalFileEnding:
+   - .bam
+  removeRedundantFiles: yes
+  removalSetting: merged
   type: program
 ## GATK BAM Calibration
 pGATKRealigner:
@@ -365,6 +394,10 @@ pGATKRealigner:
   dataType: SCALAR
   default: 1
   fileEnding: _rreal
+  removalFileEnding:
+   - .bam
+  removeRedundantFiles: yes
+  removalSetting: merged
   type: program
 GATKReAlignerINDELKnownSet1:
   associatedProgram:
@@ -389,6 +422,10 @@ pGATKBaseRecalibration:
   dataType: SCALAR
   default: 1
   fileEnding: _brecal
+  removalFileEnding:
+   - .bam
+  removeRedundantFiles: yes
+  removalSetting: merged
   type: program
 GATKBaseReCalibrationSNPKnownSet:
   associatedProgram:
@@ -509,12 +546,16 @@ pSamToolsMpileUp:
   dataType: SCALAR
   default: 1
   fileEnding: _mpileup_
+  outDirectoryName: samtools
   programNamePath:
    - samtools
    - bcftools
-  type: program
-  outDirectoryName: samtools
   programType: variantCaller
+  removalFileEnding:
+   - .vcf
+  removeRedundantFiles: yes
+  removalSetting: family
+  type: program
 ##Freebayes
 pFreebayes:
   associatedProgram:
@@ -526,9 +567,13 @@ pFreebayes:
   programNamePath:
    - freebayes
    - bcftools
-  type: program
   outDirectoryName: freebayes
   programType: variantCaller
+  removalFileEnding:
+   - .vcf
+  removeRedundantFiles: yes
+  removalSetting: family
+  type: program
 ## GATK Genotype
 pGATKHaploTypeCaller:
   associatedProgram:
@@ -537,6 +582,10 @@ pGATKHaploTypeCaller:
   dataType: SCALAR
   default: 1
   fileEnding: _gvcf
+  removalFileEnding:
+   - .vcf
+  removeRedundantFiles: yes
+  removalSetting: merged
   type: program
 GATKHaploTypeCallerSNPKnownSet:
   associatedProgram:
@@ -577,6 +626,10 @@ pGATKGenoTypeGVCFs:
   dataType: SCALAR
   default: 1
   fileEnding: _
+  removalFileEnding:
+   - .vcf
+  removeRedundantFiles: yes
+  removalSetting: family
   type: program
 GATKGenoTypeGVCFsRefGVCF:
   associatedProgram:
@@ -600,9 +653,13 @@ pGATKVariantRecalibration:
   fileEnding: vrecal_
   programNamePath:
    - bcftools
-  type: program
   outDirectoryName: gatk
   programType: variantCaller
+  removalFileEnding:
+   - .vcf
+  removeRedundantFiles: yes
+  removalSetting: family
+  type: program
 GATKVariantReCalibrationTrainingSetHapMap:
   associatedProgram:
    - pGATKVariantRecalibration
@@ -700,13 +757,17 @@ pGATKCombineVariantCallSets:
   dataType: SCALAR
   default: 1
   fileEnding: comb_
+  removalFileEnding:
+   - .vcf
+  removeRedundantFiles: yes
+  removalSetting: family
   type: program
 GATKCombineVariantsPrioritizeCaller:
   associatedProgram:
    - pGATKCombineVariantCallSets
   dataType: SCALAR
   mandatory: no
-  type: program
+  type: programArgument
 GATKCombineVariantCallSetsBCFFile:
   associatedProgram:
    - pGATKCombineVariantCallSets
@@ -736,6 +797,10 @@ pVT:
    - sed
    - bgzip
    - tabix
+  removalFileEnding:
+   - .vcf
+  removeRedundantFiles: yes
+  removalSetting: variantAnnotation
   type: program
 VTDecompose:
   associatedProgram:
@@ -872,6 +937,10 @@ pVariantEffectPredictor:
   dataType: SCALAR
   default: 1
   fileEnding: vep_
+  removalFileEnding:
+   - .vcf
+  removeRedundantFiles: yes
+  removalSetting: variantAnnotation
   type: program
 vepDirectoryPath:
   associatedProgram:
@@ -899,6 +968,10 @@ pVCFParser:
   dataType: SCALAR
   default: 1
   fileEnding: parsed_
+  removalFileEnding:
+   - .vcf
+  removeRedundantFiles: yes
+  removalSetting: variantAnnotation
   type: program
 vcfParserVepTranscripts:
   associatedProgram:
@@ -931,6 +1004,10 @@ pAnnovar:
   dataType: SCALAR
   default: 0
   fileEnding: annovar_
+  removalFileEnding:
+   - .vcf
+  removeRedundantFiles: yes
+  removalSetting: variantAnnotation
   type: program
 annovarPath:
   associatedProgram:
@@ -958,6 +1035,10 @@ pSnpEff:
   dataType: SCALAR
   default: 1
   fileEnding: snpeff_
+  removalFileEnding:
+   - .vcf
+  removeRedundantFiles: yes
+  removalSetting: variantAnnotation
   type: program
 snpEffPath:
   associatedProgram:
