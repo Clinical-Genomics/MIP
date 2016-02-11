@@ -13401,21 +13401,21 @@ sub AddInfileInfo {
     ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] = $sampleID.".".$date."_".$flowCell."_".$index.".lane".$1."_".$direction;  #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
 
     $fileAtDirectionLevelRef = \${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter];  #Alias
-    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFiles'}{$$fileAtDirectionLevelRef}{'OriginalFileName'} = ${$infileHashRef}{$sampleID}[$infileCounter];  #Original fileName
+    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFile'}{$$fileAtDirectionLevelRef}{'OriginalFileName'} = ${$infileHashRef}{$sampleID}[$infileCounter];  #Original fileName
 
-    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFiles'}{$$fileAtDirectionLevelRef}{'OriginalFileNameNoEnding'} = $1."_".$date."_".$flowCell."_".$sampleID."_".$index."_".$direction;  #Original fileName, but no ending
+    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFile'}{$$fileAtDirectionLevelRef}{'OriginalFileNameNoEnding'} = $1."_".$date."_".$flowCell."_".$sampleID."_".$index."_".$direction;  #Original fileName, but no ending
 
-    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFiles'}{$$fileAtDirectionLevelRef}{'Lane'} = $1;  #Save sample lane                  
+    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFile'}{$$fileAtDirectionLevelRef}{'Lane'} = $1;  #Save sample lane                  
 
-    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFiles'}{$$fileAtDirectionLevelRef}{'Date'} = $parsedDate;  #Save Sequence run date
+    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFile'}{$$fileAtDirectionLevelRef}{'Date'} = $parsedDate;  #Save Sequence run date
 
-    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFiles'}{$$fileAtDirectionLevelRef}{'Flow-cell'} = $flowCell;  #Save Sequence flow-cell        
+    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFile'}{$$fileAtDirectionLevelRef}{'Flow-cell'} = $flowCell;  #Save Sequence flow-cell        
 
-    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFiles'}{$$fileAtDirectionLevelRef}{'SampleBarcode'} = $index;  #Save sample barcode
+    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFile'}{$$fileAtDirectionLevelRef}{'SampleBarcode'} = $index;  #Save sample barcode
 
-    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFiles'}{$$fileAtDirectionLevelRef}{'RunBarcode'} = $date."_".$flowCell."_".$1."_".$index;  #Save run barcode
+    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFile'}{$$fileAtDirectionLevelRef}{'RunBarcode'} = $date."_".$flowCell."_".$1."_".$index;  #Save run barcode
     
-    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFiles'}{$$fileAtDirectionLevelRef}{'ReadDirection'} = $direction;   
+    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFile'}{$$fileAtDirectionLevelRef}{'ReadDirection'} = $direction;   
 }
 
 
