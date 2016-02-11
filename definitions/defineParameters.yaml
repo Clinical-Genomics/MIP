@@ -1132,6 +1132,13 @@ cadd1000GenomesFile:
   dataType: SCALAR
   existsCheck: file
   type: path
+caddExacFile:
+  associatedProgram:
+   - pRankVariants
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  existsCheck: file
+  type: path
 spidexFile:
   associatedProgram:
    - pRankVariants
