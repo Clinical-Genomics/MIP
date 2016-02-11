@@ -961,7 +961,7 @@ if ($scriptParameter{'pMosaikAlign'} > 0) {  #Run MosaikAlign
     }
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
-	&MosaikAlign(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infile, \%inDirPath, \%infilesLaneNoEnding, \%infilesBothStrandsNoEnding, \%jobID, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'}, "MosaikAlign");	
+	&MosaikAlign(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infile, \%inDirPath, \%infilesLaneNoEnding, \%jobID, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'}, "MosaikAlign");	
     }
 }
 
@@ -996,7 +996,6 @@ if ($scriptParameter{'pBwaMem'} > 0) {  #Run BWA Mem
 		 'infileHashRef' => \%infile, 
 		 'inDirPathHashRef' => \%inDirPath,
 		 'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
-		 'infilesBothStrandsNoEndingHashRef' => \%infilesBothStrandsNoEnding,
 		 'jobIDHashRef' => \%jobID,
 		 'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
 		 'alignerRef' => \$scriptParameter{'aligner'}, 
@@ -9820,7 +9819,7 @@ sub BWAMem {
     
 ##Function : Performs alignment.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $infilesBothStrandsNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $alignerRef, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $alignerRef, $programName
 ##         : $parameterHashRef                  => The parameter hash {REF}
 ##         : $scriptParameterHashRef            => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef                 => Info on samples and family hash {REF}
@@ -9828,7 +9827,6 @@ sub BWAMem {
 ##         : $infileHashRef                     => The infiles hash {REF}
 ##         : $inDirPathHashRef                  => The indirectories path(s) hash {REF}
 ##         : $infilesLaneNoEndingHashRef        => The infile(s) without the ".ending" {REF}
-##         : $infilesBothStrandsNoEndingHashRef => The infile(s) without the ".ending" and strand info {REF}
 ##         : $jobIDHashRef                      => The jobID hash {REF}
 ##         : $sampleIDRef                       => The sampleID {REF}
 ##         : $alignerRef                        => The aligner used in the analysis {REF}
@@ -9849,7 +9847,6 @@ sub BWAMem {
     my $infileHashRef = ${$argHashRef}{'infileHashRef'};
     my $inDirPathHashRef = ${$argHashRef}{'inDirPathHashRef'};
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
-    my $infilesBothStrandsNoEndingHashRef = ${$argHashRef}{'infilesBothStrandsNoEndingHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
     my $alignerRef = ${$argHashRef}{'alignerRef'};
@@ -9864,7 +9861,6 @@ sub BWAMem {
 			     'infileHashRef' => ${$infileHashRef}{$$sampleIDRef}, #Any MIP mandatory key will do
 			     'inDirPathHashRef' => ${$inDirPathHashRef}{$$sampleIDRef}, #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{$$sampleIDRef},  #Any MIP mandatory key will do
-			     'infilesBothStrandsNoEndingHashRef' => ${$infilesBothStrandsNoEndingHashRef}{$$sampleIDRef},  #Any MIP mandatory key will do
 			     'sampleIDRef' => $$sampleIDRef,
 			     'alignerRef' => $$alignerRef,
 			     'programName' => $programName,
@@ -9911,7 +9907,7 @@ sub BWAMem {
 	## Parallelize alignment by spliting of alignmnet processes as the files are read
 	if (${$scriptParameterHashRef}{'analysisType'} eq "rapid") {
 	    
-	    my $seqLength = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'File'}{${$infilesBothStrandsNoEndingHashRef}{ $$sampleIDRef }[$infileCounter]}{'SequenceLength'};
+	    my $seqLength = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'File'}{${$infilesLaneNoEndingHashRef}{ $$sampleIDRef }[$infileCounter]}{'SequenceLength'};
 	    my ($numberNodes, $ReadNrofLines) = &DetermineNrofRapidNodes($seqLength, $infileSize);
 	    
 	    for (my $sbatchCounter=0;$sbatchCounter<$numberNodes-1;$sbatchCounter++) {  #Parallization for each file handled
@@ -10185,7 +10181,7 @@ sub MosaikAlign {
     
 ##Function : Performs alignment.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $infilesBothStrandsNoEndingHashRef, $sampleID, $aligner, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $sampleID, $aligner, $programName
 ##         : $parameterHashRef                  => The parameter hash {REF}
 ##         : $scriptParameterHashRef            => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef                 => Info on samples and family hash {REF}
@@ -10193,7 +10189,6 @@ sub MosaikAlign {
 ##         : $infileHashRef                     => The infiles hash {REF}
 ##         : $inDirPathHashRef                  => The indirectories path(s) hash {REF}
 ##         : $infilesLaneNoEndingHashRef        => The infile(s) without the ".ending" {REF}
-##         : $infilesBothStrandsNoEndingHashRef => The infile(s) without the ".ending" and strand info {REF}
 ##         : $sampleID                          => The sampleID
 ##         : $aligner                           => The aligner used in the analysis
 ##         : $programName                       => The program name
@@ -10205,11 +10200,10 @@ sub MosaikAlign {
     my $infileHashRef = $_[4];
     my $inDirPathHashRef = $_[5];
     my $infilesLaneNoEndingHashRef = $_[6];
-    my $infilesBothStrandsNoEndingHashRef = $_[7];
-    my $jobIDHashRef = $_[8];
-    my $sampleID = $_[9];
-    my $aligner = $_[10];
-    my $programName = $_[11];
+    my $jobIDHashRef = $_[7];
+    my $sampleID = $_[8];
+    my $aligner = $_[9];
+    my $programName = $_[10];
     
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $sbatchScriptTracker=0;
@@ -10227,8 +10221,10 @@ sub MosaikAlign {
 	    $time = 40;
 	}
 
+	my $infile = ${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter];
+
 	## Set parameters depending on sequence length
-	my $seqLength = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter]}{'SequenceLength'};
+	my $seqLength = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{$infile}{'SequenceLength'};
 	my $actParameter = 35;  #The alignment candidate threshold (length)
 	my $bwParameter = 35;  #Specifies the Smith-Waterman bandwidth.
 
@@ -10263,7 +10259,6 @@ sub MosaikAlign {
 	my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner;
 	my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner;
 	${$parameterHashRef}{"p".$programName}{$sampleID}{'inDirectory'} = $outSampleDirectory;  #Used downstream
-	my $infile = ${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter];
 	my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{"p".$programName}{'fileEnding'};
 
 	## Copies file to temporary directory.
@@ -13394,6 +13389,7 @@ sub AddInfileInfo {
 
 	$fileAtLaneLevelRef = \${$infilesLaneNoEndingHashRef}{$sampleID}[$$laneTrackerRef];  #Alias
 	${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'SequenceRunType'} = "Single-end";  #Single-end until proven otherwise
+	${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'SequenceLength'} = `cd ${$inDirPathHashRef}{$sampleID};$readFile ${$infileHashRef}{$sampleID}[$infileCounter] | $seqLengthRegExp;`;  #Collect sequence length
 	$$laneTrackerRef++;
     }
     if ($direction == 2) {  #2nd read direction
@@ -13420,8 +13416,6 @@ sub AddInfileInfo {
     ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFiles'}{$$fileAtDirectionLevelRef}{'RunBarcode'} = $date."_".$flowCell."_".$1."_".$index;  #Save run barcode
     
     ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFiles'}{$$fileAtDirectionLevelRef}{'ReadDirection'} = $direction;   
-
-    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFiles'}{$$fileAtDirectionLevelRef}{'SequenceLength'} = `cd ${$inDirPathHashRef}{$sampleID};$readFile ${$infileHashRef}{$sampleID}[$infileCounter] | $seqLengthRegExp;`;  #Collect sequence length
 }
 
 
@@ -17769,11 +17763,10 @@ sub FindMaxSeqLengthForSampleID {
     
 ##Function : Finds the maximum sequence length of the reads for all sequencing file(s).   
 ##Returns  : $maxSequenceLength
-##Arguments: $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $infilesBothStrandsNoEndingHashRef, $sampleIDRef 
+##Arguments: $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $sampleIDRef 
 ##         : $scriptParameterHashRef            => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef                 => Info on samples and family hash {REF}
 ##         : $infilesLaneNoEndingHashRef        => The infile(s) without the ".ending" {REF}
-##         : $infilesBothStrandsNoEndingHashRef => The infile(s) without the ".ending" and strand info {REF}
 ##         : $sampleIDRef                       => The sampleID {REF}
 
     my ($argHashRef) = @_;
@@ -17782,14 +17775,13 @@ sub FindMaxSeqLengthForSampleID {
     my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
     my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
-    my $infilesBothStrandsNoEndingHashRef = ${$argHashRef}{'infilesBothStrandsNoEndingHashRef'};
     my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
 
     my $maxSequenceLength = 0;
 
     for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} });$infileCounter++) {  #For all infiles per lane
 	
-	my $seqLength = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'File'}{${$infilesBothStrandsNoEndingHashRef}{$$sampleIDRef}[$infileCounter]}{'SequenceLength'};
+	my $seqLength = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'File'}{${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter]}{'SequenceLength'};
 
 	if ($seqLength > $maxSequenceLength) {
 
@@ -19192,16 +19184,28 @@ sub RemoveFiles {
 			    my $infile = ${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter]; 
 			    
 			    for (my $fileEndingCounter=0;$fileEndingCounter < scalar( @{ ${$parameterHashRef}{$program}{'removalFileEnding'} });$fileEndingCounter++) {
-				
-				my $filePath = $inDirectory."/".$infile.$outfileEnding.${$parameterHashRef}{$program}{'removalFileEnding'}[$fileEndingCounter];
-				
-				## Detect which mostCompletePath to use depending on fileEnding
-				my $mostCompleteRef = &DetectMostCompleteFile({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
-									       'fileEndingRef' => \${$parameterHashRef}{$program}{'removalFileEnding'}[$fileEndingCounter],
-									       'sampleIDRef' => \$sampleID,
-									       'familyIDRef' => \$familyID,
-									      });
-				
+
+				my $filePath;
+				if (defined($outfileEnding)) {
+
+				    $filePath = $inDirectory."/".$infile.$outfileEnding.${$parameterHashRef}{$program}{'removalFileEnding'}[$fileEndingCounter];
+				}
+				else {
+
+				    $filePath = $inDirectory."/".$infile.${$parameterHashRef}{$program}{'removalFileEnding'}[$fileEndingCounter];
+				}
+
+				my $mostCompleteRef;
+
+				if (${$parameterHashRef}{$program}{'removalFileEnding'}[$fileEndingCounter]=~/vcf|bam/) {
+
+				    ## Detect which mostCompletePath to use depending on fileEnding
+				    $mostCompleteRef = &DetectMostCompleteFile({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+										   'fileEndingRef' => \${$parameterHashRef}{$program}{'removalFileEnding'}[$fileEndingCounter],
+										   'sampleIDRef' => \$sampleID,
+										   'familyIDRef' => \$familyID,
+										  });
+				}
 				## Checks if the file is recorded as the "MostCompleteBAM|VCF". If false writes removal of file(s) to supplied filehandle
 				&CheckMostCompleteAndRemoveFile({'FILEHANDLE' => $FILEHANDLE, 
 								 'mostCompleteRef' => $mostCompleteRef,
