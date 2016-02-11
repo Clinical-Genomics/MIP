@@ -18262,6 +18262,7 @@ sub AddToSampleInfo {
 	my (@dirs) = File::Spec->splitdir(${$scriptParameterHashRef}{'logFile'});
 	my $path = "/".join("/", splice(@dirs, 1, -2) );  #Remove leading and trailing '' as well as move up 1 directory since we want all mip logs not just per date and add leading "/" and join on "/"
 	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'logFileDir'} = $path;  #Add logFileDir to SampleInfoFile
+	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'lastLogFilePath'} = ${$scriptParameterHashRef}{'logFile'};
     }
 }
 
