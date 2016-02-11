@@ -901,7 +901,6 @@ if ($scriptParameter{'pFastQC'} > 0) {  #Run FastQC
 		 'infileHashRef' => \%infile, 
 		 'inDirPathHashRef' => \%inDirPath,
 		 'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
-		 'infilesBothStrandsNoEndingHashRef' => \%infilesBothStrandsNoEnding,
 		 'jobIDHashRef' => \%jobID,
 		 'sampleID' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
 		 'programName' => "FastQC",
@@ -11054,14 +11053,13 @@ sub FastQC {
     
 ##Function : Raw sequence quality analysis using FASTQC.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $infilesBothStrandsNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $programName
 ##         : $parameterHashRef                  => The parameter hash {REF}
 ##         : $scriptParameterHashRef            => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef                 => Info on samples and family hash {REF}
 ##         : $infileHashRef                     => The infiles hash {REF}
 ##         : $inDirPathHashRef                  => The indirectories path(s) hash {REF}
 ##         : $infilesLaneNoEndingHashRef        => The infile(s) without the ".ending" {REF}
-##         : $infilesBothStrandsNoEndingHashRef => The infile(s) without the ".ending" and strand info {REF}
 ##         : $jobIDHashRef                      => The jobID hash {REF}
 ##         : $sampleIDREf                       => The sampleID {REF}
 ##         : $programName                       => The program name
@@ -11080,7 +11078,6 @@ sub FastQC {
     my $infileHashRef = ${$argHashRef}{'infileHashRef'};
     my $inDirPathHashRef = ${$argHashRef}{'inDirPathHashRef'};
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
-    my $infilesBothStrandsNoEndingHashRef = ${$argHashRef}{'infilesBothStrandsNoEndingHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $sampleIDRef = ${$argHashRef}{'sampleID'};
     my $programName = ${$argHashRef}{'programName'};
@@ -11092,7 +11089,6 @@ sub FastQC {
 			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} },  #Any MIP mandatory key will do
 			     'inDirPathHashRef' => ${$inDirPathHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
-			     'infilesBothStrandsNoEndingHashRef' => ${$infilesBothStrandsNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
 			     'sampleIDRef' => $$sampleIDRef,
 			     'programName' => $programName,
 	);
@@ -11143,6 +11139,7 @@ sub FastQC {
 	&PrintWait(\$infileCounter, \$nrCores, \$coreCounter, $FILEHANDLE);
 
 	my $infile = ${$infileHashRef}{$$sampleIDRef}[$infileCounter];
+	my $fileAtLaneLevel = &RemoveFileEnding(\$infile, ".fastq");
 
 	print $FILEHANDLE "fastqc ";
 	print $FILEHANDLE $$tempDirectoryRef."/".$infile." ";  #InFile
@@ -11158,7 +11155,7 @@ sub FastQC {
 			   'sampleID' => $$sampleIDRef,
 			   'programName' => "FastQC",
 			   'infile' => $infile,
-			   'outDirectory' => $outSampleDirectory."/".${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'File'}{${$infilesBothStrandsNoEndingHashRef}{ $$sampleIDRef }[$infileCounter]}{'OriginalFileNameNoEnding'}."_fastqc",
+			   'outDirectory' => $outSampleDirectory."/".$fileAtLaneLevel."_fastqc",
 			   'outFileEnding' => "fastqc_data.txt",
 			   'outDataType' => "static"
 			  });
@@ -11171,9 +11168,12 @@ sub FastQC {
 
 	&PrintWait(\$infileCounter, \$nrCores, \$coreCounter, $FILEHANDLE);
 
-	## Copies files from temporary folder to source. Loop over files specified by $arrayRef and collects files from $extractArrayRef.
+	my $infile = ${$infileHashRef}{$$sampleIDRef}[$infileCounter];
+	my $fileAtLaneLevel = &RemoveFileEnding(\$infile, ".fastq");
+
+	## Copies files from temporary folder to source
 	print $FILEHANDLE "cp -r ";
-	print $FILEHANDLE $$tempDirectoryRef."/".${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'File'}{${$infilesBothStrandsNoEndingHashRef}{ $$sampleIDRef }[$infileCounter]}{'OriginalFileNameNoEnding'}."_fastqc ";
+	print $FILEHANDLE $$tempDirectoryRef."/".$fileAtLaneLevel."_fastqc ";
 	print $FILEHANDLE $outSampleDirectory." ";
 	print $FILEHANDLE "&", "\n\n";
     }
@@ -13325,6 +13325,11 @@ sub AddInfileInfo {
 ##         : $compressedSwitch                  => ".fastq.gz" or ".fastq" info governs zcat or cat downstream
 
     my ($argHashRef) = @_;
+
+    my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
     
     ## Flatten argument(s)
     my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
@@ -13334,6 +13339,7 @@ sub AddInfileInfo {
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
     my $infilesBothStrandsNoEndingHashRef = ${$argHashRef}{'infilesBothStrandsNoEndingHashRef'};
     my $laneHashRef = ${$argHashRef}{'laneHashRef'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
     my $sampleID = ${$argHashRef}{'sampleID'};
     my $lane = ${$argHashRef}{'lane'};
     my $date = ${$argHashRef}{'date'};
@@ -13364,6 +13370,8 @@ sub AddInfileInfo {
     &CheckMandatoryArguments(\%mandatoryArgument, "AddInfileInfo");
 
     my $readFile;
+    my $fileAtLaneLevelRef;
+    my $fileAtDirectionLevelRef;
 
     my $parsedDate = DateTime::Format::Multi->parse_datetime($date);  #Reparse to dateTime standard
     $parsedDate = $parsedDate->ymd('-');  #Only date
@@ -13382,35 +13390,38 @@ sub AddInfileInfo {
     if ($direction == 1) {  #Read 1
 
 	push( @{${$laneHashRef}{$sampleID}}, $lane);  #Lane
-	${$infilesLaneNoEndingHashRef}{$sampleID}[$$laneTrackerRef]= $sampleID.".".$date."_".$flowCell."_".$index.".lane".$1;  #Save new format (sampleID_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
+	${$infilesLaneNoEndingHashRef}{$sampleID}[$$laneTrackerRef] = $sampleID.".".$date."_".$flowCell."_".$index.".lane".$1;  #Save new format (sampleID_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
 
-	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesLaneNoEndingHashRef}{ $sampleID }[$$laneTrackerRef] }{'SequenceRunType'} = "Single-end";  #Single-end until proven otherwise
+	$fileAtLaneLevelRef = \${$infilesLaneNoEndingHashRef}{$sampleID}[$$laneTrackerRef];  #Alias
+	${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'SequenceRunType'} = "Single-end";  #Single-end until proven otherwise
 	$$laneTrackerRef++;
     }
     if ($direction == 2) {  #2nd read direction
 
-	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesLaneNoEndingHashRef}{ $sampleID }[$$laneTrackerRef-1] }{'SequenceRunType'} = "Paired-end";  #$laneTracker -1 since it gets incremented after direction eq 1. 
+	$fileAtLaneLevelRef = \${$infilesLaneNoEndingHashRef}{ $sampleID }[$$laneTrackerRef-1];  #Alias
+	${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'SequenceRunType'} = "Paired-end";  #$laneTracker -1 since it gets incremented after direction eq 1. 
     }
     
-    ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter]= $sampleID.".".$date."_".$flowCell."_".$index.".lane".$1."_".$direction;  #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
+    ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] = $sampleID.".".$date."_".$flowCell."_".$index.".lane".$1."_".$direction;  #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
 
-    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'OriginalFileName'} = ${$infileHashRef}{$sampleID}[$infileCounter];  #Original fileName
+    $fileAtDirectionLevelRef = \${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter];  #Alias
+    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFiles'}{$$fileAtDirectionLevelRef}{'OriginalFileName'} = ${$infileHashRef}{$sampleID}[$infileCounter];  #Original fileName
 
-    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'OriginalFileNameNoEnding'} = $1."_".$date."_".$flowCell."_".$sampleID."_".$index."_".$direction;  #Original fileName, but no ending
+    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFiles'}{$$fileAtDirectionLevelRef}{'OriginalFileNameNoEnding'} = $1."_".$date."_".$flowCell."_".$sampleID."_".$index."_".$direction;  #Original fileName, but no ending
 
-    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'Lane'} = $1;  #Save sample lane                  
+    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFiles'}{$$fileAtDirectionLevelRef}{'Lane'} = $1;  #Save sample lane                  
 
-    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'Date'} = $parsedDate;  #Save Sequence run date
+    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFiles'}{$$fileAtDirectionLevelRef}{'Date'} = $parsedDate;  #Save Sequence run date
 
-    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'Flow-cell'} = $flowCell;  #Save Sequence flow-cell        
+    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFiles'}{$$fileAtDirectionLevelRef}{'Flow-cell'} = $flowCell;  #Save Sequence flow-cell        
 
-    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'SampleBarcode'} = $index;  #Save sample barcode
+    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFiles'}{$$fileAtDirectionLevelRef}{'SampleBarcode'} = $index;  #Save sample barcode
 
-    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'RunBarcode'} = $date."_".$flowCell."_".$1."_".$index;  #Save run barcode
+    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFiles'}{$$fileAtDirectionLevelRef}{'RunBarcode'} = $date."_".$flowCell."_".$1."_".$index;  #Save run barcode
     
-    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'ReadDirection'} = $direction;   
+    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFiles'}{$$fileAtDirectionLevelRef}{'ReadDirection'} = $direction;   
 
-    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'File'}{ ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] }{'SequenceLength'} = `cd ${$inDirPathHashRef}{$sampleID};$readFile ${$infileHashRef}{$sampleID}[$infileCounter] | $seqLengthRegExp;`;  #Collect sequence length
+    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'ReadDirectionFiles'}{$$fileAtDirectionLevelRef}{'SequenceLength'} = `cd ${$inDirPathHashRef}{$sampleID};$readFile ${$infileHashRef}{$sampleID}[$infileCounter] | $seqLengthRegExp;`;  #Collect sequence length
 }
 
 
