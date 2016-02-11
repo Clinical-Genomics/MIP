@@ -18220,12 +18220,24 @@ sub AddToSampleInfo {
 	    
 	    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'Program'}{"GATK"}{'Version'} = $1;
 	}
+	else {  #Fall back on actually calling program
+	    
+	    my $ret = (`java -jar ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}/GenomeAnalysisTK.jar --version 2>&1`);
+	    chomp($ret);
+	    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'Program'}{"GATK"}{'Version'} = $ret;
+	}
     }
     if (defined(${$scriptParameterHashRef}{'picardToolsPath'})) {  #To enable addition of version to sampleInfo
 	
 	if (${$scriptParameterHashRef}{'picardToolsPath'}=~/picard-tools-([^,]+)/) {
 	    
 	    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'Program'}{"PicardTools"}{'Version'} = $1;
+	}
+	else {  #Fall back on actually calling program
+
+	    my $ret = (`java -jar ${$scriptParameterHashRef}{'picardToolsPath'}/picard.jar CreateSequenceDictionary --version 2>&1`);
+	    chomp($ret);
+	    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'Program'}{"PicardTools"}{'Version'} = $ret;
 	}
     }
     if (defined(${$scriptParameterHashRef}{'humanGenomeReference'})) {  #To enable addition of version to sampleInfo
