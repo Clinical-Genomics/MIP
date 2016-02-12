@@ -200,6 +200,8 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -anvstn/--annovarSupportedTableNames Print Annovar MIP supported table names
                  -anvarmafth/--annovarMAFThreshold Sets the minor allele frequency threshold in annovar (defaults to "0")
                -pSnE/--pSnpEff Variant annotation using snpEFF (defaults to "1" (=yes))
+#snpEffAnn
+                 -sneann/--snpEffAnn Annotate variants using SnpEff (defaults to "1" (=yes))
                  -snep/--snpEffPath Path to snpEff. Mandatory for use of snpEff (defaults to "")
                  -snesaf/--snpSiftAnnotationFiles Annotation files to use with snpSift (default to (dbsnp_138.b37.excluding_sites_after_129.vcf.gz=CAF ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz=AF ExAC.r0.3.sites.vep.vcf=AF); Hash flag i.e. --Flag key=value)
                  -snesaoi/--snpSiftAnnotationOutInfoKey snpSift output INFO key (default to (ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz=1000GAF ExAC.r0.3.sites.vep.vcf=EXACAF); Hash flag i.e. --Flag key=value)
@@ -497,6 +499,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'anvarmafth|annovarMAFThreshold:n' => \$parameter{'annovarMAFThreshold'}{'value'},
 	   'snep|snpEffPath:s'  => \$parameter{'snpEffPath'}{'value'},  #path to snpEff directory
 	   'pSnE|pSnpEff:n' => \$parameter{'pSnpEff'}{'value'},
+	   'sneann|snpEffAnn:n' => \$parameter{'snpEffAnn'}{'value'},
 	   'snesaf|snpSiftAnnotationFiles=s'  => \%{$parameter{'snpSiftAnnotationFiles'}{'value'}},
 	   'snesaoi|snpSiftAnnotationOutInfoKey=s'  => \%{$parameter{'snpSiftAnnotationOutInfoKey'}{'value'}},
 	   'snesdbnsfp|snpSiftDbNSFPFile:s'  => \$parameter{'snpSiftDbNSFPFile'}{'value'},  #DbNSFP file
@@ -3266,7 +3269,38 @@ sub SnpEff {
 	## SnpSift Annotation
 	print $FILEHANDLE "## SnpSift Annotation","\n";
 
-	my $annotationFileCounter = 0;
+	if (${$scriptParameterHashRef}{'snpEffAnn'} eq 1) {  #Annotate using SnpEff
+
+	    ## Create file commands for xargs
+	    ($xargsFileCounter, $xargsFileName) = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
+								 'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
+								 'fileName' => $fileName,
+								 'programInfoPath' => $programInfoPath,
+								 'nrCores' => $nrCores,
+								 'xargsFileCounter' => $xargsFileCounter,
+								 'firstCommand' => "java",
+								 'memoryAllocation' => "Xmx4g -XX:-UseConcMarkSweepGC",
+								 'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+								 'javaTemporaryDirectory' => $$tempDirectoryRef,
+								 'javaJar' => ${$scriptParameterHashRef}{'snpEffPath'}."/snpEff.jar"
+								});
+	    
+	    for (my $contigsCounter=0;$contigsCounter<scalar(@{$vcfParserContigsArrayRef});$contigsCounter++) {
+		
+		my $contigRef = \${$vcfParserContigsArrayRef}[$contigsCounter];
+		
+		print $XARGSFILEHANDLE "ann ";
+		print $XARGSFILEHANDLE "-v ";
+		print $XARGSFILEHANDLE "GRCh37.75 ";
+		print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf "; #Infile
+		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		print $XARGSFILEHANDLE "> ".$$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf.".$xargsFileCounter." "; #Outfile;
+		print $XARGSFILEHANDLE "\n";
+
+	    }
+	}
+
+	my $annotationFileCounter = $xargsFileCounter;
 
 	for my $annotationFile (keys %{${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}}) {
 		

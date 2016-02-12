@@ -1040,6 +1040,12 @@ pSnpEff:
   removeRedundantFiles: yes
   removalSetting: variantAnnotation
   type: program
+snpEffAnn:
+  associatedProgram:
+   - pSnpEff
+  dataType: SCALAR
+  default: 1
+  type: programArgument
 snpEffPath:
   associatedProgram:
    - pSnpEff
