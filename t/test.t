@@ -307,12 +307,8 @@ sub ReadInfileVCF {
 
 	    &ParseMetaData(\%{$metaDataHashRef}, $_);
 	    
-	    if ($_=~/INFO\=\<ID\=(\w+)/) { # Collect all INFO keys
-		
-		$vcfHeader{'INFO'}{$1} = $1; #Save to hash
-	    }
-	    if ($_=~/INFO\=\<ID\=(\w+\+\+\w+)/) { # Special case
-
+	    if ($_=~/INFO\=\<ID\=([^,]+)/) {
+	
 		$vcfHeader{'INFO'}{$1} = $1; #Save to hash
 	    }
 	    if ($_=~/INFO\=\<ID\=CSQ/) { #Find VEP INFO Field
