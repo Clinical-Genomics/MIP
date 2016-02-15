@@ -344,34 +344,51 @@ sub CreateCondaEnvironment {
 
     print $FILEHANDLE "\n\n";
 
-    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
-		  'FILEHANDLE' => $BASHFILEHANDLE,
-		  'binary' => "sambamba",
-		  'softLink' => "sambamba_v".${$parameterHashRef}{'bioConda'}{'sambamba'},
-		 });
-    
-    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
-		  'FILEHANDLE' => $BASHFILEHANDLE,
-		  'binary' => q?../share/picard-?.${$parameterHashRef}{'bioConda'}{'picard'}.q?-1/picard.jar?,
-		  'softLink' => "picard.jar",
-		 });
-    
-    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
-		  'FILEHANDLE' => $BASHFILEHANDLE,
-		  'binary' => q?../share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.q?l-2/snpEff.jar?,
-		  'softLink' => "snpEff.jar",
-		 });
-    
-    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
-		  'FILEHANDLE' => $BASHFILEHANDLE,
-		  'binary' => q?../share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.q?l-2/SnpSift.jar?,
-		  'softLink' => "SnpSift.jar",
-		 });
-    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
-		  'FILEHANDLE' => $BASHFILEHANDLE,
-		  'binary' => q?../share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.q?l-2/snpEff.config?,
-		  'softLink' => "snpEff.config",
-		 });
+    ## Custom 
+    foreach my $program (keys %{${$parameterHashRef}{'bioConda'}}) {
+
+
+	if ($program eq "sambamba") {
+
+	    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
+			  'FILEHANDLE' => $BASHFILEHANDLE,
+			  'binary' => "sambamba",
+			  'softLink' => "sambamba_v".${$parameterHashRef}{'bioConda'}{'sambamba'},
+			 });
+	}
+	if ($program eq "picard") {
+
+	    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
+			  'FILEHANDLE' => $BASHFILEHANDLE,
+			  'binary' => q?../share/picard-?.${$parameterHashRef}{'bioConda'}{'picard'}.q?-1/picard.jar?,
+			  'softLink' => "picard.jar",
+			 });
+	}
+	if ($program eq "snpeff") {
+	    
+	    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
+			  'FILEHANDLE' => $BASHFILEHANDLE,
+			  'binary' => q?../share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.q?l-2/snpEff.jar?,
+			  'softLink' => "snpEff.jar",
+			 });
+	    
+	    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
+			  'FILEHANDLE' => $BASHFILEHANDLE,
+			  'binary' => q?../share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.q?l-2/SnpSift.jar?,
+			  'softLink' => "SnpSift.jar",
+			 });
+	    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
+			  'FILEHANDLE' => $BASHFILEHANDLE,
+			  'binary' => q?../share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.q?l-2/snpEff.config?,
+			  'softLink' => "snpEff.config",
+			 });
+	    &CheckMTCodonTable({'parameterHashRef' => $parameterHashRef,
+				'FILEHANDLE' => $BASHFILEHANDLE,
+				'shareDirectory' => $parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.q?l-2/?,
+				'binary' => "snpEff.config",
+			       });
+	}
+    }
 }
 
 
@@ -906,7 +923,11 @@ sub SnpEff {
 		  'binary' => q?../share/snpEff.?.${$parameterHashRef}{'snpEff'}.q?/snpEff.config?,
 		  'softLink' => "snpEff.config",
 		 });
-
+    &CheckMTCodonTable({'parameterHashRef' => $parameterHashRef,
+			'FILEHANDLE' => $BASHFILEHANDLE,
+			'shareDirectory' => $parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/share/snpEff.?.${$parameterHashRef}{'snpEff'}.q?/?,
+			'binary' => "snpEff.config",
+		       });
     &CleanUpModuleInstall($FILEHANDLE, $pwd);
 }
 
@@ -1131,4 +1152,40 @@ sub AddSoftLink {
     print $FILEHANDLE "## Move to original working directory\n";
     print $FILEHANDLE "cd ".$pwd;
     print $FILEHANDLE "\n\n";
+}
+
+
+sub CheckMTCodonTable {
+
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $shareDirectory = ${$argHashRef}{'shareDirectory'};
+    my $binary = ${$argHashRef}{'binary'};
+    
+    my $pwd = cwd();
+
+    my $detectRegExp = q?perl -nae 'if($_=~/GRCh37.75.MT.codonTable/) {print 1}' ?;
+    my $addRegExp = q?perl -nae 'if($_=~/GRCh37.75.reference/) {print $_; print "GRCh37.75.MT.codonTable : Vertebrate_Mitochondrial\n"} else {print $_;}' ?;
+
+    my $ret = `$detectRegExp $shareDirectory/$binary`;
+
+    if (!$ret) {  #No MT.codonTable in config
+
+	print $FILEHANDLE "## Adding GRCh37.75.MT.codonTable : Vertebrate_Mitochondrial to ".$shareDirectory.$binary;
+	print $FILEHANDLE "\n";
+
+	## Add MT.codon Table to config
+	print $FILEHANDLE $addRegExp." ".$shareDirectory.$binary." > ".$shareDirectory.$binary.".tmp";
+	print $FILEHANDLE "\n";
+	print $FILEHANDLE "mv ".$shareDirectory.$binary.".tmp ".$shareDirectory.$binary;
+	print $FILEHANDLE "\n\n";
+	
+    }
+    else {
+
+	print STDERR  "Found MT.codonTable in ".$shareDirectory."snpEff.config. Skipping addition to snpEff config\n"; 
+    }
 }
