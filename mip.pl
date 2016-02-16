@@ -294,7 +294,7 @@ my $aligner;
 
 ## Target definition files
 my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists);  #Arrays for target bed infile lists
-my (@GATKTargetPaddedBedIntervalLists);  #Array for target infile lists used in GATK (currently removed)
+my (@GATKTargetPaddedBedIntervalLists);  #Array for target infile lists used in GATK
 
 ## Directories, files, sampleInfo and jobIDs
 my (%infile, %inDirPath, %infilesLaneNoEnding, %lane, %infilesBothStrandsNoEnding, %jobID, %sampleInfo); 
@@ -701,7 +701,7 @@ if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
 			 'exomeTargetBedInfileListsArrayRef' => \@exomeTargetBedInfileLists,
 			 'exomeTargetPaddedBedInfileListsArrayRef' => \@exomeTargetPaddedBedInfileLists,
 			 'GATKTargetPaddedBedIntervalListsArrayRef' => \@GATKTargetPaddedBedIntervalLists,
-			 'associatedPrograms' => "pPicardToolsCalculateHSMetrics",
+			 'associatedPrograms' => \@{["pPicardToolsCalculateHSMetrics"]},
 			 'parameterName' => "exomeTargetBedInfileLists",
 			 'type' => "path",
 			 'default' => "notSetYet",
@@ -719,7 +719,7 @@ if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
 			 'exomeTargetBedInfileListsArrayRef' => \@exomeTargetBedInfileLists,
 			 'exomeTargetPaddedBedInfileListsArrayRef' => \@exomeTargetPaddedBedInfileLists,
 			 'GATKTargetPaddedBedIntervalListsArrayRef' => \@GATKTargetPaddedBedIntervalLists,
-			 'associatedPrograms' => "pPicardToolsCalculateHSMetrics",
+			 'associatedPrograms' => \@{["pPicardToolsCalculateHSMetrics"]},
 			 'parameterName' => "exomeTargetPaddedBedInfileLists",
 			 'type' => "path",
 			 'default' => "notSetYet",
@@ -731,12 +731,14 @@ if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
 			 'sampleInfoHashRef' => \%sampleInfo,
 			 'fileInfoHashRef' => \%fileInfo,
 			 'supportedCaptureKitHashRef' => \%supportedCaptureKit,
-			 'exomeTargetBedInfileListsArrayRef' => \@exomeTargetBedInfileLists,
-			 'exomeTargetPaddedBedInfileListsArrayRef' => \@exomeTargetPaddedBedInfileLists,
-			 'GATKTargetPaddedBedIntervalListsArrayRef' => \@GATKTargetPaddedBedIntervalLists,
 			 'arrayRef' => \@GATKTargetPaddedBedIntervalLists,
 			 'orderParametersArrayRef' => \@orderParameters,
 			 'broadcastsArrayRef' => \@broadcasts,
+			 'exomeTargetBedInfileListsArrayRef' => \@exomeTargetBedInfileLists,
+			 'exomeTargetPaddedBedInfileListsArrayRef' => \@exomeTargetPaddedBedInfileLists,
+			 'GATKTargetPaddedBedIntervalListsArrayRef' => \@GATKTargetPaddedBedIntervalLists,
+			 'associatedPrograms' => \@{["pGATKRealigner",
+						     "pGATKHaploTypeCaller"]},
 			 'parameterName' => "GATKTargetPaddedBedIntervalLists",
 			 'type' => "path",
 			 'default' => "notSetYet",
@@ -1114,7 +1116,7 @@ else {
 	    
 	    if ( ($fileInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} == 1) || (scalar( @{ $infilesLaneNoEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] } }) > 1) ) {  #Sanity Check that we have something to merge with
 		
-		&PicardToolsMerge({'parameterHashRef' => \%parameter,
+		&PicardToolsMergeSamFiles({'parameterHashRef' => \%parameter,
 				   'scriptParameterHashRef' => \%scriptParameter,
 				   'sampleInfoHashRef' => \%sampleInfo,
 				   'fileInfoHashRef' => \%fileInfo,
@@ -7651,6 +7653,15 @@ sub GATKHaploTypeCaller {
 		    'famFilePath' => $outFamilyFileDirectory."/".$$familyIDRef.".fam",
 		   });
 
+    ## Prepare target interval file. Copies file to temporary directory, and adds fileExtension to fit GATK
+    &PrepareGATKTargetIntervals({'analysisTypeRef' => \${$scriptParameterHashRef}{'analysisType'},
+				 'exomeTargetBedInfileListsRef' => \${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'GATKTargetPaddedBedIntervalLists'},
+				 'referencesDirectoryRef' => $referencesDirectoryRef,
+				 'tempDirectoryRef' => $tempDirectoryRef,
+				 'FILEHANDLE' => $FILEHANDLE,
+				 'addEnding' => 0,
+				});
+
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
     my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, $$sampleIDRef);
     
@@ -7758,6 +7769,11 @@ sub GATKHaploTypeCaller {
 	print $XARGSFILEHANDLE "--variant_index_parameter 128000 ";
 	print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 
+	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
+	    
+	    print $XARGSFILEHANDLE "-L ".$$tempDirectoryRef."/".${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'GATKTargetPaddedBedIntervalLists'}.".intervals "; #Limit base score recalibration to targets kit target ".interval" file
+	    }
+	
 	if ($PicardToolsMergeSwitch == 1) {  #Alignment BAM-files merged previously
 
 	    print $XARGSFILEHANDLE "-I ".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile
@@ -7924,22 +7940,13 @@ sub GATKBaseReCalibration {
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pGATKRealigner'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{"p".$programName}{'fileEnding'};
 
-    if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
-
-	## Copies file to temporary directory.
-	&MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE,
-			    'path' => $$referencesDirectoryRef."/".${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'exomeTargetBedInfileLists'},
-			    'tempDirectory' => $$tempDirectoryRef,
-			   });
-	print $FILEHANDLE "wait ";
-	print $FILEHANDLE "\n\n";
-
-	## Add the by GATK required ".interval" ending
-	print $FILEHANDLE "mv ";
-	print $FILEHANDLE $$tempDirectoryRef."/".${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'exomeTargetBedInfileLists'}." ";
-	print $FILEHANDLE $$tempDirectoryRef."/".${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'exomeTargetBedInfileLists'}.".intervals ";
-	print $FILEHANDLE "\n\n";
-    }
+    ## Prepare target interval file. Copies file to temporary directory, and adds fileExtension to fit GATK
+    &PrepareGATKTargetIntervals({'analysisTypeRef' => \${$scriptParameterHashRef}{'analysisType'},
+				 'exomeTargetBedInfileListsRef' => \${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'exomeTargetBedInfileLists'},
+				 'referencesDirectoryRef' => $referencesDirectoryRef,
+				 'tempDirectoryRef' => $tempDirectoryRef,
+				 'FILEHANDLE' => $FILEHANDLE,
+				});
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
     my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, $$sampleIDRef);
@@ -8394,6 +8401,15 @@ sub GATKReAligner {
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pSambambaMarkduplicates'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{"p".$programName}{'fileEnding'};
 
+    ## Prepare target interval file. Copies file to temporary directory, and adds fileExtension to fit GATK
+    &PrepareGATKTargetIntervals({'analysisTypeRef' => \${$scriptParameterHashRef}{'analysisType'},
+				 'exomeTargetBedInfileListsRef' => \${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'GATKTargetPaddedBedIntervalLists'},
+				 'referencesDirectoryRef' => $referencesDirectoryRef,
+				 'tempDirectoryRef' => $tempDirectoryRef,
+				 'FILEHANDLE' => $FILEHANDLE,
+				 'addEnding' => 0,
+				});
+
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
     my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, $$sampleIDRef);
 
@@ -8449,6 +8465,12 @@ sub GATKReAligner {
 	    print $XARGSFILEHANDLE "-known ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'GATKReAlignerINDELKnownSet2'}." ";  #Input VCF file with known indels
 	    print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus	    
 	    print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
+
+	    if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
+		
+		print $XARGSFILEHANDLE "-L ".$$tempDirectoryRef."/".${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'GATKTargetPaddedBedIntervalLists'}.".intervals "; #Limit base score recalibration to targets kit target ".interval" file
+	    }
+
 	    print $XARGSFILEHANDLE "-I ".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile	    
 	    print $XARGSFILEHANDLE "-o ".$intermediarySampleDirectory."/".$infile.$outfileEnding."_".$$contigRef.".intervals ";  #Interval outFile
 	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
@@ -8486,6 +8508,12 @@ sub GATKReAligner {
 	    print $XARGSFILEHANDLE "--consensusDeterminationModel USE_READS ";  #Additionally uses indels already present in the original alignments of the reads 
 	    print $XARGSFILEHANDLE "-targetIntervals ".$intermediarySampleDirectory."/".$infile.$outfileEnding."_".$$contigRef.".intervals ";
 	    print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
+
+	    if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
+		
+		print $XARGSFILEHANDLE "-L ".$$tempDirectoryRef."/".${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'GATKTargetPaddedBedIntervalLists'}." "; #Limit base score recalibration to targets kit target ".interval" file
+	    }
+
 	    print $XARGSFILEHANDLE "-I ".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile per contig
 	    print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$infile.$outfileEnding."_".$$contigRef.".bam ";  #OutFile
 	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
@@ -8582,6 +8610,12 @@ sub GATKReAligner {
 		print $XARGSFILEHANDLE "-known ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'GATKReAlignerINDELKnownSet2'}." ";  #Input VCF file with known indels
 		print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus	 
 		print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
+
+		if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
+		    
+		    print $XARGSFILEHANDLE "-L ".$$tempDirectoryRef."/".${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'GATKTargetPaddedBedIntervalLists'}." "; #Limit base score recalibration to targets kit target ".interval" file
+		}
+
 		print $XARGSFILEHANDLE "-I ".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile per contig
 		print $XARGSFILEHANDLE "-o ".$intermediarySampleDirectory."/".$infile.$outfileEnding."_".$$contigRef.".intervals ";  #Interval outFile
 		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
@@ -8619,6 +8653,12 @@ sub GATKReAligner {
 		print $XARGSFILEHANDLE "--consensusDeterminationModel USE_READS ";  #Additionally uses indels already present in the original alignments of the reads
 		print $XARGSFILEHANDLE "-targetIntervals ".$intermediarySampleDirectory."/".$infile.$outfileEnding."_".$$contigRef.".intervals ";
 		print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
+
+		if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
+		    
+		    print $XARGSFILEHANDLE "-L ".$$tempDirectoryRef."/".${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'GATKTargetPaddedBedIntervalLists'}." "; #Limit base score recalibration to targets kit target ".interval" file
+		}
+		
 		print $XARGSFILEHANDLE "-I ".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile per contig
 		print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$infile.$outfileEnding."_".$$contigRef.".bam ";  #OutFile
 		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
@@ -9055,9 +9095,9 @@ sub SambambaMarkduplicates {
 }
 
 
-sub PicardToolsMerge { 
+sub PicardToolsMergeSamFiles { 
 
-##PicardToolsMerge
+##PicardToolsMergeSamFiles
     
 ##Function : Merges all bam files using PicardTools MergeSamFiles within each sampleid and files generated previously (option if provided with '-picardToolsMergeSamFilesPrevious'). The merged files have to be sorted before attempting to merge.
 ##Returns  : "|$xargsFileCounter"
@@ -10902,21 +10942,21 @@ sub BAMCalibrationAndGTBlock {
 
 	    if ( (${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'picardToolsMergeSamFilesPrevious'} == 1) || (scalar( @{ $infilesLaneNoEnding{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] } }) > 1) ) {  #Sanity Check that we have something to merge with
 		
-		($xargsFileCounter, $xargsFileName) = &PicardToolsMerge({'parameterHashRef' => \%{$parameterHashRef},
-									 'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-									 'sampleInfoHashRef' => \%{$sampleInfoHashRef},
-									 'fileInfoHashRef' => \%{$fileInfoHashRef},
-									 'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
-									 'laneHashRef' => \%{$laneHashRef},
-									 'jobIDHashRef' => \%{$jobIDHashRef},
-									 'sampleIDRef' => $sampleIDRef,
-									 'alignerRef' => \$$alignerRef, 
-									 'programName' => "PicardToolsMergeSamFiles",
-									 'fileEnding' => ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'fileEnding'},
-									 'fileName' => $fileName,
-									 'programInfoPath' => $programInfoPath,
-									 'FILEHANDLE' => $FILEHANDLE,
-									});
+		($xargsFileCounter, $xargsFileName) = &PicardToolsMergeSamFiles({'parameterHashRef' => \%{$parameterHashRef},
+										 'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+										 'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+										 'fileInfoHashRef' => \%{$fileInfoHashRef},
+										 'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
+										 'laneHashRef' => \%{$laneHashRef},
+										 'jobIDHashRef' => \%{$jobIDHashRef},
+										 'sampleIDRef' => $sampleIDRef,
+										 'alignerRef' => \$$alignerRef, 
+										 'programName' => "PicardToolsMergeSamFiles",
+										 'fileEnding' => ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'fileEnding'},
+										 'fileName' => $fileName,
+										 'programInfoPath' => $programInfoPath,
+										 'FILEHANDLE' => $FILEHANDLE,
+										});
 	    }
 	}
 	if ($scriptParameter{'pSambambaMarkduplicates'} > 0) {  #Sambamba Markduplicates
@@ -15325,7 +15365,7 @@ sub PrepareArrayParameters {
 ##         : $exomeTargetBedInfileListsArrayRef        => The exome target BED infiles array {REF}
 ##         : $exomeTargetPaddedBedInfileListsArrayRef  => The exome target padded BED infiles array {REF}
 ##         : $GATKTargetPaddedBedIntervalListsArrayRef => The exome target padded BED infiles array {REF}
-##         : $associatedPrograms                       => Programs that use the parameter. Comma separated string
+##         : $associatedPrograms                       => Programs that use the parameter array {REF}
 ##         : $parameterType                            => Type of MIP parameter 
 ##         : $parameterDefault                         => The parameter default value
 ##         : $parameterExistsCheck                     => Check if intendent file exists in reference directory
@@ -15344,14 +15384,8 @@ sub PrepareArrayParameters {
     my $exomeTargetBedInfileListsArrayRef = ${$argHashRef}{'exomeTargetBedInfileListsArrayRef'};
     my $exomeTargetPaddedBedInfileListsArrayRef = ${$argHashRef}{'exomeTargetPaddedBedInfileListsArrayRef'};
     my $GATKTargetPaddedBedIntervalListsArrayRef = ${$argHashRef}{'GATKTargetPaddedBedIntervalListsArrayRef'};
-    my $associatedPrograms = ${$argHashRef}{'associatedPrograms'};    
+    my $associatedPrograms = ${$argHashRef}{'associatedPrograms'};
 
-    my @associatedPrograms;
-
-    if (defined($associatedPrograms)) {
-
-	@associatedPrograms = split(",", $associatedPrograms);
-    }
     unless (scalar(@{$arrayRef}) == 0) {  #No input from cmd	    
 
 	${$parameterHashRef}{ ${$argHashRef}{'parameterName'} }{'value'} = "SetbyUser";
@@ -15369,7 +15403,7 @@ sub PrepareArrayParameters {
 				      'exomeTargetBedInfileListsArrayRef' => \@{$exomeTargetBedInfileListsArrayRef},
 				      'exomeTargetPaddedBedInfileListsArrayRef' => \@{$exomeTargetPaddedBedInfileListsArrayRef},
 				      'GATKTargetPaddedBedIntervalListsArrayRef' => \@{$GATKTargetPaddedBedIntervalListsArrayRef},
-				      'associatedPrograms' => \@associatedPrograms,
+				      'associatedPrograms' => \@{$associatedPrograms},
 				      'parameterName' => ${$argHashRef}{'parameterName'},
 				      'parameterValue' => ${$parameterHashRef}{ ${$argHashRef}{'parameterName'} }{'value'},
 				      'parameterType' => ${$argHashRef}{'type'},
@@ -19204,7 +19238,6 @@ sub RemoveFiles {
     my $lastModuleBAMCalibrationBlock = "pGATKHaploTypeCaller";
     my $lastModuleVariantAnnotationBlock = "pSnpEff";
     
-    #foreach my $program (keys %{${$parameterHashRef}{''}}) {
     foreach my $program (@{${$parameterHashRef}{'dynamicParameters'}{'program'}}) {
 
 	if (${$scriptParameterHashRef}{$program} > 0) {
@@ -19305,12 +19338,14 @@ sub RemoveFiles {
 					for (my $contigsCounter=0;$contigsCounter<scalar(@{$vcfParserContigsArrayRef});$contigsCounter++) {
 					    
 					    my $contigRef = \${$vcfParserContigsArrayRef}[$contigsCounter];
-					    my $filePath = $inDirectory."/".$infile.$outfileEnding."_".$$contigRef.${$parameterHashRef}{$program}{'removalFileEnding'}[$fileEndingCounter];
 					    
 					    if ( ($program eq "pPicardToolsMergeSamFiles") && (scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} }) < 2) ) {
 						
 						next;  #Skip as these files are not created since there is no merge for this sampleID
 					    }
+
+					    my $filePath = $inDirectory."/".$infile.$outfileEnding."_".$$contigRef.${$parameterHashRef}{$program}{'removalFileEnding'}[$fileEndingCounter];
+
 					    if ($program eq "pGATKHaploTypeCaller") {  #Special case - always collapses all files even if there is only one
 						
 						my $lanes = join("",@{${$laneHashRef}{$sampleID}});  #Extract lanes
@@ -19707,6 +19742,66 @@ sub VcfToBcf {
     print $FILEHANDLE "index ";  #VCF/BCF conversion
     print $FILEHANDLE $infile.".bcf ";  #Bcf file to index
     print $FILEHANDLE "\n\n";
+}
+
+
+sub PrepareGATKTargetIntervals {
+
+##PrepareGATKTargetIntervals
+    
+##Function : Prepare target interval file. Copies file to temporary directory, and adds fileExtension to fit GATK 
+##Returns  : ""
+##Arguments: $analysisTypeRef, $exomeTargetBedInfileListsRef, $referencesDirectoryRef, $tempDirectoryRef, $FILEHANDLE
+##         : $analysisTypeRef              => The analysis type {REF}
+##         : $exomeTargetBedInfileListsRef => Target interval list file {REF}
+##         : $referencesDirectoryRef       => Reference directory {REF}
+##         : $tempDirectoryRef             => Temporary directory {REF}
+##         : $FILEHANDLE                   => Filehandle to write to
+
+    my ($argHashRef) = @_;
+    
+    my %default = ('addEnding' => 1,
+		   'callType' => "BOTH",
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+
+    ## Flatten argument(s)
+    my $analysisTypeRef = ${$argHashRef}{'analysisTypeRef'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $referencesDirectoryRef = ${$argHashRef}{'referencesDirectoryRef'};
+    my $exomeTargetBedInfileListsRef = ${$argHashRef}{'exomeTargetBedInfileListsRef'};
+    my $tempDirectoryRef = ${$argHashRef}{'tempDirectoryRef'};
+    my $addEnding = ${$argHashRef}{'addEnding'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('analysisTypeRef' => $$analysisTypeRef,
+			     'referencesDirectoryRef' => $$referencesDirectoryRef,
+			     'exomeTargetBedInfileListsRef' => $$exomeTargetBedInfileListsRef,
+			     'tempDirectoryRef' => $$tempDirectoryRef,
+			     'FILEHANDLE' => $FILEHANDLE,
+	);
+    
+    &CheckMandatoryArguments(\%mandatoryArgument, "PrepareGATKTargetIntervals");
+
+    if ( ($$analysisTypeRef eq "exomes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
+
+	## Copies file to temporary directory.
+	&MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE,
+			    'path' => $$referencesDirectoryRef."/".$$exomeTargetBedInfileListsRef,
+			    'tempDirectory' => $$tempDirectoryRef,
+			   });
+	print $FILEHANDLE "wait ";
+	print $FILEHANDLE "\n\n";	
+    }
+    if ($addEnding == 1) {
+
+	## Add the by GATK required ".interval" ending
+	print $FILEHANDLE "mv ";
+	print $FILEHANDLE $$tempDirectoryRef."/".$$exomeTargetBedInfileListsRef." ";
+	print $FILEHANDLE $$tempDirectoryRef."/".$$exomeTargetBedInfileListsRef.".intervals ";
+	print $FILEHANDLE "\n\n";
+    }
 }
 
 
