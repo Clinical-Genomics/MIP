@@ -694,6 +694,7 @@ if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
 			 'scriptParameterHashRef' => \%scriptParameter,
 			 'sampleInfoHashRef' => \%sampleInfo,
 			 'fileInfoHashRef' => \%fileInfo,
+			 'supportedCaptureKitHashRef' => \%supportedCaptureKit,
 			 'arrayRef' => \@exomeTargetBedInfileLists,
 			 'orderParametersArrayRef' => \@orderParameters,
 			 'broadcastsArrayRef' => \@broadcasts,
@@ -711,6 +712,7 @@ if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
 			 'scriptParameterHashRef' => \%scriptParameter,
 			 'sampleInfoHashRef' => \%sampleInfo,
 			 'fileInfoHashRef' => \%fileInfo,
+			 'supportedCaptureKitHashRef' => \%supportedCaptureKit,
 			 'arrayRef' => \@exomeTargetPaddedBedInfileLists,
 			 'orderParametersArrayRef' => \@orderParameters,
 			 'broadcastsArrayRef' => \@broadcasts,
@@ -728,6 +730,7 @@ if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
 			 'scriptParameterHashRef' => \%scriptParameter,
 			 'sampleInfoHashRef' => \%sampleInfo,
 			 'fileInfoHashRef' => \%fileInfo,
+			 'supportedCaptureKitHashRef' => \%supportedCaptureKit,
 			 'exomeTargetBedInfileListsArrayRef' => \@exomeTargetBedInfileLists,
 			 'exomeTargetPaddedBedInfileListsArrayRef' => \@exomeTargetPaddedBedInfileLists,
 			 'GATKTargetPaddedBedIntervalListsArrayRef' => \@GATKTargetPaddedBedIntervalLists,
@@ -15310,11 +15313,12 @@ sub PrepareArrayParameters {
     
 ##Function : Check if user supplied cmd info and supplies arrayParameters to scriptParameters
 ##Returns  : "" 
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $arrayRef, $orderParametersArrayRef, $broadcastsArrayRef, $exomeTargetBedInfileListsArrayRef, $exomeTargetPaddedBedInfileListsArrayRef, $GATKTargetPaddedBedIntervalListsArrayRef, $associatedPrograms, $parameterName, $parameterType, $parameterDefault, $parameterExistsCheck
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $supportedCaptureKitHashRef, $arrayRef, $orderParametersArrayRef, $broadcastsArrayRef, $exomeTargetBedInfileListsArrayRef, $exomeTargetPaddedBedInfileListsArrayRef, $GATKTargetPaddedBedIntervalListsArrayRef, $associatedPrograms, $parameterName, $parameterType, $parameterDefault, $parameterExistsCheck
 ##         : $parameterHashRef                         => The parameter hash {REF}
 ##         : $scriptParameterHashRef                   => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef                        => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef                          => The fileInfo hash {REF}
+##         : $supportedCaptureKitHashRef               => The supported capture kits hash {REF}
 ##         : $arrayRef                                 => Array to loop in for parameter {REF}
 ##         : $orderParametersArrayRef                  => Order of addition to parameter array {REF}
 ##         : $broadcastsArrayRef                       => Holds the parameters info for broadcasting later {REF}
@@ -15333,6 +15337,7 @@ sub PrepareArrayParameters {
     my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
     my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
     my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
+    my $supportedCaptureKitHashRef = ${$argHashRef}{'supportedCaptureKitHashRef'};
     my $arrayRef = ${$argHashRef}{'arrayRef'};
     my $orderParametersArrayRef = ${$argHashRef}{'$orderParametersArrayRef'};
     my $broadcastsArrayRef = ${$argHashRef}{'broadcastsArrayRef'};
@@ -15359,6 +15364,7 @@ sub PrepareArrayParameters {
 				      'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 				      'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 				      'fileInfoHashRef' => \%{$fileInfoHashRef},
+				      'supportedCaptureKitHashRef' => \%{$supportedCaptureKitHashRef},
 				      'broadcastsArrayRef' => \@{$broadcastsArrayRef},
 				      'exomeTargetBedInfileListsArrayRef' => \@{$exomeTargetBedInfileListsArrayRef},
 				      'exomeTargetPaddedBedInfileListsArrayRef' => \@{$exomeTargetPaddedBedInfileListsArrayRef},
