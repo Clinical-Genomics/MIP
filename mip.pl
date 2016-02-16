@@ -724,8 +724,7 @@ if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
 			 'type' => "path",
 			 'default' => "notSetYet",
 			 'existCheck' => "file",
-			});
- 
+			}); 
 &PrepareArrayParameters({'parameterHashRef' => \%parameter,
 			 'scriptParameterHashRef' => \%scriptParameter,
 			 'sampleInfoHashRef' => \%sampleInfo,
@@ -1159,6 +1158,10 @@ else {
 	&CheckBuildHumanGenomePreRequisites(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infilesLaneNoEnding, \%jobID, \%supportedCosmidReference, "GATKRealigner");
 	&CheckBuildDownLoadPreRequisites(\%parameter, \%scriptParameter, \%sampleInfo, \%infilesLaneNoEnding, \%jobID, \%supportedCosmidReference, "GATKRealigner");
 	
+	if ($scriptParameter{'dryRunAll'} != 1) {
+	    
+	    &CheckBuildPTCHSMetricPreRequisites(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infilesLaneNoEnding, \%jobID, "GATKRealigner");
+	}
 	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {   
 	    
 	    &GATKReAligner({'parameterHashRef' => \%parameter,
@@ -1182,6 +1185,10 @@ else {
 	&CheckBuildHumanGenomePreRequisites(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infilesLaneNoEnding, \%jobID, \%supportedCosmidReference, "GATKBaseRecalibration");
 	&CheckBuildDownLoadPreRequisites(\%parameter, \%scriptParameter, \%sampleInfo, \%infilesLaneNoEnding, \%jobID, \%supportedCosmidReference, "GATKBaseRecalibration");
 	
+	if ($scriptParameter{'dryRunAll'} != 1) {
+	    
+	    &CheckBuildPTCHSMetricPreRequisites(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infilesLaneNoEnding, \%jobID, "GATKBaseRecalibration");
+	}
 	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {   
 	    
 	    &GATKBaseReCalibration({'parameterHashRef' => \%parameter,
@@ -1368,17 +1375,6 @@ if ($scriptParameter{'pGATKHaploTypeCaller'} > 0) {  #Run GATK HaploTypeCaller
     if ($scriptParameter{'dryRunAll'} != 1) {
 	
 	&CheckBuildPTCHSMetricPreRequisites(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infilesLaneNoEnding, \%jobID, "GATKHaploTypeCaller");
-    }
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {
-	
-	if ( (defined($parameter{ $scriptParameter{'familyID'} }{$scriptParameter{'sampleIDs'}[$sampleIDCounter]}{'GATKTargetPaddedBedIntervalLists'}{'buildFile'})) && ($parameter{ $scriptParameter{'familyID'} }{$scriptParameter{'sampleIDs'}[$sampleIDCounter]}{'GATKTargetPaddedBedIntervalLists'}{'buildFile'} eq 1) ){
-	    
-	    if ($scriptParameter{'dryRunAll'} != 1) {
-		
-		&BuildPTCHSMetricPreRequisites(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infilesLaneNoEnding, \%jobID, $scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "GATKHaploTypeCaller");
-		last;  #Will handle all build per sampleID within sbatch script
-	    }
-	}
     }
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {
 	
@@ -13604,7 +13600,7 @@ sub AddTargetlistsToScriptParameter {
 			    &SetTargetandAutoBuild(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$fileInfoHashRef}, \%{$supportedCaptureKitHashRef}, \@{${$scriptParameterHashRef}{'sampleIDs'}}, \$parameterName, \${$fileInfoHashRef}{'exomeTargetPaddedBedInfileLists'});
 			}
 			elsif ( ($parameterName eq "GATKTargetPaddedBedIntervalLists") && (${$scriptParameterHashRef}{'analysisType'} ne "genomes") ) {  #Note that potential pedigree files entries will be updated with GenomeReferenceSource and version here 
-			    
+
 			    &SetTargetandAutoBuild(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$fileInfoHashRef}, \%{$supportedCaptureKitHashRef}, \@{${$scriptParameterHashRef}{'sampleIDs'}}, \$parameterName, \${$fileInfoHashRef}{'GATKTargetPaddedBedIntervalLists'});
 			}
 			else {
@@ -15012,6 +15008,7 @@ sub CheckAutoBuild {
 	    return "1";  #Flag that autobuild is needed
 	}
 	else {
+
 	    return "0";  #No autobuild is needed   
 	}
     }
@@ -15110,7 +15107,7 @@ sub CheckExistance {
 ##         : $itemNameRef            => Item to check for existance {REF}
 ##         : $parameterNameRef       => MIP parameter name {REF}
 ##         : $itemTypeToCheck        => The type of item to check
-##         : $sampleIDRef            => SampleId {REF}
+##         : $sampleIDRef            => SampleID {REF}
 
     my $parameterHashRef = $_[0];
     my $scriptParameterHashRef = $_[1];
@@ -15131,11 +15128,11 @@ sub CheckExistance {
     elsif ($itemTypeToCheck eq "f") {
 	
 	unless (-f $$itemNameRef) {  #Check existence of supplied file in supplied reference dir
-	    
+
 	    if (defined($sampleIDRef)) {  #Individual files per sampleID
-		
+
 		${$parameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{$$parameterNameRef}{'buildFile'} = &CheckAutoBuild(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \$$parameterNameRef, \$$sampleIDRef);  #Check autoBuild or not and return value
-		
+
 		if (${$parameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{$$parameterNameRef}{'buildFile'} == 0) {  #No autobuild
 		    
 		    $logger->fatal($USAGE, "\n");
@@ -15158,7 +15155,7 @@ sub CheckExistance {
 	else {
 
 	    if (defined($sampleIDRef)) {
-		
+
 		${$parameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{$$parameterNameRef}{'buildFile'} = 0;  #File exist in this check
 	    }
 	    else {
@@ -15176,7 +15173,7 @@ sub SetAutoBuildFeature {
     
 ##Function : Sets parameters with autoBuild enabled to the new value dependent on $referenceFileNameRef
 ##Returns  : "" 
-##Arguments: $parameterHasRef, $scriptParameterHashRef, $fileInfoHashRef, $parameterName, $referenceFileEndingRef, $referenceFileNameRef, $printSwitch
+##Arguments: $parameterHasRef, $scriptParameterHashRef, $fileInfoHashRef, $parameterName, $referenceFileEndingRef, $referenceFileNameRef, $printSwitch, $sampleIDRef
 ##         : $parameterHashRef       => The parameter hash {REF}
 ##         : $scriptParameterHashRef => The activa parameters for this analysis hash {REF}
 ##         : $fileInfoHashRef        => The fileInfo hash {REF}
@@ -15184,6 +15181,7 @@ sub SetAutoBuildFeature {
 ##         : $referenceFileEndingRef => Reference file name ending {REF}
 ##         : $referenceFileNameRef   => Reference file name {REF}
 ##         : $printSwitch            => To print or not
+##         : $sampleIDRef            => SampleID {REF}
 
     my $parameterHashRef = $_[0];
     my $scriptParameterHashRef = $_[1];
@@ -15192,6 +15190,7 @@ sub SetAutoBuildFeature {
     my $referenceFileEndingRef = $_[4];
     my $referenceFileNameRef = $_[5];
     my $printSwitch = $_[6];
+    my $sampleIDRef = $_[7];
      
      if( defined(${$scriptParameterHashRef}{$parameterName}) && (${$scriptParameterHashRef}{$parameterName} eq "notSetYet") ) { 
 
@@ -15210,8 +15209,8 @@ sub SetAutoBuildFeature {
 	     &CheckFileEndingsToBeBuilt(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \@{${$fileInfoHashRef}{'mosaikJumpDbStubFileEndings'}}, "mosaikJumpDbStub");
 	 }
 	 else {  #Complete fileName - No stubs
-	    
-	     &CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName}), \$parameterName, "f");
+
+	     &CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \(${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName}), \$parameterName, "f", $sampleIDRef);
          }
     }
 }
@@ -15315,6 +15314,7 @@ sub SetTargetFiles {
 
     my %alias = ('exomeTargetBedInfileLists' => "ExomeTargetBedInfileLists",
 		 'exomeTargetPaddedBedInfileLists' => "ExomeTargetPaddedBedInfileLists",
+		 'GATKTargetPaddedBedIntervalLists' => "GATKTargetPaddedBedIntervalLists",
 	);
     
     if (defined(${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef})) {  #Capture kit check
@@ -15335,14 +15335,14 @@ sub SetTargetFiles {
 	$logger->info("Set ".$$parameterNameRef." to: ".${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef}, "\n");
     }
     else {
-	
+
 	${$supportedCaptureKitHashRef}{'Latest'} =~ s/GenomeReferenceSource/$$humanGenomeReferenceSourceRef/;  #Replace with Refseq genome or Ensembl genome
 	${$supportedCaptureKitHashRef}{'Latest'} =~ s/Version/$$humanGenomeReferenceVersionRef/;  #Replace with actual version
 	
 	${$scriptParameterHashRef}{$$parameterNameRef} = "notSetYet";  #Required for autobuild
 
 	## Sets parameters with autoBuild enabled to the new value dependent on $referenceFileNameRef
-	&SetAutoBuildFeature(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, $$parameterNameRef, \$$referenceFileEndingRef, \${$supportedCaptureKitHashRef}{'Latest'}, "noPrint");  #Always use the most updated capture kit when building target list
+	&SetAutoBuildFeature(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, $$parameterNameRef, \$$referenceFileEndingRef, \${$supportedCaptureKitHashRef}{'Latest'}, "noPrint", $sampleIDRef);  #Always use the most updated capture kit when building target list
     }
 }
 
@@ -15563,6 +15563,7 @@ sub SetTargetandAutoBuild {
     for (my $elementsCounter=0;$elementsCounter<scalar(@{$arrayRef});$elementsCounter++) {
 
 	${$parameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{${$arrayRef}[$elementsCounter]}{$$parameterNameRef}{'buildFile'} = "yesAutoBuild";
+
 	&SetTargetFiles(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$fileInfoHashRef}, \%{$supportedCaptureKitHashRef}, \${$fileInfoHashRef}{'humanGenomeReferenceSource'}, \${$fileInfoHashRef}{'humanGenomeReferenceVersion'}, \${$scriptParameterHashRef}{'familyID'}, \${$arrayRef}[$elementsCounter], \$$parameterNameRef, \$$fileEndingRef);
     }   
 }
