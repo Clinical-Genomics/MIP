@@ -2331,10 +2331,34 @@ sub Evaluation {
     print $FILEHANDLE "> ".$$tempDirectoryRef."/NIST.vcf.stats ";
     print $FILEHANDLE "\n\n";
 
+    ## Generate ".idx" for downstream Picard by failling this process
+    print $FILEHANDLE "## Generate '.idx' for downstream Picard by failling this process","\n";
+    
+    ## Writes java core commands to filehandle.
+    &JavaCore({'FILEHANDLE' => $FILEHANDLE,
+	       'memoryAllocation' => "Xmx2g",
+	       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+	       'javaTemporaryDirectory' => $$tempDirectoryRef,
+	       'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
+	      });
+
+    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
+    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
+    print $FILEHANDLE "-R ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
+    print $FILEHANDLE "-V: ".$$tempDirectoryRef."/NIST.vcf ";
+    print $FILEHANDLE "-o ".$$tempDirectoryRef."/NISTXXX.vcf ";
+    print $FILEHANDLE "-sn ".$$sampleIDRef."XXX ";  #Include genotypes from this sample
+    print $FILEHANDLE "\n\n";
+
     ## Create .interval_list file from NIST union bed
-    print $FILEHANDLE "## Create .interval_list file from NIST union bed\n\n";
-    print $FILEHANDLE "cat ";
+    print $FILEHANDLE "## Prepare .interval_list file from NIST union bed\n\n";
+
+    print $FILEHANDLE q?perl -nae 'unless($_=~/NC_007605/ || $_=~/hs37d5/) {print $_}' ?;
     print $FILEHANDLE $$referencesDirectoryRef."/".${$fileInfoHashRef}{'humanGenomeReferenceNameNoEnding'}.".dict ";
+    print $FILEHANDLE "> ".$$tempDirectoryRef."/Homo_sapiens.GRCh37.dict ";
+
+    print $FILEHANDLE "cat ";
+    print $FILEHANDLE $$tempDirectoryRef."/Homo_sapiens.GRCh37.dict ";
     print $FILEHANDLE $$referencesDirectoryRef."/".${$scriptParameterHashRef}{'NISTHighConfidenceCallSetBed'}." ";
     print $FILEHANDLE "> ".$$tempDirectoryRef."/NIST.bed.dict_body ";
     print $FILEHANDLE "\n\n";
@@ -2376,6 +2400,7 @@ sub Evaluation {
     print $FILEHANDLE "-V: ".$$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType.".vcf ";  #FamilyID inFile
     print $FILEHANDLE "-o ".$$tempDirectoryRef."/MIP.vcf ";  #SampleID exome outFile
     print $FILEHANDLE "-sn ".$$sampleIDRef." ";  #Include genotypes from this sample
+    print $FILEHANDLE "-env ";
     print $FILEHANDLE "\n\n";
 
     ## Left align, trim and split allels
@@ -2409,6 +2434,25 @@ sub Evaluation {
     print $FILEHANDLE "bcftools stats ";
     print $FILEHANDLE $$tempDirectoryRef."/MIP_lts_refrm.vcf ";
     print $FILEHANDLE "> ".$$tempDirectoryRef."/MIP_lts_refrm.vcf.stats ";
+    print $FILEHANDLE "\n\n";
+
+    ## Generate ".idx" for downstream Picard by failling this process
+    print $FILEHANDLE "## Generate '.idx' for downstream Picard by failling this process","\n";
+    
+    ## Writes java core commands to filehandle.
+    &JavaCore({'FILEHANDLE' => $FILEHANDLE,
+	       'memoryAllocation' => "Xmx2g",
+	       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+	       'javaTemporaryDirectory' => $$tempDirectoryRef,
+	       'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
+	      });
+
+    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
+    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
+    print $FILEHANDLE "-R ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
+    print $FILEHANDLE "-V: ".$$tempDirectoryRef."/MIP_lts_refrm.vcf ";
+    print $FILEHANDLE "-o ".$$tempDirectoryRef."/MIPXXX.vcf ";
+    print $FILEHANDLE "-sn ".$$sampleIDRef."XXX ";  #Include genotypes from this sample
     print $FILEHANDLE "\n\n";
 
     
@@ -2461,7 +2505,7 @@ sub Evaluation {
 		       'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 		       'jobIDHashRef' => \%{$jobIDHashRef},
 		       'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
-		       'dependencies' => 7, 
+		       'dependencies' => 2, 
 		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
 		       'sbatchFileName' => $fileName
 		       });
