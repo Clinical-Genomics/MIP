@@ -211,9 +211,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                ##RankVariants
                -pRaV/--pRankVariants Ranking of annotated variants (defaults to "1" (=yes))
                  -ravgft/--genmodModelsFamilyType Use one of the known setups (defaults to "mip")
-                 -ravcsf/--caddWGSSNVsFile Whole genome sequencing CADD score file (defaults to "")
-                 -ravc1kgf/--cadd1000GenomesFile 1000 Genome cadd score file (defaults to "")
-                 -ravcexac/--caddExacFile Exac cadd score file (defaults to "")
+                 -ravcad/--genmodcaddFiles CADD score files (defaults to ""; comma sep)
                  -ravspi/--spidexFile Spidex database for alternative splicing (defaults to "")
                  -ravwg/--wholeGene Allow compound pairs in intronic regions (defaults to "1" (=yes))
                  -ravrpf/--genmodModelsReducedPenetranceFile File containg genes with reduced penetrance (defaults to "")
@@ -506,9 +504,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'snesdbnsfpa|snpSiftDbNSFPAnnotations:s'  => \@{$parameter{'snpSiftDbNSFPAnnotations'}{'value'}},  #Comma separated list
 	   'pRaV|pRankVariants:n' => \$parameter{'pRankVariants'}{'value'},  #Ranking variants
 	   'ravgft|genmodModelsFamilyType:s' => \$parameter{'genmodModelsFamilyType'}{'value'},
-	   'ravcsf|caddWGSSNVsFile:s' => \$parameter{'caddWGSSNVsFile'}{'value'},
-	   'ravc1kgf|cadd1000GenomesFile:s' => \$parameter{'cadd1000GenomesFile'}{'value'},
-	   'ravcexac|caddExacFile:s' => \$parameter{'caddExacFile'}{'value'},
+	   'ravcad|genmodcaddFiles:s'  => \@{$parameter{'genmodcaddFiles'}{'value'}},  #Comma separated list
 	   'ravspi|spidexFile:s' => \$parameter{'spidexFile'}{'value'},
 	   'ravwg|wholeGene:n'  => \$parameter{'wholeGene'}{'value'},  #Allow compound pairs in intronic regions
 	   'ravrpf|genmodModelsReducedPenetranceFile:s' => \$parameter{'genmodModelsReducedPenetranceFile'}{'value'},
@@ -2387,21 +2383,9 @@ sub RankVariants {
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "annotate ";  #Annotate vcf variants
 
-	    if (defined(${$scriptParameterHashRef}{'caddWGSSNVsFile'}) ) {
-		
-		print $XARGSFILEHANDLE "--cadd_file ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'caddWGSSNVsFile'}." ";  #Whole genome sequencing CADD score file
-	    }
-	    if (defined(${$scriptParameterHashRef}{'cadd1000GenomesFile'})) {
-		
-		print $XARGSFILEHANDLE "--cadd_file ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'cadd1000GenomesFile'}." ";  #1000G CADD score file
-	    }
-	    if (defined(${$scriptParameterHashRef}{'caddExacFile'})) {
-		
-		print $XARGSFILEHANDLE "--cadd_file ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'caddExacFile'}." ";  #Exac CADD score file
-	    }
-	    if (defined(${$scriptParameterHashRef}{'spidexFile'})) {
-		
-		print $XARGSFILEHANDLE "--spidex ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'spidexFile'}." ";  #Spidex file
+	    foreach my $caddFile (@{${$scriptParameterHashRef}{'genmodcaddFiles'}}) {
+
+		print $XARGSFILEHANDLE "--cadd_file ".$$referencesDirectoryRef."/".$caddFile." ";  #CADD score file(s)
 	    }
 
 	    print $XARGSFILEHANDLE "-o /dev/stdout ";  #OutFile
@@ -13792,10 +13776,6 @@ sub AddToScriptParameter {
 			}
 			elsif ( ($parameterName eq "vcfParserSelectFileMatchingColumn") && ( ${$scriptParameterHashRef}{'vcfParserSelectFile'} eq "noUserInfo") ) {  #Do nothing since no SelectFile was given
 			}
-			elsif ( ($parameterName eq "caddWGSSNVsFile") && (!defined(${$scriptParameterHashRef}{'caddWGSSNVsFile'}) ) ) {  #Do nothing since no CADD annotation should be performed
-			}
-			elsif ( ($parameterName eq "cadd1000GenomesFile") && (!defined(${$scriptParameterHashRef}{'cadd1000GenomesFile'}) ) ) {  #Do nothing since no CADD annotation should be performed
-			}
 			elsif ( ($parameterName eq "rankModelFile") && (!defined(${$scriptParameterHashRef}{'rankModelFile'}) ) ) {  #Do nothing since no rank model was given i.e. use rank scripts deafult supplied with distribution
 			}
 			elsif ( ($parameterName eq "genmodModelsReducedPenetranceFile") && (!defined(${$scriptParameterHashRef}{'genmodModelsReducedPenetranceFile'}) ) ) {  #Do nothing since no reduced penetrance should be performed
@@ -13916,26 +13896,128 @@ sub CheckParameterFiles {
 	    }
 	    elsif ( ($parameterExistsCheck) && ($parameterExistsCheck eq "file") && (defined(${$scriptParameterHashRef}{$parameterName})) ) {  #Check file existence in reference directory
 		
-		if ($parameterName eq "mosaikJumpDbStub") {
-		    
-		    &CheckFileEndingsToBeBuilt(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \@{${$fileInfoHashRef}{'mosaikJumpDbStubFileEndings'}}, $parameterName); 
-		}
-		elsif ($parameterName eq "bwaBuildReference") {
-		    
-		    &CheckFileEndingsToBeBuilt(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \@{${$fileInfoHashRef}{'bwaBuildReferenceFileEndings'}}, $parameterName);
-		}
-		elsif ($parameterName eq "picardToolsMergeSamFilesPrevious") {
-		    
-		    for (my $fileCounter=0;$fileCounter<scalar(@{${$scriptParameterHashRef}{'picardToolsMergeSamFilesPrevious'}});$fileCounter++) {
+		if (${$parameterHashRef}{$parameterName}{'dataType'} eq "SCALAR") {
+
+		    if ($parameterName eq "mosaikJumpDbStub") {
 			
-			&CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \${$scriptParameterHashRef}{'picardToolsMergeSamFilesPrevious'}[$fileCounter], \$parameterName, "f");
+			&CheckFileEndingsToBeBuilt(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \@{${$fileInfoHashRef}{'mosaikJumpDbStubFileEndings'}}, $parameterName); 
+		    }
+		    elsif ($parameterName eq "bwaBuildReference") {
+			
+			&CheckFileEndingsToBeBuilt(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \@{${$fileInfoHashRef}{'bwaBuildReferenceFileEndings'}}, $parameterName);
+		    }
+		    elsif ($parameterName eq "humanGenomeReference") {
+			
+			my $path = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName};
+			&CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \$path, \$parameterName, "f");  #Check reference genome		    
+			&CheckHumanGenomeFileEndings(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, \${$scriptParameterHashRef}{'referencesDir'}, \${$fileInfoHashRef}{'humanGenomeReferenceNameNoEnding'}, \$parameterName);
+		    }
+		    elsif ($parameterName eq "sampleInfoFile") {
+			
+			if (defined(${$scriptParameterHashRef}{'sampleInfoFile'})) {
+			    
+			    if (-f ${$scriptParameterHashRef}{'sampleInfoFile'}) {
+				
+				my %tempHash = &LoadYAML(\%{$scriptParameterHashRef}, ${$scriptParameterHashRef}{'sampleInfoFile'});  #Load parameters from previous run from sampleInfoFile
+				
+				## Update sampleInfo with information from pedigree
+				&UpdateSampleInfoHash(\%{$sampleInfoHashRef}, \%tempHash, \${$scriptParameterHashRef}{'familyID'});							    
+			    }
+			} 
+		    }
+		    elsif ( ($parameterName eq "genomicSet") && (${$scriptParameterHashRef}{'genomicSet'} eq "noUserInfo") ) {  #Do nothing since this is not a required feature
+		    }
+		    elsif ( ($parameterName eq "bwaMemRapidDb") && (${$scriptParameterHashRef}{'analysisType'} ne "rapid")) {  #Do nothing since file is not required unless rapid mode is enabled
+		    }
+		    elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCF") && (${$scriptParameterHashRef}{'analysisType'} =~/genomes/) ) {  #Do nothing since file is not required unless exome mode is enabled
+		    }
+		    elsif ( ($parameterName eq "vcfParserRangeFeatureFile") && ( ${$scriptParameterHashRef}{'vcfParserRangeFeatureFile'} eq "noUserInfo") ) {  #Do nothing since no RangeFile was given
+		    }
+		    elsif ($parameterName eq "vcfParserSelectFile") {
+			
+			if (${$scriptParameterHashRef}{'vcfParserSelectFile'} eq "noUserInfo") {  #No SelectFile was given
+			    
+			    ${$scriptParameterHashRef}{'VcfParserOutputFileCount'} = 1;  #To track if VCFParser was used with a vcfParserSelectFile (=2) or not (=1)
+			}
+			else {  #To enable addition of selectFile to sampleInfo                                                                       
+			    
+			    my $path = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName};
+			    &CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \$path, \$parameterName, "f");
+			    
+			    ## Collects sequences contigs used in select file
+			    &CollectSelectFileContigs(\@{${$fileInfoHashRef}{'SelectFileContigs'}}, ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'vcfParserSelectFile'});
+			    
+			    ${$scriptParameterHashRef}{'VcfParserOutputFileCount'} = 2;  #To track if VCFParser was used with a vcfParserSelectFile (=2) or not (=1)
+			}
+		    }
+		    elsif ( ($parameterName eq "genmodModelsReducedPenetranceFile") && (!defined(${$scriptParameterHashRef}{'genmodModelsReducedPenetranceFile'}) ) ) {  #Do nothing since no reduced penetrance should be performed
+		    }
+		    elsif ($parameterName eq "rankModelFile") {  
+			
+			if (!defined(${$scriptParameterHashRef}{'rankModelFile'})) {  #Do nothing since no rank model config file was given. Usse default supplied by ranking script
+			}
+			else {  #To enable addition of rankModel file and version to sampleInfo                                                                       
+			    
+			    my $path = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName};
+			    &CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \$path, \$parameterName, "f");
+			}
+		    }
+		    else {
+			
+			my $path = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName};
+			&CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \$path, \$parameterName, "f");
 		    }
 		}
-		elsif ($parameterName eq "humanGenomeReference") {
-		    
-		    my $path = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName};
-		    &CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \$path, \$parameterName, "f");  #Check reference genome		    
-		    &CheckHumanGenomeFileEndings(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, \${$scriptParameterHashRef}{'referencesDir'}, \${$fileInfoHashRef}{'humanGenomeReferenceNameNoEnding'}, \$parameterName);
+		if (${$parameterHashRef}{$parameterName}{'dataType'} eq "ARRAY") {
+		 
+		    if ($parameterName eq "annovarTableNames") {
+			
+			## Defines and adds annovar tables parameters to hash
+			%{$annovarTableHashRef} = &DefineAnnovarTables(\%{$parameterHashRef}, \@{$annovarSupportedTableNamesArrayRef}, \$scriptParameter{'annovarGenomeBuildVersion'}); #Set all AnnovarTables properties
+			
+			&CheckAnnovarTables(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$annovarTableHashRef}, \@{$annovarSupportedTableNamesArrayRef});
+		    }
+		    else {
+			
+			for (my $fileCounter=0;$fileCounter<scalar(@{${$scriptParameterHashRef}{$parameterName}});$fileCounter++) {
+			    
+			    my $file = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName}[$fileCounter];
+			    
+			    if ($parameterName eq "picardToolsMergeSamFilesPrevious") {
+				
+				$file = ${$scriptParameterHashRef}{$parameterName}[$fileCounter];
+			    }
+			    &CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \$file, \$parameterName, "f");
+			}
+		    }
+		}
+		if (${$parameterHashRef}{$parameterName}{'dataType'} eq "HASH") { 
+
+		    if ($parameterName eq "snpSiftAnnotationFiles"){
+			
+			my %snpEffFile = &DefineSnpEffFiles(\%{$parameterHashRef});
+			
+			for my $file (keys %{${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}}) {
+			    
+			    my $intendedFilePath = ${$scriptParameterHashRef}{'referencesDir'}."/".$file;
+			    &CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \$intendedFilePath, \$file, "f");
+			    
+			    if ($file =~/\.gz$/) {  #Check for tabix index as well
+				
+				my $fileIndex = $file.".tbi";
+				my $intendedFilePath = ${$scriptParameterHashRef}{'referencesDir'}."/".$fileIndex;
+				&CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \$intendedFilePath, \$fileIndex, "f");
+			    }
+			}
+		    }
+		    else {
+			
+			for my $file (keys %{${$scriptParameterHashRef}{$parameterName}}) {
+			    
+			    my $intendedFilePath = ${$scriptParameterHashRef}{'referencesDir'}."/".$file;
+			    &CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \$intendedFilePath, \$file, "f");
+			}
+		    }
 		}
 		elsif ( ($parameterName eq "exomeTargetBedInfileLists") || ($parameterName eq "exomeTargetPaddedBedInfileLists") || ($parameterName eq "GATKTargetPaddedBedIntervalLists") ) {
 		    
@@ -13965,90 +14047,6 @@ sub CheckParameterFiles {
 			}
 			undef(${$scriptParameterHashRef}{$parameterName});  #Remove parameter to avoid unnecessary print to STDOUT and config
 		    }
-		}
-		elsif ($parameterName eq "annovarTableNames") {
-		    
-		    ## Defines and adds annovar tables parameters to hash
-		    %{$annovarTableHashRef} = &DefineAnnovarTables(\%{$parameterHashRef}, \@{$annovarSupportedTableNamesArrayRef}, \$scriptParameter{'annovarGenomeBuildVersion'}); #Set all AnnovarTables properties
-
-		    &CheckAnnovarTables(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$annovarTableHashRef}, \@{$annovarSupportedTableNamesArrayRef});
-		}
-		elsif ($parameterName eq "sampleInfoFile") {
-		    
-		    if (defined(${$scriptParameterHashRef}{'sampleInfoFile'})) {
-			
-			if (-f ${$scriptParameterHashRef}{'sampleInfoFile'}) {
-			    
-			    my %tempHash = &LoadYAML(\%{$scriptParameterHashRef}, ${$scriptParameterHashRef}{'sampleInfoFile'});  #Load parameters from previous run from sampleInfoFile
-
-			    ## Update sampleInfo with information from pedigree
-			    &UpdateSampleInfoHash(\%{$sampleInfoHashRef}, \%tempHash, \${$scriptParameterHashRef}{'familyID'});							    
-			}
-		    } 
-		}
-		elsif ( ($parameterName eq "genomicSet") && (${$scriptParameterHashRef}{'genomicSet'} eq "noUserInfo") ) {  #Do nothing since this is not a required feature
-		}
-		elsif ( ($parameterName eq "bwaMemRapidDb") && (${$scriptParameterHashRef}{'analysisType'} ne "rapid")) {  #Do nothing since file is not required unless rapid mode is enabled
-		}
-		elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCF") && (${$scriptParameterHashRef}{'analysisType'} =~/genomes/) ) {  #Do nothing since file is not required unless exome mode is enabled
-		}
-		elsif ( ($parameterName eq "vcfParserRangeFeatureFile") && ( ${$scriptParameterHashRef}{'vcfParserRangeFeatureFile'} eq "noUserInfo") ) {  #Do nothing since no RangeFile was given
-		}
-		elsif ($parameterName eq "vcfParserSelectFile") {
-		    
-		    if (${$scriptParameterHashRef}{'vcfParserSelectFile'} eq "noUserInfo") {  #No SelectFile was given
-			
-			${$scriptParameterHashRef}{'VcfParserOutputFileCount'} = 1;  #To track if VCFParser was used with a vcfParserSelectFile (=2) or not (=1)
-		    }
-		    else {  #To enable addition of selectFile to sampleInfo                                                                       
-			
-			my $path = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName};
-			&CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \$path, \$parameterName, "f");
-	
-			## Collects sequences contigs used in select file
-			&CollectSelectFileContigs(\@{${$fileInfoHashRef}{'SelectFileContigs'}}, ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'vcfParserSelectFile'});
-			
-			${$scriptParameterHashRef}{'VcfParserOutputFileCount'} = 2;  #To track if VCFParser was used with a vcfParserSelectFile (=2) or not (=1)
-		    }
-		}
-		elsif ( ($parameterName eq "caddWGSSNVsFile") && (!defined(${$scriptParameterHashRef}{'caddWGSSNVsFile'}) ) ) {  #Do nothing since no CADD annotation should be performed
-		}
-		elsif ( ($parameterName eq "cadd1000GenomesFile") && (!defined(${$scriptParameterHashRef}{'cadd1000GenomesFile'}) ) ) {  #Do nothing since no CADD annotation should be performed
-		}
-		elsif ( ($parameterName eq "genmodModelsReducedPenetranceFile") && (!defined(${$scriptParameterHashRef}{'genmodModelsReducedPenetranceFile'}) ) ) {  #Do nothing since no reduced penetrance should be performed
-		}
-		elsif ($parameterName eq "rankModelFile") {  
-		    
-		    if (!defined(${$scriptParameterHashRef}{'rankModelFile'})) {  #Do nothing since no rank model config file was given. Usse default supplied by ranking script
-		    }
-		    else {  #To enable addition of rankModel file and version to sampleInfo                                                                       
-			
-			my $path = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName};
-			&CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \$path, \$parameterName, "f");
-		    }
-		}
-		elsif ($parameterName eq "snpSiftAnnotationFiles"){
-
-		    my %snpEffFile = &DefineSnpEffFiles(\%{$parameterHashRef});
-		    my $intendedFilePathRef;
-		    
-		    for my $file (keys %{${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}}) {
-
-			my $intendedFilePath = ${$scriptParameterHashRef}{'referencesDir'}."/".$file;
-			&CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \$intendedFilePath, \$file, "f");
-			
-			if ($file =~/\.gz$/) {  #Check for tabix index as well
-			    
-			    my $fileIndex = $file.".tbi";
-			    my $intendedFilePath = ${$scriptParameterHashRef}{'referencesDir'}."/".$fileIndex;
-			    &CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \$intendedFilePath, \$fileIndex, "f");
-			}
-		    }
-		}
-		else {
-
-		    my $path = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName};
-		    &CheckExistance(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \$path, \$parameterName, "f");
 		}		    
 	    }
 	}

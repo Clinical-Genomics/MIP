@@ -1124,27 +1124,6 @@ genmodModelsFamilyType:
   dataType: SCALAR
   default: mip
   type: programArgument
-caddWGSSNVsFile:
-  associatedProgram:
-   - pRankVariants
-  buildFile: noAutoBuild
-  dataType: SCALAR
-  existsCheck: file
-  type: path
-cadd1000GenomesFile:
-  associatedProgram:
-   - pRankVariants
-  buildFile: noAutoBuild
-  dataType: SCALAR
-  existsCheck: file
-  type: path
-caddExacFile:
-  associatedProgram:
-   - pRankVariants
-  buildFile: noAutoBuild
-  dataType: SCALAR
-  existsCheck: file
-  type: path
 spidexFile:
   associatedProgram:
    - pRankVariants
@@ -1419,4 +1398,12 @@ snpSiftAnnotationOutInfoKey:
      ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz: 1000GAF
      ExAC.r0.3.sites.vep.vcf.gz: EXACAF
   existsCheck: file
+  type: path
+genmodcaddFiles:
+  associatedProgram:
+   - pRankVariants
+  dataType: ARRAY
+  elementSeparator: ,
+  existsCheck: file
+  mandatory: no
   type: path
