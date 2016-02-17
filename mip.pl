@@ -220,6 +220,9 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                
                ###Utility
                -pScK/--pSampleCheck QC for samples gender and relationship (defaults to "1" (=yes) )
+               -pEvL/--pEvaluation Compare concordance with NIST data set (defaults to "0" (=no) )
+                 -evlnhc/--NISTHighConfidenceCallSet NIST high-confidence variant calls (defaults to "NISTIntgratedCalls.v2.19.vcf")
+                 -evlnil/--NISTHighConfidenceCallSetBed NIST high-confidence variant calls interval list (defaults to "NISTIntgratedCalls.v2.19.interval_list")
                -pQcC/--pQCCollect Collect QC metrics from programs processed (defaults to "1" (=yes) )
                  -qccsi/--QCCollectSampleInfoFile SampleInfo File containing info on what to parse from this analysis run (defaults to "{outDataDir}/{familyID}/{familyID}_qc_sampleInfo.yaml")
                  -qccref/--QCCollectRegExpFile Regular expression file containing the regular expression to be used for each program (defaults to "qc_regExp_v1.4.yaml")
@@ -512,6 +515,9 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'ravrpf|genmodModelsReducedPenetranceFile:s' => \$parameter{'genmodModelsReducedPenetranceFile'}{'value'},
 	   'ravrm|rankModelFile:s' => \$parameter{'rankModelFile'}{'value'},  #The rank modell config.ini path
 	   'pScK|pSampleCheck:n' => \$parameter{'pSampleCheck'}{'value'},  #QC for samples gender and relationship
+	   'pEvL|pEvaluation:n' => \$parameter{'pEvaluation'}{'value'},  #Compare concordance with NIST data set
+	   'evlnhc|NISTHighConfidenceCallSet:s' => \$parameter{'NISTHighConfidenceCallSet'}{'value'},
+	   'evlnil|NISTHighConfidenceCallSetBed:s' => \$parameter{'NISTHighConfidenceCallSetBed'}{'value'},
 	   'pQcC|pQCCollect:n' => \$parameter{'pQCCollect'}{'value'},  #QCmetrics collect
 	   'qccsi|QCCollectSampleInfoFile:s' => \$parameter{'QCCollectSampleInfoFile'}{'value'},  #SampleInfo yaml file produced by MIP
 	   'qccref|QCCollectRegExpFile:s' => \$parameter{'QCCollectRegExpFile'}{'value'},  #Regular expression yaml file
@@ -1471,6 +1477,29 @@ if ($scriptParameter{'pSampleCheck'} > 0) {  #Run SampleCheck. Done per family
 		 });
 }
 
+if ($scriptParameter{'pEvaluation'} > 0) {  #Run Evaluation. Done per family
+
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {
+
+	if ($scriptParameter{'sampleIDs'}[$sampleIDCounter]=~/ADM1059A3/) {
+	    
+	    $logger->info("[Evaluation]\n");
+	    
+	    &Evaluation({'parameterHashRef' => \%parameter,
+			 'scriptParameterHashRef' => \%scriptParameter,
+			 'sampleInfoHashRef' => \%sampleInfo,
+			 'fileInfoHashRef' => \%fileInfo,
+			 'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+			 'jobIDHashRef' => \%jobID,
+			 'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
+			 'callType' => "BOTH",
+			 'programName' => "Evaluation",
+			});
+	}
+    }
+}
+
+
 if ($scriptParameter{'pGATKPhaseByTransmission'} > 0) {  #Run GATK PhaseByTransmission. Done per family
     
     $logger->info("[GATK PhaseByTransmission]\n");
@@ -2109,7 +2138,7 @@ sub QCCollect {
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $familyIDRef                => The familyID
+##         : $familyIDRef                => The familyID {REF}
 ##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 
@@ -2185,6 +2214,291 @@ sub QCCollect {
 		       'jobIDHashRef' => \%{$jobIDHashRef},
 		       'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
 		       'dependencies' => 7, 
+		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
+		       'sbatchFileName' => $fileName
+		       });
+    }
+}
+
+
+sub Evaluation { 
+
+##Evaluation
+    
+##Function : Compare metrics for this analysis run with the NIST reference dataset.
+##Returns  : ""
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $jobIDHashRef, $familyIDRef, $sampleIDRef, $callType, $programName
+##         : $parameterHashRef           => The parameter hash {REF}
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $fileInfoHashRef            => The fileInfo hash {REF}
+##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $familyIDRef                => The familyID {REF}
+##         : $sampleIDRef                => The sampleID {REF}
+##         : $callType                   => The variant call type
+##         : $programName                => The program name
+
+    my ($argHashRef) = @_;
+    
+    my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+		   'alignerRef' => \${$argHashRef}{'scriptParameterHashRef'}{'aligner'},
+		   'referencesDirRef' => \${$argHashRef}{'scriptParameterHashRef'}{'referencesDir'},
+		   'callType' => "BOTH",
+		   'tempDirectoryRef' => \${$argHashRef}{'scriptParameterHashRef'}{'tempDirectory'},
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+    
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
+    my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
+    my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
+    my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
+    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $callType = ${$argHashRef}{'callType'};
+    my $programName = ${$argHashRef}{'programName'};
+    my $referencesDirectoryRef =  ${$argHashRef}{'referencesDirRef'};
+    my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
+			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
+			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'callType' => $callType,
+			     'programName' => $programName,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+
+    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    my ($fileName) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+					    'FILEHANDLE' => $FILEHANDLE,
+					    'directoryID' => $$familyIDRef,
+					    'programName' => $programName,
+					    'programDirectory' => lc($programName),
+					    'tempDirectory' => $$tempDirectoryRef,
+					   });
+    
+    ## Assign directories
+    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
+    ${$parameterHashRef}{"p".$programName}{'inDirectory'} = $outFamilyDirectory;  #Used downstream
+
+    my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pGATKCombineVariantCallSets'}{'fileEnding'};
+
+    ## Copy file(s) to temporary directory
+    print $FILEHANDLE "## Copy file(s) to temporary directory\n"; 
+    &MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE,
+			'path' => $inFamilyDirectory."/".$$familyIDRef.$infileEnding.$callType.".vcf*",
+			'tempDirectory' => $$tempDirectoryRef
+		       });
+    print $FILEHANDLE "wait", "\n\n";
+    
+    ## Create new sample names file
+    print $FILEHANDLE "## Create new sample names file\n";
+    print $FILEHANDLE q?echo "ADM1059A3-NIST" ?;
+    print $FILEHANDLE "> ".$$tempDirectoryRef."/sample_names.txt ";
+    print $FILEHANDLE "\n\n";
+
+    ## Rename NIST 
+    print $FILEHANDLE "bcftools ";
+    print $FILEHANDLE "reheader ";  #Modify header of VCF/BCF files, change sample names.
+    print $FILEHANDLE "-s ";  #New sample names
+    print $FILEHANDLE $$tempDirectoryRef."/sample_names.txt ";
+    print $FILEHANDLE " ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'NISTHighConfidenceCallSet'}." ";
+    print $FILEHANDLE "> ".$$tempDirectoryRef."/NIST.vcf ";
+    print $FILEHANDLE "\n\n";
+
+    ## BcfTools Stats
+    print $FILEHANDLE "## bcfTools Stats\n";
+    print $FILEHANDLE "bcftools stats ";
+    print $FILEHANDLE $$tempDirectoryRef."/NIST.vcf ";
+    print $FILEHANDLE "> ".$$tempDirectoryRef."/NIST.vcf.stats ";
+    print $FILEHANDLE "\n\n";
+
+    ## Generate ".idx" for downstream Picard by failling this process
+    print $FILEHANDLE "## Generate '.idx' for downstream Picard by failling this process","\n";
+    
+    ## Writes java core commands to filehandle.
+    &JavaCore({'FILEHANDLE' => $FILEHANDLE,
+	       'memoryAllocation' => "Xmx2g",
+	       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+	       'javaTemporaryDirectory' => $$tempDirectoryRef,
+	       'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
+	      });
+
+    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
+    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
+    print $FILEHANDLE "-R ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
+    print $FILEHANDLE "-V: ".$$tempDirectoryRef."/NIST.vcf ";
+    print $FILEHANDLE "-o ".$$tempDirectoryRef."/NISTXXX.vcf ";
+    print $FILEHANDLE "-sn ".$$sampleIDRef."XXX ";  #Include genotypes from this sample
+    print $FILEHANDLE "\n\n";
+
+    ## Create .interval_list file from NIST union bed
+    print $FILEHANDLE "## Prepare .interval_list file from NIST union bed\n\n";
+
+    print $FILEHANDLE q?perl -nae 'unless($_=~/NC_007605/ || $_=~/hs37d5/) {print $_}' ?;
+    print $FILEHANDLE $$referencesDirectoryRef."/".${$fileInfoHashRef}{'humanGenomeReferenceNameNoEnding'}.".dict ";
+    print $FILEHANDLE "> ".$$tempDirectoryRef."/Homo_sapiens.GRCh37.dict ";
+
+    print $FILEHANDLE "cat ";
+    print $FILEHANDLE $$tempDirectoryRef."/Homo_sapiens.GRCh37.dict ";
+    print $FILEHANDLE $$referencesDirectoryRef."/".${$scriptParameterHashRef}{'NISTHighConfidenceCallSetBed'}." ";
+    print $FILEHANDLE "> ".$$tempDirectoryRef."/NIST.bed.dict_body ";
+    print $FILEHANDLE "\n\n";
+    
+    print $FILEHANDLE "## Remove target annotations, 'track', 'browse' and keep only 5 columns", "\n";
+    print $FILEHANDLE q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^browser/) {} else {print @F[0], "\t", (@F[1] + 1), "\t", @F[2], "\t", "+", "\t", "-", "\n";}' ?;
+    print $FILEHANDLE $$tempDirectoryRef."/NIST.bed.dict_body ";  #Infile
+    print $FILEHANDLE "> ".$$tempDirectoryRef."/NIST.bed.dict_body_col_5.interval_list ";  #Remove unnecessary info and reformat 
+    print $FILEHANDLE "\n\n";
+
+    print $FILEHANDLE "## Create".${$scriptParameterHashRef}{'NISTHighConfidenceCallSetBed'}.".interval_list ", "\n";
+    &JavaCore({'FILEHANDLE' => $FILEHANDLE,
+	       'memoryAllocation' => "Xmx2g",
+	       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+	       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+	       'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
+	      });
+    
+    print $FILEHANDLE "IntervalListTools ";
+    print $FILEHANDLE "INPUT=".$$tempDirectoryRef."/NIST.bed.dict_body_col_5.interval_list ";
+    print $FILEHANDLE "OUTPUT=".$$tempDirectoryRef."/NIST.bed.interval_list ";
+    print $FILEHANDLE "\n\n";
+
+    ### MIP data
+    ## GATK SelectVariants
+    print $FILEHANDLE "## GATK SelectVariants","\n";
+    
+    ## Writes java core commands to filehandle.
+    &JavaCore({'FILEHANDLE' => $FILEHANDLE,
+	       'memoryAllocation' => "Xmx2g",
+	       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+	       'javaTemporaryDirectory' => $$tempDirectoryRef,
+	       'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
+	      });
+
+    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
+    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
+    print $FILEHANDLE "-R ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
+    print $FILEHANDLE "-V: ".$$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType.".vcf ";  #FamilyID inFile
+    print $FILEHANDLE "-o ".$$tempDirectoryRef."/MIP.vcf ";  #SampleID exome outFile
+    print $FILEHANDLE "-sn ".$$sampleIDRef." ";  #Include genotypes from this sample
+    print $FILEHANDLE "-env ";
+    print $FILEHANDLE "\n\n";
+
+    ## Left align, trim and split allels
+    print $FILEHANDLE "## GATK LeftAlignAndTrimVariants","\n";
+    
+    ## Writes java core commands to filehandle.
+    &JavaCore({'FILEHANDLE' => $FILEHANDLE,
+	       'memoryAllocation' => "Xmx2g",
+	       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+	       'javaTemporaryDirectory' => $$tempDirectoryRef,
+	       'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
+	      });
+
+    print $FILEHANDLE "-T LeftAlignAndTrimVariants ";  #Type of analysis to run
+    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
+    print $FILEHANDLE "-R ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
+    print $FILEHANDLE "--splitMultiallelics ";
+    print $FILEHANDLE "--variant ".$$tempDirectoryRef."/MIP.vcf ";  #SampleID inFile
+    print $FILEHANDLE "-o ".$$tempDirectoryRef."/MIP_lts.vcf ";  #outFile
+    print $FILEHANDLE "\n\n";
+
+    ## Modify since different ref genomes
+    print $FILEHANDLE "## Modify since different ref genomes\n";
+    print $FILEHANDLE q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig=<ID=hs37d5,length=35477943>/) {print $_}' ?;
+    print $FILEHANDLE $$tempDirectoryRef."/MIP_lts.vcf ";  #Infile
+    print $FILEHANDLE "> ".$$tempDirectoryRef."/MIP_lts_refrm.vcf ";
+    print $FILEHANDLE "\n\n";
+
+    ## BcfTools Stats
+    print $FILEHANDLE "## bcfTools Stats\n";
+    print $FILEHANDLE "bcftools stats ";
+    print $FILEHANDLE $$tempDirectoryRef."/MIP_lts_refrm.vcf ";
+    print $FILEHANDLE "> ".$$tempDirectoryRef."/MIP_lts_refrm.vcf.stats ";
+    print $FILEHANDLE "\n\n";
+
+    ## Generate ".idx" for downstream Picard by failling this process
+    print $FILEHANDLE "## Generate '.idx' for downstream Picard by failling this process","\n";
+    
+    ## Writes java core commands to filehandle.
+    &JavaCore({'FILEHANDLE' => $FILEHANDLE,
+	       'memoryAllocation' => "Xmx2g",
+	       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+	       'javaTemporaryDirectory' => $$tempDirectoryRef,
+	       'javaJar' => ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}."/GenomeAnalysisTK.jar"
+	      });
+
+    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
+    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
+    print $FILEHANDLE "-R ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
+    print $FILEHANDLE "-V: ".$$tempDirectoryRef."/MIP_lts_refrm.vcf ";
+    print $FILEHANDLE "-o ".$$tempDirectoryRef."/MIPXXX.vcf ";
+    print $FILEHANDLE "-sn ".$$sampleIDRef."XXX ";  #Include genotypes from this sample
+    print $FILEHANDLE "\n\n";
+
+    
+    print $FILEHANDLE "## Picard GenotypeConcordance - Genome restricted by union - good quality ", "\n";
+    &JavaCore({'FILEHANDLE' => $FILEHANDLE,
+	       'memoryAllocation' => "Xmx2g",
+	       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+	       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+	       'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
+	      });
+    
+    print $FILEHANDLE "GenotypeConcordance ";
+    print $FILEHANDLE "TRUTH_VCF=".$$tempDirectoryRef."/NIST.vcf ";
+    print $FILEHANDLE "CALL_VCF=".$$tempDirectoryRef."/MIP_lts_refrm.vcf ";
+    print $FILEHANDLE "OUTPUT=".$$tempDirectoryRef."/compMIP.Vs.NIST_ADM1059A3_genome_bed ";
+    print $FILEHANDLE "TRUTH_SAMPLE=ADM1059A3-NIST ";
+    print $FILEHANDLE "CALL_SAMPLE=".$$sampleIDRef." ";
+    print $FILEHANDLE "MIN_GQ=20 ";
+    print $FILEHANDLE "MIN_DP=10 ";
+    print $FILEHANDLE "INTERVALS=".$$tempDirectoryRef."/NIST.bed.interval_list ";
+    print $FILEHANDLE "\n\n";
+
+    print $FILEHANDLE "## Picard GenotypeConcordance - Genome - good quality ", "\n";
+    &JavaCore({'FILEHANDLE' => $FILEHANDLE,
+	       'memoryAllocation' => "Xmx2g",
+	       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+	       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+	       'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar"
+	      });
+    
+    print $FILEHANDLE "GenotypeConcordance ";
+    print $FILEHANDLE "TRUTH_VCF=".$$tempDirectoryRef."/NIST.vcf ";
+    print $FILEHANDLE "CALL_VCF=".$$tempDirectoryRef."/MIP_lts_refrm.vcf ";
+    print $FILEHANDLE "OUTPUT=".$$tempDirectoryRef."/compMIP.Vs.NIST_ADM1059A3_genome ";
+    print $FILEHANDLE "TRUTH_SAMPLE=ADM1059A3-NIST ";
+    print $FILEHANDLE "CALL_SAMPLE=".$$sampleIDRef." ";
+    print $FILEHANDLE "MIN_GQ=20 ";
+    print $FILEHANDLE "MIN_DP=10 ";
+    print $FILEHANDLE "\n\n";
+
+
+    close($FILEHANDLE); 
+
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+
+	## Add qcmetrics path to sampleInfo
+	${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'Program'}{'QCCollect'}{'QCCollectMetricsFile'}{'Path'} = $outFamilyDirectory."/".$$familyIDRef."_qcmetrics.yaml";
+	
+	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		       'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		       'jobIDHashRef' => \%{$jobIDHashRef},
+		       'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
+		       'dependencies' => 2, 
 		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
 		       'sbatchFileName' => $fileName
 		       });
