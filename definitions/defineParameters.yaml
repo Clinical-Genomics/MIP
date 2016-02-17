@@ -1046,6 +1046,12 @@ snpEffAnn:
   dataType: SCALAR
   default: 1
   type: programArgument
+snpEffGenomeBuildVersion:
+  associatedProgram:
+   - pSnpEff
+  dataType: SCALAR
+  default: GRCh37.75
+  type: programArgument
 snpEffPath:
   associatedProgram:
    - pSnpEff

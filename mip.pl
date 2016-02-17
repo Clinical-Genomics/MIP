@@ -203,6 +203,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
 #snpEffAnn
                  -sneann/--snpEffAnn Annotate variants using SnpEff (defaults to "1" (=yes))
                  -snep/--snpEffPath Path to snpEff. Mandatory for use of snpEff (defaults to "")
+                 -snegbv/--snpEffGenomeBuildVersion SnpEff genome build version (defaults to "GRCh37.75")
                  -snesaf/--snpSiftAnnotationFiles Annotation files to use with snpSift (default to (dbsnp_138.b37.excluding_sites_after_129.vcf.gz=CAF ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz=AF ExAC.r0.3.sites.vep.vcf=AF); Hash flag i.e. --Flag key=value)
                  -snesaoi/--snpSiftAnnotationOutInfoKey snpSift output INFO key (default to (ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz=1000GAF ExAC.r0.3.sites.vep.vcf=EXACAF); Hash flag i.e. --Flag key=value)
                  -snesdbnsfp/--snpSiftDbNSFPFile DbNSFP File (defaults to "dbNSFP2.6.txt.gz")
@@ -498,6 +499,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'snep|snpEffPath:s'  => \$parameter{'snpEffPath'}{'value'},  #path to snpEff directory
 	   'pSnE|pSnpEff:n' => \$parameter{'pSnpEff'}{'value'},
 	   'sneann|snpEffAnn:n' => \$parameter{'snpEffAnn'}{'value'},
+	   'snegbv|snpEffGenomeBuildVersion:s'  => \$parameter{'snpEffGenomeBuildVersion'}{'value'},
 	   'snesaf|snpSiftAnnotationFiles=s'  => \%{$parameter{'snpSiftAnnotationFiles'}{'value'}},
 	   'snesaoi|snpSiftAnnotationOutInfoKey=s'  => \%{$parameter{'snpSiftAnnotationOutInfoKey'}{'value'}},
 	   'snesdbnsfp|snpSiftDbNSFPFile:s'  => \$parameter{'snpSiftDbNSFPFile'}{'value'},  #DbNSFP file
@@ -3275,8 +3277,9 @@ sub SnpEff {
 		my $contigRef = \${$vcfParserContigsArrayRef}[$contigsCounter];
 		
 		print $XARGSFILEHANDLE "ann ";
-		print $XARGSFILEHANDLE "-v ";
-		print $XARGSFILEHANDLE "GRCh37.75 ";
+		print $XARGSFILEHANDLE "-v ";  #Verbose mode
+		print $XARGSFILEHANDLE ${$scriptParameterHashRef}{'snpEffGenomeBuildVersion'}." ";  #Reference genome
+		print $XARGSFILEHANDLE "-c ".${$scriptParameterHashRef}{'snpEffPath'}."/snpEff.config ";  #Specify config file
 		print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf "; #Infile
 		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		print $XARGSFILEHANDLE "> ".$$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf.".$xargsFileCounter." "; #Outfile;
