@@ -606,12 +606,34 @@ foreach my $orderParameterElement (@orderParameters) {
 	if ( (defined($scriptParameter{'humanGenomeReference'})) && (defined($fileInfo{'humanGenomeReferenceNameNoEnding'})) ) {
 
 	    ## Sets parameters with autoBuild enabled to the new value dependent on $referenceFileNameRef
-	    &SetAutoBuildFeature(\%parameter, \%scriptParameter, \%fileInfo, "mosaikAlignReference", \$fileInfo{'mosaikAlignReference'}, \$fileInfo{'humanGenomeReferenceNameNoEnding'});
-	    &SetAutoBuildFeature(\%parameter, \%scriptParameter, \%fileInfo, "mosaikJumpDbStub", \$fileInfo{'mosaikJumpDbStub'}, \$fileInfo{'humanGenomeReferenceNameNoEnding'});
-	    &SetAutoBuildFeature(\%parameter, \%scriptParameter, \%fileInfo, "bwaBuildReference", \$fileInfo{'bwaBuildReference'}, \$scriptParameter{'humanGenomeReference'});
+	    &SetAutoBuildFeature({'parameterHashRef' => \%parameter,
+				  'scriptParameterHashRef' => \%scriptParameter,
+				  'fileInfoHashRef' => \%fileInfo,
+				  'broadcastsArrayRef' => \@broadcasts,
+				  'parameterName' => "mosaikAlignReference",
+				  'referenceFileEndingRef' => \$fileInfo{'mosaikAlignReference'},
+				  'referenceFileNameRef' => \$fileInfo{'humanGenomeReferenceNameNoEnding'},
+				 });
+	    &SetAutoBuildFeature({'parameterHashRef' => \%parameter,
+				  'scriptParameterHashRef' => \%scriptParameter,
+				  'fileInfoHashRef' => \%fileInfo,
+				  'broadcastsArrayRef' => \@broadcasts,
+				  'parameterName' => "mosaikJumpDbStub",
+				  'referenceFileEndingRef' => \$fileInfo{'mosaikJumpDbStub'},
+				  'referenceFileNameRef' => \$fileInfo{'humanGenomeReferenceNameNoEnding'},
+				 });
+	    &SetAutoBuildFeature({'parameterHashRef' => \%parameter,
+				  'scriptParameterHashRef' => \%scriptParameter,
+				  'fileInfoHashRef' => \%fileInfo,
+				  'broadcastsArrayRef' => \@broadcasts,
+				  'parameterName' => "bwaBuildReference",
+				  'referenceFileEndingRef' => \$fileInfo{'bwaBuildReference'},
+				  'referenceFileNameRef' => \$scriptParameter{'humanGenomeReference'},
+				 });
 	}
     }
 } 
+
 
 ###Checks
 
@@ -670,7 +692,11 @@ for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs
 
 
 ## Compares the number of elements in two arrays and exits if the elements are not equal
-&CompareArrayElements(\@{$scriptParameter{'sampleIDs'}}, \@{$scriptParameter{'inFilesDirs'}}, "sampleIDs", "inFileDirs");
+&CompareArrayElements({'arrayRef' => \@{$scriptParameter{'sampleIDs'}},
+		       'arrayQueryRef' => \@{$scriptParameter{'inFilesDirs'}},
+		       'parameterName' => "sampleIDs",
+		       'parameterNameQuery' => "inFileDirs",
+		      });
 
 
 ## Check that VEP directory and VEP cache match
@@ -832,8 +858,12 @@ my $uncompressedFileSwitch = &InfilesReFormat({'scriptParameterHashRef' => \%scr
 
 
 ## Creates all fileendings as the samples is processed depending on the chain of modules activated
-&CreateFileEndings(\%parameter, \%scriptParameter, \%fileInfo, \%infilesLaneNoEnding, \@orderParameters);
-
+&CreateFileEndings({'parameterHashRef' => \%parameter,
+		    'scriptParameterHashRef' => \%scriptParameter,
+		    'fileInfoHashRef' => \%fileInfo,
+		    'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+		    'orderParametersArrayRef' => \@orderParameters,
+		   });
 
 ## Create .fam file to be used in variant calling analyses
 &CreateFamFile({'scriptParameterHashRef' => \%scriptParameter,
@@ -2283,13 +2313,14 @@ sub Evaluation {
 					    'FILEHANDLE' => $FILEHANDLE,
 					    'directoryID' => $$familyIDRef,
 					    'programName' => $programName,
-					    'programDirectory' => lc($programName),
+					    'programDirectory' => lc($$alignerRef."/gatk/".$programName),
 					    'tempDirectory' => $$tempDirectoryRef,
+					    'errorTrap' => 0,  #Special case to allow "vcf.idx" to be created
 					   });
     
     ## Assign directories
     my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
-    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk/".lc($programName);
     ${$parameterHashRef}{"p".$programName}{'inDirectory'} = $outFamilyDirectory;  #Used downstream
 
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pGATKCombineVariantCallSets'}{'fileEnding'};
@@ -2349,6 +2380,7 @@ sub Evaluation {
     print $FILEHANDLE q?perl -nae 'unless($_=~/NC_007605/ || $_=~/hs37d5/) {print $_}' ?;
     print $FILEHANDLE $$referencesDirectoryRef."/".${$fileInfoHashRef}{'humanGenomeReferenceNameNoEnding'}.".dict ";
     print $FILEHANDLE "> ".$$tempDirectoryRef."/Homo_sapiens.GRCh37.dict ";
+    print $FILEHANDLE "\n\n";
 
     print $FILEHANDLE "cat ";
     print $FILEHANDLE $$tempDirectoryRef."/Homo_sapiens.GRCh37.dict ";
@@ -2486,6 +2518,17 @@ sub Evaluation {
     print $FILEHANDLE "MIN_DP=10 ";
     print $FILEHANDLE "\n\n";
 
+    ## Copies file from temporary directory.
+    print $FILEHANDLE "## Copy file from temporary directory\n";
+    &MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/compMIP.Vs.NIST_ADM1059A3_genome*",
+			  'filePath' => $outFamilyDirectory."/",
+			  'FILEHANDLE' => $FILEHANDLE,
+			 });
+    &MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/*vcf.stats",
+			  'filePath' => $outFamilyDirectory."/",
+			  'FILEHANDLE' => $FILEHANDLE,
+			 });
+    print $FILEHANDLE "wait", "\n\n";
 
     close($FILEHANDLE); 
 
@@ -2519,7 +2562,7 @@ sub RankVariants {
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $familyID                   => The familyID
+##         : $familyIDRef                => The familyIDRef {REF}
 ##         : $aligner                    => The aligner used in the analysis
 ##         : $callType                   => The variant call type
 ##         : $programName                => The program name
@@ -7949,13 +7992,13 @@ sub GATKHaploTypeCaller {
 		   });
 
     ## Prepare target interval file. Copies file to temporary directory, and adds fileExtension to fit GATK
-    &PrepareGATKTargetIntervals({'analysisTypeRef' => \${$scriptParameterHashRef}{'analysisType'},
-				 'exomeTargetBedInfileListsRef' => \${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'GATKTargetPaddedBedIntervalLists'},
-				 'referencesDirectoryRef' => $referencesDirectoryRef,
-				 'tempDirectoryRef' => $tempDirectoryRef,
-				 'FILEHANDLE' => $FILEHANDLE,
-				 'addEnding' => 0,
-				});
+    my $targetIntervalsPath = &PrepareGATKTargetIntervals({'analysisTypeRef' => \${$scriptParameterHashRef}{'analysisType'},
+							   'targetIntervalFileListsRef' => \${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'GATKTargetPaddedBedIntervalLists'},
+							   'referencesDirectoryRef' => $referencesDirectoryRef,
+							   'tempDirectoryRef' => $tempDirectoryRef,
+							   'FILEHANDLE' => $FILEHANDLE,
+							   'addEnding' => 0,
+							  });
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
     my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, $$sampleIDRef);
@@ -8065,9 +8108,9 @@ sub GATKHaploTypeCaller {
 	print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 
 	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
-	    
-	    print $XARGSFILEHANDLE "-L ".$$tempDirectoryRef."/".${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'GATKTargetPaddedBedIntervalLists'}.".intervals "; #Limit base score recalibration to targets kit target ".interval" file
-	    }
+
+	    print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit base score recalibration to targets kit target file
+	}
 	
 	if ($PicardToolsMergeSwitch == 1) {  #Alignment BAM-files merged previously
 
@@ -8236,12 +8279,12 @@ sub GATKBaseReCalibration {
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{"p".$programName}{'fileEnding'};
 
     ## Prepare target interval file. Copies file to temporary directory, and adds fileExtension to fit GATK
-    &PrepareGATKTargetIntervals({'analysisTypeRef' => \${$scriptParameterHashRef}{'analysisType'},
-				 'exomeTargetBedInfileListsRef' => \${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'exomeTargetBedInfileLists'},
-				 'referencesDirectoryRef' => $referencesDirectoryRef,
-				 'tempDirectoryRef' => $tempDirectoryRef,
-				 'FILEHANDLE' => $FILEHANDLE,
-				});
+    my $targetIntervalsPath = &PrepareGATKTargetIntervals({'analysisTypeRef' => \${$scriptParameterHashRef}{'analysisType'},
+							   'targetIntervalFileListsRef' => \${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'exomeTargetBedInfileLists'},
+							   'referencesDirectoryRef' => $referencesDirectoryRef,
+							   'tempDirectoryRef' => $tempDirectoryRef,
+							   'FILEHANDLE' => $FILEHANDLE,
+							  });
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
     my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, $$sampleIDRef);
@@ -8311,7 +8354,7 @@ sub GATKBaseReCalibration {
 
 	    if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
 
-		print $XARGSFILEHANDLE "-L ".$$tempDirectoryRef."/".${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'exomeTargetBedInfileLists'}.".intervals "; #Limit base score recalibration to targets kit target ".interval" file
+		print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit base score recalibration to targets kit target file
 	    }
 
 	    print $XARGSFILEHANDLE "-I ".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile
@@ -8366,7 +8409,7 @@ sub GATKBaseReCalibration {
 
 	    if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
 		
-		print $XARGSFILEHANDLE "-L ".$$tempDirectoryRef."/".${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'exomeTargetBedInfileLists'}.".intervals "; #Limit base score recalibration to targets kit target .interval file
+		print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit base score recalibration to targets kit target file
 	    }
 
 	    print $XARGSFILEHANDLE "-I ".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile per contig
@@ -8491,6 +8534,12 @@ sub GATKBaseReCalibration {
 		print $XARGSFILEHANDLE "-nct ".${$scriptParameterHashRef}{'maximumCores'}." ";  #How many CPU threads should be allocated per data thread to running this analysis
 		print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus
 		print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
+
+		if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
+		    
+		    print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit base score recalibration to targets kit target file
+		}
+
 		print $XARGSFILEHANDLE "-I ".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile
 		print $XARGSFILEHANDLE "-o ".$intermediarySampleDirectory."/".$infile.$infileEnding."_".$$contigRef.".grp ";  #Recalibration table file
 		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
@@ -8540,6 +8589,12 @@ sub GATKBaseReCalibration {
 		    print $XARGSFILEHANDLE "--disable_indel_quals  ";  #Do not recalibrate indel base quality (should be done for Pacbio reads)
 		}
 		print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
+
+		if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
+		    
+		    print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit base score recalibration to targets kit target file
+		}
+		
 		print $XARGSFILEHANDLE "-I ".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile
 		print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$infile.$outfileEnding."_".$$contigRef.".bam ";  #OutFile
 		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
@@ -8697,13 +8752,13 @@ sub GATKReAligner {
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{"p".$programName}{'fileEnding'};
 
     ## Prepare target interval file. Copies file to temporary directory, and adds fileExtension to fit GATK
-    &PrepareGATKTargetIntervals({'analysisTypeRef' => \${$scriptParameterHashRef}{'analysisType'},
-				 'exomeTargetBedInfileListsRef' => \${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'GATKTargetPaddedBedIntervalLists'},
-				 'referencesDirectoryRef' => $referencesDirectoryRef,
-				 'tempDirectoryRef' => $tempDirectoryRef,
-				 'FILEHANDLE' => $FILEHANDLE,
-				 'addEnding' => 0,
-				});
+    my $targetIntervalsPath = &PrepareGATKTargetIntervals({'analysisTypeRef' => \${$scriptParameterHashRef}{'analysisType'},
+							   'targetIntervalFileListsRef' => \${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'GATKTargetPaddedBedIntervalLists'},
+							   'referencesDirectoryRef' => $referencesDirectoryRef,
+							   'tempDirectoryRef' => $tempDirectoryRef,
+							   'FILEHANDLE' => $FILEHANDLE,
+							   'addEnding' => 0,
+							  });
 
     ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
     my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, $$sampleIDRef);
@@ -8762,8 +8817,8 @@ sub GATKReAligner {
 	    print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 
 	    if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
-		
-		print $XARGSFILEHANDLE "-L ".$$tempDirectoryRef."/".${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'GATKTargetPaddedBedIntervalLists'}.".intervals "; #Limit base score recalibration to targets kit target ".interval" file
+
+		print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit base score recalibration to targets kit target file
 	    }
 
 	    print $XARGSFILEHANDLE "-I ".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile	    
@@ -8806,7 +8861,7 @@ sub GATKReAligner {
 
 	    if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
 		
-		print $XARGSFILEHANDLE "-L ".$$tempDirectoryRef."/".${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'GATKTargetPaddedBedIntervalLists'}." "; #Limit base score recalibration to targets kit target ".interval" file
+		print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit base score recalibration to targets kit target file
 	    }
 
 	    print $XARGSFILEHANDLE "-I ".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile per contig
@@ -8908,7 +8963,7 @@ sub GATKReAligner {
 
 		if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
 		    
-		    print $XARGSFILEHANDLE "-L ".$$tempDirectoryRef."/".${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'GATKTargetPaddedBedIntervalLists'}." "; #Limit base score recalibration to targets kit target ".interval" file
+		    print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit base score recalibration to targets kit target file
 		}
 
 		print $XARGSFILEHANDLE "-I ".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile per contig
@@ -8951,7 +9006,7 @@ sub GATKReAligner {
 
 		if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
 		    
-		    print $XARGSFILEHANDLE "-L ".$$tempDirectoryRef."/".${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{'GATKTargetPaddedBedIntervalLists'}." "; #Limit base score recalibration to targets kit target ".interval" file
+		    print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit base score recalibration to targets kit target file
 		}
 		
 		print $XARGSFILEHANDLE "-I ".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile per contig
@@ -12891,18 +12946,24 @@ sub ReadPlinkPedigreeFile {
 		    if (${$sampleInfoHashRef}{$familyID}{$sampleID}{'Capture_kit'} && $pedigreeFileElements[$sampleElementsCounter] eq "Capture_kit") {  #Add latest capture kit for each individual
 			
 			my $captureKit = ${$sampleInfoHashRef}{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]}[-1];  #Use only the last capture kit since it should be the most interesting
+			
+			## Return a capture kit depending on user info
 			${$scriptParameterHashRef}{$familyID}{$sampleID}{'exomeTargetBedInfileLists'} = &AddCaptureKit({'fileInfoHashRef' => \%{$fileInfoHashRef},
 															'supportedCaptureKitHashRef' => \%{$supportedCaptureKitHashRef}, 
 															'captureKit' => $captureKit, 
 															'parameterName' => "exomeTargetBedInfileLists", 
 															'userSuppliedParameterswitch' => $userExomeTargetBedInfileListsSwitch,
 														       });  #Capture kit target infile_list
+			
+			## Return a capture kit depending on user info
 			${$scriptParameterHashRef}{$familyID}{$sampleID}{'exomeTargetPaddedBedInfileLists'} = &AddCaptureKit({'fileInfoHashRef' => \%{$fileInfoHashRef},
 															      'supportedCaptureKitHashRef' => \%{$supportedCaptureKitHashRef},
 															      'captureKit' => $captureKit,
 															      'parameterName' => "exomeTargetPaddedBedInfileLists",
 															      'userSuppliedParameterswitch' => $userExomeTargetPaddedBedInfileListSwitch,
 															     });  #Capture kit padded target infile_list	
+
+			## Return a capture kit depending on user info
 			${$scriptParameterHashRef}{$familyID}{$sampleID}{'GATKTargetPaddedBedIntervalLists'} = &AddCaptureKit({'fileInfoHashRef' => \%{$fileInfoHashRef},
 															       'supportedCaptureKitHashRef' => \%{$supportedCaptureKitHashRef}, 
 															       'captureKit' => $captureKit,
@@ -13861,6 +13922,7 @@ sub AddTargetlistsToScriptParameter {
     my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
     my $supportedCaptureKitHashRef = ${$argHashRef}{'supportedCaptureKitHashRef'};
     my $broadcastsArrayRef = ${$argHashRef}{'broadcastsArrayRef'};
+    my $targetIntervalListsArrayRef =  ${$argHashRef}{'targetIntervalListsArrayRef'};
     my $associatedPrograms = ${$argHashRef}{'associatedPrograms'};
     my $parameterName = ${$argHashRef}{'parameterName'};
     my $parameterValue = ${$argHashRef}{'parameterValue'};
@@ -13869,8 +13931,6 @@ sub AddTargetlistsToScriptParameter {
     my $parameterExistsCheck = ${$argHashRef}{'parameterExistsCheck'};
     my $familyIDRef = ${$argHashRef}{'familyIDRef'};
     my $referencesDirectoryRef = ${$argHashRef}{'referencesDirRef'};
-
-    my $targetIntervalListsArrayRef =  ${$argHashRef}{'targetIntervalListsArrayRef'};
 
     ## Mandatory arguments
     my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
@@ -13967,51 +14027,74 @@ sub AddTargetlistsToScriptParameter {
 		}
 		else {  #Add to enable or overwrite info gathered from config and use in recreation of cmd line later
 		    
-			&EnableArrayParameter(\%{$scriptParameterHashRef}, \@{$targetIntervalListsArrayRef}, \$parameterName);
-			&CompareArrayElements(\@{${$scriptParameterHashRef}{'sampleIDs'}}, \@{$targetIntervalListsArrayRef}, "sampleIDs", $parameterName);
-			&SetAutoBuildAndScriptParameterPerSample(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \@{${$scriptParameterHashRef}{'sampleIDs'}}, \@{$targetIntervalListsArrayRef}, \$parameterName);
+		    ## Adds arrayRef to scriptParameters for recreation of cmd in log and seperated input parameter string into array elements
+		    &EnableArrayParameter({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+					   'arrayRef' => \@{$targetIntervalListsArrayRef},
+					   'parameterNameRef' => \$parameterName,
+					  });
+		    
+		    ## Compares the number of elements in two arrays and exits if the elements are not equal
+		    &CompareArrayElements({'arrayRef' => \@{$scriptParameter{'sampleIDs'}},
+					   'arrayQueryRef' => \@{$targetIntervalListsArrayRef},
+					   'parameterName' => "sampleIDs",
+					   'parameterNameQuery' => $parameterName,
+					  });
+		    ## Sets autoBuild and populates scriptParameter hash with array elements per sampleID
+		    &SetAutoBuildAndScriptParameterPerSample({'parameterHashRef' => \%{$parameterHashRef},
+							      'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+							      'sampleIDArrayRef' => \@{${$scriptParameterHashRef}{'sampleIDs'}},
+							      'parameterArrayRef' => \@{$targetIntervalListsArrayRef},
+							      'parameterNameRef' => \$parameterName,
+							     });
 		}
 		if ( ($parameterExistsCheck) && ($parameterExistsCheck eq "file") && (defined(${$scriptParameterHashRef}{$parameterName})) ) {  #Check file existence in reference directory
 		    
-		    
-		    if ( ($parameterName eq "exomeTargetBedInfileLists") || ($parameterName eq "exomeTargetPaddedBedInfileLists") || ($parameterName eq "GATKTargetPaddedBedIntervalLists") ) {
+		    if ( ($parameterName eq "GATKTargetPaddedBedIntervalLists") && (${$scriptParameterHashRef}{'analysisType'} eq "genomes") ) {  #No need to check since genomes does not use GATKTargetPaddedBedIntervalLists
+		    }
+		    else {
 			
-			if ( ($parameterName eq "GATKTargetPaddedBedIntervalLists") && (${$scriptParameterHashRef}{'analysisType'} eq "genomes") ) {  #No need to check since genomes does not use GATKTargetPaddedBedIntervalLists
-			}
-			else {
+			for (my $sampleIDsCounter=0;$sampleIDsCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDsCounter++) {  #All sampleIDs
 			    
-			    for (my $sampleIDsCounter=0;$sampleIDsCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDsCounter++) {  #All sampleIDs
-
-				my $sampleIDRef = \${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDsCounter];
-				
-				unless (defined(${$scriptParameterHashRef}{ $$familyIDRef }{ $$sampleIDRef }{$parameterName})) {  #No capture kit supplied
-
-				    my $captureKit = &AddCaptureKit({'fileInfoHashRef' => \%{$fileInfoHashRef},
-								     'supportedCaptureKitHashRef' => \%{$supportedCaptureKitHashRef},
-								     'captureKit' => "Latest", 
-								     'parameterName' => $parameterName,
-								    });
-				    $logger->warn("Could not detect a supplied capture kit. Will Try to use 'Latest' capture kit: ".$captureKit, "\n");
-				    ${$scriptParameterHashRef}{ $$familyIDRef }{$$sampleIDRef }{$parameterName} = $captureKit;
-				}
-				my $path = $$referencesDirectoryRef."/".${$scriptParameterHashRef}{ $$familyIDRef }{$$sampleIDRef}{$parameterName};
-				&CheckSupportedFileEnding(\$path, \${$fileInfoHashRef}{$parameterName}, \$parameterName);
-				
-				&CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
-						 'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-						 'itemNameRef' => \$path,
-						 'parameterNameRef' => \$parameterName,
-						 'itemTypeToCheck' => "file",
-						 'sampleIDRef' => \$$sampleIDRef,
-						});
+			    my $sampleIDRef = \${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDsCounter];
 			    
-				my $exomeTargetBedFileNoEnding = &RemoveFileEnding(\${$scriptParameterHashRef}{ $$familyIDRef }{$$sampleIDRef}{$parameterName} , ${$fileInfoHashRef}{$parameterName});  #Remove ".fileending" from reference filename
-				 &CheckTargetExistFileBed(\%{$scriptParameterHashRef}, \$exomeTargetBedFileNoEnding, $parameterName);
+			    unless (defined(${$scriptParameterHashRef}{ $$familyIDRef }{ $$sampleIDRef }{$parameterName})) {  #No capture kit supplied
+				
+				## Return a capture kit depending on user info
+				my $captureKit = &AddCaptureKit({'fileInfoHashRef' => \%{$fileInfoHashRef},
+								 'supportedCaptureKitHashRef' => \%{$supportedCaptureKitHashRef},
+								 'captureKit' => "Latest", 
+								 'parameterName' => $parameterName,
+								});
+				$logger->warn("Could not detect a supplied capture kit. Will Try to use 'Latest' capture kit: ".$captureKit, "\n");
+				${$scriptParameterHashRef}{ $$familyIDRef }{$$sampleIDRef }{$parameterName} = $captureKit;
 			    }
-			    undef(${$scriptParameterHashRef}{$parameterName});  #Remove parameter to avoid unnecessary print to STDOUT and config
+			    my $path = $$referencesDirectoryRef."/".${$scriptParameterHashRef}{ $$familyIDRef }{$$sampleIDRef}{$parameterName};
+
+			    ## Check that the supplied fileEnding is supported. Otherwise exits.
+			    &CheckSupportedFileEnding({'fileNameRef' => \$path,
+						       'fileEndingRef' => \${$fileInfoHashRef}{$parameterName},
+						       'parameterNameRef' => \$parameterName,
+						      });
+			    
+			    &CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
+					     'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+					     'itemNameRef' => \$path,
+					     'parameterNameRef' => \$parameterName,
+					     'itemTypeToCheck' => "file",
+					     'sampleIDRef' => \$$sampleIDRef,
+					    });
+			    
+			    my $exomeTargetBedFileNoEnding = &RemoveFileEnding(\${$scriptParameterHashRef}{ $$familyIDRef }{$$sampleIDRef}{$parameterName} , ${$fileInfoHashRef}{$parameterName});  #Remove ".fileending" from reference filename
+			    
+			    ## Check that supplied target file ends with ".bed" and otherwise exists
+			    &CheckTargetExistFileBed({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+						      'fileRef' => \$exomeTargetBedFileNoEnding,
+						      'parameterName' => $parameterName,
+						     });
 			}
-		    }		    
-		}
+			undef(${$scriptParameterHashRef}{$parameterName});  #Remove parameter to avoid unnecessary print to STDOUT and config
+		    }
+		}		    
 	    }	    
 	}
 	if ($parameterSetSwitch eq 1) {  #No need to set parameter more than once
@@ -14205,10 +14288,17 @@ sub CheckParameterFiles {
 ##         : $broadcastsArrayRef                 => Holds the parameters info for broadcasting later
 ##         : $annovarSupportedTableNamesArrayRef => The supported annovar reference names array {REF}
 ##         : $associatedProgramsArrayRef         => The parameters program(s) {REF}
+##         : $familyIDRef                        => The familyIDRef {REF}
 ##         : $parameterName                      => Parameter name
 ##         : $parameterExistsCheck               => Check if intendent file exists in reference directory
 
     my ($argHashRef) = @_;
+
+    my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+		   'referencesDirRef' => \${$argHashRef}{'scriptParameterHashRef'}{'referencesDir'},
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
 
     ## Flatten argument(s)
     my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
@@ -14222,6 +14312,21 @@ sub CheckParameterFiles {
     my $associatedProgramsArrayRef = ${$argHashRef}{'associatedProgramsArrayRef'};
     my $parameterName = ${$argHashRef}{'parameterName'};
     my $parameterExistsCheck = ${$argHashRef}{'parameterExistsCheck'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
+    my $referencesDirectoryRef = ${$argHashRef}{'referencesDirRef'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
+			     'fileInfoHashRef' => ${$fileInfoHashRef}{'humanGenomeReferenceFileEndings'},  #Any MIP mandatory key will do
+			     'supportedCaptureKitHashRef' => ${$supportedCaptureKitHashRef}{'Latest'},  #Any MIP mandatory key will do
+			     'broadcastsArrayRef' => ${$broadcastsArrayRef}[0],
+			     'associatedProgramsArrayRef' => ${$associatedProgramsArrayRef}[0],
+			     'parameterName' => $parameterName,
+			     'parameterExistsCheck' => $parameterExistsCheck,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "CheckParameterFiles");
 
     foreach my $associatedProgram (@{$associatedProgramsArrayRef}) {  #Check all programs that use parameter
 	
@@ -14231,7 +14336,7 @@ sub CheckParameterFiles {
 	    
 	    $parameterSetSwitch = 1;		    
 	    
-	    if ( $parameterExistsCheck && ($parameterExistsCheck eq "directory") ) {  #Check dir existence
+	    if ($parameterExistsCheck eq "directory") {  #Check dir existence
 		
 		if ($parameterName eq "inFilesDirs") {
 		    
@@ -14246,7 +14351,7 @@ sub CheckParameterFiles {
 		    }
 		}
 		else {
-		    
+
 		    &CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
 				     'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 				     'itemNameRef' => \${$scriptParameterHashRef}{$parameterName},
@@ -14254,21 +14359,31 @@ sub CheckParameterFiles {
 				     'itemTypeToCheck' => $parameterExistsCheck,
 				    });		}
 	    }
-	    elsif ( ($parameterExistsCheck) && ($parameterExistsCheck eq "file") && (defined(${$scriptParameterHashRef}{$parameterName})) ) {  #Check file existence in reference directory
+	    elsif ( ($parameterExistsCheck eq "file") && (defined(${$scriptParameterHashRef}{$parameterName})) ) {  #Check file existence in reference directory
 		
 		if (${$parameterHashRef}{$parameterName}{'dataType'} eq "SCALAR") {
 
 		    if ($parameterName eq "mosaikJumpDbStub") {
 			
-			&CheckFileEndingsToBeBuilt(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \@{${$fileInfoHashRef}{'mosaikJumpDbStubFileEndings'}}, $parameterName); 
-		    }
+			## Checks files to be built by combining filename stub with fileendings
+			&CheckFileEndingsToBeBuilt({'parameterHashRef' => \%{$parameterHashRef},
+						    'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+						    'fileEndingsRef' => \@{${$fileInfoHashRef}{'mosaikJumpDbStubFileEndings'}},
+						    'parameterName' => "mosaikJumpDbStub",
+						   }); 
+		}
 		    elsif ($parameterName eq "bwaBuildReference") {
 			
-			&CheckFileEndingsToBeBuilt(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \@{${$fileInfoHashRef}{'bwaBuildReferenceFileEndings'}}, $parameterName);
+			## Checks files to be built by combining filename stub with fileendings
+			&CheckFileEndingsToBeBuilt({'parameterHashRef' => \%{$parameterHashRef},
+						    'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+						    'fileEndingsRef' => \@{${$fileInfoHashRef}{'bwaBuildReferenceFileEndings'}},
+						    'parameterName' => "bwaBuildReference",
+						   });
 		    }
 		    elsif ($parameterName eq "humanGenomeReference") {
 			
-			my $path = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName};
+			my $path = $$referencesDirectoryRef."/".${$scriptParameterHashRef}{$parameterName};
 			&CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
 					 'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 					 'itemNameRef' => \$path,
@@ -14276,7 +14391,12 @@ sub CheckParameterFiles {
 					 'itemTypeToCheck' => $parameterExistsCheck,
 					});  #Check reference genome		    
 
-			&CheckHumanGenomeFileEndings(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, \${$scriptParameterHashRef}{'referencesDir'}, \${$fileInfoHashRef}{'humanGenomeReferenceNameNoEnding'}, \$parameterName);
+			## Check the existance of associated Human genome files
+			&CheckHumanGenomeFileEndings({'parameterHashRef' => \%{$parameterHashRef},
+						      'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+						      'fileInfoHashRef' => \%{$fileInfoHashRef},
+						      'parameterNameRef' => \$parameterName
+						     });
 		    }
 		    elsif ($parameterName eq "sampleInfoFile") {
 			
@@ -14287,7 +14407,7 @@ sub CheckParameterFiles {
 				my %tempHash = &LoadYAML(\%{$scriptParameterHashRef}, ${$scriptParameterHashRef}{'sampleInfoFile'});  #Load parameters from previous run from sampleInfoFile
 				
 				## Update sampleInfo with information from pedigree
-				&UpdateSampleInfoHash(\%{$sampleInfoHashRef}, \%tempHash, \${$scriptParameterHashRef}{'familyID'});							    
+				&UpdateSampleInfoHash(\%{$sampleInfoHashRef}, \%tempHash, \$$familyIDRef);							    
 			    }
 			} 
 		    }
@@ -14307,7 +14427,7 @@ sub CheckParameterFiles {
 			}
 			else {  #To enable addition of selectFile to sampleInfo                                                                       
 			    
-			    my $path = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName};
+			    my $path = $$referencesDirectoryRef."/".${$scriptParameterHashRef}{$parameterName};
 			    &CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
 					     'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 					     'itemNameRef' => \$path,
@@ -14316,7 +14436,7 @@ sub CheckParameterFiles {
 					    });
 			    
 			    ## Collects sequences contigs used in select file
-			    &CollectSelectFileContigs(\@{${$fileInfoHashRef}{'SelectFileContigs'}}, ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'vcfParserSelectFile'});
+			    &CollectSelectFileContigs(\@{${$fileInfoHashRef}{'SelectFileContigs'}}, $$referencesDirectoryRef."/".${$scriptParameterHashRef}{'vcfParserSelectFile'});
 			    
 			    ${$scriptParameterHashRef}{'VcfParserOutputFileCount'} = 2;  #To track if VCFParser was used with a vcfParserSelectFile (=2) or not (=1)
 			}
@@ -14329,7 +14449,7 @@ sub CheckParameterFiles {
 			}
 			else {  #To enable addition of rankModel file and version to sampleInfo                                                                       
 			    
-			    my $path = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName};
+			    my $path = $$referencesDirectoryRef."/".${$scriptParameterHashRef}{$parameterName};
 			    &CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
 					     'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 					     'itemNameRef' => \$path,
@@ -14340,7 +14460,7 @@ sub CheckParameterFiles {
 		    }
 		    else {
 			
-			my $path = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName};
+			my $path = $$referencesDirectoryRef."/".${$scriptParameterHashRef}{$parameterName};
 			&CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
 					 'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 					 'itemNameRef' => \$path,
@@ -14362,7 +14482,7 @@ sub CheckParameterFiles {
 			
 			for (my $fileCounter=0;$fileCounter<scalar(@{${$scriptParameterHashRef}{$parameterName}});$fileCounter++) {
 			    
-			    my $path = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName}[$fileCounter];
+			    my $path = $$referencesDirectoryRef."/".${$scriptParameterHashRef}{$parameterName}[$fileCounter];
 			    
 			    if ($parameterName eq "picardToolsMergeSamFilesPrevious") {
 				
@@ -14385,7 +14505,7 @@ sub CheckParameterFiles {
 			
 			for my $file (keys %{${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}}) {
 			    
-			    my $path = ${$scriptParameterHashRef}{'referencesDir'}."/".$file;
+			    my $path = $$referencesDirectoryRef."/".$file;
 			    &CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
 					     'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 					     'itemNameRef' => \$path,
@@ -14396,7 +14516,7 @@ sub CheckParameterFiles {
 			    if ($file =~/\.gz$/) {  #Check for tabix index as well
 				
 				my $fileIndex = $file.".tbi";
-				my $path = ${$scriptParameterHashRef}{'referencesDir'}."/".$fileIndex;
+				my $path = $$referencesDirectoryRef."/".$fileIndex;
 				&CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
 						 'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 						 'itemNameRef' => \$path,
@@ -14410,7 +14530,7 @@ sub CheckParameterFiles {
 			
 			for my $file (keys %{${$scriptParameterHashRef}{$parameterName}}) {
 			    
-			    my $path = ${$scriptParameterHashRef}{'referencesDir'}."/".$file;
+			    my $path = $$referencesDirectoryRef."/".$file;
 			    &CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
 					     'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 					     'itemNameRef' => \$path,
@@ -14426,31 +14546,42 @@ sub CheckParameterFiles {
 		    }
 		    else {
 			
-			for (my $sampleIDsCounter=0;$sampleIDsCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDsCounter++) {  #All sampleIDs
-			    
-			    unless (defined(${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDsCounter] }{$parameterName})) {  #No capture kit supplied
+			foreach my $sampleID (@{${$scriptParameterHashRef}{'sampleIDs'}}) {
+
+			    unless (defined(${$scriptParameterHashRef}{ $$familyIDRef }{ $sampleID }{$parameterName})) {  #No capture kit supplied
 				
+				## Return a capture kit depending on user info
 				my $captureKit = &AddCaptureKit({'fileInfoHashRef' => \%{$fileInfoHashRef},
 								 'supportedCaptureKitHashRef' => \%{$supportedCaptureKitHashRef},
 								 'captureKit' => "Latest", 
 								 'parameterName' => $parameterName,
 								});
 				$logger->warn("Could not detect a supplied capture kit. Will Try to use 'Latest' capture kit: ".$captureKit, "\n");
-				${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDsCounter] }{$parameterName} = $captureKit;
+				${$scriptParameterHashRef}{ $$familyIDRef }{$sampleID}{$parameterName} = $captureKit;
 			    }
-			    my $path = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDsCounter] }{ $parameterName };
-			    &CheckSupportedFileEnding(\$path, \${$fileInfoHashRef}{$parameterName}, \$parameterName);
+			    my $path = $$referencesDirectoryRef."/".${$scriptParameterHashRef}{ $$familyIDRef }{ $sampleID }{ $parameterName };
+			    
+			    ## Check that the supplied fileEnding is supported. Otherwise exits.
+			    &CheckSupportedFileEnding({'fileNameRef' => \$path,
+						       'fileEndingRef' => \${$fileInfoHashRef}{$parameterName},
+						       'parameterNameRef' => \$parameterName,
+						      });
 
 			    &CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
 					     'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 					     'itemNameRef' => \$path,
 					     'parameterNameRef' => \$parameterName,
 					     'itemTypeToCheck' => $parameterExistsCheck,
-					     'sampleIDRef' =>  \${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDsCounter],
+					     'sampleIDRef' =>  \$sampleID,
 					    });
 			    
-			    my $exomeTargetBedFileNoEnding = &RemoveFileEnding(\${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDsCounter]}{$parameterName}, ${$fileInfoHashRef}{$parameterName});  #Remove ".fileending" from reference filename
-			    &CheckTargetExistFileBed(\%{$scriptParameterHashRef}, \$exomeTargetBedFileNoEnding, $parameterName);
+			    my $exomeTargetBedFileNoEnding = &RemoveFileEnding(\${$scriptParameterHashRef}{ $$familyIDRef }{$sampleID}{$parameterName}, ${$fileInfoHashRef}{$parameterName});  #Remove ".fileending" from reference filename
+
+			    ## Check that supplied target file ends with ".bed" and otherwise exists
+			    &CheckTargetExistFileBed({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+						      'fileRef' => \$exomeTargetBedFileNoEnding,
+						      'parameterName' => $parameterName,
+						     });
 			}
 			undef(${$scriptParameterHashRef}{$parameterName});  #Remove parameter to avoid unnecessary print to STDOUT and config
 		    }
@@ -14470,18 +14601,37 @@ sub CreateFileEndings {
     
 ##Function : Creates the fileEndings depending on which modules are used by the user to relevant chain.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $orderParametersArrayRef
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $orderParametersArrayRef, $familyIDRef
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $fileInfoHashRef            => Info on files hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $orderParametersArrayRef    => Order of addition to parameter array {REF}
+##         : $familyIDRef                => The familyID {REF}
 
-    my $parameterHashRef = $_[0];
-    my $scriptParameterHashRef = $_[1];
-    my $fileInfoHashRef = $_[2];
-    my $infilesLaneNoEndingHashRef = $_[3];
-    my $orderParametersArrayRef = $_[4];
+    my ($argHashRef) = @_;
+    
+    my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
+    my $orderParametersArrayRef = ${$argHashRef}{'orderParametersArrayRef'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
+			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'orderParametersArrayRef' => ${$orderParametersArrayRef}[0],
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "CreateFileEndings");
 
     my %tempFileEnding;  #Used to enable seqential build-up of fileEndings between modules
     
@@ -14489,8 +14639,8 @@ sub CreateFileEndings {
 	
 	if (defined(${$scriptParameterHashRef}{$orderParameterElement})) {  #Only active parameters
 
-	    if ( ($orderParameterElement =~ /^p[A-Z]/) && (${$parameterHashRef}{$orderParameterElement}{'associatedProgram'}) ) {  #Only process programs
-
+	    if ( ( any {$_ eq $orderParameterElement} @{${$parameterHashRef}{'dynamicParameters'}{'program'}} ) ) { #Only process programs
+		
 		if (${$parameterHashRef}{$orderParameterElement}{'chain'} eq "MAIN") {  #MAIN chain
 		    
 		    if (${$parameterHashRef}{$orderParameterElement}{'fileEnding'} ne "nofileEnding") {  #FileEnding exist
@@ -14498,36 +14648,38 @@ sub CreateFileEndings {
 ###MAIN/Per sampleID
 			for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDCounter++) {
 			    
+			    my $sampleID = ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter];  #Alias
+
 			    if (${$scriptParameterHashRef}{$orderParameterElement} > 0) {  #Fileending should be added    
 				
 				if ($orderParameterElement eq "pPicardToolsMergeSamFiles") {  #Special case
 				    
-				    if ( (defined(${$scriptParameterHashRef}{'picardToolsMergeSamFilesPrevious'})) || (scalar( @{ ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] } }) > 1) ) {  #Sanity check that we have something to merge and hence to fileEnding should be added
+				    if ( (defined(${$scriptParameterHashRef}{'picardToolsMergeSamFilesPrevious'})) || (scalar( @{ ${$infilesLaneNoEndingHashRef}{ $sampleID } }) > 1) ) {  #Sanity check that we have something to merge and hence to fileEnding should be added
 					
-					${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{'pPicardToolsMergeSamFiles'}{'fileEnding'} = $tempFileEnding{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }.${$parameterHashRef}{$orderParameterElement}{'fileEnding'};  #Adds from previous entry 
+					${$fileInfoHashRef}{ $$familyIDRef }{ $sampleID }{'pPicardToolsMergeSamFiles'}{'fileEnding'} = $tempFileEnding{ $sampleID }.${$parameterHashRef}{$orderParameterElement}{'fileEnding'};  #Adds from previous entry 
 				    }
 				    else {
 					
-					${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{'pPicardToolsMergeSamFiles'}{'fileEnding'} = $tempFileEnding{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }."";
+					${$fileInfoHashRef}{ $$familyIDRef }{ $sampleID }{'pPicardToolsMergeSamFiles'}{'fileEnding'} = $tempFileEnding{ $sampleID }."";
 				    }
 				}
 				else {
 
-				    if (defined($tempFileEnding{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] })) {
+				    if (defined($tempFileEnding{ $sampleID })) {
 					
-					${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }.${$parameterHashRef}{$orderParameterElement}{'fileEnding'};
+					${$fileInfoHashRef}{ $$familyIDRef }{ $sampleID }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{ $sampleID }.${$parameterHashRef}{$orderParameterElement}{'fileEnding'};
 				    }
 				    else  {  #First module that should add filending
 
-					${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = ${$parameterHashRef}{$orderParameterElement}{'fileEnding'};
+					${$fileInfoHashRef}{ $$familyIDRef }{ $sampleID }{$orderParameterElement}{'fileEnding'} = ${$parameterHashRef}{$orderParameterElement}{'fileEnding'};
 				    } 
 				}
 			    }
 			    else {  #Do not add new module fileEnding
 
-				${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] };
+				${$fileInfoHashRef}{ $$familyIDRef }{ $sampleID }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{ $sampleID };
 			    }
-			    $tempFileEnding{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] } = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'};  #To enable sequential build-up of fileending
+			    $tempFileEnding{ $sampleID } = ${$fileInfoHashRef}{ $$familyIDRef }{ $sampleID }{$orderParameterElement}{'fileEnding'};  #To enable sequential build-up of fileending
 			}
 			
 ###MAIN/Per familyID
@@ -14539,20 +14691,20 @@ sub CreateFileEndings {
 			    }
 			    else {
 				
-				if (defined($tempFileEnding{${$scriptParameterHashRef}{'familyID'}})) {
+				if (defined($tempFileEnding{$$familyIDRef})) {
 			
-				    ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{${$scriptParameterHashRef}{'familyID'}}.${$parameterHashRef}{$orderParameterElement}{'fileEnding'};
+				    ${$fileInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{$$familyIDRef}.${$parameterHashRef}{$orderParameterElement}{'fileEnding'};
 				}
 				else  {  #First module that should add filending
 				    
-				    ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{$orderParameterElement}{'fileEnding'} = ${$parameterHashRef}{$orderParameterElement}{'fileEnding'};
+				    ${$fileInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{$orderParameterElement}{'fileEnding'} = ${$parameterHashRef}{$orderParameterElement}{'fileEnding'};
 				}
-				$tempFileEnding{ ${$scriptParameterHashRef}{'familyID'} } = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{$orderParameterElement}{'fileEnding'};  #To enable sequential build-up of fileending 
+				$tempFileEnding{ $$familyIDRef } = ${$fileInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{$orderParameterElement}{'fileEnding'};  #To enable sequential build-up of fileending 
 			    }		
 			}
 			else {  #Do not add new module fileEnding
 			 
-			    ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{  ${$scriptParameterHashRef}{'familyID'} }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{ ${$scriptParameterHashRef}{'familyID'} };
+			    ${$fileInfoHashRef}{ $$familyIDRef }{  $$familyIDRef }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{ $$familyIDRef };
 			}
 		    }
 		}
@@ -14565,24 +14717,26 @@ sub CreateFileEndings {
 ###OTHER/Per sampleID
 			for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDCounter++) {
 			    
+			    my $sampleID = ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter];  #Alias
+
 			    if (${$scriptParameterHashRef}{$orderParameterElement} > 0) {  #Fileending should be added    
 			
-				unless (defined($tempFileEnding{$chainfork}{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] })) {	
+				unless (defined($tempFileEnding{$chainfork}{ $sampleID })) {	
 
-				    $tempFileEnding{$chainfork}{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] } = $tempFileEnding{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] };  #Inherit current MAIN chain. 
+				    $tempFileEnding{$chainfork}{ $sampleID } = $tempFileEnding{ $sampleID };  #Inherit current MAIN chain. 
 				}
-				if (defined($tempFileEnding{$chainfork}{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] })) {
+				if (defined($tempFileEnding{$chainfork}{ $sampleID })) {
 
-				    ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{$chainfork}{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }.${$parameterHashRef}{$orderParameterElement}{'fileEnding'};
+				    ${$fileInfoHashRef}{ $$familyIDRef }{ $sampleID }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{$chainfork}{ $sampleID }.${$parameterHashRef}{$orderParameterElement}{'fileEnding'};
 				}
 				else  {  #First module that should add filending
 
-				    ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = ${$parameterHashRef}{$orderParameterElement}{'fileEnding'};
+				    ${$fileInfoHashRef}{ $$familyIDRef }{ $sampleID }{$orderParameterElement}{'fileEnding'} = ${$parameterHashRef}{$orderParameterElement}{'fileEnding'};
 				} 
 			    }
 			    else {  #Do not add new module fileEnding
 
-				${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{$chainfork}{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] };
+				${$fileInfoHashRef}{ $$familyIDRef }{ $sampleID }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{$chainfork}{ $sampleID };
 			    }
 			    ##NOTE: No sequential build-up of fileending
 			}
@@ -14590,19 +14744,19 @@ sub CreateFileEndings {
 
 			if (${$scriptParameterHashRef}{$orderParameterElement} > 0) {  #File ending should be added
 			    
-			    unless (defined($tempFileEnding{$chainfork}{${$scriptParameterHashRef}{'familyID'}})) {	
+			    unless (defined($tempFileEnding{$chainfork}{$$familyIDRef})) {	
 
-				$tempFileEnding{$chainfork}{${$scriptParameterHashRef}{'familyID'}} =  $tempFileEnding{${$scriptParameterHashRef}{'familyID'}};  #Inherit current MAIN chain. 
+				$tempFileEnding{$chainfork}{$$familyIDRef} =  $tempFileEnding{$$familyIDRef};  #Inherit current MAIN chain. 
 			    }
-			    if (defined($tempFileEnding{$chainfork}{${$scriptParameterHashRef}{'familyID'}})) {
+			    if (defined($tempFileEnding{$chainfork}{$$familyIDRef})) {
 
-				${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{$chainfork}{${$scriptParameterHashRef}{'familyID'}}.${$parameterHashRef}{$orderParameterElement}{'fileEnding'};
+				${$fileInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{$orderParameterElement}{'fileEnding'} = $tempFileEnding{$chainfork}{$$familyIDRef}.${$parameterHashRef}{$orderParameterElement}{'fileEnding'};
 			    }
 			    else  {  #First module that should add filending
 
-				${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{$orderParameterElement}{'fileEnding'} = ${$parameterHashRef}{$orderParameterElement}{'fileEnding'};
+				${$fileInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{$orderParameterElement}{'fileEnding'} = ${$parameterHashRef}{$orderParameterElement}{'fileEnding'};
 			    }
-			    $tempFileEnding{$chainfork}{${$scriptParameterHashRef}{'familyID'}} = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{$orderParameterElement}{'fileEnding'};  #To enable sequential build-up of fileending 
+			    $tempFileEnding{$chainfork}{$$familyIDRef} = ${$fileInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{$orderParameterElement}{'fileEnding'};  #To enable sequential build-up of fileending 
 			}
 		    }
 		}
@@ -14631,7 +14785,10 @@ sub ProgramPreRequisites {
 
     my ($argHashRef) = @_;
 
-    my %default = ('callType' => "",
+    my %default = ('outDataDir' => ${$argHashRef}{'scriptParameterHashRef'}{'outDataDir'},
+		   'outScriptDir' => ${$argHashRef}{'scriptParameterHashRef'}{'outScriptDir'},
+		   'emailType' => ${$argHashRef}{'scriptParameterHashRef'}{'emailType'},
+		   'callType' => "",
 		   'nrofCores' => 1,
 		   'processTime' => 1,
 		   'pipefail' => 1,
@@ -14648,40 +14805,51 @@ sub ProgramPreRequisites {
     ## Flatten argument(s)
     my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
     my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $emailType = ${$argHashRef}{'emailType'};
+    my $outDataDir = ${$argHashRef}{'outDataDir'};
+    my $outScriptDir = ${$argHashRef}{'outScriptDir'};
+    my $directoryID = ${$argHashRef}{'directoryID'};
+    my $programDirectory = ${$argHashRef}{'programDirectory'};
+    my $programName = ${$argHashRef}{'programName'};
+    my $callType = ${$argHashRef}{'callType'};
+    my $nrofCores = ${$argHashRef}{'nrofCores'};
+    my $processTime = ${$argHashRef}{'processTime'};
+    my $tempDirectory = ${$argHashRef}{'tempDirectory'};
+    my $errorTrap = ${$argHashRef}{'errorTrap'};
+    my $pipefail = ${$argHashRef}{'pipefail'};
+    
+    ## Mandatory arguments
+    my %mandatoryArgument = ('scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'FILEHANDLE' => $FILEHANDLE,
+			     'directoryID' => $directoryID,  #Any MIP mandatory key will do
+			     'programDirectory' => $programDirectory,
+			     'programName' => $programName,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+
+    ### Sbatch script names and directory creation
 
     my $fileNameEnd = ".sh";
     my $fileName;  #The sbatch script - to be created filename
-    my $fileNamePath;
-    my $dryRunFilenamePath;
-    my $programDataDirectory;
-    my $fileInfoPath;
-    my $dryRunFileInfoPath;
     my $fileNameTracker;
 
-###Sbatch script names and directory creation
-
-    $programDataDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".${$argHashRef}{'directoryID'}."/".${$argHashRef}{'programDirectory'};
-    $fileNamePath = ${$scriptParameterHashRef}{'outScriptDir'}."/".${$argHashRef}{'directoryID'}."/".${$argHashRef}{'programDirectory'}."/".${$argHashRef}{'programName'}."_".${$argHashRef}{'directoryID'};
-    $dryRunFilenamePath = ${$scriptParameterHashRef}{'outScriptDir'}."/".${$argHashRef}{'directoryID'}."/".${$argHashRef}{'programDirectory'}."/dry_run_".${$argHashRef}{'programName'}."_".${$argHashRef}{'directoryID'};
-    $fileInfoPath = ${$scriptParameterHashRef}{'outDataDir'}."/".${$argHashRef}{'directoryID'}."/".${$argHashRef}{'programDirectory'}."/info/".${$argHashRef}{'programName'}."_".${$argHashRef}{'directoryID'};
-    $dryRunFileInfoPath = ${$scriptParameterHashRef}{'outDataDir'}."/".${$argHashRef}{'directoryID'}."/".${$argHashRef}{'programDirectory'}."/info/dry_run_".${$argHashRef}{'programName'}."_".${$argHashRef}{'directoryID'};
-
-    $fileNamePath .= ${$argHashRef}{'callType'}.".";
-    $dryRunFilenamePath .= ${$argHashRef}{'callType'}.".";
-    $fileInfoPath .= ${$argHashRef}{'callType'}.".";
-    $dryRunFileInfoPath .= ${$argHashRef}{'callType'}.".";
+    my $programDataDirectory = $outDataDir."/".$directoryID."/".$programDirectory;
+    my $fileNamePath = $outScriptDir."/".$directoryID."/".$programDirectory."/".$programName."_".$directoryID.$callType.".";
+    my $dryRunFilenamePath = $outScriptDir."/".$directoryID."/".$programDirectory."/dry_run_".$programName."_".$directoryID.$callType.".";
+    my $fileInfoPath = $outDataDir."/".$directoryID."/".$programDirectory."/info/".$programName."_".$directoryID.$callType.".";
+    my $dryRunFileInfoPath = $outDataDir."/".$directoryID."/".$programDirectory."/info/dry_run_".$programName."_".$directoryID.$callType.".";
 
     ## Create directories
-    `mkdir -p ${$scriptParameterHashRef}{'outDataDir'}/${$argHashRef}{'directoryID'}/${$argHashRef}{'programDirectory'}/info;`;  #Creates the aligner folder and info data file directory
+    `mkdir -p $outDataDir/$directoryID/$programDirectory/info;`;  #Creates the aligner folder and info data file directory
     `mkdir -p $programDataDirectory`;  #Creates the aligner folder and if supplied the program data file directory
-    `mkdir -p ${$scriptParameterHashRef}{'outScriptDir'}/${$argHashRef}{'directoryID'}/${$argHashRef}{'programDirectory'}`;  #Creates the aligner folder script file directory
+    `mkdir -p $outScriptDir/$directoryID/$programDirectory`;  #Creates the aligner folder script file directory
 
     ## Set paths depending on dry run or not
-    if ( (${$scriptParameterHashRef}{"p".${$argHashRef}{'programName'}} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
 	$fileName = $fileNamePath;
     }
-    elsif (${$scriptParameterHashRef}{"p".${$argHashRef}{'programName'}} == 2) {  #Dry run single program
+    elsif (${$scriptParameterHashRef}{"p".$programName} == 2) {  #Dry run single program
 
 	$fileName = $dryRunFilenamePath;
 	$fileInfoPath = $dryRunFileInfoPath;
@@ -14697,36 +14865,36 @@ sub ProgramPreRequisites {
     ($fileName, $fileNameTracker) = &CheckFileNameExists(\$fileName, \$fileNameEnd);
 
 ###Info and Log
-    $logger->info("Creating sbatch script for ".${$argHashRef}{'programName'}." and writing script file(s) to: ".$fileName."\n");
-    $logger->info("Sbatch script ".${$argHashRef}{'programName'}." data files will be written to: ".$programDataDirectory."\n");
+    $logger->info("Creating sbatch script for ".$programName." and writing script file(s) to: ".$fileName."\n");
+    $logger->info("Sbatch script ".$programName." data files will be written to: ".$programDataDirectory."\n");
 
 ###Sbatch header
     open ($FILEHANDLE, ">",$fileName) or $logger->logdie("Can't write to '".$fileName."' :".$!."\n");
     
     print $FILEHANDLE "#! /bin/bash -l", "\n";
 
-    if (${$argHashRef}{'pipefail'} == 1) {
+    if ($pipefail == 1) {
 
 	print $FILEHANDLE "set -o pipefail", "\n";  #Detect errors within pipes 
     }
     print $FILEHANDLE "#SBATCH -A ".${$scriptParameterHashRef}{'projectID'}, "\n";
-    print $FILEHANDLE "#SBATCH -n ".${$argHashRef}{'nrofCores'}, "\n";
-    print $FILEHANDLE "#SBATCH -t ".${$argHashRef}{'processTime'}.":00:00", "\n";	
-    print $FILEHANDLE "#SBATCH -J ".${$argHashRef}{'programName'}."_".${$argHashRef}{'directoryID'}.${$argHashRef}{'callType'}, "\n";
+    print $FILEHANDLE "#SBATCH -n ".$nrofCores, "\n";
+    print $FILEHANDLE "#SBATCH -t ".$processTime.":00:00", "\n";	
+    print $FILEHANDLE "#SBATCH -J ".$programName."_".$directoryID.$callType, "\n";
     print $FILEHANDLE "#SBATCH -e ".$fileInfoPath.$fileNameTracker.".stderr.txt", "\n";
     print $FILEHANDLE "#SBATCH -o ".$fileInfoPath.$fileNameTracker.".stdout.txt", "\n";
     
     if (exists(${$scriptParameterHashRef}{'email'})) {
 	
-	if (${$scriptParameterHashRef}{'emailType'} =~/B/i) {
+	if ($emailType =~/B/i) {
 
 	    print $FILEHANDLE "#SBATCH --mail-type=BEGIN", "\n";
 	}
-	if (${$scriptParameterHashRef}{'emailType'} =~/E/i) {
+	if ($emailType =~/E/i) {
 	 
 	    print $FILEHANDLE "#SBATCH --mail-type=END", "\n";
 	}
-	if (${$scriptParameterHashRef}{'emailType'} =~/F/i) {
+	if ($emailType =~/F/i) {
 	    
 	    print $FILEHANDLE "#SBATCH --mail-type=FAIL", "\n";
 	}
@@ -14736,10 +14904,10 @@ sub ProgramPreRequisites {
     print $FILEHANDLE q?echo "Running on: $(hostname)"?,"\n";
     print $FILEHANDLE q?PROGNAME=$(basename $0)?,"\n\n";
     
-    if (defined(${$argHashRef}{'tempDirectory'})) {  #Not all programs need a temporary directory
+    if (defined($tempDirectory)) {  #Not all programs need a temporary directory
 
 	print $FILEHANDLE "## Create temporary directory\n";
-	print $FILEHANDLE q?tempDirectory="?.${$argHashRef}{'tempDirectory'}.q?"?, "\n";  #Assign batch variable
+	print $FILEHANDLE q?tempDirectory="?.$tempDirectory.q?"?, "\n";  #Assign batch variable
 	print $FILEHANDLE q?mkdir -p $tempDirectory?, "\n\n";
 	
 	##Create housekeeping function and trap
@@ -14750,7 +14918,7 @@ sub ProgramPreRequisites {
 	print $FILEHANDLE q?trap finish EXIT TERM INT?, "\n\n";
     }
 
-    if (${$argHashRef}{'errorTrap'} == 1) {
+    if ($errorTrap == 1) {
 
 	## Create error handling function and trap
 	print $FILEHANDLE q?error() {?, "\n\n";
@@ -15488,14 +15656,31 @@ sub CheckFileEndingsToBeBuilt {
 ##         : $fileEndingsRef         => Reference to the fileEndings to be added to the filename stub {REF}
 ##         : $parameterName          => MIP parameter name
     
-    my $parameterHashRef = $_[0];
-    my $scriptParameterHashRef = $_[1];
-    my $fileEndingsRef = $_[2];
-    my $parameterName = $_[3]; 
-    
-    for (my $fileEndingsRefCounter=0;$fileEndingsRefCounter<scalar(@{$fileEndingsRef});$fileEndingsRefCounter++) {  #All fileEndings
+    my ($argHashRef) = @_;
 
-	my $path = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$parameterName}.${$fileEndingsRef}[$fileEndingsRefCounter];
+    my %default = ('referencesDirRef' => \${$argHashRef}{'scriptParameterHashRef'}{'referencesDir'},
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+    
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $fileEndingsRef = ${$argHashRef}{'fileEndingsRef'};
+    my $parameterName = ${$argHashRef}{'parameterName'};
+    my $referencesDirectoryRef = ${$argHashRef}{'referencesDirRef'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'fileEndingsRef' => $fileEndingsRef,
+			     'parameterName' => $parameterName,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "CheckFileEndingsToBeBuilt");
+    
+    foreach my $fileEnding (@{$fileEndingsRef}) {
+	
+	my $path = $$referencesDirectoryRef."/".${$scriptParameterHashRef}{$parameterName}.$fileEnding;
 	&CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
 			 'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 			 'itemNameRef' => \$path,
@@ -15602,40 +15787,75 @@ sub SetAutoBuildFeature {
     
 ##Function : Sets parameters with autoBuild enabled to the new value dependent on $referenceFileNameRef
 ##Returns  : "" 
-##Arguments: $parameterHasRef, $scriptParameterHashRef, $fileInfoHashRef, $parameterName, $referenceFileEndingRef, $referenceFileNameRef, $printSwitch, $sampleIDRef
+##Arguments: $parameterHasRef, $scriptParameterHashRef, $fileInfoHashRef, $broadcastsArrayRef, $parameterName, $referenceFileEndingRef, $referenceFileNameRef, $printSwitch, $sampleIDRef
 ##         : $parameterHashRef       => The parameter hash {REF}
 ##         : $scriptParameterHashRef => The activa parameters for this analysis hash {REF}
 ##         : $fileInfoHashRef        => The fileInfo hash {REF}
+##         : $broadcastsArrayRef     => Holds the parameters info for broadcasting later
 ##         : $parameterName          => MIP parameter name 
 ##         : $referenceFileEndingRef => Reference file name ending {REF}
 ##         : $referenceFileNameRef   => Reference file name {REF}
 ##         : $printSwitch            => To print or not
 ##         : $sampleIDRef            => SampleID {REF}
 
-    my $parameterHashRef = $_[0];
-    my $scriptParameterHashRef = $_[1];
-    my $fileInfoHashRef = $_[2];
-    my $parameterName = $_[3];
-    my $referenceFileEndingRef = $_[4];
-    my $referenceFileNameRef = $_[5];
-    my $printSwitch = $_[6];
-    my $sampleIDRef = $_[7];
+    my ($argHashRef) = @_;
+
+    my %default = ('printSwitch' => "Print",
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
+    my $broadcastsArrayRef = ${$argHashRef}{'broadcastsArrayRef'};
+    my $parameterName = ${$argHashRef}{'parameterName'};
+    my $referenceFileEndingRef = ${$argHashRef}{'referenceFileEndingRef'};
+    my $referenceFileNameRef = ${$argHashRef}{'referenceFileNameRef'};
+    my $printSwitch = ${$argHashRef}{'printSwitch'};
+    my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'fileInfoHashRef' => ${$fileInfoHashRef}{'humanGenomeReferenceFileEndings'},  #Any MIP mandatory key will do
+			     'parameterName' => $parameterName,
+			     'referenceFileEndingRef' => $$referenceFileEndingRef,
+			     'referenceFileNameRef' => $referenceFileNameRef,
+			     'parameterName' => $parameterName,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "SetAutoBuildFeature");
      
      if( defined(${$scriptParameterHashRef}{$parameterName}) && (${$scriptParameterHashRef}{$parameterName} eq "notSetYet") ) { 
 
 	 ${$scriptParameterHashRef}{$parameterName} = $$referenceFileNameRef.$$referenceFileEndingRef;
 
-	 if ( (defined($printSwitch)) && ($printSwitch ne "noPrint") ) {
+	 if ($printSwitch ne "noPrint") {
 
-	     $logger->info("Set ".$parameterName." to: ".${$scriptParameterHashRef}{$parameterName}, "\n");
+	     if (scalar(@{$broadcastsArrayRef}) > 0) {
+
+		 my $info = "Set ".$parameterName." to: ".${$scriptParameterHashRef}{$parameterName};
+		 push(@{$broadcastsArrayRef}, $info);  #Add info to broadcasts
+	     }
 	 }
 	 if ($parameterName eq "bwaBuildReference") {
-
-	     &CheckFileEndingsToBeBuilt(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \@{${$fileInfoHashRef}{'bwaBuildReferenceFileEndings'}}, "bwaBuildReference");
+	     
+	     ## Checks files to be built by combining filename stub with fileendings
+	     &CheckFileEndingsToBeBuilt({'parameterHashRef' => \%{$parameterHashRef},
+					 'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+					 'fileEndingsRef' => \@{${$fileInfoHashRef}{'bwaBuildReferenceFileEndings'}},
+					 'parameterName' => "bwaBuildReference",
+					});
 	 }
 	 elsif ($parameterName eq "mosaikJumpDbStub") {
 
-	     &CheckFileEndingsToBeBuilt(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \@{${$fileInfoHashRef}{'mosaikJumpDbStubFileEndings'}}, "mosaikJumpDbStub");
+	     ## Checks files to be built by combining filename stub with fileendings
+	     &CheckFileEndingsToBeBuilt({'parameterHashRef' => \%{$parameterHashRef},
+					 'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+					 'fileEndingsRef' => \@{${$fileInfoHashRef}{'mosaikJumpDbStubFileEndings'}},
+					 'parameterName' => "mosaikJumpDbStub",
+					});
 	 }
 	 else {  #Complete fileName - No stubs
 
@@ -15736,17 +15956,41 @@ sub SetTargetFiles {
 ##         : $parameterName                  => MIP parameter name
 ##         : $referenceFileEndingRef         => File name ending {REF}
     
-    my $parameterHashRef = $_[0];
-    my $scriptParameterHashRef = $_[1];
-    my $sampleInfoHashRef = $_[2];
-    my $fileInfoHashRef = $_[3];
-    my $supportedCaptureKitHashRef = $_[4];
-    my $humanGenomeReferenceSourceRef = $_[5];
-    my $humanGenomeReferenceVersionRef = $_[6];
-    my $familyIDRef = $_[7];
-    my $sampleIDRef = $_[8];
-    my $parameterNameRef = $_[9];
-    my $referenceFileEndingRef = $_[10];
+    my ($argHashRef) = @_;
+
+    my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+		   'referencesDirRef' => \${$argHashRef}{'scriptParameterHashRef'}{'referencesDir'},
+		   'humanGenomeReferenceSourceRef' => \${$argHashRef}{'fileInfoHashRef'}{'humanGenomeReferenceSource'},
+		   'humanGenomeReferenceVersionRef' => \${$argHashRef}{'fileInfoHashRef'}{'humanGenomeReferenceVersion'},
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
+    my $supportedCaptureKitHashRef = ${$argHashRef}{'supportedCaptureKitHashRef'};
+    my $humanGenomeReferenceSourceRef = ${$argHashRef}{'humanGenomeReferenceSourceRef'};
+    my $humanGenomeReferenceVersionRef = ${$argHashRef}{'humanGenomeReferenceVersionRef'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
+    my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
+    my $parameterNameRef = ${$argHashRef}{'parameterNameRef'};
+    my $referenceFileEndingRef = ${$argHashRef}{'referenceFileEndingRef'};
+    my $referencesDirectoryRef = ${$argHashRef}{'referencesDirRef'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
+			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
+			     'supportedCaptureKitHashRef' => \%{$supportedCaptureKitHashRef},
+			     'sampleIDRef' => $$sampleIDRef,
+			     'parameterNameRef' => $$parameterNameRef,
+			     'referenceFileEndingRef' => $$referenceFileEndingRef,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "SetTargetFiles");
 
     my %alias = ('exomeTargetBedInfileLists' => "ExomeTargetBedInfileLists",
 		 'exomeTargetPaddedBedInfileLists' => "ExomeTargetPaddedBedInfileLists",
@@ -15766,7 +16010,7 @@ sub SetTargetFiles {
 
 	    ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef} = ${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef};  #Add to sampleInfo for qc print later
 	}
-	my $path = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef};
+	my $path = $$referencesDirectoryRef."/".${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{$$parameterNameRef};
 	&CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
 			 'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 			 'itemNameRef' => \$path,
@@ -15785,7 +16029,15 @@ sub SetTargetFiles {
 	${$scriptParameterHashRef}{$$parameterNameRef} = "notSetYet";  #Required for autobuild
 
 	## Sets parameters with autoBuild enabled to the new value dependent on $referenceFileNameRef
-	&SetAutoBuildFeature(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, $$parameterNameRef, \$$referenceFileEndingRef, \${$supportedCaptureKitHashRef}{'Latest'}, "noPrint", $sampleIDRef);  #Always use the most updated capture kit when building target list
+	&SetAutoBuildFeature({'parameterHashRef' => \%{$parameterHashRef},
+			      'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+			      'fileInfoHashRef' => \%{$fileInfoHashRef},
+			      'parameterName' => $$parameterNameRef,
+			      'referenceFileEndingRef' => \$$referenceFileEndingRef,
+			      'referenceFileNameRef' => \${$supportedCaptureKitHashRef}{'Latest'},
+			      'printSwitch' => "noPrint",
+			      'sampleIDRef' => $sampleIDRef
+			     });  #Always use the most updated capture kit when building target list
     }
 }
 
@@ -15963,9 +16215,12 @@ sub EnableArrayParameter {
 ##         : $arrayRef               => Array to loop through {REF}
 ##         : $parameterNameRef       => MIP parameter name {REF}
 
-    my $scriptParameterHashRef = $_[0];
-    my $arrayRef = $_[1];
-    my $parameterNameRef = $_[2];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $arrayRef = ${$argHashRef}{'arrayRef'};
+    my $parameterNameRef = ${$argHashRef}{'parameterNameRef'};
     
     ${$scriptParameterHashRef}{$$parameterNameRef} = join(',',@{$arrayRef});  #Add to enable recreation of cmd line later
     @{$arrayRef} = split(/,/,join(',', @{$arrayRef}));  #Enables comma separated list of sample IDs from user supplied cmd info
@@ -16025,8 +16280,18 @@ sub SetTargetandAutoBuild {
 
 	${$parameterHashRef}{ $$familyIDRef }{${$arrayRef}[$elementsCounter]}{$$parameterNameRef}{'buildFile'} = "yesAutoBuild";
 
-	&SetTargetFiles(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$fileInfoHashRef}, \%{$supportedCaptureKitHashRef}, \${$fileInfoHashRef}{'humanGenomeReferenceSource'}, \${$fileInfoHashRef}{'humanGenomeReferenceVersion'}, $familyIDRef, \${$arrayRef}[$elementsCounter], \$$parameterNameRef, \$$fileEndingRef);
-    }   
+	&SetTargetFiles({'parameterHashRef' => \%{$parameterHashRef},
+			 'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+			 'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+			 'fileInfoHashRef' => \%{$fileInfoHashRef},
+			 'supportedCaptureKitHashRef' => \%{$supportedCaptureKitHashRef},
+			 #'humanGenomeReferenceSourceRef' => \${$fileInfoHashRef}{'humanGenomeReferenceSource'},
+			 #'humanGenomeReferenceVersionRef' => \${$fileInfoHashRef}{'humanGenomeReferenceVersion'},
+			 'sampleIDRef' => \${$arrayRef}[$elementsCounter],
+			 'parameterNameRef' => \$$parameterNameRef,
+			 'referenceFileEndingRef' => \$$fileEndingRef,
+			});
+    }
 }
 
 
@@ -16034,16 +16299,19 @@ sub CheckTargetExistFileBed {
 
 ##CheckTargetExistFileBed
     
-##Function : Check that supplied target file ends with ".bed" and exists.
+##Function : Check that supplied target file ends with ".bed" and otherwise exists.
 ##Returns  : ""
 ##Arguments: $scriptParameterHashRef, $fileRef, $parameterName
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 ##         : $fileRef                => File to check for existance and file ending {REF}
 ##         : $parameterName          => MIP parameter name
 
-    my $scriptParameterHashRef = $_[0];
-    my $fileRef = $_[1];
-    my $parameterName = $_[2];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $fileRef = ${$argHashRef}{'fileRef'};
+    my $parameterName = ${$argHashRef}{'parameterName'};
 
     if (defined($$fileRef)) {
 
@@ -16073,10 +16341,13 @@ sub CompareArrayElements {
 ##         : $parameterName      => MIP reference parameter
 ##         : $parameterNameQuery => MIP query parameter
 
-    my $arrayRef = $_[0]; 
-    my $arrayQueryRef = $_[1]; 
-    my $parameterName = $_[2];
-    my $parameterNameQuery = $_[3];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $arrayRef = ${$argHashRef}{'arrayRef'}; 
+    my $arrayQueryRef = ${$argHashRef}{'arrayQueryRef'}; 
+    my $parameterName = ${$argHashRef}{'parameterName'};
+    my $parameterNameQuery = ${$argHashRef}{'parameterNameQuery'};
     
     if (scalar(@{$arrayRef}) != scalar(@{$arrayQueryRef})) {
 	
@@ -16092,23 +16363,34 @@ sub SetAutoBuildAndScriptParameterPerSample {
 ##Function : Sets autoBuild and populates scriptParameter hash with array elements per sampleID.
 ##Returns  : ""
 ##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleIDArrayRef, $parameterArrayRef, $parameterNameRef
-##         : $parameterHashRef             => The parameter hash {REF}
-##         : $scriptParameterHashRef       => The active parameters for this analysis hash {REF}
-##         : $sampleIDArrayRef             => SampleID array {REF}
-##         : $parameterArrayRef            => Parameter array {REF}
-##         : $parameterNameRef             => MIP parameter name {REF}
+##         : $parameterHashRef       => The parameter hash {REF}
+##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $sampleIDArrayRef       => SampleID array {REF}
+##         : $parameterArrayRef      => Parameter array {REF}
+##         : $parameterNameRef       => MIP parameter name {REF}
+##         : $familyIDRef            => The familyIDREf
 
-    my $parameterHashRef = $_[0];
-    my $scriptParameterHashRef = $_[1];
-    my $sampleIDArrayRef = $_[2];
-    my $parameterArrayRef = $_[3];
-    my $parameterNameRef = $_[4];
+    my ($argHashRef) = @_;
+
+    my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleIDArrayRef = ${$argHashRef}{'sampleIDArrayRef'};
+    my $parameterArrayRef = ${$argHashRef}{'parameterArrayRef'};
+    my $parameterNameRef = ${$argHashRef}{'parameterNameRef'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
 
     for (my $sampleIDsCounter=0;$sampleIDsCounter<scalar(@{$sampleIDArrayRef});$sampleIDsCounter++) {  #All sampleIDs
+	my $sampleIDRef = \${$sampleIDArrayRef}[$sampleIDsCounter];  #Alias
 	
-	${$parameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{${$sampleIDArrayRef}[$sampleIDsCounter]}{$$parameterNameRef}{'buildFile'} = "yesAutoBuild";  #Turn on autoBuild
-	${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$sampleIDArrayRef}[$sampleIDsCounter] }{$$parameterNameRef} = ${$parameterArrayRef}[$sampleIDsCounter];  #Populate hash that is used in modules
-	$logger->info("Set ".$$parameterNameRef." to: ".${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$sampleIDArrayRef}[$sampleIDsCounter] }{$$parameterNameRef}, "\n");
+	${$parameterHashRef}{ $$familyIDRef }{ $$sampleIDRef }{$$parameterNameRef}{'buildFile'} = "yesAutoBuild";  #Turn on autoBuild
+	${$scriptParameterHashRef}{ $$familyIDRef }{ $$sampleIDRef }{$$parameterNameRef} = ${$parameterArrayRef}[$sampleIDsCounter];  #Populate hash that is used in modules
+	$logger->info("Set ".$$parameterNameRef." to: ".${$scriptParameterHashRef}{ $$familyIDRef }{ $$sampleIDRef }{$$parameterNameRef}, "\n");
     }
 }
 
@@ -16603,9 +16885,12 @@ sub CheckSupportedFileEnding {
 ##         : $fileEndingRef    => Supported file name ending {REF}
 ##         : $parameterNameRef => Parameter name {REF}
 
-    my $fileNameRef = $_[0];
-    my $fileEndingRef = $_[1];
-    my $parameterNameRef = $_[2];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $fileNameRef = ${$argHashRef}{'fileNameRef'};
+    my $fileEndingRef = ${$argHashRef}{'fileEndingRef'};
+    my $parameterNameRef = ${$argHashRef}{'parameterNameRef'};
 
     unless ( (defined($$fileNameRef)) && ($$fileNameRef =~/(\S+)$$fileEndingRef$/) ) {
 	
@@ -17150,12 +17435,29 @@ sub CheckHumanGenomeFileEndings {
 ##         : $humanGenomeReferenceNameNoEndingRef => The associated human genome file without file ending {REF}
 ##         : $parameterNameRef                    => The parameter under evaluation {REF}                   
 
-    my $parameterHashRef = $_[0];
-    my $scriptParameterHashRef = $_[1];
-    my $fileInfoHashRef = $_[2];
-    my $referencesDirRef = $_[3];
-    my $humanGenomeReferenceNameNoEndingRef = $_[4];
-    my $parameterNameRef = $_[5];
+    my ($argHashRef) = @_;
+
+    my %default = ('referencesDirRef' => \${$argHashRef}{'scriptParameterHashRef'}{'referencesDir'},
+		   'humanGenomeReferenceNameNoEndingRef' => \${$argHashRef}{'fileInfoHashRef'}{'humanGenomeReferenceNameNoEnding'},
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
+    my $referencesDirRef = ${$argHashRef}{'referencesDirRef'};
+    my $humanGenomeReferenceNameNoEndingRef = ${$argHashRef}{'humanGenomeReferenceNameNoEndingRef'};
+    my $parameterNameRef = ${$argHashRef}{'parameterNameRef'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'fileInfoHashRef' => ${$fileInfoHashRef}{'humanGenomeReferenceNameNoEnding'},  #Any MIP mandatory key will do
+			     'parameterNameRef' => $$parameterNameRef,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "CheckHumanGenomeFileEndings");
     	       
     for (my $fileEndingsCounter=0;$fileEndingsCounter<scalar(@{${$fileInfoHashRef}{'humanGenomeReferenceFileEndings'}});$fileEndingsCounter++) {
 
@@ -17927,7 +18229,7 @@ sub AddCaptureKit {
 
 ##AddCaptureKit
     
-##Function : Adds a capture kit to the scriptParameterHash. If arg->{userSuppliedParameterswitchRef} is set, go a head and add capture kit no matter what the switch was.
+##Function : Return a capture kit depending on user info. If arg->{userSuppliedParameterswitchRef} is set, go a head and add capture kit no matter what the switch was.
 ##Returns  : "Set capture kit or ''"
 ##Arguments: $fileInfoHashRef, $supportedCaptureKitHashRef, $argHashRef
 ##         : $fileInfoHashRef             => The file info hash {REF}
@@ -20239,13 +20541,13 @@ sub PrepareGATKTargetIntervals {
 ##PrepareGATKTargetIntervals
     
 ##Function : Prepare target interval file. Copies file to temporary directory, and adds fileExtension to fit GATK 
-##Returns  : ""
-##Arguments: $analysisTypeRef, $exomeTargetBedInfileListsRef, $referencesDirectoryRef, $tempDirectoryRef, $FILEHANDLE
-##         : $analysisTypeRef              => The analysis type {REF}
-##         : $exomeTargetBedInfileListsRef => Target interval list file {REF}
-##         : $referencesDirectoryRef       => Reference directory {REF}
-##         : $tempDirectoryRef             => Temporary directory {REF}
-##         : $FILEHANDLE                   => Filehandle to write to
+##Returns  : "$targetIntervalsPath"
+##Arguments: $analysisTypeRef, $targetIntervalFileListsRef, $referencesDirectoryRef, $tempDirectoryRef, $FILEHANDLE
+##         : $analysisTypeRef            => The analysis type {REF}
+##         : $targetIntervalFileListsRef => Target interval list file {REF}
+##         : $referencesDirectoryRef     => Reference directory {REF}
+##         : $tempDirectoryRef           => Temporary directory {REF}
+##         : $FILEHANDLE                 => Filehandle to write to
 
     my ($argHashRef) = @_;
     
@@ -20259,37 +20561,44 @@ sub PrepareGATKTargetIntervals {
     my $analysisTypeRef = ${$argHashRef}{'analysisTypeRef'};
     my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
     my $referencesDirectoryRef = ${$argHashRef}{'referencesDirectoryRef'};
-    my $exomeTargetBedInfileListsRef = ${$argHashRef}{'exomeTargetBedInfileListsRef'};
+    my $targetIntervalFileListsRef = ${$argHashRef}{'targetIntervalFileListsRef'};
     my $tempDirectoryRef = ${$argHashRef}{'tempDirectoryRef'};
     my $addEnding = ${$argHashRef}{'addEnding'};
 
-    ## Mandatory arguments
-    my %mandatoryArgument = ('analysisTypeRef' => $$analysisTypeRef,
-			     'referencesDirectoryRef' => $$referencesDirectoryRef,
-			     'exomeTargetBedInfileListsRef' => $$exomeTargetBedInfileListsRef,
-			     'tempDirectoryRef' => $$tempDirectoryRef,
-			     'FILEHANDLE' => $FILEHANDLE,
-	);
-    
-    &CheckMandatoryArguments(\%mandatoryArgument, "PrepareGATKTargetIntervals");
+    my $targetIntervalsPath = $$tempDirectoryRef."/".$$targetIntervalFileListsRef;
 
     if ( ($$analysisTypeRef eq "exomes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
-
+	
+	## Mandatory arguments
+	my %mandatoryArgument = ('analysisTypeRef' => $$analysisTypeRef,
+				 'referencesDirectoryRef' => $$referencesDirectoryRef,
+				 'targetIntervalFileListsRef' => $$targetIntervalFileListsRef,
+				 'tempDirectoryRef' => $$tempDirectoryRef,
+				 'FILEHANDLE' => $FILEHANDLE,
+	    );
+	
+	&CheckMandatoryArguments(\%mandatoryArgument, "PrepareGATKTargetIntervals");
+	
+	
 	## Copies file to temporary directory.
 	&MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE,
-			    'path' => $$referencesDirectoryRef."/".$$exomeTargetBedInfileListsRef,
+			    'path' => $$referencesDirectoryRef."/".$$targetIntervalFileListsRef,
 			    'tempDirectory' => $$tempDirectoryRef,
 			   });
 	print $FILEHANDLE "wait ";
 	print $FILEHANDLE "\n\n";	
-    }
-    if ($addEnding == 1) {
+	
+	if ($addEnding == 1) {
+	    
+	    $targetIntervalsPath .= ".intervals";
 
-	## Add the by GATK required ".interval" ending
-	print $FILEHANDLE "mv ";
-	print $FILEHANDLE $$tempDirectoryRef."/".$$exomeTargetBedInfileListsRef." ";
-	print $FILEHANDLE $$tempDirectoryRef."/".$$exomeTargetBedInfileListsRef.".intervals ";
-	print $FILEHANDLE "\n\n";
+	    ## Add the by GATK required ".interval" ending
+	    print $FILEHANDLE "mv ";
+	    print $FILEHANDLE $$tempDirectoryRef."/".$$targetIntervalFileListsRef." ";
+	    print $FILEHANDLE $$tempDirectoryRef."/".$$targetIntervalFileListsRef.".intervals ";
+	    print $FILEHANDLE "\n\n";
+	}
+	return $targetIntervalsPath;
     }
 }
 
