@@ -98,7 +98,7 @@ This will generate a batch script "mip.sh" for the install in your working direc
 3. Run the bash script
 
  ```
- $ . mip.sh
+ $ bash mip.sh
  ```
  This will install all the dependencies of MIP and other modules included in MIP into a conda environment (defaults to "mip"). 
  However a fresh version of perl and cpanm is installed outside of the conda environment, but are activated through bashrc and  bash_profile.
