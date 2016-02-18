@@ -1,5 +1,5 @@
 ---
-## Version: 1.1.0
+## Version: 1.2.0
 ##Enable/activate MIP
 MIP:
   associatedProgram:
@@ -139,6 +139,7 @@ genomicSet:
   dataType: SCALAR
   default: noUserInfo
   existsCheck: file
+  reference: referencesDir
   type: path
 reduceIO:
   associatedProgram:
@@ -237,6 +238,7 @@ mosaikAlignNeuralNetworkPeFile:
   dataType: SCALAR
   default: 2.1.78.pe.ann
   existsCheck: file
+  reference: referencesDir
   type: path
 mosaikAlignNeuralNetworkSeFile:
   associatedProgram:
@@ -245,6 +247,7 @@ mosaikAlignNeuralNetworkSeFile:
   dataType: SCALAR
   default: 2.1.78.se.ann
   existsCheck: file
+  reference: referencesDir
   type: path
 mosaikJumpDbStub:
   associatedProgram:
@@ -253,6 +256,7 @@ mosaikJumpDbStub:
   dataType: SCALAR
   default: notSetYet
   existsCheck: file
+  reference: referencesDir
   type: path
 ## BWA
 pBwaMem:
@@ -277,6 +281,7 @@ bwaMemRapidDb:
   buildFile: noAutoBuild
   dataType: SCALAR
   existsCheck: file
+  reference: referencesDir
   type: path
 bwaMemCram:
   associatedProgram:
@@ -333,6 +338,7 @@ bwaBuildReference:
   dataType: SCALAR
   default: notSetYet
   existsCheck: file
+  reference: referencesDir
   type: path
 ## Choosen MIP Aligner
 aligner:
@@ -406,6 +412,7 @@ GATKReAlignerINDELKnownSet1:
   dataType: SCALAR
   default: 1000G_phase1.indels.b37.vcf
   existsCheck: file
+  reference: referencesDir
   type: path
 GATKReAlignerINDELKnownSet2:
   associatedProgram:
@@ -414,6 +421,7 @@ GATKReAlignerINDELKnownSet2:
   dataType: SCALAR
   default: Mills_and_1000G_gold_standard.indels.b37.vcf
   existsCheck: file
+  reference: referencesDir
   type: path
 pGATKBaseRecalibration:
   associatedProgram:
@@ -434,6 +442,7 @@ GATKBaseReCalibrationSNPKnownSet:
   dataType: SCALAR
   default: dbsnp_138.b37.vcf
   existsCheck: file
+  reference: referencesDir
   type: path
 GATKBaseReCalibrationOverClippedRead:
   associatedProgram:
@@ -473,6 +482,7 @@ sambambaDepthBed:
   dataType: SCALAR
   default: CCDS.current.bed
   existsCheck: file
+  reference: referencesDir
   type: path
 sambambaDepthBaseQuality:
   associatedProgram:
@@ -594,6 +604,7 @@ GATKHaploTypeCallerSNPKnownSet:
   dataType: SCALAR
   default: dbsnp_138.b37.vcf
   existsCheck: file
+  reference: referencesDir
   type: path
 GATKHaploTypeCallerSoftClippedBases:
   associatedProgram:
@@ -637,6 +648,7 @@ GATKGenoTypeGVCFsRefGVCF:
   buildFile: noAutoBuild
   dataType: SCALAR
   existsCheck: file
+  reference: referencesDir
   type: path
 GATKGenoTypeGVCFsAllSites:
   associatedProgram:
@@ -667,6 +679,7 @@ GATKVariantReCalibrationTrainingSetHapMap:
   dataType: SCALAR
   default: hapmap_3.3.b37.sites.vcf
   existsCheck: file
+  reference: referencesDir
   type: path
 GATKVariantReCalibrationTrainingSetDbSNP:
   associatedProgram:
@@ -675,6 +688,7 @@ GATKVariantReCalibrationTrainingSetDbSNP:
   dataType: SCALAR
   default: dbsnp_138.b37.vcf
   existsCheck: file
+  reference: referencesDir
   type: path
 GATKVariantReCalibrationTrainingSet1000GSNP:
   associatedProgram:
@@ -683,6 +697,7 @@ GATKVariantReCalibrationTrainingSet1000GSNP:
   dataType: SCALAR
   default: 1000G_phase1.snps.high_confidence.b37.vcf
   existsCheck: file
+  reference: referencesDir
   type: path
 GATKVariantReCalibrationTrainingSet1000GOmni:
   associatedProgram:
@@ -691,6 +706,7 @@ GATKVariantReCalibrationTrainingSet1000GOmni:
   dataType: SCALAR
   default: 1000G_omni2.5.b37.sites.vcf
   existsCheck: file
+  reference: referencesDir
   type: path
 GATKVariantReCalibrationTrainingSetMills:
   associatedProgram:
@@ -699,6 +715,7 @@ GATKVariantReCalibrationTrainingSetMills:
   dataType: SCALAR
   default: Mills_and_1000G_gold_standard.indels.b37.vcf
   existsCheck: file
+  reference: referencesDir
   type: path
 GATKVariantReCalibrationSnvTSFilterLevel:
   associatedProgram:
@@ -749,6 +766,7 @@ GATKCalculateGenotypePosteriorsSupportSet:
   dataType: SCALAR
   default: 1000G_phase3_v4_20130502.sites.vcf
   existsCheck: file
+  reference: referencesDir
   type: path
 pGATKCombineVariantCallSets:
   associatedProgram:
@@ -833,6 +851,7 @@ VTgenmodFilter1000G:
   dataType: SCALAR
   default: ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
   existsCheck: file
+  reference: referencesDir
   type: path
 VTgenmodFilterThreshold:
   associatedProgram:
@@ -888,6 +907,7 @@ GATKVariantEvalDbSNP:
   dataType: SCALAR
   default: dbsnp_138.b37.excluding_sites_after_129.vcf
   existsCheck: file
+  reference: referencesDir
   type: path
 GATKVariantEvalGold:
   associatedProgram:
@@ -897,6 +917,7 @@ GATKVariantEvalGold:
   dataType: SCALAR
   default: Mills_and_1000G_gold_standard.indels.b37.vcf
   existsCheck: file
+  reference: referencesDir
   type: path
 GATKDownSampleToCoverage:
   associatedProgram: 
@@ -984,12 +1005,14 @@ vcfParserRangeFeatureFile:
    - pVCFParser
   dataType: SCALAR
   existsCheck: file
+  reference: referencesDir
   type: path
 vcfParserSelectFile:
   associatedProgram:
    - pVCFParser
   dataType: SCALAR
   existsCheck: file
+  reference: referencesDir
   type: path
 vcfParserSelectFileMatchingColumn:
   associatedProgram:
@@ -1064,6 +1087,7 @@ snpSiftDbNSFPFile:
   dataType: SCALAR
   default: dbNSFP2.9.txt.gz
   existsCheck: file
+  reference: referencesDir
   type: path
 ## java large pages - effects all modules using java
 javaUseLargePages:
@@ -1133,6 +1157,7 @@ NISTHighConfidenceCallSet:
   default: NISTIntgratedCalls.v2.19.vcf
   dataType: SCALAR
   existsCheck: file
+  reference: referencesDir
   type: path
 NISTHighConfidenceCallSetBed:
   associatedProgram:
@@ -1141,6 +1166,7 @@ NISTHighConfidenceCallSetBed:
   default: NISTIntgratedCalls.v2.19.bed
   dataType: SCALAR
   existsCheck: file
+  reference: referencesDir
   type: path
 ## RankVariants
 pRankVariants:
@@ -1163,6 +1189,7 @@ spidexFile:
   buildFile: noAutoBuild
   dataType: SCALAR
   existsCheck: file
+  reference: referencesDir
   type: path
 wholeGene:
   associatedProgram:
@@ -1176,6 +1203,7 @@ genmodModelsReducedPenetranceFile:
   buildFile: noAutoBuild
   dataType: SCALAR
   existsCheck: file
+  reference: referencesDir
   type: path
 rankModelFile:
   associatedProgram:
@@ -1183,6 +1211,7 @@ rankModelFile:
   buildFile: noAutoBuild
   dataType: SCALAR
   existsCheck: file
+  reference: referencesDir
   type: path
 ## PythonVirtualEnvironment
 usePythonVirtualEnvironment:
@@ -1224,6 +1253,7 @@ QCCollectRegExpFile:
   dataType: SCALAR
   default: qc_regExp_v1.4.yaml
   existsCheck: file
+  reference: referencesDir
   type: path
 ## RemoveRedundantFiles
 pRemoveRedundantFiles:
@@ -1275,6 +1305,7 @@ humanGenomeReference:
   dataType: SCALAR
   default: Homo_sapiens.GRCh37.d5.fasta
   existsCheck: file
+  reference: referencesDir
   type: path
 pythonVirtualEnvironmentCommand:
   associatedProgram:
@@ -1420,6 +1451,7 @@ snpSiftAnnotationFiles:
      ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz: AF
      ExAC.r0.3.sites.vep.vcf.gz: AF   
   existsCheck: file
+  reference: referencesDir
   type: path
 snpSiftAnnotationOutInfoKey:
   associatedProgram:
@@ -1431,6 +1463,7 @@ snpSiftAnnotationOutInfoKey:
      ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz: 1000GAF
      ExAC.r0.3.sites.vep.vcf.gz: EXACAF
   existsCheck: file
+  reference: referencesDir
   type: path
 genmodcaddFiles:
   associatedProgram:
@@ -1439,4 +1472,5 @@ genmodcaddFiles:
   elementSeparator: ,
   existsCheck: file
   mandatory: no
+  reference: referencesDir
   type: path

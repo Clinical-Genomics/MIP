@@ -810,7 +810,8 @@ if ($scriptParameter{'writeConfigFile'} ne 0) {  #Write config file for family
 ## Adds dynamic aggregate information from definitions to parameterHash
 &AddToParameter({'parameterHashRef' => \%parameter,
 		 'aggregateArrayRef' => ["type:program",  #Collects all programs that MIP can handle
-					 "programType:variantCaller",
+					 "programType:variantCaller",  #Collects all variantCallers
+					 "reference:referencesDir",  #Collects all references in that are supposed to be in referenceDirectory
 					 "removeRedundantFiles:yes"],  #Collect all programs that are variantCallers
 		});
 
@@ -14328,6 +14329,8 @@ sub CheckParameterFiles {
 	);
     &CheckMandatoryArguments(\%mandatoryArgument, "CheckParameterFiles");
 
+    my $directory = "";  #Initialize for downstream path generation when required
+
     foreach my $associatedProgram (@{$associatedProgramsArrayRef}) {  #Check all programs that use parameter
 	
 	my $parameterSetSwitch = 0;
@@ -14335,34 +14338,16 @@ sub CheckParameterFiles {
 	if (defined(${$scriptParameterHashRef}{$associatedProgram}) && (${$scriptParameterHashRef}{$associatedProgram} > 0) ) {  #Only add active programs parameters	    
 	    
 	    $parameterSetSwitch = 1;		    
-	    
-	    if ($parameterExistsCheck eq "directory") {  #Check dir existence
+	    if (exists(${$parameterHashRef}{$parameterName}{'reference'})) {  #Expect file to be in referenceDirectory
 		
-		if ($parameterName eq "inFilesDirs") {
-		    
-		    for (my $indirectoryCount=0;$indirectoryCount<scalar(@{${$scriptParameterHashRef}{'inFilesDirs'}});$indirectoryCount++) {
-			
-			&CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
-					 'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-					 'itemNameRef' => \${$scriptParameterHashRef}{'inFilesDirs'}[$indirectoryCount],
-					 'parameterNameRef' => \$parameterName,
-					 'itemTypeToCheck' => $parameterExistsCheck,
-					});
-		    }
-		}
-		else {
-
-		    &CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
-				     'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-				     'itemNameRef' => \${$scriptParameterHashRef}{$parameterName},
-				     'parameterNameRef' => \$parameterName,
-				     'itemTypeToCheck' => $parameterExistsCheck,
-				    });		}
+		$directory = $$referencesDirectoryRef."/";
 	    }
-	    elsif ( ($parameterExistsCheck eq "file") && (defined(${$scriptParameterHashRef}{$parameterName})) ) {  #Check file existence in reference directory
+	    if (defined(${$scriptParameterHashRef}{$parameterName}) ) {  #Check parameter existence
 		
 		if (${$parameterHashRef}{$parameterName}{'dataType'} eq "SCALAR") {
-
+		    
+		    my $path .= $directory.${$scriptParameterHashRef}{$parameterName};
+		    
 		    if ($parameterName eq "mosaikJumpDbStub") {
 			
 			## Checks files to be built by combining filename stub with fileendings
@@ -14371,7 +14356,7 @@ sub CheckParameterFiles {
 						    'fileEndingsRef' => \@{${$fileInfoHashRef}{'mosaikJumpDbStubFileEndings'}},
 						    'parameterName' => "mosaikJumpDbStub",
 						   }); 
-		}
+		    }
 		    elsif ($parameterName eq "bwaBuildReference") {
 			
 			## Checks files to be built by combining filename stub with fileendings
@@ -14380,23 +14365,6 @@ sub CheckParameterFiles {
 						    'fileEndingsRef' => \@{${$fileInfoHashRef}{'bwaBuildReferenceFileEndings'}},
 						    'parameterName' => "bwaBuildReference",
 						   });
-		    }
-		    elsif ($parameterName eq "humanGenomeReference") {
-			
-			my $path = $$referencesDirectoryRef."/".${$scriptParameterHashRef}{$parameterName};
-			&CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
-					 'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-					 'itemNameRef' => \$path,
-					 'parameterNameRef' => \$parameterName,
-					 'itemTypeToCheck' => $parameterExistsCheck,
-					});  #Check reference genome		    
-
-			## Check the existance of associated Human genome files
-			&CheckHumanGenomeFileEndings({'parameterHashRef' => \%{$parameterHashRef},
-						      'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-						      'fileInfoHashRef' => \%{$fileInfoHashRef},
-						      'parameterNameRef' => \$parameterName
-						     });
 		    }
 		    elsif ($parameterName eq "sampleInfoFile") {
 			
@@ -14426,8 +14394,6 @@ sub CheckParameterFiles {
 			    ${$scriptParameterHashRef}{'VcfParserOutputFileCount'} = 1;  #To track if VCFParser was used with a vcfParserSelectFile (=2) or not (=1)
 			}
 			else {  #To enable addition of selectFile to sampleInfo                                                                       
-			    
-			    my $path = $$referencesDirectoryRef."/".${$scriptParameterHashRef}{$parameterName};
 			    &CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
 					     'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 					     'itemNameRef' => \$path,
@@ -14445,11 +14411,9 @@ sub CheckParameterFiles {
 		    }
 		    elsif ($parameterName eq "rankModelFile") {  
 			
-			if (!defined(${$scriptParameterHashRef}{'rankModelFile'})) {  #Do nothing since no rank model config file was given. Usse default supplied by ranking script
+			if (!defined(${$scriptParameterHashRef}{'rankModelFile'})) {  #Do nothing since no rank model config file was given. Use default supplied by ranking script
 			}
 			else {  #To enable addition of rankModel file and version to sampleInfo                                                                       
-			    
-			    my $path = $$referencesDirectoryRef."/".${$scriptParameterHashRef}{$parameterName};
 			    &CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
 					     'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 					     'itemNameRef' => \$path,
@@ -14460,17 +14424,36 @@ sub CheckParameterFiles {
 		    }
 		    else {
 			
-			my $path = $$referencesDirectoryRef."/".${$scriptParameterHashRef}{$parameterName};
 			&CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
 					 'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 					 'itemNameRef' => \$path,
 					 'parameterNameRef' => \$parameterName,
 					 'itemTypeToCheck' => $parameterExistsCheck,
 					});
+			if ($path =~/\.gz$/) {  #Check for tabix index as well
+			 
+			    $path .=".tbi";
+			    &CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
+					     'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+					     'itemNameRef' => \$path,
+					     'parameterNameRef' => \$parameterName,
+					     'itemTypeToCheck' => $parameterExistsCheck,
+					    });
+			}
+			
+			if ($parameterName eq "humanGenomeReference") {		    
+			    
+			    ## Check the existance of associated Human genome files
+			    &CheckHumanGenomeFileEndings({'parameterHashRef' => \%{$parameterHashRef},
+							  'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+							  'fileInfoHashRef' => \%{$fileInfoHashRef},
+							  'parameterNameRef' => \$parameterName
+							 });
+			}
 		    }
 		}
 		if (${$parameterHashRef}{$parameterName}{'dataType'} eq "ARRAY") {
-		 
+		    
 		    if ($parameterName eq "annovarTableNames") {
 			
 			## Defines and adds annovar tables parameters to hash
@@ -14480,63 +14463,56 @@ sub CheckParameterFiles {
 		    }
 		    else {
 			
-			for (my $fileCounter=0;$fileCounter<scalar(@{${$scriptParameterHashRef}{$parameterName}});$fileCounter++) {
+			foreach my $file (@{${$scriptParameterHashRef}{$parameterName}}) {
 			    
-			    my $path = $$referencesDirectoryRef."/".${$scriptParameterHashRef}{$parameterName}[$fileCounter];
-			    
-			    if ($parameterName eq "picardToolsMergeSamFilesPrevious") {
-				
-				$path = ${$scriptParameterHashRef}{$parameterName}[$fileCounter];
-			    }
+			    my $path .= $directory.$file;
 			    &CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
 					     'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 					     'itemNameRef' => \$path,
 					     'parameterNameRef' => \$parameterName,
 					     'itemTypeToCheck' => $parameterExistsCheck,
 					    });
-			}
-		    }
-		}
-		if (${$parameterHashRef}{$parameterName}{'dataType'} eq "HASH") { 
 
-		    if ($parameterName eq "snpSiftAnnotationFiles"){
-			
-			my %snpEffFile = &DefineSnpEffFiles(\%{$parameterHashRef});
-			
-			for my $file (keys %{${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}}) {
-			    
-			    my $path = $$referencesDirectoryRef."/".$file;
-			    &CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
-					     'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-					     'itemNameRef' => \$path,
-					     'parameterNameRef' => \$file,
-					     'itemTypeToCheck' => $parameterExistsCheck,
-					    });
-			    
 			    if ($file =~/\.gz$/) {  #Check for tabix index as well
 				
 				my $fileIndex = $file.".tbi";
-				my $path = $$referencesDirectoryRef."/".$fileIndex;
+				$path .=".tbi";
 				&CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
 						 'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 						 'itemNameRef' => \$path,
 						 'parameterNameRef' => \$fileIndex,
 						 'itemTypeToCheck' => $parameterExistsCheck,
-						});
+					    });
 			    }
 			}
 		    }
-		    else {
+		}
+		if (${$parameterHashRef}{$parameterName}{'dataType'} eq "HASH") { 
+		    
+		    for my $file (keys %{${$scriptParameterHashRef}{$parameterName}}) {
 			
-			for my $file (keys %{${$scriptParameterHashRef}{$parameterName}}) {
+			my $path .= $directory.$file;
+			&CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
+					 'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+					 'itemNameRef' => \$path,
+					 'parameterNameRef' => \$file,
+					 'itemTypeToCheck' => $parameterExistsCheck,
+					});
+			
+			if ($file =~/\.gz$/) {  #Check for tabix index as well
 			    
-			    my $path = $$referencesDirectoryRef."/".$file;
+			    my $fileIndex = $file.".tbi";
+			    $path .=".tbi";
 			    &CheckExistance({'parameterHashRef' => \%{$parameterHashRef},
 					     'scriptParameterHashRef' => \%{$scriptParameterHashRef},
 					     'itemNameRef' => \$path,
-					     'parameterNameRef' => \$file,
+					     'parameterNameRef' => \$fileIndex,
 					     'itemTypeToCheck' => $parameterExistsCheck,
 					    });
+			}
+			if ($parameterName eq "snpSiftAnnotationFiles"){
+			    
+			    my %snpEffFile = &DefineSnpEffFiles(\%{$parameterHashRef});
 			}
 		    }
 		}
@@ -19229,6 +19205,8 @@ sub EvalParameterHash {
     $nonMandatoryKey{'removeRedundantFiles'}{'values'} = ["yes"];
     $nonMandatoryKey{'removalSetting'}{'keyDataType'} = "SCALAR";
     $nonMandatoryKey{'removalSetting'}{'values'} = ["single", "merged", "family", "variantAnnotation"];
+    $nonMandatoryKey{'reference'}{'keyDataType'} = "SCALAR";
+    $nonMandatoryKey{'reference'}{'values'} = ["referencesDir"];
 
     &CheckKeys($parameterHashRef, \%mandatoryKey, \%nonMandatoryKey, \$filePath);
 
