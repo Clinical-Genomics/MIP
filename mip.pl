@@ -8108,9 +8108,9 @@ sub GATKHaploTypeCaller {
 	print $XARGSFILEHANDLE "--variant_index_parameter 128000 ";
 	print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 
-	if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
+	if ($targetIntervalsPath) {
 
-	    print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit base score recalibration to targets kit target file
+	    print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit to targets kit target file
 	}
 	
 	if ($PicardToolsMergeSwitch == 1) {  #Alignment BAM-files merged previously
@@ -8353,7 +8353,7 @@ sub GATKBaseReCalibration {
 	    print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus	    	    
 	    print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 
-	    if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
+	    if ($targetIntervalsPath) {
 
 		print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit base score recalibration to targets kit target file
 	    }
@@ -8408,7 +8408,7 @@ sub GATKBaseReCalibration {
 	    }
 	    print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 
-	    if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
+	    if ($targetIntervalsPath) {
 		
 		print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit base score recalibration to targets kit target file
 	    }
@@ -8536,7 +8536,7 @@ sub GATKBaseReCalibration {
 		print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus
 		print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 
-		if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
+		if ($targetIntervalsPath) {
 		    
 		    print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit base score recalibration to targets kit target file
 		}
@@ -8591,7 +8591,7 @@ sub GATKBaseReCalibration {
 		}
 		print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 
-		if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
+		if ($targetIntervalsPath) {
 		    
 		    print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit base score recalibration to targets kit target file
 		}
@@ -8817,9 +8817,9 @@ sub GATKReAligner {
 	    print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus	    
 	    print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 
-	    if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
+	    if ($targetIntervalsPath) {
 
-		print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit base score recalibration to targets kit target file
+		print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit to targets kit target file
 	    }
 
 	    print $XARGSFILEHANDLE "-I ".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile	    
@@ -8860,9 +8860,9 @@ sub GATKReAligner {
 	    print $XARGSFILEHANDLE "-targetIntervals ".$intermediarySampleDirectory."/".$infile.$outfileEnding."_".$$contigRef.".intervals ";
 	    print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 
-	    if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
-		
-		print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit base score recalibration to targets kit target file
+	    if ($targetIntervalsPath) {
+
+		print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit to targets kit target file
 	    }
 
 	    print $XARGSFILEHANDLE "-I ".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile per contig
@@ -8962,9 +8962,9 @@ sub GATKReAligner {
 		print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{'GATKDownSampleToCoverage'}." ";  #Coverage to downsample to at any given locus	 
 		print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 
-		if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
+		if ($targetIntervalsPath) {
 		    
-		    print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit base score recalibration to targets kit target file
+		    print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit to targets kit target file
 		}
 
 		print $XARGSFILEHANDLE "-I ".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile per contig
@@ -9005,9 +9005,9 @@ sub GATKReAligner {
 		print $XARGSFILEHANDLE "-targetIntervals ".$intermediarySampleDirectory."/".$infile.$outfileEnding."_".$$contigRef.".intervals ";
 		print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 
-		if ( (${$scriptParameterHashRef}{'analysisType'} eq "exomes") || (${$scriptParameterHashRef}{'analysisType'} eq "rapid") ) { #Exome/rapid analysis
+		if ($targetIntervalsPath) {
 		    
-		    print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit base score recalibration to targets kit target file
+		    print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit to targets kit target file
 		}
 		
 		print $XARGSFILEHANDLE "-I ".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile per contig
@@ -20543,8 +20543,6 @@ sub PrepareGATKTargetIntervals {
     my $tempDirectoryRef = ${$argHashRef}{'tempDirectoryRef'};
     my $addEnding = ${$argHashRef}{'addEnding'};
 
-    my $targetIntervalsPath = $$tempDirectoryRef."/".$$targetIntervalFileListsRef;
-
     if ( ($$analysisTypeRef eq "exomes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
 	
 	## Mandatory arguments
@@ -20556,7 +20554,8 @@ sub PrepareGATKTargetIntervals {
 	    );
 	
 	&CheckMandatoryArguments(\%mandatoryArgument, "PrepareGATKTargetIntervals");
-	
+
+	my $targetIntervalsPath = $$tempDirectoryRef."/".$$targetIntervalFileListsRef;
 	
 	## Copies file to temporary directory.
 	&MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE,
