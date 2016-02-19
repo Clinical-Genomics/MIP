@@ -12842,15 +12842,33 @@ sub ReadPlinkPedigreeFile {
 ##         : $filePath                                 => The pedigree file
 ###FORMAT: FamliyID\tSampleID\tFather\tMother\tSex(1=male; 2=female; other=unknown)\tPhenotype(-9 missing, 0 missing, 1 unaffected, 2 affected)..n
 
-    my $parameterHashRef = $_[0];
-    my $scriptParameterHashRef = $_[1];
-    my $sampleInfoHashRef = $_[2];
-    my $fileInfoHashRef = $_[3];
-    my $supportedCaptureKitHashRef = $_[4];
-    my $exomeTargetBedInfileListsArrayRef = $_[5];
-    my $exomeTargetPaddedBedInfileListsArrayRef = $_[6];
-    my $GATKTargetPaddedBedIntervalListsArrayRef = $_[7];
-    my $filePath = $_[8];
+    my ($argHashRef) = @_;
+    
+    my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+		   );
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
+    my $supportedCaptureKitHashRef = ${$argHashRef}{'supportedCaptureKitHashRef'};
+    my $exomeTargetBedInfileListsArrayRef = ${$argHashRef}{'exomeTargetBedInfileListsArrayRef'};
+    my $exomeTargetPaddedBedInfileListsArrayRef = ${$argHashRef}{'exomeTargetPaddedBedInfileListsArrayRef'};
+    my $GATKTargetPaddedBedIntervalListsArrayRef = ${$argHashRef}{'GATKTargetPaddedBedIntervalListsArrayRef'};
+    my $filePath = ${$argHashRef}{'filePath'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'fileInfoHashRef' => ${$fileInfoHashRef}{'humanGenomeReferenceFileEndings'},  #Any MIP mandatory key will do
+			     'supportedCaptureKitHashRef' => ${$supportedCaptureKitHashRef}{'Latest'},  #Any MIP mandatory key will do
+			     'filePath' => $filePath,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "ReadPlinkPedigreeFile");
     
     my @pedigreeFileElements = ("FamilyID", "SampleID", "Father", "Mother", "Sex", "Phenotype", );
     my @pedigreeSampleIDs;
@@ -14126,6 +14144,11 @@ sub AddToScriptParameter {
     
     my ($argHashRef) = @_;
 
+    my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+
     ## Flatten argument(s)
     my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
     my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
@@ -14138,9 +14161,19 @@ sub AddToScriptParameter {
     my $GATKTargetPaddedBedIntervalListsArrayRef = ${$argHashRef}{'GATKTargetPaddedBedIntervalListsArrayRef'};
     my $associatedProgramsArrayRef = ${$argHashRef}{'associatedProgramsArrayRef'};
     my $parameterName = ${$argHashRef}{'parameterName'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
 
     my $elementSeparatorRef = \${$parameterHashRef}{$parameterName}{'elementSeparator'};
-    
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'fileInfoHashRef' => ${$fileInfoHashRef}{'humanGenomeReferenceFileEndings'},  #Any MIP mandatory key will do
+			     'supportedCaptureKitHashRef' => ${$supportedCaptureKitHashRef}{'Latest'},  #Any MIP mandatory key will do
+			     'associatedProgramsArrayRef' => ${$associatedProgramsArrayRef}[0],
+			     'parameterName' => $parameterName,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "AddToScriptParameter");
+
     foreach my $associatedProgram (@{$associatedProgramsArrayRef}) {  #Check all programs that use parameter
 
 	my $parameterSetSwitch = 0;
@@ -14248,7 +14281,16 @@ sub AddToScriptParameter {
     if ($parameterName eq "pedigreeFile") {
 	
 	## Reads familyID_pedigree file in PLINK format. Checks for pedigree data for allowed entries and correct format. Add data to sampleInfo depending on user info.
-	&ReadPlinkPedigreeFile(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$fileInfoHashRef}, \%{$supportedCaptureKitHashRef}, \@{$exomeTargetBedInfileListsArrayRef}, \@{$exomeTargetPaddedBedInfileListsArrayRef}, \@{$GATKTargetPaddedBedIntervalListsArrayRef}, ${$scriptParameterHashRef}{'pedigreeFile'});
+	&ReadPlinkPedigreeFile({'parameterHashRef' => \%{$parameterHashRef},
+				'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+				'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+				'fileInfoHashRef' => \%{$fileInfoHashRef},
+				'supportedCaptureKitHashRef' => \%{$supportedCaptureKitHashRef},
+				'exomeTargetBedInfileListsArrayRef' => \@{$exomeTargetBedInfileListsArrayRef},
+				'exomeTargetPaddedBedInfileListsArrayRef' => \@{$exomeTargetPaddedBedInfileListsArrayRef},
+				'GATKTargetPaddedBedIntervalListsArrayRef' => \@{$GATKTargetPaddedBedIntervalListsArrayRef},
+				'filePath' => ${$scriptParameterHashRef}{'pedigreeFile'},
+			       });
     }
     ## Parameter set
     if (defined(${$scriptParameterHashRef}{$parameterName})) {
