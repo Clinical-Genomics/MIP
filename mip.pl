@@ -19365,9 +19365,9 @@ sub EvalParameterHash {
     $nonMandatoryKey{'programNamePath'}{'keyDataType'} = "ARRAY";
     $nonMandatoryKey{'elementSeparator'}{'keyDataType'} = "SCALAR";
     $nonMandatoryKey{'reduceIO'}{'keyDataType'} = "SCALAR";
-    $nonMandatoryKey{'reduceIO'}{'value'} = [1];
+    $nonMandatoryKey{'reduceIO'}{'values'} = [1];
     $nonMandatoryKey{'programType'}{'keyDataType'} = "SCALAR";
-    $nonMandatoryKey{'programType'}{'value'} = ["variantCaller"];
+    $nonMandatoryKey{'programType'}{'values'} = ["aligner", "variantCaller"];
     $nonMandatoryKey{'outDirectoryName'}{'keyDataType'} = "SCALAR";
     $nonMandatoryKey{'removalFileEnding'}{'keyDataType'} = "ARRAY";
     $nonMandatoryKey{'removeRedundantFiles'}{'keyDataType'} = "SCALAR";
