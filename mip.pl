@@ -681,9 +681,6 @@ if (exists($scriptParameter{'email'})) {  #Allow no malformed email adress
 		     'scriptParameterHashRef' => \%scriptParameter,
 		    });
 
-## Check aligner options
-&CheckAligner(\%scriptParameter);
-
 ## Test that the familyID and the sampleID(s) exists and are unique. Check if id sampleID contains "_".
 &CheckUniqueIDNs(\%scriptParameter, \@{$scriptParameter{'sampleIDs'}});  #Test that sampleIDs are unique
 
@@ -786,6 +783,21 @@ if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
 			 'default' => "notSetYet",
 			 'existCheck' => "file",
 			});
+
+## Adds dynamic aggregate information from definitions to parameterHash
+&AddToParameter({'parameterHashRef' => \%parameter,
+		 'aggregateArrayRef' => ["type:program",  #Collects all programs that MIP can handle
+					 "programType:variantCaller",  #Collects all variantCallers
+					 "programType:aligner",
+					 "reference:referencesDir",  #Collects all references in that are supposed to be in referenceDirectory
+					 "removeRedundantFiles:yes"],  #Collect all programs that are variantCallers
+		});
+
+## Check that the correct number of aligners is used in MIP and sets the aligner flag accordingly
+&CheckAligner({'parameterHashRef' => \%parameter,
+	       'scriptParameterHashRef' => \%scriptParameter,
+	       'broadcastsArrayRef' => \@broadcasts,
+	      });
 
 ## Broadcast set parameters info
 foreach my $parameterInfo (@broadcasts) {
@@ -912,13 +924,6 @@ if ($scriptParameter{'writeConfigFile'} ne 0) {  #Write config file for family
     &WriteYAML(\%scriptParameter, \$scriptParameter{'writeConfigFile'});  #Write used settings to configfile
 }
 
-## Adds dynamic aggregate information from definitions to parameterHash
-&AddToParameter({'parameterHashRef' => \%parameter,
-		 'aggregateArrayRef' => ["type:program",  #Collects all programs that MIP can handle
-					 "programType:variantCaller",  #Collects all variantCallers
-					 "reference:referencesDir",  #Collects all references in that are supposed to be in referenceDirectory
-					 "removeRedundantFiles:yes"],  #Collect all programs that are variantCallers
-		});
 
 &CheckPrioritizeVariantCallers(\%parameter, \%scriptParameter);
 
@@ -14036,7 +14041,7 @@ sub AddTargetlistsToScriptParameter {
 ##         : $sampleInfoHashRef           => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef             => The fileInfo hash {REF}
 ##         : $supportedCaptureKitHashRef  => The supported capture kits hash {REF}
-##         : $broadcastsArrayRef          => Holds the parameters info for broadcasting later
+##         : $broadcastsArrayRef          => Holds the parameters info for broadcasting later {REF}
 ##         : $targetIntervalListsArrayRef => The target list interval file
 ##         : $familyIDRef                 => The familyID {REF}
 ##         : $parameterName               => Parameter name
@@ -14256,7 +14261,7 @@ sub AddToScriptParameter {
 ##         : $sampleInfoHashRef                        => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef                          => The fileInfo hash {
 ##         : $supportedCaptureKitHashRef               => The supported capture kits hash {REF}
-##         : $broadcastsArrayRef                       => Holds the parameters info for broadcasting later
+##         : $broadcastsArrayRef                       => Holds the parameters info for broadcasting later {REF}
 ##         : $exomeTargetBedInfileListsArrayRef        => The exome target BED infiles array {REF}
 ##         : $exomeTargetPaddedBedInfileListsArrayRef  => The exome target padded BED infiles array {REF}
 ##         : $GATKTargetPaddedBedIntervalListsArrayRef => The exome target padded BED infiles array {REF}
@@ -14449,7 +14454,7 @@ sub CheckParameterFiles {
 ##         : $fileInfoHashRef                    => The fileInfo hash {REF}
 ##         : $supportedCaptureKitHashRef         => The supported capture kits hash {REF}
 ##         : $annovarTableHashRef                => annovarTableHashRef {REF}
-##         : $broadcastsArrayRef                 => Holds the parameters info for broadcasting later
+##         : $broadcastsArrayRef                 => Holds the parameters info for broadcasting later {REF}
 ##         : $annovarSupportedTableNamesArrayRef => The supported annovar reference names array {REF}
 ##         : $associatedProgramsArrayRef         => The parameters program(s) {REF}
 ##         : $familyIDRef                        => The familyIDRef {REF}
@@ -15939,7 +15944,7 @@ sub SetAutoBuildFeature {
 ##         : $parameterHashRef       => The parameter hash {REF}
 ##         : $scriptParameterHashRef => The activa parameters for this analysis hash {REF}
 ##         : $fileInfoHashRef        => The fileInfo hash {REF}
-##         : $broadcastsArrayRef     => Holds the parameters info for broadcasting later
+##         : $broadcastsArrayRef     => Holds the parameters info for broadcasting later {REF}
 ##         : $parameterName          => MIP parameter name 
 ##         : $referenceFileEndingRef => Reference file name ending {REF}
 ##         : $referenceFileNameRef   => Reference file name {REF}
@@ -19327,59 +19332,6 @@ sub AddToSampleInfo {
     }
 }
 
-sub CheckAligner {
-	
-##CheckAligner
-
-##Function : Check that the correct aligner is used in MIP
-##Returns  : ""
-##Arguments: $scriptParameterHashRef
-##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
-	
-    my $scriptParameterHashRef = $_[0];
-
-    if ( (${$scriptParameterHashRef}{'pMosaikBuild'} > 0) || (${$scriptParameterHashRef}{'pMosaikAlign'} > 0)) {  #Mosaik track
-	
-	if ( (${$scriptParameterHashRef}{'pBwaAln'} == 0) && (${$scriptParameterHashRef}{'pBwaSampe'} == 0) && (${$scriptParameterHashRef}{'pBwaMem'} == 0) ) {
-	    
-	    if (${$scriptParameterHashRef}{'aligner'} eq "bwa") {
-		
-		${$scriptParameterHashRef}{'aligner'} = "mosaik";
-		$logger->warn("Changed aligner to mosaik based on your supplied parameters", "\n");
-	    }
-	}
-	else {
-	    
-	    $logger->fatal($USAGE, "\n");
-	    $logger->fatal("You have to choose either mosaik or bwa to perform alignments or specify which aligner (-aligner 'mosaik' or 'bwa') was used if you want to only run programs after alignment.", "\n");
-	    exit 1;
-	}
-    }
-    elsif ( (${$scriptParameterHashRef}{'pBwaAln'} > 0) || (${$scriptParameterHashRef}{'pBwaSampe'} > 0) || (${$scriptParameterHashRef}{'pBwaMem'} > 0)) {  #BWA track
-	
-	if ( (${$scriptParameterHashRef}{'pMosaikBuild'} == 0) || (${$scriptParameterHashRef}{'pMosaikAlign'} == 0)) {
-
-	    if (${$scriptParameterHashRef}{'aligner'} eq "mosaik") {
-		
-		${$scriptParameterHashRef}{'aligner'} = "bwa";
-		$logger->warn("Changed aligner to bwa based on your supplied parameters", "\n");
-	    }
-	}
-	else {
-
-	    $logger->fatal($USAGE, "\n");
-	    $logger->fatal("You have to choose either mosaik or bwa to perform alignments or specify which aligner (-aligner 'mosaik' or 'bwa') was used if you want to only run programs after alignment.", "\n");
-	    exit 1;
-	}
-    }
-    elsif (!defined(${$scriptParameterHashRef}{'aligner'})) {
-	
-	$logger->fatal($USAGE, "\n");
-	$logger->fatal("You have to choose either mosaik or bwa to perform alignments or specify which aligner (-aligner 'mosaik' or 'bwa') was used if you want to only run programs after alignment.", "\n");
-	exit 1;
-    }
-}
-
 
 sub EvalParameterHash {
 
@@ -19413,9 +19365,9 @@ sub EvalParameterHash {
     $nonMandatoryKey{'programNamePath'}{'keyDataType'} = "ARRAY";
     $nonMandatoryKey{'elementSeparator'}{'keyDataType'} = "SCALAR";
     $nonMandatoryKey{'reduceIO'}{'keyDataType'} = "SCALAR";
-    $nonMandatoryKey{'reduceIO'}{'value'} = [1];
+    $nonMandatoryKey{'reduceIO'}{'values'} = [1];
     $nonMandatoryKey{'programType'}{'keyDataType'} = "SCALAR";
-    $nonMandatoryKey{'programType'}{'value'} = ["variantCaller"];
+    $nonMandatoryKey{'programType'}{'values'} = ["aligner", "variantCaller"];
     $nonMandatoryKey{'outDirectoryName'}{'keyDataType'} = "SCALAR";
     $nonMandatoryKey{'removalFileEnding'}{'keyDataType'} = "ARRAY";
     $nonMandatoryKey{'removeRedundantFiles'}{'keyDataType'} = "SCALAR";
@@ -20794,6 +20746,54 @@ sub PrepareGATKTargetIntervals {
 	}
 	return $targetIntervalsPath;
     }
+}
+
+
+sub CheckAligner {
+	
+##CheckAligner
+
+##Function : Check that the correct number of aligners is used in MIP and sets the aligner flag accordingly.
+##Returns  : ""
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $broadcastsArrayRef
+##         : $parameterHashRef       => The parameter hash {REF}
+##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $broadcastsArrayRef     => Holds the parameters info for broadcasting later {REF}
+
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $broadcastsArrayRef = ${$argHashRef}{'broadcastsArrayRef'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'broadcastsArrayRef' => @{$broadcastsArrayRef}[0]
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "CheckAligner");
+
+    my %aligner;;
+
+    foreach my $aligner (@{${$parameterHashRef}{'dynamicParameters'}{'aligner'}}) {
+	
+	if (${$scriptParameterHashRef}{$aligner} > 0) {  #Active aligner    
+	    
+	    $aligner{'totalActiveAlignerCount'}++;
+	    push(@{$aligner{'activeAligners'}}, $aligner);
+	    ${$scriptParameterHashRef}{'aligner'} = ${$parameterHashRef}{$aligner}{'outDirectoryName'};  #Set aligner parameter depending on active aligner
+
+	    my $info = "Set aligner to: ".${$scriptParameterHashRef}{'aligner'};
+	    push(@{$broadcastsArrayRef}, $info);  #Add info to broadcasts
+	}
+    }
+    if ($aligner{'totalActiveAlignerCount'} > 1) {
+
+	$logger->fatal($USAGE, "\n");
+	$logger->fatal("You have activate more than 1 aligner: ".join(", ", @{$aligner{'activeAligners'}}).". MIP currently only supports 1 aligner per analysis.", "\n");
+	exit 1;
+    } 
 }
 
 
