@@ -48,7 +48,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -f/--familyID Group id of samples to be compared (defaults to "0" (=no), (Ex: 1 for IDN 1-1-1A))
                -ped/--pedigreeFile (defaults to "")
                -hgr/--humanGenomeReference Fasta file for the human genome reference (defaults to "Homo_sapiens.GRCh37.d5.fasta;1000G decoy version 5")
-               -al/--aligner Setting which aligner was used for alignment in previous analysis (defaults to "bwa")
+               -ald/--alignerOutDir Setting which aligner out directory was used for alignment in previous analysis (defaults to "{outDataDir}{ {aligner}{outDirectoryName} }")
                -at/--analysisType Type of analysis to perform (defaults to "exomes";Valid entries: "genomes", "exomes", "rapid")
                -mc/--maximumCores The maximum number of cores per node used in the analysis (defaults to "8")
                -c/--configFile YAML config file for script parameters (defaults to "")
@@ -292,7 +292,6 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 &EvalParameterHash(\%parameter, $Bin."/definitions/defineParameters.yaml");
 
 my $mipVersion = "v2.5.6";	#Set MIP version
-my $aligner;
 
 ## Target definition files
 my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists);  #Arrays for target bed infile lists
@@ -369,7 +368,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'f|familyID:s' => \$parameter{'familyID'}{'value'},  #Family group ID (Merged to same vcf file after GATK Base Recalibration)
 	   'ped|pedigreeFile:s' => \$parameter{'pedigreeFile'}{'value'},  #Pedigree file
 	   'hgr|humanGenomeReference:s' => \$parameter{'humanGenomeReference'}{'value'},  #Human genome reference
-	   'al|aligner:s' => \$parameter{'aligner'}{'value'},  #determining which aligner was used previously (if not specified)
+	   'al|alignerOutDir:s' => \$parameter{'alignerOutDir'}{'value'},  #determining which aligner out data directory was used previously (if not specified)
 	   'at|analysisType:s' => \$parameter{'analysisType'}{'value'},  #Type of analysis
 	   'mc|maximumCores:n' => \$parameter{'maximumCores'}{'value'},  #Per node
 	   'c|configFile:s' => \$parameter{'configFile'}{'value'},
@@ -543,7 +542,7 @@ if (exists($parameter{'configFile'}{'value'})) {  #Input from cmd
     &ReplaceConfigParamWithCMDInfo(\%parameter, \%scriptParameter, "clusterConstantPath");
     &ReplaceConfigParamWithCMDInfo(\%parameter, \%scriptParameter, "analysisConstantPath");
     &ReplaceConfigParamWithCMDInfo(\%parameter, \%scriptParameter, "analysisType");
-    &ReplaceConfigParamWithCMDInfo(\%parameter, \%scriptParameter, "aligner");
+    &ReplaceConfigParamWithCMDInfo(\%parameter, \%scriptParameter, "alignerOutDir");
 
     foreach my $orderParameterElement (@orderParameters) {  #Loop through all parameters and update info   
 
@@ -970,7 +969,7 @@ my $uncompressedFileSwitch = &InfilesReFormat({'scriptParameterHashRef' => \%scr
 					       'infilesBothStrandsNoEndingHashRef' => \%infilesBothStrandsNoEnding,
 					       'laneHashRef' => \%lane,
 					       'jobIDHashRef' => \%jobID,
-					       'alignerRef' => \$scriptParameter{'aligner'}, 
+					       'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 					       'programName' => "InfilesReFormat",
 					      });  #Required to format infiles correctly for subsequent input into aligners
 
@@ -1092,7 +1091,7 @@ if ($scriptParameter{'pMosaikBuild'} > 0) {  #Run MosaikBuild
 		      'laneHashRef' => \%lane,
 		      'jobIDHashRef' => \%jobID,
 		      'sampleID' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
-		      'aligner' => \$scriptParameter{'aligner'}, 
+		      'alignerOutDir' => \$scriptParameter{'alignerOutDir'}, 
 		      'programName' => "MosaikBuild",
 		     });	
     }
@@ -1106,7 +1105,7 @@ if ($scriptParameter{'pMosaikAlign'} > 0) {  #Run MosaikAlign
 	
 	if ( ($parameter{'humanGenomeReference'}{'buildFile'} eq 1) || ($parameter{'mosaikAlignReference'}{'buildFile'} eq 1) || ($parameter{'mosaikJumpDbStub'}{'buildFile'} eq 1) ) {
 	    
-	    &BuildMosaikAlignPreRequisites(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infilesLaneNoEnding, \%jobID, \%supportedCosmidReference, \@{$fileInfo{'mosaikJumpDbStubFileEndings'}}, \$fileInfo{'humanGenomeReferenceSource'}, \$fileInfo{'humanGenomeReferenceVersion'}, $scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "MosaikAlign");
+	    &BuildMosaikAlignPreRequisites(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infilesLaneNoEnding, \%jobID, \%supportedCosmidReference, \@{$fileInfo{'mosaikJumpDbStubFileEndings'}}, \$fileInfo{'humanGenomeReferenceSource'}, \$fileInfo{'humanGenomeReferenceVersion'}, $scriptParameter{'familyID'}, $scriptParameter{'alignerOutDir'}, "MosaikAlign");
 	    
 	}
 	if ( ($parameter{'mosaikAlignNeuralNetworkPeFile'}{'buildFile'} eq 1) || ($parameter{'mosaikAlignNeuralNetworkSeFile'}{'buildFile'} eq 1) ){
@@ -1117,7 +1116,7 @@ if ($scriptParameter{'pMosaikAlign'} > 0) {  #Run MosaikAlign
     }
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
-	&MosaikAlign(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infile, \%inDirPath, \%infilesLaneNoEnding, \%jobID, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'}, "MosaikAlign");	
+	&MosaikAlign(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infile, \%inDirPath, \%infilesLaneNoEnding, \%jobID, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'alignerOutDir'}, "MosaikAlign");	
     }
 }
 
@@ -1138,7 +1137,7 @@ if ($scriptParameter{'pBwaMem'} > 0) {  #Run BWA Mem
 				    'jobIDHashRef' => \%jobID,
 				    'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
 				    'bwaBuildReferenceFileEndingsArrayRef' => \@{$fileInfo{'bwaBuildReferenceFileEndings'}},
-				    'aligner' => $scriptParameter{'aligner'},
+				    'alignerOutDir' => $scriptParameter{'alignerOutDir'},
 				    'programName' => "BwaMem",
 				   });
 	}
@@ -1154,7 +1153,7 @@ if ($scriptParameter{'pBwaMem'} > 0) {  #Run BWA Mem
 		 'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
 		 'jobIDHashRef' => \%jobID,
 		 'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
-		 'alignerRef' => \$scriptParameter{'aligner'}, 
+		 'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 		 'programName' => "BwaMem",
 		});	
     }    
@@ -1175,7 +1174,7 @@ if ($scriptParameter{'pPicardToolsMergeRapidReads'} > 0) {  #Run PicardToolsMerg
 				     'laneHashRef' => \%lane,
 				     'jobIDHashRef' => \%jobID,
 				     'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
-				     'alignerRef' => \$scriptParameter{'aligner'}, 
+				     'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 				     'programName' => "PicardToolsMergeRapidReads",
 				    });
     }    
@@ -1197,14 +1196,14 @@ if ($scriptParameter{'pBwaAln'} > 0) {  #Run BWA Aln
 				    'jobIDHashRef' => \%jobID,
 				    'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
 				    'bwaBuildReferenceFileEndingsArrayRef' => \@{$fileInfo{'bwaBuildReferenceFileEndings'}},
-				    'aligner' => $scriptParameter{'aligner'},
+				    'alignerOutDir' => $scriptParameter{'alignerOutDir'},
 				    'programName' => "BwaAln",
 				   });
 	}
     }
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
-	&BWAAln(\%parameter, \%scriptParameter, \%sampleInfo, \%infile, \%inDirPath, \%infilesLaneNoEnding, \%infilesBothStrandsNoEnding, \%jobID, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'}, "BwaAln");	
+	&BWAAln(\%parameter, \%scriptParameter, \%sampleInfo, \%infile, \%inDirPath, \%infilesLaneNoEnding, \%infilesBothStrandsNoEnding, \%jobID, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'alignerOutDir'}, "BwaAln");	
     }    
 }
 
@@ -1224,14 +1223,14 @@ if ($scriptParameter{'pBwaSampe'} > 0) {  #Run BWA Sampe
 				    'jobIDHashRef' => \%jobID,
 				    'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
 				    'bwaBuildReferenceFileEndingsArrayRef' => \@{$fileInfo{'bwaBuildReferenceFileEndings'}},
-				    'aligner' => $scriptParameter{'aligner'},
+				    'alignerOutDir' => $scriptParameter{'alignerOutDir'},
 				    'programName' => "BwaSampe",
 				   });
 	}
     }
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
-	&BWASampe(\%parameter, \%scriptParameter, \%sampleInfo, \%infile, \%inDirPath, \%infilesLaneNoEnding, \%infilesBothStrandsNoEnding, \%jobID, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'}, "BwaSampe");
+	&BWASampe(\%parameter, \%scriptParameter, \%sampleInfo, \%infile, \%inDirPath, \%infilesLaneNoEnding, \%infilesBothStrandsNoEnding, \%jobID, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'alignerOutDir'}, "BwaSampe");
     }
 }
 
@@ -1249,7 +1248,7 @@ if ($scriptParameter{'reduceIO'} == 1) {  #Run consecutive models
 			       'laneHashRef' => \%lane,
 			       'jobIDHashRef' => \%jobID,
 			       'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
-			       'alignerRef' => \$scriptParameter{'aligner'}, 
+			       'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 			       'programName' => "BAMCalibrationAndGTBlock",
 			      });
 
@@ -1272,7 +1271,7 @@ else {
 				   'laneHashRef' => \%lane,
 				   'jobIDHashRef' => \%jobID,
 				   'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
-				   'alignerRef' => \$scriptParameter{'aligner'}, 
+				   'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 				   'fileEnding' => $sampleInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'fileEnding'},
 				   'programName' => "PicardToolsMergeSamFiles",
 				  });
@@ -1294,7 +1293,7 @@ else {
 				     'laneHashRef' => \%lane,
 				     'jobIDHashRef' => \%jobID,
 				     'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
-				     'alignerRef' => \$scriptParameter{'aligner'}, 
+				     'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 				     'programName' => "SambambaMarkduplicates",
 				    });
 	}
@@ -1321,7 +1320,7 @@ else {
 			    'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
 			    'jobIDHashRef' => \%jobID,
 			    'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
-			    'alignerRef' => \$scriptParameter{'aligner'}, 
+			    'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 			    'programName' => "GATKRealigner",
 			   });
 	}
@@ -1348,7 +1347,7 @@ else {
 				    'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
 				    'jobIDHashRef' => \%jobID,
 				    'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
-				    'alignerRef' => \$scriptParameter{'aligner'}, 
+				    'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 				    'programName' => "GATKBaseRecalibration",
 				   });
 	}
@@ -1370,7 +1369,7 @@ if ($scriptParameter{'pChanjoSexCheck'} > 0) {
 			 'laneHashRef' => \%lane,
 			 'jobIDHashRef' => \%jobID,
 			 'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
-			 'alignerRef' => \$scriptParameter{'aligner'}, 
+			 'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 			 'programName' => "ChanjoSexCheck",
 			});
     }
@@ -1390,7 +1389,7 @@ if ($scriptParameter{'pSambambaDepth'} > 0) {
 			'laneHashRef' => \%lane,
 			'jobIDHashRef' => \%jobID,
 			'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
-			'alignerRef' => \$scriptParameter{'aligner'}, 
+			'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 			'programName' => "SambambaDepth",
 		       });
     }
@@ -1411,7 +1410,7 @@ if ($scriptParameter{'pGenomeCoverageBED'} > 0) {  #Run GenomeCoverageBED
 			    'laneHashRef' => \%lane,
 			    'jobIDHashRef' => \%jobID,
 			    'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
-			    'alignerRef' => \$scriptParameter{'aligner'}, 
+			    'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 			    'programName' => "GenomeCoverageBED",
 			   });
     }
@@ -1433,7 +1432,7 @@ if ($scriptParameter{'pPicardToolsCollectMultipleMetrics'} > 0) {  #Run PicardTo
 					    'laneHashRef' => \%lane,
 					    'jobIDHashRef' => \%jobID,
 					    'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
-					    'alignerRef' => \$scriptParameter{'aligner'}, 
+					    'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 					    'programName' => "PicardToolsCollectMultipleMetrics",
 					   });
     }
@@ -1458,7 +1457,7 @@ if ($scriptParameter{'pPicardToolsCalculateHSMetrics'} > 0) {  #Run PicardToolsC
 					'laneHashRef' => \%lane,
 					'jobIDHashRef' => \%jobID,
 					'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
-					'alignerRef' => \$scriptParameter{'aligner'}, 
+					'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 					'programName' => "PicardToolsCalculateHSMetrics",
 				       });
     }
@@ -1470,7 +1469,7 @@ if ($scriptParameter{'pRCovPlots'} > 0) {  #Run Rcovplot scripts
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
-	&RCoveragePlots(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%lane, \%infilesLaneNoEnding, \%jobID, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'aligner'}, "RCovPlots");	
+	&RCoveragePlots(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%lane, \%infilesLaneNoEnding, \%jobID, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'alignerOutDir'}, "RCovPlots");	
     }
 }
 
@@ -1489,7 +1488,7 @@ if ($scriptParameter{'pSamToolsMpileUp'} > 0) {  #Run SamToolsMpileUp
 		      'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
 		      'laneHashRef' => \%lane,
 		      'jobIDHashRef' => \%jobID,
-		      'alignerRef' => \$scriptParameter{'aligner'}, 
+		      'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 		      'programName' => "SamToolsMpileUp",
 		     });
 }
@@ -1508,7 +1507,7 @@ if ($scriptParameter{'pFreebayes'} > 0) {  #Run Freebayes
 		'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
 		'laneHashRef' => \%lane,
 		'jobIDHashRef' => \%jobID,
-		'alignerRef' => \$scriptParameter{'aligner'}, 
+		'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 		'programName' => "Freebayes",
 	       });
 }
@@ -1535,7 +1534,7 @@ if ($scriptParameter{'pGATKHaploTypeCaller'} > 0) {  #Run GATK HaploTypeCaller
 			      'laneHashRef' => \%lane,
 			      'jobIDHashRef' => \%jobID,
 			      'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
-			      'alignerRef' => \$scriptParameter{'aligner'}, 
+			      'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 			      'programName' => "GATKHaploTypeCaller",
 			     });
     }
@@ -1554,7 +1553,7 @@ if ($scriptParameter{'pGATKGenoTypeGVCFs'} > 0) {  #Run GATK GenoTypeGVCFs. Done
 			'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
 			'laneHashRef' => \%lane,
 			'jobIDHashRef' => \%jobID,
-			'alignerRef' => \$scriptParameter{'aligner'}, 
+			'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 			'callType' => "BOTH",
 			'programName' => "GATKGenoTypeGVCFs",
 		       });
@@ -1566,7 +1565,7 @@ if ($scriptParameter{'pGATKGenoTypeGVCFs'} > 0) {  #Run GATK GenoTypeGVCFs. Done
 				   'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
 				   'laneHashRef' => \%lane,
 				   'jobIDHashRef' => \%jobID,
-				   'alignerRef' => \$scriptParameter{'aligner'}, 
+				   'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 				   'callType' => "BOTH",
 				   'programName' => "GATKGenoTypeGVCFs",
 				  });
@@ -1589,7 +1588,7 @@ if ($scriptParameter{'pGATKVariantRecalibration'} > 0) {  #Run GATK VariantRecal
 			       'fileInfoHashRef' => \%fileInfo,
 			       'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
 			       'jobIDHashRef' => \%jobID,
-			       'alignerRef' => \$scriptParameter{'aligner'}, 
+			       'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 			       'callType' => "BOTH",
 			       'programName' => "GATKVariantRecalibration",
 			      });
@@ -1606,7 +1605,7 @@ if ($scriptParameter{'pGATKCombineVariantCallSets'} > 0) {  #Run GATKCombineVari
 				 'fileInfoHashRef' => \%fileInfo,
 				 'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
 				 'jobIDHashRef' => \%jobID,
-				 'alignerRef' => \$scriptParameter{'aligner'}, 
+				 'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 				 'callType' => "BOTH",
 				 'programName' => "GATKCombineVariantCallSets",
 				});
@@ -1622,7 +1621,7 @@ if ($scriptParameter{'pSampleCheck'} > 0) {  #Run SampleCheck. Done per family
 		  'fileInfoHashRef' => \%fileInfo,
 		  'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
 		  'jobIDHashRef' => \%jobID,
-		  'alignerRef' => \$scriptParameter{'aligner'}, 
+		  'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 		  'callType' => "BOTH",
 		  'programName' => "SampleCheck",
 		 });
@@ -1656,7 +1655,7 @@ if ($scriptParameter{'pGATKPhaseByTransmission'} > 0) {  #Run GATK PhaseByTransm
     $logger->info("[GATK PhaseByTransmission]\n");
     
     &CheckBuildHumanGenomePreRequisites(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infilesLaneNoEnding, \%jobID, \%supportedCosmidReference, "GATKPhaseByTransmission");
-    &GATKPhaseByTransmission(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infilesLaneNoEnding, \%jobID, $scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH", "GATKPhaseByTransmission");
+    &GATKPhaseByTransmission(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infilesLaneNoEnding, \%jobID, $scriptParameter{'familyID'}, $scriptParameter{'alignerOutDir'}, "BOTH", "GATKPhaseByTransmission");
 }
 
 if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) {  #Run GATK ReadBackedPhasing. Done per family. NOTE: Needs phased calls
@@ -1664,7 +1663,7 @@ if ($scriptParameter{'pGATKReadBackedPhasing'} > 0) {  #Run GATK ReadBackedPhasi
     $logger->info("[GATK ReadBackedPhasing]\n");
     
     &CheckBuildHumanGenomePreRequisites(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infilesLaneNoEnding, \%jobID, \%supportedCosmidReference, "GATKReadBackedPhasing");
-    &GATKReadBackedPhasing(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%lane, \%infilesLaneNoEnding, \%jobID, $scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "BOTH", "GATKReadBackedPhasing");
+    &GATKReadBackedPhasing(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%lane, \%infilesLaneNoEnding, \%jobID, $scriptParameter{'familyID'}, $scriptParameter{'alignerOutDir'}, "BOTH", "GATKReadBackedPhasing");
 }
 
 if ($scriptParameter{'pGATKVariantEvalAll'} > 0) {  #Run GATK VariantEval for all variants. Done per sampleID
@@ -1684,7 +1683,7 @@ if ($scriptParameter{'pGATKVariantEvalAll'} > 0) {  #Run GATK VariantEval for al
 			     'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
 			     'jobIDHashRef' => \%jobID,
 			     'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
-			     'alignerRef' => \$scriptParameter{'aligner'}, 
+			     'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 			     'callType' => "BOTH",
 			     'programName' => "GATKVariantEvalAll",
 			      });
@@ -1708,7 +1707,7 @@ if ($scriptParameter{'reduceIO'} == 1) {  #Run consecutive models
 			     'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
 			     'jobIDHashRef' => \%jobID,
 			     'annovarTableHashRef' => \%annovarTable,
-			     'alignerRef' => \$scriptParameter{'aligner'}, 
+			     'alignerOutDir' => \$scriptParameter{'alignerOutDir'}, 
 			     'callType' => "BOTH",
 			     'programName' => "VariantAnnotationBlock",
 			      });
@@ -1725,7 +1724,7 @@ else {
 	     'fileInfoHashRef' => \%fileInfo,
 	     'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
 	     'jobIDHashRef' => \%jobID,
-	     'alignerRef' => \$scriptParameter{'aligner'}, 
+	     'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 	     'callType' => "BOTH",
 	     'programName' => "VT",
 	    });
@@ -1740,7 +1739,7 @@ else {
 				 'fileInfoHashRef' => \%fileInfo,
 				 'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
 				 'jobIDHashRef' => \%jobID,
-				 'alignerRef' => \$scriptParameter{'aligner'}, 
+				 'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 				 'callType' => "BOTH",
 				 'programName' => "VariantEffectPredictor",
 				});
@@ -1755,7 +1754,7 @@ else {
 		    'fileInfoHashRef' => \%fileInfo,
 		    'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
 		    'jobIDHashRef' => \%jobID,
-		    'alignerRef' => \$scriptParameter{'aligner'}, 
+		    'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 		    'callType' => "BOTH",
 		    'programName' => "VCFParser",
 		   });
@@ -1771,7 +1770,7 @@ else {
 	    
 	    if ($parameter{ $scriptParameter{'annovarTableNames'}[$tableNamesCounter] }{'buildFile'} eq 1) {
 		
-		&BuildAnnovarPreRequisites(\%parameter, \%scriptParameter, \%sampleInfo, \%infilesLaneNoEnding, \%jobID, \%annovarTable, $scriptParameter{'familyID'}, $scriptParameter{'aligner'}, "Annovar");
+		&BuildAnnovarPreRequisites(\%parameter, \%scriptParameter, \%sampleInfo, \%infilesLaneNoEnding, \%jobID, \%annovarTable, $scriptParameter{'familyID'}, $scriptParameter{'alignerOutDir'}, "Annovar");
 		last;  #Will handle all build tables within sbatch script
 	    }
 	}
@@ -1782,7 +1781,7 @@ else {
 		  'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
 		  'jobIDHashRef' => \%jobID,
 		  'annovarTableHashRef' => \%annovarTable,
-		  'alignerRef' => \$scriptParameter{'aligner'}, 
+		  'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 		  'callType' => "BOTH",
 		  'programName' => "Annovar",
 		 });
@@ -1799,7 +1798,7 @@ else {
 		 'fileInfoHashRef' => \%fileInfo,
 		 'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
 		 'jobIDHashRef' => \%jobID,
-		 'alignerRef' => \$scriptParameter{'aligner'}, 
+		 'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 		 'callType' => "BOTH",
 		 'programName' => "SnpEff",
 		});
@@ -1814,7 +1813,7 @@ else {
 		       'fileInfoHashRef' => \%fileInfo,
 		       'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
 		       'jobIDHashRef' => \%jobID,
-		       'alignerRef' => \$scriptParameter{'aligner'}, 
+		       'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 		       'callType' => "BOTH",
 		       'programName' => "RankVariants",
 		      });
@@ -1838,7 +1837,7 @@ if ($scriptParameter{'pGATKVariantEvalExome'} > 0) {  #Run GATK VariantEval for 
 			       'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
 			       'jobIDHashRef' => \%jobID,
 			       'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
-			       'alignerRef' => \$scriptParameter{'aligner'}, 
+			       'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 			       'callType' => "BOTH",
 			       'programName' => "GATKVariantEvalExome",
 			      });
@@ -1887,7 +1886,7 @@ if ($scriptParameter{'pAnalysisRunStatus'} > 0) {
 			'sampleInfoHashRef' => \%sampleInfo,
 			'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
 			'jobIDHashRef' => \%jobID,
-			'alignerRef' => \$scriptParameter{'aligner'}, 
+			'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 			'callType' => "BOTH",
 			'programName' => "AnalysisRunStatus",
 		       });
@@ -1902,7 +1901,7 @@ if ( ($scriptParameter{'pSacct'} > 0) && ($scriptParameter{'dryRunAll'} == 0) ) 
 	    'sampleInfoHashRef' => \%sampleInfo,
 	    'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
 	    'jobIDHashRef' => \%jobID,
-	    'alignerRef' => \$scriptParameter{'aligner'}, 
+	    'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
 	    'programName' => "Sacct",
 	   });
 }
@@ -1925,14 +1924,14 @@ sub Sacct {
     
 ##Function : Output SLURM info on each job via Sacct command
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerRef, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $familyIDRef                => The familyID {REF}
-##         : $alignerRef                 => The aligner used in the analysis {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $programName                => The program name
 
     my ($argHashRef) = @_;
@@ -1949,7 +1948,7 @@ sub Sacct {
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $familyIDRef = ${$argHashRef}{'familyIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $programName = ${$argHashRef}{'programName'};
 
     ## Mandatory arguments
@@ -1958,7 +1957,7 @@ sub Sacct {
 			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
 			     'jobIDHashRef' => ${$jobIDHashRef}{'Pan'}{'Pan'},
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'programName' => $programName,
 	);
      &CheckMandatoryArguments(\%mandatoryArgument, $programName);
@@ -1971,7 +1970,7 @@ sub Sacct {
 					    'FILEHANDLE' => $FILEHANDLE,
 					    'directoryID' => $$familyIDRef,
 					    'programName' => $programName,
-					    'programDirectory' => $$alignerRef,
+					    'programDirectory' => $$alignerOutDirRef,
 					   });
 
     print $FILEHANDLE "sacct --format=jobid,jobname%50,account,partition,alloccpus,TotalCPU,elapsed,start,end,state,exitcode -j ";
@@ -2180,7 +2179,7 @@ sub RemoveRedundantFiles {
     
 ##Function : Generates a sbatch script, which removes redundant files.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $familyIDRef, $aligner, $callType, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $familyIDRef, $alignerOutDir, $callType, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -2188,14 +2187,14 @@ sub RemoveRedundantFiles {
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $laneHashRef                => The lane info hash {REF}
 ##         : $familyIDRef                => The familyID
-##         : $alignerRef                 => The aligner used in the analysis
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis
 ##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 
     my ($argHashRef) = @_;
     
     my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
-		   'alignerRef' => \${$argHashRef}{'scriptParameterHashRef'}{'aligner'},
+		   'alignerOutDirRef' => \${$argHashRef}{'scriptParameterHashRef'}{'alignerOutDir'},
 		   'callType' => "BOTH",
 	);
     
@@ -2209,7 +2208,7 @@ sub RemoveRedundantFiles {
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
     my $laneHashRef = ${$argHashRef}{'laneHashRef'};
     my $familyIDRef = ${$argHashRef}{'familyIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $callType = ${$argHashRef}{'callType'};
     my $programName = ${$argHashRef}{'programName'};
 
@@ -2220,7 +2219,7 @@ sub RemoveRedundantFiles {
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
 			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'programName' => $programName,
 	);
      &CheckMandatoryArguments(\%mandatoryArgument, $programName);
@@ -2238,7 +2237,7 @@ sub RemoveRedundantFiles {
 					    'FILEHANDLE' => $FILEHANDLE,
 					    'directoryID' => $$familyIDRef,
 					    'programName' => $programName,
-					    'programDirectory' => $$alignerRef,
+					    'programDirectory' => $$alignerOutDirRef,
 					   });
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDCounter++) { 
@@ -2256,7 +2255,7 @@ sub RemoveRedundantFiles {
 		      'FILEHANDLE' => $FILEHANDLE,
 		      'sampleID' => $sampleID,
 		      'reduceIORef' => $reduceIORef,
-		      'alignerRef' => $alignerRef,
+		      'alignerOutDirRef' => $alignerOutDirRef,
 		      'programName' => "RemoveFiles",
 		     });
     }	
@@ -2270,7 +2269,7 @@ sub RemoveRedundantFiles {
 		  'laneHashRef' => \%{$laneHashRef},
 		  'FILEHANDLE' => $FILEHANDLE,
 		  'reduceIORef' => $reduceIORef,
-		  'alignerRef' => $alignerRef,
+		  'alignerOutDirRef' => $alignerOutDirRef,
 		  'programName' => "RemoveFiles",
 		 });
     close($FILEHANDLE);
@@ -2378,7 +2377,7 @@ sub Evaluation {
     
 ##Function : Compare metrics for this analysis run with the NIST reference dataset.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $jobIDHashRef, $familyIDRef, $sampleIDRef, $callType, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $jobIDHashRef, $familyIDRef, $sampleIDRef, $callType, $alignerOutDirRef, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -2388,12 +2387,13 @@ sub Evaluation {
 ##         : $familyIDRef                => The familyID {REF}
 ##         : $sampleIDRef                => The sampleID {REF}
 ##         : $callType                   => The variant call type
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $programName                => The program name
 
     my ($argHashRef) = @_;
     
     my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
-		   'alignerRef' => \${$argHashRef}{'scriptParameterHashRef'}{'aligner'},
+		   'alignerOutDirRef' => \${$argHashRef}{'scriptParameterHashRef'}{'alignerOutDir'},
 		   'referencesDirRef' => \${$argHashRef}{'scriptParameterHashRef'}{'referencesDir'},
 		   'callType' => "BOTH",
 		   'tempDirectoryRef' => \${$argHashRef}{'scriptParameterHashRef'}{'tempDirectory'},
@@ -2410,7 +2410,7 @@ sub Evaluation {
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $familyIDRef = ${$argHashRef}{'familyIDRef'};
     my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $callType = ${$argHashRef}{'callType'};
     my $programName = ${$argHashRef}{'programName'};
     my $referencesDirectoryRef =  ${$argHashRef}{'referencesDirRef'};
@@ -2434,14 +2434,14 @@ sub Evaluation {
 					    'FILEHANDLE' => $FILEHANDLE,
 					    'directoryID' => $$familyIDRef,
 					    'programName' => $programName,
-					    'programDirectory' => lc($$alignerRef."/gatk/".$programName),
+					    'programDirectory' => lc($$alignerOutDirRef."/gatk/".$programName),
 					    'tempDirectory' => $$tempDirectoryRef,
 					    'errorTrap' => 0,  #Special case to allow "vcf.idx" to be created
 					   });
     
     ## Assign directories
-    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
-    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk/".lc($programName);
+    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk/".lc($programName);
     ${$parameterHashRef}{"p".$programName}{'inDirectory'} = $outFamilyDirectory;  #Used downstream
 
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pGATKCombineVariantCallSets'}{'fileEnding'};
@@ -2676,7 +2676,7 @@ sub RankVariants {
     
 ##Function : Annotate and score variants depending on mendelian inheritance, frequency and phenotype etc.
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerRef, $callType, $programName, $programInfoPath, $fileName, $FILEHANDLE, $xargsFileCounter
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName, $programInfoPath, $fileName, $FILEHANDLE, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -2684,7 +2684,7 @@ sub RankVariants {
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $familyIDRef                => The familyIDRef {REF}
-##         : $aligner                    => The aligner used in the analysis
+##         : $alignerOutDir              => The alignerOutDir used in the analysis
 ##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
@@ -2711,7 +2711,7 @@ sub RankVariants {
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $familyIDRef = ${$argHashRef}{'familyIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $callType = ${$argHashRef}{'callType'};
     my $programName = ${$argHashRef}{'programName'};
     my $programInfoPath = ${$argHashRef}{'programInfoPath'};
@@ -2729,7 +2729,7 @@ sub RankVariants {
 			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'callType' => $callType,
 			     'programName' => $programName,
 	);
@@ -2753,7 +2753,7 @@ sub RankVariants {
 							       'FILEHANDLE' => $FILEHANDLE,
 							       'directoryID' => $$familyIDRef,
 							       'programName' => $programName,
-							       'programDirectory' => lc($$alignerRef."/gatk"),
+							       'programDirectory' => lc($$alignerOutDirRef."/gatk"),
 							       'nrofCores' => $nrCores,
 							       'processTime' => 10,
 							       'tempDirectory' => $$tempDirectoryRef
@@ -2761,8 +2761,8 @@ sub RankVariants {
     }
 
     ## Assign directories
-    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
-    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
+    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
     
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pSnpEff'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"p".$programName}{'fileEnding'};
@@ -2995,7 +2995,7 @@ sub GATKVariantEvalExome {
     
 ##Function : GATK VariantEval for exome variants.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $alignerRef, $callType, $familyIDRef, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $alignerOutDirRef, $callType, $familyIDRef, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -3004,7 +3004,7 @@ sub GATKVariantEvalExome {
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleIDRef                => The sampleID {REF}
-##         : $alignerRef                 => The aligner used in the analysis {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $callType                   => The variant call type
 ##         : $familyIDRef                => The familyID {REF}
 ##         : $programName                => The program name {REF}
@@ -3027,7 +3027,7 @@ sub GATKVariantEvalExome {
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $callType = ${$argHashRef}{'callType'};
     my $programName = ${$argHashRef}{'programName'};
     my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
@@ -3042,7 +3042,7 @@ sub GATKVariantEvalExome {
 			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
 			     'sampleIDRef' => $$sampleIDRef,
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'callType' => $callType,
 			     'programName' => $programName,
 	);
@@ -3055,15 +3055,15 @@ sub GATKVariantEvalExome {
 					    'FILEHANDLE' => $FILEHANDLE,
 					    'directoryID' => $$sampleIDRef,
 					    'programName' => $programName,
-					    'programDirectory' => lc($$alignerRef."/gatk/varianteval"),
+					    'programDirectory' => lc($$alignerOutDirRef."/gatk/varianteval"),
 					    'callType' => $callType,
 					    'processTime' => 2,
 					    'tempDirectory' => $$tempDirectoryRef
 					   });
 
     ## Assign directories
-    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk/varianteval";
-    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk/varianteval";
+    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
 
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pGATKCombineVariantCallSets'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pGATKCombineVariantCallSets'}{'fileEnding'};
@@ -3368,7 +3368,7 @@ sub GATKVariantEvalAll {
     
 ##Function : GATK VariantEval for all variants.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $sampleIDRef, $alignerRef, $callType, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $sampleIDRef, $alignerOutDirRef, $callType, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -3378,7 +3378,7 @@ sub GATKVariantEvalAll {
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $familyIDRef                => The familyID {REF}
 ##         : $sampleIDRef                => The sampleID {REF}
-##         : $alignerRef                 => The aligner used in the analysis {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 
@@ -3400,7 +3400,7 @@ sub GATKVariantEvalAll {
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $callType = ${$argHashRef}{'callType'};
     my $programName = ${$argHashRef}{'programName'};
     my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
@@ -3415,7 +3415,7 @@ sub GATKVariantEvalAll {
 			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
 			     'sampleIDRef' => $$sampleIDRef,
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'callType' => $callType,
 			     'programName' => $programName,
 	);
@@ -3428,16 +3428,16 @@ sub GATKVariantEvalAll {
 					    'FILEHANDLE' => $FILEHANDLE,
 					    'directoryID' => $$sampleIDRef,
 					    'programName' => $programName,
-					    'programDirectory' => lc($$alignerRef."/gatk/varianteval"),
+					    'programDirectory' => lc($$alignerOutDirRef."/gatk/varianteval"),
 					    'callType' => $callType,
 					    'processTime' => 2,
 					    'tempDirectory' => $$tempDirectoryRef,
 					   });
 
     ## Assign directories
-    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
-    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk/varianteval";
-    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
+    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk/varianteval";
+    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
 
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pGATKCombineVariantCallSets'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pGATKCombineVariantCallSets'}{'fileEnding'};
@@ -3606,7 +3606,7 @@ sub SnpEff {
     
 ##Function : SnpEff annotates variants from different sources.
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerRef, $callType, $programName, $programInfoPath, $fileName, $FILEHANDLE, $xargsFileCounter
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName, $programInfoPath, $fileName, $FILEHANDLE, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -3614,7 +3614,7 @@ sub SnpEff {
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $familyIDRef                => The familyID {REF}
-##         : $alignerRef                 => The aligner used in the analysis {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
@@ -3641,7 +3641,7 @@ sub SnpEff {
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $familyIDRef = ${$argHashRef}{'familyIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $callType = ${$argHashRef}{'callType'};
     my $fileName = ${$argHashRef}{'fileName'};
     my $programName = ${$argHashRef}{'programName'};
@@ -3659,7 +3659,7 @@ sub SnpEff {
 			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'callType' => $callType,
 			     'programName' => $programName,
 	);
@@ -3681,7 +3681,7 @@ sub SnpEff {
 							       'FILEHANDLE' => $FILEHANDLE,
 							       'directoryID' => $$familyIDRef,
 							       'programName' => $programName,
-							       'programDirectory' => lc($$alignerRef."/gatk"),
+							       'programDirectory' => lc($$alignerOutDirRef."/gatk"),
 							       'callType' => $callType,
 							       'nrofCores' => $nrCores,
 							       'processTime' => 10,
@@ -3690,8 +3690,8 @@ sub SnpEff {
     }
 
     ## Assign directories
-    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
-    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
+    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
     ${$parameterHashRef}{"p".$programName}{'inDirectory'} = $outFamilyDirectory;  #Used downstream
     
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pAnnovar'}{'fileEnding'};
@@ -3964,7 +3964,7 @@ sub Annovar {
     
 ##Function : Annotate and filter SNVs by gene, region and databases.
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $annovarTableHashRef, $familyID, $aligner, $callType, $programName, $fileName, $programInfoPath, $FILEHANDLE, $xargsFileCounter
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $annovarTableHashRef, $familyID, $alignerOutDir, $callType, $programName, $fileName, $programInfoPath, $FILEHANDLE, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -3973,7 +3973,7 @@ sub Annovar {
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $annovarTableHashRef        => annovarTableHashRef {REF}
 ##         : $familyIDRef                => The familyID {REF}
-##         : $alignerRef                 => The aligner used in the analysis {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
@@ -4000,7 +4000,7 @@ sub Annovar {
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $annovarTableHashRef = ${$argHashRef}{'annovarTableHashRef'};
     my $familyIDRef = ${$argHashRef}{'familyIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $callType = ${$argHashRef}{'callType'};
     my $fileName = ${$argHashRef}{'fileName'};
     my $programName = ${$argHashRef}{'programName'};
@@ -4017,7 +4017,7 @@ sub Annovar {
 			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'callType' => $callType,
 			     'programName' => $programName,
 	);
@@ -4039,7 +4039,7 @@ sub Annovar {
 							       'FILEHANDLE' => $FILEHANDLE,
 							       'directoryID' => $$familyIDRef,
 							       'programName' => $programName,
-							       'programDirectory' => lc($$alignerRef."/gatk"),
+							       'programDirectory' => lc($$alignerOutDirRef."/gatk"),
 							       'callType' => $callType,
 							       'nrofCores' => $nrCores,
 							       'processTime' => 7,
@@ -4048,8 +4048,8 @@ sub Annovar {
     } 
     
     ## Assign directories
-    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
-    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
+    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
     ${$parameterHashRef}{"p".$programName}{'inDirectory'} = $outFamilyDirectory;  #Used downstream
 
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pVCFParser'}{'fileEnding'};
@@ -4217,7 +4217,7 @@ sub VCFParser {
     
 ##Function : VCFParser performs parsing of VariantEffectPredictor annotated variants
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerRef, $callType, $programName, $fileName, $programInfoPath, $FILEHANDLE, $xargsFileCounter
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName, $fileName, $programInfoPath, $FILEHANDLE, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -4225,7 +4225,7 @@ sub VCFParser {
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $familyIDRef                => The familyID {REF}
-##         : $alignerRef                 => The aligner used in the analysis {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
@@ -4252,7 +4252,7 @@ sub VCFParser {
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $familyIDRef = ${$argHashRef}{'familyIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $callType = ${$argHashRef}{'callType'};
     my $fileName = ${$argHashRef}{'fileName'};
     my $programInfoPath = ${$argHashRef}{'programInfoPath'};
@@ -4271,7 +4271,7 @@ sub VCFParser {
 			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'callType' => $callType,
 			     'programName' => $programName,
 	);
@@ -4290,15 +4290,15 @@ sub VCFParser {
 							       'FILEHANDLE' => $FILEHANDLE,
 							       'directoryID' => $$familyIDRef,
 							       'programName' => $programName,
-							       'programDirectory' => lc($$alignerRef."/gatk"),
+							       'programDirectory' => lc($$alignerOutDirRef."/gatk"),
 							       'callType' => $callType,
 							       'tempDirectory' => $$tempDirectoryRef,
 							      });
     }
 
     ## Assign directories
-    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
-    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
+    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
     ${$parameterHashRef}{"p".$programName}{'inDirectory'} = $outFamilyDirectory;  #Used downstream
 
     my $infileEnding = ${$fileInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{'pVariantEffectPredictor'}{'fileEnding'};
@@ -4493,7 +4493,7 @@ sub VariantEffectPredictor {
     
 ##Function : VariantEffectPredictor performs annotation of variants.
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerRef, $callType, $programName, $programInfoPath, $fileName, $FILEHANDLE, $xargsFileCounter
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName, $programInfoPath, $fileName, $FILEHANDLE, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -4501,7 +4501,7 @@ sub VariantEffectPredictor {
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $familyIDRef                => The familyID {REF}
-##         : $alignerRef                 => The aligner used in the analysis {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
@@ -4529,7 +4529,7 @@ sub VariantEffectPredictor {
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $familyIDRef = ${$argHashRef}{'familyIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $callType = ${$argHashRef}{'callType'};
     my $fileName = ${$argHashRef}{'fileName'};
     my $programName = ${$argHashRef}{'programName'};
@@ -4548,7 +4548,7 @@ sub VariantEffectPredictor {
 			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'callType' => $callType,
 			     'programName' => $programName,
 	);
@@ -4576,7 +4576,7 @@ sub VariantEffectPredictor {
 							       'FILEHANDLE' => $FILEHANDLE,
 							       'directoryID' => $$familyIDRef,
 							       'programName' => $programName,
-							       'programDirectory' => lc($$alignerRef."/gatk"),
+							       'programDirectory' => lc($$alignerOutDirRef."/gatk"),
 							       'callType' => $callType,
 							       'nrofCores' => ${$scriptParameterHashRef}{'maximumCores'},
 							       'processTime' => 10,
@@ -4587,8 +4587,8 @@ sub VariantEffectPredictor {
     my ($volume, $directories, $stderrFile) = File::Spec->splitpath($stderrPath);  #Split to enable submission to &SampleInfoQC later
 
     ## Assign directories
-    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
-    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
+    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
     ${$parameterHashRef}{"p".$programName}{'inDirectory'} = $outFamilyDirectory;  #Used downstream
 
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pVT'}{'fileEnding'};
@@ -4744,7 +4744,7 @@ sub GATKReadBackedPhasing {
     
 ##Function : GATK ReadBackedPhasing performs physical phasing of SNP calls, based on sequencing reads.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyID, $aligner, $callType, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyID, $alignerOutDir, $callType, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -4753,7 +4753,7 @@ sub GATKReadBackedPhasing {
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $familyID                   => The familyID
-##         : $aligner                    => The aligner used in the analysis
+##         : $alignerOutDir              => The alignerOutDir used in the analysis
 ##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 
@@ -4765,7 +4765,7 @@ sub GATKReadBackedPhasing {
     my $infilesLaneNoEndingHashRef = $_[5];
     my $jobIDHashRef = $_[6];
     my $familyID = $_[7];
-    my $aligner = $_[8];
+    my $alignerOutDir = $_[8];
     my $callType = $_[9];
     my $programName = $_[10];
     
@@ -4777,7 +4777,7 @@ sub GATKReadBackedPhasing {
 					    'FILEHANDLE' => $FILEHANDLE,
 					    'directoryID' => $familyID,
 					    'programName' => $programName,
-					    'programDirectory' => lc($aligner."/gatk"),
+					    'programDirectory' => lc($alignerOutDir."/gatk"),
 					    'callType' => $callType,
 					    'nrofCores' => $nrCores,
 					    'processTime' => 15,
@@ -4785,8 +4785,8 @@ sub GATKReadBackedPhasing {
 					   });
 
     ## Assign directories
-    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/gatk";
-    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/gatk";
+    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$alignerOutDir."/gatk";
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$alignerOutDir."/gatk";
 
     my $infileEnding;
 
@@ -4812,7 +4812,7 @@ sub GATKReadBackedPhasing {
     ## Copy BAM file(s) to temporary directory
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDCounter++) {  #Collect infiles for all sampleIDs
 
-	my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter]."/".$aligner."/gatk";
+	my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter]."/".$alignerOutDir."/gatk";
 	my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{'pGATKBaseRecalibration'}{'fileEnding'};
 
 	## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
@@ -4915,7 +4915,7 @@ sub GATKPhaseByTransmission {
     
 ##Function : GATK PhaseByTransmission computes the most likely genotype combination and phases trios and parent/child pairs given their genotype likelihoods and a mutation prior and phases all sites were parent/child transmission can be inferred unambiguously.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyID, $aligner, $callType, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyID, $alignerOutDir, $callType, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -4923,7 +4923,7 @@ sub GATKPhaseByTransmission {
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $familyID                   => The familyID
-##         : $aligner                    => The aligner used in the analysis
+##         : $alignerOutDir              => The alignerOutDir used in the analysis
 ##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 
@@ -4934,7 +4934,7 @@ sub GATKPhaseByTransmission {
     my $infilesLaneNoEndingHashRef = $_[4];
     my $jobIDHashRef = $_[5];
     my $familyID = $_[6];
-    my $aligner = $_[7];
+    my $alignerOutDir = $_[7];
     my $callType = $_[8];
     my $programName = $_[9];
 
@@ -4945,7 +4945,7 @@ sub GATKPhaseByTransmission {
 					    'FILEHANDLE' => $FILEHANDLE,
 					    'directoryID' => $familyID,
 					    'programName' => $programName,
-					    'programDirectory' => lc($aligner."/gatk"),
+					    'programDirectory' => lc($alignerOutDir."/gatk"),
 					    'callType' => $callType,
 					    'processTime' => 15,
 					    'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
@@ -4953,8 +4953,8 @@ sub GATKPhaseByTransmission {
     
     ## Assign directories
     my $outFamilyFileDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID;
-    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/gatk";
-    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$aligner."/gatk";
+    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$alignerOutDir."/gatk";
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$familyID."/".$alignerOutDir."/gatk";
 
     my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'pGATKCombineVariantCallSets'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{"p".$programName}{'fileEnding'};
@@ -5025,14 +5025,14 @@ sub SampleCheck {
     
 ##Function : Tests sample for correct relatives (only performed for samples with relatives defined in pedigree file) performed on sequence data.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $jobIDHashRef, $familyIDRef, $alignerRef, $callType, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName
 ##         : $parameterHashRef       => The parameter hash {REF}
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef        => The fileInfo hash {REF}
 ##         : $jobIDHashRef           => The jobID hash {REF}
 ##         : $familyIDRef            => The familyID {REF}
-##         : $alignerRef             => The aligner used in the analysis {REF}
+##         : $alignerOutDirRef       => The alignerOutDir used in the analysis {REF}
 ##         : $callType               => The variant call type
 ##         : $programName            => The program name
 
@@ -5052,7 +5052,7 @@ sub SampleCheck {
     my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $callType = ${$argHashRef}{'callType'};
     my $programName = ${$argHashRef}{'programName'};
     my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
@@ -5065,7 +5065,7 @@ sub SampleCheck {
 			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'callType' => $callType,
 			     'programName' => $programName,
 	);
@@ -5078,12 +5078,12 @@ sub SampleCheck {
 					    'FILEHANDLE' => $FILEHANDLE,
 					    'directoryID' => $$familyIDRef,
 					    'programName' => $programName,
-					    'programDirectory' => lc($$alignerRef."/".$programName),
+					    'programDirectory' => lc($$alignerOutDirRef."/".$programName),
 					    'callType' => $callType,
 					   });
     
-    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
-    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/".lc($programName);
+    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/".lc($programName);
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pGATKCombineVariantCallSets'}{'fileEnding'};
 
 
@@ -5227,7 +5227,7 @@ sub VT {
     
 ##Function : Split multi allelic records into single records and normalize
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerRef, $callType, $fileName, $programName, $programInfoPath, $FILEHANDLE, $xargsFileCounter, $stderrPath
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $fileName, $programName, $programInfoPath, $FILEHANDLE, $xargsFileCounter, $stderrPath
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -5235,7 +5235,7 @@ sub VT {
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $familyIDRef                => The familyID {REF}
-##         : $alignerRef                 => The aligner used in the analysis {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $callType                   => The variant call type
 ##         : $fileName                   => File name
 ##         : $programName                => The program name
@@ -5261,7 +5261,7 @@ sub VT {
     my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $callType = ${$argHashRef}{'callType'};
     my $fileName = ${$argHashRef}{'fileName'};
     my $programName = ${$argHashRef}{'programName'};
@@ -5278,7 +5278,7 @@ sub VT {
 			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'programName' => $programName,
 	);
     &CheckMandatoryArguments(\%mandatoryArgument, $programName);
@@ -5304,7 +5304,7 @@ sub VT {
 							       'FILEHANDLE' => $FILEHANDLE,
 							       'directoryID' => $$familyIDRef,
 							       'programName' => $programName,
-							       'programDirectory' => lc($$alignerRef."/gatk"),
+							       'programDirectory' => lc($$alignerOutDirRef."/gatk"),
 							       'callType' => $callType,
 							       'nrofCores' => $nrCores,
 							       'processTime' => $time,
@@ -5315,8 +5315,8 @@ sub VT {
     my ($volume, $directories, $stderrFile) = File::Spec->splitpath($stderrPath); #Split to enable submission to &SampleInfoQC later
 
     ## Assign directories
-    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
-    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
+    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
     ${$parameterHashRef}{"p".$programName}{'inDirectory'} = $outFamilyDirectory;  #Used downstream
 
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pGATKCombineVariantCallSets'}{'fileEnding'};
@@ -5477,7 +5477,7 @@ sub GATKCombineVariantCallSets {
     
 ##Function : GATK CombineVariants to combine all variants call from different callers.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerRef, $callType, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -5485,7 +5485,7 @@ sub GATKCombineVariantCallSets {
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $familyIDRef                => The familyID {REF}
-##         : $alignerRef                 => The aligner used in the analysis {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 
@@ -5505,7 +5505,7 @@ sub GATKCombineVariantCallSets {
     my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $callType = ${$argHashRef}{'callType'};
     my $programName = ${$argHashRef}{'programName'};
     my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
@@ -5518,7 +5518,7 @@ sub GATKCombineVariantCallSets {
 			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'callType' => $callType,
 			     'programName' => $programName,
 	);
@@ -5533,14 +5533,14 @@ sub GATKCombineVariantCallSets {
 					    'FILEHANDLE' => $FILEHANDLE,
 					    'directoryID' => $$familyIDRef,
 					    'programName' => $programName,
-					    'programDirectory' => lc($$alignerRef."/gatk"),
+					    'programDirectory' => lc($$alignerOutDirRef."/gatk"),
 					    'callType' => $callType,
 					    'processTime' => 2,
 					    'tempDirectory' => $$tempDirectoryRef,
 					   });
 
     ## Assign directories
-    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
     ${$parameterHashRef}{"p".$programName}{'inDirectory'} = $outFamilyDirectory;  #Used downstream
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pGATKCombineVariantCallSets'}{'fileEnding'};
 
@@ -5549,7 +5549,7 @@ sub GATKCombineVariantCallSets {
 	if (${$scriptParameterHashRef}{$variantCaller} > 0) {  #Expect vcf
 	    
 	    my $programOutDirectoryName = ${$parameterHashRef}{$variantCaller}{'outDirectoryName'};   
-	    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/".$programOutDirectoryName;
+	    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/".$programOutDirectoryName;
 	    my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$variantCaller}{'fileEnding'};
 	    
 	    unshift(@variantCallers, $programOutDirectoryName);  #To prioritize downstream - 1. gatk 2. samtools determined by orderParameters order
@@ -5659,14 +5659,14 @@ sub GATKVariantReCalibration {
     
 ##Function : GATK VariantRecalibrator/ApplyRecalibration.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $jobIDHashRef, $familyIDRef, $alignerRef, $callType, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName
 ##         : $parameterHashRef       => The parameter hash {REF}
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef        => The fileInfo hash {REF}
 ##         : $jobIDHashRef           => The jobID hash {REF}
 ##         : $familyIDRef            => The familyID {REF}
-##         : $alignerRef             => The aligner used in the analysis {REF}
+##         : $alignerOutDirRef       => The alignerOutDir used in the analysis {REF}
 ##         : $callType               => The variant call type
 ##         : $programName            => The program name
 
@@ -5686,7 +5686,7 @@ sub GATKVariantReCalibration {
     my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $callType = ${$argHashRef}{'callType'};
     my $programName = ${$argHashRef}{'programName'};
     my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
@@ -5699,7 +5699,7 @@ sub GATKVariantReCalibration {
 			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'callType' => $callType,
 			     'programName' => $programName,
 	);
@@ -5714,7 +5714,7 @@ sub GATKVariantReCalibration {
 							      'FILEHANDLE' => $FILEHANDLE,
 							      'directoryID' => $$familyIDRef,
 							      'programName' => $programName,
-							      'programDirectory' => lc($$alignerRef."/".$programOutDirectoryName),
+							      'programDirectory' => lc($$alignerOutDirRef."/".$programOutDirectoryName),
 							      'callType' => $callType,
 							      'nrofCores' => $nrCores,
 							      'processTime' => 10,
@@ -5724,9 +5724,9 @@ sub GATKVariantReCalibration {
 
     ## Assign directories
     my $outFamilyFileDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef;  #For ".fam" file
-    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/".$programOutDirectoryName;
+    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/".$programOutDirectoryName;
     my $intermediarySampleDirectory = $$tempDirectoryRef."/gatk/intermediary";
-    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/".$programOutDirectoryName;
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/".$programOutDirectoryName;
     ${$parameterHashRef}{"p".$programName}{'inDirectory'} = $outFamilyDirectory;  #Used downstream
 
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pGATKGenoTypeGVCFs'}{'fileEnding'};
@@ -6030,7 +6030,7 @@ sub GATKConcatenateGenoTypeGVCFs {
     
 ##Function : Concatenate GVCFs produced after GATKGenoTypeGVCFs done per contig. 
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $laneHashRef, $jobIDHashRef, $familyIDRef, $alignerRef, $callType, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $laneHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName
 ##         : $parameterHashRef       => The parameter hash {REF}
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
@@ -6038,7 +6038,7 @@ sub GATKConcatenateGenoTypeGVCFs {
 ##         : $laneHashRef            => The lane info hash {REF}
 ##         : $jobIDHashRef           => The jobID hash {REF}
 ##         : $familyIDRef            => The familyID {REF}
-##         : $alignerRef             => The aligner used in the analysis {REF}
+##         : $alignerOutDirRef       => The alignerOutDir used in the analysis {REF}
 ##         : $callType               => The variant call type
 ##         : $programName            => The program name
 
@@ -6059,7 +6059,7 @@ sub GATKConcatenateGenoTypeGVCFs {
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
     my $laneHashRef = ${$argHashRef}{'laneHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $callType = ${$argHashRef}{'callType'};
     my $programName = ${$argHashRef}{'programName'};
     my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
@@ -6073,7 +6073,7 @@ sub GATKConcatenateGenoTypeGVCFs {
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
 			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'callType' => $callType,
 			     'programName' => $programName,
 	);
@@ -6088,7 +6088,7 @@ sub GATKConcatenateGenoTypeGVCFs {
 					    'FILEHANDLE' => $FILEHANDLE,
 					    'directoryID' => $$familyIDRef,
 					    'programName' => $programName,
-					    'programDirectory' => lc($$alignerRef."/gatk"),
+					    'programDirectory' => lc($$alignerOutDirRef."/gatk"),
 					    'callType' => $callType,
 					    'nrofCores' => $nrCores,
 					    'processTime' => 10,
@@ -6096,8 +6096,8 @@ sub GATKConcatenateGenoTypeGVCFs {
 					   });
     
     ## Assign directories
-    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
-    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
+    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pGATKGenoTypeGVCFs'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pGATKGenoTypeGVCFs'}{'fileEnding'}; 
 
@@ -6153,7 +6153,7 @@ sub GATKGenoTypeGVCFs {
     
 ##Function : GATK GenoTypeGVCFs. 
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $laneHashRef, $jobIDHashRef, $familyIDRef, $alignerRef, $callType, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $laneHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName
 ##         : $parameterHashRef       => The parameter hash {REF}
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
@@ -6161,7 +6161,7 @@ sub GATKGenoTypeGVCFs {
 ##         : $laneHashRef            => The lane info hash {REF}
 ##         : $jobIDHashRef           => The jobID hash {REF}
 ##         : $familyIDRef            => The familyID {REF}
-##         : $alignerRef             => The aligner used in the analysis {REF}
+##         : $alignerOutDirRef       => The alignerOutDir used in the analysis {REF}
 ##         : $callType               => The variant call type
 ##         : $programName            => The program name
 
@@ -6182,7 +6182,7 @@ sub GATKGenoTypeGVCFs {
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
     my $laneHashRef = ${$argHashRef}{'laneHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $callType = ${$argHashRef}{'callType'};
     my $programName = ${$argHashRef}{'programName'};
     my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
@@ -6196,7 +6196,7 @@ sub GATKGenoTypeGVCFs {
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
 			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'callType' => $callType,
 			     'programName' => $programName,
 	);
@@ -6230,7 +6230,7 @@ sub GATKGenoTypeGVCFs {
 						'FILEHANDLE' => $FILEHANDLE,
 						'directoryID' => $$familyIDRef,
 						'programName' => $programName,
-						'programDirectory' => lc($$alignerRef."/gatk"),
+						'programDirectory' => lc($$alignerOutDirRef."/gatk"),
 						'callType' => $callType,
 						'nrofCores' => $nrCores,
 						'processTime' => $processTime,
@@ -6238,7 +6238,7 @@ sub GATKGenoTypeGVCFs {
 					       });
 	
 	## Assign directories
-	my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/gatk";
+	my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
 	${$parameterHashRef}{"p".$programName}{'inDirectory'} = $outFamilyDirectory;  #Used downstream
 	my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"p".$programName}{'fileEnding'}; 
 	
@@ -6248,7 +6248,7 @@ sub GATKGenoTypeGVCFs {
 	    ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
 	    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter]);
 	    
-	    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter]."/".$$alignerRef."/gatk";
+	    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter]."/".$$alignerOutDirRef."/gatk";
 	    my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{'pGATKHaploTypeCaller'}{'fileEnding'};
 	    
 	    if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
@@ -6361,7 +6361,7 @@ sub RCoveragePlots {
     
 ##Function : Generates sbatch scripts for R scripts: 1. covplots_genome.R 2. covplots_exome.R; on files generated from calculateCoverage genomeCoverageBED.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleID, $aligner, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -6370,7 +6370,7 @@ sub RCoveragePlots {
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleID                   => The sampleID
-##         : $aligner                    => The aligner used in the analysis
+##         : $alignerOutDir              => The alignerOutDir used in the analysis
 ##         : $programName                => The program name
 
     my $parameterHashRef = $_[0];
@@ -6381,7 +6381,7 @@ sub RCoveragePlots {
     my $infilesLaneNoEndingHashRef = $_[5];
     my $jobIDHashRef = $_[6];
     my $sampleID = $_[7];
-    my $aligner = $_[8];
+    my $alignerOutDir = $_[8];
     my $programName = $_[9];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -6391,13 +6391,13 @@ sub RCoveragePlots {
 					    'FILEHANDLE' => $FILEHANDLE,
 					    'directoryID' => $sampleID,
 					    'programName' => $programName,
-					    'programDirectory' => lc($aligner."/coveragereport"),
+					    'programDirectory' => lc($alignerOutDir."/coveragereport"),
 					    'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
 					   });
     
     ## Assign directories
-    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/coveragereport";
-    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner."/coveragereport";
+    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$alignerOutDir."/coveragereport";
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$alignerOutDir."/coveragereport";
 
     my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{'pGATKBaseRecalibration'}{'fileEnding'};
 
@@ -6462,7 +6462,7 @@ sub GenomeCoverageBED {
     
 ##Function : Calculates coverage on BAM files.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $aligner, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -6471,7 +6471,7 @@ sub GenomeCoverageBED {
 ##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleID                   => The sampleID
-##         : $aligner                    => The aligner used in the analysis
+##         : $alignerOutDir              => The alignerOutDir used in the analysis
 ##         : $programName                => The program name
     
     my ($argHashRef) = @_;
@@ -6491,7 +6491,7 @@ sub GenomeCoverageBED {
     my $laneHashRef = ${$argHashRef}{'laneHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $programName = ${$argHashRef}{'programName'};
     my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
     
@@ -6503,7 +6503,7 @@ sub GenomeCoverageBED {
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{$$sampleIDRef},  #Any MIP mandatory key will do
 			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
 			     'sampleIDRef' => $$sampleIDRef,
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'programName' => $programName,
 	);
     
@@ -6513,8 +6513,8 @@ sub GenomeCoverageBED {
     my $fileName;
     
     ## Assign directories
-    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
-    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/coveragereport";
+    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/coveragereport";
 
     my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'pGATKBaseRecalibration'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{"p".$programName}{'fileEnding'};
@@ -6531,7 +6531,7 @@ sub GenomeCoverageBED {
 					     'FILEHANDLE' => $FILEHANDLE,
 					     'directoryID' => $$sampleIDRef,
 					     'programName' => $programName,
-					     'programDirectory' => lc($$alignerRef."/coveragereport"),
+					     'programDirectory' => lc($$alignerOutDirRef."/coveragereport"),
 					     'nrofCores' => $nrCores,
 					     'processTime' => 16,
 					     'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
@@ -6570,7 +6570,7 @@ sub GenomeCoverageBED {
 					     'FILEHANDLE' => $FILEHANDLE,
 					     'directoryID' => $$sampleIDRef,
 					     'programName' => $programName,
-					     'programDirectory' => lc($$alignerRef."/coveragereport"),
+					     'programDirectory' => lc($$alignerOutDirRef."/coveragereport"),
 					     'nrofCores' => $nrCores,
 					     'processTime' => 16,
 					     'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
@@ -6625,7 +6625,7 @@ sub PicardToolsCalculateHSMetrics {
     
 ##Function : Calculates coverage on exonic part of BAM files.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $aligner, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -6634,7 +6634,7 @@ sub PicardToolsCalculateHSMetrics {
 ##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleID                   => The sampleID
-##         : $aligner                    => The aligner used in the analysis
+##         : $alignerOutDir              => The alignerOutDir used in the analysis
 ##         : $programName                => The program name
 
     my ($argHashRef) = @_;
@@ -6655,7 +6655,7 @@ sub PicardToolsCalculateHSMetrics {
     my $laneHashRef = ${$argHashRef}{'laneHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $programName = ${$argHashRef}{'programName'};
     my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
     my $referencesDirectoryRef =  ${$argHashRef}{'referencesDirRef'};
@@ -6668,7 +6668,7 @@ sub PicardToolsCalculateHSMetrics {
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
 			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'programName' => $programName,
 	);
     &CheckMandatoryArguments(\%mandatoryArgument, $programName);
@@ -6677,8 +6677,8 @@ sub PicardToolsCalculateHSMetrics {
     my $fileName;
 
     ## Assign directories
-    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
-    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/coveragereport";
+    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/coveragereport";
 
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pGATKBaseRecalibration'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{"p".$programName}{'fileEnding'};
@@ -6695,7 +6695,7 @@ sub PicardToolsCalculateHSMetrics {
 					     'FILEHANDLE' => $FILEHANDLE,
 					     'directoryID' => $$sampleIDRef,
 					     'programName' => $programName,
-					     'programDirectory' => lc($$alignerRef."/coveragereport"),
+					     'programDirectory' => lc($$alignerOutDirRef."/coveragereport"),
 					     'nrofCores' => $nrCores,
 					     'processTime' => 16,
 					     'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
@@ -6759,7 +6759,7 @@ sub PicardToolsCalculateHSMetrics {
 					     'FILEHANDLE' => $FILEHANDLE,
 					     'directoryID' => $$sampleIDRef,
 					     'programName' => $programName,
-					     'programDirectory' => lc($$alignerRef."/coveragereport"),
+					     'programDirectory' => lc($$alignerOutDirRef."/coveragereport"),
 					     'nrofCores' => $nrCores,
 					     'processTime' => 16,
 					     'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
@@ -6837,7 +6837,7 @@ sub PicardToolsCollectMultipleMetrics {
     
 ##Function : Calculates coverage and alignment metrics on BAM files.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleIDRef, $alignerRef, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleIDRef, $alignerOutDirRef, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -6846,7 +6846,7 @@ sub PicardToolsCollectMultipleMetrics {
 ##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleIDRef                => The sampleID
-##         : $alignerRef                 => The aligner used in the analysis
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis
 ##         : $programName                => The program name
 
     my ($argHashRef) = @_;
@@ -6867,7 +6867,7 @@ sub PicardToolsCollectMultipleMetrics {
     my $laneHashRef = ${$argHashRef}{'laneHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $programName = ${$argHashRef}{'programName'};
     my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
     my $referencesDirectoryRef =  ${$argHashRef}{'referencesDirRef'};
@@ -6880,7 +6880,7 @@ sub PicardToolsCollectMultipleMetrics {
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
 			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'programName' => $programName,
 	);
     &CheckMandatoryArguments(\%mandatoryArgument, $programName);
@@ -6889,8 +6889,8 @@ sub PicardToolsCollectMultipleMetrics {
     my $fileName;
 
     ## Assign directories
-    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
-    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/coveragereport";
+    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/coveragereport";
 
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pGATKBaseRecalibration'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pGATKBaseRecalibration'}{'fileEnding'};
@@ -6907,7 +6907,7 @@ sub PicardToolsCollectMultipleMetrics {
 					     'FILEHANDLE' => $FILEHANDLE,
 					     'directoryID' => $$sampleIDRef,
 					     'programName' => $programName,
-					     'programDirectory' => lc($$alignerRef."/coveragereport"),
+					     'programDirectory' => lc($$alignerOutDirRef."/coveragereport"),
 					     'nrofCores' => $nrCores,
 					     'processTime' => 16,
 					     'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
@@ -6977,7 +6977,7 @@ sub PicardToolsCollectMultipleMetrics {
 					     'FILEHANDLE' => $FILEHANDLE,
 					     'directoryID' => $$sampleIDRef,
 					     'programName' => $programName,
-					     'programDirectory' => lc($$alignerRef."/coveragereport"),
+					     'programDirectory' => lc($$alignerOutDirRef."/coveragereport"),
 					     'nrofCores' => $nrCores,
 					     'processTime' => 16,
 					     'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
@@ -7056,7 +7056,7 @@ sub ChanjoSexCheck {
     
 ##Function : Predict gender from BAM files.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleIDRef, $alignerRef, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleIDRef, $alignerOutDirRef, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -7065,7 +7065,7 @@ sub ChanjoSexCheck {
 ##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleIDRef                => The sampleID {REF}
-##         : $alignerRef                 => The aligner used in the analysis {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $programName                => The program name
     
     my ($argHashRef) = @_;
@@ -7085,7 +7085,7 @@ sub ChanjoSexCheck {
     my $laneHashRef = ${$argHashRef}{'laneHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $programName = ${$argHashRef}{'programName'};
     my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
     my $familyIDRef = ${$argHashRef}{'familyIDRef'};
@@ -7097,7 +7097,7 @@ sub ChanjoSexCheck {
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
 			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'programName' => $programName,
 	);
     &CheckMandatoryArguments(\%mandatoryArgument, $programName);
@@ -7107,8 +7107,8 @@ sub ChanjoSexCheck {
     
     ## Assign directories               
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef;
-    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
-    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/coveragereport";
+    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/coveragereport";
 
     my $infileEnding = ${$fileInfoHashRef}{ $$familyIDRef }{$$sampleIDRef}{'pGATKBaseRecalibration'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{ $$familyIDRef }{$$sampleIDRef}{"p".$programName}{'fileEnding'};
@@ -7124,7 +7124,7 @@ sub ChanjoSexCheck {
 					     'FILEHANDLE' => $FILEHANDLE,
 					     'directoryID' => $$sampleIDRef,
 					     'programName' => $programName,
-					     'programDirectory' => lc($$alignerRef."/coveragereport"),
+					     'programDirectory' => lc($$alignerOutDirRef."/coveragereport"),
 					     'processTime' => 2,
 					    });
 
@@ -7175,7 +7175,7 @@ sub ChanjoSexCheck {
 					     'FILEHANDLE' => $FILEHANDLE,
 					     'directoryID' => $$sampleIDRef,
 					     'programName' => $programName,
-					     'programDirectory' => lc($$alignerRef."/coveragereport"),
+					     'programDirectory' => lc($$alignerOutDirRef."/coveragereport"),
 					     'nrofCores' => $nrCores,
 					     'processTime' => 2,
 					    });
@@ -7249,7 +7249,7 @@ sub SambambaDepth {
     
 ##Function : Generate coverage bed outfile for each individual.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleIDRef, $alignerRef, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleIDRef, $alignerOutDirRef, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -7258,7 +7258,7 @@ sub SambambaDepth {
 ##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleIDRef                => The sampleID {REF}
-##         : $alignerRef                 => The aligner used in the analysis {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $programName                => The program name
 
     my ($argHashRef) = @_;
@@ -7278,7 +7278,7 @@ sub SambambaDepth {
     my $laneHashRef = ${$argHashRef}{'laneHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $programName = ${$argHashRef}{'programName'};
     my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
     my $familyIDRef = ${$argHashRef}{'familyIDRef'};
@@ -7291,7 +7291,7 @@ sub SambambaDepth {
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
 			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'programName' => $programName,
 	);
     &CheckMandatoryArguments(\%mandatoryArgument, $programName);
@@ -7302,8 +7302,8 @@ sub SambambaDepth {
 
     ## Assign directories
     my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef;
-    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
-    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/coveragereport";
+    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/coveragereport";
 
     my $infileEnding = ${$fileInfoHashRef}{ $$familyIDRef }{$$sampleIDRef}{'pGATKBaseRecalibration'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{ $$familyIDRef }{$$sampleIDRef}{"p".$programName}{'fileEnding'};
@@ -7319,7 +7319,7 @@ sub SambambaDepth {
 					     'FILEHANDLE' => $FILEHANDLE,
 					     'directoryID' => $$sampleIDRef,
 					     'programName' => $programName,
-					     'programDirectory' => lc($$alignerRef."/coveragereport"),
+					     'programDirectory' => lc($$alignerOutDirRef."/coveragereport"),
 					     'nrofCores' => $nrCores,
 					     'processTime' => 10,
 					     'tempDirectory' => $$tempDirectoryRef,
@@ -7385,7 +7385,7 @@ sub SambambaDepth {
 					     'FILEHANDLE' => $FILEHANDLE,
 					     'directoryID' => $$sampleIDRef,
 					     'programName' => $programName,
-					     'programDirectory' => lc($$alignerRef."/coveragereport"),
+					     'programDirectory' => lc($$alignerOutDirRef."/coveragereport"),
 					     'nrofCores' => $nrCores,
 					     'processTime' => 10,
 					     'tempDirectory' => $$tempDirectoryRef
@@ -7471,7 +7471,7 @@ sub SamToolsMpileUp {
     
 ##Function : SamToolsMpileUp
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $aligner, $callType, $programName, $programInfoPath
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $callType, $programName, $programInfoPath
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -7480,7 +7480,7 @@ sub SamToolsMpileUp {
 ##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleID                   => The sampleID
-##         : $aligner                    => The aligner used in the analysis
+##         : $alignerOutDir              => The alignerOutDir used in the analysis
 ##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
@@ -7505,7 +7505,7 @@ sub SamToolsMpileUp {
     my $laneHashRef = ${$argHashRef}{'laneHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $fileName = ${$argHashRef}{'fileName'};
     my $programName = ${$argHashRef}{'programName'};
     my $programInfoPath = ${$argHashRef}{'programInfoPath'};
@@ -7523,7 +7523,7 @@ sub SamToolsMpileUp {
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
 			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'programName' => $programName,
 	);
     &CheckMandatoryArguments(\%mandatoryArgument, $programName);
@@ -7544,7 +7544,7 @@ sub SamToolsMpileUp {
 							       'FILEHANDLE' => $FILEHANDLE,
 							       'directoryID' => $$familyIDRef,
 							       'programName' => $programName,
-							       'programDirectory' => lc($$alignerRef."/".$programOutDirectoryName),
+							       'programDirectory' => lc($$alignerOutDirRef."/".$programOutDirectoryName),
 							       'nrofCores' => $nrCores,
 							       'processTime' => $time,
 							       'tempDirectory' => $$tempDirectoryRef
@@ -7555,8 +7555,8 @@ sub SamToolsMpileUp {
     $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, $nrCores);  #To not exceed maximum
 
     ## Assign directories
-    my $outFamilyFileDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/".$programOutDirectoryName;  #For ".fam" file
-    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/".$programOutDirectoryName;
+    my $outFamilyFileDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/".$programOutDirectoryName;  #For ".fam" file
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/".$programOutDirectoryName;
     ${$parameterHashRef}{"p".$programName}{'inDirectory'} = $outFamilyDirectory;  #Used downstream
 
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"p".$programName}{'fileEnding'};
@@ -7574,7 +7574,7 @@ sub SamToolsMpileUp {
 	
 	    my $sampleIDRef = \${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter];  #Alias
 	    
-	    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
+	    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk";
 	    my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pGATKBaseRecalibration'}{'fileEnding'};
 	    
 	    ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
@@ -7755,7 +7755,7 @@ sub Freebayes {
     
 ##Function : Freebayes
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $aligner, $callType, $programName, $programInfoPath
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $callType, $programName, $programInfoPath
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -7764,7 +7764,7 @@ sub Freebayes {
 ##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleID                   => The sampleID
-##         : $aligner                    => The aligner used in the analysis
+##         : $alignerOutDir              => The alignerOutDir used in the analysis
 ##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
@@ -7789,7 +7789,7 @@ sub Freebayes {
     my $laneHashRef = ${$argHashRef}{'laneHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $fileName = ${$argHashRef}{'fileName'};
     my $programName = ${$argHashRef}{'programName'};
     my $programInfoPath = ${$argHashRef}{'programInfoPath'};
@@ -7807,7 +7807,7 @@ sub Freebayes {
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
 			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'programName' => $programName,
 	);
     &CheckMandatoryArguments(\%mandatoryArgument, $programName);
@@ -7828,7 +7828,7 @@ sub Freebayes {
 							       'FILEHANDLE' => $FILEHANDLE,
 							       'directoryID' => $$familyIDRef,
 							       'programName' => $programName,
-							       'programDirectory' => lc($$alignerRef."/".$programOutDirectoryName),
+							       'programDirectory' => lc($$alignerOutDirRef."/".$programOutDirectoryName),
 							       'nrofCores' => $nrCores,
 							       'processTime' => $time,
 							       'tempDirectory' => $$tempDirectoryRef
@@ -7839,8 +7839,8 @@ sub Freebayes {
     $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, $nrCores);  #To not exceed maximum
 
     ## Assign directories
-    my $outFamilyFileDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/".$programOutDirectoryName;  #For ".fam" file
-    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerRef."/".$programOutDirectoryName;
+    my $outFamilyFileDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/".$programOutDirectoryName;  #For ".fam" file
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/".$programOutDirectoryName;
     ${$parameterHashRef}{"p".$programName}{'inDirectory'} = $outFamilyDirectory;  #Used downstream
 
     my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"p".$programName}{'fileEnding'};
@@ -7850,7 +7850,7 @@ sub Freebayes {
 	
 	    my $sampleIDRef = \${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter];  #Alias
 	    
-	    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
+	    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk";
 	    my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pGATKBaseRecalibration'}{'fileEnding'};
 	    
 	    ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
@@ -8016,7 +8016,7 @@ sub GATKHaploTypeCaller {
     
 ##Function : GATKHaploTypeCaller. 
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $aligner, $programName, $programInfoPath
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName, $programInfoPath
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -8025,7 +8025,7 @@ sub GATKHaploTypeCaller {
 ##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleID                   => The sampleID
-##         : $aligner                    => The aligner used in the analysis
+##         : $alignerOutDir              => The alignerOutDir used in the analysis
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
 
@@ -8048,7 +8048,7 @@ sub GATKHaploTypeCaller {
     my $laneHashRef = ${$argHashRef}{'laneHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $fileName = ${$argHashRef}{'fileName'};
     my $programName = ${$argHashRef}{'programName'};
     my $programInfoPath = ${$argHashRef}{'programInfoPath'};
@@ -8065,7 +8065,7 @@ sub GATKHaploTypeCaller {
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
 			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'programName' => $programName,
 	);
     &CheckMandatoryArguments(\%mandatoryArgument, $programName);
@@ -8086,7 +8086,7 @@ sub GATKHaploTypeCaller {
 							       'FILEHANDLE' => $FILEHANDLE,
 							       'directoryID' => $$sampleIDRef,
 							       'programName' => $programName,
-							       'programDirectory' => lc($$alignerRef."/gatk"),
+							       'programDirectory' => lc($$alignerOutDirRef."/gatk"),
 							       'nrofCores' => $nrCores,
 							       'processTime' => $time,
 							       'tempDirectory' => $$tempDirectoryRef
@@ -8098,8 +8098,8 @@ sub GATKHaploTypeCaller {
 
     ## Assign directories
     my $outFamilyFileDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef;  #For ".fam" file
-    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
-    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
+    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk";
     ${$parameterHashRef}{"p".$programName}{$$sampleIDRef}{'inDirectory'} = $outSampleDirectory;  #Used downstream
 
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pGATKBaseRecalibration'}{'fileEnding'};
@@ -8316,7 +8316,7 @@ sub GATKBaseReCalibration {
     
 ##Function : GATK BaseRecalibrator/PrintReads to recalibrate bases before variant calling. Both BaseRecalibrator/PrintReads will be executed within the same sbatch script.
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleID, $aligner, $programName, $programInfoPath, $fileName, $FILEHANDLE, $xargsFileCounter
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName, $programInfoPath, $fileName, $FILEHANDLE, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -8325,7 +8325,7 @@ sub GATKBaseReCalibration {
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleIDRef                => The sampleID {REF}
-##         : $alignerRef                 => The aligner used in the analysis {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
 ##         : $fileName                   => File name
@@ -8349,7 +8349,7 @@ sub GATKBaseReCalibration {
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $fileName = ${$argHashRef}{'fileName'};
     my $programName = ${$argHashRef}{'programName'};
     my $programInfoPath = ${$argHashRef}{'programInfoPath'};
@@ -8376,7 +8376,7 @@ sub GATKBaseReCalibration {
 							       'FILEHANDLE' => $FILEHANDLE,
 							       'directoryID' => $$sampleIDRef,
 							       'programName' => $programName,
-							       'programDirectory' => lc($$alignerRef."/gatk"),
+							       'programDirectory' => lc($$alignerOutDirRef."/gatk"),
 							       'nrofCores' => $nrCores,
 							       'processTime' => 50,
 							       'tempDirectory' => $gatkTemporaryDirectory,
@@ -8391,9 +8391,9 @@ sub GATKBaseReCalibration {
     }
 
     ## Assign directories
-    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
+    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk";
     my $intermediarySampleDirectory = $gatkTemporaryDirectory;
-    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk";
     ${$parameterHashRef}{"p".$programName}{$$sampleIDRef}{'inDirectory'} = $outSampleDirectory;  #Used downstream
 
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pGATKRealigner'}{'fileEnding'};
@@ -8790,7 +8790,7 @@ sub GATKReAligner {
     
 ##Function : GATK ReAlignerTargetCreator/IndelRealigner to rearrange reads around INDELs. Both ReAlignerTargetCreator and IndelRealigner will be executed within the same sbatch script.
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleID, $aligner, $programName, $fileName, $programInfoPath, $FILEHANDLE, $xargsFileCounter
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName, $fileName, $programInfoPath, $FILEHANDLE, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -8799,7 +8799,7 @@ sub GATKReAligner {
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleIDRef                => The sampleID {REF}
-##         : $alignerRef                 => The aligner used in the analysis {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
 ##         : $fileName                   => File name
@@ -8822,7 +8822,7 @@ sub GATKReAligner {
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $programName = ${$argHashRef}{'programName'};
     my $fileName = ${$argHashRef}{'fileName'};
     my $programInfoPath = ${$argHashRef}{'programInfoPath'};
@@ -8849,7 +8849,7 @@ sub GATKReAligner {
 							       'FILEHANDLE' => $FILEHANDLE,
 							       'directoryID' => $$sampleIDRef,
 							       'programName' => $programName,
-							       'programDirectory' => lc($$alignerRef."/gatk"),
+							       'programDirectory' => lc($$alignerOutDirRef."/gatk"),
 							       'nrofCores' => $nrCores,
 							       'processTime' => 40,
 							       'tempDirectory' => $gatkTemporaryDirectory
@@ -8864,9 +8864,9 @@ sub GATKReAligner {
     }
 
     ## Assign directories
-    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef;
+    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef;
     my $intermediarySampleDirectory = $gatkTemporaryDirectory;
-    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef."/gatk";
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk";
     ${$parameterHashRef}{"p".$programName}{$$sampleIDRef}{'inDirectory'} = $outSampleDirectory;  #Used downstream
 
     my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pSambambaMarkduplicates'}{'fileEnding'};
@@ -9205,7 +9205,7 @@ sub SambambaMarkduplicates {
     
 ##Function : Mark duplicated reads using Sambamba Markduplicates in files generated from alignment (sorted, merged).
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $aligner, $programName, $fileName, $programInfoPath, $FILEHANDLE, $xargsFileCounter
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName, $fileName, $programInfoPath, $FILEHANDLE, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -9214,7 +9214,7 @@ sub SambambaMarkduplicates {
 ##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleIDRef                => The sampleID {REF}
-##         : $alignerRef                 => The aligner used in the analysis {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $programName                => The program name
 ##         : $fileName                   => File name
 ##         : $programInfoPath            => The program info path
@@ -9237,7 +9237,7 @@ sub SambambaMarkduplicates {
     my $laneHashRef = ${$argHashRef}{'laneHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $fileName = ${$argHashRef}{'fileName'};
     my $programName = ${$argHashRef}{'programName'};
     my $programInfoPath = ${$argHashRef}{'programInfoPath'};
@@ -9260,8 +9260,8 @@ sub SambambaMarkduplicates {
     }
 
     ## Assign directories
-    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef;
-    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef;
+    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef;
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef;
     ${$parameterHashRef}{"p".$programName}{$$sampleIDRef}{'inDirectory'} = $outSampleDirectory;  #Used downstream
 
     ## Assign fileEndings
@@ -9283,7 +9283,7 @@ sub SambambaMarkduplicates {
 								   'FILEHANDLE' => $FILEHANDLE,
 								   'directoryID' => $$sampleIDRef,
 								   'programName' => $programName,
-								   'programDirectory' => lc($$alignerRef),
+								   'programDirectory' => lc($$alignerOutDirRef),
 								   'nrofCores' => $nrCores,
 								   'processTime' => $time,
 								   'tempDirectory' => $$tempDirectoryRef
@@ -9409,7 +9409,7 @@ sub SambambaMarkduplicates {
 								   'FILEHANDLE' => $FILEHANDLE,
 								   'directoryID' => $$sampleIDRef,
 								   'programName' => $programName,
-								   'programDirectory' => lc($$alignerRef),
+								   'programDirectory' => lc($$alignerOutDirRef),
 								   'nrofCores' => $nrCores,
 								   'processTime' => $time,
 								   'tempDirectory' => $$tempDirectoryRef,
@@ -9572,7 +9572,7 @@ sub PicardToolsMergeSamFiles {
     
 ##Function : Merges all bam files using PicardTools MergeSamFiles within each sampleid and files generated previously (option if provided with '-picardToolsMergeSamFilesPrevious'). The merged files have to be sorted before attempting to merge.
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleIDRef, $alignerRef, $fileEnding, $fileName, $programInfoPath, $programName, $FILEHANDLE, $xargsFileCounter
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleIDRef, $alignerOutDirRef, $fileEnding, $fileName, $programInfoPath, $programName, $FILEHANDLE, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -9581,7 +9581,7 @@ sub PicardToolsMergeSamFiles {
 ##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleIDRef                => The sampleID {REF}
-##         : $alignerRef                 => The aligner used in the analysis {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $fileEnding                 => The sampleID file ending to use 
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
@@ -9605,7 +9605,7 @@ sub PicardToolsMergeSamFiles {
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $laneHashRef = ${$argHashRef}{'laneHashRef'};
     my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $fileEnding = ${$argHashRef}{'fileEnding'};
     my $fileName = ${$argHashRef}{'fileName'};
     my $programName = ${$argHashRef}{'programName'};
@@ -9631,7 +9631,7 @@ sub PicardToolsMergeSamFiles {
 							       'FILEHANDLE' => $FILEHANDLE,
 							       'directoryID' => $$sampleIDRef,
 							       'programName' => $programName,
-							       'programDirectory' => lc($$alignerRef),
+							       'programDirectory' => lc($$alignerOutDirRef),
 							       'nrofCores' => $nrCores,
 							       'processTime' => 20,
 							       'tempDirectory' => $$tempDirectoryRef
@@ -9639,22 +9639,15 @@ sub PicardToolsMergeSamFiles {
     }
 
     ## Assign directories
-    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef;
-    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef;
+    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef;
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef;
     ${$parameterHashRef}{"p".$programName}{$$sampleIDRef}{'inDirectory'} = $outSampleDirectory;  #Used downstream
    
     my $infileEnding;
 
     if (${$scriptParameterHashRef}{'analysisType'} ne "rapid") {
 
-	if ($$alignerRef eq "mosaik") {
-
-	    $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pMosaikAlign'}{'fileEnding'};
-	}
-	if ($$alignerRef eq "bwa") {
-	    
-	    $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'pBwaMem'}{'fileEnding'};
-	}
+	$infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{ ${$parameterHashRef}{'activeAligner'} }{'fileEnding'};
     }    
     else {  #Rapid mode used
 
@@ -9986,7 +9979,7 @@ sub BWASampe {
     
 ##Function : Perform alignment of BWA Aln index reads using BWA sampe.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $infilesBothStrandsNoEndingHashRef, $jobIDHashRef, $sampleID, $aligner, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $infilesBothStrandsNoEndingHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName
 ##         : $parameterHashRef                  => The parameter hash {REF}
 ##         : $scriptParameterHashRef            => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef                 => Info on samples and family hash {REF}
@@ -9996,7 +9989,7 @@ sub BWASampe {
 ##         : $infilesBothStrandsNoEndingHashRef => The infile(s) without the ".ending" and strand info {REF}
 ##         : $jobIDHashRef                      => The jobID hash {REF}
 ##         : $sampleID                          => The sampleID
-##         : $aligner                           => The aligner used in the analysis
+##         : $alignerOutDir                     => The alignerOutDir used in the analysis
 ##         : $programName                       => The program name
 
     my $parameterHashRef = $_[0];
@@ -10008,7 +10001,7 @@ sub BWASampe {
     my $infilesBothStrandsNoEndingHashRef = $_[6];
     my $jobIDHashRef = $_[7];
     my $sampleID = $_[8];
-    my $aligner = $_[9];
+    my $alignerOutDir = $_[9];
     my $programName = $_[10];
     
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -10035,7 +10028,7 @@ sub BWASampe {
 						'FILEHANDLE' => $FILEHANDLE,
 						'directoryID' => $sampleID,
 						'programName' => $programName,
-						'programDirectory' => lc($aligner),
+						'programDirectory' => lc($alignerOutDir),
 						'nrofCores' => $nrCores,
 						'processTime' => $time,
 						'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
@@ -10122,7 +10115,7 @@ sub BWAAln {
     
 ##Function : Generates BWA aln index on fastq files.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $infilesBothStrandsNoEndingHashRef, $jobIDHashRef, $sampleID, $aligner, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $infilesBothStrandsNoEndingHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName
 ##         : $parameterHashRef                  => The parameter hash {REF}
 ##         : $scriptParameterHashRef            => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef                 => Info on samples and family hash {REF}
@@ -10132,7 +10125,7 @@ sub BWAAln {
 ##         : $infilesBothStrandsNoEndingHashRef => The infile(s) without the ".ending" and strand info {REF}
 ##         : $jobIDHashRef                      => The jobID hash {REF}
 ##         : $sampleID                          => The sampleID
-##         : $aligner                           => The aligner used in the analysis
+##         : $alignerOutDir                     => The alignerOutDir used in the analysis
 ##         : $programName                       => The program name
 
     my $parameterHashRef = $_[0];
@@ -10144,7 +10137,7 @@ sub BWAAln {
     my $infilesBothStrandsNoEndingHashRef = $_[6];
     my $jobIDHashRef = $_[7];
     my $sampleID = $_[8];
-    my $aligner = $_[9];
+    my $alignerOutDir = $_[9];
     my $programName = $_[10];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -10165,7 +10158,7 @@ sub BWAAln {
 					    'FILEHANDLE' => $FILEHANDLE,
 					    'directoryID' => $sampleID,
 					    'programName' => $programName,
-					    'programDirectory' => lc($aligner),
+					    'programDirectory' => lc($alignerOutDir),
 					    'nrofCores' => $nrCores,
 					    'processTime' => $time,
 					    'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
@@ -10173,7 +10166,7 @@ sub BWAAln {
 
     ## Assign directories
     my $inSampleDirectory =  ${$inDirPathHashRef}{$sampleID};
-    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".lc($aligner);
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".lc($alignerOutDir);
     ${$parameterHashRef}{"p".$programName}{$sampleID}{'inDirectory'} = $outSampleDirectory;  #Used downstream
 
     my $coreCounter=1;    
@@ -10227,7 +10220,7 @@ sub PicardToolsMergeRapidReads {
     
 ##Function : Merges all batch read processes to one file using PicardTools MergeSamFiles within each sampleid. The read batch proccessed files have to be sorted before attempting to merge.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleID, $aligner, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -10235,7 +10228,7 @@ sub PicardToolsMergeRapidReads {
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleIDRef                => The sampleID
-##         : $alignerRef                 => The aligner used in the analysis
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis
 ##         : $programName                => The program name
 
     my ($argHashRef) = @_;
@@ -10253,7 +10246,7 @@ sub PicardToolsMergeRapidReads {
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $programName = ${$argHashRef}{'programName'};
     my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
     
@@ -10264,7 +10257,7 @@ sub PicardToolsMergeRapidReads {
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{$$sampleIDRef},  #Any MIP mandatory key will do
 			     'sampleIDRef' => $$sampleIDRef,
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'programName' => $programName,
 	);
     
@@ -10277,14 +10270,14 @@ sub PicardToolsMergeRapidReads {
 					    'FILEHANDLE' => $FILEHANDLE,
 					    'directoryID' => $$sampleIDRef,
 					    'programName' => $programName,
-					    'programDirectory' => lc($$alignerRef),
+					    'programDirectory' => lc($$alignerOutDirRef),
 					    'nrofCores' => ${$scriptParameterHashRef}{'maximumCores'},
 					    'processTime' => 20,
 					   });
 
     ## Assign directories
-    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef;
-    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef;
+    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef;
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef;
 
     my $infileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'pBwaMem'}{'fileEnding'};
     my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{"p".$programName}{'fileEnding'};
@@ -10367,7 +10360,7 @@ sub BWAMem {
     
 ##Function : Performs alignment.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $alignerRef, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $alignerOutDirRef, $programName
 ##         : $parameterHashRef                  => The parameter hash {REF}
 ##         : $scriptParameterHashRef            => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef                 => Info on samples and family hash {REF}
@@ -10377,7 +10370,7 @@ sub BWAMem {
 ##         : $infilesLaneNoEndingHashRef        => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef                      => The jobID hash {REF}
 ##         : $sampleIDRef                       => The sampleID {REF}
-##         : $alignerRef                        => The aligner used in the analysis {REF}
+##         : $alignerOutDirRef                  => The alignerOutDir used in the analysis {REF}
 ##         : $programName                       => The program name
 
     my ($argHashRef) = @_;
@@ -10397,7 +10390,7 @@ sub BWAMem {
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $programName = ${$argHashRef}{'programName'};
     my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
     
@@ -10410,7 +10403,7 @@ sub BWAMem {
 			     'inDirPathHashRef' => ${$inDirPathHashRef}{$$sampleIDRef}, #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{$$sampleIDRef},  #Any MIP mandatory key will do
 			     'sampleIDRef' => $$sampleIDRef,
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'programName' => $programName,
 	);
     
@@ -10465,7 +10458,7 @@ sub BWAMem {
 									  'FILEHANDLE' => $FILEHANDLE,
 									  'directoryID' => $$sampleIDRef,
 									  'programName' => $programName,
-									  'programDirectory' => lc($$alignerRef),
+									  'programDirectory' => lc($$alignerOutDirRef),
 									  'nrofCores' => ${$scriptParameterHashRef}{'maximumCores'},
 									  'processTime' => $time,
 									 });
@@ -10476,7 +10469,7 @@ sub BWAMem {
 
 		## Assign directories
 		my $BWAinSampleDirectory = ${$inDirPathHashRef}{$$sampleIDRef};
-		my $BWAoutSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef;
+		my $BWAoutSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef;
 		${$parameterHashRef}{"p".$programName}{$$sampleIDRef}{'inDirectory'} = $BWAoutSampleDirectory;  #Used downstream
 
 		my $infile;
@@ -10562,7 +10555,7 @@ sub BWAMem {
 							       'FILEHANDLE' => $FILEHANDLE,
 							       'directoryID' => $$sampleIDRef,
 							       'programName' => $programName,
-							       'programDirectory' => lc($$alignerRef),
+							       'programDirectory' => lc($$alignerOutDirRef),
 							       'nrofCores' => ${$scriptParameterHashRef}{'maximumCores'},
 							       'processTime' => $time,
 							       'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
@@ -10571,7 +10564,7 @@ sub BWAMem {
 
 	    ## Assign directories
 	    my $inSampleDirectory = ${$inDirPathHashRef}{$$sampleIDRef};
-	    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef;
+	    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef;
 	    ${$parameterHashRef}{"p".$programName}{$$sampleIDRef}{'inDirectory'} = $outSampleDirectory;  #Used downstream
 	    
 	    ## Copies file to temporary directory.
@@ -10729,7 +10722,7 @@ sub MosaikAlign {
     
 ##Function : Performs alignment.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $sampleID, $aligner, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $sampleID, $alignerOutDir, $programName
 ##         : $parameterHashRef                  => The parameter hash {REF}
 ##         : $scriptParameterHashRef            => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef                 => Info on samples and family hash {REF}
@@ -10738,7 +10731,7 @@ sub MosaikAlign {
 ##         : $inDirPathHashRef                  => The indirectories path(s) hash {REF}
 ##         : $infilesLaneNoEndingHashRef        => The infile(s) without the ".ending" {REF}
 ##         : $sampleID                          => The sampleID
-##         : $aligner                           => The aligner used in the analysis
+##         : $alignerOutDir                     => The alignerOutDir used in the analysis
 ##         : $programName                       => The program name
 
     my $parameterHashRef = $_[0];
@@ -10750,7 +10743,7 @@ sub MosaikAlign {
     my $infilesLaneNoEndingHashRef = $_[6];
     my $jobIDHashRef = $_[7];
     my $sampleID = $_[8];
-    my $aligner = $_[9];
+    my $alignerOutDir = $_[9];
     my $programName = $_[10];
     
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -10796,7 +10789,7 @@ sub MosaikAlign {
 								  'FILEHANDLE' => $FILEHANDLE,
 								  'directoryID' => $sampleID,
 								  'programName' => $programName,
-								  'programDirectory' => lc($aligner),
+								  'programDirectory' => lc($alignerOutDir),
 								  'nrofCores' => ${$scriptParameterHashRef}{'maximumCores'},
 								  'processTime' => $time,
 								  'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
@@ -10804,8 +10797,8 @@ sub MosaikAlign {
 	my ($volume, $directories, $stdoutFile) = File::Spec->splitpath($programInfoPath."stdout.txt");  #Split to enable submission to &SampleInfoQC later
 
 	## Assign directories
-	my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner;
-	my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$aligner;
+	my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$alignerOutDir;
+	my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$alignerOutDir;
 	${$parameterHashRef}{"p".$programName}{$sampleID}{'inDirectory'} = $outSampleDirectory;  #Used downstream
 	my $outfileEnding = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{$sampleID}{"p".$programName}{'fileEnding'};
 
@@ -10983,7 +10976,7 @@ sub MosaikBuild {
     
 ##Function : Generates Mosaik hash format on reads using MosaikBuild
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $aligner, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -10993,7 +10986,7 @@ sub MosaikBuild {
 ##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleID                   => The sampleID
-##         : $aligner                    => The aligner used
+##         : $alignerOutDir              => The alignerOutDir used
 ##         : $programName                => The program name
 
     my ($argHashRef) = @_;
@@ -11008,7 +11001,7 @@ sub MosaikBuild {
     my $laneHashRef = ${$argHashRef}{'laneHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $sampleIDRef = ${$argHashRef}{'sampleID'};
-    my $alignerRef = ${$argHashRef}{'aligner'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDir'};
     my $programName = ${$argHashRef}{'programName'};
 
     my $tempDirectoryRef = \${$scriptParameterHashRef}{'tempDirectory'};
@@ -11024,7 +11017,7 @@ sub MosaikBuild {
 					    'FILEHANDLE' => $FILEHANDLE,
 					    'directoryID' => $$sampleIDRef,
 					    'programName' => $programName,
-					    'programDirectory' => lc($$alignerRef),
+					    'programDirectory' => lc($$alignerOutDirRef),
 					    'nrofCores' => $nrCores,
 					    'processTime' => $time,
 					    'tempDirectory' => $$tempDirectoryRef
@@ -11032,7 +11025,7 @@ sub MosaikBuild {
     
     ## Assign directories
     my $inSampleDirectory = ${$inDirPathHashRef}{$$sampleIDRef};
-    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerRef;
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef;
     ${$parameterHashRef}{"p".$programName}{$$sampleIDRef}{'inDirectory'} = $outSampleDirectory;  ##Used downstream
 
     my $coreCounter=1;
@@ -11100,7 +11093,7 @@ sub VariantAnnotationBlock {
     
 ##Function : Run consecutive module 
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $annovarTableHashRef, $alignerRef, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $annovarTableHashRef, $alignerOutDirRef, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -11109,7 +11102,7 @@ sub VariantAnnotationBlock {
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $annovarTableHashRef        => annovarTableHashRef {REF}
 ##         : $familyIDRef                => The familyID {REF}
-##         : $alignerRef                 => The aligner used {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used {REF}
 ##         : $programName                => The program name
     
     my ($argHashRef) = @_;
@@ -11128,7 +11121,7 @@ sub VariantAnnotationBlock {
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $annovarTableHashRef = ${$argHashRef}{'annovarTableHashRef'};
     my $supportedCosmidReferenceHashRef = ${$argHashRef}{'supportedCosmidReferenceHashRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $callType = ${$argHashRef}{'callType'};
     my $programName = ${$argHashRef}{'programName'};
     my $familyIDRef = ${$argHashRef}{'familyIDRef'};
@@ -11139,7 +11132,7 @@ sub VariantAnnotationBlock {
 			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'callType' => $callType,
 			     'programName' => $programName,
 	);
@@ -11177,7 +11170,7 @@ sub VariantAnnotationBlock {
 	    
 	    if (${$parameterHashRef}{ ${$scriptParameterHashRef}{'annovarTableNames'}[$tableNamesCounter] }{'buildFile'} eq 1) {
 		
-		&BuildAnnovarPreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$jobIDHashRef}, \%{$annovarTableHashRef}, $$familyIDRef, $$alignerRef, "Annovar");
+		&BuildAnnovarPreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$jobIDHashRef}, \%{$annovarTableHashRef}, $$familyIDRef, $$alignerOutDirRef, "Annovar");
 		last;  #Will handle all build tables within sbatch script
 	    }
 	}
@@ -11198,7 +11191,7 @@ sub VariantAnnotationBlock {
 							      'FILEHANDLE' => $FILEHANDLE,
 							      'directoryID' => $$familyIDRef,
 							      'programName' => $programName,
-							      'programDirectory' => lc($$alignerRef),
+							      'programDirectory' => lc($$alignerOutDirRef),
 							      'nrofCores' => $nrCores,
 							      'processTime' => $time,
 							     });
@@ -11211,7 +11204,7 @@ sub VariantAnnotationBlock {
 						   'fileInfoHashRef' => \%{$fileInfoHashRef},
 						   'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
 						   'jobIDHashRef' => \%{$jobIDHashRef},
-						   'alignerRef' => \$$alignerRef, 
+						   'alignerOutDirRef' => \$$alignerOutDirRef, 
 						   'callType' => $callType,
 						   'programName' => "VT",
 						   'fileName' => $fileName,
@@ -11229,7 +11222,7 @@ sub VariantAnnotationBlock {
 								       'fileInfoHashRef' => \%{$fileInfoHashRef},
 								       'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
 								       'jobIDHashRef' => \%{$jobIDHashRef},
-								       'alignerRef' => \$$alignerRef, 
+								       'alignerOutDirRef' => \$$alignerOutDirRef, 
 								       'callType' => $callType,
 								       'programName' => "VariantEffectPredictor",
 								       'fileName' => $fileName,
@@ -11247,7 +11240,7 @@ sub VariantAnnotationBlock {
 							  'fileInfoHashRef' => \%{$fileInfoHashRef},
 							  'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
 							  'jobIDHashRef' => \%{$jobIDHashRef},
-							  'alignerRef' => \$$alignerRef, 
+							  'alignerOutDirRef' => \$$alignerOutDirRef, 
 							  'callType' => $callType,
 							  'programName' => "VCFParser",
 							  'fileName' => $fileName,
@@ -11265,7 +11258,7 @@ sub VariantAnnotationBlock {
 							'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
 							'jobIDHashRef' => \%{$jobIDHashRef},
 							'annovarTableHashRef' => \%{$annovarTableHashRef},
-							'alignerRef' => \$$alignerRef, 
+							'alignerOutDirRef' => \$$alignerOutDirRef, 
 							'callType' => $callType,
 							'programName' => "Annovar",
 							'fileName' => $fileName,
@@ -11282,7 +11275,7 @@ sub VariantAnnotationBlock {
 						       'fileInfoHashRef' => \%{$fileInfoHashRef},
 						       'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
 						       'jobIDHashRef' => \%{$jobIDHashRef},
-						       'alignerRef' => \$$alignerRef, 
+						       'alignerOutDirRef' => \$$alignerOutDirRef, 
 						       'callType' => $callType,
 						       'programName' => "SnpEff",
 						       'fileName' => $fileName,
@@ -11299,7 +11292,7 @@ sub VariantAnnotationBlock {
 							     'fileInfoHashRef' => \%{$fileInfoHashRef},
 							     'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
 							     'jobIDHashRef' => \%{$jobIDHashRef},
-							     'alignerRef' => \$$alignerRef, 
+							     'alignerOutDirRef' => \$$alignerOutDirRef, 
 							     'callType' => $callType,
 							     'programName' => "RankVariants",
 							     'fileName' => $fileName,
@@ -11317,7 +11310,7 @@ sub BAMCalibrationAndGTBlock {
     
 ##Function : Run consecutive module 
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $supportedCosmidReferenceHashRef, $aligner, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $supportedCosmidReferenceHashRef, $alignerOutDir, $programName
 ##         : $parameterHashRef                => The parameter hash {REF}
 ##         : $scriptParameterHashRef          => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef               => Info on samples and family hash {REF}
@@ -11326,7 +11319,7 @@ sub BAMCalibrationAndGTBlock {
 ##         : $laneHashRef                     => The lane info hash {REF}
 ##         : $jobIDHashRef                    => The jobID hash {REF}
 ##         : $supportedCosmidReferenceHashRef => The supported cosmid references hash {REF}
-##         : $aligner                         => The aligner used
+##         : $alignerOutDir                   => The alignerOutDir used
 ##         : $programName                     => The program name
 
     my ($argHashRef) = @_;
@@ -11346,7 +11339,7 @@ sub BAMCalibrationAndGTBlock {
     my $laneHashRef = ${$argHashRef}{'laneHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
     my $supportedCosmidReferenceHashRef = ${$argHashRef}{'supportedCosmidReferenceHashRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $programName = ${$argHashRef}{'programName'};
     my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
     my $familyIDRef = ${$argHashRef}{'familyIDRef'};
@@ -11358,7 +11351,7 @@ sub BAMCalibrationAndGTBlock {
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
 			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'programName' => $programName,
 	);
     &CheckMandatoryArguments(\%mandatoryArgument, "BAMCalibrationAndGTBlock");
@@ -11403,7 +11396,7 @@ sub BAMCalibrationAndGTBlock {
 								  'FILEHANDLE' => $FILEHANDLE,
 								  'directoryID' => $$sampleIDRef,
 								  'programName' => $programName,
-								  'programDirectory' => lc($$alignerRef),
+								  'programDirectory' => lc($$alignerOutDirRef),
 								  'nrofCores' => $nrCores,
 								  'processTime' => $time,
 								  'tempDirectory' => $$tempDirectoryRef
@@ -11421,7 +11414,7 @@ sub BAMCalibrationAndGTBlock {
 										 'laneHashRef' => \%{$laneHashRef},
 										 'jobIDHashRef' => \%{$jobIDHashRef},
 										 'sampleIDRef' => $sampleIDRef,
-										 'alignerRef' => \$$alignerRef, 
+										 'alignerOutDirRef' => \$$alignerOutDirRef, 
 										 'programName' => "PicardToolsMergeSamFiles",
 										 'fileEnding' => ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'fileEnding'},
 										 'fileName' => $fileName,
@@ -11440,7 +11433,7 @@ sub BAMCalibrationAndGTBlock {
 									   'laneHashRef' => \%{$laneHashRef},
 									   'jobIDHashRef' => \%{$jobIDHashRef},
 									   'sampleIDRef' => $sampleIDRef,
-									   'alignerRef' => \$$alignerRef, 
+									   'alignerOutDirRef' => \$$alignerOutDirRef, 
 									   'programName' => "SambambaMarkduplicates",
 									   'fileName' => $fileName,
 									   'programInfoPath' => $programInfoPath,
@@ -11458,7 +11451,7 @@ sub BAMCalibrationAndGTBlock {
 								  'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
 								  'jobIDHashRef' => \%{$jobIDHashRef},
 								  'sampleIDRef' => $sampleIDRef,
-								  'alignerRef' => \$$alignerRef, 
+								  'alignerOutDirRef' => \$$alignerOutDirRef, 
 								  'programName' => "GATKRealigner",
 								  'fileEnding' => ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'fileEnding'},
 								  'fileName' => $fileName,
@@ -11477,7 +11470,7 @@ sub BAMCalibrationAndGTBlock {
 									  'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
 									  'jobIDHashRef' => \%{$jobIDHashRef},
 									  'sampleIDRef' => $sampleIDRef,
-									  'alignerRef' => \$$alignerRef, 
+									  'alignerOutDirRef' => \$$alignerOutDirRef, 
 									  'programName' => "GATKBaseRecalibration",
 									  'fileEnding' => ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'fileEnding'},
 									  'fileName' => $fileName,
@@ -11859,14 +11852,14 @@ sub BuildAnnovarPreRequisites {
     
 ##Function : Creates the AnnovarPreRequisites.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $annovarTableHashRef, $familyID, $aligner, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $annovarTableHashRef, $familyID, $alignerOutDir, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $annovarTableHashRef        => annovarTableHashRef {REF}
 ##         : $familyID                   => Family ID
-##         : $aligner                    => The aligner used in the analysis
+##         : $alignerOutDir              => The alignerOutDir used in the analysis
 ##         : $programName                => The program name
 
     my $parameterHashRef = $_[0];
@@ -11876,7 +11869,7 @@ sub BuildAnnovarPreRequisites {
     my $jobIDHashRef = $_[4];
     my $annovarTableHashRef = $_[5];
     my $familyID = $_[6];
-    my $aligner = $_[7];
+    my $alignerOutDir = $_[7];
     my $programName = $_[8];
     
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -11888,7 +11881,7 @@ sub BuildAnnovarPreRequisites {
 					    'FILEHANDLE' => $FILEHANDLE,
 					    'directoryID' => $familyID,
 					    'programName' => $programName,
-					    'programDirectory' => lc($aligner),
+					    'programDirectory' => lc($alignerOutDir),
 					    'processTime' => 3,
 					    'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
 					   });
@@ -12012,7 +12005,7 @@ sub BuildDownLoadablePreRequisites {
 
 ##Function : Creates the downloadable resources.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, supportedCosmidReferenceHashRef, $familyID, $aligner, $programName, $FILEHANDLE, $randomInteger
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, supportedCosmidReferenceHashRef, $familyID, $alignerOutDir, $programName, $FILEHANDLE, $randomInteger
 ##         : $parameterHashRef                => The parameter hash {REF}
 ##         : $scriptParameterHashRef          => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef               => Info on samples and family hash {REF}
@@ -12020,7 +12013,7 @@ sub BuildDownLoadablePreRequisites {
 ##         : $jobIDHashRef                    => The jobID hash {REF}
 ##         : $supportedCosmidReferenceHashRef => The supported cosmid references hash {REF}
 ##         : $familyID                        => Family ID
-##         : $aligner                         => The aligner used in the analysis
+##         : $alignerOutDir                   => The alignerOutDir used in the analysis
 ##         : $programName                     => The program name
 
     my $parameterHashRef = $_[0];
@@ -12030,7 +12023,7 @@ sub BuildDownLoadablePreRequisites {
     my $jobIDHashRef = $_[4];
     my $supportedCosmidReferenceHashRef = $_[5];
     my $familyID = $_[6];
-    my $aligner = $_[7];
+    my $alignerOutDir = $_[7];
     my $programName = $_[8];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -12040,7 +12033,7 @@ sub BuildDownLoadablePreRequisites {
 					    'FILEHANDLE' => $FILEHANDLE,
 					    'directoryID' => $familyID,
 					    'programName' => $programName,
-					    'programDirectory' => lc($aligner),
+					    'programDirectory' => lc($alignerOutDir),
 					    'processTime' => 4,
 					   });
 
@@ -12082,7 +12075,7 @@ sub BuildPTCHSMetricPreRequisites {
 
 ##Function : Creates the target "infiles_list" "padded.infile_list" and interval_list files.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyID, $aligner, $programName, $FILEHANDLE
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyID, $alignerOutDir, $programName, $FILEHANDLE
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -12090,7 +12083,7 @@ sub BuildPTCHSMetricPreRequisites {
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $familyID                   => Family ID
-##         : $aligner                    => The aligner used in the analysis
+##         : $alignerOutDir              => The alignerOutDir used in the analysis
 ##         : $programName                => The program name
 ##         : $FILEHANDLE                 => Filehandle to write to
 
@@ -12101,7 +12094,7 @@ sub BuildPTCHSMetricPreRequisites {
     my $infilesLaneNoEndingHashRef = $_[4];
     my $jobIDHashRef = $_[5];
     my $familyID = $_[6];
-    my $aligner = $_[7];
+    my $alignerOutDir = $_[7];
     my $programName = $_[8];   
     my $FILEHANDLE = $_[9];  #Decides if a new sbatch script will be generated or handled by supplied FILEHANDLE
 
@@ -12117,7 +12110,7 @@ sub BuildPTCHSMetricPreRequisites {
 					     'FILEHANDLE' => $FILEHANDLE,
 					     'directoryID' => $familyID,
 					     'programName' => $programName,
-					     'programDirectory' => lc($aligner),
+					     'programDirectory' => lc($alignerOutDir),
 					    });
     }
 
@@ -12318,7 +12311,7 @@ sub BuildBwaPreRequisites {
 
 ##Function : Creates the BwaPreRequisites using scriptParameters{'humanGenomeReference'} as reference.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $supportedCosmidReferenceHashRef, $bwaBuildReferenceFileEndingsArrayRef, $familyID, $aligner, $programName, $FILEHANDLE
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $supportedCosmidReferenceHashRef, $bwaBuildReferenceFileEndingsArrayRef, $familyID, $alignerOutDir, $programName, $FILEHANDLE
 ##         : $parameterHashRef                     => The parameter hash {REF}
 ##         : $scriptParameterHashRef               => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef                    => Info on samples and family hash {REF}
@@ -12328,7 +12321,7 @@ sub BuildBwaPreRequisites {
 ##         : $supportedCosmidReferenceHashRef      => The supported cosmid references hash {REF}
 ##         : $bwaBuildReferenceFileEndingsArrayRef => The bwa reference associated file endings {REF}
 ##         : $familyID                             => Family ID
-##         : $aligner                              => The aligner used in the analysis
+##         : $alignerOutDir                        => The alignerOutDir used in the analysis
 ##         : $programName                          => The program name
 
     my ($argHashRef) = @_;
@@ -12349,7 +12342,7 @@ sub BuildBwaPreRequisites {
     my $supportedCosmidReferenceHashRef = ${$argHashRef}{'supportedCosmidReferenceHashRef'};
     my $bwaBuildReferenceFileEndingsArrayRef = ${$argHashRef}{'bwaBuildReferenceFileEndingsArrayRef'};
     my $familyID = ${$argHashRef}{'familyID'};
-    my $aligner = ${$argHashRef}{'aligner'};
+    my $alignerOutDir = ${$argHashRef}{'alignerOutDir'};
     my $programName = ${$argHashRef}{'programName'};
     my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
     
@@ -12360,7 +12353,7 @@ sub BuildBwaPreRequisites {
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'bwaBuildReferenceFileEndingsArrayRef' => ${$bwaBuildReferenceFileEndingsArrayRef}[0],
 			     'familyID' => $familyID,
-			     'aligner' => $aligner,
+			     'alignerOutDir' => $alignerOutDir,
 			     'programName' => $programName,
 	);
     
@@ -12374,11 +12367,11 @@ sub BuildBwaPreRequisites {
 					    'FILEHANDLE' => $FILEHANDLE,
 					    'directoryID' => $familyID,
 					    'programName' => $programName,
-					    'programDirectory' => lc($aligner),
+					    'programDirectory' => lc($alignerOutDir),
 					    'processTime' => 3,
 					   });
  
-    &BuildHumanGenomePreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$fileInfoHashRef}, \%{$infilesLaneNoEndingHashRef}, \%{$jobIDHashRef}, \%{$supportedCosmidReferenceHashRef}, $familyID, $aligner, $programName, $FILEHANDLE, $randomInteger);
+    &BuildHumanGenomePreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$fileInfoHashRef}, \%{$infilesLaneNoEndingHashRef}, \%{$jobIDHashRef}, \%{$supportedCosmidReferenceHashRef}, $familyID, $alignerOutDir, $programName, $FILEHANDLE, $randomInteger);
 
     if (${$parameterHashRef}{'bwaBuildReference'}{'buildFile'} eq 1) {
 
@@ -12422,7 +12415,7 @@ sub BuildMosaikAlignPreRequisites {
     
 ##Function : Creates the mosaikAlignPreRequisites using scriptParameters{'humanGenomeReference'} as reference.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $supportedCosmidReferenceHashRef, $mosaikJumpDbStubFileEndingsArrayRef, $humanGenomeReferenceSourceRef, $humanGenomeReferenceVersionRef, $familyID, $aligner, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $supportedCosmidReferenceHashRef, $mosaikJumpDbStubFileEndingsArrayRef, $humanGenomeReferenceSourceRef, $humanGenomeReferenceVersionRef, $familyID, $alignerOutDir, $programName
 ##         : $parameterHashRef                    => The parameter hash {REF}
 ##         : $scriptParameterHashRef              => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef                   => Info on samples and family hash {REF}
@@ -12434,7 +12427,7 @@ sub BuildMosaikAlignPreRequisites {
 ##         : $humanGenomeReferenceSourceRef       => The human genome source {REF}
 ##         : $humanGenomeReferenceVersionRef      => The human genome build version {REF}
 ##         : $familyID                            => Family ID
-##         : $aligner                             => Aligner used in the analysis
+##         : $alignerOutDir                       => AlignerOutDir used in the analysis
 ##         : $programName                         => Program name 
 
     my $parameterHashRef = $_[0];
@@ -12448,7 +12441,7 @@ sub BuildMosaikAlignPreRequisites {
     my $humanGenomeReferenceSourceRef = $_[8];
     my $humanGenomeReferenceVersionRef = $_[9];
     my $familyID = $_[10];
-    my $aligner = $_[11];
+    my $alignerOutDir = $_[11];
     my $programName = $_[12];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -12459,13 +12452,13 @@ sub BuildMosaikAlignPreRequisites {
 					    'FILEHANDLE' => $FILEHANDLE,
 					    'directoryID' => $familyID,
 					    'programName' => $programName,
-					    'programDirectory' => lc($aligner),
+					    'programDirectory' => lc($alignerOutDir),
 					    'nrofCores' => 4,
 					    'processTime' => 2,
 					   });
     
     ## Creates the humanGenomePreRequisites using scriptParameters{'humanGenomeReference'} as reference.
-    &BuildHumanGenomePreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$fileInfoHashRef}, \%{$infilesLaneNoEndingHashRef}, \%{$jobIDHashRef}, \%{$supportedCosmidReferenceHashRef}, $familyID, $aligner, $programName, $FILEHANDLE, $randomInteger);
+    &BuildHumanGenomePreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$fileInfoHashRef}, \%{$infilesLaneNoEndingHashRef}, \%{$jobIDHashRef}, \%{$supportedCosmidReferenceHashRef}, $familyID, $alignerOutDir, $programName, $FILEHANDLE, $randomInteger);
 
     if (${$parameterHashRef}{'mosaikAlignReference'}{'buildFile'} eq 1) {  ##Begin autoBuild of MosaikAlignReference
 	
@@ -12557,7 +12550,7 @@ sub CheckBuildHumanGenomePreRequisites {
 	    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} != 1)) {
 	
 		## Creates the humanGenomePreRequisites using scriptParameters{'humanGenomeReference'} as reference.
-		&BuildHumanGenomePreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$fileInfoHashRef}, \%{$infilesLaneNoEndingHashRef}, \%{$jobIDHashRef}, \%{$supportedCosmidReferenceHashRef}, ${$scriptParameterHashRef}{'familyID'}, ${$scriptParameterHashRef}{'aligner'}, $programName);
+		&BuildHumanGenomePreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$fileInfoHashRef}, \%{$infilesLaneNoEndingHashRef}, \%{$jobIDHashRef}, \%{$supportedCosmidReferenceHashRef}, ${$scriptParameterHashRef}{'familyID'}, ${$scriptParameterHashRef}{'alignerOutDir'}, $programName);
 		last;#Will handle all metafiles build within sbatch script
 	    }
 	}
@@ -12596,17 +12589,17 @@ sub CheckBuildPTCHSMetricPreRequisites {
 	
 	if (${$parameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{'exomeTargetBedInfileLists'}{'buildFile'} eq 1) {
 	    
-	    &BuildPTCHSMetricPreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$fileInfoHashRef}, \%{$infilesLaneNoEndingHashRef}, \%{$jobIDHashRef}, ${$scriptParameterHashRef}{'familyID'}, ${$scriptParameterHashRef}{'aligner'}, $programName, $FILEHANDLE);
+	    &BuildPTCHSMetricPreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$fileInfoHashRef}, \%{$infilesLaneNoEndingHashRef}, \%{$jobIDHashRef}, ${$scriptParameterHashRef}{'familyID'}, ${$scriptParameterHashRef}{'alignerOutDir'}, $programName, $FILEHANDLE);
 	    last;  #Will handle all build per sampleID within sbatch script
 	}
 	if (${$parameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{'exomeTargetPaddedBedInfileLists'}{'buildFile'} eq 1) {
 	    
-	    &BuildPTCHSMetricPreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$fileInfoHashRef}, \%{$infilesLaneNoEndingHashRef}, \%{$jobIDHashRef}, ${$scriptParameterHashRef}{'familyID'}, ${$scriptParameterHashRef}{'aligner'}, $programName, $FILEHANDLE);
+	    &BuildPTCHSMetricPreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$fileInfoHashRef}, \%{$infilesLaneNoEndingHashRef}, \%{$jobIDHashRef}, ${$scriptParameterHashRef}{'familyID'}, ${$scriptParameterHashRef}{'alignerOutDir'}, $programName, $FILEHANDLE);
 	    last;  #Will handle all build per sampleID within sbatch script
 	}
 	if ( (defined(${$parameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{'GATKTargetPaddedBedIntervalLists'}{'buildFile'})) && (${$parameterHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'sampleIDs'}[$sampleIDCounter] }{'GATKTargetPaddedBedIntervalLists'}{'buildFile'} eq 1) ){
 	    
-	    &BuildPTCHSMetricPreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$fileInfoHashRef}, \%{$infilesLaneNoEndingHashRef}, \%{$jobIDHashRef}, ${$scriptParameterHashRef}{'familyID'}, ${$scriptParameterHashRef}{'aligner'}, $programName, $FILEHANDLE);
+	    &BuildPTCHSMetricPreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$fileInfoHashRef}, \%{$infilesLaneNoEndingHashRef}, \%{$jobIDHashRef}, ${$scriptParameterHashRef}{'familyID'}, ${$scriptParameterHashRef}{'alignerOutDir'}, $programName, $FILEHANDLE);
 	    last;  #Will handle all build per sampleID within sbatch script
 	}
     }
@@ -12751,7 +12744,7 @@ sub BuildHumanGenomePreRequisites {
     
 ##Function : Creates the humanGenomePreRequisites using scriptParameters{'humanGenomeReference'} as reference.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $humanGenomeReferenceFileEndingsArrayRef, $familyID, $aligner, $program, $FILEHANDLE, $randomInteger
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $humanGenomeReferenceFileEndingsArrayRef, $familyID, $alignerOutDir, $program, $FILEHANDLE, $randomInteger
 ##         : $parameterHashRef                => The parameter hash {REF}
 ##         : $scriptParameterHashRef          => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef               => Info on samples and family hash {REF}
@@ -12760,7 +12753,7 @@ sub BuildHumanGenomePreRequisites {
 ##         : $jobIDHashRef                    => The jobID hash {REF}
 ##         : $supportedCosmidReferenceHashRef => The supported cosmid references hash {REF}
 ##         : $familyID                        => Family ID
-##         : $aligner                         => The aligner used in the analysis
+##         : $alignerOutDir                   => The alignerOutDir used in the analysis
 ##         : $program                         => The program under evaluation
 ##         : $FILEHANDLE                      => Filehandle to write to. A new sbatch script will be generated if $FILEHANDLE is lacking, else write to exising $FILEHANDLE
 ##         : $randomInteger                   => The random integer to create temporary file name
@@ -12773,7 +12766,7 @@ sub BuildHumanGenomePreRequisites {
     my $jobIDHashRef = $_[5];
     my $supportedCosmidReferenceHashRef = $_[6];
     my $familyID = $_[7];
-    my $aligner = $_[8];
+    my $alignerOutDir = $_[8];
     my $program = $_[9];
     my $FILEHANDLE = $_[10];
     my $randomInteger = $_[11];
@@ -12790,7 +12783,7 @@ sub BuildHumanGenomePreRequisites {
 					     'FILEHANDLE' => $FILEHANDLE,
 					     'directoryID' => $familyID,
 					     'programName' => $program,
-					     'programDirectory' => lc($aligner),
+					     'programDirectory' => lc($alignerOutDir),
 					    });
     }
 
@@ -13710,7 +13703,7 @@ sub InfilesReFormat {
     
 ##Function : Reformat files for MIP output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames.
 ##Returns  : "$uncompressedFileCounter"
-##Arguments: $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $infilesBothStrandsNoEndingHashRef, $laneHashRef, $jobIDHashRef, $alignerRef, $programName
+##Arguments: $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $infilesBothStrandsNoEndingHashRef, $laneHashRef, $jobIDHashRef, $alignerOutDirRef, $programName
 ##         : $scriptParameterHashRef            => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef                 => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef                   => The fileInfo hash {REF}
@@ -13720,7 +13713,7 @@ sub InfilesReFormat {
 ##         : $infilesBothStrandsNoEndingHashRef => The infile(s) without the ".ending" and strand info {REF}
 ##         : $laneHashRef                       => The lane info hash {REF}
 ##         : $jobIDHashRef                      => The jobID hash {REF}
-##         : $alignerRef                        => The aligner used in the analysis {REF}
+##         : $alignerOutDirRef                  => The alignerOutDir used in the analysis {REF}
 ##         : $programName                       => The program name {REF}
 
     my ($argHashRef) = @_;
@@ -13735,7 +13728,7 @@ sub InfilesReFormat {
     my $infilesBothStrandsNoEndingHashRef = ${$argHashRef}{'infilesBothStrandsNoEndingHashRef'};
     my $laneHashRef = ${$argHashRef}{'laneHashRef'};
     my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $programName = ${$argHashRef}{'programName'};
     
     ## Mandatory arguments
@@ -13744,7 +13737,7 @@ sub InfilesReFormat {
 			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
 			     'infileHashRef' => ${$infileHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] }, #Any MIP mandatory key will do
 			     'inDirPathHashRef' => ${$inDirPathHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] }, #Any MIP mandatory key will do
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'programName' => $programName,
 	);
     
@@ -14923,7 +14916,7 @@ sub ProgramPreRequisites {
 ##         : $outDataDir             => The MIP out data directory
 ##         : $outScriptDir           => The MIP out script directory
 ##         : $directoryID            => $samplID|$familyID
-##         : $programDirectory       => Builds from $directoryID/$aligner
+##         : $programDirectory       => Builds from $directoryID/$alignerOutDir
 ##         : $programName            => Assigns filename to sbatch script
 ##         : $callType               => SNV,INDEL or BOTH
 ##         : $nrofCores              => The number of cores to allocate
@@ -14990,9 +14983,9 @@ sub ProgramPreRequisites {
     my $dryRunFileInfoPath = $outDataDir."/".$directoryID."/".$programDirectory."/info/dry_run_".$programName."_".$directoryID.$callType.".";
 
     ## Create directories
-    `mkdir -p $outDataDir/$directoryID/$programDirectory/info;`;  #Creates the aligner folder and info data file directory
-    `mkdir -p $programDataDirectory`;  #Creates the aligner folder and if supplied the program data file directory
-    `mkdir -p $outScriptDir/$directoryID/$programDirectory`;  #Creates the aligner folder script file directory
+    `mkdir -p $outDataDir/$directoryID/$programDirectory/info;`;  #Creates the alignerOutDir folder and info data file directory
+    `mkdir -p $programDataDirectory`;  #Creates the alignerOutDir folder and if supplied the program data file directory
+    `mkdir -p $outScriptDir/$directoryID/$programDirectory`;  #Creates the alignerOutDir folder script file directory
 
     ## Set paths depending on dry run or not
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
@@ -15702,9 +15695,9 @@ sub UpdateYAML {
 
 	    ${$scriptParameterHashRef}{$$parameterNameRef} =~ s/FDN!/$$familyIDRef/gi;  #Exchange FND! for the current familyID
 	}
-	if (defined(${$scriptParameterHashRef}{'aligner'})) {  #Set the aligner used
+	if (defined(${$scriptParameterHashRef}{'alignerOutDir'})) {  #Set the alignerOutDir used
 
-	    ${$scriptParameterHashRef}{$$parameterNameRef} =~ s/ALIGNER!/${$scriptParameterHashRef}{'aligner'}/gi;  #Exchange ALIGNER! for the current aligner
+	    ${$scriptParameterHashRef}{$$parameterNameRef} =~ s/ALIGNEROUTDIR!/${$scriptParameterHashRef}{'alignerOutDir'}/gi;  #Exchange ALIGNEROUTDIR! for the current alignerOutDir
 	}
     }
 }
@@ -17028,7 +17021,7 @@ sub CheckBuildDownLoadPreRequisites {
 		
 		    if (${$parameterHashRef}{$parameterName}{'buildFile'} eq 1) {  #Enable autoBuild
 			
-			&BuildDownLoadablePreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$infilesLaneNoEndingHashRef}, \%{$jobIDHashRef}, \%{$supportedCosmidReferenceHashRef}, ${$scriptParameterHashRef}{'familyID'}, ${$scriptParameterHashRef}{'aligner'}, $programName);
+			&BuildDownLoadablePreRequisites(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \%{$infilesLaneNoEndingHashRef}, \%{$jobIDHashRef}, \%{$supportedCosmidReferenceHashRef}, ${$scriptParameterHashRef}{'familyID'}, ${$scriptParameterHashRef}{'alignerOutDir'}, $programName);
 			last;  #Perform once
 		    }
 		}
@@ -20116,7 +20109,7 @@ sub RemoveFiles {
     
 ##Function : Removes intermediate files from the MIP analysis depending on set MIP parameters
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $FILEHANDLE, $familyID, $sampleID, $aligner, $callType, $programName, $reduceIORef
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $FILEHANDLE, $familyID, $sampleID, $alignerOutDir, $callType, $programName, $reduceIORef
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -20126,7 +20119,7 @@ sub RemoveFiles {
 ##         : $FILEHANDLE                 => Filehandle to write to
 ##         : $familyID                   => The familyID
 ##         : $sampleID                   => The sampleID
-##         : $aligner                    => The aligner used in the analysis
+##         : $alignerOutDir              => The alignerOutDir used in the analysis
 ##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 ##         : $reduceIORef                => Reduce IO - modulates processBlocks {REF}
@@ -20151,7 +20144,7 @@ sub RemoveFiles {
     my $sampleID = ${$argHashRef}{'sampleID'};
     my $inSampleDirectory = ${$argHashRef}{'inSampleDirectory'};
     my $reduceIORef = ${$argHashRef}{'reduceIORef'};
-    my $alignerRef = ${$argHashRef}{'alignerRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
     my $callType = ${$argHashRef}{'callType'};
     my $programName = ${$argHashRef}{'programName'};
 
@@ -20164,7 +20157,7 @@ sub RemoveFiles {
 			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
 			     'FILEHANDLE' => $FILEHANDLE,
 			     'reduceIORef' => $$reduceIORef,
-			     'alignerRef' => $$alignerRef,
+			     'alignerOutDirRef' => $$alignerOutDirRef,
 			     'programName' => $programName,
 	);
     
@@ -20753,7 +20746,7 @@ sub CheckAligner {
 	
 ##CheckAligner
 
-##Function : Check that the correct number of aligners is used in MIP and sets the aligner flag accordingly.
+##Function : Check that the correct number of aligners is used in MIP and sets the alignerOutDir flag accordingly.
 ##Returns  : ""
 ##Arguments: $parameterHashRef, $scriptParameterHashRef, $broadcastsArrayRef
 ##         : $parameterHashRef       => The parameter hash {REF}
@@ -20782,10 +20775,15 @@ sub CheckAligner {
 	    
 	    $aligner{'totalActiveAlignerCount'}++;
 	    push(@{$aligner{'activeAligners'}}, $aligner);
-	    ${$scriptParameterHashRef}{'aligner'} = ${$parameterHashRef}{$aligner}{'outDirectoryName'};  #Set aligner parameter depending on active aligner
+	    ${$parameterHashRef}{'activeAligner'} = $aligner;  #Save the active aligner for downstream use
+	    
+	    if (${$scriptParameterHashRef}{'alignerOutDir'} eq "notSetYet") {
 
-	    my $info = "Set aligner to: ".${$scriptParameterHashRef}{'aligner'};
-	    push(@{$broadcastsArrayRef}, $info);  #Add info to broadcasts
+		${$scriptParameterHashRef}{'alignerOutDir'} = ${$parameterHashRef}{$aligner}{'outDirectoryName'};  #Set alignerOutDir parameter depending on active aligner
+
+		my $info = "Set alignerOutDir to: ".${$scriptParameterHashRef}{'alignerOutDir'};
+		push(@{$broadcastsArrayRef}, $info);  #Add info to broadcasts
+	    }
 	}
     }
     if ($aligner{'totalActiveAlignerCount'} > 1) {

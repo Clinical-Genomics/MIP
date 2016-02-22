@@ -347,7 +347,7 @@ bwaBuildReference:
   reference: referencesDir
   type: path
 ## Choosen MIP Aligner
-aligner:
+alignerOutDir:
   associatedProgram:
    - MIP
   dataType: SCALAR
