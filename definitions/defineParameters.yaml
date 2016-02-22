@@ -215,8 +215,10 @@ pMosaikAlign:
   dataType: SCALAR
   default: 0
   fileEnding: _sorted
+  outDirectoryName: mosaik
   programNamePath:
    - MosaikAligner
+  programType: aligner
   removalFileEnding:
    - .stat
    - .bam
@@ -266,10 +268,12 @@ pBwaMem:
   dataType: SCALAR
   default: 1
   fileEnding: _sorted
+  outDirectoryName: bwa
   programNamePath:
    - bwa
    - samtools
    - sambamba
+  programType: aligner
   removalFileEnding:
    - .bam
   removeRedundantFiles: yes
@@ -345,7 +349,7 @@ aligner:
   associatedProgram:
    - MIP
   dataType: SCALAR
-  default: bwa
+  default: notSetYet
   type: MIP
 ## PicardTools
 pPicardToolsMergeRapidReads:
