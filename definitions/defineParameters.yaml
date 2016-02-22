@@ -326,8 +326,10 @@ pBwaSampe:
   dataType: SCALAR
   default: 0
   fileEnding: nofileEnding
+  outDirectoryName: bwa
   programNamePath:
    - bwa
+  programType: aligner
   removalFileEnding:
    - .bam
   removeRedundantFiles: yes
