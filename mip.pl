@@ -576,7 +576,12 @@ foreach my $orderParameterElement (@orderParameters) {
 	$parameter{'sampleInfoFile'}{'default'} = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/".$scriptParameter{'familyID'}."_qc_sampleInfo.yaml";
 
 	## Set the default Log4perl file using supplied dynamic parameters.
-	$parameter{'logFile'}{'default'} = &DeafultLog4perlFile(\%scriptParameter, \$parameter{'logFile'}{'value'}, \$script, \$date, \$dateTimeStamp);
+	$parameter{'logFile'}{'default'} = &DeafultLog4perlFile({'scriptParameterHashRef' => \%scriptParameter,
+								 'cmdInputRef' => \$parameter{'logFile'}{'value'},
+								 'scriptRef' => \$script,
+								 'dateRef' => \$date,
+								 'dateTimeStampRef' => \$dateTimeStamp,
+								});
 
 	$parameter{'QCCollectSampleInfoFile'}{'default'} = $parameter{'sampleInfoFile'}{'default'};
     }
@@ -673,7 +678,7 @@ if (exists($scriptParameter{'email'})) {  #Allow no malformed email adress
 
 ## Check programs in path, and executable
 &CheckCommandinPath({'parameterHashRef' => \%parameter,
-		     'scriptParameterHashRef' =>\%scriptParameter,
+		     'scriptParameterHashRef' => \%scriptParameter,
 		    });
 
 ## Check aligner options
@@ -685,9 +690,23 @@ if (exists($scriptParameter{'email'})) {  #Allow no malformed email adress
 for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #all sampleIDs
 
     ## Enables target files handled per SampleID to be processed by AddToScriptParameters
-    &ScriptParameterPerSampleID(\%scriptParameter, \$scriptParameter{'familyID'}, \$scriptParameter{'sampleIDs'}[$sampleIDCounter], "exomeTargetBedInfileLists");
-    &ScriptParameterPerSampleID(\%scriptParameter, \$scriptParameter{'familyID'}, \$scriptParameter{'sampleIDs'}[$sampleIDCounter], "exomeTargetPaddedBedInfileLists");
-    &ScriptParameterPerSampleID(\%scriptParameter, \$scriptParameter{'familyID'}, \$scriptParameter{'sampleIDs'}[$sampleIDCounter], "GATKTargetPaddedBedIntervalLists");
+    &ScriptParameterPerSampleID({'scriptParameterHashRef' => \%scriptParameter,
+				 'familyIDRef' => \$scriptParameter{'familyID'},
+				 'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
+				 'parameterName' => "exomeTargetBedInfileLists",
+				});
+
+    &ScriptParameterPerSampleID({'scriptParameterHashRef' => \%scriptParameter,
+				 'familyIDRef' => \$scriptParameter{'familyID'},
+				 'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
+				 'parameterName' => "exomeTargetPaddedBedInfileLists",
+				});
+
+    &ScriptParameterPerSampleID({'scriptParameterHashRef' => \%scriptParameter,
+				 'familyIDRef' => \$scriptParameter{'familyID'},
+				 'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
+				 'parameterName' => "GATKTargetPaddedBedIntervalLists",
+				});
 }
 
 
@@ -776,25 +795,111 @@ foreach my $parameterInfo (@broadcasts) {
 
 ### Cosmid references
 ## Defines the Cosmid manager hash keys and populates it from arguments
-&DefineSupportedCosmidReferences(\%supportedCosmidReference, "humanGenomeReference", "decoy", "5", \$fileInfo{'humanGenomeReferenceVersion'}, "compressed");
-&DefineSupportedCosmidReferences(\%supportedCosmidReference, "sambambaDepthBed", "ccds", "latest", \$fileInfo{'humanGenomeReferenceVersion'}, "unCompressed");
-&DefineSupportedCosmidReferences(\%supportedCosmidReference, "GATKReAlignerINDELKnownSet1", "indels", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'}, \$fileInfo{'humanGenomeReferenceVersion'}, "unCompressed");
-&DefineSupportedCosmidReferences(\%supportedCosmidReference, "GATKReAlignerINDELKnownSet2", "mills", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'}, \$fileInfo{'humanGenomeReferenceVersion'}, "unCompressed");
-&DefineSupportedCosmidReferences(\%supportedCosmidReference, "GATKBaseReCalibrationSNPKnownSet", "dbsnp", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'}, \$fileInfo{'humanGenomeReferenceVersion'}, "unCompressed");
-&DefineSupportedCosmidReferences(\%supportedCosmidReference, "GATKHaploTypeCallerSNPKnownSet", "dbsnp", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'}, \$fileInfo{'humanGenomeReferenceVersion'}, "unCompressed");
-&DefineSupportedCosmidReferences(\%supportedCosmidReference, "GATKVariantReCalibrationTrainingSetHapMap", "hapmap", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'}, \$fileInfo{'humanGenomeReferenceVersion'}, "unCompressed");
-&DefineSupportedCosmidReferences(\%supportedCosmidReference, "GATKVariantReCalibrationTrainingSetMills", "mills", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'}, \$fileInfo{'humanGenomeReferenceVersion'}, "unCompressed");
-&DefineSupportedCosmidReferences(\%supportedCosmidReference, "GATKVariantReCalibrationTrainingSet1000GOmni", "1000g_omni", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'}, \$fileInfo{'humanGenomeReferenceVersion'}, "unCompressed");
-&DefineSupportedCosmidReferences(\%supportedCosmidReference, "GATKVariantReCalibrationTrainingSet1000GSNP", "1000g_snps", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'}, \$fileInfo{'humanGenomeReferenceVersion'}, "unCompressed");
-&DefineSupportedCosmidReferences(\%supportedCosmidReference, "GATKVariantReCalibrationTrainingSetDbSNP", "dbsnp", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'}, \$fileInfo{'humanGenomeReferenceVersion'}, "unCompressed");
-&DefineSupportedCosmidReferences(\%supportedCosmidReference, "GATKVariantEvalGold", "mills", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'}, \$fileInfo{'humanGenomeReferenceVersion'}, "unCompressed"); 
-&DefineSupportedCosmidReferences(\%supportedCosmidReference, "GATKVariantEvalDbSNP", "dbsnpex", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'}, \$fileInfo{'humanGenomeReferenceVersion'}, "unCompressed");
+&DefineSupportedCosmidReferences({'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+				  'parameterName' => "humanGenomeReference",
+				  'cosmidResourceName' => "decoy",
+				  'cosmidResourceVersion' => "5",
+				  'humanGenomeReferenceVersionRef' => \$fileInfo{'humanGenomeReferenceVersion'},
+				  'compressedSwitch' => "compressed",
+				 });
+&DefineSupportedCosmidReferences({'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+				  'parameterName' => "sambambaDepthBed",
+				  'cosmidResourceName' => "ccds",
+				  'cosmidResourceVersion' => "latest",
+				  'humanGenomeReferenceVersionRef' => \$fileInfo{'humanGenomeReferenceVersion'},
+				 });
+&DefineSupportedCosmidReferences({'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+				  'parameterName' => "GATKReAlignerINDELKnownSet1",
+				  'cosmidResourceName' => "indels",
+				  'cosmidResourceVersion' => $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'},
+				  'humanGenomeReferenceVersionRef' => \$fileInfo{'humanGenomeReferenceVersion'},
+				 });
+&DefineSupportedCosmidReferences({'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+				  'parameterName' => "GATKReAlignerINDELKnownSet2",
+				  'cosmidResourceName' => "mills",
+				  'cosmidResourceVersion' => $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'},
+				  'humanGenomeReferenceVersionRef' => \$fileInfo{'humanGenomeReferenceVersion'},
+				 });
+&DefineSupportedCosmidReferences({'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+				  'parameterName' => "GATKBaseReCalibrationSNPKnownSet",
+				  'cosmidResourceName' => "dbsnp",
+				  'cosmidResourceVersion' => $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'},
+				  'humanGenomeReferenceVersionRef' => \$fileInfo{'humanGenomeReferenceVersion'},
+				 });
+&DefineSupportedCosmidReferences({'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+				  'parameterName' => "GATKHaploTypeCallerSNPKnownSet",
+				  'cosmidResourceName' => "dbsnp",
+				  'cosmidResourceVersion' => $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'},
+				  'humanGenomeReferenceVersionRef' => \$fileInfo{'humanGenomeReferenceVersion'},
+				 });
+&DefineSupportedCosmidReferences({'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+				  'parameterName' => "GATKVariantReCalibrationTrainingSetHapMap",
+				  'cosmidResourceName' => "hapmap",
+				  'cosmidResourceVersion' => $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'},
+				  'humanGenomeReferenceVersionRef' => \$fileInfo{'humanGenomeReferenceVersion'},
+				 });
+&DefineSupportedCosmidReferences({'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+				  'parameterName' => "GATKVariantReCalibrationTrainingSetMills",
+				  'cosmidResourceName' => "mills",
+				  'cosmidResourceVersion' => $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'},
+				  'humanGenomeReferenceVersionRef' => \$fileInfo{'humanGenomeReferenceVersion'},
+				 });
+&DefineSupportedCosmidReferences({'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+				  'parameterName' => "GATKVariantReCalibrationTrainingSet1000GOmni",
+				  'cosmidResourceName' => "1000g_omni",
+				  'cosmidResourceVersion' => $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'},
+				  'humanGenomeReferenceVersionRef' => \$fileInfo{'humanGenomeReferenceVersion'},
+				 });
+&DefineSupportedCosmidReferences({'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+				  'parameterName' => "GATKVariantReCalibrationTrainingSet1000GSNP",
+				  'cosmidResourceName' => "1000g_snps",
+				  'cosmidResourceVersion' => $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'},
+				  'humanGenomeReferenceVersionRef' => \$fileInfo{'humanGenomeReferenceVersion'},
+				 });
+&DefineSupportedCosmidReferences({'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+				  'parameterName' => "GATKVariantReCalibrationTrainingSetDbSNP",
+				  'cosmidResourceName' => "dbsnp",
+				  'cosmidResourceVersion' => $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'},
+				  'humanGenomeReferenceVersionRef' => \$fileInfo{'humanGenomeReferenceVersion'},
+				 });
+&DefineSupportedCosmidReferences({'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+				  'parameterName' => "GATKVariantEvalGold",
+				  'cosmidResourceName' => "mills",
+				  'cosmidResourceVersion' => $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'},
+				  'humanGenomeReferenceVersionRef' => \$fileInfo{'humanGenomeReferenceVersion'},
+				 }); 
+&DefineSupportedCosmidReferences({'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+				  'parameterName' => "GATKVariantEvalDbSNP",
+				  'cosmidResourceName' => "dbsnpex",
+				  'cosmidResourceVersion' => $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'},
+				  'humanGenomeReferenceVersionRef' => \$fileInfo{'humanGenomeReferenceVersion'},
+				 });
 
 ##Flag -> array parameters to enable multiple download via Cosmid using the same flag 
-&DefineSupportedCosmidReferences(\%supportedCosmidReference, "dbsnp_138.b37.vcf", "dbsnp", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'}, \$fileInfo{'humanGenomeReferenceVersion'}, "unCompressed");
-&DefineSupportedCosmidReferences(\%supportedCosmidReference, "dbsnp_138.b37.excluding_sites_after_129.vcf", "dbsnpex", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'}, \$fileInfo{'humanGenomeReferenceVersion'}, "unCompressed");
-&DefineSupportedCosmidReferences(\%supportedCosmidReference, "1000G_phase1.indels.b37.vcf", "1000g_omni", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'}, \$fileInfo{'humanGenomeReferenceVersion'}, "unCompressed");
-&DefineSupportedCosmidReferences(\%supportedCosmidReference, "1000G_phase1.snps.high_confidence.b37.vcf", "1000g_snps", $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'}, \$fileInfo{'humanGenomeReferenceVersion'}, "unCompressed");
+&DefineSupportedCosmidReferences({'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+				  'parameterName' => "dbsnp_138.b37.vcf",
+				  'cosmidResourceName' => "dbsnp",
+				  'cosmidResourceVersion' => $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'},
+				  'humanGenomeReferenceVersionRef' => \$fileInfo{'humanGenomeReferenceVersion'},
+				 });
+&DefineSupportedCosmidReferences({'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+				  'parameterName' => "dbsnp_138.b37.excluding_sites_after_129.vcf",
+				  'cosmidResourceName' => "dbsnpex",
+				  'cosmidResourceVersion' => $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'},
+				  'humanGenomeReferenceVersionRef' => \$fileInfo{'humanGenomeReferenceVersion'},
+				 });
+&DefineSupportedCosmidReferences({'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+				  'parameterName' => "1000G_phase1.indels.b37.vcf",
+				  'cosmidResourceName' => "1000g_omni",
+				  'cosmidResourceVersion' => $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'},
+				  'humanGenomeReferenceVersionRef' => \$fileInfo{'humanGenomeReferenceVersion'},
+				 });
+&DefineSupportedCosmidReferences({'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+				  'parameterName' => "1000G_phase1.snps.high_confidence.b37.vcf",
+				  'cosmidResourceName' => "1000g_snps",
+				  'cosmidResourceVersion' => $scriptParameter{'GATKBundleDownLoadVersion'}."/b".$fileInfo{'humanGenomeReferenceVersion'},
+				  'humanGenomeReferenceVersionRef' => \$fileInfo{'humanGenomeReferenceVersion'},
+				 });
 
 
 ## Check that a Cosmid installation exists
@@ -836,12 +941,19 @@ if ($scriptParameter{'writeConfigFile'} ne 0) {  #Write config file for family
 
 
 ## Write CMD to MIP log file
-&WriteCMDMipLog(\%parameter, \%scriptParameter, \@orderParameters, \$script, \$scriptParameter{'logFile'}, \$mipVersion);
-
+&WriteCMDMipLog({'parameterHashRef' => \%parameter,
+		 'scriptParameterHashRef' => \%scriptParameter,
+		 'orderParametersArrayRef' => \@orderParameters,
+		 'scriptRef' => \$script,
+		 'logFileRef' => \$scriptParameter{'logFile'},
+		 'mipVersionRef' => \$mipVersion,
+		});
 
 ## Collects the ".fastq(.gz)" files from the supplied infiles directory. Checks if any of the files exist
-&CollectInfiles(\%scriptParameter, \%inDirPath, \%infile);
-
+&CollectInfiles({'scriptParameterHashRef' => \%scriptParameter,
+		 'inDirPathHashRef' => \%inDirPath,
+		 'infileHashRef' => \%infile,
+		});
 
 ## Reformat files for MIP output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames
 my $uncompressedFileSwitch = &InfilesReFormat({'scriptParameterHashRef' => \%scriptParameter,
@@ -874,7 +986,10 @@ my $uncompressedFileSwitch = &InfilesReFormat({'scriptParameterHashRef' => \%scr
 
 
 ## Add to SampleInfo
-&AddToSampleInfo(\%scriptParameter, \%sampleInfo, \%fileInfo);
+&AddToSampleInfo({'scriptParameterHashRef' => \%scriptParameter,
+		  'sampleInfoHashRef' => \%sampleInfo,
+		  'fileInfoHashRef' => \%fileInfo,
+		 });
 
 
 ############
@@ -13539,41 +13654,47 @@ sub CollectInfiles {
 ##         : $inDirPathHashRef       => The indirectories path(s) hash {REF}
 ##         : $infileHashRef          => The infiles hash {REF}
 
-    my $scriptParameterHashRef = $_[0];
-    my $inDirPathHashRef = $_[1];
-    my $infileHashRef = $_[2];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $inDirPathHashRef = ${$argHashRef}{'inDirPathHashRef'};
+    my $infileHashRef = ${$argHashRef}{'infileHashRef'};
 
     $logger->info("Reads from Platform\n");
 
     for (my $inputDirectoryCounter=0;$inputDirectoryCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$inputDirectoryCounter++) {  #Collects inputfiles govern by sampleIDs
 	
-	my @infiles = `cd ${$scriptParameterHashRef}{'inFilesDirs'}[ $inputDirectoryCounter ];ls *.fastq*;`;  #'cd' to input dir and collect fastq files and fastq.gz files
+	my $inFileDirectoryRef = \${$scriptParameterHashRef}{'inFilesDirs'}[$inputDirectoryCounter];  #Alias
+	my $sampleIDRef = \${$scriptParameterHashRef}{'sampleIDs'}[$inputDirectoryCounter];  #Alias 
+
+	my @infiles = `cd $$inFileDirectoryRef;ls *.fastq*;`;  #'cd' to input dir and collect fastq files and fastq.gz files
 	chomp(@infiles);   #Remove newline from every entry in array
 
 	if (scalar(@infiles) == 0) {  #No "*.fastq*" infiles
 	    
-	    $logger->fatal("Could not find any '.fastq' files in supplied infiles directory ".${$scriptParameterHashRef}{'inFilesDirs'}[$inputDirectoryCounter], "\n");
+	    $logger->fatal("Could not find any '.fastq' files in supplied infiles directory ".$$inFileDirectoryRef, "\n");
 	    exit 1;
 	}
 	foreach my $infile (@infiles) {  #Check that inFileDirs/infile contains sampleID in filename
 
-	    unless ( $infile =~/${$scriptParameterHashRef}{'sampleIDs'}[$inputDirectoryCounter]/) {
+	    unless ( $infile =~/$$sampleIDRef/) {
 
-		$logger->fatal("Could not detect sampleID: ".${$scriptParameterHashRef}{'sampleIDs'}[$inputDirectoryCounter]." in supplied infile: ".${$scriptParameterHashRef}{'inFilesDirs'}[$inputDirectoryCounter]."/".$infile, "\n");
+		$logger->fatal("Could not detect sampleID: ".$$sampleIDRef." in supplied infile: ".$$inFileDirectoryRef."/".$infile, "\n");
 		$logger->fatal("Check that the order of supplied: '--sampleIDs' and '--inFilesDirs' correlate.", "\n");
 		$logger->fatal("NOTE: SampleIDs read from pedigree are lexiographically sorted and for instance '--inFileDirs' supplied need to be supplied in the same order to correlate", "\n");
 		exit 1;
 	    }
 	}
-	$logger->info("Sample ID: ".${$scriptParameterHashRef}{'sampleIDs'}[$inputDirectoryCounter]."\n");
+	$logger->info("Sample ID: ".$$sampleIDRef."\n");
 	$logger->info("\tInputfiles:\n");
 	## Log each file from platform
 	foreach my $file (@infiles) {
 
 	    $logger->info("\t\t", $file, "\n");  #Indent for visability
 	}
-	${$inDirPathHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[$inputDirectoryCounter] } = ${$scriptParameterHashRef}{'inFilesDirs'}[ $inputDirectoryCounter ];   #Catch inputdir path
-	${$infileHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[$inputDirectoryCounter] }  = [@infiles];  #Reload files into hash
+	${$inDirPathHashRef}{ $$sampleIDRef } = $$inFileDirectoryRef;   #Catch inputdir path
+	${$infileHashRef}{ $$sampleIDRef }  = [@infiles];  #Reload files into hash
     }
 }
 
@@ -14790,16 +14911,22 @@ sub ProgramPreRequisites {
     
 ##Function : Creates program directories (info & programData & programScript), program script filenames and writes sbatch header.
 ##Returns  : Path to stdout
-##Arguments: $scriptParameterHashRef, $FILEHANDLE, $argHashRef
+##Arguments: $scriptParameterHashRef, $FILEHANDLE, $emailType, $outDataDir, $outScriptDir, $directoryID, $programDirectory, $programName, $callType, $nrofCores, $processTime, $tempDirectory, $errorTrap, $pipefail
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 ##         : $FILEHANDLE             => FILEHANDLE to write to
+##         : $emailType              => The email type
+##         : $outDataDir             => The MIP out data directory
+##         : $outScriptDir           => The MIP out script directory
 ##         : $directoryID            => $samplID|$familyID
-##         : $programName            => Assigns filename to sbatch script
 ##         : $programDirectory       => Builds from $directoryID/$aligner
+##         : $programName            => Assigns filename to sbatch script
 ##         : $callType               => SNV,INDEL or BOTH
 ##         : $nrofCores              => The number of cores to allocate
 ##         : $processTime            => Hours
 ##         : $tempDirectory          => Temporary directory for program {Optional}
+##         : $errorTrap              => Error trap switch
+##         : $pipefail               => Pipe fail switch
+ 
 
     my ($argHashRef) = @_;
 
@@ -15289,13 +15416,16 @@ sub WriteCMDMipLog {
 ##         : $scriptRef               => The script that is being executed {REF}
 ##         : $logFileRef              => The log file
 ##         : $mipVersionRef           => The MIP version
-    
-    my $parameterHashRef = $_[0];
-    my $scriptParameterHashRef = $_[1];
-    my $orderParametersArrayRef = $_[2];
-    my $scriptRef = $_[3];
-    my $logFileRef = $_[4];
-    my $mipVersionRef = $_[5];
+
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $orderParametersArrayRef = ${$argHashRef}{'orderParametersArrayRef'};
+    my $scriptRef = ${$argHashRef}{'scriptRef'};
+    my $logFileRef = ${$argHashRef}{'logFileRef'};
+    my $mipVersionRef = ${$argHashRef}{'mipVersionRef'};
 
     my $cmdLine = $$scriptRef." ";
 
@@ -16210,10 +16340,13 @@ sub ScriptParameterPerSampleID {
 ##         : $sampleIDRef            => Sample ID  {REF}
 ##         : $parameterName          => MIP parameter name
 
-    my $scriptParameterHashRef = $_[0];
-    my $familyIDRef = $_[1];
-    my $sampleIDRef = $_[2];
-    my $parameterName = $_[3];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
+    my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
+    my $parameterName = ${$argHashRef}{'parameterName'};
 
     if (defined(${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{$parameterName})) {
 	
@@ -16744,25 +16877,33 @@ sub DefineSupportedCosmidReferences {
     
 ##Function : Defines the Cosmid manager hash keys and populates it from arguments 
 ##Returns  : ""
-##Arguments: $supportedCosmidReferenceHashRef, $parameterName, $cosmidResourceName, $CosmidResourceVersion, 
+##Arguments: $supportedCosmidReferenceHashRef, $parameterName, $cosmidResourceName, $cosmidResourceVersion, 
 ##         : $supportedCosmidReferenceHashRef => The supported cosmid references hash {REF} 
 ##         : $parameterName                    => MIP parameter name
 ##         : $cosmidResourceName               => Cosmid Resource name
-##         : $CosmidResourceVersion            => Version of the cosmid Resource to download
+##         : $cosmidResourceVersion            => Version of the cosmid Resource to download
 ##         : $humanGenomeReferenceVersionRef   => The human genome build used in the analysis
 ##         : $compressedSwitch                 => If files after download are compressed or not
 
-    my $supportedCosmidReferenceHashRef = $_[0];
-    my $parameterName = $_[1];
-    my $cosmidResourceName = $_[2];
-    my $CosmidResourceVersion = $_[3];
-    my $humanGenomeReferenceVersionRef = $_[4];
-    my $compressedSwitch = $_[5];
+    my ($argHashRef) = @_;
+
+    my %default = ('compressedSwitch' => "unCompressed",
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+    
+    ## Flatten argument(s)
+    my $supportedCosmidReferenceHashRef = ${$argHashRef}{'supportedCosmidReferenceHashRef'};
+    my $parameterName = ${$argHashRef}{'parameterName'};
+    my $cosmidResourceName = ${$argHashRef}{'cosmidResourceName'};
+    my $cosmidResourceVersion = ${$argHashRef}{'cosmidResourceVersion'};
+    my $humanGenomeReferenceVersionRef = ${$argHashRef}{'humanGenomeReferenceVersionRef'};
+    my $compressedSwitch = ${$argHashRef}{'compressedSwitch'};
 
     ${$supportedCosmidReferenceHashRef}{$parameterName} = {
 
 	'cosmidName' => $cosmidResourceName,
-	'version' => $CosmidResourceVersion,
+	'version' => $cosmidResourceVersion,
 	'humanGenomeReferenceVersion' => $$humanGenomeReferenceVersionRef,
 	'compressedSwitch' => $compressedSwitch,
     };
@@ -17417,23 +17558,36 @@ sub DeafultLog4perlFile {
     
 ##Function : Set the default Log4perl file using supplied dynamic parameters.
 ##Returns  : "$LogFile"
-##Arguments: $scriptParameterHashRef, $cmdInputRef, $scriptRef, $dateRef, $dateTimeStampRef
+##Arguments: $scriptParameterHashRef, $cmdInputRef, $scriptRef, $dateRef, $dateTimeStampRef, $familyIDRef, $outDataDirRef
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 ##         : $cmdInputRef            => User supplied info on cmd for logFile option {REF}
 ##         : $scriptRef              => The script that is executed {REF}
 ##         : $dateRef                => The date {REF}
 ##         : $dateTimeStampRef       => The date and time {REF}
+##         : $familyIDRef            => The familyID {REF}
+##         : $outDataDirRef          => OutData directory {REF}
    
-    my $scriptParameterHashRef = $_[0];
-    my $cmdInputRef = $_[1];
-    my $scriptRef = $_[2];
-    my $dateRef = $_[3];
-    my $dateTimeStampRef = $_[4];
+    my ($argHashRef) = @_;
+
+    my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+		   'outDataDirRef' => \${$argHashRef}{'scriptParameterHashRef'}{'outDataDir'},
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $cmdInputRef = ${$argHashRef}{'cmdInputRef'};
+    my $scriptRef = ${$argHashRef}{'scriptRef'};
+    my $dateRef = ${$argHashRef}{'dateRef'};
+    my $dateTimeStampRef = ${$argHashRef}{'dateTimeStampRef'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
+    my $outDataDirRef = ${$argHashRef}{'outDataDirRef'};
     
     unless (defined($$cmdInputRef)) {  #No input from cmd i.e. do not create default logging directory or set default
 
-	`mkdir -p ${$scriptParameterHashRef}{'outDataDir'}/${$scriptParameterHashRef}{'familyID'}/mip_log/$$dateRef;`;  #Creates the default log dir
-	my $LogFile = ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'familyID'}."/mip_log/".$$dateRef."/".$$scriptRef."_".$$dateTimeStampRef.".log";  #concatenates log filename	
+	`mkdir -p $$outDataDirRef/$$familyIDRef/mip_log/$$dateRef;`;  #Creates the default log dir
+	my $LogFile = $$outDataDirRef."/".$$familyIDRef."/mip_log/".$$dateRef."/".$$scriptRef."_".$$dateTimeStampRef.".log";  #concatenates log filename	
 	return $LogFile;
     }
 }
@@ -19085,70 +19239,91 @@ sub AddToSampleInfo {
 
 ##Function : Adds parameter info to sampleInfo
 ##Returns  : ""
-##Arguments: $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef
+##Arguments: $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $familyIDRef
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef        => The fileInfo hash {REF}
+##         : $familyIDRef            => The familyIDRef {REF}
 
-    my $scriptParameterHashRef = $_[0];
-    my $sampleInfoHashRef = $_[1];
-    my $fileInfoHashRef = $_[2];
+
+    my ($argHashRef) = @_;
+
+    my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+		   'outDataDir' => ${$argHashRef}{'scriptParameterHashRef'}{'outDataDir'},
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
+    my $outDataDir = ${$argHashRef}{'outDataDir'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
+			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "AddToSampleInfo");
+    
 
     if (defined(${$scriptParameterHashRef}{'instanceTag'})) {
 
-	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'InstanceTag'} = ${$scriptParameterHashRef}{'instanceTag'};
+	${$sampleInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{'InstanceTag'} = ${$scriptParameterHashRef}{'instanceTag'};
     }
     if (defined(${$scriptParameterHashRef}{'researchEthicalApproval'})) {
 
-	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'ResearchEthicalApproval'} = ${$scriptParameterHashRef}{'researchEthicalApproval'};
+	${$sampleInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{'ResearchEthicalApproval'} = ${$scriptParameterHashRef}{'researchEthicalApproval'};
     }
     if (defined(${$scriptParameterHashRef}{'analysisType'})) {
 
-	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'AnalysisType'} = ${$scriptParameterHashRef}{'analysisType'};
+	${$sampleInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{'AnalysisType'} = ${$scriptParameterHashRef}{'analysisType'};
     }
     if (defined(${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'})) {
 
 	if (${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}=~/GenomeAnalysisTK-([^,]+)/) {
 	    
-	    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'Program'}{"GATK"}{'Version'} = $1;
+	    ${$sampleInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{'Program'}{"GATK"}{'Version'} = $1;
 	}
 	else {  #Fall back on actually calling program
 	    
 	    my $ret = (`java -jar ${$scriptParameterHashRef}{'genomeAnalysisToolKitPath'}/GenomeAnalysisTK.jar --version 2>&1`);
 	    chomp($ret);
-	    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'Program'}{"GATK"}{'Version'} = $ret;
+	    ${$sampleInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{'Program'}{"GATK"}{'Version'} = $ret;
 	}
     }
     if (defined(${$scriptParameterHashRef}{'picardToolsPath'})) {  #To enable addition of version to sampleInfo
 	
 	if (${$scriptParameterHashRef}{'picardToolsPath'}=~/picard-tools-([^,]+)/) {
 	    
-	    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'Program'}{"PicardTools"}{'Version'} = $1;
+	    ${$sampleInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{'Program'}{"PicardTools"}{'Version'} = $1;
 	}
 	else {  #Fall back on actually calling program
 
 	    my $ret = (`java -jar ${$scriptParameterHashRef}{'picardToolsPath'}/picard.jar CreateSequenceDictionary --version 2>&1`);
 	    chomp($ret);
-	    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'Program'}{"PicardTools"}{'Version'} = $ret;
+	    ${$sampleInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{'Program'}{"PicardTools"}{'Version'} = $ret;
 	}
     }
     if (defined(${$scriptParameterHashRef}{'humanGenomeReference'})) {  #To enable addition of version to sampleInfo
 
-	${$sampleInfoHashRef}{${$scriptParameterHashRef}{'familyID'}}{${$scriptParameterHashRef}{'familyID'}}{"HumanGenomeBuild"}{'Path'} = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'};
-	${$sampleInfoHashRef}{${$scriptParameterHashRef}{'familyID'}}{${$scriptParameterHashRef}{'familyID'}}{"HumanGenomeBuild"}{'Source'} = ${$fileInfoHashRef}{'humanGenomeReferenceSource'};
-	${$sampleInfoHashRef}{${$scriptParameterHashRef}{'familyID'}}{${$scriptParameterHashRef}{'familyID'}}{"HumanGenomeBuild"}{'Version'} = ${$fileInfoHashRef}{'humanGenomeReferenceVersion'};
+	${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"HumanGenomeBuild"}{'Path'} = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'};
+	${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"HumanGenomeBuild"}{'Source'} = ${$fileInfoHashRef}{'humanGenomeReferenceSource'};
+	${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"HumanGenomeBuild"}{'Version'} = ${$fileInfoHashRef}{'humanGenomeReferenceVersion'};
     }
     if (defined(${$scriptParameterHashRef}{'pedigreeFile'}) ) {
 	
-	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'PedigreeFile'}{'Path'} = ${$scriptParameterHashRef}{'pedigreeFile'};  #Add pedigreeFile to sampleInfo
-	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'PedigreeFileAnalysis'}{'Path'} = ${$scriptParameterHashRef}{'outDataDir'}."/".${$scriptParameterHashRef}{'familyID'}."/qc_pedigree.yaml";  #Add pedigreeFile info used in this analysis to SampleInfoFile
+	${$sampleInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{'PedigreeFile'}{'Path'} = ${$scriptParameterHashRef}{'pedigreeFile'};  #Add pedigreeFile to sampleInfo
+	${$sampleInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{'PedigreeFileAnalysis'}{'Path'} = $outDataDir."/".$$familyIDRef."/qc_pedigree.yaml";  #Add pedigreeFile info used in this analysis to SampleInfoFile
     }
     if (defined(${$scriptParameterHashRef}{'logFile'})) {
 
 	my (@dirs) = File::Spec->splitdir(${$scriptParameterHashRef}{'logFile'});
 	my $path = "/".join("/", splice(@dirs, 1, -2) );  #Remove leading and trailing '' as well as move up 1 directory since we want all mip logs not just per date and add leading "/" and join on "/"
-	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'logFileDir'} = $path;  #Add logFileDir to SampleInfoFile
-	${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{'familyID'} }{ ${$scriptParameterHashRef}{'familyID'} }{'lastLogFilePath'} = ${$scriptParameterHashRef}{'logFile'};
+	${$sampleInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{'logFileDir'} = $path;  #Add logFileDir to SampleInfoFile
+	${$sampleInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{'lastLogFilePath'} = ${$scriptParameterHashRef}{'logFile'};
     }
 }
 
