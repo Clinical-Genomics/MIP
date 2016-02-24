@@ -60,6 +60,7 @@ $parameter{'condaPath'} = $ENV{HOME}."/miniconda";
 
 $parameter{'bioConda'}{'bwa'} = "0.7.12";
 $parameter{'bioConda'}{'fastqc'} = "0.11.4";
+$parameter{'bioConda'}{'cramtools'} = "3.0.b47";
 $parameter{'bioConda'}{'samtools'} = "1.3";
 $parameter{'bioConda'}{'bcftools'} = "1.3";
 $parameter{'bioConda'}{'snpeff'} = "4.1";
