@@ -18199,6 +18199,7 @@ sub RemovePedigreeElements {
 			  'Father' => "Father",
 			  'Phenotype' => "Phenotype",
 			  'Clinical_db_gene_annotation' => "Clinical_db_gene_annotation",
+			  'Sequence_type' => "Sequence_type",
 	);
     
     for my $familyID (keys %{$hashRef}) {
