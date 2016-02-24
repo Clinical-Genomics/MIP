@@ -71,6 +71,12 @@ analysisType:
   dataType: SCALAR
   default: exomes
   type: MIP
+platForm:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  default: ILLUMINA
+  type: MIP
 outScriptDir:
   associatedProgram:
    - MIP

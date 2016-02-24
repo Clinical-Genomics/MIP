@@ -50,6 +50,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -hgr/--humanGenomeReference Fasta file for the human genome reference (defaults to "Homo_sapiens.GRCh37.d5.fasta;1000G decoy version 5")
                -ald/--alignerOutDir Setting which aligner out directory was used for alignment in previous analysis (defaults to "{outDataDir}{ {aligner}{outDirectoryName} }")
                -at/--analysisType Type of analysis to perform (defaults to "exomes";Valid entries: "genomes", "exomes", "rapid")
+               -pl/--platForm Platform/technology used to produce the reads (defaults to "ILLUMINA")
                -mc/--maximumCores The maximum number of cores per node used in the analysis (defaults to "8")
                -c/--configFile YAML config file for script parameters (defaults to "")
                -ccp/--clusterConstantPath Set the cluster constant path (defaults to "")
@@ -370,6 +371,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'hgr|humanGenomeReference:s' => \$parameter{'humanGenomeReference'}{'value'},  #Human genome reference
 	   'al|alignerOutDir:s' => \$parameter{'alignerOutDir'}{'value'},  #determining which aligner out data directory was used previously (if not specified)
 	   'at|analysisType:s' => \$parameter{'analysisType'}{'value'},  #Type of analysis
+	   'pl|platForm:s' => \$parameter{'platForm'}{'value'},  #Platform/technology used to produce the reads
 	   'mc|maximumCores:n' => \$parameter{'maximumCores'}{'value'},  #Per node
 	   'c|configFile:s' => \$parameter{'configFile'}{'value'},
 	   'ccp|clusterConstantPath:s' => \$parameter{'clusterConstantPath'}{'value'},
@@ -10395,7 +10397,11 @@ sub BWASampe {
 	## BWA Sampe	
 	print $FILEHANDLE "## Aligning reads\n";
 	print $FILEHANDLE "bwa sampe ";
-	print $FILEHANDLE "-r ".'"@RG\tID:'.${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].'\tSM:'.$sampleID.'\tPL:ILLUMINA" '.${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #read group header line
+	print $FILEHANDLE q?-r "@RG\t?;
+	print $FILEHANDLE q?ID:?.${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].q?\t?;
+	print $FILEHANDLE q?SM:?.$sampleID.q?\t?;
+	print $FILEHANDLE q?PL:?.${$scriptParameterHashRef}{'platForm'}.q?" ?;  #Read group header line
+	print $FILEHANDLE ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference
 	print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesBothStrandsNoEndingHashRef}{$sampleID}[$pairedEndTracker].".sai ";  #Read 1
 
 	if ( $sequenceRunMode eq "Paired-end") {
@@ -10844,10 +10850,15 @@ sub BWAMem {
 		## BWA Mem for each read batch	
 		print $FILEHANDLE "bwa mem ";
 		print $FILEHANDLE "-M ";  #Mark shorter split hits as secondary (for Picard compatibility). 
-		print $FILEHANDLE "-t ".${$scriptParameterHashRef}{'maximumCores'}." ";  #Number of threads 
-		print $FILEHANDLE "-R ".'"@RG\tID:'.${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].'\tSM:'.$$sampleIDRef.'\tPL:ILLUMINA" '; #Read group header line
-		print $FILEHANDLE ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference
+		print $FILEHANDLE "-t ".${$scriptParameterHashRef}{'maximumCores'}." ";  #Number of threads
 
+		## Read group header line
+		print $FILEHANDLE q?-R "@RG\t?;
+		print $FILEHANDLE q?ID:?.${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].q?\t?;
+		print $FILEHANDLE q?SM:?.$$sampleIDRef.q?\t?;
+		print $FILEHANDLE q?PL:?.${$scriptParameterHashRef}{'platForm'}.q?" ?;
+
+		print $FILEHANDLE ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference
 		print $FILEHANDLE "<( ";  #Pipe to BWA Mem (Read 1)
 		print $FILEHANDLE "zcat ";  #Decompress Read 1
 		print $FILEHANDLE $BWAinSampleDirectory."/".$infile." ";  #Read 1
@@ -10944,8 +10955,11 @@ sub BWAMem {
 	    print $FILEHANDLE "## Aligning reads and converting to BAM via samtools and sorting via Sambamba\n";
 	    print $FILEHANDLE "bwa mem ";
 	    print $FILEHANDLE "-M ";  #Mark shorter split hits as secondary (for Picard compatibility). 
-	    print $FILEHANDLE "-t ".${$scriptParameterHashRef}{'maximumCores'}." ";  #Number of threads 
-	    print $FILEHANDLE "-R ".'"@RG\tID:'.${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].'\tSM:'.$$sampleIDRef.'\tPL:ILLUMINA" '; #Read group header line
+	    print $FILEHANDLE "-t ".${$scriptParameterHashRef}{'maximumCores'}." ";  #Number of threads
+	    print $FILEHANDLE q?-R "@RG\t?;
+	    print $FILEHANDLE q?ID:?.${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].q?\t?;
+	    print $FILEHANDLE q?SM:?.$$sampleIDRef.q?\t?;
+	    print $FILEHANDLE q?PL:?.${$scriptParameterHashRef}{'platForm'}.q?" ?;  #Read group header line
 	    print $FILEHANDLE ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference
 	    print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".${$infileHashRef}{$$sampleIDRef}[$pairedEndTracker]." ";  #Read 1
 
@@ -11388,7 +11402,7 @@ sub MosaikBuild {
 
     my $coreCounter=1;
     my $pairedEndTracker = 0;
-    my $stParameter = "ILLUMINA";  #Default
+    my $stParameter = ${$scriptParameterHashRef}{'platForm'};
     
     ## Copies files from source to temporary folder. Loop over files specified by $arrayRef and collects files from $extractArrayRef.
     &MigrateFilesToTemp({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
