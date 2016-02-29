@@ -63,7 +63,7 @@ $parameter{'bioConda'}{'fastqc'} = "0.11.4";
 $parameter{'bioConda'}{'cramtools'} = "3.0.b47";
 $parameter{'bioConda'}{'samtools'} = "1.3";
 $parameter{'bioConda'}{'bcftools'} = "1.3";
-$parameter{'bioConda'}{'snpeff'} = "4.1";
+$parameter{'bioConda'}{'snpeff'} = "4.2";
 $parameter{'bioConda'}{'picard'} = "1.141";
 $parameter{'bioConda'}{'mosaik'} = "2.2.26";
 $parameter{'bioConda'}{'htslib'} = "1.3";
@@ -94,7 +94,7 @@ $parameter{'perlModules'} = ["YAML",
     ];
 
 ## PIP
-$parameter{'pip'}{'genmod'} = "3.4.2";
+$parameter{'pip'}{'genmod'} = "3.4.5";
 $parameter{'pip'}{'chanjo'} = "3.3.1";
 $parameter{'pip'}{'cosmid'} = "0.4.9.1";
 $parameter{'pip'}{'python-Levenshtein'} = "0.12.0";
