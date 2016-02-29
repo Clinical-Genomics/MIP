@@ -30,7 +30,7 @@ my ($infile, $parseVEP, $rangeFeatureFile, $selectFeatureFile, $selectFeatureMat
 my (@metaData, @selectMetaData, @rangeFeatureAnnotationColumns, @selectFeatureAnnotationColumns); 
 my (%geneAnnotation, %consequenceSeverity, %rangeData, %selectData, %snpEffCmd, %tree, %metaData, %siftTerm, %polyPhenTerm);
 
-my $vcfParserVersion = "1.2.5";
+my $vcfParserVersion = "1.2.6";
 
 ## Enables cmd "vcfParser.pl" to print usage help 
 if(scalar(@ARGV) == 0) {
@@ -148,6 +148,7 @@ sub DefineSelectData {
     $selectData{'SelectFile'}{'Ensembl_transcript_to_refseq_transcript'}{'INFO'} = q?##INFO=<ID=Ensembl_transcript_to_refseq_transcript,Number=.,Type=String,Description="The link between ensembl transcript and refSeq transcript IDs">?;
     $selectData{'SelectFile'}{'Gene_description'}{'INFO'} = q?##INFO=<ID=Gene_description,Number=.,Type=String,Description="The HGNC gene description">?;
     $selectData{'SelectFile'}{'Genetic_disease_model'}{'INFO'} = q?##INFO=<ID=Genetic_disease_model,Number=.,Type=String,Description="Known disease gene(s) inheritance model">?;
+    $selectData{'SelectFile'}{'No_hgnc_symbol'}{'INFO'} = q?##INFO=<ID=No_hgnc_symbol,Number=.,Type=String,Description="Clinically relevant genetic regions lacking a HGNC_symbol or Ensembl gene ">?;
 }
 
 sub DefineSnpEffAnnotations {
@@ -178,6 +179,10 @@ sub DefineSnpEffAnnotations {
     $snpEffCmd{'SnpEff'}{'EXACAF'}{'INFO'} = q?##INFO=<ID=EXACAF,Number=A,Type=Float,Description="Estimated allele frequency in the range (0,1) in Exac">?;
     $snpEffCmd{'SnpEff'}{'EXACAF'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_AF,Number=.,Type=String,Description="Estimated allele frequency in the range (0,1)">?;
 
+    $snpEffCmd{'SnpEff'}{'EXACMAXAF'}{'File'} = q?ExAC.r\d+.\d+.sites.vep.vcf?;
+    $snpEffCmd{'SnpEff'}{'EXACMAXAF'}{'INFO'} = q?##INFO=<ID=EXACMAXAF,Number=A,Type=Float,Description="Estimated max allele frequency in the range (0,1) in Exac">?;
+    $snpEffCmd{'SnpEff'}{'EXACMAXAF'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_AF,Number=.,Type=String,Description="Estimated max allele frequency in the range (0,1)">?;
+
     $snpEffCmd{'SnpEff'}{'CLNSIG'}{'File'} = q?clinvar_\d+.vcf?;
     $snpEffCmd{'SnpEff'}{'CLNSIG'}{'INFO'} = q?##INFO=<ID=CLNSIG,Number=A,Type=String,Description="Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other">?;
     $snpEffCmd{'SnpEff'}{'CLNSIG'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_CLNSIG,Number=A,Type=String,Description="Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other">?;
@@ -194,6 +199,10 @@ sub DefineSnpEffAnnotations {
 
     $snpEffCmd{'SnpEff'}{'GERP++_RS_prediction_term'}{'File'} = q?SnpSift dbnsfp?;
     $snpEffCmd{'SnpEff'}{'GERP++_RS_prediction_term'}{'INFO'} = q?##INFO=<ID=GERP++_RS_prediction_term,Number=A,Type=String,Description="GERP RS conservation prediction term">?;
+
+    $snpEffCmd{'SnpEff'}{'MTAF'}{'File'} = q?genbank_haplogroup_\d+_\S+.vcf?;
+    $snpEffCmd{'SnpEff'}{'MTAF'}{'INFO'} = q?##INFO=<ID=MTAF,Number=A,Type=Float,Description="Allele Frequency, for each ALT allele, in the same order as listed">?;
+    $snpEffCmd{'SnpEff'}{'MTAF'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_MTAF,Number=A,Type=Float,Description="Allele Frequency, for each ALT allele, in the same order as listed">?;
 
 }
 
@@ -548,6 +557,7 @@ sub ReadInfileVCF {
 	    my %variantData;
 	    my %selectedVariantData;
 	    my %consequence;
+	    my %noIDRegion;
 	    my $variantLine;
 	    my $selectedVariantLine;
 	    my $sampleIDInfo;
@@ -645,6 +655,32 @@ sub ReadInfileVCF {
 			## Save Alternative Allele frequency info  
 			$variantLine .= $database."=".$tempMaf.";";
 			$selectedVariantLine .= $database."=".$tempMaf.";";
+		    }		    
+		}
+		elsif($database eq "EXACMAXAF") {
+		    
+		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
+		    
+		    my $tempMaf = &FindAF(\@tempArray, "\\S+_EXACAF_MAX_AF=");
+		    
+		    if (defined($tempMaf)) {
+			
+			## Save Alternative Allele frequency info  
+			$variantLine .= $database."=".$tempMaf.";";
+			$selectedVariantLine .= $database."=".$tempMaf.";";
+		    }		    
+		}
+		elsif($database eq "MTAF") {
+			
+		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
+
+		    my $tempMaf = &FindAF(\@tempArray, "\\S+_MTAF=");
+
+		    if (defined($tempMaf)) {
+			
+			## Save Alternative Allele frequency info
+			$variantLine .= $database."=".$tempMaf.";";
+			$selectedVariantLine .= $database."=".$tempMaf.";";
 		    }
 		}
 		elsif($database eq "CLNSIG") {
@@ -652,6 +688,19 @@ sub ReadInfileVCF {
 		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
 		    
 		    my $tempMaf = &FindAF(\@tempArray, "\\S+_CLNSIG=");
+		    
+		    if (defined($tempMaf)) {
+			
+			## Save Alternative Allele frequency info  
+			$variantLine .= $database."=".$tempMaf.";";
+			$selectedVariantLine .= $database."=".$tempMaf.";";
+		    }
+		}
+		elsif($database eq "CLNACC") {
+		    
+		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
+		    
+		    my $tempMaf = &FindAF(\@tempArray, "\\S+_CLNACC=");
 		    
 		    if (defined($tempMaf)) {
 			
@@ -701,7 +750,7 @@ sub ReadInfileVCF {
 		    }
 		}
 	    }
-	    &TreeAnnotations("SelectFile", \@lineElements, $selectDataHashRef, \$selectedVariantLine);
+	    %noIDRegion = &TreeAnnotations("SelectFile", \@lineElements, $selectDataHashRef, \$selectedVariantLine);  #Only for selectfile since all variants are passed to research file
 	    &TreeAnnotations("RangeFile", \@lineElements, $rangeDataHashRef, \$variantLine);
 	    
 	    my @variantEffects = split(/;/, $lineElements[7]); #Split INFO field
@@ -966,10 +1015,18 @@ sub ReadInfileVCF {
 		}
 		if ($transcriptsCounter > 0) { #Write to transcript file
 		    
+		    if (%noIDRegion) {  #No HGNC_symbol or EnsemblGeneID, but clinically relevant
+		
+			print WOSFTSV $selectedVariantLine, "\n";
+		    }
 		    print STDOUT $variantLine, "\n";
 		}
 		elsif ( ($selectedTranscriptCounter == 0) && ($transcriptsCounter == 0) ) {
 
+		    if (%noIDRegion) {  #No HGNC_symbol or EnsemblGeneID, but clinically relevant
+
+			print WOSFTSV $selectedVariantLine, "\n";
+		    }
 		    print STDOUT $variantLine, "\n";
 		}
 	    }
@@ -1384,6 +1441,8 @@ sub TreeAnnotations {
     my $hashRef = $_[2];
     my $printLineRef = $_[3];
     
+    my %noIDRegion;  #No HGNC_symbol or ensemblGeneID, but still clinically releveant e.g. mtD-loop
+
     if(defined($tree{$rangeFileKey}{ $$lineElementsArrayRef[0] }) ) { #Range annotations
 	
 	my $feature; #Features to be collected
@@ -1415,7 +1474,7 @@ sub TreeAnnotations {
 		    if ($featureCounter == (scalar(@{$feature}-1)) ) { #Last for this feature tuple
 
 			for my $rangeAnnotation (keys % {$$hashRef{'Present'}}) { #All selected annotations
-			    
+			
 			    if ($$hashRef{'Present'}{$rangeAnnotation}{'ColumnOrder'} eq $annotationsCounter) { #Correct feature
 			
 				if ($rangeAnnotation eq "Clinical_db_gene_annotation") {  #Special case, which is global and not gene centric
@@ -1423,6 +1482,10 @@ sub TreeAnnotations {
 				    ## Collect unique elements from array reference and return array reference with unique elements
 				    my $uniqueRef = &UniqElements(\@{$collectedAnnotations{$annotationsCounter}});
 				    @{$collectedAnnotations{$annotationsCounter}} = @{$uniqueRef};
+				}
+				if ($rangeAnnotation eq "No_hgnc_symbol") {  #Special case, where there is no HGNC or Ensembl gene ID but the region should be included in the select file anyway
+				    my $idKey = join ("_", @{$lineElementsArrayRef}[0..1, 3..4]);
+				    $noIDRegion{$idKey}++;
 				}
 				if ( (defined($collectedAnnotations{$annotationsCounter})) && (@{$collectedAnnotations{$annotationsCounter}}) ) {
 				
@@ -1435,6 +1498,7 @@ sub TreeAnnotations {
 	    }
 	}
     }
+    return %noIDRegion;
 }
 
 

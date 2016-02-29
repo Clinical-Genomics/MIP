@@ -757,6 +757,13 @@ sub RegExpToYAML {
     $regExp{'Chanjo'}{'Version'} = q?perl -nae 'if($_=~/version\s(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect Chanjo version
 
     $regExp{'vt'}{'Version'} = q?perl -nae 'if($_=~/decompose\sv(\S+)/) {print $1;last;}' ?; #Collect vt version
+
+    $regExp{'Samtools'}{'Version'} = q?perl -nae 'if($_=~/samtoolsVersion=(\S+)/) {print $1;last;}' ?; #Collect Samtools version
+
+    $regExp{'Bcftools'}{'Version'} = q?perl -nae 'if($_=~/bcftools_\w+Version=(\S+)/) {print $1;last;}' ?; #Collect Bcftools version
+
+    $regExp{'Freebayes'}{'Version'} = q?perl -nae 'if($_=~/source=freeBayes\s(\S+)/) {print $1;last;}' ?; #Collect Freebayes version
+
 #$regExp{''}{''} = ;
 
     

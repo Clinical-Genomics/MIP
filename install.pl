@@ -10,25 +10,37 @@ use IO::File;
 use Cwd;
 use FindBin qw($Bin); #Find directory of script
 use vars qw($USAGE);
+use IPC::Cmd qw[can_run run];
+
+## Third party module(s)
+use List::MoreUtils qw(any);
 
 BEGIN {
     $USAGE =
 	qq{install.pl [options]
            -env/--condaEnvironment Conda environment (Default: "mip")
            -cdp/--condaPath The conda path (Default: "HOME/miniconda")
-           -bvc/--bioConda Set the module version of the programs that can be installed with bioConda (i.e. 'bwa=0.7.12')
+           -bvc/--bioConda Set the module version of the programs that can be installed with bioConda (e.g. 'bwa=0.7.12')
+           -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.4.2')
+
+           ## SHELL
            -per/--perl Set the perl version (defaults: "5.18.2")
            -pm/perlModules Set the perl modules to be installed via cpanm (comma sep)
-           -pip/--pip Set the module version of the programs that can be installed with pip (i.e. 'genmod=3.3.3')
+           -pic/--picardTools Set the picardTools version (Default: "2.0.1"),
            -sbb/sambamba Set the sambamba version (Default: "0.5.9")
            -vct/--vcfTools Set the vcftools version (Default: "0.1.14")
            -bet/--bedTools Set the bedtools version (Default: "2.25.0")
            -vt/--vt Set the vt version (Default: "0.57")
-           -plk/--plink  Set the plink version (Default: "151117")
-           -vep/--VariantEffectPredictor Set the VEP version (Default: "82")
-	   -vepc/--vepDirectoryCache Specify the cache directory to use (whole path; defaults to "~/miniconda/envs/condaEnvironment/ensembl-tools-release-VariantEffectPredictorVersion/cache")
+           -plk/--plink  Set the plink version (Default: "160110")
+           -vep/--variantEffectPredictor Set the VEP version (Default: "83")
+	   -vepc/--vepDirectoryCache Specify the cache directory to use (whole path; defaults to "~/miniconda/envs/condaEnvironment/ensembl-tools-release-variantEffectPredictorVersion/cache")
+           -vepp/--variantEffectPredictorPlugin Supply a comma separated list of VEP plugins (Default: "UpDownDistance")
+
+           ## Utility
+           -pbc/--preferBioConda Bioconda will used for overlapping shell and biconda installations (Default: 1 (=yes))
            -ppd/--printParameterDefaults Print the parameter defaults
-           -u/--update Always install program
+           -u/--update Always install all programs (Default: 1 (=yes))
+           -sp/--selectPrograms Install supplied programs e.g. -sp perl -sp bedTools (Default: "";)
            -h/--help Display this help message   
            -v/--version Display version
         };    
@@ -39,17 +51,26 @@ my %parameter;
 
 ### Set parameter default
 
-##Conda
 $parameter{'update'} = 1;
+
+##Conda
+$parameter{'preferBioConda'} = 1;
 $parameter{'condaEnvironment'} = "mip";
 $parameter{'condaPath'} = $ENV{HOME}."/miniconda";
+
 $parameter{'bioConda'}{'bwa'} = "0.7.12";
-$parameter{'bioConda'}{'fastqc'} = "0.11.2";
-$parameter{'bioConda'}{'samtools'} = "1.2";
-$parameter{'bioConda'}{'bcftools'} = "1.2";
+$parameter{'bioConda'}{'fastqc'} = "0.11.4";
+$parameter{'bioConda'}{'cramtools'} = "3.0.b47";
+$parameter{'bioConda'}{'samtools'} = "1.3";
+$parameter{'bioConda'}{'bcftools'} = "1.3";
 $parameter{'bioConda'}{'snpeff'} = "4.1";
-$parameter{'bioConda'}{'picard'} = "1.139";
+$parameter{'bioConda'}{'picard'} = "1.141";
 $parameter{'bioConda'}{'mosaik'} = "2.2.26";
+$parameter{'bioConda'}{'htslib'} = "1.3";
+$parameter{'bioConda'}{'bedtools'} = "2.25.0";
+$parameter{'bioConda'}{'vt'} = "2015.11.10";
+$parameter{'bioConda'}{'sambamba'} = "0.5.9";
+$parameter{'bioConda'}{'freebayes'} = "1.0.2";
 
 ##Perl Modules
 $parameter{'perl'} = "5.18.2";
@@ -67,70 +88,140 @@ $parameter{'perlModules'} = ["YAML",
 			     "DBI",  # VEP
 			     "JSON",  # VEP
 			     "DBD::mysql",  # VEP
-			     "CGI",  #VEP
+			     "CGI",  # VEP
+			     "Sereal::Encoder",  # VEP
+			     "Sereal::Decoder",  # VEP
     ];
 
 ## PIP
-$parameter{'pip'}{'genmod'} = "3.3.3";
-$parameter{'pip'}{'chanjo'} = "3.0.1";
+$parameter{'pip'}{'genmod'} = "3.4.2";
+$parameter{'pip'}{'chanjo'} = "3.3.1";
 $parameter{'pip'}{'cosmid'} = "0.4.9.1";
 $parameter{'pip'}{'python-Levenshtein'} = "0.12.0";
 
-## Programs currently not supported by conda or other packet manager
+## Programs currently installable by SHELL
+$parameter{'picardTools'} = "2.0.1";
 $parameter{'sambamba'} = "0.5.9";
 $parameter{'vcfTools'} = "0.1.14";
 $parameter{'bedTools'} = "2.25.0";
 $parameter{'vt'} = "gitRepo";
-$parameter{'plink'} = "151117";
-$parameter{'VariantEffectPredictor'} = "82";
-$parameter{'vepDirectoryCache'} = $parameter{'condaPath'}.q?/envs/?.$parameter{'condaEnvironment'}.q?/ensembl-tools-release-?.$parameter{'VariantEffectPredictor'}.q?/cache?;  #Cache directory;
+$parameter{'plink'} = "160110";
+$parameter{'snpEff'} = "v4_2";
+$parameter{'variantEffectPredictor'} = "83";
+$parameter{'vepDirectoryCache'} = $parameter{'condaPath'}.q?/envs/?.$parameter{'condaEnvironment'}.q?/ensembl-tools-release-?.$parameter{'variantEffectPredictor'}.q?/cache?;  #Cache directory;
+$parameter{'variantEffectPredictorPlugin'} = "UpDownDistance";
 
-my $installVersion = "0.0.1";
+my $installVersion = "0.0.3";
 
 ###User Options
 GetOptions('env|condaEnvironment:s'  => \$parameter{'condaEnvironment'},
 	   'cdp|condaPath:s' => \$parameter{'condaPath'},
-	   'bcv|bioConda=s'  => \%{$parameter{'bioConda'}},
+	   'bcv|bioConda=s' => \%{$parameter{'bioConda'}},
+	   'pip|pip=s' => \%{$parameter{'pip'}},
 	   'per|perl=s' => \$parameter{'perl'},
-	   'pm|perlModules:s'  => \@{$parameter{'perlModules'}},  #Comma separated list
-	   'pip|pip=s'  => \%{$parameter{'pip'}},
-	   'sbb|sambamba:s'  => \$parameter{'sambamba'},
-	   'vct|vcfTools:s'  => \$parameter{'vcfTools'},
+	   'pm|perlModules:s' => \@{$parameter{'perlModules'}},  #Comma separated list
+	   'pic|picardTools:s' => \$parameter{'picardTools'},
+	   'sbb|sambamba:s' => \$parameter{'sambamba'},
+	   'vct|vcfTools:s' => \$parameter{'vcfTools'},
 	   'bet|bedTools:s' =>\$parameter{'bedTools'}, 
-	   'vt|vt:s'  => \$parameter{'vt'},
-	   'plk|plink:s'  => \$parameter{'plink'},
-	   'vep|VariantEffectPredictor:s'  => \$parameter{'VariantEffectPredictor'},
-	   'vepc|vepDirectoryCache:s'  => \$parameter{'vepDirectoryCache'},  #path to vep cache dir
-	   'ppd|printParameterDefaults'  => sub { &PrintParameters(\%parameter); exit;},  #Display parameter defaults
+	   'vt|vt:s' => \$parameter{'vt'},
+	   'plk|plink:s' => \$parameter{'plink'},
+	   'vep|variantEffectPredictor:s' => \$parameter{'variantEffectPredictor'},
+	   'vepc|vepDirectoryCache:s' => \$parameter{'vepDirectoryCache'},  #path to vep cache dir
+	   'vepp|variantEffectPredictorPlugin:s' => \$parameter{'variantEffectPredictorPlugin'},  #Comma sep string
+	   'pbc|preferBioConda:s' => \$parameter{'preferBioConda'},  # Bioconda will used for overlapping shell and biconda installlations
+	   'ppd|printParameterDefaults' => sub { &PrintParameters(\%parameter); exit;},  #Display parameter defaults
 	   'u|update:n' => \$parameter{'update'},
+	   'sp|selectPrograms:s' => \@{$parameter{'selectPrograms'}},  #Comma sep string
 	   'h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
 	   'v|version' => sub { print STDOUT "\ninstall.pl ".$installVersion, "\n\n"; exit;},  #Display version number
     );
 
 ###MAIN###
 
-
 #my $LOGFILEHANDLE = &OpenLogFile("MIP_installation.log");
 
 my $BASHFILEHANDLE = &CreateBashFile("mip.sh");
 
+&CreateConda(\%parameter, $BASHFILEHANDLE);
+
 &CreateCondaEnvironment(\%parameter, $BASHFILEHANDLE);
 
-&Perl(\%parameter, $BASHFILEHANDLE);
+if (scalar(@{$parameter{'selectPrograms'}}) > 0) {
+	
+    if ( ( any {$_ eq "perl"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 
+	&Perl(\%parameter, $BASHFILEHANDLE);
+    }
+}
+else {
+
+    &Perl(\%parameter, $BASHFILEHANDLE);
+}
 &PipInstall(\%parameter, $BASHFILEHANDLE);
 
-&Sambamba(\%parameter, $BASHFILEHANDLE);
+if ($parameter{'preferBioConda'} != 1) {
 
-&VcfTools(\%parameter, $BASHFILEHANDLE);
+    if (scalar(@{$parameter{'selectPrograms'}}) > 0) {
+	
+	if ( ( any {$_ eq "picardTools"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+	    
+	    &PicardTools(\%parameter, $BASHFILEHANDLE);
+	}
+	if ( ( any {$_ eq "sambamba"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 
-&BedTools(\%parameter, $BASHFILEHANDLE);
+	    &Sambamba(\%parameter, $BASHFILEHANDLE);
+	}
+	if ( ( any {$_ eq "bedTools"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 
-&VT(\%parameter, $BASHFILEHANDLE);
+	    &BedTools(\%parameter, $BASHFILEHANDLE);
+	}
+	if ( ( any {$_ eq "vt"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 
-&Plink(\%parameter, $BASHFILEHANDLE);
+	    &VT(\%parameter, $BASHFILEHANDLE);
+	}
+	if ( ( any {$_ eq "snpEff"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 
-&VariantEffectPredictor(\%parameter, $BASHFILEHANDLE);
+	    &SnpEff(\%parameter, $BASHFILEHANDLE);
+	}
+    }
+    else {
+	
+	&PicardTools(\%parameter, $BASHFILEHANDLE);
+	
+	&Sambamba(\%parameter, $BASHFILEHANDLE);
+	
+	&BedTools(\%parameter, $BASHFILEHANDLE);
+	
+	&VT(\%parameter, $BASHFILEHANDLE);
+	
+	&SnpEff(\%parameter, $BASHFILEHANDLE);
+    }
+}
+
+if (scalar(@{$parameter{'selectPrograms'}}) > 0) {
+	
+	if ( ( any {$_ eq "vcfTools"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+
+	    &VcfTools(\%parameter, $BASHFILEHANDLE);
+	}
+	if ( ( any {$_ eq "plink"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+	    
+	    &Plink(\%parameter, $BASHFILEHANDLE);
+	}
+	if ( ( any {$_ eq "variantEffectPredictor"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+
+	    &VariantEffectPredictor(\%parameter, $BASHFILEHANDLE);
+	}
+}
+else {
+
+    &VcfTools(\%parameter, $BASHFILEHANDLE);
+    
+    &Plink(\%parameter, $BASHFILEHANDLE);
+    
+    &VariantEffectPredictor(\%parameter, $BASHFILEHANDLE);
+}
 
 close($BASHFILEHANDLE);
 #close($LOGFILEHANDLE);
@@ -142,12 +233,16 @@ sub CreateBashFile {
     my $fileName = $_[0];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    
+    my $pwd = cwd();
+
     ## Open batch file
-    open ($FILEHANDLE, ">",$fileName) or die("Can't write to '".$fileName."' :".$!."\n");
+    open ($FILEHANDLE, ">",$pwd."/".$fileName) or die("Can't write to '".$pwd."/".$fileName."' :".$!."\n");
 
     print $FILEHANDLE "#!/usr/bin/env bash", "\n\n";
-    return $FILEHANDLE;
+ 
+    print STDOUT "Will write install instructions to '".$pwd."/".$fileName, "'\n";
+
+   return $FILEHANDLE;
 }
 
 sub OpenLogFile {
@@ -187,10 +282,22 @@ sub PrintParameters {
 }
 
 
-sub CreateCondaEnvironment {
+sub CreateConda {
 
     my $parameterHashRef = $_[0];
     my $FILEHANDLE = $_[1];
+
+    my $program = "conda";
+
+    if(can_run($program)) {  #IPC::Cmd
+	
+	print STDERR "ProgramCheck: ".$program." installed", "\n";
+    }
+    else {
+	
+	print STDERR "Could not detect ".$program." in your PATH\n";
+	exit 1;
+    }
 
     ## Check Conda path
     if (! -d $parameter{'condaPath'}) {
@@ -205,20 +312,84 @@ sub CreateCondaEnvironment {
     print $FILEHANDLE "### Update Conda\n";
     print $FILEHANDLE "conda update -y conda ";
     print $FILEHANDLE "\n\n";
+}
 
-    ## Create MIP environment
-    print $FILEHANDLE "### Creating Conda Environment: ".${$parameterHashRef}{'condaEnvironment'}."\n";
-    print $FILEHANDLE "conda create ";
+sub CreateCondaEnvironment {
+
+    my $parameterHashRef = $_[0];
+    my $FILEHANDLE = $_[1];
+
+    ## Check Conda environment
+    if (! -d $parameter{'condaPath'}."/envs/".$parameter{'condaEnvironment'}) {
+
+	## Create conda environment
+	print $FILEHANDLE "### Creating Conda Environment and install: ".${$parameterHashRef}{'condaEnvironment'}."\n";
+	print $FILEHANDLE "conda create -n ".${$parameterHashRef}{'condaEnvironment'}." ";
+	print $FILEHANDLE "-y ";
+	print $FILEHANDLE "pip ";
+	print $FILEHANDLE "\n\n";
+    }
+    
+    ## Install into conda environment
+    print $FILEHANDLE "### Installing into Conda Environment: ".${$parameterHashRef}{'condaEnvironment'}."\n";
+    print $FILEHANDLE "conda install ";	
+    print $FILEHANDLE "-n ".${$parameterHashRef}{'condaEnvironment'}." ";
     print $FILEHANDLE "-y ";
-    print $FILEHANDLE "-n ".${$parameterHashRef}{'condaEnvironment'}." "; 
     print $FILEHANDLE "-c bioconda ";
-
+    
     ## Install all bioConda packages
     foreach my $program (keys %{${$parameterHashRef}{'bioConda'}}) {
-
+	    
 	print $FILEHANDLE $program."=".${$parameterHashRef}{'bioConda'}{$program}." ";
     }
+
     print $FILEHANDLE "\n\n";
+
+    ## Custom 
+    foreach my $program (keys %{${$parameterHashRef}{'bioConda'}}) {
+
+
+	if ($program eq "sambamba") {
+
+	    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
+			  'FILEHANDLE' => $BASHFILEHANDLE,
+			  'binary' => "sambamba",
+			  'softLink' => "sambamba_v".${$parameterHashRef}{'bioConda'}{'sambamba'},
+			 });
+	}
+	if ($program eq "picard") {
+
+	    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
+			  'FILEHANDLE' => $BASHFILEHANDLE,
+			  'binary' => q?../share/picard-?.${$parameterHashRef}{'bioConda'}{'picard'}.q?-1/picard.jar?,
+			  'softLink' => "picard.jar",
+			 });
+	}
+	if ($program eq "snpeff") {
+	    
+	    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
+			  'FILEHANDLE' => $BASHFILEHANDLE,
+			  'binary' => q?../share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.q?l-2/snpEff.jar?,
+			  'softLink' => "snpEff.jar",
+			 });
+	    
+	    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
+			  'FILEHANDLE' => $BASHFILEHANDLE,
+			  'binary' => q?../share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.q?l-2/SnpSift.jar?,
+			  'softLink' => "SnpSift.jar",
+			 });
+	    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
+			  'FILEHANDLE' => $BASHFILEHANDLE,
+			  'binary' => q?../share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.q?l-2/snpEff.config?,
+			  'softLink' => "snpEff.config",
+			 });
+	    &CheckMTCodonTable({'parameterHashRef' => $parameterHashRef,
+				'FILEHANDLE' => $BASHFILEHANDLE,
+				'shareDirectory' => $parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.q?l-2/?,
+				'binary' => "snpEff.config",
+			       });
+	}
+    }
 }
 
 
@@ -311,6 +482,8 @@ sub InstallPerlCpnam {
 	print $FILEHANDLE "## Export path\n";
 	print $FILEHANDLE q?echo 'export PATH=$HOME/perl-?.${$parameterHashRef}{'perl'}.q?/:$PATH' >> ~/.bashrc?;
 	print $FILEHANDLE "\n\n";
+	print $FILEHANDLE q?export PATH=$HOME/perl-?.${$parameterHashRef}{'perl'}.q?/:$PATH?;  #Use newly installed perl
+	print $FILEHANDLE "\n\n";
     }
 
     ## Remove tar file
@@ -328,7 +501,7 @@ sub InstallPerlCpnam {
 	print $FILEHANDLE q?echo 'eval `perl -I ~/perl-?.${$parameterHashRef}{'perl'}.q?/lib/perl5/ -Mlocal::lib=~/perl-?.${$parameterHashRef}{'perl'}.q?/`' >> ~/.bash_profile ?;  #Add at start-up
 	print $FILEHANDLE "\n\n";
     }
-    
+
     ## Install Perl modules via cpanm
     print $FILEHANDLE "## Install cpanm\n";
     print $FILEHANDLE q?wget -O- http://cpanmin.us | perl - -l $HOME/perl-?.${$parameterHashRef}{'perl'}.q?/bin App::cpanminus --local-lib=~/perl-?.${$parameterHashRef}{'perl'}.q?/ local::lib ?;
@@ -336,8 +509,9 @@ sub InstallPerlCpnam {
 
     ## Use newly installed perl
     print $FILEHANDLE q?eval `perl -I ~/perl-?.${$parameterHashRef}{'perl'}.q?/lib/perl5/ -Mlocal::lib=~/perl-?.${$parameterHashRef}{'perl'}.q?/` ?;
-    print $FILEHANDLE "\n";
+    print $FILEHANDLE "\n\n";
 
+    ## Use newly installed perl
     print $FILEHANDLE q?PERL5LIB=~/perl-?.${$parameterHashRef}{'perl'}.q?/lib/perl5?;
     print $FILEHANDLE "\n\n";
 }
@@ -382,6 +556,56 @@ sub PipInstall {
 }
 
 
+sub PicardTools {
+
+    my $parameterHashRef = $_[0];
+    my $FILEHANDLE = $_[1];
+
+    my $pwd = cwd();
+
+    if (&CheckCondaBinFileExists($parameterHashRef, "picard.jar")) {  # Assumes that picard.jar is there as well then
+
+	return
+    }
+
+    ## Install picard
+    print $FILEHANDLE "### Install Picard\n\n";
+
+    &CreateInstallDirectory($FILEHANDLE);
+    
+    ## Download
+    print $FILEHANDLE "## Download Picard\n";
+    print $FILEHANDLE "wget --quiet https://github.com/broadinstitute/picard/releases/download/".${$parameterHashRef}{'picardTools'}."/picard-tools-".${$parameterHashRef}{'picardTools'}.".zip ";
+    print $FILEHANDLE "-O picard-tools-".${$parameterHashRef}{'picardTools'}.".zip";  #Download outfile
+    print $FILEHANDLE "\n\n";
+
+    ## Extract
+    print $FILEHANDLE "## Extract\n";
+    print $FILEHANDLE "unzip picard-tools-".${$parameterHashRef}{'picardTools'}.".zip";
+    print $FILEHANDLE "\n\n";
+
+    ## Make available from conda environment
+    if (-d $parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/share/picard-tools-?.${$parameterHashRef}{'picardTools'}) {
+
+	print $FILEHANDLE "rm -rf ".$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/share/picard-tools-?.${$parameterHashRef}{'picardTools'};
+	print $FILEHANDLE "\n\n";
+    }
+
+    print $FILEHANDLE "## Make available from conda environment\n";
+    print $FILEHANDLE "mv ";
+    print $FILEHANDLE q?picard-tools-?.${$parameterHashRef}{'picardTools'}.q? ?.$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/share/?;
+    print $FILEHANDLE "\n\n";
+
+    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
+		  'FILEHANDLE' => $BASHFILEHANDLE,
+		  'binary' => q?../share/picard-tools-?.${$parameterHashRef}{'picardTools'}.q?/picard.jar?,
+		  'softLink' => "picard.jar",
+		 });
+
+    &CleanUpModuleInstall($FILEHANDLE, $pwd);
+}
+
+
 sub Sambamba {
 
     my $parameterHashRef = $_[0];
@@ -401,7 +625,7 @@ sub Sambamba {
     ## Download
     print $FILEHANDLE "## Download sambamba release\n";
     print $FILEHANDLE q?wget --quiet https://github.com/lomereiter/sambamba/releases/download/v?.${$parameterHashRef}{'sambamba'}.q?/sambamba_v?.${$parameterHashRef}{'sambamba'}.q?_linux.tar.bz2 ?;
-    print $FILEHANDLE "-O sambamba_v".${$parameterHashRef}{'sambamba'}."_linux.tar.bz2";  #Dowload outfile
+    print $FILEHANDLE "-O sambamba_v".${$parameterHashRef}{'sambamba'}."_linux.tar.bz2";  #Download outfile
     print $FILEHANDLE "\n\n";
 
     ## Decompress
@@ -429,14 +653,11 @@ sub Sambamba {
     print $FILEHANDLE q?sambamba_v?.${$parameterHashRef}{'sambamba'}.q? ?.$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/bin/?;
     print $FILEHANDLE "\n\n";
 
-    ## Add softlink
-    print $FILEHANDLE "## Add soflink\n";
-    print $FILEHANDLE "cd ".$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/bin/?;
-    print $FILEHANDLE "\n";
-
-    print $FILEHANDLE "ln -s ";
-    print $FILEHANDLE q?sambamba_v?.${$parameterHashRef}{'sambamba'}.q? sambamba?;
-    print $FILEHANDLE "\n\n";
+    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
+		  'FILEHANDLE' => $BASHFILEHANDLE,
+		  'binary' => "sambamba_v".${$parameterHashRef}{'bioConda'}{'sambamba'},
+		  'softLink' => "sambamba",
+		 });
 
     &CleanUpModuleInstall($FILEHANDLE, $pwd);
 
@@ -463,7 +684,7 @@ sub VcfTools {
     ## Download
     print $FILEHANDLE "## Download vcfTools\n";
     print $FILEHANDLE "wget --quiet https://github.com/vcftools/vcftools/releases/download/v".${$parameterHashRef}{'vcfTools'}."/vcftools-".${$parameterHashRef}{'vcfTools'}.".tar.gz ";
-    print $FILEHANDLE "-O vcftools-".${$parameterHashRef}{'vcfTools'}.".tar.gz";  #Dowload outfile
+    print $FILEHANDLE "-O vcftools-".${$parameterHashRef}{'vcfTools'}.".tar.gz";  #Download outfile
     print $FILEHANDLE "\n\n";
 
     ## Extract
@@ -529,7 +750,7 @@ sub BedTools {
     ## Download
     print $FILEHANDLE "## Download bedTools\n";
     print $FILEHANDLE "wget --quiet https://github.com/arq5x/bedtools".$bedToolsMainVersion."/releases/download/v".${$parameterHashRef}{'bedTools'}."/bedtools-".${$parameterHashRef}{'bedTools'}.".tar.gz ";
-    print $FILEHANDLE "-O bedtools-".${$parameterHashRef}{'bedTools'}.".tar.gz";  #Dowload outfile
+    print $FILEHANDLE "-O bedtools-".${$parameterHashRef}{'bedTools'}.".tar.gz";  #Download outfile
     print $FILEHANDLE "\n\n";
     
     ## Extract
@@ -621,7 +842,7 @@ sub Plink {
     ## Download
     print $FILEHANDLE "## Download Plink\n";
     print $FILEHANDLE "wget https://www.cog-genomics.org/static/bin/plink".${$parameterHashRef}{'plink'}."/plink_linux_x86_64.zip ";
-    print $FILEHANDLE "-O plink-".${$parameterHashRef}{'plink'}."-x86_64.zip";  #Dowload outfile
+    print $FILEHANDLE "-O plink-".${$parameterHashRef}{'plink'}."-x86_64.zip";  #Download outfile
     print $FILEHANDLE "\n\n";
 
     ## Extract
@@ -639,6 +860,79 @@ sub Plink {
 }
 
 
+sub SnpEff {
+
+    my $parameterHashRef = $_[0];
+    my $FILEHANDLE = $_[1];
+
+    my $pwd = cwd();
+
+    if (&CheckCondaBinFileExists($parameterHashRef, "snpEff.jar")) {  # Assumes that SnpSift.jar is there as well then
+
+	return
+    }
+
+    ## Install SnpEff
+    print $FILEHANDLE "### Install SnpEff\n\n";
+
+    &CreateInstallDirectory($FILEHANDLE);
+    
+    ## Download
+    print $FILEHANDLE "## Download SnpEff\n";
+    print $FILEHANDLE "wget --quiet http://sourceforge.net/projects/snpeff/files/snpEff_".${$parameterHashRef}{'snpEff'}."_core.zip/download ";
+    print $FILEHANDLE "-O snpEff_".${$parameterHashRef}{'snpEff'}."_core.zip";  #Download outfile
+    print $FILEHANDLE "\n\n";
+
+    ## Extract
+    print $FILEHANDLE "## Extract\n";
+    print $FILEHANDLE "unzip snpEff_".${$parameterHashRef}{'snpEff'}."_core.zip";
+    print $FILEHANDLE "\n\n";
+
+    ## Make available from conda environment
+    if (-d $parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/share/snpEff.?.${$parameterHashRef}{'snpEff'}) {
+	
+	print $FILEHANDLE "rm -rf ".$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/share/snpEff.?.${$parameterHashRef}{'snpEff'};
+	print $FILEHANDLE "\n\n";
+    }
+
+    print $FILEHANDLE "## Make available from conda environment\n";
+    print $FILEHANDLE "mkdir -p ".$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/share/snpEff.?.${$parameterHashRef}{'snpEff'};
+    print $FILEHANDLE "\n\n";
+
+    print $FILEHANDLE "mv ";
+    print $FILEHANDLE q?snpEff/*.jar ?.$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/share/snpEff.?.${$parameterHashRef}{'snpEff'}.q?/?;
+    print $FILEHANDLE "\n\n";
+
+    print $FILEHANDLE "mv ";
+    print $FILEHANDLE q?snpEff/snpEff.config ?.$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/share/snpEff.?.${$parameterHashRef}{'snpEff'}.q?/?;
+    print $FILEHANDLE "\n\n";
+
+    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
+		  'FILEHANDLE' => $BASHFILEHANDLE,
+		  'binary' => q?../share/snpEff.?.${$parameterHashRef}{'snpEff'}.q?/snpEff.jar?,
+		  'softLink' => "snpEff.jar",
+		 });
+    
+    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
+		  'FILEHANDLE' => $BASHFILEHANDLE,
+		  'binary' => q?../share/snpEff.?.${$parameterHashRef}{'snpEff'}.q?/SnpSift.jar?,
+		  'softLink' => "SnpSift.jar",
+		 });
+
+    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
+		  'FILEHANDLE' => $BASHFILEHANDLE,
+		  'binary' => q?../share/snpEff.?.${$parameterHashRef}{'snpEff'}.q?/snpEff.config?,
+		  'softLink' => "snpEff.config",
+		 });
+    &CheckMTCodonTable({'parameterHashRef' => $parameterHashRef,
+			'FILEHANDLE' => $BASHFILEHANDLE,
+			'shareDirectory' => $parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/share/snpEff.?.${$parameterHashRef}{'snpEff'}.q?/?,
+			'binary' => "snpEff.config",
+		       });
+    &CleanUpModuleInstall($FILEHANDLE, $pwd);
+}
+
+
 sub VariantEffectPredictor {
 
     my $parameterHashRef = $_[0];
@@ -646,7 +940,7 @@ sub VariantEffectPredictor {
 
     my $pwd = cwd();
     
-    my $minicondaBinDirectory = $parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/ensembl-tools-release-?.${$parameterHashRef}{'VariantEffectPredictor'};
+    my $minicondaBinDirectory = $parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/ensembl-tools-release-?.${$parameterHashRef}{'variantEffectPredictor'};
 
     if (-d $minicondaBinDirectory) {
 
@@ -685,24 +979,25 @@ sub VariantEffectPredictor {
 
     ## Download
     print $FILEHANDLE "## Download VEP\n";
-    print $FILEHANDLE "wget --quiet https://github.com/Ensembl/ensembl-tools/archive/release/".${$parameterHashRef}{'VariantEffectPredictor'}.".zip ";
-    print $FILEHANDLE "-O VariantEffectPredictor-".${$parameterHashRef}{'VariantEffectPredictor'}.".zip";  #Dowload outfile
+    print $FILEHANDLE "wget --quiet https://github.com/Ensembl/ensembl-tools/archive/release/".${$parameterHashRef}{'variantEffectPredictor'}.".zip ";
+    print $FILEHANDLE "-O VariantEffectPredictor-".${$parameterHashRef}{'variantEffectPredictor'}.".zip";  #Download outfile
     print $FILEHANDLE "\n\n";
 
     ## Extract
     print $FILEHANDLE "## Extract\n";
-    print $FILEHANDLE "unzip VariantEffectPredictor-".${$parameterHashRef}{'VariantEffectPredictor'}.".zip";
+    print $FILEHANDLE "unzip VariantEffectPredictor-".${$parameterHashRef}{'variantEffectPredictor'}.".zip";
     print $FILEHANDLE "\n\n";    
 
     ## Move to VariantEffectPredictor directory
     print $FILEHANDLE "## Move to VariantEffectPredictor directory\n";
-    print $FILEHANDLE "cd ensembl-tools-release-".${$parameterHashRef}{'VariantEffectPredictor'}."/scripts/variant_effect_predictor/";
+    print $FILEHANDLE "cd ensembl-tools-release-".${$parameterHashRef}{'variantEffectPredictor'}."/scripts/variant_effect_predictor/";
     print $FILEHANDLE "\n\n";
 
     ## Install VEP
     print $FILEHANDLE "## Install VEP\n";
     print $FILEHANDLE "perl INSTALL.pl ";
-    print $FILEHANDLE "--AUTO alcf ";  #a (API), l (FAIDX/htslib), c (cache), f (FASTA), p (plugins)
+    print $FILEHANDLE "--AUTO alcfp ";  #a (API), l (FAIDX/htslib), c (cache), f (FASTA), p (plugins)
+    print $FILEHANDLE "-g ".$parameter{'variantEffectPredictorPlugin'}." ";  #Plugins 
     print $FILEHANDLE "-c ".${$parameterHashRef}{'vepDirectoryCache'}." ";  #Cache directory
     print $FILEHANDLE "-s homo_sapiens ";
     print $FILEHANDLE "--ASSEMBLY GRCh37 ";
@@ -713,7 +1008,12 @@ sub VariantEffectPredictor {
     print $FILEHANDLE q?cd ?.$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'};
     print $FILEHANDLE "\n\n";
 
-    print $FILEHANDLE "rm -rf VariantEffectPredictor-".${$parameterHashRef}{'VariantEffectPredictor'}.".zip";;
+    print $FILEHANDLE "rm -rf VariantEffectPredictor-".${$parameterHashRef}{'variantEffectPredictor'}.".zip";;
+    print $FILEHANDLE "\n\n";
+
+    ## Moving up
+    print $FILEHANDLE "## Moving back to original working directory\n";
+    print $FILEHANDLE "cd ".$pwd;  #Go back to subroutine origin
     print $FILEHANDLE "\n\n";
 
     &DeactivateCondaEnvironment($FILEHANDLE);
@@ -824,5 +1124,69 @@ sub CheckCondaBinFileExists {
 	
 	print STDERR "Writting install instructions for ".$programName, "\n";
 	return 0;
+    }
+}
+
+
+sub AddSoftLink {
+
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $binary = ${$argHashRef}{'binary'};
+    my $softLink = ${$argHashRef}{'softLink'} ;
+    
+    my $pwd = cwd();
+
+    ## Add softlink
+    print $FILEHANDLE "## Add softlink\n";
+    print $FILEHANDLE "cd ".$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/bin/?;
+    print $FILEHANDLE "\n";
+
+    print $FILEHANDLE "ln -f -s ";
+    print $FILEHANDLE $binary.q? ?.$softLink;
+    print $FILEHANDLE "\n\n";
+
+    ## Move to back
+    print $FILEHANDLE "## Move to original working directory\n";
+    print $FILEHANDLE "cd ".$pwd;
+    print $FILEHANDLE "\n\n";
+}
+
+
+sub CheckMTCodonTable {
+
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $shareDirectory = ${$argHashRef}{'shareDirectory'};
+    my $binary = ${$argHashRef}{'binary'};
+    
+    my $pwd = cwd();
+
+    my $detectRegExp = q?perl -nae 'if($_=~/GRCh37.75.MT.codonTable/) {print 1}' ?;
+    my $addRegExp = q?perl -nae 'if($_=~/GRCh37.75.reference/) {print $_; print "GRCh37.75.MT.codonTable : Vertebrate_Mitochondrial\n"} else {print $_;}' ?;
+
+    my $ret = `$detectRegExp $shareDirectory/$binary`;
+
+    if (!$ret) {  #No MT.codonTable in config
+
+	print $FILEHANDLE "## Adding GRCh37.75.MT.codonTable : Vertebrate_Mitochondrial to ".$shareDirectory.$binary;
+	print $FILEHANDLE "\n";
+
+	## Add MT.codon Table to config
+	print $FILEHANDLE $addRegExp." ".$shareDirectory.$binary." > ".$shareDirectory.$binary.".tmp";
+	print $FILEHANDLE "\n";
+	print $FILEHANDLE "mv ".$shareDirectory.$binary.".tmp ".$shareDirectory.$binary;
+	print $FILEHANDLE "\n\n";
+	
+    }
+    else {
+
+	print STDERR  "Found MT.codonTable in ".$shareDirectory."snpEff.config. Skipping addition to snpEff config\n"; 
     }
 }
