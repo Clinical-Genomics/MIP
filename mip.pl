@@ -176,12 +176,13 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                
                ###Annotation
                -pVT/--pVT VT decompose and normalize (defaults to "1" (=yes))
-                -vtdec/--VTDecompose Split multi allelic records into single records (defaults to "1" (=yes))
-                -vtnor/--VTNormalize Normalize variants (defaults to "1" (=yes))
-                -vtmaa/--VTmissingAltAllele Remove missing alternative alleles '*' (defaults to "1" (=yes))
-                -vtgmf/--VTgenmodFilter Remove common variants from vcf (defaults to "1" (=yes))
-                -vtgfr/--VTgenmodFilter1000G Genmod annotate 1000G reference (defaults to "ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz")
-                -vtgft/--VTgenmodFilterThreshold Threshold for filtering variants (defaults to "0.10")
+                 -vtdec/--VTDecompose Split multi allelic records into single records (defaults to "1" (=yes))
+                 -vtnor/--VTNormalize Normalize variants (defaults to "1" (=yes))
+                 -vtmaa/--VTmissingAltAllele Remove missing alternative alleles '*' (defaults to "1" (=yes))
+                 -vtgmf/--VTgenmodFilter Remove common variants from vcf (defaults to "1" (=yes))
+                 -vtgfr/--VTgenmodFilter1000G Genmod annotate 1000G reference (defaults to "ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz")
+                 -vtmaf/--VTgenmodFilterMaxAf Annotate MAX_AF from reference (defaults to "")
+                 -vtgft/--VTgenmodFilterThreshold Threshold for filtering variants (defaults to "0.10")
                -pVeP/--pVariantEffectPredictor Annotate variants using VEP (defaults to "1" (=yes))
                  -vepp/--vepDirectoryPath Path to VEP script directory (defaults to "")
                  -vepc/--vepDirectoryCache Specify the cache directory to use (defaults to "") 
@@ -481,6 +482,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'vtmaa|VTmissingAltAllele:n'  => \$parameter{'VTmissingAltAllele'}{'value'},  #VT remove '*' entries from vcf
 	   'vtgmf|VTgenmodFilter:n'  => \$parameter{'VTgenmodFilter'}{'value'},  #VT Remove common variants from vcf 
 	   'vtgfr|VTgenmodFilter1000G:s'  => \$parameter{'VTgenmodFilter1000G'}{'value'},  #VT Genmod annotate 1000G reference
+	   'vtmaf|VTgenmodFilterMaxAf:n' => \$parameter{'VTgenmodFilterMaxAf'}{'value'}, 
 	   'vtgft|VTgenmodFilterThreshold:s'  => \$parameter{'VTgenmodFilterThreshold'}{'value'},  #VT Threshold for filtering variants
 	   'pVeP|pVariantEffectPredictor:n' => \$parameter{'pVariantEffectPredictor'}{'value'},  #Annotation of variants using vep
 	   'vepp|vepDirectoryPath:s'  => \$parameter{'vepDirectoryPath'}{'value'},  #path to vep script dir
@@ -3949,6 +3951,8 @@ sub SnpEff {
 	## SnpSift Annotation
 	print $FILEHANDLE "## SnpSift Annotation","\n";
 
+	my $annotationFileCounter = 0;
+
 	if (${$scriptParameterHashRef}{'snpEffAnn'} eq 1) {  #Annotate using SnpEff
 
 	    ## Create file commands for xargs
@@ -3979,9 +3983,8 @@ sub SnpEff {
 		print $XARGSFILEHANDLE "\n";
 
 	    }
+	    $annotationFileCounter = $xargsFileCounter;
 	}
-
-	my $annotationFileCounter = $xargsFileCounter;
 
 	for my $annotationFile (keys %{${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}}) {
 		
@@ -5628,6 +5631,7 @@ sub VT {
 	    print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    print $XARGSFILEHANDLE "; ";
 	}
+
 	## Remove common variants
 	if (${$scriptParameterHashRef}{'VTgenmodFilter'} > 0) {
 
@@ -5635,6 +5639,11 @@ sub VT {
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "annotate ";  #Command
 	    print $XARGSFILEHANDLE "--thousand_g ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'VTgenmodFilter1000G'}." ";  #1000G reference
+
+	    if (${$scriptParameterHashRef}{'VTgenmodFilterMaxAf'} == 1) {
+
+		print $XARGSFILEHANDLE "--max_af ";  #If the MAX AF should be annotated
+	    }
 	    print $XARGSFILEHANDLE "-o /dev/stdout ";  #OutStream
 	    print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf".$altFileEnding." ";
 	    print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file

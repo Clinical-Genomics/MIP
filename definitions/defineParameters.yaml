@@ -865,6 +865,12 @@ VTgenmodFilter1000G:
   existsCheck: file
   reference: referencesDir
   type: path
+VTgenmodFilterMaxAf:
+  associatedProgram:
+   - pVT
+  dataType: SCALAR
+  default: 1
+  type: programArgument
 VTgenmodFilterThreshold:
   associatedProgram:
    - pVT
@@ -1399,6 +1405,7 @@ vepFeatures:
    - biotype
    - regulatory
    - tsl
+   - canonical
   type: programArgument
 vcfParserRangeFeatureAnnotationColumns:
   associatedProgram:

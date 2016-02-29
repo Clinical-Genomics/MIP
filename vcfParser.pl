@@ -179,6 +179,10 @@ sub DefineSnpEffAnnotations {
     $snpEffCmd{'SnpEff'}{'EXACAF'}{'INFO'} = q?##INFO=<ID=EXACAF,Number=A,Type=Float,Description="Estimated allele frequency in the range (0,1) in Exac">?;
     $snpEffCmd{'SnpEff'}{'EXACAF'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_AF,Number=.,Type=String,Description="Estimated allele frequency in the range (0,1)">?;
 
+    $snpEffCmd{'SnpEff'}{'EXACMAXAF'}{'File'} = q?ExAC.r\d+.\d+.sites.vep.vcf?;
+    $snpEffCmd{'SnpEff'}{'EXACMAXAF'}{'INFO'} = q?##INFO=<ID=EXACMAXAF,Number=A,Type=Float,Description="Estimated max allele frequency in the range (0,1) in Exac">?;
+    $snpEffCmd{'SnpEff'}{'EXACMAXAF'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_AF,Number=.,Type=String,Description="Estimated max allele frequency in the range (0,1)">?;
+
     $snpEffCmd{'SnpEff'}{'CLNSIG'}{'File'} = q?clinvar_\d+.vcf?;
     $snpEffCmd{'SnpEff'}{'CLNSIG'}{'INFO'} = q?##INFO=<ID=CLNSIG,Number=A,Type=String,Description="Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other">?;
     $snpEffCmd{'SnpEff'}{'CLNSIG'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_CLNSIG,Number=A,Type=String,Description="Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other">?;
@@ -651,7 +655,20 @@ sub ReadInfileVCF {
 			## Save Alternative Allele frequency info  
 			$variantLine .= $database."=".$tempMaf.";";
 			$selectedVariantLine .= $database."=".$tempMaf.";";
-		    }
+		    }		    
+		}
+		elsif($database eq "EXACMAXAF") {
+		    
+		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
+		    
+		    my $tempMaf = &FindAF(\@tempArray, "\\S+_EXACAF_MAX_AF=");
+		    
+		    if (defined($tempMaf)) {
+			
+			## Save Alternative Allele frequency info  
+			$variantLine .= $database."=".$tempMaf.";";
+			$selectedVariantLine .= $database."=".$tempMaf.";";
+		    }		    
 		}
 		elsif($database eq "MTAF") {
 			
@@ -671,6 +688,19 @@ sub ReadInfileVCF {
 		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
 		    
 		    my $tempMaf = &FindAF(\@tempArray, "\\S+_CLNSIG=");
+		    
+		    if (defined($tempMaf)) {
+			
+			## Save Alternative Allele frequency info  
+			$variantLine .= $database."=".$tempMaf.";";
+			$selectedVariantLine .= $database."=".$tempMaf.";";
+		    }
+		}
+		elsif($database eq "CLNACC") {
+		    
+		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
+		    
+		    my $tempMaf = &FindAF(\@tempArray, "\\S+_CLNACC=");
 		    
 		    if (defined($tempMaf)) {
 			
