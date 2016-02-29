@@ -18,6 +18,7 @@ BEGIN {
 		   "DateTime::Format::HTTP",
 		   "DateTime::Format::Mail",
 		   "Set::IntervalTree",  # vcfParser
+		   "Net::SSLeay",  # VEP
 		   "LWP::Simple",  # VEP
 		   "LWP::Protocol::https",  # VEP
 		   "Archive::Zip",  # VEP

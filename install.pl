@@ -24,6 +24,7 @@ BEGIN {
            -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.4.2')
 
            ## SHELL
+           -pei/--perlInstall Install perl (defaults: "0" (=no))
            -per/--perl Set the perl version (defaults: "5.18.2")
            -pm/perlModules Set the perl modules to be installed via cpanm (comma sep)
            -pic/--picardTools Set the picardTools version (Default: "2.0.1"),
@@ -31,15 +32,15 @@ BEGIN {
            -vct/--vcfTools Set the vcftools version (Default: "0.1.14")
            -bet/--bedTools Set the bedtools version (Default: "2.25.0")
            -vt/--vt Set the vt version (Default: "0.57")
-           -plk/--plink  Set the plink version (Default: "160110")
+           -plk/--plink  Set the plink version (Default: "160224")
            -vep/--variantEffectPredictor Set the VEP version (Default: "83")
 	   -vepc/--vepDirectoryCache Specify the cache directory to use (whole path; defaults to "~/miniconda/envs/condaEnvironment/ensembl-tools-release-variantEffectPredictorVersion/cache")
            -vepp/--variantEffectPredictorPlugin Supply a comma separated list of VEP plugins (Default: "UpDownDistance")
 
            ## Utility
-           -pbc/--preferBioConda Bioconda will used for overlapping shell and biconda installations (Default: 1 (=yes))
+           -pbc/--preferBioConda Bioconda will used for overlapping shell and biconda installations (Default: "1" (=yes))
            -ppd/--printParameterDefaults Print the parameter defaults
-           -u/--update Always install all programs (Default: 1 (=yes))
+           -u/--update Always install all programs (Default: "1" (=yes))
            -sp/--selectPrograms Install supplied programs e.g. -sp perl -sp bedTools (Default: "";)
            -h/--help Display this help message   
            -v/--version Display version
@@ -64,7 +65,9 @@ $parameter{'bioConda'}{'cramtools'} = "3.0.b47";
 $parameter{'bioConda'}{'samtools'} = "1.3";
 $parameter{'bioConda'}{'bcftools'} = "1.3";
 $parameter{'bioConda'}{'snpeff'} = "4.2";
+$parameter{'bioCondaSnpeffPatch'} = "-0";  #For correct softlinking in share and bin in conda env
 $parameter{'bioConda'}{'picard'} = "1.141";
+$parameter{'bioCondaPicardPatch'} = "-1";  #For correct softlinking in share and bin in conda env
 $parameter{'bioConda'}{'mosaik'} = "2.2.26";
 $parameter{'bioConda'}{'htslib'} = "1.3";
 $parameter{'bioConda'}{'bedtools'} = "2.25.0";
@@ -72,7 +75,9 @@ $parameter{'bioConda'}{'vt'} = "2015.11.10";
 $parameter{'bioConda'}{'sambamba'} = "0.5.9";
 $parameter{'bioConda'}{'freebayes'} = "1.0.2";
 
+
 ##Perl Modules
+$parameter{'perlInstall'} = 0;
 $parameter{'perl'} = "5.18.2";
 $parameter{'perlModules'} = ["YAML",
 			     "Log::Log4perl",
@@ -82,6 +87,7 @@ $parameter{'perlModules'} = ["YAML",
 			     "DateTime::Format::HTTP",
 			     "DateTime::Format::Mail",
 			     "Set::IntervalTree",  # vcfParser
+			     "Net::SSLeay",  # VEP
 			     "LWP::Simple",  # VEP
 			     "LWP::Protocol::https",  # VEP
 			     "Archive::Zip",  # VEP
@@ -105,7 +111,7 @@ $parameter{'sambamba'} = "0.5.9";
 $parameter{'vcfTools'} = "0.1.14";
 $parameter{'bedTools'} = "2.25.0";
 $parameter{'vt'} = "gitRepo";
-$parameter{'plink'} = "160110";
+$parameter{'plink'} = "160224";
 $parameter{'snpEff'} = "v4_2";
 $parameter{'variantEffectPredictor'} = "83";
 $parameter{'vepDirectoryCache'} = $parameter{'condaPath'}.q?/envs/?.$parameter{'condaEnvironment'}.q?/ensembl-tools-release-?.$parameter{'variantEffectPredictor'}.q?/cache?;  #Cache directory;
@@ -119,6 +125,7 @@ GetOptions('env|condaEnvironment:s'  => \$parameter{'condaEnvironment'},
 	   'bcv|bioConda=s' => \%{$parameter{'bioConda'}},
 	   'pip|pip=s' => \%{$parameter{'pip'}},
 	   'per|perl=s' => \$parameter{'perl'},
+	   'pei|perlInstall:n' => \$parameter{'perlInstall'},
 	   'pm|perlModules:s' => \@{$parameter{'perlModules'}},  #Comma separated list
 	   'pic|picardTools:s' => \$parameter{'picardTools'},
 	   'sbb|sambamba:s' => \$parameter{'sambamba'},
@@ -148,16 +155,18 @@ my $BASHFILEHANDLE = &CreateBashFile("mip.sh");
 &CreateCondaEnvironment(\%parameter, $BASHFILEHANDLE);
 
 if (scalar(@{$parameter{'selectPrograms'}}) > 0) {
-	
+    
     if ( ( any {$_ eq "perl"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
-
+	
 	&Perl(\%parameter, $BASHFILEHANDLE);
     }
 }
 else {
-
+    
     &Perl(\%parameter, $BASHFILEHANDLE);
 }
+
+
 &PipInstall(\%parameter, $BASHFILEHANDLE);
 
 if ($parameter{'preferBioConda'} != 1) {
@@ -361,7 +370,7 @@ sub CreateCondaEnvironment {
 
 	    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
 			  'FILEHANDLE' => $BASHFILEHANDLE,
-			  'binary' => q?../share/picard-?.${$parameterHashRef}{'bioConda'}{'picard'}.q?-1/picard.jar?,
+			  'binary' => q?../share/picard-?.${$parameterHashRef}{'bioConda'}{'picard'}.${$parameterHashRef}{'bioCondaPicardPatch'}.q?/picard.jar?,
 			  'softLink' => "picard.jar",
 			 });
 	}
@@ -369,23 +378,23 @@ sub CreateCondaEnvironment {
 	    
 	    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
 			  'FILEHANDLE' => $BASHFILEHANDLE,
-			  'binary' => q?../share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.q?l-2/snpEff.jar?,
+			  'binary' => q?../share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.${$parameterHashRef}{'bioCondaSnpeffPatch'}.q?/snpEff.jar?,
 			  'softLink' => "snpEff.jar",
 			 });
 	    
 	    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
 			  'FILEHANDLE' => $BASHFILEHANDLE,
-			  'binary' => q?../share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.q?l-2/SnpSift.jar?,
+			  'binary' => q?../share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.${$parameterHashRef}{'bioCondaSnpeffPatch'}.q?/SnpSift.jar?,
 			  'softLink' => "SnpSift.jar",
 			 });
 	    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
 			  'FILEHANDLE' => $BASHFILEHANDLE,
-			  'binary' => q?../share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.q?l-2/snpEff.config?,
+			  'binary' => q?../share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.${$parameterHashRef}{'bioCondaSnpeffPatch'}.q?/snpEff.config?,
 			  'softLink' => "snpEff.config",
 			 });
 	    &CheckMTCodonTable({'parameterHashRef' => $parameterHashRef,
 				'FILEHANDLE' => $BASHFILEHANDLE,
-				'shareDirectory' => $parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.q?l-2/?,
+				'shareDirectory' => $parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.${$parameterHashRef}{'bioCondaSnpeffPatch'}.q?/?,
 				'binary' => "snpEff.config",
 			       });
 	}
@@ -408,20 +417,26 @@ sub Perl {
 	    print STDERR q?Skipping writting installation for perl-?.${$parameterHashRef}{'perl'},"\n";  
 	}
 	else {
-	    
-	    ## Removing specific Perl version
-	    print $FILEHANDLE "### Removing specific Perl version\n";
-	    print $FILEHANDLE q?rm -rf $HOME/perl-?.${$parameterHashRef}{'perl'};
-	    print $FILEHANDLE "\n\n";
-	    
-	    &InstallPerlCpnam($parameterHashRef, $BASHFILEHANDLE); 
 
+	    if (${$parameterHashRef}{'perlInstall'} == 1) {
+	    
+		## Removing specific Perl version
+		print $FILEHANDLE "### Removing specific Perl version\n";
+		print $FILEHANDLE q?rm -rf $HOME/perl-?.${$parameterHashRef}{'perl'};
+		print $FILEHANDLE "\n\n";
+		
+		&InstallPerlCpnam($parameterHashRef, $BASHFILEHANDLE); 
+	    }
+	    
 	    &PerlModules($parameterHashRef, $BASHFILEHANDLE,);
 	}
     }
     else {
     	
-	&InstallPerlCpnam($parameterHashRef, $BASHFILEHANDLE, "AddPath");
+	if (${$parameterHashRef}{'perlInstall'} == 1) {
+	    
+	    &InstallPerlCpnam($parameterHashRef, $BASHFILEHANDLE, "AddPath");
+	}
 
 	&PerlModules($parameterHashRef, $BASHFILEHANDLE,);
     }
@@ -1170,9 +1185,12 @@ sub CheckMTCodonTable {
 
     my $detectRegExp = q?perl -nae 'if($_=~/GRCh37.75.MT.codonTable/) {print 1}' ?;
     my $addRegExp = q?perl -nae 'if($_=~/GRCh37.75.reference/) {print $_; print "GRCh37.75.MT.codonTable : Vertebrate_Mitochondrial\n"} else {print $_;}' ?;
+    my $ret;
 
-    my $ret = `$detectRegExp $shareDirectory/$binary`;
+    if (-f $shareDirectory."/".$binary) {
 
+	$ret = `$detectRegExp $shareDirectory/$binary`;
+    }
     if (!$ret) {  #No MT.codonTable in config
 
 	print $FILEHANDLE "## Adding GRCh37.75.MT.codonTable : Vertebrate_Mitochondrial to ".$shareDirectory.$binary;
