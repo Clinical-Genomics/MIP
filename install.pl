@@ -36,6 +36,8 @@ BEGIN {
            -vep/--variantEffectPredictor Set the VEP version (Default: "83")
 	   -vepc/--vepDirectoryCache Specify the cache directory to use (whole path; defaults to "~/miniconda/envs/condaEnvironment/ensembl-tools-release-variantEffectPredictorVersion/cache")
            -vepp/--variantEffectPredictorPlugin Supply a comma separated list of VEP plugins (Default: "UpDownDistance")
+           -cnv/--CNVnator Set the CNVnator version (Default: "0.3.2")
+           -ftr/--FindTranslocations Set the FindTranslocations version (Default: "0")
 
            ## Utility
            -pbc/--preferBioConda Bioconda will used for overlapping shell and biconda installations (Default: "1" (=yes))
@@ -74,6 +76,13 @@ $parameter{'bioConda'}{'bedtools'} = "2.25.0";
 $parameter{'bioConda'}{'vt'} = "2015.11.10";
 $parameter{'bioConda'}{'sambamba'} = "0.5.9";
 $parameter{'bioConda'}{'freebayes'} = "1.0.2";
+$parameter{'bioConda'}{'delly'} = "0.7.2";
+$parameter{'bioConda'}{'manta'} = "0.29.3";
+$parameter{'bioCondaMantaPatch'} = "-0";
+$parameter{'bioConda'}{'gcc'} = "4.8.5";
+$parameter{'bioConda'}{'cmake'} = "3.3.1";
+$parameter{'bioConda'}{'boost'} = "1.57.0";
+$parameter{'bioCondaBoostPatch'} = "-4";
 
 
 ##Perl Modules
@@ -116,8 +125,10 @@ $parameter{'snpEff'} = "v4_2";
 $parameter{'variantEffectPredictor'} = "83";
 $parameter{'vepDirectoryCache'} = $parameter{'condaPath'}.q?/envs/?.$parameter{'condaEnvironment'}.q?/ensembl-tools-release-?.$parameter{'variantEffectPredictor'}.q?/cache?;  #Cache directory;
 $parameter{'variantEffectPredictorPlugin'} = "UpDownDistance";
+$parameter{'CNVnator'} = "0.3.2";
+$parameter{'FindTranslocations'} = "0";
 
-my $installVersion = "0.0.3";
+my $installVersion = "0.0.4";
 
 ###User Options
 GetOptions('env|condaEnvironment:s'  => \$parameter{'condaEnvironment'},
@@ -136,6 +147,8 @@ GetOptions('env|condaEnvironment:s'  => \$parameter{'condaEnvironment'},
 	   'vep|variantEffectPredictor:s' => \$parameter{'variantEffectPredictor'},
 	   'vepc|vepDirectoryCache:s' => \$parameter{'vepDirectoryCache'},  #path to vep cache dir
 	   'vepp|variantEffectPredictorPlugin:s' => \$parameter{'variantEffectPredictorPlugin'},  #Comma sep string
+	   'cnv|CNVnator:s' => \$parameter{'CNVnator'},
+	   'ftr|FindTranslocations:s' => \$parameter{'FindTranslocations'},
 	   'pbc|preferBioConda:s' => \$parameter{'preferBioConda'},  # Bioconda will used for overlapping shell and biconda installlations
 	   'ppd|printParameterDefaults' => sub { &PrintParameters(\%parameter); exit;},  #Display parameter defaults
 	   'u|update:n' => \$parameter{'update'},
@@ -222,6 +235,14 @@ if (scalar(@{$parameter{'selectPrograms'}}) > 0) {
 
 	    &VariantEffectPredictor(\%parameter, $BASHFILEHANDLE);
 	}
+	if ( ( any {$_ eq "CNVnator"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+	    
+	    &CNVnator(\%parameter, $BASHFILEHANDLE);
+	}
+	if ( ( any {$_ eq "FindTranslocations"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+	    
+	    &FindTranslocations(\%parameter, $BASHFILEHANDLE);
+	}
 }
 else {
 
@@ -230,6 +251,10 @@ else {
     &Plink(\%parameter, $BASHFILEHANDLE);
     
     &VariantEffectPredictor(\%parameter, $BASHFILEHANDLE);
+
+    &CNVnator(\%parameter, $BASHFILEHANDLE);
+
+    &FindTranslocations(\%parameter, $BASHFILEHANDLE);
 }
 
 close($BASHFILEHANDLE);
@@ -397,6 +422,24 @@ sub CreateCondaEnvironment {
 				'shareDirectory' => $parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.${$parameterHashRef}{'bioCondaSnpeffPatch'}.q?/?,
 				'binary' => "snpEff.config",
 			       });
+	}
+	if ($program eq "manta") {
+
+	&AddSoftLink({'parameterHashRef' => $parameterHashRef,
+                          'FILEHANDLE' => $BASHFILEHANDLE,
+                          'binary' => q?../share/manta-?.${$parameterHashRef}{'bioConda'}{'manta'}.${$parameterHashRef}{'bioCondaMantaPatch'}.q?/bin/configManta.py?,
+                          'softLink' => "configManta.py",
+                         });
+
+	    &EnableExecutable({'parameterHashRef' => $parameterHashRef,
+			       'FILEHANDLE' => $BASHFILEHANDLE,
+			       'binary' => q?configManta.py?,
+			 });
+	    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
+			  'FILEHANDLE' => $BASHFILEHANDLE,
+			  'binary' => q?../share/manta-?.${$parameterHashRef}{'bioConda'}{'manta'}.${$parameterHashRef}{'bioCondaMantaPatch'}.q?/bin/configManta.py.ini?,
+			  'softLink' => "configManta.py.ini",
+			 });
 	}
     }
 }
@@ -803,7 +846,7 @@ sub VT {
 	return
     }
 
-    ## Install sambamba
+    ## Install VT
     print $FILEHANDLE "### Install VT\n\n";
 
     &CreateInstallDirectory($FILEHANDLE);
@@ -856,7 +899,7 @@ sub Plink {
     
     ## Download
     print $FILEHANDLE "## Download Plink\n";
-    print $FILEHANDLE "wget https://www.cog-genomics.org/static/bin/plink".${$parameterHashRef}{'plink'}."/plink_linux_x86_64.zip ";
+    print $FILEHANDLE "wget --quiet https://www.cog-genomics.org/static/bin/plink".${$parameterHashRef}{'plink'}."/plink_linux_x86_64.zip ";
     print $FILEHANDLE "-O plink-".${$parameterHashRef}{'plink'}."-x86_64.zip";  #Download outfile
     print $FILEHANDLE "\n\n";
 
@@ -1035,6 +1078,221 @@ sub VariantEffectPredictor {
 }
 
 
+sub CNVnator {
+
+    my $parameterHashRef = $_[0];
+    my $FILEHANDLE = $_[1];
+
+    my $pwd = cwd();
+
+    if (&CheckCondaBinFileExists($parameterHashRef, "cnvnator")) {
+
+	return
+    }
+
+    my $minicondaBinDirectory = $parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/root?;
+
+    if (-d $minicondaBinDirectory) {
+
+	print STDERR q?Found Root in miniconda directory: ?.$minicondaBinDirectory, "\n";
+	
+	if (${$parameterHashRef}{'update'} == 0) {
+
+	    print STDERR "Skipping writting installation process for Root","\n";  	    
+	    return
+	}
+	else {
+
+	    ## Removing Root
+	    print $FILEHANDLE "### Removing Root\n";
+	    print $FILEHANDLE q?rm -rf ?.$minicondaBinDirectory;
+	    print $FILEHANDLE "\n\n";
+	}
+    }
+    else {
+	
+	print STDERR "Writting install instructions for Root", "\n";
+    }
+
+    ## Install Root
+    print $FILEHANDLE "### Install CNVnator/Root\n\n";
+
+    ## Move to miniconda environment
+    print $FILEHANDLE q?cd ?.$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'};
+    print $FILEHANDLE "\n\n";
+
+    ## Download
+    print $FILEHANDLE "## Download Root\n";
+
+    print $FILEHANDLE "wget --quiet https://root.cern.ch/download/root_v5.34.34.Linux-slc6-x86_64-gcc4.4.tar.gz ";  #Currently hardcoded
+    print $FILEHANDLE "-O root_v5.34.34.Linux-slc6-x86_64-gcc4.4.tar.gz ";  #Download outfile
+    print $FILEHANDLE "\n\n";
+
+    ## Extract
+    print $FILEHANDLE "## Extract\n";
+    print $FILEHANDLE "tar xvf root_v5.34.34.Linux-slc6-x86_64-gcc4.4.tar.gz ";
+    print $FILEHANDLE "\n\n";
+
+    unless ($ENV{PATH}=~/$parameter{'condaPath'}\/envs\/${$parameterHashRef}{'condaEnvironment'}\/root\/bin/) {
+	
+	## Export path
+	print $FILEHANDLE "## Export path\n";
+	print $FILEHANDLE q?echo 'source ?.$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/root/bin/thisroot.sh' >> ~/.bashrc?;
+	print $FILEHANDLE "\n\n";
+
+	## Use newly installed root
+	print $FILEHANDLE q?source ?.$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/root/bin/thisroot.sh ?;
+	print $FILEHANDLE "\n\n";
+    }
+    
+    ## Moving up
+    print $FILEHANDLE "## Moving back to original working directory\n";
+    print $FILEHANDLE "cd ".$pwd;  #Go back to subroutine origin
+    print $FILEHANDLE "\n\n";
+
+    ## Install CNVNator
+    print $FILEHANDLE "### Install CNVnator\n\n";
+
+    &CreateInstallDirectory($FILEHANDLE);
+    
+    ## Download
+    print $FILEHANDLE "## Download CNVNator\n";
+    print $FILEHANDLE "wget --quiet https://github.com/abyzovlab/CNVnator/releases/download/v".${$parameterHashRef}{'CNVnator'}."/CNVnator_v".${$parameterHashRef}{'CNVnator'}.".zip ";
+    print $FILEHANDLE "-O CNVnator_v".${$parameterHashRef}{'CNVnator'}.".zip";  #Download outfile
+    print $FILEHANDLE "\n\n";
+
+    ## Extract
+    print $FILEHANDLE "## Extract\n";
+    print $FILEHANDLE "unzip CNVnator_v".${$parameterHashRef}{'CNVnator'}.".zip";
+    print $FILEHANDLE "\n\n";
+
+    ## Move to CNVnator directory
+    print $FILEHANDLE "## Move to CNVnator directory\n";
+    print $FILEHANDLE "cd CNVnator_v".${$parameterHashRef}{'CNVnator'}."/src/samtools/";
+    print $FILEHANDLE "\n\n";
+
+    ## Configure
+    print $FILEHANDLE "## Configure CNVnator samTools specific version\n";
+    print $FILEHANDLE "make";
+    print $FILEHANDLE "\n\n";
+
+    print $FILEHANDLE "## Move to CNVnator directory\n";
+    print $FILEHANDLE "cd ..";
+    print $FILEHANDLE "\n";
+
+    print $FILEHANDLE "make";
+    print $FILEHANDLE "\n\n";
+
+    ## Make available from conda environment
+    print $FILEHANDLE "## Make available from conda environment\n";
+    print $FILEHANDLE "mv ";
+    print $FILEHANDLE q?cnvnator ?.$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/bin/?;
+    print $FILEHANDLE "\n\n";
+
+    ## Make available from conda environment
+    print $FILEHANDLE "## Make available from conda environment\n";
+    print $FILEHANDLE "mv ";
+    print $FILEHANDLE q?cnvnator2VCF.pl ?.$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/bin/?;
+    print $FILEHANDLE "\n\n";
+
+    print $FILEHANDLE "## Make executable from conda environment\n";
+    print $FILEHANDLE "chmod +x ";
+    print $FILEHANDLE $parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/bin/cnvnator2VCF.pl?;
+    print $FILEHANDLE "\n\n";
+    
+
+    &CleanUpModuleInstall($FILEHANDLE, $pwd);
+}
+
+
+sub FindTranslocations {
+
+    my $parameterHashRef = $_[0];
+    my $FILEHANDLE = $_[1];
+
+    my $pwd = cwd();
+
+    if (&CheckCondaBinFileExists($parameterHashRef, "FindTranslocations")) {
+
+	return
+    }
+
+    ## Install Plink
+    print $FILEHANDLE "### Install FindTranslocations\n\n";
+
+    &ActivateCondaEnvironment($parameterHashRef, $FILEHANDLE);
+
+    ## Add to bashrc
+    unless (-d $parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/FindTranslocations/bin?) {
+	
+	## Export path
+	print $FILEHANDLE "## Export to bashrc\n";
+	print $FILEHANDLE q?printf '\nif [ -f ?.$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/FindTranslocations/bin/FindTranslocations ]; then\n?;
+	print $FILEHANDLE q?\t\texport LD_LIBRARY_PATH=$LD_LIBRARY_PATH:?.$parameter{'condaPath'}.q?/pkgs/boost-?.$parameter{'bioConda'}{'boost'}.$parameter{'bioCondaBoostPatch'}.q?/lib\n?;
+	print $FILEHANDLE q?fi\n\n' >> ~/.bashrc?;
+	print $FILEHANDLE "\n\n";
+    }
+
+    ## Move to miniconda environment
+    print $FILEHANDLE q?cd ?.$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'};
+    print $FILEHANDLE "\n\n";
+
+    ## Download
+    print $FILEHANDLE "## Download FindTranslocations\n";
+    print $FILEHANDLE "wget --quiet https://github.com/J35P312/FindTranslocations/archive/version_".${$parameterHashRef}{'FindTranslocations'}.".zip ";
+    print $FILEHANDLE "-O FindTranslocations-".${$parameterHashRef}{'FindTranslocations'}.".zip";  #Download outfile
+    print $FILEHANDLE "\n\n";
+
+    ## Extract
+    print $FILEHANDLE "## Extract\n";
+    print $FILEHANDLE "rm -rf FindTranslocations";
+    print $FILEHANDLE "\n\n";
+    print $FILEHANDLE "unzip FindTranslocations-".${$parameterHashRef}{'FindTranslocations'}.".zip ";
+    print $FILEHANDLE "\n\n";
+    print $FILEHANDLE "mv FindTranslocations-version_".${$parameterHashRef}{'FindTranslocations'}." ";
+    print $FILEHANDLE "FindTranslocations ";
+    print $FILEHANDLE "\n\n";
+
+    ## Move to FindTranslocations directory
+    print $FILEHANDLE "## Move to FindTranslocations directory\n";
+    print $FILEHANDLE "cd FindTranslocations";
+    print $FILEHANDLE "\n\n";
+    print $FILEHANDLE "mkdir -p build";
+    print $FILEHANDLE "\n\n";
+    print $FILEHANDLE "cd build";
+    print $FILEHANDLE "\n\n";
+
+    ## Configure
+    print $FILEHANDLE "## Configure\n";
+    print $FILEHANDLE "cmake .. -DBoost_NO_BOOST_CMAKE=ON";
+    print $FILEHANDLE "\n\n";
+
+    print $FILEHANDLE "make";
+    print $FILEHANDLE "\n\n";
+
+    print $FILEHANDLE "cd ../bin";
+    print $FILEHANDLE "\n\n";
+    print $FILEHANDLE "chmod a+x FindTranslocations";
+    print $FILEHANDLE "\n\n";
+
+    ## Make available from conda environment
+    my $cwd = cwd();
+    print $FILEHANDLE "## Make available from conda environment\n";
+    print $FILEHANDLE "ln -f -s  ";
+    print $FILEHANDLE $parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/FindTranslocations/bin/FindTranslocations ?.$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/bin/?;
+    print $FILEHANDLE "\n\n";    
+
+    ## Clean-up
+    print $FILEHANDLE q?cd ?.$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'};
+    print $FILEHANDLE "\n\n";
+    print $FILEHANDLE "rm -rf FindTranslocations-".${$parameterHashRef}{'FindTranslocations'}.".zip";
+    print $FILEHANDLE "\n\n";
+
+    &DeactivateCondaEnvironment($FILEHANDLE);
+}
+
+
+
 sub ActivateCondaEnvironment {
 
     my $parameterHashRef = $_[0];
@@ -1162,6 +1420,33 @@ sub AddSoftLink {
 
     print $FILEHANDLE "ln -f -s ";
     print $FILEHANDLE $binary.q? ?.$softLink;
+    print $FILEHANDLE "\n\n";
+
+    ## Move to back
+    print $FILEHANDLE "## Move to original working directory\n";
+    print $FILEHANDLE "cd ".$pwd;
+    print $FILEHANDLE "\n\n";
+}
+
+
+sub EnableExecutable {
+
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $binary = ${$argHashRef}{'binary'};
+    
+    my $pwd = cwd();
+
+    ## Add softlink
+    print $FILEHANDLE "## Enable executable\n";
+    print $FILEHANDLE "cd ".$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/bin/?;
+    print $FILEHANDLE "\n";
+
+    print $FILEHANDLE "chmod a+x ";
+    print $FILEHANDLE $binary.q? ?;
     print $FILEHANDLE "\n\n";
 
     ## Move to back
