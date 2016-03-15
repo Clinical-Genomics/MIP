@@ -764,6 +764,12 @@ sub RegExpToYAML {
 
     $regExp{'Freebayes'}{'Version'} = q?perl -nae 'if($_=~/source=freeBayes\s(\S+)/) {print $1;last;}' ?; #Collect Freebayes version
 
+    $regExp{'Delly'}{'Version'} = q?perl -nae 'if($_=~/SVMETHOD=EMBL\.DELLY(v\d+\.\d+\.\d+)/) {print $1;last }' ?; #Collect Delly version
+
+    $regExp{'Manta'}{'Version'} = q?perl -nae 'if($_=~/GenerateSVCandidates\s+(\S+)/) {print $1;last}' ?; #Collect Manta version
+
+    $regExp{'SVVariantEffectPredictor'}{'Version'} = q?perl -nae 'if($_=~/##VEP=(\w+)/) {print $1;last;}' ?; #Collect SVVariantEffectPredictor version
+
 #$regExp{''}{''} = ;
 
     

@@ -123,12 +123,40 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -ptchsetpl/--exomeTargetPaddedBedInfileLists Prepared padded target BED file for PicardTools CalculateHSMetrics (defaults to "". File ending should be ".padXXX.infile_list")
                -pRcP/--pRCovPlots Plots of genome coverage using rCovPlots (defaults to "1" (=yes))
 
+               ###Structural Variant Callers
+               -pCnv/--pCNVnator Structural variant calling using CNVnator (defaults to "1" (=yes))
+                 -cnvhbs/--cnvBinSize CNVnator bin size (defaults to "1000")
+               -pDel/--pDelly Structural variant calling using Delly (defaults to "1" (=yes))
+                 -deltyp/--dellyType Type of SV to call (defaults to "DEL,DUP,INV,TRA"; comma sep)
+               -pMna/--pManta Structural variant calling using Manta (defaults to "1" (=yes))
+               -pFit/--pFindTranslocations Structural variant calling using FT (defaults to "1" (=yes))
+                 -fitmsp/--findTranslocationsMinimumSuppotingPairs The minimum number of supporting reads (defaults to "6")
+               -pCsv/--pCombineStructuralVariantCallSets Combine variant call sets (defaults to "1" (=yes))
+                 -csvvtd/--svVTDecompose Split multi allelic records into single records (defaults to "1" (=yes))
+                 -csvbtv/--svBcfToolsViewFilter Include structural variants with PASS in FILTER column (defaults to "1" (=yes))
+                 -csvgmf/--svGenmodFilter Remove common structural variants from vcf (defaults to "1" (=yes))
+                 -csvgfr/--svGenmodFilter1000G Genmod annotate structural variants from 1000G reference (defaults to "ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz")
+                 -csvgft/--svGenmodFilterThreshold Threshold for filtering structural variants (defaults to "0.10")
+                 -csvbcf/--combineStructuralVariantCallSetsBCFFile Produce a bcf from the combineStructuralVariantCallSet vcf (defaults to "1" (=yes))
+               -pSvv/--pSVVariantEffectPredictor Annotate SV variants using VEP (defaults to "1" (=yes))
+               -svvepf/--svvepFeatures VEP features (defaults to ("hgvs","symbol","numbers","sift","polyphen","humdiv","domains","protein","ccds","uniprot","biotype","regulatory", "tsl", "canonical", "per_gene"); comma sep)
+               -pSVVcP/--pSVVCFParser Parse structural variants using vcfParser.pl (defaults to "1" (=yes))
+                 -svvcpvt/--svVcfParserVepTranscripts Parse VEP transcript specific entries (defaults to "0" (=no))
+                 -svvcprff/--svVcfParserRangeFeatureFile Range annotations file (defaults to ""; tab-sep)
+                 -svvcprfa/--svVcfParserRangeFeatureAnnotationColumns Range annotations feature columns (defaults to ""; comma sep)
+                 -svvcpsf/--svVcfParserSelectFile File containging list of genes to analyse seperately (defaults to "";tab-sep file and HGNC Symbol required)
+                 -svvcpsfm/--svVcfParserSelectFileMatchingColumn Position of HGNC Symbol column in SelectFile (defaults to "")
+                 -svvcpsfa/--svVcfParserSelectFeatureAnnotationColumns Feature columns to use in annotation (defaults to ""; comma sep)
+               -pSvR/--pSVRankVariants Ranking of annotated SV variants (defaults to "1" (=yes))
+                 -svravwg/--svWholeGene Allow compound pairs in intronic regions (defaults to "0" (=yes))
+                 -svravrm/--svRankModelFile Rank model config file (defaults to "")
+               
                ##Samtools
                -pSmp/--pSamToolsMpileUp Variant calling using samTools mpileup and bcfTools (defaults to "1" (=yes))
 
                ##Freebayes
                -pFrb/--pFreebayes Variant calling using Freebayes and bcfTools (defaults to "1" (=yes))
-               
+
                ##GATK              
                -gtp/--genomeAnalysisToolKitPath  Path to GATK. Mandatory for use of GATK (defaults to "")
                -gbdv/--GATKBundleDownLoadVersion  GATK FTP bundle download version.(defaults to "2.8")
@@ -187,7 +215,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -vepp/--vepDirectoryPath Path to VEP script directory (defaults to "")
                  -vepc/--vepDirectoryCache Specify the cache directory to use (defaults to "") 
                  -vepr/--vepReference Use Human reference file with VEP (defaults to "0" (=no))
-                 -vepf/--vepFeatures VEP features (defaults to ("hgvs","symbol","numbers","sift","polyphen","humdiv","domains","protein","ccds","uniprot","biotype","regulatory"); comma sep)
+                 -vepf/--vepFeatures VEP features (defaults to ("hgvs","symbol","numbers","sift","polyphen","humdiv","domains","protein","ccds","uniprot","biotype","regulatory", "tsl", "canonical"); comma sep)
                -pVcP/--pVCFParser Parse variants using vcfParser.pl (defaults to "1" (=yes))
                  -vcpvt/--vcfParserVepTranscripts Parse VEP transcript specific entries (defaults to "0" (=no))
                  -vcprff/--vcfParserRangeFeatureFile Range annotations file (defaults to ""; tab-sep)
@@ -431,6 +459,32 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'ptchsetl|exomeTargetBedInfileLists:s' => \@exomeTargetBedInfileLists,  #Comma separated list of target file for CalculateHsMetrics
 	   'ptchsetpl|exomeTargetPaddedBedInfileLists:s' => \@exomeTargetPaddedBedInfileLists,  #Comma separated list of padded target file for CalculateHsMetrics
 	   'pRcP|pRCovPlots:n' => \$parameter{'pRCovPlots'}{'value'},
+	   'pCnv|pCNVnator:n' => \$parameter{'pCNVnator'}{'value'},
+	   'cnvhbs|cnvBinSize:n' => \$parameter{'cnvBinSize'}{'value'},
+	   'pDel|pDelly:n' => \$parameter{'pDelly'}{'value'},
+	   'deltyp|dellyType:s'  => \@{$parameter{'dellyType'}{'value'}},
+	   'pMna|pManta:n' => \$parameter{'pManta'}{'value'},
+	   'pFit|pFindTranslocations:n' => \$parameter{'pFindTranslocations'}{'value'},
+	   'fitmsp|findTranslocationsMinimumSuppotingPairs:n' => \$parameter{'findTranslocationsMinimumSuppotingPairs'}{'value'},
+	   'csvvtd|svVTDecompose:n' => \$parameter{'svVTDecompose'}{'value'},  #VT decompose (split multiallelic variants)
+	   'csvbtv|svBcfToolsViewFilter:n' => \$parameter{'svBcfToolsViewFilter'}{'value'},  #Include structural variants with PASS in FILTER column
+	   'csvgmf|svGenmodFilter:n'  => \$parameter{'svGenmodFilter'}{'value'},  #Remove common structural variants from vcf 
+	   'csvgfr|svGenmodFilter1000G:s'  => \$parameter{'svGenmodFilter1000G'}{'value'},  #Genmod annotate structural variants from 1000G reference
+	   'csvgft|svGenmodFilterThreshold:s'  => \$parameter{'svGenmodFilterThreshold'}{'value'},  #Threshold for filtering structural variants
+	   'pCsv|pCombineStructuralVariantCallSets:n' => \$parameter{'pCombineStructuralVariantCallSets'}{'value'},  #Combine structural variant call sets
+	   'csvbcf|combineStructuralVariantCallSetsBCFFile:n' => \$parameter{'combineStructuralVariantCallSetsBCFFile'}{'value'},  #Produce compressed vcf
+	   'pSvv|pSVVariantEffectPredictor:n' => \$parameter{'pSVVariantEffectPredictor'}{'value'},
+	   'svvepf|svvepFeatures:s'  => \@{$parameter{'svvepFeatures'}{'value'}},  #Comma separated list
+	   'pSVVcP|pSVVCFParser:n' => \$parameter{'pSVVCFParser'}{'value'},
+	   'svvcpvt|svVcfParserVepTranscripts:n' => \$parameter{'svVcfParserVepTranscripts'}{'value'},
+	   'svvcprff|svVcfParserRangeFeatureFile:s' => \$parameter{'svVcfParserRangeFeatureFile'}{'value'},  #path to vcfParserRangeFeatureFile
+	   'svvcprfa|svVcfParserRangeFeatureAnnotationColumns:s'  => \@{$parameter{'svVcfParserRangeFeatureAnnotationColumns'}{'value'}},  #Comma separated list
+	   'svvcpsf|svVcfParserSelectFile:s'  => \$parameter{'svVcfParserSelectFile'}{'value'},  #path to vcfParserSelectFile
+	   'svvcpsfm|svVcfParserSelectFileMatchingColumn:n' => \$parameter{'svVcfParserSelectFileMatchingColumn'}{'value'},  #Column of HGNC Symbol in SelectFile
+	   'svvcpsfa|svVcfParserSelectFeatureAnnotationColumns:s'  => \@{$parameter{'svVcfParserSelectFeatureAnnotationColumns'}{'value'}},  #Comma separated list
+	   'pSvR|pSVRankVariants:n' => \$parameter{'pSVRankVariants'}{'value'},  #Ranking of SV variants
+	   'svravwg|svWholeGene:n'  => \$parameter{'svWholeGene'}{'value'},  #Allow compound pairs in intronic regions
+	   'svravrm|svRankModelFile:s' => \$parameter{'svRankModelFile'}{'value'},  #The rank modell config.ini path
 	   'pSmp|pSamToolsMpileUp:n' => \$parameter{'pSamToolsMpileUp'}{'value'},
 	   'pFrb|pFreebayes:n' => \$parameter{'pFreebayes'}{'value'},
 	   'gtp|genomeAnalysisToolKitPath:s' => \$parameter{'genomeAnalysisToolKitPath'}{'value'},  #GATK whole path
@@ -791,6 +845,7 @@ if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
 &AddToParameter({'parameterHashRef' => \%parameter,
 		 'aggregateArrayRef' => ["type:program",  #Collects all programs that MIP can handle
 					 "programType:variantCaller",  #Collects all variantCallers
+					 "programType:structuralVariantCaller",  #Collects all structural variantCallers
 					 "programType:aligner",
 					 "reference:referencesDir",  #Collects all references in that are supposed to be in referenceDirectory
 					 "removeRedundantFiles:yes"],  #Collect all programs that are variantCallers
@@ -1545,6 +1600,208 @@ if ($scriptParameter{'pRCovPlots'} > 0) {  #Run Rcovplot scripts
 	
 	&RCoveragePlots(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%lane, \%infilesLaneNoEnding, \%jobID, $scriptParameter{'sampleIDs'}[$sampleIDCounter], $scriptParameter{'alignerOutDir'}, "RCovPlots");	
     }
+}
+
+
+if ($scriptParameter{'pCNVnator'} > 0) {  #Run CNVnator
+    
+    $logger->info("[CNVnator]\n");
+    
+    &CheckBuildHumanGenomePreRequisites({'parameterHashRef' => \%parameter,
+					 'scriptParameterHashRef' => \%scriptParameter,
+					 'sampleInfoHashRef' => \%sampleInfo,
+					 'fileInfoHashRef' => \%fileInfo,
+					 'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+					 'jobIDHashRef' => \%jobID,
+					 'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+					 'programName' => "CNVnator",
+					});
+    &CheckBuildDownLoadPreRequisites({'parameterHashRef' => \%parameter,
+				      'scriptParameterHashRef' => \%scriptParameter,
+				      'sampleInfoHashRef' => \%sampleInfo,
+				      'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+				      'jobIDHashRef' => \%jobID,
+				      'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+				      'programName' => "CNVnator",
+				     });
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #For all SampleIDs
+
+	&CNVnator({'parameterHashRef' => \%parameter,
+		   'scriptParameterHashRef' => \%scriptParameter,
+		   'sampleInfoHashRef' => \%sampleInfo,
+		   'fileInfoHashRef' => \%fileInfo,
+		   'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+		   'laneHashRef' => \%lane,
+		   'jobIDHashRef' => \%jobID,
+		   'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
+		   'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
+		   'programName' => "CNVnator",
+		  });
+    }
+}
+
+
+if ($scriptParameter{'pDelly'} > 0) {  #Run Delly
+    
+    $logger->info("[Delly]\n");
+    
+    &CheckBuildHumanGenomePreRequisites({'parameterHashRef' => \%parameter,
+					 'scriptParameterHashRef' => \%scriptParameter,
+					 'sampleInfoHashRef' => \%sampleInfo,
+					 'fileInfoHashRef' => \%fileInfo,
+					 'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+					 'jobIDHashRef' => \%jobID,
+					 'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+					 'programName' => "Delly",
+					});
+    &CheckBuildDownLoadPreRequisites({'parameterHashRef' => \%parameter,
+				      'scriptParameterHashRef' => \%scriptParameter,
+				      'sampleInfoHashRef' => \%sampleInfo,
+				      'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+				      'jobIDHashRef' => \%jobID,
+				      'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+				      'programName' => "Delly",
+				     });
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #For all SampleIDs
+
+	&Delly({'parameterHashRef' => \%parameter,
+		'scriptParameterHashRef' => \%scriptParameter,
+		'sampleInfoHashRef' => \%sampleInfo,
+		'fileInfoHashRef' => \%fileInfo,
+		'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+		'laneHashRef' => \%lane,
+		'jobIDHashRef' => \%jobID,
+		'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
+		'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
+		'programName' => "Delly",
+	       });
+    }
+}
+
+if ($scriptParameter{'pManta'} > 0) {  #Run Delly
+    
+    $logger->info("[Manta]\n");
+    
+    &CheckBuildHumanGenomePreRequisites({'parameterHashRef' => \%parameter,
+					 'scriptParameterHashRef' => \%scriptParameter,
+					 'sampleInfoHashRef' => \%sampleInfo,
+					 'fileInfoHashRef' => \%fileInfo,
+					 'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+					 'jobIDHashRef' => \%jobID,
+					 'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+					 'programName' => "Manta",
+					});
+    &CheckBuildDownLoadPreRequisites({'parameterHashRef' => \%parameter,
+				      'scriptParameterHashRef' => \%scriptParameter,
+				      'sampleInfoHashRef' => \%sampleInfo,
+				      'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+				      'jobIDHashRef' => \%jobID,
+				      'supportedCosmidReferenceHashRef' => \%supportedCosmidReference,
+				      'programName' => "Manta",
+				     });
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #For all SampleIDs
+
+	&Manta({'parameterHashRef' => \%parameter,
+		'scriptParameterHashRef' => \%scriptParameter,
+		'sampleInfoHashRef' => \%sampleInfo,
+		'fileInfoHashRef' => \%fileInfo,
+		'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+		'laneHashRef' => \%lane,
+		'jobIDHashRef' => \%jobID,
+		'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
+		'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
+		'programName' => "Manta",
+	       });
+    }
+}
+
+
+if ($scriptParameter{'pFindTranslocations'} > 0) {  #Run FindTranslocations
+    
+    $logger->info("[FindTranslocations]\n");
+    
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #For all SampleIDs
+
+	&FindTranslocations({'parameterHashRef' => \%parameter,
+			     'scriptParameterHashRef' => \%scriptParameter,
+			     'sampleInfoHashRef' => \%sampleInfo,
+			     'fileInfoHashRef' => \%fileInfo,
+			     'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+			     'laneHashRef' => \%lane,
+			     'jobIDHashRef' => \%jobID,
+			     'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
+			     'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
+			     'programName' => "FindTranslocations",
+			    });
+    }
+}
+
+
+if ($scriptParameter{'pCombineStructuralVariantCallSets'} > 0) {  #Run CombineVariantCallSets. For all SampleIDs and StructuralVariantCallers
+
+    $logger->info("[CombineStructuralVariantCallSets]\n");
+
+    &CombineStructuralVariantCallSets({'parameterHashRef' => \%parameter,
+					   'scriptParameterHashRef' => \%scriptParameter,
+					   'sampleInfoHashRef' => \%sampleInfo,
+					   'fileInfoHashRef' => \%fileInfo,
+					   'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+					   'laneHashRef' => \%lane,
+					   'jobIDHashRef' => \%jobID,
+					   'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
+					   'callType' => "SV",
+					   'programName' => "CombineStructuralVariantCallSets",
+					  });
+}
+
+if ($scriptParameter{'pSVVariantEffectPredictor'} > 0) {  #Run SVVariantEffectPredictor. Done per family
+    
+    $logger->info("[SVVariantEffectPredictor]\n");
+    
+    &SVVariantEffectPredictor({'parameterHashRef' => \%parameter,
+			       'scriptParameterHashRef' => \%scriptParameter,
+			       'sampleInfoHashRef' => \%sampleInfo,
+			       'fileInfoHashRef' => \%fileInfo,
+			       'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+			       'jobIDHashRef' => \%jobID,
+			       'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
+			       'callType' => "SV",
+			       'programName' => "SVVariantEffectPredictor",
+			      });
+}
+
+
+if ($scriptParameter{'pSVVCFParser'} > 0) {  #Run pSVVCFParser. Done per family
+    
+    $logger->info("[SVVCFParser]\n");
+    
+    &SVVCFParser({'parameterHashRef' => \%parameter,
+		  'scriptParameterHashRef' => \%scriptParameter,
+		  'sampleInfoHashRef' => \%sampleInfo,
+		  'fileInfoHashRef' => \%fileInfo,
+		  'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+		  'jobIDHashRef' => \%jobID,
+		  'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
+		  'callType' => "SV",
+		  'programName' => "SVVCFParser",
+		 });
+}
+
+
+if ($scriptParameter{'pSVRankVariants'} > 0) {  #Run SVRankVariants. Done per family
+    
+    $logger->info("[SVRankVariants]\n");
+    
+    &SVRankVariants({'parameterHashRef' => \%parameter,
+		     'scriptParameterHashRef' => \%scriptParameter,
+		     'sampleInfoHashRef' => \%sampleInfo,
+		     'fileInfoHashRef' => \%fileInfo,
+		     'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+		     'jobIDHashRef' => \%jobID,
+		     'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
+		     'callType' => "SV",
+		     'programName' => "SVRankVariants",
+		    });
 }
 
 
@@ -2674,21 +2931,14 @@ sub Evaluation {
 		       });
     print $FILEHANDLE "wait", "\n\n";
     
-    ## Create new sample names file
-    print $FILEHANDLE "## Create new sample names file\n";
-    print $FILEHANDLE q?echo "ADM1059A3-NIST" ?;
-    print $FILEHANDLE "> ".$$tempDirectoryRef."/sample_names.txt ";
-    print $FILEHANDLE "\n\n";
-
-    ## Rename NIST 
-    print $FILEHANDLE "bcftools ";
-    print $FILEHANDLE "reheader ";  #Modify header of VCF/BCF files, change sample names.
-    print $FILEHANDLE "-s ";  #New sample names
-    print $FILEHANDLE $$tempDirectoryRef."/sample_names.txt ";
-    print $FILEHANDLE " ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'NISTHighConfidenceCallSet'}." ";
-    print $FILEHANDLE "> ".$$tempDirectoryRef."/NIST.vcf ";
-    print $FILEHANDLE "\n\n";
-
+    ## Rename vcf samples. The samples array will replace the sample names in the same order as supplied.
+    &RenameVCFSamples({'sampleIDArrayRef' => ["ADM1059A3-NIST"],
+		       'tempDirectoryRef' => $tempDirectoryRef,
+		       'infile' => $$referencesDirectoryRef."/".${$scriptParameterHashRef}{'NISTHighConfidenceCallSet'},
+		       'outfile' => $$tempDirectoryRef."/NIST.vcf",
+		       'FILEHANDLE' => $FILEHANDLE,
+		      });
+    
     ## BcfTools Stats
     print $FILEHANDLE "## bcfTools Stats\n";
     print $FILEHANDLE "bcftools stats ";
@@ -4905,9 +5155,17 @@ sub VariantEffectPredictor {
 	## Collect QC metadata info for later use                     	
 	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 		       'familyID' => $$familyIDRef,
-		       'programName' => $programName,
+		       'programName' => $programName."Summary",
 		       'outDirectory' => $outFamilyDirectory,
 		       'outFileEnding' => $$familyIDRef.$outfileEnding.$callType."_".${$fileInfoHashRef}{'contigsSizeOrdered'}[0].".vcf_summary.html",
+		       'outDataType' => "static"
+		      });
+	## Collect QC metadata info for later use                     	
+	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		       'familyID' => $$familyIDRef,
+		       'programName' => $programName,
+		       'outDirectory' => $outFamilyDirectory,
+		       'outFileEnding' => $$familyIDRef.$outfileEnding.$callType."_".${$fileInfoHashRef}{'contigsSizeOrdered'}[0].".vcf",
 		       'outDataType' => "static"
 		      });
     }
@@ -4918,7 +5176,7 @@ sub VariantEffectPredictor {
 			  'FILEHANDLE' => $FILEHANDLE,
 			 });
     print $FILEHANDLE "wait", "\n\n";
-
+    
     close($XARGSFILEHANDLE);
 
     if ($$reduceIORef eq "0") {  #Run as individual sbatch script
@@ -4933,6 +5191,17 @@ sub VariantEffectPredictor {
 
 	close($FILEHANDLE);
     }
+    else {  #Move file for downstream collection of VEP version
+	
+	## Copies file from temporary directory.
+	print $FILEHANDLE "## Copy file from temporary directory\n";
+	&MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".${$fileInfoHashRef}{'contigsSizeOrdered'}[0].".vcf",
+			      'filePath' => $outFamilyDirectory."/",
+			      'FILEHANDLE' => $FILEHANDLE,
+			     });
+	print $FILEHANDLE "wait", "\n\n";	    
+    }
+
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
 
 	if ($$reduceIORef eq "0") {  #Run as individual sbatch script
@@ -7780,6 +8049,2358 @@ sub SambambaDepth {
 		       'dependencies' => 5, 
 		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
 		       'sbatchFileName' => $fileName
+		      });
+    }
+}
+
+
+sub SVRankVariants { 
+
+##SVRankVariants
+    
+##Function : Annotate and score SV variants depending on mendelian inheritance, frequency and phenotype etc.
+##Returns  : "|$xargsFileCounter"
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName, $programInfoPath, $fileName, $FILEHANDLE, $xargsFileCounter
+##         : $parameterHashRef           => The parameter hash {REF}
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $fileInfoHashRef            => The fileInfo hash {REF}
+##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $familyIDRef                => The familyIDRef {REF}
+##         : $alignerOutDir              => The alignerOutDir used in the analysis
+##         : $callType                   => The variant call type
+##         : $programName                => The program name
+##         : $programInfoPath            => The program info path
+##         : $fileName                   => File name
+##         : $FILEHANDLE                 => Sbatch filehandle to write to
+##         : $xargsFileCounter           => The xargs file counter
+
+    my ($argHashRef) = @_;
+    
+    my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+		   'referencesDirRef' => \${$argHashRef}{'scriptParameterHashRef'}{'referencesDir'},
+		   'tempDirectoryRef' => \${$argHashRef}{'scriptParameterHashRef'}{'tempDirectory'},
+		   'xargsFileCounter' => 0,
+		   'callType' => "BOTH",
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+    
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
+    my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
+    my $callType = ${$argHashRef}{'callType'};
+    my $programName = ${$argHashRef}{'programName'};
+    my $programInfoPath = ${$argHashRef}{'programInfoPath'};
+    my $fileName = ${$argHashRef}{'fileName'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $xargsFileCounter = ${$argHashRef}{'xargsFileCounter'};    
+    my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
+    my $referencesDirectoryRef =  ${$argHashRef}{'referencesDirRef'};
+
+    my $reduceIORef = \${$scriptParameterHashRef}{'reduceIO'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
+			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
+			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'alignerOutDirRef' => $$alignerOutDirRef,
+			     'callType' => $callType,
+			     'programName' => $programName,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+
+    
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $time = 20;
+
+    ## Set the number of cores
+    my $nrCores = ${$scriptParameterHashRef}{'maximumCores'};
+    my $genModnrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, 16);  #Detect the number of cores to use per genmod process.
+    my $xargsFileName;
+
+    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
+	
+	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    
+	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+	($fileName, $programInfoPath) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+							       'FILEHANDLE' => $FILEHANDLE,
+							       'directoryID' => $$familyIDRef,
+							       'programName' => $programName,
+							       'programDirectory' => lc($$alignerOutDirRef."/gatk"),
+							       'nrofCores' => $nrCores,
+							       'processTime' => 10,
+							       'tempDirectory' => $$tempDirectoryRef
+							      });
+    }
+
+    ## Assign directories
+    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
+    
+    my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pSVVCFParser'}{'fileEnding'};
+    my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"p".$programName}{'fileEnding'};
+    my $vcfParserAnalysisType = "";
+    my $vcfParserContigsArrayRef = \@{ ${$fileInfoHashRef}{'contigsSizeOrdered'} };  #Set default
+
+    if (${$scriptParameterHashRef}{'usePythonVirtualEnvironment'} == 1) {
+	
+	## GenMod uses python virtualenvironment
+	print $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{'pythonVirtualEnvironmentCommand'} })." ".${$scriptParameterHashRef}{'pythonVirtualEnvironment'}, "\n\n";  #Activate python environment
+    }
+
+    for (my $vcfParserOutputFileCounter=0;$vcfParserOutputFileCounter<${$scriptParameterHashRef}{'VcfParserOutputFileCount'};$vcfParserOutputFileCounter++) {
+	
+	if ($vcfParserOutputFileCounter == 1) {
+	    
+	    $vcfParserAnalysisType = ".selected";  #SelectFile variants
+	    $vcfParserContigsArrayRef = \@{${$fileInfoHashRef}{'SelectFileContigs'}};  #Selectfile contigs
+	}
+	
+	## Copy file(s) to temporary directory
+	print $FILEHANDLE "## Copy file(s) to temporary directory\n";
+	$xargsFileCounter = &XargsMigrateContigFiles({'FILEHANDLE' => $FILEHANDLE,
+						      'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
+						      'arrayRef' => \@{ ${$fileInfoHashRef}{'contigsSizeOrdered'} },
+						      'fileName' => $fileName,
+						      'programInfoPath' => $programInfoPath,
+						      'nrCores' => $nrCores,
+						      'xargsFileCounter' => $xargsFileCounter,
+						      'inFile' => $$familyIDRef.$infileEnding.$callType,
+						      'fileEnding' => $vcfParserAnalysisType.".vcf*",
+						      'inDirectory' => $inFamilyDirectory,
+						      'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+						     });
+	
+	## Calculate Gene Models
+	print $FILEHANDLE "## Calculate Gene Models", "\n";   
+	
+	if (${$scriptParameterHashRef}{'analysisType'} eq "exomes") {
+	    
+	    ## Clear trap for signal(s)
+	    &ClearTrap({'FILEHANDLE' => $FILEHANDLE,
+		       });
+	}
+	
+	## Create file commands for xargs
+	($xargsFileCounter, $xargsFileName) = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
+							     'XARGSFILEHANDLE' => $XARGSFILEHANDLE, 
+							     'fileName' => $fileName,
+							     'programInfoPath' => $programInfoPath, 
+							     'nrCores' => $genModnrCores,
+							     'xargsFileCounter' => $xargsFileCounter,
+							     'firstCommand' => "genmod",
+							    });
+    
+	## Process per contig
+	for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{'contigsSizeOrdered'}});$contigsCounter++) {
+	    
+	    my $contigRef = \${$fileInfoHashRef}{'contigsSizeOrdered'}[$contigsCounter];
+	    
+	    ## Genmod Models
+	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
+	    print $XARGSFILEHANDLE "models ";  #Annotate genetic models for vcf variants
+	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{'pedigreeFile'}." ";  #Pedigree file
+	    print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{'genmodModelsFamilyType'}." ";  #Family type
+	    
+	    if (defined(${$scriptParameterHashRef}{'genmodModelsReducedPenetranceFile'})) {
+		
+		print $XARGSFILEHANDLE "--reduced_penetrance ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'genmodModelsReducedPenetranceFile'}." ";  #Use list of genes that have been shown to display reduced penetrance
+	    }
+	    print $XARGSFILEHANDLE "--processes 4 ";  #Define how many processes that should be use for annotation 
+	    
+	    if (${$scriptParameterHashRef}{'pSVVariantEffectPredictor'} > 0) {  #Use VEP annotations in compound models
+		
+		print $XARGSFILEHANDLE "--vep "; 
+	    }
+	    if (${$scriptParameterHashRef}{'svWholeGene'} == 1) {
+		
+		print $XARGSFILEHANDLE "--whole_gene "; 
+	    }
+	    
+	    print $XARGSFILEHANDLE "-o /dev/stdout ";  #OutFile
+	    print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf ";  #InFile
+	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef."_models.stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    print $XARGSFILEHANDLE "| ";  #Pipe
+	    
+	    
+	    ## Genmod Score
+	    print $XARGSFILEHANDLE "genmod ";
+	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
+	    print $XARGSFILEHANDLE "score ";  #Score variants in a vcf file using Weighted sums
+	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{'pedigreeFile'}." ";  #Pedigree file
+	    print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{'genmodModelsFamilyType'}." ";  #Family type
+	    
+	    if (defined(${$scriptParameterHashRef}{'rankModelFile'})) {
+		
+		print $XARGSFILEHANDLE "--score_config ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'svRankModelFile'}." ";  #Rank model config.ini file 
+	    }
+	    
+	    print $XARGSFILEHANDLE "-o /dev/stdout ";  #OutFile
+	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef."_models_score.stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    print $XARGSFILEHANDLE "- ";  #InStream
+	    print $XARGSFILEHANDLE "| ";  #Pipe
+	    
+	    ##Genmod Compound
+	    print $XARGSFILEHANDLE "genmod ";
+	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
+	    print $XARGSFILEHANDLE "compound ";  #Adjust score for compound variants in a vcf file
+	    
+	    if (${$scriptParameterHashRef}{'pSVVariantEffectPredictor'} > 0) {  #Use VEP annotations in compound models
+		
+		print $XARGSFILEHANDLE "--vep "; 
+	    }
+	    
+	    print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.$vcfParserAnalysisType."_models_score_compound.vcf ";  #OutFile
+	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef."_models_score_compound.stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    print $XARGSFILEHANDLE "- ";  #InStream
+	    print $XARGSFILEHANDLE "\n";
+	}
+	
+	## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
+	&ConcatenateVariants({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+			      'FILEHANDLE' => $FILEHANDLE,
+			      'arrayRef' => \@{ ${$fileInfoHashRef}{'contigs'} },
+			      'infilePrefix' => $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_", 
+			      'infilePostfix' => $vcfParserAnalysisType."_models_score_compound.vcf",
+			      'outfile' => $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_combined".$vcfParserAnalysisType.".vcf",
+			     });
+	
+	## Genmod sort
+	print $FILEHANDLE "genmod ";
+	print $FILEHANDLE "-v ";  #Increase output verbosity
+	print $FILEHANDLE "sort ";  #Sort a VCF file based on rank score
+	print $FILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.".vcf ";  #Outfile
+	print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_combined".$vcfParserAnalysisType.".vcf ";  #inFile
+	print $FILEHANDLE "\n\n";
+	
+	if (${$scriptParameterHashRef}{'analysisType'} eq "exomes") {
+	    
+	    ## Enable trap for signal(s) and function
+	    &EnableTrap({'FILEHANDLE' => $FILEHANDLE,
+			});
+	}
+	
+	## Copies file from temporary directory.
+	print $FILEHANDLE "## Copy file from temporary directory\n";
+	&MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf",
+			      'filePath' => $outFamilyDirectory."/",
+			      'FILEHANDLE' => $FILEHANDLE,
+			     });
+	print $FILEHANDLE "wait", "\n\n";
+	
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+	    
+	    if ($vcfParserOutputFileCounter == 1) {
+		
+		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'SVVCFFile'}{'Clinical'}{'Path'} = $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf";
+		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'Program'}{'SVRankVariants'}{'Clinical'}{'Path'} = $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf";   #Save clinical candidate list path
+	    }
+	    else {
+		
+		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'SVVCFFile'}{'Research'}{'Path'} = $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf";
+		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'Program'}{'SVRankVariants'}{'Research'}{'Path'} = $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf";   #Save research candidate list path
+	    }
+	}
+    }
+    close($FILEHANDLE);   
+    
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+
+	if (defined(${$scriptParameterHashRef}{'svRankModelFile'})) {  #Add to SampleInfo
+			    
+	    if (${$scriptParameterHashRef}{'svRankModelFile'}=~/v(\d+\.\d+.\d+|\d+\.\d+)/) {
+				
+		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'Program'}{"SVRankVariants"}{'RankModel'}{'Version'} = $1;
+	    }
+	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'Program'}{"SVRankVariants"}{'RankModel'}{'File'} = ${$scriptParameterHashRef}{'svRankModelFile'};
+	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'Program'}{"SVRankVariants"}{'RankModel'}{'Path'} = $$referencesDirectoryRef."/".${$scriptParameterHashRef}{'svRankModelFile'};
+
+	}
+	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		       'familyID' => ${$scriptParameterHashRef}{'familyID'},
+		       'programName' => "SVGenmod",
+		       'outDirectory' => $outFamilyDirectory,
+		       'outFileEnding' => $$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf",
+		       'outDataType' => "static"
+		      });
+	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		       'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		       'jobIDHashRef' => \%{$jobIDHashRef},
+		       'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
+		       'dependencies' => 1, 
+		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
+		       'sbatchFileName' => $fileName
+		      });
+    }
+}
+
+
+sub SVVCFParser {
+ 
+##SVVCFParser
+    
+##Function : SVVCFParser performs parsing of VariantEffectPredictor annotated variants
+##Returns  : "|$xargsFileCounter"
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName, $fileName, $programInfoPath, $FILEHANDLE, $xargsFileCounter
+##         : $parameterHashRef           => The parameter hash {REF}
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $fileInfoHashRef            => The fileInfo hash {REF}
+##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $familyIDRef                => The familyID {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $callType                   => The variant call type
+##         : $programName                => The program name
+##         : $programInfoPath            => The program info path
+##         : $fileName                   => File name
+##         : $FILEHANDLE                 => Sbatch filehandle to write to
+##         : $xargsFileCounter           => The xargs file counter
+
+    my ($argHashRef) = @_;
+    
+    my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+		   'referencesDirRef' => \${$argHashRef}{'scriptParameterHashRef'}{'referencesDir'},
+		   'tempDirectoryRef' => \${$argHashRef}{'scriptParameterHashRef'}{'tempDirectory'},
+		   'xargsFileCounter' => 0,
+		   'callType' => "BOTH",
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
+    my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
+    my $callType = ${$argHashRef}{'callType'};
+    my $fileName = ${$argHashRef}{'fileName'};
+    my $programInfoPath = ${$argHashRef}{'programInfoPath'};
+    my $programName = ${$argHashRef}{'programName'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $xargsFileCounter = ${$argHashRef}{'xargsFileCounter'};
+    my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
+    my $referencesDirectoryRef =  ${$argHashRef}{'referencesDirRef'};
+
+    my $reduceIORef = \${$scriptParameterHashRef}{'reduceIO'};
+    my $nrCores = ${$scriptParameterHashRef}{'maximumCores'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
+			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
+			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'alignerOutDirRef' => $$alignerOutDirRef,
+			     'callType' => $callType,
+			     'programName' => $programName,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $time = 20;
+    my $xargsFileName;
+
+    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
+ 
+	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+
+	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header    
+	($fileName, $programInfoPath) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+							       'FILEHANDLE' => $FILEHANDLE,
+							       'directoryID' => $$familyIDRef,
+							       'programName' => $programName,
+							       'programDirectory' => lc($$alignerOutDirRef."/gatk"),
+							       'callType' => $callType,
+							       'tempDirectory' => $$tempDirectoryRef,
+							      });
+    }
+
+    ## Assign directories
+    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
+    ${$parameterHashRef}{"p".$programName}{'inDirectory'} = $outFamilyDirectory;  #Used downstream
+
+    my $infileEnding = ${$fileInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{'pSVVariantEffectPredictor'}{'fileEnding'};
+    my $outfileEnding = ${$fileInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{"p".$programName}{'fileEnding'};
+
+    ## Copy file(s) to temporary directory
+    print $FILEHANDLE "## Copy file(s) to temporary directory\n"; 
+    ($xargsFileCounter, $xargsFileName) = &XargsMigrateContigFiles({'FILEHANDLE' => $FILEHANDLE,
+								    'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
+								    'arrayRef' => \@{ ${$fileInfoHashRef}{'contigsSizeOrdered'} },
+								    'fileName' =>$fileName,
+								    'programInfoPath' => $programInfoPath,
+								    'nrCores' => $nrCores,
+								    'xargsFileCounter' => $xargsFileCounter,
+								    'inFile' => $$familyIDRef.$infileEnding.$callType,
+								    'inDirectory' => $inFamilyDirectory,
+								    'tempDirectory' => $$tempDirectoryRef,
+								   });
+    ## VCFParser
+    print $FILEHANDLE "## VCFParser\n";
+
+    ## Create file commands for xargs
+    ($xargsFileCounter, $xargsFileName) = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
+							 'XARGSFILEHANDLE' => $XARGSFILEHANDLE, 
+							 'fileName' => $fileName,
+							 'programInfoPath' => $programInfoPath,
+							 'nrCores' => $nrCores,
+							 'xargsFileCounter' => $xargsFileCounter,
+							 'firstCommand' => "perl",
+							});
+
+    for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{'contigsSizeOrdered'}});$contigsCounter++) {
+
+	my $contigRef = \${$fileInfoHashRef}{'contigsSizeOrdered'}[$contigsCounter];
+
+	print $XARGSFILEHANDLE ${$scriptParameterHashRef}{'inScriptDir'}."/vcfParser.pl ";  #Parses the VEP output to tab-sep format
+	print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_".$$contigRef.".vcf ";  #Infile
+	
+	if (${$scriptParameterHashRef}{'pSVVariantEffectPredictor'} > 0) {
+	    
+	    print $XARGSFILEHANDLE "--parseVEP ".${$scriptParameterHashRef}{'svVcfParserVepTranscripts'}." ";  #Parse VEP transcript specific entries
+	}
+	if ($$contigRef =~ /MT|M/) {
+	    
+	    print $XARGSFILEHANDLE "--padding 10 ";  #Special case for mitochondrial contig annotation
+	}
+	if (${$scriptParameterHashRef}{'svVcfParserRangeFeatureFile'} ne "noUserInfo") {
+	    
+	    print $XARGSFILEHANDLE "-rf ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'svVcfParserRangeFeatureFile'}." ";  #List of genes to analyse separately	
+	    
+	    if (scalar(@{${$scriptParameterHashRef}{'svVcfParserRangeFeatureAnnotationColumns'}}) > 0) {
+		
+		print $XARGSFILEHANDLE "-rf_ac ";  #Range annotation columns
+		print $XARGSFILEHANDLE join(',', @{${$scriptParameterHashRef}{'svVcfParserRangeFeatureAnnotationColumns'}})." ";	    
+	    }
+	}
+	if (${$scriptParameterHashRef}{'svVcfParserSelectFile'} ne "noUserInfo") {
+	 
+	    if (! &CheckEntryHashofArray(\%{$fileInfoHashRef}, "SelectFileContigs", $$contigRef)) {
+
+		print $XARGSFILEHANDLE "-sf ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'svVcfParserSelectFile'}." ";  #List of genes to analyse separately
+		print $XARGSFILEHANDLE "-sf_mc ".${$scriptParameterHashRef}{'svVcfParserSelectFileMatchingColumn'}." ";  #Column of HGNC Symbol in SelectFile (-sf)
+		
+		if (scalar(@{${$scriptParameterHashRef}{'svVcfParserSelectFeatureAnnotationColumns'}}) > 0) {
+		    
+		    print $XARGSFILEHANDLE "-sf_ac ";  #Select annotation columns
+		    print $XARGSFILEHANDLE join(',', @{${$scriptParameterHashRef}{'svVcfParserSelectFeatureAnnotationColumns'}})." ";	    
+		}
+		print $XARGSFILEHANDLE "-sof ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".selected.vcf ";
+	    }
+	}
+	print $XARGSFILEHANDLE "> ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf ";  #outfile
+	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE "\n";
+    }
+
+    ## QC Data File(s)
+    &MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".${$fileInfoHashRef}{'contigsSizeOrdered'}[0].".vcf",
+			  'filePath' => $outFamilyDirectory."/",
+			  'FILEHANDLE' => $FILEHANDLE,
+			 });
+    print $FILEHANDLE "wait", "\n\n";
+    
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+
+	## Clear old VCFParser entry if present
+	if (defined(${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$programName})) {
+	    
+	    delete(${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$programName});
+	}
+	if (${$scriptParameterHashRef}{'svVcfParserRangeFeatureFile'} ne "noUserInfo") {
+
+	    ## Collect databases(s) from a potentially merged selectFile and adds them to sampleInfo
+	    &CollectSubDatabases({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+				  'familyIDRef' => $familyIDRef,
+				  'programNameRef' => \$programName,
+				  'databaseFile' => $$referencesDirectoryRef."/".${$scriptParameterHashRef}{'svVcfParserRangeFeatureFile'},
+				  'databaseKey' => "RangeFile",
+				 });
+
+	    if (${$scriptParameterHashRef}{'svVcfParserRangeFeatureFile'}=~/v(\d+\.\d+.\d+|\d+\.\d+)/) {
+		
+		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$programName}{"RangeFile"}{'Version'} = $1;
+	    }
+	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$programName}{"RangeFile"}{'Path'} = $$referencesDirectoryRef."/".${$scriptParameterHashRef}{'svVcfParserRangeFeatureFile'};
+	}
+	if (${$scriptParameterHashRef}{'svVcfParserSelectFile'} ne "noUserInfo") {
+
+	    ## Collect databases(s) from a potentially merged selectFile and adds them to sampleInfo
+	    &CollectSubDatabases({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+				  'familyIDRef' => $familyIDRef,
+				  'programNameRef' => \$programName,
+				  'databaseFile' => $$referencesDirectoryRef."/".${$scriptParameterHashRef}{'svVcfParserSelectFile'},
+				  'databaseKey' => "SelectFile",
+				 });
+
+	    if (${$scriptParameterHashRef}{'svVcfParserSelectFile'}=~/v(\d+\.\d+.\d+|\d+\.\d+)/) {
+		
+		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$programName}{"SelectFile"}{'Version'} = $1;
+	    }
+	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$programName}{"SelectFile"}{'Path'} = $$referencesDirectoryRef."/".${$scriptParameterHashRef}{'svVcfParserSelectFile'};
+	}
+
+	## Collect QC metadata info for later use
+	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		       'familyID' => $$familyIDRef,
+		       'programName' => $programName,
+		       'outDirectory' => $outFamilyDirectory,
+		       'outFileEnding' => $$familyIDRef.$outfileEnding.$callType."_".${$fileInfoHashRef}{'contigsSizeOrdered'}[0].".vcf",
+		       'outDataType' => "static"
+		      });
+    }
+
+    close($XARGSFILEHANDLE);
+    
+    my $vcfParserAnalysisType = "";
+    my @vcfParserContigsRef = \@{ ${$fileInfoHashRef}{'contigsSizeOrdered'} };
+    
+    for (my $vcfParserOutputFileCounter=0;$vcfParserOutputFileCounter<${$scriptParameterHashRef}{'VcfParserOutputFileCount'};$vcfParserOutputFileCounter++) {
+	    
+	if ($vcfParserOutputFileCounter == 1) {
+	    
+	    $vcfParserAnalysisType = ".selected";  #SelectFile variants
+	    @vcfParserContigsRef = \@{${$fileInfoHashRef}{'SelectFileContigs'}};
+	}
+	
+	## Copies file from temporary directory.
+	print $FILEHANDLE "## Copy file(s) from temporary directory\n";
+	($xargsFileCounter, $xargsFileName) = &XargsMigrateContigFiles({'FILEHANDLE' => $FILEHANDLE,
+									'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
+									'arrayRef' => @vcfParserContigsRef,
+									'fileName' =>$fileName,
+									'programInfoPath' => $programInfoPath,
+									'nrCores' => $nrCores,
+									'xargsFileCounter' => $xargsFileCounter,
+									'outFile' => $$familyIDRef.$outfileEnding.$callType,
+									'fileEnding' => $vcfParserAnalysisType.".vcf*",
+									'outDirectory' => $outFamilyDirectory,
+									'tempDirectory' => $$tempDirectoryRef,
+								       });
+	
+	## Adds the most complete vcf file to sampleInfo
+	&AddMostCompleteVCF({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+			     'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+			     'programName' => $programName,
+			     'path' => $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType.$vcfParserAnalysisType.".vcf",
+			     'vcfParserOutputFileCounter' => $vcfParserOutputFileCounter,
+			    });
+    }
+    close($FILEHANDLE);
+    
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+	
+	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		       'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		       'jobIDHashRef' => \%{$jobIDHashRef},
+		       'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
+		       'dependencies' => 1, 
+		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
+		       'sbatchFileName' => $fileName
+		      });
+    }
+}
+
+
+sub SVVariantEffectPredictor {
+    
+##SVVariantEffectPredictor
+    
+##Function : SV VariantEffectPredictor performs annotation of SV variants.
+##Returns  : "|$xargsFileCounter"
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName, $programInfoPath, $fileName, $FILEHANDLE, $xargsFileCounter
+##         : $parameterHashRef           => The parameter hash {REF}
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $fileInfoHashRef            => The fileInfo hash {REF}
+##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $familyIDRef                => The familyID {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $callType                   => The variant call type
+##         : $programName                => The program name
+##         : $programInfoPath            => The program info path
+##         : $fileName                   => File name
+##         : $FILEHANDLE                 => Sbatch filehandle to write to
+##         : $xargsFileCounter           => The xargs file counter
+##         : $stderrPath                 => The stderr path of the block script
+
+    my ($argHashRef) = @_;
+    
+    my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+		   'referencesDirRef' => \${$argHashRef}{'scriptParameterHashRef'}{'referencesDir'},
+		   'tempDirectoryRef' => \${$argHashRef}{'scriptParameterHashRef'}{'tempDirectory'},
+		   'xargsFileCounter' => 0,
+		   'callType' => "BOTH",
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
+    my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
+    my $callType = ${$argHashRef}{'callType'};
+    my $fileName = ${$argHashRef}{'fileName'};
+    my $programName = ${$argHashRef}{'programName'};
+    my $programInfoPath = ${$argHashRef}{'programInfoPath'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $xargsFileCounter = ${$argHashRef}{'xargsFileCounter'};
+    my $stderrPath = ${$argHashRef}{'stderrPath'};
+    my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
+    my $referencesDirectoryRef =  ${$argHashRef}{'referencesDirRef'};
+
+    my $reduceIORef = \${$scriptParameterHashRef}{'reduceIO'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
+			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
+			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'alignerOutDirRef' => $$alignerOutDirRef,
+			     'callType' => $callType,
+			     'programName' => $programName,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $time = 20;
+    my $xargsFileName;
+
+    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
+
+	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    }
+
+    my $nrForkes = 4;  #VariantEffectPredictor forks
+
+    ## Set the number of cores to allocate per sbatch job.
+    my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar(@{${$fileInfoHashRef}{'contigs'}}));  #Detect the number of cores to use
+    $nrCores = floor($nrCores / $nrForkes);  #Adjust for the number of forks 
+
+    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    ($fileName, $programInfoPath) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+							   'FILEHANDLE' => $FILEHANDLE,
+							   'directoryID' => $$familyIDRef,
+							   'programName' => $programName,
+							   'programDirectory' => lc($$alignerOutDirRef."/gatk"),
+							   'callType' => $callType,
+							   'nrofCores' => ${$scriptParameterHashRef}{'maximumCores'},
+							   'processTime' => 10,
+							   'tempDirectory' => $$tempDirectoryRef
+							  });
+    $stderrPath = $programInfoPath.".stderr.txt";
+
+    my ($volume, $directories, $stderrFile) = File::Spec->splitpath($stderrPath);  #Split to enable submission to &SampleInfoQC later
+
+    ## Assign directories
+    my $inFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
+    ${$parameterHashRef}{"p".$programName}{'inDirectory'} = $outFamilyDirectory;  #Used downstream
+
+    my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'pCombineStructuralVariantCallSets'}{'fileEnding'};
+    my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"p".$programName}{'fileEnding'};
+    my $coreCounter = 1;
+
+    ## Copy file(s) to temporary directory
+    print $FILEHANDLE "## Copy file(s) to temporary directory\n"; 
+    &MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE, 
+			'path' => $inFamilyDirectory."/".$$familyIDRef.$infileEnding.$callType.".vcf*",
+			'tempDirectory' => $$tempDirectoryRef
+		       });
+    print $FILEHANDLE "wait", "\n\n";
+
+    ## Fix SV with no length as these will fail in the annotation with VEP
+    my $perlFixSVNoLengths = q?perl -nae 'my %info = (); my $start; my $end; my $alt; my @data; ?;  #Set up variables
+    $perlFixSVNoLengths .= q?@data=split("\t", $_); ?;  #Split line
+    $perlFixSVNoLengths .= q?$start = $data[1]; $start++; ?;  #Add $start position 
+    $perlFixSVNoLengths .= q?$alt=$data[4]; ?;  #Add $alt allele
+    $perlFixSVNoLengths .= q?foreach my $bit (split /\;/, $data[7]) { my ($key, $value) = split /\=/, $bit; $info{$key} = $value; } ?;  #Add INFO field to %data using $key->$value
+    $perlFixSVNoLengths .= q?if(defined($info{END})) { $end = $info{END}; } ?;  #Add $end position
+    $perlFixSVNoLengths .= q?if($alt=~ /\<|\[|\]|\>/) { $alt=~ s/\<|\>//g; $alt=~ s/\:.+//g; if($start >= $end && $alt=~ /del/i) {} else {print $_} } ?;  #If SV, strip SV type entry and check if no length, then do not print variant else print 
+    $perlFixSVNoLengths .= q?else {print $_}' ?;  #All other line - print
+
+    print $FILEHANDLE $perlFixSVNoLengths." ";
+    print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType.".vcf ";
+    print $FILEHANDLE "> ".$$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_fixedSVLength.vcf ";
+    print $FILEHANDLE "\n\n";
+
+    ## VariantEffectPredictor
+    print $FILEHANDLE "## VariantEffectPredictor","\n";
+
+    ## Create file commands for xargs
+    ($xargsFileCounter, $xargsFileName) = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
+							 'XARGSFILEHANDLE' => $XARGSFILEHANDLE, 
+							 'fileName' => $fileName,
+							 'programInfoPath' => $programInfoPath,
+							 'nrCores' => $nrCores,
+							 'xargsFileCounter' => $xargsFileCounter,
+							 'firstCommand' => "perl",
+							});
+
+    for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{'contigsSizeOrdered'}});$contigsCounter++) {
+
+	my $contigRef = \${$fileInfoHashRef}{'contigsSizeOrdered'}[$contigsCounter];
+
+	print $XARGSFILEHANDLE ${$scriptParameterHashRef}{'vepDirectoryPath'}."/variant_effect_predictor.pl ";  #VEP script 
+	print $XARGSFILEHANDLE "--dir_cache ".${$scriptParameterHashRef}{'vepDirectoryCache'}." ";  #Specify the cache directory to use
+	print $XARGSFILEHANDLE "--cache ";  #Enables use of the cache.
+	if (${$scriptParameterHashRef}{'vepReference'} == 1 ) {  #Use reference file for analysis with vep
+
+	    print $XARGSFILEHANDLE "--fasta ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
+	}
+	print $XARGSFILEHANDLE "--force_overwrite ";  #force the overwrite of the existing file
+	print $XARGSFILEHANDLE "--vcf ";  #Writes output in VCF format.
+	print $XARGSFILEHANDLE "--no_progress ";  #Do not show progress in stderr
+	print $XARGSFILEHANDLE "--fork ".$nrForkes." ";  #Enable forking, using the specified number of forks.
+	print $XARGSFILEHANDLE "--buffer_size 100 ";  #Sets the internal buffer size, corresponding to the number of variations that are read in to memory simultaneously 
+	print $XARGSFILEHANDLE "--offline ";  #Use installed assembly 
+	print $XARGSFILEHANDLE "--chr ".$$contigRef." ";
+
+	if ($$contigRef =~ /MT|M/) {
+
+	    print $XARGSFILEHANDLE "--plugin UpDownDistance,10,10 ";  #Special case for mitochondrial contig annotation
+	}
+
+	for (my $vepFeatureCounter=0;$vepFeatureCounter<scalar(@{${$scriptParameterHashRef}{'svVepFeatures'}});$vepFeatureCounter++) {
+
+	    print $XARGSFILEHANDLE "--".${$scriptParameterHashRef}{'svVepFeatures'}[$vepFeatureCounter]." ";  #Add VEP features to the output.
+
+	    if ( ($$contigRef =~ /MT|M/) && (${$scriptParameterHashRef}{'svVepFeatures'}[$vepFeatureCounter] eq "refseq") ) {  #Special case for mitochondrial contig annotation
+
+		print $XARGSFILEHANDLE "--all_refseq ";
+	    }
+	    if ( (${$scriptParameterHashRef}{'svVepFeatures'}[$vepFeatureCounter] eq "sift") || (${$scriptParameterHashRef}{'svVepFeatures'}[$vepFeatureCounter] eq "polyphen") )  {  #Protein predictions
+		
+		print $XARGSFILEHANDLE "p ";  #Add prediction term 
+	    }
+	}
+	print $XARGSFILEHANDLE "-i ".$$tempDirectoryRef."/".$$familyIDRef.$infileEnding.$callType."_fixedSVLength.vcf ";  #InFile (family vcf)
+	print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_".$$contigRef.".vcf ";  #OutFile
+	print $XARGSFILEHANDLE "1> ".$xargsFileName.".".$$contigRef.".stdout.txt ";  #Redirect xargs output to program specific stdout file
+	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE "\n";
+    }
+
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+	
+	## Collect QC metadata info for later use                     	
+	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		       'familyID' => $$familyIDRef,
+		       'programName' => $programName."Summary",
+		       'outDirectory' => $outFamilyDirectory,
+		       'outFileEnding' => $$familyIDRef.$outfileEnding.$callType."_".${$fileInfoHashRef}{'contigsSizeOrdered'}[0].".vcf_summary.html",
+		       'outDataType' => "static"
+		      });
+	## Collect QC metadata info for later use                     	
+	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		       'familyID' => $$familyIDRef,
+		       'programName' => $programName,
+		       'outDirectory' => $outFamilyDirectory,
+		       'outFileEnding' => $$familyIDRef.$outfileEnding.$callType."_".${$fileInfoHashRef}{'contigsSizeOrdered'}[0].".vcf",
+		       'outDataType' => "static"
+		      });
+    }
+
+    ## QC Data File(s)
+    &MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_*.vcf_s*",
+			  'filePath' => $outFamilyDirectory."/",
+			  'FILEHANDLE' => $FILEHANDLE,
+			 });
+    print $FILEHANDLE "wait", "\n\n";
+
+    close($XARGSFILEHANDLE);
+
+    ## Copies file from temporary directory.
+    print $FILEHANDLE "## Copy file from temporary directory\n";
+    &MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_*.vcf*",
+			  'filePath' => $outFamilyDirectory."/",
+			  'FILEHANDLE' => $FILEHANDLE,
+			 });
+    print $FILEHANDLE "wait", "\n\n";
+    
+    close($FILEHANDLE);
+
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+
+	## Submitt job
+	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		       'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		       'jobIDHashRef' => \%{$jobIDHashRef},
+		       'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
+		       'dependencies' => 1, 
+		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
+		       'sbatchFileName' => $fileName
+		      });
+    }
+}
+
+
+sub CombineStructuralVariantCallSets { 
+
+##CombineStructuralVariantCallSets
+    
+##Function : CombineVariants to combine all structural variants call from different callers.
+##Returns  : ""
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName
+##         : $parameterHashRef           => The parameter hash {REF}
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $fileInfoHashRef            => The fileInfo hash {REF}
+##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $laneHashRef                => The lane info hash {REF}
+##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $familyIDRef                => The familyID {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $callType                   => The variant call type
+##         : $programName                => The program name
+
+    my ($argHashRef) = @_;
+    
+    my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+		   'referencesDirRef' => \${$argHashRef}{'scriptParameterHashRef'}{'referencesDir'},
+		   'tempDirectoryRef' => \${$argHashRef}{'scriptParameterHashRef'}{'tempDirectory'},
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
+    my $laneHashRef = ${$argHashRef}{'laneHashRef'};
+    my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
+    my $callType = ${$argHashRef}{'callType'};
+    my $programName = ${$argHashRef}{'programName'};
+    my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
+    my $referencesDirectoryRef =  ${$argHashRef}{'referencesDirRef'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
+			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
+			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] }, #Any MIP mandatory key will do
+			     'alignerOutDirRef' => $$alignerOutDirRef,
+			     'callType' => $callType,
+			     'programName' => $programName,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my @structuralVariantCallers;  #Stores callers that have been executed
+    my @parallelChains;  #Stores the parallel chains that jobIds should be inherited from
+    
+    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header    
+    my ($fileName) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+					    'FILEHANDLE' => $FILEHANDLE,
+					    'directoryID' => $$familyIDRef,
+					    'programName' => $programName,
+					    'programDirectory' => lc($$alignerOutDirRef."/gatk"),
+					    'callType' => $callType,
+					    'processTime' => 2,
+					    'tempDirectory' => $$tempDirectoryRef,
+					   });
+    
+    ## Assign directories
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
+    ${$parameterHashRef}{"p".$programName}{'inDirectory'} = $outFamilyDirectory;  #Used downstream
+    my $outfileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"p".$programName}{'fileEnding'}; 
+    
+    ## Collect infiles for all sampleIDs to enable migration to temporary directory
+    foreach my $sampleID (@{${$scriptParameterHashRef}{'sampleIDs'}}) {
+	
+	## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
+	my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, $sampleID);
+
+	foreach my $structuralVariantCaller (@{${$parameterHashRef}{'dynamicParameters'}{'structuralVariantCaller'}}) {
+	    
+	    if (${$scriptParameterHashRef}{$structuralVariantCaller} > 0) {  #Expect vcf
+		
+		my $programOutDirectoryName = ${$parameterHashRef}{$structuralVariantCaller}{'outDirectoryName'};   
+		my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerOutDirRef."/gatk/".$programOutDirectoryName;
+		my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$sampleID}{$structuralVariantCaller}{'fileEnding'};
+		
+		if (! ( any {$_ eq ${$parameterHashRef}{$structuralVariantCaller}{'chain'}} @parallelChains ) ) { #If element is not part of array
+		    
+		    push(@parallelChains, ${$parameterHashRef}{$structuralVariantCaller}{'chain'});
+		}
+		if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
+		    
+		    ## Copy file(s) to temporary directory
+		    print $FILEHANDLE "## Copy file(s) to temporary directory\n"; 
+		    &MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE, 
+					'path' => $inSampleDirectory."/".$infile.$infileEnding.".vcf*",
+					'tempDirectory' => $$tempDirectoryRef
+				       });
+		    
+		    print $FILEHANDLE "wait", "\n\n";
+		    
+		    ## Compress or decompress original file or stream to outfile (if supplied)
+		    &Bgzip({'FILEHANDLE' => $FILEHANDLE,
+			    'infilePath' => $$tempDirectoryRef."/".$infile.$infileEnding.".vcf",
+			    'outfilePath' => $$tempDirectoryRef."/".$infile.$infileEnding.".vcf.gz",
+			   });
+		    print $FILEHANDLE "\n";
+		    
+		    ## Index file using tabix 
+		    &Tabix({'FILEHANDLE' => $FILEHANDLE,
+			    'infilePath' => $$tempDirectoryRef."/".$infile.$infileEnding.".vcf.gz",
+			   });
+		}
+		else {
+		    
+		    my $lanes = join("",@{${$laneHashRef}{ $sampleID }});  #Extract lanes
+		    
+		    ## Copy file(s) to temporary directory
+		    print $FILEHANDLE "## Copy file(s) to temporary directory\n"; 
+		    &MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE, 
+					'path' => $inSampleDirectory."/".$sampleID."_lanes_".$lanes.$infileEnding.".vcf*",
+					'tempDirectory' => $$tempDirectoryRef,
+				       });
+		    
+		    print $FILEHANDLE "wait", "\n\n";
+		    
+		    ## Compress or decompress original file or stream to outfile (if supplied)
+		    &Bgzip({'FILEHANDLE' => $FILEHANDLE,
+			    'infilePath' => $$tempDirectoryRef."/".$sampleID."_lanes_".$lanes.$infileEnding.".vcf",
+			    'outfilePath' => $$tempDirectoryRef."/".$sampleID."_lanes_".$lanes.$infileEnding.".vcf.gz",
+			   });
+		    print $FILEHANDLE "\n";
+		    
+		    ## Index file using tabix 
+		    &Tabix({'FILEHANDLE' => $FILEHANDLE,
+			    'infilePath' => $$tempDirectoryRef."/".$sampleID."_lanes_".$lanes.$infileEnding.".vcf.gz",
+			   });
+		}
+	    }
+	}
+	print $FILEHANDLE "wait", "\n\n";
+    }
+
+    ## Merge all structural variant caller's vcf files per samleID
+    print $FILEHANDLE "## Merge all structural variant caller's vcf files per samleID\n";
+    foreach my $structuralVariantCaller (@{${$parameterHashRef}{'dynamicParameters'}{'structuralVariantCaller'}}) {
+	
+	if (${$scriptParameterHashRef}{$structuralVariantCaller} > 0) {  #Expect vcf
+	    
+	    print $FILEHANDLE "bcftools merge ";
+
+	    foreach my $sampleID (@{${$scriptParameterHashRef}{'sampleIDs'}}) {  #Collapse all structural variant calls to one vcf file per variant caller and sampleID
+				
+		## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
+		my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, $sampleID);
+		
+		my $programOutDirectoryName = ${$parameterHashRef}{$structuralVariantCaller}{'outDirectoryName'};   
+		my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$$alignerOutDirRef."/gatk/".$programOutDirectoryName;
+		my $infileEnding = ${$fileInfoHashRef}{$$familyIDRef}{$sampleID}{$structuralVariantCaller}{'fileEnding'};
+		
+		if ($PicardToolsMergeSwitch == 1) {  #Alignment BAM-files merged previously
+		    
+		    print $FILEHANDLE $$tempDirectoryRef."/".$infile.$infileEnding.".vcf.gz ";  #InFile
+		}
+		else {  #No previous merge of alignment BAM-files
+		    
+		    my $lanes = join("",@{${$laneHashRef}{ $sampleID }});  #Extract lanes
+		    print $FILEHANDLE $$tempDirectoryRef."/".$sampleID."_lanes_".$lanes.$infileEnding.".vcf.gz ";  #InFile(s)
+		} 
+	    } 
+	    
+	    print $FILEHANDLE "> ".$$tempDirectoryRef."/".$$familyIDRef."_".$structuralVariantCaller.".vcf ";  #OutFile
+	    print $FILEHANDLE "\n\n";
+
+	    ## Compress or decompress original file or stream to outfile (if supplied)
+	    &Bgzip({'FILEHANDLE' => $FILEHANDLE,
+		    'infilePath' => $$tempDirectoryRef."/".$$familyIDRef."_".$structuralVariantCaller.".vcf",
+		    'outfilePath' => $$tempDirectoryRef."/".$$familyIDRef."_".$structuralVariantCaller.".vcf.gz",
+		   });
+	    print $FILEHANDLE "\n";
+	    
+	    ## Index file using tabix 
+	    &Tabix({'FILEHANDLE' => $FILEHANDLE,
+		    'infilePath' => $$tempDirectoryRef."/".$$familyIDRef."_".$structuralVariantCaller.".vcf.gz",
+		   });
+	}
+    }
+    
+    ## Concatenate structural variant caller's family vcf files
+    print $FILEHANDLE "## Concatenate structural variant caller's family vcf files\n";
+    print $FILEHANDLE "bcftools concat ";
+    print $FILEHANDLE "-a ";  #First coordinate of the next file can precede last record of the current file
+    
+    foreach my $structuralVariantCaller (@{${$parameterHashRef}{'dynamicParameters'}{'structuralVariantCaller'}}) {
+	
+	if (${$scriptParameterHashRef}{$structuralVariantCaller} > 0) {  #Expect vcf
+	    
+	    print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef."_".$structuralVariantCaller.".vcf.gz "; 
+	}
+    }
+    print $FILEHANDLE "> ".$$tempDirectoryRef."/".$$familyIDRef."_".$callType.".vcf ";
+    print $FILEHANDLE "\n\n";
+
+    ## Writes sbatch code to supplied filehandle to sort variants in vcf format
+    &SortVcf({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+	      'fileInfoHashRef' => \%{$fileInfoHashRef},
+	      'FILEHANDLE' => $FILEHANDLE,
+	      'sequenceDictFile' => $$referencesDirectoryRef."/".${$fileInfoHashRef}{'humanGenomeReferenceNameNoEnding'}.".dict",
+	      'infile' => $$tempDirectoryRef."/".$$familyIDRef."_".$callType.".vcf ",
+	      'outfile' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_sorted.vcf ",
+	     });
+
+    my $altFileEnding = "";  #Alternative ending
+    if (${$scriptParameterHashRef}{'svVTDecompose'} > 0) {
+
+	$altFileEnding .= "_VT";
+
+	## Split multiallelic variants
+	print $FILEHANDLE "## Split multiallelic variants\n";
+	print $FILEHANDLE "vt decompose ";
+	print $FILEHANDLE "-s ";
+	print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType."_sorted.vcf ";
+	print $FILEHANDLE "> ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$altFileEnding.".vcf ";
+	print $FILEHANDLE "\n\n";
+    }
+    
+    ## Remove FILTER ne PASS
+    if (${$scriptParameterHashRef}{'svBcfToolsViewFilter'} > 0) {
+	
+	print $FILEHANDLE "## Remove FILTER ne PASS\n";
+	print $FILEHANDLE "bcftools view ";
+	print $FILEHANDLE "-f PASS ";
+	print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$altFileEnding.".vcf ";
+
+	$altFileEnding .= "_filt";
+
+	print $FILEHANDLE "> ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$altFileEnding.".vcf ";
+	print $FILEHANDLE "\n\n";
+    }
+
+    ## Remove common variants
+    if (${$scriptParameterHashRef}{'svGenmodFilter'} > 0) {
+	
+	print $FILEHANDLE "## Remove common variants\n";
+	print $FILEHANDLE "genmod ";  #Program
+	print $FILEHANDLE "-v ";  #Increase output verbosity
+	print $FILEHANDLE "annotate ";  #Command
+	print $FILEHANDLE "--thousand_g ".${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'svGenmodFilter1000G'}." ";  #1000G reference
+	print $FILEHANDLE "-o /dev/stdout ";  #OutStream
+	print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$altFileEnding.".vcf"." ";
+	print $FILEHANDLE "| ";
+	
+	$altFileEnding .= "_genmodFilter";  #Update ending
+	
+	print $FILEHANDLE "genmod ";  #Program
+	print $FILEHANDLE "-v ";  #Increase output verbosity
+	print $FILEHANDLE "filter ";  #Command
+	print $FILEHANDLE "-t ".${$scriptParameterHashRef}{'svGenmodFilterThreshold'}." ";  #Threshold for filtering variants
+	print $FILEHANDLE "- ";  #InStream
+	print $FILEHANDLE "> ".$$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$altFileEnding.".vcf"." ";  #OutFile
+	print $FILEHANDLE "\n\n";
+    }
+
+    if ($altFileEnding ne "") {  #Then we ahve something to rename 
+
+	print $FILEHANDLE "## Rename outfile\n";
+	print $FILEHANDLE "mv ";
+	print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.$altFileEnding.".vcf"." ";
+	print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.".vcf ";
+	print $FILEHANDLE "\n\n";
+    }
+    
+    if (${$scriptParameterHashRef}{'combineStructuralVariantCallSetsBCFFile'} == 1) {
+	
+	&VcfToBcf({'infile' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType,
+		   'FILEHANDLE' => $FILEHANDLE,
+		  });
+	
+	## Copies file from temporary directory.
+	print $FILEHANDLE "## Copy file from temporary directory\n";
+	&MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.".bcf*",
+			      'filePath' => $outFamilyDirectory."/",
+			      'FILEHANDLE' => $FILEHANDLE,
+			     });
+    }
+
+    ## Copies file from temporary directory.
+    print $FILEHANDLE "## Copy file from temporary directory\n";
+    &MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$$familyIDRef.$outfileEnding.$callType.".vcf",
+			  'filePath' => $outFamilyDirectory."/",
+			  'FILEHANDLE' => $FILEHANDLE,
+			 });
+    print $FILEHANDLE "wait", "\n\n";
+    
+    close($FILEHANDLE);   
+
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+	
+	${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'SVVCFFile'}{'ReadyVcf'}{'Path'} = $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType.".vcf";	
+
+	if (${$scriptParameterHashRef}{'combineStructuralVariantCallSetsBCFFile'} eq 1) {
+
+	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{'SVBCFFile'}{'Path'} = $outFamilyDirectory."/".$$familyIDRef.$outfileEnding.$callType.".bcf";
+	}
+
+	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		       'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		       'jobIDHashRef' => \%{$jobIDHashRef},
+		       'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
+		       'dependencies' => 7, 
+		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
+		       'sbatchFileName' => $fileName,
+		       'parallelChainsArrayRef' => \@parallelChains,
+		      });
+    }
+}
+
+sub CNVnator { 
+    
+##CNVnator
+    
+##Function : Call structural variants using CNVnator
+##Returns  : ""
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName, $programInfoPath
+##         : $parameterHashRef           => The parameter hash {REF}
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $fileInfoHashRef            => The fileInfo hash {REF}
+##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $laneHashRef                => The lane info hash {REF}
+##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $sampleID                   => The sampleID
+##         : $alignerOutDir              => The alignerOutDir used in the analysis
+##         : $programName                => The program name
+##         : $programInfoPath            => The program info path
+    
+    my ($argHashRef) = @_;
+    
+    my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+		   'referencesDirRef' => \${$argHashRef}{'scriptParameterHashRef'}{'referencesDir'},
+		   'tempDirectoryRef' => \${$argHashRef}{'scriptParameterHashRef'}{'tempDirectory'},
+		   'xargsFileCounter' => 0,
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+    
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
+    my $laneHashRef = ${$argHashRef}{'laneHashRef'};
+    my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
+    my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
+    my $fileName = ${$argHashRef}{'fileName'};
+    my $programName = ${$argHashRef}{'programName'};
+    my $programInfoPath = ${$argHashRef}{'programInfoPath'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $xargsFileCounter = ${$argHashRef}{'xargsFileCounter'};
+    my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
+    my $referencesDirectoryRef =  ${$argHashRef}{'referencesDirRef'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
+			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
+			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'alignerOutDirRef' => $$alignerOutDirRef,
+			     'programName' => $programName,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+
+    my $nrCores = ${$scriptParameterHashRef}{'maximumCores'};
+    my $programOutDirectoryName = ${$parameterHashRef}{"p".$programName}{'outDirectoryName'};
+
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $time = 30;
+    my $xargsFileName;
+
+    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
+ 
+	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+	
+	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+	($fileName, $programInfoPath) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+							       'FILEHANDLE' => $FILEHANDLE,
+							       'directoryID' => $$sampleIDRef,
+							       'programName' => $programName,
+							       'programDirectory' => lc($$alignerOutDirRef."/gatk/".$programOutDirectoryName),
+							       'nrofCores' => $nrCores,
+							       'processTime' => $time,
+							       'tempDirectory' => $$tempDirectoryRef
+							      });
+    }
+
+    ## Assign directories
+    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk/".$programOutDirectoryName;
+    ${$parameterHashRef}{"p".$programName}{$$sampleIDRef}{'inDirectory'} = $outSampleDirectory; #Used downstream
+
+
+    my $infileEnding = ${$fileInfoHashRef}{ $$familyIDRef }{$$sampleIDRef}{'pGATKBaseRecalibration'}{'fileEnding'};
+    my $outfileEnding = ${$fileInfoHashRef}{ $$familyIDRef }{$$sampleIDRef}{"p".$programName}{'fileEnding'};
+    my $coreCounter=1;
+
+    ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
+    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, $$sampleIDRef);
+    my $rootFile;
+    my $phenoTypeInfo = ${$sampleInfoHashRef}{${$scriptParameterHashRef}{'familyID'} }{$$sampleIDRef}{'Phenotype'}; #Alias
+
+    my $perlVcfFix = q&perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {print q?##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">?, "\n"; print $_."\t".FORMAT."\t&.$$sampleIDRef.q&", "\n"} else {print $_."\tGT\t&;
+    if ($phenoTypeInfo eq 2) {  #Affected
+
+	$perlVcfFix .= q&1/1"&;
+    }
+    if ($phenoTypeInfo ne 2) {  #Unaffected
+    
+	$perlVcfFix .= q&0/1"&;
+    }
+    $perlVcfFix .= q&, "\n"}' &;
+
+    my $perlAddContigs = q?perl -nae '{print "##contig=<ID=".$F[0].",length=".$F[1].">", "\n"}'?;
+
+    ## Add contigs to vcfheader
+    print $FILEHANDLE $perlAddContigs." ";
+    print $FILEHANDLE $$referencesDirectoryRef."/".${$scriptParameterHashRef}{'humanGenomeReference'}.".fai "; #Reference fai file
+    print $FILEHANDLE "> ".$$tempDirectoryRef."/contigHeader.txt ";
+    print $FILEHANDLE "\n\n";
+
+    ## Create by CNVnator required "chr.fa" files
+    print $FILEHANDLE "## Create by CNVnator required 'chr.fa' files\n";
+    for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{'contigs'}});$contigsCounter++) {
+
+	my $contigRef = \${$fileInfoHashRef}{'contigs'}[$contigsCounter];
+
+	&PrintWait({'counterRef' => \$contigsCounter,
+		    'nrCoresRef' => \$nrCores,
+		    'coreCounterRef' => \$coreCounter,
+		    'FILEHANDLE' => $FILEHANDLE,
+		   });
+
+	print $FILEHANDLE "samtools faidx ";
+	print $FILEHANDLE $$referencesDirectoryRef."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";
+	print $FILEHANDLE $$contigRef." ";
+	print $FILEHANDLE "> ".$$tempDirectoryRef."/".$$contigRef.".fa &";
+	print $FILEHANDLE "\n";
+    }
+    print $FILEHANDLE "wait", "\n\n";
+
+    if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
+	
+	## Copy file(s) to temporary directory
+	print $FILEHANDLE "## Copy file(s) to temporary directory\n";
+	($xargsFileCounter, $xargsFileName) = &XargsMigrateContigFiles({'FILEHANDLE' => $FILEHANDLE,
+									'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
+									'arrayRef' => \@{ ${$fileInfoHashRef}{'contigsSizeOrdered'} },
+									'fileName' =>$fileName,
+									'programInfoPath' => $programInfoPath,
+									'nrCores' => $nrCores,
+									'xargsFileCounter' => $xargsFileCounter,
+									'inFile' => $infile.$infileEnding,
+									'inDirectory' => $inSampleDirectory,
+									'fileEnding' => ".b*",
+									'tempDirectory' => $$tempDirectoryRef,
+								       });
+
+	## CNVnator
+	print $FILEHANDLE "## CNVnator","\n";
+	
+	## Create file commands for xargs
+	($xargsFileCounter, $xargsFileName) = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
+							     'XARGSFILEHANDLE' => $XARGSFILEHANDLE, 
+							     'fileName' => $fileName,
+							     'programInfoPath' => $programInfoPath,
+							     'nrCores' => $nrCores,
+							     'xargsFileCounter' => $xargsFileCounter,
+							     'firstCommand' => "cnvnator",
+							    });
+	
+	## Process per contig
+	for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{'contigsSizeOrdered'}});$contigsCounter++) {
+	    
+	    my $contigRef = \${$fileInfoHashRef}{'contigsSizeOrdered'}[$contigsCounter];
+	    
+	    print $XARGSFILEHANDLE "-chrom ".$$contigRef." ";  #chromosome name
+	    print $XARGSFILEHANDLE "-unique ";  #To have correct q0 field for CNV calls
+	    
+	    $rootFile = $$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".root";  #Output ROOT file
+	    
+	    print $XARGSFILEHANDLE "-root ".$rootFile." ";  
+	    print $XARGSFILEHANDLE "-tree ".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile
+	    print $XARGSFILEHANDLE "1> ".$xargsFileName.".".$$contigRef.".stdout.txt ";  #Redirect xargs output to program specific stdout file
+	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    print $XARGSFILEHANDLE "; ";
+
+	    &CNVnatorHis({'rootFile' => $rootFile,
+			  'contigRef' => $contigRef,
+			  'cnvBinSizeRef' => \${$scriptParameterHashRef}{'cnvBinSize'},
+			  'chromosomeReference' => $$tempDirectoryRef."/".$$contigRef.".fa",
+			  'FILEHANDLE' => $XARGSFILEHANDLE,
+			  'stdoutFile' => $xargsFileName.".".$$contigRef.".stdout.txt",
+			  'stderrFile' => $xargsFileName.".".$$contigRef.".stderr.txt",
+			 });
+	    &CNVnatorStat({'rootFile' => $rootFile,
+			   'contigRef' => $contigRef,
+			   'cnvBinSizeRef' => \${$scriptParameterHashRef}{'cnvBinSize'},
+			   'FILEHANDLE' => $XARGSFILEHANDLE,
+			   'stdoutFile' => $xargsFileName.".".$$contigRef.".stdout.txt",
+			   'stderrFile' => $xargsFileName.".".$$contigRef.".stderr.txt",
+			  });
+	    &CNVnatorPartition({'rootFile' => $rootFile,
+				'contigRef' => $contigRef,
+				'cnvBinSizeRef' => \${$scriptParameterHashRef}{'cnvBinSize'},
+				'FILEHANDLE' => $XARGSFILEHANDLE,
+				'stdoutFile' => $xargsFileName.".".$$contigRef.".stdout.txt",
+				'stderrFile' => $xargsFileName.".".$$contigRef.".stderr.txt",
+			       });
+	    &CNVnatorCalling({'rootFile' => $rootFile,
+			      'contigRef' => $contigRef,
+			      'cnvBinSizeRef' => \${$scriptParameterHashRef}{'cnvBinSize'},
+			      'chromosomeReference' => $$referencesDirectoryRef,
+			      'FILEHANDLE' => $XARGSFILEHANDLE,
+			      'stderrFile' => $xargsFileName.".".$$contigRef.".stderr.txt",
+			      'outFile' => $$tempDirectoryRef."/".$infile.$outfileEnding."_".$$contigRef.".vcf", #OutFile
+			     });
+	    print $XARGSFILEHANDLE "\n";
+	}
+
+	## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
+	&ConcatenateVariants({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+			      'FILEHANDLE' => $FILEHANDLE,
+			      'arrayRef' => \@{${$fileInfoHashRef}{'contigs'}},
+			      'infilePrefix' => $$tempDirectoryRef."/".$infile.$outfileEnding."_", 
+			      'infilePostfix' => ".vcf",
+			      'outfile' => $$tempDirectoryRef."/".$infile.$outfileEnding."_concat.vcf",
+			     });
+
+	## Fix GT FORMAT in header and SampleID and GT and Genotype call
+	print $FILEHANDLE $perlVcfFix." ";
+	print $FILEHANDLE $$tempDirectoryRef."/".$infile.$outfileEnding."_concat.vcf ";
+	print $FILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileEnding."_concat_fix.vcf ";
+	print $FILEHANDLE "\n\n";
+
+	##Add contigs to header
+	print $FILEHANDLE "bcftools annotate ";
+	print $FILEHANDLE "-h ".$$tempDirectoryRef."/contigHeader.txt ";
+	print $FILEHANDLE $$tempDirectoryRef."/".$infile.$outfileEnding."_concat_fix.vcf ";
+	print $FILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileEnding.".vcf ";
+	print $FILEHANDLE "\n\n";
+
+	## Copies file from temporary directory.
+	print $FILEHANDLE "## Copy file from temporary directory\n";
+	&MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$infile.$outfileEnding.".vcf*",
+			      'filePath' => $outSampleDirectory."/",
+			      'FILEHANDLE' => $FILEHANDLE,
+			     });
+	print $FILEHANDLE "wait", "\n\n";
+    }
+    else {
+	
+	for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} });$infileCounter++) {  #For all infiles per lane
+	    
+	    my $infile = ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter];
+	    
+	    ## Copy file(s) to temporary directory
+	    print $FILEHANDLE "## Copy file(s) to temporary directory\n";
+	    ($xargsFileCounter, $xargsFileName) = &XargsMigrateContigFiles({'FILEHANDLE' => $FILEHANDLE,
+									    'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
+									    'arrayRef' => \@{ ${$fileInfoHashRef}{'contigsSizeOrdered'} },
+									    'fileName' =>$fileName,
+									    'programInfoPath' => $programInfoPath,
+									    'nrCores' => $nrCores,
+									    'xargsFileCounter' => $xargsFileCounter,
+									    'inFile' => $infile.$infileEnding,
+									    'inDirectory' => $inSampleDirectory,
+									    'fileEnding' => ".b*",
+									    'tempDirectory' => $$tempDirectoryRef,
+									   });
+	    
+	    ## CNVnator
+	    print $FILEHANDLE "## CNVnator","\n";
+	    
+	    ## Create file commands for xargs
+	    ($xargsFileCounter, $xargsFileName) = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
+								 'XARGSFILEHANDLE' => $XARGSFILEHANDLE, 
+								 'fileName' => $fileName,
+								 'programInfoPath' => $programInfoPath,
+								 'nrCores' => $nrCores,
+								 'xargsFileCounter' => $xargsFileCounter,
+								 'firstCommand' => "cnvnator",
+								});
+	    
+	    ## Split per contig
+	    for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{'contigsSizeOrdered'}});$contigsCounter++) {
+		
+		my $contigRef = \${$fileInfoHashRef}{'contigsSizeOrdered'}[$contigsCounter];
+		$rootFile = $$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".root";  #Output ROOT file
+		
+		print $XARGSFILEHANDLE "-chrom ".$$contigRef." ";  #chromosome name
+		print $XARGSFILEHANDLE "-unique ";  #To have correct q0 field for CNV calls		    
+		print $XARGSFILEHANDLE "-root ".$rootFile." ";
+		print $XARGSFILEHANDLE "-tree ".$$tempDirectoryRef."/".$infile.$infileEnding."_".$$contigRef.".bam ";  #InFile
+		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		print $XARGSFILEHANDLE "; ";
+
+		&CNVnatorHis({'rootFile' => $rootFile,
+			      'contigRef' => $contigRef,
+			      'cnvBinSizeRef' => \${$scriptParameterHashRef}{'cnvBinSize'},
+			      'chromosomeReference' => $$tempDirectoryRef."/".$$contigRef.".fa",
+			      'FILEHANDLE' => $XARGSFILEHANDLE,
+			      'stdoutFile' => $xargsFileName.".".$$contigRef.".stdout.txt",
+			      'stderrFile' => $xargsFileName.".".$$contigRef.".stderr.txt",
+			     });
+		&CNVnatorStat({'rootFile' => $rootFile,
+			       'contigRef' => $contigRef,
+			       'cnvBinSizeRef' => \${$scriptParameterHashRef}{'cnvBinSize'},
+			       'FILEHANDLE' => $XARGSFILEHANDLE,
+			       'stdoutFile' => $xargsFileName.".".$$contigRef.".stdout.txt",
+			       'stderrFile' => $xargsFileName.".".$$contigRef.".stderr.txt",
+			      });
+		&CNVnatorPartition({'rootFile' => $rootFile,
+				    'contigRef' => $contigRef,
+				    'cnvBinSizeRef' => \${$scriptParameterHashRef}{'cnvBinSize'},
+				    'FILEHANDLE' => $XARGSFILEHANDLE,
+				    'stdoutFile' => $xargsFileName.".".$$contigRef.".stdout.txt",
+				    'stderrFile' => $xargsFileName.".".$$contigRef.".stderr.txt",
+				   });
+		&CNVnatorCalling({'rootFile' => $rootFile,
+				  'contigRef' => $contigRef,
+				  'cnvBinSizeRef' => \${$scriptParameterHashRef}{'cnvBinSize'},
+				  'chromosomeReference' => $$referencesDirectoryRef,
+				  'FILEHANDLE' => $XARGSFILEHANDLE,
+				  'stderrFile' => $xargsFileName.".".$$contigRef.".stderr.txt",
+				  'outFile' => $$tempDirectoryRef."/".$infile.$outfileEnding."_".$$contigRef.".vcf", #OutFile
+				 });
+		print $XARGSFILEHANDLE "\n";	    
+	    }
+	    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
+	    &ConcatenateVariants({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+				  'FILEHANDLE' => $FILEHANDLE,
+				  'arrayRef' => \@{${$fileInfoHashRef}{'contigs'}},
+				  'infilePrefix' => $$tempDirectoryRef."/".$infile.$outfileEnding."_", 
+				  'infilePostfix' => ".vcf",
+				  'outfile' => $$tempDirectoryRef."/".$infile.$outfileEnding."_concat.vcf",
+				 });
+	    
+	    ## Fix GT FORMAT in header and SampleID and GT and Genotype call
+	    print $FILEHANDLE $perlVcfFix." ";
+	    print $FILEHANDLE $$tempDirectoryRef."/".$infile.$outfileEnding."_concat.vcf ";
+	    print $FILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileEnding."_concat_fix.vcf ";
+	    print $FILEHANDLE "\n\n";
+
+	    ##Add contigs to header
+	    print $FILEHANDLE "bcftools annotate ";
+	    print $FILEHANDLE "-h ".$$tempDirectoryRef."/contigHeader.txt ";
+	    print $FILEHANDLE $$tempDirectoryRef."/".$infile.$outfileEnding."_concat_fix.vcf ";
+	    print $FILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileEnding.".vcf ";
+	    print $FILEHANDLE "\n\n";
+	    
+	    ## Copies file from temporary directory.
+	    print $FILEHANDLE "## Copy file from temporary directory\n";
+	    &MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$infile.$outfileEnding.".vcf*",
+				  'filePath' => $outSampleDirectory."/",
+				  'FILEHANDLE' => $FILEHANDLE,
+				 });
+	    print $FILEHANDLE "wait", "\n\n";	   
+	}
+    }    
+  
+    close($FILEHANDLE);     
+
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+
+	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		       'familyID' => $$familyIDRef,
+		       'programName' => "CNVnator",
+		       'outDirectory' => $outSampleDirectory,
+		       'outFileEnding' => $infile.$outfileEnding.".vcf",
+		       'outDataType' => "static"
+		      });	
+	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		       'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		       'jobIDHashRef' => \%{$jobIDHashRef},
+		       'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
+		       'sampleID' => $$sampleIDRef,
+		       'dependencies' => 1, 
+		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
+		       'sbatchFileName' => $fileName,
+		      });
+    }
+}
+
+
+sub Delly { 
+    
+##Delly
+    
+##Function : Call structural variants using Delly
+##Returns  : ""
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName, $programInfoPath
+##         : $parameterHashRef           => The parameter hash {REF}
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $fileInfoHashRef            => The fileInfo hash {REF}
+##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $laneHashRef                => The lane info hash {REF}
+##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $sampleID                   => The sampleID
+##         : $alignerOutDir              => The alignerOutDir used in the analysis
+##         : $programName                => The program name
+##         : $programInfoPath            => The program info path
+    
+    my ($argHashRef) = @_;
+    
+    my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+		   'referencesDirRef' => \${$argHashRef}{'scriptParameterHashRef'}{'referencesDir'},
+		   'tempDirectoryRef' => \${$argHashRef}{'scriptParameterHashRef'}{'tempDirectory'},
+		   'xargsFileCounter' => 0,
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+    
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
+    my $laneHashRef = ${$argHashRef}{'laneHashRef'};
+    my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
+    my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
+    my $fileName = ${$argHashRef}{'fileName'};
+    my $programName = ${$argHashRef}{'programName'};
+    my $programInfoPath = ${$argHashRef}{'programInfoPath'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $xargsFileCounter = ${$argHashRef}{'xargsFileCounter'};
+    my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
+    my $referencesDirectoryRef =  ${$argHashRef}{'referencesDirRef'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
+			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
+			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'alignerOutDirRef' => $$alignerOutDirRef,
+			     'programName' => $programName,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+
+    my $nrCores = ${$scriptParameterHashRef}{'maximumCores'};
+    my $programOutDirectoryName = ${$parameterHashRef}{"p".$programName}{'outDirectoryName'};
+
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $time = 30;
+    my $xargsFileName;
+
+    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
+ 
+	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+	
+	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+	($fileName, $programInfoPath) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+							       'FILEHANDLE' => $FILEHANDLE,
+							       'directoryID' => $$sampleIDRef,
+							       'programName' => $programName,
+							       'programDirectory' => lc($$alignerOutDirRef."/gatk/".$programOutDirectoryName),
+							       'nrofCores' => $nrCores,
+							       'processTime' => $time,
+							       'tempDirectory' => $$tempDirectoryRef
+							      });
+    }
+
+    ## Assign directories
+    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk/".$programOutDirectoryName;
+    ${$parameterHashRef}{"p".$programName}{$$sampleIDRef}{'inDirectory'} = $outSampleDirectory; #Used downstream
+
+
+    my $infileEnding = ${$fileInfoHashRef}{ $$familyIDRef }{$$sampleIDRef}{'pGATKBaseRecalibration'}{'fileEnding'};
+    my $outfileEnding = ${$fileInfoHashRef}{ $$familyIDRef }{$$sampleIDRef}{"p".$programName}{'fileEnding'};
+
+    ## Removes an element from array and return new array while leaving orginal arrayRef untouched
+    my @contigs = &RemoveElementFromArray({'arrayRef' => \@{${$fileInfoHashRef}{'contigsSizeOrdered'}},
+					   'element' => "MT",
+					   'contigSwitch' => "yes",
+					  });
+    
+    ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
+    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, $$sampleIDRef);
+
+    if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
+	
+	## Copy file(s) to temporary directory
+	print $FILEHANDLE "## Copy file(s) to temporary directory\n";
+	&MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE, 
+			    'path' => $inSampleDirectory."/".$infile.$infileEnding.".b*",
+			    'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+			   });
+	print $FILEHANDLE "wait", "\n\n";
+
+	## Copy file(s) to temporary directory
+	print $FILEHANDLE "## Copy file(s) to temporary directory\n";
+	($xargsFileCounter, $xargsFileName) = &XargsMigrateContigFiles({'FILEHANDLE' => $FILEHANDLE,
+									'XARGSFILEHANDLE' => $XARGSFILEHANDLE,
+									'arrayRef' => \@{ ${$fileInfoHashRef}{'contigsSizeOrdered'} },
+									'fileName' =>$fileName,
+									'programInfoPath' => $programInfoPath,
+									'nrCores' => $nrCores,
+									'xargsFileCounter' => $xargsFileCounter,
+									'inFile' => $infile.$infileEnding,
+									'inDirectory' => $inSampleDirectory,
+									'fileEnding' => ".b*",
+									'tempDirectory' => $$tempDirectoryRef,
+								       });
+	
+	## Delly
+	print $FILEHANDLE "## Delly","\n";
+
+	## Create file commands for xargs
+	($xargsFileCounter, $xargsFileName) = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
+							     'XARGSFILEHANDLE' => $XARGSFILEHANDLE, 
+							     'fileName' => $fileName,
+							     'programInfoPath' => $programInfoPath,
+							     'nrCores' => $nrCores,
+							     'xargsFileCounter' => $xargsFileCounter,
+							     'firstCommand' => "delly",
+							    });
+
+	foreach my $svType (@{${$scriptParameterHashRef}{'dellyType'}}) {  #Sacrifice inter translocations due to performance
+	    
+	    if($svType ne "TRA") {
+
+		## Process per contig
+		foreach my $contig (@contigs) {
+  
+		    print $XARGSFILEHANDLE "-t ".$svType." ";  #The SV to call
+		    print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$infile.$outfileEnding."_".$contig."_".$svType.".vcf ";
+		    print $XARGSFILEHANDLE "-x human.hg19.excl.tsv ";  #to exclude telomere and centromere regions
+		    print $XARGSFILEHANDLE "-g ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'humanGenomeReference'}." "; #Reference file
+		    print $XARGSFILEHANDLE $$tempDirectoryRef."/".$infile.$infileEnding."_".$contig.".bam ";  #InFile
+		    print $XARGSFILEHANDLE "1> ".$xargsFileName.".".$contig.".".$svType.".stdout.txt ";  #Redirect xargs output to program specific stdout file
+		    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$contig.".".$svType.".stderr.txt ";  #Redirect xargs output to program specific stderr file	    
+		    print $XARGSFILEHANDLE "\n";
+		}
+	    }
+	    else {
+		
+		print $XARGSFILEHANDLE "-t ".$svType." ";  #The SV to call
+		print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$infile.$outfileEnding."_".$svType.".vcf ";
+		print $XARGSFILEHANDLE $$tempDirectoryRef."/".$infile.$infileEnding.".bam ";  #InFile
+		print $XARGSFILEHANDLE "1> ".$xargsFileName.".".$svType.".stdout.txt ";  #Redirect xargs output to program specific stdout file
+		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$svType.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		print $XARGSFILEHANDLE "\n";
+	    }
+	}
+	
+	## Concatenate contigs per svType
+	foreach my $svType (@{${$scriptParameterHashRef}{'dellyType'}}) {
+	    
+	    if($svType ne "TRA") {
+		
+		## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
+		&ConcatenateVariants({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+				      'FILEHANDLE' => $FILEHANDLE,
+				      'arrayRef' => \@contigs,
+				      'infilePrefix' => $$tempDirectoryRef."/".$infile.$outfileEnding."_", 
+				      'infilePostfix' => "_".$svType.".vcf",
+				      'outfile' => $$tempDirectoryRef."/".$infile.$outfileEnding."_".$svType."_concat.vcf",
+				     });
+	    }
+	}
+
+	## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
+	&ConcatenateVariants({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+			      'FILEHANDLE' => $FILEHANDLE,
+			      'arrayRef' => \@{${$scriptParameterHashRef}{'dellyType'}},
+			      'infilePrefix' => $$tempDirectoryRef."/".$infile.$outfileEnding."_", 
+			      'infilePostfix' => "_concat.vcf",
+			      'outfile' => $$tempDirectoryRef."/".$infile.$outfileEnding."_concat.vcf",
+			     });
+
+	## Writes sbatch code to supplied filehandle to sort variants in vcf format
+	&SortVcf({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		  'fileInfoHashRef' => \%{$fileInfoHashRef},
+		  'FILEHANDLE' => $FILEHANDLE,
+		  'sequenceDictFile' => $$referencesDirectoryRef."/".${$fileInfoHashRef}{'humanGenomeReferenceNameNoEnding'}.".dict",
+		  'infile' => $$tempDirectoryRef."/".$infile.$outfileEnding."_concat.vcf",
+		  'outfile' => $$tempDirectoryRef."/".$infile.$outfileEnding."_concat_sorted.vcf",
+		 });
+
+	## Rename vcf samples. The samples array will replace the sample names in the same order as supplied.
+	&RenameVCFSamples({'sampleIDArrayRef' => [$$sampleIDRef],
+			   'tempDirectoryRef' => $tempDirectoryRef,
+			   'infile' => $$tempDirectoryRef."/".$infile.$outfileEnding."_concat_sorted.vcf",
+			   'outfile' => $$tempDirectoryRef."/".$infile.$outfileEnding.".vcf",
+			   'FILEHANDLE' => $FILEHANDLE,
+			  });
+	
+	## Copies file from temporary directory.
+	print $FILEHANDLE "## Copy file from temporary directory\n";
+	&MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$infile.$outfileEnding.".vcf",
+			      'filePath' => $outSampleDirectory."/",
+			      'FILEHANDLE' => $FILEHANDLE,
+			     });
+	print $FILEHANDLE "wait", "\n\n";
+
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+		
+		&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+			       'familyID' => $$familyIDRef,
+			       'sampleID' => $$sampleIDRef,
+			       'programName' => "Delly",
+			       'infile' => $infile,
+			       'outDirectory' => $outSampleDirectory,
+			       'outFileEnding' => $infile.$outfileEnding.".vcf",
+			       'outDataType' => "static"
+			      });
+	    }
+    }
+    else {
+	
+	for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} });$infileCounter++) {  #For all infiles per lane
+	    
+	    my $infile = ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter];
+	    
+	    ## Copy file(s) to temporary directory
+	    print $FILEHANDLE "## Copy file(s) to temporary directory\n";
+	    &MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE, 
+				'path' => $inSampleDirectory."/".$infile.$infileEnding.".b*",
+				'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+			       });
+	    print $FILEHANDLE "wait", "\n\n";
+	    
+	    ## Delly
+	    print $FILEHANDLE "## Delly","\n";
+	    
+	    ## Create file commands for xargs
+	    ($xargsFileCounter, $xargsFileName) = &XargsCommand({'FILEHANDLE' => $FILEHANDLE,
+								 'XARGSFILEHANDLE' => $XARGSFILEHANDLE, 
+								 'fileName' => $fileName,
+								 'programInfoPath' => $programInfoPath,
+								 'nrCores' => $nrCores,
+								 'xargsFileCounter' => $xargsFileCounter,
+								 'firstCommand' => "delly",
+								});
+
+	    foreach my $svType (@{${$scriptParameterHashRef}{'dellyType'}}) {
+		
+		if($svType ne "TRA") {
+		    
+		    ## Process per contig
+		    foreach my $contig (@contigs) {
+			
+			print $XARGSFILEHANDLE "-t ".$svType." ";  #The SV to call
+			print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$infile.$outfileEnding."_".$contig."_".$svType.".vcf ";
+			print $XARGSFILEHANDLE "-x human.hg19.excl.tsv ";  #to exclude telomere and centromere regions
+			print $XARGSFILEHANDLE "-g ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'humanGenomeReference'}." "; #Reference file
+			print $XARGSFILEHANDLE $$tempDirectoryRef."/".$infile.$infileEnding."_".$contig.".bam ";  #InFile
+			print $XARGSFILEHANDLE "1> ".$xargsFileName.".".$contig.".".$svType.".stdout.txt ";  #Redirect xargs output to program specific stdout file
+			print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$svType.".stderr.txt ";  #Redirect xargs output to program specific stderr file	    
+			print $XARGSFILEHANDLE "\n";
+		    }
+		}
+		else {
+		    
+		    print $XARGSFILEHANDLE "-t ".$svType." ";  #The SV to call
+		    print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$infile.$outfileEnding."_".$svType.".vcf ";
+		    print $XARGSFILEHANDLE $$tempDirectoryRef."/".$infile.$infileEnding.".bam ";  #InFile
+		    print $XARGSFILEHANDLE "1> ".$xargsFileName.".".$svType.".stderr.txt ";  #Redirect xargs output to program specific stdout file
+		    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$svType.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		    print $XARGSFILEHANDLE "\n";	    
+		}
+	    }	    
+	    
+	    ## Concatenate contigs per svType
+	    foreach my $svType (@{${$scriptParameterHashRef}{'dellyType'}}) {
+		
+		if($svType ne "TRA") {
+		    
+		    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
+		    &ConcatenateVariants({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+					  'FILEHANDLE' => $FILEHANDLE,
+					  'arrayRef' => \@contigs,
+					  'infilePrefix' => $$tempDirectoryRef."/".$infile.$outfileEnding."_", 
+					  'infilePostfix' => "_".$svType.".vcf",
+					  'outfile' => $$tempDirectoryRef."/".$infile.$outfileEnding."_".$svType."_concat.vcf",
+					 });
+		}
+	    }
+	    
+	    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
+	    &ConcatenateVariants({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+				  'FILEHANDLE' => $FILEHANDLE,
+				  'arrayRef' => \@{${$scriptParameterHashRef}{'dellyType'}},
+				  'infilePrefix' => $$tempDirectoryRef."/".$infile.$outfileEnding."_", 
+				  'infilePostfix' => "_concat.vcf",
+				  'outfile' => $$tempDirectoryRef."/".$infile.$outfileEnding."_concat.vcf",
+				 });
+
+	    ## Writes sbatch code to supplied filehandle to sort variants in vcf format
+	    &SortVcf({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		      'fileInfoHashRef' => \%{$fileInfoHashRef},
+		      'FILEHANDLE' => $FILEHANDLE,
+		      'sequenceDictFile' => $$referencesDirectoryRef."/".${$fileInfoHashRef}{'humanGenomeReferenceNameNoEnding'}.".dict",
+		      'infile' => $$tempDirectoryRef."/".$infile.$outfileEnding."_concat.vcf",
+		      'outfile' => $$tempDirectoryRef."/".$infile.$outfileEnding."_concat_sorted.vcf ",
+		     });
+	    
+	    ## Rename vcf samples. The samples array will replace the sample names in the same order as supplied.
+	    &RenameVCFSamples({'sampleIDArrayRef' => [$$sampleIDRef],
+			       'tempDirectoryRef' => $tempDirectoryRef,
+			       'infile' => $$tempDirectoryRef."/".$infile.$outfileEnding."_concat_sorted.vcf",
+			       'outfile' => $$tempDirectoryRef."/".$infile.$outfileEnding.".vcf",
+			       'FILEHANDLE' => $FILEHANDLE,
+			      });
+	
+	    ## Copies file from temporary directory.
+	    print $FILEHANDLE "## Copy file from temporary directory\n";
+	    &MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$infile.$outfileEnding.".vcf*",
+				  'filePath' => $outSampleDirectory."/",
+				  'FILEHANDLE' => $FILEHANDLE,
+				 });
+	    print $FILEHANDLE "wait", "\n\n";
+	    
+	    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+		
+		&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+			       'familyID' => $$familyIDRef,
+			       'sampleID' => $$sampleIDRef,
+			       'programName' => "Delly",
+			       'infile' => $infile,
+			       'outDirectory' => $outSampleDirectory,
+			       'outFileEnding' => $infile.$outfileEnding.".vcf",
+			       'outDataType' => "static"
+			      });
+	    }
+	}
+    }
+  
+    close($FILEHANDLE);     
+    
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+	
+	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		       'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		       'jobIDHashRef' => \%{$jobIDHashRef},
+		       'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
+		       'sampleID' => $$sampleIDRef,
+		       'dependencies' => 1, 
+		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
+		       'sbatchFileName' => $fileName,
+		      });
+    }
+}
+
+
+sub Manta { 
+    
+##Manta
+    
+##Function : Call structural variants using Manta
+##Returns  : ""
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName, $programInfoPath
+##         : $parameterHashRef           => The parameter hash {REF}
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $fileInfoHashRef            => The fileInfo hash {REF}
+##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $laneHashRef                => The lane info hash {REF}
+##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $sampleID                   => The sampleID
+##         : $alignerOutDir              => The alignerOutDir used in the analysis
+##         : $programName                => The program name
+##         : $programInfoPath            => The program info path
+    
+    my ($argHashRef) = @_;
+    
+    my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+		   'referencesDirRef' => \${$argHashRef}{'scriptParameterHashRef'}{'referencesDir'},
+		   'tempDirectoryRef' => \${$argHashRef}{'scriptParameterHashRef'}{'tempDirectory'},
+		   'xargsFileCounter' => 0,
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+    
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
+    my $laneHashRef = ${$argHashRef}{'laneHashRef'};
+    my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
+    my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
+    my $fileName = ${$argHashRef}{'fileName'};
+    my $programName = ${$argHashRef}{'programName'};
+    my $programInfoPath = ${$argHashRef}{'programInfoPath'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $xargsFileCounter = ${$argHashRef}{'xargsFileCounter'};
+    my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
+    my $referencesDirectoryRef =  ${$argHashRef}{'referencesDirRef'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
+			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
+			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'alignerOutDirRef' => $$alignerOutDirRef,
+			     'programName' => $programName,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+
+    my $nrCores = ${$scriptParameterHashRef}{'maximumCores'};
+    my $programOutDirectoryName = ${$parameterHashRef}{"p".$programName}{'outDirectoryName'};
+
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $time = 30;
+    my $xargsFileName;
+
+    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
+ 
+	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+	
+	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+	($fileName, $programInfoPath) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+							       'FILEHANDLE' => $FILEHANDLE,
+							       'directoryID' => $$sampleIDRef,
+							       'programName' => $programName,
+							       'programDirectory' => lc($$alignerOutDirRef."/gatk/".$programOutDirectoryName),
+							       'nrofCores' => $nrCores,
+							       'processTime' => $time,
+							       'tempDirectory' => $$tempDirectoryRef
+							      });
+    }
+
+    ## Assign directories
+    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk/".$programOutDirectoryName;
+    ${$parameterHashRef}{"p".$programName}{$$sampleIDRef}{'inDirectory'} = $outSampleDirectory; #Used downstream
+
+    my $infileEnding = ${$fileInfoHashRef}{ $$familyIDRef }{$$sampleIDRef}{'pGATKBaseRecalibration'}{'fileEnding'};
+    my $outfileEnding = ${$fileInfoHashRef}{ $$familyIDRef }{$$sampleIDRef}{"p".$programName}{'fileEnding'};
+    my $coreCounter=1;
+
+    ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
+    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, $$sampleIDRef);
+
+    if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
+	
+	## Copy file(s) to temporary directory
+	print $FILEHANDLE "## Copy file(s) to temporary directory\n";
+	&MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE, 
+			    'path' => $inSampleDirectory."/".$infile.$infileEnding.".b*",
+			    'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+			   });
+	print $FILEHANDLE "wait", "\n\n";
+
+	## Manta
+	print $FILEHANDLE "## Manta","\n";
+	print $FILEHANDLE "configManta.py ";
+	print $FILEHANDLE "--bam ".$$tempDirectoryRef."/".$infile.$infileEnding.".bam ";  #Infile
+	print $FILEHANDLE "--referenceFasta ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
+	print $FILEHANDLE "--runDir ".$$tempDirectoryRef." ";
+	print $FILEHANDLE "\n\n";
+
+	print $FILEHANDLE "## Manta WorkFlow","\n";
+	print $FILEHANDLE $$tempDirectoryRef."/runWorkflow.py ";
+	print $FILEHANDLE "--mode local ";
+	print $FILEHANDLE "\n\n";
+	
+	print $FILEHANDLE "gzip ";
+	print $FILEHANDLE "-d ";
+	print $FILEHANDLE "-c ";
+	print $FILEHANDLE $$tempDirectoryRef."/results/variants/diploidSV.vcf.gz ";
+	print $FILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileEnding.".vcf ";
+	print $FILEHANDLE "\n\n";
+
+	## Copies file from temporary directory.
+	print $FILEHANDLE "## Copy file from temporary directory\n";
+	&MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$infile.$outfileEnding.".vcf*",
+			      'filePath' => $outSampleDirectory."/",
+			      'FILEHANDLE' => $FILEHANDLE,
+			     });
+	print $FILEHANDLE "wait", "\n\n";
+
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+	    
+	    &SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+			   'familyID' => $$familyIDRef,
+			   'sampleID' => $$sampleIDRef,
+			   'programName' => "Manta",
+			   'infile' => $infile,
+			   'outDirectory' => $outSampleDirectory,
+			   'outFileEnding' => $infile.$outfileEnding.".vcf",
+			   'outDataType' => "static"
+			  });
+	}
+    }
+    else {
+	
+	for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} });$infileCounter++) {  #For all infiles per lane
+	    
+	    my $infile = ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter];
+	    
+	    ## Copy file(s) to temporary directory
+	    print $FILEHANDLE "## Copy file(s) to temporary directory\n";
+	    &MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE, 
+				'path' => $inSampleDirectory."/".$infile.$infileEnding.".b*",
+				'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+			       });
+	    print $FILEHANDLE "wait", "\n\n";
+	    
+	    ## Manta
+	    print $FILEHANDLE "## Manta","\n";
+	    print $FILEHANDLE "configManta.py ";
+	    print $FILEHANDLE "--bam ".$$tempDirectoryRef."/".$infile.$infileEnding.".bam ";  #Infile
+	    print $FILEHANDLE "--referenceFasta ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
+	    print $FILEHANDLE "--runDir ".$$tempDirectoryRef." ";
+	    print $FILEHANDLE "\n\n";
+	    
+	    print $FILEHANDLE "## Manta WorkFlow","\n";
+	    print $FILEHANDLE $$tempDirectoryRef."/runWorkflow.py ";
+	    print $FILEHANDLE "--mode local ";
+	    print $FILEHANDLE "\n\n";
+	    
+	    print $FILEHANDLE "gzip ";
+	    print $FILEHANDLE "-d ";
+	    print $FILEHANDLE "-c ";
+	    print $FILEHANDLE $$tempDirectoryRef."/results/variants/diploidSV.vcf.gz ";
+	    print $FILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileEnding.".vcf ";
+	    print $FILEHANDLE "\n\n";
+
+	    ## Copies file from temporary directory.
+	    print $FILEHANDLE "## Copy file from temporary directory\n";
+	    &MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$infile.$outfileEnding.".vcf*",
+				  'filePath' => $outSampleDirectory."/",
+				  'FILEHANDLE' => $FILEHANDLE,
+				 });
+	    print $FILEHANDLE "wait", "\n\n";
+
+	    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+		
+		&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+			       'familyID' => $$familyIDRef,
+			       'sampleID' => $$sampleIDRef,
+			       'programName' => "Manta",
+			       'infile' => $infile,
+			       'outDirectory' => $outSampleDirectory,
+			       'outFileEnding' => $infile.$outfileEnding.".vcf",
+			       'outDataType' => "static"
+			      });
+	    }
+	}
+    }
+    close($FILEHANDLE);     
+
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+
+	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		       'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		       'jobIDHashRef' => \%{$jobIDHashRef},
+		       'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
+		       'sampleID' => $$sampleIDRef,
+		       'dependencies' => 1, 
+		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
+		       'sbatchFileName' => $fileName,
+		      });
+    }
+}
+
+
+sub FindTranslocations { 
+    
+##FindTranslocations
+    
+##Function : Call structural variants using FindTranslocations
+##Returns  : ""
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName, $programInfoPath
+##         : $parameterHashRef           => The parameter hash {REF}
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $fileInfoHashRef            => The fileInfo hash {REF}
+##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $laneHashRef                => The lane info hash {REF}
+##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $sampleID                   => The sampleID
+##         : $alignerOutDir              => The alignerOutDir used in the analysis
+##         : $programName                => The program name
+##         : $programInfoPath            => The program info path
+    
+    my ($argHashRef) = @_;
+    
+    my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+		   'referencesDirRef' => \${$argHashRef}{'scriptParameterHashRef'}{'referencesDir'},
+		   'tempDirectoryRef' => \${$argHashRef}{'scriptParameterHashRef'}{'tempDirectory'},
+		   'xargsFileCounter' => 0,
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+    
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $fileInfoHashRef = ${$argHashRef}{'fileInfoHashRef'};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
+    my $laneHashRef = ${$argHashRef}{'laneHashRef'};
+    my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
+    my $sampleIDRef = ${$argHashRef}{'sampleIDRef'};
+    my $alignerOutDirRef = ${$argHashRef}{'alignerOutDirRef'};
+    my $fileName = ${$argHashRef}{'fileName'};
+    my $programName = ${$argHashRef}{'programName'};
+    my $programInfoPath = ${$argHashRef}{'programInfoPath'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $xargsFileCounter = ${$argHashRef}{'xargsFileCounter'};
+    my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
+    my $referencesDirectoryRef =  ${$argHashRef}{'referencesDirRef'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
+			     'fileInfoHashRef' => ${$fileInfoHashRef}{'contigs'},  #Any MIP mandatory key will do
+			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'laneHashRef' => ${$laneHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'alignerOutDirRef' => $$alignerOutDirRef,
+			     'programName' => $programName,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+
+    my $nrCores = 2;
+    my $programOutDirectoryName = ${$parameterHashRef}{"p".$programName}{'outDirectoryName'};
+
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $time = 30;
+    my $xargsFileName;
+
+    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
+ 
+	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+	
+	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+	($fileName, $programInfoPath) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+							       'FILEHANDLE' => $FILEHANDLE,
+							       'directoryID' => $$sampleIDRef,
+							       'programName' => $programName,
+							       'programDirectory' => lc($$alignerOutDirRef."/gatk/".$programOutDirectoryName),
+							       'nrofCores' => $nrCores,
+							       'processTime' => $time,
+							       'tempDirectory' => $$tempDirectoryRef
+							      });
+    }
+
+    ## Assign directories
+    my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$$sampleIDRef."/".$$alignerOutDirRef."/gatk/".$programOutDirectoryName;
+    ${$parameterHashRef}{"p".$programName}{$$sampleIDRef}{'inDirectory'} = $outSampleDirectory; #Used downstream
+
+    my $infileEnding = ${$fileInfoHashRef}{ $$familyIDRef }{$$sampleIDRef}{'pGATKBaseRecalibration'}{'fileEnding'};
+    my $outfileEnding = ${$fileInfoHashRef}{ $$familyIDRef }{$$sampleIDRef}{"p".$programName}{'fileEnding'};
+    my $coreCounter=1;
+
+    ## Check if any files for this sampleID were merged previously to set infile and PicardToolsMergeSwitch to enable correct handling of number of infiles to process
+    my ($infile, $PicardToolsMergeSwitch) = &CheckIfMergedFiles(\%{$scriptParameterHashRef}, \%{$fileInfoHashRef}, \%{$laneHashRef}, \%{$infilesLaneNoEndingHashRef}, $$sampleIDRef);
+    my @findTranslocationsTypes = ("intra", "inter");
+    my $perlVcfFix = q&perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {print q?##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">?, "\n"; print $_."\t".FORMAT."\t&.$$sampleIDRef.q&", "\n"} else {print $_."\tGT\t1/1", "\n"}' &;
+    my $perlAddContigs = q?perl -nae '{print "##contig=<ID=".$F[0].",length=".$F[1].">", "\n"}'?;
+
+    ## Add contigs to vcfheader
+    print $FILEHANDLE $perlAddContigs." ";
+    print $FILEHANDLE $$referencesDirectoryRef."/".${$scriptParameterHashRef}{'humanGenomeReference'}.".fai "; #Reference fai file
+    print $FILEHANDLE "> ".$$tempDirectoryRef."/contigHeader.txt ";
+    print $FILEHANDLE "\n\n";
+
+    if ($PicardToolsMergeSwitch == 1) {  #Files were merged previously
+	
+	## Copy file(s) to temporary directory
+	print $FILEHANDLE "## Copy file(s) to temporary directory\n";
+	&MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE, 
+			    'path' => $inSampleDirectory."/".$infile.$infileEnding.".b*",
+			    'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+			   });
+	print $FILEHANDLE "wait", "\n\n";
+
+	## FindTranslocations
+	print $FILEHANDLE "## FindTranslocations","\n";
+	print $FILEHANDLE "FindTranslocations ";
+	print $FILEHANDLE "--sv ";
+	print $FILEHANDLE "--auto ";
+	print $FILEHANDLE "--bam ".$$tempDirectoryRef."/".$infile.$infileEnding.".bam ";  #Infile
+	print $FILEHANDLE "--bai ".$$tempDirectoryRef."/".$infile.$infileEnding.".bai ";  #Infile index
+	print $FILEHANDLE "--minimum-supporting-pairs ".${$scriptParameterHashRef}{'findTranslocationsMinimumSuppotingPairs'}." ";
+	print $FILEHANDLE "--output ".$$tempDirectoryRef."/".$infile.$outfileEnding." ";
+	print $FILEHANDLE "\n\n";
+
+	foreach my $svType (@findTranslocationsTypes) {
+	    
+	    ## Fix GT FORMAT in header and SampleID and GT and Genotype call
+	    print $FILEHANDLE $perlVcfFix." ";
+	    print $FILEHANDLE $$tempDirectoryRef."/".$infile.$outfileEnding."_".$svType."_chr_events.vcf ";
+	    print $FILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileEnding."_".$svType."_glfixed.vcf ";
+	    print $FILEHANDLE "\n\n";
+
+	    ##Add contigs to header
+	    print $FILEHANDLE "bcftools annotate ";
+	    print $FILEHANDLE "-h ".$$tempDirectoryRef."/contigHeader.txt ";
+	    print $FILEHANDLE $$tempDirectoryRef."/".$infile.$outfileEnding."_".$svType."_glfixed.vcf ";
+	    print $FILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileEnding."_".$svType."_glfixed_contigHeader.vcf ";
+	    print $FILEHANDLE "\n\n";
+	}
+
+	## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
+	&ConcatenateVariants({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+			      'FILEHANDLE' => $FILEHANDLE,
+			      'arrayRef' => \@findTranslocationsTypes,
+			      'infilePrefix' => $$tempDirectoryRef."/".$infile.$outfileEnding."_", 
+			      'infilePostfix' => "_glfixed_contigHeader.vcf",
+			      'outfile' => $$tempDirectoryRef."/".$infile.$outfileEnding."_glfixed_contigHeader_concat.vcf",
+			     });
+
+	## Writes sbatch code to supplied filehandle to sort variants in vcf format
+	&SortVcf({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		  'fileInfoHashRef' => \%{$fileInfoHashRef},
+		  'FILEHANDLE' => $FILEHANDLE,
+		  'sequenceDictFile' => $$referencesDirectoryRef."/".${$fileInfoHashRef}{'humanGenomeReferenceNameNoEnding'}.".dict",
+		  'infile' => $$tempDirectoryRef."/".$infile.$outfileEnding."_glfixed_contigHeader_concat.vcf",
+		  'outfile' => $$tempDirectoryRef."/".$infile.$outfileEnding.".vcf ",
+		 });
+	
+	## Copies file from temporary directory.
+	print $FILEHANDLE "## Copy file from temporary directory\n";
+	&MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$infile.$outfileEnding.".vcf*",
+			      'filePath' => $outSampleDirectory."/",
+			      'FILEHANDLE' => $FILEHANDLE,
+			     });
+	print $FILEHANDLE "wait", "\n\n";
+    }
+    else {
+	
+	for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} });$infileCounter++) {  #For all infiles per lane
+	    
+	    my $infile = ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter];
+	    
+	    ## Copy file(s) to temporary directory
+	    print $FILEHANDLE "## Copy file(s) to temporary directory\n";
+	    &MigrateFileToTemp({'FILEHANDLE' => $FILEHANDLE, 
+				'path' => $inSampleDirectory."/".$infile.$infileEnding.".b*",
+				'tempDirectory' => ${$scriptParameterHashRef}{'tempDirectory'}
+			       });
+	    print $FILEHANDLE "wait", "\n\n";
+	    
+	    ## FindTranslocations
+	    print $FILEHANDLE "## FindTranslocations","\n";
+	    print $FILEHANDLE "FindTranslocations ";
+	    print $FILEHANDLE "--sv ";
+	    print $FILEHANDLE "--auto ";
+	    print $FILEHANDLE "--bam ".$$tempDirectoryRef."/".$infile.$infileEnding.".bam ";  #Infile
+	    print $FILEHANDLE "--bai ".$$tempDirectoryRef."/".$infile.$infileEnding.".bai ";  #Infile index
+	    print $FILEHANDLE "--minimum-supporting-pairs ".${$scriptParameterHashRef}{'findTranslocationsMinimumSuppotingPairs'}." ";
+	    print $FILEHANDLE "--output ".$$tempDirectoryRef."/".$infile.$outfileEnding." ";
+	    print $FILEHANDLE "\n\n";
+
+	    foreach my $svType (@findTranslocationsTypes) {
+		
+		## Fix GT FORMAT in header and SampleID and GT and Genotype call
+		print $FILEHANDLE $perlVcfFix." ";
+		print $FILEHANDLE $$tempDirectoryRef."/".$infile.$outfileEnding."_".$svType."_chr_events.vcf ";
+		print $FILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileEnding."_".$svType."_glfixed.vcf ";
+		print $FILEHANDLE "\n\n";
+		
+		##Add contigs to header
+		print $FILEHANDLE "bcftools annotate ";
+		print $FILEHANDLE "-h ".$$tempDirectoryRef."/contigHeader.txt ";
+		print $FILEHANDLE $$tempDirectoryRef."/".$infile.$outfileEnding."_".$svType."_glfixed.vcf ";
+		print $FILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileEnding."_".$svType."_glfixed_contigHeader.vcf ";
+		print $FILEHANDLE "\n\n";
+	    }
+	    
+	    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
+	    &ConcatenateVariants({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+				  'FILEHANDLE' => $FILEHANDLE,
+				  'arrayRef' => \@findTranslocationsTypes,
+				  'infilePrefix' => $$tempDirectoryRef."/".$infile.$outfileEnding."_", 
+				  'infilePostfix' => "_glfixed_contigHeader.vcf",
+				  'outfile' => $$tempDirectoryRef."/".$infile.$outfileEnding."_glfixed_contigHeader_concat.vcf",
+				 });
+
+	    ## Writes sbatch code to supplied filehandle to sort variants in vcf format
+	    &SortVcf({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		      'fileInfoHashRef' => \%{$fileInfoHashRef},
+		      'FILEHANDLE' => $FILEHANDLE,
+		      'sequenceDictFile' => $$referencesDirectoryRef."/".${$fileInfoHashRef}{'humanGenomeReferenceNameNoEnding'}.".dict",
+		      'infile' => $$tempDirectoryRef."/".$infile.$outfileEnding."_glfixed_contigHeader_concat.vcf",
+		      'outfile' => $$tempDirectoryRef."/".$infile.$outfileEnding.".vcf ",
+		     });
+
+	    ## Copies file from temporary directory.
+	    print $FILEHANDLE "## Copy file from temporary directory\n";
+	    &MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$infile.$outfileEnding.".vcf*",
+				  'filePath' => $outSampleDirectory."/",
+				  'FILEHANDLE' => $FILEHANDLE,
+				 });
+	    print $FILEHANDLE "wait", "\n\n";	   
+	}
+    }
+    close($FILEHANDLE);     
+
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+
+	&SampleInfoQC({'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		       'familyID' => $$familyIDRef,
+		       'programName' => "FindTranslocations",
+		       'outDirectory' => $outSampleDirectory,
+		       'outFileEnding' => $infile.$outfileEnding.".vcf",
+		       'outDataType' => "static"
+		      });	
+	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		       'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		       'jobIDHashRef' => \%{$jobIDHashRef},
+		       'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
+		       'sampleID' => $$sampleIDRef,
+		       'dependencies' => 1, 
+		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
+		       'sbatchFileName' => $fileName,
 		      });
     }
 }
@@ -14203,6 +16824,16 @@ sub FIDSubmitJob {
 		    
 		    $jobIDs = &AddToJobID(\%{$jobIDHashRef}, $familyIDChainKey, $familyIDChainKey);  #Family chain
 		}
+		elsif (${$argHashRef}{'dependencies'} == 7) {  #Add jobs from other parallel chains that have branched of from MAIN i.e. merge branch back again
+		    
+		    foreach my $parallelChain (@{$parallelChainsArrayRef}) {
+
+			foreach my $sampleID (@{${$scriptParameterHashRef}{'sampleIDs'}}) {
+			    
+			    $jobIDs .= &AddToJobID(\%{$jobIDHashRef}, ${$argHashRef}{'familyID'}."_".$parallelChain, $sampleID."_".$parallelChain);  #Add to jobID string
+			}
+		    }
+		}
 		elsif (${$jobIDHashRef}{${$argHashRef}{'familyID'}."_MAIN"}{${$argHashRef}{'familyID'}."_MAIN"}) {  #Inherit from potential MAIN. Trunk
 		    
 		    $jobIDs = &AddToJobID(\%{$jobIDHashRef}, ${$argHashRef}{'familyID'}."_MAIN", ${$argHashRef}{'familyID'}."_MAIN");
@@ -17117,8 +19748,6 @@ sub SetTargetandAutoBuild {
 			 'sampleInfoHashRef' => \%{$sampleInfoHashRef},
 			 'fileInfoHashRef' => \%{$fileInfoHashRef},
 			 'supportedCaptureKitHashRef' => \%{$supportedCaptureKitHashRef},
-			 #'humanGenomeReferenceSourceRef' => \${$fileInfoHashRef}{'humanGenomeReferenceSource'},
-			 #'humanGenomeReferenceVersionRef' => \${$fileInfoHashRef}{'humanGenomeReferenceVersion'},
 			 'sampleIDRef' => \${$arrayRef}[$elementsCounter],
 			 'parameterNameRef' => \$$parameterNameRef,
 			 'referenceFileEndingRef' => \$$fileEndingRef,
@@ -18165,6 +20794,63 @@ sub ConcatenateVariants {
 	print $FILEHANDLE "-V: ".$infilePrefix.${$arrayRef}[$elementCounter].$infilePostfix." ";  #files to combined
     }
     print $FILEHANDLE "-out ".$outfile, "\n\n";  #OutFile
+}
+
+
+sub SortVcf {
+
+##SortVcf
+    
+##Function : Writes sbatch code to supplied filehandle to sort variants in vcf format.
+##Returns  : ""
+##Arguments: $scriptParameterHashRef, $FILEHANDLE, $sequenceDictFile, $infile, $outfile
+##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $FILEHANDLE             => SBATCH script FILEHANDLE to print to
+##         : $sequenceDictFile       => Human reference sequence dict file
+##         : $infile                 => File to sort
+##         : $outfile                => The sorted outfile
+
+    my ($argHashRef) = @_;
+    
+    my %default = ('familyID' => ${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+    
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $arrayRef = ${$argHashRef}{'arrayRef'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $sequenceDictFile = ${$argHashRef}{'sequenceDictFile'};
+    my $infile = ${$argHashRef}{'infile'};
+    my $outfile = ${$argHashRef}{'outfile'};
+    
+    ## Mandatory arguments
+    my %mandatoryArgument = ('scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'FILEHANDLE' => $FILEHANDLE,
+			     'sequenceDictFile' => $sequenceDictFile,
+			     'infile' => $infile,
+			     'outfile' => $outfile,
+	);
+    
+    &CheckMandatoryArguments(\%mandatoryArgument, "SortVcf");
+    
+    print $FILEHANDLE "## Picard SortVcf","\n";
+
+    ## Writes java core commands to filehandle.
+    &JavaCore({'FILEHANDLE' => $FILEHANDLE,
+	       'memoryAllocation' => "Xmx2g",
+	       'javaUseLargePagesRef' => \${$scriptParameterHashRef}{'javaUseLargePages'},
+	       'javaTemporaryDirectory' => ${$scriptParameterHashRef}{'tempDirectory'},
+	       'javaJar' => ${$scriptParameterHashRef}{'picardToolsPath'}."/picard.jar",
+	      });
+
+    print $FILEHANDLE "SortVcf ";
+    
+    print $FILEHANDLE "INPUT=".$infile." ";  #File to sort
+    print $FILEHANDLE "OUTPUT=".$outfile." ";  #OutFile
+    print $FILEHANDLE "SEQUENCE_DICTIONARY=".$sequenceDictFile;
+    print $FILEHANDLE "\n\n";
 }
 
 
@@ -20172,6 +22858,16 @@ sub AddToSampleInfo {
 	    ${$sampleInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{'Program'}{"PicardTools"}{'Version'} = $ret;
 	}
     }
+    if (defined(${$scriptParameterHashRef}{'pCNVnator'})) {  #To enable addition of version to sampleInfo
+	
+	if ( (${$scriptParameterHashRef}{"pCNVnator"} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+
+	    my $regExp = q?perl -nae 'if($_=~/CNVnator\s+(\S+)/) {print $1}'?;
+	    my $ret = (`cnvnator 2>&1 | $regExp`);
+	    chomp($ret);
+	    ${$sampleInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{'Program'}{"CNVnator"}{'Version'} = $ret;
+	}
+    }
     if (defined(${$scriptParameterHashRef}{'humanGenomeReference'})) {  #To enable addition of version to sampleInfo
 
 	${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"HumanGenomeBuild"}{'Path'} = ${$scriptParameterHashRef}{'referencesDir'}."/".${$scriptParameterHashRef}{'humanGenomeReference'};
@@ -20227,7 +22923,7 @@ sub EvalParameterHash {
     $nonMandatoryKey{'reduceIO'}{'keyDataType'} = "SCALAR";
     $nonMandatoryKey{'reduceIO'}{'values'} = [1];
     $nonMandatoryKey{'programType'}{'keyDataType'} = "SCALAR";
-    $nonMandatoryKey{'programType'}{'values'} = ["aligner", "variantCaller"];
+    $nonMandatoryKey{'programType'}{'values'} = ["aligner", "variantCaller", "structuralVariantCaller"];
     $nonMandatoryKey{'outDirectoryName'}{'keyDataType'} = "SCALAR";
     $nonMandatoryKey{'removalFileEnding'}{'keyDataType'} = "ARRAY";
     $nonMandatoryKey{'removeRedundantFiles'}{'keyDataType'} = "SCALAR";
@@ -21511,14 +24207,16 @@ sub VcfToBcf {
     
 ##Function : Compress vcf to bcf and index.
 ##Returns  : ""
-##Arguments: $infile, $FILEHANDLE
+##Arguments: $infile, $outfile, $FILEHANDLE
 ##         : $infile     => The file to compress and index (no fileEnding)
+##         : $outfile    => Out file (no fileEnding)
 ##         : $FILEHANDLE => SBATCH script FILEHANDLE to print to
     
     my ($argHashRef) = @_;
     
     ## Flatten argument(s)
     my $infile = ${$argHashRef}{'infile'};
+    my $outfile = ${$argHashRef}{'outfile'};
     my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
     
     ## Mandatory arguments
@@ -21532,13 +24230,29 @@ sub VcfToBcf {
     print $FILEHANDLE "view ";  #VCF/BCF conversion
     print $FILEHANDLE "-O b ";  #Output type - b: compressed BCF
     print $FILEHANDLE $infile.".vcf ";  #Infile
-    print $FILEHANDLE "> ".$infile.".bcf ";  #Outfile
+
+    if (defined($outfile)) {
+
+	print $FILEHANDLE "> ".$outfile.".bcf ";  #Outfile
+    }
+    else {
+
+	print $FILEHANDLE "> ".$infile.".bcf ";  #Outfile
+    }
     print $FILEHANDLE "\n\n";
     
     print $FILEHANDLE "## Index bcf","\n";
     print $FILEHANDLE "bcftools ";
     print $FILEHANDLE "index ";  #VCF/BCF conversion
+
+    if (defined($outfile)) {
+	
+	print $FILEHANDLE $outfile.".bcf ";  #Bcf file to index
+    }
+    else {
+	
     print $FILEHANDLE $infile.".bcf ";  #Bcf file to index
+    }
     print $FILEHANDLE "\n\n";
 }
 
@@ -21659,6 +24373,303 @@ sub CheckAligner {
 	$logger->fatal("You have activate more than 1 aligner: ".join(", ", @{$aligner{'activeAligners'}}).". MIP currently only supports 1 aligner per analysis.", "\n");
 	exit 1;
     } 
+}
+
+
+sub CNVnatorHis {
+
+##CNVnatorHis
+
+##Function : Generates a histogram
+##Returns  : ""
+##Arguments: $rootFile, $contigRef, $cnvBinSizeRef, $chromosomeReference, $FILEHANDLE, $stdoutFile , $stderrFile
+##         : $rootFile            => The root file
+##         : $contigRef           => Contig to analyze {REF}
+##         : $cnvBinSizeRef       => The cnvnator bin size {REF}
+##         : $chromosomeReference => The chrmosome reference X.fa file
+##         : $FILEHANDLE          => Filehandle to write to
+##         : $stdoutFile          => The stdout output file
+##         : $stderrFile          => The stderr output file
+  
+    my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $rootFile = ${$argHashRef}{'rootFile'};
+    my $contigRef = ${$argHashRef}{'contigRef'};
+    my $cnvBinSizeRef = ${$argHashRef}{'cnvBinSizeRef'};
+    my $chromosomeReference = ${$argHashRef}{'chromosomeReference'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $stdoutFile = ${$argHashRef}{'stdoutFile'};
+    my $stderrFile = ${$argHashRef}{'stderrFile'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('rootFile' => $rootFile,
+			     'contigRef' => $$contigRef,
+			     'cnvBinSizeRef' => $$cnvBinSizeRef,
+			     'chromosomeReference' => $chromosomeReference,
+			     'FILEHANDLE' => $FILEHANDLE,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "CNVnatorHis");
+    
+    print $FILEHANDLE "cnvnator "; 
+    print $FILEHANDLE "-root ".$rootFile." ";  #ROOT file
+    print $FILEHANDLE "-chrom ".$$contigRef." ";  #chromosome name
+    print $FILEHANDLE "-his ".$$cnvBinSizeRef." ";
+    print $FILEHANDLE "-d ".$chromosomeReference." ";
+    
+    if (defined($stdoutFile)) {
+	
+	print $FILEHANDLE "1>> ".$stdoutFile." ";
+    }
+    if (defined($stderrFile)) {
+	
+	print $FILEHANDLE "2>> ".$stderrFile." ";
+    }
+    print $FILEHANDLE "; ";
+    
+}
+
+sub CNVnatorStat {
+
+##CNVnatorStat
+
+##Function : Calculates statistics
+##Returns  : ""
+##Arguments: $rootFile, $contigRef, $cnvBinSizeRef, $chromosomeReference, $FILEHANDLE, $stdoutFile, $stderrFile
+##         : $rootFile      => The root file
+##         : $contigRef     => Contig to analyze {REF}
+##         : $cnvBinSizeRef => The cnvnator bin size {REF}
+##         : $FILEHANDLE    => Filehandle to write to
+##         : $stdoutFile    => The stdout output file
+##         : $stderrFile    => The stderr output file
+
+    my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $rootFile = ${$argHashRef}{'rootFile'};
+    my $contigRef = ${$argHashRef}{'contigRef'};
+    my $cnvBinSizeRef = ${$argHashRef}{'cnvBinSizeRef'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $stdoutFile = ${$argHashRef}{'stdoutFile'};
+    my $stderrFile = ${$argHashRef}{'stderrFile'};
+    
+    ## Mandatory arguments
+    my %mandatoryArgument = ('rootFile' => $rootFile,
+			     'contigRef' => $$contigRef,
+			     'cnvBinSizeRef' => $$cnvBinSizeRef,
+			     'FILEHANDLE' => $FILEHANDLE,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "CNVnatorStat");
+
+    print $FILEHANDLE "cnvnator "; 
+    print $FILEHANDLE "-root ".$rootFile." ";  #ROOT file
+    print $FILEHANDLE "-chrom ".$$contigRef." ";  #chromosome name
+    print $FILEHANDLE "-stat ".$$cnvBinSizeRef." ";
+    
+    if (defined($stdoutFile)) {
+	
+	print $FILEHANDLE "1>> ".$stdoutFile." ";
+    }
+    if (defined($stderrFile)) {
+	
+	print $FILEHANDLE "2> ".$stderrFile." ";
+    }
+    print $FILEHANDLE "; ";
+}
+
+sub CNVnatorPartition {
+
+##CNVnatorPartition
+
+##Function : Read depth signal partioning
+##Returns  : ""
+##Arguments: $rootFile, $contigRef, $cnvBinSizeRef, $chromosomeReference, $FILEHANDLE, $stdoutFile, $stderrFile
+##         : $rootFile      => The root file
+##         : $contigRef     => Contig to analyze {REF}
+##         : $cnvBinSizeRef => The cnvnator bin size {REF}
+##         : $FILEHANDLE    => Filehandle to write to
+##         : $stdoutFile    => The stdout output file
+##         : $stderrFile    => The stderr output file
+    
+    my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $rootFile = ${$argHashRef}{'rootFile'};
+    my $contigRef = ${$argHashRef}{'contigRef'};
+    my $cnvBinSizeRef = ${$argHashRef}{'cnvBinSizeRef'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $stdoutFile = ${$argHashRef}{'stdoutFile'};
+    my $stderrFile = ${$argHashRef}{'stderrFile'};
+    
+    ## Mandatory arguments
+    my %mandatoryArgument = ('rootFile' => $rootFile,
+			     'contigRef' => $$contigRef,
+			     'cnvBinSizeRef' => $$cnvBinSizeRef,
+			     'FILEHANDLE' => $FILEHANDLE,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "CNVnatorPartition");
+
+    print $FILEHANDLE "cnvnator "; 
+    print $FILEHANDLE "-root ".$rootFile." ";  #ROOT file
+    print $FILEHANDLE "-chrom ".$$contigRef." ";  #chromosome name
+    print $FILEHANDLE "-partition ".$$cnvBinSizeRef." ";
+    
+    if (defined($stdoutFile)) {
+	
+	print $FILEHANDLE "1>> ".$stdoutFile." ";
+    }
+    if (defined($stderrFile)) {
+	
+	print $FILEHANDLE "2>> ".$stderrFile." ";
+    }
+    print $FILEHANDLE "; ";
+}
+
+sub CNVnatorCalling {
+
+##CNVnatorCalling
+
+##Function : CNV Calling
+##Returns  : ""
+##Arguments: $rootFile, $contigRef, $cnvBinSizeRef, $chromosomeReference, $FILEHANDLE, $stderrFile
+##         : $rootFile            => The root file
+##         : $contigRef           => Contig to analyze {REF}
+##         : $cnvBinSizeRef       => The cnvnator bin size {REF}
+##         : $chromosomeReference => The chrmosome reference X.fa file
+##         : $FILEHANDLE          => Filehandle to write to
+##         : $stderrFile          => The stderr output file
+##         : $outFile             => The outfile
+   
+    my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $rootFile = ${$argHashRef}{'rootFile'};
+    my $contigRef = ${$argHashRef}{'contigRef'};
+    my $cnvBinSizeRef = ${$argHashRef}{'cnvBinSizeRef'};
+    my $chromosomeReference = ${$argHashRef}{'chromosomeReference'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    my $stderrFile = ${$argHashRef}{'stderrFile'};
+    my $outFile = ${$argHashRef}{'outFile'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('rootFile' => $rootFile,
+			     'contigRef' => $$contigRef,
+			     'cnvBinSizeRef' => $$cnvBinSizeRef,
+			     'chromosomeReference' => $chromosomeReference,
+			     'FILEHANDLE' => $FILEHANDLE,
+			     'outFile' => $outFile,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "CNVnatorCalling");
+    
+    print $FILEHANDLE "cnvnator "; 
+    print $FILEHANDLE "-root ".$rootFile." ";  #ROOT file
+    print $FILEHANDLE "-chrom ".$$contigRef." ";  #chromosome name
+    print $FILEHANDLE "-call ".$$cnvBinSizeRef." ";
+    
+    if (defined($stderrFile)) {
+	
+	print $FILEHANDLE "2> ".$stderrFile." ";
+    }
+    print $FILEHANDLE "> ".$outFile.".tmp ";
+    print $FILEHANDLE "; ";
+    
+    ## Convert to vcf
+    print $FILEHANDLE "cnvnator2VCF.pl ";
+    print $FILEHANDLE $outFile.".tmp ";  #Infile
+    print $FILEHANDLE $chromosomeReference." ";
+    print $FILEHANDLE "> ".$outFile;
+}
+
+
+sub RenameVCFSamples {
+
+##RenameVCFSamples
+
+##Function : Rename vcf samples. The samples array will replace the sample names in the same order as supplied.
+##Returns  : ""
+##Arguments: $sampleIDArrayRef, $tempDirectoryRef, $infile, $outfile, $FILEHANDLE
+##         : $sampleIDArrayRef => Samples to rename in the same order as in the vcf {REF}
+##         : $tempDirectoryRef => Temporary directory {REF}
+##         : $infile           => The vcf infile to rename samples for
+##         : $outfile          => Output vcf with samples renamed
+##         : $FILEHANDLE       => Filehandle to write to
+
+     my ($argHashRef) = @_;
+
+     my $sampleIDArrayRef = ${$argHashRef}{'sampleIDArrayRef'};
+     my $tempDirectoryRef =  ${$argHashRef}{'tempDirectoryRef'};
+     my $infile = ${$argHashRef}{'infile'};
+     my $outfile = ${$argHashRef}{'outfile'};
+     my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+
+     ## Mandatory arguments
+     my %mandatoryArgument = ('sampleIDArrayRef' => ${$sampleIDArrayRef}[0],
+			      'tempDirectoryRef' => $$tempDirectoryRef,
+			      'infile' => $infile,
+			      'outfile' => $outfile,
+			      '$FILEHANDLE' => $FILEHANDLE,
+	 );
+     &CheckMandatoryArguments(\%mandatoryArgument, "RenameVCFSamples");
+
+     ## Create new sample names file
+     print $FILEHANDLE "## Create new sample(s) names file\n";
+     print $FILEHANDLE q?printf "?;
+
+     foreach my $sampleID (@{$sampleIDArrayRef}) {
+
+	 print $FILEHANDLE $sampleID.q?\n?;
+     }
+     print $FILEHANDLE q?" ?;
+     print $FILEHANDLE "> ".$$tempDirectoryRef."/sample_name.txt ";
+     print $FILEHANDLE "\n\n";
+     
+     ## Rename samples in VCF
+     print $FILEHANDLE "## Rename sample(s) names ion VCF file\n";
+     print $FILEHANDLE "bcftools ";
+     print $FILEHANDLE "reheader ";  #Modify header of VCF/BCF files, change sample names.
+     print $FILEHANDLE "-s ";  #New sample names
+     print $FILEHANDLE $$tempDirectoryRef."/sample_name.txt ";
+     print $FILEHANDLE " ".$infile." ";  #Infile
+     print $FILEHANDLE "> ".$outfile." ";
+     print $FILEHANDLE "\n\n";
+}
+
+
+sub RemoveElementFromArray {
+
+##RemoveElementFromArray
+    
+##Function : Removes an element from array and return new array while leaving orginal arrayRef untouched. 
+##Returns  : "Array"
+##Tags     : helper, remove, ARRAY, contigs
+##Arguments: $arrayRef, $element, $contigSwitch
+##         : $arrayRef => Array to remove an element from {REF}
+##         : $element  => Element to remove
+##         : $contigSwitch => Expect contigs in arrayRef
+
+    my ($argHashRef) = @_;
+
+    my $arrayRef = ${$argHashRef}{'arrayRef'};
+    my $element = ${$argHashRef}{'element'};
+    my $contigSwitch = ${$argHashRef}{'contigSwitch'};
+
+    my @array = @{$arrayRef};  #Make local copy
+
+    for (my $index=0;$index<scalar(@array);$index++) {
+
+	if($contigSwitch) {  #Make sure that contig is removed independent of genome source
+	    
+	    if( (${$arrayRef}[$index] eq $element) || (${$arrayRef}[$index] eq "chr".$element) ) {
+		
+		splice(@array, $index, 1);  #Remove $element from array
+	    }
+	}
+	elsif( (${$arrayRef}[$index] eq $element) ) {  #Arbitrary element from array
+	    
+	    splice(@array, $index, 1);  #Remove $element from array
+	}
+    }
+    return @array
 }
 
 

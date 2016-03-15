@@ -560,6 +560,184 @@ pRCovPlots:
   default: 0
   fileEnding: nofileEnding
   type: program
+##Structural Variant Calling
+pCNVnator:
+  associatedProgram:
+   - MIP
+  chain: SVCNV
+  dataType: SCALAR
+  default: 1
+  fileEnding: _cnvnator
+  programNamePath:
+   - cnvnator
+   - root
+   - bcftools
+   - samtools
+  outDirectoryName: cnvnator
+  programType: structuralVariantCaller
+  type: program
+cnvBinSize:
+  associatedProgram:
+   - pCNVnator
+  dataType: SCALAR
+  default: 1000
+  type: programArgument
+pDelly:
+  associatedProgram:
+   - MIP
+  chain: SVDEL
+  dataType: SCALAR
+  default: 1
+  fileEnding: _delly
+  programNamePath:
+   - delly
+   - bcftools
+  outDirectoryName: delly
+  programType: structuralVariantCaller
+  type: program
+pManta:
+  associatedProgram:
+   - MIP
+  chain: SVMAN
+  dataType: SCALAR
+  default: 1
+  fileEnding: _manta
+  programNamePath:
+   - configManta.py
+  outDirectoryName: manta
+  programType: structuralVariantCaller
+  type: program
+pFindTranslocations:
+  associatedProgram:
+   - MIP
+  chain: SVFT
+  dataType: SCALAR
+  default: 1
+  fileEnding: _findt
+  programNamePath:
+   - FindTranslocations
+  outDirectoryName: findtranslocations
+  programType: structuralVariantCaller
+  type: program
+findTranslocationsMinimumSuppotingPairs:
+  associatedProgram:
+   - pFindTranslocations
+  dataType: SCALAR
+  default: 6
+  type: programArgument
+pCombineStructuralVariantCallSets:
+  associatedProgram:
+   - MIP
+  chain: SV
+  dataType: SCALAR
+  default: 1
+  fileEnding: _comb_
+  programNamePath:
+   - vt
+   - bcftools
+  type: program
+svVTDecompose:
+  associatedProgram:
+   - pCombineStructuralVariantCallSets
+  dataType: SCALAR
+  default: 1
+  type: programArgument
+svBcfToolsViewFilter:
+  associatedProgram:
+   - pCombineStructuralVariantCallSets
+  dataType: SCALAR
+  default: 1
+  type: programArgument
+svGenmodFilter:
+  associatedProgram:
+   - pCombineStructuralVariantCallSets
+  dataType: SCALAR
+  default: 1
+  type: programArgument
+svGenmodFilter1000G:
+  associatedProgram:
+   - pCombineStructuralVariantCallSets
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  default: ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
+  existsCheck: file
+  reference: referencesDir
+  type: path
+svGenmodFilterThreshold:
+  associatedProgram:
+   - pCombineStructuralVariantCallSets
+  dataType: SCALAR
+  default: 0.10
+  type: programArgument
+combineStructuralVariantCallSetsBCFFile:
+  associatedProgram:
+   - pCombineStructuralVariantCallSets
+  dataType: SCALAR
+  default: 1
+  type: programArgument
+pSVVariantEffectPredictor:
+  associatedProgram:
+   - MIP
+  chain: SV
+  dataType: SCALAR
+  default: 1
+  fileEnding: vep_
+  type: program
+pSVVCFParser:
+  associatedProgram:
+   - MIP
+  chain: SV
+  dataType: SCALAR
+  default: 1
+  fileEnding: parsed_
+  type: program
+svVcfParserVepTranscripts:
+  associatedProgram:
+   - pSVVCFParser
+  dataType: SCALAR
+  default: 0
+  type: programArgument
+svVcfParserRangeFeatureFile:
+  associatedProgram:
+   - pSVVCFParser
+  dataType: SCALAR
+  existsCheck: file
+  reference: referencesDir
+  type: path
+svVcfParserSelectFile:
+  associatedProgram:
+   - pSVVCFParser
+  dataType: SCALAR
+  existsCheck: file
+  reference: referencesDir
+  type: path
+svVcfParserSelectFileMatchingColumn:
+  associatedProgram:
+   - pSVVCFParser
+  dataType: SCALAR
+  type: programArgument
+pSVRankVariants:
+  associatedProgram:
+   - MIP
+  chain: SV
+  dataType: SCALAR
+  default: 1
+  fileEnding: ranked_
+  type: program
+svWholeGene:
+  associatedProgram:
+   - pSVRankVariants
+  dataType: SCALAR
+  default: 0
+  type: programArgument
+svRankModelFile:
+  associatedProgram:
+   - pSVRankVariants
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  existsCheck: file
+  reference: referencesDir
+  type: path
 ##Samtools
 pSamToolsMpileUp:
   associatedProgram:
@@ -954,6 +1132,8 @@ GATKBundleDownLoadVersion:
    - pBwaSampe
    - pGATKRealigner
    - pGATKBaseRecalibration
+   - pCNVnator
+   - pDelly
    - pGATKHaploTypeCaller
    - pGATKGenoTypeGVCFs
    - pSamToolsMpileUp
@@ -1386,6 +1566,17 @@ sambambaDepthCutOffs:
    - 50
    - 100
   type: programArgument
+dellyType:
+  associatedProgram:
+   - pDelly
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - DEL
+   - DUP
+   - INV
+   - INS
+  type: programArgument
 vepFeatures:
   associatedProgram:
    - pVariantEffectPredictor
@@ -1407,6 +1598,28 @@ vepFeatures:
    - tsl
    - canonical
   type: programArgument
+svVepFeatures:
+  associatedProgram:
+   - pSVVariantEffectPredictor
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - hgvs
+   - symbol
+   - numbers
+   - sift
+   - polyphen
+   - humdiv
+   - domains
+   - protein
+   - ccds
+   - uniprot
+   - biotype
+   - regulatory
+   - tsl
+   - canonical
+   - per_gene
+  type: programArgument
 vcfParserRangeFeatureAnnotationColumns:
   associatedProgram:
    - pVCFParser
@@ -1416,6 +1629,18 @@ vcfParserRangeFeatureAnnotationColumns:
 vcfParserSelectFeatureAnnotationColumns:
   associatedProgram:
    - pVCFParser
+  elementSeparator: ,
+  dataType: ARRAY
+  type: programArgument
+svVcfParserRangeFeatureAnnotationColumns:
+  associatedProgram:
+   - pSVVCFParser
+  elementSeparator: ,
+  dataType: ARRAY
+  type: programArgument
+svVcfParserSelectFeatureAnnotationColumns:
+  associatedProgram:
+   - pSVVCFParser
   elementSeparator: ,
   dataType: ARRAY
   type: programArgument
