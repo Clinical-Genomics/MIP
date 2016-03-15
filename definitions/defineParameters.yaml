@@ -612,7 +612,7 @@ pFindTranslocations:
    - MIP
   chain: SVFT
   dataType: SCALAR
-  default: 1
+  default: 0
   fileEnding: _findt
   programNamePath:
    - FindTranslocations
@@ -1348,6 +1348,12 @@ pEvaluation:
    - gzip
    - bcftools
   type: program
+NISTID:
+  associatedProgram:
+   - pEvaluation
+  dataType: SCALAR
+  default: NA12878
+  type: programArgument
 NISTHighConfidenceCallSet:
   associatedProgram:
    - pEvaluation

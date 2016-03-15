@@ -122,6 +122,7 @@ $parameter{'bedTools'} = "2.25.0";
 $parameter{'vt'} = "gitRepo";
 $parameter{'plink'} = "160224";
 $parameter{'snpEff'} = "v4_2";
+$parameter{'snpEffGenomeVersion'} = "GRCh37.75";
 $parameter{'variantEffectPredictor'} = "83";
 $parameter{'vepDirectoryCache'} = $parameter{'condaPath'}.q?/envs/?.$parameter{'condaEnvironment'}.q?/ensembl-tools-release-?.$parameter{'variantEffectPredictor'}.q?/cache?;  #Cache directory;
 $parameter{'variantEffectPredictorPlugin'} = "UpDownDistance";
@@ -422,15 +423,21 @@ sub CreateCondaEnvironment {
 				'shareDirectory' => $parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.${$parameterHashRef}{'bioCondaSnpeffPatch'}.q?/?,
 				'binary' => "snpEff.config",
 			       });
+	    unless (-d $parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/share/snpeff-?.${$parameterHashRef}{'bioConda'}{'snpeff'}.${$parameterHashRef}{'bioCondaSnpeffPatch'}.q?/data/?.${$parameterHashRef}{'snpEffGenomeVersion'}) {
+		
+		&SnpEffDownload({'parameterHashRef' => $parameterHashRef,
+				 'FILEHANDLE' => $BASHFILEHANDLE,
+				});
+	    }	
 	}
 	if ($program eq "manta") {
-
-	&AddSoftLink({'parameterHashRef' => $parameterHashRef,
+	    
+	    &AddSoftLink({'parameterHashRef' => $parameterHashRef,
                           'FILEHANDLE' => $BASHFILEHANDLE,
                           'binary' => q?../share/manta-?.${$parameterHashRef}{'bioConda'}{'manta'}.${$parameterHashRef}{'bioCondaMantaPatch'}.q?/bin/configManta.py?,
                           'softLink' => "configManta.py",
                          });
-
+	    
 	    &EnableExecutable({'parameterHashRef' => $parameterHashRef,
 			       'FILEHANDLE' => $BASHFILEHANDLE,
 			       'binary' => q?configManta.py?,
@@ -987,6 +994,12 @@ sub SnpEff {
 			'shareDirectory' => $parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/share/snpEff.?.${$parameterHashRef}{'snpEff'}.q?/?,
 			'binary' => "snpEff.config",
 		       });
+    unless (-d $parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/share/snpEff.?.${$parameterHashRef}{'snpEff'}.q?/data/?.${$parameterHashRef}{'snpEffGenomeVersion'}) {
+	
+	&SnpEffDownload({'parameterHashRef' => $parameterHashRef,
+			 'FILEHANDLE' => $BASHFILEHANDLE,
+			});
+    }
     &CleanUpModuleInstall($FILEHANDLE, $pwd);
 }
 
@@ -1468,8 +1481,8 @@ sub CheckMTCodonTable {
     
     my $pwd = cwd();
 
-    my $detectRegExp = q?perl -nae 'if($_=~/GRCh37.75.MT.codonTable/) {print 1}' ?;
-    my $addRegExp = q?perl -nae 'if($_=~/GRCh37.75.reference/) {print $_; print "GRCh37.75.MT.codonTable : Vertebrate_Mitochondrial\n"} else {print $_;}' ?;
+    my $detectRegExp = q?perl -nae 'if($_=~/?.${$parameterHashRef}{'snpEffGenomeVersion'}.q?.MT.codonTable/) {print 1}' ?;
+    my $addRegExp = q?perl -nae 'if($_=~/?.${$parameterHashRef}{'snpEffGenomeVersion'}.q?.reference/) {print $_; print "?.${$parameterHashRef}{'snpEffGenomeVersion'}.q?.MT.codonTable : Vertebrate_Mitochondrial\n"} else {print $_;}' ?;
     my $ret;
 
     if (-f $shareDirectory."/".$binary) {
@@ -1478,7 +1491,7 @@ sub CheckMTCodonTable {
     }
     if (!$ret) {  #No MT.codonTable in config
 
-	print $FILEHANDLE "## Adding GRCh37.75.MT.codonTable : Vertebrate_Mitochondrial to ".$shareDirectory.$binary;
+	print $FILEHANDLE q?## Adding ?.${$parameterHashRef}{'snpEffGenomeVersion'}.q?.MT.codonTable : Vertebrate_Mitochondrial to ?.$shareDirectory.$binary;
 	print $FILEHANDLE "\n";
 
 	## Add MT.codon Table to config
@@ -1492,4 +1505,23 @@ sub CheckMTCodonTable {
 
 	print STDERR  "Found MT.codonTable in ".$shareDirectory."snpEff.config. Skipping addition to snpEff config\n"; 
     }
+}
+
+
+sub SnpEffDownload {
+    
+    my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
+    
+    print $FILEHANDLE "java -Xmx2g ";
+    print $FILEHANDLE q?-jar ?.${$parameterHashRef}{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/bin/snpEff.jar ?;
+    print $FILEHANDLE "download ";
+    print $FILEHANDLE " -v ";
+    print $FILEHANDLE ${$parameterHashRef}{'snpEffGenomeVersion'}." ";
+    print $FILEHANDLE q?-c ?.${$parameterHashRef}{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/bin/snpEff.config ?;
+    print $FILEHANDLE "\n\n";
+    
 }

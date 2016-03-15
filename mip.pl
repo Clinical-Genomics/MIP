@@ -129,7 +129,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pDel/--pDelly Structural variant calling using Delly (defaults to "1" (=yes))
                  -deltyp/--dellyType Type of SV to call (defaults to "DEL,DUP,INV,TRA"; comma sep)
                -pMna/--pManta Structural variant calling using Manta (defaults to "1" (=yes))
-               -pFit/--pFindTranslocations Structural variant calling using FT (defaults to "1" (=yes))
+               -pFit/--pFindTranslocations Structural variant calling using FT (defaults to "0" (=no))
                  -fitmsp/--findTranslocationsMinimumSuppotingPairs The minimum number of supporting reads (defaults to "6")
                -pCsv/--pCombineStructuralVariantCallSets Combine variant call sets (defaults to "1" (=yes))
                  -csvvtd/--svVTDecompose Split multi allelic records into single records (defaults to "1" (=yes))
@@ -251,6 +251,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                ###Utility
                -pScK/--pSampleCheck QC for samples gender and relationship (defaults to "1" (=yes) )
                -pEvL/--pEvaluation Compare concordance with NIST data set (defaults to "0" (=no) )
+                 -evlnid/--NISTID NIST high-confidence sampleID (defaults to "NA12878")
                  -evlnhc/--NISTHighConfidenceCallSet NIST high-confidence variant calls (defaults to "NISTIntgratedCalls.v2.19.vcf")
                  -evlnil/--NISTHighConfidenceCallSetBed NIST high-confidence variant calls interval list (defaults to "NISTIntgratedCalls.v2.19.interval_list")
                -pQcC/--pQCCollect Collect QC metrics from programs processed (defaults to "1" (=yes) )
@@ -573,6 +574,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'ravrm|rankModelFile:s' => \$parameter{'rankModelFile'}{'value'},  #The rank modell config.ini path
 	   'pScK|pSampleCheck:n' => \$parameter{'pSampleCheck'}{'value'},  #QC for samples gender and relationship
 	   'pEvL|pEvaluation:n' => \$parameter{'pEvaluation'}{'value'},  #Compare concordance with NIST data set
+	   'evlnid|NISTID:s' => \$parameter{'NISTID'}{'value'},
 	   'evlnhc|NISTHighConfidenceCallSet:s' => \$parameter{'NISTHighConfidenceCallSet'}{'value'},
 	   'evlnil|NISTHighConfidenceCallSetBed:s' => \$parameter{'NISTHighConfidenceCallSetBed'}{'value'},
 	   'pQcC|pQCCollect:n' => \$parameter{'pQCCollect'}{'value'},  #QCmetrics collect
@@ -2045,7 +2047,7 @@ if ($scriptParameter{'pEvaluation'} > 0) {  #Run Evaluation. Done per family
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {
 
-	if ($scriptParameter{'sampleIDs'}[$sampleIDCounter]=~/ADM1059A3/) {
+	if ($scriptParameter{'sampleIDs'}[$sampleIDCounter]=~/$scriptParameter{'NISTID'}/) {
 	    
 	    $logger->info("[Evaluation]\n");
 	    
@@ -2932,7 +2934,7 @@ sub Evaluation {
     print $FILEHANDLE "wait", "\n\n";
     
     ## Rename vcf samples. The samples array will replace the sample names in the same order as supplied.
-    &RenameVCFSamples({'sampleIDArrayRef' => ["ADM1059A3-NIST"],
+    &RenameVCFSamples({'sampleIDArrayRef' => [${$scriptParameterHashRef}{'NISTID'}."-NIST"],
 		       'tempDirectoryRef' => $tempDirectoryRef,
 		       'infile' => $$referencesDirectoryRef."/".${$scriptParameterHashRef}{'NISTHighConfidenceCallSet'},
 		       'outfile' => $$tempDirectoryRef."/NIST.vcf",
@@ -10694,9 +10696,9 @@ sub Freebayes {
     
 ##Freebayes
     
-##Function : Freebayes
+##Function : Call snv/small indels usig Freebayes
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $callType, $programName, $programInfoPath
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $callType, $programName, $programInfoPath, $FILEHANDLE
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -10709,6 +10711,7 @@ sub Freebayes {
 ##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
+##         : $FILEHANDLE                 => Sbatch filehandle to write to
     
     my ($argHashRef) = @_;
     
@@ -17662,6 +17665,8 @@ sub AddToScriptParameter {
 			}
 			elsif ( ($parameterName eq "genmodModelsReducedPenetranceFile") && (!defined(${$scriptParameterHashRef}{'genmodModelsReducedPenetranceFile'}) ) ) {  #Do nothing since no reduced penetrance should be performed
 			}
+			elsif ( ($parameterName eq "pythonVirtualEnvironment") && (${$scriptParameterHashRef}{'usePythonVirtualEnvironment'} == 0) ) {  #Do nothing since no python virtualenvironment should be activated
+			}
 			else {
 			    
 			    if (defined($logger)) {  #We have a logg object and somewhere to write
@@ -24186,6 +24191,14 @@ sub CheckPrioritizeVariantCallers {
 	    if (! ( any {$_ eq $$programOutDirectoryNameRef} @priorityCalls ) ) {  #If element is not part of string
 
 		$logger->fatal("GATKCombineVariantsPrioritizeCaller does not contain active variant caller: '".$$programOutDirectoryNameRef."'");
+		exit 1;
+	    }
+	}
+	if (${$scriptParameterHashRef}{$variantCaller} == 0) { #Only NOT active programs
+
+	    if ( ( any {$_ eq $$programOutDirectoryNameRef} @priorityCalls ) ) {  #If element IS part of string
+
+		$logger->fatal("GATKCombineVariantsPrioritizeCaller contains deactivated variant caller: '".$$programOutDirectoryNameRef."'");
 		exit 1;
 	    }
 	}
