@@ -322,7 +322,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ## Eval parameter hash
 &EvalParameterHash(\%parameter, $Bin."/definitions/defineParameters.yaml");
 
-my $mipVersion = "v2.6.1";	#Set MIP version
+my $mipVersion = "v2.6.2";	#Set MIP version
 
 ## Target definition files
 my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists);  #Arrays for target bed infile lists
@@ -6077,6 +6077,7 @@ sub GATKCombineVariantCallSets {
 			       });
 	}
     }
+    print $FILEHANDLE "wait", "\n\n";
 
     ## GATK CombineVariants
     print $FILEHANDLE "## GATK CombineVariants","\n";
