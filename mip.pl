@@ -17485,7 +17485,7 @@ sub AddTargetlistsToScriptParameter {
 							     });
 		}
 		if ( ($parameterExistsCheck) && ($parameterExistsCheck eq "file") && (defined(${$scriptParameterHashRef}{$parameterName})) ) {  #Check file existence in reference directory
-		    
+
 		    if ( ($parameterName eq "GATKTargetPaddedBedIntervalLists") && (${$scriptParameterHashRef}{'analysisType'} eq "genomes") ) {  #No need to check since genomes does not use GATKTargetPaddedBedIntervalLists
 		    }
 		    else {
@@ -20202,7 +20202,7 @@ sub ReplaceConfigParamWithCMDInfo {
 
 	${$scriptParameterHashRef}{$parameterName} = ${$parameterHashRef}{$parameterName}{'value'};  #Transfer to active parameter
     }
-    elsif (exists(${$parameterHashRef}{$parameterName}{'default'})) {
+    elsif ( (exists(${$parameterHashRef}{$parameterName}{'default'})) && (!defined(${$scriptParameterHashRef}{$parameterName})) ) {
 
 	${$scriptParameterHashRef}{$parameterName} = ${$parameterHashRef}{$parameterName}{'default'};  #Transfer to active parameter
     }
