@@ -93,6 +93,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -memrdb/--bwaMemRapidDb Selection of relevant regions post alignment (defaults to "")
                  -memcrm/--bwaMemCram Use CRAM-format for output (defaults to "1" (=yes))
                  -memsts/--bwaMembamStats Collect statistics from BAM files (defaults to "1" (=yes))
+                 -memssm/--bwaSambambaSortMemoryLimit Set the memory limit for Sambamba sort after bwa alignment (defaults to "32G")
                -pAln/--pBwaAln Index reads using BWA Aln (defaults to "0" (=no))
                  -alnq/--bwaAlnQualityTrimming BWA Aln quality threshold for read trimming (defaults to "20")
                -pSap/--pBwaSampe Align reads using BWA Sampe (defaults to "0" (=no))
@@ -293,7 +294,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ## Eval parameter hash
 &EvalParameterHash(\%parameter, $Bin."/definitions/defineParameters.yaml");
 
-my $mipVersion = "v2.6.2";	#Set MIP version
+my $mipVersion = "v2.6.3";	#Set MIP version
 
 ## Target definition files
 my (@exomeTargetBedInfileLists, @exomeTargetPaddedBedInfileLists);  #Arrays for target bed infile lists
@@ -408,6 +409,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'memrdb|bwaMemRapidDb:s' => \$parameter{'bwaMemRapidDb'}{'value'},
 	   'memcrm|bwaMemCram:n' => \$parameter{'bwaMemCram'}{'value'},
 	   'memsts|bwaMembamStats:n' => \$parameter{'bwaMembamStats'}{'value'},
+	   'memssm|bwaSambambaSortMemoryLimit:s' => \$parameter{'bwaSambambaSortMemoryLimit'}{'value'},
 	   'pAln|pBwaAln:n' => \$parameter{'pBwaAln'}{'value'},
 	   'alnq|bwaAlnQualityTrimming:n' => \$parameter{'bwaAlnQualityTrimming'}{'value'},  #BWA aln quality threshold for read trimming down to 35bp
 	   'pSap|pBwaSampe:n' => \$parameter{'pBwaSampe'}{'value'},
@@ -10989,6 +10991,7 @@ sub BWAMem {
 	    print $FILEHANDLE "| ";
 	    print $FILEHANDLE "sambamba_".${$scriptParameterHashRef}{'sambambaVersion'}." ";  #Program
 	    print $FILEHANDLE "sort ";  #Command
+	    print $FILEHANDLE "-m ".${$scriptParameterHashRef}{'bwaSambambaSortMemoryLimit'}." ";  #Memory limit
 	    print $FILEHANDLE "--tmpdir=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Directory for storing intermediate files
 	    print $FILEHANDLE "--show-progress ";  #Show progressbar in STDERR
 	    print $FILEHANDLE "--out=".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileEnding.".bam ";  #Outfile

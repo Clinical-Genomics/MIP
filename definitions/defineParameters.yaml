@@ -305,6 +305,12 @@ bwaMembamStats:
   dataType: SCALAR
   default: 1
   type: programArgument
+bwaSambambaSortMemoryLimit:
+  associatedProgram:
+   - pBwaMem
+  dataType: SCALAR
+  default: 32G
+  type: programArgument
 pBwaAln:
   associatedProgram:
    - MIP
