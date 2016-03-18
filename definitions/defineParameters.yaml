@@ -305,6 +305,12 @@ bwaMembamStats:
   dataType: SCALAR
   default: 1
   type: programArgument
+bwaSambambaSortMemoryLimit:
+  associatedProgram:
+   - pBwaMem
+  dataType: SCALAR
+  default: 32G
+  type: programArgument
 pBwaAln:
   associatedProgram:
    - MIP
@@ -733,13 +739,13 @@ GATKVariantReCalibrationSnvTSFilterLevel:
   associatedProgram:
    - pGATKVariantRecalibration
   dataType: SCALAR
-  default: 99.5
+  default: 99.9
   type: programArgument
 GATKVariantReCalibrationIndelTSFilterLevel:
   associatedProgram:
    - pGATKVariantRecalibration
   dataType: SCALAR
-  default: 99.0
+  default: 99.9
   type: programArgument
 GATKVariantReCalibrationDPAnnotation:
   associatedProgram:
