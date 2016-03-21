@@ -78,6 +78,7 @@ $parameter{'bioConda'}{'sambamba'} = "0.5.9";
 $parameter{'bioConda'}{'freebayes'} = "1.0.2";
 $parameter{'bioConda'}{'delly'} = "0.7.2";
 $parameter{'bioConda'}{'manta'} = "0.29.3";
+$parameter{'bioConda'}{'multiqc'} = "0.4";
 $parameter{'bioCondaMantaPatch'} = "-0";
 $parameter{'bioConda'}{'gcc'} = "4.8.5";
 $parameter{'bioConda'}{'cmake'} = "3.3.1";
