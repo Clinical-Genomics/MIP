@@ -107,6 +107,8 @@ $parameter{'perlModules'} = ["YAML",
 			     "CGI",  # VEP
 			     "Sereal::Encoder",  # VEP
 			     "Sereal::Decoder",  # VEP
+			     "Bio::Root::Version",  #VEP
+			     "Module::Build", #VEP
     ];
 
 ## PIP
