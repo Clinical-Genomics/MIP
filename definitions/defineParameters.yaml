@@ -167,7 +167,7 @@ pGZipFastq:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   programNamePath:
    - gzip
   type: program
@@ -178,7 +178,7 @@ pFastQC:
   chain: RawSeqQC
   dataType: SCALAR
   default: 1
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   programNamePath:
    - fastqc
   type: program
@@ -189,7 +189,7 @@ pMadeline:
   chain: PedigreeDraw
   dataType: SCALAR
   default: 0
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   programNamePath:
    - madeline2
   type: program
@@ -200,10 +200,10 @@ pMosaikBuild:
   chain: MAIN
   dataType: SCALAR
   default: 0
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   programNamePath:
    - MosaikBuild
-  removalFileEnding:
+  fileEnding:
    - .dat
   removeRedundantFiles: yes
   removalSetting: single
@@ -220,12 +220,12 @@ pMosaikAlign:
   chain: MAIN
   dataType: SCALAR
   default: 0
-  fileEnding: _sorted
+  fileTag: _sorted
   outDirectoryName: mosaik
   programNamePath:
    - MosaikAligner
   programType: aligner
-  removalFileEnding:
+  fileEnding:
    - .stat
    - .bam
   removeRedundantFiles: yes
@@ -273,14 +273,14 @@ pBwaMem:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: _sorted
+  fileTag: _sorted
   outDirectoryName: bwa
   programNamePath:
    - bwa
    - samtools
    - sambamba
   programType: aligner
-  removalFileEnding:
+  fileEnding:
    - .bam
   removeRedundantFiles: yes
   removalSetting: single
@@ -317,10 +317,10 @@ pBwaAln:
   chain: MAIN
   dataType: SCALAR
   default: 0
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   programNamePath:
    - bwa
-  removalFileEnding:
+  fileEnding:
    - .sai
   removeRedundantFiles: yes
   removalSetting: single
@@ -337,12 +337,12 @@ pBwaSampe:
   chain: MAIN
   dataType: SCALAR
   default: 0
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   outDirectoryName: bwa
   programNamePath:
    - bwa
   programType: aligner
-  removalFileEnding:
+  fileEnding:
    - .bam
   removeRedundantFiles: yes
   removalSetting: single
@@ -372,16 +372,16 @@ pPicardToolsMergeRapidReads:
   chain: MAIN
   dataType: SCALAR
   default: 0
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   type: program
-## BAMCalibrationAndGTBlock
-pBAMCalibrationAndGTBlock:
+## BAMCalibrationBlock
+pBAMCalibrationBlock:
   associatedProgram:
    - MIP
   chain: MAIN
   dataType: SCALAR
   default: 0
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   reduceIO: 1
   type: program
 pPicardToolsMergeSamFiles:
@@ -390,8 +390,8 @@ pPicardToolsMergeSamFiles:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: _merged
-  removalFileEnding:
+  fileTag: _merged
+  fileEnding:
    - .bam
   removeRedundantFiles: yes
   removalSetting: merged
@@ -402,10 +402,10 @@ pSambambaMarkduplicates:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: _smd
+  fileTag: _smd
   programNamePath:
    - sambamba
-  removalFileEnding:
+  fileEnding:
    - .bam
   removeRedundantFiles: yes
   removalSetting: merged
@@ -417,8 +417,8 @@ pGATKRealigner:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: _rreal
-  removalFileEnding:
+  fileTag: _rreal
+  fileEnding:
    - .bam
   removeRedundantFiles: yes
   removalSetting: merged
@@ -447,8 +447,8 @@ pGATKBaseRecalibration:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: _brecal
-  removalFileEnding:
+  fileTag: _brecal
+  fileEnding:
    - .bam
   removeRedundantFiles: yes
   removalSetting: merged
@@ -481,7 +481,7 @@ pChanjoSexCheck:
   chain: CoverageReportGender
   dataType: SCALAR
   default: 1
-  fileEnding: .sexcheck
+  fileTag: .sexcheck
   type: program
 pSambambaDepth:
   associatedProgram:
@@ -489,7 +489,7 @@ pSambambaDepth:
   chain: CoverageReport
   dataType: SCALAR
   default: 1
-  fileEnding: _coverage
+  fileTag: _coverage
   programNamePath:
    - sambamba
   type: program
@@ -532,7 +532,7 @@ pGenomeCoverageBED:
   chain: CoverageQCGCovBed
   dataType: SCALAR
   default: 0
-  fileEnding: _genomeCoverageBed
+  fileTag: _genomeCoverageBed
   programNamePath:
    - bedtools
   type: program
@@ -548,7 +548,7 @@ pPicardToolsCollectMultipleMetrics:
   chain: CoverageQCPTCMM
   dataType: SCALAR
   default: 1
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   type: program
 pPicardToolsCalculateHSMetrics:
   associatedProgram:
@@ -556,7 +556,7 @@ pPicardToolsCalculateHSMetrics:
   chain: CoverageQCPTCHSM
   dataType: SCALAR
   default: 1
-  fileEnding: _CalculateHsMetrics
+  fileTag: _CalculateHsMetrics
   type: program
 pRCovPlots:
   associatedProgram:
@@ -564,7 +564,7 @@ pRCovPlots:
   chain: CoverageQCRCOVP
   dataType: SCALAR
   default: 0
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   type: program
 ##Structural Variant Calling
 pCNVnator:
@@ -573,7 +573,7 @@ pCNVnator:
   chain: SVCNV
   dataType: SCALAR
   default: 1
-  fileEnding: _cnvnator
+  fileTag: _cnvnator
   programNamePath:
    - cnvnator
    - root
@@ -594,7 +594,7 @@ pDelly:
   chain: SVDEL
   dataType: SCALAR
   default: 1
-  fileEnding: _delly
+  fileTag: _delly
   programNamePath:
    - delly
    - bcftools
@@ -607,7 +607,7 @@ pManta:
   chain: SVMAN
   dataType: SCALAR
   default: 1
-  fileEnding: _manta
+  fileTag: _manta
   programNamePath:
    - configManta.py
   outDirectoryName: manta
@@ -619,7 +619,7 @@ pFindTranslocations:
   chain: SVFT
   dataType: SCALAR
   default: 0
-  fileEnding: _findt
+  fileTag: _findt
   programNamePath:
    - FindTranslocations
   outDirectoryName: findtranslocations
@@ -637,7 +637,7 @@ pCombineStructuralVariantCallSets:
   chain: SV
   dataType: SCALAR
   default: 1
-  fileEnding: _comb_
+  fileTag: _comb_
   programNamePath:
    - vt
    - bcftools
@@ -687,7 +687,7 @@ pSVVariantEffectPredictor:
   chain: SV
   dataType: SCALAR
   default: 1
-  fileEnding: vep_
+  fileTag: vep_
   type: program
 pSVVCFParser:
   associatedProgram:
@@ -695,7 +695,7 @@ pSVVCFParser:
   chain: SV
   dataType: SCALAR
   default: 1
-  fileEnding: parsed_
+  fileTag: parsed_
   type: program
 svVcfParserVepTranscripts:
   associatedProgram:
@@ -728,7 +728,7 @@ pSVRankVariants:
   chain: SV
   dataType: SCALAR
   default: 1
-  fileEnding: ranked_
+  fileTag: ranked_
   type: program
 svWholeGene:
   associatedProgram:
@@ -751,13 +751,13 @@ pSamToolsMpileUp:
   chain: SAMMP
   dataType: SCALAR
   default: 1
-  fileEnding: _mpileup_
+  fileTag: _mpileup_
   outDirectoryName: samtools
   programNamePath:
    - samtools
    - bcftools
   programType: variantCaller
-  removalFileEnding:
+  fileEnding:
    - .vcf
   removeRedundantFiles: yes
   removalSetting: family
@@ -769,13 +769,13 @@ pFreebayes:
   chain: FREEB
   dataType: SCALAR
   default: 1
-  fileEnding: _freebayes_
+  fileTag: _freebayes_
   programNamePath:
    - freebayes
    - bcftools
   outDirectoryName: freebayes
   programType: variantCaller
-  removalFileEnding:
+  fileEnding:
    - .vcf
   removeRedundantFiles: yes
   removalSetting: family
@@ -787,8 +787,8 @@ pGATKHaploTypeCaller:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: _gvcf
-  removalFileEnding:
+  fileTag: _gvcf
+  fileEnding:
    - .vcf
   removeRedundantFiles: yes
   removalSetting: merged
@@ -832,8 +832,8 @@ pGATKGenoTypeGVCFs:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: _
-  removalFileEnding:
+  fileTag: _
+  fileEnding:
    - .vcf
   removeRedundantFiles: yes
   removalSetting: family
@@ -858,12 +858,12 @@ pGATKVariantRecalibration:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: vrecal_
+  fileTag: vrecal_
   programNamePath:
    - bcftools
   outDirectoryName: gatk
   programType: variantCaller
-  removalFileEnding:
+  fileEnding:
    - .vcf
   removeRedundantFiles: yes
   removalSetting: family
@@ -970,8 +970,8 @@ pGATKCombineVariantCallSets:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: comb_
-  removalFileEnding:
+  fileTag: comb_
+  fileEnding:
    - .vcf
   removeRedundantFiles: yes
   removalSetting: family
@@ -995,7 +995,7 @@ pVariantAnnotationBlock:
   chain: MAIN
   dataType: SCALAR
   default: 0
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   reduceIO: 1
   type: program
 ##VT
@@ -1005,13 +1005,13 @@ pVT:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: vt_
+  fileTag: vt_
   programNamePath:
    - vt
    - sed
    - bgzip
    - tabix
-  removalFileEnding:
+  fileEnding:
    - .vcf
   removeRedundantFiles: yes
   removalSetting: variantAnnotation
@@ -1067,7 +1067,7 @@ pGATKPhaseByTransmission:
   chain: Phasing
   dataType: SCALAR
   default: 0
-  fileEnding: phtr_
+  fileTag: phtr_
   type: program
 pGATKReadBackedPhasing:
   associatedProgram:
@@ -1075,7 +1075,7 @@ pGATKReadBackedPhasing:
   chain: Phasing
   dataType: SCALAR
   default: 0
-  fileEnding: phrb_
+  fileTag: phrb_
   type: program
 GATKReadBackedPhasingPhaseQualityThreshold:
   associatedProgram:
@@ -1089,7 +1089,7 @@ pGATKVariantEvalAll:
   chain: AllVariantQC
   dataType: SCALAR
   default: 1
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   type: program
 pGATKVariantEvalExome:
   associatedProgram:
@@ -1097,7 +1097,7 @@ pGATKVariantEvalExome:
   chain: ExomeVariantQC
   dataType: SCALAR
   default: 1
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   programNamePath:
    - bedtools
   type: program
@@ -1161,8 +1161,8 @@ pVariantEffectPredictor:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: vep_
-  removalFileEnding:
+  fileTag: vep_
+  fileEnding:
    - .vcf
   removeRedundantFiles: yes
   removalSetting: variantAnnotation
@@ -1192,8 +1192,8 @@ pVCFParser:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: parsed_
-  removalFileEnding:
+  fileTag: parsed_
+  fileEnding:
    - .vcf
   removeRedundantFiles: yes
   removalSetting: variantAnnotation
@@ -1230,8 +1230,8 @@ pAnnovar:
   chain: MAIN
   dataType: SCALAR
   default: 0
-  fileEnding: annovar_
-  removalFileEnding:
+  fileTag: annovar_
+  fileEnding:
    - .vcf
   removeRedundantFiles: yes
   removalSetting: variantAnnotation
@@ -1261,8 +1261,8 @@ pSnpEff:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: snpeff_
-  removalFileEnding:
+  fileTag: snpeff_
+  fileEnding:
    - .vcf
   removeRedundantFiles: yes
   removalSetting: variantAnnotation
@@ -1338,7 +1338,7 @@ pSampleCheck:
   chain: IDQC
   dataType: SCALAR
   default: 1
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   programNamePath:
    - vcftools
    - plink
@@ -1349,7 +1349,7 @@ pEvaluation:
   chain: EvalNIST
   dataType: SCALAR
   default: 0
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   programNamePath:
    - gzip
    - bcftools
@@ -1385,7 +1385,7 @@ pRankVariants:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: ranked_
+  fileTag: ranked_
   type: program
 genmodModelsFamilyType:
   associatedProgram:
@@ -1448,7 +1448,7 @@ pQCCollect:
   chain: ALL
   dataType: SCALAR
   default: 1
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   type: program
 QCCollectSampleInfoFile:
   associatedProgram:
@@ -1472,7 +1472,7 @@ pRemoveRedundantFiles:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   type: program
 ## AnalysisRunStatus
 pAnalysisRunStatus:
@@ -1481,7 +1481,7 @@ pAnalysisRunStatus:
   chain: ALL
   dataType: SCALAR
   default: 1
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   type: program
 ## Sacct
 pSacct:
@@ -1490,7 +1490,7 @@ pSacct:
   chain: ALL
   dataType: SCALAR
   default: 1
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   type: program
 ## HumanGenomeReference
 humanGenomeReference:
