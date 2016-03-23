@@ -30,7 +30,7 @@ my ($infile, $parseVEP, $rangeFeatureFile, $selectFeatureFile, $selectFeatureMat
 my (@metaData, @selectMetaData, @rangeFeatureAnnotationColumns, @selectFeatureAnnotationColumns); 
 my (%geneAnnotation, %consequenceSeverity, %rangeData, %selectData, %snpEffCmd, %tree, %metaData, %siftTerm, %polyPhenTerm);
 
-my $vcfParserVersion = "1.2.6";
+my $vcfParserVersion = "1.2.7";
 
 ## Enables cmd "vcfParser.pl" to print usage help 
 if(scalar(@ARGV) == 0) {
@@ -777,9 +777,9 @@ sub ReadInfileVCF {
 			for (my $fieldCounter=0;$fieldCounter<scalar(@transcripts);$fieldCounter++) { #CSQ field
 				
 			    my @transcriptsEffects = split(/\|/, $transcripts[$fieldCounter]); #Split in "|"
-				
+	
 			    if ( (defined($transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ])) && ($transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ] ne "") ) {
-				    
+
 				if (defined($transcriptsEffects[ $vepFormatFieldColumn{'SYMBOL'} ])) { 
 					
 				    $variantData{'Symbol'} = $transcriptsEffects[ $vepFormatFieldColumn{'SYMBOL'} ];  #Save HGNC Symbol
@@ -796,27 +796,19 @@ sub ReadInfileVCF {
 					}
 					$selectedTranscriptCounter++;
 				    }
-				    ## Always include all transcripts in research list
-				    if ($transcriptsCounter > 0) {
-					
-					$variantLine .= ",".$transcripts[$fieldCounter];
-				    }
-				    else {
-						
-					$variantLine .= "CSQ=".$transcripts[$fieldCounter];
-				    }
-				    $transcriptsCounter++;
-				}	
+				}
 			    }
-			}
-			if ( ($selectedTranscriptCounter == 0) && ($transcriptsCounter == 0) ) {
 
-			    $variantLine .= "CSQ=".$CSQTranscripts;  #No transcript info
-			}
-			unless ($variantEffectCounter == scalar(@variantEffects)-1) {  #Unless this is the last feature
+			    ## Always include all transcripts in research list
+			    if ($transcriptsCounter > 0) {
 				
-			    $variantLine .= ";";
-			    $selectedVariantLine .= ";";
+				$variantLine .= ",".$transcripts[$fieldCounter];
+			    }
+			    else {
+				
+				$variantLine .= "CSQ=".$transcripts[$fieldCounter];
+			    }
+			    $transcriptsCounter++;
 			}
 		    }
 		    else { #Not CSQ field from VEP 		    		    
@@ -827,7 +819,7 @@ sub ReadInfileVCF {
 			    $selectedVariantLine .= $variantEffects[$variantEffectCounter];
 			}
 			else {
-			    
+
 			    $variantLine .= $variantEffects[$variantEffectCounter].";";
 			    $selectedVariantLine .= $variantEffects[$variantEffectCounter].";";
 			}
@@ -841,7 +833,7 @@ sub ReadInfileVCF {
 			$selectedVariantLine .= $variantEffects[$variantEffectCounter];
 		    }
 		    else {
-			
+
 			$variantLine .= $variantEffects[$variantEffectCounter].";";
 			$selectedVariantLine .= $variantEffects[$variantEffectCounter].";";
 		    }
@@ -849,11 +841,6 @@ sub ReadInfileVCF {
 	    }
 	    if ($parseVEP == 1) {
 		
-		unless ( ($selectedTranscriptCounter == 0) && ($transcriptsCounter == 0) ) {  #Info to add from CSQ field
-		    
-		    $selectedVariantLine .= ";";
-		    $variantLine .= ";";
-		}
 		$transcriptsCounter = 0;
 		$selectedTranscriptCounter = 0;
 
@@ -880,6 +867,7 @@ sub ReadInfileVCF {
 				   
 				    &AddFieldToElementCounter(\$selectedTranscriptCounter, \$selectedVariantLine, ",", \$alleleGeneEntry, "HGVScp=");
 				}
+		
 				## Always include all transcripts in research list
 				my $alleleGeneEntry = $transcriptsEffects[ $vepFormatFieldColumn{'Allele'} ].":".$variantData{'Symbol'};
 				    
@@ -1101,7 +1089,7 @@ sub AddFieldToElementCounter {
     
     if ($$transcriptCounterRef == 0) {
 	
-	$$lineRef .= $fieldID.$$valueRef; #First selected feature
+	$$lineRef .= ";".$fieldID.$$valueRef; #First selected feature
     }
     else {
 
