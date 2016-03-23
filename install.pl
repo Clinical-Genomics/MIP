@@ -11,6 +11,7 @@ use Cwd;
 use FindBin qw($Bin); #Find directory of script
 use vars qw($USAGE);
 use IPC::Cmd qw[can_run run];
+use File::Spec::Functions qw(catfile), qw(catdir);
 
 ## Third party module(s)
 use List::MoreUtils qw(any);
@@ -118,6 +119,7 @@ $parameter{'pip'}{'cosmid'} = "0.4.9.1";
 $parameter{'pip'}{'python-Levenshtein'} = "0.12.0";
 
 ## Programs currently installable by SHELL
+$parameter{'MIPScripts'} = "Your current MIP version";
 $parameter{'picardTools'} = "2.0.1";
 $parameter{'sambamba'} = "0.5.9";
 $parameter{'vcfTools'} = "0.1.14";
@@ -226,29 +228,35 @@ if ($parameter{'preferBioConda'} != 1) {
 }
 
 if (scalar(@{$parameter{'selectPrograms'}}) > 0) {
+
+    if ( ( any {$_ eq "MIPScripts"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+	&MIPScripts(\%parameter, $BASHFILEHANDLE);
+    }
+    
+    if ( ( any {$_ eq "vcfTools"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 	
-	if ( ( any {$_ eq "vcfTools"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
-
-	    &VcfTools(\%parameter, $BASHFILEHANDLE);
-	}
-	if ( ( any {$_ eq "plink"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
-	    
-	    &Plink(\%parameter, $BASHFILEHANDLE);
-	}
-	if ( ( any {$_ eq "variantEffectPredictor"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
-
-	    &VariantEffectPredictor(\%parameter, $BASHFILEHANDLE);
-	}
-	if ( ( any {$_ eq "CNVnator"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
-	    
-	    &CNVnator(\%parameter, $BASHFILEHANDLE);
-	}
-	if ( ( any {$_ eq "FindTranslocations"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
-	    
-	    &FindTranslocations(\%parameter, $BASHFILEHANDLE);
-	}
+	&VcfTools(\%parameter, $BASHFILEHANDLE);
+    }
+    if ( ( any {$_ eq "plink"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+	
+	&Plink(\%parameter, $BASHFILEHANDLE);
+    }
+    if ( ( any {$_ eq "variantEffectPredictor"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+	
+	&VariantEffectPredictor(\%parameter, $BASHFILEHANDLE);
+    }
+    if ( ( any {$_ eq "CNVnator"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+	
+	&CNVnator(\%parameter, $BASHFILEHANDLE);
+    }
+    if ( ( any {$_ eq "FindTranslocations"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+	
+	&FindTranslocations(\%parameter, $BASHFILEHANDLE);
+    }
 }
 else {
+    
+    &MIPScripts(\%parameter, $BASHFILEHANDLE);
 
     &VcfTools(\%parameter, $BASHFILEHANDLE);
     
@@ -1233,7 +1241,7 @@ sub FindTranslocations {
 	return
     }
 
-    ## Install Plink
+    ## Install FindTranslocations
     print $FILEHANDLE "### Install FindTranslocations\n\n";
 
     &ActivateCondaEnvironment($parameterHashRef, $FILEHANDLE);
@@ -1307,6 +1315,69 @@ sub FindTranslocations {
     &DeactivateCondaEnvironment($FILEHANDLE);
 }
 
+
+sub MIPScripts {
+
+    my $parameterHashRef = $_[0];
+    my $FILEHANDLE = $_[1];
+
+    my $pwd = cwd();
+    my $mipDirectory = $Bin;  #Alias
+
+    ## Define MIP scripts and yaml files
+    my @mipScripts = ("calculateAF.pl",
+		      "maxAF.pl",
+		      "mip.pl",
+		      "qcCollect.pl",
+		      "vcfParser.pl",
+	);
+    my %mipSubScripts;
+    $mipSubScripts{"definitions"} = ["defineParameters.yaml"];
+    $mipSubScripts{"t"} = ["test.t"];
+    $mipSubScripts{"templates"} = ["mip_config.yaml"];
+
+    if (&CheckCondaBinFileExists($parameterHashRef, "mip.pl")) {  #Proxy for all 
+
+	return
+    }
+
+    ## Install MIPScripts
+    print $FILEHANDLE "### Install MIPScripts\n\n";
+    
+    ## Create directories
+    print $FILEHANDLE "## Create directories\n\n";
+    foreach my $directory (keys %mipSubScripts) {
+
+	print $FILEHANDLE "mkdir -p ";
+	print $FILEHANDLE catdir($parameter{'condaPath'}, "envs", ${$parameterHashRef}{'condaEnvironment'}, "bin", $directory);
+	print $FILEHANDLE "\n\n";
+    }
+
+    ## Copy mip scripts and sub scripts to conda env and make executable
+    print $FILEHANDLE "## Copy mip scripts and subdirectory scripts to conda env and make executable\n\n";
+    foreach my $script (@mipScripts) {
+	    
+	print $FILEHANDLE "cp ";
+	print $FILEHANDLE catfile($Bin, $script)." ";
+	print $FILEHANDLE catdir($parameter{'condaPath'}, "envs", ${$parameterHashRef}{'condaEnvironment'}, "bin");
+	print $FILEHANDLE "\n";
+	print $FILEHANDLE "chmod a+x ".catfile($parameter{'condaPath'}, "envs", ${$parameterHashRef}{'condaEnvironment'}, "bin", $script);
+	print $FILEHANDLE "\n\n";
+    }
+
+    foreach my $directory (keys %mipSubScripts) {
+
+	foreach my $script (@{$mipSubScripts{$directory}}) {
+
+	    print $FILEHANDLE "cp ";
+	    print $FILEHANDLE catfile($Bin, $directory, $script)." ";
+	    print $FILEHANDLE catdir($parameter{'condaPath'}, "envs", ${$parameterHashRef}{'condaEnvironment'}, "bin", $directory);
+	    print $FILEHANDLE "\n";
+	    print $FILEHANDLE "chmod a+x ".catfile($parameter{'condaPath'}, "envs", ${$parameterHashRef}{'condaEnvironment'}, "bin", $directory, $script);
+	    print $FILEHANDLE "\n\n";
+	}
+    }
+}
 
 
 sub ActivateCondaEnvironment {
@@ -1397,7 +1468,7 @@ sub CheckCondaBinFileExists {
 	    print STDERR "Writting install instructions for ".$programName, "\n";
 	}   
 	else {
-	    
+
 	    print STDERR q?Found ?.$programName.q? in miniconda directory: ?.$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/bin/?, "\n";
 	    
 	    if (${$parameterHashRef}{'update'} == 0) {
