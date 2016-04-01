@@ -10,6 +10,9 @@ use Getopt::Long;
 use POSIX;
 use Cwd 'abs_path';  #Export absolute path function
 use FindBin qw($Bin);  #Find directory of script
+use File::Path qw(make_path);
+use File::Copy qw(copy);
+use Cwd;
 use IPC::Cmd qw[can_run run];
 use vars qw($USAGE);
 use List::Util qw(any);
@@ -18,6 +21,8 @@ use List::Util qw(any);
 use YAML;
 use Log::Log4perl;
 use DateTime;
+use Path::Iterator::Rule;
+
 
 BEGIN {
 
@@ -652,7 +657,7 @@ foreach my $orderParameterElement (@orderParameters) {
 	
 	if (defined($scriptParameter{'pedigreeFile'})) {
 
-	    `mkdir -p $scriptParameter{'outDataDir'}/$scriptParameter{'familyID'};`;  #Create family directory
+	    make_path($scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'});  #Create family directory
 	    my $yamlFile = $scriptParameter{'outDataDir'}."/".$scriptParameter{'familyID'}."/qc_pedigree.yaml";
 
 	    ## Writes a YAML hash to file
@@ -15271,8 +15276,16 @@ sub CollectInfiles {
 	
 	my $inFileDirectoryRef = \${$scriptParameterHashRef}{'inFilesDirs'}[$inputDirectoryCounter];  #Alias
 	my $sampleIDRef = \${$scriptParameterHashRef}{'sampleIDs'}[$inputDirectoryCounter];  #Alias 
+	my @infiles = ();
 
-	my @infiles = `cd $$inFileDirectoryRef;ls *.fastq*;`;  #'cd' to input dir and collect fastq files and fastq.gz files
+	## Collect all fastq files in supplied indirectories
+	my $rule = Path::Iterator::Rule->new;
+	$rule->name("*.fastq*");  #Only look for fastq or fastq.gz files
+	my $it = $rule->iter( $$inFileDirectoryRef );
+	while ( my $file = $it->() ) {  #Iterate over directory
+	    my ($volume, $directories, $fastqFile) = File::Spec->splitpath($file);
+	    push(@infiles, $fastqFile);
+	}
 	chomp(@infiles);   #Remove newline from every entry in array
 
 	if (scalar(@infiles) == 0) {  #No "*.fastq*" infiles
@@ -15558,8 +15571,6 @@ sub AddInfileInfo {
 
 	$readFile = "cat";  #Read file in uncompressed format
     }
-    
-    my $seqLengthRegExp = q?perl -ne 'if ($_!~/@/) {chomp($_);my $seqLength = length($_);print $seqLength;last;}' ?;  #Prints sequence length and exits
 
     if ($direction == 1) {  #Read 1
 
@@ -15568,7 +15579,13 @@ sub AddInfileInfo {
 
 	$fileAtLaneLevelRef = \${$infilesLaneNoEndingHashRef}{$sampleID}[$$laneTrackerRef];  #Alias
 	${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'SequenceRunType'} = "Single-end";  #Single-end until proven otherwise
-	${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'SequenceLength'} = `cd ${$inDirPathHashRef}{$sampleID};$readFile ${$infileHashRef}{$sampleID}[$infileCounter] | $seqLengthRegExp;`;  #Collect sequence length
+
+	## Collect read length from an infile
+	${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{'File'}{$$fileAtLaneLevelRef}{'SequenceLength'} = &CollectReadLength({'directory' => ${$inDirPathHashRef}{$sampleID},
+															      'readFileCommand' => $readFile,
+															      'file' => ${$infileHashRef}{$sampleID}[$infileCounter],
+															     });
+
 	$$laneTrackerRef++;
     }
     if ($direction == 2) {  #2nd read direction
@@ -16591,9 +16608,10 @@ sub ProgramPreRequisites {
     my $dryRunFileInfoPath = $outDataDir."/".$directoryID."/".$programDirectory."/info/dry_run_".$programName."_".$directoryID.$callType.".";
 
     ## Create directories
-    `mkdir -p $outDataDir/$directoryID/$programDirectory/info;`;  #Creates the alignerOutDir folder and info data file directory
-    `mkdir -p $programDataDirectory`;  #Creates the alignerOutDir folder and if supplied the program data file directory
-    `mkdir -p $outScriptDir/$directoryID/$programDirectory`;  #Creates the alignerOutDir folder script file directory
+    make_path($outDataDir."/".$directoryID."/".$programDirectory."/info",  #Creates the alignerOutDir folder and info data file directory
+	      $programDataDirectory,  #Creates the alignerOutDir folder and if supplied the program data file directory
+	      $outScriptDir."/".$directoryID."/".$programDirectory,  #Creates the alignerOutDir folder script file directory
+	);
 
     ## Set paths depending on dry run or not
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
@@ -17647,8 +17665,8 @@ sub MoveMosaikNN {
 
 	   $logger->warn("Could not find Mosaik Network Files in ".${$scriptParameterHashRef}{'referencesDir'},"\n");
 	   $logger->info("Copying Mosaik Network Files ".${$scriptParameterHashRef}{'mosaikAlignNeuralNetworkSeFile'}." and ".${$scriptParameterHashRef}{'mosaikAlignNeuralNetworkPeFile'}." to ".${$scriptParameterHashRef}{'referencesDir'}." from ".$paths[$pathsCounter], "\n");
-	   `cp $paths[$pathsCounter]/${$scriptParameterHashRef}{'mosaikAlignNeuralNetworkSeFile'} ${$scriptParameterHashRef}{'referencesDir'}/`;  #Copying files in place
-	   `cp $paths[$pathsCounter]/${$scriptParameterHashRef}{'mosaikAlignNeuralNetworkPeFile'} ${$scriptParameterHashRef}{'referencesDir'}/`;  #Copying files in place
+	   copy($paths[$pathsCounter]."/".${$scriptParameterHashRef}{'mosaikAlignNeuralNetworkSeFile'}, ${$scriptParameterHashRef}{'referencesDir'});
+	   copy($paths[$pathsCounter]."/".${$scriptParameterHashRef}{'mosaikAlignNeuralNetworkPeFile'}, ${$scriptParameterHashRef}{'referencesDir'});
 	   last;
 	}
     }
@@ -19319,7 +19337,7 @@ sub DeafultLog4perlFile {
     
     unless (defined($$cmdInputRef)) {  #No input from cmd i.e. do not create default logging directory or set default
 
-	`mkdir -p $$outDataDirRef/$$familyIDRef/mip_log/$$dateRef;`;  #Creates the default log dir
+	make_path($$outDataDirRef."/".$$familyIDRef."/mip_log/".$$dateRef);
 	my $LogFile = $$outDataDirRef."/".$$familyIDRef."/mip_log/".$$dateRef."/".$$scriptRef."_".$$dateTimeStampRef.".log";  #concatenates log filename	
 	return $LogFile;
     }
@@ -22893,6 +22911,7 @@ sub RenameVCFSamples {
      print $FILEHANDLE $$tempDirectoryRef."/sample_name.txt ";
      print $FILEHANDLE " ".$infile." ";  #Infile
      say $FILEHANDLE "> ".$outfile." ";
+     say $FILEHANDLE "\n";
 }
 
 
@@ -22931,6 +22950,33 @@ sub RemoveElementFromArray {
 	}
     }
     return @array
+}
+
+
+sub CollectReadLength {
+
+##CollectReadLength
+    
+##Function : Collect read length from an infile
+##Returns  : "readLength"
+##Arguments: $directory
+##         : $directory => Directory of file
+##         : $readFile  => Command used to read file
+##         : $file      => File to parse
+
+    my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $directory = ${$argHashRef}{'directory'};
+    my $readFileCommand = ${$argHashRef}{'readFileCommand'};
+    my $file = ${$argHashRef}{'file'};
+    
+    my $seqLengthRegExp = q?perl -ne 'if ($_!~/@/) {chomp($_);my $seqLength = length($_);print $seqLength;last;}' ?;  #Prints sequence length and exits
+    
+    my $pwd = cwd();  #Save current direcory
+    chdir($directory);  #Move to sampleID infile directory
+    my $ret = `$readFileCommand $file | $seqLengthRegExp;`;  #Collect sequence length
+    return $ret;
 }
 
 

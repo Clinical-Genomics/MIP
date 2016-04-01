@@ -87,13 +87,14 @@ $parameter{'bioCondaBoostPatch'} = "-4";
 ##Perl Modules
 $parameter{'perlInstall'} = 0;
 $parameter{'perl'} = "5.18.2";
-$parameter{'perlModules'} = ["Modern::Perl",
-			     "YAML",
-			     "Log::Log4perl",
-			     "DateTime",
-			     "DateTime::Format::ISO8601",
-			     "DateTime::Format::HTTP",
-			     "DateTime::Format::Mail",
+$parameter{'perlModules'} = ["Modern::Perl",  #MIP
+			     "Path::Iterator::Rule",  #MIP
+			     "YAML",  #MIP
+			     "Log::Log4perl",  #MIP
+			     "DateTime",  #MIP
+			     "DateTime::Format::ISO8601",  #MIP
+			     "DateTime::Format::HTTP",  #MIP
+			     "DateTime::Format::Mail",  #MIP
 			     "Set::IntervalTree",  # vcfParser
 			     "Net::SSLeay",  # VEP
 			     "LWP::Simple",  # VEP
