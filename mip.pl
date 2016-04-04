@@ -27,7 +27,7 @@ use Path::Iterator::Rule;
 BEGIN {
 
 
-    my @modules = ("YAML", "Log::Log4perl", "DateTime", "List::MoreUtils", "DateTime::Format::ISO8601", "DateTime::Format::HTTP", "DateTime::Format::Mail");	
+    my @modules = ("YAML", "Log::Log4perl", "DateTime", "Path::Iterator::Rule", "DateTime::Format::ISO8601", "DateTime::Format::HTTP", "DateTime::Format::Mail");	
 
     ## Evaluate that all modules required are installed
     &EvalModules(\@modules);
@@ -609,8 +609,11 @@ if (exists($parameter{'configFile'}{'value'})) {  #Input from cmd
     foreach my $orderParameterElement (@orderParameters) {  #Loop through all parameters and update info   
 
 	## Updates the config file to particular user/cluster for entries following specifications. Leaves other entries untouched.
-	&UpdateYAML(\%scriptParameter, \$orderParameterElement, \$parameter{'familyID'}{'value'});
+	&UpdateConfigFile(\%scriptParameter, \$orderParameterElement, \$parameter{'familyID'}{'value'});
     }
+    
+    ##Remove previous analysis specific info not relevant for current run e.g. log file
+    delete($scriptParameter{'logFile'});
 }
 
 ###Populate scriptParameters{'parameterName'} => 'Value'
@@ -14118,7 +14121,6 @@ sub CheckBuildPTCHSMetricPreRequisites {
     my $FILEHANDLE = ${$argHashRef}{'FILEHANDLE'};
     my $familyIDRef = ${$argHashRef}{'familyIDRef'};
 
-    #for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDCounter++) {
     foreach my $sampleID (@{${$scriptParameterHashRef}{'sampleIDs'}}) {
 	
 	if (${$parameterHashRef}{ $$familyIDRef }{ $sampleID }{'exomeTargetBedInfileLists'}{'buildFile'} eq 1) {
@@ -17288,9 +17290,9 @@ sub CheckUniqueIDNs {
 }
 
 
-sub UpdateYAML {
+sub UpdateConfigFile {
 
-##UpdateYAML
+##UpdateConfigFile
     
 ##Function : Updates the config file to particular user/cluster for entries following specifications. Leaves other entries untouched.
 ##Returns  : "" 
@@ -17993,7 +17995,7 @@ sub ScriptParameterPerSampleID {
 
     if (defined(${$scriptParameterHashRef}{$$familyIDRef}{$$sampleIDRef}{$parameterName})) {
 	
-	${$scriptParameterHashRef}{$parameterName} = 1;  #Define in scriptParameter so that we now that parameter is present per SampleID
+	${$scriptParameterHashRef}{$parameterName} = 1;  #Define in scriptParameter so that we know that parameter is present per SampleID
     }
 }
 
