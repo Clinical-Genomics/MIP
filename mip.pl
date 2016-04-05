@@ -258,6 +258,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pQcC/--pQCCollect Collect QC metrics from programs processed (defaults to "1" (=yes) )
                  -qccsi/--QCCollectSampleInfoFile SampleInfo File containing info on what to parse from this analysis run (defaults to "{outDataDir}/{familyID}/{familyID}_qc_sampleInfo.yaml")
                  -qccref/--QCCollectRegExpFile Regular expression file containing the regular expression to be used for each program (defaults to "qc_regExp_v1.4.yaml")
+               -pMqC/--pMultiQC Create aggregate bioinformatics analysis report across many samples (defaults to "1" (=yes))
                -pReM/--pRemoveRedundantFiles Generating sbatch script for deletion of redundant files (defaults to "1" (=yes);Note: Must be submitted manually to SLURM)
                -pArS/--pAnalysisRunStatus Sets the analysis run status flag to finished in sampleInfoFile (defaults to "1" (=yes))
                -pSac/--pSacct Generating sbatch script for SLURM info on each submitted job (defaults to "1" (=yes);Note: Must be submitted manually to SLURM)
@@ -582,6 +583,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'pQcC|pQCCollect:n' => \$parameter{'pQCCollect'}{'value'},  #QCmetrics collect
 	   'qccsi|QCCollectSampleInfoFile:s' => \$parameter{'QCCollectSampleInfoFile'}{'value'},  #SampleInfo yaml file produced by MIP
 	   'qccref|QCCollectRegExpFile:s' => \$parameter{'QCCollectRegExpFile'}{'value'},  #Regular expression yaml file
+	   'pMqC|pMultiQC:n' => \$parameter{'pMultiQC'}{'value'},  #Aggregate bioinformatics reports
 	   'pReM|pRemoveRedundantFiles:n' => \$parameter{'pRemoveRedundantFiles'}{'value'},
 	   'pArS|pAnalysisRunStatus:n' => \$parameter{'pAnalysisRunStatus'}{'value'},  #AnalysisRunStatus change flag in sampleInfo file if allowed to execute
 	   'pSac|pSacct:n' => \$parameter{'pSacct'}{'value'},
@@ -2339,6 +2341,22 @@ if ($scriptParameter{'pQCCollect'} > 0) {  #Run QCCollect. Done per family
 	       });
 }
 
+
+if ($scriptParameter{'pMultiQC'} > 0) {
+
+    $logger->info("[MultiQC]\n");
+
+    &MultiQC({'parameterHashRef' => \%parameter,
+	      'scriptParameterHashRef' => \%scriptParameter,
+	      'sampleInfoHashRef' => \%sampleInfo,
+	      'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+	      'jobIDHashRef' => \%jobID,
+	      'callType' => "BOTH",
+	      'programName' => "MultiQC",
+	     });
+}
+
+
 if ($scriptParameter{'pRemoveRedundantFiles'} > 0) {  #Sbatch generation of removal of alignment files
     
     $logger->info("[Removal of redundant files]\n");
@@ -2752,6 +2770,87 @@ sub RemoveRedundantFiles {
 		  'programName' => "RemoveFiles",
 		 });
     close($FILEHANDLE);
+}
+
+
+sub MultiQC {
+
+##MultiQC
+    
+##Function : Aggregate bioinforamtics reports per case
+##Returns  : ""
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $programName
+##         : $parameterHashRef           => The parameter hash {REF}
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $familyIDRef                => The familyID {REF}
+##         : $programName                => The program name
+
+    my ($argHashRef) = @_;
+    
+    my %default = ('familyIDRef' => \${$argHashRef}{'scriptParameterHashRef'}{'familyID'},
+	);
+    
+    &SetDefaultArg(\%{$argHashRef}, \%default);
+    
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{'parameterHashRef'};
+    my $scriptParameterHashRef = ${$argHashRef}{'scriptParameterHashRef'};
+    my $sampleInfoHashRef = ${$argHashRef}{'sampleInfoHashRef'};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{'infilesLaneNoEndingHashRef'};
+    my $jobIDHashRef = ${$argHashRef}{'jobIDHashRef'};
+    my $familyIDRef = ${$argHashRef}{'familyIDRef'};
+    my $programName = ${$argHashRef}{'programName'};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = ('parameterHashRef' => ${$parameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+			     'scriptParameterHashRef' => ${$scriptParameterHashRef}{'familyID'},  #Any MIP mandatory key will do
+			     'sampleInfoHashRef' => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
+			     'infilesLaneNoEndingHashRef' => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{'sampleIDs'}[0] },  #Any MIP mandatory key will do
+			     'programName' => $programName,
+	);
+     &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $time = 1;
+
+    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    my ($fileName) = &ProgramPreRequisites({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+					    'FILEHANDLE' => $FILEHANDLE,
+					    'directoryID' => $$familyIDRef,
+					    'programName' => $programName,
+					    'programDirectory' => lc($programName),
+					   });
+    
+    ## Assign directories
+    my $programOutDirectoryName = ${$parameterHashRef}{"p".$programName}{'outDirectoryName'};
+
+    foreach my $sampleID (@{${$scriptParameterHashRef}{'sampleIDs'}}) {
+
+	my $inSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID;
+	my $outSampleDirectory = ${$scriptParameterHashRef}{'outDataDir'}."/".$sampleID."/".$programOutDirectoryName;
+
+	print $FILEHANDLE "multiqc ";
+	print $FILEHANDLE "--force ";
+	print $FILEHANDLE "--outdir ".$outSampleDirectory." ";
+	say $FILEHANDLE $inSampleDirectory;
+    }
+
+    close($FILEHANDLE);
+
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+	
+	&FIDSubmitJob({'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+		       'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+		       'jobIDHashRef' => \%{$jobIDHashRef},
+		       'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
+		       'dependencies' => 7, 
+		       'path' => ${$parameterHashRef}{"p".$programName}{'chain'},
+		       'sbatchFileName' => $fileName
+		      });
+    }
 }
 
 
