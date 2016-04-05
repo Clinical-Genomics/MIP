@@ -1465,6 +1465,16 @@ QCCollectRegExpFile:
   existsCheck: file
   reference: referencesDir
   type: path
+## MultiQC
+pMultiQC:
+  associatedProgram:
+   - MIP
+  chain: ALL
+  dataType: SCALAR
+  default: 1
+  fileTag: nofileTag
+  outDirectoryName: multiqc
+  type: program
 ## RemoveRedundantFiles
 pRemoveRedundantFiles:
   associatedProgram:
