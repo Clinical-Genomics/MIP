@@ -76,8 +76,9 @@ $parameter{'bioConda'}{'sambamba'} = "0.5.9";
 $parameter{'bioConda'}{'freebayes'} = "1.0.2";
 $parameter{'bioConda'}{'delly'} = "0.7.2";
 $parameter{'bioConda'}{'manta'} = "0.29.3";
-$parameter{'bioConda'}{'multiqc'} = "0.4";
 $parameter{'bioCondaMantaPatch'} = "-0";
+$parameter{'bioConda'}{'multiqc'} = "0.4";
+$parameter{'bioConda'}{'plink2'} = "1.90b3.35";
 $parameter{'bioConda'}{'gcc'} = "4.8.5";
 $parameter{'bioConda'}{'cmake'} = "3.3.1";
 $parameter{'bioConda'}{'boost'} = "1.57.0";
@@ -123,7 +124,7 @@ $parameter{'sambamba'} = "0.5.9";
 $parameter{'vcfTools'} = "0.1.14";
 $parameter{'bedTools'} = "2.25.0";
 $parameter{'vt'} = "gitRepo";
-$parameter{'plink'} = "160224";
+$parameter{'plink2'} = "160224";
 $parameter{'snpEff'} = "v4_2";
 $parameter{'snpEffGenomeVersion'} = "GRCh37.75";
 $parameter{'variantEffectPredictor'} = "83";
@@ -147,7 +148,7 @@ GetOptions('env|condaEnvironment:s'  => \$parameter{'condaEnvironment'},
 	   'vct|vcfTools:s' => \$parameter{'vcfTools'},
 	   'bet|bedTools:s' =>\$parameter{'bedTools'}, 
 	   'vt|vt:s' => \$parameter{'vt'},
-	   'plk|plink:s' => \$parameter{'plink'},
+	   'plk|plink2:s' => \$parameter{'plink2'},
 	   'vep|variantEffectPredictor:s' => \$parameter{'variantEffectPredictor'},
 	   'vepc|vepDirectoryCache:s' => \$parameter{'vepDirectoryCache'},  #path to vep cache dir
 	   'vepp|variantEffectPredictorPlugin:s' => \$parameter{'variantEffectPredictorPlugin'},  #Comma sep string
@@ -210,6 +211,10 @@ if ($parameter{'preferBioConda'} != 1) {
 
 	    &SnpEff(\%parameter, $BASHFILEHANDLE);
 	}
+	if ( ( any {$_ eq "plink2"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+	
+	    &Plink2(\%parameter, $BASHFILEHANDLE);
+	}
     }
     else {
 	
@@ -220,6 +225,8 @@ if ($parameter{'preferBioConda'} != 1) {
 	&BedTools(\%parameter, $BASHFILEHANDLE);
 	
 	&VT(\%parameter, $BASHFILEHANDLE);
+
+	&Plink2(\%parameter, $BASHFILEHANDLE);
 	
 	&SnpEff(\%parameter, $BASHFILEHANDLE);
     }
@@ -234,10 +241,6 @@ if (scalar(@{$parameter{'selectPrograms'}}) > 0) {
     if ( ( any {$_ eq "vcfTools"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 	
 	&VcfTools(\%parameter, $BASHFILEHANDLE);
-    }
-    if ( ( any {$_ eq "plink"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
-	
-	&Plink(\%parameter, $BASHFILEHANDLE);
     }
     if ( ( any {$_ eq "variantEffectPredictor"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 	
@@ -257,8 +260,6 @@ else {
     &MIPScripts(\%parameter, $BASHFILEHANDLE);
 
     &VcfTools(\%parameter, $BASHFILEHANDLE);
-    
-    &Plink(\%parameter, $BASHFILEHANDLE);
     
     &VariantEffectPredictor(\%parameter, $BASHFILEHANDLE);
 
@@ -883,7 +884,7 @@ sub VT {
 }
 
 
-sub Plink {
+sub Plink2 {
 
     my $parameterHashRef = $_[0];
     my $FILEHANDLE = $_[1];
@@ -902,13 +903,13 @@ sub Plink {
     
     ## Download
     say $FILEHANDLE "## Download Plink";
-    print $FILEHANDLE "wget --quiet https://www.cog-genomics.org/static/bin/plink".${$parameterHashRef}{'plink'}."/plink_linux_x86_64.zip ";
-    print $FILEHANDLE "-O plink-".${$parameterHashRef}{'plink'}."-x86_64.zip";  #Download outfile
+    print $FILEHANDLE "wget --quiet https://www.cog-genomics.org/static/bin/plink".${$parameterHashRef}{'plink2'}."/plink_linux_x86_64.zip ";
+    print $FILEHANDLE "-O plink-".${$parameterHashRef}{'plink2'}."-x86_64.zip";  #Download outfile
     say $FILEHANDLE "\n";
 
     ## Extract
     say $FILEHANDLE "## Extract";
-    print $FILEHANDLE "unzip plink-".${$parameterHashRef}{'plink'}."-x86_64.zip";
+    print $FILEHANDLE "unzip plink-".${$parameterHashRef}{'plink2'}."-x86_64.zip";
     say $FILEHANDLE "\n";
 
     ## Make available from conda environment
