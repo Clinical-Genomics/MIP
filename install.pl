@@ -124,7 +124,7 @@ $parameter{'sambamba'} = "0.5.9";
 $parameter{'vcfTools'} = "0.1.14";
 $parameter{'bedTools'} = "2.25.0";
 $parameter{'vt'} = "gitRepo";
-$parameter{'plink2'} = "160224";
+$parameter{'plink2'} = "160316";
 $parameter{'snpEff'} = "v4_2";
 $parameter{'snpEffGenomeVersion'} = "GRCh37.75";
 $parameter{'variantEffectPredictor'} = "83";
@@ -237,7 +237,6 @@ if (scalar(@{$parameter{'selectPrograms'}}) > 0) {
     if ( ( any {$_ eq "MIPScripts"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 	&MIPScripts(\%parameter, $BASHFILEHANDLE);
     }
-    
     if ( ( any {$_ eq "vcfTools"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 	
 	&VcfTools(\%parameter, $BASHFILEHANDLE);
@@ -915,7 +914,7 @@ sub Plink2 {
     ## Make available from conda environment
     say $FILEHANDLE "## Make available from conda environment";
     print $FILEHANDLE "mv ";
-    print $FILEHANDLE q?plink ?.$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/bin/?;
+    print $FILEHANDLE q?plink ?.$parameter{'condaPath'}.q?/envs/?.${$parameterHashRef}{'condaEnvironment'}.q?/bin/plink2?;
     say $FILEHANDLE "\n";
 
     &CleanUpModuleInstall($FILEHANDLE, $pwd);
