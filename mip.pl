@@ -12049,19 +12049,15 @@ sub BWAMem {
 	    print $FILEHANDLE "--tmpdir=".${$scriptParameterHashRef}{'tempDirectory'}." ";  #Directory for storing intermediate files
 	    print $FILEHANDLE "--show-progress ";  #Show progressbar in STDERR
 	    print $FILEHANDLE "--out=".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileTag.".bam ";  #Outfile
-	    say $FILEHANDLE "/dev/stdin ";
+	    say $FILEHANDLE "/dev/stdin ","\n";
 
 	    if (${$scriptParameterHashRef}{'bwaMembamStats'} == 1) {
 
 		print $FILEHANDLE "samtools stats ";
 		print $FILEHANDLE ${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileTag.".bam ";
-		print $FILEHANDLE "| ";
-		print $FILEHANDLE "grep ^SN "; 
-		print $FILEHANDLE "| "; 
-		print $FILEHANDLE "cut -f 2- ";
 		print $FILEHANDLE "| "; 
 		print $FILEHANDLE q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\s+(\d+)/) {$raw = $1;} elsif($_=~/reads mapped:\s+(\d+)/) {$map = $1; $p = ($map / $raw ) * 100; print "percentag mapped reads:\t".$p."\n"}' ?;
-		say $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileTag.".stats ";
+		say $FILEHANDLE "> ".${$scriptParameterHashRef}{'tempDirectory'}."/".${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileTag.".stats ", "\n";
 
 		## Copies file from temporary directory.
 		say $FILEHANDLE "## Copy file from temporary directory";
