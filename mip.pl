@@ -20588,7 +20588,7 @@ sub XargsCommand {
 
 	print $FILEHANDLE $firstCommand." ";
     }
-    say $FILEHANDLE q? {} "?;  #Set placeholder
+    say $FILEHANDLE q? {} "?, "\n";  #Set placeholder
     open ($XARGSFILEHANDLE, ">",$fileName.".".$xargsFileCounter.".xargs") or $logger->logdie("Can't write to '".$fileName.".".$xargsFileCounter.".xargs"."' :".$!."\n\n");  #Open XARGSFILEHANDLE 
     return ( ($xargsFileCounter + 1), $xargsFileName);  #Increment to not overwrite xargs file with next call (if used) and xargsFileName stub
 }

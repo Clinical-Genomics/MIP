@@ -1619,6 +1619,7 @@ vepFeatures:
    - regulatory
    - tsl
    - canonical
+   - appris
   type: programArgument
 svVepFeatures:
   associatedProgram:
@@ -1641,6 +1642,7 @@ svVepFeatures:
    - tsl
    - canonical
    - per_gene
+   - appris
   type: programArgument
 vcfParserRangeFeatureAnnotationColumns:
   associatedProgram:
