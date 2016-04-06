@@ -100,7 +100,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                
                ##PicardTools
                -ptp/--picardToolsPath Path to PicardTools. Mandatory for use of PicardTools (defaults to "")
-               -pPtM/--pPicardToolsMergeSamFiles Merge (BAM file(s) ) using PicardTools MergeSamFiles (defaults to "1" (=yes))
+               -pPtM/--pPicardToolsMergeSamFiles Merge (BAM file(s) ) using PicardTools MergeSamFiles or rename single samples for downstream processing (Mandatory)
                -pPtMR/--pPicardToolsMergeRapidReads Merge Read batch processed (BAM file(s)) using PicardTools MergeSamFiles (Only relevant in rapid mode;defaults to "0" (=no))
                  -ptmp/--picardToolsMergeSamFilesPrevious PicardTools MergeSamFiles on merged current files and previous BAM-file(s) (supply whole path and name, name must contain sample id, and lanes_Xn info)
 
@@ -785,19 +785,16 @@ for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs
 &CheckVEPDirectories(\$scriptParameter{'vepDirectoryPath'}, \$scriptParameter{'vepDirectoryCache'});
 
 ## PicardToolsMergeSamFilesPrevious
-if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
+if( (scalar(@{$parameter{'picardToolsMergeSamFilesPrevious'}{'value'}}) > 0) ) {
     
-    if( (scalar(@{$parameter{'picardToolsMergeSamFilesPrevious'}{'value'}}) > 0) ) {
-
-	## Checks if previous alignments have been supplied for each sampleID. Saves merge info in sampleInfo hash.
-	&CheckMergePicardToolsMergeSamFilesPrevious(\%scriptParameter, \%fileInfo);
-    }
-    else {  #Not supplied - Set to 0 to handle correctly in program subroutines 
+    ## Checks if previous alignments have been supplied for each sampleID. Saves merge info in sampleInfo hash.
+    &CheckMergePicardToolsMergeSamFilesPrevious(\%scriptParameter, \%fileInfo);
+}
+else {  #Not supplied - Set to 0 to handle correctly in program subroutines 
+    
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #Set for all sampleIDs
 	
-	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  #Set for all sampleIDs
-	    
-	    $fileInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} = 0;
-	}
+	$fileInfo{ $scriptParameter{'familyID'} }{ $scriptParameter{'sampleIDs'}[$sampleIDCounter] }{'picardToolsMergeSamFilesPrevious'} = 0;
     }
 }
 
@@ -1323,25 +1320,24 @@ if ($scriptParameter{'reduceIO'} == 1) {  #Run consecutive models
 }
 else {
 
-    if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {  #Run picardtools merge
+    ##Always run even for single samples to rename them correctly for standardised downstream processing. 
+    ##Will also split alignment per contig and copy to temporary directory for '-rio 1' block to enable selective removal of block submodules.
+    $logger->info("[PicardTool MergeSamFiles]\n");
+    
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
 	
-	$logger->info("[PicardTool MergeSamFiles]\n");
 	
-	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{'sampleIDs'}});$sampleIDCounter++) {  
-	    
-	    
-	    &PicardToolsMergeSamFiles({'parameterHashRef' => \%parameter,
-				       'scriptParameterHashRef' => \%scriptParameter,
-				       'sampleInfoHashRef' => \%sampleInfo,
-				       'fileInfoHashRef' => \%fileInfo,
-				       'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
-				       'laneHashRef' => \%lane,
-				       'jobIDHashRef' => \%jobID,
-				       'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
-				       'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
-				       'programName' => "PicardToolsMergeSamFiles",
-				      });
-	}
+	&PicardToolsMergeSamFiles({'parameterHashRef' => \%parameter,
+				   'scriptParameterHashRef' => \%scriptParameter,
+				   'sampleInfoHashRef' => \%sampleInfo,
+				   'fileInfoHashRef' => \%fileInfo,
+				   'infilesLaneNoEndingHashRef' => \%infilesLaneNoEnding,
+				   'laneHashRef' => \%lane,
+				   'jobIDHashRef' => \%jobID,
+				   'sampleIDRef' => \$scriptParameter{'sampleIDs'}[$sampleIDCounter],
+				   'alignerOutDirRef' => \$scriptParameter{'alignerOutDir'}, 
+				   'programName' => "PicardToolsMergeSamFiles",
+				  });
     }
 
     if ($scriptParameter{'pSambambaMarkduplicates'} > 0) {  #Sambamba Markduplicates
@@ -11122,7 +11118,7 @@ sub PicardToolsMergeSamFiles {
 	}
     }
     
-    if ( (${$scriptParameterHashRef}{'pPicardToolsMergeSamFiles'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+    if (${$scriptParameterHashRef}{'dryRunAll'} == 0) {
 	
 	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'MostCompleteBAM'}{'Path'} = $outSampleDirectory."/".$$sampleIDRef."_lanes_".$lanes.$outfileTag.".bam";
     }
@@ -11213,7 +11209,7 @@ sub PicardToolsMergeSamFiles {
 											'fileEnding' => ".b*",
 										       });
 		    }
-		    if ( (${$scriptParameterHashRef}{'pPicardToolsMergeSamFiles'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+		    if (${$scriptParameterHashRef}{'dryRunAll'} == 0) {
 
 			${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'MostCompleteBAM'}{'Path'} = $outSampleDirectory."/".$$sampleIDRef."_lanes_".$mergeLanes.$lanes.$outfileTag.".bam";
 		    }
@@ -11307,7 +11303,7 @@ sub PicardToolsMergeSamFiles {
 										    'fileEnding' => ".b*",
 										   });
 		}
-		if ( (${$scriptParameterHashRef}{'pPicardToolsMergeSamFiles'} == 1) && (${$scriptParameterHashRef}{'dryRunAll'} == 0) ) {
+		if (${$scriptParameterHashRef}{'dryRunAll'} == 0) {
 		    
 		    ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{'MostCompleteBAM'}{'Path'} = $outSampleDirectory."/".$$sampleIDRef."_lanes_".$mergeLanes.$lanes.$outfileTag.".bam";
 		}
@@ -12822,11 +12818,11 @@ sub BAMCalibrationBlock {
     
     ## Set the number of cores to allocate per sbatch job.
     my $nrCores = ${$scriptParameterHashRef}{'maximumCores'};
-    
-    if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {
-	
-	$logger->info("\t[PicardTool MergeSamFiles]\n");
-    }
+
+    ##Always run even for single samples to rename them correctly for standardised downstream processing. 
+    ##Will also split alignment per contig and copy to temporary directory for '-rio 1' block to enable selective removal of block submodules.
+    $logger->info("\t[PicardTool MergeSamFiles]\n");
+
     if ($scriptParameter{'pSambambaMarkduplicates'} > 0) {  #Sambamba Markduplicates
 	
 	$logger->info("\t[Sambamba Markduplicates]\n");
@@ -12893,24 +12889,24 @@ sub BAMCalibrationBlock {
 								  'processTime' => $time,
 								  'tempDirectory' => $$tempDirectoryRef
 								 });
-	
-	if ($scriptParameter{'pPicardToolsMergeSamFiles'} > 0) {  #Run picardtools merge
 
-	    ($xargsFileCounter, $xargsFileName) = &PicardToolsMergeSamFiles({'parameterHashRef' => \%{$parameterHashRef},
-									     'scriptParameterHashRef' => \%{$scriptParameterHashRef},
-									     'sampleInfoHashRef' => \%{$sampleInfoHashRef},
-									     'fileInfoHashRef' => \%{$fileInfoHashRef},
-									     'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
-									     'laneHashRef' => \%{$laneHashRef},
-									     'jobIDHashRef' => \%{$jobIDHashRef},
-									     'sampleIDRef' => $sampleIDRef,
-									     'alignerOutDirRef' => \$$alignerOutDirRef, 
-									     'programName' => "PicardToolsMergeSamFiles",
-									     'fileName' => $fileName,
-									     'programInfoPath' => $programInfoPath,
-									     'FILEHANDLE' => $FILEHANDLE,
-									    });
-	}
+	##Always run even for single samples to rename them correctly for standardised downstream processing. 
+	##Will also split alignment per contig and copy to temporary directory for '-rio 1' block to enable selective removal of block submodules.
+	($xargsFileCounter, $xargsFileName) = &PicardToolsMergeSamFiles({'parameterHashRef' => \%{$parameterHashRef},
+									 'scriptParameterHashRef' => \%{$scriptParameterHashRef},
+									 'sampleInfoHashRef' => \%{$sampleInfoHashRef},
+									 'fileInfoHashRef' => \%{$fileInfoHashRef},
+									 'infilesLaneNoEndingHashRef' => \%{$infilesLaneNoEndingHashRef},
+									 'laneHashRef' => \%{$laneHashRef},
+									 'jobIDHashRef' => \%{$jobIDHashRef},
+									 'sampleIDRef' => $sampleIDRef,
+									 'alignerOutDirRef' => \$$alignerOutDirRef, 
+									 'programName' => "PicardToolsMergeSamFiles",
+									 'fileName' => $fileName,
+									 'programInfoPath' => $programInfoPath,
+									 'FILEHANDLE' => $FILEHANDLE,
+									});
+
 	if ($scriptParameter{'pSambambaMarkduplicates'} > 0) {  #Sambamba Markduplicates
 	    
 	    ($xargsFileCounter, $xargsFileName) = &SambambaMarkduplicates({'parameterHashRef' => \%{$parameterHashRef},
@@ -16847,7 +16843,7 @@ sub AddMergedInfileName {
 	    }
 	}
     }
-    elsif (${$scriptParameterHashRef}{'pPicardToolsMergeSamFiles'} > 0) {  #Build infile name again
+    else {  #Build infile name again
 
 	$infile = $sampleID."_lanes_";
 
