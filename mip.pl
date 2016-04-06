@@ -10843,12 +10843,12 @@ sub SambambaMarkduplicates {
     ## Concatenate all metric files
     print $FILEHANDLE "cat ";
     print $FILEHANDLE $$tempDirectoryRef."/".$infile.$outfileTag."_*_metric ";
-    say $FILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileTag."_metricAll ";  #Metric file for all files
+    say $FILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileTag."_metricAll ", "\n";  #Metric file for all files
     
     ## Sum metric over concatenated file
     print $FILEHANDLE $regExp." ";
     print $FILEHANDLE $$tempDirectoryRef."/".$infile.$outfileTag."_metricAll ";
-    say $FILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileTag."_metric ";  #Sum of all original metric files
+    say $FILEHANDLE "> ".$$tempDirectoryRef."/".$infile.$outfileTag."_metric ", "\n";  #Sum of all original metric files
     
     
     &MigrateFileFromTemp({'tempPath' => $$tempDirectoryRef."/".$infile.$outfileTag."_metric",
