@@ -33,7 +33,7 @@ BEGIN {
            -plk/--plink  Set the plink version (Default: "160224")
            -vep/--variantEffectPredictor Set the VEP version (Default: "83")
 	   -vepc/--vepDirectoryCache Specify the cache directory to use (whole path; defaults to "~/miniconda/envs/condaEnvironment/ensembl-tools-release-variantEffectPredictorVersion/cache")
-           -vepp/--variantEffectPredictorPlugin Supply a comma separated list of VEP plugins (Default: "UpDownDistance")
+           -vepp/--variantEffectPredictorPlugin Supply a comma separated list of VEP plugins (Default: "UpDownDistance,LoFtool,LoF")
            -cnv/--CNVnator Set the CNVnator version (Default: "0.3.2")
            -ftr/--FindTranslocations Set the FindTranslocations version (Default: "0")
 
@@ -129,7 +129,7 @@ $parameter{'snpEff'} = "v4_2";
 $parameter{'snpEffGenomeVersion'} = "GRCh37.75";
 $parameter{'variantEffectPredictor'} = "83";
 $parameter{'vepDirectoryCache'} = $parameter{'condaPath'}.q?/envs/?.$parameter{'condaEnvironment'}.q?/ensembl-tools-release-?.$parameter{'variantEffectPredictor'}.q?/cache?;  #Cache directory;
-$parameter{'variantEffectPredictorPlugin'} = "UpDownDistance";
+$parameter{'variantEffectPredictorPlugin'} = "UpDownDistance,LoFtool,LoF";
 $parameter{'CNVnator'} = "0.3.2";
 $parameter{'FindTranslocations'} = "0";
 
@@ -1068,6 +1068,32 @@ sub VariantEffectPredictor {
     print $FILEHANDLE "-c ".${$parameterHashRef}{'vepDirectoryCache'}." ";  #Cache directory
     print $FILEHANDLE "-s homo_sapiens ";
     print $FILEHANDLE "--ASSEMBLY GRCh37 ";
+    say $FILEHANDLE "\n";
+
+    ##Add LofTool required text file
+    say $FILEHANDLE "##Add LofTool required text file";
+    print $FILEHANDLE "wget https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.txt ";
+    print $FILEHANDLE q?-O $HOME/.vep/Plugins/LoFtool_scores.txt ?;
+    say $FILEHANDLE "\n";
+
+    ##Add Lof required perl splice script
+    say $FILEHANDLE "##Add Lof required perl splice script";
+    print $FILEHANDLE "wget https://raw.githubusercontent.com/konradjk/loftee/master/splice_module.pl ";
+    print $FILEHANDLE q?-O $HOME/.vep/Plugins/splice_module.pl ?;
+    say $FILEHANDLE "\n";
+
+    ##Add Lof optional human_ancestor_fa
+    say $FILEHANDLE "##Add Lof optional human_ancestor_fa";
+    print $FILEHANDLE "wget https://s3.amazonaws.com/bcbio_nextgen/human_ancestor.fa.gz ";
+    print $FILEHANDLE q?-O ?.${$parameterHashRef}{'vepDirectoryCache'}.q?/human_ancestor.fa.gz ?;
+    say $FILEHANDLE "\n";
+
+    ##Uncompress
+    print $FILEHANDLE "bgzip -d ".${$parameterHashRef}{'vepDirectoryCache'}."/human_ancestor.fa.gz ";
+    say $FILEHANDLE "\n";
+
+    print $FILEHANDLE "wget https://s3.amazonaws.com/bcbio_nextgen/human_ancestor.fa.gz.fai ";
+    print $FILEHANDLE q?-O ?.${$parameterHashRef}{'vepDirectoryCache'}.q?/human_ancestor.fa.fai ?;
     say $FILEHANDLE "\n";
 
     ## Clean up

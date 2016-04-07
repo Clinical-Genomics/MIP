@@ -140,7 +140,8 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -csvgft/--svGenmodFilterThreshold Threshold for filtering structural variants (defaults to "0.10")
                  -csvbcf/--combineStructuralVariantCallSetsBCFFile Produce a bcf from the combineStructuralVariantCallSet vcf (defaults to "1" (=yes))
                -pSvv/--pSVVariantEffectPredictor Annotate SV variants using VEP (defaults to "1" (=yes))
-               -svvepf/--svvepFeatures VEP features (defaults to ("hgvs","symbol","numbers","sift","polyphen","humdiv","domains","protein","ccds","uniprot","biotype","regulatory", "tsl", "canonical", "per_gene"); comma sep)
+               -svvepf/--svVepFeatures VEP features (defaults to ("hgvs","symbol","numbers","sift","polyphen","humdiv","domains","protein","ccds","uniprot","biotype","regulatory", "tsl", "canonical", "per_gene", "appris"); comma sep)
+               -svveppl/--svVepPlugins VEP plugins (defaults to ("UpDownDistance, LoFtool, LoF"); comma sep)
                -pSVVcP/--pSVVCFParser Parse structural variants using vcfParser.pl (defaults to "1" (=yes))
                  -svvcpvt/--svVcfParserVepTranscripts Parse VEP transcript specific entries (defaults to "0" (=no))
                  -svvcprff/--svVcfParserRangeFeatureFile Range annotations file (defaults to ""; tab-sep)
@@ -216,7 +217,8 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -vepp/--vepDirectoryPath Path to VEP script directory (defaults to "")
                  -vepc/--vepDirectoryCache Specify the cache directory to use (defaults to "") 
                  -vepr/--vepReference Use Human reference file with VEP (defaults to "0" (=no))
-                 -vepf/--vepFeatures VEP features (defaults to ("hgvs","symbol","numbers","sift","polyphen","humdiv","domains","protein","ccds","uniprot","biotype","regulatory", "tsl", "canonical"); comma sep)
+                 -vepf/--vepFeatures VEP features (defaults to ("hgvs","symbol","numbers","sift","polyphen","humdiv","domains","protein","ccds","uniprot","biotype","regulatory", "tsl", "canonical", "appris"); comma sep)
+                 -veppl/--vepPlugins VEP plugins (defaults to ("UpDownDistance, LoFtool, LoF"); comma sep)
                -pVcP/--pVCFParser Parse variants using vcfParser.pl (defaults to "1" (=yes))
                  -vcpvt/--vcfParserVepTranscripts Parse VEP transcript specific entries (defaults to "0" (=no))
                  -vcprff/--vcfParserRangeFeatureFile Range annotations file (defaults to ""; tab-sep)
@@ -478,7 +480,8 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'pCsv|pCombineStructuralVariantCallSets:n' => \$parameter{'pCombineStructuralVariantCallSets'}{'value'},  #Combine structural variant call sets
 	   'csvbcf|combineStructuralVariantCallSetsBCFFile:n' => \$parameter{'combineStructuralVariantCallSetsBCFFile'}{'value'},  #Produce compressed vcf
 	   'pSvv|pSVVariantEffectPredictor:n' => \$parameter{'pSVVariantEffectPredictor'}{'value'},
-	   'svvepf|svvepFeatures:s'  => \@{$parameter{'svvepFeatures'}{'value'}},  #Comma separated list
+	   'svvepf|svVepFeatures:s'  => \@{$parameter{'svVepFeatures'}{'value'}},  #Comma separated list
+	   'svvepl|svVepPlugins:s'  => \@{$parameter{'svVepPlugins'}{'value'}},  #Comma separated list
 	   'pSVVcP|pSVVCFParser:n' => \$parameter{'pSVVCFParser'}{'value'},
 	   'svvcpvt|svVcfParserVepTranscripts:n' => \$parameter{'svVcfParserVepTranscripts'}{'value'},
 	   'svvcprff|svVcfParserRangeFeatureFile:s' => \$parameter{'svVcfParserRangeFeatureFile'}{'value'},  #path to vcfParserRangeFeatureFile
@@ -547,6 +550,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{'inFilesDirs'}{'value'}},  #Com
 	   'vepc|vepDirectoryCache:s'  => \$parameter{'vepDirectoryCache'}{'value'},  #path to vep cache dir
 	   'vepr|vepReference:s'  => \$parameter{'vepReference'}{'value'},  #Use Human reference file with VEP
 	   'vepf|vepFeatures:s'  => \@{$parameter{'vepFeatures'}{'value'}},  #Comma separated list
+	   'veppl|vepPlugins:s'  => \@{$parameter{'vepPlugins'}{'value'}},  #Comma separated list
 	   'pVcP|pVCFParser:n' => \$parameter{'pVCFParser'}{'value'},
 	   'vcpvt|vcfParserVepTranscripts:n' => \$parameter{'vcfParserVepTranscripts'}{'value'},
 	   'vcprff|vcfParserRangeFeatureFile:s'  => \$parameter{'vcfParserRangeFeatureFile'}{'value'},  #path to vcfParserRangeFeatureFile
@@ -5014,21 +5018,37 @@ sub VariantEffectPredictor {
 	print $XARGSFILEHANDLE "--buffer_size 20000 ";  #Sets the internal buffer size, corresponding to the number of variations that are read in to memory simultaneously 
 	print $XARGSFILEHANDLE "--offline ";  #Use installed assembly 
 	print $XARGSFILEHANDLE "--chr ".$$contigRef." ";
-	
-	if ($$contigRef =~ /MT|M/) {
-	    
-	    print $XARGSFILEHANDLE "--plugin UpDownDistance,10,10 ";  #Special case for mitochondrial contig annotation
+
+	##VEPPlugins
+	foreach my $plugin (@{${$scriptParameterHashRef}{'vepPlugins'}}) {
+
+	    if ($plugin eq "LoF") {
+
+		print $XARGSFILEHANDLE "--plugin ".$plugin.",human_ancestor_fa:".${$scriptParameterHashRef}{'vepDirectoryCache'}."/human_ancestor.fa,filter_position:0.05 ";
+	    }
+	    elsif ($plugin eq "UpDownDistance") {  #Special case for mitochondrial contig annotation
+		
+		if ($$contigRef =~ /MT|M/) {
+
+		    print $XARGSFILEHANDLE "--plugin UpDownDistance,10,10 ";
+		}
+	    }
+	    else {
+
+		print $XARGSFILEHANDLE "--plugin ".$plugin." ";
+	    }
 	}
-	
-	for (my $vepFeatureCounter=0;$vepFeatureCounter<scalar(@{${$scriptParameterHashRef}{'vepFeatures'}});$vepFeatureCounter++) {
+
+	##VEPFeatures
+	foreach my $vepFeature (@{${$scriptParameterHashRef}{'vepFeatures'}}) {
+
+	    print $XARGSFILEHANDLE "--".$vepFeature." ";  #Add VEP features to the output.
 	    
-	    print $XARGSFILEHANDLE "--".${$scriptParameterHashRef}{'vepFeatures'}[$vepFeatureCounter]." ";  #Add VEP features to the output.
-	    
-	    if ( ($$contigRef =~ /MT|M/) && (${$scriptParameterHashRef}{'vepFeatures'}[$vepFeatureCounter] eq "refseq") ) {  #Special case for mitochondrial contig annotation
+	    if ( ($$contigRef =~ /MT|M/) && ($vepFeature eq "refseq") ) {  #Special case for mitochondrial contig annotation
 		
 		print $XARGSFILEHANDLE "--all_refseq ";
 	    }
-	    if ( (${$scriptParameterHashRef}{'vepFeatures'}[$vepFeatureCounter] eq "sift") || (${$scriptParameterHashRef}{'vepFeatures'}[$vepFeatureCounter] eq "polyphen") )  {  #Protein predictions
+	    if ( ($vepFeature eq "sift") || ($vepFeature eq "polyphen") )  {  #Protein predictions
 		
 		print $XARGSFILEHANDLE "p ";  #Add prediction term 
 	    }
@@ -8190,7 +8210,7 @@ sub SVVariantEffectPredictor {
 
     print $FILEHANDLE $perlFixSVNoLengths." ";
     print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType.".vcf ";
-    say $FILEHANDLE "> ".$$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType."_fixedSVLength.vcf ";
+    say $FILEHANDLE "> ".$$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType."_fixedSVLength.vcf ", "\n";
 
     ## VariantEffectPredictor
     say $FILEHANDLE "## VariantEffectPredictor";
@@ -8224,20 +8244,36 @@ sub SVVariantEffectPredictor {
 	print $XARGSFILEHANDLE "--offline ";  #Use installed assembly 
 	print $XARGSFILEHANDLE "--chr ".$$contigRef." ";
 
-	if ($$contigRef =~ /MT|M/) {
+	##VEPPlugins
+	foreach my $plugin (@{${$scriptParameterHashRef}{'svVepPlugins'}}) {
 
-	    print $XARGSFILEHANDLE "--plugin UpDownDistance,10,10 ";  #Special case for mitochondrial contig annotation
+	    if ($plugin eq "LoF") {
+
+		print $XARGSFILEHANDLE "--plugin ".$plugin.",human_ancestor_fa:".${$scriptParameterHashRef}{'vepDirectoryCache'}."/human_ancestor.fa,filter_position:0.05 ";
+	    }
+	    elsif ($plugin eq "UpDownDistance") {  #Special case for mitochondrial contig annotation
+		
+		if ($$contigRef =~ /MT|M/) {
+
+		    print $XARGSFILEHANDLE "--plugin UpDownDistance,10,10 ";
+		}
+	    }
+	    else {
+
+		print $XARGSFILEHANDLE "--plugin ".$plugin." ";
+	    }
 	}
 
-	for (my $vepFeatureCounter=0;$vepFeatureCounter<scalar(@{${$scriptParameterHashRef}{'svVepFeatures'}});$vepFeatureCounter++) {
+	##VEPFeatures
+	foreach my $vepFeature (@{${$scriptParameterHashRef}{'svVepFeatures'}}) {
 
-	    print $XARGSFILEHANDLE "--".${$scriptParameterHashRef}{'svVepFeatures'}[$vepFeatureCounter]." ";  #Add VEP features to the output.
+	    print $XARGSFILEHANDLE "--".$vepFeature." ";  #Add VEP features to the output.
 
-	    if ( ($$contigRef =~ /MT|M/) && (${$scriptParameterHashRef}{'svVepFeatures'}[$vepFeatureCounter] eq "refseq") ) {  #Special case for mitochondrial contig annotation
+	    if ( ($$contigRef =~ /MT|M/) && ($vepFeature eq "refseq") ) {  #Special case for mitochondrial contig annotation
 
 		print $XARGSFILEHANDLE "--all_refseq ";
 	    }
-	    if ( (${$scriptParameterHashRef}{'svVepFeatures'}[$vepFeatureCounter] eq "sift") || (${$scriptParameterHashRef}{'svVepFeatures'}[$vepFeatureCounter] eq "polyphen") )  {  #Protein predictions
+	    if ( ($vepFeature eq "sift") || ($vepFeature eq "polyphen") )  {  #Protein predictions
 		
 		print $XARGSFILEHANDLE "p ";  #Add prediction term 
 	    }

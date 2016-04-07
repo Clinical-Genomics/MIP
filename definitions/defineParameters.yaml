@@ -1621,6 +1621,16 @@ vepFeatures:
    - canonical
    - appris
   type: programArgument
+vepPlugins:
+  associatedProgram:
+   - pVariantEffectPredictor
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - UpDownDistance
+   - LoFtool
+   - LoF
+  type: programArgument
 svVepFeatures:
   associatedProgram:
    - pSVVariantEffectPredictor
@@ -1643,6 +1653,16 @@ svVepFeatures:
    - canonical
    - per_gene
    - appris
+  type: programArgument
+svVepPlugins:
+  associatedProgram:
+   - pVariantEffectPredictor
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - UpDownDistance
+   - LoFtool
+   - LoF
   type: programArgument
 vcfParserRangeFeatureAnnotationColumns:
   associatedProgram:
