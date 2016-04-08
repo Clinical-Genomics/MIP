@@ -1,10 +1,19 @@
 #!/usr/bin/env perl
 
-use Modern::Perl '2014';
-
 ###Master script for analysing paired end reads from the Illumina plattform in fastq(.gz) format to annotated ranked disease causing variants. The program performs QC, aligns reads using Mosaik or BWA, performs variant discovery and annotation as well as ranking the found variants according to disease potential.
  
 ###Copyright 2011 Henrik Stranneheim
+
+use v5.18;  #Require at least perl 5.18
+use Modern::Perl '2014';
+use autodie qw(open close :all);
+
+##Unicode broilerplate
+use warnings qw( FATAL utf8 );
+use utf8;  #Allow unicode characters in this script
+use open qw( :encoding(UTF-8) :std );
+use charnames qw( :full :short );
+
 
 use Getopt::Long;
 use POSIX;
@@ -14,20 +23,21 @@ use File::Path qw(make_path);
 use File::Copy qw(copy);
 use Cwd;
 use IPC::Cmd qw[can_run run];
+use IPC::System::Simple;  #Required for autodie :all
 use vars qw($USAGE);
 use List::Util qw(any);
+use Time::Piece;
 
 ## Third party module(s)
 use YAML;
 use Log::Log4perl;
-use DateTime;
 use Path::Iterator::Rule;
 
 
 BEGIN {
 
 
-    my @modules = ("YAML", "Log::Log4perl", "DateTime", "Path::Iterator::Rule", "DateTime::Format::ISO8601", "DateTime::Format::HTTP", "DateTime::Format::Mail");	
+    my @modules = ("YAML", "Log::Log4perl", "Path::Iterator::Rule");	
 
     ## Evaluate that all modules required are installed
     &EvalModules(\@modules);
@@ -307,9 +317,9 @@ my @orderParameters;  #To add/write parameters in the correct order
 my @broadcasts;  #Holds all set parameters info after AddToScriptParameter
 
 ## Add dateTimestamp for later use in log and qcmetrics yaml file
-my $dateTime = DateTime->now(time_zone=>'local');
-my $dateTimeStamp = $dateTime->datetime();
-my $date = $dateTime->ymd('-');  #Catches current date
+my $dateTime = localtime;
+my $dateTimeStamp = $dateTime->datetime;
+my $date = $dateTime->ymd;
 my $script = (`basename $0`);  #Catches script name
 chomp($dateTimeStamp, $date, $script);  #Remove \n;
 
@@ -15689,8 +15699,8 @@ sub AddInfileInfo {
     my $fileAtLaneLevelRef;
     my $fileAtDirectionLevelRef;
 
-    my $parsedDate = DateTime::Format::Multi->parse_datetime($date);  #Reparse to dateTime standard
-    $parsedDate = $parsedDate->ymd('-');  #Only date
+    my $parsedDate = Time::Piece->strptime($date, "%y%m%d");
+    $parsedDate = $parsedDate->ymd;
 
     if ($compressedSwitch eq "compressed") {
 
@@ -20988,8 +20998,8 @@ sub CollectSubDatabases {
 
 		if ($feature eq "Date") {
 
-		       my $date = DateTime::Format::Multi->parse_datetime($memberDatabase{$feature});  #Reparse to dateTime standard
-		       $memberDatabase{$feature} = $date->ymd('-');  #Only date
+		    my $parsedDate = Time::Piece->strptime($memberDatabase{$feature}, "%Y%m%d");
+		    $memberDatabase{$feature} = $parsedDate->ymd;
 		}
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$$programNameRef}{$databaseKey}{'Database'}{$databaseName}{$feature} = $memberDatabase{$feature};
 	    }
@@ -23109,31 +23119,26 @@ sub CollectReadLength {
 }
 
 
-package DateTime::Format::Multi;
-
-#Package for testing multiple date formats
-
-## Third party module(s) on parsing date formats
-use DateTime::Format::ISO8601;
-use DateTime::Format::HTTP;
-use DateTime::Format::Mail;
-
-#Build the parsers
-use DateTime::Format::Builder (
-    parsers => {
-	parse_datetime => [
-	    sub {
-		eval { DateTime::Format::ISO8601->parse_datetime( $_[1] ) };
-	    },
-	    sub {
-		eval { DateTime::Format::Mail->parse_datetime( $_[1] ) };
-	    },
-	    sub {
-		eval { DateTime::Format::HTTP->parse_datetime( $_[1] ) };
-	    },
-	    ]
+##Investigate potential autodie error
+if ($@ and $@->isa('autodie::exception')) {
+    
+    if ($@->matches('default')) {
+	
+	say "Not an autodie error at all";
     }
-    );
+    if ($@->matches('open')) { 
+
+	say "Error from open";
+    }
+    if ($@->matches(':io' )) {
+
+	say "Non-open, IO error.\n";
+    }
+}
+elsif ($@) {
+
+    say "A non-autodie exception.";
+}
 
 ####
 #Decommissioned

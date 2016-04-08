@@ -2,6 +2,13 @@
 
 use strict;
 use warnings;
+use Modern::Perl '2014';
+use warnings qw( FATAL utf8 );
+use autodie;
+use v5.18;  #Require at least perl 5.18
+use utf8;  #Allow unicode characters in this script
+use open qw( :encoding(UTF-8) :std );
+use charnames qw( :full :short );
 
 use Pod::Usage;
 use Pod::Text;

@@ -4,14 +4,17 @@
 
 use strict;
 use warnings;
+use warnings qw( FATAL utf8 );
+use utf8;
+use open qw( :encoding(UTF-8) :std );
+use charnames qw( :full :short );
 
 use Getopt::Long;
 use Cwd;
 use FindBin qw($Bin); #Find directory of script
 use vars qw($USAGE);
-use IPC::Cmd qw[can_run run];
+use IO::Handle;
 use File::Spec::Functions qw(catfile), qw(catdir);
-use List::Util qw(any);
 
 BEGIN {
     $USAGE =
@@ -89,14 +92,11 @@ $parameter{'bioCondaBoostPatch'} = "-4";
 $parameter{'perlInstall'} = 0;
 $parameter{'perl'} = "5.18.2";
 $parameter{'perlModules'} = ["Modern::Perl",  #MIP
+			     "IPC::System::Simple",  #MIP
 			     "Path::Iterator::Rule",  #MIP
 			     "YAML",  #MIP
 			     "Log::Log4perl",  #MIP
-			     "DateTime",  #MIP
-			     "DateTime::Format::ISO8601",  #MIP
-			     "DateTime::Format::HTTP",  #MIP
-			     "DateTime::Format::Mail",  #MIP
-			     "Set::IntervalTree",  # vcfParser
+			     "Set::IntervalTree",  # MIP/vcfParser.pl
 			     "Net::SSLeay",  # VEP
 			     "LWP::Simple",  # VEP
 			     "LWP::Protocol::https",  # VEP
@@ -174,8 +174,8 @@ my $BASHFILEHANDLE = &CreateBashFile("mip.sh");
 
 if (scalar(@{$parameter{'selectPrograms'}}) > 0) {
     
-    if ( ( any {$_ eq "perl"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
-	
+    if ( ( grep {$_ eq "perl"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+
 	&Perl(\%parameter, $BASHFILEHANDLE);
     }
 }
@@ -191,27 +191,27 @@ if ($parameter{'preferBioConda'} != 1) {
 
     if (scalar(@{$parameter{'selectPrograms'}}) > 0) {
 	
-	if ( ( any {$_ eq "picardTools"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+	if ( ( grep {$_ eq "picardTools"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 	    
 	    &PicardTools(\%parameter, $BASHFILEHANDLE);
 	}
-	if ( ( any {$_ eq "sambamba"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+	if ( ( grep {$_ eq "sambamba"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 
 	    &Sambamba(\%parameter, $BASHFILEHANDLE);
 	}
-	if ( ( any {$_ eq "bedTools"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+	if ( ( grep {$_ eq "bedTools"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 
 	    &BedTools(\%parameter, $BASHFILEHANDLE);
 	}
-	if ( ( any {$_ eq "vt"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+	if ( ( grep {$_ eq "vt"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 
 	    &VT(\%parameter, $BASHFILEHANDLE);
 	}
-	if ( ( any {$_ eq "snpEff"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+	if ( ( grep {$_ eq "snpEff"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 
 	    &SnpEff(\%parameter, $BASHFILEHANDLE);
 	}
-	if ( ( any {$_ eq "plink2"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+	if ( ( grep {$_ eq "plink2"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 	
 	    &Plink2(\%parameter, $BASHFILEHANDLE);
 	}
@@ -234,22 +234,22 @@ if ($parameter{'preferBioConda'} != 1) {
 
 if (scalar(@{$parameter{'selectPrograms'}}) > 0) {
 
-    if ( ( any {$_ eq "MIPScripts"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+    if ( ( grep {$_ eq "MIPScripts"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 	&MIPScripts(\%parameter, $BASHFILEHANDLE);
     }
-    if ( ( any {$_ eq "vcfTools"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+    if ( ( grep {$_ eq "vcfTools"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 	
 	&VcfTools(\%parameter, $BASHFILEHANDLE);
     }
-    if ( ( any {$_ eq "variantEffectPredictor"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+    if ( ( grep {$_ eq "variantEffectPredictor"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 	
 	&VariantEffectPredictor(\%parameter, $BASHFILEHANDLE);
     }
-    if ( ( any {$_ eq "CNVnator"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+    if ( ( grep {$_ eq "CNVnator"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 	
 	&CNVnator(\%parameter, $BASHFILEHANDLE);
     }
-    if ( ( any {$_ eq "FindTranslocations"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
+    if ( ( grep {$_ eq "FindTranslocations"} @{$parameter{'selectPrograms'}} ) ) { #If element is part of array
 	
 	&FindTranslocations(\%parameter, $BASHFILEHANDLE);
     }
@@ -333,8 +333,8 @@ sub CreateConda {
 
     my $program = "conda";
 
-    if(can_run($program)) {  #IPC::Cmd
-	
+    if ($ENV{PATH}=~/conda/) {
+
 	say STDERR "ProgramCheck: ".$program." installed";
     }
     else {
@@ -541,7 +541,7 @@ sub InstallPerlCpnam {
     say $FILEHANDLE q?./Configure -des -Dprefix=$HOME/perl-?.${$parameterHashRef}{'perl'};    
     say $FILEHANDLE "make";
     say $FILEHANDLE "make test";    
-    say $FILEHANDLE "make install";
+    say $FILEHANDLE "make install", "\n";
     
     if ($path) {
 	
@@ -563,11 +563,13 @@ sub InstallPerlCpnam {
     print $FILEHANDLE "cd ".$pwd;
     say $FILEHANDLE "\n";
 
-    if ($path) {
+    #if ($path) {
 
 	print $FILEHANDLE q?echo 'eval `perl -I ~/perl-?.${$parameterHashRef}{'perl'}.q?/lib/perl5/ -Mlocal::lib=~/perl-?.${$parameterHashRef}{'perl'}.q?/`' >> ~/.bash_profile ?;  #Add at start-up
 	say $FILEHANDLE "\n";
-    }
+	print $FILEHANDLE q?echo 'export PERL_UNICODE=SAD' >> ~/.bash_profile ?;  #Add at start-up
+	say $FILEHANDLE "\n";
+    #}
 
     ## Install Perl modules via cpanm
     say $FILEHANDLE "## Install cpanm";
