@@ -1,22 +1,22 @@
 #!/usr/bin/env perl
 
-
 ###Will test perl modules and some selected funtions as well as vcf keys both in header and body. Adjusts dynamically according to supplied config file.
 ###Copyright 2016 Henrik Stranneheim
 
-use strict;
-use warnings;
+use Modern::Perl '2014';
+use warnings qw( FATAL utf8 );
+use autodie;
+use v5.18;  #Require at least perl 5.18
+use utf8;  #Allow unicode characters in this script
+use open qw( :encoding(UTF-8) :std );
+use charnames qw( :full :short );
 
 BEGIN {
 
 
     my @modules = ("YAML",
 		   "Log::Log4perl",
-		   "List::MoreUtils",
-		   "DateTime",
-		   "DateTime::Format::ISO8601",
-		   "DateTime::Format::HTTP",
-		   "DateTime::Format::Mail",
+		   "Path::Iterator::Rule",
 		   "Set::IntervalTree",  # vcfParser
 		   "Net::SSLeay",  # VEP
 		   "LWP::Simple",  # VEP
@@ -219,19 +219,6 @@ sub TestModules {
     my $verbose = 1;
     ok(GetOptions("verbose:n"  => \$verbose), "Getopt::Long: Get options call");
     ok ($verbose == 2, "Getopt::Long: Get options modified");
-    
-    use DateTime;
-    my $dateTime = DateTime->now(time_zone=>'local');
-    ok (defined($dateTime), "DateTime: Now");
-    my $dateTimeStamp = $dateTime->datetime();
-    ok (defined($dateTimeStamp), "DateTime: Time stamp");
-    my $date = $dateTime->ymd('-');  #Catches current date
-    ok (defined($date), "DateTime: Current date");
-    
-    use List::MoreUtils qw(any);
-    
-    my @array = ("apples", "oranges");
-    ok( (any {$_ eq "apples"} @array),"List::MoreUtils: Any");
 }
 
 sub CreateLog4perlCongfig {
