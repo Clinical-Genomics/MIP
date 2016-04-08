@@ -1029,7 +1029,10 @@ sub ReadInfileVCF {
 	    }
 	}
     }
-    close(WOSFTSV);
+    if ($selectFeatureFile ne 0) {
+
+	close(WOSFTSV);
+    }
     print STDERR "Finished Processing VCF", "\n";
 }
 
