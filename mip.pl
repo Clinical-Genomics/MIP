@@ -9638,7 +9638,7 @@ sub SamToolsMpileUp {
 	print $XARGSFILEHANDLE "-g ";  #Generate genotype likelihoods in BCF format
 	print $XARGSFILEHANDLE "-C 50 ";  #Adjust mapping quality
 	print $XARGSFILEHANDLE "-p ";  #Apply -m and -F per-sample for increased sensitivity
-	print $XARGSFILEHANDLE "-t DV "; #Optional tags to output; high-quality non-reference bases
+	print $XARGSFILEHANDLE "-t AD "; #Optional tags to output; Allelic depth
 	print $XARGSFILEHANDLE "-f ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{'humanGenomeReference'}." ";  #Reference file
 
 	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{'sampleIDs'}});$sampleIDCounter++) { #Collect infiles for all sampleIDs
