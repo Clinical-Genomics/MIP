@@ -4171,11 +4171,7 @@ sub SnpEff {
 		    ## Apply specific INFO field output key for easier downstream processing
 		    if (defined(${$scriptParameterHashRef}{'snpSiftAnnotationOutInfoKey'}{$annotationFile})) {
 			
-			print $XARGSFILEHANDLE "-name SnpSift_".${$scriptParameterHashRef}{'snpSiftAnnotationOutInfoKey'}{$annotationFile}."_ ";
-		    }
-		    else {  ## Prepend 'str' to all annotated INFO fields
-
-			print $XARGSFILEHANDLE "-name SnpSift_ ";
+			print $XARGSFILEHANDLE "-name ".${$scriptParameterHashRef}{'snpSiftAnnotationOutInfoKey'}{$annotationFile}." ";
 		    }
 		    print $XARGSFILEHANDLE "-info ".${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}{$annotationFile}." ";  #Database
 		}

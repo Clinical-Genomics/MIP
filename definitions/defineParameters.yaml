@@ -1747,9 +1747,9 @@ snpSiftAnnotationOutInfoKey:
   buildFile: yesAutoBuild
   dataType: HASH
   default:
-     dbsnp_138.b37.excluding_sites_after_129.vcf.gz: Dbsnp129LCAF
-     ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz: 1000GAF
-     ExAC.r0.3.sites.vep.vcf.gz: EXACAF
+     dbsnp_138.b37.excluding_sites_after_129.vcf.gz: Dbsnp129L
+     ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz: 1000G
+     ExAC.r0.3.sites.vep.vcf.gz: EXAC
   existsCheck: file
   reference: referencesDir
   type: path
