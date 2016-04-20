@@ -2393,19 +2393,16 @@ sub Sacct {
 
     my ($argHashRef) = @_;
     
-    my %default = (familyIDRef => \${$argHashRef}{scriptParameterHashRef}{familyID},
-	);
-    
-    &SetDefaultArg(\%{$argHashRef}, \%default);
-    
+    ## Default(s)
+    my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
+    my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
+
     ## Flatten argument(s)
     my $parameterHashRef = ${$argHashRef}{parameterHashRef};
     my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
     my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
     my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $familyIDRef = ${$argHashRef}{familyIDRef};
-    my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef};
     my $programName = ${$argHashRef}{programName};
 
     ## Mandatory arguments
@@ -20122,29 +20119,6 @@ sub AddCaptureKit {
 }
 
 
-sub SetDefaultArg {
-
-##SetDefaultArg
-    
-##Function : Set the default arguments for argHashRef using $defaultHashRef
-##Returns  : ""
-##Arguments: $argHashRef, $parameterValueRef, $parameterName, $associatedProgram
-##         : $argHashRef     => The argument hash {REF}
-##         : $defaultHashRef => The default hash {REF}
-
-    my $argHashRef = $_[0];
-    my $defaultHashRef = $_[1];
-    
-    foreach my $key (keys %{$defaultHashRef}) {
-	
-	unless (defined(${$argHashRef}{$key})) {
-	    
-	    ${$argHashRef}{$key} = ${$defaultHashRef}{$key};  #Set default
-	}
-    }
-}
-
-
 sub GatherBamFiles {
     
 ##GatherBamFiles
@@ -22358,20 +22332,18 @@ sub PrepareGATKTargetIntervals {
 ##         : $FILEHANDLE                 => Filehandle to write to
 
     my ($argHashRef) = @_;
-    
-    my %default = (addEnding => 1,
-		   callType => "BOTH",
-	);
-    
-    &SetDefaultArg(\%{$argHashRef}, \%default);
 
+    ## Default(s)
+    my $callType = ${$argHashRef}{callType} //= "BOTH";
+    my $addEnding = ${$argHashRef}{addEnding} //= 1;
+    
     ## Flatten argument(s)
     my $analysisTypeRef = ${$argHashRef}{analysisTypeRef};
     my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
     my $referencesDirectoryRef = ${$argHashRef}{referencesDirectoryRef};
     my $targetIntervalFileListsRef = ${$argHashRef}{targetIntervalFileListsRef};
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef};
-    my $addEnding = ${$argHashRef}{addEnding};
+    ;
 
     if ( ($$analysisTypeRef eq "exomes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
 	
