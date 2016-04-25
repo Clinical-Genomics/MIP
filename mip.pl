@@ -3313,6 +3313,7 @@ sub RankVariants {
 	    ## Genmod Models
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "models ";  #Annotate genetic models for vcf variants
+	    print $XARGSFILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
 	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{pedigreeFile}." ";  #Pedigree file
 	    print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{genmodModelsFamilyType}." ";  #Family type
 
@@ -3340,6 +3341,7 @@ sub RankVariants {
 	    print $XARGSFILEHANDLE "genmod ";
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "annotate ";  #Annotate vcf variants
+	    print $XARGSFILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
 
 	    foreach my $caddFile (@{${$scriptParameterHashRef}{genmodcaddFiles}}) {
 
@@ -3376,6 +3378,7 @@ sub RankVariants {
 	    print $XARGSFILEHANDLE "genmod ";
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "compound ";  #Adjust score for compound variants in a vcf file
+	    print $XARGSFILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
 
 	    if (${$scriptParameterHashRef}{pVariantEffectPredictor} > 0) {  #Use VEP annotations in compound models
 		
@@ -7483,6 +7486,7 @@ sub SVRankVariants {
 	    ## Genmod Models
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "models ";  #Annotate genetic models for vcf variants
+	    print $XARGSFILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
 	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{pedigreeFile}." ";  #Pedigree file
 	    print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{genmodModelsFamilyType}." ";  #Family type
 	    
@@ -7528,7 +7532,8 @@ sub SVRankVariants {
 	    print $XARGSFILEHANDLE "genmod ";
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "compound ";  #Adjust score for compound variants in a vcf file
-	    
+	    print $XARGSFILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
+
 	    if (${$scriptParameterHashRef}{pSVVariantEffectPredictor} > 0) {  #Use VEP annotations in compound models
 		
 		print $XARGSFILEHANDLE "--vep "; 
@@ -7552,6 +7557,7 @@ sub SVRankVariants {
 	print $FILEHANDLE "genmod ";
 	print $FILEHANDLE "-v ";  #Increase output verbosity
 	print $FILEHANDLE "sort ";  #Sort a VCF file based on rank score
+	print $XARGSFILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
 	print $FILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf ";  #Outfile
 	say $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType.".vcf ";  #infile
 	
