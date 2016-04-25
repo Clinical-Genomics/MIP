@@ -22,7 +22,7 @@ BEGIN {
            -env/--condaEnvironment Conda environment (Default: "mip")
            -cdp/--condaPath The conda path (Default: "HOME/miniconda")
            -bvc/--bioConda Set the module version of the programs that can be installed with bioConda (e.g. 'bwa=0.7.12')
-           -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.4.8')
+           -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.5.1')
 
            ## SHELL
            -pei/--perlInstall Install perl (defaults: "0" (=no))
@@ -112,7 +112,7 @@ $parameter{'perlModules'} = ["Modern::Perl",  #MIP
     ];
 
 ## PIP
-$parameter{'pip'}{'genmod'} = "3.4.8";
+$parameter{'pip'}{'genmod'} = "3.5.1";
 $parameter{'pip'}{'chanjo'} = "3.3.1";
 $parameter{'pip'}{'cosmid'} = "0.4.9.1";
 $parameter{'pip'}{'python-Levenshtein'} = "0.12.0";
