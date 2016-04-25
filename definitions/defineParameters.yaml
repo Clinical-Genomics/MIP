@@ -744,6 +744,12 @@ svRankModelFile:
   existsCheck: file
   reference: referencesDir
   type: path
+svRankVariantBCFFile:
+  associatedProgram:
+   - pSVRankVariants
+  dataType: SCALAR
+  default: 1
+  type: programArgument
 ##Samtools
 pSamToolsMpileUp:
   associatedProgram:
@@ -1423,6 +1429,12 @@ rankModelFile:
   existsCheck: file
   reference: referencesDir
   type: path
+rankVariantBCFFile:
+  associatedProgram:
+   - pRankVariants
+  dataType: SCALAR
+  default: 1
+  type: programArgument
 ## PythonVirtualEnvironment
 usePythonVirtualEnvironment:
   associatedProgram:

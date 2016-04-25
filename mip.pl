@@ -162,6 +162,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pSvR/--pSVRankVariants Ranking of annotated SV variants (defaults to "1" (=yes))
                  -svravwg/--svWholeGene Allow compound pairs in intronic regions (defaults to "0" (=yes))
                  -svravrm/--svRankModelFile Rank model config file (defaults to "")
+                 -svravbcf/--svRankVariantsBCFFile Produce bcfs from the Rank variants vcfs (defaults to "1" (=yes))
                
                ##Samtools
                -pSmp/--pSamToolsMpileUp Variant calling using samTools mpileup and bcfTools (defaults to "1" (=yes))
@@ -260,6 +261,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -ravwg/--wholeGene Allow compound pairs in intronic regions (defaults to "1" (=yes))
                  -ravrpf/--genmodModelsReducedPenetranceFile File containg genes with reduced penetrance (defaults to "")
                  -ravrm/--rankModelFile Rank model config file (defaults to "")
+                 -ravbcf/--rankVariantBCFFile Produce bcfs from the Rank variants vcfs (defaults to "1" (=yes))
                
                ###Utility
                -pScK/--pSampleCheck QC for samples gender and relationship (defaults to "1" (=yes) )
@@ -502,6 +504,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'pSvR|pSVRankVariants:n' => \$parameter{pSVRankVariants}{value},  #Ranking of SV variants
 	   'svravwg|svWholeGene:n'  => \$parameter{svWholeGene}{value},  #Allow compound pairs in intronic regions
 	   'svravrm|svRankModelFile:s' => \$parameter{svRankModelFile}{value},  #The rank modell config.ini path
+	   'svravbcf|svRankVariantsBCFFile:n' => \$parameter{svRankVariantsBCFFile}{value},  #Produce compressed vcfs
 	   'pSmp|pSamToolsMpileUp:n' => \$parameter{pSamToolsMpileUp}{value},
 	   'pFrb|pFreebayes:n' => \$parameter{pFreebayes}{value},
 	   'gtp|genomeAnalysisToolKitPath:s' => \$parameter{genomeAnalysisToolKitPath}{value},  #GATK whole path
@@ -589,6 +592,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'ravwg|wholeGene:n'  => \$parameter{wholeGene}{value},  #Allow compound pairs in intronic regions
 	   'ravrpf|genmodModelsReducedPenetranceFile:s' => \$parameter{genmodModelsReducedPenetranceFile}{value},
 	   'ravrm|rankModelFile:s' => \$parameter{rankModelFile}{value},  #The rank modell config.ini path
+	   'ravbcf|rankVariantBCFFile:n' => \$parameter{rankVariantBCFFile}{value},  #Produce compressed vcfs
 	   'pScK|pSampleCheck:n' => \$parameter{pSampleCheck}{value},  #QC for samples gender and relationship
 	   'pEvL|pEvaluation:n' => \$parameter{pEvaluation}{value},  #Compare concordance with NIST data set
 	   'evlnid|NISTID:s' => \$parameter{NISTID}{value},
@@ -3419,17 +3423,41 @@ sub RankVariants {
 			     });
 	say $FILEHANDLE "wait", "\n";
 
+	if (${$scriptParameterHashRef}{rankVariantBCFFile} == 1) {
+	
+	    &VcfToBcf({infile => $$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType,
+		       FILEHANDLE => $FILEHANDLE,
+		      });
+	
+	    ## Copies file from temporary directory.
+	    say $FILEHANDLE "## Copy file from temporary directory";
+	    &MigrateFileFromTemp({tempPath => $$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".bcf*",
+				  filePath => $outFamilyDirectory."/",
+				  FILEHANDLE => $FILEHANDLE,
+				 });
+	}
+
 	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 	    
 	    if ($vcfParserOutputFileCounter == 1) {
 
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{VCFFile}{Clinical}{Path} = $outFamilyDirectory."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf";
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{Program}{RankVariants}{Clinical}{Path} = $outFamilyDirectory."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf";   #Save clinical candidate list path
+
+		if (${$scriptParameterHashRef}{rankVariantBCFFile} == 1) {
+
+		    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{BCFFile}{Clinical}{Path} = $outFamilyDirectory."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".bcf";
+		}
 	    }
 	    else {
 
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{VCFFile}{Research}{Path} = $outFamilyDirectory."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf";
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{Program}{RankVariants}{Research}{Path} = $outFamilyDirectory."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf";   #Save research candidate list path
+
+		if (${$scriptParameterHashRef}{rankVariantBCFFile} == 1) {
+
+		    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{BCFFile}{Research}{Path} = $outFamilyDirectory."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".bcf";
+		}
 	    }
 	}
     }
@@ -7570,17 +7598,41 @@ sub SVRankVariants {
 			     });
 	say $FILEHANDLE "wait", "\n";
 	
+	if (${$scriptParameterHashRef}{svRankVariantBCFFile} == 1) {
+	
+	    &VcfToBcf({infile => $$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType,
+		       FILEHANDLE => $FILEHANDLE,
+		      });
+	
+	    ## Copies file from temporary directory.
+	    say $FILEHANDLE "## Copy file from temporary directory";
+	    &MigrateFileFromTemp({tempPath => $$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".bcf*",
+				  filePath => $outFamilyDirectory."/",
+				  FILEHANDLE => $FILEHANDLE,
+				 });
+	}
+
 	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 	    
 	    if ($vcfParserOutputFileCounter == 1) {
 		
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{SVVCFFile}{Clinical}{Path} = $outFamilyDirectory."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf";
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{Program}{SVRankVariants}{Clinical}{Path} = $outFamilyDirectory."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf";   #Save clinical candidate list path
+
+		if (${$scriptParameterHashRef}{svRankVariantBCFFile} == 1) {
+
+		    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{SVBCFFile}{Clinical}{Path} = $outFamilyDirectory."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".bcf";
+		}
 	    }
 	    else {
 		
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{SVVCFFile}{Research}{Path} = $outFamilyDirectory."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf";
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{Program}{SVRankVariants}{Research}{Path} = $outFamilyDirectory."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf";   #Save research candidate list path
+
+		if (${$scriptParameterHashRef}{svRankVariantBCFFile} == 1) {
+
+		    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{SVBCFFile}{Research}{Path} = $outFamilyDirectory."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".bcf";
+		}
 	    }
 	}
     }
@@ -16536,7 +16588,7 @@ sub ProgramPreRequisites {
     ## Default(s)
     my $outDataDir = ${$argHashRef}{outDataDir} //= ${$argHashRef}{scriptParameterHashRef}{outDataDir};
     my $outScriptDir = ${$argHashRef}{outScriptDir} //= ${$argHashRef}{scriptParameterHashRef}{outScriptDir};
-    my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
+    my $tempDirectory = ${$argHashRef}{tempDirectory} //= ${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $emailType = ${$argHashRef}{emailType} //= ${$argHashRef}{scriptParameterHashRef}{emailType};
     my $nrofCores = ${$argHashRef}{nrofCores} //= 1;
     my $processTime = ${$argHashRef}{processTime} //= 1;
@@ -16644,10 +16696,10 @@ sub ProgramPreRequisites {
     say $FILEHANDLE q?echo "Running on: $(hostname)"?;
     say $FILEHANDLE q?PROGNAME=$(basename $0)?,"\n";
     
-    if (defined($$tempDirectoryRef)) {  #Not all programs need a temporary directory
+    if (defined($tempDirectory)) {  #Not all programs need a temporary directory
 
 	say $FILEHANDLE "## Create temporary directory";
-	say $FILEHANDLE q?tempDirectory="?.$$tempDirectoryRef.q?"?;  #Assign batch variable
+	say $FILEHANDLE q?tempDirectory="?.$tempDirectory.q?"?;  #Assign batch variable
 	say $FILEHANDLE q?mkdir -p $tempDirectory?, "\n";
 	
 	##Create housekeeping function and trap
