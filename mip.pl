@@ -2325,6 +2325,7 @@ if ($scriptParameter{pRemoveRedundantFiles} > 0) {  #Sbatch generation of remova
 			   sampleInfoHashRef => \%sampleInfo,
 			   fileInfoHashRef => \%fileInfo,
 			   infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
+			   jobIDHashRef => \%jobID,
 			   laneHashRef => \%lane,
 			   programName => "RemoveRedundantFiles",
 			  });	
@@ -2420,6 +2421,7 @@ sub Sacct {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$familyIDRef,
 					    programName => $programName,
@@ -2439,7 +2441,8 @@ sub Sacct {
 		       infilesLaneNoEndingHashRef => \%{$infilesLaneNoEndingHashRef},
 		       dependencies => 7, 
 		       path => ${$parameterHashRef}{"p".$programName}{chain},
-		       sbatchFileName => $fileName
+		       sbatchFileName => $fileName,
+		       jobDependency => "afterany",
 		      });
     }
 }
@@ -2486,6 +2489,7 @@ sub AnalysisRunStatus {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$familyIDRef,
 					    programName => $programName,
@@ -2621,12 +2625,13 @@ sub RemoveRedundantFiles {
     
 ##Function : Generates a sbatch script, which removes redundant files.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $familyIDRef, $alignerOutDir, $callType, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $laneHashRef, $familyIDRef, $alignerOutDir, $callType, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $laneHashRef                => The lane info hash {REF}
 ##         : $familyIDRef                => The familyID
 ##         : $alignerOutDirRef           => The alignerOutDir used in the analysis
@@ -2646,6 +2651,7 @@ sub RemoveRedundantFiles {
     my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
     my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
+    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
     my $laneHashRef = ${$argHashRef}{laneHashRef};
     my $programName = ${$argHashRef}{programName};
 
@@ -2670,6 +2676,7 @@ sub RemoveRedundantFiles {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$familyIDRef,
 					    programName => $programName,
@@ -2754,6 +2761,7 @@ sub MultiQC {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$familyIDRef,
 					    programName => $programName,
@@ -2836,6 +2844,7 @@ sub QCCollect {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$familyIDRef,
 					    programName => $programName,
@@ -2932,6 +2941,7 @@ sub Evaluation {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$familyIDRef,
 					    programName => $programName,
@@ -3236,6 +3246,7 @@ sub RankVariants {
     
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							       jobIDHashRef => \%{$jobIDHashRef},
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$familyIDRef,
 							       programName => $programName,
@@ -3560,6 +3571,7 @@ sub GATKVariantEvalExome {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$sampleIDRef,
 					    programName => $programName,
@@ -3791,6 +3803,7 @@ sub GATKVariantEvalAll {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header    
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$sampleIDRef,
 					    programName => $programName,
@@ -3966,6 +3979,7 @@ sub SnpEff {
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header    
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							       jobIDHashRef => \%{$jobIDHashRef},
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$familyIDRef,
 							       programName => $programName,
@@ -4310,6 +4324,7 @@ sub Annovar {
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header    
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							       jobIDHashRef => \%{$jobIDHashRef},
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$familyIDRef,
 							       programName => $programName,
@@ -4554,6 +4569,7 @@ sub VCFParser {
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header    
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							       jobIDHashRef => \%{$jobIDHashRef},
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$familyIDRef,
 							       programName => $programName,
@@ -4842,6 +4858,7 @@ sub VariantEffectPredictor {
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							       jobIDHashRef => \%{$jobIDHashRef},
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$familyIDRef,
 							       programName => $programName,
@@ -5079,6 +5096,7 @@ sub GATKReadBackedPhasing {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header    
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $familyID,
 					    programName => $programName,
@@ -5224,6 +5242,7 @@ sub GATKPhaseByTransmission {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header    
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $familyID,
 					    programName => $programName,
@@ -5353,6 +5372,7 @@ sub SampleCheck {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$familyIDRef,
 					    programName => $programName,
@@ -5577,6 +5597,7 @@ sub VT {
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							       jobIDHashRef => \%{$jobIDHashRef},
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$familyIDRef,
 							       programName => $programName,
@@ -5807,6 +5828,7 @@ sub GATKCombineVariantCallSets {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header    
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$familyIDRef,
 					    programName => $programName,
@@ -5986,6 +6008,7 @@ sub GATKVariantReCalibration {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							      jobIDHashRef => \%{$jobIDHashRef},
 							      FILEHANDLE => $FILEHANDLE,
 							      directoryID => $$familyIDRef,
 							      programName => $programName,
@@ -6356,6 +6379,7 @@ sub GATKConcatenateGenoTypeGVCFs {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header	
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$familyIDRef,
 					    programName => $programName,
@@ -6499,6 +6523,7 @@ sub GATKGenoTypeGVCFs {
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header	
 	my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+						jobIDHashRef => \%{$jobIDHashRef},
 						FILEHANDLE => $FILEHANDLE,
 						directoryID => $$familyIDRef,
 						programName => $programName,
@@ -6639,6 +6664,7 @@ sub RCoveragePlots {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $sampleID,
 					    programName => $programName,
@@ -6756,6 +6782,7 @@ sub GenomeCoverageBED {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					 jobIDHashRef => \%{$jobIDHashRef},
 					 FILEHANDLE => $FILEHANDLE,
 					 directoryID => $$sampleIDRef,
 					 programName => $programName,
@@ -6873,6 +6900,7 @@ sub PicardToolsCalculateHSMetrics {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					 jobIDHashRef => \%{$jobIDHashRef},
 					 FILEHANDLE => $FILEHANDLE,
 					 directoryID => $$sampleIDRef,
 					 programName => $programName,
@@ -7014,6 +7042,7 @@ sub PicardToolsCollectMultipleMetrics {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					 jobIDHashRef => \%{$jobIDHashRef},
 					 FILEHANDLE => $FILEHANDLE,
 					 directoryID => $$sampleIDRef,
 					 programName => $programName,
@@ -7160,6 +7189,7 @@ sub ChanjoSexCheck {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					 jobIDHashRef => \%{$jobIDHashRef},
 					 FILEHANDLE => $FILEHANDLE,
 					 directoryID => $$sampleIDRef,
 					 programName => $programName,
@@ -7289,6 +7319,7 @@ sub SambambaDepth {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					 jobIDHashRef => \%{$jobIDHashRef},
 					 FILEHANDLE => $FILEHANDLE,
 					 directoryID => $$sampleIDRef,
 					 programName => $programName,
@@ -7436,6 +7467,7 @@ sub SVRankVariants {
     
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							       jobIDHashRef => \%{$jobIDHashRef},
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$familyIDRef,
 							       programName => $programName,
@@ -7742,6 +7774,7 @@ sub SVVCFParser {
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header    
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							       jobIDHashRef => \%{$jobIDHashRef},
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$familyIDRef,
 							       programName => $programName,
@@ -8014,6 +8047,7 @@ sub SVVariantEffectPredictor {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							   jobIDHashRef => \%{$jobIDHashRef},
 							   FILEHANDLE => $FILEHANDLE,
 							   directoryID => $$familyIDRef,
 							   programName => $programName,
@@ -8243,6 +8277,7 @@ sub CombineStructuralVariantCallSets {
     
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header    
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$familyIDRef,
 					    programName => $programName,
@@ -8568,6 +8603,7 @@ sub CNVnator {
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							       jobIDHashRef => \%{$jobIDHashRef},
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$sampleIDRef,
 							       programName => $programName,
@@ -8828,6 +8864,7 @@ sub Delly {
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							       jobIDHashRef => \%{$jobIDHashRef},
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$sampleIDRef,
 							       programName => $programName,
@@ -9054,6 +9091,7 @@ sub Manta {
     
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header    
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$familyIDRef,
 					    programName => $programName,
@@ -9233,6 +9271,7 @@ sub FindTranslocations {
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							       jobIDHashRef => \%{$jobIDHashRef},
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$sampleIDRef,
 							       programName => $programName,
@@ -9416,6 +9455,7 @@ sub SamToolsMpileUp {
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							       jobIDHashRef => \%{$jobIDHashRef},
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$familyIDRef,
 							       programName => $programName,
@@ -9657,6 +9697,7 @@ sub Freebayes {
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							       jobIDHashRef => \%{$jobIDHashRef},
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$familyIDRef,
 							       programName => $programName,
@@ -9872,6 +9913,7 @@ sub GATKHaploTypeCaller {
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							       jobIDHashRef => \%{$jobIDHashRef},
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$sampleIDRef,
 							       programName => $programName,
@@ -10094,6 +10136,7 @@ sub GATKBaseReCalibration {
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							       jobIDHashRef => \%{$jobIDHashRef},
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$sampleIDRef,
 							       programName => $programName,
@@ -10384,6 +10427,7 @@ sub GATKReAligner {
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							       jobIDHashRef => \%{$jobIDHashRef},
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$sampleIDRef,
 							       programName => $programName,
@@ -10662,6 +10706,7 @@ sub SambambaMarkduplicates {
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							       jobIDHashRef => \%{$jobIDHashRef},
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$sampleIDRef,
 							       programName => $programName,
@@ -10862,6 +10907,7 @@ sub PicardToolsMergeSamFiles {
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							       jobIDHashRef => \%{$jobIDHashRef},
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$sampleIDRef,
 							       programName => $programName,
@@ -11300,6 +11346,7 @@ sub BWASampe {
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+						jobIDHashRef => \%{$jobIDHashRef},
 						FILEHANDLE => $FILEHANDLE,
 						directoryID => $sampleID,
 						programName => $programName,
@@ -11440,6 +11487,7 @@ sub BWAAln {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $sampleID,
 					    programName => $programName,
@@ -11564,6 +11612,7 @@ sub PicardToolsMergeRapidReads {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$sampleIDRef,
 					    programName => $programName,
@@ -11755,6 +11804,7 @@ sub BWAMem {
 		
 		## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 		my ($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+									  jobIDHashRef => \%{$jobIDHashRef},
 									  FILEHANDLE => $FILEHANDLE,
 									  directoryID => $$sampleIDRef,
 									  programName => $programName,
@@ -11857,6 +11907,7 @@ sub BWAMem {
 
 	    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	    my ($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+								      jobIDHashRef => \%{$jobIDHashRef},
 								      FILEHANDLE => $FILEHANDLE,
 								      directoryID => $$sampleIDRef,
 								      programName => $programName,
@@ -12088,6 +12139,7 @@ sub MosaikAlign {
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	my ($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+								  jobIDHashRef => \%{$jobIDHashRef},
 								  FILEHANDLE => $FILEHANDLE,
 								  directoryID => $sampleID,
 								  programName => $programName,
@@ -12308,6 +12360,7 @@ sub MosaikBuild {
     
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$sampleIDRef,
 					    programName => $programName,
@@ -12516,6 +12569,7 @@ sub VariantAnnotationBlock {
     
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							      jobIDHashRef => \%{$jobIDHashRef},
 							      FILEHANDLE => $FILEHANDLE,
 							      directoryID => $$familyIDRef,
 							      programName => $programName,
@@ -12742,6 +12796,7 @@ sub BAMCalibrationBlock {
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	my ($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+								  jobIDHashRef => \%{$jobIDHashRef},
 								  FILEHANDLE => $FILEHANDLE,
 								  directoryID => $$sampleIDRef,
 								  programName => $programName,
@@ -12865,6 +12920,7 @@ sub Madeline {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$familyIDRef,
 					    programName => $programName,
@@ -12978,6 +13034,7 @@ sub FastQC {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$sampleIDRef,
 					    programName => $programName,
@@ -13135,6 +13192,7 @@ sub GZipFastq {
     
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $sampleID,
 					    programName => $programName,
@@ -13218,6 +13276,7 @@ sub BuildAnnovarPreRequisites {
     
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $familyID,
 					    programName => $programName,
@@ -13375,6 +13434,7 @@ sub BuildDownLoadablePreRequisites {
     
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$familyIDRef,
 					    programName => $programName,
@@ -13468,6 +13528,7 @@ sub BuildPTCHSMetricPreRequisites {
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					     jobIDHashRef => \%{$jobIDHashRef},
 					     FILEHANDLE => $FILEHANDLE,
 					     directoryID => $$familyIDRef,
 					     programName => $programName,
@@ -13792,6 +13853,7 @@ sub BuildBwaPreRequisites {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$familyIDRef,
 					    programName => $programName,
@@ -13889,6 +13951,7 @@ sub BuildMosaikAlignPreRequisites {
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header.
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $familyID,
 					    programName => $programName,
@@ -14287,6 +14350,7 @@ sub BuildHumanGenomePreRequisites {
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					    jobIDHashRef => \%{$jobIDHashRef},
 					     FILEHANDLE => $FILEHANDLE,
 					     directoryID => $$familyIDRef,
 					     programName => $program,
@@ -14882,6 +14946,7 @@ sub FIDSubmitJob {
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
+    my $jobDependency = ${$argHashRef}{jobDependency} //= "afterok";
 
     ## Flatten argument(s)
     my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
@@ -15039,7 +15104,7 @@ sub FIDSubmitJob {
 	    }
 	    if ($jobIDs) {  #Previous jobs for chainkey exists
 
-		$jobIDsReturn = `sbatch --dependency=afterok$jobIDs $sbatchFileName`;  #Supply with dependency of previous jobs that this one is dependent on
+		$jobIDsReturn = `sbatch --dependency=$jobDependency$jobIDs $sbatchFileName`;  #Supply with dependency of previous jobs that this one is dependent on
 		($jobID) = ($jobIDsReturn =~ /Submitted batch job (\d+)/);  #Just submitted jobID
 	    }
 	    else {  #No previous jobs
@@ -15228,7 +15293,7 @@ sub FIDSubmitJob {
 	    }
 	    if ($jobIDs) {
 
-		$jobIDsReturn = `sbatch --dependency=afterok$jobIDs $sbatchFileName`;  #Supply with dependency of previous jobs that this one is dependent on
+		$jobIDsReturn = `sbatch --dependency=$jobDependency$jobIDs $sbatchFileName`;  #Supply with dependency of previous jobs that this one is dependent on
 		($jobID) = ($jobIDsReturn =~ /Submitted batch job (\d+)/);
 	    }
 	    else {
@@ -16573,8 +16638,9 @@ sub ProgramPreRequisites {
     
 ##Function : Creates program directories (info & programData & programScript), program script filenames and writes sbatch header.
 ##Returns  : Path to stdout
-##Arguments: $scriptParameterHashRef, $FILEHANDLE, $emailType, $outDataDir, $outScriptDir, $directoryID, $programDirectory, $programName, $callType, $nrofCores, $processTime, $tempDirectory, $errorTrap, $pipefail
+##Arguments: $scriptParameterHashRef, $jobIDHashRef, $FILEHANDLE, $emailType, $outDataDir, $outScriptDir, $directoryID, $programDirectory, $programName, $callType, $nrofCores, $processTime, $tempDirectory, $errorTrap, $pipefail
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $jobIDHashRe            => The jobID hash {REF}
 ##         : $FILEHANDLE             => FILEHANDLE to write to
 ##         : $emailType              => The email type
 ##         : $outDataDir             => The MIP out data directory
@@ -16609,6 +16675,7 @@ sub ProgramPreRequisites {
     
     ## Flatten argument(s)
     my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
+    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};		   
     my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
     my $directoryID = ${$argHashRef}{directoryID};
     my $programDirectory = ${$argHashRef}{programDirectory};
@@ -16712,6 +16779,13 @@ sub ProgramPreRequisites {
 	say $FILEHANDLE q?finish() {?, "\n";
 	say $FILEHANDLE "\t".q?## Perform sbatch exit housekeeping?;
 	say $FILEHANDLE "\t".q?rm -rf $tempDirectory?;
+
+	## Output SLURM info on each job via Sacct command and write to MIP Log file(.status)
+	&TrackProgress({jobIDHashRef => \%{$jobIDHashRef},
+			FILEHANDLE => $FILEHANDLE,
+			logFileRef => \${$scriptParameterHashRef}{logFile},
+		       });
+
 	say $FILEHANDLE q?}?; 
 	say $FILEHANDLE q?trap finish EXIT TERM INT?, "\n";
     }
@@ -16724,6 +16798,13 @@ sub ProgramPreRequisites {
 	say $FILEHANDLE "\t".q{ret="$?"};
 	say $FILEHANDLE "\t".q?echo "${PROGNAME}: ${1:-"Unknown Error - ExitCode="$ret}" 1>&2?, "\n";
 	say $FILEHANDLE "\t".q?exit 1?;
+	
+	## Output SLURM info on each job via Sacct command and write to MIP Log file(.status)
+	&TrackProgress({jobIDHashRef => \%{$jobIDHashRef},
+			FILEHANDLE => $FILEHANDLE,
+			logFileRef => \${$scriptParameterHashRef}{logFile},
+		       });
+
 	say $FILEHANDLE q?}?;
 	say $FILEHANDLE q?trap error ERR?, "\n";
     }
@@ -17067,7 +17148,7 @@ sub WriteCMDMipLog {
 ##         : $scriptParameterHashRef  => The active parameters for this analysis hash {REF}
 ##         : $orderParametersArrayRef => Order of addition to parameter array {REF}
 ##         : $scriptRef               => The script that is being executed {REF}
-##         : $logFileRef              => The log file
+##         : $logFileRef              => The log file {REF}
 ##         : $mipVersionRef           => The MIP version
 
     my ($argHashRef) = @_;
@@ -21442,6 +21523,7 @@ sub VTCore {
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							       jobIDHashRef => \%{$jobIDHashRef},
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$familyIDRef,
 							       programName => $program,
@@ -22870,6 +22952,35 @@ sub CollectReadLength {
     chdir($directory);  #Move to sampleID infile directory
     my $ret = `$readFileCommand $file | $seqLengthRegExp;`;  #Collect sequence length
     return $ret;
+}
+
+
+sub TrackProgress {
+
+##TrackProgress
+    
+##Function : Output SLURM info on each job via Sacct command and write to MIP Log file(.status)
+##Returns  : ""
+##Arguments: $jobIDHashRef, $FILEHANDLE, $logFileRef
+##         : $jobIDHashRef => The jobID hash {REF}
+##         : $FILEHANDLE   => Sbatch filehandle to write to
+##         : $logFileRef   => The log file {REF}
+
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
+    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $logFileRef = ${$argHashRef}{logFileRef};
+
+    if (scalar(keys %{$jobIDHashRef}) > 0) {
+	
+	print $FILEHANDLE "\t".q?sacct --format=jobid,jobname%50,account,partition,alloccpus,TotalCPU,elapsed,start,end,state,exitcode -j ?;
+	print $FILEHANDLE join(',', @{${$jobIDHashRef}{Pan}{Pan}}), " ";
+	print $FILEHANDLE q?| ?;
+	print $FILEHANDLE q?perl -nae 'my @headers=(jobid,jobname,account,partition,alloccpus,TotalCPU,elapsed,start,end,state,exitcode); if($. == 1) {print "#".join("\t", @headers), "\n"} if ($.>=3 && $F[0]!~/.batch/) {print join("\t", @F), "\n"}' ?;
+	say $FILEHANDLE q?> ?.$$logFileRef.".status";
+    }
 }
 
 
