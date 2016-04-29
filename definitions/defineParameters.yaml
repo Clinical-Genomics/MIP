@@ -1449,24 +1449,6 @@ rankVariantBCFFile:
   dataType: SCALAR
   default: 1
   type: programArgument
-## PythonVirtualEnvironment
-usePythonVirtualEnvironment:
-  associatedProgram:
-   - pChanjoSexCheck
-   - pVT
-   - pGATKVariantRecalibration
-   - pRankVariants
-  dataType: SCALAR
-  default: 0
-  type: programArgument
-pythonVirtualEnvironment:
-  associatedProgram:
-   - pChanjoSexCheck
-   - pVT
-   - pGATKVariantRecalibration
-   - pRankVariants
-  dataType: SCALAR
-  type: programArgument
 ## QCCollect
 pQCCollect:
   associatedProgram:
@@ -1553,13 +1535,11 @@ humanGenomeReference:
   existsCheck: file
   reference: referencesDir
   type: path
-pythonVirtualEnvironmentCommand:
+sourceEnvironmentCommand:
   associatedProgram:
    - MIP
   elementSeparator: " "
   dataType: ARRAY
-  default:
-   - workon
   type: MIP
 instanceTag:
   associatedProgram:
