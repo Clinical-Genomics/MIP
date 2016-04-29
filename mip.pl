@@ -160,7 +160,9 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -svvcpsfm/--svVcfParserSelectFileMatchingColumn Position of HGNC Symbol column in SelectFile (defaults to "")
                  -svvcpsfa/--svVcfParserSelectFeatureAnnotationColumns Feature columns to use in annotation (defaults to ""; comma sep)
                -pSvR/--pSVRankVariants Ranking of annotated SV variants (defaults to "1" (=yes))
+                 -svravgft/--svGenmodModelsFamilyType Use one of the known setups (defaults to "mip")
                  -svravwg/--svWholeGene Allow compound pairs in intronic regions (defaults to "0" (=yes))
+                 -svravrpf/--svGenmodModelsReducedPenetranceFile File containg genes with reduced penetrance (defaults to "")
                  -svravrm/--svRankModelFile Rank model config file (defaults to "")
                  -svravbcf/--svRankVariantsBCFFile Produce bcfs from the Rank variants vcfs (defaults to "1" (=yes))
                
@@ -504,6 +506,8 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'svvcpsfm|svVcfParserSelectFileMatchingColumn:n' => \$parameter{svVcfParserSelectFileMatchingColumn}{value},  #Column of HGNC Symbol in SelectFile
 	   'svvcpsfa|svVcfParserSelectFeatureAnnotationColumns:s'  => \@{$parameter{svVcfParserSelectFeatureAnnotationColumns}{value}},  #Comma separated list
 	   'pSvR|pSVRankVariants:n' => \$parameter{pSVRankVariants}{value},  #Ranking of SV variants
+	   'svravgft|svGenmodModelsFamilyType:s' => \$parameter{svGenmodModelsFamilyType}{value},
+	   'svravrpf|svGenmodModelsReducedPenetranceFile:s' => \$parameter{svGenmodModelsReducedPenetranceFile}{value},
 	   'svravwg|svWholeGene:n'  => \$parameter{svWholeGene}{value},  #Allow compound pairs in intronic regions
 	   'svravrm|svRankModelFile:s' => \$parameter{svRankModelFile}{value},  #The rank modell config.ini path
 	   'svravbcf|svRankVariantsBCFFile:n' => \$parameter{svRankVariantsBCFFile}{value},  #Produce compressed vcfs
@@ -7720,11 +7724,11 @@ sub SVRankVariants {
 	    print $XARGSFILEHANDLE "models ";  #Annotate genetic models for vcf variants
 	    print $XARGSFILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
 	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{pedigreeFile}." ";  #Pedigree file
-	    print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{genmodModelsFamilyType}." ";  #Family type
+	    print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{svGenmodModelsFamilyType}." ";  #Family type
 	    
-	    if (defined(${$scriptParameterHashRef}{genmodModelsReducedPenetranceFile})) {
+	    if (defined(${$scriptParameterHashRef}{svGenmodModelsReducedPenetranceFile})) {
 		
-		print $XARGSFILEHANDLE "--reduced_penetrance ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{genmodModelsReducedPenetranceFile}." ";  #Use list of genes that have been shown to display reduced penetrance
+		print $XARGSFILEHANDLE "--reduced_penetrance ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{svGenmodModelsReducedPenetranceFile}." ";  #Use list of genes that have been shown to display reduced penetrance
 	    }
 	    print $XARGSFILEHANDLE "--processes 4 ";  #Define how many processes that should be use for annotation 
 	    
@@ -7748,7 +7752,7 @@ sub SVRankVariants {
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "score ";  #Score variants in a vcf file using Weighted sums
 	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{pedigreeFile}." ";  #Pedigree file
-	    print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{genmodModelsFamilyType}." ";  #Family type
+	    print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{svGenmodModelsFamilyType}." ";  #Family type
 	    
 	    if (defined(${$scriptParameterHashRef}{rankModelFile})) {
 		

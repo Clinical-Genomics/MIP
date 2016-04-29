@@ -736,12 +736,26 @@ pSVRankVariants:
   default: 1
   fileTag: ranked_
   type: program
+svGenmodModelsFamilyType:
+  associatedProgram:
+   - pSVRankVariants
+  dataType: SCALAR
+  default: mip
+  type: programArgument
 svWholeGene:
   associatedProgram:
    - pSVRankVariants
   dataType: SCALAR
   default: 0
   type: programArgument
+svGenmodModelsReducedPenetranceFile:
+  associatedProgram:
+   - pSVRankVariants
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  existsCheck: file
+  reference: referencesDir
+  type: path
 svRankModelFile:
   associatedProgram:
    - pSVRankVariants
