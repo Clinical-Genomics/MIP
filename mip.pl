@@ -80,6 +80,8 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
 
                -ges/--genomicSet Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
                -rio/--reduceIO Run consecutive models at nodes (defaults to "1" (=yes))
+               -ppm/--printProgramMode Print all programs that are supported in: 0 (off mode), 1 (on mode), 2 (dry run mode; defaults to "2")
+               -pp/--printProgram Print all programs that are supported
                -l/--logFile Mip log file (defaults to "{outDataDir}/{familyID}/mip_log/{date}/{scriptname}_{timestamp}.log")
                -h/--help Display this help message    
                -v/--version Display version of MIP            
@@ -216,6 +218,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -gveedbg/--GATKVariantEvalGold Gold Indel file used in GATK VariantEval (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
                
                ###Annotation
+               -pPvab/--pPrepareForVariantAnnotationBlock Prepare for variant annotation block by copying and splitting files per contig (Mandatory)
                -pVT/--pVT VT decompose and normalize (defaults to "1" (=yes))
                  -vtdec/--VTDecompose Split multi allelic records into single records (defaults to "1" (=yes))
                  -vtnor/--VTNormalize Normalize variants (defaults to "1" (=yes))
@@ -436,6 +439,9 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'nrm|nodeRamMemory:n' => \$parameter{nodeRamMemory}{value},  #Per node
            'ges|genomicSet:s' => \$parameter{genomicSet}{value},  #Selection of relevant regions post alignment and sort
 	   'rio|reduceIO:n' => \$parameter{reduceIO}{value},
+	   'ppm|printProgramMode:n' => \$parameter{printProgramMode}{value},
+	   'pp|printProgram' => sub { GetOptions('ppm|printProgramMode:n' => \$parameter{printProgramMode}{value});  #Force ppm to be read before function call
+				      &PrintProgram({parameterHashRef => \%parameter}); exit;},
 	   'l|logFile:s' => \$parameter{logFile}{value},
 	   'h|help' => sub { say STDOUT $USAGE; exit;},  #Display help text
 	   'v|version' => sub { say STDOUT "\nMip.pl ".$mipVersion, "\n"; exit;},  #Display version number
@@ -550,6 +556,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'pGvEE|pGATKVariantEvalExome:n' => \$parameter{pGATKVariantEvalExome}{value},  #GATK varianteval only exonic variants
 	   'gveedbs|GATKVariantEvalDbSNP:s' => \$parameter{GATKVariantEvalDbSNP}{value},
 	   'gveedbg|GATKVariantEvalGold:s' => \$parameter{GATKVariantReCalibrationTrainingSetMills}{value},
+	   'pPvab|pPrepareForVariantAnnotationBlock:n' => \$parameter{pPrepareForVariantAnnotationBlock}{value},
 	   'pVT|pVT:n' => \$parameter{pVT}{value},  #VT program
 	   'vtddec|VTDecompose:n' => \$parameter{VTDecompose}{value},  #VT decompose (split multiallelic variants)
 	   'vtdnor|VTNormalize:n' => \$parameter{VTNormalize}{value},  #VT normalize varaints according to genomic reference
@@ -858,7 +865,7 @@ else {  #Not supplied - Set to 0 to handle correctly in program subroutines
 			 broadcastsArrayRef => \@broadcasts,
 			 targetIntervalListsArrayRef => \@GATKTargetPaddedBedIntervalLists,
 			 associatedPrograms => \@{["pGATKRealigner",
-						     "pGATKHaploTypeCaller"]},
+						   "pGATKHaploTypeCaller"]},
 			 parameterName => "GATKTargetPaddedBedIntervalLists",
 			 type => "path",
 			 default => "notSetYet",
@@ -868,11 +875,11 @@ else {  #Not supplied - Set to 0 to handle correctly in program subroutines
 ## Adds dynamic aggregate information from definitions to parameterHash
 &AddToParameter({parameterHashRef => \%parameter,
 		 aggregateArrayRef => ["type:program",  #Collects all programs that MIP can handle
-					 "programType:variantCaller",  #Collects all variantCallers
-					 "programType:structuralVariantCaller",  #Collects all structural variantCallers
-					 "programType:aligner",
-					 "reference:referencesDir",  #Collects all references in that are supposed to be in referenceDirectory
-					 "removeRedundantFiles:yes"],  #Collect all programs that are variantCallers
+				       "programType:variantCaller",  #Collects all variantCallers
+				       "programType:structuralVariantCaller",  #Collects all structural variantCallers
+				       "programType:aligner",
+				       "reference:referencesDir",  #Collects all references in that are supposed to be in referenceDirectory
+				       "removeRedundantFiles:yes"],  #Collect all programs that are variantCallers
 		});
 
 ## Check that the correct number of aligners is used in MIP and sets the aligner flag accordingly
@@ -2135,6 +2142,18 @@ if ($scriptParameter{reduceIO} == 1) {  #Run consecutive models
 }
 else {
 
+    $logger->info("[PrepareForVariantAnnotationBlock]\n");
+    
+    &PrepareForVariantAnnotationBlock({parameterHashRef => \%parameter,
+					 scriptParameterHashRef => \%scriptParameter,
+					 sampleInfoHashRef => \%sampleInfo,
+					 fileInfoHashRef => \%fileInfo,
+					 infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
+					 jobIDHashRef => \%jobID,
+					 callType => "BOTH",
+					 programName => "PrepareForVariantAnnotationBlock",
+					});
+    
     if ($scriptParameter{pVT} > 0) {  #Run VT. Done per family
 	
 	$logger->info("[VT]\n");
@@ -2410,7 +2429,6 @@ sub Sacct {
 			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
 			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
 			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     jobIDHashRef => ${$jobIDHashRef}{Pan}{Pan},
 			     alignerOutDirRef => $$alignerOutDirRef,
 			     programName => $programName,
 	);
@@ -2429,8 +2447,12 @@ sub Sacct {
 					   });
 
     print $FILEHANDLE "sacct --format=jobid,jobname%50,account,partition,alloccpus,TotalCPU,elapsed,start,end,state,exitcode -j ";
-    say $FILEHANDLE join(',', @{${$jobIDHashRef}{Pan}{Pan}});
 
+    ## If run in dry run mode this will be empty
+    if (scalar(keys %{$jobIDHashRef}) > 0) {
+
+	say $FILEHANDLE join(',', @{${$jobIDHashRef}{Pan}{Pan}});
+    }
     close($FILEHANDLE);
 
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
@@ -3439,8 +3461,25 @@ sub RankVariants {
 
 	if (${$scriptParameterHashRef}{rankVariantBCFFile} == 1) {
 	
-	    &VcfToBcf({infile => $$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType,
+	    ## Using GATK combined file directly yields error in bcftools - unclear why 
+	    say $FILEHANDLE "\n## Preprocessing for compatibility with bcfTools v1.3\n";
+	    print $FILEHANDLE "bcftools view ";
+	    print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf ";
+	    print $FILEHANDLE "| ";  #Pipe
+	    &JavaCore({FILEHANDLE => $FILEHANDLE,
+		       memoryAllocation => "Xmx12g",
+		       javaUseLargePagesRef => \${$scriptParameterHashRef}{javaUseLargePages},
+		       javaTemporaryDirectory => ${$scriptParameterHashRef}{tempDirectory},
+		       javaJar => ${$scriptParameterHashRef}{picardToolsPath}."/picard.jar"
+		      });
+	    print $FILEHANDLE "SortVcf ";
+	    print $FILEHANDLE "I=/dev/stdin ";
+	    say $FILEHANDLE "O=".$$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType."_sorted.vcf", "\n";
+
+	    &VcfToBcf({infile => $$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType."_sorted",
 		       FILEHANDLE => $FILEHANDLE,
+		       outfile => $$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType,
+
 		      });
 	
 	    ## Copies file from temporary directory.
@@ -4881,8 +4920,6 @@ sub VariantEffectPredictor {
     my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{pVT}{fileTag};
     my $outfileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"p".$programName}{fileTag};
 
-    my $coreCounter = 1;
-
     if ($$reduceIORef eq "0") {  #Run as individual sbatch script
 	
 	## Copy file(s) to temporary directory
@@ -5580,10 +5617,9 @@ sub VT {
     &CheckMandatoryArguments(\%mandatoryArgument, $programName);
 
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
-
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 10;
     my $xargsFileName;
+    my $time = 10;
 
     unless (defined($FILEHANDLE)){ #Run as individual sbatch script
 	
@@ -5619,26 +5655,24 @@ sub VT {
     ## Assign fileTags
     my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{pGATKCombineVariantCallSets}{fileTag};
     my $outfileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"p".$programName}{fileTag};
+
+    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+	
+	## Copy file(s) to temporary directory
+	say $FILEHANDLE "## Copy file(s) to temporary directory"; 
+	($xargsFileCounter, $xargsFileName) = &XargsMigrateContigFiles({FILEHANDLE => $FILEHANDLE,
+									XARGSFILEHANDLE => $XARGSFILEHANDLE,
+									arrayRef => \@{ ${$fileInfoHashRef}{contigsSizeOrdered} },
+									fileName =>$fileName,
+									programInfoPath => $programInfoPath,
+									nrCores => $nrCores,
+									xargsFileCounter => $xargsFileCounter,
+									infile => $$familyIDRef.$infileTag.$callType,
+									inDirectory => $inFamilyDirectory,
+									tempDirectory => $$tempDirectoryRef,
+								       });
+    }
     
-    ## Copy file(s) to temporary directory
-    say $FILEHANDLE "## Copy file(s) to temporary directory"; 
-    &MigrateFileToTemp({FILEHANDLE => $FILEHANDLE,
-			path => $inFamilyDirectory."/".$$familyIDRef.$infileTag.$callType.".vcf*",
-			tempDirectory => $$tempDirectoryRef
-		       });
-    say $FILEHANDLE "wait", "\n";
-
-    ## Compress or decompress original file or stream to outfile (if supplied)
-    &Bgzip({FILEHANDLE => $FILEHANDLE,
-	    infilePath => $$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType.".vcf",
-	    outfilePath => $$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType.".vcf.gz",
-	   });
-
-    ## Index file using tabix 
-    &Tabix({FILEHANDLE => $FILEHANDLE,
-	    infilePath => $$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType.".vcf.gz",
-	   });
-
     if (${$scriptParameterHashRef}{VTgenmodFilter} > 0) {
 	
 	if (${$scriptParameterHashRef}{usePythonVirtualEnvironment} == 1) {
@@ -5654,7 +5688,7 @@ sub VT {
 							 programInfoPath => $programInfoPath,
 							 nrCores => $nrCores,
 							 xargsFileCounter => $xargsFileCounter,
-							 firstCommand => "tabix",
+							 firstCommand => "less",
 							});
 
     my $removeStarRegExp = q?perl -nae \'unless\($F\[4\] eq \"\*\") \{print $_\}\' ?;  #VEP does not annotate '*' since the alt allele does not exist, this is captured in the upsream indel and SNV record associated with '*'
@@ -5664,9 +5698,7 @@ sub VT {
 	
 	my $contigRef = \${$fileInfoHashRef}{contigsSizeOrdered}[$contigsCounter];
 	
-	print $XARGSFILEHANDLE "-h ";  #Include header
-	print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType.".vcf.gz ";
-	print $XARGSFILEHANDLE $$contigRef." ";
+	print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType."_".$$contigRef.".vcf ";  #Infile 
 
 	## VT - Split multi allelic records into single records and normalize
 	&VTCore({scriptParameterHashRef => \%{$scriptParameterHashRef},
@@ -5753,6 +5785,175 @@ sub VT {
 		       outfileEnding => $stderrFile,
 		       outDataType => "infoDirectory"
 		      });
+
+	if ($$reduceIORef eq "0") { #Run as individual sbatch script
+
+	    ## Submitt job
+	    &FIDSubmitJob({scriptParameterHashRef => \%{$scriptParameterHashRef},
+			   sampleInfoHashRef => \%{$sampleInfoHashRef},
+			   jobIDHashRef => \%{$jobIDHashRef},
+			   infilesLaneNoEndingHashRef => \%{$infilesLaneNoEndingHashRef},
+			   dependencies => 1, 
+			   path => ${$parameterHashRef}{"p".$programName}{chain},
+			   sbatchFileName => $fileName
+			  });
+	}
+    }
+    if ($$reduceIORef eq "1") {
+	
+	return $xargsFileCounter;  #Track the number of created xargs scripts per module for Block algorithm
+    }
+}
+
+
+sub PrepareForVariantAnnotationBlock { 
+
+##PrepareForVariantAnnotationBlock
+    
+##Function : Copy files for VariantAnnotationBlock to enable restart and skip of modules within block
+##Returns  : "|$xargsFileCounter"
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $fileName, $programName, $programInfoPath, $FILEHANDLE, $xargsFileCounter, $stderrPath
+##         : $parameterHashRef           => The parameter hash {REF}
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $fileInfoHashRef            => The fileInfo hash {REF}
+##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $familyIDRef                => The familyID {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $callType                   => The variant call type
+##         : $fileName                   => File name
+##         : $programName                => The program name
+##         : $programInfoPath            => The program info path
+##         : $FILEHANDLE                 => Filehandle to write to
+##         : $xargsFileCounter           => The xargs file counter
+##         : $stderrPath                 => The stderr path of the block script
+
+    my ($argHashRef) = @_;
+
+    ## Default(s)
+    my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
+    my $callType = ${$argHashRef}{callType} //= "BOTH";
+    my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
+    my $referencesDirectoryRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
+    my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
+    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+    
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
+    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
+    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
+    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
+    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
+    my $fileName = ${$argHashRef}{fileName};
+    my $programName = ${$argHashRef}{programName};
+    my $programInfoPath = ${$argHashRef}{programInfoPath};
+    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $stderrPath = ${$argHashRef}{stderrPath};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
+			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
+			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
+			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
+			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
+			     alignerOutDirRef => $$alignerOutDirRef,
+			     programName => $programName,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+
+    my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $xargsFileName;
+    my $time = 10;
+
+    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
+	
+	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    }
+
+    ## Set the number of cores to allocate per sbatch job.
+    my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar(@{${$fileInfoHashRef}{contigs}}));  #Detect the number of cores to use
+
+    if ($$reduceIORef eq "0") { #Run as individual sbatch script
+	
+	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							       jobIDHashRef => \%{$jobIDHashRef},
+							       FILEHANDLE => $FILEHANDLE,
+							       directoryID => $$familyIDRef,
+							       programName => $programName,
+							       programDirectory => lc($$alignerOutDirRef."/gatk"),
+							       callType => $callType,
+							       nrofCores => $nrCores,
+							       processTime => $time,
+							       tempDirectory => $$tempDirectoryRef,
+							      });
+	$stderrPath = $programInfoPath.".stderr.txt";
+    }
+    my ($volume, $directories, $stderrFile) = File::Spec->splitpath($stderrPath); #Split to enable submission to &SampleInfoQC later
+
+    ## Assign directories
+    my $inFamilyDirectory = ${$scriptParameterHashRef}{outDataDir}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
+    my $outFamilyDirectory = ${$scriptParameterHashRef}{outDataDir}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
+    ${$parameterHashRef}{"p".$programName}{inDirectory} = $outFamilyDirectory;  #Used downstream
+
+    ## Assign fileTags
+    my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{pGATKCombineVariantCallSets}{fileTag};
+    
+    ## Copy file(s) to temporary directory
+    say $FILEHANDLE "## Copy file(s) to temporary directory"; 
+    &MigrateFileToTemp({FILEHANDLE => $FILEHANDLE,
+			path => $inFamilyDirectory."/".$$familyIDRef.$infileTag.$callType.".vcf*",
+			tempDirectory => $$tempDirectoryRef
+		       });
+    say $FILEHANDLE "wait", "\n";
+
+    ## Compress or decompress original file or stream to outfile (if supplied)
+    &Bgzip({FILEHANDLE => $FILEHANDLE,
+	    infilePath => $$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType.".vcf",
+	    outfilePath => $$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType.".vcf.gz",
+	   });
+    
+    ## Index file using tabix 
+    &Tabix({FILEHANDLE => $FILEHANDLE,
+	    infilePath => $$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType.".vcf.gz",
+	   });
+
+    ## Create file commands for xargs
+    ($xargsFileCounter, $xargsFileName) = &XargsCommand({FILEHANDLE => $FILEHANDLE,
+							 XARGSFILEHANDLE => $XARGSFILEHANDLE, 
+							 fileName => $fileName,
+							 nrCores => $nrCores,
+							 xargsFileCounter => $xargsFileCounter,
+							 firstCommand => "tabix",
+							});
+
+    ## Split vcf into contigs
+    for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{contigsSizeOrdered}});$contigsCounter++) {
+	
+	my $contigRef = \${$fileInfoHashRef}{contigsSizeOrdered}[$contigsCounter];
+	
+	print $XARGSFILEHANDLE "-h ";  #Include header
+	print $XARGSFILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType.".vcf.gz ";
+	print $XARGSFILEHANDLE $$contigRef." ";
+	say $XARGSFILEHANDLE "> ".$$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType."_".$$contigRef.".vcf";
+    }
+
+    if ($$reduceIORef eq "0") { #Run as individual sbatch script
+
+	## Copies file from temporary directory.
+	say $FILEHANDLE "## Copy file from temporary directory";
+	&MigrateFileFromTemp({tempPath => $$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType."_*.vcf*",
+			      filePath => $outFamilyDirectory."/",
+			      FILEHANDLE => $FILEHANDLE,
+			     });
+	say $FILEHANDLE "wait", "\n";
+
+	close($FILEHANDLE);
+    }
+if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 
 	if ($$reduceIORef eq "0") { #Run as individual sbatch script
 
@@ -7613,6 +7814,22 @@ sub SVRankVariants {
 			      outfile => $$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType.".vcf",
 			     });
 	
+	if (${$scriptParameterHashRef}{svRankVariantBCFFile} == 1) {
+	
+	    &VcfToBcf({infile => $$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType,
+		       FILEHANDLE => $FILEHANDLE,
+		       outfile => $$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType,
+
+		      });
+	
+	    ## Copies file from temporary directory.
+	    say $FILEHANDLE "## Copy file from temporary directory";
+	    &MigrateFileFromTemp({tempPath => $$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".bcf*",
+				  filePath => $outFamilyDirectory."/",
+				  FILEHANDLE => $FILEHANDLE,
+				 });
+	}
+
 	## Genmod sort
 	print $FILEHANDLE "genmod ";
 	print $FILEHANDLE "-v ";  #Increase output verbosity
@@ -7635,20 +7852,6 @@ sub SVRankVariants {
 			      FILEHANDLE => $FILEHANDLE,
 			     });
 	say $FILEHANDLE "wait", "\n";
-	
-	if (${$scriptParameterHashRef}{svRankVariantBCFFile} == 1) {
-	
-	    &VcfToBcf({infile => $$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType,
-		       FILEHANDLE => $FILEHANDLE,
-		      });
-	
-	    ## Copies file from temporary directory.
-	    say $FILEHANDLE "## Copy file from temporary directory";
-	    &MigrateFileFromTemp({tempPath => $$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".bcf*",
-				  filePath => $outFamilyDirectory."/",
-				  FILEHANDLE => $FILEHANDLE,
-				 });
-	}
 
 	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 	    
@@ -12504,6 +12707,8 @@ sub VariantAnnotationBlock {
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
     my $xargsFileName;
     
+    $logger->info("\t[PrepareForVariantAnnotationBlock]\n");
+
     if (${$scriptParameterHashRef}{pVT} > 0) {
 	
 	$logger->info("\t[VT]\n");  #Run VT. Done per family
@@ -12577,7 +12782,22 @@ sub VariantAnnotationBlock {
 							      nrofCores => $nrCores,
 							      processTime => $time,
 							     });
-    
+
+    ## Copy files for VariantAnnotationBlock to enable restart and skip of modules within block
+    ($xargsFileCounter, $xargsFileName) = &PrepareForVariantAnnotationBlock({parameterHashRef => \%{$parameterHashRef},
+									     scriptParameterHashRef => \%{$scriptParameterHashRef},
+									     sampleInfoHashRef => \%{$sampleInfoHashRef},
+									     fileInfoHashRef => \%{$fileInfoHashRef},
+									     infilesLaneNoEndingHashRef => \%{$infilesLaneNoEndingHashRef},
+									     jobIDHashRef => \%{$jobIDHashRef},
+									     callType => $callType,
+									     programName => "VT",
+									     fileName => $fileName,
+									     programInfoPath => $programInfoPath,
+									     FILEHANDLE => $FILEHANDLE,
+									     xargsFileCounter => $xargsFileCounter,
+									     stderrPath => $programInfoPath.".stderr.txt",
+									    });	
     if (${$scriptParameterHashRef}{pVT} > 0) {  #Run VT. Done per family
 	
 	($xargsFileCounter, $xargsFileName) = &VT({parameterHashRef => \%{$parameterHashRef},
@@ -22981,6 +23201,42 @@ sub TrackProgress {
 	print $FILEHANDLE q?perl -nae 'my @headers=(jobid,jobname,account,partition,alloccpus,TotalCPU,elapsed,start,end,state,exitcode); if($. == 1) {print "#".join("\t", @headers), "\n"} if ($.>=3 && $F[0]!~/.batch/) {print join("\t", @F), "\n"}' ?;
 	say $FILEHANDLE q?> ?.$$logFileRef.".status";
     }
+}
+
+sub PrintProgram {
+
+##PrintProgram
+
+##Function : Print all supported programs in '-ppm' mode
+##Returns  : ""
+##Arguments: $parameterHashRef
+##         : $parameterHashRef => The parameter hash {REF}
+
+    my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
+    my $printProgramMode = ${$parameterHashRef}{printProgramMode}{value} //= ${$parameterHashRef}{printProgramMode}{default};
+    
+    &AddToParameter({parameterHashRef => $parameterHashRef,
+		     aggregateArrayRef => ["type:program"],
+		    });
+    my @orderParameters;
+
+    ## Adds the order of first level keys from yaml file to array
+    &OrderParameterNames(\@orderParameters, $Bin."/definitions/defineParameters.yaml");
+ 
+    foreach my $orderParameterElement (@orderParameters) {
+	
+	if ( ( any {$_ eq $orderParameterElement} @{${$parameterHashRef}{dynamicParameters}{program}} ) ) { #Only process programs
+	    
+	    unless ($orderParameterElement=~/pMadeline|pMosaik|pBwaSampe|pBwaAln|pPicardToolsMergeRapidReads|pBAMCalibrationBlock|pVariantAnnotationBlock|pAnnovar/) {
+
+		print STDOUT "--".$orderParameterElement." ".$printProgramMode." ";
+	    }
+	}
+    }
+    print STDOUT "\n";
 }
 
 

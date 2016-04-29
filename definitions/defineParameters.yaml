@@ -159,6 +159,12 @@ sambambaVersion:
   dataType: SCALAR
   default: v0.5.9
   type: MIP
+printProgramMode:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  default: 2
+  type: MIP
 ###Programs
 ## GZip
 pGZipFastq:
@@ -1003,6 +1009,14 @@ pVariantAnnotationBlock:
   default: 0
   fileTag: nofileTag
   reduceIO: 1
+  type: program
+pPrepareForVariantAnnotationBlock:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileTag: nofileTag
   type: program
 ##VT
 pVT:

@@ -364,6 +364,11 @@ sub ReadInfileVCF {
 		    if (${$scriptParameterHashRef}{'snpSiftAnnotationOutInfoKey'}{$annotationFile}) {
 			
 			@splittedKeys = split(',', ${$scriptParameterHashRef}{'snpSiftAnnotationOutInfoKey'}{$annotationFile});
+			
+			my @originalVcfKeys = split(',', ${$scriptParameterHashRef}{'snpSiftAnnotationFiles'}{$annotationFile});
+			
+			## Modify list elements in place to produce -names flag from SnpEff
+			map{$_ .= shift(@originalVcfKeys)} @splittedKeys;
 		    }
 		    else {
 			
