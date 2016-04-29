@@ -73,6 +73,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -tmd/--tempDirectory Set the temporary directory for all programs (defaults to "/scratch/SLURM_JOB_ID";supply whole path)
                -jul/--javaUseLargePages Use large page memory. (-XX, hence option considered not stable and are subject to change without notice, but can be consiered when faced with Java Runtime Environment Memory issues)
                -nrm/--nodeRamMemory The RAM memory size of the node(s) in GigaBytes (Defaults to 24)
+               -sen/--sourceEnvironmentCommand Source environment command in sbatch scripts (defaults to "")
                -uve/--usePythonVirtualEnvironment Decides if MIP should try to activate a python virtual environment (Defaults to "0" (=no))
                -pve/--pythonVirtualEnvironment Python virtualenvironment (defaults to "")
                -pvec/--pythonVirtualEnvironmentCommand Python virtualenvironment (defaults to "workon";whitespace sep)
@@ -431,6 +432,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'rea|researchEthicalApproval:s' => \$parameter{researchEthicalApproval}{value},
 	   'dra|dryRunAll:n' => \$parameter{dryRunAll}{value},
 	   'tmd|tempDirectory:s' => \$parameter{tempDirectory}{value},
+	   'sen|sourceEnvironmentCommand=s{,}' => \@{$parameter{sourceEnvironmentCommand}{value}},
 	   'uve|usePythonVirtualEnvironment:n' => \$parameter{usePythonVirtualEnvironment}{value},
 	   'pve|pythonVirtualEnvironment:s' => \$parameter{pythonVirtualEnvironment}{value},
 	   'pvec|pythonVirtualEnvironmentCommand=s{,}' => \@{$parameter{pythonVirtualEnvironmentCommand}{value}},
@@ -16899,6 +16901,7 @@ sub ProgramPreRequisites {
     my $outScriptDir = ${$argHashRef}{outScriptDir} //= ${$argHashRef}{scriptParameterHashRef}{outScriptDir};
     my $tempDirectory = ${$argHashRef}{tempDirectory} //= ${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $emailType = ${$argHashRef}{emailType} //= ${$argHashRef}{scriptParameterHashRef}{emailType};
+    my $sourceEnvironmentCommandArrayRef = ${$argHashRef}{sourceEnvironmentCommand} //= ${$argHashRef}{scriptParameterHashRef}{sourceEnvironmentCommand};
     my $nrofCores = ${$argHashRef}{nrofCores} //= 1;
     my $processTime = ${$argHashRef}{processTime} //= 1;
     my $pipefail = ${$argHashRef}{pipefail} //= 1;
@@ -17005,7 +17008,11 @@ sub ProgramPreRequisites {
     
     say $FILEHANDLE q?echo "Running on: $(hostname)"?;
     say $FILEHANDLE q?PROGNAME=$(basename $0)?,"\n";
-    
+    if (scalar(@{$sourceEnvironmentCommandArrayRef}) > 0) {
+
+	say $FILEHANDLE "##Activate environment";
+	say $FILEHANDLE join(' ', @{$sourceEnvironmentCommandArrayRef}), "\n";
+    }
     if (defined($tempDirectory)) {  #Not all programs need a temporary directory
 
 	say $FILEHANDLE "## Create temporary directory";

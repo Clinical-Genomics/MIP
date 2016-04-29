@@ -1561,6 +1561,12 @@ pythonVirtualEnvironmentCommand:
   default:
    - workon
   type: MIP
+sourceEnvironmentCommand:
+  associatedProgram:
+   - MIP
+  elementSeparator: " "
+  dataType: ARRAY
+  type: MIP
 instanceTag:
   associatedProgram:
    - MIP
