@@ -74,9 +74,6 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -jul/--javaUseLargePages Use large page memory. (-XX, hence option considered not stable and are subject to change without notice, but can be consiered when faced with Java Runtime Environment Memory issues)
                -nrm/--nodeRamMemory The RAM memory size of the node(s) in GigaBytes (Defaults to 24)
                -sen/--sourceEnvironmentCommand Source environment command in sbatch scripts (defaults to "")
-               -uve/--usePythonVirtualEnvironment Decides if MIP should try to activate a python virtual environment (Defaults to "0" (=no))
-               -pve/--pythonVirtualEnvironment Python virtualenvironment (defaults to "")
-               -pvec/--pythonVirtualEnvironmentCommand Python virtualenvironment (defaults to "workon";whitespace sep)
                -sab/--sambambaVersion Version of sambamba (defaults to "v0.5.9")
 
                -ges/--genomicSet Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
@@ -433,9 +430,6 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'dra|dryRunAll:n' => \$parameter{dryRunAll}{value},
 	   'tmd|tempDirectory:s' => \$parameter{tempDirectory}{value},
 	   'sen|sourceEnvironmentCommand=s{,}' => \@{$parameter{sourceEnvironmentCommand}{value}},
-	   'uve|usePythonVirtualEnvironment:n' => \$parameter{usePythonVirtualEnvironment}{value},
-	   'pve|pythonVirtualEnvironment:s' => \$parameter{pythonVirtualEnvironment}{value},
-	   'pvec|pythonVirtualEnvironmentCommand=s{,}' => \@{$parameter{pythonVirtualEnvironmentCommand}{value}},
 	   'sab|sambambaVersion:s' => \$parameter{sambambaVersion}{value},
 	   'jul|javaUseLargePages:s' => \$parameter{javaUseLargePages}{value},
 	   'nrm|nodeRamMemory:n' => \$parameter{nodeRamMemory}{value},  #Per node
@@ -3292,12 +3286,6 @@ sub RankVariants {
     my $vcfParserAnalysisType = "";
     my $vcfParserContigsArrayRef = \@{ ${$fileInfoHashRef}{contigsSizeOrdered} };  #Set default
 
-    if (${$scriptParameterHashRef}{usePythonVirtualEnvironment} == 1) {
-
-	## GenMod uses python virtualenvironment
-	say $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{pythonVirtualEnvironmentCommand} })." ".${$scriptParameterHashRef}{pythonVirtualEnvironment}, "\n";  #Activate python environment
-    }
-
     for (my $vcfParserOutputFileCounter=0;$vcfParserOutputFileCounter<${$scriptParameterHashRef}{VcfParserOutputFileCount};$vcfParserOutputFileCounter++) {
 	
 	if ($vcfParserOutputFileCounter == 1) {
@@ -5675,14 +5663,6 @@ sub VT {
 								       });
     }
     
-    if (${$scriptParameterHashRef}{VTgenmodFilter} > 0) {
-	
-	if (${$scriptParameterHashRef}{usePythonVirtualEnvironment} == 1) {
-
-	    say $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{pythonVirtualEnvironmentCommand} })." ".${$scriptParameterHashRef}{pythonVirtualEnvironment}, "\n";  #Activate python environment
-	}
-    }
-    
     ## Create file commands for xargs
     ($xargsFileCounter, $xargsFileName) = &XargsCommand({FILEHANDLE => $FILEHANDLE,
 							 XARGSFILEHANDLE => $XARGSFILEHANDLE, 
@@ -7400,11 +7380,6 @@ sub ChanjoSexCheck {
 					 processTime => 2,
 					});
     
-    if (${$scriptParameterHashRef}{usePythonVirtualEnvironment} == 1) {
-	
-	say $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{pythonVirtualEnvironmentCommand} })." ".${$scriptParameterHashRef}{pythonVirtualEnvironment}, "\n";  #Activate python environment
-    }
-    
     ## ChanjoSexCheck
     say $FILEHANDLE "## Predicting sex from alignment";
     print $FILEHANDLE "chanjo ";  #Program
@@ -7691,12 +7666,6 @@ sub SVRankVariants {
 
     my $vcfParserAnalysisType = "";
     my $vcfParserContigsArrayRef = \@{ ${$fileInfoHashRef}{contigsSizeOrdered} };  #Set default
-
-    if (${$scriptParameterHashRef}{usePythonVirtualEnvironment} == 1) {
-	
-	## GenMod uses python virtualenvironment
-	say $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{pythonVirtualEnvironmentCommand} })." ".${$scriptParameterHashRef}{pythonVirtualEnvironment}, "\n";  #Activate python environment
-    }
 
     for (my $vcfParserOutputFileCounter=0;$vcfParserOutputFileCounter<${$scriptParameterHashRef}{VcfParserOutputFileCount};$vcfParserOutputFileCounter++) {
 	
@@ -13173,11 +13142,6 @@ sub Madeline {
 
     say $FILEHANDLE "## Reformat pedigree to Madeline format";
 
-    if (${$scriptParameterHashRef}{usePythonVirtualEnvironment} == 1) {
-
-	say $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{pythonVirtualEnvironmentCommand} })." ".${$scriptParameterHashRef}{pythonVirtualEnvironment}, "\n";  #Activate python environment
-    }
-
     print $FILEHANDLE "ped_parser ";
     print $FILEHANDLE "-t mip ";  #MIP pedigree format
     print $FILEHANDLE "--to_madeline ";  #Print the ped file in madeline format
@@ -14449,10 +14413,6 @@ sub DownloadReference {
 
 	    $logger->warn("Will try to download ".$parameterName." before executing ".$$programRef."\n");
 	}
-	if (${$scriptParameterHashRef}{usePythonVirtualEnvironment} == 1) {
-
-	    say $FILEHANDLE join(' ', @{ ${$scriptParameterHashRef}{pythonVirtualEnvironmentCommand} })." ".${$scriptParameterHashRef}{pythonVirtualEnvironment}, "\n";  #Activate python environment
-	}
 
 	print $FILEHANDLE "cosmid ";  #Database download manager
 	print $FILEHANDLE "clone ";  #Clone resource
@@ -14739,23 +14699,8 @@ sub CheckCosmidInstallation {
 	 
 	    $logger->info("Checking your Cosmid installation in preparation for download of ".${$scriptParameterHashRef}{$parameterName}."\n");
 	    
-	    if (${$scriptParameterHashRef}{usePythonVirtualEnvironment} == 1) {
-		
-		if (defined(${$scriptParameterHashRef}{pythonVirtualEnvironment})) {  #Use python virtualenv
-		    
-		    my $pythonEnvironmentCommand = join(' ', @{ ${$scriptParameterHashRef}{pythonVirtualEnvironmentCommand} });
-		    $whichReturn = `source ~/.bash_profile; $pythonEnvironmentCommand ${$scriptParameterHashRef}{pythonVirtualEnvironment};which cosmid;`;
-		}
-		else  {  #No python virtualenv
-		    
-		    $logger->fatal("Cannot download".${$scriptParameterHashRef}{$parameterName}." without a '-pythonVirtualEnvironment'");
-		    exit 1;
-		}
-	    }
-	    elsif (${$scriptParameterHashRef}{usePythonVirtualEnvironment} == 0) {  #Proceed without a python environment
-		
-		$whichReturn = `which cosmid;`;
-	    }
+	    $whichReturn = `which cosmid;`;
+
 	    if ($whichReturn eq "") {
 		
 		$logger->fatal("MIP uses cosmid to download ".${$scriptParameterHashRef}{$parameterName}." and MIP could not find a cosmid installation in your environment ","\n"); 
@@ -16339,8 +16284,6 @@ sub AddToScriptParameter {
 			elsif ( ($parameterName eq "rankModelFile") && (!defined(${$scriptParameterHashRef}{rankModelFile}) ) ) {  #Do nothing since no rank model was given i.e. use rank scripts deafult supplied with distribution
 			}
 			elsif ( ($parameterName eq "genmodModelsReducedPenetranceFile") && (!defined(${$scriptParameterHashRef}{genmodModelsReducedPenetranceFile}) ) ) {  #Do nothing since no reduced penetrance should be performed
-			}
-			elsif ( ($parameterName eq "pythonVirtualEnvironment") && (${$scriptParameterHashRef}{usePythonVirtualEnvironment} == 0) ) {  #Do nothing since no python virtualenvironment should be activated
 			}
 			else {
 			    
