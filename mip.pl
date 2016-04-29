@@ -7813,28 +7813,12 @@ sub SVRankVariants {
 			      infilePostfix => $vcfParserAnalysisType."_models_score_compound.vcf",
 			      outfile => $$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType.".vcf",
 			     });
-	
-	if (${$scriptParameterHashRef}{svRankVariantBCFFile} == 1) {
-	
-	    &VcfToBcf({infile => $$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType,
-		       FILEHANDLE => $FILEHANDLE,
-		       outfile => $$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType,
-
-		      });
-	
-	    ## Copies file from temporary directory.
-	    say $FILEHANDLE "## Copy file from temporary directory";
-	    &MigrateFileFromTemp({tempPath => $$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".bcf*",
-				  filePath => $outFamilyDirectory."/",
-				  FILEHANDLE => $FILEHANDLE,
-				 });
-	}
 
 	## Genmod sort
 	print $FILEHANDLE "genmod ";
 	print $FILEHANDLE "-v ";  #Increase output verbosity
 	print $FILEHANDLE "sort ";  #Sort a VCF file based on rank score
-	print $XARGSFILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
+	print $FILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
 	print $FILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf ";  #Outfile
 	say $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType.".vcf ";  #infile
 	
@@ -7852,6 +7836,39 @@ sub SVRankVariants {
 			      FILEHANDLE => $FILEHANDLE,
 			     });
 	say $FILEHANDLE "wait", "\n";
+
+	if (${$scriptParameterHashRef}{svRankVariantBCFFile} == 1) {
+	
+	    ## Using GATK combined file directly yields error in bcftools - unclear why 
+	    say $FILEHANDLE "\n## Preprocessing for compatibility with bcfTools v1.3\n";
+
+	    print $FILEHANDLE "bcftools view ";
+	    print $FILEHANDLE $$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf ";
+	    print $FILEHANDLE "| ";  #Pipe
+
+	    &JavaCore({FILEHANDLE => $FILEHANDLE,
+		       memoryAllocation => "Xmx12g",
+		       javaUseLargePagesRef => \${$scriptParameterHashRef}{javaUseLargePages},
+		       javaTemporaryDirectory => ${$scriptParameterHashRef}{tempDirectory},
+		       javaJar => ${$scriptParameterHashRef}{picardToolsPath}."/picard.jar"
+		      });
+	    print $FILEHANDLE "SortVcf ";
+	    print $FILEHANDLE "I=/dev/stdin ";
+	    say $FILEHANDLE "O=".$$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType."_sorted.vcf", "\n";
+
+	    &VcfToBcf({infile => $$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType."_sorted",
+		       FILEHANDLE => $FILEHANDLE,
+		       outfile => $$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType,
+
+		      });
+
+	    ## Copies file from temporary directory.
+	    say $FILEHANDLE "## Copy file from temporary directory";
+	    &MigrateFileFromTemp({tempPath => $$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".bcf*",
+				  filePath => $outFamilyDirectory."/",
+				  FILEHANDLE => $FILEHANDLE,
+				 });
+	}
 
 	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 	    
