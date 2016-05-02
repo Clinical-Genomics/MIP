@@ -21666,13 +21666,14 @@ sub CheckKeys {
 	    ## Mandatory key exists
 	    if (exists(${$parameterHashRef}{$parameter}{$mandatoryKey})) {
 
+		## Check key data type
 		&CheckDataType({parameterHashRef => $parameterHashRef,
 				keyHashRef => $mandatoryKeyHashRef,
 				parameter => $parameter,
 				key => $mandatoryKey,
 				filePathRef => $filePathRef,
 			       });
-		
+		## Evaluate key values
 		&CheckValues({parameterHashRef => $parameterHashRef,
 			      keyHashRef => $mandatoryKeyHashRef,
 			      parameter => $parameter,
@@ -21691,6 +21692,7 @@ sub CheckKeys {
 	    ## NonMandatory key exists
 	    if (exists(${$parameterHashRef}{$parameter}{$nonMandatoryKey})) {
 
+		## Check key data type
 		&CheckDataType({parameterHashRef => $parameterHashRef,
 				keyHashRef => $nonMandatoryKeyHashRef,
 				parameter => $parameter,
@@ -21698,6 +21700,7 @@ sub CheckKeys {
 				filePathRef => $filePathRef,
 			       });
 
+		## Evaluate key values
 		&CheckValues({parameterHashRef => $parameterHashRef,
 			      keyHashRef => $nonMandatoryKeyHashRef,
 			      parameter => $parameter,
