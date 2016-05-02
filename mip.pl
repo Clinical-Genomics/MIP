@@ -421,7 +421,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'al|alignerOutDir:s' => \$parameter{alignerOutDir}{value},  #determining which aligner out data directory was used previously (if not specified)
 	   'at|analysisType:s' => \$parameter{analysisType}{value},  #Type of analysis
 	   'pl|platForm:s' => \$parameter{platForm}{value},  #Platform/technology used to produce the reads
-	   'mc|maximumCores:n' => \$parameter{maximumCores}{value},  #Per node
+	   'mc|maximumCores=n' => \$parameter{maximumCores}{value},  #Per node
 	   'c|configFile:s' => \$parameter{configFile}{value},
 	   'ccp|clusterConstantPath:s' => \$parameter{clusterConstantPath}{value},
 	   'acp|analysisConstantPath:s' => \$parameter{analysisConstantPath}{value},
@@ -429,110 +429,110 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'sif|sampleInfoFile:s' => \$parameter{sampleInfoFile}{value},  #Write all info on samples and run to YAML file
 	   'int|instanceTag:s' => \@{$parameter{instanceTag}{value}},
 	   'rea|researchEthicalApproval:s' => \$parameter{researchEthicalApproval}{value},
-	   'dra|dryRunAll:n' => \$parameter{dryRunAll}{value},
+	   'dra|dryRunAll=i' => \$parameter{dryRunAll}{value},
 	   'tmd|tempDirectory:s' => \$parameter{tempDirectory}{value},
 	   'sen|sourceEnvironmentCommand=s{,}' => \@{$parameter{sourceEnvironmentCommand}{value}},
 	   'sab|sambambaVersion:s' => \$parameter{sambambaVersion}{value},
 	   'jul|javaUseLargePages:s' => \$parameter{javaUseLargePages}{value},
-	   'nrm|nodeRamMemory:n' => \$parameter{nodeRamMemory}{value},  #Per node
+	   'nrm|nodeRamMemory=n' => \$parameter{nodeRamMemory}{value},  #Per node
            'ges|genomicSet:s' => \$parameter{genomicSet}{value},  #Selection of relevant regions post alignment and sort
-	   'rio|reduceIO:n' => \$parameter{reduceIO}{value},
-	   'ppm|printProgramMode:n' => \$parameter{printProgramMode}{value},
-	   'pp|printProgram' => sub { GetOptions('ppm|printProgramMode:n' => \$parameter{printProgramMode}{value});  #Force ppm to be read before function call
+	   'rio|reduceIO=n' => \$parameter{reduceIO}{value},
+	   'ppm|printProgramMode=n' => \$parameter{printProgramMode}{value},
+	   'pp|printProgram' => sub { GetOptions('ppm|printProgramMode=n' => \$parameter{printProgramMode}{value});  #Force ppm to be read before function call
 				      &PrintProgram({parameterHashRef => \%parameter}); exit;},
 	   'l|logFile:s' => \$parameter{logFile}{value},
 	   'h|help' => sub { say STDOUT $USAGE; exit;},  #Display help text
 	   'v|version' => sub { say STDOUT "\nMip.pl ".$mipVersion, "\n"; exit;},  #Display version number
-	   'pGZ|pGZipFastq:n' => \$parameter{pGZipFastq}{value},
-	   'pFqC|pFastQC:n' => \$parameter{pFastQC}{value},
-	   'pMaD|pMadeline:n' => \$parameter{pMadeline}{value},
-	   'pMoB|pMosaikBuild:n' => \$parameter{pMosaikBuild}{value},
-	   'mobmfl|mosaikBuildMedianFragLength:n' => \$parameter{mosaikBuildMedianFragLength}{value},  #for fragment length estimation and local search
-	   'pMoA|pMosaikAlign:n' => \$parameter{pMosaikAlign}{value},
+	   'pGZ|pGZipFastq=n' => \$parameter{pGZipFastq}{value},
+	   'pFqC|pFastQC=n' => \$parameter{pFastQC}{value},
+	   'pMaD|pMadeline=n' => \$parameter{pMadeline}{value},
+	   'pMoB|pMosaikBuild=n' => \$parameter{pMosaikBuild}{value},
+	   'mobmfl|mosaikBuildMedianFragLength=n' => \$parameter{mosaikBuildMedianFragLength}{value},  #for fragment length estimation and local search
+	   'pMoA|pMosaikAlign=n' => \$parameter{pMosaikAlign}{value},
 	   'moaref|mosaikAlignReference:s' => \$parameter{mosaikAlignReference}{value},  #MosaikAlign reference file assumes existance of jump database files in same dir
 	   'moaape|mosaikAlignNeuralNetworkPeFile:s' => \$parameter{mosaikAlignNeuralNetworkPeFile}{value},
 	   'moaase|mosaikAlignNeuralNetworkSeFile:s' => \$parameter{mosaikAlignNeuralNetworkSeFile}{value}, 
 	   'mojdb|mosaikJumpDbStub:s' => \$parameter{mosaikJumpDbStub}{value},  #Stub for MosaikJump database
-	   'pMem|pBwaMem:n' => \$parameter{pBwaMem}{value},
+	   'pMem|pBwaMem=n' => \$parameter{pBwaMem}{value},
 	   'memrdb|bwaMemRapidDb:s' => \$parameter{bwaMemRapidDb}{value},
-	   'memcrm|bwaMemCram:n' => \$parameter{bwaMemCram}{value},
-	   'memsts|bwaMembamStats:n' => \$parameter{bwaMembamStats}{value},
+	   'memcrm|bwaMemCram=n' => \$parameter{bwaMemCram}{value},
+	   'memsts|bwaMembamStats=n' => \$parameter{bwaMembamStats}{value},
 	   'memssm|bwaSambambaSortMemoryLimit:s' => \$parameter{bwaSambambaSortMemoryLimit}{value},
-	   'pAln|pBwaAln:n' => \$parameter{pBwaAln}{value},
-	   'alnq|bwaAlnQualityTrimming:n' => \$parameter{bwaAlnQualityTrimming}{value},  #BWA aln quality threshold for read trimming down to 35bp
-	   'pSap|pBwaSampe:n' => \$parameter{pBwaSampe}{value},
-	   'pPtM|pPicardToolsMergeSamFiles:n' => \$parameter{pPicardToolsMergeSamFiles}{value},  #PicardTools mergeSamFiles
-	   'pPtMR|pPicardToolsMergeRapidReads:n' => \$parameter{pPicardToolsMergeRapidReads}{value},  #PicardTools mergeSamFiles - rapid mode
+	   'pAln|pBwaAln=n' => \$parameter{pBwaAln}{value},
+	   'alnq|bwaAlnQualityTrimming=n' => \$parameter{bwaAlnQualityTrimming}{value},  #BWA aln quality threshold for read trimming down to 35bp
+	   'pSap|pBwaSampe=n' => \$parameter{pBwaSampe}{value},
+	   'pPtM|pPicardToolsMergeSamFiles=n' => \$parameter{pPicardToolsMergeSamFiles}{value},  #PicardTools mergeSamFiles
+	   'pPtMR|pPicardToolsMergeRapidReads=n' => \$parameter{pPicardToolsMergeRapidReads}{value},  #PicardTools mergeSamFiles - rapid mode
 	   'ptmp|picardToolsMergeSamFilesPrevious:s' => \@{$parameter{picardToolsMergeSamFilesPrevious}{value}},  #Comma separated list
 	   'ptp|picardToolsPath:s' => \$parameter{picardToolsPath}{value},  #Path to picardtools
 	   'pSmd|pSambambaMarkduplicates:s' => \$parameter{pSambambaMarkduplicates}{value},  #Sambamba Markduplicates
-	   'pChS|pChanjoSexCheck:n' => \$parameter{pChanjoSexCheck}{value},   #Chanjo coverage analysis on sex chromosomes
-	   'pSdt|pSambambaDepth:n' => \$parameter{pSambambaDepth}{value},   #Chanjo coverage analysis
+	   'pChS|pChanjoSexCheck=n' => \$parameter{pChanjoSexCheck}{value},   #Chanjo coverage analysis on sex chromosomes
+	   'pSdt|pSambambaDepth=n' => \$parameter{pSambambaDepth}{value},   #Chanjo coverage analysis
 	   'sdtcut|sambambaDepthCutOffs:s' => \@{$parameter{sambambaDepthCutOffs}{value}},   # Cutoff used for completeness
 	   'sdtbed|sambambaDepthBed:s' => \$parameter{sambambaDepthBed}{value},
-	   'sdtbaq|sambambaDepthBaseQuality:n' => \$parameter{sambambaDepthBaseQuality}{value},
-	   'sdtmaq|sambambaDepthMappingQuality:n' => \$parameter{sambambaDepthMappingQuality}{value},
-	   'sdtndu|sambambaDepthNoDuplicates:n' => \$parameter{sambambaDepthNoDuplicates}{value},
-	   'sdtfqc|sambambaDepthNoFailedQualityControl:n' => \$parameter{sambambaDepthNoFailedQualityControl}{value},
-	   'pGcB|pGenomeCoverageBED:n' => \$parameter{pGenomeCoverageBED}{value},
-	   'xcov|GenomeCoverageBEDMaxCoverage:n' => \$parameter{GenomeCoverageBEDMaxCoverage}{value},  #Sets max depth to calculate coverage
-	   'pPtCMM|pPicardToolsCollectMultipleMetrics:n' => \$parameter{pPicardToolsCollectMultipleMetrics}{value},
-	   'pPtCHS|pPicardToolsCalculateHSMetrics:n' => \$parameter{pPicardToolsCalculateHSMetrics}{value},
+	   'sdtbaq|sambambaDepthBaseQuality=n' => \$parameter{sambambaDepthBaseQuality}{value},
+	   'sdtmaq|sambambaDepthMappingQuality=n' => \$parameter{sambambaDepthMappingQuality}{value},
+	   'sdtndu|sambambaDepthNoDuplicates=n' => \$parameter{sambambaDepthNoDuplicates}{value},
+	   'sdtfqc|sambambaDepthNoFailedQualityControl=n' => \$parameter{sambambaDepthNoFailedQualityControl}{value},
+	   'pGcB|pGenomeCoverageBED=n' => \$parameter{pGenomeCoverageBED}{value},
+	   'xcov|GenomeCoverageBEDMaxCoverage=n' => \$parameter{GenomeCoverageBEDMaxCoverage}{value},  #Sets max depth to calculate coverage
+	   'pPtCMM|pPicardToolsCollectMultipleMetrics=n' => \$parameter{pPicardToolsCollectMultipleMetrics}{value},
+	   'pPtCHS|pPicardToolsCalculateHSMetrics=n' => \$parameter{pPicardToolsCalculateHSMetrics}{value},
 	   'ptchsetl|exomeTargetBedInfileLists:s' => \@exomeTargetBedInfileLists,  #Comma separated list of target file for CalculateHsMetrics
 	   'ptchsetpl|exomeTargetPaddedBedInfileLists:s' => \@exomeTargetPaddedBedInfileLists,  #Comma separated list of padded target file for CalculateHsMetrics
-	   'pRcP|pRCovPlots:n' => \$parameter{pRCovPlots}{value},
-	   'pCnv|pCNVnator:n' => \$parameter{pCNVnator}{value},
-	   'cnvhbs|cnvBinSize:n' => \$parameter{cnvBinSize}{value},
-	   'pDel|pDelly:n' => \$parameter{pDelly}{value},
+	   'pRcP|pRCovPlots=n' => \$parameter{pRCovPlots}{value},
+	   'pCnv|pCNVnator=n' => \$parameter{pCNVnator}{value},
+	   'cnvhbs|cnvBinSize=n' => \$parameter{cnvBinSize}{value},
+	   'pDel|pDelly=n' => \$parameter{pDelly}{value},
 	   'deltyp|dellyType:s'  => \@{$parameter{dellyType}{value}},
-	   'pMna|pManta:n' => \$parameter{pManta}{value},
-	   'pFit|pFindTranslocations:n' => \$parameter{pFindTranslocations}{value},
-	   'fitmsp|findTranslocationsMinimumSuppotingPairs:n' => \$parameter{findTranslocationsMinimumSuppotingPairs}{value},
-	   'csvvtd|svVTDecompose:n' => \$parameter{svVTDecompose}{value},  #VT decompose (split multiallelic variants)
-	   'csvbtv|svBcfToolsViewFilter:n' => \$parameter{svBcfToolsViewFilter}{value},  #Include structural variants with PASS in FILTER column
-	   'csvgmf|svGenmodFilter:n'  => \$parameter{svGenmodFilter}{value},  #Remove common structural variants from vcf 
+	   'pMna|pManta=n' => \$parameter{pManta}{value},
+	   'pFit|pFindTranslocations=n' => \$parameter{pFindTranslocations}{value},
+	   'fitmsp|findTranslocationsMinimumSuppotingPairs=n' => \$parameter{findTranslocationsMinimumSuppotingPairs}{value},
+	   'csvvtd|svVTDecompose=n' => \$parameter{svVTDecompose}{value},  #VT decompose (split multiallelic variants)
+	   'csvbtv|svBcfToolsViewFilter=n' => \$parameter{svBcfToolsViewFilter}{value},  #Include structural variants with PASS in FILTER column
+	   'csvgmf|svGenmodFilter=n'  => \$parameter{svGenmodFilter}{value},  #Remove common structural variants from vcf 
 	   'csvgfr|svGenmodFilter1000G:s'  => \$parameter{svGenmodFilter1000G}{value},  #Genmod annotate structural variants from 1000G reference
 	   'csvgft|svGenmodFilterThreshold:s'  => \$parameter{svGenmodFilterThreshold}{value},  #Threshold for filtering structural variants
-	   'pCsv|pCombineStructuralVariantCallSets:n' => \$parameter{pCombineStructuralVariantCallSets}{value},  #Combine structural variant call sets
-	   'csvbcf|combineStructuralVariantCallSetsBCFFile:n' => \$parameter{combineStructuralVariantCallSetsBCFFile}{value},  #Produce compressed vcf
-	   'pSvv|pSVVariantEffectPredictor:n' => \$parameter{pSVVariantEffectPredictor}{value},
+	   'pCsv|pCombineStructuralVariantCallSets=n' => \$parameter{pCombineStructuralVariantCallSets}{value},  #Combine structural variant call sets
+	   'csvbcf|combineStructuralVariantCallSetsBCFFile=n' => \$parameter{combineStructuralVariantCallSetsBCFFile}{value},  #Produce compressed vcf
+	   'pSvv|pSVVariantEffectPredictor=n' => \$parameter{pSVVariantEffectPredictor}{value},
 	   'svvepf|svVepFeatures:s'  => \@{$parameter{svVepFeatures}{value}},  #Comma separated list
 	   'svvepl|svVepPlugins:s'  => \@{$parameter{svVepPlugins}{value}},  #Comma separated list
-	   'pSVVcP|pSVVCFParser:n' => \$parameter{pSVVCFParser}{value},
-	   'svvcpvt|svVcfParserVepTranscripts:n' => \$parameter{svVcfParserVepTranscripts}{value},
+	   'pSVVcP|pSVVCFParser=n' => \$parameter{pSVVCFParser}{value},
+	   'svvcpvt|svVcfParserVepTranscripts=n' => \$parameter{svVcfParserVepTranscripts}{value},
 	   'svvcprff|svVcfParserRangeFeatureFile:s' => \$parameter{svVcfParserRangeFeatureFile}{value},  #path to vcfParserRangeFeatureFile
 	   'svvcprfa|svVcfParserRangeFeatureAnnotationColumns:s'  => \@{$parameter{svVcfParserRangeFeatureAnnotationColumns}{value}},  #Comma separated list
 	   'svvcpsf|svVcfParserSelectFile:s'  => \$parameter{svVcfParserSelectFile}{value},  #path to vcfParserSelectFile
-	   'svvcpsfm|svVcfParserSelectFileMatchingColumn:n' => \$parameter{svVcfParserSelectFileMatchingColumn}{value},  #Column of HGNC Symbol in SelectFile
+	   'svvcpsfm|svVcfParserSelectFileMatchingColumn=n' => \$parameter{svVcfParserSelectFileMatchingColumn}{value},  #Column of HGNC Symbol in SelectFile
 	   'svvcpsfa|svVcfParserSelectFeatureAnnotationColumns:s'  => \@{$parameter{svVcfParserSelectFeatureAnnotationColumns}{value}},  #Comma separated list
-	   'pSvR|pSVRankVariants:n' => \$parameter{pSVRankVariants}{value},  #Ranking of SV variants
+	   'pSvR|pSVRankVariants=n' => \$parameter{pSVRankVariants}{value},  #Ranking of SV variants
 	   'svravgft|svGenmodModelsFamilyType:s' => \$parameter{svGenmodModelsFamilyType}{value},
 	   'svravrpf|svGenmodModelsReducedPenetranceFile:s' => \$parameter{svGenmodModelsReducedPenetranceFile}{value},
-	   'svravwg|svWholeGene:n'  => \$parameter{svWholeGene}{value},  #Allow compound pairs in intronic regions
+	   'svravwg|svWholeGene=n'  => \$parameter{svWholeGene}{value},  #Allow compound pairs in intronic regions
 	   'svravrm|svRankModelFile:s' => \$parameter{svRankModelFile}{value},  #The rank modell config.ini path
-	   'svravbcf|svRankVariantsBCFFile:n' => \$parameter{svRankVariantsBCFFile}{value},  #Produce compressed vcfs
-	   'pSmp|pSamToolsMpileUp:n' => \$parameter{pSamToolsMpileUp}{value},
-	   'pFrb|pFreebayes:n' => \$parameter{pFreebayes}{value},
+	   'svravbcf|svRankVariantsBCFFile=n' => \$parameter{svRankVariantsBCFFile}{value},  #Produce compressed vcfs
+	   'pSmp|pSamToolsMpileUp=n' => \$parameter{pSamToolsMpileUp}{value},
+	   'pFrb|pFreebayes=n' => \$parameter{pFreebayes}{value},
 	   'gtp|genomeAnalysisToolKitPath:s' => \$parameter{genomeAnalysisToolKitPath}{value},  #GATK whole path
 	   'gbdv|GATKBundleDownLoadVersion:s' => \$parameter{GATKBundleDownLoadVersion}{value},  #Sets the GATK FTP Bundle Download version
 	   'gtpl|GATKTargetPaddedBedIntervalLists:s' => \@GATKTargetPaddedBedIntervalLists,  #Comma separated list of padded target file set to be used in GATK
-	   'gdco|GATKDownSampleToCoverage:n' => \$parameter{GATKDownSampleToCoverage}{value},  #GATK downsample to coverage
-	   'pGrA|pGATKRealigner:n' => \$parameter{pGATKRealigner}{value},  #GATK ReAlignerTargetCreator/IndelRealigner
+	   'gdco|GATKDownSampleToCoverage=n' => \$parameter{GATKDownSampleToCoverage}{value},  #GATK downsample to coverage
+	   'pGrA|pGATKRealigner=n' => \$parameter{pGATKRealigner}{value},  #GATK ReAlignerTargetCreator/IndelRealigner
 	   'graks1|GATKReAlignerINDELKnownSet1:s' => \$parameter{GATKReAlignerINDELKnownSet1}{value},  #Known INDEL set to be used in GATK ReAlignerTargetCreator/IndelRealigner
 	   'graks2|GATKReAlignerINDELKnownSet2:s' => \$parameter{GATKReAlignerINDELKnownSet2}{value},  #Known INDEL set to be used in GATK ReAlignerTargetCreator/IndelRealigner
-	   'pGbR|pGATKBaseRecalibration:n' => \$parameter{pGATKBaseRecalibration}{value},  #GATK BaseRecalibrator/PrintReads
+	   'pGbR|pGATKBaseRecalibration=n' => \$parameter{pGATKBaseRecalibration}{value},  #GATK BaseRecalibrator/PrintReads
 	   'gbrkse|GATKBaseReCalibrationSNPKnownSet:s' => \$parameter{GATKBaseReCalibrationSNPKnownSet}{value},  #Known SNP set to be used in GATK BaseRecalibrator/PrintReads
-	   'gbrocr|GATKBaseReCalibrationOverClippedRead:n' => \$parameter{GATKBaseReCalibrationOverClippedRead}{value},  #Filter out reads that are over-soft-clipped
-	   'gbrdiq|GATKBaseReCalibrationDisableIndelQual:n' => \$parameter{GATKBaseReCalibrationDisableIndelQual}{value},  #Disable indel quality scores
+	   'gbrocr|GATKBaseReCalibrationOverClippedRead=n' => \$parameter{GATKBaseReCalibrationOverClippedRead}{value},  #Filter out reads that are over-soft-clipped
+	   'gbrdiq|GATKBaseReCalibrationDisableIndelQual=n' => \$parameter{GATKBaseReCalibrationDisableIndelQual}{value},  #Disable indel quality scores
 	   'gbrsqq|GATKBaseReCalibrationStaticQuantizedQuals:s'  => \@{$parameter{GATKBaseReCalibrationStaticQuantizedQuals}{value}},  #Comma separated list
-	   'pGhC|pGATKHaploTypeCaller:n' => \$parameter{pGATKHaploTypeCaller}{value},  #GATK Haplotypecaller
+	   'pGhC|pGATKHaploTypeCaller=n' => \$parameter{pGATKHaploTypeCaller}{value},  #GATK Haplotypecaller
 	   'ghckse|GATKHaploTypeCallerSNPKnownSet:s' => \$parameter{GATKHaploTypeCallerSNPKnownSet}{value},  #Known SNP set to be used in GATK HaplotypeCaller
-	   'ghcscb|GATKHaploTypeCallerSoftClippedBases:n' => \$parameter{GATKHaploTypeCallerSoftClippedBases}{value},  #Do not include soft clipped bases in the variant calling
+	   'ghcscb|GATKHaploTypeCallerSoftClippedBases=n' => \$parameter{GATKHaploTypeCallerSoftClippedBases}{value},  #Do not include soft clipped bases in the variant calling
 	   'ghcpim|GATKHaploTypeCallerPcrIndelModel:s' => \$parameter{GATKHaploTypeCallerPcrIndelModel}{value},  #The PCR indel model to use
-	   'pGgT|pGATKGenoTypeGVCFs:n' => \$parameter{pGATKGenoTypeGVCFs}{value},  #Merge gVCF records using GATK GenotypeGVCFs
+	   'pGgT|pGATKGenoTypeGVCFs=n' => \$parameter{pGATKGenoTypeGVCFs}{value},  #Merge gVCF records using GATK GenotypeGVCFs
 	   'ggtgrl|GATKGenoTypeGVCFsRefGVCF:s' => \$parameter{GATKGenoTypeGVCFsRefGVCF}{value},  #GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping
-	   'ggtals|GATKGenoTypeGVCFsAllSites:n' => \$parameter{GATKGenoTypeGVCFsAllSites}{value},  #Emit non-variant sites to the output VCF
-	   'pGvR|pGATKVariantRecalibration:n' => \$parameter{pGATKVariantRecalibration}{value},  #GATK VariantRecalibrator/ApplyRecalibration
+	   'ggtals|GATKGenoTypeGVCFsAllSites=n' => \$parameter{GATKGenoTypeGVCFsAllSites}{value},  #Emit non-variant sites to the output VCF
+	   'pGvR|pGATKVariantRecalibration=n' => \$parameter{pGATKVariantRecalibration}{value},  #GATK VariantRecalibrator/ApplyRecalibration
 	   'gvrtsh|GATKVariantReCalibrationTrainingSetHapMap:s' => \$parameter{GATKVariantReCalibrationTrainingSetHapMap}{value},  #GATK VariantRecalibrator resource
 	   'gvrtss|GATKVariantReCalibrationTrainingSetDbSNP:s' => \$parameter{GATKVariantReCalibrationTrainingSetDbSNP}{value},  #GATK VariantRecalibrator resource
 	   'gvrtsg|GATKVariantReCalibrationTrainingSet1000GSNP:s' => \$parameter{GATKVariantReCalibrationTrainingSet1000GSNP}{value},  #GATK VariantRecalibrator resource
@@ -540,79 +540,79 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'gvrtsm|GATKVariantReCalibrationTrainingSetMills:s' => \$parameter{GATKVariantReCalibrationTrainingSetMills}{value},  #GATK VariantRecalibrator resource
 	   'gvrstf|GATKVariantReCalibrationSnvTSFilterLevel:s' => \$parameter{GATKVariantReCalibrationSnvTSFilterLevel}{value},  #Snv truth sensativity level
 	   'gvritf|GATKVariantReCalibrationIndelTSFilterLevel:s' => \$parameter{GATKVariantReCalibrationIndelTSFilterLevel}{value},  #Indel truth sensativity level
-	   'gvrdpa|GATKVariantReCalibrationDPAnnotation:n' => \$parameter{GATKVariantReCalibrationDPAnnotation}{value},
-	   'gvrsmg|GATKVariantReCalibrationSnvMaxGaussians:n' => \$parameter{GATKVariantReCalibrationSnvMaxGaussians}{value},
-	   'gvrimg|GATKVariantReCalibrationIndelMaxGaussians:n' => \$parameter{GATKVariantReCalibrationIndelMaxGaussians}{value},
-	   'gvrevf|GATKVariantReCalibrationexcludeNonVariantsFile:n' => \$parameter{GATKVariantReCalibrationexcludeNonVariantsFile}{value},
-	   'gvrbcf|GATKVariantReCalibrationBCFFile:n' => \$parameter{GATKVariantReCalibrationBCFFile}{value},  #Produce compressed vcf
+	   'gvrdpa|GATKVariantReCalibrationDPAnnotation=n' => \$parameter{GATKVariantReCalibrationDPAnnotation}{value},
+	   'gvrsmg|GATKVariantReCalibrationSnvMaxGaussians=n' => \$parameter{GATKVariantReCalibrationSnvMaxGaussians}{value},
+	   'gvrimg|GATKVariantReCalibrationIndelMaxGaussians=n' => \$parameter{GATKVariantReCalibrationIndelMaxGaussians}{value},
+	   'gvrevf|GATKVariantReCalibrationexcludeNonVariantsFile=n' => \$parameter{GATKVariantReCalibrationexcludeNonVariantsFile}{value},
+	   'gvrbcf|GATKVariantReCalibrationBCFFile=n' => \$parameter{GATKVariantReCalibrationBCFFile}{value},  #Produce compressed vcf
 	   'gcgpss|GATKCalculateGenotypePosteriorsSupportSet:s' => \$parameter{GATKCalculateGenotypePosteriorsSupportSet}{value},  #GATK CalculateGenotypePosteriors support set
-	   'pGcv|pGATKCombineVariantCallSets:n' => \$parameter{pGATKCombineVariantCallSets}{value},  #Combine variant call sets
+	   'pGcv|pGATKCombineVariantCallSets=n' => \$parameter{pGATKCombineVariantCallSets}{value},  #Combine variant call sets
 	   'gcvpc|GATKCombineVariantsPrioritizeCaller:s' => \$parameter{GATKCombineVariantsPrioritizeCaller}{value},  #Prioritize variant calls
-	   'gcvbcf|GATKCombineVariantCallSetsBCFFile:n' => \$parameter{GATKCombineVariantCallSetsBCFFile}{value},  #Produce compressed vcf
-	   'pGpT|pGATKPhaseByTransmission:n' => \$parameter{pGATKPhaseByTransmission}{value},  #GATK PhaseByTransmission to produce phased genotype calls
-	   'pGrP|pGATKReadBackedPhasing:n' => \$parameter{pGATKReadBackedPhasing}{value},  #GATK ReadBackedPhasing
-	   'grpqth|GATKReadBackedPhasingPhaseQualityThreshold:n' => \$parameter{GATKReadBackedPhasingPhaseQualityThreshold}{value},  #quality score required to output phasing
-	   'pGvEA|pGATKVariantEvalAll:n' => \$parameter{pGATKVariantEvalAll}{value},  #GATK varianteval all variants
-	   'pGvEE|pGATKVariantEvalExome:n' => \$parameter{pGATKVariantEvalExome}{value},  #GATK varianteval only exonic variants
+	   'gcvbcf|GATKCombineVariantCallSetsBCFFile=n' => \$parameter{GATKCombineVariantCallSetsBCFFile}{value},  #Produce compressed vcf
+	   'pGpT|pGATKPhaseByTransmission=n' => \$parameter{pGATKPhaseByTransmission}{value},  #GATK PhaseByTransmission to produce phased genotype calls
+	   'pGrP|pGATKReadBackedPhasing=n' => \$parameter{pGATKReadBackedPhasing}{value},  #GATK ReadBackedPhasing
+	   'grpqth|GATKReadBackedPhasingPhaseQualityThreshold=n' => \$parameter{GATKReadBackedPhasingPhaseQualityThreshold}{value},  #quality score required to output phasing
+	   'pGvEA|pGATKVariantEvalAll=n' => \$parameter{pGATKVariantEvalAll}{value},  #GATK varianteval all variants
+	   'pGvEE|pGATKVariantEvalExome=n' => \$parameter{pGATKVariantEvalExome}{value},  #GATK varianteval only exonic variants
 	   'gveedbs|GATKVariantEvalDbSNP:s' => \$parameter{GATKVariantEvalDbSNP}{value},
 	   'gveedbg|GATKVariantEvalGold:s' => \$parameter{GATKVariantReCalibrationTrainingSetMills}{value},
-	   'pPvab|pPrepareForVariantAnnotationBlock:n' => \$parameter{pPrepareForVariantAnnotationBlock}{value},
-	   'pVT|pVT:n' => \$parameter{pVT}{value},  #VT program
-	   'vtddec|VTDecompose:n' => \$parameter{VTDecompose}{value},  #VT decompose (split multiallelic variants)
-	   'vtdnor|VTNormalize:n' => \$parameter{VTNormalize}{value},  #VT normalize varaints according to genomic reference
-	   'vtmaa|VTmissingAltAllele:n'  => \$parameter{VTmissingAltAllele}{value},  #VT remove '*' entries from vcf
-	   'vtgmf|VTgenmodFilter:n'  => \$parameter{VTgenmodFilter}{value},  #VT Remove common variants from vcf 
+	   'pPvab|pPrepareForVariantAnnotationBlock=n' => \$parameter{pPrepareForVariantAnnotationBlock}{value},
+	   'pVT|pVT=n' => \$parameter{pVT}{value},  #VT program
+	   'vtddec|VTDecompose=n' => \$parameter{VTDecompose}{value},  #VT decompose (split multiallelic variants)
+	   'vtdnor|VTNormalize=n' => \$parameter{VTNormalize}{value},  #VT normalize varaints according to genomic reference
+	   'vtmaa|VTmissingAltAllele=n'  => \$parameter{VTmissingAltAllele}{value},  #VT remove '*' entries from vcf
+	   'vtgmf|VTgenmodFilter=n'  => \$parameter{VTgenmodFilter}{value},  #VT Remove common variants from vcf 
 	   'vtgfr|VTgenmodFilter1000G:s'  => \$parameter{VTgenmodFilter1000G}{value},  #VT Genmod annotate 1000G reference
-	   'vtmaf|VTgenmodFilterMaxAf:n' => \$parameter{VTgenmodFilterMaxAf}{value}, 
+	   'vtmaf|VTgenmodFilterMaxAf=n' => \$parameter{VTgenmodFilterMaxAf}{value}, 
 	   'vtgft|VTgenmodFilterThreshold:s'  => \$parameter{VTgenmodFilterThreshold}{value},  #VT Threshold for filtering variants
-	   'pVeP|pVariantEffectPredictor:n' => \$parameter{pVariantEffectPredictor}{value},  #Annotation of variants using vep
+	   'pVeP|pVariantEffectPredictor=n' => \$parameter{pVariantEffectPredictor}{value},  #Annotation of variants using vep
 	   'vepp|vepDirectoryPath:s'  => \$parameter{vepDirectoryPath}{value},  #path to vep script dir
 	   'vepc|vepDirectoryCache:s'  => \$parameter{vepDirectoryCache}{value},  #path to vep cache dir
 	   'vepr|vepReference:s'  => \$parameter{vepReference}{value},  #Use Human reference file with VEP
 	   'vepf|vepFeatures:s'  => \@{$parameter{vepFeatures}{value}},  #Comma separated list
 	   'veppl|vepPlugins:s'  => \@{$parameter{vepPlugins}{value}},  #Comma separated list
-	   'pVcP|pVCFParser:n' => \$parameter{pVCFParser}{value},
-	   'vcpvt|vcfParserVepTranscripts:n' => \$parameter{vcfParserVepTranscripts}{value},
+	   'pVcP|pVCFParser=n' => \$parameter{pVCFParser}{value},
+	   'vcpvt|vcfParserVepTranscripts=n' => \$parameter{vcfParserVepTranscripts}{value},
 	   'vcprff|vcfParserRangeFeatureFile:s'  => \$parameter{vcfParserRangeFeatureFile}{value},  #path to vcfParserRangeFeatureFile
 	   'vcprfa|vcfParserRangeFeatureAnnotationColumns:s'  => \@{$parameter{vcfParserRangeFeatureAnnotationColumns}{value}},  #Comma separated list
 	   'vcpsf|vcfParserSelectFile:s'  => \$parameter{vcfParserSelectFile}{value},  #path to vcfParserSelectFile
-	   'vcpsfm|vcfParserSelectFileMatchingColumn:n' => \$parameter{vcfParserSelectFileMatchingColumn}{value},  #Column of HGNC Symbol in SelectFile
+	   'vcpsfm|vcfParserSelectFileMatchingColumn=n' => \$parameter{vcfParserSelectFileMatchingColumn}{value},  #Column of HGNC Symbol in SelectFile
 	   'vcpsfa|vcfParserSelectFeatureAnnotationColumns:s'  => \@{$parameter{vcfParserSelectFeatureAnnotationColumns}{value}},  #Comma separated list
-	   'pAnV|pAnnovar:n' => \$parameter{pAnnovar}{value},  #Performs annovar filter gene, region and filter analysis
+	   'pAnV|pAnnovar=n' => \$parameter{pAnnovar}{value},  #Performs annovar filter gene, region and filter analysis
 	   'anvp|annovarPath:s'  => \$parameter{annovarPath}{value},  #path to annovar script dir
 	   'anvgbv|annovarGenomeBuildVersion:s'  => \$parameter{annovarGenomeBuildVersion}{value},
 	   'anvtn|annovarTableNames:s'  => \@{$parameter{annovarTableNames}{value}},  #Comma separated list
 	   'anvstn|annovarSupportedTableNames' => sub { &PrintSupportedAnnovarTableNames(\%scriptParameter, \@annovarSupportedTableNames)},  #Generates a list of supported table names
-	   'anvarmafth|annovarMAFThreshold:n' => \$parameter{annovarMAFThreshold}{value},
+	   'anvarmafth|annovarMAFThreshold=n' => \$parameter{annovarMAFThreshold}{value},
 	   'snep|snpEffPath:s'  => \$parameter{snpEffPath}{value},  #path to snpEff directory
-	   'pSnE|pSnpEff:n' => \$parameter{pSnpEff}{value},
-	   'sneann|snpEffAnn:n' => \$parameter{snpEffAnn}{value},
+	   'pSnE|pSnpEff=n' => \$parameter{pSnpEff}{value},
+	   'sneann|snpEffAnn=n' => \$parameter{snpEffAnn}{value},
 	   'snegbv|snpEffGenomeBuildVersion:s'  => \$parameter{snpEffGenomeBuildVersion}{value},
 	   'snesaf|snpSiftAnnotationFiles=s'  => \%{$parameter{snpSiftAnnotationFiles}{value}},
 	   'snesaoi|snpSiftAnnotationOutInfoKey=s'  => \%{$parameter{snpSiftAnnotationOutInfoKey}{value}},
 	   'snesdbnsfp|snpSiftDbNSFPFile:s'  => \$parameter{snpSiftDbNSFPFile}{value},  #DbNSFP file
 	   'snesdbnsfpa|snpSiftDbNSFPAnnotations:s'  => \@{$parameter{snpSiftDbNSFPAnnotations}{value}},  #Comma separated list
-	   'pRaV|pRankVariants:n' => \$parameter{pRankVariants}{value},  #Ranking variants
+	   'pRaV|pRankVariants=n' => \$parameter{pRankVariants}{value},  #Ranking variants
 	   'ravgft|genmodModelsFamilyType:s' => \$parameter{genmodModelsFamilyType}{value},
 	   'ravcad|genmodcaddFiles:s'  => \@{$parameter{genmodcaddFiles}{value}},  #Comma separated list
 	   'ravspi|spidexFile:s' => \$parameter{spidexFile}{value},
-	   'ravwg|wholeGene:n'  => \$parameter{wholeGene}{value},  #Allow compound pairs in intronic regions
+	   'ravwg|wholeGene=n'  => \$parameter{wholeGene}{value},  #Allow compound pairs in intronic regions
 	   'ravrpf|genmodModelsReducedPenetranceFile:s' => \$parameter{genmodModelsReducedPenetranceFile}{value},
 	   'ravrm|rankModelFile:s' => \$parameter{rankModelFile}{value},  #The rank modell config.ini path
-	   'ravbcf|rankVariantBCFFile:n' => \$parameter{rankVariantBCFFile}{value},  #Produce compressed vcfs
-	   'pScK|pSampleCheck:n' => \$parameter{pSampleCheck}{value},  #QC for samples gender and relationship
-	   'pEvL|pEvaluation:n' => \$parameter{pEvaluation}{value},  #Compare concordance with NIST data set
+	   'ravbcf|rankVariantBCFFile=n' => \$parameter{rankVariantBCFFile}{value},  #Produce compressed vcfs
+	   'pScK|pSampleCheck=n' => \$parameter{pSampleCheck}{value},  #QC for samples gender and relationship
+	   'pEvL|pEvaluation=n' => \$parameter{pEvaluation}{value},  #Compare concordance with NIST data set
 	   'evlnid|NISTID:s' => \$parameter{NISTID}{value},
 	   'evlnhc|NISTHighConfidenceCallSet:s' => \$parameter{NISTHighConfidenceCallSet}{value},
 	   'evlnil|NISTHighConfidenceCallSetBed:s' => \$parameter{NISTHighConfidenceCallSetBed}{value},
-	   'pQcC|pQCCollect:n' => \$parameter{pQCCollect}{value},  #QCmetrics collect
+	   'pQcC|pQCCollect=n' => \$parameter{pQCCollect}{value},  #QCmetrics collect
 	   'qccsi|QCCollectSampleInfoFile:s' => \$parameter{QCCollectSampleInfoFile}{value},  #SampleInfo yaml file produced by MIP
 	   'qccref|QCCollectRegExpFile:s' => \$parameter{QCCollectRegExpFile}{value},  #Regular expression yaml file
-	   'pMqC|pMultiQC:n' => \$parameter{pMultiQC}{value},  #Aggregate bioinformatics reports
-	   'pReM|pRemoveRedundantFiles:n' => \$parameter{pRemoveRedundantFiles}{value},
-	   'pArS|pAnalysisRunStatus:n' => \$parameter{pAnalysisRunStatus}{value},  #AnalysisRunStatus change flag in sampleInfo file if allowed to execute
-	   'pSac|pSacct:n' => \$parameter{pSacct}{value},
-    );
+	   'pMqC|pMultiQC=n' => \$parameter{pMultiQC}{value},  #Aggregate bioinformatics reports
+	   'pReM|pRemoveRedundantFiles=n' => \$parameter{pRemoveRedundantFiles}{value},
+	   'pArS|pAnalysisRunStatus=n' => \$parameter{pAnalysisRunStatus}{value},  #AnalysisRunStatus change flag in sampleInfo file if allowed to execute
+	   'pSac|pSacct=n' => \$parameter{pSacct}{value},
+    ) or die "Invalid options passed to $0\n";
 
 ## Change relative path to absolute path for certain parameters 
 &UpdateToAbsolutePath(\%parameter);
@@ -881,6 +881,11 @@ else {  #Not supplied - Set to 0 to handle correctly in program subroutines
 				       "reference:referencesDir",  #Collects all references in that are supposed to be in referenceDirectory
 				       "removeRedundantFiles:yes"],  #Collect all programs that are variantCallers
 		});
+## Check correct value for program mode in MIP
+&CheckProgramMode({parameterHashRef => \%parameter,
+		   scriptParameterHashRef => \%scriptParameter
+		  });
+
 
 ## Check that the correct number of aligners is used in MIP and sets the aligner flag accordingly
 &CheckAligner({parameterHashRef => \%parameter,
@@ -22795,7 +22800,7 @@ sub CheckAligner {
 	);
     &CheckMandatoryArguments(\%mandatoryArgument, "CheckAligner");
 
-    my %aligner;;
+    my %aligner;
 
     foreach my $aligner (@{${$parameterHashRef}{dynamicParameters}{aligner}}) {
 	
@@ -23208,6 +23213,42 @@ sub PrintProgram {
 	}
     }
     print STDOUT "\n";
+}
+
+
+sub CheckProgramMode {
+
+##CheckProgramMode
+
+##Function : Check correct value for program mode in MIP.
+##Returns  : ""
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $broadcastsArrayRef
+##         : $parameterHashRef       => The parameter hash {REF}
+##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
+    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
+			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
+	);
+
+    &CheckMandatoryArguments(\%mandatoryArgument, "CheckProgramMode");
+
+    my @allowedValues = (0, 1, 2);
+
+    foreach my $program (@{${$parameterHashRef}{dynamicParameters}{program}}) {
+
+	if (! ( any {$_ eq ${$scriptParameterHashRef}{$program}} @allowedValues ) ) { #If element is not part of array
+	    
+	    $logger->fatal("'".${$scriptParameterHashRef}{$program}."' Is not an allowed mode for program '--".$program."'. Set to: ".join("|", @allowedValues));
+	    exit 1;
+	}
+    }
 }
 
 
