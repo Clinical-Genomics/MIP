@@ -627,16 +627,21 @@ if (exists($parameter{configFile}{value})) {  #Input from cmd
 
     &CompareHashKeys(\%scriptParameter, \%parameter);
 
+    my @activeParameters = ("clusterConstantPath", "analysisConstantPath", "analysisType", "alignerOutDir"); 
+
     ## Replace config parameter with cmd info for active parameter
-    &ReplaceConfigParamWithCMDInfo(\%parameter, \%scriptParameter, "clusterConstantPath");
-    &ReplaceConfigParamWithCMDInfo(\%parameter, \%scriptParameter, "analysisConstantPath");
-    &ReplaceConfigParamWithCMDInfo(\%parameter, \%scriptParameter, "analysisType");
-    &ReplaceConfigParamWithCMDInfo(\%parameter, \%scriptParameter, "alignerOutDir");
+    &ReplaceConfigParamWithCMDInfo({parameterHashRef => \%parameter,
+				    scriptParameterHashRef => \%scriptParameter,
+				    parameterNameArrayRef => \@activeParameters,
+				   });
 
     foreach my $orderParameterElement (@orderParameters) {  #Loop through all parameters and update info   
 
 	## Updates the config file to particular user/cluster for entries following specifications. Leaves other entries untouched.
-	&UpdateConfigFile(\%scriptParameter, \$orderParameterElement, \$parameter{familyID}{value});
+	&UpdateConfigFile({scriptParameterHashRef => \%scriptParameter,
+			   parameterNameRef => \$orderParameterElement,
+			   familyIDRef => \$parameter{familyID}{value},
+			  });
     }
     
     ##Remove previous analysis specific info not relevant for current run e.g. log file
@@ -1028,7 +1033,10 @@ if ($scriptParameter{writeConfigFile} ne 0) {  #Write config file for family
 	    });
 
 ## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
-@{$fileInfo{"SelectFileContigs"}} = &SizeSortSelectFileContigs(\%fileInfo, "SelectFileContigs", "contigsSizeOrdered");
+@{$fileInfo{"SelectFileContigs"}} = &SizeSortSelectFileContigs({fileInfoHashRef =>\%fileInfo,
+								hashKeyToSort => "SelectFileContigs",
+								hashKeySortReference => "contigsSizeOrdered",
+							       });
 
 
 ## Detect the gender included in current analysis
@@ -2529,10 +2537,16 @@ sub AnalysisRunStatus {
     my @pathsArrayRef;
 
     ## Collects all programs file path(s) created by MIP located in %sampleInfo
-    &CollectPathEntries(\%{$sampleInfoHashRef}, \@pathsArrayRef);
+    &CollectPathEntries({sampleInfoHashRef => \%{$sampleInfoHashRef},
+			 pathsArrayRef => \@pathsArrayRef,
+			});
 
     ## Collects all programs outfile path(s) created by MIP as OutDirectory->value and outfile->value located in %sampleInfo.
-    &CollectOutDataPathsEntries(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \%{$sampleInfoHashRef}, \@pathsArrayRef);
+    &CollectOutDataPathsEntries({parameterHashRef => \%{$parameterHashRef},
+				 scriptParameterHashRef => \%{$scriptParameterHashRef},
+				 sampleInfoHashRef => \%{$sampleInfoHashRef},
+				 pathsArrayRef => \@pathsArrayRef,
+				});
 
     print $FILEHANDLE q?files=(?;  #Create bash array
     foreach my $path (@pathsArrayRef) {
@@ -4683,7 +4697,11 @@ sub VCFParser {
 	}
 	if (${$scriptParameterHashRef}{vcfParserSelectFile} ne "noUserInfo") {
 	 
-	    if (! &CheckEntryHashofArray(\%{$fileInfoHashRef}, "SelectFileContigs", $$contigRef)) {
+	    if (! &CheckEntryHashofArray({hashRef => \%{$fileInfoHashRef},
+					  key => "SelectFileContigs",
+					  element => $$contigRef,
+					 })
+		) {
 
 		print $XARGSFILEHANDLE "-sf ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{vcfParserSelectFile}." ";  #List of genes to analyse separately
 		print $XARGSFILEHANDLE "-sf_mc ".${$scriptParameterHashRef}{vcfParserSelectFileMatchingColumn}." ";  #Column of HGNC Symbol in SelectFile (-sf)
@@ -5329,7 +5347,12 @@ sub GATKPhaseByTransmission {
     print $FILEHANDLE "-V: ".${$scriptParameterHashRef}{tempDirectory}."/".$familyID.$infileTag.$callType.".vcf ";  #InFile (family vcf)
 
     ## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-    &GATKPedigreeFlag(\%{$scriptParameterHashRef}, $FILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKPhaseByTransmission");
+    &GATKPedigreeFlag({scriptParameterHashRef => \%{$scriptParameterHashRef},
+		       FILEHANDLE => $FILEHANDLE,
+		       outFamilyFileDirectory => $outFamilyFileDirectory,
+		       pedigreeValidationType => "SILENT",
+		       programName => $programName,
+		      });
 
     say $FILEHANDLE "-o ".${$scriptParameterHashRef}{tempDirectory}."/".$familyID.$outfileTag.$callType.".vcf", "\n";  #OutFile
 
@@ -6316,7 +6339,12 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "-nt ".${$scriptParameterHashRef}{maximumCores}." ";  #How many data threads should be allocated to running this analysis    
 
 	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-	&GATKPedigreeFlag(\%{$scriptParameterHashRef}, $FILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKVariantRecalibration");  #Sub routine prints "--pedigree file" for family
+	&GATKPedigreeFlag({scriptParameterHashRef => \%{$scriptParameterHashRef},
+			   FILEHANDLE => $FILEHANDLE,
+			   outFamilyFileDirectory => $outFamilyFileDirectory,
+			   pedigreeValidationType => "SILENT",
+			   programName => $programName,
+			  });
 	
 	## GATK ApplyRecalibration
 	say $FILEHANDLE "\n\n## GATK ApplyRecalibration";
@@ -6357,7 +6385,13 @@ sub GATKVariantReCalibration {
 	}
 
 	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-	&GATKPedigreeFlag(\%{$scriptParameterHashRef}, $FILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKVariantRecalibration");  #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family    
+	&GATKPedigreeFlag({scriptParameterHashRef => \%{$scriptParameterHashRef},
+			   FILEHANDLE => $FILEHANDLE,
+			   outFamilyFileDirectory => $outFamilyFileDirectory,
+			   pedigreeValidationType => "SILENT",
+			   programName => $programName,
+			  });
+ 
 	print $FILEHANDLE "--mode ".$modes[$modeCounter]." ";  #Recalibration mode to employ (SNP|INDEL|BOTH)
 	say $FILEHANDLE "\n";
     }
@@ -6443,7 +6477,13 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "-R ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{humanGenomeReference}." ";  #Reference file
 	
 	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-	&GATKPedigreeFlag(\%{$scriptParameterHashRef}, $FILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKVariantRecalibration");  #Passing filehandle directly to sub routine using "*". Sub routine prints "--pedigree file" for family
+	&GATKPedigreeFlag({scriptParameterHashRef => \%{$scriptParameterHashRef},
+			   FILEHANDLE => $FILEHANDLE,
+			   outFamilyFileDirectory => $outFamilyFileDirectory,
+			   pedigreeValidationType => "SILENT",
+			   programName => $programName,
+			  });
+
 	print $FILEHANDLE "--supporting ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{GATKCalculateGenotypePosteriorsSupportSet}." ";  #Supporting data set
 	print $FILEHANDLE "-V ".$$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType.".vcf ";  #Infile
 	print $FILEHANDLE "-o ".$$tempDirectoryRef."/".$$familyIDRef.$outfileTag.$callType."_refined.vcf ";  #Outfile
@@ -6769,7 +6809,12 @@ sub GATKGenoTypeGVCFs {
 	print $FILEHANDLE "-nt 16 ";  #How many data threads should be allocated to running this analysis.
 
 	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-	&GATKPedigreeFlag(\%{$scriptParameterHashRef}, $FILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKHaploTypeCaller");  #Sub routine prints "--pedigree file" for family
+	&GATKPedigreeFlag({scriptParameterHashRef => \%{$scriptParameterHashRef},
+			   FILEHANDLE => $FILEHANDLE,
+			   outFamilyFileDirectory => $outFamilyFileDirectory,
+			   pedigreeValidationType => "SILENT",
+			   programName => $programName,
+			  });
 
 	if (${$scriptParameterHashRef}{GATKGenoTypeGVCFsAllSites} eq 1) {
 
@@ -8046,7 +8091,11 @@ sub SVVCFParser {
 	}
 	if (${$scriptParameterHashRef}{svVcfParserSelectFile} ne "noUserInfo") {
 	 
-	    if (! &CheckEntryHashofArray(\%{$fileInfoHashRef}, "SelectFileContigs", $$contigRef)) {
+	    if (! &CheckEntryHashofArray({hashRef => \%{$fileInfoHashRef},
+					  key => "SelectFileContigs",
+					  element => $$contigRef,
+					 })
+		) {
 
 		print $XARGSFILEHANDLE "-sf ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{svVcfParserSelectFile}." ";  #List of genes to analyse separately
 		print $XARGSFILEHANDLE "-sf_mc ".${$scriptParameterHashRef}{svVcfParserSelectFileMatchingColumn}." ";  #Column of HGNC Symbol in SelectFile (-sf)
@@ -10202,7 +10251,12 @@ sub GATKHaploTypeCaller {
 	print $XARGSFILEHANDLE "-nct 1 ";  #Number of CPU Threads per data thread
 
 	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-	&GATKPedigreeFlag(\%{$scriptParameterHashRef}, $XARGSFILEHANDLE, $outFamilyFileDirectory, "SILENT", "GATKHaploTypeCaller");  #Sub routine prints "--pedigree file" for family
+	&GATKPedigreeFlag({scriptParameterHashRef => \%{$scriptParameterHashRef},
+			   FILEHANDLE => $XARGSFILEHANDLE,
+			   outFamilyFileDirectory => $outFamilyFileDirectory,
+			   pedigreeValidationType => "SILENT",
+			   programName => $programName,
+			  });
 
 	## Filter
 	if (${$scriptParameterHashRef}{GATKHaploTypeCallerSoftClippedBases} == 1) { #Do not analyze soft clipped bases in the reads
@@ -13661,7 +13715,11 @@ sub BuildDownLoadablePreRequisites {
 
     for my $parameterName (keys %{$supportedCosmidReferenceHashRef}) {
 
-	if (! &CheckEntryHashofArray(\%{${$parameterHashRef}{$parameterName}}, "associatedProgram", "p".$programName)) {  #If the cosmid supported parameter is associated with the MIP program
+	if (! &CheckEntryHashofArray({hashRef => \%{${$parameterHashRef}{$parameterName}},
+				      key => "associatedProgram",
+				      element => "p".$programName,
+				     })
+	    ) {  #If the cosmid supported parameter is associated with the MIP program
 
 	    if (${$parameterHashRef}{$parameterName}{buildFile} eq 1) {
 	    
@@ -14295,8 +14353,6 @@ sub CheckBuildHumanGenomePreRequisites {
 	    }
 	}
     }
-    ##Collect sequence contigs from human reference
-    #&CollectSeqContigs();  #Reloads if required NOTE:Preparation for future changes but not activated yet
 }
 
 
@@ -14774,10 +14830,22 @@ sub ReadPlinkPedigreeFile {
     my $sampleID;
     
     ## Determine if the user supplied info on array parameter
-    my $userSampleIDsSwitch = &CheckUserInfoArrays(\%{$scriptParameterHashRef}, \@{${$parameterHashRef}{sampleIDs}{value}}, "sampleIDs");
-    my $userExomeTargetBedInfileListsSwitch = &CheckUserInfoArrays(\%{$scriptParameterHashRef}, \@{$exomeTargetBedInfileListsArrayRef}, "exomeTargetBedInfileLists");
-    my $userExomeTargetPaddedBedInfileListSwitch = &CheckUserInfoArrays(\%{$scriptParameterHashRef}, \@{$exomeTargetPaddedBedInfileListsArrayRef}, "exomeTargetPaddedBedInfileLists");
-    my $userExomeTargetPaddedBedIntervalListSwitch = &CheckUserInfoArrays(\%{$scriptParameterHashRef}, \@{$GATKTargetPaddedBedIntervalListsArrayRef}, "GATKTargetPaddedBedIntervalLists");
+    my $userSampleIDsSwitch = &CheckUserInfoArrays({scriptParameterHashRef => \%{$scriptParameterHashRef},
+						    arrayRef => \@{${$parameterHashRef}{sampleIDs}{value}},
+						    parameterName => "sampleIDs",
+						   });
+    my $userExomeTargetBedInfileListsSwitch = &CheckUserInfoArrays({scriptParameterHashRef => \%{$scriptParameterHashRef},
+								    arrayRef => \@{$exomeTargetBedInfileListsArrayRef},
+								    parameterName => "exomeTargetBedInfileLists",
+								   });
+    my $userExomeTargetPaddedBedInfileListSwitch = &CheckUserInfoArrays({scriptParameterHashRef => \%{$scriptParameterHashRef},
+									 arrayRef => \@{$exomeTargetPaddedBedInfileListsArrayRef},
+									 parameterName => "exomeTargetPaddedBedInfileLists",
+									});
+    my $userExomeTargetPaddedBedIntervalListSwitch = &CheckUserInfoArrays({scriptParameterHashRef => \%{$scriptParameterHashRef},
+									   arrayRef => \@{$GATKTargetPaddedBedIntervalListsArrayRef},
+									   parameterName => "GATKTargetPaddedBedIntervalLists",
+									  });
     
     ## Defines which entries are allowed and links them to position.
     my %plinkPedigree = &DefinePlinkPedigree();  #Holds allowed entries and positions to be checked for Plink pedigree files
@@ -14841,7 +14909,11 @@ sub ReadPlinkPedigreeFile {
 		if ( defined($lineInfo[$sampleElementsCounter]) && ($lineInfo[$sampleElementsCounter] =~/\S+/) ) {  #Check that we have an non blank entry
 		    
 		    ## Test element for being part of hash of array at supplied key.
-		    if (&CheckEntryHashofArray(\%plinkPedigree, $sampleElementsCounter, $lineInfo[$sampleElementsCounter])) {
+		    if (&CheckEntryHashofArray({hashRef => \%plinkPedigree,
+						key => $sampleElementsCounter,
+						element => $lineInfo[$sampleElementsCounter],
+					       })
+			) {
 			
 			$logger->fatal("Found illegal element: '".$lineInfo[$sampleElementsCounter]."' in column '".$sampleElementsCounter."' in pedigree file: '".$filePath."' at line '".$.."'\n");
 			$logger->fatal("Please correct the entry before analysis.\n");
@@ -15694,7 +15766,12 @@ sub InfilesReFormat {
 		    $uncompressedFileCounter = "unCompressed";  #File needs compression before starting analysis. Note: All files are rechecked downstream and uncompressed ones are gzipped automatically           
 		}
 		## Check that the sampleID provided and sampleID in infile name match.
-		&CheckSampleIDMatch(\%{$scriptParameterHashRef}, \%{$infileHashRef}, $sampleID, $4, $infileCounter);   #$4 = SampleID from filename
+		&CheckSampleIDMatch({scriptParameterHashRef => \%{$scriptParameterHashRef},
+				     infileHashRef => \%{$infileHashRef},
+				     sampleID => $sampleID,
+				     infileSampleID => $4,  #$4 = SampleID from filename
+				     infileCounter => $infileCounter,
+				    });
 
 		## Detect "regExp" in string
 		${$fileInfoHashRef}{undeterminedInFileName}{ ${$infileHashRef}{$sampleID}[$infileCounter] } = &CheckString({string => $3,  #$3 = FlowCell from filename
@@ -15730,7 +15807,12 @@ sub InfilesReFormat {
 		    $uncompressedFileCounter = "unCompressed";  #File needs compression before starting analysis. Note: All files are rechecked downstream and uncompressed ones are gzipped automatically           
 		}
 		## Check that the sampleID provided and sampleID in infile name match.
-		&CheckSampleIDMatch(\%{$scriptParameterHashRef}, \%{$infileHashRef}, $sampleID, $4, $infileCounter);  #$4 = SampleID from filename
+		&CheckSampleIDMatch({scriptParameterHashRef => \%{$scriptParameterHashRef},
+				     infileHashRef => \%{$infileHashRef},
+				     sampleID => $sampleID,
+				     infileSampleID => $4,  #$4 = SampleID from filename
+				     infileCounter => $infileCounter,
+				    });
 
 		## Detect "regExp" in string
 		${$fileInfoHashRef}{undeterminedInFileName}{ ${$infileHashRef}{$sampleID}[$infileCounter] } = &CheckString({string => $3,  #$3 = FlowCell from filename
@@ -15781,11 +15863,23 @@ sub CheckSampleIDMatch {
 ##         : $infileSampleID         => SampleID collect with regexp from infile
 ##         : $infileCounter          => Counts the number of infiles
 
-    my $scriptParameterHashRef = $_[0];
-    my $infileHashRef = $_[1];
-    my $sampleID = $_[2];
-    my $infileSampleID = $_[3];
-    my $infileCounter = $_[4];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
+    my $infileHashRef = ${$argHashRef}{infileHashRef};
+    my $sampleID = ${$argHashRef}{sampleID};
+    my $infileSampleID = ${$argHashRef}{infileSampleID};
+    my $infileCounter = ${$argHashRef}{infileCounter};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = (scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
+			     infileHashRef => $infileHashRef,
+			     sampleID => $sampleID,
+			     infileSampleID => $infileSampleID,
+			     infileCounter => $infileCounter,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "CheckSampleIDMatch");
     
     my %seen;
     $seen{$infileSampleID} = 1;  #Add input as first increment
@@ -16486,7 +16580,9 @@ sub CheckParameterFiles {
 					    });
 			    
 			    ## Collects sequences contigs used in select file
-			    &CollectSelectFileContigs(\@{${$fileInfoHashRef}{SelectFileContigs}}, $$referencesDirectoryRef."/".${$scriptParameterHashRef}{vcfParserSelectFile});
+			    &CollectSelectFileContigs({contigsArrayRef => \@{${$fileInfoHashRef}{SelectFileContigs}},
+						       selectFilePath => $$referencesDirectoryRef."/".${$scriptParameterHashRef}{vcfParserSelectFile},
+						      });
 			    
 			    ${$scriptParameterHashRef}{VcfParserOutputFileCount} = 2;  #To track if VCFParser was used with a vcfParserSelectFile (=2) or not (=1)
 			}
@@ -17135,80 +17231,6 @@ sub SampleInfoQC {
 }
 
 
-sub GATKTargetListFlag {
-
-##GATKTargetListFlag
-    
-##Function : Detects if there are different capture kits across sampleIDs. Creates a temporary merged interval_list for all interval_list that have been supplied and returns temporary list. Will also extract specific contigs if requested and return that list if enabled.
-##Returns  : "Filepath"
-##Arguments: $scriptParameterHashRef, $FILEHANDLE, $contigRef
-##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
-##         : $FILEHANDLE             => FILEHANDLE to write to
-##         : $contigRef              => The contig to extract {REF}
-
-    my $scriptParameterHashRef = $_[0];
-    my $FILEHANDLE = $_[1];
-    my $contigRef = $_[2];
-
-    my %GATKTargetPaddedBedIntervalListTracker;
-    my @GATKTargetPaddedBedIntervalListFiles;
-
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{sampleIDs}});$sampleIDCounter++) {  #Collect infiles for all sampleIDs
-	
-	if (defined(${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{familyID} }{ ${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter] }{GATKTargetPaddedBedIntervalLists})) {
-
-	    ${$scriptParameterHashRef}{GATKTargetPaddedBedIntervalLists} = ${$scriptParameterHashRef}{referencesDir}."/".${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{familyID} }{ ${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter] }{GATKTargetPaddedBedIntervalLists};  #Transfer to scriptParameter top level
-       
-	    $GATKTargetPaddedBedIntervalListTracker{ ${$scriptParameterHashRef}{GATKTargetPaddedBedIntervalLists} }++;  #Increment to track file record
-	    
-	    if ($GATKTargetPaddedBedIntervalListTracker{ ${$scriptParameterHashRef}{GATKTargetPaddedBedIntervalLists} } == 1) {  #Not detected previously
-		
-		push(@GATKTargetPaddedBedIntervalListFiles, ${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{familyID} }{ ${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter] }{GATKTargetPaddedBedIntervalLists});
-	    }
-	}
-    }
-    
-    ##Determine file to print to module (untouched/merged and/or splited)
-    my $outDirectory = ${$scriptParameterHashRef}{tempDirectory};  #For merged and/or splitet
-
-    if (scalar(@GATKTargetPaddedBedIntervalListFiles) > 1) {  #Merge files
-      
-	say $FILEHANDLE "\n## Generate merged interval_list\n";
-
-	&JavaCore({FILEHANDLE => $FILEHANDLE,
-		   memoryAllocation => "Xmx2g",
-		   javaUseLargePagesRef => \${$scriptParameterHashRef}{javaUseLargePages},
-		   javaTemporaryDirectory => ${$scriptParameterHashRef}{tempDirectory},
-		   javaJar => ${$scriptParameterHashRef}{picardToolsPath}."/picard.jar"
-		  });
-
-	print $FILEHANDLE "IntervalListTools ";
-	print $FILEHANDLE "UNIQUE=TRUE ";  #Merge overlapping and adjacent intervals to create a list of unique intervals
-    
-	for (my $fileCounter=0;$fileCounter<scalar(@GATKTargetPaddedBedIntervalListFiles);$fileCounter++) {
-	
-	    print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{referencesDir}."/".$GATKTargetPaddedBedIntervalListFiles[$fileCounter]." ";
-	}
-	say $FILEHANDLE "OUTPUT=".$outDirectory."/merged.interval_list", "\n";  #Merged outfile
-
-	if (defined($$contigRef)) {
-	    
-	    my $inDirectory = ${$scriptParameterHashRef}{tempDirectory};
-	    return &SplitTargetFile(*$FILEHANDLE, \$inDirectory, \$outDirectory, \("merged.interval_list"), \$$contigRef);  #Split
-	}
-        return $outDirectory."/merged.interval_list";  #No split
-    }
-    elsif (defined($$contigRef)) {  #Supply original file but create splitted temp file
-
-	return &SplitTargetFile(*$FILEHANDLE, \${$scriptParameterHashRef}{referencesDir}, \$outDirectory, \$GATKTargetPaddedBedIntervalListFiles[0], \$$contigRef);  #Only 1 file for all samples
-    }
-    else {#No merge and no split. return original and only file
-
-	return  ${$scriptParameterHashRef}{referencesDir}."/".$GATKTargetPaddedBedIntervalListFiles[0];
-    }
-}
-
-
 sub SplitTargetFile {
 
 ##SplitTargetFile
@@ -17222,11 +17244,14 @@ sub SplitTargetFile {
 ##         : $infileRef       => Target file {REF}
 ##         : $contigRef       => The contig to extract {REF}
 
-    my $FILEHANDLE = $_[0];
-    my $inDirectoryRef = $_[1];
-    my $outDirectoryRef = $_[2];
-    my $infileRef = $_[3];
-    my $contigRef = $_[4];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $inDirectoryRef = ${$argHashRef}{inDirectoryRef};
+    my $outDirectoryRef = ${$argHashRef}{outDirectoryRef};
+    my $infileRef = ${$argHashRef}{infileRef};
+    my $contigRef = ${$argHashRef}{contigRef};
     
     if (defined($$contigRef)) {  #The contig to split
 	
@@ -17246,19 +17271,31 @@ sub GATKPedigreeFlag {
     
 ##Function : Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
 ##Returns  : ""
-##Arguments: $scriptParameterHashRef, $FILEHANDLE, $outFamilyFileDirectory, $pedigreeValidationType, $program
+##Arguments: $scriptParameterHashRef, $FILEHANDLE, $outFamilyFileDirectory, $pedigreeValidationType, $programName
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 ##         : $FILEHANDLE             => FILEHANDLE to write to
 ##         : $outFamilyFileDirectory => The family data analysis directory 
 ##         : $pedigreeValidationType => The pedigree validation strictness level
-##         : $program                => The program to use the pedigree file
+##         : $programName            => The program to use the pedigree file
 
-    my $scriptParameterHashRef = $_[0];
-    my $FILEHANDLE = $_[1];
-    my $outFamilyFileDirectory = $_[2];
-    my $pedigreeValidationType = $_[3];
-    my $program = $_[4];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
+    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $outFamilyFileDirectory = ${$argHashRef}{outFamilyFileDirectory};
+    my $pedigreeValidationType = ${$argHashRef}{pedigreeValidationType};
+    my $programName = ${$argHashRef}{programName};
     
+    ## Mandatory arguments
+    my %mandatoryArgument = (scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
+			     FILEHANDLE => $FILEHANDLE,
+			     outFamilyFileDirectory => $outFamilyFileDirectory,
+			     pedigreeValidationType => $pedigreeValidationType,
+			     programName => $programName,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "GATKPedigreeFlag");
+
     my $famFile = $outFamilyFileDirectory."/".${$scriptParameterHashRef}{familyID}.".fam";
     my $parentCounter;
     my $pqParentCounter = q?perl -ne 'my $parentCounter=0; while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] eq 0) || ($line[3] eq 0) ) { $parentCounter++} } } print $parentCounter; last;'?;
@@ -17268,7 +17305,7 @@ sub GATKPedigreeFlag {
     $parentCounter = `$pqParentCounter $famFile`;  #Count the number of parents
     $childCounter = `$pqChildCounter $famFile`;  #Count the number of children
     
-    if ($program ne "GATKPhaseByTransmission") {
+    if ($programName ne "GATKPhaseByTransmission") {
 	
 	if ($parentCounter > 0) {  #Parents present
 	    
@@ -17277,7 +17314,13 @@ sub GATKPedigreeFlag {
     }
     else {
 	
-	&CheckPedigreeMembers(\%{$scriptParameterHashRef}, $FILEHANDLE, \$outFamilyFileDirectory, \$pedigreeValidationType, \$parentCounter, \$childCounter);  #Special case - GATK PhaseByTransmission needs parent/child or trio 
+	&CheckPedigreeMembers({scriptParameterHashRef => \%{$scriptParameterHashRef},
+			       FILEHANDLE => $FILEHANDLE,
+			       outFamilyFileDirectoryRef => \$outFamilyFileDirectory,
+			       pedigreeValidationTypeRef => \$pedigreeValidationType,
+			       parentCounterRef => \$parentCounter,
+			       childCounterRef => \$childCounter
+			      });  #Special case - GATK PhaseByTransmission needs parent/child or trio 
     }
 }
 
@@ -17289,19 +17332,30 @@ sub CheckPedigreeMembers {
 ##Function : Detect if the pedigree file contains a valid parent/child or trio
 ##Returns  : ""
 ##Arguments: $scriptParameterHashRef, $FILEHANDLE, $outFamilyFileDirectoryRef, $pedigreeValidationTypeRef, $parentCounterRef, $childCounterRef
-##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
-##         : $FILEHANDLE             => FILEHANDLE to write to
+##         : $scriptParameterHashRef    => The active parameters for this analysis hash {REF}
+##         : $FILEHANDLE                => FILEHANDLE to write to
 ##         : $outFamilyFileDirectoryRef => The family data analysis directory {REF}
 ##         : $pedigreeValidationTypeRef => The pedigree validation strictness level {REF}
-##         : $parentCounterRef       => The number of parent(s) {REF}
-##         : $childCounterRef        => The number of children(s) {REF}
+##         : $parentCounterRef          => The number of parent(s) {REF}
+##         : $childCounterRef           => The number of children(s) {REF}
 
-    my $scriptParameterHashRef = $_[0];
-    my $FILEHANDLE = $_[1];
-    my $outFamilyFileDirectoryRef = $_[2];
-    my $pedigreeValidationTypeRef = $_[3];
-    my $parentCounterRef = $_[4];
-    my $childCounterRef = $_[5];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
+    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $outFamilyFileDirectoryRef = ${$argHashRef}{outFamilyFileDirectoryRef};
+    my $pedigreeValidationTypeRef = ${$argHashRef}{pedigreeValidationTypeRef};
+    my $parentCounterRef = ${$argHashRef}{parentCounterRef};
+    my $childCounterRef = ${$argHashRef}{childCounterRef};
+    
+    ## Mandatory arguments
+    my %mandatoryArgument = (scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
+			     FILEHANDLE => $FILEHANDLE,
+			     outFamilyFileDirectoryRef => $outFamilyFileDirectoryRef,
+			     pedigreeValidationType => $$pedigreeValidationTypeRef,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "CheckPedigreeMembers");
 	    
     if (scalar(@{${$scriptParameterHashRef}{sampleIDs}}) < 4) {  #i.e.1-3 individuals in pedigree		    
 		
@@ -17600,14 +17654,23 @@ sub UpdateConfigFile {
     
 ##Function : Updates the config file to particular user/cluster for entries following specifications. Leaves other entries untouched.
 ##Returns  : "" 
-##Arguments: $scriptParameterHashRef, $parameterNameRef, $familyID
+##Arguments: $scriptParameterHashRef, $parameterNameRef, $familyIDRef
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 ##         : $parameterNameRef       => MIP Parameter to update {REF}
-##         : $familyID               => Sets the familyID
+##         : $familyIDRef            => Sets the familyID {REF}
 
-    my $scriptParameterHashRef = $_[0];
-    my $parameterNameRef = $_[1]; 
-    my $familyIDRef = $_[2]; 
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
+    my $parameterNameRef = ${$argHashRef}{parameterNameRef};
+    my $familyIDRef = ${$argHashRef}{familyIDRef};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = (scriptParameterHashRef => ${$scriptParameterHashRef}{'MIP'},  #Any MIP mandatory key will do
+	);
+
+    &CheckMandatoryArguments(\%mandatoryArgument, "UpdateConfigFile");
     
     if (${$scriptParameterHashRef}{$$parameterNameRef}) {  #Active parameter
 	
@@ -17647,10 +17710,20 @@ sub CheckAutoBuild {
 ##         : $parameterNameRef       => MIP parameter name {REF}
 ##         : $sampleIDRef            => SampleId {REF}
 
-    my $parameterHashRef = $_[0];
-    my $scriptParameterHashRef = $_[1];
-    my $parameterNameRef = $_[2];
-    my $sampleIDRef = $_[3];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
+    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
+    my $parameterNameRef = ${$argHashRef}{parameterNameRef};
+    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
+			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
+			     parameterNameRef => $$parameterNameRef,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "CheckAutoBuild");
 
     if (defined($sampleIDRef)) {
 	
@@ -17818,7 +17891,12 @@ sub CheckExistance {
 
 	    if (defined($sampleIDRef)) {  #Individual files per sampleID
 
-		${$parameterHashRef}{ ${$scriptParameterHashRef}{familyID} }{$$sampleIDRef}{$$parameterNameRef}{buildFile} = &CheckAutoBuild(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \$$parameterNameRef, \$$sampleIDRef);  #Check autoBuild or not and return value
+		## Check autoBuild or not and return value
+		${$parameterHashRef}{ ${$scriptParameterHashRef}{familyID} }{$$sampleIDRef}{$$parameterNameRef}{buildFile} = &CheckAutoBuild({parameterHashRef => \%{$parameterHashRef},
+																	      scriptParameterHashRef => \%{$scriptParameterHashRef},
+																	      parameterNameRef => $parameterNameRef,
+																	      sampleIDRef => \$$sampleIDRef
+																	     });
 
 		if (${$parameterHashRef}{ ${$scriptParameterHashRef}{familyID} }{$$sampleIDRef}{$$parameterNameRef}{buildFile} == 0) {  #No autobuild
 		    
@@ -17829,7 +17907,11 @@ sub CheckExistance {
 	    }
 	    else {
 		
-		${$parameterHashRef}{$$parameterNameRef}{buildFile} = &CheckAutoBuild(\%{$parameterHashRef}, \%{$scriptParameterHashRef}, \$$parameterNameRef);  #Check autoBuild or not and return value
+		## Check autoBuild or not and return value
+		${$parameterHashRef}{$$parameterNameRef}{buildFile} = &CheckAutoBuild({parameterHashRef => \%{$parameterHashRef},
+										       scriptParameterHashRef => \%{$scriptParameterHashRef},
+										       parameterNameRef => $parameterNameRef,
+										      });
 		
 		if (${$parameterHashRef}{$$parameterNameRef}{buildFile} == 0) {  #No autobuild
 		    
@@ -17982,10 +18064,12 @@ sub CheckUserInfoArrays {
 ##         : $arrayRef               => Array to loop in for parameter {REF}
 ##         : $parameterName          => MIP parameter to evaluate
     
-    
-    my $scriptParameterHashRef = $_[0];
-    my $arrayRef = $_[1];
-    my $parameterName = $_[2];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
+    my $arrayRef = ${$argHashRef}{arrayRef};
+    my $parameterName = ${$argHashRef}{parameterName};
     
     my $userSuppliedInfoSwitch;
     
@@ -18703,13 +18787,22 @@ sub CollectSeqContigs {
 ##Function : Collects sequences contigs used in analysis from human genome sequence dictionnary associated with $humanGenomeReference
 ##Returns  : ""
 ##Arguments: $contigsArrayRef, $referencesDirRef, $humanGenomeReferenceNameNoEndingRef
-##         : $contigsArrayRef                         => Contig array {REF}
-##         : $referencesDirRef                        => The MIP reference directory
-##         : $humanGenomeReferenceNameNoEndingRef     => The associated human genome file without file ending                        
+##         : $contigsArrayRef                     => Contig array {REF}
+##         : $referencesDirRef                    => The MIP reference directory
+##         : $humanGenomeReferenceNameNoEndingRef => The associated human genome file without file ending                        
 
-    my $contigsArrayRef = $_[0];
-    my $referencesDirRef = $_[1];
-    my $humanGenomeReferenceNameNoEndingRef = $_[2];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $contigsArrayRef = ${$argHashRef}{contigsArrayRef};
+    my $referencesDirRef = ${$argHashRef}{referencesDirRef};
+    my $humanGenomeReferenceNameNoEndingRef = ${$argHashRef}{humanGenomeReferenceNameNoEndingRef};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = (referencesDirRef => $$referencesDirRef,
+			     humanGenomeReferenceNameNoEndingRef => $$humanGenomeReferenceNameNoEndingRef,
+	);
+     &CheckMandatoryArguments(\%mandatoryArgument, "CollectSeqContigs");
 
     my $pqSeqDict = q?perl -nae 'if($F[0]=~/^\@SQ/) { if($F[1]=~/SN\:(\S+)/) {print $1, ",";} }' ?; 
     my $SeqDictLocation = $$referencesDirRef."/".$$humanGenomeReferenceNameNoEndingRef.".dict";
@@ -18728,8 +18821,16 @@ sub CollectSelectFileContigs {
 ##         : $contigsArrayRef => Contig array {REF}
 ##         : $selectFilePath  => The select file path
 
-    my $contigsArrayRef = $_[0];
-    my $selectFilePath = $_[1];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $contigsArrayRef = ${$argHashRef}{contigsArrayRef};
+    my $selectFilePath = ${$argHashRef}{selectFilePath};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = (selectFilePath => $selectFilePath,
+	);
+     &CheckMandatoryArguments(\%mandatoryArgument, "CollectSelectFileContigs");
 
     my $pqSeqDict = q?perl -nae 'if ($_=~/contig\=\<ID\=(\w+)/) {print $1, ",";} if($_=~/#CHROM/) {last;}' ?; 
     @{$contigsArrayRef} = `$pqSeqDict $selectFilePath `;  #Returns a comma seperated string of sequence contigs from file
@@ -18754,9 +18855,12 @@ sub SizeSortSelectFileContigs {
 ##         : $hashKeyToSort        => The keys to sort
 ##         : $hashKeySortReference => The hash keys sort reference
 
-    my $fileInfoHashRef = $_[0];
-    my $hashKeyToSort = $_[1];
-    my $hashKeySortReference = $_[2];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
+    my $hashKeyToSort = ${$argHashRef}{hashKeyToSort};
+    my $hashKeySortReference = ${$argHashRef}{hashKeySortReference};
     
     my @sortedArray;
  
@@ -18765,7 +18869,11 @@ sub SizeSortSelectFileContigs {
 	
 	foreach my $element (@{${$fileInfoHashRef}{$hashKeySortReference}}) {
 
-	    if (! &CheckEntryHashofArray(\%{$fileInfoHashRef}, $hashKeyToSort, $element)) {
+	    if (! &CheckEntryHashofArray({hashRef => \%{$fileInfoHashRef},
+					  key => $hashKeyToSort,
+					  element => $element,
+					 })
+		) {
 	    
 		push(@sortedArray, $element);
 	    }
@@ -18793,22 +18901,28 @@ sub ReplaceConfigParamWithCMDInfo {
     
 ##Function : Replace config parameter with cmd info for active parameter
 ##Returns  : 
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $parameterName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $parameterNameArrayRef
 ##         : $parameterHashRef       => The parameter hash {REF}
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
-##         : $parameterName          => MIP parameter name
+##         : $parameterNameArrayRef  => MIP activate parameter names {REF}
 
-    my $parameterHashRef = $_[0];
-    my $scriptParameterHashRef = $_[1];
-    my $parameterName = $_[2];
+    my ($argHashRef) = @_;
 
-    if (defined(${$parameterHashRef}{$parameterName}{value})) {  #Replace config parameter with cmd info for parameter
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
+    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
+    my $parameterNameArrayRef = ${$argHashRef}{parameterNameArrayRef};
 
-	${$scriptParameterHashRef}{$parameterName} = ${$parameterHashRef}{$parameterName}{value};  #Transfer to active parameter
-    }
-    elsif ( (exists(${$parameterHashRef}{$parameterName}{default})) && (!defined(${$scriptParameterHashRef}{$parameterName})) ) {
+    foreach my $parameterName (@{$parameterNameArrayRef}) {
 
-	${$scriptParameterHashRef}{$parameterName} = ${$parameterHashRef}{$parameterName}{default};  #Transfer to active parameter
+	if (defined(${$parameterHashRef}{$parameterName}{value})) {  #Replace config parameter with cmd info for parameter
+
+	    ${$scriptParameterHashRef}{$parameterName} = ${$parameterHashRef}{$parameterName}{value};  #Transfer to active parameter
+	}
+	elsif ( (exists(${$parameterHashRef}{$parameterName}{default})) && (!defined(${$scriptParameterHashRef}{$parameterName})) ) {
+
+	    ${$scriptParameterHashRef}{$parameterName} = ${$parameterHashRef}{$parameterName}{default};  #Transfer to active parameter
+	}
     }
 }
 
@@ -18974,7 +19088,11 @@ sub CheckBuildDownLoadPreRequisites {
 	
 	if (defined(${$parameterHashRef}{$parameterName}{associatedProgram})) {  
 	    
-	    if (! &CheckEntryHashofArray(\%{${$parameterHashRef}{$parameterName}}, "associatedProgram", "p".$programName)) {  #If the cosmid supported parameter is associated with the MIP program
+	    if (! &CheckEntryHashofArray({hashRef => \%{${$parameterHashRef}{$parameterName}},
+					  key => "associatedProgram",
+					  element => "p".$programName,
+					 })
+		) {  #If the cosmid supported parameter is associated with the MIP program
 		
 		if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} != 1) ) {  #Only enable autoDownload for active programs
 		
@@ -19064,13 +19182,16 @@ sub CheckEntryHashofArray {
 ##Function : Test element for being part of hash of array at supplied key. 
 ##Returns  : Return "1" if element is not part of array
 ##Arguments: $hashRef, $keyRef, $elementRef
-##         : $hashRef    => Hash {REF} 
-##         : $key        => The key pointing to the array in the $hashRef
+##         : $hashRef => Hash {REF} 
+##         : $key     => The key pointing to the array in the $hashRef
 ##         : $element => Element to look for in hash of array
 
-    my $hashRef = $_[0];
-    my $key = $_[1];
-    my $element = $_[2];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $hashRef = ${$argHashRef}{hashRef};
+    my $key = ${$argHashRef}{key};
+    my $element = ${$argHashRef}{element};
 
     if (defined($$hashRef{$key})) {  #Information on entry present
 
@@ -19657,7 +19778,10 @@ sub CheckHumanGenomeFileEndings {
     if (${$parameterHashRef}{$$parameterNameRef.".dict"}{buildFile} eq 0) {
 	
 	##Collect sequence contigs from human reference ".dict" file since it exists
-	&CollectSeqContigs(\@{${$fileInfoHashRef}{contigs}}, \$$referencesDirRef, \$$humanGenomeReferenceNameNoEndingRef);  #Preparation for future changes but not active yet
+	&CollectSeqContigs({contigsArrayRef => \@{${$fileInfoHashRef}{contigs}},
+			    referencesDirRef => \$$referencesDirRef,
+			    humanGenomeReferenceNameNoEndingRef => \$$humanGenomeReferenceNameNoEndingRef,
+			   });
     }
 }
 
@@ -19834,15 +19958,31 @@ sub CollectOutDataPathsEntries {
     
 ##Function : Collects all programs outfile path(s) created by MIP as OutDirectory->value and outfile->value located in %sampleInfo.  
 ##Returns  : ""
-##Arguments: $sampleInfoHashRef, $pathsArrayRef
-##         : $sampleInfoHashRef => Info on samples and family hash {REF}
-##         : $pathsArrayRef     => Holds the collected paths {REF}
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $pathsArrayRef
+##         : $parameterHashRef       => The parameter hash {REF}
+##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
+##         : $pathsArrayRef          => Holds the collected paths {REF}
     
-    my $parameterHashRef = $_[0];
-    my $scriptParameterHashRef = $_[1];
-    my $sampleInfoHashRef = $_[2];
-    my $pathsArrayRef = $_[3];
+    my ($argHashRef) = @_;
+
+    ## Default(s)
+    my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
+    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
+    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
+    my $pathsArrayRef = ${$argHashRef}{pathsArrayRef};
     
+    ## Mandatory arguments
+    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
+			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
+			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
+			     pathsArrayRef => @{${pathsArrayRef}}[0],
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "CollectOutDataPathsEntries");
+
     for my $familyID ( keys %{$sampleInfoHashRef} ) {  #For every family id 
 	
 	for my $member ( keys %{ ${$sampleInfoHashRef}{$familyID} }) {  #For every familyID and sampleID
@@ -19851,7 +19991,7 @@ sub CollectOutDataPathsEntries {
 
 		for my $program ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{Program} } ) {  #For every programs           
 		    
-		    if ( (!defined(${$parameterHashRef}{"p".$program}{reduceIO})) || ${$parameterHashRef}{"p".$program}{reduceIO} ==  ${$scriptParameterHashRef}{reduceIO}) {  #Only include program that have the correct ReduceIO flag or no does not belog to a reduceIO block
+		    if ( (!defined(${$parameterHashRef}{"p".$program}{reduceIO})) || (${$parameterHashRef}{"p".$program}{reduceIO} ==  ${$scriptParameterHashRef}{reduceIO}) ) {  #Only include program that have the correct ReduceIO flag or no does not belog to a reduceIO block
 
 			my @outDirectoryArray;  #Temporary array for collecting outDirectories within the same program
 			my @outfileArray;  #Temporary array for collecting outfile within the same program
@@ -19859,14 +19999,24 @@ sub CollectOutDataPathsEntries {
 			for my $key ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{Program}{$program} } ) { #For every key within program
 			    
 			    ## Check if KeyName is "OutDirectory" or "OutFile"  and adds to @pathsArrayRef if true.
-			    &CollectOutFile(\@{$pathsArrayRef}, \@outDirectoryArray, \@outfileArray, ${$sampleInfoHashRef}{$familyID}{$member}{Program}{$program}{$key}, $key);
+			    &CollectOutFile({pathsArrayRef => \@{$pathsArrayRef},
+					     outDirectoryArrayRef => \@outDirectoryArray,
+					     outfileArrayRef => \@outfileArray,
+					     key => ${$sampleInfoHashRef}{$familyID}{$member}{Program}{$program}{$key},
+					     keyName => $key,
+					    });
 			    
 			    if (ref(${$sampleInfoHashRef}{$familyID}{$member}{Program}{$program}{$key}) eq "HASH" ) { #HASH reference indicating more levels
 				
 				for my $secondKey ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{Program}{$program}{$key} } ) { #For every programs
 				    
 				    ## Check if KeyName is "OutDirectory" or "OutFile"  and adds to @pathsArrayRef if true.
-				    &CollectOutFile(\@{$pathsArrayRef}, \@outDirectoryArray, \@outfileArray, ${$sampleInfoHashRef}{$familyID}{$member}{Program}{$program}{$key}{$secondKey}, $secondKey);
+				    &CollectOutFile({pathsArrayRef => \@{$pathsArrayRef},
+						     outDirectoryArrayRef => \@outDirectoryArray,
+						     outfileArrayRef => \@outfileArray,
+						     key => ${$sampleInfoHashRef}{$familyID}{$member}{Program}{$program}{$key}{$secondKey},
+						     keyName => $secondKey,
+						    });
 				}
 			    }
 			}
@@ -19891,11 +20041,21 @@ sub CollectOutFile {
 ##         : $key                  => The hash key
 ##         : $keyName              => The actual key  
     
-    my $pathsArrayRef = $_[0];
-    my $outDirectoryArrayRef = $_[1];
-    my $outfileArrayRef = $_[2];
-    my $key = $_[3];
-    my $keyName = $_[4];	
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $pathsArrayRef = ${$argHashRef}{pathsArrayRef};
+    my $outDirectoryArrayRef = ${$argHashRef}{outDirectoryArrayRef};
+    my $outfileArrayRef = ${$argHashRef}{outfileArrayRef};
+    my $key = ${$argHashRef}{key};
+    my $keyName = ${$argHashRef}{keyName};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = (pathsArrayRef => @{${pathsArrayRef}}[0],
+			     key => $key,
+			     keyName => $keyName,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "CollectOutFile");	
     
     if ($keyName eq "OutDirectory") {
 	
@@ -19924,8 +20084,11 @@ sub CollectPathEntries {
 ##         : $sampleInfoHashRef => Info on samples and family hash {REF}
 ##         : $pathsArrayRef     => Holds the collected paths {REF}
     
-    my $sampleInfoHashRef = $_[0];
-    my $pathsArrayRef = $_[1];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
+    my $pathsArrayRef = ${$argHashRef}{pathsArrayRef};
     
     for my $familyID ( keys %{$sampleInfoHashRef} ) {  #For every familyID 
 	
@@ -19934,28 +20097,39 @@ sub CollectPathEntries {
 	    for my $key ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member} } ) {  #For every key within member
 		
 		## Check if KeyName is "Path" and adds to @pathsArrayRef if true.
-		&CheckAndAddToArray(\@{$pathsArrayRef}, ${$sampleInfoHashRef}{$familyID}{$member}{$key}, $key);
-		
+		&CheckAndAddToArray({pathsArrayRef => \@{$pathsArrayRef},
+				     key => ${$sampleInfoHashRef}{$familyID}{$member}{$key},
+				     keyName => $key,
+				    });
 		if (ref(${$sampleInfoHashRef}{$familyID}{$member}{$key}) eq "HASH" ) {   #HASH reference indicating more levels
 		    
 		    for my $secondKey ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{$key} } ) { #For every secondkey with program
 			
 			## Check if KeyName is "Path" and adds to @pathsArrayRef if true.
-			&CheckAndAddToArray(\@{$pathsArrayRef}, ${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey}, $secondKey);
+			&CheckAndAddToArray({pathsArrayRef => \@{$pathsArrayRef},
+					     key => ${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey},
+					     keyName => $secondKey,
+					    });
 		    
 			if (ref(${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey}) eq "HASH" ) {   #HASH reference indicating more levels
 		    
 			    for my $thirdKey ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey} } ) { #For every thirdkey with program
 				
 				## Check if KeyName is "Path" and adds to @pathsArrayRef if true.
-				&CheckAndAddToArray(\@{$pathsArrayRef}, ${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey}{$thirdKey}, $thirdKey);
+				&CheckAndAddToArray({pathsArrayRef => \@{$pathsArrayRef},
+						     key => ${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey}{$thirdKey},
+						     keyName => $thirdKey,
+						    });
 
 				if (ref(${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey}{$thirdKey}) eq "HASH" ) {   #HASH reference indicating more levels
 				    
 				    for my $fourthKey ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey}{$thirdKey} } ) { #For every forthkey with program
 					
 					## Check if KeyName is "Path" and adds to @pathsArrayRef if true.
-					&CheckAndAddToArray(\@{$pathsArrayRef}, ${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey}{$thirdKey}{$fourthKey}, $fourthKey);
+					&CheckAndAddToArray({pathsArrayRef => \@{$pathsArrayRef},
+							     key => ${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey}{$thirdKey}{$fourthKey},
+							     keyName => $fourthKey,
+							    });
 				    }
 				}
 			    }
@@ -19979,9 +20153,18 @@ sub CheckAndAddToArray {
 ##         : $key           => The hash key
 ##         : $keyName       => The actual key
     
-    my $pathsArrayRef = $_[0];
-    my $key = $_[1];
-    my $keyName = $_[2];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $pathsArrayRef = ${$argHashRef}{pathsArrayRef};
+    my $key = ${$argHashRef}{key};
+    my $keyName = ${$argHashRef}{keyName};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = (key => $key,
+			     keyName => $keyName,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "CheckAndAddToArray");
     
     if ($keyName eq "Path") {
 	
@@ -21483,9 +21666,19 @@ sub CheckKeys {
 	    ## Mandatory key exists
 	    if (exists(${$parameterHashRef}{$parameter}{$mandatoryKey})) {
 
-		&CheckDataType($parameterHashRef, $mandatoryKeyHashRef, $parameter, $mandatoryKey, $filePathRef);
-
-		&CheckValues($parameterHashRef, $mandatoryKeyHashRef, $parameter, $mandatoryKey, $filePathRef);
+		&CheckDataType({parameterHashRef => $parameterHashRef,
+				keyHashRef => $mandatoryKeyHashRef,
+				parameter => $parameter,
+				key => $mandatoryKey,
+				filePathRef => $filePathRef,
+			       });
+		
+		&CheckValues({parameterHashRef => $parameterHashRef,
+			      keyHashRef => $mandatoryKeyHashRef,
+			      parameter => $parameter,
+			      key => $mandatoryKey,
+			      filePathRef => $filePathRef,
+			     });
 	    }	    
 	    else {
 		
@@ -21498,9 +21691,19 @@ sub CheckKeys {
 	    ## NonMandatory key exists
 	    if (exists(${$parameterHashRef}{$parameter}{$nonMandatoryKey})) {
 
-		&CheckDataType($parameterHashRef, $nonMandatoryKeyHashRef, $parameter, $nonMandatoryKey, $filePathRef);
+		&CheckDataType({parameterHashRef => $parameterHashRef,
+				keyHashRef => $nonMandatoryKeyHashRef,
+				parameter => $parameter,
+				key => $nonMandatoryKey,
+				filePathRef => $filePathRef,
+			       });
 
-		&CheckValues($parameterHashRef, $nonMandatoryKeyHashRef, $parameter, $nonMandatoryKey, $filePathRef);
+		&CheckValues({parameterHashRef => $parameterHashRef,
+			      keyHashRef => $nonMandatoryKeyHashRef,
+			      parameter => $parameter,
+			      key => $nonMandatoryKey,
+			      filePathRef => $filePathRef,
+			     });
 	    }	    
 	}
     }
@@ -21519,11 +21722,14 @@ sub CheckValues {
 ##         : $key              => Hash with non  key
 ##         : $filePathRef      => Path to yaml file {REF}
 
-    my $parameterHashRef = $_[0];
-    my $keyHashRef = $_[1];
-    my $parameter = $_[2];
-    my $key = $_[3];
-    my $filePathRef = $_[4];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
+    my $keyHashRef = ${$argHashRef}{keyHashRef};
+    my $parameter = ${$argHashRef}{parameter};
+    my $key = ${$argHashRef}{key};
+    my $filePathRef = ${$argHashRef}{filePathRef};
     
     ## Check value(s)
     if (${$keyHashRef}{$key}{values}) {
@@ -21552,12 +21758,15 @@ sub CheckDataType {
 ##         : $key              => Hash with non  key
 ##         : $filePathRef      => Path to yaml file {REF}
 
-    my $parameterHashRef = $_[0];
-    my $keyHashRef = $_[1];
-    my $parameter = $_[2];
-    my $key = $_[3];
-    my $filePathRef = $_[4];
-    
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
+    my $keyHashRef = ${$argHashRef}{keyHashRef};
+    my $parameter = ${$argHashRef}{parameter};
+    my $key = ${$argHashRef}{key};
+    my $filePathRef = ${$argHashRef}{filePathRef};
+
     ## Check dataType
     my $dataType = ref(${$parameterHashRef}{$parameter}{$key});
     
@@ -23222,7 +23431,7 @@ sub CheckProgramMode {
 
 ##Function : Check correct value for program mode in MIP.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $broadcastsArrayRef
+##Arguments: $parameterHashRef, $scriptParameterHashRef
 ##         : $parameterHashRef       => The parameter hash {REF}
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 
@@ -23276,6 +23485,95 @@ elsif ($@) {
 ####
 #Decommissioned
 ####
+
+
+sub GATKTargetListFlag {
+
+##GATKTargetListFlag
+    
+##Function : Detects if there are different capture kits across sampleIDs. Creates a temporary merged interval_list for all interval_list that have been supplied and returns temporary list. Will also extract specific contigs if requested and return that list if enabled.
+##Returns  : "Filepath"
+##Arguments: $scriptParameterHashRef, $FILEHANDLE, $contigRef
+##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $FILEHANDLE             => FILEHANDLE to write to
+##         : $contigRef              => The contig to extract {REF}
+
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
+    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $contigRef = ${$argHashRef}{contigRef};
+
+    my %GATKTargetPaddedBedIntervalListTracker;
+    my @GATKTargetPaddedBedIntervalListFiles;
+
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{sampleIDs}});$sampleIDCounter++) {  #Collect infiles for all sampleIDs
+	
+	if (defined(${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{familyID} }{ ${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter] }{GATKTargetPaddedBedIntervalLists})) {
+
+	    ${$scriptParameterHashRef}{GATKTargetPaddedBedIntervalLists} = ${$scriptParameterHashRef}{referencesDir}."/".${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{familyID} }{ ${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter] }{GATKTargetPaddedBedIntervalLists};  #Transfer to scriptParameter top level
+       
+	    $GATKTargetPaddedBedIntervalListTracker{ ${$scriptParameterHashRef}{GATKTargetPaddedBedIntervalLists} }++;  #Increment to track file record
+	    
+	    if ($GATKTargetPaddedBedIntervalListTracker{ ${$scriptParameterHashRef}{GATKTargetPaddedBedIntervalLists} } == 1) {  #Not detected previously
+		
+		push(@GATKTargetPaddedBedIntervalListFiles, ${$scriptParameterHashRef}{ ${$scriptParameterHashRef}{familyID} }{ ${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter] }{GATKTargetPaddedBedIntervalLists});
+	    }
+	}
+    }
+    
+    ##Determine file to print to module (untouched/merged and/or splited)
+    my $outDirectory = ${$scriptParameterHashRef}{tempDirectory};  #For merged and/or splitet
+
+    if (scalar(@GATKTargetPaddedBedIntervalListFiles) > 1) {  #Merge files
+      
+	say $FILEHANDLE "\n## Generate merged interval_list\n";
+
+	&JavaCore({FILEHANDLE => $FILEHANDLE,
+		   memoryAllocation => "Xmx2g",
+		   javaUseLargePagesRef => \${$scriptParameterHashRef}{javaUseLargePages},
+		   javaTemporaryDirectory => ${$scriptParameterHashRef}{tempDirectory},
+		   javaJar => ${$scriptParameterHashRef}{picardToolsPath}."/picard.jar"
+		  });
+
+	print $FILEHANDLE "IntervalListTools ";
+	print $FILEHANDLE "UNIQUE=TRUE ";  #Merge overlapping and adjacent intervals to create a list of unique intervals
+    
+	for (my $fileCounter=0;$fileCounter<scalar(@GATKTargetPaddedBedIntervalListFiles);$fileCounter++) {
+	
+	    print $FILEHANDLE "INPUT=".${$scriptParameterHashRef}{referencesDir}."/".$GATKTargetPaddedBedIntervalListFiles[$fileCounter]." ";
+	}
+	say $FILEHANDLE "OUTPUT=".$outDirectory."/merged.interval_list", "\n";  #Merged outfile
+
+	if (defined($$contigRef)) {
+	    
+	    my $inDirectory = ${$scriptParameterHashRef}{tempDirectory};
+	    my $infile = "merged.interval_list";
+	    return &SplitTargetFile({FILEHANDLE => $FILEHANDLE,
+				     inDirectoryRef => \$inDirectory,
+				     outDirectoryRef => \$outDirectory,
+				     infileRef => \$infile,
+				     contigRef => $contigRef,
+				    });
+	}
+        return $outDirectory."/merged.interval_list";  #No split
+    }
+    elsif (defined($$contigRef)) {  #Supply original file but create splitted temp file
+
+	return &SplitTargetFile({FILEHANDLE => $FILEHANDLE,
+				 inDirectoryRef => \${$scriptParameterHashRef}{referencesDir},
+				 outDirectoryRef => \$outDirectory,
+				 infileRef => \$GATKTargetPaddedBedIntervalListFiles[0],
+				 contigRef => $contigRef,
+				});
+    }
+    else {#No merge and no split. return original and only file
+
+	return  ${$scriptParameterHashRef}{referencesDir}."/".$GATKTargetPaddedBedIntervalListFiles[0];
+    }
+}
+
 
 sub CheckTemplateFilesPaths {
 
