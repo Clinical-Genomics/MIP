@@ -15,7 +15,7 @@ use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
 
 
-use Getopt::Long;
+use Getopt::Long 'HelpMessage';
 use POSIX;
 use Cwd 'abs_path';  #Export absolute path function
 use FindBin qw($Bin);  #Find directory of script
@@ -612,7 +612,9 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'pReM|pRemoveRedundantFiles=n' => \$parameter{pRemoveRedundantFiles}{value},
 	   'pArS|pAnalysisRunStatus=n' => \$parameter{pAnalysisRunStatus}{value},  #AnalysisRunStatus change flag in sampleInfo file if allowed to execute
 	   'pSac|pSacct=n' => \$parameter{pSacct}{value},
-    ) or die "Invalid options passed to $0\n";
+    ) or &Help({USAGE => $USAGE,
+		exitCode => 1,
+	       });
 
 ## Change relative path to absolute path for certain parameters 
 &UpdateToAbsolutePath(\%parameter);
@@ -20127,7 +20129,6 @@ sub CollectOutDataPathsEntries {
     my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
 			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
 			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     pathsArrayRef => @{${pathsArrayRef}}[0],
 	);
     &CheckMandatoryArguments(\%mandatoryArgument, "CollectOutDataPathsEntries");
 
@@ -20199,8 +20200,7 @@ sub CollectOutFile {
     my $keyName = ${$argHashRef}{keyName};
 
     ## Mandatory arguments
-    my %mandatoryArgument = (pathsArrayRef => @{${pathsArrayRef}}[0],
-			     key => $key,
+    my %mandatoryArgument = (key => $key,
 			     keyName => $keyName,
 	);
     &CheckMandatoryArguments(\%mandatoryArgument, "CollectOutFile");	
@@ -20309,8 +20309,7 @@ sub CheckAndAddToArray {
     my $keyName = ${$argHashRef}{keyName};
 
     ## Mandatory arguments
-    my %mandatoryArgument = (key => $key,
-			     keyName => $keyName,
+    my %mandatoryArgument = (keyName => $keyName,
 	);
     &CheckMandatoryArguments(\%mandatoryArgument, "CheckAndAddToArray");
     
@@ -23612,6 +23611,29 @@ sub CheckProgramMode {
 	    exit 1;
 	}
     }
+}
+
+
+sub Help {
+
+##Help
+    
+##Function : Print help text and exit with supplied exit code
+##Returns  : ""
+##Arguments: $USAGE, $exitCode
+##         : $USAGE     => Help text
+##         : $exitCode => Exit code
+
+    my ($argHashRef) = @_;
+
+    ## Default(s)
+    my $exitCode = ${$argHashRef}{errorCode} //= 0;
+
+    ## Flatten argument(s)
+    my $USAGE = ${$argHashRef}{USAGE};
+
+    say STDOUT $USAGE;
+    exit $exitCode;
 }
 
 
