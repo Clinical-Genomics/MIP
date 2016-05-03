@@ -399,10 +399,11 @@ my @annovarSupportedTableNames = ("refGene", "knownGene", "ensGene", "mce46way",
 my %annovarTable;  #Holds annovar tables and features
 
 ## Enables cmd "mip.pl" to print usage help
-if(scalar(@ARGV) == 0) {
+if(!@ARGV) {
 
-    say STDOUT $USAGE;
-    exit;
+    &Help({USAGE => $USAGE,
+	   exitCode => 0,
+	  });
 }
 
 ###User Options
@@ -821,8 +822,8 @@ for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}
 &CheckVEPDirectories(\$scriptParameter{vepDirectoryPath}, \$scriptParameter{vepDirectoryCache});
 
 ## PicardToolsMergeSamFilesPrevious
-if( (scalar(@{$parameter{picardToolsMergeSamFilesPrevious}{value}}) > 0) ) {
-    
+if(@{$parameter{picardToolsMergeSamFilesPrevious}{value}}) {
+
     ## Checks if previous alignments have been supplied for each sampleID. Saves merge info in sampleInfo hash.
     &CheckMergePicardToolsMergeSamFilesPrevious(\%scriptParameter, \%fileInfo);
 }
@@ -2468,7 +2469,7 @@ sub Sacct {
     print $FILEHANDLE "sacct --format=jobid,jobname%50,account,partition,alloccpus,TotalCPU,elapsed,start,end,state,exitcode -j ";
 
     ## If run in dry run mode this will be empty
-    if (scalar(keys %{$jobIDHashRef}) > 0) {
+    if (keys %{$jobIDHashRef}) {
 
 	say $FILEHANDLE join(',', @{${$jobIDHashRef}{Pan}{Pan}});
     }
@@ -4179,7 +4180,7 @@ sub SnpEff {
 	    close($XARGSFILEHANDLE);
 	}
 
-	if (scalar(@{${$scriptParameterHashRef}{snpSiftDbNSFPAnnotations}}) > 0) {
+	if (@{${$scriptParameterHashRef}{snpSiftDbNSFPAnnotations}}) {
 	
 	    ## SnpSiftDbNSFP Annotation
 	    say $FILEHANDLE "## SnpSiftDnNSFP Annotation";
@@ -4695,7 +4696,7 @@ sub VCFParser {
 	    
 	    print $XARGSFILEHANDLE "-rf ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{vcfParserRangeFeatureFile}." ";  #List of genes to analyse separately	
 	    
-	    if (scalar(@{${$scriptParameterHashRef}{vcfParserRangeFeatureAnnotationColumns}}) > 0) {
+	    if (@{${$scriptParameterHashRef}{vcfParserRangeFeatureAnnotationColumns}}) {
 		
 		print $XARGSFILEHANDLE "-rf_ac ";  #Range annotation columns
 		print $XARGSFILEHANDLE join(',', @{${$scriptParameterHashRef}{vcfParserRangeFeatureAnnotationColumns}})." ";	    
@@ -4712,7 +4713,7 @@ sub VCFParser {
 		print $XARGSFILEHANDLE "-sf ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{vcfParserSelectFile}." ";  #List of genes to analyse separately
 		print $XARGSFILEHANDLE "-sf_mc ".${$scriptParameterHashRef}{vcfParserSelectFileMatchingColumn}." ";  #Column of HGNC Symbol in SelectFile (-sf)
 		
-		if (scalar(@{${$scriptParameterHashRef}{vcfParserSelectFeatureAnnotationColumns}}) > 0) {
+		if (@{${$scriptParameterHashRef}{vcfParserSelectFeatureAnnotationColumns}}) {
 		    
 		    print $XARGSFILEHANDLE "-sf_ac ";  #Select annotation columns
 		    print $XARGSFILEHANDLE join(',', @{${$scriptParameterHashRef}{vcfParserSelectFeatureAnnotationColumns}})." ";	    
@@ -8158,7 +8159,7 @@ sub SVVCFParser {
 	    
 	    print $XARGSFILEHANDLE "-rf ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{svVcfParserRangeFeatureFile}." ";  #List of genes to analyse separately	
 	    
-	    if (scalar(@{${$scriptParameterHashRef}{svVcfParserRangeFeatureAnnotationColumns}}) > 0) {
+	    if (@{${$scriptParameterHashRef}{svVcfParserRangeFeatureAnnotationColumns}}) {
 		
 		print $XARGSFILEHANDLE "-rf_ac ";  #Range annotation columns
 		print $XARGSFILEHANDLE join(',', @{${$scriptParameterHashRef}{svVcfParserRangeFeatureAnnotationColumns}})." ";	    
@@ -8175,7 +8176,7 @@ sub SVVCFParser {
 		print $XARGSFILEHANDLE "-sf ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{svVcfParserSelectFile}." ";  #List of genes to analyse separately
 		print $XARGSFILEHANDLE "-sf_mc ".${$scriptParameterHashRef}{svVcfParserSelectFileMatchingColumn}." ";  #Column of HGNC Symbol in SelectFile (-sf)
 		
-		if (scalar(@{${$scriptParameterHashRef}{svVcfParserSelectFeatureAnnotationColumns}}) > 0) {
+		if (@{${$scriptParameterHashRef}{svVcfParserSelectFeatureAnnotationColumns}}) {
 		    
 		    print $XARGSFILEHANDLE "-sf_ac ";  #Select annotation columns
 		    print $XARGSFILEHANDLE join(',', @{${$scriptParameterHashRef}{svVcfParserSelectFeatureAnnotationColumns}})." ";	    
@@ -15803,7 +15804,7 @@ sub CollectInfiles {
 	}
 	chomp(@infiles);   #Remove newline from every entry in array
 
-	if (scalar(@infiles) == 0) {  #No "*.fastq*" infiles
+	if (!@infiles) {  #No "*.fastq*" infiles
 	    
 	    $logger->fatal("Could not find any '.fastq' files in supplied infiles directory ".$$inFileDirectoryRef, "\n");
 	    exit 1;
@@ -17191,7 +17192,8 @@ sub ProgramPreRequisites {
     
     say $FILEHANDLE q?echo "Running on: $(hostname)"?;
     say $FILEHANDLE q?PROGNAME=$(basename $0)?,"\n";
-    if (scalar(@{$sourceEnvironmentCommandArrayRef}) > 0) {
+
+    if (@{$sourceEnvironmentCommandArrayRef}) {
 
 	say $FILEHANDLE "##Activate environment";
 	say $FILEHANDLE join(' ', @{$sourceEnvironmentCommandArrayRef}), "\n";
@@ -17757,7 +17759,7 @@ sub CheckUniqueIDNs {
 
     my %seen;  #Hash to test duplicate sampleIDs later
 
-    if (scalar(@{$sampleIdArrayRef}) == 0) {
+    if (!@{$sampleIdArrayRef}) {
 
 	$logger->fatal("Please provide sampleID(s)\n");
 	exit 1;
@@ -18125,7 +18127,7 @@ sub SetAutoBuildFeature {
 
 	 if ($printSwitch ne "noPrint") {
 
-	     if (scalar(@{$broadcastsArrayRef}) > 0) {
+	     if (@{$broadcastsArrayRef}) {
 
 		 my $info = "Set ".$parameterName." to: ".${$scriptParameterHashRef}{$parameterName};
 		 push(@{$broadcastsArrayRef}, $info);  #Add info to broadcasts
@@ -18213,7 +18215,7 @@ sub CheckUserInfoArrays {
     
     my $userSuppliedInfoSwitch;
     
-    if (scalar(@{$arrayRef}) == 0) {  #No user supplied sample info
+    if (!@{$arrayRef}) {  #No user supplied sample info
 	
 	if (defined(${$scriptParameterHashRef}{$parameterName})) {  #sampleIDs info in config file
 	    
@@ -18365,7 +18367,7 @@ sub PrepareArrayParameters {
     my $broadcastsArrayRef = ${$argHashRef}{broadcastsArrayRef};
     my $associatedPrograms = ${$argHashRef}{associatedPrograms};
 
-    unless (scalar(@{$arrayRef}) == 0) {  #No input from cmd	    
+    if (@{$arrayRef}) {  #No input from cmd	    
 
 	${$parameterHashRef}{ ${$argHashRef}{parameterName} }{value} = "SetbyUser";
 	@{$arrayRef} = join(',',@{$arrayRef});  #If user supplied parameter as comma separated list
@@ -18981,7 +18983,7 @@ sub CollectSelectFileContigs {
     @{$contigsArrayRef} = `$pqSeqDict $selectFilePath `;  #Returns a comma seperated string of sequence contigs from file
     @{$contigsArrayRef} = split(/,/,join(',', @{$contigsArrayRef}));
 
-    if (scalar(@{$contigsArrayRef}) == 0) {
+    if (!@{$contigsArrayRef}) {
 
 	$logger->fatal("Could not detect any '##contig' in meta data header in select file: ".$selectFilePath."\n");
 	exit 1;
@@ -19951,7 +19953,7 @@ sub CheckMergePicardToolsMergeSamFilesPrevious {
     
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{sampleIDs}});$sampleIDCounter++) {  #Check all samples to check, which are to be merged with previous files later
 	
-	if (scalar(@{${$scriptParameterHashRef}{picardToolsMergeSamFilesPrevious}}) > 0) {  #Supplied info - check for which sampleID(s)  	
+	if (@{${$scriptParameterHashRef}{picardToolsMergeSamFilesPrevious}}) {  #Supplied info - check for which sampleID(s)  	
 	    
 	    for (my $mergeFileCounter=0;$mergeFileCounter<scalar(@{${$scriptParameterHashRef}{picardToolsMergeSamFilesPrevious}});$mergeFileCounter++) {
 		
@@ -21477,7 +21479,7 @@ sub CheckCommandinPath {
 
 	    my $programNamePathsArrayRef = \@{ $parameter{$parameterName}{programNamePath} };  #Alias
 
-	    if ( (scalar(@{$programNamePathsArrayRef}) > 0) && (${$scriptParameterHashRef}{$parameterName} > 0) ) {  #Only check path(s) for active programs
+	    if ( (@{$programNamePathsArrayRef}) && (${$scriptParameterHashRef}{$parameterName} > 0) ) {  #Only check path(s) for active programs
 
 		foreach my $program (@{ $programNamePathsArrayRef }) {
 		  
@@ -23531,7 +23533,7 @@ sub TrackProgress {
     my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
     my $logFileRef = ${$argHashRef}{logFileRef};
 
-    if (scalar(keys %{$jobIDHashRef}) > 0) {
+    if (keys %{$jobIDHashRef}) {
 	
 	print $FILEHANDLE "\t".q?sacct --format=jobid,jobname%50,account,partition,alloccpus,TotalCPU,elapsed,start,end,state,exitcode -j ?;
 	print $FILEHANDLE join(',', @{${$jobIDHashRef}{Pan}{Pan}}), " ";
