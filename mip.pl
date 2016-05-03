@@ -12387,9 +12387,9 @@ sub BWAMem {
 		}
 		if (${$scriptParameterHashRef}{bwaMembamStats} == 1) {
 
-		    if (! exists(${$fileInfoHashRef}{undeterminedInFileName}{ ${$infileHashRef}{$$sampleIDRef}[$infileCounter] }) ) {  #Do not add to SampleInfo and hence skip test of "UndeterminedInFileName" files in QCCollect
+		    if (! ${$fileInfoHashRef}{undeterminedInFileName}{ ${$infileHashRef}{$$sampleIDRef}[$infileCounter] } ) {  #Do not add to SampleInfo and hence skip test of "UndeterminedInFileName" files in QCCollect
 
-			## Collect QC metadata info for later use                                                                                               
+			## Collect QC metadata info for later use
 			&SampleInfoQC({sampleInfoHashRef => \%{$sampleInfoHashRef},
 				       familyID => ${$scriptParameterHashRef}{familyID},
 				       sampleID => $$sampleIDRef,
