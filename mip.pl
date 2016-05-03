@@ -763,7 +763,9 @@ foreach my $parameterName (keys %parameter) {
 $parameter{dynamicParameters}{trio} = &DetectTrio(\%scriptParameter, \%sampleInfo);
 
 ## Detect number of founders (i.e. parents ) based on pedigree file
-&DetectFounders(\%scriptParameter, \%sampleInfo);
+&DetectFounders({scriptParameterHashRef => \%scriptParameter,
+		 sampleInfoHashRef => \%sampleInfo,
+		});
 
 ## Check email adress format
 if (exists($scriptParameter{email})) {  #Allow no malformed email adress
@@ -778,7 +780,9 @@ if (exists($scriptParameter{email})) {  #Allow no malformed email adress
 		    });
 
 ## Test that the familyID and the sampleID(s) exists and are unique. Check if id sampleID contains "_".
-&CheckUniqueIDNs(\%scriptParameter, \@{$scriptParameter{sampleIDs}});  #Test that sampleIDs are unique
+&CheckUniqueIDNs({scriptParameterHashRef => \%scriptParameter,
+		  sampleIdArrayRef => \@{$scriptParameter{sampleIDs}},
+		 });
 
 for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {  #all sampleIDs
 
@@ -3278,7 +3282,9 @@ sub RankVariants {
 
     ## Set the number of cores
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
-    my $genModnrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, 16);  #Detect the number of cores to use per genmod process.
+    my $genModnrCores = &NrofCoresPerSbatch({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					     nrCores => 16,
+					    });  #Detect the number of cores to use per genmod process.
     my $xargsFileName;
 
     unless (defined($FILEHANDLE)){ #Run as individual sbatch script
@@ -4055,8 +4061,6 @@ sub SnpEff {
     my $vcfParserAnalysisType = "";
     my $vcfParserContigsArrayRef = \@{ ${$fileInfoHashRef}{contigsSizeOrdered} };  #Set default
     
-    my $snpSiftnrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, 8);  #Detect the number of cores to use. Currently there is only enough java threads for around 8 parallel pipes
-
     for (my $vcfParserOutputFileCounter=0;$vcfParserOutputFileCounter<${$scriptParameterHashRef}{VcfParserOutputFileCount};$vcfParserOutputFileCounter++) {
 
 	my $coreCounter = 1;
@@ -4907,7 +4911,9 @@ sub VariantEffectPredictor {
     my $nrForkes = 4;  #VariantEffectPredictor forks
 
     ## Set the number of cores to allocate per sbatch job.
-    my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar(@{${$fileInfoHashRef}{contigs}}));  #Detect the number of cores to use
+    my $nrCores = &NrofCoresPerSbatch({scriptParameterHashRef => \%{$scriptParameterHashRef},
+				       nrCores => scalar(@{${$fileInfoHashRef}{contigs}}),
+				      });  #Detect the number of cores to use
     $nrCores = floor($nrCores / $nrForkes);  #Adjust for the number of forks 
 
     if ($$reduceIORef eq "0") {  #Run as individual sbatch script
@@ -5428,16 +5434,26 @@ sub SampleCheck {
     &CheckMandatoryArguments(\%mandatoryArgument, $programName);
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $xargsFileName;
+    my $xargsFileCounter = 0;
 
+    ## Set the number of cores to allocate per sbatch job.
+    my $nrCores = &NrofCoresPerSbatch({scriptParameterHashRef => \%{$scriptParameterHashRef},
+				       nrCores => scalar(@{${$scriptParameterHashRef}{sampleIDs}}),
+				      });
+    
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
-					    jobIDHashRef => \%{$jobIDHashRef},
-					    FILEHANDLE => $FILEHANDLE,
-					    directoryID => $$familyIDRef,
-					    programName => $programName,
-					    programDirectory => lc($$alignerOutDirRef."/".$programName),
-					    callType => $callType,
-					   });
+    my ($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
+							      jobIDHashRef => \%{$jobIDHashRef},
+							      FILEHANDLE => $FILEHANDLE,
+							      directoryID => $$familyIDRef,
+							      programName => $programName,
+							      programDirectory => lc($$alignerOutDirRef."/".$programName),
+							      callType => $callType,
+							      nrofCores => $nrCores,
+							      processTime => 10,
+							     });
     
     ## Assign Directories
     my $inFamilyDirectory = ${$scriptParameterHashRef}{outDataDir}."/".$$familyIDRef."/".$$alignerOutDirRef."/gatk";
@@ -5446,46 +5462,100 @@ sub SampleCheck {
     ## Assign fileTags
     my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{pGATKCombineVariantCallSets}{fileTag};
 
+    ## Copy file(s) to temporary directory
+    say $FILEHANDLE "## Copy file(s) to temporary directory"; 
+    &MigrateFileToTemp({FILEHANDLE => $FILEHANDLE,
+			path => $inFamilyDirectory."/".$$familyIDRef.$infileTag.$callType.".vcf*",
+			tempDirectory => $$tempDirectoryRef
+		       });
+    say $FILEHANDLE "wait", "\n";
 
-    my $founderCount = &DetectFounders(\%{$scriptParameterHashRef}, \%{$sampleInfoHashRef});
+    my $founderCount = &DetectFounders({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					sampleInfoHashRef => \%{$sampleInfoHashRef},
+				       });
 
-    ## Generate Plink bed and bim (as well as fam) files
-    print $FILEHANDLE "plink2 ";
-    print $FILEHANDLE "--vcf ".$inFamilyDirectory."/".$$familyIDRef.$infileTag.$callType.".vcf ";  #InFile
-    print $FILEHANDLE "--chr 23-24 ";  #Only analyse sex chromosomes
-    print $FILEHANDLE "--out ".$outFamilyDirectory."/".$$familyIDRef."_vcf_data_unsplit ";  #OutFile (.ped and .map)
-    say $FILEHANDLE "\n";
+    ## GATK SelectVariants and Plink2 bed, bim and .fam file 
+    say $FILEHANDLE "## GATK SelectVariants and Plink2 bed, bim and .fam file";
 
+    ## Create file commands for xargs
+    ($xargsFileCounter, $xargsFileName) = &XargsCommand({FILEHANDLE => $FILEHANDLE,
+							 XARGSFILEHANDLE => $XARGSFILEHANDLE,
+							 fileName => $fileName,
+							 programInfoPath => $programInfoPath,
+							 nrCores => $nrCores,
+							 xargsFileCounter => $xargsFileCounter,
+							 firstCommand => "java",
+							 memoryAllocation => "Xmx2g",
+							 javaUseLargePagesRef => \${$scriptParameterHashRef}{javaUseLargePages},
+							 javaTemporaryDirectory => $$tempDirectoryRef,
+							 javaJar => ${$scriptParameterHashRef}{genomeAnalysisToolKitPath}."/GenomeAnalysisTK.jar"
+							});
+    foreach my $sampleID (@{${$scriptParameterHashRef}{sampleIDs}}) {
+	
+	print $XARGSFILEHANDLE "-T SelectVariants ";  #Type of analysis to run
+	print $XARGSFILEHANDLE "-l INFO ";  #Set the minimum level of logging
+	print $XARGSFILEHANDLE "-R ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{humanGenomeReference}." ";  #Reference file
+	print $XARGSFILEHANDLE "-V: ".$$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType.".vcf ";  #FamilyID infile
+	print $XARGSFILEHANDLE "-o ".$$tempDirectoryRef."/".$sampleID.".vcf ";  #SampleID outfile
+	print $XARGSFILEHANDLE "-sn ".$sampleID." ";  #Include genotypes from this sample
+	print $XARGSFILEHANDLE "-env ";
+	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$sampleID."_SelectVariants.stderr.txt ";  #Redirect xargs output to program specific stderr file	
+	print $XARGSFILEHANDLE "; ";
+
+	## Generate Plink bed and bim (as well as fam) files
+	print $XARGSFILEHANDLE "plink2 ";
+	print $XARGSFILEHANDLE "--vcf ".$$tempDirectoryRef."/".$sampleID.".vcf ";  #InFile
+	print $XARGSFILEHANDLE "--chr 23-24 ";  #Only analyse sex chromosomes
+	print $XARGSFILEHANDLE "--out ".$$tempDirectoryRef."/".$sampleID."_vcf_data_unsplit ";  #OutFile (.ped and .map)
+	say $XARGSFILEHANDLE "2> ".$xargsFileName.".".$sampleID."_plink2.stderr.txt ";  #Redirect xargs output to program specific stderr file	
+    }
+
+    ## Add a subsetet and correct .fam file for analysis
+    say $FILEHANDLE "## Add a subsetet and correct .fam file for analysis";
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{sampleIDs}});$sampleIDCounter++) {  #Collect infiles for all sampleIDs
-
-	my $sampleID = ${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter];  #Alias
+	
+	my $sampleIDRef = \${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter];  #Alias
 	my $lineCounter = 2 + $sampleIDCounter;  #Skip header line
-
-	## Add a subsetet and correct .fam file for analysis
-	print $FILEHANDLE q?perl -nae 'if($F[1]=~/?.$sampleID.q?/) {print $F[0]."\t".$F[1]."\t0\t0\t".$F[4]."\t".$F[5]}' ?;  #Include 1 line and remove founders
+	print $FILEHANDLE q?perl -nae 'if($F[1]=~/?.$$sampleIDRef.q?/) {print $F[0]."\t".$F[1]."\t0\t0\t".$F[4]."\t".$F[5]}' ?;  #Include 1 line and remove founders
 	print $FILEHANDLE ${$scriptParameterHashRef}{outDataDir}."/".${$scriptParameterHashRef}{familyID}."/".${$scriptParameterHashRef}{familyID}.".fam ";
 	print $FILEHANDLE "> "; 
-	print $FILEHANDLE $outFamilyDirectory."/".$$familyIDRef."_vcf_data_unsplit.fam ";
-	say $FILEHANDLE "\n";
-	
-	## Split X to remove PAR regions
-	print $FILEHANDLE "plink2 ";
-	print $FILEHANDLE "--bfile ".$outFamilyDirectory."/".$$familyIDRef."_vcf_data_unsplit ";
-	print $FILEHANDLE "--split-x b37 no-fail ";  #By default, PLINK errors out when no variants would be affected by --split-x;the 'no-fail' modifier overrides this.
-	print $FILEHANDLE "--make-bed ";
-	print $FILEHANDLE "--out ".$outFamilyDirectory."/".$$familyIDRef."_vcf_data ";
-	say $FILEHANDLE "\n";
+	print $FILEHANDLE $$tempDirectoryRef."/".$$sampleIDRef."_vcf_data_unsplit.fam ";
+	say $FILEHANDLE "2> ".$xargsFileName.".".$$sampleIDRef."_sampleFam.stderr.txt ", "\n";  #Redirect xargs output to program specific stderr file	
+    }
 
-	print $FILEHANDLE "plink2 ";
-	print $FILEHANDLE "--bfile ".$outFamilyDirectory."/".$$familyIDRef."_vcf_data ";
-	print $FILEHANDLE "--check-sex ";
+    ## Perform sex-check on individual samples and sampleID.fam  using Plink2
+    say $FILEHANDLE "## Perform sex-check on individual samples and sampleID.fam  using Plink2";
+
+    ## Create file commands for xargs
+    ($xargsFileCounter, $xargsFileName) = &XargsCommand({FILEHANDLE => $FILEHANDLE,
+							 XARGSFILEHANDLE => $XARGSFILEHANDLE,
+							 fileName => $fileName,
+							 programInfoPath => $programInfoPath,
+							 nrCores => $nrCores,
+							 xargsFileCounter => $xargsFileCounter,
+							 firstCommand => "plink2",
+							});
+
+    foreach my $sampleID (@{${$scriptParameterHashRef}{sampleIDs}}) {
+
+	## Split X to remove PAR regions
+	print $XARGSFILEHANDLE "--bfile ".$$tempDirectoryRef."/".$sampleID."_vcf_data_unsplit ";
+	print $XARGSFILEHANDLE "--split-x b37 no-fail ";  #By default, PLINK errors out when no variants would be affected by --split-x;the 'no-fail' modifier overrides this.
+	print $XARGSFILEHANDLE "--make-bed ";
+	print $XARGSFILEHANDLE "--out ".$$tempDirectoryRef."/".$sampleID."_vcf_data ";
+	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$sampleID."_plink2_splitX.stderr.txt ";  #Redirect xargs output to program specific stderr file	
+	print $XARGSFILEHANDLE "; ";
+
+	print $XARGSFILEHANDLE "plink2 ";
+	print $XARGSFILEHANDLE "--bfile ".$$tempDirectoryRef."/".$sampleID."_vcf_data ";
+	print $XARGSFILEHANDLE "--check-sex ";
 	
 	unless (${$sampleInfoHashRef}{${$scriptParameterHashRef}{familyID} }{$sampleID}{Sex} == 2) {
-	
-	    print $FILEHANDLE "y-only ";
+	    
+	    print $XARGSFILEHANDLE "y-only ";
 	}
-	print $FILEHANDLE "--out ".$outFamilyDirectory."/".$sampleID."_vcf_data ";
-	say $FILEHANDLE "\n";
+	print $XARGSFILEHANDLE "--out ".$outFamilyDirectory."/".$sampleID."_vcf_data ";
+	say $XARGSFILEHANDLE "2> ".$xargsFileName.".".$sampleID."_plink2_check-sex.stderr.txt ";  #Redirect xargs output to program specific stderr file
     }
     
     ## Concatenate files for qc downsteam 
@@ -5501,7 +5571,6 @@ sub SampleCheck {
     print $FILEHANDLE "> ".$outFamilyDirectory."/".$$familyIDRef.".sexcheck ";
     say $FILEHANDLE "\n";
 
-   
     if ( (${$scriptParameterHashRef}{pSampleCheck} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 
 	## Collect QC metadata info for later use                                                                                               
@@ -5517,13 +5586,13 @@ sub SampleCheck {
 
     say $FILEHANDLE "#Create Plink .ped and .map file per family using vcfTools";
     print $FILEHANDLE "vcftools ";
-    print $FILEHANDLE "--vcf ".$inFamilyDirectory."/".$$familyIDRef.$infileTag.$callType.".vcf ";  #InFile
+    print $FILEHANDLE "--vcf ".$$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType.".vcf ";  #InFile
     print $FILEHANDLE "--plink ";  #PLINK format
     say $FILEHANDLE "--out ".$outFamilyDirectory."/".$$familyIDRef, "\n";  #OutFile (.ped and .map)
 
     say $FILEHANDLE "#Create vcfTools inbreeding coefficient F per family using vcfTools";
     print $FILEHANDLE "vcftools ";
-    print $FILEHANDLE "--vcf ".$inFamilyDirectory."/".$$familyIDRef.$infileTag.$callType.".vcf ";  #InFile
+    print $FILEHANDLE "--vcf ".$$tempDirectoryRef."/".$$familyIDRef.$infileTag.$callType.".vcf ";  #InFile
     print $FILEHANDLE "--het ";  #Individual inbreeding
     say $FILEHANDLE "--out ".$outFamilyDirectory."/".$$familyIDRef, "\n";  #Outfile
 
@@ -5539,7 +5608,7 @@ sub SampleCheck {
 		      });
     }
 
-    if (scalar(@{${$scriptParameterHashRef}{sampleIDs}}) > 1) {  #Only perform is more than 1 sample
+    if (scalar(@{${$scriptParameterHashRef}{sampleIDs}}) > 1) {  #Only perform if more than 1 sample
 	
 	say $FILEHANDLE "#Create Plink .mibs per family"; 
 	print $FILEHANDLE "plink2 ";
@@ -5562,8 +5631,6 @@ sub SampleCheck {
 			  });
 	}
     }
-    
-    say $FILEHANDLE "wait", "\n";    
     
     close($FILEHANDLE); 
 
@@ -5649,7 +5716,9 @@ sub VT {
     }
 
     ## Set the number of cores to allocate per sbatch job.
-    my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar(@{${$fileInfoHashRef}{contigs}}));  #Detect the number of cores to use
+    my $nrCores = &NrofCoresPerSbatch({scriptParameterHashRef => \%{$scriptParameterHashRef},
+				       nrCores => scalar(@{${$fileInfoHashRef}{contigs}})
+				      });  #Detect the number of cores to use
 
     if ($$reduceIORef eq "0") { #Run as individual sbatch script
 
@@ -5888,7 +5957,9 @@ sub PrepareForVariantAnnotationBlock {
     }
 
     ## Set the number of cores to allocate per sbatch job.
-    my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar(@{${$fileInfoHashRef}{contigs}}));  #Detect the number of cores to use
+    my $nrCores = &NrofCoresPerSbatch({scriptParameterHashRef => \%{$scriptParameterHashRef},
+				       nrCores => scalar(@{${$fileInfoHashRef}{contigs}})
+				      });  #Detect the number of cores to use
 
     if ($$reduceIORef eq "0") { #Run as individual sbatch script
 	
@@ -7690,7 +7761,9 @@ sub SVRankVariants {
 
     ## Set the number of cores
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
-    my $genModnrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, 16);  #Detect the number of cores to use per genmod process.
+    my $genModnrCores = &NrofCoresPerSbatch({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					     nrCores => 16
+					    });  #Detect the number of cores to use per genmod process.
     my $xargsFileName;
 
     unless (defined($FILEHANDLE)){ #Run as individual sbatch script
@@ -8291,7 +8364,9 @@ sub SVVariantEffectPredictor {
     my $nrForkes = 4;  #VariantEffectPredictor forks
 
     ## Set the number of cores to allocate per sbatch job.
-    my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar(@{${$fileInfoHashRef}{contigs}}));  #Detect the number of cores to use
+    my $nrCores = &NrofCoresPerSbatch({scriptParameterHashRef => \%{$scriptParameterHashRef},
+				       nrCores => scalar(@{${$fileInfoHashRef}{contigs}})
+				      });  #Detect the number of cores to use
     $nrCores = floor($nrCores / $nrForkes);  #Adjust for the number of forks 
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -9716,7 +9791,9 @@ sub SamToolsMpileUp {
     }
 
     $nrCores = floor(${$scriptParameterHashRef}{nodeRamMemory} / 4);  #Division by X according to the java heap
-    $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, $nrCores);  #To not exceed maximum
+    $nrCores = &NrofCoresPerSbatch({scriptParameterHashRef => \%{$scriptParameterHashRef},
+				    nrCores => $nrCores
+				   });  #To not exceed maximum
 
     ## Assign directories
     my $outFamilyFileDirectory = ${$scriptParameterHashRef}{outDataDir}."/".$$familyIDRef."/".$$alignerOutDirRef."/".$programOutDirectoryName;  #For ".fam" file
@@ -9958,7 +10035,9 @@ sub Freebayes {
     }
 
     $nrCores = floor(${$scriptParameterHashRef}{nodeRamMemory} / 4);  #Division by X according to the java heap
-    $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, $nrCores);  #To not exceed maximum
+    $nrCores = &NrofCoresPerSbatch({scriptParameterHashRef => \%{$scriptParameterHashRef},
+				    nrCores => $nrCores,
+				   });  #To not exceed maximum
 
     ## Assign directories
     my $outFamilyFileDirectory = ${$scriptParameterHashRef}{outDataDir}."/".$$familyIDRef."/".$$alignerOutDirRef."/".$programOutDirectoryName;  #For ".fam" file
@@ -10174,7 +10253,9 @@ sub GATKHaploTypeCaller {
     }
 
     $nrCores = floor(${$scriptParameterHashRef}{nodeRamMemory} / 4);  #Division by X according to the java heap
-    $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, $nrCores);  #To not exceed maximum
+    $nrCores = &NrofCoresPerSbatch({scriptParameterHashRef => \%{$scriptParameterHashRef},
+				    nrCores => $nrCores,
+				   });  #To not exceed maximum
 
     ## Assign directories
     my $outFamilyFileDirectory = ${$scriptParameterHashRef}{outDataDir}."/".$$familyIDRef;  #For ".fam" file
@@ -10449,7 +10530,9 @@ sub GATKBaseReCalibration {
     }
     
     $nrCores = floor(${$scriptParameterHashRef}{nodeRamMemory} / 4);  #Division by X according to the java heap
-    $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, $nrCores);  #To not exceed maximum
+    $nrCores = &NrofCoresPerSbatch({scriptParameterHashRef => \%{$scriptParameterHashRef},
+				    nrCores => $nrCores
+				   });  #To not exceed maximum
     
     ## GATK BaseRecalibrator
     say $FILEHANDLE "## GATK BaseRecalibrator";
@@ -10742,7 +10825,9 @@ sub GATKReAligner {
     say $FILEHANDLE "## GATK ReAlignerTargetCreator";
     
     $nrCores = floor(${$scriptParameterHashRef}{nodeRamMemory} / 4);  #Division by 4 since the java heap is 4GB
-    $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, $nrCores);  #To not exceed maximum
+    $nrCores = &NrofCoresPerSbatch({scriptParameterHashRef => \%{$scriptParameterHashRef},
+				    nrCores => $nrCores
+				   });  #To not exceed maximum
     
     ## Create file commands for xargs
     ($xargsFileCounter, $xargsFileName) = &XargsCommand({FILEHANDLE => $FILEHANDLE,
@@ -11226,7 +11311,9 @@ sub PicardToolsMergeSamFiles {
 	say $FILEHANDLE "## Merging alignment files";
 	
 	$nrCores = floor(${$scriptParameterHashRef}{nodeRamMemory} / 4);  #Division by X according to java Heap size
-	$nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, $nrCores);  #To not exceed maximum
+	$nrCores = &NrofCoresPerSbatch({scriptParameterHashRef => \%{$scriptParameterHashRef},
+					nrCores => $nrCores,
+				       });  #To not exceed maximum
 	
 	## Create file commands for xargs
 	($xargsFileCounter, $xargsFileName) = &XargsCommand({FILEHANDLE => $FILEHANDLE,
@@ -11321,7 +11408,9 @@ sub PicardToolsMergeSamFiles {
 		    
 		    my $mergeLanes; if($1) {$mergeLanes = $1;} else {$mergeLanes = $2;}  #Make sure to always supply lanes from previous regexp		    
 
-		    my $picardToolsMergeSamFilesPreviousFileNoEnding = &RemoveFileEnding(\$picardToolsMergeSamFilesPreviousFile, ".bam");
+		    my $picardToolsMergeSamFilesPreviousFileNoEnding = &RemoveFileEnding({fileNameRef => \$picardToolsMergeSamFilesPreviousFile,
+											  fileEnding => ".bam",
+											 });
 
 		    ## Split BAMs using Samtools
 		    say $FILEHANDLE "## Split alignment files per contig";
@@ -11341,7 +11430,9 @@ sub PicardToolsMergeSamFiles {
 		    say $FILEHANDLE "## Merging alignment files";
 
 		    $nrCores = floor(${$scriptParameterHashRef}{nodeRamMemory} / 4);  #Division by X according to java Heap size
-		    $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, $nrCores);  #To not exceed maximum
+		    $nrCores = &NrofCoresPerSbatch({scriptParameterHashRef => \%{$scriptParameterHashRef},
+						    nrCores => $nrCores,
+						   });  #To not exceed maximum
 
 		    ## Create file commands for xargs
 		    ($xargsFileCounter, $xargsFileName) = &XargsCommand({FILEHANDLE => $FILEHANDLE,
@@ -11419,9 +11510,13 @@ sub PicardToolsMergeSamFiles {
 		say $FILEHANDLE "## Merging alignment files";
 
 		$nrCores = floor(${$scriptParameterHashRef}{nodeRamMemory} / 4);  #Division by X according to java Heap size
-		$nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, $nrCores);  #To not exceed maximum
+		$nrCores = &NrofCoresPerSbatch({scriptParameterHashRef => \%{$scriptParameterHashRef},
+						nrCores => $nrCores,
+					       });  #To not exceed maximum
 
-		my $picardToolsMergeSamFilesPreviousFileNoEnding = &RemoveFileEnding(\$picardToolsMergeSamFilesPreviousFile, ".bam");
+		my $picardToolsMergeSamFilesPreviousFileNoEnding = &RemoveFileEnding({fileNameRef => \$picardToolsMergeSamFilesPreviousFile,
+										      fileEnding => ".bam",
+										     });
 
 		## Split BAMs using Samtools
 		say $FILEHANDLE "## Split alignment files per contig";
@@ -11732,12 +11827,18 @@ sub BWAAln {
 
     for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all files   
 
+	my $infileRef = \${$infilesLaneNoEndingHashRef}{ $sampleID }[$infileCounter];  #Alias
+
 	## Adjust the number of cores to be used in the analysis according to sequencing mode requirements.
-	&AdjustNrCoresToSeqMode(\$nrCores, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$sampleID}{File}{${$infilesLaneNoEndingHashRef}{ $sampleID }[$infileCounter]}{SequenceRunType});
+	&AdjustNrCoresToSeqMode({nrCoresRef => \$nrCores,
+				 sequenceRunTypeRef => \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$sampleID}{File}{$$infileRef}{SequenceRunType},
+				});
     }
 
     ## Set the number of cores to allocate per sbatch job.
-    $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, $nrCores );  #Make sure that the number of cores does not exceed maximum after incrementing above
+    $nrCores = &NrofCoresPerSbatch({scriptParameterHashRef => \%{$scriptParameterHashRef},
+				    nrCores => $nrCores,
+				   });  #Make sure that the number of cores does not exceed maximum after incrementing above
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
@@ -12610,7 +12711,9 @@ sub MosaikBuild {
     my $time = 10;
     
     ## Set the number of cores to allocate per sbatch job.
-    my $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, scalar( @{ ${$laneHashRef}{$$sampleIDRef} } ));  #Detect the number of cores to use from lanes
+    my $nrCores = &NrofCoresPerSbatch({scriptParameterHashRef => \%{$scriptParameterHashRef},
+				       nrCores => scalar( @{ ${$laneHashRef}{$$sampleIDRef} } ),
+				      });  #Detect the number of cores to use from lanes
     
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
@@ -13260,6 +13363,7 @@ sub FastQC {
     my ($argHashRef) = @_;
 
     ## Default(s)
+    my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     
     ## Flatten argument(s)
@@ -13291,12 +13395,18 @@ sub FastQC {
 
     for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} });$infileCounter++) {  #For all files   
 
+	my $infileRef = \${$infilesLaneNoEndingHashRef}{ $$sampleIDRef }[$infileCounter];  #Alias
+
 	## Adjust the number of cores to be used in the analysis according to sequencing mode requirements.
-	&AdjustNrCoresToSeqMode(\$nrCores, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$$sampleIDRef}{File}{ ${$infilesLaneNoEndingHashRef}{ $$sampleIDRef }[$infileCounter] }{SequenceRunType});
+	&AdjustNrCoresToSeqMode({nrCoresRef => \$nrCores,
+				 sequenceRunTypeRef => \${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{File}{$$infileRef}{SequenceRunType},
+				});
     }
 
     ## Set the number of cores to allocate per sbatch job.
-    $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, $nrCores );  #Make sure that the number of cores does not exceed maximum after incrementing above
+    $nrCores = &NrofCoresPerSbatch({scriptParameterHashRef => \%{$scriptParameterHashRef},
+				    nrCores => $nrCores,
+				   });  #Make sure that the number of cores does not exceed maximum after incrementing above
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
@@ -13337,7 +13447,9 @@ sub FastQC {
 		   });
 
 	my $infile = ${$infileHashRef}{$$sampleIDRef}[$infileCounter];
-	my $fileAtLaneLevel = &RemoveFileEnding(\$infile, ".fastq");
+	my $fileAtLaneLevel = &RemoveFileEnding({fileNameRef => \$infile,
+						 fileEnding => ".fastq",
+						});
 
 	print $FILEHANDLE "fastqc ";
 	print $FILEHANDLE $$tempDirectoryRef."/".$infile." ";  #InFile
@@ -13349,7 +13461,7 @@ sub FastQC {
 	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 	    
 	    &SampleInfoQC({sampleInfoHashRef => \%{$sampleInfoHashRef},
-			   familyID => ${$scriptParameterHashRef}{familyID},
+			   familyID => $$familyIDRef,
 			   sampleID => $$sampleIDRef,
 			   programName => "FastQC",
 			   infile => $infile,
@@ -13371,7 +13483,9 @@ sub FastQC {
 		   });
 
 	my $infile = ${$infileHashRef}{$$sampleIDRef}[$infileCounter];
-	my $fileAtLaneLevel = &RemoveFileEnding(\$infile, ".fastq");
+	my $fileAtLaneLevel = &RemoveFileEnding({fileNameRef => \$infile,
+						 fileEnding => ".fastq",
+						});
 
 	## Copies files from temporary folder to source
 	print $FILEHANDLE "cp -r ";
@@ -13418,6 +13532,7 @@ sub GZipFastq {
     my ($argHashRef) = @_;
 
     ## Default(s)
+    my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     
     ## Flatten argument(s)
@@ -13449,12 +13564,17 @@ sub GZipFastq {
 
     for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all files   
 	
+	my $infileRef = \${$infilesLaneNoEndingHashRef}{ $sampleID }[$infileCounter];  #Alias
 	## Adjust the number of cores to be used in the analysis according to sequencing mode requirements.
-	&AdjustNrCoresToSeqMode(\$nrCores, \${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$sampleID}{File}{ ${$infilesLaneNoEndingHashRef}{ $sampleID }[$infileCounter] }{SequenceRunType});
+	&AdjustNrCoresToSeqMode({nrCoresRef => \$nrCores,
+				 sequenceRunTypeRef => \${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{File}{$$infileRef}{SequenceRunType},
+				});
     }
 
     ## Set the number of cores to allocate per sbatch job.
-    $nrCores = &NrofCoresPerSbatch(\%{$scriptParameterHashRef}, $nrCores );  #Make sure that the number of cores does not exceed maximum after incrementing above
+    $nrCores = &NrofCoresPerSbatch({scriptParameterHashRef => \%{$scriptParameterHashRef},
+				    nrCores => $nrCores,
+				   });  #Make sure that the number of cores does not exceed maximum after incrementing above
     
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => \%{$scriptParameterHashRef},
@@ -13812,15 +13932,21 @@ sub BuildPTCHSMetricPreRequisites {
 
 	my $sampleIDBuildSwitchInfile = ${$parameterHashRef}{ $$familyIDRef }{ $$sampleIDRef }{exomeTargetBedInfileLists}{buildFile};
 	my $sampleIDBuildFileInfile = ${$scriptParameterHashRef}{ $$familyIDRef }{ $$sampleIDRef }{exomeTargetBedInfileLists};
-	my $infileListNoEnding = &RemoveFileEnding(\$sampleIDBuildFileInfile, ${$fileInfoHashRef}{exomeTargetBedInfileLists});  #For comparison of identical filename.bed files, to avoid creating files twice
+	my $infileListNoEnding = &RemoveFileEnding({fileNameRef => \$sampleIDBuildFileInfile,
+						    fileEnding => ${$fileInfoHashRef}{exomeTargetBedInfileLists},
+						   });  #For comparison of identical filename.bed files, to avoid creating files twice
 
 	my $sampleIDBuildSwitchPadded = ${$parameterHashRef}{ $$familyIDRef }{ $$sampleIDRef }{exomeTargetPaddedBedInfileLists}{buildFile};
 	my $sampleIDBuildFilePadded = ${$scriptParameterHashRef}{ $$familyIDRef }{ $$sampleIDRef }{exomeTargetPaddedBedInfileLists};
-	my $paddedInfileListNoEnding = &RemoveFileEnding(\$sampleIDBuildFilePadded , ${$fileInfoHashRef}{exomeTargetPaddedBedInfileLists});  #For comparison of identical filename.bed files, to avoid creating files twice
+	my $paddedInfileListNoEnding = &RemoveFileEnding({fileNameRef => \$sampleIDBuildFilePadded,
+							  fileEnding => ${$fileInfoHashRef}{exomeTargetPaddedBedInfileLists},
+							 });  #For comparison of identical filename.bed files, to avoid creating files twice
 
 	my $sampleIDBuildSwitchPaddedInterval = ${$parameterHashRef}{ $$familyIDRef }{ $$sampleIDRef }{GATKTargetPaddedBedIntervalLists}{buildFile};
 	my $sampleIDBuildFilePaddedInterval = ${$scriptParameterHashRef}{ $$familyIDRef }{ $$sampleIDRef }{GATKTargetPaddedBedIntervalLists};
-	my $paddedIntervalListNoEnding = &RemoveFileEnding(\$sampleIDBuildFilePaddedInterval , ${$fileInfoHashRef}{GATKTargetPaddedBedIntervalLists});  #For comparison of identical filename.bed files, to avoid creating files twice
+	my $paddedIntervalListNoEnding = &RemoveFileEnding({fileNameRef => \$sampleIDBuildFilePaddedInterval,
+							    fileEnding => ${$fileInfoHashRef}{GATKTargetPaddedBedIntervalLists},
+							   });  #For comparison of identical filename.bed files, to avoid creating files twice
 
 	if ( (defined($sampleIDBuildSwitchPadded)) && ($sampleIDBuildSwitchPadded == 1) ) {  #If identical filename.bed and padded files need creation do not build infile_list in separate part of sbatch
 
@@ -15625,8 +15751,11 @@ sub NrofCoresPerSbatch {
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 ##         : $nrCores                => The number of cores to allocate
 
-    my $scriptParameterHashRef = $_[0];
-    my $nrCores = $_[1];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
+    my $nrCores = ${$argHashRef}{nrCores};
     
     if ($nrCores > ${$scriptParameterHashRef}{maximumCores}) {  #Set number of cores depending on how many lanes to process
 	
@@ -16246,7 +16375,9 @@ sub AddTargetlistsToScriptParameter {
 					     sampleIDRef => \$$sampleIDRef,
 					    });
 			    
-			    my $exomeTargetBedFileNoEnding = &RemoveFileEnding(\${$scriptParameterHashRef}{ $$familyIDRef }{$$sampleIDRef}{$parameterName} , ${$fileInfoHashRef}{$parameterName});  #Remove ".fileending" from reference filename
+			    my $exomeTargetBedFileNoEnding = &RemoveFileEnding({fileNameRef => \${$scriptParameterHashRef}{ $$familyIDRef }{$$sampleIDRef}{$parameterName},
+										fileEnding => ${$fileInfoHashRef}{$parameterName},
+									       });  #Remove ".fileending" from reference filename
 			    
 			    ## Check that supplied target file ends with ".bed" and otherwise exists
 			    &CheckTargetExistFileBed({scriptParameterHashRef => \%{$scriptParameterHashRef},
@@ -16731,7 +16862,9 @@ sub CheckParameterFiles {
 					     sampleIDRef =>  \$sampleID,
 					    });
 			    
-			    my $exomeTargetBedFileNoEnding = &RemoveFileEnding(\${$scriptParameterHashRef}{ $$familyIDRef }{$sampleID}{$parameterName}, ${$fileInfoHashRef}{$parameterName});  #Remove ".fileending" from reference filename
+			    my $exomeTargetBedFileNoEnding = &RemoveFileEnding({fileNameRef => \${$scriptParameterHashRef}{ $$familyIDRef }{$sampleID}{$parameterName},
+										fileEnding => ${$fileInfoHashRef}{$parameterName},
+									       });  #Remove ".fileending" from reference filename
 
 			    ## Check that supplied target file ends with ".bed" and otherwise exists
 			    &CheckTargetExistFileBed({scriptParameterHashRef => \%{$scriptParameterHashRef},
@@ -17614,8 +17747,11 @@ sub CheckUniqueIDNs {
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 ##         : $sampleIDArrayRef => Array to loop in for parameter {REF}
 
-    my $scriptParameterHashRef = $_[0];
-    my $sampleIdArrayRef = $_[1];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
+    my $sampleIdArrayRef = ${$argHashRef}{sampleIdArrayRef};
 
     my %seen;  #Hash to test duplicate sampleIDs later
 
@@ -17790,7 +17926,9 @@ sub ParseHumanGenomeReference {
 
 	$logger->warn("MIP cannot detect what kind of humanGenomeReference you have supplied. If you want to automatically set the capture kits used please supply the refrence on this format: [Species].[Source][Version].", "\n");
     }
-    ${$fileInfoHashRef}{humanGenomeReferenceNameNoEnding} = &RemoveFileEnding(\$$humanGenomeReferenceRef, ".fasta");
+    ${$fileInfoHashRef}{humanGenomeReferenceNameNoEnding} = &RemoveFileEnding({fileNameRef => \$$humanGenomeReferenceRef,
+									       fileEnding => ".fasta",
+									      });
     ${$fileInfoHashRef}{humanGenomeCompressed} = &CheckGzipped(\$$humanGenomeReferenceRef);
 }
 
@@ -18331,8 +18469,11 @@ sub RemoveFileEnding {
 ##         : $fileNameRef => File name {REF}
 ##         : $fileEnding  => File ending to be removed
 
-    my $fileNameRef = $_[0];
-    my $fileEnding = $_[1];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $fileNameRef = ${$argHashRef}{fileNameRef};
+    my $fileEnding = ${$argHashRef}{fileEnding};
 
     my $fileNameNoEnding;
     
@@ -18598,7 +18739,9 @@ sub SetTargetFileGeneralBuildParameter {
 	);
     &CheckMandatoryArguments(\%mandatoryArgument, "SetTargetFileGeneralBuildParameter");
     
-    $$sampleIDBuildFileNoEndingRef = &RemoveFileEnding(\$$targetfileRef, ${$fileInfoHashRef}{$parameterName});  #Remove ".fileending" from reference filename
+    $$sampleIDBuildFileNoEndingRef = &RemoveFileEnding({fileNameRef => \$$targetfileRef,
+							fileEnding => ${$fileInfoHashRef}{$parameterName}
+						       });  #Remove ".fileending" from reference filename
     ${$parameterHashRef}{ $$familyIDRef }{$$sampleIDRef}{$parameterName}{buildFile} = 0;  #Build once then done
     $$sampleIDBuildFileRef = $$targetfileRef;
     
@@ -19003,8 +19146,11 @@ sub AdjustNrCoresToSeqMode {
 ##         : $nrCoresRef         => The maximum number of cores to be use before printing "wait" statement {REF}
 ##         : $sequenceRunTypeRef => Type of sequencing [Paired-end|Single-end] {REF}
 
-    my $nrCoresRef = $_[0];
-    my $sequenceRunTypeRef = $_[1];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $nrCoresRef = ${$argHashRef}{nrCoresRef};
+    my $sequenceRunTypeRef = ${$argHashRef}{sequenceRunTypeRef};
     
     if ($$sequenceRunTypeRef eq "Paired-end") {  #Second read direction if present
 
@@ -19266,7 +19412,9 @@ sub ModifyFileEnding {
     my $filePathRef = $_[0];
     my $fileEnding = $_[1];
 
-    my $fileName = &RemoveFileEnding(\$$filePathRef, $fileEnding);
+    my $fileName = &RemoveFileEnding({fileNameRef => \$$filePathRef,
+				      fileEnding => $fileEnding,
+				     });
 
     if (defined($fileName)) {  #Successfully removed file ending using &RemoveFileEnding
 	
@@ -20826,7 +20974,7 @@ sub XargsCommand {
 ##XargsCommand
     
 ##Function : Creates the command line for xargs. Writes to sbatch FILEHANDLE and opens xargs FILEHANDLE
-##Returns  : "xargsFileCounter + 1"
+##Returns  : "xargsFileCounter + 1, $xargsFileName"
 ##Arguments: $FILEHANDLE, $XARGSFILEHANDLE, $fileName, $programInfoPath, $nrCores, $firstCommand, $xargsFileCounter, $memoryAllocation, $javaUseLargePagesRef, $javaTemporaryDirectory, $javaJar
 ##         : $FILEHANDLE             => Sbatch filehandle to write to
 ##         : $XARGSFILEHANDLE        => XARGS filehandle to write to 
@@ -22668,8 +22816,11 @@ sub DetectFounders {
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
 
-    my $scriptParameterHashRef = $_[0];
-    my $sampleInfoHashRef = $_[1];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
+    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
 
     my @founders;
     my $founderCounter = 0;
