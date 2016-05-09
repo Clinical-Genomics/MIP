@@ -9363,7 +9363,7 @@ sub Delly {
 
 sub Manta { 
 
-##Manta2
+##Manta
     
 ##Function : Joint analysis
 ##Returns  : ""
