@@ -4988,6 +4988,7 @@ sub VariantEffectPredictor {
 	    print $XARGSFILEHANDLE "--fasta ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{humanGenomeReference}." ";  #Reference file
 	}
 	print $XARGSFILEHANDLE "--force_overwrite ";  #force the overwrite of the existing file
+	print $XARGSFILEHANDLE "--format vcf ";  #Input is in the VCF format
 	print $XARGSFILEHANDLE "--vcf ";  #Writes output in VCF format.
 	print $XARGSFILEHANDLE "--no_progress ";  #Do not show progress in stderr
 	print $XARGSFILEHANDLE "--fork ".$nrForkes." ";  #Enable forking, using the specified number of forks.
@@ -8446,6 +8447,7 @@ sub SVVariantEffectPredictor {
 	    print $XARGSFILEHANDLE "--fasta ".$$referencesDirectoryRef."/".${$scriptParameterHashRef}{humanGenomeReference}." ";  #Reference file
 	}
 	print $XARGSFILEHANDLE "--force_overwrite ";  #force the overwrite of the existing file
+	print $XARGSFILEHANDLE "--format vcf ";  #Input is in the VCF format
 	print $XARGSFILEHANDLE "--vcf ";  #Writes output in VCF format.
 	print $XARGSFILEHANDLE "--no_progress ";  #Do not show progress in stderr
 	print $XARGSFILEHANDLE "--fork ".$nrForkes." ";  #Enable forking, using the specified number of forks.
