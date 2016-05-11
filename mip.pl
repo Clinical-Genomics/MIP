@@ -3488,7 +3488,7 @@ sub RankVariants {
 	    say $FILEHANDLE "\n## Preprocessing for compatibility with bcfTools v1.3\n";
 	    print $FILEHANDLE "bcftools view ";
 	    print $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf")." ";
-	    print $FILEHANDLE "> ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType."_tmp.vcf");  #Outfile
+	    say $FILEHANDLE "> ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType."_tmp.vcf"), "\n";  #Outfile
 
 	    &JavaCore({FILEHANDLE => $FILEHANDLE,
 		       memoryAllocation => "Xmx12g",
