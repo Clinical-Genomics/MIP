@@ -147,6 +147,10 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pCsv/--pCombineStructuralVariantCallSets Combine variant call sets (defaults to "1" (=yes))
                  -csvvtd/--svVTDecompose Split multi allelic records into single records (defaults to "1" (=yes))
                  -csvbtv/--svBcfToolsViewFilter Include structural variants with PASS in FILTER column (defaults to "1" (=yes))
+                 -csvvan/--svVCFAnno Annotate structural variants (defaults to "1" (=yes)
+                 -csvval/--svVCFAnnoLua vcfAnno lua postscripting file (defaults to "")
+                 -csvvac/--svVCFAnnoConfig vcfAnno toml config (defaults to "")
+                 -csvvah/--svVCFAnnotationHeaderLinesFile Adjust for postscript by adding required header lines to vcf (defaults to "")
                  -csvgmf/--svGenmodFilter Remove common structural variants from vcf (defaults to "1" (=yes))
                  -csvgfr/--svGenmodFilter1000G Genmod annotate structural variants from 1000G reference (defaults to "ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz")
                  -csvgft/--svGenmodFilterThreshold Threshold for filtering structural variants (defaults to "0.10")
@@ -492,6 +496,10 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'fitmsp|findTranslocationsMinimumSuppotingPairs=n' => \$parameter{findTranslocationsMinimumSuppotingPairs}{value},
 	   'csvvtd|svVTDecompose=n' => \$parameter{svVTDecompose}{value},  #VT decompose (split multiallelic variants)
 	   'csvbtv|svBcfToolsViewFilter=n' => \$parameter{svBcfToolsViewFilter}{value},  #Include structural variants with PASS in FILTER column
+	   'csvvan|svVCFAnno=n' => \$parameter{svVCFAnno}{value},
+	   'csvval|svVCFAnnoLua:s' => \$parameter{svVCFAnnoLua}{value},  #Lua file postscripting
+	   'csvvac|svVCFAnnoConfig:s' => \$parameter{svVCFAnnoConfig}{value},  #Toml config of what to annotate
+	   'csvvah|svVCFAnnotationHeaderLinesFile:s' => \$parameter{svVCFAnnotationHeaderLinesFile}{value},  #Adjust for postscript by adding required header lines to vcf
 	   'csvgmf|svGenmodFilter=n'  => \$parameter{svGenmodFilter}{value},  #Remove common structural variants from vcf 
 	   'csvgfr|svGenmodFilter1000G:s'  => \$parameter{svGenmodFilter1000G}{value},  #Genmod annotate structural variants from 1000G reference
 	   'csvgft|svGenmodFilterThreshold:s'  => \$parameter{svGenmodFilterThreshold}{value},  #Threshold for filtering structural variants
@@ -8812,6 +8820,34 @@ sub CombineStructuralVariantCallSets {
 	print $FILEHANDLE "-t ".${$scriptParameterHashRef}{svGenmodFilterThreshold}." ";  #Threshold for filtering variants
 	print $FILEHANDLE "- ";  #InStream
 	say $FILEHANDLE "> ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$altFileEnding.".vcf"), "\n";  #OutFile
+    }
+
+    ## Annotate 1000G structural variants
+    if (${$scriptParameterHashRef}{svVCFAnno} > 0) {
+	
+	say $FILEHANDLE "## Annotate 1000G structural variants";
+	print $FILEHANDLE "vcfanno ";  #Program
+	print $FILEHANDLE "-lua ".catfile($$referencesDirectoryRef, ${$scriptParameterHashRef}{svVCFAnnoLua})." ";  #Increase output verbosity
+	print $FILEHANDLE "-ends ";  #Annotate the start and end as well as the interval itself
+	print $FILEHANDLE catfile($$referencesDirectoryRef, ${$scriptParameterHashRef}{svVCFAnnoConfig})." ";  #Config
+	print $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$altFileEnding.".vcf")." ";
+	print $FILEHANDLE "| ";
+	print $FILEHANDLE q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", @F), "\n"}' ?;  #Remove "[" and "]" from INFO as it breaks vcf format
+
+	$altFileEnding .= "_vcfAnno";  #Update ending
+
+	say $FILEHANDLE "> ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$altFileEnding.".vcf"), "\n";
+	
+
+	say $FILEHANDLE "## Add header for 1000G annotation of structural variants";
+	print $FILEHANDLE "bcftools annotate ";
+	print $FILEHANDLE "--header-lines ".catfile($$referencesDirectoryRef, ${$scriptParameterHashRef}{svVCFAnnotationHeaderLinesFile})." ";
+	print $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$altFileEnding.".vcf")." ";
+
+	$altFileEnding .= "_bcfToolsAnnotate";  #Update ending
+
+	say $FILEHANDLE "> ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$altFileEnding.".vcf"), "\n";
+
     }
 
     if ($altFileEnding ne "") {  #Then we have something to rename 

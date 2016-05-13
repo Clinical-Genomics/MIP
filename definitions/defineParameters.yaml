@@ -660,6 +660,36 @@ svBcfToolsViewFilter:
   dataType: SCALAR
   default: 1
   type: programArgument
+svVCFAnno:
+  associatedProgram:
+   - pCombineStructuralVariantCallSets
+  dataType: SCALAR
+  default: 1
+  type: programArgument
+svVCFAnnoLua:
+  associatedProgram:
+   - pCombineStructuralVariantCallSets
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  existsCheck: file
+  reference: referencesDir
+  type: path
+svVCFAnnoConfig:
+  associatedProgram:
+   - pCombineStructuralVariantCallSets
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  existsCheck: file
+  reference: referencesDir
+  type: path
+svVCFAnnotationHeaderLinesFile:
+  associatedProgram:
+   - pCombineStructuralVariantCallSets
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  existsCheck: file
+  reference: referencesDir
+  type: path
 svGenmodFilter:
   associatedProgram:
    - pCombineStructuralVariantCallSets

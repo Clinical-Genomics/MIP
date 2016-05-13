@@ -82,6 +82,7 @@ $parameter{'bioConda'}{'manta'} = "0.29.3";
 $parameter{'bioCondaMantaPatch'} = "-0";
 $parameter{'bioConda'}{'multiqc'} = "0.5";
 $parameter{'bioConda'}{'plink2'} = "1.90b3.35";
+$parameter{'bioConda'}{'vcfanno'} = "0.0.11";
 $parameter{'bioConda'}{'gcc'} = "4.8.5";
 $parameter{'bioConda'}{'cmake'} = "3.3.1";
 $parameter{'bioConda'}{'boost'} = "1.57.0";
