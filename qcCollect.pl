@@ -787,6 +787,8 @@ sub RegExpToYAML {
 
     $regExp{'Manta'}{'Version'} = q?perl -nae 'if($_=~/GenerateSVCandidates\s+(\S+)/) {print $1;last}' ?; #Collect Manta version
 
+    $regExp{'SVCombineVariantCallSets'}{'VcfAnno'} = q?perl -nae 'if($_=~/vcfanno\sversion\s(\S+)/) {print $1;last;}' ?; #Collect SVVCFAnno version
+
     $regExp{'SVVariantEffectPredictor'}{'Version'} = q?perl -nae 'if($_=~/##VEP=(\w+)/) {print $1;last;}' ?; #Collect SVVariantEffectPredictor version
 
     $regExp{'SVVariantEffectPredictor'}{'Cache'} = q?perl -nae 'if($_=~/##VEP=\w+\s+cache=(\S+)/) {print $1;last;}' ?; #Collect SVVariantEffectPredictor cache directory

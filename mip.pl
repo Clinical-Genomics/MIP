@@ -144,17 +144,17 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pMna/--pManta Structural variant calling using Manta (defaults to "1" (=yes))
                -pFit/--pFindTranslocations Structural variant calling using FT (defaults to "0" (=no))
                  -fitmsp/--findTranslocationsMinimumSuppotingPairs The minimum number of supporting reads (defaults to "6")
-               -pCsv/--pCombineStructuralVariantCallSets Combine variant call sets (defaults to "1" (=yes))
-                 -csvvtd/--svVTDecompose Split multi allelic records into single records (defaults to "1" (=yes))
-                 -csvbtv/--svBcfToolsViewFilter Include structural variants with PASS in FILTER column (defaults to "1" (=yes))
-                 -csvvan/--svVCFAnno Annotate structural variants (defaults to "1" (=yes)
-                 -csvval/--svVCFAnnoLua vcfAnno lua postscripting file (defaults to "")
-                 -csvvac/--svVCFAnnoConfig vcfAnno toml config (defaults to "")
-                 -csvvah/--svVCFAnnotationHeaderLinesFile Adjust for postscript by adding required header lines to vcf (defaults to "")
-                 -csvgmf/--svGenmodFilter Remove common structural variants from vcf (defaults to "1" (=yes))
-                 -csvgfr/--svGenmodFilter1000G Genmod annotate structural variants from 1000G reference (defaults to "ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz")
-                 -csvgft/--svGenmodFilterThreshold Threshold for filtering structural variants (defaults to "0.10")
-                 -csvbcf/--combineStructuralVariantCallSetsBCFFile Produce a bcf from the combineStructuralVariantCallSet vcf (defaults to "1" (=yes))
+               -pSvC/--pSVCombineVariantCallSets Combine variant call sets (defaults to "1" (=yes))
+                 -svcvtd/--svVTDecompose Split multi allelic records into single records (defaults to "1" (=yes))
+                 -svcbtv/--svBcfToolsViewFilter Include structural variants with PASS in FILTER column (defaults to "1" (=yes))
+                 -svcvan/--svVCFAnno Annotate structural variants (defaults to "1" (=yes)
+                 -svcval/--svVCFAnnoLua vcfAnno lua postscripting file (defaults to "")
+                 -svcvac/--svVCFAnnoConfig vcfAnno toml config (defaults to "")
+                 -svcvah/--svVCFAnnotationHeaderLinesFile Adjust for postscript by adding required header lines to vcf (defaults to "")
+                 -svcgmf/--svGenmodFilter Remove common structural variants from vcf (defaults to "1" (=yes))
+                 -svcgfr/--svGenmodFilter1000G Genmod annotate structural variants from 1000G reference (defaults to "ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz")
+                 -svcgft/--svGenmodFilterThreshold Threshold for filtering structural variants (defaults to "0.10")
+                 -svcbcf/--svCombineVariantCallSetsBCFFile Produce a bcf from the combineStructuralVariantCallSet vcf (defaults to "1" (=yes))
                -pSvv/--pSVVariantEffectPredictor Annotate SV variants using VEP (defaults to "1" (=yes))
                -svvepf/--svVepFeatures VEP features (defaults to ("hgvs","symbol","numbers","sift","polyphen","humdiv","domains","protein","ccds","uniprot","biotype","regulatory", "tsl", "canonical", "per_gene", "appris"); comma sep)
                -svveppl/--svVepPlugins VEP plugins (defaults to ("UpDownDistance, LoFtool, LoF"); comma sep)
@@ -494,17 +494,17 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'pMna|pManta=n' => \$parameter{pManta}{value},
 	   'pFit|pFindTranslocations=n' => \$parameter{pFindTranslocations}{value},
 	   'fitmsp|findTranslocationsMinimumSuppotingPairs=n' => \$parameter{findTranslocationsMinimumSuppotingPairs}{value},
-	   'csvvtd|svVTDecompose=n' => \$parameter{svVTDecompose}{value},  #VT decompose (split multiallelic variants)
-	   'csvbtv|svBcfToolsViewFilter=n' => \$parameter{svBcfToolsViewFilter}{value},  #Include structural variants with PASS in FILTER column
-	   'csvvan|svVCFAnno=n' => \$parameter{svVCFAnno}{value},
-	   'csvval|svVCFAnnoLua:s' => \$parameter{svVCFAnnoLua}{value},  #Lua file postscripting
-	   'csvvac|svVCFAnnoConfig:s' => \$parameter{svVCFAnnoConfig}{value},  #Toml config of what to annotate
-	   'csvvah|svVCFAnnotationHeaderLinesFile:s' => \$parameter{svVCFAnnotationHeaderLinesFile}{value},  #Adjust for postscript by adding required header lines to vcf
-	   'csvgmf|svGenmodFilter=n'  => \$parameter{svGenmodFilter}{value},  #Remove common structural variants from vcf 
-	   'csvgfr|svGenmodFilter1000G:s'  => \$parameter{svGenmodFilter1000G}{value},  #Genmod annotate structural variants from 1000G reference
-	   'csvgft|svGenmodFilterThreshold:s'  => \$parameter{svGenmodFilterThreshold}{value},  #Threshold for filtering structural variants
-	   'pCsv|pCombineStructuralVariantCallSets=n' => \$parameter{pCombineStructuralVariantCallSets}{value},  #Combine structural variant call sets
-	   'csvbcf|combineStructuralVariantCallSetsBCFFile=n' => \$parameter{combineStructuralVariantCallSetsBCFFile}{value},  #Produce compressed vcf
+	   'pSvC|pSVCombineVariantCallSets=n' => \$parameter{pSVCombineVariantCallSets}{value},  #Combine structural variant call sets
+	   'svcvtd|svVTDecompose=n' => \$parameter{svVTDecompose}{value},  #VT decompose (split multiallelic variants)
+	   'svcbtv|svBcfToolsViewFilter=n' => \$parameter{svBcfToolsViewFilter}{value},  #Include structural variants with PASS in FILTER column
+	   'svcvan|svVCFAnno=n' => \$parameter{svVCFAnno}{value},
+	   'svcval|svVCFAnnoLua:s' => \$parameter{svVCFAnnoLua}{value},  #Lua file postscripting
+	   'svcvac|svVCFAnnoConfig:s' => \$parameter{svVCFAnnoConfig}{value},  #Toml config of what to annotate
+	   'svcvah|svVCFAnnotationHeaderLinesFile:s' => \$parameter{svVCFAnnotationHeaderLinesFile}{value},  #Adjust for postscript by adding required header lines to vcf
+	   'svcgmf|svGenmodFilter=n'  => \$parameter{svGenmodFilter}{value},  #Remove common structural variants from vcf 
+	   'svcgfr|svGenmodFilter1000G:s'  => \$parameter{svGenmodFilter1000G}{value},  #Genmod annotate structural variants from 1000G reference
+	   'svcgft|svGenmodFilterThreshold:s'  => \$parameter{svGenmodFilterThreshold}{value},  #Threshold for filtering structural variants
+	   'svcbcf|svCombineVariantCallSetsBCFFile=n' => \$parameter{svCombineVariantCallSetsBCFFile}{value},  #Produce compressed vcf
 	   'pSvv|pSVVariantEffectPredictor=n' => \$parameter{pSVVariantEffectPredictor}{value},
 	   'svvepf|svVepFeatures:s'  => \@{$parameter{svVepFeatures}{value}},  #Comma separated list
 	   'svvepl|svVepPlugins:s'  => \@{$parameter{svVepPlugins}{value}},  #Comma separated list
@@ -1771,19 +1771,19 @@ if ($scriptParameter{pFindTranslocations} > 0) {  #Run FindTranslocations
 }
 
 
-if ($scriptParameter{pCombineStructuralVariantCallSets} > 0) {  #Run CombineVariantCallSets. For all SampleIDs and StructuralVariantCallers
+if ($scriptParameter{pSVCombineVariantCallSets} > 0) {  #Run CombineVariantCallSets. For all SampleIDs and StructuralVariantCallers
 
-    $logger->info("[CombineStructuralVariantCallSets]\n");
+    $logger->info("[SVCombineVariantCallSets]\n");
 
-    &CombineStructuralVariantCallSets({parameterHashRef => \%parameter,
-				       scriptParameterHashRef => \%scriptParameter,
-				       sampleInfoHashRef => \%sampleInfo,
-				       fileInfoHashRef => \%fileInfo,
-				       infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
-				       laneHashRef => \%lane,
-				       jobIDHashRef => \%jobID,
-				       programName => "CombineStructuralVariantCallSets",
-				      });
+    &SVCombineVariantCallSets({parameterHashRef => \%parameter,
+			       scriptParameterHashRef => \%scriptParameter,
+			       sampleInfoHashRef => \%sampleInfo,
+			       fileInfoHashRef => \%fileInfo,
+			       infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
+			       laneHashRef => \%lane,
+			       jobIDHashRef => \%jobID,
+			       programName => "SVCombineVariantCallSets",
+			      });
 }
 
 if ($scriptParameter{pSVVariantEffectPredictor} > 0) {  #Run SVVariantEffectPredictor. Done per family
@@ -5821,7 +5821,7 @@ sub VT {
 
 	    $altFileEnding = "_noStar";
 	    print $XARGSFILEHANDLE catfile($removeStarRegExp.$$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.".vcf")." ";
-	    print $XARGSFILEHANDLE "> ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.".vcf".$altFileEnding)." ";
+	    print $XARGSFILEHANDLE "> ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.$altFileEnding.".vcf")." ";
 	    print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    print $XARGSFILEHANDLE "; ";
 	}
@@ -5839,7 +5839,7 @@ sub VT {
 		print $XARGSFILEHANDLE "--max_af ";  #If the MAX AF should be annotated
 	    }
 	    print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutStream
-	    print $XARGSFILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.".vcf".$altFileEnding)." ";
+	    print $XARGSFILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.$altFileEnding.".vcf")." ";
 	    print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    print $XARGSFILEHANDLE "| ";
 
@@ -5850,13 +5850,13 @@ sub VT {
 	    print $XARGSFILEHANDLE "filter ";  #Command
 	    print $XARGSFILEHANDLE "-t ".${$scriptParameterHashRef}{VTgenmodFilterThreshold}." ";  #Threshold for filtering variants
 	    print $XARGSFILEHANDLE "- ";  #InStream
-	    print $XARGSFILEHANDLE "> ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.".vcf".$altFileEnding)." ";  #OutFile
+	    print $XARGSFILEHANDLE "> ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.$altFileEnding.".vcf")." ";  #OutFile
 	    print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    print $XARGSFILEHANDLE "; ";
 	}
 
 	print $XARGSFILEHANDLE "mv ";
-	print $XARGSFILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.".vcf".$altFileEnding)." ";
+	print $XARGSFILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.$altFileEnding.".vcf")." ";
 	say $XARGSFILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.".vcf")." ";
     }
 
@@ -8405,7 +8405,7 @@ sub SVVariantEffectPredictor {
     ${$parameterHashRef}{"p".$programName}{inDirectory} = $outFamilyDirectory;  #Used downstream
 
     ## Assign fileTags
-    my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{pCombineStructuralVariantCallSets}{fileTag};
+    my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{pSVCombineVariantCallSets}{fileTag};
     my $outfileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"p".$programName}{fileTag};
 
     my $coreCounter = 1;
@@ -8559,9 +8559,9 @@ sub SVVariantEffectPredictor {
 }
 
 
-sub CombineStructuralVariantCallSets { 
+sub SVCombineVariantCallSets { 
 
-##CombineStructuralVariantCallSets
+##SVCombineVariantCallSets
     
 ##Function : CombineVariants to combine all structural variants call from different callers.
 ##Returns  : ""
@@ -8615,17 +8615,18 @@ sub CombineStructuralVariantCallSets {
     my @parallelChains;  #Stores the parallel chains that jobIds should be inherited from
     
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header    
-    my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
-					    jobIDHashRef => $jobIDHashRef,
-					    FILEHANDLE => $FILEHANDLE,
-					    directoryID => $$familyIDRef,
-					    programName => $programName,
-					    programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
-					    callType => $callType,
-					    processTime => 2,
-					    tempDirectory => $$tempDirectoryRef,
-					   });
-    
+    my ($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
+							      jobIDHashRef => $jobIDHashRef,
+							      FILEHANDLE => $FILEHANDLE,
+							      directoryID => $$familyIDRef,
+							      programName => $programName,
+							      programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
+							      callType => $callType,
+							      processTime => 2,
+							      tempDirectory => $$tempDirectoryRef,
+							     });
+    my ($volume, $directories, $stderrFile) = File::Spec->splitpath($programInfoPath.".stderr.txt");  #Split to enable submission to &SampleInfoQC later
+
     ## Assign directories
     my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
     ${$parameterHashRef}{"p".$programName}{inDirectory} = $outFamilyDirectory;  #Used downstream
@@ -8838,6 +8839,16 @@ sub CombineStructuralVariantCallSets {
 
 	say $FILEHANDLE "> ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$altFileEnding.".vcf"), "\n";
 	
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 2) ) {
+
+	    &SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
+			   familyID => ${$scriptParameterHashRef}{familyID},
+			   programName => "SVCombineVariantCallSets",
+			   outDirectory => $directories,
+			   outfileEnding => $stderrFile,
+			   outDataType => "infoDirectory"
+			  });
+	}
 
 	say $FILEHANDLE "## Add header for 1000G annotation of structural variants";
 	print $FILEHANDLE "bcftools annotate ";
@@ -8858,7 +8869,7 @@ sub CombineStructuralVariantCallSets {
 	say $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.".vcf"), "\n";
     }
     
-    if (${$scriptParameterHashRef}{combineStructuralVariantCallSetsBCFFile} == 1) {
+    if (${$scriptParameterHashRef}{svCombineVariantCallSetsBCFFile} == 1) {
 	
 	&VcfToBcf({infile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType),
 		   FILEHANDLE => $FILEHANDLE,
@@ -8886,7 +8897,7 @@ sub CombineStructuralVariantCallSets {
 	
 	${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{SVVCFFile}{ReadyVcf}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.".vcf");	
 
-	if (${$scriptParameterHashRef}{combineStructuralVariantCallSetsBCFFile} eq 1) {
+	if (${$scriptParameterHashRef}{svCombineVariantCallSetsBCFFile} eq 1) {
 
 	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{SVBCFFile}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.".bcf");
 	}

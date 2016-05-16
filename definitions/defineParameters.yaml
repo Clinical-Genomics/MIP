@@ -578,7 +578,7 @@ pCNVnator:
    - MIP
   chain: SVCNV
   dataType: SCALAR
-  default: 1
+  default: 0
   fileTag: _cnvnator
   programNamePath:
    - cnvnator
@@ -599,7 +599,7 @@ pDelly:
    - MIP
   chain: SVDEL
   dataType: SCALAR
-  default: 1
+  default: 0
   fileTag: _delly
   programNamePath:
    - delly
@@ -637,7 +637,7 @@ findTranslocationsMinimumSuppotingPairs:
   dataType: SCALAR
   default: 6
   type: programArgument
-pCombineStructuralVariantCallSets:
+pSVCombineVariantCallSets:
   associatedProgram:
    - MIP
   chain: SV
@@ -650,25 +650,25 @@ pCombineStructuralVariantCallSets:
   type: program
 svVTDecompose:
   associatedProgram:
-   - pCombineStructuralVariantCallSets
+   - pSVCombineVariantCallSets
   dataType: SCALAR
   default: 1
   type: programArgument
 svBcfToolsViewFilter:
   associatedProgram:
-   - pCombineStructuralVariantCallSets
+   - pSVCombineVariantCallSets
   dataType: SCALAR
   default: 1
   type: programArgument
 svVCFAnno:
   associatedProgram:
-   - pCombineStructuralVariantCallSets
+   - pSVCombineVariantCallSets
   dataType: SCALAR
   default: 1
   type: programArgument
 svVCFAnnoLua:
   associatedProgram:
-   - pCombineStructuralVariantCallSets
+   - pSVCombineVariantCallSets
   buildFile: noAutoBuild
   dataType: SCALAR
   existsCheck: file
@@ -676,7 +676,7 @@ svVCFAnnoLua:
   type: path
 svVCFAnnoConfig:
   associatedProgram:
-   - pCombineStructuralVariantCallSets
+   - pSVCombineVariantCallSets
   buildFile: noAutoBuild
   dataType: SCALAR
   existsCheck: file
@@ -684,7 +684,7 @@ svVCFAnnoConfig:
   type: path
 svVCFAnnotationHeaderLinesFile:
   associatedProgram:
-   - pCombineStructuralVariantCallSets
+   - pSVCombineVariantCallSets
   buildFile: noAutoBuild
   dataType: SCALAR
   existsCheck: file
@@ -692,13 +692,13 @@ svVCFAnnotationHeaderLinesFile:
   type: path
 svGenmodFilter:
   associatedProgram:
-   - pCombineStructuralVariantCallSets
+   - pSVCombineVariantCallSets
   dataType: SCALAR
   default: 1
   type: programArgument
 svGenmodFilter1000G:
   associatedProgram:
-   - pCombineStructuralVariantCallSets
+   - pSVCombineVariantCallSets
   buildFile: noAutoBuild
   dataType: SCALAR
   default: ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
@@ -707,13 +707,13 @@ svGenmodFilter1000G:
   type: path
 svGenmodFilterThreshold:
   associatedProgram:
-   - pCombineStructuralVariantCallSets
+   - pSVCombineVariantCallSets
   dataType: SCALAR
   default: 0.10
   type: programArgument
-combineStructuralVariantCallSetsBCFFile:
+svCombineVariantCallSetsBCFFile:
   associatedProgram:
-   - pCombineStructuralVariantCallSets
+   - pSVCombineVariantCallSets
   dataType: SCALAR
   default: 1
   type: programArgument
