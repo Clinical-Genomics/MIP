@@ -76,7 +76,6 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -jul/--javaUseLargePages Use large page memory. (-XX, hence option considered not stable and are subject to change without notice, but can be consiered when faced with Java Runtime Environment Memory issues)
                -nrm/--nodeRamMemory The RAM memory size of the node(s) in GigaBytes (Defaults to 24)
                -sen/--sourceEnvironmentCommand Source environment command in sbatch scripts (defaults to "")
-               -sab/--sambambaVersion Version of sambamba (defaults to "v0.5.9")
 
                -ges/--genomicSet Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
                -rio/--reduceIO Run consecutive models at nodes (defaults to "1" (=yes))
@@ -438,7 +437,6 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'dra|dryRunAll=i' => \$parameter{dryRunAll}{value},
 	   'tmd|tempDirectory:s' => \$parameter{tempDirectory}{value},
 	   'sen|sourceEnvironmentCommand=s{,}' => \@{$parameter{sourceEnvironmentCommand}{value}},
-	   'sab|sambambaVersion:s' => \$parameter{sambambaVersion}{value},
 	   'jul|javaUseLargePages:s' => \$parameter{javaUseLargePages}{value},
 	   'nrm|nodeRamMemory=n' => \$parameter{nodeRamMemory}{value},  #Per node
            'ges|genomicSet:s' => \$parameter{genomicSet}{value},  #Selection of relevant regions post alignment and sort
@@ -7656,10 +7654,11 @@ sub SambambaDepth {
     
     ## SambambaDepth
     say $FILEHANDLE "## Annotating bed from alignment";
-    print $FILEHANDLE "sambamba_".${$scriptParameterHashRef}{sambambaVersion}." ";  #Program
+    print $FILEHANDLE "sambamba ";  #Program
     print $FILEHANDLE "depth ";  #Sub command
     print $FILEHANDLE "region "; #Mode
     print $FILEHANDLE "--regions ".catfile($$referencesDirectoryRef, ${$scriptParameterHashRef}{sambambaDepthBed})." ";  #Region to calculate coverage on
+    print $FILEHANDLE "--fix-mate-overlaps ";
     print $FILEHANDLE "--min-base-quality ".${$scriptParameterHashRef}{sambambaDepthBaseQuality}." ";  #The minimum base quality to include in analysis
     print $FILEHANDLE q?--filter '?;
     print $FILEHANDLE "mapping_quality >= ".${$scriptParameterHashRef}{sambambaDepthMappingQuality}." ";  #The minimum mapping quality to include in analysis
@@ -7691,7 +7690,7 @@ sub SambambaDepth {
 			 });
     say $FILEHANDLE "wait", "\n";
     
-    if ( (${$scriptParameterHashRef}{pSambambaDepth} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{pSambambaDepth} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 2) ) {
 	
 	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{Program}{$programName}{$infile}{Bed}{Path} = catfile($outSampleDirectory, $infile.$outfileTag.".bed");
     }
@@ -8839,7 +8838,7 @@ sub SVCombineVariantCallSets {
 
 	say $FILEHANDLE "> ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$altFileEnding.".vcf"), "\n";
 	
-	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 2) ) {
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 
 	    &SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
 			   familyID => ${$scriptParameterHashRef}{familyID},
@@ -11134,7 +11133,7 @@ sub SambambaMarkduplicates {
 							 programInfoPath => $programInfoPath,
 							 nrCores => $nrCores,
 							 xargsFileCounter => $xargsFileCounter,
-							 firstCommand => "sambamba_".${$scriptParameterHashRef}{sambambaVersion}." ",  #Program
+							 firstCommand => "sambamba ",  #Program
 							});
     
     for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{contigsSizeOrdered}});$contigsCounter++) {
@@ -11144,12 +11143,15 @@ sub SambambaMarkduplicates {
 	print $XARGSFILEHANDLE "markdup ";
 	print $XARGSFILEHANDLE "--tmpdir=".${$scriptParameterHashRef}{tempDirectory}." ";  #Directory for storing intermediate files
 	print $XARGSFILEHANDLE "--show-progress ";  #Show progressbar in STDERR
+	print $XARGSFILEHANDLE "--hash-table-size=1500000 ";
+	print $XARGSFILEHANDLE "--overflow-list-size=1500000 "; 
+	print $XARGSFILEHANDLE "--io-buffer-size=2048 "; #Two buffers of BUFFER_SIZE *megabytes* each are used for reading and writing BAM during the second pass
 	print $XARGSFILEHANDLE catfile($$tempDirectoryRef, $infile.$infileTag."_".$$contigRef.".bam")." ";;  #InFile
 	print $XARGSFILEHANDLE catfile($$tempDirectoryRef, $infile.$outfileTag."_".$$contigRef.".bam")." ";  #OutFile
 	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	print $XARGSFILEHANDLE "; ";
 	
-	print $XARGSFILEHANDLE "sambamba_".${$scriptParameterHashRef}{sambambaVersion}." ";  #Program
+	print $XARGSFILEHANDLE "sambamba ";  #Program
 	print $XARGSFILEHANDLE "flagstat ";
 	print $XARGSFILEHANDLE catfile($$tempDirectoryRef, $infile.$outfileTag."_".$$contigRef.".bam")." ";  #OutFile
 	print $XARGSFILEHANDLE "> ".catfile($$tempDirectoryRef, $infile.$outfileTag."_".$$contigRef."_metric")." ";  #Metric file 
@@ -12378,7 +12380,7 @@ sub BWAMem {
 	    print $FILEHANDLE "-@ ".${$scriptParameterHashRef}{maximumCores}." ";  #Number of threads 
 	    print $FILEHANDLE "- ";  #/dev/stdin
 	    print $FILEHANDLE "| ";
-	    print $FILEHANDLE "sambamba_".${$scriptParameterHashRef}{sambambaVersion}." ";  #Program
+	    print $FILEHANDLE "sambamba ";  #Program
 	    print $FILEHANDLE "sort ";  #Command
 	    print $FILEHANDLE "-m ".${$scriptParameterHashRef}{bwaSambambaSortMemoryLimit}." ";  #Memory limit
 	    print $FILEHANDLE "--tmpdir=".$$tempDirectoryRef." ";  #Directory for storing intermediate files
@@ -12406,7 +12408,7 @@ sub BWAMem {
 	    if (${$scriptParameterHashRef}{bwaMemCram} == 1) {
 
 		say $FILEHANDLE "## Create CRAM file from BAM";
-		print $FILEHANDLE "sambamba_".${$scriptParameterHashRef}{sambambaVersion}." ";  #Program
+		print $FILEHANDLE "sambamba ";  #Program
 		print $FILEHANDLE "view ";  #Commmand
 		print $FILEHANDLE "-f cram "; #Write output to CRAM-format
 		print $FILEHANDLE "-h ";  #print header before reads
@@ -21203,7 +21205,7 @@ sub SplitBAMSambamba {
     ## Default(s)
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
-    my $firstCommand = ${$argHashRef}{firstCommand} //= "sambamba_".${$argHashRef}{scriptParameterHashRef}{sambambaVersion};
+    my $firstCommand = ${$argHashRef}{firstCommand} //= "sambamba ";
     
     ## Flatten argument(s)
     my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
@@ -21534,11 +21536,7 @@ sub CheckCommandinPath {
 		foreach my $program (@{ $programNamePathsArrayRef }) {
 		  
 		    unless($seen{$program}) { 
-		
-			if($program eq "sambamba") {  #Special case
 
-			    $program .= "_".${$scriptParameterHashRef}{sambambaVersion};
-			}
 			if(can_run($program)) {  #IPC::Cmd
 			    
 			    $logger->info("ProgramCheck: ".$program." installed\n");
@@ -21763,11 +21761,21 @@ sub AddToSampleInfo {
 	    ${$sampleInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{Program}{PicardTools}{Version} = $ret;
 	}
     }
+    if ( (${$scriptParameterHashRef}{pBwaMem} == 1) || (${$scriptParameterHashRef}{pSambambaDepth} == 1) || (${$scriptParameterHashRef}{pSambambaMarkduplicates} == 1)) {  #To enable addition of version to sampleInfo as Sambamba does nit generate version tag in output
+	
+	if (${$scriptParameterHashRef}{dryRunAll} == 0) {
+	    
+	    my $regExp = q?perl -nae 'if($_=~/sambamba\s(\S+)/) {print $1;last;}'?;
+	    my $ret = (`sambamba 2>&1 | $regExp`);
+	    chomp($ret);
+	    ${$sampleInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{Program}{Sambamba}{Version} = $ret;
+	}
+    }
     if (defined(${$scriptParameterHashRef}{pCNVnator})) {  #To enable addition of version to sampleInfo
 	
 	if ( (${$scriptParameterHashRef}{pCNVnator} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 
-	    my $regExp = q?perl -nae 'if($_=~/CNVnator\s+(\S+)/) {print $1}'?;
+	    my $regExp = q?perl -nae 'if($_=~/CNVnator\s+(\S+)/) {print $1;last;}'?;
 	    my $ret = (`cnvnator 2>&1 | $regExp`);
 	    chomp($ret);
 	    ${$sampleInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{Program}{CNVnator}{Version} = $ret;

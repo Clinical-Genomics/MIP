@@ -153,12 +153,6 @@ reduceIO:
   dataType: SCALAR
   default: 1
   type: MIP
-sambambaVersion:
-  associatedProgram:
-   - MIP
-  dataType: SCALAR
-  default: v0.5.9
-  type: MIP
 printProgramMode:
   associatedProgram:
    - MIP
