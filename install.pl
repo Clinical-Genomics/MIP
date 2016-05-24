@@ -64,6 +64,8 @@ $parameter{condaEnvironment} = "mip";
 $parameter{condaPath} = catdir($ENV{HOME}, "miniconda");
 
 $parameter{bioConda}{bwa} = "0.7.13";
+$parameter{bioConda}{bwakit} = "0.7.12";
+$parameter{bioCondaBwakitPatch} = "-0";  #For correct softlinking in share and bin in conda env
 $parameter{bioConda}{fastqc} = "0.11.5";
 $parameter{bioConda}{cramtools} = "3.0.b47";
 $parameter{bioConda}{samtools} = "1.3";
@@ -84,7 +86,6 @@ $parameter{bioCondaMantaPatch} = "-0";
 $parameter{bioConda}{multiqc} = "0.6";
 $parameter{bioConda}{plink2} = "1.90b3.35";
 $parameter{bioConda}{vcfanno} = "0.0.11";
-$parameter{bioConda}{vcfTools} = "0.1.14";
 $parameter{bioConda}{gcc} = "4.8.5";
 $parameter{bioConda}{cmake} = "3.3.1";
 $parameter{bioConda}{boost} = "1.57.0";
@@ -104,6 +105,7 @@ $parameter{perlModules} = ["Modern::Perl",  #MIP
 			   "LWP::Simple",  # VEP
 			   "LWP::Protocol::https",  # VEP
 			   "Archive::Zip",  # VEP
+			   "Archive::Extract",  #VEP
 			   "DBI",  # VEP
 			   "JSON",  # VEP
 			   "DBD::mysql",  # VEP
@@ -220,10 +222,6 @@ if ($parameter{preferBioConda} != 1) {
 	
 	    &Plink2(\%parameter, $BASHFILEHANDLE);
 	}
-	if ( ( grep {$_ eq "vcfTools"} @{$parameter{selectPrograms}} ) ) { #If element is part of array
-	    
-	    &VcfTools(\%parameter, $BASHFILEHANDLE);
-	}
     }
     else {
 	
@@ -238,13 +236,15 @@ if ($parameter{preferBioConda} != 1) {
 	&SnpEff(\%parameter, $BASHFILEHANDLE);
 
 	&Plink2(\%parameter, $BASHFILEHANDLE);
-
-	&VcfTools(\%parameter, $BASHFILEHANDLE);
     }
 }
 
 if (@{$parameter{selectPrograms}}) {
-
+    
+    if ( ( grep {$_ eq "vcfTools"} @{$parameter{selectPrograms}} ) ) { #If element is part of array
+	
+	&VcfTools(\%parameter, $BASHFILEHANDLE);
+    }
     if ( ( grep {$_ eq "MIPScripts"} @{$parameter{selectPrograms}} ) ) { #If element is part of array
 
 	&MIPScripts(\%parameter, $BASHFILEHANDLE);
@@ -264,6 +264,8 @@ if (@{$parameter{selectPrograms}}) {
 }
 else {
     
+    &VcfTools(\%parameter, $BASHFILEHANDLE);
+
     &MIPScripts(\%parameter, $BASHFILEHANDLE);
     
     &VariantEffectPredictor(\%parameter, $BASHFILEHANDLE);
@@ -409,6 +411,42 @@ sub CreateCondaEnvironment {
     ## Custom 
     foreach my $program (keys %{${$parameterHashRef}{bioConda}}) {
 
+	if ($program eq "bwakit") {
+
+	    &CreateSoftLink({parameterHashRef => $parameterHashRef,
+			     FILEHANDLE => $BASHFILEHANDLE,
+			     binary => catfile($parameter{condaPath}, "envs", $parameter{condaEnvironment}, "share", "bwakit-".${$parameterHashRef}{bioConda}{bwakit}.${$parameterHashRef}{bioCondaBwakitPatch}, "k8"),
+			     softLink => "k8",
+			    });
+	    &CreateSoftLink({parameterHashRef => $parameterHashRef,
+			     FILEHANDLE => $BASHFILEHANDLE,
+			     binary => catfile($parameter{condaPath}, "envs", $parameter{condaEnvironment}, "share", "bwakit-".${$parameterHashRef}{bioConda}{bwakit}.${$parameterHashRef}{bioCondaBwakitPatch}, "seqtk"),
+			     softLink => "seqtk",
+			    });
+	    &CreateSoftLink({parameterHashRef => $parameterHashRef,
+			     FILEHANDLE => $BASHFILEHANDLE,
+			     binary => catfile($parameter{condaPath}, "envs", $parameter{condaEnvironment}, "share", "bwakit-".${$parameterHashRef}{bioConda}{bwakit}.${$parameterHashRef}{bioCondaBwakitPatch}, "bwa-postalt.js"),
+			     softLink => "bwa-postalt.js",
+			    });
+	    &CreateSoftLink({parameterHashRef => $parameterHashRef,
+			     FILEHANDLE => $BASHFILEHANDLE,
+			     binary => catfile($parameter{condaPath}, "envs", $parameter{condaEnvironment}, "share", "bwakit-".${$parameterHashRef}{bioConda}{bwakit}.${$parameterHashRef}{bioCondaBwakitPatch}, "run-HLA"),
+			     softLink => "run-HLA",
+			    });
+	    &CreateSoftLink({parameterHashRef => $parameterHashRef,
+			     FILEHANDLE => $BASHFILEHANDLE,
+			     binary => catfile($parameter{condaPath}, "envs", $parameter{condaEnvironment}, "share", "bwakit-".${$parameterHashRef}{bioConda}{bwakit}.${$parameterHashRef}{bioCondaBwakitPatch}, "typeHLA.sh"),
+			     softLink => "typeHLA.sh",
+			    });
+	    &CreateSoftLink({parameterHashRef => $parameterHashRef,
+			     FILEHANDLE => $BASHFILEHANDLE,
+			     binary => catfile($parameter{condaPath}, "envs", $parameter{condaEnvironment}, "share", "bwakit-".${$parameterHashRef}{bioConda}{bwakit}.${$parameterHashRef}{bioCondaBwakitPatch}, "fermi2.pl"),
+			     softLink => "fermi2.pl",
+			    });
+
+	    print $BASHFILEHANDLE "cp -rf ".catdir($parameter{condaPath}, "envs", $parameter{condaEnvironment}, "share", "bwakit-".${$parameterHashRef}{bioConda}{bwakit}.${$parameterHashRef}{bioCondaBwakitPatch}, "resource-human-HLA")." ";
+	    print $BASHFILEHANDLE catdir($parameter{condaPath}, "envs", $parameter{condaEnvironment}, "bin"), "\n\n";
+	}
 	if ($program eq "picard") {
 
 	    &CreateSoftLink({parameterHashRef => $parameterHashRef,
@@ -1672,8 +1710,8 @@ sub CheckMTCodonTable {
 	print $FILEHANDLE q?## Adding ?.${$parameterHashRef}{snpEffGenomeVersion}.q?.MT.codonTable : Vertebrate_Mitochondrial to ?.$shareDirectory.$configFile, "\n";
 
 	## Add MT.codon Table to config
-	print $FILEHANDLE $addRegExp." ".$shareDirectory.$configFile." > ".$shareDirectory.$configFile.".tmp", "\n";
-	print $FILEHANDLE "mv ".$shareDirectory.$configFile.".tmp ".$shareDirectory.$configFile;
+	print $FILEHANDLE $addRegExp." ".catfile($shareDirectory, $configFile)." > ".catfile($shareDirectory, $configFile.".tmp"), "\n";
+	print $FILEHANDLE "mv ".catfile($shareDirectory, $configFile.".tmp")." ".catfile($shareDirectory, $configFile);
 	print $FILEHANDLE "\n\n";
 	
     }
@@ -1700,6 +1738,8 @@ sub SnpEffDownload {
     my $parameterHashRef = ${$argHashRef}{parameterHashRef};
     my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
     
+    &ActivateCondaEnvironment($parameterHashRef, $FILEHANDLE);
+    
     print $FILEHANDLE "java -Xmx2g ";
     print $FILEHANDLE q?-jar ?.catfile(${$parameterHashRef}{condaPath}, "envs", ${$parameterHashRef}{condaEnvironment}, "bin", "snpEff.jar")." ";
     print $FILEHANDLE "download ";
@@ -1707,6 +1747,8 @@ sub SnpEffDownload {
     print $FILEHANDLE ${$parameterHashRef}{snpEffGenomeVersion}." ";
     print $FILEHANDLE q?-c ?.catfile(${$parameterHashRef}{condaPath}, "envs", ${$parameterHashRef}{condaEnvironment}, "bin", "snpEff.config")." ";
     print $FILEHANDLE "\n\n";
+
+    &DeactivateCondaEnvironment($FILEHANDLE);
     
 }
 

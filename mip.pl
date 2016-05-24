@@ -101,6 +101,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                
                ##BWA
                -pMem/--pBwaMem Align reads using BWA Mem (defaults to "0" (=no))
+                 -memhla/--bwaMemHLA Apply HLA typing (defaults to "1" (=yes))
                  -memrdb/--bwaMemRapidDb Selection of relevant regions post alignment (defaults to "")
                  -memcrm/--bwaMemCram Use CRAM-format for output (defaults to "1" (=yes))
                  -memsts/--bwaMembamStats Collect statistics from BAM files (defaults to "1" (=yes))
@@ -115,12 +116,16 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -pPtMR/--pPicardToolsMergeRapidReads Merge Read batch processed (BAM file(s)) using PicardTools MergeSamFiles (Only relevant in rapid mode;defaults to "0" (=no))
                  -ptmp/--picardToolsMergeSamFilesPrevious PicardTools MergeSamFiles on merged current files and previous BAM-file(s) (supply whole path and name, name must contain sample id, and lanes_Xn info)
 
-               ##Sambamba
-               -pSmd/--pSambambaMarkduplicates Markduplicates using Sambamba Markduplicates (defaults to "1" (=yes))
+               ##MarkDuplicates
+               -pPmD/--pPicardToolsMarkduplicates Markduplicates using PicardTools Markduplicates (defaults to "1" (=yes))
+               -pSmD/--pSambambaMarkduplicates Markduplicates using Sambamba Markduplicates (defaults to "0" (=yes))
+                 -smdhts/--sambambaMarkDupHashTableSize Sambamba size of hash table for finding read pairs (defaults to "500000")
+                 -smdols/--sambambaMarkDupOverflowListSize Sambamba size of the overflow list (defaults to "500000")
+                 -smdibs/--sambambaMarkDupIoBufferSize Sambamba size of the io buffer for reading and writing BAM during the second pass (defaults to "2048")
 
                ###CoverageCalculations
                -pChS/--pChanjoSexCheck Predicts gender from sex chromosome coverage (defaults to "1")
-               -pSdt/--pSambambaDepth Sambamba depth coverage analysis (defaults to "1" (=yes))
+               -pSdT/--pSambambaDepth Sambamba depth coverage analysis (defaults to "1" (=yes))
                  -sdtcut/--sambambaDepthCutOffs Read depth cutoff (comma sep; defaults to "10", "20", "30", "50", "100")
                  -sdtbed/--sambambaDepthBed Reference database (defaults to "CCDS.current.bed")
                  -sdtbaq/--sambambaDepthBaseQuality Do not count bases with lower base quality (defaults to "10")
@@ -187,6 +192,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -graks2/--GATKReAlignerINDELKnownSet2 GATK ReAlignerTargetCreator/IndelRealigner known INDEL set 2 (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
                -pGbR/--pGATKBaseRecalibration Recalibration of bases using GATK BaseRecalibrator/PrintReads (defaults to "1" (=yes))
                  -gbrkse/--GATKBaseReCalibrationSNPKnownSet GATK BaseReCalibration known SNP set (defaults to "dbsnp_138.b37.vcf")
+                 -gbrkst/--GATKBaseReCalibrationKnownSite GATK BaseReCalibration known SNV and INDEL sites (defaults to "dbsnp_138.b37.vcf", "1000G_phase1.indels.b37.vcf", "Mills_and_1000G_gold_standard.indels.b37.vcf")
                  -gbrocr/--GATKBaseReCalibrationOverClippedRead Filter out reads that are over-soft-clipped (defaults to "1" (=yes))             
                  -gbrdiq/--GATKBaseReCalibrationDisableIndelQual Disable indel quality scores (defaults to "1" (=yes))
                  -gbrsqq/--GATKBaseReCalibrationStaticQuantizedQuals Static binning of base quality scores (defaults to "10,20,30,40"; comma sep)
@@ -385,6 +391,7 @@ my %supportedCosmidReference;  #References supported as downloads from Cosmid. H
 my @vtReferences = ("GATKReAlignerINDELKnownSet1",
 		    "GATKReAlignerINDELKnownSet2",
 		    "GATKBaseReCalibrationSNPKnownSet",
+		    "GATKBaseReCalibrationKnownSite",
 		    "GATKHaploTypeCallerSNPKnownSet",
 		    "GATKVariantReCalibrationTrainingSetHapMap",
 		    "GATKVariantReCalibrationTrainingSetMills",
@@ -458,6 +465,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'moaase|mosaikAlignNeuralNetworkSeFile:s' => \$parameter{mosaikAlignNeuralNetworkSeFile}{value}, 
 	   'mojdb|mosaikJumpDbStub:s' => \$parameter{mosaikJumpDbStub}{value},  #Stub for MosaikJump database
 	   'pMem|pBwaMem=n' => \$parameter{pBwaMem}{value},
+	   'memhla|bwaMemHLA=n' => \$parameter{bwaMemHLA}{value},
 	   'memrdb|bwaMemRapidDb:s' => \$parameter{bwaMemRapidDb}{value},
 	   'memcrm|bwaMemCram=n' => \$parameter{bwaMemCram}{value},
 	   'memsts|bwaMembamStats=n' => \$parameter{bwaMembamStats}{value},
@@ -469,9 +477,13 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'pPtMR|pPicardToolsMergeRapidReads=n' => \$parameter{pPicardToolsMergeRapidReads}{value},  #PicardTools mergeSamFiles - rapid mode
 	   'ptmp|picardToolsMergeSamFilesPrevious:s' => \@{$parameter{picardToolsMergeSamFilesPrevious}{value}},  #Comma separated list
 	   'ptp|picardToolsPath:s' => \$parameter{picardToolsPath}{value},  #Path to picardtools
-	   'pSmd|pSambambaMarkduplicates:s' => \$parameter{pSambambaMarkduplicates}{value},  #Sambamba Markduplicates
+	   'pPmD|pPicardToolsMarkduplicates=n' => \$parameter{pPicardToolsMarkduplicates}{value},  #PicardTools Markduplicates
+	   'pSmD|pSambambaMarkduplicates=n' => \$parameter{pSambambaMarkduplicates}{value},  #Sambamba Markduplicates
+	   'smdhts|sambambaMarkDupHashTableSize=n' => \$parameter{sambambaMarkDupHashTableSize}{value},
+	   'smdols|sambambaMarkDupOverflowListSize=n' => \$parameter{sambambaMarkDupOverflowListSize}{value},
+	   'smdibs|sambambaMarkDupIoBufferSize=n' => \$parameter{sambambaMarkDupIoBufferSize}{value},
 	   'pChS|pChanjoSexCheck=n' => \$parameter{pChanjoSexCheck}{value},   #Chanjo coverage analysis on sex chromosomes
-	   'pSdt|pSambambaDepth=n' => \$parameter{pSambambaDepth}{value},   #Chanjo coverage analysis
+	   'pSdT|pSambambaDepth=n' => \$parameter{pSambambaDepth}{value},   #Chanjo coverage analysis
 	   'sdtcut|sambambaDepthCutOffs:s' => \@{$parameter{sambambaDepthCutOffs}{value}},   # Cutoff used for completeness
 	   'sdtbed|sambambaDepthBed:s' => \$parameter{sambambaDepthBed}{value},
 	   'sdtbaq|sambambaDepthBaseQuality=n' => \$parameter{sambambaDepthBaseQuality}{value},
@@ -530,6 +542,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'graks2|GATKReAlignerINDELKnownSet2:s' => \$parameter{GATKReAlignerINDELKnownSet2}{value},  #Known INDEL set to be used in GATK ReAlignerTargetCreator/IndelRealigner
 	   'pGbR|pGATKBaseRecalibration=n' => \$parameter{pGATKBaseRecalibration}{value},  #GATK BaseRecalibrator/PrintReads
 	   'gbrkse|GATKBaseReCalibrationSNPKnownSet:s' => \$parameter{GATKBaseReCalibrationSNPKnownSet}{value},  #Known SNP set to be used in GATK BaseRecalibrator/PrintReads
+	   'gbrkst|GATKBaseReCalibrationKnownSite:s'  => \@{$parameter{GATKBaseReCalibrationKnownSite}{value}},  #Comma separated list
 	   'gbrocr|GATKBaseReCalibrationOverClippedRead=n' => \$parameter{GATKBaseReCalibrationOverClippedRead}{value},  #Filter out reads that are over-soft-clipped
 	   'gbrdiq|GATKBaseReCalibrationDisableIndelQual=n' => \$parameter{GATKBaseReCalibrationDisableIndelQual}{value},  #Disable indel quality scores
 	   'gbrsqq|GATKBaseReCalibrationStaticQuantizedQuals:s'  => \@{$parameter{GATKBaseReCalibrationStaticQuantizedQuals}{value}},  #Comma separated list
@@ -634,6 +647,9 @@ if (exists($parameter{configFile}{value})) {  #Input from cmd
 
     ##Special case:Enable/activate MIP. Cannot be changed from cmd or config
     $scriptParameter{MIP} = $parameter{MIP}{default};
+
+    ##Special case:Required when turning of vcfParser to know how many files should be analysed (.select.vcf or just .vcf)
+    $scriptParameter{VcfParserOutputFileCount} = $parameter{VcfParserOutputFileCount}{default};
 
     &CompareHashKeys(\%scriptParameter, \%parameter);
 
@@ -1387,6 +1403,25 @@ else {
 				  });
     }
 
+    if ($scriptParameter{pPicardToolsMarkduplicates} > 0) {  #PicardTools Markduplicates
+	
+	$logger->info("[PicardTools Markduplicates]\n");
+	
+	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {  
+	    
+	    &PicardToolsMarkduplicates({parameterHashRef => \%parameter,
+					scriptParameterHashRef => \%scriptParameter,
+					sampleInfoHashRef => \%sampleInfo,
+					fileInfoHashRef => \%fileInfo,
+					infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
+					laneHashRef => \%lane,
+					jobIDHashRef => \%jobID,
+					sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
+					programName => "PicardToolsMarkduplicates",
+				       });
+	}
+    }
+
     if ($scriptParameter{pSambambaMarkduplicates} > 0) {  #Sambamba Markduplicates
 	
 	$logger->info("[Sambamba Markduplicates]\n");
@@ -1919,7 +1954,7 @@ if ($scriptParameter{pGATKHaploTypeCaller} > 0) {  #Run GATK HaploTypeCaller
 				      programName => "GATKHaploTypeCaller",
 				     });
     
-    if ($scriptParameter{dryRunAll} != 1) {
+    if ( ($scriptParameter{dryRunAll} != 1) && ($scriptParameter{analysisType} ne "genomes") ) {
 	
 	&CheckBuildPTCHSMetricPreRequisites({parameterHashRef => \%parameter,
 					     scriptParameterHashRef => \%scriptParameter,
@@ -2002,7 +2037,7 @@ if ($scriptParameter{pGATKVariantRecalibration} > 0) {  #Run GATK VariantRecalib
 				      programName => "GATKVariantRecalibration",
 				     });
 
-    if ($scriptParameter{dryRunAll} != 1) {
+    if ( ($scriptParameter{dryRunAll} != 1) && ($scriptParameter{analysisType} ne "genomes") ) {
 	
 	&CheckBuildPTCHSMetricPreRequisites({parameterHashRef => \%parameter,
 					     scriptParameterHashRef => \%scriptParameter,
@@ -10620,7 +10655,7 @@ sub GATKBaseReCalibration {
 	print $XARGSFILEHANDLE "-cov ReadGroupCovariate ";
 	
 	print $XARGSFILEHANDLE "-R ".catfile($$referencesDirectoryRef, ${$scriptParameterHashRef}{humanGenomeReference})." ";  #Reference file
-	print $XARGSFILEHANDLE "-knownSites ".catfile($$referencesDirectoryRef, ${$scriptParameterHashRef}{GATKBaseReCalibrationSNPKnownSet})." ";
+	print $XARGSFILEHANDLE "-knownSites ".join(" -knownSites ", map { catfile($$referencesDirectoryRef, $_) } (@{${$scriptParameterHashRef}{GATKBaseReCalibrationKnownSite}}) )." ";
 	print $XARGSFILEHANDLE "-nct ".${$scriptParameterHashRef}{maximumCores}." ";  #How many CPU threads should be allocated per data thread to running this analysis
 	print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{GATKDownSampleToCoverage}." ";  #Coverage to downsample to at any given locus	    	    
 	print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
@@ -11021,6 +11056,231 @@ sub GATKReAligner {
 }
 
 
+sub PicardToolsMarkduplicates { 
+
+##PicardToolsMarkduplicates
+    
+##Function : Mark duplicated reads using PicardTools Markduplicates in files generated from alignment (sorted, merged).
+##Returns  : "|$xargsFileCounter"
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName, $fileName, $programInfoPath, $FILEHANDLE, $xargsFileCounter
+##         : $parameterHashRef           => The parameter hash {REF}
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $fileInfoHashRef            => The fileInfo hash {REF}
+##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $laneHashRef                => The lane info hash {REF}
+##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $sampleIDRef                => The sampleID {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $programName                => The program name
+##         : $fileName                   => File name
+##         : $programInfoPath            => The program info path
+##         : $FILEHANDLE                 => Filehandle to write to
+##         : $xargsFileCounter           => The xargs file counter
+
+    my ($argHashRef) = @_;
+
+    ## Default(s)
+    my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
+    my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
+    my $referencesDirectoryRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
+    my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
+    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
+    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
+    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
+    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
+    my $laneHashRef = ${$argHashRef}{laneHashRef};
+    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
+    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
+    my $fileName = ${$argHashRef}{fileName};
+    my $programName = ${$argHashRef}{programName};
+    my $programInfoPath = ${$argHashRef}{programInfoPath};
+    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+
+    my $nrCores = ${$scriptParameterHashRef}{maximumCores};
+    my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
+    my $lanes = join("",@{ ${$laneHashRef}{$$sampleIDRef} });  #Extract lanes
+
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $time = 20;
+    my $xargsFileName;
+
+    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
+
+	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    }
+
+    ## Assign directories
+    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef);
+    my $outSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef);
+    ${$parameterHashRef}{"p".$programName}{$$sampleIDRef}{inDirectory} = $outSampleDirectory;  #Used downstream
+
+    ## Assign fileTags
+    my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{pPicardToolsMergeSamFiles}{fileTag};
+    my $outfileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{"p".$programName}{fileTag};
+
+    ## Add merged infile name after merging all BAM files per sampleID
+    my $infile = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MergeInfile};  #Alias
+
+    ## Sums all mapped and duplicate reads and takes fraction of before finishing
+    my $regExp = q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$feature{dup} = $feature{dup} + $1} if($_=~/\d+\smapped/ && $_=~/^(\d+)/) {$feature{map} = $feature{map} + $1} } print "Read Mapped: ".$feature{map}."\nDuplicates: ".$feature{dup}."\n"."Fraction Duplicates: ".$feature{dup}/$feature{map}, "\n"; last;'?; 
+
+    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+	
+	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
+							       jobIDHashRef => $jobIDHashRef,
+							       FILEHANDLE => $FILEHANDLE,
+							       directoryID => $$sampleIDRef,
+							       programName => $programName,
+							       programDirectory => lc($$alignerOutDirRef),
+							       nrofCores => $nrCores,
+							       processTime => $time,
+							       tempDirectory => $$tempDirectoryRef
+							      });
+	
+	## Copy file(s) to temporary directory
+	say $FILEHANDLE "## Copy file(s) to temporary directory";
+	($xargsFileCounter, $xargsFileName) = &XargsMigrateContigFiles({FILEHANDLE => $FILEHANDLE,
+									XARGSFILEHANDLE => $XARGSFILEHANDLE,
+									arrayRef => \@{ ${$fileInfoHashRef}{contigsSizeOrdered} },
+									fileName =>$fileName,
+									programInfoPath => $programInfoPath,
+									nrCores => $nrCores,
+									xargsFileCounter => $xargsFileCounter,
+									infile => $infile.$infileTag,
+									inDirectory => $inSampleDirectory,
+									fileEnding => ".b*",
+									tempDirectory => $$tempDirectoryRef,
+								       });
+    }
+    
+    ## Marking Duplicates
+    say $FILEHANDLE "## Marking Duplicates";
+    
+    ## Create file commands for xargs
+    ($xargsFileCounter, $xargsFileName) = &XargsCommand({FILEHANDLE => $FILEHANDLE,
+							 XARGSFILEHANDLE => $XARGSFILEHANDLE,
+							 fileName => $fileName,
+							 programInfoPath => $programInfoPath,
+							 nrCores => $nrCores,
+							 xargsFileCounter => $xargsFileCounter,
+							 firstCommand => "java",
+							 memoryAllocation => "Xmx4g",
+							 javaUseLargePagesRef => \${$scriptParameterHashRef}{javaUseLargePages},
+							 javaTemporaryDirectory => $$tempDirectoryRef,
+							 javaJar =>  ${$scriptParameterHashRef}{picardToolsPath}."/picard.jar",
+							});	
+    for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{contigsSizeOrdered}});$contigsCounter++) {
+	
+	my $contigRef = \${$fileInfoHashRef}{contigsSizeOrdered}[$contigsCounter];
+	
+	print $XARGSFILEHANDLE "MarkDuplicates ";
+	print $XARGSFILEHANDLE "METRICS_FILE=".catfile($$tempDirectoryRef, $infile.$outfileTag."_".$$contigRef.".metric")." ";  #MetricFile
+	print $XARGSFILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
+	print $XARGSFILEHANDLE "INPUT=".catfile($$tempDirectoryRef, $infile.$infileTag."_".$$contigRef.".bam")." ";;  #InFile
+	print $XARGSFILEHANDLE "OUTPUT=".catfile($$tempDirectoryRef, $infile.$outfileTag."_".$$contigRef.".bam")." ";  #OutFile
+	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE "; ";
+	
+	print $XARGSFILEHANDLE "sambamba ";  #Program
+	print $XARGSFILEHANDLE "flagstat ";
+	print $XARGSFILEHANDLE catfile($$tempDirectoryRef, $infile.$outfileTag."_".$$contigRef.".bam")." ";  #OutFile
+	print $XARGSFILEHANDLE "> ".catfile($$tempDirectoryRef, $infile.$outfileTag."_".$$contigRef."_metric")." ";  #Metric file 
+	say $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+    }
+    
+    ## Concatenate all metric files
+    print $FILEHANDLE "cat ";
+    print $FILEHANDLE catfile($$tempDirectoryRef, $infile.$outfileTag."_*_metric")." ";
+    say $FILEHANDLE "> ".catfile($$tempDirectoryRef, $infile.$outfileTag."_metricAll")." ", "\n";  #Metric file for all files
+    
+    ## Sum metric over concatenated file
+    print $FILEHANDLE $regExp." ";
+    print $FILEHANDLE catfile($$tempDirectoryRef, $infile.$outfileTag."_metricAll")." ";
+    say $FILEHANDLE "> ".catfile($$tempDirectoryRef, $infile.$outfileTag."_metric")." ", "\n";  #Sum of all original metric files
+    
+    
+    &MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, $infile.$outfileTag."_metric"),
+			  filePath => $outSampleDirectory,
+			  FILEHANDLE => $FILEHANDLE,
+			 });
+    say $FILEHANDLE "wait", "\n";
+    
+    if ( (${$scriptParameterHashRef}{pSambambaMarkduplicates} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	
+	## Collect QC metadata info for later use
+	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
+		       familyID => $$familyIDRef,
+		       sampleID => $$sampleIDRef,
+		       programName => "MarkDuplicates",
+		       infile => $infile,
+		       outDirectory => $outSampleDirectory,
+		       outfileEnding => $outfileTag."_metric",
+		       outDataType => "infileDependent"
+		      });
+	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $infile.$outfileTag."_".${$fileInfoHashRef}{contigsSizeOrdered}[0].".bam");
+    }
+    
+    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+	
+	## Copies file from temporary directory. Per contig
+	say $FILEHANDLE "## Copy file from temporary directory";
+	($xargsFileCounter, $xargsFileName) = &XargsMigrateContigFiles({FILEHANDLE => $FILEHANDLE,
+									XARGSFILEHANDLE => $XARGSFILEHANDLE,
+									arrayRef => \@{ ${$fileInfoHashRef}{contigsSizeOrdered} },
+									fileName =>$fileName,
+									programInfoPath => $programInfoPath,
+									nrCores => $nrCores,
+									xargsFileCounter => $xargsFileCounter,
+									outfile => $infile.$outfileTag,
+									outDirectory => $outSampleDirectory,
+									tempDirectory => $$tempDirectoryRef,
+									fileEnding => ".b*",
+								       });
+    }
+    else {
+	
+	## Remove file at temporary Directory
+	&RemoveContigFileAtTempDirectory({arrayRef => \@{ ${$fileInfoHashRef}{contigsSizeOrdered} },
+					  FILEHANDLE => $FILEHANDLE,
+					  nrCores => $nrCores,
+					  fileName => $infile.$infileTag,
+					  fileEnding => ".b*",
+					  tempDirectory => $$tempDirectoryRef,
+					 });
+    }
+    
+    close($XARGSFILEHANDLE);
+    
+    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+	
+	close($FILEHANDLE);
+	
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	    
+	    &FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
+			   sampleInfoHashRef => $sampleInfoHashRef,
+			   jobIDHashRef => $jobIDHashRef,
+			   infilesLaneNoEndingHashRef => $infilesLaneNoEndingHashRef,
+			   sampleID => $$sampleIDRef,
+			   dependencies => 1, 
+			   path => ${$parameterHashRef}{"p".$programName}{chain},
+			   sbatchFileName => $fileName
+			  });
+	}
+    }
+    else {
+	
+	return $xargsFileCounter;  #Track the number of created xargs scripts per module for Block algorithm
+    }
+}
+
+
 sub SambambaMarkduplicates { 
 
 ##SambambaMarkduplicates
@@ -11124,8 +11384,8 @@ sub SambambaMarkduplicates {
 								       });
     }
     
-    ## SambambaMarkduplicates
-    say $FILEHANDLE "## Marking Duplicates";
+    ## Marking Duplicates
+    say $FILEHANDLE "## Marking Duplicates";    
     
     ($xargsFileCounter, $xargsFileName) = &XargsCommand({FILEHANDLE => $FILEHANDLE,
 							 XARGSFILEHANDLE => $XARGSFILEHANDLE, 
@@ -11143,9 +11403,9 @@ sub SambambaMarkduplicates {
 	print $XARGSFILEHANDLE "markdup ";
 	print $XARGSFILEHANDLE "--tmpdir=".${$scriptParameterHashRef}{tempDirectory}." ";  #Directory for storing intermediate files
 	print $XARGSFILEHANDLE "--show-progress ";  #Show progressbar in STDERR
-	print $XARGSFILEHANDLE "--hash-table-size=1500000 ";
-	print $XARGSFILEHANDLE "--overflow-list-size=1500000 "; 
-	print $XARGSFILEHANDLE "--io-buffer-size=2048 "; #Two buffers of BUFFER_SIZE *megabytes* each are used for reading and writing BAM during the second pass
+	print $XARGSFILEHANDLE "--hash-table-size=".${$scriptParameterHashRef}{sambambaMarkDupHashTableSize}." ";  #Size of hash table for finding read pairs
+	print $XARGSFILEHANDLE "--overflow-list-size=".${$scriptParameterHashRef}{sambambaMarkDupOverflowListSize}." ";  #Size of the overflow list
+	print $XARGSFILEHANDLE "--io-buffer-size=".${$scriptParameterHashRef}{sambambaMarkDupIoBufferSize}." "; #Two buffers of BUFFER_SIZE *megabytes* each are used for reading and writing BAM during the second pass
 	print $XARGSFILEHANDLE catfile($$tempDirectoryRef, $infile.$infileTag."_".$$contigRef.".bam")." ";;  #InFile
 	print $XARGSFILEHANDLE catfile($$tempDirectoryRef, $infile.$outfileTag."_".$$contigRef.".bam")." ";  #OutFile
 	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
@@ -11220,7 +11480,7 @@ sub SambambaMarkduplicates {
     }
 
     close($XARGSFILEHANDLE);
-
+    
     if ($$reduceIORef eq "0") {  #Run as individual sbatch script
 	
 	close($FILEHANDLE);
@@ -12354,10 +12614,29 @@ sub BWAMem {
 	    }
 	    say $FILEHANDLE "wait", "\n";
 
-	    ## BWA MEM
-	    say $FILEHANDLE "## Aligning reads and converting to BAM via samtools and sorting via Sambamba";
-	    print $FILEHANDLE "bwa mem ";
-	    print $FILEHANDLE "-M ";  #Mark shorter split hits as secondary (for Picard compatibility). 
+	    ### BWA MEM
+
+	    ##Detect version and source of the humanGenomeReference: Source (hg19 or GRCh) and return the correct BwaMem binary
+	    my $bwaBinary = &SelectBwaMemBinary({humanGenomeReferenceSourceRef => \${$fileInfoHashRef}{humanGenomeReferenceSource},
+						 humanGenomeReferenceVersionRef => \${$fileInfoHashRef}{humanGenomeReferenceVersion},
+						});
+
+	    say $FILEHANDLE "## Aligning reads and sorting via Sambamba";	    
+	    
+	    print $FILEHANDLE $bwaBinary." ";
+
+	    if ($bwaBinary eq "bwa mem") {  #Prior to ALTs in refrence genome
+
+		print $FILEHANDLE "-M ";  #Mark shorter split hits as secondary (for Picard compatibility). 
+	    }
+	    else {
+
+		if (${$scriptParameterHashRef}{bwaMemHLA} == 1) {
+
+		    print $FILEHANDLE "-H ";  #Apply HLA typing
+		}
+		print $FILEHANDLE "-o ".catfile($$tempDirectoryRef, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter])." ";  #prefix for output files
+	    }
 	    print $FILEHANDLE "-t ".${$scriptParameterHashRef}{maximumCores}." ";  #Number of threads
 	    print $FILEHANDLE q?-R "@RG\t?;
 	    print $FILEHANDLE q?ID:?.${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].q?\t?;
@@ -12372,21 +12651,55 @@ sub BWAMem {
 		print $FILEHANDLE catfile($$tempDirectoryRef, ${$infileHashRef}{$$sampleIDRef}[$pairedEndTracker])." ";  #Read 2
 	    }
 	    $pairedEndTracker++;
-	    print $FILEHANDLE "| ";  #Pipe SAM to BAM conversion of aligned reads
-	    print $FILEHANDLE "samtools view "; 
-	    print $FILEHANDLE "-S ";  #Input is SAM
-	    print $FILEHANDLE "-h ";  #Print header for the SAM output
-	    print $FILEHANDLE "-u ";  #Uncompressed BAM output
-	    print $FILEHANDLE "-@ ".${$scriptParameterHashRef}{maximumCores}." ";  #Number of threads 
-	    print $FILEHANDLE "- ";  #/dev/stdin
-	    print $FILEHANDLE "| ";
+
+	    if ($bwaBinary eq "bwa mem") {  #Prior to ALTs in refrence genome
+
+		print $FILEHANDLE "| ";  #Pipe SAM to BAM conversion of aligned reads
+		print $FILEHANDLE "samtools view "; 
+		print $FILEHANDLE "-S ";  #Input is SAM
+		print $FILEHANDLE "-h ";  #Print header for the SAM output
+		print $FILEHANDLE "-u ";  #Uncompressed BAM output
+		print $FILEHANDLE "-@ ".${$scriptParameterHashRef}{maximumCores}." ";  #Number of threads 
+		print $FILEHANDLE "- ";  #/dev/stdin
+		print $FILEHANDLE "| ";
+	    }
+	    else {
+	
+		print $FILEHANDLE "| ";
+		print $FILEHANDLE "sh ";
+		say $FILEHANDLE "\n";
+	    }
+	    
 	    print $FILEHANDLE "sambamba ";  #Program
 	    print $FILEHANDLE "sort ";  #Command
 	    print $FILEHANDLE "-m ".${$scriptParameterHashRef}{bwaSambambaSortMemoryLimit}." ";  #Memory limit
 	    print $FILEHANDLE "--tmpdir=".$$tempDirectoryRef." ";  #Directory for storing intermediate files
 	    print $FILEHANDLE "--show-progress ";  #Show progressbar in STDERR
 	    print $FILEHANDLE "--out=".catfile($$tempDirectoryRef, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileTag.".bam")." ";  #Outfile
-	    say $FILEHANDLE catfile(dirname(devnull()),"stdin"),"\n";
+
+	    if ($bwaBinary eq "bwa mem") {  #Pipe from samtools view
+
+		say $FILEHANDLE catfile(dirname(devnull()),"stdin"),"\n";
+
+		## BAMS, HLA files BWAMem logs etc.
+		&MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].".*"),
+				      filePath => $outSampleDirectory,
+				      FILEHANDLE => $FILEHANDLE,
+				     });
+		say $FILEHANDLE "wait", "\n";
+	    }
+	    else {  #Sort directly from run-bwakit
+
+		say $FILEHANDLE catfile($$tempDirectoryRef, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].".aln.bam"), "\n";
+		    
+		## Copies file from temporary directory.
+		say $FILEHANDLE "## Copy file from temporary directory";
+		&MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileTag.".b*"),
+				      filePath => $outSampleDirectory,
+				      FILEHANDLE => $FILEHANDLE,
+				     });
+		say $FILEHANDLE "wait", "\n";
+	    }
 
 	    if (${$scriptParameterHashRef}{bwaMembamStats} == 1) {
 
@@ -12414,7 +12727,7 @@ sub BWAMem {
 		print $FILEHANDLE "-h ";  #print header before reads
 		print $FILEHANDLE "-T ".catfile($$referencesDirectoryRef, ${$scriptParameterHashRef}{humanGenomeReference})." ";  #Reference
 		print $FILEHANDLE "--output-filename ".catfile($$tempDirectoryRef, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileTag.".cram")." ";
-		say $FILEHANDLE catfile($$tempDirectoryRef, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileTag.".bam")." ";
+		say $FILEHANDLE catfile($$tempDirectoryRef, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileTag.".bam"), "\n";
 		
 		## Copies file from temporary directory.
 		say $FILEHANDLE "## Copy file from temporary directory";
@@ -12424,13 +12737,6 @@ sub BWAMem {
 				     });
 		say $FILEHANDLE "wait", "\n";
 	    }
-	    ## Copies file from temporary directory.
-	    say $FILEHANDLE "## Copy file from temporary directory";
-	    &MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileTag.".b*"),
-				  filePath => $outSampleDirectory,
-				  FILEHANDLE => $FILEHANDLE,
-				 });
-	    say $FILEHANDLE "wait", "\n";
 	    
 	    close($FILEHANDLE);
 
@@ -12460,15 +12766,30 @@ sub BWAMem {
 		    }
 		}
 
-		&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
-			       familyID => ${$scriptParameterHashRef}{familyID},
-			       sampleID => $$sampleIDRef,
-			       programName => "Bwa",
-			       infile => ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter],
-			       outDirectory => $directories,
-			       outfileEnding => $stderrFile,
-			       outDataType => "infoDirectory"
-			      });
+		if ($bwaBinary eq "bwa mem") {
+
+		    &SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
+				   familyID => ${$scriptParameterHashRef}{familyID},
+				   sampleID => $$sampleIDRef,
+				   programName => "Bwa",
+				   infile => ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter],
+				   outDirectory => $directories,
+				   outfileEnding => $outfileTag.".log.bwa",
+				   outDataType => "infileDependent"
+				  });
+		}
+		else {
+
+		    &SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
+				   familyID => ${$scriptParameterHashRef}{familyID},
+				   sampleID => $$sampleIDRef,
+				   programName => "Bwa",
+				   infile => ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter],
+				   outDirectory => $directories,
+				   outfileEnding => $stderrFile,
+				   outDataType => "infoDirectory"
+				  });
+		}
 		&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 			       sampleInfoHashRef => $sampleInfoHashRef,
 			       jobIDHashRef => $jobIDHashRef,
@@ -13257,6 +13578,23 @@ sub BAMCalibrationBlock {
 									 FILEHANDLE => $FILEHANDLE,
 									});
 
+	if ($scriptParameter{pPicardToolsMarkduplicates} > 0) {  #PicardTools Markduplicates
+	    
+	    ($xargsFileCounter, $xargsFileName) = &PicardToolsMarkduplicates({parameterHashRef => $parameterHashRef,
+									      scriptParameterHashRef => $scriptParameterHashRef,
+									      sampleInfoHashRef => $sampleInfoHashRef,
+									      fileInfoHashRef => $fileInfoHashRef,
+									      infilesLaneNoEndingHashRef => $infilesLaneNoEndingHashRef,
+									      laneHashRef => $laneHashRef,
+									      jobIDHashRef => $jobIDHashRef,
+									      sampleIDRef => $sampleIDRef,
+									      programName => "PicardToolsMarkduplicates",
+									      fileName => $fileName,
+									      programInfoPath => $programInfoPath,
+									      FILEHANDLE => $FILEHANDLE,
+									      xargsFileCounter => $xargsFileCounter,
+									     });
+	}
 	if ($scriptParameter{pSambambaMarkduplicates} > 0) {  #Sambamba Markduplicates
 	    
 	    ($xargsFileCounter, $xargsFileName) = &SambambaMarkduplicates({parameterHashRef => $parameterHashRef,
@@ -14576,7 +14914,7 @@ sub CheckBuildPTCHSMetricPreRequisites {
     my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
 
     foreach my $sampleID (@{${$scriptParameterHashRef}{sampleIDs}}) {
-	
+
 	if (${$parameterHashRef}{ $$familyIDRef }{ $sampleID }{exomeTargetBedInfileLists}{buildFile} eq 1) {
 	    
 	    &BuildPTCHSMetricPreRequisites({parameterHashRef => $parameterHashRef,
@@ -15298,7 +15636,6 @@ sub PushToJobID {
 			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
 			     familyIDChainKey => $familyIDChainKey,
 			     sampleIDChainKey => $sampleIDChainKey,
-			     sampleID => $sampleID,
 			     path => $path,
 			     chainKeyType => $chainKeyType,
 	);
@@ -16380,26 +16717,32 @@ sub AddTargetlistsToScriptParameter {
 		    }
 		}
 		else {  #Add to enable or overwrite info gathered from config and use in recreation of cmd line later
-		    
-		    ## Adds arrayRef to scriptParameters for recreation of cmd in log and seperated input parameter string into array elements
-		    &EnableArrayParameter({scriptParameterHashRef => $scriptParameterHashRef,
-					   arrayRef => $targetIntervalListsArrayRef,
-					   parameterNameRef => \$parameterName,
-					  });
-		    
-		    ## Compares the number of elements in two arrays and exits if the elements are not equal
-		    &CompareArrayElements({arrayRef => \@{$scriptParameter{sampleIDs}},
-					   arrayQueryRef => $targetIntervalListsArrayRef,
-					   parameterName => "sampleIDs",
-					   parameterNameQuery => $parameterName,
-					  });
-		    ## Sets autoBuild and populates scriptParameter hash with array elements per sampleID
-		    &SetAutoBuildAndScriptParameterPerSample({parameterHashRef => $parameterHashRef,
-							      scriptParameterHashRef => $scriptParameterHashRef,
-							      sampleIDArrayRef => \@{${$scriptParameterHashRef}{sampleIDs}},
-							      parameterArrayRef => $targetIntervalListsArrayRef,
-							      parameterNameRef => \$parameterName,
-							     });
+
+		    if ( ($parameterName eq "GATKTargetPaddedBedIntervalLists") && (${$scriptParameterHashRef}{analysisType} eq "genomes") ) {  #No need to check since genomes does not use GATKTargetPaddedBedIntervalLists
+		    }
+		    else {
+
+			
+			## Adds arrayRef to scriptParameters for recreation of cmd in log and seperated input parameter string into array elements
+			&EnableArrayParameter({scriptParameterHashRef => $scriptParameterHashRef,
+					       arrayRef => $targetIntervalListsArrayRef,
+					       parameterNameRef => \$parameterName,
+					      });
+			
+			## Compares the number of elements in two arrays and exits if the elements are not equal
+			&CompareArrayElements({arrayRef => \@{$scriptParameter{sampleIDs}},
+					       arrayQueryRef => $targetIntervalListsArrayRef,
+					       parameterName => "sampleIDs",
+					       parameterNameQuery => $parameterName,
+					      });
+			## Sets autoBuild and populates scriptParameter hash with array elements per sampleID
+			&SetAutoBuildAndScriptParameterPerSample({parameterHashRef => $parameterHashRef,
+								  scriptParameterHashRef => $scriptParameterHashRef,
+								  sampleIDArrayRef => \@{${$scriptParameterHashRef}{sampleIDs}},
+								  parameterArrayRef => $targetIntervalListsArrayRef,
+								  parameterNameRef => \$parameterName,
+								 });
+		    }
 		}
 		if ( ($parameterExistsCheck) && ($parameterExistsCheck eq "file") && (defined(${$scriptParameterHashRef}{$parameterName})) ) {  #Check file existence in reference directory
 
@@ -16424,6 +16767,7 @@ sub AddTargetlistsToScriptParameter {
 			    }
 			    my $path = catfile($$referencesDirectoryRef, ${$scriptParameterHashRef}{ $$familyIDRef }{$$sampleIDRef}{$parameterName});
 
+			    
 			    ## Check that the supplied fileEnding is supported. Otherwise exits.
 			    &CheckSupportedFileEnding({fileNameRef => \$path,
 						       fileEndingRef => \${$fileInfoHashRef}{$parameterName},
@@ -17087,7 +17431,7 @@ sub CreateFileEndings {
 
 				${$fileInfoHashRef}{ $$familyIDRef }{ $sampleID }{$orderParameterElement}{fileTag} = $tempFileEnding{$chainfork}{ $sampleID };
 			    }
-			    ##NOTE: No sequential build-up of fileending
+			    $tempFileEnding{$chainfork}{ $sampleID } = ${$fileInfoHashRef}{ $$familyIDRef }{ $sampleID }{$orderParameterElement}{fileTag};  #To enable sequential build-up of fileending
 			}
 ###Other/Per familyID
 
@@ -17106,6 +17450,10 @@ sub CreateFileEndings {
 				${$fileInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{$orderParameterElement}{fileTag} = ${$parameterHashRef}{$orderParameterElement}{fileTag};
 			    }
 			    $tempFileEnding{$chainfork}{$$familyIDRef} = ${$fileInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{$orderParameterElement}{fileTag};  #To enable sequential build-up of fileending 
+			}
+			else {  #Do not add new module fileTag
+			    
+			    ${$fileInfoHashRef}{ $$familyIDRef }{  $$familyIDRef }{$orderParameterElement}{fileTag} = $tempFileEnding{$chainfork}{ $$familyIDRef };
 			}
 		    }
 		}
@@ -18742,8 +19090,8 @@ sub SetAutoBuildAndScriptParameterPerSample {
     my $parameterNameRef = ${$argHashRef}{parameterNameRef};
 
     for (my $sampleIDsCounter=0;$sampleIDsCounter<scalar(@{$sampleIDArrayRef});$sampleIDsCounter++) {  #All sampleIDs
+
 	my $sampleIDRef = \${$sampleIDArrayRef}[$sampleIDsCounter];  #Alias
-	
 	${$parameterHashRef}{ $$familyIDRef }{ $$sampleIDRef }{$$parameterNameRef}{buildFile} = "yesAutoBuild";  #Turn on autoBuild
 	${$scriptParameterHashRef}{ $$familyIDRef }{ $$sampleIDRef }{$$parameterNameRef} = ${$parameterArrayRef}[$sampleIDsCounter];  #Populate hash that is used in modules
 	$logger->info("Set ".$$parameterNameRef." to: ".${$scriptParameterHashRef}{ $$familyIDRef }{ $$sampleIDRef }{$$parameterNameRef}, "\n");
@@ -19078,8 +19426,9 @@ sub SizeSortSelectFileContigs {
 	    }
 	}
     }
+
     ## Test if all contigs collected from select file was sorted by reference contig array
-    if (scalar(@{${$fileInfoHashRef}{$hashKeyToSort}}) != scalar(@sortedArray)) {
+    if ( (@sortedArray) && (scalar(@{${$fileInfoHashRef}{$hashKeyToSort}}) != scalar(@sortedArray)) ) {
 	
 	foreach my $element (@{${$fileInfoHashRef}{$hashKeyToSort}}) {
 
@@ -22330,7 +22679,7 @@ sub CheckVTForReferences {
 	foreach my $parameterName (@{$vtReferencesArrayRef}) {
 	    
 	    my $referenceFilePath;
-	    
+
 	    if (${$parameterHashRef}{$parameterName}{dataType} eq "SCALAR") {
 		
 		$referenceFilePath = catfile($$referencesDirectoryRef, $scriptParameter{$parameterName});
@@ -22349,9 +22698,30 @@ sub CheckVTForReferences {
 		}
 		$seen{$referenceFilePath} = 1;
 	    }
+	    elsif (${$parameterHashRef}{$parameterName}{dataType} eq "ARRAY") {  #ARRAY reference
+		
+		foreach my $annotationFile (@{${$scriptParameterHashRef}{$parameterName}}) {
+		    
+		    $referenceFilePath = catfile($$referencesDirectoryRef, $annotationFile);
+		    
+		    unless (exists($seen{$referenceFilePath})) {
+			
+			## Check if vt has processed references using RegExp
+			&CheckVT({parameterHashRef => $parameterHashRef,
+				  scriptParameterHashRef =>$scriptParameterHashRef,
+				  sampleInfoHashRef => $sampleInfoHashRef,
+				  infilesLaneNoEndingHashRef => $infilesLaneNoEndingHashRef,
+				  jobIDHashRef => $jobIDHashRef,
+				  referenceFilePath => $referenceFilePath,
+				  parameterName => $parameterName,
+				 });
+		    }   
+		    $seen{$referenceFilePath} = 1;
+		}
+	    }
 	    elsif (${$parameterHashRef}{$parameterName}{dataType} eq "HASH") {  #Hash reference
 		
-		for my $annotationFile (keys %{${$scriptParameterHashRef}{snpSiftAnnotationFiles}}) {
+		for my $annotationFile (keys %{${$scriptParameterHashRef}{$parameterName}}) {
 		    
 		    $referenceFilePath = catfile($$referencesDirectoryRef, $annotationFile);
 
@@ -23695,6 +24065,47 @@ sub Help {
 
     say STDOUT $USAGE;
     exit $exitCode;
+}
+
+
+sub SelectBwaMemBinary {
+    
+##SelectBwaMemBinary
+    
+##Function : Detect version and source of the humanGenomeReference: Source (hg19 or GRCh) and return the correct BwaMem binary
+##Returns  : ""
+##Arguments: $humanGenomeReferenceSource, $humanGenomeReferenceVersion
+##         : $humanGenomeReferenceSource  => Human genome reference source {REF}
+##         : $humanGenomeReferenceVersion => Human genome reference version {REF}
+    
+    my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $humanGenomeReferenceSourceRef = ${$argHashRef}{humanGenomeReferenceSourceRef};
+    my $humanGenomeReferenceVersionRef = ${$argHashRef}{humanGenomeReferenceVersionRef};
+    
+    if($humanGenomeReferenceSourceRef eq "GRCh") {
+	
+	if ($humanGenomeReferenceVersionRef > 37) {
+	    
+	    return "run-bwamem";
+	}
+	else {  #HumanGenome version lesser than GrCh37
+			
+	    return "bwa mem";
+	}
+    }
+    else {  #hgXX build
+	
+	if ($humanGenomeReferenceVersionRef > 19) {
+	    
+	    return "run-bwamem";
+	}
+	else {  #HumanGenome version lesser than hg19
+	    
+	    return "bwa mem";
+	}
+    }    
 }
 
 

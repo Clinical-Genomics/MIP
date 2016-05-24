@@ -285,6 +285,12 @@ pBwaMem:
   removeRedundantFiles: yes
   removalSetting: single
   type: program
+bwaMemHLA:
+  associatedProgram:
+   - pBwaMem
+  dataType: SCALAR
+  default: 1
+  type: programArgument
 bwaMemRapidDb:
   associatedProgram:
    - pBwaMem
@@ -396,13 +402,13 @@ pPicardToolsMergeSamFiles:
   removeRedundantFiles: yes
   removalSetting: merged
   type: program
-pSambambaMarkduplicates:
+pPicardToolsMarkduplicates:
   associatedProgram:
    - MIP
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileTag: _smd
+  fileTag: _md
   programNamePath:
    - sambamba
   fileEnding:
@@ -410,6 +416,38 @@ pSambambaMarkduplicates:
   removeRedundantFiles: yes
   removalSetting: merged
   type: program
+pSambambaMarkduplicates:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 0
+  fileTag: _md
+  programNamePath:
+   - sambamba
+  fileEnding:
+   - .bam
+  removeRedundantFiles: yes
+  removalSetting: merged
+  type: program
+sambambaMarkDupHashTableSize:
+  associatedProgram:
+   - pSambambaMarkduplicates
+  dataType: SCALAR
+  default: 500000
+  type: programArgument
+sambambaMarkDupOverflowListSize:
+  associatedProgram:
+   - pSambambaMarkduplicates
+  dataType: SCALAR
+  default: 500000
+  type: programArgument
+sambambaMarkDupIoBufferSize:
+  associatedProgram:
+   - pSambambaMarkduplicates
+  dataType: SCALAR
+  default: 2048
+  type: programArgument
 ## GATK BAM Calibration
 pGATKRealigner:
   associatedProgram:
@@ -1281,6 +1319,12 @@ vcfParserSelectFileMatchingColumn:
    - pVCFParser
   dataType: SCALAR
   type: programArgument
+VcfParserOutputFileCount:
+  associatedProgram:
+   - pVCFParser
+  dataType: SCALAR
+  default: 1
+  type: programArgument
 ## Annovar
 pAnnovar:
   associatedProgram:
@@ -1607,6 +1651,16 @@ picardToolsMergeSamFilesPrevious:
   existsCheck: file
   dataType: ARRAY
   mandatory: no
+  type: path
+GATKBaseReCalibrationKnownSite:
+  associatedProgram:
+   - pGATKBaseRecalibration
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - dbsnp_138.b37.vcf
+   - 1000G_phase1.indels.b37.vcf
+   - Mills_and_1000G_gold_standard.indels.b37.vcf
   type: path
 GATKBaseReCalibrationStaticQuantizedQuals:
   associatedProgram:
