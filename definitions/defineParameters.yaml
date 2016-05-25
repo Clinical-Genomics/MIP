@@ -491,15 +491,6 @@ pGATKBaseRecalibration:
   removeRedundantFiles: yes
   removalSetting: merged
   type: program
-GATKBaseReCalibrationSNPKnownSet:
-  associatedProgram:
-   - pGATKBaseRecalibration
-  buildFile: yesAutoDownLoad
-  dataType: SCALAR
-  default: dbsnp_138.b37.vcf
-  existsCheck: file
-  reference: referencesDir
-  type: path
 GATKBaseReCalibrationOverClippedRead:
   associatedProgram:
    - pGATKBaseRecalibration
@@ -1443,7 +1434,7 @@ pSampleCheck:
   fileTag: nofileTag
   programNamePath:
    - vcftools
-   - plink
+   - plink2
   type: program
 pEvaluation:
   associatedProgram:
@@ -1466,7 +1457,7 @@ NISTHighConfidenceCallSet:
   associatedProgram:
    - pEvaluation
   buildFile: noAutoBuild
-  default: NISTIntgratedCalls.v2.19.vcf
+  default: NISTIntegratedCalls.hg38.vcf
   dataType: SCALAR
   existsCheck: file
   reference: referencesDir
@@ -1858,5 +1849,16 @@ genmodcaddFiles:
   elementSeparator: ,
   existsCheck: file
   mandatory: no
+  reference: referencesDir
+  type: path
+exomeTargetBed:
+  associatedProgram:
+   - pPicardToolsCalculateHSMetrics
+   - pGATKRealigner
+   - pGATKBaseRecalibration
+   - pGATKHaploTypeCaller
+  buildFile: yesAutoBuild
+  dataType: HASH
+  existsCheck: file
   reference: referencesDir
   type: path
