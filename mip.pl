@@ -113,8 +113,8 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                ##PicardTools
                -ptp/--picardToolsPath Path to PicardTools. Mandatory for use of PicardTools (defaults to "")
                -pPtM/--pPicardToolsMergeSamFiles Merge (BAM file(s) ) using PicardTools MergeSamFiles or rename single samples for downstream processing (Mandatory)
-               -pPtMR/--pPicardToolsMergeRapidReads Merge Read batch processed (BAM file(s)) using PicardTools MergeSamFiles (Only relevant in rapid mode;defaults to "0" (=no))
                  -ptmp/--picardToolsMergeSamFilesPrevious PicardTools MergeSamFiles on merged current files and previous BAM-file(s) (supply whole path and name, name must contain sample id, and lanes_Xn info)
+               -pPtMR/--pPicardToolsMergeRapidReads Merge Read batch processed (BAM file(s)) using PicardTools MergeSamFiles (Only relevant in rapid mode;defaults to "0" (=no))
 
                ##MarkDuplicates
                -pPmD/--pPicardToolsMarkduplicates Markduplicates using PicardTools Markduplicates (defaults to "1" (=yes))
@@ -186,14 +186,15 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -gbdv/--GATKBundleDownLoadVersion  GATK FTP bundle download version.(defaults to "2.8")
                -gdco/--GATKDownSampleToCoverage Coverage to downsample to at any given locus (defaults to "1000")
                -pGrA/--pGATKRealigner Realignments of reads using GATK realign (defaults to "1" (=yes))
-                 -graks1/--GATKReAlignerINDELKnownSet1 GATK ReAlignerTargetCreator/IndelRealigner known INDEL set 1 (defaults to "1000G_phase1.indels.b37.vcf")
-                 -graks2/--GATKReAlignerINDELKnownSet2 GATK ReAlignerTargetCreator/IndelRealigner known INDEL set 2 (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
+                 -graks/--GATKReAlignerINDELKnownSite GATK ReAlignerTargetCreator/IndelRealigner known INDEL site (defaults to "1000G_phase1.indels.b37.vcf", "Mills_and_1000G_gold_standard.indels.b37.vcf")
                -pGbR/--pGATKBaseRecalibration Recalibration of bases using GATK BaseRecalibrator/PrintReads (defaults to "1" (=yes))
+                 -gbrcov/--GATKBaseReCalibrationCovariate GATK BaseReCalibration covariates (defaults to "ReadGroupCovariate", "ContextCovariate", "CycleCovariate", "QualityScoreCovariate")
                  -gbrkst/--GATKBaseReCalibrationKnownSite GATK BaseReCalibration known SNV and INDEL sites (defaults to "dbsnp_138.b37.vcf", "1000G_phase1.indels.b37.vcf", "Mills_and_1000G_gold_standard.indels.b37.vcf")
                  -gbrocr/--GATKBaseReCalibrationOverClippedRead Filter out reads that are over-soft-clipped (defaults to "1" (=yes))             
                  -gbrdiq/--GATKBaseReCalibrationDisableIndelQual Disable indel quality scores (defaults to "1" (=yes))
                  -gbrsqq/--GATKBaseReCalibrationStaticQuantizedQuals Static binning of base quality scores (defaults to "10,20,30,40"; comma sep)
                -pGhC/--pGATKHaploTypeCaller Variant discovery using GATK HaplotypeCaller (defaults to "1" (=yes))
+                 -ghcann/--GATKHaploTypeCallerAnnotation GATK HaploTypeCaller annotations (defaults to "BaseQualityRankSumTest", "ChromosomeCounts", "Coverage", "DepthPerAlleleBySample", "FisherStrand", "MappingQualityRankSumTest", "QualByDepth", "RMSMappingQuality", "ReadPosRankSumTest", "StrandOddsRatio")
                  -ghckse/--GATKHaploTypeCallerSNPKnownSet GATK HaplotypeCaller dbSNP set for annotating ID columns (defaults to "dbsnp_138.b37.vcf")
                  -ghcscb/--GATKHaploTypeCallerSoftClippedBases Do not include soft clipped bases in the variant calling (defaults to "1" (=yes))
                  -ghcpim/--GATKHaploTypeCallerPcrIndelModel The PCR indel model to use (defaults to "None"; Set to "0" to disable)
@@ -256,8 +257,8 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -anvarmafth/--annovarMAFThreshold Sets the minor allele frequency threshold in annovar (defaults to "0")
                -pSnE/--pSnpEff Variant annotation using snpEFF (defaults to "1" (=yes))
 #snpEffAnn
-                 -sneann/--snpEffAnn Annotate variants using SnpEff (defaults to "1" (=yes))
                  -snep/--snpEffPath Path to snpEff. Mandatory for use of snpEff (defaults to "")
+                 -sneann/--snpEffAnn Annotate variants using SnpEff (defaults to "1" (=yes))
                  -snegbv/--snpEffGenomeBuildVersion SnpEff genome build version (defaults to "GRCh37.75")
                  -snesaf/--snpSiftAnnotationFiles Annotation files to use with snpSift (default to (dbsnp_138.b37.excluding_sites_after_129.vcf.gz=CAF ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz=AF ExAC.r0.3.sites.vep.vcf=AF); Hash flag i.e. --Flag key=value)
                  -snesaoi/--snpSiftAnnotationOutInfoKey snpSift output INFO key (default to (ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz=1000GAF ExAC.r0.3.sites.vep.vcf=EXACAF); Hash flag i.e. --Flag key=value)
@@ -379,8 +380,7 @@ my %supportedCaptureKit = ('Nimblegen_SeqCapEZExome.V2' => "Nimblegen_SeqCapEZEx
 my %supportedCosmidReference;  #References supported as downloads from Cosmid. Hash is populated after user options are processed
 
 ## Reference that should be decomposed and normalized using vt
-my @vtReferences = ("GATKReAlignerINDELKnownSet1",
-		    "GATKReAlignerINDELKnownSet2",
+my @vtReferences = ("GATKReAlignerINDELKnownSite",
 		    "GATKBaseReCalibrationKnownSite",
 		    "GATKHaploTypeCallerSNPKnownSet",
 		    "GATKVariantReCalibrationTrainingSetHapMap",
@@ -464,8 +464,8 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'alnq|bwaAlnQualityTrimming=n' => \$parameter{bwaAlnQualityTrimming}{value},  #BWA aln quality threshold for read trimming down to 35bp
 	   'pSap|pBwaSampe=n' => \$parameter{pBwaSampe}{value},
 	   'pPtM|pPicardToolsMergeSamFiles=n' => \$parameter{pPicardToolsMergeSamFiles}{value},  #PicardTools mergeSamFiles
-	   'pPtMR|pPicardToolsMergeRapidReads=n' => \$parameter{pPicardToolsMergeRapidReads}{value},  #PicardTools mergeSamFiles - rapid mode
 	   'ptmp|picardToolsMergeSamFilesPrevious:s' => \@{$parameter{picardToolsMergeSamFilesPrevious}{value}},  #Comma separated list
+	   'pPtMR|pPicardToolsMergeRapidReads=n' => \$parameter{pPicardToolsMergeRapidReads}{value},  #PicardTools mergeSamFiles - rapid mode
 	   'ptp|picardToolsPath:s' => \$parameter{picardToolsPath}{value},  #Path to picardtools
 	   'pPmD|pPicardToolsMarkduplicates=n' => \$parameter{pPicardToolsMarkduplicates}{value},  #PicardTools Markduplicates
 	   'pSmD|pSambambaMarkduplicates=n' => \$parameter{pSambambaMarkduplicates}{value},  #Sambamba Markduplicates
@@ -526,14 +526,15 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'gbdv|GATKBundleDownLoadVersion:s' => \$parameter{GATKBundleDownLoadVersion}{value},  #Sets the GATK FTP Bundle Download version
 	   'gdco|GATKDownSampleToCoverage=n' => \$parameter{GATKDownSampleToCoverage}{value},  #GATK downsample to coverage
 	   'pGrA|pGATKRealigner=n' => \$parameter{pGATKRealigner}{value},  #GATK ReAlignerTargetCreator/IndelRealigner
-	   'graks1|GATKReAlignerINDELKnownSet1:s' => \$parameter{GATKReAlignerINDELKnownSet1}{value},  #Known INDEL set to be used in GATK ReAlignerTargetCreator/IndelRealigner
-	   'graks2|GATKReAlignerINDELKnownSet2:s' => \$parameter{GATKReAlignerINDELKnownSet2}{value},  #Known INDEL set to be used in GATK ReAlignerTargetCreator/IndelRealigner
+	   'graks|GATKReAlignerINDELKnownSite:s'  => \@{$parameter{GATKReAlignerINDELKnownSite}{value}},  #Comma separated list
 	   'pGbR|pGATKBaseRecalibration=n' => \$parameter{pGATKBaseRecalibration}{value},  #GATK BaseRecalibrator/PrintReads
+	   'gbrcov|GATKBaseReCalibrationCovariate:s'  => \@{$parameter{GATKBaseReCalibrationCovariate}{value}},  #Comma separated list
 	   'gbrkst|GATKBaseReCalibrationKnownSite:s'  => \@{$parameter{GATKBaseReCalibrationKnownSite}{value}},  #Comma separated list
 	   'gbrocr|GATKBaseReCalibrationOverClippedRead=n' => \$parameter{GATKBaseReCalibrationOverClippedRead}{value},  #Filter out reads that are over-soft-clipped
 	   'gbrdiq|GATKBaseReCalibrationDisableIndelQual=n' => \$parameter{GATKBaseReCalibrationDisableIndelQual}{value},  #Disable indel quality scores
 	   'gbrsqq|GATKBaseReCalibrationStaticQuantizedQuals:s'  => \@{$parameter{GATKBaseReCalibrationStaticQuantizedQuals}{value}},  #Comma separated list
 	   'pGhC|pGATKHaploTypeCaller=n' => \$parameter{pGATKHaploTypeCaller}{value},  #GATK Haplotypecaller
+	   'ghcann|GATKHaploTypeCallerAnnotation:s'  => \@{$parameter{GATKHaploTypeCallerAnnotation}{value}},  #Comma separated list
 	   'ghckse|GATKHaploTypeCallerSNPKnownSet:s' => \$parameter{GATKHaploTypeCallerSNPKnownSet}{value},  #Known SNP set to be used in GATK HaplotypeCaller
 	   'ghcscb|GATKHaploTypeCallerSoftClippedBases=n' => \$parameter{GATKHaploTypeCallerSoftClippedBases}{value},  #Do not include soft clipped bases in the variant calling
 	   'ghcpim|GATKHaploTypeCallerPcrIndelModel:s' => \$parameter{GATKHaploTypeCallerPcrIndelModel}{value},  #The PCR indel model to use
@@ -592,8 +593,8 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'anvtn|annovarTableNames:s'  => \@{$parameter{annovarTableNames}{value}},  #Comma separated list
 	   'anvstn|annovarSupportedTableNames' => sub { &PrintSupportedAnnovarTableNames(\%scriptParameter, \@annovarSupportedTableNames)},  #Generates a list of supported table names
 	   'anvarmafth|annovarMAFThreshold=n' => \$parameter{annovarMAFThreshold}{value},
-	   'snep|snpEffPath:s'  => \$parameter{snpEffPath}{value},  #path to snpEff directory
 	   'pSnE|pSnpEff=n' => \$parameter{pSnpEff}{value},
+	   'snep|snpEffPath:s'  => \$parameter{snpEffPath}{value},  #path to snpEff directory
 	   'sneann|snpEffAnn=n' => \$parameter{snpEffAnn}{value},
 	   'snegbv|snpEffGenomeBuildVersion:s'  => \$parameter{snpEffGenomeBuildVersion}{value},
 	   'snesaf|snpSiftAnnotationFiles=s'  => \%{$parameter{snpSiftAnnotationFiles}{value}},
@@ -867,18 +868,20 @@ foreach my $parameterInfo (@broadcasts) {
 				  cosmidResourceVersion => "latest",
 				  humanGenomeReferenceVersionRef => \$fileInfo{humanGenomeReferenceVersion},
 				 });
-&DefineSupportedCosmidReferences({supportedCosmidReferenceHashRef => \%supportedCosmidReference,
-				  parameterName => "GATKReAlignerINDELKnownSet1",
-				  cosmidResourceName => "indels",
-				  cosmidResourceVersion => $scriptParameter{GATKBundleDownLoadVersion}."/b".$fileInfo{humanGenomeReferenceVersion},
-				  humanGenomeReferenceVersionRef => \$fileInfo{humanGenomeReferenceVersion},
-				 });
-&DefineSupportedCosmidReferences({supportedCosmidReferenceHashRef => \%supportedCosmidReference,
-				  parameterName => "GATKReAlignerINDELKnownSet2",
-				  cosmidResourceName => "mills",
-				  cosmidResourceVersion => $scriptParameter{GATKBundleDownLoadVersion}."/b".$fileInfo{humanGenomeReferenceVersion},
-				  humanGenomeReferenceVersionRef => \$fileInfo{humanGenomeReferenceVersion},
-				 });
+## Has changed to array parameter fix in future bioconda download
+#&DefineSupportedCosmidReferences({supportedCosmidReferenceHashRef => \%supportedCosmidReference,
+#				  parameterName => "GATKReAlignerINDELKnownSet1",
+#				  cosmidResourceName => "indels",
+#				  cosmidResourceVersion => $scriptParameter{GATKBundleDownLoadVersion}."/b".$fileInfo{humanGenomeReferenceVersion},
+#				  humanGenomeReferenceVersionRef => \$fileInfo{humanGenomeReferenceVersion},
+#				 });
+## Has changed to array parameter fix in future bioconda download
+#&DefineSupportedCosmidReferences({supportedCosmidReferenceHashRef => \%supportedCosmidReference,
+#				  parameterName => "GATKReAlignerINDELKnownSet2",
+#				  cosmidResourceName => "mills",
+#				  cosmidResourceVersion => $scriptParameter{GATKBundleDownLoadVersion}."/b".$fileInfo{humanGenomeReferenceVersion},
+#				  humanGenomeReferenceVersionRef => \$fileInfo{humanGenomeReferenceVersion},
+#				 });
 ## Has changed to array parameter fix in future bioconda download
 #&DefineSupportedCosmidReferences({supportedCosmidReferenceHashRef => \%supportedCosmidReference,
 #				  parameterName => "GATKBaseReCalibrationKnownSite",
@@ -2196,7 +2199,14 @@ else {
 	    
 	    if ($parameter{ $scriptParameter{annovarTableNames}[$tableNamesCounter] }{buildFile} eq 1) {
 		
-		&BuildAnnovarPreRequisites(\%parameter, \%scriptParameter, \%sampleInfo, \%infilesLaneNoEnding, \%jobID, \%annovarTable, $scriptParameter{familyID}, $scriptParameter{alignerOutDir}, "Annovar");
+		&BuildAnnovarPreRequisites({parameterHashRef => \%parameter,
+					    scriptParameterHashRef => \%scriptParameter,
+					    sampleInfoHashRef => \%sampleInfo,
+					    infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
+					    jobIDHashRef => \%jobID,
+					    annovarTableHashRef => \%annovarTable,
+					    programName => "Annovar",
+					   });
 		last;  #Will handle all build tables within sbatch script
 	    }
 	}
@@ -4425,6 +4435,7 @@ sub Annovar {
 	    print $XARGSFILEHANDLE join(',', @{${$scriptParameterHashRef}{annovarTableNames}})." ";  #Databases to use
 	    
 	    print $XARGSFILEHANDLE "-operation ";  #Comma-delimited string specifying type of operation	
+
 	    for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@{${$scriptParameterHashRef}{annovarTableNames}});$tableNamesCounter++) {  #For all specified table names
 		
 		if (${$annovarTableHashRef}{${$scriptParameterHashRef}{annovarTableNames}[$tableNamesCounter]}{annotation} eq "geneanno") {
@@ -10294,9 +10305,8 @@ sub GATKHaploTypeCaller {
 		   });
     ## Get exomeTargetBed file for specfic sampleID and add fileEnding from fileInfoHash if supplied
     my $exomeTargetBedFile = &GetExomTargetBEDFile({scriptParameterHashRef => $scriptParameterHashRef,
-						    fileInfoHashRef => $fileInfoHashRef,
 						    sampleIDRef => $sampleIDRef,
-						    fileEndingPosition => 2,
+						    fileEndingRef => \${$fileInfoHashRef}{exomeTargetBed}[2],
 						   });
     ## Prepare target interval file. Copies file to temporary directory, and adds fileExtension to fit GATK
     my $targetIntervalsPath = &PrepareGATKTargetIntervals({analysisTypeRef => \${$scriptParameterHashRef}{analysisType},
@@ -10374,16 +10384,7 @@ sub GATKHaploTypeCaller {
 	}
 
 	## Annotations to apply to variant calls
-	print $XARGSFILEHANDLE "--annotation BaseQualityRankSumTest ";  #Rank Sum Test of REF versus ALT base quality scores
-	print $XARGSFILEHANDLE "--annotation ChromosomeCounts ";  #Counts and frequency of alleles in called genotypes
-	print $XARGSFILEHANDLE "--annotation Coverage ";  #Total depth of coverage per sample and over all samples
-	print $XARGSFILEHANDLE "--annotation DepthPerAlleleBySample ";  #Depth of coverage of each allele per sample
-	print $XARGSFILEHANDLE "--annotation FisherStrand ";  #Strand bias estimated using Fisher's Exact Test
-	print $XARGSFILEHANDLE "--annotation MappingQualityRankSumTest ";  #Rank Sum Test for mapping qualities of REF versus ALT reads
-	print $XARGSFILEHANDLE "--annotation QualByDepth ";  #Variant confidence normalized by unfiltered depth of variant samples
-	print $XARGSFILEHANDLE "--annotation RMSMappingQuality ";  #Root Mean Square of the mapping quality of reads across all samples
-	print $XARGSFILEHANDLE "--annotation ReadPosRankSumTest ";  #Rank Sum Test for relative positioning of REF versus ALT alleles within reads
-	print $XARGSFILEHANDLE "--annotation StrandOddsRatio ";  #Strand bias estimated by the Symmetric Odds Ratio test
+	print $XARGSFILEHANDLE "--annotation ".join(" --annotation ", (@{${$scriptParameterHashRef}{GATKHaploTypeCallerAnnotation}}) )." ";
 
 	if (scalar(@{$scriptParameter{sampleIDs}}) >= 10) {
 
@@ -10527,9 +10528,8 @@ sub GATKBaseReCalibration {
 
     ## Get exomeTargetBed file for specfic sampleID and add fileEnding from fileInfoHash if supplied
     my $exomeTargetBedFile = &GetExomTargetBEDFile({scriptParameterHashRef => $scriptParameterHashRef,
-						    fileInfoHashRef => $fileInfoHashRef,
 						    sampleIDRef => $sampleIDRef,
-						    fileEndingPosition => 0,
+						    fileEndingRef => \${$fileInfoHashRef}{exomeTargetBed}[0],
 						   });
 
     ## Prepare target interval file. Copies file to temporary directory, and adds fileExtension to fit GATK
@@ -10592,15 +10592,8 @@ sub GATKBaseReCalibration {
 	
 	print $XARGSFILEHANDLE "-T BaseRecalibrator ";  #Type of analysis to run
 	print $XARGSFILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	
-	## Covariates to be used in the recalibration
-	print $XARGSFILEHANDLE "-cov ReadGroupCovariate ";
-	print $XARGSFILEHANDLE "-cov ContextCovariate ";
-	print $XARGSFILEHANDLE "-cov CycleCovariate ";
-	print $XARGSFILEHANDLE "-cov QualityScoreCovariate ";
-	print $XARGSFILEHANDLE "-cov ReadGroupCovariate ";
-	
 	print $XARGSFILEHANDLE "-R ".catfile($$referencesDirectoryRef, ${$scriptParameterHashRef}{humanGenomeReference})." ";  #Reference file
+	print $XARGSFILEHANDLE "-cov ".join(" -cov ", (@{${$scriptParameterHashRef}{GATKBaseReCalibrationCovariate}}) )." ";  #Covariates to be used in the recalibration
 	print $XARGSFILEHANDLE "-knownSites ".join(" -knownSites ", map { catfile($$referencesDirectoryRef, $_) } (@{${$scriptParameterHashRef}{GATKBaseReCalibrationKnownSite}}) )." ";
 	print $XARGSFILEHANDLE "-nct ".${$scriptParameterHashRef}{maximumCores}." ";  #How many CPU threads should be allocated per data thread to running this analysis
 	print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{GATKDownSampleToCoverage}." ";  #Coverage to downsample to at any given locus	    	    
@@ -10827,9 +10820,8 @@ sub GATKReAligner {
 
     ## Get exomeTargetBed file for specfic sampleID and add fileEnding from fileInfoHash if supplied
     my $exomeTargetBedFile = &GetExomTargetBEDFile({scriptParameterHashRef => $scriptParameterHashRef,
-						    fileInfoHashRef => $fileInfoHashRef,
 						    sampleIDRef => $sampleIDRef,
-						    fileEndingPosition => 2,
+						    fileEndingRef => \${$fileInfoHashRef}{exomeTargetBed}[2],
 						   });
     ## Prepare target interval file. Copies file to temporary directory, and adds fileExtension to fit GATK
     my $targetIntervalsPath = &PrepareGATKTargetIntervals({analysisTypeRef => \${$scriptParameterHashRef}{analysisType},
@@ -10891,8 +10883,7 @@ sub GATKReAligner {
 	print $XARGSFILEHANDLE "-T RealignerTargetCreator ";  #Type of analysis to run
 	print $XARGSFILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $XARGSFILEHANDLE "-R ".catfile($$referencesDirectoryRef, ${$scriptParameterHashRef}{humanGenomeReference})." ";  #Reference file 
-	print $XARGSFILEHANDLE "-known ".catfile($$referencesDirectoryRef, ${$scriptParameterHashRef}{GATKReAlignerINDELKnownSet1})." ";  #Input VCF file with known indels
-	print $XARGSFILEHANDLE "-known ".catfile($$referencesDirectoryRef, ${$scriptParameterHashRef}{GATKReAlignerINDELKnownSet2})." ";  #Input VCF file with known indels
+	print $XARGSFILEHANDLE "-known ".join(" -known ", map { catfile($$referencesDirectoryRef, $_) } (@{${$scriptParameterHashRef}{GATKReAlignerINDELKnownSite}}) )." ";  #Input VCF file(s) with known indels
 	print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{GATKDownSampleToCoverage}." ";  #Coverage to downsample to at any given locus	    
 	print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 	
@@ -10931,8 +10922,7 @@ sub GATKReAligner {
 	print $XARGSFILEHANDLE "-T IndelRealigner ";
 	print $XARGSFILEHANDLE "-l INFO ";
 	print $XARGSFILEHANDLE "-R ".catfile($$referencesDirectoryRef, ${$scriptParameterHashRef}{humanGenomeReference})." ";  #Reference file
-	print $XARGSFILEHANDLE "-known ".catfile($$referencesDirectoryRef, ${$scriptParameterHashRef}{GATKReAlignerINDELKnownSet1})." ";  #Input VCF file with known indels
-	print $XARGSFILEHANDLE "-known ".catfile($$referencesDirectoryRef, ${$scriptParameterHashRef}{GATKReAlignerINDELKnownSet2})." ";  #Input VCF file with known indels	 
+	print $XARGSFILEHANDLE "-known ".join(" -known ", map { catfile($$referencesDirectoryRef, $_) } (@{${$scriptParameterHashRef}{GATKReAlignerINDELKnownSite}}) )." ";  #Input VCF file(s) with known indels
 	print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{GATKDownSampleToCoverage}." ";  #Coverage to downsample to at any given locus
 	print $XARGSFILEHANDLE "--consensusDeterminationModel USE_READS ";  #Additionally uses indels already present in the original alignments of the reads 
 	print $XARGSFILEHANDLE "-targetIntervals ".catfile($intermediarySampleDirectory, $infile.$outfileTag."_".$$contigRef.".intervals")." ";
@@ -11139,11 +11129,12 @@ sub PicardToolsMarkduplicates {
 	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	print $XARGSFILEHANDLE "; ";
 	
-	print $XARGSFILEHANDLE "sambamba ";  #Program
-	print $XARGSFILEHANDLE "flagstat ";
-	print $XARGSFILEHANDLE catfile($$tempDirectoryRef, $infile.$outfileTag."_".$$contigRef.".bam")." ";  #OutFile
-	print $XARGSFILEHANDLE "> ".catfile($$tempDirectoryRef, $infile.$outfileTag."_".$$contigRef."_metric")." ";  #Metric file 
-	say $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	## Process BAM with sambamba flagstat to produce metric file for downstream analysis
+	&SambambaFlagStat({infilePath => catfile($$tempDirectoryRef, $infile.$outfileTag."_".$$contigRef.".bam"),
+			   outfilePath => catfile($$tempDirectoryRef, $infile.$outfileTag."_".$$contigRef."_metric"),
+			   stderrFilePath => $xargsFileName.".".$$contigRef.".stderr.txt",
+			   FILEHANDLE => $XARGSFILEHANDLE,
+			  });
     }
     
     ## Concatenate all metric files
@@ -11363,11 +11354,12 @@ sub SambambaMarkduplicates {
 	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	print $XARGSFILEHANDLE "; ";
 	
-	print $XARGSFILEHANDLE "sambamba ";  #Program
-	print $XARGSFILEHANDLE "flagstat ";
-	print $XARGSFILEHANDLE catfile($$tempDirectoryRef, $infile.$outfileTag."_".$$contigRef.".bam")." ";  #OutFile
-	print $XARGSFILEHANDLE "> ".catfile($$tempDirectoryRef, $infile.$outfileTag."_".$$contigRef."_metric")." ";  #Metric file 
-	say $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	## Process BAM with sambamba flagstat to produce metric file for downstream analysis
+	&SambambaFlagStat({infilePath => catfile($$tempDirectoryRef, $infile.$outfileTag."_".$$contigRef.".bam"),
+			   outfilePath => catfile($$tempDirectoryRef, $infile.$outfileTag."_".$$contigRef."_metric"),
+			   stderrFilePath => $xargsFileName.".".$$contigRef.".stderr.txt",
+			   FILEHANDLE => $XARGSFILEHANDLE,
+			  });
     }
     
     ## Concatenate all metric files
@@ -13236,8 +13228,15 @@ sub VariantAnnotationBlock {
 	for (my $tableNamesCounter=0;$tableNamesCounter<scalar(@{ ${$scriptParameterHashRef}{annovarTableNames} });$tableNamesCounter++) {  #For all specified table names
 	    
 	    if (${$parameterHashRef}{ ${$scriptParameterHashRef}{annovarTableNames}[$tableNamesCounter] }{buildFile} eq 1) {
-		
-		&BuildAnnovarPreRequisites($parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $jobIDHashRef, $annovarTableHashRef, $$familyIDRef, $$alignerOutDirRef, "Annovar");
+
+		&BuildAnnovarPreRequisites({parameterHashRef => $parameterHashRef,
+					    scriptParameterHashRef => $scriptParameterHashRef,
+					    sampleInfoHashRef => $sampleInfoHashRef,
+					    infilesLaneNoEndingHashRef => $infilesLaneNoEndingHashRef,
+					    jobIDHashRef => $jobIDHashRef,
+					    annovarTableHashRef => $annovarTableHashRef,
+					    programName => "Annovar",
+					   });
 		last;  #Will handle all build tables within sbatch script
 	    }
 	}
@@ -13446,6 +13445,10 @@ sub BAMCalibrationBlock {
     ##Will also split alignment per contig and copy to temporary directory for '-rio 1' block to enable selective removal of block submodules.
     $logger->info("\t[PicardTool MergeSamFiles]\n");
 
+    if ($scriptParameter{pPicardToolsMarkduplicates} > 0) {  #PicardTools Markduplicates
+	
+	$logger->info("\t[PicardTools Markduplicates]\n");
+    }
     if ($scriptParameter{pSambambaMarkduplicates} > 0) {  #Sambamba Markduplicates
 	
 	$logger->info("\t[Sambamba Markduplicates]\n");
@@ -13997,15 +14000,22 @@ sub BuildAnnovarPreRequisites {
 ##         : $alignerOutDir              => The alignerOutDir used in the analysis
 ##         : $programName                => The program name
 
-    my $parameterHashRef = $_[0];
-    my $scriptParameterHashRef = $_[1];
-    my $sampleInfoHashRef = $_[2];
-    my $infilesLaneNoEndingHashRef = $_[3];
-    my $jobIDHashRef = $_[4];
-    my $annovarTableHashRef = $_[5];
-    my $familyID = $_[6];
-    my $alignerOutDir = $_[7];
-    my $programName = $_[8];
+    my ($argHashRef) = @_;
+
+    ## Default(s)
+    my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
+    my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
+    my $referencesDirectoryRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
+    my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
+
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
+    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
+    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
+    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
+    my $annovarTableHashRef = ${$argHashRef}{annovarTableHashRef};
+    my $programName = ${$argHashRef}{programName};
     
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     ${$parameterHashRef}{annovarBuildReference}{buildFile} = 0;  #Ensure that this subrutine is only executed once
@@ -14015,11 +14025,11 @@ sub BuildAnnovarPreRequisites {
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
 					    jobIDHashRef => $jobIDHashRef,
 					    FILEHANDLE => $FILEHANDLE,
-					    directoryID => $familyID,
+					    directoryID => $$familyIDRef,
 					    programName => $programName,
-					    programDirectory => lc($alignerOutDir),
+					    programDirectory => lc($$alignerOutDirRef),
 					    processTime => 3,
-					    tempDirectory => ${$scriptParameterHashRef}{tempDirectory}
+					    tempDirectory => $$tempDirectoryRef
 					   });
 
     $logger->warn("Will try to create required Annovar database files before executing ".$programName."\n");
@@ -14249,6 +14259,7 @@ sub BuildPTCHSMetricPreRequisites {
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
     my $referencesDirectoryRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
+    my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
 
     ## Flatten argument(s)
     my $parameterHashRef = ${$argHashRef}{parameterHashRef};
@@ -14295,7 +14306,7 @@ sub BuildPTCHSMetricPreRequisites {
 	&JavaCore({FILEHANDLE => $FILEHANDLE,
 		   memoryAllocation => "Xmx2g",
 		   javaUseLargePagesRef => \${$scriptParameterHashRef}{javaUseLargePages},
-		   javaTemporaryDirectory => ${$scriptParameterHashRef}{tempDirectory},
+		   javaTemporaryDirectory => $$tempDirectoryRef,
 		   javaJar => catfile(${$scriptParameterHashRef}{picardToolsPath}, "picard.jar"),
 		  });
     
@@ -14320,7 +14331,7 @@ sub BuildPTCHSMetricPreRequisites {
 	&JavaCore({FILEHANDLE => $FILEHANDLE,
 		   memoryAllocation => "Xmx2g",
 		   javaUseLargePagesRef => \${$scriptParameterHashRef}{javaUseLargePages},
-		   javaTemporaryDirectory => ${$scriptParameterHashRef}{tempDirectory},
+		   javaTemporaryDirectory => $$tempDirectoryRef,
 		   javaJar => catfile(${$scriptParameterHashRef}{picardToolsPath}, "picard.jar"),
 		  });
     
@@ -15124,12 +15135,12 @@ sub ReadPlinkPedigreeFile {
     my $familyID;
     my $sampleID;
     
-    ## Determine if the user supplied info on array parameter
-    my $userSampleIDsSwitch = &CheckUserInfoArrays({scriptParameterHashRef => $scriptParameterHashRef,
-						    arrayRef => \@{${$parameterHashRef}{sampleIDs}{value}},
-						    parameterName => "sampleIDs",
-						   });
-    ##Determine if the user supplied info on parameter either via cmd or config
+    ## Determine if the user supplied info on parameter either via cmd or config
+    my $userSampleIDsSwitch = &CheckUserSuppliedInfo({scriptParameterHashRef => $scriptParameterHashRef,
+						      dataRef => \@{${$parameterHashRef}{sampleIDs}{value}},
+						      parameterName => "sampleIDs",
+						     });
+    ## Determine if the user supplied info on parameter either via cmd or config
     my $userExomeTargetBedSwitch = &CheckUserSuppliedInfo({scriptParameterHashRef => $scriptParameterHashRef,
 							   dataRef => ${$parameterHashRef}{exomeTargetBed}{value},
 							   parameterName => "exomeTargetBed",
@@ -16409,7 +16420,7 @@ sub AddToScriptParameter {
 	
 		}
 		elsif (exists(${$parameterHashRef}{$parameterName}{default})) {  #Default exists
-		    
+
 		    if (${$parameterHashRef}{$parameterName}{dataType} eq "ARRAY") {  #Array reference
 			
 			## Build default for inFilesDirs
@@ -16421,7 +16432,7 @@ sub AddToScriptParameter {
 			    }
 			}
 			else {
-
+			    
 			    push(@{${$scriptParameterHashRef}{$parameterName}}, @{ ${$parameterHashRef}{$parameterName}{default} });
 			}
 		    }
@@ -18118,44 +18129,6 @@ sub MoveMosaikNN {
 	   last;
 	}
     }
-}
-
-
-sub CheckUserInfoArrays {
-
-##CheckUserInfoArrays
-    
-##Function : Determine if the user supplied info on array parameter
-##Returns  : "0|1" 
-##Arguments: $scriptParameterHashRef, $arrayRef, $parameterName
-##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
-##         : $arrayRef               => Array to loop in for parameter {REF}
-##         : $parameterName          => MIP parameter to evaluate
-    
-    my ($argHashRef) = @_;
-
-    ## Flatten argument(s)
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $arrayRef = ${$argHashRef}{arrayRef};
-    my $parameterName = ${$argHashRef}{parameterName};
-    
-    my $userSuppliedInfoSwitch;
-    
-    if (!@{$arrayRef}) {  #No user supplied sample info
-	
-	if (defined(${$scriptParameterHashRef}{$parameterName})) {  #sampleIDs info in config file
-	    
-	    $userSuppliedInfoSwitch = 1;  #No user supplied sample info, but present in config file do NOT overwrite using info from pedigree file
-	}
-	else {  #No sampleIDs info in config file
-	    
-	    $userSuppliedInfoSwitch = 0;  #No user supplied sample info, not defined $scriptParameter{sampleIDs} in config file, add it from pedigree file
-	}
-    }
-    else {
-	$userSuppliedInfoSwitch = 1;  #User supplied sample info, do NOT overwrite using info from pedigree file	
-    }
-    return $userSuppliedInfoSwitch;
 }
 
 
@@ -23395,19 +23368,17 @@ sub GetExomTargetBEDFile {
 ##Function : Get exomeTargetBed file for specfic sampleID and add fileEnding from fileInfoHash if supplied
 ##Returns  : "exomeTargetBedFile(fileEnding)" 
 ##Tags     : get, capturekit, sampleids
-##Arguments: $scriptParameterHashRef, $fileInfoHashRef, $sampleIDRef
+##Arguments: $scriptParameterHashRef, $sampleIDRef, $fileEndingRef
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
-##         : $fileInfoHashRef        => The file info hash {REF}
 ##         : $sampleIDRef            => The sampleID {REF}
-##         : $fileEndingPosition     => Position in fileInfoHashArray for desired file ending
+##         : $fileEndingRef          => File ending to add to file {REF}
 
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
     my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
     my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $fileEndingPosition = ${$argHashRef}{fileEndingPosition};
+    my $fileEndingRef = ${$argHashRef}{fileEndingRef};
 
     my %seen;
 
@@ -23419,9 +23390,9 @@ sub GetExomTargetBEDFile {
 
 	if (any {$_ eq $$sampleIDRef} @captureKitSamples) {  #If captureKit sampleID is associated with exomeTargetBedFile
 	    
-	    if ( (defined($fileInfoHashRef)) && defined($fileEndingPosition) ) {
+	    if (defined($$fileEndingRef)) {
 
-		$exomeTargetBedFile .= ${$fileInfoHashRef}{exomeTargetBed}[$fileEndingPosition];
+		$exomeTargetBedFile .= $$fileEndingRef;
 	    }
 	    return $exomeTargetBedFile;
 	}
@@ -23431,6 +23402,42 @@ sub GetExomTargetBEDFile {
 	$logger->fatal("Could not detect ".$sampleIDRef." in '-exomeTargetBed' associated files in sub routine GetExomTargetBEDFile", "\n");
 	exit 1;
     }
+}
+
+
+sub SambambaFlagStat {
+
+##SambambaFlagStat
+    
+##Function : Process BAM with sambamba flagstat to produce metric file for downstream analysis
+##Returns  : "|$xargsFileCounter"
+##Arguments: $infilePath, $outfilePath, $stderrFilePath, $FILEHANDLE
+##         : $FILEHANDLE => Sbatch filehandle to write to
+##         : $infilePath     => Infile path
+##         : $outfilePath    => outfile path 
+##         : $stderrFilePath => Stderr file path to write to 
+
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $infilePath = ${$argHashRef}{infilePath};
+    my $outfilePath = ${$argHashRef}{outfilePath};
+    my $stderrFilePath = ${$argHashRef}{stderrFilePath};
+    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = (infilePath => $infilePath,
+			     outfilePath => $outfilePath,
+			     stderrFilePath => $stderrFilePath,
+			     FILEHANDLE => $FILEHANDLE,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "SambambaFlagStat");
+
+    print $FILEHANDLE "sambamba ";  #Program
+    print $FILEHANDLE "flagstat ";
+    print $FILEHANDLE catfile($infilePath)." ";  #OutFile
+    print $FILEHANDLE "> ".catfile($outfilePath)." ";  #Metric file 
+    say $FILEHANDLE "2>> ".$stderrFilePath, "\n";  #Redirect xargs output to program specific stderr file
 }
 
 

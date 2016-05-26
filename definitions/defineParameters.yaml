@@ -94,6 +94,33 @@ pedigreeFile:
   buildFile: noAutoBuild
   dataType: SCALAR
   type: path
+sourceEnvironmentCommand:
+  associatedProgram:
+   - MIP
+  elementSeparator: " "
+  dataType: ARRAY
+  type: MIP
+instanceTag:
+  associatedProgram:
+   - MIP
+  elementSeparator: ,
+  dataType: ARRAY
+  type: MIP
+sampleIDs:
+  associatedProgram:
+   - MIP
+  elementSeparator: ,
+  dataType: ARRAY
+  type: path
+inFilesDirs:
+  associatedProgram:
+   - MIP
+  elementSeparator: ,
+  existsCheck: directory
+  dataType: ARRAY
+  default:
+   - notSetYet
+  type: path
 sampleInfoFile:
   associatedProgram:
    - MIP
@@ -402,6 +429,14 @@ pPicardToolsMergeSamFiles:
   removeRedundantFiles: yes
   removalSetting: merged
   type: program
+picardToolsMergeSamFilesPrevious:
+  associatedProgram:
+   - pPicardToolsMergeSamFiles
+  elementSeparator: ,
+  existsCheck: file
+  dataType: ARRAY
+  mandatory: no
+  type: path
 pPicardToolsMarkduplicates:
   associatedProgram:
    - MIP
@@ -461,23 +496,14 @@ pGATKRealigner:
   removeRedundantFiles: yes
   removalSetting: merged
   type: program
-GATKReAlignerINDELKnownSet1:
+GATKReAlignerINDELKnownSite:
   associatedProgram:
    - pGATKRealigner
-  buildFile: yesAutoDownLoad
-  dataType: SCALAR
-  default: 1000G_phase1.indels.b37.vcf
-  existsCheck: file
-  reference: referencesDir
-  type: path
-GATKReAlignerINDELKnownSet2:
-  associatedProgram:
-   - pGATKRealigner
-  buildFile: yesAutoDownLoad
-  dataType: SCALAR
-  default: Mills_and_1000G_gold_standard.indels.b37.vcf
-  existsCheck: file
-  reference: referencesDir
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - 1000G_phase1.indels.b37.vcf
+   - Mills_and_1000G_gold_standard.indels.b37.vcf
   type: path
 pGATKBaseRecalibration:
   associatedProgram:
@@ -491,6 +517,27 @@ pGATKBaseRecalibration:
   removeRedundantFiles: yes
   removalSetting: merged
   type: program
+GATKBaseReCalibrationCovariate:
+  associatedProgram:
+   - pGATKBaseRecalibration
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - ReadGroupCovariate
+   - ContextCovariate
+   - CycleCovariate
+   - QualityScoreCovariate
+  type: programArgument
+GATKBaseReCalibrationKnownSite:
+  associatedProgram:
+   - pGATKBaseRecalibration
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - dbsnp_138.b37.vcf
+   - 1000G_phase1.indels.b37.vcf
+   - Mills_and_1000G_gold_standard.indels.b37.vcf
+  type: path
 GATKBaseReCalibrationOverClippedRead:
   associatedProgram:
    - pGATKBaseRecalibration
@@ -502,6 +549,18 @@ GATKBaseReCalibrationDisableIndelQual:
    - pGATKBaseRecalibration
   dataType: SCALAR
   default: 1
+  type: programArgument
+GATKBaseReCalibrationStaticQuantizedQuals:
+  associatedProgram:
+   - pGATKBaseRecalibration
+  elementSeparator: ,
+  dataType: ARRAY
+  mandatory: no
+  default:
+   - 10
+   - 20
+   - 30
+   - 40
   type: programArgument
 ## Coverage Analysis
 pChanjoSexCheck:
@@ -522,6 +581,18 @@ pSambambaDepth:
   programNamePath:
    - sambamba
   type: program
+sambambaDepthCutOffs:
+  associatedProgram:
+   - pSambambaDepth
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - 10
+   - 20
+   - 30
+   - 50
+   - 100
+  type: programArgument
 sambambaDepthBed:
   associatedProgram:
    - pSambambaDepth
@@ -630,6 +701,17 @@ pDelly:
   outDirectoryName: delly
   programType: structuralVariantCaller
   type: program
+dellyType:
+  associatedProgram:
+   - pDelly
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - DEL
+   - DUP
+   - INV
+   - INS
+  type: programArgument
 pManta:
   associatedProgram:
    - MIP
@@ -748,6 +830,39 @@ pSVVariantEffectPredictor:
   default: 1
   fileTag: vep_
   type: program
+svVepFeatures:
+  associatedProgram:
+   - pSVVariantEffectPredictor
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - hgvs
+   - symbol
+   - numbers
+   - sift
+   - polyphen
+   - humdiv
+   - domains
+   - protein
+   - ccds
+   - uniprot
+   - biotype
+   - regulatory
+   - tsl
+   - canonical
+   - per_gene
+   - appris
+  type: programArgument
+svVepPlugins:
+  associatedProgram:
+   - pSVVariantEffectPredictor
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - UpDownDistance
+   - LoFtool
+   - LoF
+  type: programArgument
 pSVVCFParser:
   associatedProgram:
    - MIP
@@ -769,6 +884,12 @@ svVcfParserRangeFeatureFile:
   existsCheck: file
   reference: referencesDir
   type: path
+svVcfParserRangeFeatureAnnotationColumns:
+  associatedProgram:
+   - pSVVCFParser
+  elementSeparator: ,
+  dataType: ARRAY
+  type: programArgument
 svVcfParserSelectFile:
   associatedProgram:
    - pSVVCFParser
@@ -780,6 +901,12 @@ svVcfParserSelectFileMatchingColumn:
   associatedProgram:
    - pSVVCFParser
   dataType: SCALAR
+  type: programArgument
+svVcfParserSelectFeatureAnnotationColumns:
+  associatedProgram:
+   - pSVVCFParser
+  elementSeparator: ,
+  dataType: ARRAY
   type: programArgument
 pSVRankVariants:
   associatedProgram:
@@ -872,6 +999,33 @@ pGATKHaploTypeCaller:
   removeRedundantFiles: yes
   removalSetting: merged
   type: program
+GATKHaploTypeCallerAnnotation:
+  associatedProgram:
+   - pGATKHaploTypeCaller
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - BaseQualityRankSumTest
+   - ChromosomeCounts
+   - Coverage
+   - DepthPerAlleleBySample
+   - FisherStrand
+   - MappingQualityRankSumTest
+   - QualByDepth
+   - RMSMappingQuality
+   - ReadPosRankSumTest
+   - StrandOddsRatio
+  type: programArgument
+#BaseQualityRankSumTest;  #Rank Sum Test of REF versus ALT base quality scores
+#ChromosomeCounts;  #Counts and frequency of alleles in called genotypes
+#Coverage;  #Total depth of coverage per sample and over all samples
+#DepthPerAlleleBySample;  #Depth of coverage of each allele per sample
+#FisherStrand;  #Strand bias estimated using Fisher's Exact Test
+#MappingQualityRankSumTest;  #Rank Sum Test for mapping qualities of REF versus ALT reads
+#QualByDepth;  #Variant confidence normalized by unfiltered depth of variant samples
+#RMSMappingQuality;  #Root Mean Square of the mapping quality of reads across all samples
+#ReadPosRankSumTest;  #Rank Sum Test for relative positioning of REF versus ALT alleles within reads
+#StrandOddsRatio ;  #Strand bias estimated by the Symmetric Odds Ratio test
 GATKHaploTypeCallerSNPKnownSet:
   associatedProgram:
    - pGATKHaploTypeCaller
@@ -1272,6 +1426,38 @@ vepReference:
   dataType: SCALAR
   default: 0
   type: programArgument
+vepFeatures:
+  associatedProgram:
+   - pVariantEffectPredictor
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - hgvs
+   - symbol
+   - numbers
+   - sift
+   - polyphen
+   - humdiv
+   - domains
+   - protein
+   - ccds
+   - uniprot
+   - biotype
+   - regulatory
+   - tsl
+   - canonical
+   - appris
+  type: programArgument
+vepPlugins:
+  associatedProgram:
+   - pVariantEffectPredictor
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - UpDownDistance
+   - LoFtool
+   - LoF
+  type: programArgument
 ## VCFParser
 pVCFParser:
   associatedProgram:
@@ -1298,6 +1484,12 @@ vcfParserRangeFeatureFile:
   existsCheck: file
   reference: referencesDir
   type: path
+vcfParserRangeFeatureAnnotationColumns:
+  associatedProgram:
+   - pVCFParser
+  elementSeparator: ,
+  dataType: ARRAY
+  type: programArgument
 vcfParserSelectFile:
   associatedProgram:
    - pVCFParser
@@ -1309,6 +1501,12 @@ vcfParserSelectFileMatchingColumn:
   associatedProgram:
    - pVCFParser
   dataType: SCALAR
+  type: programArgument
+vcfParserSelectFeatureAnnotationColumns:
+  associatedProgram:
+   - pVCFParser
+  elementSeparator: ,
+  dataType: ARRAY
   type: programArgument
 VcfParserOutputFileCount:
   associatedProgram:
@@ -1341,6 +1539,29 @@ annovarGenomeBuildVersion:
   dataType: SCALAR
   default: hg19
   type: programArgument
+annovarTableNames:
+  associatedProgram:
+   - pAnnovar
+  elementSeparator: ,
+  existsCheck: file
+  dataType: ARRAY
+  default:
+   - refGene
+   - mce46way
+   - gerp++elem
+   - segdup
+   - tfbs
+   - mirna
+   - snp137NonFlagged
+   - 1000g2012apr_all
+   - esp6500si_all
+   - ljb2_sift
+   - ljb2_pp2hdiv
+   - ljb2_pp2hvar
+   - ljb2_mt
+   - ljb2_gerp++
+   - ljb2_phylop
+  type: path
 annovarMAFThreshold:
   associatedProgram:
    - pAnnovar
@@ -1360,6 +1581,12 @@ pSnpEff:
   removeRedundantFiles: yes
   removalSetting: variantAnnotation
   type: program
+snpEffPath:
+  associatedProgram:
+   - pSnpEff
+  dataType: SCALAR
+  existsCheck: directory
+  type: path
 snpEffAnn:
   associatedProgram:
    - pSnpEff
@@ -1372,11 +1599,29 @@ snpEffGenomeBuildVersion:
   dataType: SCALAR
   default: GRCh37.75
   type: programArgument
-snpEffPath:
+snpSiftAnnotationFiles:
   associatedProgram:
    - pSnpEff
-  dataType: SCALAR
-  existsCheck: directory
+  buildFile: yesAutoBuild
+  dataType: HASH
+  default:
+     dbsnp_138.b37.excluding_sites_after_129.vcf.gz: CAF
+     ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz: AF
+     ExAC.r0.3.sites.vep.vcf.gz: AF
+  existsCheck: file
+  reference: referencesDir
+  type: path
+snpSiftAnnotationOutInfoKey:
+  associatedProgram:
+   - pSnpEff
+  buildFile: yesAutoBuild
+  dataType: HASH
+  default:
+     dbsnp_138.b37.excluding_sites_after_129.vcf.gz: Dbsnp129L
+     ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz: 1000G
+     ExAC.r0.3.sites.vep.vcf.gz: EXAC
+  existsCheck: file
+  reference: referencesDir
   type: path
 snpSiftDbNSFPFile:
   associatedProgram:
@@ -1385,6 +1630,23 @@ snpSiftDbNSFPFile:
   default: dbNSFP2.9.txt.gz
   existsCheck: file
   reference: referencesDir
+  type: path
+snpSiftDbNSFPAnnotations:
+  associatedProgram:
+   - pSnpEff
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - SIFT_pred
+   - Polyphen2_HDIV_pred
+   - Polyphen2_HVAR_pred
+   - LRT_pred
+   - MutationTaster_pred
+   - GERP++_NR
+   - GERP++_RS
+   - phastCons100way_vertebrate
+   - 1000Gp1_AF
+   - ESP6500_AA_F
   type: path
 ## java large pages - effects all modules using java
 javaUseLargePages:
@@ -1486,6 +1748,15 @@ genmodModelsFamilyType:
   dataType: SCALAR
   default: mip
   type: programArgument
+genmodcaddFiles:
+  associatedProgram:
+   - pRankVariants
+  dataType: ARRAY
+  elementSeparator: ,
+  existsCheck: file
+  mandatory: no
+  reference: referencesDir
+  type: path
 spidexFile:
   associatedProgram:
    - pRankVariants
@@ -1606,249 +1877,6 @@ humanGenomeReference:
   dataType: SCALAR
   default: Homo_sapiens.GRCh37.d5.fasta
   existsCheck: file
-  reference: referencesDir
-  type: path
-sourceEnvironmentCommand:
-  associatedProgram:
-   - MIP
-  elementSeparator: " "
-  dataType: ARRAY
-  type: MIP
-instanceTag:
-  associatedProgram:
-   - MIP
-  elementSeparator: ,
-  dataType: ARRAY
-  type: MIP
-sampleIDs:
-  associatedProgram:
-   - MIP
-  elementSeparator: ,
-  dataType: ARRAY
-  type: path
-inFilesDirs:
-  associatedProgram:
-   - MIP
-  elementSeparator: ,
-  existsCheck: directory
-  dataType: ARRAY
-  default:
-   - notSetYet
-  type: path
-picardToolsMergeSamFilesPrevious:
-  associatedProgram:
-   - pPicardToolsMergeSamFiles
-  elementSeparator: ,
-  existsCheck: file
-  dataType: ARRAY
-  mandatory: no
-  type: path
-GATKBaseReCalibrationKnownSite:
-  associatedProgram:
-   - pGATKBaseRecalibration
-  elementSeparator: ,
-  dataType: ARRAY
-  default:
-   - dbsnp_138.b37.vcf
-   - 1000G_phase1.indels.b37.vcf
-   - Mills_and_1000G_gold_standard.indels.b37.vcf
-  type: path
-GATKBaseReCalibrationStaticQuantizedQuals:
-  associatedProgram:
-   - pGATKBaseRecalibration
-  elementSeparator: ,
-  dataType: ARRAY
-  mandatory: no
-  default:
-   - 10
-   - 20
-   - 30
-   - 40
-  type: programArgument
-sambambaDepthCutOffs:
-  associatedProgram:
-   - pSambambaDepth
-  elementSeparator: ,
-  dataType: ARRAY
-  default:
-   - 10
-   - 20
-   - 30
-   - 50
-   - 100
-  type: programArgument
-dellyType:
-  associatedProgram:
-   - pDelly
-  elementSeparator: ,
-  dataType: ARRAY
-  default:
-   - DEL
-   - DUP
-   - INV
-   - INS
-  type: programArgument
-vepFeatures:
-  associatedProgram:
-   - pVariantEffectPredictor
-  elementSeparator: ,
-  dataType: ARRAY
-  default:
-   - hgvs
-   - symbol
-   - numbers
-   - sift
-   - polyphen
-   - humdiv
-   - domains
-   - protein
-   - ccds
-   - uniprot
-   - biotype
-   - regulatory
-   - tsl
-   - canonical
-   - appris
-  type: programArgument
-vepPlugins:
-  associatedProgram:
-   - pVariantEffectPredictor
-  elementSeparator: ,
-  dataType: ARRAY
-  default:
-   - UpDownDistance
-   - LoFtool
-   - LoF
-  type: programArgument
-svVepFeatures:
-  associatedProgram:
-   - pSVVariantEffectPredictor
-  elementSeparator: ,
-  dataType: ARRAY
-  default:
-   - hgvs
-   - symbol
-   - numbers
-   - sift
-   - polyphen
-   - humdiv
-   - domains
-   - protein
-   - ccds
-   - uniprot
-   - biotype
-   - regulatory
-   - tsl
-   - canonical
-   - per_gene
-   - appris
-  type: programArgument
-svVepPlugins:
-  associatedProgram:
-   - pVariantEffectPredictor
-  elementSeparator: ,
-  dataType: ARRAY
-  default:
-   - UpDownDistance
-   - LoFtool
-   - LoF
-  type: programArgument
-vcfParserRangeFeatureAnnotationColumns:
-  associatedProgram:
-   - pVCFParser
-  elementSeparator: ,
-  dataType: ARRAY
-  type: programArgument
-vcfParserSelectFeatureAnnotationColumns:
-  associatedProgram:
-   - pVCFParser
-  elementSeparator: ,
-  dataType: ARRAY
-  type: programArgument
-svVcfParserRangeFeatureAnnotationColumns:
-  associatedProgram:
-   - pSVVCFParser
-  elementSeparator: ,
-  dataType: ARRAY
-  type: programArgument
-svVcfParserSelectFeatureAnnotationColumns:
-  associatedProgram:
-   - pSVVCFParser
-  elementSeparator: ,
-  dataType: ARRAY
-  type: programArgument
-annovarTableNames:
-  associatedProgram:
-   - pAnnovar
-  elementSeparator: ,
-  existsCheck: file
-  dataType: ARRAY
-  default:
-   - refGene
-   - mce46way
-   - gerp++elem
-   - segdup
-   - tfbs
-   - mirna
-   - snp137NonFlagged
-   - 1000g2012apr_all
-   - esp6500si_all
-   - ljb2_sift
-   - ljb2_pp2hdiv
-   - ljb2_pp2hvar
-   - ljb2_mt
-   - ljb2_lt
-   - ljb2_gerp++
-   - ljb2_phylop
-  type: path
-snpSiftDbNSFPAnnotations:
-  associatedProgram:
-   - pSnpEff
-  elementSeparator: ,
-  dataType: ARRAY
-  default:
-   - SIFT_pred
-   - Polyphen2_HDIV_pred
-   - Polyphen2_HVAR_pred
-   - LRT_pred
-   - MutationTaster_pred
-   - GERP++_NR
-   - GERP++_RS
-   - phastCons100way_vertebrate
-   - 1000Gp1_AF
-   - ESP6500_AA_F
-  type: path
-snpSiftAnnotationFiles:
-  associatedProgram:
-   - pSnpEff
-  buildFile: yesAutoBuild
-  dataType: HASH
-  default:
-     dbsnp_138.b37.excluding_sites_after_129.vcf.gz: CAF
-     ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz: AF
-     ExAC.r0.3.sites.vep.vcf.gz: AF   
-  existsCheck: file
-  reference: referencesDir
-  type: path
-snpSiftAnnotationOutInfoKey:
-  associatedProgram:
-   - pSnpEff
-  buildFile: yesAutoBuild
-  dataType: HASH
-  default:
-     dbsnp_138.b37.excluding_sites_after_129.vcf.gz: Dbsnp129L
-     ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz: 1000G
-     ExAC.r0.3.sites.vep.vcf.gz: EXAC
-  existsCheck: file
-  reference: referencesDir
-  type: path
-genmodcaddFiles:
-  associatedProgram:
-   - pRankVariants
-  dataType: ARRAY
-  elementSeparator: ,
-  existsCheck: file
-  mandatory: no
   reference: referencesDir
   type: path
 exomeTargetBed:
