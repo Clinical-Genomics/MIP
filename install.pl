@@ -28,15 +28,17 @@ BEGIN {
            ## SHELL
            -pei/--perlInstall Install perl (defaults: "0" (=no))
            -per/--perl Set the perl version (defaults: "5.18.2")
-           -pm/perlModules Set the perl modules to be installed via cpanm (comma sep)
+           -pm/perlModules Set the perl modules to be installed via cpanm (Default: ["Modern::Perl", "IPC::System::Simple", "Path::Iterator::Rule", "YAML", "Log::Log4perl", "Set::IntervalTree", "Net::SSLeay",P, "LWP::Simple", "LWP::Protocol::https", "Archive::Zip", "Archive::Extract", "DBI","JSON", "DBD::mysql", "CGI", "Sereal::Encoder", "Sereal::Decoder", "Bio::Root::Version", "Module::Build"])
            -pic/--picardTools Set the picardTools version (Default: "2.3.0"),
            -sbb/sambamba Set the sambamba version (Default: "0.6.1")
            -vct/--vcfTools Set the vcftools version (Default: "0.1.14")
            -bet/--bedTools Set the bedtools version (Default: "2.25.0")
            -vt/--vt Set the vt version (Default: "0.57")
            -plk/--plink  Set the plink version (Default: "160224")
+           -snpg/--snpEffGenomeVersions Set the snpEff genome version (Default: ["GRCh37.75"])
            -vep/--variantEffectPredictor Set the VEP version (Default: "83")
 	   -vepc/--vepDirectoryCache Specify the cache directory to use (whole path; defaults to "~/miniconda/envs/condaEnvironment/ensembl-tools-release-variantEffectPredictorVersion/cache")
+           -vepa/vepAssemblies Select the assembly version (Default: ["GRCh37"])
            -vepp/--variantEffectPredictorPlugin Supply a comma separated list of VEP plugins (Default: "UpDownDistance,LoFtool,LoF")
            -cnv/--CNVnator Set the CNVnator version (Default: "0.3.2")
            -ftr/--FindTranslocations Set the FindTranslocations version (Default: "0")
@@ -95,26 +97,6 @@ $parameter{bioCondaBoostPatch} = "-4";
 ##Perl Modules
 $parameter{perlInstall} = 0;
 $parameter{perl} = "5.18.2";
-$parameter{perlModules} = ["Modern::Perl",  #MIP
-			   "IPC::System::Simple",  #MIP
-			   "Path::Iterator::Rule",  #MIP
-			   "YAML",  #MIP
-			   "Log::Log4perl",  #MIP
-			   "Set::IntervalTree",  # MIP/vcfParser.pl
-			   "Net::SSLeay",  # VEP
-			   "LWP::Simple",  # VEP
-			   "LWP::Protocol::https",  # VEP
-			   "Archive::Zip",  # VEP
-			   "Archive::Extract",  #VEP
-			   "DBI",  # VEP
-			   "JSON",  # VEP
-			   "DBD::mysql",  # VEP
-			   "CGI",  # VEP
-			   "Sereal::Encoder",  # VEP
-			   "Sereal::Decoder",  # VEP
-			   "Bio::Root::Version",  #VEP
-			   "Module::Build", #VEP
-    ];
 
 ## PIP
 $parameter{pip}{genmod} = "3.5.2";
@@ -131,7 +113,6 @@ $parameter{bedTools} = "2.25.0";
 $parameter{vt} = "gitRepo";
 $parameter{plink2} = "160316";
 $parameter{snpEff} = "v4_2";
-$parameter{snpEffGenomeVersion} = "GRCh37.75";
 $parameter{variantEffectPredictor} = "84";
 $parameter{vepDirectoryCache} = catdir($parameter{condaPath}, "envs", $parameter{condaEnvironment}, "ensembl-tools-release-".$parameter{variantEffectPredictor}, "cache");  #Cache directory;
 $parameter{variantEffectPredictorPlugin} = "UpDownDistance,LoFtool,LoF";
@@ -154,8 +135,10 @@ GetOptions('env|condaEnvironment:s'  => \$parameter{condaEnvironment},
 	   'bet|bedTools:s' =>\$parameter{bedTools}, 
 	   'vt|vt:s' => \$parameter{vt},
 	   'plk|plink2:s' => \$parameter{plink2},
+	   'snpg|snpEffGenomeVersions:s' => \@{$parameter{snpEffGenomeVersions}},
 	   'vep|variantEffectPredictor:s' => \$parameter{variantEffectPredictor},
 	   'vepc|vepDirectoryCache:s' => \$parameter{vepDirectoryCache},  #path to vep cache dir
+	   'vepa|vepAssemblies:s' => \@{$parameter{vepAssemblies}},  #Select assembly version to use
 	   'vepp|variantEffectPredictorPlugin:s' => \$parameter{variantEffectPredictorPlugin},  #Comma sep string
 	   'cnv|CNVnator:s' => \$parameter{CNVnator},
 	   'ftr|FindTranslocations:s' => \$parameter{FindTranslocations},
@@ -168,6 +151,9 @@ GetOptions('env|condaEnvironment:s'  => \$parameter{condaEnvironment},
     ) or &Help({USAGE => $USAGE,
 		exitCode => 1,
 	       });
+
+&SetDefaultArrayParameters({parameterHashRef => \%parameter,
+			   });
 
 ###MAIN###
 
@@ -279,6 +265,53 @@ close($BASHFILEHANDLE);
 #close($LOGFILEHANDLE);
 
 ###SubRoutines###
+
+sub SetDefaultArrayParameters {
+    
+##SetDefaultArrayParameters
+    
+##Function : Set default for array parameters
+##Returns  : ""
+##Arguments: $parameterHashRe
+##         : $parameterHashRef => Holds all parameters
+    
+    my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
+    
+    my %arrayParameter;
+    $arrayParameter{vepAssemblies}{default} = ["GRCh37"];
+    $arrayParameter{snpEffGenomeVersions}{default} = ["GRCh37.75"];  #GrCh38.82 but check current on the snpEff sourceForge
+    $arrayParameter{perlModules}{default} = ["Modern::Perl",  #MIP
+					     "IPC::System::Simple",  #MIP
+					     "Path::Iterator::Rule",  #MIP
+					     "YAML",  #MIP
+					     "Log::Log4perl",  #MIP
+					     "Set::IntervalTree",  # MIP/vcfParser.pl
+					     "Net::SSLeay",  # VEP
+					     "LWP::Simple",  # VEP
+					     "LWP::Protocol::https",  # VEP
+					     "Archive::Zip",  # VEP
+					     "Archive::Extract",  #VEP
+					     "DBI",  # VEP
+					     "JSON",  # VEP
+					     "DBD::mysql",  # VEP
+					     "CGI",  # VEP
+					     "Sereal::Encoder",  # VEP
+					     "Sereal::Decoder",  # VEP
+					     "Bio::Root::Version",  #VEP
+					     "Module::Build", #VEP
+	];
+    
+    foreach my $parameterName (keys %arrayParameter) {
+	
+	if (! @{${$parameterHashRef}{$parameterName}}) {  #Unless parameter was supplied on cmd
+	    
+	    ${$parameterHashRef}{$parameterName} = $arrayParameter{$parameterName}{default};
+	}
+    }
+}
 
 sub CreateBashFile {
 
@@ -473,17 +506,23 @@ sub CreateCondaEnvironment {
 			     binary => catfile($parameter{condaPath}, "envs", $parameter{condaEnvironment}, "share", "snpeff-".${$parameterHashRef}{bioConda}{snpeff}.${$parameterHashRef}{bioCondaSnpeffPatch}, "snpEff.config"),
 			     softLink => "snpEff.config",
 			    });
-	    &CheckMTCodonTable({parameterHashRef => $parameterHashRef,
-				FILEHANDLE => $BASHFILEHANDLE,
-				shareDirectory => catdir($parameter{condaPath}, "envs", ${$parameterHashRef}{condaEnvironment}, "share", "snpeff-".${$parameterHashRef}{bioConda}{snpeff}.${$parameterHashRef}{bioCondaSnpeffPatch}),
-				configFile => "snpEff.config",
-			       });
-	    unless (-d catdir($parameter{condaPath}, "envs", ${$parameterHashRef}{condaEnvironment}, "share", "snpeff-".${$parameterHashRef}{bioConda}{snpeff}.${$parameterHashRef}{bioCondaSnpeffPatch}, "data", ${$parameterHashRef}{snpEffGenomeVersion})) {
-		
-		&SnpEffDownload({parameterHashRef => $parameterHashRef,
-				 FILEHANDLE => $BASHFILEHANDLE,
-				});
-	    }	
+	    foreach my $genomeVersion (@{${$parameterHashRef}{snpEffGenomeVersions}}) {
+
+		&CheckMTCodonTable({parameterHashRef => $parameterHashRef,
+				    FILEHANDLE => $BASHFILEHANDLE,
+				    shareDirectory => catdir($parameter{condaPath}, "envs", ${$parameterHashRef}{condaEnvironment}, "share", "snpeff-".${$parameterHashRef}{bioConda}{snpeff}.${$parameterHashRef}{bioCondaSnpeffPatch}),
+				    configFile => "snpEff.config",
+				    genomeVersionRef => \$genomeVersion,
+				   });
+
+		unless (-d catdir($parameter{condaPath}, "envs", ${$parameterHashRef}{condaEnvironment}, "share", "snpeff-".${$parameterHashRef}{bioConda}{snpeff}.${$parameterHashRef}{bioCondaSnpeffPatch}, "data", $genomeVersion)) {
+		    
+		    &SnpEffDownload({parameterHashRef => $parameterHashRef,
+				     FILEHANDLE => $BASHFILEHANDLE,
+				     genomeVersionRef => \$genomeVersion,
+				    });
+		}	
+	    }
 	}
 	if ($program eq "manta") {
 	    
@@ -1057,16 +1096,23 @@ sub SnpEff {
 		  binary => catfile($parameter{condaPath}, "envs", $parameter{condaEnvironment}, "share", "snpEff.".${$parameterHashRef}{snpEff}, "snpEff.config"),
 		  softLink => "snpEff.config",
 		 });
-    &CheckMTCodonTable({parameterHashRef => $parameterHashRef,
-			FILEHANDLE => $BASHFILEHANDLE,
-			shareDirectory => catdir($parameter{condaPath}, "envs", ${$parameterHashRef}{condaEnvironment}, "share", "snpEff.".${$parameterHashRef}{snpEff}),
-			configFile => "snpEff.config",
-		       });
-    unless (-d catdir($parameter{condaPath}, "envs", ${$parameterHashRef}{condaEnvironment}, "share", "snpEff.".${$parameterHashRef}{snpEff}, "data", ${$parameterHashRef}{snpEffGenomeVersion})) {
+
+    foreach my $genomeVersion (@{${$parameterHashRef}{snpEffGenomeVersions}}) {
+
+	&CheckMTCodonTable({parameterHashRef => $parameterHashRef,
+			    FILEHANDLE => $BASHFILEHANDLE,
+			    shareDirectory => catdir($parameter{condaPath}, "envs", ${$parameterHashRef}{condaEnvironment}, "share", "snpEff.".${$parameterHashRef}{snpEff}),
+			    configFile => "snpEff.config",
+			    genomeVersionRef => \$genomeVersion,
+			   });
 	
-	&SnpEffDownload({parameterHashRef => $parameterHashRef,
-			 FILEHANDLE => $BASHFILEHANDLE,
-			});
+	unless (-d catdir($parameter{condaPath}, "envs", ${$parameterHashRef}{condaEnvironment}, "share", "snpEff.".${$parameterHashRef}{snpEff}, "data", $genomeVersion)) {
+	    
+	    &SnpEffDownload({parameterHashRef => $parameterHashRef,
+			     FILEHANDLE => $BASHFILEHANDLE,
+			     genomeVersionRef => \$genomeVersion,
+			    });
+	}
     }
     &RemoveInstallDirectory({FILEHANDLE => $FILEHANDLE,
 			     pwd => $pwd,
@@ -1141,8 +1187,26 @@ sub VariantEffectPredictor {
     print $FILEHANDLE "-g ".$parameter{variantEffectPredictorPlugin}." ";  #Plugins 
     print $FILEHANDLE "-c ".${$parameterHashRef}{vepDirectoryCache}." ";  #Cache directory
     print $FILEHANDLE "-s homo_sapiens ";
-    print $FILEHANDLE "--ASSEMBLY GRCh37 ";
+
+    ## Only install first assembly version since VEP install cannot handle multiple versions at the same time
+    print $FILEHANDLE "--ASSEMBLY ".${$parameterHashRef}{vepAssemblies}[0]." ";
     print $FILEHANDLE "\n\n";
+    
+    if (scalar( @{${$parameterHashRef}{vepAssemblies}} ) > 1 ) {
+
+	for (my $assemblyVersion=1;$assemblyVersion<scalar(@{${$parameterHashRef}{vepAssemblies}});$assemblyVersion++) {
+
+	    print $FILEHANDLE "## Install additional VEP cache assembly version\n";
+	    print $FILEHANDLE "perl INSTALL.pl ";
+	    print $FILEHANDLE "--AUTO cf ";  #a (API), l (FAIDX/htslib), c (cache), f (FASTA), p (plugins)
+	    print $FILEHANDLE "-c ".${$parameterHashRef}{vepDirectoryCache}." ";  #Cache directory
+	    print $FILEHANDLE "-s homo_sapiens ";
+	    
+	    ## Only install first assembly version since VEP install cannot handle multiple versions at the same time
+	    print $FILEHANDLE "--ASSEMBLY ".${$parameterHashRef}{vepAssemblies}[$assemblyVersion]." ";
+	    print $FILEHANDLE "\n\n";
+	}
+    }
 
     ##Add LofTool required text file
     print $FILEHANDLE "##Add LofTool required text file\n";
@@ -1681,11 +1745,12 @@ sub CheckMTCodonTable {
     
 ##Function : Check and if required add the vertebrate mitochondrial codon table to SnpEff config
 ##Returns  : ""
-##Arguments: $parameterHashRef, $FILEHANDLE, $shareDirectory, $configFile
+##Arguments: $parameterHashRef, $FILEHANDLE, $shareDirectory, $configFile, $genomeVersionRef
 ##         : $parameterHashRef => Holds all parameters
 ##         : $FILEHANDLE       => FILEHANDLE to write to
 ##         : $shareDirectory   => The conda env shared directory
 ##         : $configFile       => The config configFile
+##         : $genomeVersionRef => SnpEff genome version
 
     my ($argHashRef) = @_;
 
@@ -1694,11 +1759,12 @@ sub CheckMTCodonTable {
     my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
     my $shareDirectory = ${$argHashRef}{shareDirectory};
     my $configFile = ${$argHashRef}{configFile};
+    my $genomeVersionRef = ${$argHashRef}{genomeVersionRef};
     
     my $pwd = cwd();
 
-    my $detectRegExp = q?perl -nae 'if($_=~/?.${$parameterHashRef}{snpEffGenomeVersion}.q?.MT.codonTable/) {print 1}' ?;
-    my $addRegExp = q?perl -nae 'if($_=~/?.${$parameterHashRef}{snpEffGenomeVersion}.q?.reference/) {print $_; print "?.${$parameterHashRef}{snpEffGenomeVersion}.q?.MT.codonTable : Vertebrate_Mitochondrial\n"} else {print $_;}' ?;
+    my $detectRegExp = q?perl -nae 'if($_=~/?.$$genomeVersionRef.q?.MT.codonTable/) {print 1}' ?;
+    my $addRegExp = q?perl -nae 'if($_=~/?.$$genomeVersionRef.q?.reference/) {print $_; print "?.$$genomeVersionRef.q?.MT.codonTable : Vertebrate_Mitochondrial\n"} else {print $_;}' ?;
     my $ret;
 
     if (-f catfile($shareDirectory, $configFile)) {
@@ -1707,7 +1773,7 @@ sub CheckMTCodonTable {
     }
     if (!$ret) {  #No MT.codonTable in config
 
-	print $FILEHANDLE q?## Adding ?.${$parameterHashRef}{snpEffGenomeVersion}.q?.MT.codonTable : Vertebrate_Mitochondrial to ?.$shareDirectory.$configFile, "\n";
+	print $FILEHANDLE q?## Adding ?.$$genomeVersionRef.q?.MT.codonTable : Vertebrate_Mitochondrial to ?.$shareDirectory.$configFile, "\n";
 
 	## Add MT.codon Table to config
 	print $FILEHANDLE $addRegExp." ".catfile($shareDirectory, $configFile)." > ".catfile($shareDirectory, $configFile.".tmp"), "\n";
@@ -1728,23 +1794,25 @@ sub SnpEffDownload {
     
 ##Function : Write instructions to download SnpEff database. This is done by install script to avoid race conditin when doing first analysis run in MIP
 ##Returns  : ""
-##Arguments: $parameterHashRef, $FILEHANDLE
+##Arguments: $parameterHashRef, $FILEHANDLE, $genomeVersionRef
 ##         : $parameterHashRef => Holds all parameters
 ##         : $FILEHANDLE       => FILEHANDLE to write to
+##         : $genomeVersionRef => SnpEff genome version
 
     my ($argHashRef) = @_;
     
     ## Flatten argument(s)
     my $parameterHashRef = ${$argHashRef}{parameterHashRef};
     my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    
+    my $genomeVersionRef = ${$argHashRef}{genomeVersionRef};
+
     &ActivateCondaEnvironment($parameterHashRef, $FILEHANDLE);
     
     print $FILEHANDLE "java -Xmx2g ";
     print $FILEHANDLE q?-jar ?.catfile(${$parameterHashRef}{condaPath}, "envs", ${$parameterHashRef}{condaEnvironment}, "bin", "snpEff.jar")." ";
     print $FILEHANDLE "download ";
     print $FILEHANDLE " -v ";
-    print $FILEHANDLE ${$parameterHashRef}{snpEffGenomeVersion}." ";
+    print $FILEHANDLE $$genomeVersionRef." ";
     print $FILEHANDLE q?-c ?.catfile(${$parameterHashRef}{condaPath}, "envs", ${$parameterHashRef}{condaEnvironment}, "bin", "snpEff.config")." ";
     print $FILEHANDLE "\n\n";
 

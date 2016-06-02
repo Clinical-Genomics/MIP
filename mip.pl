@@ -4939,6 +4939,12 @@ sub VariantEffectPredictor {
     ## VariantEffectPredictor
     say $FILEHANDLE "## VariantEffectPredictor";
 
+    my $assemblyVersion = ${$fileInfoHashRef}{humanGenomeReferenceSource}.${$fileInfoHashRef}{humanGenomeReferenceVersion};
+    
+    ## Alias genome source and version to be compatible with VEP
+    &AliasAssemblyVersion({assemblyVersion => \$assemblyVersion
+			  });
+    
     ## Create file commands for xargs
     ($xargsFileCounter, $xargsFileName) = &XargsCommand({FILEHANDLE => $FILEHANDLE,
 							 XARGSFILEHANDLE => $XARGSFILEHANDLE, 
@@ -4953,13 +4959,16 @@ sub VariantEffectPredictor {
 
 	my $contigRef = \${$fileInfoHashRef}{contigsSizeOrdered}[$contigsCounter];
 
-	print $XARGSFILEHANDLE catfile(${$scriptParameterHashRef}{vepDirectoryPath}. "variant_effect_predictor.pl")." ";  #VEP script 
+	print $XARGSFILEHANDLE catfile(${$scriptParameterHashRef}{vepDirectoryPath}, "variant_effect_predictor.pl")." ";  #VEP script 
+	print $XARGSFILEHANDLE "--assembly ".$assemblyVersion." "; 
 	print $XARGSFILEHANDLE "--dir_cache ".${$scriptParameterHashRef}{vepDirectoryCache}." ";  #Specify the cache directory to use
 	print $XARGSFILEHANDLE "--cache ";  #Enables use of the cache.
+
 	if (${$scriptParameterHashRef}{vepReference} == 1 ) {  #Use reference file for analysis with vep
 
 	    print $XARGSFILEHANDLE "--fasta ".catfile($$referencesDirectoryRef, ${$scriptParameterHashRef}{humanGenomeReference})." ";  #Reference file
 	}
+
 	print $XARGSFILEHANDLE "--force_overwrite ";  #force the overwrite of the existing file
 	print $XARGSFILEHANDLE "--format vcf ";  #Input is in the VCF format
 	print $XARGSFILEHANDLE "--vcf ";  #Writes output in VCF format.
@@ -7493,13 +7502,19 @@ sub ChanjoSexCheck {
 					 programDirectory => catfile(lc($$alignerOutDirRef), "coveragereport"),
 					 processTime => 2,
 					});
-    
+   
     ## ChanjoSexCheck
     say $FILEHANDLE "## Predicting sex from alignment";
     print $FILEHANDLE "chanjo ";  #Program
     print $FILEHANDLE "-v -v ";  #Incrementing "-v" for increased verbosity
     print $FILEHANDLE "--log_file ".catfile($outSampleDirectory, $infile.$infileTag."_chanjoSexCheck.log")." ";
     print $FILEHANDLE "sex ";  #Sub command
+
+    ## Set chromosome prefix if required
+    if (any {$_ eq "chrX"} @{${$fileInfoHashRef}{contigsSizeOrdered}}) {  #If element is part of array
+
+	print $FILEHANDLE "--prefix chr ";
+    }
     print $FILEHANDLE catfile($inSampleDirectory, $infile.$infileTag.".bam")." ";  #InFile
     say $FILEHANDLE "> ".catfile($outSampleDirectory, $infile.$outfileTag), "\n";  #OutFile
     
@@ -8411,6 +8426,12 @@ sub SVVariantEffectPredictor {
     ## VariantEffectPredictor
     say $FILEHANDLE "## VariantEffectPredictor";
 
+    my $assemblyVersion = ${$fileInfoHashRef}{humanGenomeReferenceSource}.${$fileInfoHashRef}{humanGenomeReferenceVersion};
+
+    ## Alias genome source and version to be compatible with VEP
+    &AliasAssemblyVersion({assemblyVersion => \$assemblyVersion
+			  });
+
     ## Create file commands for xargs
     ($xargsFileCounter, $xargsFileName) = &XargsCommand({FILEHANDLE => $FILEHANDLE,
 							 XARGSFILEHANDLE => $XARGSFILEHANDLE, 
@@ -8425,13 +8446,16 @@ sub SVVariantEffectPredictor {
 
 	my $contigRef = \${$fileInfoHashRef}{contigsSizeOrdered}[$contigsCounter];
 
-	print $XARGSFILEHANDLE catfile(${$scriptParameterHashRef}{vepDirectoryPath}, "variant_effect_predictor.pl")." ";  #VEP script 
+	print $XARGSFILEHANDLE catfile(${$scriptParameterHashRef}{vepDirectoryPath}, "variant_effect_predictor.pl")." ";  #VEP script
+	print $XARGSFILEHANDLE "--assembly ".$assemblyVersion." "; 
 	print $XARGSFILEHANDLE "--dir_cache ".${$scriptParameterHashRef}{vepDirectoryCache}." ";  #Specify the cache directory to use
 	print $XARGSFILEHANDLE "--cache ";  #Enables use of the cache.
+
 	if (${$scriptParameterHashRef}{vepReference} == 1 ) {  #Use reference file for analysis with vep
 
 	    print $XARGSFILEHANDLE "--fasta ".catfile($$referencesDirectoryRef, ${$scriptParameterHashRef}{humanGenomeReference})." ";  #Reference file
 	}
+
 	print $XARGSFILEHANDLE "--force_overwrite ";  #force the overwrite of the existing file
 	print $XARGSFILEHANDLE "--format vcf ";  #Input is in the VCF format
 	print $XARGSFILEHANDLE "--vcf ";  #Writes output in VCF format.
@@ -13256,7 +13280,7 @@ sub VariantAnnotationBlock {
     }
     if (${$scriptParameterHashRef}{pRankVariants} > 0) { #Run RankVariants. Done per family
 	
-	$logger->info("[RankVariants]\n");
+	$logger->info("\t[RankVariants]\n");
     }
     
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -23438,6 +23462,31 @@ sub SambambaFlagStat {
     print $FILEHANDLE catfile($infilePath)." ";  #OutFile
     print $FILEHANDLE "> ".catfile($outfilePath)." ";  #Metric file 
     say $FILEHANDLE "2>> ".$stderrFilePath, "\n";  #Redirect xargs output to program specific stderr file
+}
+
+
+sub AliasAssemblyVersion {
+    
+##AliasAssemblyVersion
+    
+##Function : Alias genome source and version to be compatible with VEP
+##Returns  : "$$assemblyVersionRef"
+##Arguments: $assemblyVersionRef
+##         : $assemblyVersionRef => The genome source and version to be checked
+    
+    my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $assemblyVersionRef = ${$argHashRef}{assemblyVersion};
+    
+    if ($$assemblyVersionRef=~/hg(\d+)/) {
+	
+	my $versionNumber = $1;
+	if ($versionNumber > 20) {
+	    
+	    $$assemblyVersionRef = "GRCh".$versionNumber;
+	}
+    }
 }
 
 
