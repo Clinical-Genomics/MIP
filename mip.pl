@@ -10332,14 +10332,16 @@ sub GATKHaploTypeCaller {
 						    sampleIDRef => $sampleIDRef,
 						    fileEndingRef => \${$fileInfoHashRef}{exomeTargetBed}[2],
 						   });
-    ## Prepare target interval file. Copies file to temporary directory, and adds fileExtension to fit GATK
-    my $targetIntervalsPath = &PrepareGATKTargetIntervals({analysisTypeRef => \${$scriptParameterHashRef}{analysisType},
-							   targetIntervalFileListsRef => \$exomeTargetBedFile,
-							   referencesDirectoryRef => $referencesDirectoryRef,
-							   tempDirectoryRef => $tempDirectoryRef,
-							   FILEHANDLE => $FILEHANDLE,
-							   addEnding => 0,
-							  });
+    if ( (${$scriptParameterHashRef}{analysisType} eq "exomes") || (${$scriptParameterHashRef}{analysisType} eq "rapid") ) { #Exome/rapid analysis
+	
+	## Generate contig specific interval_list
+	&GenerateContigSpecificTargetBedFile({scriptParameterHashRef => $scriptParameterHashRef,
+					      fileInfoHashRef => $fileInfoHashRef,
+					      FILEHANDLE => $FILEHANDLE,
+					      exomeTargetBedFileRef => \$exomeTargetBedFile,
+					     });
+	
+    }
 
     ## Add merged infile name after merging all BAM files per sampleID
     my $infile = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MergeInfile};  #Alias
@@ -10417,11 +10419,14 @@ sub GATKHaploTypeCaller {
 	print $XARGSFILEHANDLE "--emitRefConfidence GVCF ";  #Mode for emitting experimental reference confidence scores. GVCF generates block summarized version of the BP_RESOLUTION data 
 	print $XARGSFILEHANDLE "--variant_index_type LINEAR "; 
 	print $XARGSFILEHANDLE "--variant_index_parameter 128000 ";
-	print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 
-	if ($targetIntervalsPath) {
-
-	    print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit to targets kit target file
+	if ( (${$scriptParameterHashRef}{analysisType} eq "exomes") || (${$scriptParameterHashRef}{analysisType} eq "rapid") ) { #Exome/rapid analysis
+	    
+	    print $XARGSFILEHANDLE "-L ".catfile($$tempDirectoryRef, $$contigRef."_".$exomeTargetBedFile)." "; #Limit to targets kit target file
+	}
+	else {  #genomes
+	    
+	    print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 	}
 	
 	print $XARGSFILEHANDLE "-I ".catfile($$tempDirectoryRef, $infile.$infileTag."_".$$contigRef.".bam")." ";  #InFile
@@ -10555,14 +10560,18 @@ sub GATKBaseReCalibration {
 						    sampleIDRef => $sampleIDRef,
 						    fileEndingRef => \${$fileInfoHashRef}{exomeTargetBed}[0],
 						   });
-
-    ## Prepare target interval file. Copies file to temporary directory, and adds fileExtension to fit GATK
-    my $targetIntervalsPath = &PrepareGATKTargetIntervals({analysisTypeRef => \${$scriptParameterHashRef}{analysisType},
-							   targetIntervalFileListsRef => \$exomeTargetBedFile,
-							   referencesDirectoryRef => $referencesDirectoryRef,
-							   tempDirectoryRef => $tempDirectoryRef,
-							   FILEHANDLE => $FILEHANDLE,
-							  });
+    if ( (${$scriptParameterHashRef}{analysisType} eq "exomes") || (${$scriptParameterHashRef}{analysisType} eq "rapid") ) { #Exome/rapid analysis
+	
+	## Generate contig specific interval_list
+	&GenerateContigSpecificTargetBedFile({scriptParameterHashRef => $scriptParameterHashRef,
+					      fileInfoHashRef => $fileInfoHashRef,
+					      FILEHANDLE => $FILEHANDLE,
+					      exomeTargetBedFileRef => \$exomeTargetBedFile,
+					      fileEnding => ".intervals",
+					     });
+	
+    }
+    $exomeTargetBedFile .= ".intervals";  #Add required GATK ending
 
     ## Add merged infile name after merging all BAM files per sampleID
     my $infile = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MergeInfile};  #Alias
@@ -10620,13 +10629,16 @@ sub GATKBaseReCalibration {
 	print $XARGSFILEHANDLE "-cov ".join(" -cov ", (@{${$scriptParameterHashRef}{GATKBaseReCalibrationCovariate}}) )." ";  #Covariates to be used in the recalibration
 	print $XARGSFILEHANDLE "-knownSites ".join(" -knownSites ", map { catfile($$referencesDirectoryRef, $_) } (@{${$scriptParameterHashRef}{GATKBaseReCalibrationKnownSite}}) )." ";
 	print $XARGSFILEHANDLE "-nct ".${$scriptParameterHashRef}{maximumCores}." ";  #How many CPU threads should be allocated per data thread to running this analysis
-	print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{GATKDownSampleToCoverage}." ";  #Coverage to downsample to at any given locus	    	    
-	print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
-	
-	if ($targetIntervalsPath) {
+	print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{GATKDownSampleToCoverage}." ";  #Coverage to downsample to at any given locus	
+
+	if ( (${$scriptParameterHashRef}{analysisType} eq "exomes") || (${$scriptParameterHashRef}{analysisType} eq "rapid") ) { #Exome/rapid analysis
 	    
-	    print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit base score recalibration to targets kit target file
+	    print $XARGSFILEHANDLE "-L ".catfile($$tempDirectoryRef, $$contigRef."_".$exomeTargetBedFile)." "; #Limit to targets kit target file
 	}
+	else {  #genomes
+
+	    print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
+	}    	    
 	
 	print $XARGSFILEHANDLE "-I ".catfile($$tempDirectoryRef, $infile.$infileTag."_".$$contigRef.".bam")." ";  #InFile
 	print $XARGSFILEHANDLE "-o ".catfile($intermediarySampleDirectory, $infile.$infileTag."_".$$contigRef.".grp")." ";  #Recalibration table file
@@ -10675,12 +10687,14 @@ sub GATKBaseReCalibration {
 	    
 	    print $XARGSFILEHANDLE "--disable_indel_quals  ";  #Do not recalibrate indel base quality (should be done for Pacbio reads)
 	}
-	print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
-	
-	if ($targetIntervalsPath) {
+	if ( (${$scriptParameterHashRef}{analysisType} eq "exomes") || (${$scriptParameterHashRef}{analysisType} eq "rapid") ) { #Exome/rapid analysis
 	    
-	    print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit base score recalibration to targets kit target file
+	    print $XARGSFILEHANDLE "-L ".catfile($$tempDirectoryRef, $$contigRef."_".$exomeTargetBedFile)." "; #Limit to targets kit target file
 	}
+	else {  #genomes
+
+	    print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
+	}  
 	
 	print $XARGSFILEHANDLE "-I ".catfile($$tempDirectoryRef, $infile.$infileTag."_".$$contigRef.".bam")." ";  #InFile per contig
 	print $XARGSFILEHANDLE "-o ".catfile($$tempDirectoryRef, $infile.$outfileTag."_".$$contigRef.".bam")." ";  #OutFile
@@ -10841,24 +10855,27 @@ sub GATKReAligner {
     ## Assign fileTags
     my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{pSambambaMarkduplicates}{fileTag};
     my $outfileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{"p".$programName}{fileTag};
-
+    
     ## Get exomeTargetBed file for specfic sampleID and add fileEnding from fileInfoHash if supplied
     my $exomeTargetBedFile = &GetExomTargetBEDFile({scriptParameterHashRef => $scriptParameterHashRef,
 						    sampleIDRef => $sampleIDRef,
 						    fileEndingRef => \${$fileInfoHashRef}{exomeTargetBed}[2],
 						   });
-    ## Prepare target interval file. Copies file to temporary directory, and adds fileExtension to fit GATK
-    my $targetIntervalsPath = &PrepareGATKTargetIntervals({analysisTypeRef => \${$scriptParameterHashRef}{analysisType},
-							   targetIntervalFileListsRef => \$exomeTargetBedFile,
-							   referencesDirectoryRef => $referencesDirectoryRef,
-							   tempDirectoryRef => $tempDirectoryRef,
-							   FILEHANDLE => $FILEHANDLE,
-							   addEnding => 0,
-							  });
+    
+    if ( (${$scriptParameterHashRef}{analysisType} eq "exomes") || (${$scriptParameterHashRef}{analysisType} eq "rapid") ) { #Exome/rapid analysis
+	
+	## Generate contig specific interval_list
+	&GenerateContigSpecificTargetBedFile({scriptParameterHashRef => $scriptParameterHashRef,
+					      fileInfoHashRef => $fileInfoHashRef,
+					      FILEHANDLE => $FILEHANDLE,
+					      exomeTargetBedFileRef => \$exomeTargetBedFile,
+					     });
+	
+    }
 
     ## Add merged infile name after merging all BAM files per sampleID
     my $infile = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MergeInfile};  #Alias
-
+    
     if ($$reduceIORef eq "0") {  #Run as individual sbatch script
 	
 	## Copy file(s) to temporary directory
@@ -10909,13 +10926,15 @@ sub GATKReAligner {
 	print $XARGSFILEHANDLE "-R ".catfile($$referencesDirectoryRef, ${$scriptParameterHashRef}{humanGenomeReference})." ";  #Reference file 
 	print $XARGSFILEHANDLE "-known ".join(" -known ", map { catfile($$referencesDirectoryRef, $_) } (@{${$scriptParameterHashRef}{GATKReAlignerINDELKnownSite}}) )." ";  #Input VCF file(s) with known indels
 	print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{GATKDownSampleToCoverage}." ";  #Coverage to downsample to at any given locus	    
-	print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 	
-	if ($targetIntervalsPath) {
+	if ( (${$scriptParameterHashRef}{analysisType} eq "exomes") || (${$scriptParameterHashRef}{analysisType} eq "rapid") ) { #Exome/rapid analysis
 	    
-	    print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit to targets kit target file
+	    print $XARGSFILEHANDLE "-L ".catfile($$tempDirectoryRef, $$contigRef."_".$exomeTargetBedFile)." "; #Limit to targets kit target file
 	}
-	
+	else {  #genomes
+
+	    print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
+	}
 	print $XARGSFILEHANDLE "-I ".catfile($$tempDirectoryRef, $infile.$infileTag."_".$$contigRef.".bam")." ";  #InFile	    
 	print $XARGSFILEHANDLE "-o ".catfile($intermediarySampleDirectory, $infile.$outfileTag."_".$$contigRef.".intervals")." ";  #Interval outfile
 	say $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
@@ -10950,11 +10969,14 @@ sub GATKReAligner {
 	print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{GATKDownSampleToCoverage}." ";  #Coverage to downsample to at any given locus
 	print $XARGSFILEHANDLE "--consensusDeterminationModel USE_READS ";  #Additionally uses indels already present in the original alignments of the reads 
 	print $XARGSFILEHANDLE "-targetIntervals ".catfile($intermediarySampleDirectory, $infile.$outfileTag."_".$$contigRef.".intervals")." ";
-	print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 	
-	if ($targetIntervalsPath) {
+	if ( (${$scriptParameterHashRef}{analysisType} eq "exomes") || (${$scriptParameterHashRef}{analysisType} eq "rapid") ) { #Exome/rapid analysis	
 	    
-	    print $XARGSFILEHANDLE "-L ".$targetIntervalsPath." "; #Limit to targets kit target file
+	    print $XARGSFILEHANDLE "-L ".catfile($$tempDirectoryRef, $$contigRef."_".$exomeTargetBedFile)." "; #Limit to targets kit target file
+	}
+	else {  #genomes
+
+	    print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 	}
 	
 	print $XARGSFILEHANDLE "-I ".catfile($$tempDirectoryRef, $infile.$infileTag."_".$$contigRef.".bam")." ";  #InFile per contig
@@ -10993,7 +11015,7 @@ sub GATKReAligner {
 					  fileName => $infile.$infileTag,
 					  fileEnding => ".b*",
 					  tempDirectory => $$tempDirectoryRef,
-					     });
+					 });
     }
     
     close($XARGSFILEHANDLE);
@@ -17347,13 +17369,14 @@ sub SplitTargetFile {
 ##SplitTargetFile
     
 ##Function : Splits a target file into new contig specific target file
-##Returns  : "Filepath to splitted file"
-##Arguments: $FILEHANDLE, $inDirectoryRef, $outDirectoryRef, $infileRef, $contigRef
+##Returns  : ""
+##Arguments: $FILEHANDLE, $inDirectoryRef, $outDirectoryRef, $infileRef, $contigRef, $fileEnding
 ##         : $FILEHANDLE      => FILEHANDLE to write to
 ##         : $inDirectoryRef  => Indirectory {REF}
 ##         : $outDirectoryRef => Analysis outdirectory {REF}
 ##         : $infileRef       => Target file {REF}
 ##         : $contigRef       => The contig to extract {REF}
+##         : $fileEnding      => File ending to add
 
     my ($argHashRef) = @_;
 
@@ -17363,15 +17386,21 @@ sub SplitTargetFile {
     my $outDirectoryRef = ${$argHashRef}{outDirectoryRef};
     my $infileRef = ${$argHashRef}{infileRef};
     my $contigRef = ${$argHashRef}{contigRef};
+    my $fileEnding = ${$argHashRef}{fileEnding};
     
     if (defined($$contigRef)) {  #The contig to split
 	
-	say $FILEHANDLE "\n## Generate contig specific interval_list\n"; 
 	print $FILEHANDLE q?perl -nae 'if($_=~/^\@/) {print $_;} elsif($_=~/^?.$$contigRef.q?\s+/) {print $_;}' ?;  #Select header and contig
 	print $FILEHANDLE catfile($$inDirectoryRef, $$infileRef)." ";  #Infile
-	say $FILEHANDLE "> ".catfile($$outDirectoryRef, $$contigRef."_".$$infileRef), "\n";#Extract genomic interval info
 	
-	return catfile($$outDirectoryRef, $$contigRef."_".$$infileRef);
+	if (defined($fileEnding)) {
+
+	    say $FILEHANDLE "> ".catfile($$outDirectoryRef, $$contigRef."_".$$infileRef.$fileEnding). " &"; #Outfile with supplied file ending
+	}
+	else {
+
+	    say $FILEHANDLE "> ".catfile($$outDirectoryRef, $$contigRef."_".$$infileRef). " &";  #Outfile
+	}
     }
 }
 
@@ -23490,6 +23519,57 @@ sub AliasAssemblyVersion {
 }
 
 
+sub GenerateContigSpecificTargetBedFile {
+    
+##GenerateContigSpecificTargetBedFile
+    
+##Function : Generate contig specific interval_list
+##Returns  : ""
+##Arguments: $scriptParameterHashRef, $fileInfoHashRef, $FILEHANDLE, $exomeTargetBedFile
+##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $fileInfoHashRef        => The fileInfo hash {REF}
+##         : $FILEHANDLE             => Filehandle to write to
+##         : $exomeTargetBedFile     => Target file to split
+##         : $fileEnding      => File ending to add
+    
+    my ($argHashRef) = @_;
+    
+    ## Default(s)
+    my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
+    my $referencesDirectoryRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
+    
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
+    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
+    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $exomeTargetBedFileRef = ${$argHashRef}{exomeTargetBedFileRef};
+    my $fileEnding = ${$argHashRef}{fileEnding};
+    
+    my $nrCores = ${$scriptParameterHashRef}{maximumCores};
+    my $coreCounter = 1;
+    say $FILEHANDLE "## Generate contig specific interval_list\n"; 
+    for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{contigsSizeOrdered}});$contigsCounter++) {
+	
+	my $contigRef = \${$fileInfoHashRef}{contigsSizeOrdered}[$contigsCounter];
+	
+	&PrintWait({counterRef => \$contigsCounter,
+		    nrCoresRef => \$nrCores,
+		    coreCounterRef => \$coreCounter,
+		    FILEHANDLE => $FILEHANDLE,
+		   });
+	
+	## Splits a target file into new contig specific target file
+	&SplitTargetFile({FILEHANDLE => $FILEHANDLE,
+			  inDirectoryRef => $referencesDirectoryRef,
+			  outDirectoryRef => $tempDirectoryRef,
+			  infileRef => $exomeTargetBedFileRef,
+			  contigRef => $contigRef,
+			  fileEnding => $fileEnding,
+			 });
+    }
+    say $FILEHANDLE "wait", "\n";
+}
+
 ##Investigate potential autodie error
 if ($@ and $@->isa("autodie::exception")) {
     
@@ -23514,6 +23594,53 @@ elsif ($@) {
 ####
 #Decommissioned
 ####
+
+
+sub MergeTargetListFlag {
+
+##MergeTargetListFlag
+    
+##Function : Detects if there are different capture kits across sampleIDs. Creates a temporary merged interval_list for all interval_list that have been supplied and returns temporary list.
+##Returns  : "Filepath"
+##Arguments: $scriptParameterHashRef, $FILEHANDLE, $contigRef
+##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $FILEHANDLE             => FILEHANDLE to write to
+##         : $contigRef              => The contig to extract {REF}
+
+    my ($argHashRef) = @_;
+
+    ## Default(s)
+    my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
+    my $referencesDirectoryRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
+    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    
+    ##Determine file to print to module (untouched/merged and/or splited)
+    my $outDirectory = ${$scriptParameterHashRef}{tempDirectory};  #For merged and/or splitet
+
+    if (scalar(keys %{${$scriptParameterHashRef}{exomeTargetBed}}) > 1) {  #Merge files
+	
+	say $FILEHANDLE "\n## Generate merged interval_list\n";
+	
+	&JavaCore({FILEHANDLE => $FILEHANDLE,
+		   memoryAllocation => "Xmx2g",
+		   javaUseLargePagesRef => \${$scriptParameterHashRef}{javaUseLargePages},
+		   javaTemporaryDirectory => $$tempDirectoryRef,
+		   javaJar => catfile(${$scriptParameterHashRef}{picardToolsPath}, "picard.jar"),
+		  });
+	
+	print $FILEHANDLE "IntervalListTools ";
+	print $FILEHANDLE "UNIQUE=TRUE ";  #Merge overlapping and adjacent intervals to create a list of unique intervals
+	
+	foreach my $targetFile (keys %{${$scriptParameterHashRef}{exomeTargetBed}}) {
+	    
+	    print $FILEHANDLE "INPUT=".catfile($$referencesDirectoryRef, $targetFile)." ";
+	}
+	say $FILEHANDLE "OUTPUT=".catfile($$tempDirectoryRef, "merged.interval_list"), "\n";  #Merged outfile
+    }
+}
 
 
 sub GATKTargetListFlag {
