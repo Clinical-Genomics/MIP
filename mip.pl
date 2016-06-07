@@ -61,7 +61,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -ped/--pedigreeFile (defaults to "")
                -hgr/--humanGenomeReference Fasta file for the human genome reference (defaults to "Homo_sapiens.GRCh37.d5.fasta;1000G decoy version 5")
                -ald/--alignerOutDir Setting which aligner out directory was used for alignment in previous analysis (defaults to "{outDataDir}{ {aligner}{outDirectoryName} }")
-               -at/--analysisType Type of analysis to perform (defaults to "exomes";Valid entries: "genomes", "exomes", "rapid")
+               -at/--analysisType Type of analysis to perform (defaults to "genomes";Valid entries: "genomes", "exomes", "rapid")
                -pl/--platForm Platform/technology used to produce the reads (defaults to "ILLUMINA")
                -mc/--maximumCores The maximum number of cores per node used in the analysis (defaults to "8")
                -c/--configFile YAML config file for script parameters (defaults to "")
