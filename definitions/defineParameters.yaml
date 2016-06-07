@@ -180,6 +180,12 @@ reduceIO:
   dataType: SCALAR
   default: 1
   type: MIP
+replaceIUPAC:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  default: 0
+  type: MIP
 printProgramMode:
   associatedProgram:
    - MIP

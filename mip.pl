@@ -79,6 +79,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
 
                -ges/--genomicSet Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
                -rio/--reduceIO Run consecutive models at nodes (defaults to "1" (=yes))
+               -riu/--replaceIUPAC Replace IUPAC code in alternative alleles with N (defaults to "0" (=no))
                -ppm/--printProgramMode Print all programs that are supported in: 0 (off mode), 1 (on mode), 2 (dry run mode; defaults to "2")
                -pp/--printProgram Print all programs that are supported
                -l/--logFile Mip log file (defaults to "{outDataDir}/{familyID}/mip_log/{date}/{scriptname}_{timestamp}.log")
@@ -438,6 +439,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'nrm|nodeRamMemory=n' => \$parameter{nodeRamMemory}{value},  #Per node
            'ges|genomicSet:s' => \$parameter{genomicSet}{value},  #Selection of relevant regions post alignment and sort
 	   'rio|reduceIO=n' => \$parameter{reduceIO}{value},
+	   'riu|replaceIUPAC=n' => \$parameter{replaceIUPAC}{value},
 	   'ppm|printProgramMode=n' => \$parameter{printProgramMode}{value},
 	   'pp|printProgram' => sub { GetOptions('ppm|printProgramMode=n' => \$parameter{printProgramMode}{value});  #Force ppm to be read before function call
 				      &PrintProgram({parameterHashRef => \%parameter}); exit;},
@@ -9952,6 +9954,15 @@ sub SamToolsMpileUp {
 	print $XARGSFILEHANDLE "-G10 ";  #Filter clusters of indels separated by <int> or fewer base pairs allowing only one to pass
 	print $XARGSFILEHANDLE q?-e \'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %MAX(DV)/%MAX(DP)<=0.25\' ?;  #exclude sites for which the expression is true
 	print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+
+	if (${$scriptParameterHashRef}{replaceIUPAC} eq 1) {
+	    
+	    ## Replace the IUPAC code in alternative allels with N for input stream and writes to stream
+	    &ReplaceIUPAC({stderrPath => $xargsFileName.".".$$contigRef.".stderr.txt",
+			   FILEHANDLE => $XARGSFILEHANDLE
+			  });
+	}
+
 	print $XARGSFILEHANDLE "| ";  #Pipe
 	print $XARGSFILEHANDLE "bcftools "; 
 	print $XARGSFILEHANDLE "norm ";  #
@@ -10171,13 +10182,21 @@ sub Freebayes {
 	print $XARGSFILEHANDLE "-g3 ";  #Filter SNPs within <int> base pairs of an indel
 	print $XARGSFILEHANDLE "-G10 ";  #Filter clusters of indels separated by <int> or fewer base pairs allowing only one to pass
 	print $XARGSFILEHANDLE q?-e \'%QUAL<10 || (AC<2 && %QUAL<15)\' ?;  #exclude sites for which the expression is true
-	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+
+	if (${$scriptParameterHashRef}{replaceIUPAC} eq 1) {
+	    
+	    ## Replace the IUPAC code in alternative allels with N for input stream and writes to stream
+	    &ReplaceIUPAC({stderrPath => $xargsFileName.".".$$contigRef.".stderr.txt",
+			   FILEHANDLE => $XARGSFILEHANDLE
+			  });
+	}
 	print $XARGSFILEHANDLE "| ";  #Pipe
 	print $XARGSFILEHANDLE "bcftools "; 
 	print $XARGSFILEHANDLE "norm ";  #
 	print $XARGSFILEHANDLE "-f ".catfile($$referencesDirectoryRef, ${$scriptParameterHashRef}{humanGenomeReference})." ";  #Reference file
 	print $XARGSFILEHANDLE "-o ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.".vcf")." "; #OutFile
-	say $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	say $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
     }
 
     ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
@@ -23569,6 +23588,50 @@ sub GenerateContigSpecificTargetBedFile {
     }
     say $FILEHANDLE "wait", "\n";
 }
+
+
+sub ReplaceIUPAC {
+
+##ReplaceIUPAC
+    
+##Function : Replace the IUPAC code in alternative allels with N for input stream and writes to stream.
+##Returns  : ""
+##Arguments: $stderrPath, $FILEHANDLE, $xargs
+##         : $stderrPath => Stderr path to errors write to
+##         : $FILEHANDLE => Sbatch filehandle to write to
+##         : $xargs      => Write on xargs format
+
+    my ($argHashRef) = @_;
+
+    ## Default(s)
+    my $xargs = ${$argHashRef}{xargs} //= 1;
+
+    ## Flatten argument(s)
+    my $stderrPath = ${$argHashRef}{stderrPath};
+    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+
+    ## Mandatory arguments
+    my %mandatoryArgument = (FILEHANDLE => $FILEHANDLE,
+	);
+    &CheckMandatoryArguments(\%mandatoryArgument, "ReplaceIUPAC");
+
+    print $FILEHANDLE "| ";  #Pipe
+    print $FILEHANDLE "perl -nae ";
+
+    if ($xargs == 1) {  #Add escape char
+
+	print $FILEHANDLE q?\'if($_=~/^#/) {print $_;} else { @F[4] =~ s/W|K|Y|R|S|M/N/g; print join(\"\\\t\", @F), \"\\\n\"; }\' ?;  #substitute IUPAC code with N to not break vcf specifications (GRCh38)
+    }
+    else {
+
+	print $FILEHANDLE q?'if($_=~/^#/) {print $_;} else { @F[4] =~ s/W|K|Y|R|S|M/N/g; print join("\t", @F), "\n"; }' ?;  #substitute IUPAC code with N to not break vcf specifications (GRCh38)
+    }
+    if ($stderrPath) {
+
+	print $FILEHANDLE "2>> ".$stderrPath." ";  #Redirect output to program specific stderr file
+    }
+}
+
 
 ##Investigate potential autodie error
 if ($@ and $@->isa("autodie::exception")) {
