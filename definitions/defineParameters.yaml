@@ -69,7 +69,7 @@ analysisType:
   associatedProgram:
    - MIP
   dataType: SCALAR
-  default: exomes
+  default: genomes
   type: MIP
 platForm:
   associatedProgram:
