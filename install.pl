@@ -28,17 +28,17 @@ BEGIN {
            ## SHELL
            -pei/--perlInstall Install perl (defaults: "0" (=no))
            -per/--perl Set the perl version (defaults: "5.18.2")
-           -pm/perlModules Set the perl modules to be installed via cpanm (Default: ["Modern::Perl", "IPC::System::Simple", "Path::Iterator::Rule", "YAML", "Log::Log4perl", "Set::IntervalTree", "Net::SSLeay",P, "LWP::Simple", "LWP::Protocol::https", "Archive::Zip", "Archive::Extract", "DBI","JSON", "DBD::mysql", "CGI", "Sereal::Encoder", "Sereal::Decoder", "Bio::Root::Version", "Module::Build"])
+           -pm/--perlModules Set the perl modules to be installed via cpanm (Default: ["Modern::Perl", "IPC::System::Simple", "Path::Iterator::Rule", "YAML", "Log::Log4perl", "Set::IntervalTree", "Net::SSLeay",P, "LWP::Simple", "LWP::Protocol::https", "Archive::Zip", "Archive::Extract", "DBI","JSON", "DBD::mysql", "CGI", "Sereal::Encoder", "Sereal::Decoder", "Bio::Root::Version", "Module::Build"])
            -pic/--picardTools Set the picardTools version (Default: "2.3.0"),
-           -sbb/sambamba Set the sambamba version (Default: "0.6.1")
+           -sbb/--sambamba Set the sambamba version (Default: "0.6.1")
            -vct/--vcfTools Set the vcftools version (Default: "0.1.14")
            -bet/--bedTools Set the bedtools version (Default: "2.25.0")
            -vt/--vt Set the vt version (Default: "0.57")
            -plk/--plink  Set the plink version (Default: "160224")
            -snpg/--snpEffGenomeVersions Set the snpEff genome version (Default: ["GRCh37.75"])
-           -vep/--variantEffectPredictor Set the VEP version (Default: "83")
+           -vep/--variantEffectPredictor Set the VEP version (Default: "84")
 	   -vepc/--vepDirectoryCache Specify the cache directory to use (whole path; defaults to "~/miniconda/envs/condaEnvironment/ensembl-tools-release-variantEffectPredictorVersion/cache")
-           -vepa/vepAssemblies Select the assembly version (Default: ["GRCh37"])
+           -vepa/--vepAssemblies Select the assembly version (Default: ["GRCh37"])
            -vepp/--variantEffectPredictorPlugin Supply a comma separated list of VEP plugins (Default: "UpDownDistance,LoFtool,LoF")
            -cnv/--CNVnator Set the CNVnator version (Default: "0.3.2")
            -ftr/--FindTranslocations Set the FindTranslocations version (Default: "0")
@@ -74,8 +74,8 @@ $parameter{bioConda}{samtools} = "1.3";
 $parameter{bioConda}{bcftools} = "1.3";
 $parameter{bioConda}{snpeff} = "4.2";
 $parameter{bioCondaSnpeffPatch} = "-0";  #For correct softlinking in share and bin in conda env
-$parameter{bioConda}{picard} = "1.141";
-$parameter{bioCondaPicardPatch} = "-1";  #For correct softlinking in share and bin in conda env
+$parameter{bioConda}{picard} = "2.3.0";
+$parameter{bioCondaPicardPatch} = "-0";  #For correct softlinking in share and bin in conda env
 $parameter{bioConda}{mosaik} = "2.2.26";
 $parameter{bioConda}{htslib} = "1.3";
 $parameter{bioConda}{bedtools} = "2.25.0";
@@ -88,10 +88,10 @@ $parameter{bioCondaMantaPatch} = "-0";
 $parameter{bioConda}{multiqc} = "0.6";
 $parameter{bioConda}{plink2} = "1.90b3.35";
 $parameter{bioConda}{vcfanno} = "0.0.11";
-$parameter{bioConda}{gcc} = "4.8.5";
-$parameter{bioConda}{cmake} = "3.3.1";
-$parameter{bioConda}{boost} = "1.57.0";
-$parameter{bioCondaBoostPatch} = "-4";
+#$parameter{bioConda}{gcc} = "4.8.5";
+#$parameter{bioConda}{cmake} = "3.3.1";
+#$parameter{bioConda}{boost} = "1.57.0";
+#$parameter{bioCondaBoostPatch} = "-4";
 
 
 ##Perl Modules
@@ -107,7 +107,7 @@ $parameter{pip}{'python-Levenshtein'} = "0.12.0";
 ## Programs currently installable by SHELL
 $parameter{MIPScripts} = "Your current MIP version";
 $parameter{picardTools} = "2.3.0";
-$parameter{sambamba} = "0.5.9";
+$parameter{sambamba} = "0.6.1";
 $parameter{vcfTools} = "0.1.14";
 $parameter{bedTools} = "2.25.0";
 $parameter{vt} = "gitRepo";
@@ -239,14 +239,14 @@ if (@{$parameter{selectPrograms}}) {
 	
 	&VariantEffectPredictor(\%parameter, $BASHFILEHANDLE);
     }
-    if ( ( grep {$_ eq "CNVnator"} @{$parameter{selectPrograms}} ) ) { #If element is part of array
+#    if ( ( grep {$_ eq "CNVnator"} @{$parameter{selectPrograms}} ) ) { #If element is part of array
 	
-	&CNVnator(\%parameter, $BASHFILEHANDLE);
-    }
-    if ( ( grep {$_ eq "FindTranslocations"} @{$parameter{selectPrograms}} ) ) { #If element is part of array
+#	&CNVnator(\%parameter, $BASHFILEHANDLE);
+ #   }
+ #   if ( ( grep {$_ eq "FindTranslocations"} @{$parameter{selectPrograms}} ) ) { #If element is part of array
 	
-	&FindTranslocations(\%parameter, $BASHFILEHANDLE);
-    }
+#	&FindTranslocations(\%parameter, $BASHFILEHANDLE);
+ #   }
 }
 else {
     
@@ -256,9 +256,9 @@ else {
     
     &VariantEffectPredictor(\%parameter, $BASHFILEHANDLE);
 
-    &CNVnator(\%parameter, $BASHFILEHANDLE);
+#    &CNVnator(\%parameter, $BASHFILEHANDLE);
 
-    &FindTranslocations(\%parameter, $BASHFILEHANDLE);
+#    &FindTranslocations(\%parameter, $BASHFILEHANDLE);
 }
 
 close($BASHFILEHANDLE);
@@ -282,7 +282,7 @@ sub SetDefaultArrayParameters {
     
     my %arrayParameter;
     $arrayParameter{vepAssemblies}{default} = ["GRCh37"];
-    $arrayParameter{snpEffGenomeVersions}{default} = ["GRCh37.75"];  #GrCh38.82 but check current on the snpEff sourceForge
+    $arrayParameter{snpEffGenomeVersions}{default} = ["GRCh37.75"];  #GRCh38.82 but check current on the snpEff sourceForge
     $arrayParameter{perlModules}{default} = ["Modern::Perl",  #MIP
 					     "IPC::System::Simple",  #MIP
 					     "Path::Iterator::Rule",  #MIP
