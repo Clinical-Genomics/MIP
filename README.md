@@ -31,10 +31,12 @@ perl mip.pl -pMosaikBuild 0 -configFile 1_config.yaml
 ```
 
 ##Features
+ - Installation
+ 	* Simple automated install of all programs using conda/SHELL via supplied install script
  - Autonomous
-	* Automated install of dependencies via install script
  	* Checks that all dependencies are fulfilled before launching
- 	* Builds/downloads references and/or files missing before launching
+ 	* Builds/Prepares/downloads references and/or files missing before launching
+ 	* Decompose and normalise reference(s) and variant vcf(s)
  	* Splits and merges files for samples and families when relevant
  - Automatic
 	* A minimal amount of hands-on time
@@ -49,15 +51,19 @@ perl mip.pl -pMosaikBuild 0 -configFile 1_config.yaml
  	* Simulate your analysis before performing it
  	* Redirect each modules analysis process to a temporary directory (@nodes or @login)
  	* Limit a run to a specific set of genomic intervals
+ 	* Use multiple variant callers and annotation programs
+ 	* Optionally split data into clinical variants and research variants
  - Fast
- 	* Analyses an exome trio in approximately 6 h
- 	* Analyses a genome in approximately 35 h
+ 	* Analyses an exome trio in approximately 4 h
+ 	* Analyses a genome in approximately 21 h
  	* Rapid mode analyzes a WGS sample in approximately 4 h using a data reduction and parallelization scheme
  - Traceability
+ 	* Track the status of each modules through dynamically updated status logs
  	* Recreate your analysis from the MIP log or generated config files
  	* Logs sample meta-data and sequence meta-data
  	* Logs version numbers of softwares and databases
  	* Checks sample integrity (sex and relationship)
+ 	* Test data output existens and integrity using automated tests
  - Annotation
  	* Gene annotation
  		* Summarise over all transcript and output on gene level
@@ -65,9 +71,13 @@ perl mip.pl -pMosaikBuild 0 -configFile 1_config.yaml
  		* Separate pathogenic transcripts for correct downstream annotation
  	* Annotate all alleles for a position
  		* Split multi-allelic records into single records to ease annotation
+ 		* Left align and trim variants to normalise them prior to annotation
+ 		* Annotate coverage across genetic regions
+ 		* Extracts QC-metrics and stores them in YAML format
  - Standardized
  	* Use standard formats whenever possible
  - Visualization
+ 	* Ranks variants according to pathogenic potential
  	* Output is directly compatibel with Scout
 
 ##Getting Started
