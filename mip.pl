@@ -218,7 +218,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -gcgpss/--GATKCalculateGenotypePosteriorsSupportSet GATK CalculateGenotypePosteriors support set (defaults to "1000G_phase3_v4_20130502.sites.vcf")
                -pGcv/--pGATKCombineVariantCallSets Combine variant call sets (defaults to "1" (=yes))
                  -gcvbcf/--GATKCombineVariantCallSetsBCFFile Produce a bcf from the GATK CombineVariantCallSet vcf (defaults to "1" (=yes))
-                 -gcvpc/GATKCombineVariantsPrioritizeCaller The prioritization order of variant callers.(defaults to ""; comma sep; Options: gatk|samtools)
+                 -gcvpc/GATKCombineVariantsPrioritizeCaller The prioritization order of variant callers.(defaults to ""; comma sep; Options: gatk|samtools|freebayes)
                -pGpT/--pGATKPhaseByTransmission Computes the most likely genotype and phases calls were unamibigous using GATK PhaseByTransmission (defaults to "0" (=yes))
                -pGrP/--pGATKReadBackedPhasing Performs physical phasing of SNP calls, based on sequencing reads using GATK ReadBackedPhasing (defaults to "0" (=yes))
                  -grpqth/--GATKReadBackedPhasingPhaseQualityThreshold The minimum phasing quality score required to output phasing (defaults to "20")
@@ -990,6 +990,7 @@ if ($scriptParameter{writeConfigFile} ne 0) {  #Write config file for family
 @{$fileInfo{"SelectFileContigs"}} = &SizeSortSelectFileContigs({fileInfoHashRef =>\%fileInfo,
 								hashKeyToSort => "SelectFileContigs",
 								hashKeySortReference => "contigsSizeOrdered",
+								analysisTypeRef => \$scriptParameter{analysisType},
 							       });
 
 
@@ -3463,7 +3464,7 @@ sub RankVariants {
 	    say $FILEHANDLE "> ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType."_tmp.vcf"), "\n";  #Outfile
 
 	    &JavaCore({FILEHANDLE => $FILEHANDLE,
-		       memoryAllocation => "Xmx12g",
+		       memoryAllocation => "Xmx24g -XX:-UseConcMarkSweepGC",
 		       javaUseLargePagesRef => \${$scriptParameterHashRef}{javaUseLargePages},
 		       javaTemporaryDirectory => ${$scriptParameterHashRef}{tempDirectory},
 		       javaJar => catfile(${$scriptParameterHashRef}{picardToolsPath}, "picard.jar"),
@@ -18641,10 +18642,11 @@ sub SizeSortSelectFileContigs {
     
 ##Function : Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
 ##Returns  : "@sortedArray"
-##Arguments: $fileInfoHashRef, $hashKeyToSort, $hashKeySortReference
+##Arguments: $fileInfoHashRef, $hashKeyToSort, $hashKeySortReference, $analysisTypeRef
 ##         : $fileInfoHashRef      => The fileInfo hash {REF}
 ##         : $hashKeyToSort        => The keys to sort
 ##         : $hashKeySortReference => The hash keys sort reference
+##         : $analysisTypeRef      => Type of analysis
 
     my ($argHashRef) = @_;
 
@@ -18652,6 +18654,7 @@ sub SizeSortSelectFileContigs {
     my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
     my $hashKeyToSort = ${$argHashRef}{hashKeyToSort};
     my $hashKeySortReference = ${$argHashRef}{hashKeySortReference};
+    my $analysisTypeRef = ${$argHashRef}{analysisTypeRef};
     
     my @sortedArray;
  
@@ -18678,8 +18681,12 @@ sub SizeSortSelectFileContigs {
 
 	    if ( ! (any {$_ eq $element} @sortedArray) ) {  #If element is not part of array
 		
-		$logger->fatal("Could not detect '##contig'= ".$element." from meta data header in '-vcfParserSelectFile' in reference contigs collected from '-humanGenomeReference'\n");
+		unless ( ($$analysisTypeRef eq "exomes") && ($element=~/MT$|M$/) ) {  #Special case when analysing exomes since Mitochondrial contigs have no baits in exome capture kits
+
+		    $logger->fatal("Could not detect '##contig'= ".$element." from meta data header in '-vcfParserSelectFile' in reference contigs collected from '-humanGenomeReference'\n");
 		exit 1;
+		}
+		
 	    }
 	    
 	}
@@ -20886,7 +20893,7 @@ sub SetContigs {
 
 ##SetContigs
 
-##Function : Set contig prefix and contig names depending on reference used. Exclude mitochondrial contig if requested and analysisType is "exome".  
+##Function : Set contig prefix and contig names depending on reference used. Exclude mitochondrial contig if analysisType is "exomes".  
 ##Returns  : ""
 ##Arguments: $scriptParameterHashRef, $fileInfoHashRef
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
@@ -20907,6 +20914,10 @@ sub SetContigs {
 	
 	@{${$fileInfoHashRef}{contigs}} = ("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "X", "Y", "MT");  #Chr for filtering of bam file
 	@{${$fileInfoHashRef}{contigsSizeOrdered}} = ("1", "2", "3", "4", "5", "6", "7", "X", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "Y", "MT");  #Chr for filtering of bam file
+    }
+    if (${$scriptParameterHashRef}{analysisType} eq "exomes") {
+
+	pop(@{${$fileInfoHashRef}{contigsSizeOrdered}});  #Remove Mitochondrial contig
     }
 }
 
@@ -22473,7 +22484,7 @@ sub UpdateFileContigs {
 	    if( (${$selectFileContigsArrayRef}[$index] eq "Y") || (${$selectFileContigsArrayRef}[$index] eq "chrY") ) {
 
 		splice(@{$selectFileContigsArrayRef}, $index, 1);  #Remove $element from array
-		last;  #Will nor occur more than once
+		last;  #Will not occur more than once
 	    }
 	}
     }
