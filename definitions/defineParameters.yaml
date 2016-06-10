@@ -1725,7 +1725,7 @@ NISTHighConfidenceCallSet:
   associatedProgram:
    - pEvaluation
   buildFile: noAutoBuild
-  default: NISTIntegratedCalls.hg38.vcf
+  default: NISTIntgratedCalls.v2.19.vcf
   dataType: SCALAR
   existsCheck: file
   reference: referencesDir

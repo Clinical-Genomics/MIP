@@ -208,8 +208,8 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -gvrtsg/--GATKVariantReCalibrationTrainingSet1000GSNP GATK VariantRecalibrator 1000G high confidence SNP training set (defaults to "1000G_phase1.snps.high_confidence.b37.vcf")
                  -gvrtso/--GATKVariantReCalibrationTrainingSet1000GOmni GATK VariantRecalibrator 1000G_omni training set (defaults to "1000G_omni2.5.b37.sites.vcf")
                  -gvrtsm/--GATKVariantReCalibrationTrainingSetMills GATK VariantRecalibrator Mills training set (defaults to "Mills_and_1000G_gold_standard.indels.b37.vcf")
-                 -gvrstf/--GATKVariantReCalibrationSnvTSFilterLevel The truth sensitivity level for snvs at which to start filtering used in GATK VariantRecalibrator (defaults to "99.5")
-                 -gvritf/--GATKVariantReCalibrationIndelTSFilterLevel The truth sensitivity level for indels at which to start filtering used in GATK VariantRecalibrator (defaults to "99.0")
+                 -gvrstf/--GATKVariantReCalibrationSnvTSFilterLevel The truth sensitivity level for snvs at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
+                 -gvritf/--GATKVariantReCalibrationIndelTSFilterLevel The truth sensitivity level for indels at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
                  -gvrdpa/--GATKVariantReCalibrationDPAnnotation Use the DP annotation in variant recalibration. (defaults to "1" (=yes))
                  -gvrsmg/--GATKVariantReCalibrationSnvMaxGaussians Use hard filtering for snvs (defaults to "0" (=no))
                  -gvrimg/--GATKVariantReCalibrationIndelMaxGaussians Use hard filtering for indels (defaults to "1" (=yes))
@@ -3485,6 +3485,7 @@ sub RankVariants {
 				  filePath => $outFamilyDirectory,
 				  FILEHANDLE => $FILEHANDLE,
 				 });
+	    say $FILEHANDLE "wait", "\n";
 	}
 
 	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
@@ -7974,6 +7975,7 @@ sub SVRankVariants {
 				  filePath => $outFamilyDirectory,
 				  FILEHANDLE => $FILEHANDLE,
 				 });
+	    say $FILEHANDLE "wait", "\n";
 	}
 
 	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
@@ -12761,7 +12763,7 @@ sub BWAMem {
 		}
 		if (${$scriptParameterHashRef}{bwaMembamStats} == 1) {
 
-		    if (! ${$fileInfoHashRef}{undeterminedInFileName}{ ${$infileHashRef}{$$sampleIDRef}[$infileCounter] } ) {  #Do not add to SampleInfo and hence skip test of "UndeterminedInFileName" files in QCCollect
+		    if (! ${$fileInfoHashRef}{undeterminedInFileName}{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter] } ) {  #Do not add to SampleInfo and hence skip test of "UndeterminedInFileName" files in QCCollect
 
 			## Collect QC metadata info for later use
 			&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -16139,14 +16141,10 @@ sub InfilesReFormat {
 				     infileCounter => $infileCounter,
 				    });
 
-		## Detect "regExp" in string
-		${$fileInfoHashRef}{undeterminedInFileName}{ ${$infileHashRef}{$sampleID}[$infileCounter] } = &CheckString({string => $3,  #$3 = FlowCell from filename
-															    regExp => "Undetermined",
-															   });
-
 		## Adds information derived from infile name to sampleInfo hash. Tracks the number of lanes sequenced and checks unique array elementents.
 		&AddInfileInfo({scriptParameterHashRef => $scriptParameterHashRef,
 				sampleInfoHashRef => $sampleInfoHashRef,
+				fileInfoHashRef => $fileInfoHashRef,
 				laneHashRef => $laneHashRef,
 				infileHashRef => $infileHashRef,
 				inDirPathHashRef => $inDirPathHashRef,
@@ -16161,7 +16159,7 @@ sub InfilesReFormat {
 				laneTrackerRef => \$laneTracker,
 				infileCounter => $infileCounter,
 				compressedInfo => $compressedSwitch,
-			       });		
+			       });
 	    }
             elsif (${$infileHashRef}{$sampleID}[$infileCounter] =~/(\d+)_(\d+)_([^_]+)_([^_]+)_([^_]+)_(\d).fastq/) {  #Parse 'new' no "index" format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                             
 		
@@ -16180,14 +16178,10 @@ sub InfilesReFormat {
 				     infileCounter => $infileCounter,
 				    });
 
-		## Detect "regExp" in string
-		${$fileInfoHashRef}{undeterminedInFileName}{ ${$infileHashRef}{$sampleID}[$infileCounter] } = &CheckString({string => $3,  #$3 = FlowCell from filename
-															    regExp => "Undetermined",
-															   });
-
 		## Adds information derived from infile name to sampleInfo hash. Tracks the number of lanes sequenced and checks unique array elementents.
 		&AddInfileInfo({scriptParameterHashRef => $scriptParameterHashRef,
 				sampleInfoHashRef => $sampleInfoHashRef,
+				fileInfoHashRef => $fileInfoHashRef,
 				laneHashRef => $laneHashRef,
 				infileHashRef => $infileHashRef,
 				inDirPathHashRef => $inDirPathHashRef,
@@ -16267,9 +16261,10 @@ sub AddInfileInfo {
     
 ##Function : Adds information derived from infile name to sampleInfo hash. Tracks the number of lanes sequenced and checks unique array elementents.
 ##Returns  : ""
-##Arguments: $scriptParameterHashRef, $sampleInfoHashRef, $infileHashRef, $infilesLaneNoEndingHashRef, $infilesBothStrandsNoEndingHashRef, $inDirPathHashRef, $laneHashRef, $lane, $date, $flowCell, $sampleID, $index, $direction, $laneTrackerRef, $infileCounter, $compressedSwitch
+##Arguments: $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infileHashRef, $infilesLaneNoEndingHashRef, $infilesBothStrandsNoEndingHashRef, $inDirPathHashRef, $laneHashRef, $lane, $date, $flowCell, $sampleID, $index, $direction, $laneTrackerRef, $infileCounter, $compressedSwitch
 ##         : $scriptParameterHashRef            => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef                 => Info on samples and family hash {REF}
+##         : $fileInfoHashRef                   => The fileInfo hash {REF}
 ##         : $infileHashRef                     => The infiles hash {REF}
 ##         : $infilesLaneNoEndingHashRef        => The infile(s) without the ".ending" {REF}
 ##         : $infilesBothStrandsNoEndingHashRef => The infile(s) without the ".ending" and strand info {REF}
@@ -16293,6 +16288,7 @@ sub AddInfileInfo {
     ## Flatten argument(s)
     my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
     my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
+    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
     my $infileHashRef = ${$argHashRef}{infileHashRef};
     my $inDirPathHashRef = ${$argHashRef}{inDirPathHashRef};
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
@@ -16356,7 +16352,10 @@ sub AddInfileInfo {
 															  readFileCommand => $readFile,
 															  file => ${$infileHashRef}{$sampleID}[$infileCounter],
 															 });
-
+	## Detect "regExp" in string
+	${$fileInfoHashRef}{undeterminedInFileName}{ ${$infilesLaneNoEndingHashRef}{$sampleID}[$$laneTrackerRef] } = &CheckString({string => $flowCell,
+																   regExp => "Undetermined",
+																  });	
 	$$laneTrackerRef++;
     }
     if ($direction == 2) {  #2nd read direction
@@ -20917,6 +20916,7 @@ sub SetContigs {
     }
     if (${$scriptParameterHashRef}{analysisType} eq "exomes") {
 
+	pop(@{${$fileInfoHashRef}{contigs}});  #Remove Mitochondrial contig
 	pop(@{${$fileInfoHashRef}{contigsSizeOrdered}});  #Remove Mitochondrial contig
     }
 }
