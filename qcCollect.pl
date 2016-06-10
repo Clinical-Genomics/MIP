@@ -1,7 +1,12 @@
 #!/usr/bin/env perl
 
-use strict;
-use warnings;
+use Modern::Perl '2014';
+use warnings qw( FATAL utf8 );
+use autodie;
+use v5.18;  #Require at least perl 5.18
+use utf8;  #Allow unicode characters in this script
+use open qw( :encoding(UTF-8) :std );
+use charnames qw( :full :short );
 
 ##Collects MPS QC from MIP. Loads information on files to examine and values to extract from in YAML format and outputs exracted metrics in YAML format. 
 #Copyright 2013 Henrik Stranneheim 
@@ -748,7 +753,21 @@ sub RegExpToYAML {
 
     $regExp{'VariantEffectPredictor'}{'Version'} = q?perl -nae 'if($_=~/##VEP=(\w+)/) {print $1;last;}' ?; #Collect VariantEffectPredictor version
 
-    $regExp{'VariantEffectPredictor'}{'Cache:'} = q?perl -nae 'if($_=~/##VEP=\w+\s+cache=(\S+)/) {print $1;last;}' ?; #Collect VariantEffectPredictor cache directory 
+    $regExp{'VariantEffectPredictor'}{'Cache'} = q?perl -nae 'if($_=~/##VEP=\w+\s+cache=(\S+)/) {print $1;last;}' ?; #Collect VariantEffectPredictor cache directory
+
+    $regExp{'VariantEffectPredictor'}{'PolyPhen'} = q?perl -nae 'if($_=~/##VEP=/ && $_=~/polyphen=(\S+)/) {print $1;last;}' ?; #Collect VariantEffectPredictor polyPhen version
+
+    $regExp{'VariantEffectPredictor'}{'Sift'} = q?perl -nae 'if($_=~/##VEP=/ && $_=~/sift=sift(\S+)/) {print $1;last;}' ?; #Collect VariantEffectPredictor sift version
+
+    $regExp{'VariantEffectPredictor'}{'GeneBuild'} = q?perl -nae 'if($_=~/##VEP=/ && $_=~/genebuild=(\S+)/) {print $1;last;}' ?; #Collect VariantEffectPredictor geneBuild
+
+    $regExp{'VariantEffectPredictor'}{'Assembly'} = q?perl -nae 'if($_=~/##VEP=/ && $_=~/assembly=(\S+)/) {print $1;last;}' ?; #Collect VariantEffectPredictor assembly
+
+    $regExp{'VariantEffectPredictor'}{'HGMDPublic'} = q?perl -nae 'if($_=~/##VEP=/ && $_=~/HGMD-PUBLIC=(\S+)/) {print $1;last;}' ?; #Collect VariantEffectPredictor HGMD-PUBLIC version
+
+    $regExp{'VariantEffectPredictor'}{'RegBuild'} = q?perl -nae 'if($_=~/##VEP=/ && $_=~/regbuild=(\S+)/) {print $1;last;}' ?; #Collect VariantEffectPredictor regbuild version
+
+    $regExp{'VariantEffectPredictor'}{'Gencode'} = q?perl -nae 'if($_=~/##VEP=/ && $_=~/gencode=\S+\s+(\d+)/) {print $1;last;}' ?; #Collect VariantEffectPredictor gencode version
 
     $regExp{'VCFParser'}{'Version'} = q?perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect VCFParser version
 
@@ -763,6 +782,34 @@ sub RegExpToYAML {
     $regExp{'Bcftools'}{'Version'} = q?perl -nae 'if($_=~/bcftools_\w+Version=(\S+)/) {print $1;last;}' ?; #Collect Bcftools version
 
     $regExp{'Freebayes'}{'Version'} = q?perl -nae 'if($_=~/source=freeBayes\s(\S+)/) {print $1;last;}' ?; #Collect Freebayes version
+
+    $regExp{'Delly'}{'Version'} = q?perl -nae 'if($_=~/SVMETHOD=EMBL\.DELLY(v\d+\.\d+\.\d+)/) {print $1;last }' ?; #Collect Delly version
+
+    $regExp{'Manta'}{'Version'} = q?perl -nae 'if($_=~/GenerateSVCandidates\s+(\S+)/) {print $1;last}' ?; #Collect Manta version
+
+    $regExp{'SVCombineVariantCallSets'}{'VcfAnno'} = q?perl -nae 'if($_=~/vcfanno\sversion\s(\S+)/) {print $1;last;}' ?; #Collect SVVCFAnno version
+
+    $regExp{'SVVariantEffectPredictor'}{'Version'} = q?perl -nae 'if($_=~/##VEP=(\w+)/) {print $1;last;}' ?; #Collect SVVariantEffectPredictor version
+
+    $regExp{'SVVariantEffectPredictor'}{'Cache'} = q?perl -nae 'if($_=~/##VEP=\w+\s+cache=(\S+)/) {print $1;last;}' ?; #Collect SVVariantEffectPredictor cache directory
+
+    $regExp{'SVVariantEffectPredictor'}{'PolyPhen'} = q?perl -nae 'if($_=~/##VEP=/ && $_=~/polyphen=(\S+)/) {print $1;last;}' ?; #Collect SVVariantEffectPredictor polyPhen version
+
+    $regExp{'SVVariantEffectPredictor'}{'Sift'} = q?perl -nae 'if($_=~/##VEP=/ && $_=~/sift=sift(\S+)/) {print $1;last;}' ?; #Collect SVVariantEffectPredictor sift version
+
+    $regExp{'SVVariantEffectPredictor'}{'GeneBuild'} = q?perl -nae 'if($_=~/##VEP=/ && $_=~/genebuild=(\S+)/) {print $1;last;}' ?; #Collect SVVariantEffectPredictor geneBuild
+
+    $regExp{'SVVariantEffectPredictor'}{'Assembly'} = q?perl -nae 'if($_=~/##VEP=/ && $_=~/assembly=(\S+)/) {print $1;last;}' ?; #Collect SVVariantEffectPredictor assembly
+
+    $regExp{'SVVariantEffectPredictor'}{'HGMDPublic'} = q?perl -nae 'if($_=~/##VEP=/ && $_=~/HGMD-PUBLIC=(\S+)/) {print $1;last;}' ?; #Collect SVVariantEffectPredictor HGMD-PUBLIC version
+
+    $regExp{'SVVariantEffectPredictor'}{'RegBuild'} = q?perl -nae 'if($_=~/##VEP=/ && $_=~/regbuild=(\S+)/) {print $1;last;}' ?; #Collect SVVariantEffectPredictor regbuild version
+
+    $regExp{'SVVariantEffectPredictor'}{'Gencode'} = q?perl -nae 'if($_=~/##VEP=/ && $_=~/gencode=\S+\s+(\d+)/) {print $1;last;}' ?; #Collect SVVariantEffectPredictor gencode version
+
+    $regExp{'SVVCFParser'}{'Version'} = q?perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect SVVCFParser version
+
+    $regExp{'SVGenmod'}{'Version'} = q?perl -nae 'if($_=~/##Software=<ID=genmod\w+,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect SVGenmod version
 
 #$regExp{''}{''} = ;
 

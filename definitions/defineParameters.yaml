@@ -69,7 +69,7 @@ analysisType:
   associatedProgram:
    - MIP
   dataType: SCALAR
-  default: exomes
+  default: genomes
   type: MIP
 platForm:
   associatedProgram:
@@ -93,6 +93,33 @@ pedigreeFile:
    - MIP
   buildFile: noAutoBuild
   dataType: SCALAR
+  type: path
+sourceEnvironmentCommand:
+  associatedProgram:
+   - MIP
+  elementSeparator: " "
+  dataType: ARRAY
+  type: MIP
+instanceTag:
+  associatedProgram:
+   - MIP
+  elementSeparator: ,
+  dataType: ARRAY
+  type: MIP
+sampleIDs:
+  associatedProgram:
+   - MIP
+  elementSeparator: ,
+  dataType: ARRAY
+  type: path
+inFilesDirs:
+  associatedProgram:
+   - MIP
+  elementSeparator: ,
+  existsCheck: directory
+  dataType: ARRAY
+  default:
+   - notSetYet
   type: path
 sampleInfoFile:
   associatedProgram:
@@ -153,11 +180,17 @@ reduceIO:
   dataType: SCALAR
   default: 1
   type: MIP
-sambambaVersion:
+replaceIUPAC:
   associatedProgram:
    - MIP
   dataType: SCALAR
-  default: v0.5.9
+  default: 0
+  type: MIP
+printProgramMode:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  default: 2
   type: MIP
 ###Programs
 ## GZip
@@ -167,7 +200,7 @@ pGZipFastq:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   programNamePath:
    - gzip
   type: program
@@ -178,7 +211,7 @@ pFastQC:
   chain: RawSeqQC
   dataType: SCALAR
   default: 1
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   programNamePath:
    - fastqc
   type: program
@@ -189,7 +222,7 @@ pMadeline:
   chain: PedigreeDraw
   dataType: SCALAR
   default: 0
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   programNamePath:
    - madeline2
   type: program
@@ -200,10 +233,10 @@ pMosaikBuild:
   chain: MAIN
   dataType: SCALAR
   default: 0
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   programNamePath:
    - MosaikBuild
-  removalFileEnding:
+  fileEnding:
    - .dat
   removeRedundantFiles: yes
   removalSetting: single
@@ -220,12 +253,12 @@ pMosaikAlign:
   chain: MAIN
   dataType: SCALAR
   default: 0
-  fileEnding: _sorted
+  fileTag: _sorted
   outDirectoryName: mosaik
   programNamePath:
    - MosaikAligner
   programType: aligner
-  removalFileEnding:
+  fileEnding:
    - .stat
    - .bam
   removeRedundantFiles: yes
@@ -273,18 +306,24 @@ pBwaMem:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: _sorted
+  fileTag: _sorted
   outDirectoryName: bwa
   programNamePath:
    - bwa
    - samtools
    - sambamba
   programType: aligner
-  removalFileEnding:
+  fileEnding:
    - .bam
   removeRedundantFiles: yes
   removalSetting: single
   type: program
+bwaMemHLA:
+  associatedProgram:
+   - pBwaMem
+  dataType: SCALAR
+  default: 1
+  type: programArgument
 bwaMemRapidDb:
   associatedProgram:
    - pBwaMem
@@ -317,10 +356,10 @@ pBwaAln:
   chain: MAIN
   dataType: SCALAR
   default: 0
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   programNamePath:
    - bwa
-  removalFileEnding:
+  fileEnding:
    - .sai
   removeRedundantFiles: yes
   removalSetting: single
@@ -337,12 +376,12 @@ pBwaSampe:
   chain: MAIN
   dataType: SCALAR
   default: 0
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   outDirectoryName: bwa
   programNamePath:
    - bwa
   programType: aligner
-  removalFileEnding:
+  fileEnding:
    - .bam
   removeRedundantFiles: yes
   removalSetting: single
@@ -372,16 +411,16 @@ pPicardToolsMergeRapidReads:
   chain: MAIN
   dataType: SCALAR
   default: 0
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   type: program
-## BAMCalibrationAndGTBlock
-pBAMCalibrationAndGTBlock:
+## BAMCalibrationBlock
+pBAMCalibrationBlock:
   associatedProgram:
    - MIP
   chain: MAIN
   dataType: SCALAR
   default: 0
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   reduceIO: 1
   type: program
 pPicardToolsMergeSamFiles:
@@ -390,8 +429,30 @@ pPicardToolsMergeSamFiles:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: _merged
-  removalFileEnding:
+  fileTag: _merged
+  fileEnding:
+   - .bam
+  removeRedundantFiles: yes
+  removalSetting: merged
+  type: program
+picardToolsMergeSamFilesPrevious:
+  associatedProgram:
+   - pPicardToolsMergeSamFiles
+  elementSeparator: ,
+  existsCheck: file
+  dataType: ARRAY
+  mandatory: no
+  type: path
+pPicardToolsMarkduplicates:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileTag: _md
+  programNamePath:
+   - sambamba
+  fileEnding:
    - .bam
   removeRedundantFiles: yes
   removalSetting: merged
@@ -401,15 +462,33 @@ pSambambaMarkduplicates:
    - MIP
   chain: MAIN
   dataType: SCALAR
-  default: 1
-  fileEnding: _smd
+  default: 0
+  fileTag: _md
   programNamePath:
    - sambamba
-  removalFileEnding:
+  fileEnding:
    - .bam
   removeRedundantFiles: yes
   removalSetting: merged
   type: program
+sambambaMarkDupHashTableSize:
+  associatedProgram:
+   - pSambambaMarkduplicates
+  dataType: SCALAR
+  default: 500000
+  type: programArgument
+sambambaMarkDupOverflowListSize:
+  associatedProgram:
+   - pSambambaMarkduplicates
+  dataType: SCALAR
+  default: 500000
+  type: programArgument
+sambambaMarkDupIoBufferSize:
+  associatedProgram:
+   - pSambambaMarkduplicates
+  dataType: SCALAR
+  default: 2048
+  type: programArgument
 ## GATK BAM Calibration
 pGATKRealigner:
   associatedProgram:
@@ -417,29 +496,20 @@ pGATKRealigner:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: _rreal
-  removalFileEnding:
+  fileTag: _rreal
+  fileEnding:
    - .bam
   removeRedundantFiles: yes
   removalSetting: merged
   type: program
-GATKReAlignerINDELKnownSet1:
+GATKReAlignerINDELKnownSite:
   associatedProgram:
    - pGATKRealigner
-  buildFile: yesAutoDownLoad
-  dataType: SCALAR
-  default: 1000G_phase1.indels.b37.vcf
-  existsCheck: file
-  reference: referencesDir
-  type: path
-GATKReAlignerINDELKnownSet2:
-  associatedProgram:
-   - pGATKRealigner
-  buildFile: yesAutoDownLoad
-  dataType: SCALAR
-  default: Mills_and_1000G_gold_standard.indels.b37.vcf
-  existsCheck: file
-  reference: referencesDir
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - 1000G_phase1.indels.b37.vcf
+   - Mills_and_1000G_gold_standard.indels.b37.vcf
   type: path
 pGATKBaseRecalibration:
   associatedProgram:
@@ -447,20 +517,32 @@ pGATKBaseRecalibration:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: _brecal
-  removalFileEnding:
+  fileTag: _brecal
+  fileEnding:
    - .bam
   removeRedundantFiles: yes
   removalSetting: merged
   type: program
-GATKBaseReCalibrationSNPKnownSet:
+GATKBaseReCalibrationCovariate:
   associatedProgram:
    - pGATKBaseRecalibration
-  buildFile: yesAutoDownLoad
-  dataType: SCALAR
-  default: dbsnp_138.b37.vcf
-  existsCheck: file
-  reference: referencesDir
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - ReadGroupCovariate
+   - ContextCovariate
+   - CycleCovariate
+   - QualityScoreCovariate
+  type: programArgument
+GATKBaseReCalibrationKnownSite:
+  associatedProgram:
+   - pGATKBaseRecalibration
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - dbsnp_138.b37.vcf
+   - 1000G_phase1.indels.b37.vcf
+   - Mills_and_1000G_gold_standard.indels.b37.vcf
   type: path
 GATKBaseReCalibrationOverClippedRead:
   associatedProgram:
@@ -474,6 +556,18 @@ GATKBaseReCalibrationDisableIndelQual:
   dataType: SCALAR
   default: 1
   type: programArgument
+GATKBaseReCalibrationStaticQuantizedQuals:
+  associatedProgram:
+   - pGATKBaseRecalibration
+  elementSeparator: ,
+  dataType: ARRAY
+  mandatory: no
+  default:
+   - 10
+   - 20
+   - 30
+   - 40
+  type: programArgument
 ## Coverage Analysis
 pChanjoSexCheck:
   associatedProgram:
@@ -481,7 +575,7 @@ pChanjoSexCheck:
   chain: CoverageReportGender
   dataType: SCALAR
   default: 1
-  fileEnding: .sexcheck
+  fileTag: .sexcheck
   type: program
 pSambambaDepth:
   associatedProgram:
@@ -489,10 +583,22 @@ pSambambaDepth:
   chain: CoverageReport
   dataType: SCALAR
   default: 1
-  fileEnding: _coverage
+  fileTag: _coverage
   programNamePath:
    - sambamba
   type: program
+sambambaDepthCutOffs:
+  associatedProgram:
+   - pSambambaDepth
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - 10
+   - 20
+   - 30
+   - 50
+   - 100
+  type: programArgument
 sambambaDepthBed:
   associatedProgram:
    - pSambambaDepth
@@ -532,7 +638,7 @@ pGenomeCoverageBED:
   chain: CoverageQCGCovBed
   dataType: SCALAR
   default: 0
-  fileEnding: _genomeCoverageBed
+  fileTag: _genomeCoverageBed
   programNamePath:
    - bedtools
   type: program
@@ -548,7 +654,7 @@ pPicardToolsCollectMultipleMetrics:
   chain: CoverageQCPTCMM
   dataType: SCALAR
   default: 1
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   type: program
 pPicardToolsCalculateHSMetrics:
   associatedProgram:
@@ -556,7 +662,7 @@ pPicardToolsCalculateHSMetrics:
   chain: CoverageQCPTCHSM
   dataType: SCALAR
   default: 1
-  fileEnding: _CalculateHsMetrics
+  fileTag: _CalculateHsMetrics
   type: program
 pRCovPlots:
   associatedProgram:
@@ -564,8 +670,292 @@ pRCovPlots:
   chain: CoverageQCRCOVP
   dataType: SCALAR
   default: 0
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   type: program
+##Structural Variant Calling
+pCNVnator:
+  associatedProgram:
+   - MIP
+  chain: SVCNV
+  dataType: SCALAR
+  default: 0
+  fileTag: _cnvnator
+  programNamePath:
+   - cnvnator
+   - root
+   - bcftools
+   - samtools
+  outDirectoryName: cnvnator
+  programType: structuralVariantCaller
+  type: program
+cnvBinSize:
+  associatedProgram:
+   - pCNVnator
+  dataType: SCALAR
+  default: 1000
+  type: programArgument
+pDelly:
+  associatedProgram:
+   - MIP
+  chain: SVDEL
+  dataType: SCALAR
+  default: 0
+  fileTag: _delly
+  programNamePath:
+   - delly
+   - bcftools
+  outDirectoryName: delly
+  programType: structuralVariantCaller
+  type: program
+dellyType:
+  associatedProgram:
+   - pDelly
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - DEL
+   - DUP
+   - INV
+   - INS
+  type: programArgument
+pManta:
+  associatedProgram:
+   - MIP
+  chain: SVMAN
+  dataType: SCALAR
+  default: 1
+  fileTag: _manta
+  programNamePath:
+   - configManta.py
+  outDirectoryName: manta
+  programType: structuralVariantCaller
+  type: program
+pFindTranslocations:
+  associatedProgram:
+   - MIP
+  chain: SVFT
+  dataType: SCALAR
+  default: 0
+  fileTag: _findt
+  programNamePath:
+   - FindTranslocations
+  outDirectoryName: findtranslocations
+  programType: structuralVariantCaller
+  type: program
+findTranslocationsMinimumSuppotingPairs:
+  associatedProgram:
+   - pFindTranslocations
+  dataType: SCALAR
+  default: 6
+  type: programArgument
+pSVCombineVariantCallSets:
+  associatedProgram:
+   - MIP
+  chain: SV
+  dataType: SCALAR
+  default: 1
+  fileTag: _comb_
+  programNamePath:
+   - vt
+   - bcftools
+  type: program
+svVTDecompose:
+  associatedProgram:
+   - pSVCombineVariantCallSets
+  dataType: SCALAR
+  default: 1
+  type: programArgument
+svBcfToolsViewFilter:
+  associatedProgram:
+   - pSVCombineVariantCallSets
+  dataType: SCALAR
+  default: 1
+  type: programArgument
+svVCFAnno:
+  associatedProgram:
+   - pSVCombineVariantCallSets
+  dataType: SCALAR
+  default: 1
+  type: programArgument
+svVCFAnnoLua:
+  associatedProgram:
+   - pSVCombineVariantCallSets
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  existsCheck: file
+  reference: referencesDir
+  type: path
+svVCFAnnoConfig:
+  associatedProgram:
+   - pSVCombineVariantCallSets
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  existsCheck: file
+  reference: referencesDir
+  type: path
+svVCFAnnotationHeaderLinesFile:
+  associatedProgram:
+   - pSVCombineVariantCallSets
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  existsCheck: file
+  reference: referencesDir
+  type: path
+svGenmodFilter:
+  associatedProgram:
+   - pSVCombineVariantCallSets
+  dataType: SCALAR
+  default: 1
+  type: programArgument
+svGenmodFilter1000G:
+  associatedProgram:
+   - pSVCombineVariantCallSets
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  default: ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
+  existsCheck: file
+  reference: referencesDir
+  type: path
+svGenmodFilterThreshold:
+  associatedProgram:
+   - pSVCombineVariantCallSets
+  dataType: SCALAR
+  default: 0.10
+  type: programArgument
+svCombineVariantCallSetsBCFFile:
+  associatedProgram:
+   - pSVCombineVariantCallSets
+  dataType: SCALAR
+  default: 1
+  type: programArgument
+pSVVariantEffectPredictor:
+  associatedProgram:
+   - MIP
+  chain: SV
+  dataType: SCALAR
+  default: 1
+  fileTag: vep_
+  type: program
+svVepFeatures:
+  associatedProgram:
+   - pSVVariantEffectPredictor
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - hgvs
+   - symbol
+   - numbers
+   - sift
+   - polyphen
+   - humdiv
+   - domains
+   - protein
+   - ccds
+   - uniprot
+   - biotype
+   - regulatory
+   - tsl
+   - canonical
+   - per_gene
+   - appris
+  type: programArgument
+svVepPlugins:
+  associatedProgram:
+   - pSVVariantEffectPredictor
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - UpDownDistance
+   - LoFtool
+   - LoF
+  type: programArgument
+pSVVCFParser:
+  associatedProgram:
+   - MIP
+  chain: SV
+  dataType: SCALAR
+  default: 1
+  fileTag: parsed_
+  type: program
+svVcfParserVepTranscripts:
+  associatedProgram:
+   - pSVVCFParser
+  dataType: SCALAR
+  default: 0
+  type: programArgument
+svVcfParserRangeFeatureFile:
+  associatedProgram:
+   - pSVVCFParser
+  dataType: SCALAR
+  existsCheck: file
+  reference: referencesDir
+  type: path
+svVcfParserRangeFeatureAnnotationColumns:
+  associatedProgram:
+   - pSVVCFParser
+  elementSeparator: ,
+  dataType: ARRAY
+  type: programArgument
+svVcfParserSelectFile:
+  associatedProgram:
+   - pSVVCFParser
+  dataType: SCALAR
+  existsCheck: file
+  reference: referencesDir
+  type: path
+svVcfParserSelectFileMatchingColumn:
+  associatedProgram:
+   - pSVVCFParser
+  dataType: SCALAR
+  type: programArgument
+svVcfParserSelectFeatureAnnotationColumns:
+  associatedProgram:
+   - pSVVCFParser
+  elementSeparator: ,
+  dataType: ARRAY
+  type: programArgument
+pSVRankVariants:
+  associatedProgram:
+   - MIP
+  chain: SV
+  dataType: SCALAR
+  default: 1
+  fileTag: ranked_
+  type: program
+svGenmodModelsFamilyType:
+  associatedProgram:
+   - pSVRankVariants
+  dataType: SCALAR
+  default: mip
+  type: programArgument
+svWholeGene:
+  associatedProgram:
+   - pSVRankVariants
+  dataType: SCALAR
+  default: 0
+  type: programArgument
+svGenmodModelsReducedPenetranceFile:
+  associatedProgram:
+   - pSVRankVariants
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  existsCheck: file
+  reference: referencesDir
+  type: path
+svRankModelFile:
+  associatedProgram:
+   - pSVRankVariants
+  buildFile: noAutoBuild
+  dataType: SCALAR
+  existsCheck: file
+  reference: referencesDir
+  type: path
+svRankVariantBCFFile:
+  associatedProgram:
+   - pSVRankVariants
+  dataType: SCALAR
+  default: 1
+  type: programArgument
 ##Samtools
 pSamToolsMpileUp:
   associatedProgram:
@@ -573,13 +963,13 @@ pSamToolsMpileUp:
   chain: SAMMP
   dataType: SCALAR
   default: 1
-  fileEnding: _mpileup_
+  fileTag: _mpileup_
   outDirectoryName: samtools
   programNamePath:
    - samtools
    - bcftools
   programType: variantCaller
-  removalFileEnding:
+  fileEnding:
    - .vcf
   removeRedundantFiles: yes
   removalSetting: family
@@ -591,13 +981,13 @@ pFreebayes:
   chain: FREEB
   dataType: SCALAR
   default: 1
-  fileEnding: _freebayes_
+  fileTag: _freebayes_
   programNamePath:
    - freebayes
    - bcftools
   outDirectoryName: freebayes
   programType: variantCaller
-  removalFileEnding:
+  fileEnding:
    - .vcf
   removeRedundantFiles: yes
   removalSetting: family
@@ -609,12 +999,39 @@ pGATKHaploTypeCaller:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: _gvcf
-  removalFileEnding:
+  fileTag: _gvcf
+  fileEnding:
    - .vcf
   removeRedundantFiles: yes
   removalSetting: merged
   type: program
+GATKHaploTypeCallerAnnotation:
+  associatedProgram:
+   - pGATKHaploTypeCaller
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - BaseQualityRankSumTest
+   - ChromosomeCounts
+   - Coverage
+   - DepthPerAlleleBySample
+   - FisherStrand
+   - MappingQualityRankSumTest
+   - QualByDepth
+   - RMSMappingQuality
+   - ReadPosRankSumTest
+   - StrandOddsRatio
+  type: programArgument
+#BaseQualityRankSumTest;  #Rank Sum Test of REF versus ALT base quality scores
+#ChromosomeCounts;  #Counts and frequency of alleles in called genotypes
+#Coverage;  #Total depth of coverage per sample and over all samples
+#DepthPerAlleleBySample;  #Depth of coverage of each allele per sample
+#FisherStrand;  #Strand bias estimated using Fisher's Exact Test
+#MappingQualityRankSumTest;  #Rank Sum Test for mapping qualities of REF versus ALT reads
+#QualByDepth;  #Variant confidence normalized by unfiltered depth of variant samples
+#RMSMappingQuality;  #Root Mean Square of the mapping quality of reads across all samples
+#ReadPosRankSumTest;  #Rank Sum Test for relative positioning of REF versus ALT alleles within reads
+#StrandOddsRatio ;  #Strand bias estimated by the Symmetric Odds Ratio test
 GATKHaploTypeCallerSNPKnownSet:
   associatedProgram:
    - pGATKHaploTypeCaller
@@ -654,8 +1071,8 @@ pGATKGenoTypeGVCFs:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: _
-  removalFileEnding:
+  fileTag: _
+  fileEnding:
    - .vcf
   removeRedundantFiles: yes
   removalSetting: family
@@ -680,12 +1097,12 @@ pGATKVariantRecalibration:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: vrecal_
+  fileTag: vrecal_
   programNamePath:
    - bcftools
   outDirectoryName: gatk
   programType: variantCaller
-  removalFileEnding:
+  fileEnding:
    - .vcf
   removeRedundantFiles: yes
   removalSetting: family
@@ -792,8 +1209,8 @@ pGATKCombineVariantCallSets:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: comb_
-  removalFileEnding:
+  fileTag: comb_
+  fileEnding:
    - .vcf
   removeRedundantFiles: yes
   removalSetting: family
@@ -817,8 +1234,16 @@ pVariantAnnotationBlock:
   chain: MAIN
   dataType: SCALAR
   default: 0
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   reduceIO: 1
+  type: program
+pPrepareForVariantAnnotationBlock:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 1
+  fileTag: nofileTag
   type: program
 ##VT
 pVT:
@@ -827,13 +1252,13 @@ pVT:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: vt_
+  fileTag: vt_
   programNamePath:
    - vt
    - sed
    - bgzip
    - tabix
-  removalFileEnding:
+  fileEnding:
    - .vcf
   removeRedundantFiles: yes
   removalSetting: variantAnnotation
@@ -889,7 +1314,7 @@ pGATKPhaseByTransmission:
   chain: Phasing
   dataType: SCALAR
   default: 0
-  fileEnding: phtr_
+  fileTag: phtr_
   type: program
 pGATKReadBackedPhasing:
   associatedProgram:
@@ -897,7 +1322,7 @@ pGATKReadBackedPhasing:
   chain: Phasing
   dataType: SCALAR
   default: 0
-  fileEnding: phrb_
+  fileTag: phrb_
   type: program
 GATKReadBackedPhasingPhaseQualityThreshold:
   associatedProgram:
@@ -911,7 +1336,7 @@ pGATKVariantEvalAll:
   chain: AllVariantQC
   dataType: SCALAR
   default: 1
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   type: program
 pGATKVariantEvalExome:
   associatedProgram:
@@ -919,7 +1344,7 @@ pGATKVariantEvalExome:
   chain: ExomeVariantQC
   dataType: SCALAR
   default: 1
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   programNamePath:
    - bedtools
   type: program
@@ -960,6 +1385,8 @@ GATKBundleDownLoadVersion:
    - pBwaSampe
    - pGATKRealigner
    - pGATKBaseRecalibration
+   - pCNVnator
+   - pDelly
    - pGATKHaploTypeCaller
    - pGATKGenoTypeGVCFs
    - pSamToolsMpileUp
@@ -981,8 +1408,8 @@ pVariantEffectPredictor:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: vep_
-  removalFileEnding:
+  fileTag: vep_
+  fileEnding:
    - .vcf
   removeRedundantFiles: yes
   removalSetting: variantAnnotation
@@ -1005,6 +1432,38 @@ vepReference:
   dataType: SCALAR
   default: 0
   type: programArgument
+vepFeatures:
+  associatedProgram:
+   - pVariantEffectPredictor
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - hgvs
+   - symbol
+   - numbers
+   - sift
+   - polyphen
+   - humdiv
+   - domains
+   - protein
+   - ccds
+   - uniprot
+   - biotype
+   - regulatory
+   - tsl
+   - canonical
+   - appris
+  type: programArgument
+vepPlugins:
+  associatedProgram:
+   - pVariantEffectPredictor
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - UpDownDistance
+   - LoFtool
+   - LoF
+  type: programArgument
 ## VCFParser
 pVCFParser:
   associatedProgram:
@@ -1012,8 +1471,8 @@ pVCFParser:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: parsed_
-  removalFileEnding:
+  fileTag: parsed_
+  fileEnding:
    - .vcf
   removeRedundantFiles: yes
   removalSetting: variantAnnotation
@@ -1031,6 +1490,12 @@ vcfParserRangeFeatureFile:
   existsCheck: file
   reference: referencesDir
   type: path
+vcfParserRangeFeatureAnnotationColumns:
+  associatedProgram:
+   - pVCFParser
+  elementSeparator: ,
+  dataType: ARRAY
+  type: programArgument
 vcfParserSelectFile:
   associatedProgram:
    - pVCFParser
@@ -1043,6 +1508,18 @@ vcfParserSelectFileMatchingColumn:
    - pVCFParser
   dataType: SCALAR
   type: programArgument
+vcfParserSelectFeatureAnnotationColumns:
+  associatedProgram:
+   - pVCFParser
+  elementSeparator: ,
+  dataType: ARRAY
+  type: programArgument
+VcfParserOutputFileCount:
+  associatedProgram:
+   - pVCFParser
+  dataType: SCALAR
+  default: 1
+  type: programArgument
 ## Annovar
 pAnnovar:
   associatedProgram:
@@ -1050,8 +1527,8 @@ pAnnovar:
   chain: MAIN
   dataType: SCALAR
   default: 0
-  fileEnding: annovar_
-  removalFileEnding:
+  fileTag: annovar_
+  fileEnding:
    - .vcf
   removeRedundantFiles: yes
   removalSetting: variantAnnotation
@@ -1068,6 +1545,29 @@ annovarGenomeBuildVersion:
   dataType: SCALAR
   default: hg19
   type: programArgument
+annovarTableNames:
+  associatedProgram:
+   - pAnnovar
+  elementSeparator: ,
+  existsCheck: file
+  dataType: ARRAY
+  default:
+   - refGene
+   - mce46way
+   - gerp++elem
+   - segdup
+   - tfbs
+   - mirna
+   - snp137NonFlagged
+   - 1000g2012apr_all
+   - esp6500si_all
+   - ljb2_sift
+   - ljb2_pp2hdiv
+   - ljb2_pp2hvar
+   - ljb2_mt
+   - ljb2_gerp++
+   - ljb2_phylop
+  type: path
 annovarMAFThreshold:
   associatedProgram:
    - pAnnovar
@@ -1081,12 +1581,18 @@ pSnpEff:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: snpeff_
-  removalFileEnding:
+  fileTag: snpeff_
+  fileEnding:
    - .vcf
   removeRedundantFiles: yes
   removalSetting: variantAnnotation
   type: program
+snpEffPath:
+  associatedProgram:
+   - pSnpEff
+  dataType: SCALAR
+  existsCheck: directory
+  type: path
 snpEffAnn:
   associatedProgram:
    - pSnpEff
@@ -1099,11 +1605,29 @@ snpEffGenomeBuildVersion:
   dataType: SCALAR
   default: GRCh37.75
   type: programArgument
-snpEffPath:
+snpSiftAnnotationFiles:
   associatedProgram:
    - pSnpEff
-  dataType: SCALAR
-  existsCheck: directory
+  buildFile: yesAutoBuild
+  dataType: HASH
+  default:
+     dbsnp_138.b37.excluding_sites_after_129.vcf.gz: CAF
+     ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz: AF
+     ExAC.r0.3.sites.vep.vcf.gz: AF
+  existsCheck: file
+  reference: referencesDir
+  type: path
+snpSiftAnnotationOutInfoKey:
+  associatedProgram:
+   - pSnpEff
+  buildFile: yesAutoBuild
+  dataType: HASH
+  default:
+     dbsnp_138.b37.excluding_sites_after_129.vcf.gz: Dbsnp129L
+     ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz: 1000G
+     ExAC.r0.3.sites.vep.vcf.gz: EXAC
+  existsCheck: file
+  reference: referencesDir
   type: path
 snpSiftDbNSFPFile:
   associatedProgram:
@@ -1112,6 +1636,23 @@ snpSiftDbNSFPFile:
   default: dbNSFP2.9.txt.gz
   existsCheck: file
   reference: referencesDir
+  type: path
+snpSiftDbNSFPAnnotations:
+  associatedProgram:
+   - pSnpEff
+  elementSeparator: ,
+  dataType: ARRAY
+  default:
+   - SIFT_pred
+   - Polyphen2_HDIV_pred
+   - Polyphen2_HVAR_pred
+   - LRT_pred
+   - MutationTaster_pred
+   - GERP++_NR
+   - GERP++_RS
+   - phastCons100way_vertebrate
+   - 1000Gp1_AF
+   - ESP6500_AA_F
   type: path
 ## java large pages - effects all modules using java
 javaUseLargePages:
@@ -1158,10 +1699,10 @@ pSampleCheck:
   chain: IDQC
   dataType: SCALAR
   default: 1
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   programNamePath:
    - vcftools
-   - plink
+   - plink2
   type: program
 pEvaluation:
   associatedProgram:
@@ -1169,11 +1710,17 @@ pEvaluation:
   chain: EvalNIST
   dataType: SCALAR
   default: 0
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   programNamePath:
    - gzip
    - bcftools
   type: program
+NISTID:
+  associatedProgram:
+   - pEvaluation
+  dataType: SCALAR
+  default: NA12878
+  type: programArgument
 NISTHighConfidenceCallSet:
   associatedProgram:
    - pEvaluation
@@ -1199,7 +1746,7 @@ pRankVariants:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: ranked_
+  fileTag: ranked_
   type: program
 genmodModelsFamilyType:
   associatedProgram:
@@ -1207,6 +1754,15 @@ genmodModelsFamilyType:
   dataType: SCALAR
   default: mip
   type: programArgument
+genmodcaddFiles:
+  associatedProgram:
+   - pRankVariants
+  dataType: ARRAY
+  elementSeparator: ,
+  existsCheck: file
+  mandatory: no
+  reference: referencesDir
+  type: path
 spidexFile:
   associatedProgram:
    - pRankVariants
@@ -1237,23 +1793,11 @@ rankModelFile:
   existsCheck: file
   reference: referencesDir
   type: path
-## PythonVirtualEnvironment
-usePythonVirtualEnvironment:
+rankVariantBCFFile:
   associatedProgram:
-   - pChanjoSexCheck
-   - pVT
-   - pGATKVariantRecalibration
    - pRankVariants
   dataType: SCALAR
-  default: 0
-  type: programArgument
-pythonVirtualEnvironment:
-  associatedProgram:
-   - pChanjoSexCheck
-   - pVT
-   - pGATKVariantRecalibration
-   - pRankVariants
-  dataType: SCALAR
+  default: 1
   type: programArgument
 ## QCCollect
 pQCCollect:
@@ -1262,7 +1806,7 @@ pQCCollect:
   chain: ALL
   dataType: SCALAR
   default: 1
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   type: program
 QCCollectSampleInfoFile:
   associatedProgram:
@@ -1279,6 +1823,16 @@ QCCollectRegExpFile:
   existsCheck: file
   reference: referencesDir
   type: path
+## MultiQC
+pMultiQC:
+  associatedProgram:
+   - MIP
+  chain: ALL
+  dataType: SCALAR
+  default: 1
+  fileTag: nofileTag
+  outDirectoryName: multiqc
+  type: program
 ## RemoveRedundantFiles
 pRemoveRedundantFiles:
   associatedProgram:
@@ -1286,7 +1840,7 @@ pRemoveRedundantFiles:
   chain: MAIN
   dataType: SCALAR
   default: 1
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   type: program
 ## AnalysisRunStatus
 pAnalysisRunStatus:
@@ -1295,7 +1849,7 @@ pAnalysisRunStatus:
   chain: ALL
   dataType: SCALAR
   default: 1
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   type: program
 ## Sacct
 pSacct:
@@ -1304,7 +1858,7 @@ pSacct:
   chain: ALL
   dataType: SCALAR
   default: 1
-  fileEnding: nofileEnding
+  fileTag: nofileTag
   type: program
 ## HumanGenomeReference
 humanGenomeReference:
@@ -1331,171 +1885,14 @@ humanGenomeReference:
   existsCheck: file
   reference: referencesDir
   type: path
-pythonVirtualEnvironmentCommand:
+exomeTargetBed:
   associatedProgram:
-   - MIP
-  elementSeparator: " "
-  dataType: ARRAY
-  default:
-   - workon
-  type: MIP
-instanceTag:
-  associatedProgram:
-   - MIP
-  elementSeparator: ,
-  dataType: ARRAY
-  type: MIP
-sampleIDs:
-  associatedProgram:
-   - MIP
-  elementSeparator: ,
-  dataType: ARRAY
-  type: path
-inFilesDirs:
-  associatedProgram:
-   - MIP
-  elementSeparator: ,
-  existsCheck: directory
-  dataType: ARRAY
-  default:
-   - notSetYet
-  type: path
-picardToolsMergeSamFilesPrevious:
-  associatedProgram:
-   - pPicardToolsMergeSamFiles
-  elementSeparator: ,
-  existsCheck: file
-  dataType: ARRAY
-  mandatory: no
-  type: path
-GATKBaseReCalibrationStaticQuantizedQuals:
-  associatedProgram:
+   - pPicardToolsCalculateHSMetrics
+   - pGATKRealigner
    - pGATKBaseRecalibration
-  elementSeparator: ,
-  dataType: ARRAY
-  mandatory: no
-  default:
-   - 10
-   - 20
-   - 30
-   - 40
-  type: programArgument
-sambambaDepthCutOffs:
-  associatedProgram:
-   - pSambambaDepth
-  elementSeparator: ,
-  dataType: ARRAY
-  default:
-   - 10
-   - 20
-   - 30
-   - 50
-   - 100
-  type: programArgument
-vepFeatures:
-  associatedProgram:
-   - pVariantEffectPredictor
-  elementSeparator: ,
-  dataType: ARRAY
-  default:
-   - hgvs
-   - symbol
-   - numbers
-   - sift
-   - polyphen
-   - humdiv
-   - domains
-   - protein
-   - ccds
-   - uniprot
-   - biotype
-   - regulatory
-   - tsl
-   - canonical
-  type: programArgument
-vcfParserRangeFeatureAnnotationColumns:
-  associatedProgram:
-   - pVCFParser
-  elementSeparator: ,
-  dataType: ARRAY
-  type: programArgument
-vcfParserSelectFeatureAnnotationColumns:
-  associatedProgram:
-   - pVCFParser
-  elementSeparator: ,
-  dataType: ARRAY
-  type: programArgument
-annovarTableNames:
-  associatedProgram:
-   - pAnnovar
-  elementSeparator: ,
-  existsCheck: file
-  dataType: ARRAY
-  default:
-   - refGene
-   - mce46way
-   - gerp++elem
-   - segdup
-   - tfbs
-   - mirna
-   - snp137NonFlagged
-   - 1000g2012apr_all
-   - esp6500si_all
-   - ljb2_sift
-   - ljb2_pp2hdiv
-   - ljb2_pp2hvar
-   - ljb2_mt
-   - ljb2_lt
-   - ljb2_gerp++
-   - ljb2_phylop
-  type: path
-snpSiftDbNSFPAnnotations:
-  associatedProgram:
-   - pSnpEff
-  elementSeparator: ,
-  dataType: ARRAY
-  default:
-   - SIFT_pred
-   - Polyphen2_HDIV_pred
-   - Polyphen2_HVAR_pred
-   - LRT_pred
-   - MutationTaster_pred
-   - GERP++_NR
-   - GERP++_RS
-   - phastCons100way_vertebrate
-   - 1000Gp1_AF
-   - ESP6500_AA_F
-  type: path
-snpSiftAnnotationFiles:
-  associatedProgram:
-   - pSnpEff
+   - pGATKHaploTypeCaller
   buildFile: yesAutoBuild
   dataType: HASH
-  default:
-     dbsnp_138.b37.excluding_sites_after_129.vcf.gz: CAF
-     ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz: AF
-     ExAC.r0.3.sites.vep.vcf.gz: AF   
   existsCheck: file
-  reference: referencesDir
-  type: path
-snpSiftAnnotationOutInfoKey:
-  associatedProgram:
-   - pSnpEff
-  buildFile: yesAutoBuild
-  dataType: HASH
-  default:
-     dbsnp_138.b37.excluding_sites_after_129.vcf.gz: Dbsnp129LCAF
-     ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz: 1000GAF
-     ExAC.r0.3.sites.vep.vcf.gz: EXACAF
-  existsCheck: file
-  reference: referencesDir
-  type: path
-genmodcaddFiles:
-  associatedProgram:
-   - pRankVariants
-  dataType: ARRAY
-  elementSeparator: ,
-  existsCheck: file
-  mandatory: no
   reference: referencesDir
   type: path

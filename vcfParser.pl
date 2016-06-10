@@ -1,7 +1,12 @@
 #!/usr/bin/env perl
 
-use strict;
-use warnings;
+use Modern::Perl '2014';
+use warnings qw( FATAL utf8 );
+use autodie;
+use v5.18;  #Require at least perl 5.18
+use utf8;  #Allow unicode characters in this script
+use open qw( :encoding(UTF-8) :std );
+use charnames qw( :full :short );
 
 use Getopt::Long;
 use IO::File;
@@ -30,7 +35,7 @@ my ($infile, $parseVEP, $rangeFeatureFile, $selectFeatureFile, $selectFeatureMat
 my (@metaData, @selectMetaData, @rangeFeatureAnnotationColumns, @selectFeatureAnnotationColumns); 
 my (%geneAnnotation, %consequenceSeverity, %rangeData, %selectData, %snpEffCmd, %tree, %metaData, %siftTerm, %polyPhenTerm);
 
-my $vcfParserVersion = "1.2.6";
+my $vcfParserVersion = "1.2.8";
 
 ## Enables cmd "vcfParser.pl" to print usage help 
 if(scalar(@ARGV) == 0) {
@@ -167,29 +172,13 @@ sub DefineSnpEffAnnotations {
     $snpEffCmd{'SnpEff'}{'DbsnpLCAF'}{'INFO'} = q?##INFO=<ID=DbsnpLCAF,Number=1,Type=Float,Description="Least common AF in the DbSNP database.">?;
     $snpEffCmd{'SnpEff'}{'DbsnpLCAF'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_CAF,Number=.,Type=String,Description="An ordered, comma delimited list of allele frequencies based on 1000Genomes, starting with the reference allele followed by alternate alleles as ordered in the ALT column. Where a 1000Genomes alternate allele is not in the dbSNPs alternate allele set, the allele is added to the ALT column.  The minor allele is the second largest value in the list, and was previuosly reported in VCF as the GMAF.  This is the GMAF reported on the RefSNP and EntrezSNP pages and VariationReporter">?;
 
-    $snpEffCmd{'SnpEff'}{'1000GAF'}{'File'} = q?1000G_phase\d+.\S+.vcf|ALL.wgs.phase\d+.\S+.vcf?;
-    $snpEffCmd{'SnpEff'}{'1000GAF'}{'INFO'} = q?##INFO=<ID=1000GAF,Number=A,Type=Float,Description="Estimated allele frequency in the range (0,1) in the 1000G database.">?;
-    $snpEffCmd{'SnpEff'}{'1000GAF'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_AF,Number=.,Type=String,Description="Estimated allele frequency in the range (0,1)">?;
-
     $snpEffCmd{'SnpEff'}{'ESPMAF'}{'File'} = q?ESP\d+SI-V\d+-\w+.updatedProteinHgvs.snps_indels.vcf?;
     $snpEffCmd{'SnpEff'}{'ESPMAF'}{'INFO'} = q?##INFO=<ID=ESPMAF,Number=1,Type=Float,Description="Global Minor Allele Frequency in the ESP database.">?;
     $snpEffCmd{'SnpEff'}{'ESPMAF'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_MAF,Number=.,Type=String,Description="Minor Allele Frequency in percent in the order of EA,AA,All">?;
 
-    $snpEffCmd{'SnpEff'}{'EXACAF'}{'File'} = q?ExAC.r\d+.\d+.sites.vep.vcf?;
-    $snpEffCmd{'SnpEff'}{'EXACAF'}{'INFO'} = q?##INFO=<ID=EXACAF,Number=A,Type=Float,Description="Estimated allele frequency in the range (0,1) in Exac">?;
-    $snpEffCmd{'SnpEff'}{'EXACAF'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_AF,Number=.,Type=String,Description="Estimated allele frequency in the range (0,1)">?;
-
     $snpEffCmd{'SnpEff'}{'EXACMAXAF'}{'File'} = q?ExAC.r\d+.\d+.sites.vep.vcf?;
     $snpEffCmd{'SnpEff'}{'EXACMAXAF'}{'INFO'} = q?##INFO=<ID=EXACMAXAF,Number=A,Type=Float,Description="Estimated max allele frequency in the range (0,1) in Exac">?;
     $snpEffCmd{'SnpEff'}{'EXACMAXAF'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_AF,Number=.,Type=String,Description="Estimated max allele frequency in the range (0,1)">?;
-
-    $snpEffCmd{'SnpEff'}{'CLNSIG'}{'File'} = q?clinvar_\d+.vcf?;
-    $snpEffCmd{'SnpEff'}{'CLNSIG'}{'INFO'} = q?##INFO=<ID=CLNSIG,Number=A,Type=String,Description="Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other">?;
-    $snpEffCmd{'SnpEff'}{'CLNSIG'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_CLNSIG,Number=A,Type=String,Description="Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other">?;
-
-    $snpEffCmd{'SnpEff'}{'CLNACC'}{'File'} = q?clinvar_\d+.vcf?;
-    $snpEffCmd{'SnpEff'}{'CLNACC'}{'INFO'} = q?##INFO=<ID=CLNACC,Number=.,Type=String,Description="Variant Accession and Versions">?;
-    $snpEffCmd{'SnpEff'}{'CLNACC'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_CLNACC,Number=.,Type=String,Description="Variant Accession and Versions">?;
 
     $snpEffCmd{'SnpEff'}{'phastCons100way_vertebrate_prediction_term'}{'File'} = q?SnpSift dbnsfp?;
     $snpEffCmd{'SnpEff'}{'phastCons100way_vertebrate_prediction_term'}{'INFO'} = q?##INFO=<ID=phastCons100way_vertebrate_prediction_term,Number=A,Type=String,Description="PhastCons conservation prediction term">?;
@@ -199,10 +188,6 @@ sub DefineSnpEffAnnotations {
 
     $snpEffCmd{'SnpEff'}{'GERP++_RS_prediction_term'}{'File'} = q?SnpSift dbnsfp?;
     $snpEffCmd{'SnpEff'}{'GERP++_RS_prediction_term'}{'INFO'} = q?##INFO=<ID=GERP++_RS_prediction_term,Number=A,Type=String,Description="GERP RS conservation prediction term">?;
-
-    $snpEffCmd{'SnpEff'}{'MTAF'}{'File'} = q?genbank_haplogroup_\d+_\S+.vcf?;
-    $snpEffCmd{'SnpEff'}{'MTAF'}{'INFO'} = q?##INFO=<ID=MTAF,Number=A,Type=Float,Description="Allele Frequency, for each ALT allele, in the same order as listed">?;
-    $snpEffCmd{'SnpEff'}{'MTAF'}{'FIX_INFO'} = q?##INFO=<ID=SnpSift_MTAF,Number=A,Type=Float,Description="Allele Frequency, for each ALT allele, in the same order as listed">?;
 
 }
 
@@ -592,7 +577,7 @@ sub ReadInfileVCF {
 
 		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
 
-		     my $tempMafList = &FindAF(\@tempArray, "\\S+_CAF=");
+		    my $tempMafList = &FindAF(\@tempArray, "Dbsnp\\S+CAF=");
 
 		    if (defined($tempMafList)) {
 
@@ -616,19 +601,6 @@ sub ReadInfileVCF {
 			}
 		    }
 		}
-		elsif($database eq "1000GAF") {
-			
-		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
-
-		    my $tempMaf = &FindAF(\@tempArray, "\\S+_1000GAF_AF=");
-
-		    if (defined($tempMaf)) {
-			
-			## Save Alternative Allele frequency info
-			$variantLine .= $database."=".$tempMaf.";";
-			$selectedVariantLine .= $database."=".$tempMaf.";";
-		    }
-		}
 		elsif($database eq "ESPMAF") {
 		    
 		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
@@ -644,24 +616,12 @@ sub ReadInfileVCF {
 			$selectedVariantLine .= $database."=".$tempMaf.";";
 		    }   
 		}
-		elsif($database eq "EXACAF") {
-		    
-		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
-		    
-		    my $tempMaf = &FindAF(\@tempArray, "\\S+_EXACAF_AF=");
-		    
-		    if (defined($tempMaf)) {
-			
-			## Save Alternative Allele frequency info  
-			$variantLine .= $database."=".$tempMaf.";";
-			$selectedVariantLine .= $database."=".$tempMaf.";";
-		    }		    
-		}
 		elsif($database eq "EXACMAXAF") {
 		    
 		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
 		    
-		    my $tempMaf = &FindAF(\@tempArray, "\\S+_EXACAF_MAX_AF=");
+		    #my $tempMaf = &FindAF(\@tempArray, "\\S+_EXACAF_MAX_AF=");
+		    my $tempMaf = &FindAF(\@tempArray, "\\S+_EXACAFMAX_AF=");
 		    
 		    if (defined($tempMaf)) {
 			
@@ -669,45 +629,6 @@ sub ReadInfileVCF {
 			$variantLine .= $database."=".$tempMaf.";";
 			$selectedVariantLine .= $database."=".$tempMaf.";";
 		    }		    
-		}
-		elsif($database eq "MTAF") {
-			
-		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
-
-		    my $tempMaf = &FindAF(\@tempArray, "\\S+_MTAF=");
-
-		    if (defined($tempMaf)) {
-			
-			## Save Alternative Allele frequency info
-			$variantLine .= $database."=".$tempMaf.";";
-			$selectedVariantLine .= $database."=".$tempMaf.";";
-		    }
-		}
-		elsif($database eq "CLNSIG") {
-		    
-		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
-		    
-		    my $tempMaf = &FindAF(\@tempArray, "\\S+_CLNSIG=");
-		    
-		    if (defined($tempMaf)) {
-			
-			## Save Alternative Allele frequency info  
-			$variantLine .= $database."=".$tempMaf.";";
-			$selectedVariantLine .= $database."=".$tempMaf.";";
-		    }
-		}
-		elsif($database eq "CLNACC") {
-		    
-		    my @tempArray = split(/;/, $lineElements[7]);  #Split INFO field to key=value items
-		    
-		    my $tempMaf = &FindAF(\@tempArray, "\\S+_CLNACC=");
-		    
-		    if (defined($tempMaf)) {
-			
-			## Save Alternative Allele frequency info  
-			$variantLine .= $database."=".$tempMaf.";";
-			$selectedVariantLine .= $database."=".$tempMaf.";";
-		    }
 		}
 		elsif($database eq "phastCons100way_vertebrate_prediction_term") {
 		    
@@ -777,9 +698,9 @@ sub ReadInfileVCF {
 			for (my $fieldCounter=0;$fieldCounter<scalar(@transcripts);$fieldCounter++) { #CSQ field
 				
 			    my @transcriptsEffects = split(/\|/, $transcripts[$fieldCounter]); #Split in "|"
-				
+	
 			    if ( (defined($transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ])) && ($transcriptsEffects[ $vepFormatFieldColumn{'Feature'} ] ne "") ) {
-				    
+
 				if (defined($transcriptsEffects[ $vepFormatFieldColumn{'SYMBOL'} ])) { 
 					
 				    $variantData{'Symbol'} = $transcriptsEffects[ $vepFormatFieldColumn{'SYMBOL'} ];  #Save HGNC Symbol
@@ -796,27 +717,19 @@ sub ReadInfileVCF {
 					}
 					$selectedTranscriptCounter++;
 				    }
-				    ## Always include all transcripts in research list
-				    if ($transcriptsCounter > 0) {
-					
-					$variantLine .= ",".$transcripts[$fieldCounter];
-				    }
-				    else {
-						
-					$variantLine .= "CSQ=".$transcripts[$fieldCounter];
-				    }
-				    $transcriptsCounter++;
-				}	
+				}
 			    }
-			}
-			if ( ($selectedTranscriptCounter == 0) && ($transcriptsCounter == 0) ) {
 
-			    $variantLine .= "CSQ=".$CSQTranscripts;  #No transcript info
-			}
-			unless ($variantEffectCounter == scalar(@variantEffects)-1) {  #Unless this is the last feature
+			    ## Always include all transcripts in research list
+			    if ($transcriptsCounter > 0) {
 				
-			    $variantLine .= ";";
-			    $selectedVariantLine .= ";";
+				$variantLine .= ",".$transcripts[$fieldCounter];
+			    }
+			    else {
+				
+				$variantLine .= "CSQ=".$transcripts[$fieldCounter];
+			    }
+			    $transcriptsCounter++;
 			}
 		    }
 		    else { #Not CSQ field from VEP 		    		    
@@ -827,7 +740,7 @@ sub ReadInfileVCF {
 			    $selectedVariantLine .= $variantEffects[$variantEffectCounter];
 			}
 			else {
-			    
+
 			    $variantLine .= $variantEffects[$variantEffectCounter].";";
 			    $selectedVariantLine .= $variantEffects[$variantEffectCounter].";";
 			}
@@ -841,7 +754,7 @@ sub ReadInfileVCF {
 			$selectedVariantLine .= $variantEffects[$variantEffectCounter];
 		    }
 		    else {
-			
+
 			$variantLine .= $variantEffects[$variantEffectCounter].";";
 			$selectedVariantLine .= $variantEffects[$variantEffectCounter].";";
 		    }
@@ -849,11 +762,6 @@ sub ReadInfileVCF {
 	    }
 	    if ($parseVEP == 1) {
 		
-		unless ( ($selectedTranscriptCounter == 0) && ($transcriptsCounter == 0) ) {  #Info to add from CSQ field
-		    
-		    $selectedVariantLine .= ";";
-		    $variantLine .= ";";
-		}
 		$transcriptsCounter = 0;
 		$selectedTranscriptCounter = 0;
 
@@ -880,6 +788,7 @@ sub ReadInfileVCF {
 				   
 				    &AddFieldToElementCounter(\$selectedTranscriptCounter, \$selectedVariantLine, ",", \$alleleGeneEntry, "HGVScp=");
 				}
+		
 				## Always include all transcripts in research list
 				my $alleleGeneEntry = $transcriptsEffects[ $vepFormatFieldColumn{'Allele'} ].":".$variantData{'Symbol'};
 				    
@@ -1036,7 +945,10 @@ sub ReadInfileVCF {
 	    }
 	}
     }
-    close(WOSFTSV);
+    if ($selectFeatureFile ne 0) {
+
+	close(WOSFTSV);
+    }
     print STDERR "Finished Processing VCF", "\n";
 }
 
@@ -1101,7 +1013,7 @@ sub AddFieldToElementCounter {
     
     if ($$transcriptCounterRef == 0) {
 	
-	$$lineRef .= $fieldID.$$valueRef; #First selected feature
+	$$lineRef .= ";".$fieldID.$$valueRef; #First selected feature
     }
     else {
 
