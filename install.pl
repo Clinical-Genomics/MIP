@@ -47,7 +47,7 @@ BEGIN {
            ## Utility
            -psh/--preferShell Shell will be used for overlapping shell and biconda installations (Supply flag to enable)
            -ppd/--printParameterDefaults Print the parameter defaults
-           -u/--update Always install all programs (Default: "1" (=yes))
+           -nup/--noUpdate Do not update already installed programs (Supply flag to enable)
            -sp/--selectPrograms Install supplied programs e.g. -sp perl -sp bedTools (Default: "";)
            -h/--help Display this help message   
            -v/--version Display version
@@ -58,8 +58,6 @@ my $installDirectory = ".MIP";
 my %parameter; 
 
 ### Set parameter default
-
-$parameter{update} = 1;
 
 ##Conda
 $parameter{condaEnvironment} = "mip";
@@ -144,7 +142,7 @@ GetOptions('env|condaEnvironment:s'  => \$parameter{condaEnvironment},
 	   'ftr|FindTranslocations:s' => \$parameter{FindTranslocations},
 	   'psh|preferShell' => \$parameter{preferShell},  # Shell will be used for overlapping shell and biconda installations
 	   'ppd|printParameterDefaults' => sub { &PrintParameters(\%parameter); exit;},  #Display parameter defaults
-	   'u|update=n' => \$parameter{update},
+	   'nup|noUpdate' => \$parameter{noUpdate},
 	   'sp|selectPrograms:s' => \@{$parameter{selectPrograms}},  #Comma sep string
 	   'h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
 	   'v|version' => sub { print STDOUT "\ninstall.pl ".$installVersion, "\n\n"; exit;},  #Display version number
@@ -558,7 +556,7 @@ sub Perl {
     
     if ($ENV{PATH}=~/perl-${$parameterHashRef}{perl}/) {
 	
-	if (${$parameterHashRef}{update} == 0) {
+	if (${$parameterHashRef}{noUpdate}) {
 	    
 	    print STDERR "Found perl-".${$parameterHashRef}{perl}.". in your path", "\n";
 	    print STDERR q?Skipping writting installation for perl-?.${$parameterHashRef}{perl}, "\n";  
@@ -1136,7 +1134,7 @@ sub VariantEffectPredictor {
 
 	print STDERR q?Found VariantEffectPredictor in miniconda directory: ?.$minicondaBinDirectory, "\n";
 	
-	if (${$parameterHashRef}{update} == 0) {
+	if (${$parameterHashRef}{noUpdate}) {
 
 	    print STDERR "Skipping writting installation process for VariantEffectPredictor\n";  	    
 	    return
@@ -1274,7 +1272,7 @@ sub CNVnator {
 
 	print STDERR q?Found Root in miniconda directory: ?.$minicondaBinDirectory, "\n";
 	
-	if (${$parameterHashRef}{update} == 0) {
+	if (${$parameterHashRef}{noUpdate}) {
 
 	    print STDERR "Skipping writting installation process for Root\n";  	    
 	    return
@@ -1642,7 +1640,7 @@ sub CheckCondaBinFileExists {
 	    
 	    print STDERR q?Found ?.$programName.q? version ?.$programVersion.q? in miniconda directory: ?.catdir($parameter{condaPath}, "envs", ${$parameterHashRef}{condaEnvironment}, "bin"), "\n";
 	    
-	    if (${$parameterHashRef}{update} == 0) {
+	    if (${$parameterHashRef}{noUpdate}) {
 
 		print STDERR q?Skipping writting installation process for ?.$programName.q? ?.$programVersion, "\n";  
 		return 1;
@@ -1653,7 +1651,7 @@ sub CheckCondaBinFileExists {
 
 	    print STDERR q?Found ?.$programName.q? in miniconda directory: ?.catdir($parameter{condaPath}, "envs", ${$parameterHashRef}{condaEnvironment}, "bin"), "\n";
 	    
-	    if (${$parameterHashRef}{update} == 0) {
+	    if (${$parameterHashRef}{noUpdate}) {
 		
 		print STDERR q?Skipping writting installation process for ?.$programName, "\n";  	    
 		return 1;
