@@ -45,7 +45,7 @@ BEGIN {
            -ftr/--FindTranslocations Set the FindTranslocations version (Default: "0")
 
            ## Utility
-           -pbc/--preferBioConda Bioconda will used for overlapping shell and biconda installations (Default: "1" (=yes))
+           -psh/--preferShell Shell will be used for overlapping shell and biconda installations (Supply flag to enable)
            -ppd/--printParameterDefaults Print the parameter defaults
            -u/--update Always install all programs (Default: "1" (=yes))
            -sp/--selectPrograms Install supplied programs e.g. -sp perl -sp bedTools (Default: "";)
@@ -62,7 +62,6 @@ my %parameter;
 $parameter{update} = 1;
 
 ##Conda
-$parameter{preferBioConda} = 1;
 $parameter{condaEnvironment} = "mip";
 $parameter{condaPath} = catdir($ENV{HOME}, "miniconda");
 
@@ -96,7 +95,6 @@ $parameter{bioConda}{vcfanno} = "0.0.11";
 
 
 ##Perl Modules
-#$parameter{perlInstall} = 0;
 $parameter{perl} = "5.18.2";
 
 ## PIP
@@ -144,7 +142,7 @@ GetOptions('env|condaEnvironment:s'  => \$parameter{condaEnvironment},
 	   'vepp|variantEffectPredictorPlugin:s' => \$parameter{variantEffectPredictorPlugin},  #Comma sep string
 	   'cnv|CNVnator:s' => \$parameter{CNVnator},
 	   'ftr|FindTranslocations:s' => \$parameter{FindTranslocations},
-	   'pbc|preferBioConda=n' => \$parameter{preferBioConda},  # Bioconda will used for overlapping shell and biconda installlations
+	   'psh|preferShell' => \$parameter{preferShell},  # Shell will be used for overlapping shell and biconda installations
 	   'ppd|printParameterDefaults' => sub { &PrintParameters(\%parameter); exit;},  #Display parameter defaults
 	   'u|update=n' => \$parameter{update},
 	   'sp|selectPrograms:s' => \@{$parameter{selectPrograms}},  #Comma sep string
@@ -182,7 +180,7 @@ else {
 
 &PipInstall(\%parameter, $BASHFILEHANDLE);
 
-if ($parameter{preferBioConda} != 1) {
+if ($parameter{preferShell}) {
 
     if (@{$parameter{selectPrograms}}) {
 	
