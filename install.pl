@@ -22,11 +22,12 @@ BEGIN {
 	qq{install.pl [options]
            -env/--condaEnvironment Conda environment (Default: "mip")
            -cdp/--condaPath The conda path (Default: "HOME/miniconda")
+           -cdu/--condaUpDate Update conda before installing (Supply flag to enable)
            -bvc/--bioConda Set the module version of the programs that can be installed with bioConda (e.g. 'bwa=0.7.12')
            -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.5.1')
 
            ## SHELL
-           -pei/--perlInstall Install perl (defaults: "0" (=no))
+           -pei/--perlInstall Install perl (Supply flag to enable)
            -per/--perl Set the perl version (defaults: "5.18.2")
            -pm/--perlModules Set the perl modules to be installed via cpanm (Default: ["Modern::Perl", "IPC::System::Simple", "Path::Iterator::Rule", "YAML", "Log::Log4perl", "Set::IntervalTree", "Net::SSLeay",P, "LWP::Simple", "LWP::Protocol::https", "Archive::Zip", "Archive::Extract", "DBI","JSON", "DBD::mysql", "CGI", "Sereal::Encoder", "Sereal::Decoder", "Bio::Root::Version", "Module::Build"])
            -pic/--picardTools Set the picardTools version (Default: "2.3.0"),
@@ -95,7 +96,7 @@ $parameter{bioConda}{vcfanno} = "0.0.11";
 
 
 ##Perl Modules
-$parameter{perlInstall} = 0;
+#$parameter{perlInstall} = 0;
 $parameter{perl} = "5.18.2";
 
 ## PIP
@@ -124,10 +125,11 @@ my $installVersion = "0.0.4";
 ###User Options
 GetOptions('env|condaEnvironment:s'  => \$parameter{condaEnvironment},
 	   'cdp|condaPath:s' => \$parameter{condaPath},
+	   'cdu|condaUpDate' => \$parameter{condaUpDate},
 	   'bcv|bioConda=s' => \%{$parameter{bioConda}},
 	   'pip|pip=s' => \%{$parameter{pip}},
 	   'per|perl=s' => \$parameter{perl},
-	   'pei|perlInstall=n' => \$parameter{perlInstall},
+	   'pei|perlInstall' => \$parameter{perlInstall},
 	   'pm|perlModules:s' => \@{$parameter{perlModules}},  #Comma separated list
 	   'pic|picardTools:s' => \$parameter{picardTools},
 	   'sbb|sambamba:s' => \$parameter{sambamba},
@@ -396,18 +398,21 @@ sub CreateConda {
     }
 
     ## Check Conda path
-    if (! -d $parameter{condaPath}) {
+    if (! -d ${$parameterHashRef}{condaPath}) {
 
-	print STDERR "Could not find miniconda directory in: ".catdir($parameter{condaPath}), "\n";
+	print STDERR "Could not find miniconda directory in: ".catdir(${$parameterHashRef}{condaPath}), "\n";
 	exit 1;
     }
 
     print STDERR "Writting install instructions for Conda packages\n";
 
     ## Update Conda
-    print $FILEHANDLE "### Update Conda\n";
-    print $FILEHANDLE "conda update -y conda ";
-    print $FILEHANDLE "\n\n";
+    if (${$parameterHashRef}{condaUpDate}) {
+
+	print $FILEHANDLE "### Update Conda\n";
+	print $FILEHANDLE "conda update -y conda ";
+	print $FILEHANDLE "\n\n";
+    }
 }
 
 sub CreateCondaEnvironment {
@@ -562,7 +567,7 @@ sub Perl {
 	}
 	else {
 
-	    if (${$parameterHashRef}{perlInstall} == 1) {
+	    if (${$parameterHashRef}{perlInstall}) {
 	    
 		## Removing specific Perl version
 		print $FILEHANDLE "### Removing specific Perl version\n";
@@ -577,7 +582,7 @@ sub Perl {
     }
     else {
     	
-	if (${$parameterHashRef}{perlInstall} == 1) {
+	if (${$parameterHashRef}{perlInstall}) {
 	    
 	    &InstallPerlCpnam($parameterHashRef, $BASHFILEHANDLE, "AddPath");
 	}
