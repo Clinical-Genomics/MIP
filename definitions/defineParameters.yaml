@@ -178,7 +178,7 @@ reduceIO:
   associatedProgram:
    - MIP
   dataType: SCALAR
-  default: 1
+  default: 0
   type: MIP
 replaceIUPAC:
   associatedProgram:
@@ -1671,7 +1671,7 @@ javaUseLargePages:
    - pSnpEff
    - pAnnovar
   dataType: SCALAR
-  default: no
+  default: 0
   type: programArgument
 ## genomeAnalysisToolKitPath
 genomeAnalysisToolKitPath:

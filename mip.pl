@@ -57,7 +57,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -emt/--emailType E-mail type (defaults to F (=FAIL);Options: B (=BEGIN) and/or F (=FAIL) and/or E=(END))
                -odd/--outDataDir The data files output directory (mandatory)
                -osd/--outScriptDir The script files (.sh) output directory (mandatory)
-               -f/--familyID Group id of samples to be compared (defaults to "0" (=no), (Ex: 1 for IDN 1-1-1A))
+               -f/--familyID Group id of samples to be compared (defaults to "", (Ex: 1 for IDN 1-1-1A))
                -ped/--pedigreeFile (defaults to "")
                -hgr/--humanGenomeReference Fasta file for the human genome reference (defaults to "Homo_sapiens.GRCh37.d5.fasta;1000G decoy version 5")
                -ald/--alignerOutDir Setting which aligner out directory was used for alignment in previous analysis (defaults to "{outDataDir}{ {aligner}{outDirectoryName} }")
@@ -73,15 +73,15 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -sif/--sampleInfoFile YAML file for sample info used in the analysis (defaults to "{outDataDir}/{familyID}/{familyID}_qc_sampleInfo.yaml")
                -dra/--dryRunAll Sets all programs to dry run mode i.e. no sbatch submission (defaults to "0" (=no))
                -tmd/--tempDirectory Set the temporary directory for all programs (defaults to "/scratch/SLURM_JOB_ID";supply whole path)
-               -jul/--javaUseLargePages Use large page memory. (-XX, hence option considered not stable and are subject to change without notice, but can be consiered when faced with Java Runtime Environment Memory issues)
+               -jul/--javaUseLargePages Use large page memory. (defaults to "0" (=no))
                -nrm/--nodeRamMemory The RAM memory size of the node(s) in GigaBytes (Defaults to 24)
                -sen/--sourceEnvironmentCommand Source environment command in sbatch scripts (defaults to "")
 
                -ges/--genomicSet Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
-               -rio/--reduceIO Run consecutive models at nodes (defaults to "1" (=yes))
+               -rio/--reduceIO Run consecutive models at nodes (defaults to "0" (=no))
                -riu/--replaceIUPAC Replace IUPAC code in alternative alleles with N (defaults to "0" (=no))
-               -ppm/--printProgramMode Print all programs that are supported in: 0 (off mode), 1 (on mode), 2 (dry run mode; defaults to "2")
                -pp/--printProgram Print all programs that are supported
+               -ppm/--printProgramMode Print all programs that are supported in: 0 (off mode), 1 (on mode), 2 (dry run mode; defaults to "2")
                -l/--logFile Mip log file (defaults to "{outDataDir}/{familyID}/mip_log/{date}/{scriptname}_{timestamp}.log")
                -h/--help Display this help message    
                -v/--version Display version of MIP            
@@ -435,7 +435,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'dra|dryRunAll=i' => \$parameter{dryRunAll}{value},
 	   'tmd|tempDirectory:s' => \$parameter{tempDirectory}{value},
 	   'sen|sourceEnvironmentCommand=s{,}' => \@{$parameter{sourceEnvironmentCommand}{value}},
-	   'jul|javaUseLargePages:s' => \$parameter{javaUseLargePages}{value},
+	   'jul|javaUseLargePages=n' => \$parameter{javaUseLargePages}{value},
 	   'nrm|nodeRamMemory=n' => \$parameter{nodeRamMemory}{value},  #Per node
            'ges|genomicSet:s' => \$parameter{genomicSet}{value},  #Selection of relevant regions post alignment and sort
 	   'rio|reduceIO=n' => \$parameter{reduceIO}{value},
@@ -1289,7 +1289,7 @@ if ($scriptParameter{pBwaSampe} > 0) {  #Run BWA Sampe
 }
 
 
-if ($scriptParameter{reduceIO} == 1) {  #Run consecutive models
+if ($scriptParameter{reduceIO}) {  #Run consecutive models
 
     $scriptParameter{pBAMCalibrationBlock} = 1;  #Enable as program
     $logger->info("[BAMCalibrationBlock]\n");
@@ -2109,7 +2109,7 @@ if ($scriptParameter{pGATKVariantEvalAll} > 0) {  #Run GATK VariantEval for all 
 ## Removes contigY|chrY from SelectFileContigs if no males or other found in analysis
 &UpdateFileContigs(\@{${fileInfo}{contigsSizeOrdered}}, \$scriptParameter{maleFound});
 
-if ($scriptParameter{reduceIO} == 1) {  #Run consecutive models
+if ($scriptParameter{reduceIO}) {  #Run consecutive models
     
     $scriptParameter{pVariantAnnotationBlock} = 1;  #Enable as program
     $logger->info("[VariantAnnotationBlock]\n");
@@ -3300,7 +3300,7 @@ sub RankVariants {
 	    $vcfParserContigsArrayRef = \@{${$fileInfoHashRef}{SelectFileContigs}};  #Selectfile contigs
 	}
 
-	if ($$reduceIORef eq "0") { #Run as individual sbatch script
+	if ( ! $$reduceIORef) { #Run as individual sbatch script
 	    
 	    ## Copy file(s) to temporary directory
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -3543,7 +3543,7 @@ sub RankVariants {
 		       sbatchFileName => $fileName
 		      });
     }
-    if ($$reduceIORef eq "1") {
+    if ($$reduceIORef) {
 	
 	return $xargsFileCounter;  #Track the number of created xargs scripts per module for Block algorithm
     }
@@ -4050,7 +4050,7 @@ sub SnpEff {
 	    $vcfParserContigsArrayRef = \@{${$fileInfoHashRef}{SelectFileContigs}};  #Selectfile contigs
 	}
 
-	if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+	if ( ! $$reduceIORef) {  #Run as individual sbatch script
 	    
 	    ## Copy file(s) to temporary directory
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -4217,7 +4217,7 @@ sub SnpEff {
 	    say $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	}
 
-	if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+	if ( ! $$reduceIORef) {  #Run as individual sbatch script
 
 	    ## Copies file from temporary directory. Per contig
 	    say $FILEHANDLE "## Copy file from temporary directory";
@@ -4265,7 +4265,7 @@ sub SnpEff {
 		      });
     }
 
-    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+    if ( ! $$reduceIORef) {  #Run as individual sbatch script
 	
 	close($FILEHANDLE);
 	
@@ -4281,7 +4281,7 @@ sub SnpEff {
 			  });
 	}
     }
-    if ($$reduceIORef eq "1") {
+    if ($$reduceIORef) {
 	
 	return $xargsFileCounter;  #Track the number of created xargs scripts per module for Block algorithm
     }
@@ -4392,7 +4392,7 @@ sub Annovar {
 	}
 	my $coreCounter=1;   	    	
 
-	if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+	if ( ! $$reduceIORef) {  #Run as individual sbatch script
 	
 	    ## Copy file(s) to temporary directory
 	    say $FILEHANDLE "## Copy file(s) to temporary directory"; 
@@ -4487,7 +4487,7 @@ sub Annovar {
 	    print $XARGSFILEHANDLE "mv ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf.".${$scriptParameterHashRef}{annovarGenomeBuildVersion}."_multianno.vcf")." ";
 	    say $XARGSFILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf");
 	}	
-	if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+	if ( ! $$reduceIORef) {  #Run as individual sbatch script
 	
 	    ## Copies file from temporary directory.
 	    say $FILEHANDLE "## Copy file from temporary directory";
@@ -4514,7 +4514,7 @@ sub Annovar {
 			    });
     }
 
-    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+    if ( ! $$reduceIORef) {  #Run as individual sbatch script
 
 	close($FILEHANDLE);
 
@@ -4530,7 +4530,7 @@ sub Annovar {
 			  });
 	}
     }
-    if ($$reduceIORef eq "1") {
+    if ($$reduceIORef) {
 	
 	return $xargsFileCounter;  #Track the number of created xargs scripts per module for Block algorithm
     }
@@ -4624,7 +4624,7 @@ sub VCFParser {
     my $infileTag = ${$fileInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{pVariantEffectPredictor}{fileTag};
     my $outfileTag = ${$fileInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{"p".$programName}{fileTag};
 
-    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+    if ( ! $$reduceIORef) {  #Run as individual sbatch script
 	
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory"; 
@@ -4761,7 +4761,7 @@ sub VCFParser {
 
     close($XARGSFILEHANDLE);
     
-    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+    if ( ! $$reduceIORef) {  #Run as individual sbatch script
 
 	my $vcfParserAnalysisType = "";
 	my @vcfParserContigsRef = \@{ ${$fileInfoHashRef}{contigsSizeOrdered} };
@@ -4802,7 +4802,7 @@ sub VCFParser {
     
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 
-	if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+	if ( ! $$reduceIORef) {  #Run as individual sbatch script
 	    
 	    &FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 			   sampleInfoHashRef => $sampleInfoHashRef,
@@ -4814,7 +4814,7 @@ sub VCFParser {
 			  });
 	}
     }
-    if ($$reduceIORef eq "1") {
+    if ($$reduceIORef) {
 	
 	return $xargsFileCounter;  #Track the number of created xargs scripts per module for Block algorithm
     }
@@ -4896,7 +4896,7 @@ sub VariantEffectPredictor {
 				      });  #Detect the number of cores to use
     $nrCores = floor($nrCores / $nrForkes);  #Adjust for the number of forks 
 
-    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+    if ( ! $$reduceIORef) {  #Run as individual sbatch script
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
@@ -4923,7 +4923,7 @@ sub VariantEffectPredictor {
     my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{pVT}{fileTag};
     my $outfileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"p".$programName}{fileTag};
 
-    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+    if ( ! $$reduceIORef) {  #Run as individual sbatch script
 	
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory"; 
@@ -5052,7 +5052,7 @@ sub VariantEffectPredictor {
     
     close($XARGSFILEHANDLE);
 
-    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+    if ( ! $$reduceIORef) {  #Run as individual sbatch script
 	
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
@@ -5077,7 +5077,7 @@ sub VariantEffectPredictor {
 
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 
-	if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+	if ( ! $$reduceIORef) {  #Run as individual sbatch script
 
 	    ## Submitt job
 	    &FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
@@ -5089,7 +5089,7 @@ sub VariantEffectPredictor {
 			   sbatchFileName => $fileName
 			  });
 	}
-	if ($$reduceIORef eq "1") {  #Redirect qcCollect search to Block File, since VEP will write stderr there
+	if ($$reduceIORef) {  #Redirect qcCollect search to Block File, since VEP will write stderr there
 	    
 	    $programName = "VariantAnnotationBlock";
 	}
@@ -5103,7 +5103,7 @@ sub VariantEffectPredictor {
 		       outDataType => "infoDirectory"
 		      });
     }
-    if ($$reduceIORef eq "1") {
+    if ($$reduceIORef) {
 	
 	return $xargsFileCounter;  #Track the number of created xargs scripts per module for Block algorithm
     }
@@ -5710,7 +5710,7 @@ sub VT {
 				       nrCores => scalar(@{${$fileInfoHashRef}{contigs}})
 				      });  #Detect the number of cores to use
 
-    if ($$reduceIORef eq "0") { #Run as individual sbatch script
+    if ( ! $$reduceIORef) { #Run as individual sbatch script
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
@@ -5737,7 +5737,7 @@ sub VT {
     my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{pGATKCombineVariantCallSets}{fileTag};
     my $outfileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"p".$programName}{fileTag};
 
-    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+    if ( ! $$reduceIORef) {  #Run as individual sbatch script
 	
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory"; 
@@ -5836,7 +5836,7 @@ sub VT {
 	say $XARGSFILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.".vcf")." ";
     }
 
-    if ($$reduceIORef eq "0") { #Run as individual sbatch script
+    if ( ! $$reduceIORef) { #Run as individual sbatch script
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
@@ -5859,7 +5859,7 @@ sub VT {
 		       outDataType => "infoDirectory"
 		      });
 
-	if ($$reduceIORef eq "0") { #Run as individual sbatch script
+	if ( ! $$reduceIORef) { #Run as individual sbatch script
 
 	    ## Submitt job
 	    &FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
@@ -5872,7 +5872,7 @@ sub VT {
 			  });
 	}
     }
-    if ($$reduceIORef eq "1") {
+    if ($$reduceIORef) {
 	
 	return $xargsFileCounter;  #Track the number of created xargs scripts per module for Block algorithm
     }
@@ -5951,7 +5951,7 @@ sub PrepareForVariantAnnotationBlock {
 				       nrCores => scalar(@{${$fileInfoHashRef}{contigs}})
 				      });  #Detect the number of cores to use
 
-    if ($$reduceIORef eq "0") { #Run as individual sbatch script
+    if ( ! $$reduceIORef) { #Run as individual sbatch script
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
@@ -6016,7 +6016,7 @@ sub PrepareForVariantAnnotationBlock {
 	say $XARGSFILEHANDLE "> ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_".$$contigRef.".vcf");
     }
 
-    if ($$reduceIORef eq "0") { #Run as individual sbatch script
+    if ( ! $$reduceIORef) { #Run as individual sbatch script
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
@@ -6030,7 +6030,7 @@ sub PrepareForVariantAnnotationBlock {
     }
 if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 
-	if ($$reduceIORef eq "0") { #Run as individual sbatch script
+	if ( ! $$reduceIORef) { #Run as individual sbatch script
 
 	    ## Submitt job
 	    &FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
@@ -6043,7 +6043,7 @@ if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterH
 			  });
 	}
     }
-    if ($$reduceIORef eq "1") {
+    if ($$reduceIORef) {
 	
 	return $xargsFileCounter;  #Track the number of created xargs scripts per module for Block algorithm
     }
@@ -10600,7 +10600,7 @@ sub GATKBaseReCalibration {
 
     my $coreCounter = 1;
     
-    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+    if ( ! $$reduceIORef) {  #Run as individual sbatch script
 	
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -10738,7 +10738,7 @@ sub GATKBaseReCalibration {
 								    fileEnding => ".b*",
 								   });
     
-    if ($$reduceIORef eq "1") {  #Run as block sbatch script
+    if ($$reduceIORef) {  #Run as block sbatch script
 	
 	## Remove file at temporary Directory
 	&RemoveContigFileAtTempDirectory({arrayRef => \@{ ${$fileInfoHashRef}{contigsSizeOrdered} },
@@ -10898,7 +10898,7 @@ sub GATKReAligner {
     ## Add merged infile name after merging all BAM files per sampleID
     my $infile = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MergeInfile};  #Alias
     
-    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+    if ( ! $$reduceIORef) {  #Run as individual sbatch script
 	
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -11006,7 +11006,7 @@ sub GATKReAligner {
 	say $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
     }
     
-    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+    if ( ! $$reduceIORef) {  #Run as individual sbatch script
 	
 	## Copies file from temporary directory. Per contig
 	say $FILEHANDLE "## Copy file from temporary directory";
@@ -11042,7 +11042,7 @@ sub GATKReAligner {
     
     close($XARGSFILEHANDLE);
     
-    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+    if ( ! $$reduceIORef) {  #Run as individual sbatch script
 	
 	close($FILEHANDLE);
 	
@@ -11139,7 +11139,7 @@ sub PicardToolsMarkduplicates {
     ## Sums all mapped and duplicate reads and takes fraction of before finishing
     my $regExp = q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$feature{dup} = $feature{dup} + $1} if($_=~/\d+\smapped/ && $_=~/^(\d+)/) {$feature{map} = $feature{map} + $1} } print "Read Mapped: ".$feature{map}."\nDuplicates: ".$feature{dup}."\n"."Fraction Duplicates: ".$feature{dup}/$feature{map}, "\n"; last;'?; 
 
-    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+    if ( ! $$reduceIORef) {  #Run as individual sbatch script
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
@@ -11237,7 +11237,7 @@ sub PicardToolsMarkduplicates {
 	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $infile.$outfileTag."_".${$fileInfoHashRef}{contigsSizeOrdered}[0].".bam");
     }
     
-    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+    if ( ! $$reduceIORef) {  #Run as individual sbatch script
 	
 	## Copies file from temporary directory. Per contig
 	say $FILEHANDLE "## Copy file from temporary directory";
@@ -11268,7 +11268,7 @@ sub PicardToolsMarkduplicates {
     
     close($XARGSFILEHANDLE);
     
-    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+    if ( ! $$reduceIORef) {  #Run as individual sbatch script
 	
 	close($FILEHANDLE);
 	
@@ -11365,7 +11365,7 @@ sub SambambaMarkduplicates {
     ## Sums all mapped and duplicate reads and takes fraction of before finishing
     my $regExp = q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$feature{dup} = $feature{dup} + $1} if($_=~/\d+\smapped/ && $_=~/^(\d+)/) {$feature{map} = $feature{map} + $1} } print "Read Mapped: ".$feature{map}."\nDuplicates: ".$feature{dup}."\n"."Fraction Duplicates: ".$feature{dup}/$feature{map}, "\n"; last;'?; 
 
-    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+    if ( ! $$reduceIORef) {  #Run as individual sbatch script
 	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
@@ -11462,7 +11462,7 @@ sub SambambaMarkduplicates {
 	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $infile.$outfileTag."_".${$fileInfoHashRef}{contigsSizeOrdered}[0].".bam");
     }
     
-    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+    if ( ! $$reduceIORef) {  #Run as individual sbatch script
 	
 	## Copies file from temporary directory. Per contig
 	say $FILEHANDLE "## Copy file from temporary directory";
@@ -11493,7 +11493,7 @@ sub SambambaMarkduplicates {
 
     close($XARGSFILEHANDLE);
     
-    if ($$reduceIORef eq "0") {  #Run as individual sbatch script
+    if ( ! $$reduceIORef) {  #Run as individual sbatch script
 	
 	close($FILEHANDLE);
 	
@@ -11790,7 +11790,7 @@ sub PicardToolsMergeSamFiles {
 			say $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		    }
 		    
-		    if ($$reduceIORef eq "0") {
+		    if ( ! $$reduceIORef) {
 			
 			## Copies file from temporary directory. Per contig
 			say $FILEHANDLE "## Copy file from temporary directory";
@@ -11888,7 +11888,7 @@ sub PicardToolsMergeSamFiles {
 		    say $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		}
 
-		if ($$reduceIORef eq "0") {
+		if ( ! $$reduceIORef) {
 		    
 		    ## Copies file from temporary directory. Per contig
 		    say $FILEHANDLE "## Copy file from temporary directory";
@@ -11914,7 +11914,7 @@ sub PicardToolsMergeSamFiles {
     }
     else {
 
-	if ($$reduceIORef eq "0") {
+	if ( ! $$reduceIORef) {
 
 	    ## Copies file from temporary directory. Per contig
 	    say $FILEHANDLE "## Copy file from temporary directory";
@@ -11943,7 +11943,7 @@ sub PicardToolsMergeSamFiles {
 			  sampleID => $$sampleIDRef,
 			 });
 
-    if ($$reduceIORef eq "0") {
+    if ( ! $$reduceIORef) {
 	
 	close($FILEHANDLE);
 	
@@ -19457,7 +19457,7 @@ sub WriteUseLargePages {
     my $FILEHANDLE = $_[0];
     my $useLargePagesRef = $_[1];
     
-    if ($$useLargePagesRef ne "no") {
+    if ($$useLargePagesRef) {
 	
 	print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
     }
@@ -22327,7 +22327,7 @@ sub RemoveFiles {
 			## Add merged infile name after merging all BAM files per sampleID
 			my $infile = ${$fileInfoHashRef}{$$familyIDRef}{$sampleID}{MergeInfile};  #Alias
 			
-			if ( ($$reduceIORef == 0) || ($program eq $lastModuleBAMCalibrationBlock) ) {  #Delete intermediate files or last module in processBlock
+			if ( ( ! $$reduceIORef) || ($program eq $lastModuleBAMCalibrationBlock) ) {  #Delete intermediate files or last module in processBlock
 			    
 			    for (my $fileEndingCounter=0;$fileEndingCounter < scalar( @{ ${$parameterHashRef}{$program}{fileEnding} });$fileEndingCounter++) {
 				
@@ -22384,7 +22384,7 @@ sub RemoveFiles {
 		    }
 		    elsif (${$parameterHashRef}{$program}{removalSetting} eq "variantAnnotation") {
 			
-			if ( ($$reduceIORef == 0) || ($program eq $lastModuleVariantAnnotationBlock) ) {  #Delete intermediate files or last module in processBlock
+			if ( ( ! $$reduceIORef) || ($program eq $lastModuleVariantAnnotationBlock) ) {  #Delete intermediate files or last module in processBlock
 			    
 			    $outfileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$program}{fileTag};
 			    
