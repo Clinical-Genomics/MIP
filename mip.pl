@@ -17,6 +17,7 @@ use charnames qw( :full :short );
 
 use Getopt::Long;
 use POSIX;
+use Params::Check qw[check allow last_error];
 use Cwd 'abs_path';  #Export absolute path function
 use FindBin qw($Bin);  #Find directory of script
 use File::Basename qw(dirname);
@@ -342,8 +343,9 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ###Project specific
 
 ## Loads a YAML file into an arbitrary hash and returns it.
-%parameter = &LoadYAML(\%parameter, catfile($Bin, "definitions", "defineParameters.yaml"));  #Load parameters from configfile
-
+%parameter = &LoadYAML({yamlFile => catfile($Bin, "definitions", "defineParameters.yaml"),
+		       });
+ 
 ## Adds the order of first level keys from yaml file to array
 &OrderParameterNames(\@orderParameters, catfile($Bin, "definitions", "defineParameters.yaml"));
 
@@ -633,8 +635,9 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 if (exists($parameter{configFile}{value})) {  #Input from cmd
 
     ## Loads a YAML file into an arbitrary hash and returns it.
-    %scriptParameter = &LoadYAML(\%scriptParameter, $parameter{configFile}{value});  #Load parameters from configfile
-
+    %scriptParameter = &LoadYAML({yamlFile => $parameter{configFile}{value},
+				 });
+    
     ##Special case:Enable/activate MIP. Cannot be changed from cmd or config
     $scriptParameter{MIP} = $parameter{MIP}{default};
 
@@ -16716,8 +16719,15 @@ sub CheckParameterFiles {
 			    
 			    if (-f ${$scriptParameterHashRef}{sampleInfoFile}) {
 				
-				my %tempHash = &LoadYAML($scriptParameterHashRef, ${$scriptParameterHashRef}{sampleInfoFile});  #Load parameters from previous run from sampleInfoFile
-				
+				if (defined(${$scriptParameterHashRef}{logFile})) {
+				    
+				    $logger->info("Read Yaml file: ". ${$scriptParameterHashRef}{sampleInfoFile}, "\n");
+				}
+
+				##Loads a YAML file into an arbitrary hash and returns it. Load parameters from previous run from sampleInfoFile
+				my %tempHash = &LoadYAML({yamlFile => ${$scriptParameterHashRef}{sampleInfoFile},
+							 });  
+
 				## Update sampleInfo with information from pedigree
 				&UpdateSampleInfoHash($sampleInfoHashRef, \%tempHash, $familyIDRef);							    
 			    }
@@ -17636,13 +17646,25 @@ sub LoadYAML {
     
 ##Function : Loads a YAML file into an arbitrary hash and returns it. Note: Currently only supports hashreferences and hashes and no mixed entries.
 ##Returns  : %yamlHash
-##Arguments: $scriptParameterHashRef, $yamlFile
-##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##Arguments: $yamlFile
 ##         : $yamlFile => The yaml file to load
 
-    my $scriptParameterHashRef = $_[0];
-    my $yamlFile = $_[1];
+    my ($argHashRef) = @_;
 
+    ##Flatten argument(s)
+    my $yamlFile = ${$argHashRef}{yamlFile};
+    say ${$argHashRef}{yamlFile};
+#    my $yamlFile;
+    my %hash;
+    $hash{yamlFile} = ${$argHashRef}{yamlFile};
+#    say $hash{yamlFile};
+
+    my $tmpl = { 
+	yamlFile => { required => 1},
+    };
+    
+    my $parsed_args = check( $tmpl,/ , 1)
+	or die qw[Could not parse arguments!];
     my %yamlHash;
 
     open (my $YAML, "<", $yamlFile) or die "can't open ".$yamlFile.":".$!, "\n";  #Log4perl not initialised yet, hence no logdie
@@ -17650,11 +17672,7 @@ sub LoadYAML {
     %yamlHash = %{ YAML::LoadFile($yamlFile) };  #Load hashreference as hash
         
     close($YAML);
-    
-    if (defined(${$scriptParameterHashRef}{logFile})) {
 
-	$logger->info("Read Yaml file: ". $yamlFile, "\n");
-    }
     return %yamlHash;
 }
 
@@ -18778,8 +18796,9 @@ sub CheckCosmidYAML {
     if (-f ${$scriptParameterHashRef}{referencesDir}."/cosmid.yaml") {  #Cosmid.yaml file exists in reference directory
 	
 	## Loads a YAML file into an arbitrary hash and returns it.
-	%cosmidResources = &LoadYAML($scriptParameterHashRef, catfile(${$scriptParameterHashRef}{referencesDir}, "cosmid.yaml"));  #Load yaml file
-	
+	%cosmidResources = &LoadYAML({yamlFile => catfile(${$scriptParameterHashRef}{referencesDir}, "cosmid.yaml"),
+				     });
+
 	unless (defined($cosmidResources{directory})) {  #Set Directory entry if not defined
 	    
 	    $cosmidResources{directory} = catfile(${$scriptParameterHashRef}{referencesDir}, "resources");  #Set the Cosmid default directory
