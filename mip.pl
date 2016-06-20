@@ -350,7 +350,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ## Eval parameter hash
 &EvalParameterHash(\%parameter, catfile($Bin, "definitions", "defineParameters.yaml"));
 
-my $mipVersion = "v3.0.1";	#Set MIP version
+my $mipVersion = "v3.0.2";	#Set MIP version
 
 ## Directories, files, sampleInfo and jobIDs
 my (%infile, %inDirPath, %infilesLaneNoEnding, %lane, %infilesBothStrandsNoEnding, %jobID, %sampleInfo); 
@@ -7688,7 +7688,7 @@ sub SambambaDepth {
 			 });
     say $FILEHANDLE "wait", "\n";
     
-    if ( (${$scriptParameterHashRef}{pSambambaDepth} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 2) ) {
+    if ( (${$scriptParameterHashRef}{pSambambaDepth} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 	
 	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{Program}{$programName}{$infile}{Bed}{Path} = catfile($outSampleDirectory, $infile.$outfileTag.".bed");
     }
