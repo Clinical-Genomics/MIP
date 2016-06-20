@@ -973,6 +973,8 @@ foreach my $parameterInfo (@broadcasts) {
 
 if ($scriptParameter{writeConfigFile} ne 0) {  #Write config file for family
 
+    make_path(dirname($scriptParameter{writeConfigFile}));  #Create directory unless it already exists
+
     ## Writes a YAML hash to file
     &WriteYAML(\%scriptParameter, \$scriptParameter{writeConfigFile});  #Write used settings to configfile
 }

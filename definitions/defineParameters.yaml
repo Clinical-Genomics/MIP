@@ -178,7 +178,7 @@ reduceIO:
   associatedProgram:
    - MIP
   dataType: SCALAR
-  default: 0
+  default: 1
   type: MIP
 replaceIUPAC:
   associatedProgram:
