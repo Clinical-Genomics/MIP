@@ -18,6 +18,7 @@ use charnames qw( :full :short );
 use Getopt::Long;
 use POSIX;
 use Params::Check qw[check allow last_error];
+$Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 use Cwd 'abs_path';  #Export absolute path function
 use FindBin qw($Bin);  #Find directory of script
 use File::Basename qw(dirname);
@@ -347,10 +348,14 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 		       });
  
 ## Adds the order of first level keys from yaml file to array
-&OrderParameterNames(\@orderParameters, catfile($Bin, "definitions", "defineParameters.yaml"));
+&OrderParameterNames({orderParametersArrayRef => \@orderParameters,
+		      filePath => catfile($Bin, "definitions", "defineParameters.yaml"),
+		     });
 
 ## Eval parameter hash
-&EvalParameterHash(\%parameter, catfile($Bin, "definitions", "defineParameters.yaml"));
+&EvalParameterHash({parameterHashRef => \%parameter,
+		     filePath => catfile($Bin, "definitions", "defineParameters.yaml"),
+		    });
 
 my $mipVersion = "v3.0.1";	#Set MIP version
 
@@ -17639,7 +17644,6 @@ sub WriteYAML {
     $logger->info("Wrote: ".$$yamlFileRef, "\n");
 }
 
-
 sub LoadYAML {
  
 ##LoadYAML
@@ -17652,23 +17656,18 @@ sub LoadYAML {
     my ($argHashRef) = @_;
 
     ##Flatten argument(s)
-    my $yamlFile = ${$argHashRef}{yamlFile};
-    say ${$argHashRef}{yamlFile};
-#    my $yamlFile;
-    my %hash;
-    $hash{yamlFile} = ${$argHashRef}{yamlFile};
-#    say $hash{yamlFile};
+    my $yamlFile;
 
     my $tmpl = { 
-	yamlFile => { required => 1},
+	yamlFile => { required => 1, defined => 1, store => \$yamlFile},
     };
-    
-    my $parsed_args = check( $tmpl,/ , 1)
-	or die qw[Could not parse arguments!];
+
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
+
     my %yamlHash;
 
     open (my $YAML, "<", $yamlFile) or die "can't open ".$yamlFile.":".$!, "\n";  #Log4perl not initialised yet, hence no logdie
-    local $YAML::QuoteNumericStrings=1;  #Force numeric values to strings in YAML representation
+    local $YAML::QuoteNumericStrings = 1;  #Force numeric values to strings in YAML representation
     %yamlHash = %{ YAML::LoadFile($yamlFile) };  #Load hashreference as hash
         
     close($YAML);
@@ -21290,8 +21289,18 @@ sub OrderParameterNames {
 ##         : $orderParametersArrayRef => The parameter array {REF}
 ##         : $filePath                => File path
 
-    my $orderParametersArrayRef = $_[0];
-    my $filePath = $_[1];
+    my ($argHashRef) = @_;
+
+    ##Flatten argument(s)
+    my $orderParametersArrayRef;
+    my $filePath;
+
+    my $tmpl = { 
+	orderParametersArrayRef => { required => 1, default => [], strict_type => 1, store => \$orderParametersArrayRef},
+	filePath => { required => 1, defined => 1, store => \$filePath},
+    };
+
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     open(my $DFY, "<", $filePath) or die("Can't open '".$filePath."': ".$!."\n");
     
@@ -21430,14 +21439,24 @@ sub EvalParameterHash {
 
 ##EvalParameterHash
     
-##Function : Evaluate paremeters in parameters hash
+##Function : Evaluate parameters in parameters hash
 ##Returns  : ""
 ##Arguments: $parameterHashRef, $filePath
 ##         : $parameterHashRef => Hash with paremters from yaml file {REF}
 ##         : $filePath         => Path to yaml file
 
-    my $parameterHashRef = $_[0];
-    my $filePath = $_[1];
+    my ($argHashRef) = @_;
+    
+    ##Flatten argument(s)
+    my $parameterHashRef;
+    my $filePath;
+    
+    my $tmpl = { 
+	parameterHashRef => { required => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	filePath => { required => 1, defined => 1, store => \$filePath},
+    };
+
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my %mandatoryKey;
     $mandatoryKey{associatedProgram}{keyDataType} = "ARRAY";
@@ -21470,8 +21489,11 @@ sub EvalParameterHash {
     $nonMandatoryKey{reference}{keyDataType} = "SCALAR";
     $nonMandatoryKey{reference}{values} = ["referencesDir"];
 
-    &CheckKeys($parameterHashRef, \%mandatoryKey, \%nonMandatoryKey, \$filePath);
-
+    &CheckKeys({parameterHashRef => $parameterHashRef,
+		mandatoryKeyHashRef => \%mandatoryKey,
+		nonMandatoryKeyHashRef => \%nonMandatoryKey,
+		filePathRef => \$filePath,
+	       });
 }
 
 
@@ -21487,10 +21509,22 @@ sub CheckKeys {
 ##         : $nonMandatoryKeyHashRef => Hash with non mandatory key {REF}
 ##         : $filePathRef            => Path to yaml file {REF}
 
-    my $parameterHashRef = $_[0];
-    my $mandatoryKeyHashRef = $_[1];
-    my $nonMandatoryKeyHashRef = $_[2];
-    my $filePathRef = $_[3];
+    my ($argHashRef) = @_;
+    
+    ##Flatten argument(s)
+    my $parameterHashRef;
+    my $mandatoryKeyHashRef;
+    my $nonMandatoryKeyHashRef;
+    my $filePathRef;
+    
+    my $tmpl = { 
+	parameterHashRef => { required => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	mandatoryKeyHashRef => { required => 1, default => {}, strict_type => 1, store => \$mandatoryKeyHashRef},
+	nonMandatoryKeyHashRef => { required => 1, default => {}, strict_type => 1, store => \$nonMandatoryKeyHashRef},
+	filePathRef => { required => 1, defined => 1, store => \$filePathRef},
+    };
+
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     foreach my $parameter (keys %{$parameterHashRef}) {
 
@@ -21561,12 +21595,22 @@ sub CheckValues {
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $keyHashRef = ${$argHashRef}{keyHashRef};
-    my $parameter = ${$argHashRef}{parameter};
-    my $key = ${$argHashRef}{key};
-    my $filePathRef = ${$argHashRef}{filePathRef};
+    my $parameterHashRef;
+    my $keyHashRef;
+    my $parameter;
+    my $key;
+    my $filePathRef;
     
+    my $tmpl = { 
+	parameterHashRef => { required => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	keyHashRef => { required => 1, default => {}, strict_type => 1, store => \$keyHashRef},
+	parameter => { required => 1, defined => 1, store => \$parameter},
+	key => { required => 1, defined => 1, store => \$key},
+	filePathRef => { required => 1, defined => 1, store => \$filePathRef},
+    };
+
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
+
     ## Check value(s)
     if (${$keyHashRef}{$key}{values}) {
 	
@@ -21597,11 +21641,21 @@ sub CheckDataType {
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $keyHashRef = ${$argHashRef}{keyHashRef};
-    my $parameter = ${$argHashRef}{parameter};
-    my $key = ${$argHashRef}{key};
-    my $filePathRef = ${$argHashRef}{filePathRef};
+    my $parameterHashRef;
+    my $keyHashRef;
+    my $parameter;
+    my $key;
+    my $filePathRef;
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	keyHashRef => { required => 1, default => {}, strict_type => 1, store => \$keyHashRef},
+	parameter => { required => 1, defined => 1, store => \$parameter},
+	key => { required => 1, defined => 1, store => \$key},
+	filePathRef => { required => 1, defined => 1, store => \$filePathRef},
+    };
+
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     ## Check dataType
     my $dataType = ref(${$parameterHashRef}{$parameter}{$key});
@@ -23269,8 +23323,10 @@ sub PrintProgram {
     my @orderParameters;
 
     ## Adds the order of first level keys from yaml file to array
-    &OrderParameterNames(\@orderParameters, catfile($Bin, "definitions", "defineParameters.yaml"));
- 
+    &OrderParameterNames({orderParametersArrayRef => \@orderParameters,
+			  filePath => catfile($Bin, "definitions", "defineParameters.yaml"),
+			 });
+
     foreach my $orderParameterElement (@orderParameters) {
 	
 	if ( ( any {$_ eq $orderParameterElement} @{${$parameterHashRef}{dynamicParameters}{program}} ) ) { #Only process programs
