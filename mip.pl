@@ -350,7 +350,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ## Eval parameter hash
 &EvalParameterHash(\%parameter, catfile($Bin, "definitions", "defineParameters.yaml"));
 
-my $mipVersion = "v3.0.0";	#Set MIP version
+my $mipVersion = "v3.0.1";	#Set MIP version
 
 ## Directories, files, sampleInfo and jobIDs
 my (%infile, %inDirPath, %infilesLaneNoEnding, %lane, %infilesBothStrandsNoEnding, %jobID, %sampleInfo); 
@@ -7815,7 +7815,7 @@ sub SVRankVariants {
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
 	$xargsFileCounter = &XargsMigrateContigFiles({FILEHANDLE => $FILEHANDLE,
 						      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-						      arrayRef => \@{ ${$fileInfoHashRef}{contigsSizeOrdered} },
+						      arrayRef => $vcfParserContigsArrayRef,
 						      fileName => $fileName,
 						      programInfoPath => $programInfoPath,
 						      nrCores => $nrCores,
@@ -7847,9 +7847,9 @@ sub SVRankVariants {
 							    });
     
 	## Process per contig
-	for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{contigsSizeOrdered}});$contigsCounter++) {
+	for (my $contigsCounter=0;$contigsCounter<scalar(@{$vcfParserContigsArrayRef});$contigsCounter++) {
 	    
-	    my $contigRef = \${$fileInfoHashRef}{contigsSizeOrdered}[$contigsCounter];
+	    my $contigRef = \${$vcfParserContigsArrayRef}[$contigsCounter];
 	    
 	    ## Genmod Models
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
@@ -7915,7 +7915,7 @@ sub SVRankVariants {
 	## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
 	&ConcatenateVariants({scriptParameterHashRef => $scriptParameterHashRef,
 			      FILEHANDLE => $FILEHANDLE,
-			      arrayRef => \@{ ${$fileInfoHashRef}{contigs} },
+			      arrayRef => $vcfParserContigsArrayRef,
 			      infilePrefix => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_"), 
 			      infilePostfix => $vcfParserAnalysisType."_models_score_compound.vcf",
 			      outfile => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType.".vcf"),
