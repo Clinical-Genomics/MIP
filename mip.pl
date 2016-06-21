@@ -11714,7 +11714,7 @@ sub PicardToolsMergeSamFiles {
 	}
     }
     
-    if (${$scriptParameterHashRef}{dryRunAll} == 0) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 	
 	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $$sampleIDRef."_lanes_".$lanes.$outfileTag.".bam");
     }
@@ -11809,7 +11809,7 @@ sub PicardToolsMergeSamFiles {
 											fileEnding => ".b*",
 										       });
 		    }
-		    if (${$scriptParameterHashRef}{dryRunAll} == 0) {
+		    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 
 			${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $$sampleIDRef."_lanes_".$mergeLanes.$lanes.$outfileTag.".bam");
 		    }
@@ -11907,7 +11907,7 @@ sub PicardToolsMergeSamFiles {
 										    fileEnding => ".b*",
 										   });
 		}
-		if (${$scriptParameterHashRef}{dryRunAll} == 0) {
+		if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 		    
 		    ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $$sampleIDRef."_lanes_".$mergeLanes.$lanes.$outfileTag.".bam");
 		}
