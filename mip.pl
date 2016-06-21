@@ -44,8 +44,9 @@ BEGIN {
     my @modules = ("YAML", "Log::Log4perl", "Path::Iterator::Rule");	
 
     ## Evaluate that all modules required are installed
-    &EvalModules(\@modules);
-
+    &EvalModules({modulesArrayRef => \@modules,
+		 });
+    
     $USAGE =
 	qq{
 mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [project ID] -s [sample ID,.,.,.,n] -em [e-mail] -osd [outdirscripts] -odd [outDataDir] -f [familyID] -p[program]
@@ -301,8 +302,19 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
 	##Returns  : ""
 	##Arguments: $modulesArrayRef
 	##         : $modulesArrayRef => Array of module names
+
+	local $Params::Check::PRESERVE_CASE = 1;
+
+	my ($argHashRef) = @_;
 	
-	my $modulesArrayRef = $_[0];
+	##Flatten argument(s)
+	my $modulesArrayRef;
+		
+	my $tmpl = { 
+	    modulesArrayRef => { required => 1, default => [], strict_type => 1, store => \$modulesArrayRef},
+	};
+
+	check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 	
 	foreach my $module (@{$modulesArrayRef}) {
 
@@ -449,7 +461,9 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'riu|replaceIUPAC=n' => \$parameter{replaceIUPAC}{value},
 	   'ppm|printProgramMode=n' => \$parameter{printProgramMode}{value},
 	   'pp|printProgram' => sub { GetOptions('ppm|printProgramMode=n' => \$parameter{printProgramMode}{value});  #Force ppm to be read before function call
-				      &PrintProgram({parameterHashRef => \%parameter}); exit;},
+				      &PrintProgram({parameterHashRef => \%parameter,
+						     printProgramMode => $parameter{printProgramMode}{value},
+						    }); exit;},
 	   'l|logFile:s' => \$parameter{logFile}{value},
 	   'h|help' => sub { say STDOUT $USAGE; exit;},  #Display help text
 	   'v|version' => sub { say STDOUT "\nMip.pl ".$mipVersion, "\n"; exit;},  #Display version number
@@ -600,7 +614,9 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'anvp|annovarPath:s'  => \$parameter{annovarPath}{value},  #path to annovar script dir
 	   'anvgbv|annovarGenomeBuildVersion:s'  => \$parameter{annovarGenomeBuildVersion}{value},
 	   'anvtn|annovarTableNames:s'  => \@{$parameter{annovarTableNames}{value}},  #Comma separated list
-	   'anvstn|annovarSupportedTableNames' => sub { &PrintSupportedAnnovarTableNames(\%scriptParameter, \@annovarSupportedTableNames)},  #Generates a list of supported table names
+	   'anvstn|annovarSupportedTableNames' => sub { &PrintSupportedAnnovarTableNames({scriptParameterHashRef => \%scriptParameter,
+											  annovarSupportedTableNamesArrayRef => \@annovarSupportedTableNames,
+											 })},  #Generates a list of supported table names
 	   'anvarmafth|annovarMAFThreshold=n' => \$parameter{annovarMAFThreshold}{value},
 	   'pSnE|pSnpEff=n' => \$parameter{pSnpEff}{value},
 	   'snep|snpEffPath:s'  => \$parameter{snpEffPath}{value},  #path to snpEff directory
@@ -635,7 +651,8 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	       });
 
 ## Change relative path to absolute path for certain parameters 
-&UpdateToAbsolutePath(\%parameter);
+&UpdateToAbsolutePath({parameterHashRef => \%parameter,
+		      });
 
 if (exists($parameter{configFile}{value})) {  #Input from cmd
 
@@ -649,7 +666,10 @@ if (exists($parameter{configFile}{value})) {  #Input from cmd
     ##Special case:Required when turning of vcfParser to know how many files should be analysed (.select.vcf or just .vcf)
     $scriptParameter{VcfParserOutputFileCount} = $parameter{VcfParserOutputFileCount}{default};
 
-    &CompareHashKeys(\%scriptParameter, \%parameter);
+    ## Compare keys in two hashes
+    &CompareHashKeys({referenceHashRef => \%scriptParameter,
+		      comparisonHashRef => \%parameter,
+		     });
 
     my @activeParameters = ("clusterConstantPath", "analysisConstantPath", "analysisType", "alignerOutDir"); 
 
@@ -7696,7 +7716,7 @@ sub SambambaDepth {
 			 });
     say $FILEHANDLE "wait", "\n";
     
-    if ( (${$scriptParameterHashRef}{pSambambaDepth} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 2) ) {
+    if ( (${$scriptParameterHashRef}{pSambambaDepth} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 	
 	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{Program}{$programName}{$infile}{Bed}{Path} = catfile($outSampleDirectory, $infile.$outfileTag.".bed");
     }
@@ -11746,6 +11766,7 @@ sub PicardToolsMergeSamFiles {
 		    
 		    my $mergeLanes; if($1) {$mergeLanes = $1;} else {$mergeLanes = $2;}  #Make sure to always supply lanes from previous regexp		    
 
+		    ## Removes ".fileEnding" in filename.FILENDING(.gz)
 		    my $picardToolsMergeSamFilesPreviousFileNoEnding = &RemoveFileEnding({fileNameRef => \$picardToolsMergeSamFilesPreviousFile,
 											  fileEnding => ".bam",
 											 });
@@ -11852,6 +11873,7 @@ sub PicardToolsMergeSamFiles {
 						nrCores => $nrCores,
 					       });  #To not exceed maximum
 
+		## Removes ".fileEnding" in filename.FILENDING(.gz)
 		my $picardToolsMergeSamFilesPreviousFileNoEnding = &RemoveFileEnding({fileNameRef => \$picardToolsMergeSamFilesPreviousFile,
 										      fileEnding => ".bam",
 										     });
@@ -13879,6 +13901,8 @@ sub FastQC {
 		   });
 
 	my $infile = ${$infileHashRef}{$$sampleIDRef}[$infileCounter];
+
+	## Removes ".fileEnding" in filename.FILENDING(.gz)
 	my $fileAtLaneLevel = &RemoveFileEnding({fileNameRef => \$infile,
 						 fileEnding => ".fastq",
 						});
@@ -13915,6 +13939,8 @@ sub FastQC {
 		   });
 
 	my $infile = ${$infileHashRef}{$$sampleIDRef}[$infileCounter];
+
+	## Removes ".fileEnding" in filename.FILENDING(.gz)
 	my $fileAtLaneLevel = &RemoveFileEnding({fileNameRef => \$infile,
 						 fileEnding => ".fastq",
 						});
@@ -15176,13 +15202,14 @@ sub ReadPlinkPedigreeFile {
     
 ##Function : Reads familyID_pedigree file in PLINK format. Checks for pedigree data for allowed entries and correct format. Add data to sampleInfo depending on user info. 
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $supportedCaptureKitHashRef, $filePath
-##         : $parameterHashRef                         => The parameter hash {REF}
-##         : $scriptParameterHashRef                   => The active parameters for this analysis hash {REF}
-##         : $sampleInfoHashRef                        => Info on samples and family hash {REF}
-##         : $fileInfoHashRef                          => The associated reference file endings {REF}
-##         : $supportedCaptureKitHashRef               => The supported capture kits hash {REF}
-##         : $filePath                                 => The pedigree file
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $supportedCaptureKitHashRef, $filePath, $familyIDRef
+##         : $parameterHashRef           => The parameter hash {REF}
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $fileInfoHashRef            => The associated reference file endings {REF}
+##         : $supportedCaptureKitHashRef => The supported capture kits hash {REF}
+##         : $filePath                   => Pedigree file path
+##         : $familyIDRef                => FamilyID {RF}
 ###FORMAT: FamliyID\tSampleID\tFather\tMother\tSex(1=male; 2=female; other=unknown)\tPhenotype(-9 missing, 0 missing, 1 unaffected, 2 affected)..n
 
     my ($argHashRef) = @_;
@@ -15191,21 +15218,24 @@ sub ReadPlinkPedigreeFile {
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $supportedCaptureKitHashRef = ${$argHashRef}{supportedCaptureKitHashRef};
-    my $filePath = ${$argHashRef}{filePath};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $supportedCaptureKitHashRef;
+    my $filePath;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{humanGenomeReferenceFileEndings},  #Any MIP mandatory key will do
-			     supportedCaptureKitHashRef => ${$supportedCaptureKitHashRef}{Latest},  #Any MIP mandatory key will do
-			     filePath => $filePath,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, "ReadPlinkPedigreeFile");
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	supportedCaptureKitHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supportedCaptureKitHashRef},
+	filePath => { required => 1, defined => 1, strict_type => 1, store => \$filePath},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+    };
+    
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     my %exomtargetBedTestFileTracker;  #Use to collect which sampleIDs have used a certain capture_kit
     my @pedigreeFileElements = ("FamilyID", "SampleID", "Father", "Mother", "Sex", "Phenotype", );
@@ -15320,7 +15350,6 @@ sub ReadPlinkPedigreeFile {
 			my $exomeTargetBedFile = &AddCaptureKit({fileInfoHashRef => $fileInfoHashRef,
 								 supportedCaptureKitHashRef => $supportedCaptureKitHashRef, 
 								 captureKit => $captureKit, 
-								 parameterName => "exomeTargetBed", 
 								 userSuppliedParameterswitch => $userExomeTargetBedSwitch,
 								});  #Capture kit target infile_list
 			if($exomeTargetBedFile) {
@@ -16137,9 +16166,10 @@ sub InfilesReFormat {
             if (${$infileHashRef}{$sampleID}[$infileCounter] =~/(\d+)_(\d+)_([^_]+)_([^_]+)_index([^_]+)_(\d).fastq/) {  #Parse 'new' no "index" format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                             
 		
 		## Check if a file is gzipped.
-		my $compressedSwitch = &CheckGzipped(\${$infileHashRef}{$sampleID}[$infileCounter]);#Check gzipped or not
+		my $compressedSwitch = &CheckGzipped({fileNameRef => \${$infileHashRef}{$sampleID}[$infileCounter],
+						     });
 		
-		if ($compressedSwitch eq "unCompressed") {
+		if (! $compressedSwitch) { #Not compressed
 		    
 		    $uncompressedFileCounter = "unCompressed";  #File needs compression before starting analysis. Note: All files are rechecked downstream and uncompressed ones are gzipped automatically           
 		}
@@ -16174,9 +16204,10 @@ sub InfilesReFormat {
             elsif (${$infileHashRef}{$sampleID}[$infileCounter] =~/(\d+)_(\d+)_([^_]+)_([^_]+)_([^_]+)_(\d).fastq/) {  #Parse 'new' no "index" format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                             
 		
 		## Check if a file is gzipped.
-		my $compressedSwitch = &CheckGzipped(\${$infileHashRef}{$sampleID}[$infileCounter]);#Check gzipped or not
+		my $compressedSwitch = &CheckGzipped({fileNameRef => \${$infileHashRef}{$sampleID}[$infileCounter],
+						     });
 
-		if ($compressedSwitch eq "unCompressed") {
+		if ( ! $compressedSwitch) { #Not compressed
 		   
 		    $uncompressedFileCounter = "unCompressed";  #File needs compression before starting analysis. Note: All files are rechecked downstream and uncompressed ones are gzipped automatically           
 		}
@@ -16340,7 +16371,7 @@ sub AddInfileInfo {
     my $parsedDate = Time::Piece->strptime($date, "%y%m%d");
     $parsedDate = $parsedDate->ymd;
 
-    if ($compressedSwitch eq "compressed") {
+    if ($compressedSwitch) {
 
 	$readFile = "zcat";  #Read file in compressed format
     }
@@ -16447,25 +16478,30 @@ sub AddToScriptParameter {
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $supportedCaptureKitHashRef = ${$argHashRef}{supportedCaptureKitHashRef};
-    my $broadcastsArrayRef = ${$argHashRef}{broadcastsArrayRef};
-    my $associatedProgramsArrayRef = ${$argHashRef}{associatedProgramsArrayRef};
-    my $parameterName = ${$argHashRef}{parameterName};
+    my $parameterHashRef;# = ${$argHashRef}{parameterHashRef};
+    my $scriptParameterHashRef;# = ${$argHashRef}{scriptParameterHashRef};
+    my $sampleInfoHashRef;# = ${$argHashRef}{sampleInfoHashRef};
+    my $fileInfoHashRef;# = ${$argHashRef}{fileInfoHashRef};
+    my $supportedCaptureKitHashRef;# = ${$argHashRef}{supportedCaptureKitHashRef};
+    my $broadcastsArrayRef;# = ${$argHashRef}{broadcastsArrayRef};
+    my $associatedProgramsArrayRef;# = ${$argHashRef}{associatedProgramsArrayRef};
+    my $parameterName;# = ${$argHashRef}{parameterName};
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	supportedCaptureKitHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supportedCaptureKitHashRef},
+	broadcastsArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$broadcastsArrayRef},
+	associatedProgramsArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$associatedProgramsArrayRef},
+	parameterName => { required => 1, defined => 1, store => \$parameterName},
+	familyIDRef => {default => \$$, strict_type => 1},
+    };
+    
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $elementSeparatorRef = \${$parameterHashRef}{$parameterName}{elementSeparator};
-
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{humanGenomeReferenceFileEndings},  #Any MIP mandatory key will do
-			     supportedCaptureKitHashRef => ${$supportedCaptureKitHashRef}{Latest},  #Any MIP mandatory key will do
-			     associatedProgramsArrayRef => ${$associatedProgramsArrayRef}[0],
-			     parameterName => $parameterName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, "AddToScriptParameter");
 
     foreach my $associatedProgram (@{$associatedProgramsArrayRef}) {  #Check all programs that use parameter
 
@@ -16547,9 +16583,9 @@ sub AddToScriptParameter {
 			    my $captureKit = &AddCaptureKit({fileInfoHashRef => $fileInfoHashRef,
 							     supportedCaptureKitHashRef => $supportedCaptureKitHashRef,
 							     captureKit => "Latest", 
-							     parameterName => $parameterName,
 							    });
 			    ${$scriptParameterHashRef}{$parameterName}{$captureKit} = join(",", @{${$scriptParameterHashRef}{sampleIDs}});
+			    ## Update exomeTargetBed files with humanGenomeReferenceSourceRef and humanGenomeReferenceVersionRef
 			    &UpdateExomeTargetBed({exomeTargetBedFileHashRef => ${$scriptParameterHashRef}{exomeTargetBed},
 						   humanGenomeReferenceSourceRef => \${$fileInfoHashRef}{humanGenomeReferenceSource},
 						   humanGenomeReferenceVersionRef => \${$fileInfoHashRef}{humanGenomeReferenceVersion},
@@ -16583,8 +16619,11 @@ sub AddToScriptParameter {
     if ($parameterName eq "humanGenomeReference") {
 	
 	## Detect version and source of the humanGenomeReference: Source (hg19 or GRCh).
-	&ParseHumanGenomeReference($fileInfoHashRef, \${$scriptParameterHashRef}{humanGenomeReference});
+	&ParseHumanGenomeReference({fileInfoHashRef => $fileInfoHashRef,
+				    humanGenomeReferenceRef => \${$scriptParameterHashRef}{humanGenomeReference},
+				   });
 
+	## Update exomeTargetBed files with humanGenomeReferenceSourceRef and humanGenomeReferenceVersionRef
 	&UpdateExomeTargetBed({exomeTargetBedFileHashRef => ${$scriptParameterHashRef}{exomeTargetBed},
 			       humanGenomeReferenceSourceRef => \${$fileInfoHashRef}{humanGenomeReferenceSource},
 			       humanGenomeReferenceVersionRef => \${$fileInfoHashRef}{humanGenomeReferenceVersion},
@@ -17659,7 +17698,7 @@ sub LoadYAML {
     my $yamlFile;
 
     my $tmpl = { 
-	yamlFile => { required => 1, defined => 1, store => \$yamlFile},
+	yamlFile => { required => 1, defined => 1, strict_type => 1, store => \$yamlFile},
     };
 
     check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
@@ -17682,15 +17721,22 @@ sub CheckUniqueArrayElement {
     
 ##Function : Detects if there are items in queryRef that are not present in arrayToCheckRef. If unique adds the unique element to arrayToCheckRef.
 ##Returns  : ""
-##Arguments: $arrayToCheckRef, $arrayQueryRef, scalarQueryRef
+##Arguments: $arrayToCheckRef, $arrayQueryRef
 ##         : $arrayToCheckRef => The arrayref to be queried {REF}
-##         : $queryRef        => The query ref. Can be either array or scalar {REF}
+##         : $queryRef        => The query reference can be either array or scalar {REF}
 
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $arrayToCheckRef = ${$argHashRef}{arrayToCheckRef};
-    my $queryRef = ${$argHashRef}{queryRef};
+    my $arrayToCheckRef;
+    my $queryRef;
+
+    my $tmpl = { 
+	arrayToCheckRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$arrayToCheckRef},
+	queryRef => { required => 1, defined => 1, store => \$queryRef},
+    };
+    
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $arrayQueryRef;
 
@@ -17823,15 +17869,17 @@ sub UpdateConfigFile {
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $parameterNameRef = ${$argHashRef}{parameterNameRef};
-    my $familyIDRef = ${$argHashRef}{familyIDRef};
+    my $scriptParameterHashRef;
+    my $parameterNameRef;
+    my $familyIDRef;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (scriptParameterHashRef => ${$scriptParameterHashRef}{'MIP'},  #Any MIP mandatory key will do
-	);
-
-    &CheckMandatoryArguments(\%mandatoryArgument, "UpdateConfigFile");
+    my $tmpl = { 
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	parameterNameRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$parameterNameRef},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+    };
+    
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     if (${$scriptParameterHashRef}{$$parameterNameRef}) {  #Active parameter
 	
@@ -17934,9 +17982,19 @@ sub ParseHumanGenomeReference {
 ##         : $fileInfoHashRef         => The fileInfo hash {REF}
 ##         : $humanGenomeReferenceRef => The human genome {REF}
     
-    my $fileInfoHashRef = $_[0];
-    my $humanGenomeReferenceRef = $_[1];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $fileInfoHashRef;# = $_[0];
+    my $humanGenomeReferenceRef;# = $_[1];
     
+    my $tmpl = { 
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	humanGenomeReferenceRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$humanGenomeReferenceRef},
+    };
+    
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
+
     if ($$humanGenomeReferenceRef =~/^Homo_sapiens.GRCh(\d+\.\d+|\d+)/) {  #Used to change capture kit genome reference version later
 
 	${$fileInfoHashRef}{humanGenomeReferenceVersion} = $1;
@@ -17951,10 +18009,13 @@ sub ParseHumanGenomeReference {
 
 	$logger->warn("MIP cannot detect what kind of humanGenomeReference you have supplied. If you want to automatically set the capture kits used please supply the refrence on this format: [Species].[Source][Version].", "\n");
     }
+    ## Removes ".fileEnding" in filename.FILENDING(.gz)
     ${$fileInfoHashRef}{humanGenomeReferenceNameNoEnding} = &RemoveFileEnding({fileNameRef => $humanGenomeReferenceRef,
 									       fileEnding => ".fasta",
 									      });
-    ${$fileInfoHashRef}{humanGenomeCompressed} = &CheckGzipped($humanGenomeReferenceRef);
+
+    ${$fileInfoHashRef}{humanGenomeCompressed} = &CheckGzipped({fileNameRef => $humanGenomeReferenceRef,
+							       });
 }
 
 
@@ -18237,10 +18298,18 @@ sub CheckUserSuppliedInfo {
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $dataRef = ${$argHashRef}{dataRef};
-    my $parameterName = ${$argHashRef}{parameterName};
+    my $scriptParameterHashRef;
+    my $dataRef;
+    my $parameterName;
+
+    my $tmpl = { 
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	dataRef => { required => 1, defined => 1, store => \$dataRef},
+	parameterName => { strict_type => 1, store => \$parameterName},
+    };
     
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
+
     my $userSuppliedInfoSwitch;
 
     if (ref($dataRef) eq "ARRAY") {  #Array reference
@@ -18288,17 +18357,26 @@ sub CheckGzipped {
 ##CheckGzipped
     
 ##Function : Check if a file is gzipped.
-##Returns  : "unCompressed|compressed" 
+##Returns  : "0 (=unCompressed)| 1 (=compressed)" 
 ##Arguments: $fileNameRef
 ##         : $fileNameRef => File name {REF}
+    
+    my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $fileNameRef;# = $_[0];
+     
+    my $tmpl = { 
+	fileNameRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$fileNameRef},
+    };
+    
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
-    my $fileNameRef = $_[0];
+    my $fileCompressionStatus = 0;
 
-    my $fileCompressionStatus = "unCompressed";
-
-    if ( (defined($$fileNameRef)) && ($$fileNameRef =~/.gz$/) ) {
+    if ($$fileNameRef =~/.gz$/) {
 	
-	$fileCompressionStatus = "compressed"; 
+	$fileCompressionStatus = 1; 
     }
     return $fileCompressionStatus;
 }
@@ -18309,16 +18387,23 @@ sub RemoveFileEnding {
 ##RemoveFileEnding
     
 ##Function : Removes ".fileEnding" in filename.FILENDING(.gz)
-##Returns  : File name with supplied $fileEnding(.gz) removed
-##Arguments: $fileNameRef
+##Returns  : File name with supplied $fileEnding or $fileEnding(.gz) removed
+##Arguments: $fileNameRef, $fileEnding
 ##         : $fileNameRef => File name {REF}
 ##         : $fileEnding  => File ending to be removed
 
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $fileNameRef = ${$argHashRef}{fileNameRef};
-    my $fileEnding = ${$argHashRef}{fileEnding};
+    my $fileNameRef;# = ${$argHashRef}{fileNameRef};
+    my $fileEnding;# = ${$argHashRef}{fileEnding};
+
+    my $tmpl = { 
+	fileNameRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$fileNameRef},
+	fileEnding => { required => 1, defined => 1, strict_type => 1, store => \$fileEnding},
+    };
+    
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $fileNameNoEnding;
     
@@ -18726,9 +18811,17 @@ sub ReplaceConfigParamWithCMDInfo {
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $parameterNameArrayRef = ${$argHashRef}{parameterNameArrayRef};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $parameterNameArrayRef;
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	parameterNameArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$parameterNameArrayRef},
+    };
+    
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     foreach my $parameterName (@{$parameterNameArrayRef}) {
 
@@ -18760,7 +18853,7 @@ sub DefineSupportedCosmidReferences {
 
     my ($argHashRef) = @_;
 
-    my $compressedSwitch = ${$argHashRef}{'compressedSwitch'} //= "unCompressed";
+    my $compressedSwitch = ${$argHashRef}{'compressedSwitch'} //= 0;
     
     ## Flatten argument(s)
     my $supportedCosmidReferenceHashRef = ${$argHashRef}{supportedCosmidReferenceHashRef};
@@ -18972,8 +19065,18 @@ sub PrintSupportedAnnovarTableNames {
 ##         : $scriptParameterHashRef     => The active parameters for this analysis
 ##         : $annovarSupportedTableNames => The supported Annovar tables
     
-    my $scriptParameterHashRef = $_[0];
-    my $annovarSupportedTableNamesArrayRef = $_[1];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef;# = $_[0];
+    my $annovarSupportedTableNamesArrayRef;# = $_[1];
+
+    my $tmpl = { 
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	annovarSupportedTableNamesArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$annovarSupportedTableNamesArrayRef},
+    };
+    
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     if (${$scriptParameterHashRef}{logFile}) {
 
@@ -19013,6 +19116,14 @@ sub CheckEntryHashofArray {
     my $hashRef = ${$argHashRef}{hashRef};
     my $key = ${$argHashRef}{key};
     my $element = ${$argHashRef}{element};
+
+    my $tmpl = { 
+	hashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$hashRef},
+	key => { required => 1, defined => 1, strict_type => 1, store => \$key},
+	element => { required => 1, defined => 1, strict_type => 1, store => \$element},
+    };
+    
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     if (defined($$hashRef{$key})) {  #Information on entry present
 
@@ -19087,6 +19198,7 @@ sub ModifyFileEnding {
     my $filePathRef = $_[0];
     my $fileEnding = $_[1];
 
+    ## Removes ".fileEnding" in filename.FILENDING(.gz)
     my $fileName = &RemoveFileEnding({fileNameRef => $filePathRef,
 				      fileEnding => $fileEnding,
 				     });
@@ -19769,7 +19881,9 @@ sub CheckAnnovarTables {
 	else {  #Annovar Table not supported by MIP
 	    
 	    $logger->error("You supplied Annovar database: ".${$scriptParameterHashRef}{annovarTableNames}[$tableNamesCounter]." which is not supported by MIP. MIP can only process supported annovar databases\n");
-	    &PrintSupportedAnnovarTableNames($scriptParameterHashRef, $annovarSupportedTableNamesArrayRef);
+	    &PrintSupportedAnnovarTableNames({scriptParameterHashRef => $scriptParameterHashRef,
+					      annovarSupportedTableNamesArrayRef => $annovarSupportedTableNamesArrayRef,
+					     });
 	}
     }
 }
@@ -20474,20 +20588,28 @@ sub AddCaptureKit {
     
 ##Function : Return a capture kit depending on user info. If arg->{userSuppliedParameterswitchRef} is set, go a head and add capture kit no matter what the switch was.
 ##Returns  : "Set capture kit or ''"
-##Arguments: $fileInfoHashRef, $supportedCaptureKitHashRef, $argHashRef
+##Arguments: $fileInfoHashRef, $supportedCaptureKitHashRef, $captureKit, $userSuppliedParameterswitch
 ##         : $fileInfoHashRef             => The file info hash {REF}
 ##         : $supportedCaptureKitHashRef  => The supported capture kits hash {REF}
 ##         : $captureKit                  => The capture kit to add
-##         : $parameterName               => The parameter name
 ##         : $userSuppliedParameterswitch => Has user supplied parameter {OPTIONAL}
     
     my ($argHashRef) = @_;
 
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $supportedCaptureKitHashRef = ${$argHashRef}{supportedCaptureKitHashRef};
-    my $captureKit = ${$argHashRef}{captureKit};
-    my $parameterName = ${$argHashRef}{parameterName};
-    my $userSuppliedParameterswitch = ${$argHashRef}{userSuppliedParameterswitch};
+    ## Flatten argument(s)
+    my $fileInfoHashRef;# = ${$argHashRef}{fileInfoHashRef};
+    my $supportedCaptureKitHashRef;# = ${$argHashRef}{supportedCaptureKitHashRef};
+    my $captureKit;# = ${$argHashRef}{captureKit};
+    my $userSuppliedParameterswitch;# = ${$argHashRef}{userSuppliedParameterswitch};
+
+    my $tmpl = { 
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	supportedCaptureKitHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supportedCaptureKitHashRef},
+	captureKit => { strict_type => 1, store => \$captureKit},
+	userSuppliedParameterswitch => { strict_type => 1, store => \$userSuppliedParameterswitch},	
+    };
+
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     unless (defined($userSuppliedParameterswitch)) {  #No detected supplied capture kit
 	
@@ -21223,7 +21345,16 @@ sub UpdateToAbsolutePath {
 ##Arguments: $parameterHashRef
 ##         : $parameterHashRef => The parameter hash {REF}
 
-    my $parameterHashRef = $_[0];
+    my ($argHashRef) = @_;
+
+    ##Flatten argument(s)
+    my $parameterHashRef;
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+    };
+    
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my @parameterNames = ("inFilesDirs", "inScriptDir", "referencesDir", "outDataDir", "outScriptDir", "pedigreeFile", "configFile", "writeConfigFile", "sampleInfoFile", "logFile", "picardToolsPath", "genomeAnalysisToolKitPath", "vepDirectoryPath", "vepDirectoryCache", "snpEffPath", "annovarPath", "QCCollectSampleInfoFile");
 
@@ -21241,7 +21372,10 @@ sub UpdateToAbsolutePath {
 
 		    foreach my $element (@seperateElements) {
 
-			push(@absolutePathElements, &FindAbsolutePath($element, $parameterName));  #Add absolute path to array
+			## Find aboslute path for supplied path or croaks and exists if path does not exists
+			push(@absolutePathElements, &FindAbsolutePath({path => $element,
+								       parameterName => $parameterName,
+								      }));
 		    }
 		    ${$parameterHashRef}{$parameterName}{value}[$elementCounter] = join(",", @absolutePathElements);  #Replace original input with abolute path entries
 		}
@@ -21249,7 +21383,10 @@ sub UpdateToAbsolutePath {
 	}
 	elsif ( (defined(${$parameterHashRef}{$parameterName}{value})) && (${$parameterHashRef}{$parameterName}{value} ne "nocmdinput") ) {
 	    
-	    ${$parameterHashRef}{$parameterName}{value} = &FindAbsolutePath(${$parameterHashRef}{$parameterName}{value}, $parameterName);
+	    ## Find aboslute path for supplied path or croaks and exists if path does not exists
+	    ${$parameterHashRef}{$parameterName}{value} = &FindAbsolutePath({path => ${$parameterHashRef}{$parameterName}{value},
+									     parameterName => $parameterName,
+									    });
 	}
     }
 }
@@ -21258,14 +21395,24 @@ sub FindAbsolutePath {
 
 ##FindAbsolutePath
     
-##Function : Find aboslute path for supplied path or craoks and exists if path does not exists
+##Function : Find aboslute path for supplied path or croaks and exists if path does not exists
 ##Returns  : "$path - absolute path"
 ##Arguments: $path, $parameterName
 ##         : $path          => The supplied path to be updated/evaluated
 ##         : $parameterName => The parameter to be evaluated
 
-    my $path = $_[0];
-    my $parameterName = $_[1];
+    my ($argHashRef) = @_;
+
+    ##Flatten argument(s)
+    my $path;
+    my $parameterName;
+
+    my $tmpl = { 
+	path => { required => 1, defined => 1, store => \$path},
+	parameterName => { required => 1, defined => 1, strict_type => 1, store => \$parameterName},
+    };
+    
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $temporaryPath = $path;
     
@@ -21297,7 +21444,7 @@ sub OrderParameterNames {
 
     my $tmpl = { 
 	orderParametersArrayRef => { required => 1, default => [], strict_type => 1, store => \$orderParametersArrayRef},
-	filePath => { required => 1, defined => 1, store => \$filePath},
+	filePath => { required => 1, defined => 1, strict_type => 1, store => \$filePath},
     };
 
     check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
@@ -21453,7 +21600,7 @@ sub EvalParameterHash {
     
     my $tmpl = { 
 	parameterHashRef => { required => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
-	filePath => { required => 1, defined => 1, store => \$filePath},
+	filePath => { required => 1, defined => 1, strict_type => 1, store => \$filePath},
     };
 
     check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
@@ -21521,7 +21668,7 @@ sub CheckKeys {
 	parameterHashRef => { required => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
 	mandatoryKeyHashRef => { required => 1, default => {}, strict_type => 1, store => \$mandatoryKeyHashRef},
 	nonMandatoryKeyHashRef => { required => 1, default => {}, strict_type => 1, store => \$nonMandatoryKeyHashRef},
-	filePathRef => { required => 1, defined => 1, store => \$filePathRef},
+	filePathRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$filePathRef},
     };
 
     check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
@@ -21604,9 +21751,9 @@ sub CheckValues {
     my $tmpl = { 
 	parameterHashRef => { required => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
 	keyHashRef => { required => 1, default => {}, strict_type => 1, store => \$keyHashRef},
-	parameter => { required => 1, defined => 1, store => \$parameter},
-	key => { required => 1, defined => 1, store => \$key},
-	filePathRef => { required => 1, defined => 1, store => \$filePathRef},
+	parameter => { required => 1, defined => 1, strict_type => 1, store => \$parameter},
+	key => { required => 1, defined => 1, strict_type => 1, store => \$key},
+	filePathRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$filePathRef},
     };
 
     check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
@@ -21650,9 +21797,9 @@ sub CheckDataType {
     my $tmpl = { 
 	parameterHashRef => { required => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
 	keyHashRef => { required => 1, default => {}, strict_type => 1, store => \$keyHashRef},
-	parameter => { required => 1, defined => 1, store => \$parameter},
-	key => { required => 1, defined => 1, store => \$key},
-	filePathRef => { required => 1, defined => 1, store => \$filePathRef},
+	parameter => { required => 1, defined => 1, strict_type => 1, store => \$parameter},
+	key => { required => 1, defined => 1, strict_type => 1, store => \$key},
+	filePathRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$filePathRef},
     };
 
     check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
@@ -21688,8 +21835,18 @@ sub CompareHashKeys {
 ##         : $referenceHashRef  => Reference hash {REF}
 ##         : $comparisonHashRef => Hash to be compared to reference {REF}
 
-    my $referenceHashRef = $_[0];
-    my $comparisonHashRef = $_[1];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $referenceHashRef;# = $_[0];
+    my $comparisonHashRef;# = $_[1];
+
+    my $tmpl = { 
+	referenceHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$referenceHashRef},
+	comparisonHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$comparisonHashRef},
+    };
+    
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my @allowedUniqueKeys = ("VcfParserOutputFileCount", ${$referenceHashRef}{familyID});
     my @unique;
@@ -22702,15 +22859,15 @@ sub AddToParameter {
     my ($argHashRef) = @_;
     
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $aggregateArrayRef = ${$argHashRef}{aggregateArrayRef};
+    my $parameterHashRef;
+    my $aggregateArrayRef;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     aggregateArrayRef => ${$aggregateArrayRef}[0],  #Any element will do
-	);
-
-    &CheckMandatoryArguments(\%mandatoryArgument, "AddToParameter");
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	aggregateArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$aggregateArrayRef},
+    };
+    
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     foreach my $key (keys %{$parameterHashRef}) {
 	
@@ -23308,18 +23465,27 @@ sub PrintProgram {
 
 ##Function : Print all supported programs in '-ppm' mode
 ##Returns  : ""
-##Arguments: $parameterHashRef
+##Arguments: $parameterHashRef, $printProgramMode
 ##         : $parameterHashRef => The parameter hash {REF}
+##         : $printProgramMode => Mode to run modules in
 
     my ($argHashRef) = @_;
     
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $printProgramMode = ${$parameterHashRef}{printProgramMode}{value} //= ${$parameterHashRef}{printProgramMode}{default};
+    my $parameterHashRef;
+    my $printProgramMode = ${$argHashRef}{printProgramMode} //= 2;
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	printProgramMode => { strict_type => 1, allow => [0, 1, 2]},
+    };
     
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];    
+
     &AddToParameter({parameterHashRef => $parameterHashRef,
 		     aggregateArrayRef => ["type:program"],
 		    });
+
     my @orderParameters;
 
     ## Adds the order of first level keys from yaml file to array
@@ -23384,17 +23550,22 @@ sub Help {
 ##Function : Print help text and exit with supplied exit code
 ##Returns  : ""
 ##Arguments: $USAGE, $exitCode
-##         : $USAGE     => Help text
+##         : $USAGE    => Help text
 ##         : $exitCode => Exit code
 
     my ($argHashRef) = @_;
 
-    ## Default(s)
-    my $exitCode = ${$argHashRef}{errorCode} //= 0;
-
     ## Flatten argument(s)
-    my $USAGE = ${$argHashRef}{USAGE};
+    my $USAGE;
+    my $exitCode;
 
+    my $tmpl = { 
+	USAGE => {required => 1, defined => 1, strict_type => 1, store => \$USAGE},
+	exitCode => { default => 0, strict_type => 1, store => \$exitCode},
+    };
+    
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];    
+    
     say STDOUT $USAGE;
     exit $exitCode;
 }
@@ -23447,7 +23618,7 @@ sub UpdateExomeTargetBed {
     
 ##Function : Update exomeTargetBed files with humanGenomeReferenceSourceRef and humanGenomeReferenceVersionRef
 ##Returns  : "" 
-##Arguments: $exomeTargetBedFileHashRef, $humanGenomeReferenceSourceRef, $parameterHashRef, $scriptParameterHashRef, $fileEndingsRef
+##Arguments: $exomeTargetBedFileHashRef, $humanGenomeReferenceSourceRef, humanGenomeReferenceVersionRef
 ##         : $exomeTargetBedFileHashRef     => ExomeTargetBedTestFile hash {REF}
 ##         : humanGenomeReferenceSourceRef  => The human genome reference source {REF}
 ##         : humanGenomeReferenceVersionRef => The human genome reference version {REF}
@@ -23455,10 +23626,18 @@ sub UpdateExomeTargetBed {
     my ($argHashRef) = @_;
     
     ## Flatten argument(s)
-    my $exomeTargetBedFileHashRef = ${$argHashRef}{exomeTargetBedFileHashRef};
-    my $humanGenomeReferenceSourceRef = ${$argHashRef}{humanGenomeReferenceSourceRef};
-    my $humanGenomeReferenceVersionRef = ${$argHashRef}{humanGenomeReferenceVersionRef};
+    my $exomeTargetBedFileHashRef;
+    my $humanGenomeReferenceSourceRef;
+    my $humanGenomeReferenceVersionRef;
     
+    my $tmpl = { 
+	exomeTargetBedFileHashRef => { required => 1, store => \$exomeTargetBedFileHashRef},
+	humanGenomeReferenceSourceRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$humanGenomeReferenceSourceRef},
+	humanGenomeReferenceVersionRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$humanGenomeReferenceVersionRef},
+    };
+    
+    check( $tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
+
     foreach my $exomeTargetBedFile (keys %{$exomeTargetBedFileHashRef}) {
 	
 	my $originalFileName = $exomeTargetBedFile;
