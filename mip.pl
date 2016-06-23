@@ -15463,16 +15463,17 @@ sub AddToJobID {
     my ($argHashRef) = @_;
     
     ## Flatten argument(s)
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $familyIDChainKey = ${$argHashRef}{familyIDChainKey};
-    my $chainKey = ${$argHashRef}{chainKey};
+    my $jobIDHashRef;
+    my $familyIDChainKey;
+    my $chainKey;
     
-    ## Mandatory arguments
-    my %mandatoryArgument = (familyIDChainKey => $familyIDChainKey,
-			     chainKey => $chainKey,
-	);
-    
-    &CheckMandatoryArguments(\%mandatoryArgument, "AddToJobID");
+     my $tmpl = { 
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	familyIDChainKey => { required => 1, defined => 1, strict_type => 1, store => \$familyIDChainKey},
+	chainKey => { required => 1, defined => 1, strict_type => 1, store => \$chainKey},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     my $jobIDs = "";  #JobID string
     
@@ -15480,11 +15481,11 @@ sub AddToJobID {
 	
 	for (my $jobCounter=0;$jobCounter<scalar( @{ ${$jobIDHashRef}{$familyIDChainKey}{$chainKey} });$jobCounter++) {   #All previous jobIDs
 	    
-	    if ( ($jobCounter == 0) && (scalar( @{ ${$jobIDHashRef}{$familyIDChainKey}{$chainKey} }) == 1) ) {  #Only 1 previous jobID 
+	    if ( (! $jobCounter) && (scalar( @{ ${$jobIDHashRef}{$familyIDChainKey}{$chainKey} }) == 1) ) {  #Only 1 previous jobID 
 		
 		$jobIDs .= ":${$jobIDHashRef}{$familyIDChainKey}{$chainKey}[$jobCounter]";  #First and last jobID start with ":" and end without ":"
 	    }
-	    elsif ($jobCounter == 0) {  #First jobID
+	    elsif (! $jobCounter) {  #First jobID
 		
 		$jobIDs .= ":${$jobIDHashRef}{$familyIDChainKey}{$chainKey}[$jobCounter]:";  #First jobID start with :
 	    }
@@ -15518,7 +15519,7 @@ sub PushToJobID {
 ##         : $sampleID                   => Sample ID
 ##         : $familyIDRef                => Family id {REF}
 ##         : $path                       => Trunk or branch
-##         : $chainKeyType               => "parallel", "merged" or "family_merged" (familyID_sampleID)
+##         : $chainKeyType               => "parallel", "merged" or "family_merged"
 
     my ($argHashRef) = @_;
     
@@ -15526,28 +15527,34 @@ sub PushToJobID {
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
     
     ## Flatten argument(s)
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $parallelChainsArrayRef = ${$argHashRef}{parallelChainsArrayRef};
-    my $familyIDChainKey = ${$argHashRef}{familyIDChainKey};
-    my $sampleIDChainKey = ${$argHashRef}{sampleIDChainKey};
-    my $sampleID = ${$argHashRef}{sampleID};
-    my $path = ${$argHashRef}{path};
-    my $chainKeyType = ${$argHashRef}{chainKeyType};
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $parallelChainsArrayRef;
+    my $familyIDChainKey;
+    my $sampleIDChainKey;
+    my $sampleID;
+    my $path;
+    my $chainKeyType;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} },  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     familyIDChainKey => $familyIDChainKey,
-			     sampleIDChainKey => $sampleIDChainKey,
-			     path => $path,
-			     chainKeyType => $chainKeyType,
-	);
-    
-    &CheckMandatoryArguments(\%mandatoryArgument, "PushToJobID");
+    my $tmpl = { 
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	parallelChainsArrayRef => { default => [], strict_type => 1, store => \$parallelChainsArrayRef},
+	familyIDChainKey => { required => 1, defined => 1, strict_type => 1, store => \$familyIDChainKey},
+	sampleIDChainKey => { required => 1, defined => 1, strict_type => 1, store => \$sampleIDChainKey},
+	sampleID => { strict_type => 1, store => \$sampleID},
+	path => { required => 1, defined => 1, strict_type => 1, store => \$path},
+	chainKeyType => { required => 1, defined => 1,
+			  allow => ["parallel", "merged", "family_merged"],
+			  strict_type => 1, store => \$chainKeyType},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     my $chainKey;
     
@@ -15647,24 +15654,37 @@ sub FIDSubmitJob {
     my $jobDependency = ${$argHashRef}{jobDependency} //= "afterok";
 
     ## Flatten argument(s)
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $parallelChainsArrayRef = ${$argHashRef}{parallelChainsArrayRef};
-    my $sampleID = ${$argHashRef}{sampleID};
-    my $dependencies = ${$argHashRef}{dependencies};
-    my $path = ${$argHashRef}{path};
-    my $sbatchFileName = ${$argHashRef}{sbatchFileName};
-    my $sbatchScriptTracker = ${$argHashRef}{sbatchScriptTracker};
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $parallelChainsArrayRef;
+    my $sampleID;
+    my $dependencies;
+    my $path;
+    my $sbatchFileName;
+    my $sbatchScriptTracker;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} },  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-	);
-    
-    &CheckMandatoryArguments(\%mandatoryArgument, "FIDSubmitJob");
+    my $tmpl = { 
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	parallelChainsArrayRef => { default => [], strict_type => 1, store => \$parallelChainsArrayRef},
+	sampleID => { strict_type => 1, store => \$sampleID},
+	dependencies => { required => 1, defined => 1, 
+		  allow => [-1, 0, 1, 2, 3, 4, 5, 6, 7],
+		  strict_type => 1, store => \$dependencies},
+	path => { required => 1, defined => 1, strict_type => 1, store => \$path},
+	sbatchFileName => { required => 1, defined => 1, strict_type => 1, store => \$sbatchFileName},
+	sbatchScriptTracker => { allow => qr/^\d+$/,
+				 strict_type => 1, store => \$sbatchScriptTracker},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	jobDependency => { allow => ["afterany", "afterok"],
+			   strict_type => 1, store => \$jobDependency},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $sampleIDChainKey;
     my $sampleIDParallelChainKey;
@@ -15904,7 +15924,7 @@ sub FIDSubmitJob {
 	    elsif ((defined($path)) && $path eq "MAIN") {  #First familyID MAIN chain 
 		
 		##Add all previous jobId(s) from sampleID chainkey(s)
-		for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{sampleIDs}});$sampleIDCounter++) {           
+		for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{sampleIDs}});$sampleIDCounter++) {
 		    
 		    my $sampleIDChainKey = ${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter]."_".$path;
 		    
@@ -15967,7 +15987,7 @@ sub FIDSubmitJob {
 		}
 		else {  #First job in new path and first familyID MAIN chain 
 		    
-		    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{sampleIDs}});$sampleIDCounter++) {           
+		    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{sampleIDs}});$sampleIDCounter++) {
 			
 			my $familyIDChainKey = $$familyIDRef."_MAIN";
 			my $sampleIDChainKey = ${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter]."_MAIN";
@@ -17197,22 +17217,23 @@ sub ProgramPreRequisites {
     
 ##Function : Creates program directories (info & programData & programScript), program script filenames and writes sbatch header.
 ##Returns  : Path to stdout
-##Arguments: $scriptParameterHashRef, $jobIDHashRef, $FILEHANDLE, $emailType, $outDataDir, $outScriptDir, $directoryID, $programDirectory, $programName, $callType, $nrofCores, $processTime, $tempDirectory, $errorTrap, $pipefail
-##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
-##         : $jobIDHashRe            => The jobID hash {REF}
-##         : $FILEHANDLE             => FILEHANDLE to write to
-##         : $emailType              => The email type
-##         : $outDataDir             => The MIP out data directory
-##         : $outScriptDir           => The MIP out script directory
-##         : $directoryID            => $samplID|$familyID
-##         : $programDirectory       => Builds from $directoryID/$alignerOutDir
-##         : $programName            => Assigns filename to sbatch script
-##         : $callType               => SNV,INDEL or BOTH
-##         : $nrofCores              => The number of cores to allocate
-##         : $processTime            => Hours
-##         : $tempDirectory          => Temporary directory for program {Optional}
-##         : $errorTrap              => Error trap switch
-##         : $pipefail               => Pipe fail switch
+##Arguments: $scriptParameterHashRef, $jobIDHashRef, $sourceEnvironmentCommandArrayRef, $FILEHANDLE, $emailType, $outDataDir, $outScriptDir, $directoryID, $programDirectory, $programName, $callType, $nrofCores, $processTime, $tempDirectory, $errorTrap, $pipefail
+##         : $scriptParameterHashRef           => The active parameters for this analysis hash {REF}
+##         : $jobIDHashRef                     => The jobID hash {REF}
+##         : $sourceEnvironmentCommandArrayRef => Source environment command {REF}
+##         : $FILEHANDLE                       => FILEHANDLE to write to
+##         : $emailType                        => The email type
+##         : $outDataDir                       => The MIP out data directory
+##         : $outScriptDir                     => The MIP out script directory
+##         : $directoryID                      => $samplID|$familyID
+##         : $programDirectory                 => Builds from $directoryID/$alignerOutDir
+##         : $programName                      => Assigns filename to sbatch script
+##         : $callType                         => SNV,INDEL or BOTH
+##         : $nrofCores                        => The number of cores to allocate
+##         : $processTime                      => Hours
+##         : $tempDirectory                    => Temporary directory for program {Optional}
+##         : $errorTrap                        => Error trap switch
+##         : $pipefail                         => Pipe fail switch
  
     my ($argHashRef) = @_;
 
@@ -17221,7 +17242,7 @@ sub ProgramPreRequisites {
     my $outScriptDir = ${$argHashRef}{outScriptDir} //= ${$argHashRef}{scriptParameterHashRef}{outScriptDir};
     my $tempDirectory = ${$argHashRef}{tempDirectory} //= ${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $emailType = ${$argHashRef}{emailType} //= ${$argHashRef}{scriptParameterHashRef}{emailType};
-    my $sourceEnvironmentCommandArrayRef = ${$argHashRef}{sourceEnvironmentCommand} //= ${$argHashRef}{scriptParameterHashRef}{sourceEnvironmentCommand};
+    my $sourceEnvironmentCommandArrayRef = ${$argHashRef}{sourceEnvironmentCommandArrayRef} //= ${$argHashRef}{scriptParameterHashRef}{sourceEnvironmentCommand};
     my $nrofCores = ${$argHashRef}{nrofCores} //= 1;
     my $processTime = ${$argHashRef}{processTime} //= 1;
     my $pipefail = ${$argHashRef}{pipefail} //= 1;
@@ -17234,22 +17255,42 @@ sub ProgramPreRequisites {
     ${$argHashRef}{callType} //= "";
     
     ## Flatten argument(s)
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};		   
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $directoryID = ${$argHashRef}{directoryID};
-    my $programDirectory = ${$argHashRef}{programDirectory};
-    my $programName = ${$argHashRef}{programName};
-    my $callType = ${$argHashRef}{callType};
-    
-    ## Mandatory arguments
-    my %mandatoryArgument = (scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     FILEHANDLE => $FILEHANDLE,
-			     directoryID => $directoryID,  #Any MIP mandatory key will do
-			     programDirectory => $programDirectory,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $scriptParameterHashRef;
+    my $jobIDHashRef;
+    my $FILEHANDLE;
+    my $directoryID;
+    my $programDirectory;
+    my $programName;
+    my $callType;
+   
+    my $tmpl = { 
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	directoryID => { required => 1, defined => 1, strict_type => 1, store => \$directoryID},
+	programDirectory => { required => 1, defined => 1, strict_type => 1, store => \$programDirectory},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	callType => { strict_type => 1, store => \$callType},
+	outDataDir => { strict_type => 1 },
+	outScriptDir => { strict_type => 1 },
+	tempDirectory => { strict_type => 1 },
+	emailType => { strict_type => 1 },
+	sourceEnvironmentCommandArrayRef => { default => [], strict_type => 1 },
+	nrofCores => { default => 1,
+		       allow => qr/^\d+$/,
+		       strict_type => 1, store => \$nrofCores},
+	processTime => { default => 1,
+			 allow => qr/^\d+$/,
+			 strict_type => 1, store => \$processTime},
+	pipefail => { default => 1,
+		      allow => [0, 1],
+		      strict_type => 1, store => \$pipefail},
+	errorTrap  => { default => 1,
+			allow => [0, 1],
+			strict_type => 1, store => \$errorTrap},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     ### Sbatch script names and directory creation
 
@@ -22300,41 +22341,81 @@ sub VTCore {
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $humanGenomeReferenceRef = ${$argHashRef}{humanGenomeReferenceRef} //= \${$argHashRef}{scriptParameterHashRef}{humanGenomeReference};
     my $outfilePath = ${$argHashRef}{outfilePath} //= ${$argHashRef}{infilePath};
-    my $nrCores = ${$argHashRef}{nrCores} //= 1;
-    my $decompose = ${$argHashRef}{decompose} //= 0;
-    my $normalize = ${$argHashRef}{normalize} //= 0;
-    my $maxAF = ${$argHashRef}{maxAF} //= 0;
-    my $calculateAF = ${$argHashRef}{calculateAF} //= 0;
-    my $sed = ${$argHashRef}{sed} //= 0;
-    my $program = ${$argHashRef}{program} //= "VT";
-    my $programDirectory = ${$argHashRef}{programDirectory} //= "vt";
-    my $bgzip = ${$argHashRef}{bgzip} //= 0;
-    my $tabix = ${$argHashRef}{tabix} //= 0;
-    my $inStream = ${$argHashRef}{inStream} //= 0;
-    my $cmdbreak = ${$argHashRef}{cmdbreak} //= "\n\n";
+    my $nrCores;
+    my $decompose;
+    my $normalize;
+    my $maxAF;
+    my $calculateAF;
+    my $sed;
+    my $program;
+    my $programDirectory;
+    my $bgzip;
+    my $tabix;
+    my $inStream;
+    my $cmdbreak;
     
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $infilePath = ${$argHashRef}{infilePath};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $xargsFileName = ${$argHashRef}{xargsFileName};
-    my $contigRef = ${$argHashRef}{contigRef};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $infilePath;
+    my $FILEHANDLE;
+    my $xargsFileName;
+    my $contigRef;
 
-    ##Mandatory arguments
-    my %mandatoryArgument = (scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-	);
+    my $tmpl = { 
+	parameterHashRef => { default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { default => {}, strict_type => 1, store => \$jobIDHashRef},
+	infilePath => { required => 1, defined => 1, strict_type => 1, store => \$infilePath},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	xargsFileName => { required => 1, defined => 1, strict_type => 1, store => \$xargsFileName},
+	contigRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$contigRef},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	referencesDirRef => { default => \$$, strict_type => 1},
+	humanGenomeReferenceRef => { default => \$$, strict_type => 1},
+	outfilePath => { strict_type => 1},
+	nrCores => { default => 1,
+		     allow => qr/^\d+$/,
+		     strict_type => 1, store => \$nrCores},
+	decompose => { default => 0,
+		       allow => [0, 1],
+		       strict_type => 1, store => \$decompose},
+	normalize => { default => 0,
+		       allow => [0, 1],
+		       strict_type => 1, store => \$normalize},
+	maxAF => { default => 0,
+		   allow => [0, 1],
+		   strict_type => 1, store => \$maxAF},
+	calculateAF => { default => 0,
+			 allow => [0, 1],
+			 strict_type => 1, store => \$calculateAF},
+	sed  => { default => 0,
+		  allow => [0, 1],
+		  strict_type => 1, store => \$sed},
+	program => { default => "VT", strict_type => 1, store => \$program},
+	programDirectory => { default => "vt", strict_type => 1, store => \$programDirectory},
+	bgzip => { default => 0,
+		   allow => [0, 1],
+		   strict_type => 1, store => \$bgzip},
+	tabix => { default => 0,
+		   allow => [0, 1],
+		   strict_type => 1, store => \$tabix},
+	inStream => { default => 0,
+		      allow => [0, 1],
+		      strict_type => 1, store => \$inStream},
+	cmdbreak => { default => "\n\n", strict_type => 1, store => \$cmdbreak},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $fileName;
     my $programInfoPath;
     my $randomInteger = int(rand(10000));  #Generate a random integer between 0-10,000.	
-
-    &CheckMandatoryArguments(\%mandatoryArgument, "VTCore");
 
     unless (defined($FILEHANDLE)){ #Run as individual sbatch script
 
@@ -22355,18 +22436,18 @@ sub VTCore {
     ## Split multi allelic records into single records and normalize
     if ( (${$scriptParameterHashRef}{VTDecompose} > 0) || (${$scriptParameterHashRef}{VTNormalize} > 0) || (defined(${$scriptParameterHashRef}{VTgenmodFilter1000G})) || (${$scriptParameterHashRef}{pSnpEff} > 0) ) { 
 	
-	if ($inStream == 0) {  #Use less to initate processing
+	if ( ! $inStream) {  #Use less to initate processing
 
 	    say $FILEHANDLE "## VT - Decompose (split multi allelic records into single records) and/or normalize variants and/or add MAX_AF";
 	    print $FILEHANDLE "less ";
 	    print $FILEHANDLE $infilePath." ";  #Infile
 	}
-	if ($sed == 1) {  #Replace #FORMAT field prior to smart decomposition (variant vcfs)
+	if ($sed) {  #Replace #FORMAT field prior to smart decomposition (variant vcfs)
 
 	    print $FILEHANDLE "| ";  #Pipe		
 	    print $FILEHANDLE q?sed 's/ID=AD,Number=./ID=AD,Number=R/' ?;
 	}
-	if ( (${$scriptParameterHashRef}{VTDecompose} > 0) && ($decompose == 1) ) {
+	if ( (${$scriptParameterHashRef}{VTDecompose} > 0) && ($decompose) ) {
 
 	    print $FILEHANDLE "| ";  #Pipe
 	    print $FILEHANDLE "vt decompose ";  #Decomposes multiallelic variants into biallelic in a VCF file
@@ -22378,7 +22459,7 @@ sub VTCore {
 		print $FILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    }
 	}
-	if ( (${$scriptParameterHashRef}{VTNormalize} > 0) && ($normalize == 1) ) {  #Write stderr for xargs process
+	if ( (${$scriptParameterHashRef}{VTNormalize} > 0) && ($normalize) ) {  #Write stderr for xargs process
 
 	    print $FILEHANDLE "| ";  #Pipe
 	    print $FILEHANDLE "vt normalize ";  #Normalize variants in a VCF.The normalized variants are reordered and output in an ordered fashion
@@ -22391,7 +22472,7 @@ sub VTCore {
 		print $FILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    }
 	}
-	if ( (${$scriptParameterHashRef}{pSnpEff} > 0) && ($calculateAF == 1) ) {  #$calculateAf should not be set to 1 if reference was not part of SnpEff parameter
+	if ( (${$scriptParameterHashRef}{pSnpEff} > 0) && ($calculateAF) ) {  #$calculateAf should not be set to 1 if reference was not part of SnpEff parameter
 	    
 	    print $FILEHANDLE "| ";  #Pipe
 	    print $FILEHANDLE "perl ".catfile($Bin, "calculateAF.pl")." ";  #Add AF_
@@ -22402,7 +22483,7 @@ sub VTCore {
 		print $FILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    }
 	}
-	if ( (exists(${$scriptParameterHashRef}{VTgenmodFilter1000G})) && ($maxAF == 1) ) {
+	if ( (exists(${$scriptParameterHashRef}{VTgenmodFilter1000G})) && ($maxAF) ) {
 
 	    print $FILEHANDLE "| ";  #Pipe
 	    print $FILEHANDLE "perl ".catfile($Bin, "maxAF.pl")." ";  #Add MAX_AF
@@ -22413,7 +22494,7 @@ sub VTCore {
 		print $FILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    }
 	}
-	if ( (-e $infilePath.".tbi") || ($bgzip == 1) ) {  #Tabix has been/will be used on file, compress again
+	if ( (-e $infilePath.".tbi") || ($bgzip) ) {  #Tabix has been/will be used on file, compress again
 	
 	    print $FILEHANDLE "| ";  #Pipe
 	    print $FILEHANDLE "bgzip ";  #Compression algorithm
@@ -22422,7 +22503,7 @@ sub VTCore {
 	print $FILEHANDLE "> ".$outfilePath."_splitted_".$randomInteger." ";  #Temporary outfile
 	print $FILEHANDLE $cmdbreak;
 	
-	if ( (-e $infilePath.".tbi") || ($tabix == 1) ) {  #Tabix index
+	if ( (-e $infilePath.".tbi") || ($tabix) ) {  #Tabix index
 
 	    print $FILEHANDLE "tabix ";
 	    print $FILEHANDLE "-p vcf ";  #Preset
