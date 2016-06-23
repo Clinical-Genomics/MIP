@@ -350,7 +350,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ## Eval parameter hash
 &EvalParameterHash(\%parameter, catfile($Bin, "definitions", "defineParameters.yaml"));
 
-my $mipVersion = "v3.0.3";	#Set MIP version
+my $mipVersion = "v3.0.4";	#Set MIP version
 
 ## Directories, files, sampleInfo and jobIDs
 my (%infile, %inDirPath, %infilesLaneNoEnding, %lane, %infilesBothStrandsNoEnding, %jobID, %sampleInfo); 
@@ -10755,7 +10755,12 @@ sub GATKBaseReCalibration {
 		     arrayRef => \@{${$fileInfoHashRef}{contigs}},
 		     FILEHANDLE => $FILEHANDLE,
 		     infile => $infile.$outfileTag,
+		     createIndex => "FALSE",
 		    });
+
+    ## Create BAM index (temporary fix to accomodate Pilup.Js bug)
+    print $FILEHANDLE "\nsamtools index ";
+    say $FILEHANDLE catfile($$tempDirectoryRef, $infile.$outfileTag.".bam")."\n";
     
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
@@ -20499,16 +20504,18 @@ sub GatherBamFiles {
     
 ##Function : Concatenates BAMs. Writes to sbatch FILEHANDLE
 ##Returns  : ""
-##Arguments: $scriptParameterHashRef, $arrayRef, $FILEHANDLE, $infile
+##Arguments: $scriptParameterHashRef, $arrayRef, $FILEHANDLE, $infile, $createIndex
 ##         : $scriptParameterHashRef => Holds all set parameter for analysis
 ##         : $arrayRef               => The array of splits to gather
 ##         : $FILEHANDLE             => Filehandle to write to
-##         : infile                  => The infile
-    
+##         : $infile                 => The infile
+##         : $createIndex            => Create index
+
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
+    my $createIndex = ${$argHashRef}{createIndex} //= "TRUE";
 
     ## Flatten argument(s)
     my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
@@ -20527,7 +20534,7 @@ sub GatherBamFiles {
 	      });	
     
     print $FILEHANDLE "GatherBamFiles ";
-    print $FILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.    
+    print $FILEHANDLE "CREATE_INDEX=".$createIndex." ";  #Create a BAM index when writing a coordinate-sorted BAM file.
     for (my $elementsCounter=0;$elementsCounter<scalar(@{$arrayRef});$elementsCounter++) {
 	
 	print $FILEHANDLE "INPUT=".catfile($$tempDirectoryRef, $infile."_".${$arrayRef}[$elementsCounter].".bam")." ";
