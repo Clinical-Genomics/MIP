@@ -350,7 +350,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ## Eval parameter hash
 &EvalParameterHash(\%parameter, catfile($Bin, "definitions", "defineParameters.yaml"));
 
-my $mipVersion = "v3.0.4";	#Set MIP version
+my $mipVersion = "v3.0.5";	#Set MIP version
 
 ## Directories, files, sampleInfo and jobIDs
 my (%infile, %inDirPath, %infilesLaneNoEnding, %lane, %infilesBothStrandsNoEnding, %jobID, %sampleInfo); 
@@ -11227,7 +11227,7 @@ sub PicardToolsMarkduplicates {
 			 });
     say $FILEHANDLE "wait", "\n";
     
-    if ( (${$scriptParameterHashRef}{pSambambaMarkduplicates} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 	
 	## Collect QC metadata info for later use
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
