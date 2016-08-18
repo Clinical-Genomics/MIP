@@ -343,12 +343,23 @@ sub OpenLogFile {
 sub PrintParameters {
     
     my $parameterHashRef = $_[0];
-    
+
+    &SetDefaultArrayParameters({parameterHashRef => $parameterHashRef,
+			       });
+
     foreach my $key (keys %{$parameterHashRef}) {
 	
 	if (ref(${$parameterHashRef}{$key})!~/ARRAY|HASH/) {
 
-	    print STDOUT $key." ".${$parameterHashRef}{$key}, "\n";
+	    print STDOUT $key." ";
+	    if (${$parameterHashRef}{$key}) {
+
+		print ${$parameterHashRef}{$key}, "\n";
+	    }
+	    else {
+
+		print "0", "\n";
+	    }
 	}
 	elsif (ref(${$parameterHashRef}{$key})=~/HASH/) {
 	    
@@ -1491,6 +1502,7 @@ sub MIPScripts {
 		      "mip.pl",
 		      "qcCollect.pl",
 		      "vcfParser.pl",
+		      "install.pl",
 	);
     my %mipSubScripts;
     $mipSubScripts{"definitions"} = ["defineParameters.yaml"];
