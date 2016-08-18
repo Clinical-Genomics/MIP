@@ -13072,7 +13072,7 @@ sub BWAMem {
 		print $FILEHANDLE "samtools stats ";
 		print $FILEHANDLE catfile($$tempDirectoryRef, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileTag.".bam")." ";
 		print $FILEHANDLE "| "; 
-		print $FILEHANDLE q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\s+(\d+)/) {$raw = $1;} elsif($_=~/reads mapped:\s+(\d+)/) {$map = $1; $p = ($map / $raw ) * 100; print "percentag mapped reads:\t".$p."\n"}' ?;
+		print $FILEHANDLE q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\s+(\d+)/) {$raw = $1;} elsif($_=~/reads mapped:\s+(\d+)/) {$map = $1; $p = ($map / $raw ) * 100; print "percentage mapped reads:\t".$p."\n"}' ?;
 		say $FILEHANDLE "> ".catfile($$tempDirectoryRef, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileTag.".stats")." ", "\n";
 
 		## Copies file from temporary directory.
