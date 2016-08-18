@@ -21108,7 +21108,7 @@ sub CheckAndAddToArray {
     my $tmpl = { 
 	pathsArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$pathsArrayRef},
 	keyName => { required => 1, defined => 1, strict_type => 1, store => \$keyName},
-	key => { required => 1, defined => 1, store => \$key},
+	key => { required => 1, store => \$key},
     };
     
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
