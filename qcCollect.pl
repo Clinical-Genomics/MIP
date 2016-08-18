@@ -815,6 +815,10 @@ sub RegExpToYAML {
 
     $regExp{'SVGenmod'}{'Version'} = q?perl -nae 'if($_=~/##Software=<ID=genmod\w+,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect SVGenmod version
 
+    $regExp{'Vcftools'}{'Version'} = q?perl -nae 'if($_=~/VCFtools\s-\s(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect VCFTools version
+
+    $regExp{'Plink2'}{'Version'} = q?perl -nae 'if($_=~/PLINK\s(\S+\s\S+\s\S+\s\S+\s\S+)/) {my $ret = $1;$ret =~s/\s/_/g;print $ret;last;}' ?; #Collect Plink2 version
+
 #$regExp{''}{''} = ;
 
     

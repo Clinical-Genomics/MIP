@@ -5578,6 +5578,10 @@ sub SampleCheck {
 							      nrofCores => $nrCores,
 							      processTime => 10,
 							     });
+    #my ($volume, $directories, $stderrFile) = File::Spec->splitpath($programInfoPath.".stderr.txt");  #Split to enable submission to &SampleInfoQC later
+    my ($volume, $directories, $programInfoFile) = File::Spec->splitpath($programInfoPath);  #Split to enable submission to &SampleInfoQC later
+    my $stderrFile = $programInfoFile.".stderr.txt";  #To enable submission to &SampleInfoQC later
+    my $stdoutFile = $programInfoFile.".stdout.txt";  #To enable submission to &SampleInfoQC later
     
     ## Assign Directories
     my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
@@ -5721,7 +5725,7 @@ sub SampleCheck {
     print $FILEHANDLE "--het ";  #Individual inbreeding
     say $FILEHANDLE "--out ".catfile($outFamilyDirectory, $$familyIDRef), "\n";  #Outfile
 
-    if ( (${$scriptParameterHashRef}{pSampleCheck} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 
 	## Collect QC metadata info for later use                                                                                               
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -5730,6 +5734,15 @@ sub SampleCheck {
 		       outDirectory => $outFamilyDirectory,
 		       outfileEnding => $$familyIDRef.".het",
 		       outDataType => "infileDependent"
+		      });
+
+	## Collect QC metadata info for later use                                                                                               
+	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
+		       familyID => ${$scriptParameterHashRef}{familyID},
+		       programName => "Vcftools",
+		       outDirectory => $directories,
+		       outfileEnding => $stderrFile,
+		       outDataType => "infoDirectory",
 		      });
     }
 
@@ -5754,6 +5767,14 @@ sub SampleCheck {
 			   outfileEnding => $$familyIDRef.".mibs",
 			   outDataType => "infileDependent"
 			  });
+	    ## Collect QC metadata info for later use                                                                                               
+	    &SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
+			   familyID => ${$scriptParameterHashRef}{familyID},
+			   programName => "Plink2",
+			   outDirectory => $directories,
+			   outfileEnding => $stdoutFile,
+			   outDataType => "infoDirectory",
+		      });
 	}
     }
     
