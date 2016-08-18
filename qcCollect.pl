@@ -681,7 +681,11 @@ sub RegExpToYAML {
     
     $regExp{'MosaikAligner'}{'Total_aligned'} = q?perl -nae' if ($_=~/total aligned:\s+\S+\s+(\S+)\s\(\S+\s(\d+.\d+)/ ) {print $2;last;} elsif ($_=~/total aligned:\s+(\S+)\s\(\S+\s(\d+.\d+)/ ) { print $2;last;}' ?; #Collect total aligned sequences
 
-    $regExp{'BamStats'}{'percentag_mapped_reads'} = q?perl -nae 'if($_=~/percentag mapped reads:\s+(\S+)/) {print $1;last}' ?; #Collect % mapped reads from BAm alignment
+    $regExp{'BamStats'}{'percentage_mapped_reads'} = q?perl -nae 'if($_=~/percentage mapped reads:\s+(\S+)/) {print $1;last}' ?; #Collect % mapped reads from BAM alignment
+
+    $regExp{'BamStats'}{'raw_total_sequences'} = q?perl -nae 'if($_=~/raw total sequences:\s+(\S+)/) {print $1;last}' ?; #Collect raw total sequences from BAM alignment
+
+    $regExp{'BamStats'}{'reads_mapped'} = q?perl -nae 'if($_=~/reads mapped:\s+(\S+)/) {print $1;last}' ?; #Collect reads mapped from BAM alignment
 
     $regExp{'ChanjoSexCheck'}{'gender'} = q?perl -nae 'if( ($F[0]!~/^#/) && ($F[2] =~/\S+/) ) {print $F[2];}' ?;  #Collect gender from ChanjoSexCheck
 
