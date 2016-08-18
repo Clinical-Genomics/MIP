@@ -86,7 +86,7 @@ $parameter{bioCondaMantaPatch} = "-0";
 $parameter{bioConda}{multiqc} = "0.6";
 $parameter{bioConda}{plink2} = "1.90b3.35";
 $parameter{bioConda}{vcfanno} = "0.0.11";
-#$parameter{bioConda}{gcc} = "4.8.5";
+$parameter{bioConda}{gcc} = "4.8.5";  #Required for CNVnator
 #$parameter{bioConda}{cmake} = "3.3.1";
 #$parameter{bioConda}{boost} = "1.57.0";
 #$parameter{bioCondaBoostPatch} = "-4";
@@ -237,10 +237,10 @@ if (@{$parameter{selectPrograms}}) {
 	
 	&VariantEffectPredictor(\%parameter, $BASHFILEHANDLE);
     }
-#    if ( ( grep {$_ eq "CNVnator"} @{$parameter{selectPrograms}} ) ) { #If element is part of array
+    if ( ( grep {$_ eq "CNVnator"} @{$parameter{selectPrograms}} ) ) { #If element is part of array
 	
-#	&CNVnator(\%parameter, $BASHFILEHANDLE);
- #   }
+	&CNVnator(\%parameter, $BASHFILEHANDLE);
+    }
  #   if ( ( grep {$_ eq "FindTranslocations"} @{$parameter{selectPrograms}} ) ) { #If element is part of array
 	
 #	&FindTranslocations(\%parameter, $BASHFILEHANDLE);
@@ -254,7 +254,7 @@ else {
     
     &VariantEffectPredictor(\%parameter, $BASHFILEHANDLE);
 
-#    &CNVnator(\%parameter, $BASHFILEHANDLE);
+    &CNVnator(\%parameter, $BASHFILEHANDLE);
 
 #    &FindTranslocations(\%parameter, $BASHFILEHANDLE);
 }
@@ -1329,6 +1329,8 @@ sub CNVnator {
     ## Install CNVNator
     print $FILEHANDLE "### Install CNVnator\n";
 
+    &ActivateCondaEnvironment($parameterHashRef, $FILEHANDLE);
+
     &CreateInstallDirectory($FILEHANDLE);
     
     ## Download
@@ -1367,6 +1369,8 @@ sub CNVnator {
 
     ## Make available from conda environment
     print $FILEHANDLE "## Make available from conda environment\n";
+    print $FILEHANDLE "cd ..";
+    print $FILEHANDLE "\n";
     print $FILEHANDLE "mv ";
     print $FILEHANDLE q?cnvnator2VCF.pl ?.catdir($parameter{condaPath}, "envs", ${$parameterHashRef}{condaEnvironment}, "bin");
     print $FILEHANDLE "\n\n";
@@ -1380,6 +1384,7 @@ sub CNVnator {
     &RemoveInstallDirectory({FILEHANDLE => $FILEHANDLE,
 			     pwd => $pwd,
 			    });
+    &DeactivateCondaEnvironment($FILEHANDLE);
 }
 
 

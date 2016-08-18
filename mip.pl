@@ -1125,11 +1125,11 @@ if ($scriptParameter{dryRunAll} == 0) {
 		      });
 
 if ( ($scriptParameter{pGZipFastq} > 0) && ($uncompressedFileSwitch eq "unCompressed") ) {  #GZip of fastq files
-
+    
     $logger->info("[GZip for fastq files]\n");
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {  
-
+	
 	for (my $infileCounter=0;$infileCounter<scalar( @{ $infile{$scriptParameter{sampleIDs}[$sampleIDCounter]} });$infileCounter++) {  #To determine which sampleID had the uncompressed files
 	    
 	    if ($infile{$scriptParameter{sampleIDs}[$sampleIDCounter]}[$infileCounter] =~/.fastq$/) {
@@ -1164,7 +1164,7 @@ if ($scriptParameter{pFastQC} > 0) {  #Run FastQC
 		 inDirPathHashRef => \%inDirPath,
 		 infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 		 jobIDHashRef => \%jobID,
-		 sampleID => \$scriptParameter{sampleIDs}[$sampleIDCounter],
+		 sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
 		 programName => "FastQC",
 		});	
     }
@@ -1455,7 +1455,6 @@ else {
 			    scriptParameterHashRef => \%scriptParameter,
 			    sampleInfoHashRef => \%sampleInfo,
 			    fileInfoHashRef => \%fileInfo,
-			    laneHashRef => \%lane,
 			    infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 			    jobIDHashRef => \%jobID,
 			    sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
@@ -1504,7 +1503,6 @@ else {
 				    scriptParameterHashRef => \%scriptParameter,
 				    sampleInfoHashRef => \%sampleInfo,
 				    fileInfoHashRef => \%fileInfo,
-				    laneHashRef => \%lane,
 				    infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 				    jobIDHashRef => \%jobID,
 				    sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
@@ -1526,7 +1524,6 @@ if ($scriptParameter{pChanjoSexCheck} > 0) {
 			 sampleInfoHashRef => \%sampleInfo,
 			 fileInfoHashRef => \%fileInfo,
 			 infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
-			 laneHashRef => \%lane,
 			 jobIDHashRef => \%jobID,
 			 sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
 			 programName => "ChanjoSexCheck",
@@ -1545,7 +1542,6 @@ if ($scriptParameter{pSambambaDepth} > 0) {
 			sampleInfoHashRef => \%sampleInfo,
 			fileInfoHashRef => \%fileInfo,
 			infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
-			laneHashRef => \%lane,
 			jobIDHashRef => \%jobID,
 			sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
 			programName => "SambambaDepth",
@@ -1565,7 +1561,6 @@ if ($scriptParameter{pGenomeCoverageBED} > 0) {  #Run GenomeCoverageBED
 			    sampleInfoHashRef => \%sampleInfo,
 			    fileInfoHashRef => \%fileInfo,
 			    infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
-			    laneHashRef => \%lane,
 			    jobIDHashRef => \%jobID,
 			    sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
 			    programName => "GenomeCoverageBED",
@@ -1594,7 +1589,6 @@ if ($scriptParameter{pPicardToolsCollectMultipleMetrics} > 0) {  #Run PicardTool
 					    sampleInfoHashRef => \%sampleInfo,
 					    fileInfoHashRef => \%fileInfo,
 					    infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
-					    laneHashRef => \%lane,
 					    jobIDHashRef => \%jobID,
 					    sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
 					    programName => "PicardToolsCollectMultipleMetrics",
@@ -1634,7 +1628,6 @@ if ($scriptParameter{pPicardToolsCalculateHSMetrics} > 0) {  #Run PicardToolsCal
 					sampleInfoHashRef => \%sampleInfo,
 					fileInfoHashRef => \%fileInfo,
 					infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
-					laneHashRef => \%lane,
 					jobIDHashRef => \%jobID,
 					sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
 					programName => "PicardToolsCalculateHSMetrics",
@@ -1681,7 +1674,6 @@ if ($scriptParameter{pCNVnator} > 0) {  #Run CNVnator
 		   sampleInfoHashRef => \%sampleInfo,
 		   fileInfoHashRef => \%fileInfo,
 		   infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
-		   laneHashRef => \%lane,
 		   jobIDHashRef => \%jobID,
 		   sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
 		   programName => "CNVnator",
@@ -1718,7 +1710,6 @@ if ($scriptParameter{pDelly} > 0) {  #Run Delly
 		sampleInfoHashRef => \%sampleInfo,
 		fileInfoHashRef => \%fileInfo,
 		infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
-		laneHashRef => \%lane,
 		jobIDHashRef => \%jobID,
 		sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
 		programName => "Delly",
@@ -1752,7 +1743,6 @@ if ($scriptParameter{pManta} > 0) {  #Run Manta
 	    sampleInfoHashRef => \%sampleInfo,
 	    fileInfoHashRef => \%fileInfo,
 	    infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
-	    laneHashRef => \%lane,
 	    jobIDHashRef => \%jobID,
 	    programName => "Manta",
 	   });
@@ -1769,7 +1759,6 @@ if ($scriptParameter{pFindTranslocations} > 0) {  #Run FindTranslocations
 			     sampleInfoHashRef => \%sampleInfo,
 			     fileInfoHashRef => \%fileInfo,
 			     infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
-			     laneHashRef => \%lane,
 			     jobIDHashRef => \%jobID,
 			     sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
 			     programName => "FindTranslocations",
@@ -1787,7 +1776,6 @@ if ($scriptParameter{pSVCombineVariantCallSets} > 0) {  #Run CombineVariantCallS
 			       sampleInfoHashRef => \%sampleInfo,
 			       fileInfoHashRef => \%fileInfo,
 			       infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
-			       laneHashRef => \%lane,
 			       jobIDHashRef => \%jobID,
 			       programName => "SVCombineVariantCallSets",
 			      });
@@ -1865,7 +1853,6 @@ if ($scriptParameter{pSamToolsMpileUp} > 0) {  #Run SamToolsMpileUp
 		      sampleInfoHashRef => \%sampleInfo,
 		      fileInfoHashRef => \%fileInfo,
 		      infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
-		      laneHashRef => \%lane,
 		      jobIDHashRef => \%jobID,
 		      programName => "SamToolsMpileUp",
 		     });
@@ -1898,7 +1885,6 @@ if ($scriptParameter{pFreebayes} > 0) {  #Run Freebayes
 		sampleInfoHashRef => \%sampleInfo,
 		fileInfoHashRef => \%fileInfo,
 		infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
-		laneHashRef => \%lane,
 		jobIDHashRef => \%jobID,
 		programName => "Freebayes",
 	       });
@@ -1946,7 +1932,6 @@ if ($scriptParameter{pGATKHaploTypeCaller} > 0) {  #Run GATK HaploTypeCaller
 			      sampleInfoHashRef => \%sampleInfo,
 			      fileInfoHashRef => \%fileInfo,
 			      infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
-			      laneHashRef => \%lane,
 			      jobIDHashRef => \%jobID,
 			      sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
 			      programName => "GATKHaploTypeCaller",
@@ -1973,7 +1958,6 @@ if ($scriptParameter{pGATKGenoTypeGVCFs} > 0) {  #Run GATK GenoTypeGVCFs. Done p
 			sampleInfoHashRef => \%sampleInfo,
 			fileInfoHashRef => \%fileInfo,
 			infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
-			laneHashRef => \%lane,
 			jobIDHashRef => \%jobID,
 			programName => "GATKGenoTypeGVCFs",
 		       });
@@ -1983,7 +1967,6 @@ if ($scriptParameter{pGATKGenoTypeGVCFs} > 0) {  #Run GATK GenoTypeGVCFs. Done p
 				   sampleInfoHashRef => \%sampleInfo,
 				   fileInfoHashRef => \%fileInfo,
 				   infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
-				   laneHashRef => \%lane,
 				   jobIDHashRef => \%jobID,
 				   programName => "GATKGenoTypeGVCFs",
 				  });
@@ -2145,7 +2128,6 @@ if ($scriptParameter{pGATKVariantEvalAll} > 0) {  #Run GATK VariantEval for all 
 			     scriptParameterHashRef => \%scriptParameter,
 			     sampleInfoHashRef => \%sampleInfo,
 			     fileInfoHashRef => \%fileInfo,
-			     laneHashRef => \%lane,
 			     infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 			     jobIDHashRef => \%jobID,
 			     sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
@@ -2343,7 +2325,6 @@ if ($scriptParameter{pGATKVariantEvalExome} > 0) {  #Run GATK VariantEval for ex
 			       scriptParameterHashRef => \%scriptParameter,
 			       sampleInfoHashRef => \%sampleInfo,
 			       fileInfoHashRef => \%fileInfo,
-			       laneHashRef => \%lane,
 			       infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 			       jobIDHashRef => \%jobID,
 			       sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
@@ -2447,15 +2428,15 @@ sub Sacct {
     
 ##Function : Output SLURM info on each job via Sacct command
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $programName, $familyIDRef, $alignerOutDirRef,
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $programName                => The program name
 ##         : $familyIDRef                => The familyID {REF}
 ##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
-##         : $programName                => The program name
 
     my ($argHashRef) = @_;
     
@@ -2471,15 +2452,18 @@ sub Sacct {
     my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
     my $programName = ${$argHashRef}{programName};
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     programName => $programName,
-	);
-     &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 1;
@@ -2523,14 +2507,14 @@ sub AnalysisRunStatus {
     
 ##Function : Execute last in MAIN chain, tests that all recorded files exists, have a file sixe greater than zero, checks QC-metrics for PASS or FAIL and sets analysis run status flag to finished.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $programName, $familyIDRef,
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $familyIDRef                => The familyID {REF}
 ##         : $programName                => The program name
+##         : $familyIDRef                => The familyID {REF}
 
     my ($argHashRef) = @_;
 
@@ -2538,21 +2522,24 @@ sub AnalysisRunStatus {
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $programName = ${$argHashRef}{programName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $programName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
@@ -2700,7 +2687,7 @@ sub RemoveRedundantFiles {
     
 ##Function : Generates a sbatch script, which removes redundant files.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $laneHashRef, $familyIDRef, $alignerOutDir, $callType, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $laneHashRef, $programName, familyIDRef, $alignerOutDirRef, $callType
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -2708,46 +2695,49 @@ sub RemoveRedundantFiles {
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $laneHashRef                => The lane info hash {REF}
-##         : $familyIDRef                => The familyID
-##         : $alignerOutDirRef           => The alignerOutDir used in the analysis
-##         : $callType                   => The variant call type
 ##         : $programName                => The program name
+##         : $familyIDRef                => The familyID {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $callType                   => The variant call type
 
     my ($argHashRef) = @_;
     
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $callType = ${$argHashRef}{callType} //= "BOTH";
+    my $callType;
     
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
     my $laneHashRef = ${$argHashRef}{laneHashRef};
     my $programName = ${$argHashRef}{programName};
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     laneHashRef => ${$laneHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     programName => $programName,
-	);
-     &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	laneHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$laneHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "BOTH", strict_type => 1, store => \$callType},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 10;
-    my $xargsFileName;
-
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $xargsFileName;
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
@@ -2800,14 +2790,14 @@ sub MultiQC {
     
 ##Function : Aggregate bioinforamtics reports per case
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $programName, $familyIDRef,
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $familyIDRef                => The familyID {REF}
 ##         : $programName                => The program name
+##         : $familyIDRef                => The familyID {REF}
 
     my ($argHashRef) = @_;
    
@@ -2822,14 +2812,17 @@ sub MultiQC {
     my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
     my $programName = ${$argHashRef}{programName};
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     programName => $programName,
-	);
-     &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 1;
@@ -2879,40 +2872,45 @@ sub QCCollect {
     
 ##Function : Collect qc metrics for this analysis run.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $jobIDHashRef, $familyIDRef, $callType, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $programName, familyIDRef, $referencesDirRef, $callType,
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $familyIDRef                => The familyID {REF}
-##         : $callType                   => The variant call type
 ##         : $programName                => The program name
+##         : $familyIDRef                => The familyID {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $callType                   => The variant call type
 
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
-    my $callType = ${$argHashRef}{callType} //= "BOTH";
+    my $callType;
     
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $programName = ${$argHashRef}{programName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $programName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     callType => $callType,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	callType => { default => "BOTH", strict_type => 1, store => \$callType},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -2969,48 +2967,57 @@ sub Evaluation {
     
 ##Function : Compare metrics for this analysis run with the NIST reference dataset.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $jobIDHashRef, $familyIDRef, $sampleIDRef, $callType, $alignerOutDirRef, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $programName, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $callType
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $familyIDRef                => The familyID {REF}
 ##         : $sampleIDRef                => The sampleID {REF}
-##         : $callType                   => The variant call type
-##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $programName                => The program name
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $callType                   => The variant call type
 
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "BOTH";
+    my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
-    
-    ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $programName = ${$argHashRef}{programName};
+    my $callType;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     callType => $callType,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    ## Flatten argument(s)
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $sampleIDRef;
+    my $programName;
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	sampleIDRef => { required => 1, defined => 1, strict_type => 1, store => \$sampleIDRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "BOTH", strict_type => 1, store => \$callType},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
@@ -3256,55 +3263,68 @@ sub RankVariants {
     
 ##Function : Annotate and score variants depending on mendelian inheritance, frequency and phenotype etc.
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName, $programInfoPath, $fileName, $FILEHANDLE, $xargsFileCounter
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $programName, $programInfoPath, $fileName, $FILEHANDLE, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $callType, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $familyIDRef                => The familyIDRef {REF}
-##         : $alignerOutDir              => The alignerOutDir used in the analysis
-##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
 ##         : $fileName                   => File name
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $callType                   => The variant call type
 ##         : $xargsFileCounter           => The xargs file counter
 
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "BOTH";
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+    my $callType;
+    my $xargsFileCounter;
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $programName = ${$argHashRef}{programName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $fileName = ${$argHashRef}{fileName};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $programName;
+    my $programInfoPath;
+    my $fileName;
+    my $FILEHANDLE;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     callType => $callType,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	programInfoPath => { strict_type => 1, store => \$programInfoPath},
+	fileName => { strict_type => 1, store => \$fileName},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "BOTH", strict_type => 1, store => \$callType},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -3609,53 +3629,57 @@ sub GATKVariantEvalExome {
     
 ##Function : GATK VariantEval for exome variants.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $alignerOutDirRef, $callType, $familyIDRef, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $programName, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $callType,
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
-##         : $laneHashRef                => The lane info hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleIDRef                => The sampleID {REF}
+##         : $programName                => The program name {REF}
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
 ##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $callType                   => The variant call type
-##         : $familyIDRef                => The familyID {REF}
-##         : $programName                => The program name {REF}
 
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "BOTH";
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
+    my $callType;
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $programName = ${$argHashRef}{programName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $sampleIDRef;
+    my $programName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     laneHashRef => ${$laneHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     sampleIDRef => $$sampleIDRef,
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     callType => $callType,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "BOTH", strict_type => 1, store => \$callType},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
@@ -3841,53 +3865,52 @@ sub GATKVariantEvalAll {
     
 ##Function : GATK VariantEval for all variants.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $sampleIDRef, $alignerOutDirRef, $callType, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $programName, 
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
-##         : $laneHashRef                => The lane info hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $familyIDRef                => The familyID {REF}
 ##         : $sampleIDRef                => The sampleID {REF}
-##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
-##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "BOTH";
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    
-    ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $programName = ${$argHashRef}{programName};
+    my $callType;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     laneHashRef => ${$laneHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     sampleIDRef => $$sampleIDRef,
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     callType => $callType,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    ## Flatten argument(s)
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $sampleIDRef;
+    my $programName;
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "BOTH", strict_type => 1, store => \$callType},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
@@ -4005,55 +4028,67 @@ sub SnpEff {
     
 ##Function : SnpEff annotates variants from different sources.
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName, $programInfoPath, $fileName, $FILEHANDLE, $xargsFileCounter
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $programName, $programInfoPath, $fileName, $FILEHANDLE, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $callType, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $familyIDRef                => The familyID {REF}
-##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
-##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
 ##         : $fileName                   => File name
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
-##         : $xargsFileCounter           => The xargs file counter
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $callType                   => The variant call type
 
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "BOTH";
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+    my $callType;
+    my $xargsFileCounter;
     
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $fileName = ${$argHashRef}{fileName};
-    my $programName = ${$argHashRef}{programName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $programName;
+    my $programInfoPath;
+    my $fileName;
+    my $FILEHANDLE;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     callType => $callType,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	programInfoPath => { strict_type => 1, store => \$programInfoPath},
+	fileName => {  strict_type => 1, store => \$fileName},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "BOTH", strict_type => 1, store => \$callType},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -4347,7 +4382,7 @@ sub Annovar {
     
 ##Function : Annotate and filter SNVs by gene, region and databases.
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $annovarTableHashRef, $familyID, $alignerOutDir, $callType, $programName, $fileName, $programInfoPath, $FILEHANDLE, $xargsFileCounter
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $annovarTableHashRef, $programName, $programInfoPath, $fileName, $FILEHANDLE, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $callType, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -4355,48 +4390,61 @@ sub Annovar {
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $annovarTableHashRef        => annovarTableHashRef {REF}
-##         : $familyIDRef                => The familyID {REF}
-##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
-##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
 ##         : $fileName                   => File name
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $callType                   => The variant call type
 ##         : $xargsFileCounter           => The xargs file counter
 
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "BOTH";
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+    my $callType;
+    my $xargsFileCounter;
     
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $annovarTableHashRef = ${$argHashRef}{annovarTableHashRef};
-    my $fileName = ${$argHashRef}{fileName};
-    my $programName = ${$argHashRef}{programName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $annovarTableHashRef;
+    my $programName;
+    my $programInfoPath;
+    my $fileName;
+    my $FILEHANDLE;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     callType => $callType,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	annovarTableHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$annovarTableHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	programInfoPath => { strict_type => 1, store => \$programInfoPath},
+	fileName => { strict_type => 1, store => \$fileName},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "BOTH", strict_type => 1, store => \$callType},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -4596,55 +4644,68 @@ sub VCFParser {
     
 ##Function : VCFParser performs parsing of VariantEffectPredictor annotated variants
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName, $fileName, $programInfoPath, $FILEHANDLE, $xargsFileCounter
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $programName, $programInfoPath, $fileName, $FILEHANDLE, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $callType, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $familyIDRef                => The familyID {REF}
-##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
-##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
 ##         : $fileName                   => File name
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $callType                   => The variant call type
 ##         : $xargsFileCounter           => The xargs file counter
 
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "BOTH";
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+    my $callType;
+    my $xargsFileCounter;
     
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $fileName = ${$argHashRef}{fileName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $programName = ${$argHashRef}{programName};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $programInfoPath;
+    my $programName;
+    my $fileName;
+    my $FILEHANDLE;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     callType => $callType,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	programInfoPath => { strict_type => 1, store => \$programInfoPath},
+	fileName => {  strict_type => 1, store => \$fileName},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "BOTH", strict_type => 1, store => \$callType},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
@@ -4879,57 +4940,71 @@ sub VariantEffectPredictor {
     
 ##Function : VariantEffectPredictor performs annotation of variants.
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName, $programInfoPath, $fileName, $FILEHANDLE, $xargsFileCounter
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $programName, $programInfoPath, $fileName, $stderrPath, $FILEHANDLE, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $callType, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $familyIDRef                => The familyID {REF}
-##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
-##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
 ##         : $fileName                   => File name
-##         : $FILEHANDLE                 => Sbatch filehandle to write to
-##         : $xargsFileCounter           => The xargs file counter
 ##         : $stderrPath                 => The stderr path of the block script
+##         : $FILEHANDLE                 => Sbatch filehandle to write to
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $callType                   => The variant call type
+##         : $xargsFileCounter           => The xargs file counter
 
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "BOTH";
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+    my $callType;
+    my $xargsFileCounter;
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $fileName = ${$argHashRef}{fileName};
-    my $programName = ${$argHashRef}{programName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $stderrPath = ${$argHashRef}{stderrPath};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $programName;
+    my $programInfoPath;
+    my $fileName;
+    my $stderrPath;
+    my $FILEHANDLE;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     callType => $callType,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	programInfoPath => { strict_type => 1, store => \$programInfoPath},
+	fileName => { strict_type => 1, store => \$fileName},
+	stderrPath => { strict_type => 1, store => \$stderrPath},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "BOTH", strict_type => 1, store => \$callType},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -4999,7 +5074,7 @@ sub VariantEffectPredictor {
     my $assemblyVersion = ${$fileInfoHashRef}{humanGenomeReferenceSource}.${$fileInfoHashRef}{humanGenomeReferenceVersion};
     
     ## Alias genome source and version to be compatible with VEP
-    &AliasAssemblyVersion({assemblyVersion => \$assemblyVersion
+    &AliasAssemblyVersion({assemblyVersionRef => \$assemblyVersion
 			  });
     
     ## Create file commands for xargs
@@ -5398,7 +5473,6 @@ sub GATKPhaseByTransmission {
     &GATKPedigreeFlag({scriptParameterHashRef => $scriptParameterHashRef,
 		       FILEHANDLE => $FILEHANDLE,
 		       outFamilyFileDirectory => $outFamilyFileDirectory,
-		       pedigreeValidationType => "SILENT",
 		       programName => $programName,
 		      });
 
@@ -5434,46 +5508,54 @@ sub SampleCheck {
     
 ##Function : Tests sample for correct relatives (only performed for samples with relatives defined in pedigree file) performed on sequence data.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName
-##         : $parameterHashRef       => The parameter hash {REF}
-##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
-##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
-##         : $fileInfoHashRef        => The fileInfo hash {REF}
-##         : $jobIDHashRef           => The jobID hash {REF}
-##         : $familyIDRef            => The familyID {REF}
-##         : $alignerOutDirRef       => The alignerOutDir used in the analysis {REF}
-##         : $callType               => The variant call type
-##         : $programName            => The program name
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $programName, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $callType
+##         : $parameterHashRef           => The parameter hash {REF}
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $fileInfoHashRef            => The fileInfo hash {REF}
+##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $programName                => The program name
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $callType                   => The variant call type
 
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "BOTH";
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    
-    ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $programName = ${$argHashRef}{programName};
+    my $callType;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     callType => $callType,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    ## Flatten argument(s)
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $programName;
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "BOTH", strict_type => 1, store => \$callType},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -5532,6 +5614,7 @@ sub SampleCheck {
 							 javaTemporaryDirectory => $$tempDirectoryRef,
 							 javaJar => catfile(${$scriptParameterHashRef}{genomeAnalysisToolKitPath}, "GenomeAnalysisTK.jar"),
 							});
+
     foreach my $sampleID (@{${$scriptParameterHashRef}{sampleIDs}}) {
 	
 	print $XARGSFILEHANDLE "-T SelectVariants ";  #Type of analysis to run
@@ -5613,7 +5696,7 @@ sub SampleCheck {
     print $FILEHANDLE "> ".catfile($outFamilyDirectory, $$familyIDRef.".sexcheck")." ";
     say $FILEHANDLE "\n";
 
-    if ( (${$scriptParameterHashRef}{pSampleCheck} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 
 	## Collect QC metadata info for later use                                                                                               
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -5661,7 +5744,7 @@ sub SampleCheck {
 	print $FILEHANDLE "--matrix ";  #Create a N x N matrix of genome-wide average IBS pairwise identities
 	say $FILEHANDLE "--out ".catfile($outFamilyDirectory, $$familyIDRef), "\n";  #OutFile
 	
-	if ( (${$scriptParameterHashRef}{pSampleCheck} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 	    
 	    ## Collect QC metadata info for later use                                                                                               
 	    &SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -5696,56 +5779,71 @@ sub VT {
     
 ##Function : Split multi allelic records into single records and normalize
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $fileName, $programName, $programInfoPath, $FILEHANDLE, $xargsFileCounter, $stderrPath
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $programName, $programInfoPath, $fileName, $stderrPath, $FILEHANDLE, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $callType, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $familyIDRef                => The familyID {REF}
-##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
-##         : $callType                   => The variant call type
-##         : $fileName                   => File name
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
-##         : $FILEHANDLE                 => Filehandle to write to
-##         : $xargsFileCounter           => The xargs file counter
+##         : $fileName                   => File name
 ##         : $stderrPath                 => The stderr path of the block script
+##         : $FILEHANDLE                 => Filehandle to write to
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $callType                   => The variant call type
+##         : $xargsFileCounter           => The xargs file counter
 
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "BOTH";
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+    my $callType;
+    my $xargsFileCounter;
     
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $fileName = ${$argHashRef}{fileName};
-    my $programName = ${$argHashRef}{programName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $stderrPath = ${$argHashRef}{stderrPath};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $programName;
+    my $programInfoPath;
+    my $fileName;
+    my $stderrPath;
+    my $FILEHANDLE;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	programInfoPath => { strict_type => 1, store => \$programInfoPath},
+	fileName => { strict_type => 1, store => \$fileName},
+	stderrPath => { strict_type => 1, store => \$stderrPath},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "BOTH", strict_type => 1, store => \$callType},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -5937,56 +6035,71 @@ sub PrepareForVariantAnnotationBlock {
     
 ##Function : Copy files for VariantAnnotationBlock to enable restart and skip of modules within block
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $fileName, $programName, $programInfoPath, $FILEHANDLE, $xargsFileCounter, $stderrPath
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $programName, $programInfoPath, $fileName, $stderrPath, $FILEHANDLE, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $callType, $xargsFileCounter 
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $familyIDRef                => The familyID {REF}
-##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
-##         : $callType                   => The variant call type
-##         : $fileName                   => File name
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
-##         : $FILEHANDLE                 => Filehandle to write to
-##         : $xargsFileCounter           => The xargs file counter
+##         : $fileName                   => File name
 ##         : $stderrPath                 => The stderr path of the block script
+##         : $FILEHANDLE                 => Filehandle to write to
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $callType                   => The variant call type
+##         : $xargsFileCounter           => The xargs file counter
 
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "BOTH";
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+    my $callType;
+    my $xargsFileCounter;
     
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $fileName = ${$argHashRef}{fileName};
-    my $programName = ${$argHashRef}{programName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $stderrPath = ${$argHashRef}{stderrPath};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $programName;
+    my $programInfoPath;
+    my $fileName;
+    my $stderrPath;
+    my $FILEHANDLE;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	programInfoPath => { strict_type => 1, store => \$programInfoPath},
+	fileName => { strict_type => 1, store => \$fileName},
+	stderrPath => { strict_type => 1, store => \$stderrPath},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "BOTH", strict_type => 1, store => \$callType},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -6108,47 +6221,54 @@ sub GATKCombineVariantCallSets {
     
 ##Function : GATK CombineVariants to combine all variants call from different callers.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $programName, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $callType
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $programName                => The program name
 ##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
 ##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $callType                   => The variant call type
-##         : $programName                => The program name
 
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "BOTH";
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
+    my $callType;
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $programName = ${$argHashRef}{programName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $programName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     callType => $callType,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "BOTH", strict_type => 1, store => \$callType},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my @variantCallers;  #Stores callers that have been executed
@@ -6289,46 +6409,54 @@ sub GATKVariantReCalibration {
     
 ##Function : GATK VariantRecalibrator/ApplyRecalibration.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName
-##         : $parameterHashRef       => The parameter hash {REF}
-##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
-##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
-##         : $fileInfoHashRef        => The fileInfo hash {REF}
-##         : $jobIDHashRef           => The jobID hash {REF}
-##         : $familyIDRef            => The familyID {REF}
-##         : $alignerOutDirRef       => The alignerOutDir used in the analysis {REF}
-##         : $callType               => The variant call type
-##         : $programName            => The program name
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $programName, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $callType
+##         : $parameterHashRef           => The parameter hash {REF}
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $fileInfoHashRef            => The fileInfo hash {REF}
+##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $programName                => The program name
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $callType                   => The variant call type
 
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "BOTH";
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    
-    ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $programName = ${$argHashRef}{programName};
+    my $callType;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     callType => $callType,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    ## Flatten argument(s)
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $programName;
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "BOTH", strict_type => 1, store => \$callType},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
@@ -6454,7 +6582,6 @@ sub GATKVariantReCalibration {
 	&GATKPedigreeFlag({scriptParameterHashRef => $scriptParameterHashRef,
 			   FILEHANDLE => $FILEHANDLE,
 			   outFamilyFileDirectory => $outFamilyFileDirectory,
-			   pedigreeValidationType => "SILENT",
 			   programName => $programName,
 			  });
 	
@@ -6500,7 +6627,6 @@ sub GATKVariantReCalibration {
 	&GATKPedigreeFlag({scriptParameterHashRef => $scriptParameterHashRef,
 			   FILEHANDLE => $FILEHANDLE,
 			   outFamilyFileDirectory => $outFamilyFileDirectory,
-			   pedigreeValidationType => "SILENT",
 			   programName => $programName,
 			  });
  
@@ -6592,7 +6718,6 @@ sub GATKVariantReCalibration {
 	&GATKPedigreeFlag({scriptParameterHashRef => $scriptParameterHashRef,
 			   FILEHANDLE => $FILEHANDLE,
 			   outFamilyFileDirectory => $outFamilyFileDirectory,
-			   pedigreeValidationType => "SILENT",
 			   programName => $programName,
 			  });
 
@@ -6673,50 +6798,49 @@ sub GATKConcatenateGenoTypeGVCFs {
     
 ##Function : Concatenate GVCFs produced after GATKGenoTypeGVCFs done per contig. 
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $laneHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName
-##         : $parameterHashRef       => The parameter hash {REF}
-##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
-##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
-##         : $fileInfoHashRef        => The fileInfo hash {REF}
-##         : $laneHashRef            => The lane info hash {REF}
-##         : $jobIDHashRef           => The jobID hash {REF}
-##         : $familyIDRef            => The familyID {REF}
-##         : $alignerOutDirRef       => The alignerOutDir used in the analysis {REF}
-##         : $callType               => The variant call type
-##         : $programName            => The program name
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $programName
+##         : $parameterHashRef           => The parameter hash {REF}
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $fileInfoHashRef            => The fileInfo hash {REF}
+##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $programName                => The program name
 
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "BOTH";
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
+    my $callType;
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $programName = ${$argHashRef}{programName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $programName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     laneHashRef => ${$laneHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     callType => $callType,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, "GATKConcatenateGenoTypeGVCFs");  #Special case
-
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "BOTH", strict_type => 1, store => \$callType},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
@@ -6798,49 +6922,52 @@ sub GATKGenoTypeGVCFs {
     
 ##Function : GATK GenoTypeGVCFs. 
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $laneHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName
-##         : $parameterHashRef       => The parameter hash {REF}
-##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
-##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
-##         : $fileInfoHashRef        => The fileInfo hash {REF}
-##         : $laneHashRef            => The lane info hash {REF}
-##         : $jobIDHashRef           => The jobID hash {REF}
-##         : $familyIDRef            => The familyID {REF}
-##         : $alignerOutDirRef       => The alignerOutDir used in the analysis {REF}
-##         : $callType               => The variant call type
-##         : $programName            => The program name
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName
+##         : $parameterHashRef           => The parameter hash {REF}
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $fileInfoHashRef            => The fileInfo hash {REF}
+##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $familyIDRef                => The familyID {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $callType                   => The variant call type
+##         : $programName                => The program name
 
     my ($argHashRef) = @_;
     
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "BOTH";
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
+    my $callType;
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $programName = ${$argHashRef}{programName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $programName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     laneHashRef => ${$laneHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     callType => $callType,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "BOTH", strict_type => 1, store => \$callType},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $sbatchScriptTracker=0;
@@ -6923,7 +7050,6 @@ sub GATKGenoTypeGVCFs {
 	&GATKPedigreeFlag({scriptParameterHashRef => $scriptParameterHashRef,
 			   FILEHANDLE => $FILEHANDLE,
 			   outFamilyFileDirectory => $outFamilyFileDirectory,
-			   pedigreeValidationType => "SILENT",
 			   programName => $programName,
 			  });
 
@@ -7065,19 +7191,20 @@ sub GenomeCoverageBED {
     
 ##Function : Calculates coverage on BAM files.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $familyIDRef, $sampleID, $alignerOutDir, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $programName, familyIDRef, $tempDirectoryRef, $alignerOutDirRef
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
-##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $familyIDRef                => The familyID {REF}
-##         : $sampleID                   => The sampleID
-##         : $alignerOutDir              => The alignerOutDir used in the analysis
+##         : $sampleIDRef                => The sampleIDRef
 ##         : $programName                => The program name
-    
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+
+
     my ($argHashRef) = @_;
 
     ## Default(s)
@@ -7086,30 +7213,30 @@ sub GenomeCoverageBED {
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infileHashRef = ${$argHashRef}{infileHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $programName = ${$argHashRef}{programName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $sampleIDRef;
+    my $programName;
     
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} },  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{$$sampleIDRef},  #Any MIP mandatory key will do
-			     laneHashRef => ${$laneHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     sampleIDRef => $$sampleIDRef,
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     programName => $programName,
-	);
-    
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $fileName;
@@ -7186,17 +7313,19 @@ sub PicardToolsCalculateHSMetrics {
     
 ##Function : Calculates coverage on exonic part of BAM files.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $programName, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
-##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $sampleID                   => The sampleID
-##         : $alignerOutDir              => The alignerOutDir used in the analysis
+##         : $sampleIDRef                => The sampleID
 ##         : $programName                => The program name
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 
     my ($argHashRef) = @_;
  
@@ -7207,27 +7336,31 @@ sub PicardToolsCalculateHSMetrics {
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
     
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $programName = ${$argHashRef}{programName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $sampleIDRef;
+    my $programName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     laneHashRef => ${$laneHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $fileName;
@@ -7304,7 +7437,7 @@ sub PicardToolsCalculateHSMetrics {
 			 });
     say $FILEHANDLE "wait", "\n";
     
-    if ( (${$scriptParameterHashRef}{pPicardToolsCalculateHSMetrics} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 
 	## Collect QC metadata info for later use
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -7340,17 +7473,19 @@ sub PicardToolsCollectMultipleMetrics {
     
 ##Function : Calculates coverage and alignment metrics on BAM files.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleIDRef, $alignerOutDirRef, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $programName, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
-##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleIDRef                => The sampleID
-##         : $alignerOutDirRef           => The alignerOutDir used in the analysis
 ##         : $programName                => The program name
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 
     my ($argHashRef) = @_;
 
@@ -7361,27 +7496,31 @@ sub PicardToolsCollectMultipleMetrics {
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $programName = ${$argHashRef}{programName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $sampleIDRef;
+    my $programName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     laneHashRef => ${$laneHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $fileName;
@@ -7452,7 +7591,7 @@ sub PicardToolsCollectMultipleMetrics {
 			 });
     say $FILEHANDLE "wait", "\n";
     
-    if ( (${$scriptParameterHashRef}{pPicardToolsCollectMultipleMetrics} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 	
 	## Collect QC metadata info for later use                                                                                             
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -7488,18 +7627,19 @@ sub ChanjoSexCheck {
     
 ##Function : Predict gender from BAM files.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleIDRef, $alignerOutDirRef, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $programName, familyIDRef, $tempDirectoryRef, $alignerOutDirRef
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
-##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleIDRef                => The sampleID {REF}
-##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $programName                => The program name
-    
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+
     my ($argHashRef) = @_;
 
     ## Default(s)
@@ -7508,27 +7648,30 @@ sub ChanjoSexCheck {
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $programName = ${$argHashRef}{programName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $sampleIDRef;
+    my $programName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     laneHashRef => ${$laneHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $fileName;      
@@ -7572,7 +7715,7 @@ sub ChanjoSexCheck {
     print $FILEHANDLE catfile($inSampleDirectory, $infile.$infileTag.".bam")." ";  #InFile
     say $FILEHANDLE "> ".catfile($outSampleDirectory, $infile.$outfileTag), "\n";  #OutFile
     
-    if ( (${$scriptParameterHashRef}{pChanjoSexCheck} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 	
 	## Collect QC metadata info for later use
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -7617,17 +7760,20 @@ sub SambambaDepth {
     
 ##Function : Generate coverage bed outfile for each individual.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleIDRef, $alignerOutDirRef, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $programName, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
-##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleIDRef                => The sampleID {REF}
 ##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $programName                => The program name
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 
     my ($argHashRef) = @_;
 
@@ -7638,27 +7784,31 @@ sub SambambaDepth {
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $programName = ${$argHashRef}{programName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $sampleIDRef;
+    my $programName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     laneHashRef => ${$laneHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $fileName;
@@ -7736,7 +7886,7 @@ sub SambambaDepth {
 			 });
     say $FILEHANDLE "wait", "\n";
     
-    if ( (${$scriptParameterHashRef}{pSambambaDepth} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 	
 	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{Program}{$programName}{$infile}{Bed}{Path} = catfile($outSampleDirectory, $infile.$outfileTag.".bed");
     }
@@ -7764,7 +7914,7 @@ sub SVRankVariants {
     
 ##Function : Annotate and score SV variants depending on mendelian inheritance, frequency and phenotype etc.
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName, $programInfoPath, $fileName, $FILEHANDLE, $xargsFileCounter
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $programName, $programInfoPath, $fileName, $FILEHANDLE, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $callType, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -7772,50 +7922,59 @@ sub SVRankVariants {
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $familyIDRef                => The familyIDRef {REF}
-##         : $alignerOutDir              => The alignerOutDir used in the analysis
 ##         : $callType                   => The variant call type
 ##         : $programName                => The program name
-##         : $programInfoPath            => The program info path
 ##         : $fileName                   => File name
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $callType                   => The variant call type
 ##         : $xargsFileCounter           => The xargs file counter
 
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "SV";
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+    my $callType;
+    my $xargsFileCounter;
     
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $programName = ${$argHashRef}{programName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $fileName = ${$argHashRef}{fileName};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $programName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     callType => $callType,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
-
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "SV", strict_type => 1, store => \$callType},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $xargsFileName;
     my $time = 20;
 
     ## Set the number of cores
@@ -7823,24 +7982,18 @@ sub SVRankVariants {
     my $genModnrCores = &NrofCoresPerSbatch({scriptParameterHashRef => $scriptParameterHashRef,
 					     nrCores => 16
 					    });  #Detect the number of cores to use per genmod process.
-    my $xargsFileName;
 
-    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
-	
-	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    
-	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
-							       jobIDHashRef => $jobIDHashRef,
-							       FILEHANDLE => $FILEHANDLE,
-							       directoryID => $$familyIDRef,
-							       programName => $programName,
-							       programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
-							       nrofCores => $nrCores,
-							       processTime => 10,
-							       tempDirectory => $$tempDirectoryRef
-							      });
-    }
+    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    my ($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
+							      jobIDHashRef => $jobIDHashRef,
+							      FILEHANDLE => $FILEHANDLE,
+							      directoryID => $$familyIDRef,
+							      programName => $programName,
+							      programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
+							      nrofCores => $nrCores,
+							      processTime => 10,
+							      tempDirectory => $$tempDirectoryRef
+							     });
 
     ## Assign directories
     my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
@@ -8091,76 +8244,77 @@ sub SVVCFParser {
     
 ##Function : SVVCFParser performs parsing of VariantEffectPredictor annotated variants
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName, $fileName, $programInfoPath, $FILEHANDLE, $xargsFileCounter
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $programName, $fileName, $programInfoPath, $FILEHANDLE, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $callType, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $programName                => The program name
+##         : $FILEHANDLE                 => Sbatch filehandle to write to
 ##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
 ##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $callType                   => The variant call type
-##         : $programName                => The program name
-##         : $programInfoPath            => The program info path
-##         : $fileName                   => File name
-##         : $FILEHANDLE                 => Sbatch filehandle to write to
 ##         : $xargsFileCounter           => The xargs file counter
 
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "SV";
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+    my $callType;
+    my $xargsFileCounter;
     
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $fileName = ${$argHashRef}{fileName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $programName = ${$argHashRef}{programName};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $programName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     callType => $callType,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "SV", strict_type => 1, store => \$callType},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 20;
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargsFileName;
-
-    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
- 
-	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-
-	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header    
-	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
-							       jobIDHashRef => $jobIDHashRef,
-							       FILEHANDLE => $FILEHANDLE,
-							       directoryID => $$familyIDRef,
-							       programName => $programName,
-							       programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
-							       callType => $callType,
-							       tempDirectory => $$tempDirectoryRef,
-							      });
-    }
+    
+    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header    
+    my ($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
+							      jobIDHashRef => $jobIDHashRef,
+							      FILEHANDLE => $FILEHANDLE,
+							      directoryID => $$familyIDRef,
+							      programName => $programName,
+							      programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
+							      callType => $callType,
+							      tempDirectory => $$tempDirectoryRef,
+							     });
 
     ## Assign directories
     my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
@@ -8360,67 +8514,69 @@ sub SVVariantEffectPredictor {
     
 ##Function : SV VariantEffectPredictor performs annotation of SV variants.
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName, $programInfoPath, $fileName, $FILEHANDLE, $xargsFileCounter
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $programName, $programInfoPath, $fileName, $FILEHANDLE, $stderrPath, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $callType, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $familyIDRef                => The familyID {REF}
-##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
-##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
 ##         : $fileName                   => File name
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
-##         : $xargsFileCounter           => The xargs file counter
 ##         : $stderrPath                 => The stderr path of the block script
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $callType                   => The variant call type
+##         : $xargsFileCounter           => The xargs file counter
 
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "SV";
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;    
+    my $callType;
+    my $xargsFileCounter;
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $fileName = ${$argHashRef}{fileName};
-    my $programName = ${$argHashRef}{programName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $stderrPath = ${$argHashRef}{stderrPath};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $programName;
+    my $stderrPath;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     callType => $callType,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "SV", strict_type => 1, store => \$callType},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 20;
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargsFileName;
-
-    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
-
-	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    }
-
     my $nrForkes = 4;  #VariantEffectPredictor forks
 
     ## Set the number of cores to allocate per sbatch job.
@@ -8430,17 +8586,17 @@ sub SVVariantEffectPredictor {
     $nrCores = floor($nrCores / $nrForkes);  #Adjust for the number of forks 
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    ($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
-							   jobIDHashRef => $jobIDHashRef,
-							   FILEHANDLE => $FILEHANDLE,
-							   directoryID => $$familyIDRef,
-							   programName => $programName,
-							   programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
-							   callType => $callType,
-							   nrofCores => ${$scriptParameterHashRef}{maximumCores},
-							   processTime => 10,
-							   tempDirectory => $$tempDirectoryRef
-							  });
+    my ($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
+							      jobIDHashRef => $jobIDHashRef,
+							      FILEHANDLE => $FILEHANDLE,
+							      directoryID => $$familyIDRef,
+							      programName => $programName,
+							      programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
+							      callType => $callType,
+							      nrofCores => ${$scriptParameterHashRef}{maximumCores},
+							      processTime => 10,
+							      tempDirectory => $$tempDirectoryRef
+							     });
     $stderrPath = $programInfoPath.".stderr.txt";
 
     my ($volume, $directories, $stderrFile) = File::Spec->splitpath($stderrPath);  #Split to enable submission to &SampleInfoQC later
@@ -8484,7 +8640,7 @@ sub SVVariantEffectPredictor {
     my $assemblyVersion = ${$fileInfoHashRef}{humanGenomeReferenceSource}.${$fileInfoHashRef}{humanGenomeReferenceVersion};
 
     ## Alias genome source and version to be compatible with VEP
-    &AliasAssemblyVersion({assemblyVersion => \$assemblyVersion
+    &AliasAssemblyVersion({assemblyVersionRef => \$assemblyVersion
 			  });
 
     ## Create file commands for xargs
@@ -8620,50 +8776,54 @@ sub SVCombineVariantCallSets {
     
 ##Function : CombineVariants to combine all structural variants call from different callers.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $programName, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $callType
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
-##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $programName                => The program name
 ##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
 ##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $callType                   => The variant call type
-##         : $programName                => The program name
 
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "SV";
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    
-    ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $programName = ${$argHashRef}{programName};
+    my $callType;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     laneHashRef => ${$laneHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] }, #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     callType => $callType,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    ## Flatten argument(s)
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $programName;
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "SV", strict_type => 1, store => \$callType},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my @structuralVariantCallers;  #Stores callers that have been executed
@@ -8821,7 +8981,6 @@ sub SVCombineVariantCallSets {
 
     ## Writes sbatch code to supplied filehandle to sort variants in vcf format
     &SortVcf({scriptParameterHashRef => $scriptParameterHashRef,
-	      fileInfoHashRef => $fileInfoHashRef,
 	      FILEHANDLE => $FILEHANDLE,
 	      sequenceDictFile => catfile($$referencesDirRef, ${$fileInfoHashRef}{humanGenomeReferenceNameNoEnding}.".dict"),
 	      infile => catfile($$tempDirectoryRef, $$familyIDRef."_".$callType.".vcf")." ",
@@ -8975,19 +9134,21 @@ sub CNVnator {
     
 ##Function : Call structural variants using CNVnator
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName, $programInfoPath
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $programName, $programInfoPath, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
-##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $sampleID                   => The sampleID
-##         : $alignerOutDir              => The alignerOutDir used in the analysis
+##         : $sampleIDRef                => The sampleID
 ##         : $programName                => The program name
-##         : $programInfoPath            => The program info path
-    
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $xargsFileCounter           => The xargs file counter
+
     my ($argHashRef) = @_;
 
     ## Default(s)
@@ -8995,33 +9156,38 @@ sub CNVnator {
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+    my $xargsFileCounter;
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $fileName = ${$argHashRef}{fileName};
-    my $programName = ${$argHashRef}{programName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $sampleIDRef;
+    my $programName;
+    my $FILEHANDLE;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     laneHashRef => ${$laneHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
     my $programOutDirectoryName = ${$parameterHashRef}{"p".$programName}{outDirectoryName};
@@ -9030,22 +9196,19 @@ sub CNVnator {
     my $time = 30;
     my $xargsFileName;
 
-    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
- 
-	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-	
-	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
-							       jobIDHashRef => $jobIDHashRef,
-							       FILEHANDLE => $FILEHANDLE,
-							       directoryID => $$sampleIDRef,
-							       programName => $programName,
-							       programDirectory => catfile(lc($$alignerOutDirRef), "gatk", lc($programOutDirectoryName)),
-							       nrofCores => $nrCores,
-							       processTime => $time,
-							       tempDirectory => $$tempDirectoryRef
-							      });
-    }
+    $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    
+    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    my ($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
+							      jobIDHashRef => $jobIDHashRef,
+							      FILEHANDLE => $FILEHANDLE,
+							      directoryID => $$sampleIDRef,
+							      programName => $programName,
+							      programDirectory => catfile(lc($$alignerOutDirRef), "gatk", lc($programOutDirectoryName)),
+							      nrofCores => $nrCores,
+							      processTime => $time,
+							      tempDirectory => $$tempDirectoryRef
+							     });
 
     ## Assign directories
     my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk");
@@ -9056,7 +9219,7 @@ sub CNVnator {
     my $infileTag = ${$fileInfoHashRef}{ $$familyIDRef }{$$sampleIDRef}{pGATKBaseRecalibration}{fileTag};
     my $outfileTag = ${$fileInfoHashRef}{ $$familyIDRef }{$$sampleIDRef}{"p".$programName}{fileTag};
 
-    my $coreCounter=1;
+    my $coreCounter = 1;
 
     ## Add merged infile name after merging all BAM files per sampleID
     my $infile = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MergeInfile};  #Alias
@@ -9144,7 +9307,7 @@ sub CNVnator {
 	print $XARGSFILEHANDLE "1> ".$xargsFileName.".".$$contigRef.".stdout.txt ";  #Redirect xargs output to program specific stdout file
 	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	print $XARGSFILEHANDLE "; ";
-	
+
 	&CNVnatorHis({rootFile => $rootFile,
 		      contigRef => $contigRef,
 		      cnvBinSizeRef => \${$scriptParameterHashRef}{cnvBinSize},
@@ -9236,19 +9399,21 @@ sub Delly {
     
 ##Function : Call structural variants using Delly
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName, $programInfoPath
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $programName, $programInfoPath, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
-##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $sampleID                   => The sampleID
-##         : $alignerOutDir              => The alignerOutDir used in the analysis
+##         : $sampleIDRef                => The sampleID
 ##         : $programName                => The program name
-##         : $programInfoPath            => The program info path
-    
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $xargsFileCounter           => The xargs file counter
+
     my ($argHashRef) = @_;
 
     ## Default(s)
@@ -9256,33 +9421,38 @@ sub Delly {
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+    my $xargsFileCounter;
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $fileName = ${$argHashRef}{fileName};
-    my $programName = ${$argHashRef}{programName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $sampleIDRef;
+    my $programName;
+    my $FILEHANDLE;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     laneHashRef => ${$laneHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
     my $programOutDirectoryName = ${$parameterHashRef}{"p".$programName}{outDirectoryName};
@@ -9291,23 +9461,20 @@ sub Delly {
     my $time = 30;
     my $xargsFileName;
 
-    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
- 
-	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-	
-	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
-							       jobIDHashRef => $jobIDHashRef,
-							       FILEHANDLE => $FILEHANDLE,
-							       directoryID => $$sampleIDRef,
-							       programName => $programName,
-							       programDirectory => catfile(lc($$alignerOutDirRef), "gatk", lc($programOutDirectoryName)),
-							       nrofCores => $nrCores,
-							       processTime => $time,
-							       tempDirectory => $$tempDirectoryRef
-							      });
-    }
-
+    $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    
+    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    my ($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
+							      jobIDHashRef => $jobIDHashRef,
+							      FILEHANDLE => $FILEHANDLE,
+							      directoryID => $$sampleIDRef,
+							      programName => $programName,
+							      programDirectory => catfile(lc($$alignerOutDirRef), "gatk", lc($programOutDirectoryName)),
+							      nrofCores => $nrCores,
+							      processTime => $time,
+							      tempDirectory => $$tempDirectoryRef
+							     });
+    
     ## Assign directories
     my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk");
     my $outSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk", $programOutDirectoryName);
@@ -9320,7 +9487,7 @@ sub Delly {
     ## Removes an element from array and return new array while leaving orginal arrayRef untouched
     my @contigs = &RemoveElementFromArray({arrayRef => \@{${$fileInfoHashRef}{contigsSizeOrdered}},
 					   element => "MT",
-					   contigSwitch => "yes",
+					   contigSwitch => 1,
 					  });
     
     ## Add merged infile name after merging all BAM files per sampleID
@@ -9415,7 +9582,6 @@ sub Delly {
     
     ## Writes sbatch code to supplied filehandle to sort variants in vcf format
     &SortVcf({scriptParameterHashRef => $scriptParameterHashRef,
-	      fileInfoHashRef => $fileInfoHashRef,
 	      FILEHANDLE => $FILEHANDLE,
 	      sequenceDictFile => catfile($$referencesDirRef, ${$fileInfoHashRef}{humanGenomeReferenceNameNoEnding}.".dict"),
 	      infile => catfile($$tempDirectoryRef, $infile.$outfileTag."_concat.vcf"),
@@ -9471,51 +9637,56 @@ sub Manta {
 
 ##Manta
     
-##Function : Joint analysis
+##Function : Joint analysis of structural variation
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDirRef, $callType, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $programName, $familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $callType
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
-##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $programName                => The program name
 ##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
 ##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $callType                   => The variant call type
-##         : $programName                => The program name
 
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "SV";
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
+    my $callType;
     
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $programName = ${$argHashRef}{programName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $programName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     laneHashRef => ${$laneHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] }, #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "SV", strict_type => 1, store => \$callType},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
     my $time = 30;
@@ -9643,18 +9814,18 @@ sub FindTranslocations {
     
 ##Function : Call structural variants using FindTranslocations
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName, $programInfoPath
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
-##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $sampleID                   => The sampleID
-##         : $alignerOutDir              => The alignerOutDir used in the analysis
-##         : $programName                => The program name
-##         : $programInfoPath            => The program info path
+##         : $sampleIDRef                => The sampleID
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
     
     my ($argHashRef) = @_;
 
@@ -9663,33 +9834,33 @@ sub FindTranslocations {
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
     
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $fileName = ${$argHashRef}{fileName};
-    my $programName = ${$argHashRef}{programName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $sampleIDRef;
+    my $programName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     laneHashRef => ${$laneHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $nrCores = 2;
     my $programOutDirectoryName = ${$parameterHashRef}{"p".$programName}{outDirectoryName};
@@ -9698,23 +9869,20 @@ sub FindTranslocations {
     my $time = 30;
     my $xargsFileName;
 
-    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
- 
-	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-	
-	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
-							       jobIDHashRef => $jobIDHashRef,
-							       FILEHANDLE => $FILEHANDLE,
-							       directoryID => $$sampleIDRef,
-							       programName => $programName,
-							       programDirectory => catfile(lc($$alignerOutDirRef), "gatk", lc($programOutDirectoryName)),
-							       nrofCores => $nrCores,
-							       processTime => $time,
-							       tempDirectory => $$tempDirectoryRef
-							      });
-    }
-
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    
+    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    my ($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
+							      jobIDHashRef => $jobIDHashRef,
+							      FILEHANDLE => $FILEHANDLE,
+							      directoryID => $$sampleIDRef,
+							      programName => $programName,
+							      programDirectory => catfile(lc($$alignerOutDirRef), "gatk", lc($programOutDirectoryName)),
+							      nrofCores => $nrCores,
+							      processTime => $time,
+							      tempDirectory => $$tempDirectoryRef
+							     });
+    
     ## Assign directories
     my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk");
     my $outSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk", $programOutDirectoryName);
@@ -9825,79 +9993,80 @@ sub SamToolsMpileUp {
     
 ##Function : SamToolsMpileUp
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $callType, $programName, $programInfoPath
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $programName, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $callType, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
-##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $sampleID                   => The sampleID
-##         : $alignerOutDir              => The alignerOutDir used in the analysis
-##         : $callType                   => The variant call type
+##         : $sampleIDRef                => The sampleID {REF}
 ##         : $programName                => The program name
-##         : $programInfoPath            => The program info path
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $callType                   => The variant call type
+##         : $xargsFileCounter           => The xargs file counter
     
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "BOTH";
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+    my $callType;
+    my $xargsFileCounter;
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $fileName = ${$argHashRef}{fileName};
-    my $programName = ${$argHashRef}{programName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $sampleIDRef;
+    my $programName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     laneHashRef => ${$laneHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "BOTH", strict_type => 1, store => \$callType},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
     my $programOutDirectoryName = ${$parameterHashRef}{"p".$programName}{outDirectoryName};
-
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 30;
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargsFileName;
-
-    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
- 
-	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-	
-	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
-							       jobIDHashRef => $jobIDHashRef,
-							       FILEHANDLE => $FILEHANDLE,
-							       directoryID => $$familyIDRef,
-							       programName => $programName,
-							       programDirectory => catfile(lc($$alignerOutDirRef), $programOutDirectoryName),
-							       nrofCores => $nrCores,
-							       processTime => $time,
-							       tempDirectory => $$tempDirectoryRef
-							      });
-    }
+    
+    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    my ($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
+							      jobIDHashRef => $jobIDHashRef,
+							      FILEHANDLE => $FILEHANDLE,
+							      directoryID => $$familyIDRef,
+							      programName => $programName,
+							      programDirectory => catfile(lc($$alignerOutDirRef), $programOutDirectoryName),
+							      nrofCores => $nrCores,
+							      processTime => $time,
+							      tempDirectory => $$tempDirectoryRef
+							     });
 
     $nrCores = floor(${$scriptParameterHashRef}{nodeRamMemory} / 4);  #Division by X according to the java heap
     $nrCores = &NrofCoresPerSbatch({scriptParameterHashRef => $scriptParameterHashRef,
@@ -10076,80 +10245,74 @@ sub Freebayes {
     
 ##Function : Call snv/small indels usig Freebayes
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $callType, $programName, $programInfoPath, $FILEHANDLE
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
-##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $sampleID                   => The sampleID
-##         : $alignerOutDir              => The alignerOutDir used in the analysis
-##         : $callType                   => The variant call type
+##         : $sampleIDRef                => The sampleID {REF}
 ##         : $programName                => The program name
-##         : $programInfoPath            => The program info path
-##         : $FILEHANDLE                 => Sbatch filehandle to write to
     
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "BOTH";
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+    my $callType;
+    my $xargsFileCounter;
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $fileName = ${$argHashRef}{fileName};
-    my $programName = ${$argHashRef}{programName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $sampleIDRef;
+    my $programName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     laneHashRef => ${$laneHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "BOTH", strict_type => 1, store => \$callType},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
     my $programOutDirectoryName = ${$parameterHashRef}{"p".$programName}{outDirectoryName};
-
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 30;
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargsFileName;
 
-    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
- 
-	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-	
-	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
-							       jobIDHashRef => $jobIDHashRef,
-							       FILEHANDLE => $FILEHANDLE,
-							       directoryID => $$familyIDRef,
-							       programName => $programName,
-							       programDirectory => catfile(lc($$alignerOutDirRef), $programOutDirectoryName),
-							       nrofCores => $nrCores,
-							       processTime => $time,
-							       tempDirectory => $$tempDirectoryRef
-							      });
-    }
+    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    my ($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
+							      jobIDHashRef => $jobIDHashRef,
+							      FILEHANDLE => $FILEHANDLE,
+							      directoryID => $$familyIDRef,
+							      programName => $programName,
+							      programDirectory => catfile(lc($$alignerOutDirRef), $programOutDirectoryName),
+							      nrofCores => $nrCores,
+							      processTime => $time,
+							      tempDirectory => $$tempDirectoryRef
+							     });
 
     $nrCores = floor(${$scriptParameterHashRef}{nodeRamMemory} / 4);  #Division by X according to the java heap
     $nrCores = &NrofCoresPerSbatch({scriptParameterHashRef => $scriptParameterHashRef,
@@ -10305,18 +10468,20 @@ sub GATKHaploTypeCaller {
     
 ##Function : GATKHaploTypeCaller. 
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName, $programInfoPath
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $programName, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
-##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $sampleID                   => The sampleID
-##         : $alignerOutDir              => The alignerOutDir used in the analysis
+##         : $sampleIDRef                => The sampleID {REF}
 ##         : $programName                => The program name
-##         : $programInfoPath            => The program info path
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $xargsFileCounter           => The xargs file counter
 
     my ($argHashRef) = @_;
 
@@ -10325,57 +10490,56 @@ sub GATKHaploTypeCaller {
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+    my $xargsFileCounter;
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $fileName = ${$argHashRef}{fileName};
-    my $programName = ${$argHashRef}{programName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $sampleIDRef;
+    my $programName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     laneHashRef => ${$laneHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
-
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 30;
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargsFileName;
-
-    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
- 
-	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 	
-	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
-							       jobIDHashRef => $jobIDHashRef,
-							       FILEHANDLE => $FILEHANDLE,
-							       directoryID => $$sampleIDRef,
-							       programName => $programName,
-							       programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
-							       nrofCores => $nrCores,
-							       processTime => $time,
-							       tempDirectory => $$tempDirectoryRef
-							      });
-    }
+    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    my ($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
+							      jobIDHashRef => $jobIDHashRef,
+							      FILEHANDLE => $FILEHANDLE,
+							      directoryID => $$sampleIDRef,
+							      programName => $programName,
+							      programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
+							      nrofCores => $nrCores,
+							      processTime => $time,
+							      tempDirectory => $$tempDirectoryRef
+							     });
 
     $nrCores = floor(${$scriptParameterHashRef}{nodeRamMemory} / 4);  #Division by X according to the java heap
     $nrCores = &NrofCoresPerSbatch({scriptParameterHashRef => $scriptParameterHashRef,
@@ -10465,7 +10629,6 @@ sub GATKHaploTypeCaller {
 	&GATKPedigreeFlag({scriptParameterHashRef => $scriptParameterHashRef,
 			   FILEHANDLE => $XARGSFILEHANDLE,
 			   outFamilyFileDirectory => $outFamilyFileDirectory,
-			   pedigreeValidationType => "SILENT",
 			   programName => $programName,
 			  });
 
@@ -10541,22 +10704,23 @@ sub GATKBaseReCalibration {
     
 ##Function : GATK BaseRecalibrator/PrintReads to recalibrate bases before variant calling. Both BaseRecalibrator/PrintReads will be executed within the same sbatch script.
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName, $programInfoPath, $fileName, $FILEHANDLE, $xargsFileCounter
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $programName, $programInfoPath, $fileName, $FILEHANDLE, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
-##         : $laneHashRef                => The lane info hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleIDRef                => The sampleID {REF}
-##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
 ##         : $fileName                   => File name
 ##         : $FILEHANDLE                 => Filehandle to write to
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $xargsFileCounter           => The xargs file counter
-
 
     my ($argHashRef) = @_;
 
@@ -10565,21 +10729,43 @@ sub GATKBaseReCalibration {
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+    my $xargsFileCounter;
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $fileName = ${$argHashRef}{fileName};
-    my $programName = ${$argHashRef}{programName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $sampleIDRef;
+    my $programName;
+    my $programInfoPath;
+    my $fileName;
+    my $FILEHANDLE;
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	programInfoPath => { strict_type => 1, store => \$programInfoPath},
+	fileName => { strict_type => 1, store => \$fileName},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
@@ -10851,20 +11037,22 @@ sub GATKReAligner {
     
 ##Function : GATK ReAlignerTargetCreator/IndelRealigner to rearrange reads around INDELs. Both ReAlignerTargetCreator and IndelRealigner will be executed within the same sbatch script.
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName, $fileName, $programInfoPath, $FILEHANDLE, $xargsFileCounter
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleID, $programName, $programInfoPath, $fileName, $FILEHANDLE, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
-##         : $laneHashRef                => The lane info hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleIDRef                => The sampleID {REF}
-##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
 ##         : $fileName                   => File name
 ##         : $FILEHANDLE                 => Filehandle to write to
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $xargsFileCounter           => The xargs file counter
 
     my ($argHashRef) = @_;
@@ -10874,21 +11062,43 @@ sub GATKReAligner {
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+    my $xargsFileCounter;
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $programName = ${$argHashRef}{programName};
-    my $fileName = ${$argHashRef}{fileName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $sampleIDRef;
+    my $programName;
+    my $programInfoPath;
+    my $fileName;
+    my $FILEHANDLE;
+    
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
+	programName => { strict_type => 1, store => \$programName},
+	programInfoPath => { strict_type => 1, store => \$programInfoPath},
+	fileName => { strict_type => 1, store => \$fileName},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
@@ -11124,8 +11334,8 @@ sub PicardToolsMarkduplicates {
 ##PicardToolsMarkduplicates
     
 ##Function : Mark duplicated reads using PicardTools Markduplicates in files generated from alignment (sorted, merged).
-##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName, $fileName, $programInfoPath, $FILEHANDLE, $xargsFileCounter
+##Returns  : "$xargsFileCounter"
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleIDRef, $programName, $programInfoPath, $fileName, $FILEHANDLE, $familyIDRef, tempDirectoryRef, referencesDirRef, alignerOutDirRef, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -11134,11 +11344,14 @@ sub PicardToolsMarkduplicates {
 ##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleIDRef                => The sampleID {REF}
-##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $programName                => The program name
-##         : $fileName                   => File name
 ##         : $programInfoPath            => The program info path
+##         : $fileName                   => File name
 ##         : $FILEHANDLE                 => Filehandle to write to
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $xargsFileCounter           => The xargs file counter
 
     my ($argHashRef) = @_;
@@ -11148,21 +11361,45 @@ sub PicardToolsMarkduplicates {
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+    my $xargsFileCounter;
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $fileName = ${$argHashRef}{fileName};
-    my $programName = ${$argHashRef}{programName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $laneHashRef;
+    my $jobIDHashRef;
+    my $sampleIDRef;
+    my $programName;
+    my $programInfoPath;
+    my $fileName;
+    my $FILEHANDLE;
+    
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	laneHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$laneHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	programInfoPath => { strict_type => 1, store => \$programInfoPath},
+	fileName => { strict_type => 1, store => \$fileName},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
@@ -11351,7 +11588,7 @@ sub SambambaMarkduplicates {
     
 ##Function : Mark duplicated reads using Sambamba Markduplicates in files generated from alignment (sorted, merged).
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName, $fileName, $programInfoPath, $FILEHANDLE, $xargsFileCounter
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleIDRef, $programName, $programInfoPath, $fileName,, $FILEHANDLE, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -11360,11 +11597,14 @@ sub SambambaMarkduplicates {
 ##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleIDRef                => The sampleID {REF}
-##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $programName                => The program name
-##         : $fileName                   => File name
 ##         : $programInfoPath            => The program info path
+##         : $fileName                   => File name
 ##         : $FILEHANDLE                 => Filehandle to write to
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $xargsFileCounter           => The xargs file counter
 
     my ($argHashRef) = @_;
@@ -11374,21 +11614,45 @@ sub SambambaMarkduplicates {
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+    my $xargsFileCounter;
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $fileName = ${$argHashRef}{fileName};
-    my $programName = ${$argHashRef}{programName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $laneHashRef;
+    my $jobIDHashRef;
+    my $sampleIDRef;
+    my $programName;
+    my $programInfoPath;
+    my $fileName;
+    my $FILEHANDLE;
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	laneHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$laneHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	programInfoPath => { strict_type => 1, store => \$programInfoPath},
+	fileName => { strict_type => 1, store => \$fileName},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
@@ -11576,7 +11840,7 @@ sub PicardToolsMergeSamFiles {
     
 ##Function : Merges all bam files using PicardTools MergeSamFiles within each sampleid and files generated previously (option if provided with '-picardToolsMergeSamFilesPrevious'). The merged files have to be sorted before attempting to merge.
 ##Returns  : "|$xargsFileCounter"
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleIDRef, $alignerOutDirRef, $fileName, $programInfoPath, $programName, $FILEHANDLE, $xargsFileCounter
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleIDRef, $programName, $programInfoPath, $fileName,, $FILEHANDLE, $familyIDRef, $alignerOutDirRef, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -11585,11 +11849,13 @@ sub PicardToolsMergeSamFiles {
 ##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleIDRef                => The sampleID {REF}
-##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $programName                => The program name
 ##         : $programInfoPath            => The program info path
 ##         : $fileName                   => File name
 ##         : $FILEHANDLE                 => Filehandle to write to
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $xargsFileCounter           => The xargs file counter
 
     my ($argHashRef) = @_;
@@ -11598,21 +11864,44 @@ sub PicardToolsMergeSamFiles {
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+    my $xargsFileCounter;
     
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $fileName = ${$argHashRef}{fileName};
-    my $programName = ${$argHashRef}{programName};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $laneHashRef;
+    my $sampleIDRef;
+    my $programName;
+    my $programInfoPath;
+    my $fileName;
+    my $FILEHANDLE;
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	laneHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$laneHashRef},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	programInfoPath => { strict_type => 1, store => \$programInfoPath},
+	fileName => { strict_type => 1, store => \$fileName},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
@@ -11673,14 +11962,14 @@ sub PicardToolsMergeSamFiles {
 	## Split BAMs using Samtools
 	say $FILEHANDLE "## Split alignment files per contig";
 	($xargsFileCounter, $xargsFileName) = &SplitBAMSambamba({scriptParameterHashRef => $scriptParameterHashRef,
+								 contigsArrayRef => \@{${$fileInfoHashRef}{contigsSizeOrdered}},
 								 FILEHANDLE => $FILEHANDLE,
 								 XARGSFILEHANDLE => $XARGSFILEHANDLE,
-								 contigs => \@{${$fileInfoHashRef}{contigsSizeOrdered}},
 								 fileName => $fileName,
 								 programInfoPath => $programInfoPath,
 								 nrCores => $nrCores,
 								 xargsFileCounter => $xargsFileCounter,
-								 temporaryDirectory => $$tempDirectoryRef,
+								 tempDirectoryRef => $tempDirectoryRef,
 								 xargsFileCounter => $xargsFileCounter,
 								 infile => $infile.$infileTag
 								});
@@ -11797,14 +12086,14 @@ sub PicardToolsMergeSamFiles {
 		    ## Split BAMs using Samtools
 		    say $FILEHANDLE "## Split alignment files per contig";
 		    ($xargsFileCounter, $xargsFileName) = &SplitBAMSambamba({scriptParameterHashRef => $scriptParameterHashRef,
+									     contigsArrayRef => \@{${$fileInfoHashRef}{contigsSizeOrdered}},
 									     FILEHANDLE => $FILEHANDLE,
 									     XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									     contigs => \@{${$fileInfoHashRef}{contigsSizeOrdered}},
 									     fileName => $fileName,
 									     programInfoPath => $programInfoPath,
 									     nrCores => $nrCores,
 									     xargsFileCounter => $xargsFileCounter,
-									     temporaryDirectory => $$tempDirectoryRef,
+									     tempDirectoryRef => $tempDirectoryRef,
 									     infile => $picardToolsMergeSamFilesPreviousFileNoEnding
 									    });
 
@@ -11904,14 +12193,14 @@ sub PicardToolsMergeSamFiles {
 		## Split BAMs using Samtools
 		say $FILEHANDLE "## Split alignment files per contig";
 		($xargsFileCounter, $xargsFileName) = &SplitBAMSambamba({scriptParameterHashRef => $scriptParameterHashRef,
+									 contigsArrayRef => \@{${$fileInfoHashRef}{contigsSizeOrdered}},
 									 FILEHANDLE => $FILEHANDLE,
 									 XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									 contigs => \@{${$fileInfoHashRef}{contigsSizeOrdered}},
 									 fileName => $fileName,
 									 programInfoPath => $programInfoPath,
 									 nrCores => $nrCores,
 									 xargsFileCounter => $xargsFileCounter,
-									 temporaryDirectory => $$tempDirectoryRef,
+									 tempDirectoryRef => $tempDirectoryRef,
 									 infile => $picardToolsMergeSamFilesPreviousFileNoEnding
 									});
 
@@ -12311,16 +12600,17 @@ sub PicardToolsMergeRapidReads {
     
 ##Function : Merges all batch read processes to one file using PicardTools MergeSamFiles within each sampleid. The read batch proccessed files have to be sorted before attempting to merge.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleID, $programName, $alignerOutDirRef, $tempDirectoryRef
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $sampleIDRef                => The sampleID
-##         : $alignerOutDirRef           => The alignerOutDir used in the analysis
+##         : $sampleIDRef                => The sampleID {REF}
 ##         : $programName                => The program name
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
 
     my ($argHashRef) = @_;
 
@@ -12329,27 +12619,29 @@ sub PicardToolsMergeRapidReads {
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $programName = ${$argHashRef}{programName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $sampleIDRef;
+    my $programName;
     
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} },  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{$$sampleIDRef},  #Any MIP mandatory key will do
-			     sampleIDRef => $$sampleIDRef,
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     programName => $programName,
-	);
-    
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
@@ -12454,52 +12746,57 @@ sub BWAMem {
     
 ##Function : Performs alignment.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $alignerOutDirRef, $programName
-##         : $parameterHashRef                  => The parameter hash {REF}
-##         : $scriptParameterHashRef            => The active parameters for this analysis hash {REF}
-##         : $sampleInfoHashRef                 => Info on samples and family hash {REF}
-##         : $fileInfoHashRef                   => The file info hash {REF}
-##         : $infileHashRef                     => The infiles hash {REF}
-##         : $inDirPathHashRef                  => The indirectories path(s) hash {REF}
-##         : $infilesLaneNoEndingHashRef        => The infile(s) without the ".ending" {REF}
-##         : $jobIDHashRef                      => The jobID hash {REF}
-##         : $sampleIDRef                       => The sampleID {REF}
-##         : $alignerOutDirRef                  => The alignerOutDir used in the analysis {REF}
-##         : $programName                       => The program name
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $programName, $alignerOutDirRef, $tempDirectoryRef, $referencesDirRef
+##         : $parameterHashRef           => The parameter hash {REF}
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $fileInfoHashRef            => The file info hash {REF}
+##         : $infileHashRef              => The infiles hash {REF}
+##         : $inDirPathHashRef           => The indirectories path(s) hash {REF}
+##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $sampleIDRef                => The sampleID {REF}
+##         : $programName                => The program name
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $tempDirectoryRef           => The temporary directory
+##         : $referencesDirRef           => MIP reference directory {REF}
 
     my ($argHashRef) = @_;
 
     ## Default(s)
+    my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
-    my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
     
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infileHashRef = ${$argHashRef}{infileHashRef};
-    my $inDirPathHashRef = ${$argHashRef}{inDirPathHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $programName = ${$argHashRef}{programName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infileHashRef;
+    my $inDirPathHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $sampleIDRef;
+    my $programName;
     
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} },  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infileHashRef => ${$infileHashRef}{$$sampleIDRef}, #Any MIP mandatory key will do
-			     inDirPathHashRef => ${$inDirPathHashRef}{$$sampleIDRef}, #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{$$sampleIDRef},  #Any MIP mandatory key will do
-			     sampleIDRef => $$sampleIDRef,
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     programName => $programName,
-	);
-    
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infileHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infileHashRef},
+	inDirPathHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$inDirPathHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 30;
@@ -12541,7 +12838,9 @@ sub BWAMem {
 	if (${$scriptParameterHashRef}{analysisType} eq "rapid") {
 	    
 	    my $seqLength = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$$sampleIDRef}{File}{${$infilesLaneNoEndingHashRef}{ $$sampleIDRef }[$infileCounter]}{SequenceLength};
-	    my ($numberNodes, $ReadNrofLines) = &DetermineNrofRapidNodes($seqLength, $infileSize);
+	    my ($numberNodes, $ReadNrofLines) = &DetermineNrofRapidNodes({seqLength => $seqLength,
+									  infileSize => $infileSize,
+									 });
 	    
 	    for (my $sbatchCounter=0;$sbatchCounter<$numberNodes-1;$sbatchCounter++) {  #Parallization for each file handled
 		
@@ -13260,7 +13559,7 @@ sub VariantAnnotationBlock {
     
 ##Function : Run consecutive module 
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $annovarTableHashRef, $alignerOutDirRef, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $annovarTableHashRef, $programName, familyIDRef, $alignerOutDirRef, $callType, $xargsFileCounter
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -13268,40 +13567,50 @@ sub VariantAnnotationBlock {
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $annovarTableHashRef        => annovarTableHashRef {REF}
-##         : $familyIDRef                => The familyID {REF}
-##         : $alignerOutDirRef           => The alignerOutDir used {REF}
 ##         : $programName                => The program name
-    
+##         : $familyIDRef                => The familyID {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $callType                   => The variant call type
+##         : $xargsFileCounter           => The xargs file counter
+
     my ($argHashRef) = @_;
    
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "BOTH";
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+    my $callType;
+    my $xargsFileCounter;
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $annovarTableHashRef = ${$argHashRef}{annovarTableHashRef};
-    my $supportedCosmidReferenceHashRef = ${$argHashRef}{supportedCosmidReferenceHashRef};
-    my $programName = ${$argHashRef}{programName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $annovarTableHashRef;
+    my $supportedCosmidReferenceHashRef;
+    my $programName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     callType => $callType,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	annovarTableHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$annovarTableHashRef},
+	supportedCosmidReferenceHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supportedCosmidReferenceHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "BOTH", strict_type => 1, store => \$callType},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 80;
@@ -13536,27 +13845,32 @@ sub BAMCalibrationBlock {
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
     
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $supportedCosmidReferenceHashRef = ${$argHashRef}{supportedCosmidReferenceHashRef};
-    my $programName = ${$argHashRef}{programName};
-    
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     laneHashRef => ${$laneHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, "BAMCalibrationBlock");
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $laneHashRef;
+    my $jobIDHashRef;
+    my $supportedCosmidReferenceHashRef;
+    my $programName;
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	laneHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$laneHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	supportedCosmidReferenceHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supportedCosmidReferenceHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 80;
@@ -13696,7 +14010,6 @@ sub BAMCalibrationBlock {
 								  scriptParameterHashRef => $scriptParameterHashRef,
 								  sampleInfoHashRef => $sampleInfoHashRef,
 								  fileInfoHashRef => $fileInfoHashRef,
-								  laneHashRef => $laneHashRef,
 								  infilesLaneNoEndingHashRef => $infilesLaneNoEndingHashRef,
 								  jobIDHashRef => $jobIDHashRef,
 								  sampleIDRef => $sampleIDRef,
@@ -13713,7 +14026,6 @@ sub BAMCalibrationBlock {
 									  scriptParameterHashRef => $scriptParameterHashRef,
 									  sampleInfoHashRef => $sampleInfoHashRef,
 									  fileInfoHashRef => $fileInfoHashRef,
-									  laneHashRef => $laneHashRef,
 									  infilesLaneNoEndingHashRef => $infilesLaneNoEndingHashRef,
 									  jobIDHashRef => $jobIDHashRef,
 									  sampleIDRef => $sampleIDRef,
@@ -13750,20 +14062,25 @@ sub Madeline {
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $programName = ${$argHashRef}{programName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $programName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     programName => $programName,
-	);
-     &CheckMandatoryArguments(\%mandatoryArgument, "Madeline");
+     my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 1;
@@ -13844,30 +14161,34 @@ sub FastQC {
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $infileHashRef = ${$argHashRef}{infileHashRef};
-    my $inDirPathHashRef = ${$argHashRef}{inDirPathHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleID};
-    my $programName = ${$argHashRef}{programName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $infileHashRef;
+    my $inDirPathHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $sampleIDRef;
+    my $programName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} },  #Any MIP mandatory key will do
-			     inDirPathHashRef => ${$inDirPathHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     sampleIDRef => $$sampleIDRef,
-			     programName => $programName,
-	);
-     &CheckMandatoryArguments(\%mandatoryArgument, "FastQC");
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	infileHashRef => { defined => 1, default => {}, strict_type => 1, store => \$infileHashRef},
+	inDirPathHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$inDirPathHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 10;
-
     my $nrCores = 0;
 
     for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} });$infileCounter++) {  #For all files   
@@ -14017,26 +14338,31 @@ sub GZipFastq {
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $infileHashRef = ${$argHashRef}{infileHashRef};
-    my $inDirPathHashRef = ${$argHashRef}{inDirPathHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleID = ${$argHashRef}{sampleID};
-    my $programName = ${$argHashRef}{programName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $infileHashRef;
+    my $inDirPathHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $sampleID;
+    my $programName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} },  #Any MIP mandatory key will do
-			     inDirPathHashRef => ${$inDirPathHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     sampleID => $sampleID,
-			     programName => $programName,
-	);
-     &CheckMandatoryArguments(\%mandatoryArgument, "GZipFastq");
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	infileHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infileHashRef},
+	inDirPathHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$inDirPathHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	sampleID => { required => 1, defined => 1, strict_type => 1, store => \$sampleID},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = ceil(1.5*scalar( @{ ${$infileHashRef}{$sampleID} }));  #One full lane on Hiseq takes approx. 1.5 h for gzip to process, round up to nearest full hour.
@@ -14046,6 +14372,7 @@ sub GZipFastq {
     for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all files   
 	
 	my $infileRef = \${$infilesLaneNoEndingHashRef}{ $sampleID }[$infileCounter];  #Alias
+
 	## Adjust the number of cores to be used in the analysis according to sequencing mode requirements.
 	&AdjustNrCoresToSeqMode({nrCoresRef => \$nrCores,
 				 sequenceRunTypeRef => \${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{File}{$$infileRef}{SequenceRunType},
@@ -14117,15 +14444,18 @@ sub BuildAnnovarPreRequisites {
     
 ##Function : Creates the AnnovarPreRequisites.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $annovarTableHashRef, $familyID, $alignerOutDir, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $annovarTableHashRef, $programName, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $annovarTableHashRef        => annovarTableHashRef {REF}
-##         : $familyID                   => Family ID
-##         : $alignerOutDir              => The alignerOutDir used in the analysis
 ##         : $programName                => The program name
+##         : $familyIDRef                => The familyID {REF}
+##         : $tempDirectoryRef           => The temporary directory {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+
 
     my ($argHashRef) = @_;
 
@@ -14136,13 +14466,29 @@ sub BuildAnnovarPreRequisites {
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $annovarTableHashRef = ${$argHashRef}{annovarTableHashRef};
-    my $programName = ${$argHashRef}{programName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $annovarTableHashRef;
+    my $programName;
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	annovarTableHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$annovarTableHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     ${$parameterHashRef}{annovarBuildReference}{buildFile} = 0;  #Ensure that this subrutine is only executed once
@@ -14205,15 +14551,21 @@ sub BuildAnnovarPreRequisites {
 		    $temporaryFilePath = catfile($annovarTemporaryDirectory, ${$annovarTableHashRef}{ ${$scriptParameterHashRef}{annovarTableNames}[$tableNamesCounter] }{File}[$filesCounter]);
 		    
 		    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-		    &PrintCheckExistandMoveFile($FILEHANDLE, \$intendedFilePath, \$temporaryFilePath);
-		    
+		    &PrintCheckExistandMoveFile({FILEHANDLE => $FILEHANDLE,
+						 intendedFilePathRef => \$intendedFilePath,
+						 temporaryFilePathRef => \$temporaryFilePath,
+						});
+
 		    if (defined(${$annovarTableHashRef}{ ${$scriptParameterHashRef}{annovarTableNames}[$tableNamesCounter] }{indexFile})) {
 			
 			$intendedFilePath = catfile(${$scriptParameterHashRef}{annovarPath}, "humandb", ${$annovarTableHashRef}{ ${$scriptParameterHashRef}{annovarTableNames}[$tableNamesCounter] }{File}[$filesCounter].".idx");  
 			$temporaryFilePath = catfile($annovarTemporaryDirectory, ${$annovarTableHashRef}{ ${$scriptParameterHashRef}{annovarTableNames}[$tableNamesCounter] }{File}[$filesCounter].".idx");
 			
 			## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-			&PrintCheckExistandMoveFile($FILEHANDLE, \$intendedFilePath, \$temporaryFilePath);	
+			&PrintCheckExistandMoveFile({FILEHANDLE => $FILEHANDLE,
+						     intendedFilePathRef => \$intendedFilePath,
+						     temporaryFilePathRef => \$temporaryFilePath,
+						    });	
 		    }
 		}		
 	    }
@@ -14223,7 +14575,10 @@ sub BuildAnnovarPreRequisites {
 		$temporaryFilePath = catfile($annovarTemporaryDirectory, ${$scriptParameterHashRef}{annovarGenomeBuildVersion}."_".${$annovarTableHashRef}{ ${$scriptParameterHashRef}{annovarTableNames}[$tableNamesCounter] }{ucscAlias}.".txt");
 		
 		## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-		&PrintCheckExistandMoveFile($FILEHANDLE, \$intendedFilePath, \$temporaryFilePath);
+		&PrintCheckExistandMoveFile({FILEHANDLE => $FILEHANDLE,
+					     intendedFilePathRef => \$intendedFilePath,
+					     temporaryFilePathRef => \$temporaryFilePath,
+					    });
 	    
 		if (defined(${$annovarTableHashRef}{ ${$scriptParameterHashRef}{annovarTableNames}[$tableNamesCounter] }{indexFile})) {
 		    
@@ -14231,7 +14586,10 @@ sub BuildAnnovarPreRequisites {
 		    $temporaryFilePath = catfile($annovarTemporaryDirectory, ${$scriptParameterHashRef}{annovarGenomeBuildVersion}."_".${$annovarTableHashRef}{ ${$scriptParameterHashRef}{annovarTableNames}[$tableNamesCounter] }{ucscAlias}.".txt.idx");
 		    
 		    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-		    &PrintCheckExistandMoveFile($FILEHANDLE, \$intendedFilePath, \$temporaryFilePath);
+		    &PrintCheckExistandMoveFile({FILEHANDLE => $FILEHANDLE,
+						 intendedFilePathRef => \$intendedFilePath,
+						 temporaryFilePathRef => \$temporaryFilePath,
+						});
 		}
 	    }
 	    else {
@@ -14240,7 +14598,10 @@ sub BuildAnnovarPreRequisites {
 		$temporaryFilePath = catfile($annovarTemporaryDirectory, ${$scriptParameterHashRef}{annovarGenomeBuildVersion}."_".${$scriptParameterHashRef}{annovarTableNames}[$tableNamesCounter].".txt");    
 		
 		## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-		&PrintCheckExistandMoveFile($FILEHANDLE, \$intendedFilePath, \$temporaryFilePath);
+		&PrintCheckExistandMoveFile({FILEHANDLE => $FILEHANDLE,
+					     intendedFilePathRef => \$intendedFilePath,
+					     temporaryFilePathRef => \$temporaryFilePath,
+					    });
 	    
 		if (defined(${$annovarTableHashRef}{ ${$scriptParameterHashRef}{annovarTableNames}[$tableNamesCounter] }{indexFile})) {
 	
@@ -14248,7 +14609,10 @@ sub BuildAnnovarPreRequisites {
 		    $temporaryFilePath = catfile($annovarTemporaryDirectory, ${$scriptParameterHashRef}{annovarGenomeBuildVersion}."_".${$scriptParameterHashRef}{annovarTableNames}[$tableNamesCounter].".txt.idx");    
 		    
 		    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-		    &PrintCheckExistandMoveFile($FILEHANDLE, \$intendedFilePath, \$temporaryFilePath);	
+		    &PrintCheckExistandMoveFile({FILEHANDLE => $FILEHANDLE,
+						 intendedFilePathRef => \$intendedFilePath,
+						 temporaryFilePathRef => \$temporaryFilePath,
+						});	
 		}				
 	    }
 	}
@@ -14278,16 +14642,16 @@ sub BuildDownLoadablePreRequisites {
 
 ##Function : Creates the downloadable resources.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, supportedCosmidReferenceHashRef, $familyIDRef, $alignerOutDirRef, $programName, $FILEHANDLE, $randomInteger
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, supportedCosmidReferenceHashRef, $programName, $familyIDRef, $alignerOutDirRef
 ##         : $parameterHashRef                => The parameter hash {REF}
 ##         : $scriptParameterHashRef          => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef               => Info on samples and family hash {REF}
 ##         : $infilesLaneNoEndingHashRef      => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef                    => The jobID hash {REF}
 ##         : $supportedCosmidReferenceHashRef => The supported cosmid references hash {REF}
+##         : $programName                     => The program name
 ##         : $familyIDRef                     => Family ID {REF}
 ##         : $alignerOutDirRef                => The alignerOutDir used in the analysis
-##         : $programName                     => The program name
 
     my ($argHashRef) = @_;
     
@@ -14296,13 +14660,27 @@ sub BuildDownLoadablePreRequisites {
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $supportedCosmidReferenceHashRef = ${$argHashRef}{supportedCosmidReferenceHashRef};
-    my $programName = ${$argHashRef}{programName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $supportedCosmidReferenceHashRef;
+    my $programName;
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	supportedCosmidReferenceHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supportedCosmidReferenceHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     
@@ -14319,7 +14697,8 @@ sub BuildDownLoadablePreRequisites {
     say $FILEHANDLE "cd ${$scriptParameterHashRef}{referencesDir}", "\n";  #Move to reference directory
 
     ## Locates and sets the cosmid directory to download to
-    my $cosmidResourceDirectory = &CheckCosmidYAML($scriptParameterHashRef);
+    my $cosmidResourceDirectory = &CheckCosmidYAML({scriptParameterHashRef => $scriptParameterHashRef,
+						   });
 
     for my $parameterName (keys %{$supportedCosmidReferenceHashRef}) {
 
@@ -14368,18 +14747,20 @@ sub BuildPTCHSMetricPreRequisites {
 
 ##Function : Creates the target "infiles_list" "padded.infile_list" and interval_list files.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $familyIDRef, $alignerOutDir, $programName, $FILEHANDLE
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $programName, $FILEHANDLE, $familyIDRef, $alignerOutDirRef, $referencesDirRef, tempDirectoryRef
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The file info hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $familyIDRef                => Family ID {REF}
-##         : $alignerOutDir              => The alignerOutDir used in the analysis
 ##         : $programName                => The program name
 ##         : $FILEHANDLE                 => Filehandle to write to
-
+##         : $familyIDRef                => Family ID {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $referencesDirRef           => MIP reference directory {REF}
+##         : $tempDirectoryRef           => The temporary directory
+ 
     my ($argHashRef) = @_;
 
     ## Default(s)
@@ -14389,14 +14770,31 @@ sub BuildPTCHSMetricPreRequisites {
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $programName = ${$argHashRef}{programName};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};  #Decides if a new sbatch script will be generated or handled by supplied FILEHANDLE
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $programName;
+    my $FILEHANDLE;  #Decides if a new sbatch script will be generated or handled by supplied FILEHANDLE
+    
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $parametersToEvaluate = 0;  #The number of parameters to evaluate
     my $fileName;
@@ -14470,7 +14868,10 @@ sub BuildPTCHSMetricPreRequisites {
 	my $temporaryFilePath = catfile($$referencesDirRef, $exomeTargetBedFileRandom.".dict_body_col_5_".$$infileListEndingRef);
     
 	## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-	&PrintCheckExistandMoveFile($FILEHANDLE, \$intendedFilePath, \$temporaryFilePath);
+	&PrintCheckExistandMoveFile({FILEHANDLE => $FILEHANDLE,
+				     intendedFilePathRef => \$intendedFilePath,
+				     temporaryFilePathRef => \$temporaryFilePath,
+				    });
     
 	say $FILEHANDLE "#Create".$$paddedInfileListEndingRef;
 	&JavaCore({FILEHANDLE => $FILEHANDLE,
@@ -14489,7 +14890,10 @@ sub BuildPTCHSMetricPreRequisites {
 	$temporaryFilePath = catfile($$referencesDirRef, $exomeTargetBedFileRandom.".dict_body_col_5".$$paddedInfileListEndingRef);
     
 	## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-	&PrintCheckExistandMoveFile($FILEHANDLE, \$intendedFilePath, \$temporaryFilePath);
+	&PrintCheckExistandMoveFile({FILEHANDLE => $FILEHANDLE,
+				     intendedFilePathRef => \$intendedFilePath,
+				     temporaryFilePathRef => \$temporaryFilePath,
+				    });
 	
 	say $FILEHANDLE "#Create ".$$paddedIntervalListEndingRef." by softlinking";
 
@@ -14513,7 +14917,7 @@ sub BuildPTCHSMetricPreRequisites {
 
 	
     }
-    unless($_[6]) {  #Unless FILEHANDLE was supplied close filehandle and submit 
+    unless(defined($FILEHANDLE)) { #Unless FILEHANDLE was supplied close filehandle and submit 
 	
 	close($FILEHANDLE);
 	
@@ -14537,7 +14941,7 @@ sub BuildBwaPreRequisites {
 
 ##Function : Creates the BwaPreRequisites using scriptParameters{'humanGenomeReference'} as reference.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $supportedCosmidReferenceHashRef, $bwaBuildReferenceFileEndingsArrayRef, $familyIDRef, $alignerOutDirRef, $programName, $FILEHANDLE, $humanGenomeReferenceRef
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $supportedCosmidReferenceHashRef, $bwaBuildReferenceFileEndingsArrayRef, $programName, $FILEHANDLE, familyIDRef, $tempDirectoryRef, $referencesDirRef, $alignerOutDirRef, $humanGenomeReferenceRef
 ##         : $parameterHashRef                     => The parameter hash {REF}
 ##         : $scriptParameterHashRef               => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef                    => Info on samples and family hash {REF}
@@ -14549,6 +14953,10 @@ sub BuildBwaPreRequisites {
 ##         : $familyIDRef                          => Family ID {REF}
 ##         : $alignerOutDirRef                     => The alignerOutDir used in the analysis
 ##         : $programName                          => The program name
+##         : $familyIDRef                          => The familyID {REF}
+##         : $tempDirectoryRef                     => The temporary directory {REF}
+##         : $referencesDirRef                     => MIP reference directory {REF}
+##         : $alignerOutDirRef                     => The alignerOutDir used in the analysis {REF}
 ##         : $humanGenomeReferenceRef              => Human genome reference {REF}
 
     my ($argHashRef) = @_;
@@ -14561,28 +14969,34 @@ sub BuildBwaPreRequisites {
     my $humanGenomeReferenceRef = ${$argHashRef}{'humanGenomeReferenceRef'} //= \${$argHashRef}{'scriptParameterHashRef'}{'humanGenomeReference'},
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $supportedCosmidReferenceHashRef = ${$argHashRef}{supportedCosmidReferenceHashRef};
-    my $bwaBuildReferenceFileEndingsArrayRef = ${$argHashRef}{bwaBuildReferenceFileEndingsArrayRef};
-    my $programName = ${$argHashRef}{programName};
-    
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     bwaBuildReferenceFileEndingsArrayRef => ${$bwaBuildReferenceFileEndingsArrayRef}[0],
-			     familyID => $$familyIDRef,
-			     alignerOutDir => $$alignerOutDirRef,
-			     programName => $programName,
-	);
-    
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $supportedCosmidReferenceHashRef;
+    my $bwaBuildReferenceFileEndingsArrayRef;
+    my $programName;
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	supportedCosmidReferenceHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supportedCosmidReferenceHashRef},
+	bwaBuildReferenceFileEndingsArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$bwaBuildReferenceFileEndingsArrayRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	humanGenomeReferenceRef => { default => \$$, strict_type => 1, store => \$humanGenomeReferenceRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $randomInteger = int(rand(10000));  #Generate a random integer between 0-10,000.
@@ -14604,8 +15018,6 @@ sub BuildBwaPreRequisites {
 				    infilesLaneNoEndingHashRef => $infilesLaneNoEndingHashRef,
 				    jobIDHashRef => $jobIDHashRef,
 				    supportedCosmidReferenceHashRef => $supportedCosmidReferenceHashRef,
-				    familyID => $$familyIDRef,
-				    alignerOutDir => $$alignerOutDirRef,
 				    program => $programName,
 				    FILEHANDLE => $FILEHANDLE,
 				    randomInteger => $randomInteger,
@@ -14627,7 +15039,10 @@ sub BuildBwaPreRequisites {
 	    my $temporaryFilePath = catfile($$referencesDirRef, $$humanGenomeReferenceRef."_".$randomInteger.${$bwaBuildReferenceFileEndingsArrayRef}[$fileEndingsCounter]);
 
 	    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-	    &PrintCheckExistandMoveFile($FILEHANDLE, \$intendedFilePath, \$temporaryFilePath);
+	    &PrintCheckExistandMoveFile({FILEHANDLE => $FILEHANDLE,
+					 intendedFilePathRef => \$intendedFilePath,
+					 temporaryFilePathRef => \$temporaryFilePath,
+					});
 	}
 	${$parameterHashRef}{bwaBuildReference}{buildFile} = 0;  #Ensure that this subrutine is only executed once
     }
@@ -14726,7 +15141,10 @@ sub BuildMosaikAlignPreRequisites {
 	my $temporaryFilePath = catfile(${$scriptParameterHashRef}{referencesDir}, ${$scriptParameterHashRef}{mosaikAlignReference}."_".$randomInteger);    
 
 	## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-	&PrintCheckExistandMoveFile($FILEHANDLE, \$intendedFilePath, \$temporaryFilePath);
+	&PrintCheckExistandMoveFile({FILEHANDLE => $FILEHANDLE,
+				     intendedFilePathRef => \$intendedFilePath,
+				     temporaryFilePathRef => \$temporaryFilePath,
+				    });
     }
     if (${$parameterHashRef}{mosaikJumpDbStub}{buildFile} eq 1) {  ##Begin autoBuild of MosaikJump Database
 
@@ -14748,7 +15166,10 @@ sub BuildMosaikAlignPreRequisites {
 	    my $temporaryFilePath = catfile(${$scriptParameterHashRef}{referencesDir}, ${$scriptParameterHashRef}{mosaikJumpDbStub}."_".$randomInteger.${$mosaikJumpDbStubFileEndingsArrayRef}[$fileEndingsCounter]);
 
 	    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-	    &PrintCheckExistandMoveFile($FILEHANDLE, \$intendedFilePath, \$temporaryFilePath);
+	    &PrintCheckExistandMoveFile({FILEHANDLE => $FILEHANDLE,
+					 intendedFilePathRef => \$intendedFilePath,
+					 temporaryFilePathRef => \$temporaryFilePath,
+					});
 	}	
 	
 	say $FILEHANDLE "rm -rf ".catfile("scratch", "mosaik_tmp"), "\n";  #Cleaning up temp directory
@@ -14788,14 +15209,27 @@ sub CheckBuildHumanGenomePreRequisites {
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $supportedCosmidReferenceHashRef = ${$argHashRef}{supportedCosmidReferenceHashRef};
-    my $programName = ${$argHashRef}{programName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $supportedCosmidReferenceHashRef;
+    my $programName;
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	supportedCosmidReferenceHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supportedCosmidReferenceHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     foreach my $fileEnding (@{${$fileInfoHashRef}{humanGenomeReferenceFileEndings}}) {  #Files assocaiated with human genome reference
 
@@ -14845,14 +15279,28 @@ sub CheckBuildPTCHSMetricPreRequisites {
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $programName = ${$argHashRef}{programName};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $programName;
+    my $FILEHANDLE;
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     if (${$parameterHashRef}{exomeTargetBed}{buildFile} eq 1) {
 	
@@ -14892,16 +15340,31 @@ sub DownloadReference {
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $supportedCosmidReferenceHashRef = ${$argHashRef}{supportedCosmidReferenceHashRef};
-    my $cosmidResourceDirectoryRef = ${$argHashRef}{cosmidResourceDirectoryRef};
-    my $programRef = ${$argHashRef}{programRef};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $parameterName = ${$argHashRef}{parameterName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $supportedCosmidReferenceHashRef;
+    my $cosmidResourceDirectoryRef;
+    my $programRef;
+    my $FILEHANDLE;
+    my $parameterName;
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	supportedCosmidReferenceHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supportedCosmidReferenceHashRef},
+ 	cosmidResourceDirectoryRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$cosmidResourceDirectoryRef},
+	programRef => { required => 1, defined => 1,  default => \$$, strict_type => 1, store => \$programRef},
+	FILEHANDLE => { required => 1, store => \$FILEHANDLE},
+	parameterName => { required => 1, defined => 1, strict_type => 1, store => \$parameterName},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my @vtReferences = ("indels", "mills", "dbsnp", "hapmap", "dbsnpex", "1000g_snps");  #Should be decomposed and normalzed using vt out of downloadable references using Cosmid
  
@@ -14973,7 +15436,10 @@ sub DownloadReference {
 	}
 
 	## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-	&PrintCheckExistandMoveFile($FILEHANDLE, \$intendedFilePath, \$temporaryFilePath);	
+	&PrintCheckExistandMoveFile({FILEHANDLE => $FILEHANDLE,
+				     intendedFilePathRef => \$intendedFilePath,
+				     temporaryFilePathRef => \$temporaryFilePath,
+				    });	
 
 	## Remove temporary Cosmid resources directory
 	print $FILEHANDLE "rm -rf ";
@@ -15008,7 +15474,7 @@ sub BuildHumanGenomePreRequisites {
     
 ##Function : Creates the humanGenomePreRequisites using scriptParameters{humanGenomeReference} as reference.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $humanGenomeReferenceFileEndingsArrayRef, $familyIDRef, $alignerOutDirRef, $program, $FILEHANDLE, $randomInteger, $humanGenomeReferenceRef
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $supportedCosmidReferenceHashRef, $program, $FILEHANDLE, $randomInteger, $familyIDRef, $referencesDirRef, $alignerOutDirRef, $humanGenomeReferenceRef
 ##         : $parameterHashRef                => The parameter hash {REF}
 ##         : $scriptParameterHashRef          => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef               => Info on samples and family hash {REF}
@@ -15016,11 +15482,12 @@ sub BuildHumanGenomePreRequisites {
 ##         : $infilesLaneNoEndingHashRef      => The infile(s) without the ".ending" {REF}
 ##         : $jobIDHashRef                    => The jobID hash {REF}
 ##         : $supportedCosmidReferenceHashRef => The supported cosmid references hash {REF}
-##         : $familyIDRef                     => Family ID {REF}
-##         : $alignerOutDirRf                 => The alignerOutDir used in the analysis
 ##         : $program                         => The program under evaluation
-##         : $FILEHANDLE                      => Filehandle to write to. A new sbatch script will be generated if $FILEHANDLE is lacking, else write to exising $FILEHANDLE
+##         : $FILEHANDLE                      => Filehandle to write to. A new sbatch script will be generated if $FILEHANDLE is lacking, else write to exising $FILEHANDLE {Optional}
 ##         : $randomInteger                   => The random integer to create temporary file name
+##         : $familyIDRef                     => Family ID {REF}
+##         : $referencesDirRef                => MIP reference directory
+##         : $alignerOutDirRef                => The alignerOutDir used in the analysis
 ##         : $humanGenomeReferenceRef         => Human genome reference {REF}
 
     my ($argHashRef) = @_;
@@ -15032,17 +15499,36 @@ sub BuildHumanGenomePreRequisites {
     my $humanGenomeReferenceRef = ${$argHashRef}{'humanGenomeReferenceRef'} //= \${$argHashRef}{'scriptParameterHashRef'}{'humanGenomeReference'},
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $supportedCosmidReferenceHashRef = ${$argHashRef}{supportedCosmidReferenceHashRef};
-    my $program = ${$argHashRef}{program};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $randomInteger = ${$argHashRef}{randomInteger};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $supportedCosmidReferenceHashRef;
+    my $program;
+    my $FILEHANDLE;
+    my $randomInteger;
     
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	supportedCosmidReferenceHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supportedCosmidReferenceHashRef},
+	program => { required => 1, defined => 1, strict_type => 1, store => \$program},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	randomInteger => { required => 1, defined => 1, strict_type => 1, store => \$randomInteger},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	humanGenomeReferenceRef => { default => \$$, strict_type => 1, store => \$humanGenomeReferenceRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
+
     my $fileName;
 
     unless(defined($FILEHANDLE)) {  #No supplied FILEHANDLE i.e. create new sbatch script
@@ -15052,7 +15538,7 @@ sub BuildHumanGenomePreRequisites {
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	($fileName) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
-					    jobIDHashRef => $jobIDHashRef,
+					     jobIDHashRef => $jobIDHashRef,
 					     FILEHANDLE => $FILEHANDLE,
 					     directoryID => $$familyIDRef,
 					     programName => $program,
@@ -15063,7 +15549,8 @@ sub BuildHumanGenomePreRequisites {
     say $FILEHANDLE "cd $$referencesDirRef", "\n";  #Move to reference directory
 
     ## Locates and sets the cosmid directory to download to
-    my $cosmidResourceDirectory = &CheckCosmidYAML($scriptParameterHashRef);
+    my $cosmidResourceDirectory = &CheckCosmidYAML({scriptParameterHashRef => $scriptParameterHashRef,
+						   });
 
     &DownloadReference({parameterHashRef => $parameterHashRef,
 			scriptParameterHashRef => $scriptParameterHashRef,
@@ -15099,7 +15586,7 @@ sub BuildHumanGenomePreRequisites {
 	${$fileInfoHashRef}{humanGenomeCompressedRef} = "unCompressed";
     }
     
-    &CheckBuildPTCHSMetricPreRequisites({$parameterHashRef => $parameterHashRef,
+    &CheckBuildPTCHSMetricPreRequisites({parameterHashRef => $parameterHashRef,
 					 scriptParameterHashRef => $scriptParameterHashRef,
 					 sampleInfoHashRef => $sampleInfoHashRef,
 					 fileInfoHashRef => $fileInfoHashRef,
@@ -15131,7 +15618,10 @@ sub BuildHumanGenomePreRequisites {
 	    my $temporaryFilePath = catfile($$referencesDirRef, ${$fileInfoHashRef}{humanGenomeReferenceNameNoEnding}."_".$randomInteger.".dict");
 
 	    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-	    &PrintCheckExistandMoveFile($FILEHANDLE, \$intendedFilePath, \$temporaryFilePath);
+	    &PrintCheckExistandMoveFile({FILEHANDLE => $FILEHANDLE,
+					 intendedFilePathRef => \$intendedFilePath,
+					 temporaryFilePathRef => \$temporaryFilePath,
+					});
 	    
 	    ${$parameterHashRef}{"humanGenomeReference.dict"}{buildFile} = 0;  #Only create once
 	    
@@ -15152,7 +15642,10 @@ sub BuildHumanGenomePreRequisites {
 	    my $temporaryFilePath = catfile($$referencesDirRef, $$humanGenomeReferenceRef."_".$randomInteger.".fai");
 
 	    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-	    &PrintCheckExistandMoveFile($FILEHANDLE, \$intendedFilePath, \$temporaryFilePath);
+	    &PrintCheckExistandMoveFile({FILEHANDLE => $FILEHANDLE,
+					 intendedFilePathRef => \$intendedFilePath,
+					 temporaryFilePathRef => \$temporaryFilePath,
+					});
 	    
 	    print $FILEHANDLE "rm ";  #Remove softLink
 	    say $FILEHANDLE catfile($$referencesDirRef, $$humanGenomeReferenceRef."_".$randomInteger), "\n";  #Softlink to reference genome
@@ -15160,7 +15653,7 @@ sub BuildHumanGenomePreRequisites {
 	    ${$parameterHashRef}{"humanGenomeReference.fasta.fai"}{buildFile} = 0;  #Only create once	
 	}
     }
-    unless($_[7]) {  #Unless FILEHANDLE was supplied close it and submit 
+    unless(defined($FILEHANDLE)) { #Unless FILEHANDLE was supplied close it and submit 
 	
 	close($FILEHANDLE);
     
@@ -16086,9 +16579,16 @@ sub NrofCoresPerSbatch {
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $nrCores = ${$argHashRef}{nrCores};
+    my $scriptParameterHashRef;
+    my $nrCores;
     
+    my $tmpl = { 
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	nrCores => { required => 1, defined => 1, strict_type => 1, store => \$nrCores},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
+
     if ($nrCores > ${$scriptParameterHashRef}{maximumCores}) {  #Set number of cores depending on how many lanes to process
 	
 	$nrCores = ${$scriptParameterHashRef}{maximumCores};  #Set to max on cluster
@@ -16517,8 +17017,18 @@ sub CheckFileNameExists {
 ##         : $filePathRef   => The file path {REF}
 ##         : $fileEndingRef => The file ending {REF}
 
-    my $filePathRef = $_[0];
-    my $fileEndingRef = $_[1];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $filePathRef;
+    my $fileEndingRef;
+
+    my $tmpl = { 
+	filePathRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$filePathRef},
+	fileEndingRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$fileEndingRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $fileName;  #Temp filename
     my $fileNameTracker = 0;  #Nr of sbatch scripts with identical filenames i.e. version number
@@ -17333,7 +17843,10 @@ sub ProgramPreRequisites {
 	$logger->info("Dry Run:\n");
     }
 
-    ($fileName, $fileNameTracker) = &CheckFileNameExists(\$fileName, \$fileNameEnd);
+    ## Check if a file with with a filename consisting of $filePathRef.$fileCounter.$fileEndingRef exist. If so bumps the version number and return new filename and sbatch version number.
+    ($fileName, $fileNameTracker) = &CheckFileNameExists({filePathRef => \$fileName,
+							  fileEndingRef => \$fileNameEnd,
+							 });
 
 ###Info and Log
     $logger->info("Creating sbatch script for ".$programName." and writing script file(s) to: ".$fileName."\n");
@@ -17430,30 +17943,31 @@ sub AddMergedInfileName {
     
 ##Function : Add merged infile name after merging all BAM files per sampleID
 ##Returns  : ""
-##Arguments: $scriptParameterHashRef, $sampleInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $sampleID
+##Arguments: $scriptParameterHashRef, $fileInfoHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $sampleID
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
-##         : $laneHashRef                => The lane info hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $laneHashRef                => The lane info hash {REF}
 ##         : $sampleID                   => The sampleID
 
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $sampleID = ${$argHashRef}{sampleID};
+    my $scriptParameterHashRef;
+    my $fileInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $laneHashRef;
+    my $sampleID;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     laneHashRef => ${$laneHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     sampleID => $sampleID,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, "AddMergedInfileName");
+    my $tmpl = { 
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	laneHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$laneHashRef},
+	sampleID => { required => 1, defined => 1, strict_type => 1, store => \$sampleID},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $infile;
     my $mergeLanes;  #To pick up merged lanes later 
@@ -17502,62 +18016,65 @@ sub SampleInfoQC {
     
 ##Function : Adds outDirectory and outfile to sampleInfo to track all files that QC metrics are to be extracted from later
 ##Returns  : ""
-##Arguments: $sampleInfoHashRef, $familyID, $sampleID, $programName, $infile, $outDirectory, $outfileEnding, $outDataType
+##Arguments: $sampleInfoHashRef, $familyID, $programName, $outDirectory, $outfileEnding, $outDataType, $sampleID, $infile,
 ##         : $sampleInfoHashRef => Info on samples and family hash {REF}
 ##         : $familyID          => The familyID
-##         : $sampleID          => SampleID or "noSampleID" for family level data
 ##         : $programName       => The program
-##         : $infile            => Infile or "noInFile" for family level data
 ##         : $outDirectory      => The outdirectory of the QC file
 ##         : $outfileEnding     => The outfile ending. Actually complete outfile for "static" & "infoDirectory"
 ##         : $outDataType       => Type of data produced by program (infoDirectory|infileDependent|static) 
+##         : $sampleID          => SampleID for data at sample level {Optional}
+##         : $infile            => Infile for data at sample level {Optional}
 
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $familyID = ${$argHashRef}{familyID};
-    my $sampleID = ${$argHashRef}{sampleID};
-    my $programName = ${$argHashRef}{programName};
-    my $infile = ${$argHashRef}{infile};
-    my $outDirectory = ${$argHashRef}{outDirectory};
-    my $outfileEnding = ${$argHashRef}{outfileEnding};
-    my $outDataType = ${$argHashRef}{outDataType};
+    my $sampleInfoHashRef;
+    my $familyID;
+    my $programName;
+    my $outDirectory;
+    my $outfileEnding;
+    my $outDataType;
+    my $sampleID;
+    my $infile;
+
+    my $tmpl = { 
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	familyID => { required => 1, defined => 1, strict_type => 1, store => \$familyID},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	outDirectory => { required => 1, defined => 1, strict_type => 1, store => \$outDirectory},
+	outfileEnding => { required => 1, defined => 1, strict_type => 1, store => \$outfileEnding},
+	outDataType => { required => 1, defined => 1, strict_type => 1,
+			 allow => ["static", "infoDirectory", "infileDependent"],
+			 store => \$outDataType},
+	infile => { strict_type => 1, store => \$infile},
+	sampleID => { strict_type => 1, store => \$sampleID},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     unless (defined($sampleID)) {
 
 	${$sampleInfoHashRef}{ $familyID }{ $familyID }{Program}{ $programName }{OutDirectory} = $outDirectory;  #OutDirectory of QC file
-                                                            
-	if ($outDataType eq "static") {  #Programs which add a static file in its own directory                                                                                                 
-
-	    ${$sampleInfoHashRef}{ $familyID }{ $familyID }{Program}{ $programName }{OutFile} = $outfileEnding;  #Static QC outfile                                                                     
-	}
-	if ($outDataType eq "infoDirectory") {  #QC metrics are sent to info files                                                                                                                   
-
-	    ${$sampleInfoHashRef}{ $familyID }{ $familyID }{Program}{ $programName }{OutFile} = $outfileEnding;  #Info stdout file                                                                      
-	}
-	if ($outDataType eq "infileDependent") {  #Programs which add a filending to infile                                                                                                          
-
-	    ${$sampleInfoHashRef}{ $familyID }{ $familyID }{Program}{ $programName }{OutFile} = $outfileEnding;  #Infile dependent QC outfile                                                                                                                                                                                       
-	}
-
+	${$sampleInfoHashRef}{ $familyID }{ $familyID }{Program}{ $programName }{OutFile} = $outfileEnding;  
     }
-    else {
+    elsif (defined($infile)) {
 	
 	${$sampleInfoHashRef}{ $familyID }{ $sampleID }{Program}{ $programName }{ $infile }{OutDirectory} = $outDirectory;  #OutDirectory of QC file                                                              
 
-	if ($outDataType eq "static") {  #Programs which add a static file in its own directory 
-	    
-	    ${$sampleInfoHashRef}{ $familyID }{ $sampleID }{Program}{ $programName }{ $infile }{OutFile} = $outfileEnding;  #Static QC outfile
-	}
-	if ($outDataType eq "infoDirectory") {  #QC metrics are sent to info files
-	    
-	    ${$sampleInfoHashRef}{ $familyID }{ $sampleID }{Program}{ $programName }{ $infile }{OutFile} = $outfileEnding;  #Info stdout file
-	}
 	if ($outDataType eq "infileDependent") {  #Programs which add a filending to infile
 	    
 	    ${$sampleInfoHashRef}{ $familyID }{ $sampleID }{Program}{ $programName }{ $infile }{OutFile} = $infile.$outfileEnding;  #Infile dependent QC outfile                                                                      
 	}
+	else {
+
+	    ${$sampleInfoHashRef}{ $familyID }{ $sampleID }{Program}{ $programName }{ $infile }{OutFile} = $outfileEnding;  #Static QC outfile or Info stdout file
+	}
+    }
+    else {
+
+	$logger->fatal("Please provide infile to enable storing of sampleID data in hash\n");
+	exit 1;
     }
 }
 
@@ -17579,12 +18096,23 @@ sub SplitTargetFile {
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $inDirectoryRef = ${$argHashRef}{inDirectoryRef};
-    my $outDirectoryRef = ${$argHashRef}{outDirectoryRef};
-    my $infileRef = ${$argHashRef}{infileRef};
-    my $contigRef = ${$argHashRef}{contigRef};
-    my $fileEnding = ${$argHashRef}{fileEnding};
+    my $FILEHANDLE;
+    my $inDirectoryRef;
+    my $outDirectoryRef;
+    my $infileRef;
+    my $contigRef;
+    my $fileEnding;
+
+    my $tmpl = { 
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	inDirectoryRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$inDirectoryRef},
+	outDirectoryRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$outDirectoryRef},
+	infileRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$infileRef},
+	contigRef => { store => \$contigRef},
+	fileEnding => { strict_type => 1, store => \$fileEnding},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     if (defined($$contigRef)) {  #The contig to split
 	
@@ -17618,21 +18146,24 @@ sub GATKPedigreeFlag {
 
     my ($argHashRef) = @_;
 
+    ## Default(s)
+    my $pedigreeValidationType;
+
     ## Flatten argument(s)
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $outFamilyFileDirectory = ${$argHashRef}{outFamilyFileDirectory};
-    my $pedigreeValidationType = ${$argHashRef}{pedigreeValidationType};
-    my $programName = ${$argHashRef}{programName};
+    my $scriptParameterHashRef;
+    my $FILEHANDLE;
+    my $outFamilyFileDirectory;
+    my $programName;
     
-    ## Mandatory arguments
-    my %mandatoryArgument = (scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     FILEHANDLE => $FILEHANDLE,
-			     outFamilyFileDirectory => $outFamilyFileDirectory,
-			     pedigreeValidationType => $pedigreeValidationType,
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, "GATKPedigreeFlag");
+    my $tmpl = { 
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	outFamilyFileDirectory => { required => 1, defined => 1, strict_type => 1, store => \$outFamilyFileDirectory},
+	pedigreeValidationType => { default => "SILENT", strict_type => 1, store => \$pedigreeValidationType},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $famFile = catfile($outFamilyFileDirectory, ${$scriptParameterHashRef}{familyID}.".fam");
     my $parentCounter;
@@ -17686,14 +18217,6 @@ sub CheckPedigreeMembers {
     my $pedigreeValidationTypeRef = ${$argHashRef}{pedigreeValidationTypeRef};
     my $parentCounterRef = ${$argHashRef}{parentCounterRef};
     my $childCounterRef = ${$argHashRef}{childCounterRef};
-    
-    ## Mandatory arguments
-    my %mandatoryArgument = (scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     FILEHANDLE => $FILEHANDLE,
-			     outFamilyFileDirectoryRef => $outFamilyFileDirectoryRef,
-			     pedigreeValidationType => $$pedigreeValidationTypeRef,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, "CheckPedigreeMembers");
 	    
     if (scalar(@{${$scriptParameterHashRef}{sampleIDs}}) < 4) {  #i.e.1-3 individuals in pedigree		    
 		
@@ -17910,11 +18433,21 @@ sub DetermineNrofRapidNodes {
 ##Function : Determines the number of nodes to allocate depending on the sequence read length, which affects the infile size.
 ##Returns  : $numberNodes, $ReadNrofLines
 ##Arguments: $seqLength, $infileSize
-##         : $seqLength     => Length of sequence reads
-##         : $infileSize    => Size of the infile
+##         : $seqLength  => Length of sequence reads
+##         : $infileSize => Size of the infile
 
-    my $seqLength = $_[0]; 
-    my $infileSize = $_[1];
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $seqLength;
+    my $infileSize;
+
+    my $tmpl = { 
+	seqLength => { required => 1, defined => 1, strict_type => 1, store => \$seqLength},
+	infileSize => { required => 1, defined => 1, strict_type => 1, store => \$infileSize},
+    };
+    
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     my $numberNodes = 0;  #Nodes to allocate
     my $readPositionWeight = 1;  #Scales the readStart and readStop position
@@ -18082,7 +18615,7 @@ sub CheckAutoBuild {
 	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
 	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
 	parameterNameRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$parameterNameRef},
-	sampleIDRef => { default => \$$, strict_type => 1, store => \$sampleIDRef},
+	sampleIDRef => { strict_type => 1, store => \$sampleIDRef},
     };
     
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
@@ -18211,7 +18744,6 @@ sub CheckFileEndingsToBeBuilt {
     foreach my $fileEnding (@{$fileEndingsArrayRef}) {
 
 	my $path = catfile($$referencesDirRef, $fileName.$fileEnding);
-
 	&CheckExistance({parameterHashRef => $parameterHashRef,
 			 scriptParameterHashRef => $scriptParameterHashRef,
 			 itemNameRef => \$path,
@@ -18256,7 +18788,7 @@ sub CheckExistance {
 	itemNameRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$itemNameRef},
 	parameterNameRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$parameterNameRef},
 	itemTypeToCheck => { required => 1, defined => 1, strict_type => 1, store => \$itemTypeToCheck},
-	sampleIDRef => { default => \$$, strict_type => 1, store => \$sampleIDRef},
+	sampleIDRef => { strict_type => 1, store => \$sampleIDRef},
 	tempDirectoryRef => { default => \$$, strict_type => 1},
     };
 
@@ -18272,7 +18804,7 @@ sub CheckExistance {
 	}
     }
     elsif ($itemTypeToCheck eq "file") {
-	
+
 	unless (-f $$itemNameRef) {  #Check existence of supplied file in supplied reference dir
 
 	    if (defined($sampleIDRef)) {  #Individual files per sampleID
@@ -18283,7 +18815,7 @@ sub CheckExistance {
 																	      parameterNameRef => $parameterNameRef,
 																	      sampleIDRef => $sampleIDRef
 																	     });
-
+		
 		if (${$parameterHashRef}{ ${$scriptParameterHashRef}{familyID} }{$$sampleIDRef}{$$parameterNameRef}{buildFile} == 0) {  #No autobuild
 		    
 		    $logger->fatal($USAGE, "\n");
@@ -18292,7 +18824,7 @@ sub CheckExistance {
 		}
 	    }
 	    else {
-
+		
 		## Check autoBuild or not and return value
 		${$parameterHashRef}{$$parameterNameRef}{buildFile} = &CheckAutoBuild({parameterHashRef => $parameterHashRef,
 										       scriptParameterHashRef => $scriptParameterHashRef,
@@ -18385,7 +18917,7 @@ sub SetAutoBuildFeature {
 	     }
 	 }
 	 if ($parameterName eq "bwaBuildReference") {
-	     
+
 	     ## Checks files to be built by combining filename stub with fileendings
 	     &CheckFileEndingsToBeBuilt({parameterHashRef => $parameterHashRef,
 					 scriptParameterHashRef => $scriptParameterHashRef,
@@ -18689,15 +19221,25 @@ sub PrintCheckExistandMoveFile {
 ##         : $intendedFilePathRef  => Path to file to check for existence {REF}
 ##         : $temporaryFilePathRef => File that has been created {REF}
     
-    my $FILEHANDLE = $_[0]; 
-    my $intendedFilePathRef = $_[1]; 
-    my $temporaryFilePathRef = $_[2];
+    my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $intendedFilePathRef;
+    my $temporaryFilePathRef;
+    
+    my $tmpl = { 
+	FILEHANDLE => { required => 1, store => \$FILEHANDLE},
+	intendedFilePathRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$intendedFilePathRef},
+	temporaryFilePathRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$temporaryFilePathRef},
+    };
+    
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     print $FILEHANDLE "[ -s ".$$intendedFilePathRef." ] ";  #Check file exists and is larger than 0
     print $FILEHANDLE "&& rm ".$$temporaryFilePathRef." ";  #If other processes already has created file, remove temp file
     print $FILEHANDLE "|| ";  #File has not been created by other processes
     say $FILEHANDLE "mv ".$$temporaryFilePathRef." ".$$intendedFilePathRef,"\n";  #Move file in place
-    
 }
 
 
@@ -19177,7 +19719,16 @@ sub CheckCosmidYAML {
 ##Arguments: $scriptParameterHashRef
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 
-    my $scriptParameterHashRef = $_[0];
+     my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef;
+
+    my $tmpl = { 
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+    };
+    
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my %cosmidResources;  #Hash to load cosmid info to
 
@@ -19213,9 +19764,16 @@ sub AdjustNrCoresToSeqMode {
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $nrCoresRef = ${$argHashRef}{nrCoresRef};
-    my $sequenceRunTypeRef = ${$argHashRef}{sequenceRunTypeRef};
+    my $nrCoresRef;
+    my $sequenceRunTypeRef;
     
+    my $tmpl = { 
+	nrCoresRef => { required => 1, default => \$$, strict_type => 1, store => \$nrCoresRef},
+	sequenceRunTypeRef => { required => 1, default => \$$, strict_type => 1, store => \$sequenceRunTypeRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
+
     if ($$sequenceRunTypeRef eq "Paired-end") {  #Second read direction if present
 
 	$$nrCoresRef =  $$nrCoresRef + 2;  #2 processes per file
@@ -19242,11 +19800,20 @@ sub PrintWait {
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $counterRef = ${$argHashRef}{counterRef};
-    my $nrCoresRef = ${$argHashRef}{nrCoresRef};
-    my $coreCounterRef = ${$argHashRef}{coreCounterRef};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    
+    my $counterRef;
+    my $nrCoresRef;
+    my $coreCounterRef;
+    my $FILEHANDLE;
+   
+    my $tmpl = { 
+	counterRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$counterRef},
+	nrCoresRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$nrCoresRef},
+	coreCounterRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$coreCounterRef},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
+
     if ($$counterRef == $$coreCounterRef * $$nrCoresRef) {  #Using only nr of cores eq to lanes or maximumCores
 	
 	say $FILEHANDLE "wait", "\n";
@@ -19261,7 +19828,7 @@ sub CheckBuildDownLoadPreRequisites {
     
 ##Function : Checks if some of the active prerequisites needs to be downloaded and calls subroutine to download them if required
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $supportedCosmidReferenceHashRef, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $supportedCosmidReferenceHashRef, $programName, $familyIDRef
 ##         : $parameterHashRef                => The parameter hash {REF}
 ##         : $scriptParameterHashRef          => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef               => Info on samples and family hash {REF}
@@ -19277,22 +19844,26 @@ sub CheckBuildDownLoadPreRequisites {
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $supportedCosmidReferenceHashRef = ${$argHashRef}{supportedCosmidReferenceHashRef};
-    my $programName = ${$argHashRef}{programName};
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $supportedCosmidReferenceHashRef;
+    my $programName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     programName => $programName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, "CheckBuildDownLoadPreRequisites");
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	supportedCosmidReferenceHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supportedCosmidReferenceHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     for my $parameterName (keys %{$supportedCosmidReferenceHashRef}) {  #Supported cosmid references for MIP parameters
 	
@@ -19401,7 +19972,7 @@ sub CheckEntryHashofArray {
     
 ##Function : Test element for being part of hash of array at supplied key. 
 ##Returns  : Return "1" if element is not part of array
-##Arguments: $hashRef, $keyRef, $elementRef
+##Arguments: $hashRef, $key, $element
 ##         : $hashRef => Hash {REF} 
 ##         : $key     => The key pointing to the array in the $hashRef
 ##         : $element => Element to look for in hash of array
@@ -19409,9 +19980,9 @@ sub CheckEntryHashofArray {
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $hashRef = ${$argHashRef}{hashRef};
-    my $key = ${$argHashRef}{key};
-    my $element = ${$argHashRef}{element};
+    my $hashRef;
+    my $key;
+    my $element;
 
     my $tmpl = { 
 	hashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$hashRef},
@@ -19437,11 +20008,11 @@ sub CheckMostCompleteAndRemoveFile {
 	
 ##Function  : Checks if the file is recorded as the "MostCompleteBAM|VCF". If false writes removal of file(s) to supplied filehandle
 ##Returns   : ""
-##Arguments : $FILEHANDLE, $mostCompleteRef, $filePathRef, $fileEnding
+##Arguments : $FILEHANDLE, $filePathRef, $fileEnding, $mostCompleteRef
 ##          : $FILEHANDLE      => SBATCH script FILEHANDLE to print to 
-##          : $mostCompleteRef => The mostComplete file (BAM|VCF) {REF}
-##          : $filePathRef         => Current file {REF}
+##          : $filePathRef     => Current file {REF}
 ##          : $fileEnding      => File ending of $filePathRef
+##          : $mostCompleteRef => The mostComplete file (BAM|VCF) {REF}
 
     my ($argHashRef) = @_;
     
@@ -19451,19 +20022,24 @@ sub CheckMostCompleteAndRemoveFile {
     my $filePathRef = ${$argHashRef}{filePathRef};
     my $fileEnding = ${$argHashRef}{fileEnding};
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (FILEHANDLE => $FILEHANDLE,
-			     filePathRef => $$filePathRef,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, "CheckMostCompleteAndRemoveFile");
+    my $tmpl = { 
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	filePathRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$filePathRef},
+	fileEnding => { required => 1, defined => 1, strict_type => 1, store => \$fileEnding},
+	mostCompleteRef => { store => \$mostCompleteRef},
+    };
+    
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     if ( (defined($$mostCompleteRef)) && (defined($$filePathRef)) ) {  #Not to disturb first dry_run of analysis
 	
 	unless ($$mostCompleteRef eq $$filePathRef) {  #Do not remove mostCompleteBAM|VCF
 	    
 	    ## Modify fileending of file to include e.g. .bai for bams
-	    my $fileName = &ModifyFileEnding($filePathRef, $fileEnding);
-	    
+	    my $fileName = &ModifyFileEnding({filePathRef => $filePathRef,
+					      fileEnding => $fileEnding,
+					     });
+
 	    ##Print removal of file to sbatch script 
 	    print $FILEHANDLE "rm ";
 	    say $FILEHANDLE $fileName, "\n";  #Remove file(s)
@@ -19472,7 +20048,9 @@ sub CheckMostCompleteAndRemoveFile {
     else {
 	
 	## Modify fileending of file to include e.g. .bai for bams
-	my $fileName = &ModifyFileEnding($filePathRef, $fileEnding);
+	my $fileName = &ModifyFileEnding({filePathRef => $filePathRef,
+					  fileEnding => $fileEnding,
+					 });
 	
 	##Print removal of file to sbatch script 
 	print $FILEHANDLE "rm ";
@@ -19491,8 +20069,18 @@ sub ModifyFileEnding {
 ##          : $filePathRef => Current file {REF}
 ##          : $fileEnding  => File ending of $filePathRef
 
-    my $filePathRef = $_[0];
-    my $fileEnding = $_[1];
+     my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $filePathRef = ${$argHashRef}{filePathRef};
+    my $fileEnding = ${$argHashRef}{fileEnding};
+
+    my $tmpl = { 
+	filePathRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$filePathRef},
+	fileEnding => { required => 1, defined => 1, strict_type => 1, store => \$fileEnding},
+    };
+    
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     ## Removes ".fileEnding" in filename.FILENDING(.gz)
     my $fileName = &RemoveFileEnding({fileNameRef => $filePathRef,
@@ -19686,13 +20274,15 @@ sub ConcatenateVariants {
     
 ##Function : Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
 ##Returns  : ""
-##Arguments: $scriptParameterHashRef, $FILEHANDLE, $arrayRef, $infilePrefix, $infilePostfix, $outfile
-##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
-##         : $FILEHANDLE             => SBATCH script FILEHANDLE to print to
-##         : $arrayRef               => Holding the number and part of file names to be combined
-##         : $infilePrefix           => Will be combined with the each array element
-##         : $infilePostfix          => Will be combined with the each array element
-##         : $outfile                => The combined outfile
+##Arguments: $scriptParameterHashRef, $FILEHANDLE, $arrayRef, $infilePrefix, $infilePostfix, $outfile, $referencesDirRef, $humanGenomeReferenceRef
+##         : $scriptParameterHashRef  => The active parameters for this analysis hash {REF}
+##         : $FILEHANDLE              => SBATCH script FILEHANDLE to print to
+##         : $arrayRef                => Holding the number and part of file names to be combined
+##         : $infilePrefix            => Will be combined with the each array element
+##         : $infilePostfix           => Will be combined with the each array element
+##         : $outfile                 => The combined outfile
+##         : $referencesDirRef        => MIP reference directory {REF}
+##         : $humanGenomeReferenceRef => Human genome reference {REF}
 
     my ($argHashRef) = @_;
     
@@ -19701,21 +20291,25 @@ sub ConcatenateVariants {
     my $humanGenomeReferenceRef = ${$argHashRef}{humanGenomeReferenceRef} //= \${$argHashRef}{scriptParameterHashRef}{humanGenomeReference};
 
     ## Flatten argument(s)
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $arrayRef = ${$argHashRef}{arrayRef};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $infilePrefix = ${$argHashRef}{infilePrefix};
-    my $infilePostfix = ${$argHashRef}{infilePostfix};
-    my $outfile = ${$argHashRef}{outfile};
+    my $scriptParameterHashRef;
+    my $arrayRef;
+    my $FILEHANDLE;
+    my $infilePrefix;
+    my $infilePostfix;
+    my $outfile;
     
-    ## Mandatory arguments
-    my %mandatoryArgument = (scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     FILEHANDLE => $FILEHANDLE,
-			     infilePrefix => $infilePrefix,
-			     infilePostfix => $infilePostfix,
-	);
-    
-    &CheckMandatoryArguments(\%mandatoryArgument, "ConcatenateVariants");
+    my $tmpl = { 
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	arrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$arrayRef},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	infilePrefix => { required => 1, defined => 1, strict_type => 1, store => \$infilePrefix},
+	infilePostfix => { strict_type => 1, store => \$infilePostfix},
+	outfile => { strict_type => 1, store => \$outfile},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+	humanGenomeReferenceRef => { default => \$$, strict_type => 1, store => \$humanGenomeReferenceRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     unless (defined($infilePostfix)) {
 	
@@ -19764,22 +20358,21 @@ sub SortVcf {
     my ($argHashRef) = @_;
     
     ## Flatten argument(s)
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $arrayRef = ${$argHashRef}{arrayRef};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $sequenceDictFile = ${$argHashRef}{sequenceDictFile};
-    my $infile = ${$argHashRef}{infile};
-    my $outfile = ${$argHashRef}{outfile};
+    my $scriptParameterHashRef;
+    my $FILEHANDLE;
+    my $sequenceDictFile;
+    my $infile;
+    my $outfile;
     
-    ## Mandatory arguments
-    my %mandatoryArgument = (scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     FILEHANDLE => $FILEHANDLE,
-			     sequenceDictFile => $sequenceDictFile,
-			     infile => $infile,
-			     outfile => $outfile,
-	);
-    
-    &CheckMandatoryArguments(\%mandatoryArgument, "SortVcf");
+    my $tmpl = { 
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	sequenceDictFile => { required => 1, defined => 1, strict_type => 1, store => \$sequenceDictFile},
+	infile => { required => 1, defined => 1, strict_type => 1, store => \$infile},
+	outfile => { required => 1, defined => 1, strict_type => 1, store => \$outfile},
+   };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     say $FILEHANDLE "## Picard SortVcf";
 
@@ -19897,12 +20490,22 @@ sub WriteUseLargePages {
     
 ##Function : Write useLargePages java flag to sbatch script if enabled
 ##Returns  : ""
-##Arguments: $FILEHANDLE, $arrayRef, $infilePrefix, $infilePostfix, $outfile
+##Arguments: $FILEHANDLE, $useLargePagesRef
 ##         : $FILEHANDLE       => SBATCH script FILEHANDLE to print to
 ##         : $useLargePagesRef => UseLargePages for requiring large memory pages (cross-platform flag) {REF}
-	
-    my $FILEHANDLE = $_[0];
-    my $useLargePagesRef = $_[1];
+
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $useLargePagesRef;
+
+    my $tmpl = { 
+	FILEHANDLE => { required => 1, store => \$FILEHANDLE},
+	useLargePagesRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$useLargePagesRef},
+    };
+    
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     if ($$useLargePagesRef) {
 	
@@ -20283,13 +20886,16 @@ sub CollectOutDataPathsEntries {
     my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
     my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
     my $pathsArrayRef = ${$argHashRef}{pathsArrayRef};
-    
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, "CollectOutDataPathsEntries");
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	pathsArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$pathsArrayRef},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     for my $familyID ( keys %{$sampleInfoHashRef} ) {  #For every family id 
 	
@@ -20342,27 +20948,31 @@ sub CollectOutFile {
     
 ##Function  : Check if KeyName is "OutDirectory" or "OutFile"  and adds to @pathsArrayRef if true.
 ##Returns   : ""
-##Arguments: $pathsArrayRef, $outDirectoryArrayRef, $outfileArrayRef
+##Arguments: $pathsArrayRef, $outDirectoryArrayRef, $outfileArrayRef, $key, $keyName
 ##         : $pathsArrayRef        => Holds the collected paths {REF}
-##         : $outDirectoryArrayRef => Holds temporary outDirectory path(s) {REF}
-##         : $outfileArrayRef      => Holds temporary outDirectory path(s) {REF}
-##         : $key                  => The hash key
+##         : $outDirectoryArrayRef => Holds temporary outDirectory path(s) {Optional, REF}
+##         : $outfileArrayRef      => Holds temporary outDirectory path(s) {Optional, REF}
+##         : $key                  => The hash key pointer
 ##         : $keyName              => The actual key  
     
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $pathsArrayRef = ${$argHashRef}{pathsArrayRef};
-    my $outDirectoryArrayRef = ${$argHashRef}{outDirectoryArrayRef};
-    my $outfileArrayRef = ${$argHashRef}{outfileArrayRef};
-    my $key = ${$argHashRef}{key};
-    my $keyName = ${$argHashRef}{keyName};
+    my $pathsArrayRef;
+    my $outDirectoryArrayRef;
+    my $outfileArrayRef;
+    my $key;
+    my $keyName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (key => $key,
-			     keyName => $keyName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, "CollectOutFile");	
+    my $tmpl = { 
+	pathsArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$pathsArrayRef},
+	outDirectoryArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$outDirectoryArrayRef},
+	outfileArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$outfileArrayRef},
+	key => { required => 1, defined => 1, store => \$key},
+	keyName => { required => 1, defined => 1, strict_type => 1, store => \$keyName},
+    };
+    
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];	
     
     if ($keyName eq "OutDirectory") {
 	
@@ -20394,9 +21004,16 @@ sub CollectPathEntries {
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $pathsArrayRef = ${$argHashRef}{pathsArrayRef};
+    my $sampleInfoHashRef;
+    my $pathsArrayRef;
     
+    my $tmpl = { 
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	pathsArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$pathsArrayRef},
+    };
+    
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
+
     for my $familyID ( keys %{$sampleInfoHashRef} ) {  #For every familyID 
 	
 	for my $member ( keys %{ ${$sampleInfoHashRef}{$familyID} }) {  #For every familyID and sampleID     
@@ -20463,14 +21080,17 @@ sub CheckAndAddToArray {
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $pathsArrayRef = ${$argHashRef}{pathsArrayRef};
-    my $key = ${$argHashRef}{key};
-    my $keyName = ${$argHashRef}{keyName};
+    my $pathsArrayRef;
+    my $key;
+    my $keyName;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (keyName => $keyName,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, "CheckAndAddToArray");
+    my $tmpl = { 
+	pathsArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$pathsArrayRef},
+	keyName => { required => 1, defined => 1, strict_type => 1, store => \$keyName},
+	key => { required => 1, defined => 1, store => \$key},
+    };
+    
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     if ($keyName eq "Path") {
 	
@@ -20513,6 +21133,22 @@ sub MigrateFilesToTemp {
     my $nrCores = ${$argHashRef}{nrCores};
     my $fileEnding = ${$argHashRef}{fileEnding};
     my $sampleID = ${$argHashRef}{sampleID};
+
+    my $tmpl = { 
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	arrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$arrayRef},
+	extractArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$extractArrayRef},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	inSampleDirectory => { required => 1, defined => 1, strict_type => 1, store => \$inSampleDirectory},
+	nrCores => { required => 1, defined => 1, strict_type => 1, store => \$nrCores},
+	fileEnding => { defined => 1, strict_type => 1, store => \$fileEnding},
+	sampleID => { defined => 1, strict_type => 1, store => \$sampleID},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $pairedEndTracker = 0;
     my $coreCounter=1;
@@ -20558,9 +21194,9 @@ sub RemoveFilesAtTemp {
     
 ##Function : Removes files from at temporary folder. Loop over files specified by $arrayRef and collects files from $extractArrayRef.
 ##Returns  : ""
-##Arguments: $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $arrayRef, $extractArrayRef, $FILEHANDLE, $inSampleDirectory, $nrCores, $infileTag, $fileEnding, $sampleID, $familyIDRef
-##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF},my $scriptParameterHashRef = shift;
-##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
+##Arguments: $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $arrayRef, $extractArrayRef, $FILEHANDLE, $inSampleDirectory, $nrCores, $infileTag, $fileEnding, $sampleID, $familyIDRef, $tempDirectoryRef
+##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef      => Info on samples and family hash {Optional, REF}
 ##         : $fileInfoHashRef        => The fileInfo hash {Optional, REF}
 ##         : $arrayRef               => The array of files to copy
 ##         : $extractArrayRef        => The array to extract files from
@@ -20571,6 +21207,7 @@ sub RemoveFilesAtTemp {
 ##         : $fileEnding             => File ending. Set to "" to not add any file ending or omit from call
 ##         : $sampleID               => the sampleID {Optional}
 ##         : $familyIDRef            => The familyID {REF}
+##         : $tempDirectoryRef       => The temporary directory {REF}
 
     my ($argHashRef) = @_;
 
@@ -20579,17 +21216,35 @@ sub RemoveFilesAtTemp {
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
 
     ## Flatten argument(s)
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $arrayRef = ${$argHashRef}{arrayRef};
-    my $extractArrayRef = ${$argHashRef}{extractArrayRef};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $inSampleDirectory = ${$argHashRef}{inSampleDirectory};
-    my $nrCores = ${$argHashRef}{nrCores};
-    my $infileTag = ${$argHashRef}{infileTag};
-    my $fileEnding = ${$argHashRef}{fileEnding};
-    my $sampleID = ${$argHashRef}{sampleID};
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $arrayRef;
+    my $extractArrayRef;
+    my $FILEHANDLE;
+    my $inSampleDirectory;
+    my $nrCores;
+    my $infileTag;
+    my $fileEnding;
+    my $sampleID;
+
+    my $tmpl = { 
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { store => \$sampleInfoHashRef},
+	fileInfoHashRef => { store => \$fileInfoHashRef},
+	arrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$arrayRef},
+	extractArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$extractArrayRef},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	inSampleDirectory => { required => 1, defined => 1, strict_type => 1, store => \$inSampleDirectory},
+	nrCores => { required => 1, defined => 1, strict_type => 1, store => \$nrCores},
+	infileTag => { required => 1, defined => 1, strict_type => 1, store => \$infileTag},
+	fileEnding => { required => 1, defined => 1, strict_type => 1, store => \$fileEnding},	
+	sampleID => { strict_type => 1, store => \$sampleID},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $pairedEndTracker = 0;
     my $coreCounter=1;
@@ -20601,7 +21256,7 @@ sub RemoveFilesAtTemp {
 	my $sequenceRunMode;
 
 	if ( (defined($sampleInfoHashRef)) && (defined($sampleID)) ) {
-	
+
 	    $sequenceRunMode = ${$sampleInfoHashRef}{ $$familyIDRef }{ $sampleID }{File}{ ${$arrayRef}[$fileCounter] }{SequenceRunType};  #Collect paired-end or single-end sequence run mode
 	}
 	
@@ -20640,6 +21295,7 @@ sub RemoveFilesAtTemp {
 	    if ( (defined($sequenceRunMode)) && ($sequenceRunMode eq "Paired-end") ) {
 		
 		$pairedEndTracker = $pairedEndTracker+1;  #Increment to collect correct read 2
+
 		## Remove file(s) at temporary directory.
 		print $FILEHANDLE "rm ";  #Delete
 		print $FILEHANDLE catfile($$tempDirectoryRef, ${$extractArrayRef}[$pairedEndTracker].$infileTag.$fileEnding)." ";  #File
@@ -20702,27 +21358,39 @@ sub MigrateFileToTemp {
 
 ##MigrateFileToTemp
     
-##Function : Copies file to temporary directory.  
+##Function : Copy file to temporary directory.  
 ##Returns  : "$fileName"
-##Arguments: $FILEHANDLE, $path, $tempDirectory, $fileEnding, $xargs, $xargsFileName, $elementCounter
+##Arguments: $FILEHANDLE, $path, $tempDirectory, $fileEnding, $xargs, $xargsFileName, $elementCounter,
 ##         : $FILEHANDLE     => Filehandle to write to
 ##         : $path           => The infile path
 ##         : $tempDirectory  => The node directory to copy to
 ##         : $fileEnding     => File ending {Optional}
-##         : $xargs          => Use xargs if defined
-##         : $xargsFileName  => xargs file name
-##         : $elementCounter => The counts the elements that have been processed
+##         : $xargs          => Use xargs if defined {Optional}
+##         : $xargsFileName  => xargs file name {Optional, but required with xargs}
+##         : $elementCounter => The counts the elements that have been processed {Optional, but required with xargs}
 
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $path = ${$argHashRef}{path};
-    my $tempDirectory = ${$argHashRef}{tempDirectory};
-    my $fileEnding = ${$argHashRef}{fileEnding};
-    my $xargs = ${$argHashRef}{xargs};
-    my $xargsFileName = ${$argHashRef}{xargsFileName};
-    my $elementCounter = ${$argHashRef}{elementCounter};
+    my $FILEHANDLE;
+    my $path;
+    my $tempDirectory;
+    my $fileEnding;
+    my $xargs;
+    my $xargsFileName;
+    my $elementCounter;
+    
+    my $tmpl = {
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	path => { required => 1, defined => 1, strict_type => 1, store => \$path},
+	tempDirectory => { required => 1, defined => 1, strict_type => 1, store => \$tempDirectory},
+	fileEnding => { strict_type => 1, store => \$fileEnding},
+	xargs => { strict_type => 1, store => \$xargs},
+	xargsFileName => { strict_type => 1, store => \$xargsFileName},
+	elementCounter => {strict_type => 1, store => \$elementCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     ## Split relative path to file(s)
     my ($pathVolume, $pathDirectories, $pathFileName) = File::Spec->splitpath($path);
@@ -20743,7 +21411,15 @@ sub MigrateFileToTemp {
 
     if (defined($xargs)) {
 
-	print $FILEHANDLE "2> ".$xargsFileName.".".$elementCounter.".stderr.txt ";
+	if ( (defined($xargsFileName)) && (defined($elementCounter))) {
+
+	    print $FILEHANDLE "2> ".$xargsFileName.".".$elementCounter.".stderr.txt ";
+	}
+	else {
+
+	    $logger->fatal("Lacking xargsFileName or elementCounter in supplied arguments. Please supply arguments xargsFileName and elementCounter if xargs is supplied");
+	    exit 1;
+	}
     }
     else {
 
@@ -20759,25 +21435,36 @@ sub MigrateFileFromTemp {
 
 ##MigrateFileFromTemp
     
-##Function : Copies file from temporary directory.  
+##Function : Copy file from temporary directory.  
 ##Returns  : ""
 ##Arguments: $tempPath, $filePath, $FILEHANDLE, $xargs, $xargsFileName, elementCounter
 ##         : $tempPath       => The node temp file path
 ##         : $filePath       => The node directory to copy to
 ##         : $FILEHANDLE     => Filehandle to write to
-##         : $xargs          => Use xargs if defined
-##         : $xargsFileName  => xargs file name
-##         : $elementCounter => The counts the elements that have been processed
+##         : $xargs          => Use xargs if defined {Optional}
+##         : $xargsFileName  => xargs file name {Optional, but required with xargs}
+##         : $elementCounter => The counts the elements that have been processed {Optional, but required with xargs}
 
     my ($argHashRef) = @_;
     
     ## Flatten argument(s)
-    my $tempPath = ${$argHashRef}{tempPath};
-    my $filePath = ${$argHashRef}{filePath};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $xargs = ${$argHashRef}{xargs};
-    my $xargsFileName = ${$argHashRef}{xargsFileName};
-    my $elementCounter = ${$argHashRef}{elementCounter};
+    my $tempPath;
+    my $filePath;
+    my $FILEHANDLE;
+    my $xargs;
+    my $xargsFileName;
+    my $elementCounter;
+
+    my $tmpl = {
+	tempPath => { required => 1, defined => 1, strict_type => 1, store => \$tempPath},
+	filePath => { required => 1, defined => 1, strict_type => 1, store => \$filePath},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	xargs => { strict_type => 1, store => \$xargs},
+	xargsFileName => { strict_type => 1, store => \$xargsFileName},
+	elementCounter => {strict_type => 1, store => \$elementCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     unless (defined($xargs)) {
 
@@ -20790,7 +21477,15 @@ sub MigrateFileFromTemp {
 
     if (defined($xargs)) {
 
-	print $FILEHANDLE "2> ".$xargsFileName.".".$elementCounter.".stderr.txt ";
+	if ( (defined($xargsFileName)) && (defined($elementCounter))) {
+
+	    print $FILEHANDLE "2> ".$xargsFileName.".".$elementCounter.".stderr.txt ";
+	}
+	else {
+
+	    $logger->fatal("Lacking xargsFileName or elementCounter in supplied arguments. Please supply arguments xargsFileName and elementCounter if xargs is supplied");
+	    exit 1;
+	}
     }
     else {
 	
@@ -20823,27 +21518,38 @@ sub RemoveDirectory {
 sub RemoveContigFileAtTempDirectory {
 
 ##RemoveContigFileAtTempDirectory
-    
+
 ##Function : Removes files at temporary directory dictated by supplied array.
 ##Returns  : ""
 ##Arguments: $arrayRef, $FILEHANDLE, $nrCores, $fileName, $fileEnding, $tempDirectory
-##         : $arrayRef       => Array to use for file iteration {REF}
-##         : $FILEHANDLE     => Sbatch filehandle to write to
-##         : $nrCores        => The number of cores to use
-##         : $fileName       => File name without ending attached
-##         : $fileEnding     => File ending
-##         : $tempDirectory  => The temporary directory
+##         : $arrayRef      => Array to use for file iteration {REF}
+##         : $FILEHANDLE    => Sbatch filehandle to write to
+##         : $nrCores       => The number of cores to use
+##         : $fileName      => File name without ending attached
+##         : $fileEnding    => File ending
+##         : $tempDirectory => The temporary directory
 
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $arrayRef = ${$argHashRef}{arrayRef};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $nrCores = ${$argHashRef}{nrCores};
-    my $fileName = ${$argHashRef}{fileName};
-    my $fileEnding = ${$argHashRef}{fileEnding};
-    my $tempDirectory = ${$argHashRef}{tempDirectory};
+    my $arrayRef;
+    my $FILEHANDLE;
+    my $nrCores;
+    my $fileName;
+    my $fileEnding;
+    my $tempDirectory;
     
+     my $tmpl = { 
+	arrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$arrayRef},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	nrCores => { required => 1, defined => 1, strict_type => 1, store => \$nrCores},
+	fileName => { required => 1, defined => 1, strict_type => 1, store => \$fileName},
+	fileEnding => { required => 1, defined => 1, strict_type => 1, store => \$fileEnding},
+	tempDirectory => { required => 1, defined => 1, strict_type => 1, store => \$tempDirectory},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
+
     my $coreCounter=1;
     
     ## Remove infile at temporary Directory
@@ -20883,16 +21589,28 @@ sub JavaCore {
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $memoryAllocation = ${$argHashRef}{memoryAllocation};
-    my $javaUseLargePagesRef = ${$argHashRef}{javaUseLargePagesRef};
-    my $javaTemporaryDirectory = ${$argHashRef}{javaTemporaryDirectory};
-    my $javaJar = ${$argHashRef}{javaJar};
+    my $FILEHANDLE;
+    my $memoryAllocation;
+    my $javaUseLargePagesRef;
+    my $javaTemporaryDirectory;
+    my $javaJar;
+
+     my $tmpl = { 
+	FILEHANDLE => { required => 1, store => \$FILEHANDLE},
+	memoryAllocation => { required => 1, defined => 1, strict_type => 1, store => \$memoryAllocation},
+	javaUseLargePagesRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$javaUseLargePagesRef},
+	javaTemporaryDirectory => { strict_type => 1, store => \$javaTemporaryDirectory},
+	javaJar => { strict_type => 1, store => \$javaJar},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     print $FILEHANDLE "java ";
     print $FILEHANDLE "-".$memoryAllocation." "; 
     
-    &WriteUseLargePages($FILEHANDLE, $javaUseLargePagesRef);
+    &WriteUseLargePages({FILEHANDLE => $FILEHANDLE,
+			 useLargePagesRef => $javaUseLargePagesRef,
+			});
 
     if (defined($javaTemporaryDirectory)) {
 
@@ -21022,12 +21740,13 @@ sub GatherBamFiles {
     
 ##Function : Concatenates BAMs. Writes to sbatch FILEHANDLE
 ##Returns  : ""
-##Arguments: $scriptParameterHashRef, $arrayRef, $FILEHANDLE, $infile, $createIndex
+##Arguments: $scriptParameterHashRef, $arrayRef, $FILEHANDLE, $infile, $createIndex, $tempDirectoryRef
 ##         : $scriptParameterHashRef => Holds all set parameter for analysis
 ##         : $arrayRef               => The array of splits to gather
 ##         : $FILEHANDLE             => Filehandle to write to
 ##         : $infile                 => The infile
 ##         : $createIndex            => Create index
+##         : $tempDirectoryRef       => The temporary directory {REF}
 
     my ($argHashRef) = @_;
 
@@ -21036,10 +21755,21 @@ sub GatherBamFiles {
     my $createIndex = ${$argHashRef}{createIndex} //= "TRUE";
 
     ## Flatten argument(s)
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $arrayRef = ${$argHashRef}{arrayRef};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $infile = ${$argHashRef}{infile};
+    my $scriptParameterHashRef;
+    my $arrayRef;
+    my $FILEHANDLE;
+    my $infile;
+
+    my $tmpl = { 
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	arrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$arrayRef},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	infile => { required => 1, defined => 1, strict_type => 1, store => \$infile},
+	createIndex => { default => "TRUE", strict_type => 1, store => \$createIndex},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     say $FILEHANDLE "## GatherBamFiles";
     
@@ -21065,43 +21795,68 @@ sub XargsMigrateContigFiles {
 
 ##XargsMigrateContigFiles
     
-##Function : Migrates file(s) to temporary directory using xargs.
+##Function : Migrates file(s) to or from temporary directory (depending on supplied arguments) using xargs.
 ##Returns  : "xargsFileCounter"
-##Arguments: $arrayRef, $FILEHANDLE, $XARGSFILEHANDLE, $fileName, $programInfoPath, $nrCores, $firstCommand, $xargsFileCounter, $infile, $inDirectory, $tempDirectory, $fileEnding, $outfile, $outDirectory
+##Arguments: $arrayRef, $FILEHANDLE, $XARGSFILEHANDLE, $fileName, $tempDirectory, $programInfoPath, $infile, $inDirectory, $outfile, $outDirectory, $nrCores, $firstCommand, $xargsFileCounter, $fileEnding
 ##         : $arrayRef         => The fileInfo hash {REF}
 ##         : $FILEHANDLE       => Sbatch filehandle to write to
 ##         : $XARGSFILEHANDLE  => XARGS filehandle to write to 
 ##         : $fileName         => File name
+##         : $tempDirectory    => The temporary directory
 ##         : $programInfoPath  => The program info path
+##         : $infile           => Infile name without ending attached
+##         : $inDirectory      => In directory
+##         : $outfile          => OutFile name without ending attached
+##         : $outDirectory     => Out directory
 ##         : $nrCores          => The number of cores to use
 ##         : $firstCommand     => The inital command 
 ##         : $xargsFileCounter => The xargs file counter
-##         : $infile           => Infile name without ending attached
-##         : $inDirectory      => In directory
-##         : $tempDirectory    => The temporary directory
 ##         : $fileEnding       => File ending
-##         : $outfile          => OutFile name without ending attached
-##         : $outDirectory     => Out directory
 
     my ($argHashRef) = @_;
     
     ## Default(s)
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
-    my $nrCores = ${$argHashRef}{nrCores} //= 1;
-    my $firstCommand = ${$argHashRef}{firstCommand} //= "cp -p";
-    my $fileEnding = ${$argHashRef}{fileEnding} //= ".vcf*";
+    my $firstCommand;
+    my $fileEnding;
+    my $xargsFileCounter;
+    my $nrCores;
 
     ## Flatten argument(s)
-    my $arrayRef = ${$argHashRef}{arrayRef};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $XARGSFILEHANDLE = ${$argHashRef}{XARGSFILEHANDLE};
-    my $fileName = ${$argHashRef}{fileName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $infile = ${$argHashRef}{infile};
-    my $inDirectory = ${$argHashRef}{inDirectory};
-    my $tempDirectory = ${$argHashRef}{tempDirectory};
-    my $outfile = ${$argHashRef}{outfile};
-    my $outDirectory = ${$argHashRef}{outDirectory};
+    my $arrayRef;
+    my $FILEHANDLE;
+    my $XARGSFILEHANDLE;
+    my $fileName;
+    my $tempDirectory;
+    my $programInfoPath;
+    my $infile;
+    my $inDirectory;
+    my $outfile;
+    my $outDirectory;
+
+    my $tmpl = { 
+	arrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$arrayRef},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	XARGSFILEHANDLE => { required => 1, defined => 1, store => \$XARGSFILEHANDLE},
+	fileName => { required => 1, defined => 1, strict_type => 1, store => \$fileName},
+	tempDirectory => { required => 1, defined => 1, strict_type => 1, store => \$tempDirectory},
+	programInfoPath => { strict_type => 1, store => \$programInfoPath},
+	infile => { strict_type => 1, store => \$infile},
+	inDirectory => { strict_type => 1, store => \$inDirectory},
+	outfile => { strict_type => 1, store => \$outfile},
+	outDirectory => { strict_type => 1, store => \$outDirectory},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+	nrCores => { default => 1,
+		     allow => qr/^\d+$/,
+		     strict_type => 1, store => \$nrCores},
+	firstCommand => { default => "cp -p",
+			  strict_type => 1, store => \$firstCommand},
+	fileEnding => { default => ".vcf*",
+			strict_type => 1, store => \$fileEnding},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $xargsFileName;
 
@@ -21152,35 +21907,53 @@ sub XargsCommand {
     
 ##Function : Creates the command line for xargs. Writes to sbatch FILEHANDLE and opens xargs FILEHANDLE
 ##Returns  : "xargsFileCounter + 1, $xargsFileName"
-##Arguments: $FILEHANDLE, $XARGSFILEHANDLE, $fileName, $programInfoPath, $nrCores, $firstCommand, $xargsFileCounter, $memoryAllocation, $javaUseLargePagesRef, $javaTemporaryDirectory, $javaJar
+##Arguments: $FILEHANDLE, $XARGSFILEHANDLE, $fileName, $nrCores, $firstCommand, $programInfoPath, $memoryAllocation, $javaUseLargePagesRef, $javaTemporaryDirectory, $javaJar, $xargsFileCounter
 ##         : $FILEHANDLE             => Sbatch filehandle to write to
 ##         : $XARGSFILEHANDLE        => XARGS filehandle to write to 
 ##         : $fileName               => File name
-##         : $programInfoPath        => The program info path
 ##         : $nrCores                => The number of cores to use
 ##         : $firstCommand           => The inital command 
-##         : $xargsFileCounter       => The xargs file counter
+##         : $programInfoPath        => The program info path
 ##         : $memoryAllocation       => Memory allocation for java
 ##         : $javaUseLargePagesRef   => Use java large pages {REF}
 ##         : $javaTemporaryDirectory => Redirect tmp files to java temp {Optional}
 ##         : $javaJar                => The JAR
+##         : $xargsFileCounter       => The xargs file counter
 
     my ($argHashRef) = @_;
 
     ## Default(s)
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
+    my $xargsFileCounter;
 
     ## Flatten argument(s)
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $XARGSFILEHANDLE = ${$argHashRef}{XARGSFILEHANDLE};
-    my $fileName = ${$argHashRef}{fileName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $nrCores = ${$argHashRef}{nrCores};
-    my $firstCommand = ${$argHashRef}{firstCommand};
-    my $memoryAllocation = ${$argHashRef}{memoryAllocation};
-    my $javaUseLargePagesRef = ${$argHashRef}{javaUseLargePagesRef};
-    my $javaTemporaryDirectory = ${$argHashRef}{javaTemporaryDirectory};
-    my $javaJar = ${$argHashRef}{javaJar};
+    my $FILEHANDLE;
+    my $XARGSFILEHANDLE;
+    my $fileName;
+    my $nrCores;
+    my $firstCommand;
+    my $programInfoPath;
+    my $memoryAllocation;
+    my $javaUseLargePagesRef;
+    my $javaTemporaryDirectory;
+    my $javaJar;
+
+    my $tmpl = { 
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	XARGSFILEHANDLE => { required => 1, defined => 1, store => \$XARGSFILEHANDLE},
+	fileName => { required => 1, defined => 1, strict_type => 1, store => \$fileName},
+	nrCores => { required => 1, defined => 1, strict_type => 1, store => \$nrCores},
+	firstCommand => { required => 1, defined => 1, strict_type => 1, store => \$firstCommand},
+	programInfoPath => { strict_type => 1, store => \$programInfoPath},
+	memoryAllocation => { strict_type => 1, store => \$memoryAllocation},
+	javaUseLargePagesRef => { default => \$$, strict_type => 1, store => \$javaUseLargePagesRef},
+	javaTemporaryDirectory => { strict_type => 1, store => \$javaTemporaryDirectory},
+	javaJar => { strict_type => 1, store => \$javaJar},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $xargsFileName;
 
@@ -21201,19 +21974,13 @@ sub XargsCommand {
 
     if ( $firstCommand eq "java") {
 
-	print $FILEHANDLE "java ";
-	print $FILEHANDLE "-".$memoryAllocation." ";
-
-	&WriteUseLargePages($FILEHANDLE, $javaUseLargePagesRef);
-
-	if (defined($javaTemporaryDirectory)) {
-
-	    print $FILEHANDLE "-Djava.io.tmpdir=".$javaTemporaryDirectory." "; #Temporary Directory
-	}
-	if (defined($javaJar)) {
-
-	    print $FILEHANDLE "-jar ".$javaJar." ";
-	}
+	## Writes java core commands to filehandle.
+	&JavaCore({FILEHANDLE => $FILEHANDLE,
+		   memoryAllocation => $memoryAllocation,
+		   javaUseLargePagesRef => $javaUseLargePagesRef,
+		   javaTemporaryDirectory => $javaTemporaryDirectory,
+		   javaJar => $javaJar,
+		  });
     }
     else {
 
@@ -21310,36 +22077,55 @@ sub SplitBAMSambamba {
     
 ##Function : Split BAM file per contig and index new BAM. Creates the command line for xargs. Writes to sbatch FILEHANDLE and opens xargs FILEHANDLE
 ##Returns  : ""
-##Arguments: $FILEHANDLE, $XARGSFILEHANDLE, $contigs, $xargsFileCounter, $fileName, $programInfoPath, $nrCores, $firstCommand, $infile, $tempDirectoryRef
+##Arguments: $scriptParameterHashRef, $contigsArrayRef, $FILEHANDLE, $XARGSFILEHANDLE, $memoryAllocation, $fileName, $programInfoPath, $nrCores, $infile, $tempDirectoryRef, $xargsFileCounter, $firstCommand
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $contigsArrayRef        => The contigs to process
 ##         : $FILEHANDLE             => Sbatch filehandle to write to
 ##         : $XARGSFILEHANDLE        => XARGS filehandle to write to
-##         : $xargsFileCounter       => The xargs file counter
 ##         : $memoryAllocation       => Memory allocation for ja
-##         : $contigs                => The contigs to process
 ##         : $fileName               => File name - ususally sbatch
 ##         : $programInfoPath        => The program info path
 ##         : $nrCores                => The number of cores to use
-##         : $firstCommand           => The inital command
 ##         : $infile                 => The infile
-##         : $tempDirectoryRef     => The temporary directory
+##         : $tempDirectoryRef       => The temporary directory
+##         : $xargsFileCounter       => The xargs file counter
+##         : $firstCommand           => The inital command
 
     my ($argHashRef) = @_;
 
     ## Default(s)
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
-    my $xargsFileCounter = ${$argHashRef}{xargsFileCounter} //= 0;
-    my $firstCommand = ${$argHashRef}{firstCommand} //= "sambamba ";
-    
+    my $firstCommand;
+    my $xargsFileCounter;
+
     ## Flatten argument(s)
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $XARGSFILEHANDLE = ${$argHashRef}{XARGSFILEHANDLE};
-    my $contigs = ${$argHashRef}{contigs};
-    my $fileName = ${$argHashRef}{fileName};
-    my $programInfoPath = ${$argHashRef}{programInfoPath};
-    my $nrCores = ${$argHashRef}{nrCores};
-    my $infile = ${$argHashRef}{infile};
+    my $scriptParameterHashRef;
+    my $contigsArrayRef;
+    my $FILEHANDLE;
+    my $XARGSFILEHANDLE;
+    my $fileName;
+    my $programInfoPath;
+    my $nrCores;
+    my $infile;
+
+    my $tmpl = { 
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	contigsArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$contigsArrayRef},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	XARGSFILEHANDLE => { required => 1, defined => 1, store => \$XARGSFILEHANDLE},
+	fileName => { required => 1, defined => 1, strict_type => 1, store => \$fileName},
+	programInfoPath => { required => 1, defined => 1, strict_type => 1, store => \$programInfoPath},
+	nrCores => { required => 1, defined => 1, strict_type => 1, store => \$nrCores},
+	infile => { required => 1, defined => 1, strict_type => 1, store => \$infile},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	xargsFileCounter => { default => 0,
+			      allow => qr/^\d+$/,
+			      strict_type => 1, store => \$xargsFileCounter},
+	firstCommand => { default => "sambamba ",
+			  strict_type => 1, store => \$firstCommand},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $xargsFileName;
 
@@ -21354,9 +22140,9 @@ sub SplitBAMSambamba {
 							});
     
     ## Split by contig
-    for (my $contigsCounter=0;$contigsCounter<scalar(@{$contigs});$contigsCounter++) {
+    for (my $contigsCounter=0;$contigsCounter<scalar(@{$contigsArrayRef});$contigsCounter++) {
 	
-	my $contigRef = \${$contigs}[$contigsCounter];
+	my $contigRef = \${$contigsArrayRef}[$contigsCounter];
 
 	print $XARGSFILEHANDLE "view ";  #Command
 	print $XARGSFILEHANDLE "-h ";  #Include header
@@ -21462,9 +22248,9 @@ sub ClearTrap {
 
 ##Function : Clear trap for signal(s), e.g. in exome analysis since the might be no variants in MT or Y contigs. This will cause premature exit from sbatch
 ##Returns  : ""
-##Arguments: $trapSignalsRef, $FILEHANDLE, $analysisType
-##         : $trapSignalsRef => Array with signals to clear trap for {REF}
+##Arguments: $FILEHANDLE, $trapSignalsRef
 ##         : $FILEHANDLE     => The FILEHANDLE to write to
+##         : $trapSignalsRef => Array with signals to clear trap for {REF}
 
     my ($argHashRef) = @_;
     
@@ -21472,13 +22258,14 @@ sub ClearTrap {
     my $trapSignalsRef = ${$argHashRef}{trapSignalsRef} //= ["ERR"];
     
     ## Flatten argument(s)
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $FILEHANDLE;
  
-    ## Mandatory arguments
-    my %mandatoryArgument = (FILEHANDLE => $FILEHANDLE,
-	);
-    
-    &CheckMandatoryArguments(\%mandatoryArgument, "ClearTrap");
+    my $tmpl = { 
+	FILEHANDLE => { required => 1, store => \$FILEHANDLE},
+	trapSignalsRef => { default => [], strict_type => 1, store => \$trapSignalsRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     ## Clear trap for signal ERR
     say $FILEHANDLE "## Clear trap for signal(s) ".join(" ", @{$trapSignalsRef});
@@ -21493,10 +22280,10 @@ sub EnableTrap {
 
 ##Function : Enable trap for signal(s).  
 ##Returns  : ""
-##Arguments: $trapSignalsRef, $trapFunction, $FILEHANDLE, $analysisType
+##Arguments: $trapSignalsRef, $trapFunction, $FILEHANDLE
+##         : $FILEHANDLE     => The FILEHANDLE to write to
 ##         : $trapSignalsRef => Array with signals to clear trap for {REF}
 ##         : $trapFunction   => The trap function argument
-##         : $FILEHANDLE     => The FILEHANDLE to write to
     
     my ($argHashRef) = @_;
     
@@ -21505,13 +22292,15 @@ sub EnableTrap {
     my $trapFunction = ${$argHashRef}{trapFunction} //= "error",
     
     ## Flatten argument(s)
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $FILEHANDLE;
  
-    ## Mandatory arguments
-    my %mandatoryArgument = (FILEHANDLE => $FILEHANDLE,
-	);
-    
-    &CheckMandatoryArguments(\%mandatoryArgument, "EnableTrap");
+     my $tmpl = { 
+	FILEHANDLE => { required => 1, store => \$FILEHANDLE},
+	trapSignalsRef => { default => [], strict_type => 1, store => \$trapSignalsRef},
+	trapFunction => { strict_type => 1, store => \$trapFunction},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     say $FILEHANDLE "## Enable cleared trap for signal(s) ".join(" ", @{$trapSignalsRef})." again";
     say $FILEHANDLE "trap ".$trapFunction." ".join(" ", @{$trapSignalsRef}), "\n";
@@ -21534,12 +22323,22 @@ sub CollectSubDatabases {
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $familyIDRef = ${$argHashRef}{familyIDRef};
-    my $programNameRef = ${$argHashRef}{programNameRef};
-    my $databaseFile = ${$argHashRef}{databaseFile};
-    my $databaseKey = ${$argHashRef}{databaseKey};
+    my $sampleInfoHashRef;
+    my $familyIDRef;
+    my $programNameRef;
+    my $databaseFile;
+    my $databaseKey;
     
+    my $tmpl = { 
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	familyIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$familyIDRef},
+	programNameRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$programNameRef},
+	databaseFile => { required => 1, defined => 1, strict_type => 1, store => \$databaseFile},
+	databaseKey => { required => 1, defined => 1, strict_type => 1, store => \$databaseKey},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
+
     my %memberDatabase;  #Collect each member database features
     my %header = ("Database=<ID" => "FileName",
 		  Version => "Version",
@@ -21605,24 +22404,35 @@ sub AddMostCompleteVCF {
 
 ##Function : Adds the most complete vcf file to sampleInfo
 ##Returns  : ""
-##Arguments: $scriptParameterHashRef, $sampleInfoHashRef, $familyIDRef, $path, $programName, $vcfParserOutputFileCounter
+##Arguments: $scriptParameterHashRef, $sampleInfoHashRef, $path, $programName, $familyIDRef, $vcfParserOutputFileCounter
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
-##         : $familyIDRef                => The family ID {REF}
 ##         : $path                       => Path to file
 ##         : $programName                => Program name
+##         : $familyIDRef                => The family ID {REF}
 ##         : $vcfParserOutputFileCounter => Number of outfile files from in vcfParser (select, range)
 
     my ($argHashRef) = @_;
     
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $vcfParserOutputFileCounter = ${$argHashRef}{vcfParserOutputFileCounter} //= 0;
+    my $vcfParserOutputFileCounter;
     
     ## Flatten argument(s)
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $path = ${$argHashRef}{path};
-    my $programName = ${$argHashRef}{programName};
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $path;
+    my $programName;
+
+    my $tmpl = { 
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	path => { required => 1, defined => 1, strict_type => 1, store => \$path},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	vcfParserOutputFileCounter => { default => 0, strict_type => 1, store => \$vcfParserOutputFileCounter},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     if ( (${$scriptParameterHashRef}{ "p".$programName } == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
 	
@@ -22551,30 +23361,6 @@ sub VTCore {
 }
 
 
-sub CheckMandatoryArguments {
-
-##CheckMandatoryArguments
-
-##Function : Check that all mandatory arguments have been passed to subroutine
-##Returns  : ""
-##Arguments: $mandatoryArgumentHashRef, $functionName
-##         : $mandatoryArgumentHashRef => Mandatory arguments hash {REF}
-##         : $functionName             => Name of the calling function
-
-    my $mandatoryArgumentHashRef = $_[0];
-    my $functionName = $_[1];
-    
-    foreach my $key (keys (%{$mandatoryArgumentHashRef})) {
-	
-	unless (defined(${$mandatoryArgumentHashRef}{$key})) {
-	    
-	    warn("Mandatory argument: '".$key."' missing in function: '".$functionName."'\n");
-	    exit 1;
-	}
-    }
-}
-
-
 sub CheckVTForReferences {
     
 ##CheckVTForReferences
@@ -22828,32 +23614,37 @@ sub Bgzip {
     my ($argHashRef) = @_;
     
     ## Default(s)
-    my $compress = ${$argHashRef}{compress} //= "yes";
+    my $compress;
     
     ## Flatten argument(s)
     my $infilePath = ${$argHashRef}{infilePath};
     my $outfilePath = ${$argHashRef}{outfilePath};
     my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (infilePath => $infilePath,
-			     FILEHANDLE => $FILEHANDLE,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, "Bgzip");
+    my $tmpl = { 
+	infilePath => { required => 1, defined => 1, strict_type => 1, store => \$infilePath},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	outfilePath => { strict_type => 1, store => \$outfilePath},
+	compress => { default => 1,
+		      allow => [0, 1],
+		      strict_type => 1, store => \$compress},
+    };
+
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     print $FILEHANDLE "bgzip ";
 
-    if ( ($compress eq "yes") && defined($outfilePath) ) {  #Compress and stream
+    if ( ($compress) && defined($outfilePath) ) {  #Compress and stream
 
 	print $FILEHANDLE "-c ";
 	print $FILEHANDLE $infilePath." ";
 	print $FILEHANDLE "> ".$outfilePath." ";
     }
-    elsif ($compress eq "yes") {  #Compress original file
+    elsif ($compress) {  #Compress original file
 
 	print $FILEHANDLE $infilePath." ";
     }
-    elsif ( ($compress ne "yes") && defined($outfilePath) ){  #Decompress and stream
+    elsif ( (! $compress) && defined($outfilePath) ){  #Decompress and stream
 
 	print $FILEHANDLE "-d ";
 	print $FILEHANDLE "-c ";
@@ -22875,25 +23666,27 @@ sub Tabix {
     
 ##Function : Index file using tabix 
 ##Returns  : ""
-##Arguments: $infilePath, $preset
-##         : $infilePath  => In file path
-##         : $preset      => preset, file format
+##Arguments: $infilePath, $preset, $FILEHANDLE
+##         : $infilePath  => Infile path
+##         : $preset      => Preset, file format
 ##         : $FILEHANDLE  => Filehandle to write to
 
     my ($argHashRef) = @_;
     
     ## Default(s)
-    my $preset = ${$argHashRef}{preset} //= "vcf";
+    my $preset;
     
     ## Flatten argument(s)
-    my $infilePath = ${$argHashRef}{infilePath};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $infilePath;
+    my $FILEHANDLE;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (infilePath => $infilePath,
-			     FILEHANDLE => $FILEHANDLE,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, "Tabix");
+    my $tmpl = { 
+	infilePath => { required => 1, defined => 1, strict_type => 1, store => \$infilePath},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	preset => { default => "vcf", strict_type => 1, store => \$preset},
+    };
+ 
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     print $FILEHANDLE "tabix ";
     print $FILEHANDLE "-p ".$preset." ";  #Preset
@@ -22909,55 +23702,60 @@ sub RemoveFiles {
     
 ##Function : Removes intermediate files from the MIP analysis depending on set MIP parameters
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $FILEHANDLE, $familyID, $sampleID, $alignerOutDir, $callType, $programName, $reduceIORef
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $laneHashRef, $infilesLaneNoEndingHashRef, $programName, $reduceIORef, $sampleID, $inSampleDirectory, $FILEHANDLE, familyIDRef, $alignerOutDirRef, $callType
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
 ##         : $fileInfoHashRef            => The fileInfo hash {REF}
 ##         : $laneHashRef                => The lane info hash {REF}
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
-##         : $FILEHANDLE                 => Filehandle to write to
-##         : $familyID                   => The familyID
-##         : $sampleID                   => The sampleID
-##         : $alignerOutDir              => The alignerOutDir used in the analysis
-##         : $callType                   => The variant call type
 ##         : $programName                => The program name
 ##         : $reduceIORef                => Reduce IO - modulates processBlocks {REF}
-    
+##         : $sampleID                   => The sampleID
+##         : $inSampleDirectory          => The directory for in sample files to be removed
+##         : $FILEHANDLE                 => Filehandle to write to
+##         : $familyIDRef                => The familyID {REF}
+##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
+##         : $callType                   => The variant call type
+
     my ($argHashRef) = @_;
     
     ## Default(s)
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-    my $callType = ${$argHashRef}{callType} //= "BOTH";
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
-    
-    ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $laneHashRef = ${$argHashRef}{laneHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $sampleID = ${$argHashRef}{sampleID};
-    my $inSampleDirectory = ${$argHashRef}{inSampleDirectory};
-    my $reduceIORef = ${$argHashRef}{reduceIORef};
-    my $programName = ${$argHashRef}{programName};
+    my $callType;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
-			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
-			     sampleInfoHashRef => ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} },  #Any MIP mandatory key will do
-			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
-			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     laneHashRef => ${$laneHashRef}{ ${$scriptParameterHashRef}{sampleIDs}[0] },  #Any MIP mandatory key will do
-			     FILEHANDLE => $FILEHANDLE,
-			     reduceIORef => $$reduceIORef,
-			     alignerOutDirRef => $$alignerOutDirRef,
-			     programName => $programName,
-	);
-    
-    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
+    ## Flatten argument(s)
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $laneHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $programName;
+    my $reduceIORef;
+    my $sampleID;
+    my $inSampleDirectory;
+    my $FILEHANDLE;
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	laneHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$laneHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	reduceIORef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$reduceIORef},
+	sampleID => { strict_type => 1, store => \$sampleID},
+	inSampleDirectory => { strict_type => 1, store => \$inSampleDirectory},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	callType => { default => "BOTH", strict_type => 1, store => \$callType},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     my $vcfParserContigsArrayRef = \@{ ${$fileInfoHashRef}{contigsSizeOrdered} };  #Set default
     
@@ -23115,11 +23913,11 @@ sub DetectMostCompleteFile {
 
 ##Function : Detect which mostCompletePath to use depending on fileEnding
 ##Returns  : ""
-##Arguments: $scriptParameterHashRef,
+##Arguments: $scriptParameterHashRef, $fileEndingRef, $sampleIDRef
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 ##         : $fileEndingRef          => FileEnding (.fileEnding){REF}
-##         : $familyIDRef            => Family ID {REF}
 ##         : $sampleIDRef            => Sample ID {REF}
+##         : $familyIDRef            => Family ID {REF}
 
     my ($argHashRef) = @_;
     
@@ -23127,17 +23925,18 @@ sub DetectMostCompleteFile {
     my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
 
     ## Flatten argument(s)
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileEndingRef =  ${$argHashRef}{fileEndingRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
+    my $sampleInfoHashRef;
+    my $fileEndingRef;
+    my $sampleIDRef;
     
-    ## Mandatory arguments
-    my %mandatoryArgument = (sampleInfoHashRef => ${$sampleInfoHashRef}{$$familyIDRef},  #Any MIP mandatory key will do
-			     fileEnding => $$fileEndingRef,
-			     familyIDRef=> $$familyIDRef,
-	);
-    
-    &CheckMandatoryArguments(\%mandatoryArgument, "DetectMostCompleteFile");
+    my $tmpl = { 
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileEndingRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$fileEndingRef},
+	sampleIDRef => { store => \$sampleIDRef},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     ## Set mostcompletePaths
     my $mostcompleteBamRef;
@@ -23147,6 +23946,7 @@ sub DetectMostCompleteFile {
 	
 	$mostcompleteBamRef = \${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path};
     }
+
     ## Decide which mostcompletePaths to use
     if ($$fileEndingRef eq ".bam") {
 	
@@ -23442,23 +24242,25 @@ sub VcfToBcf {
     
 ##Function : Compress vcf to bcf and index.
 ##Returns  : ""
-##Arguments: $infile, $outfile, $FILEHANDLE
+##Arguments: $infile, $FILEHANDLE, $outfile
 ##         : $infile     => The file to compress and index (no fileEnding)
-##         : $outfile    => Out file (no fileEnding)
 ##         : $FILEHANDLE => SBATCH script FILEHANDLE to print to
+##         : $outfile    => Out file (no fileEnding) {Optional}
     
     my ($argHashRef) = @_;
     
     ## Flatten argument(s)
-    my $infile = ${$argHashRef}{infile};
-    my $outfile = ${$argHashRef}{outfile};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $infile;
+    my $FILEHANDLE;
+    my $outfile;
+
+    my $tmpl = { 
+	infile => { required => 1, defined => 1, strict_type => 1, store => \$infile},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	outfile => { strict_type => 1, store => \$outfile},
+    };
     
-    ## Mandatory arguments
-    my %mandatoryArgument = (infile => $infile,
-			     FILEHANDLE => $FILEHANDLE,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, "VcfToBcf");
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];    
     
     say $FILEHANDLE "## Compress vcf to bcf";
     print $FILEHANDLE "bcftools ";
@@ -23515,19 +24317,8 @@ sub PrepareGATKTargetIntervals {
     my $referencesDirRef = ${$argHashRef}{referencesDirRef};
     my $targetIntervalFileListsRef = ${$argHashRef}{targetIntervalFileListsRef};
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef};
-    ;
 
     if ( ($$analysisTypeRef eq "exomes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
-	
-	## Mandatory arguments
-	my %mandatoryArgument = (analysisTypeRef => $$analysisTypeRef,
-				 referencesDirRef => $$referencesDirRef,
-				 targetIntervalFileListsRef => $$targetIntervalFileListsRef,
-				 tempDirectoryRef => $$tempDirectoryRef,
-				 FILEHANDLE => $FILEHANDLE,
-	    );
-	
-	&CheckMandatoryArguments(\%mandatoryArgument, "PrepareGATKTargetIntervals");
 
 	my $targetIntervalsPath = catfile($$tempDirectoryRef, $$targetIntervalFileListsRef);
 	
@@ -23623,28 +24414,31 @@ sub CNVnatorHis {
 ##         : $cnvBinSizeRef       => The cnvnator bin size {REF}
 ##         : $chromosomeReference => The chrmosome reference X.fa file
 ##         : $FILEHANDLE          => Filehandle to write to
-##         : $stdoutfile          => The stdout output file
-##         : $stderrFile          => The stderr output file
+##         : $stdoutfile          => The stdout output file {Optional}
+##         : $stderrFile          => The stderr output file {Optional}
   
     my ($argHashRef) = @_;
     
     ## Flatten argument(s)
-    my $rootFile = ${$argHashRef}{rootFile};
-    my $contigRef = ${$argHashRef}{contigRef};
-    my $cnvBinSizeRef = ${$argHashRef}{cnvBinSizeRef};
-    my $chromosomeReference = ${$argHashRef}{chromosomeReference};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $stdoutfile = ${$argHashRef}{stdoutfile};
-    my $stderrFile = ${$argHashRef}{stderrFile};
+    my $rootFile;
+    my $contigRef;
+    my $cnvBinSizeRef;
+    my $chromosomeReference;
+    my $FILEHANDLE;
+    my $stdoutfile;
+    my $stderrFile;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (rootFile => $rootFile,
-			     contigRef => $$contigRef,
-			     cnvBinSizeRef => $$cnvBinSizeRef,
-			     chromosomeReference => $chromosomeReference,
-			     FILEHANDLE => $FILEHANDLE,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, "CNVnatorHis");
+    my $tmpl = { 
+	rootFile => { required => 1, defined => 1, strict_type => 1, store => \$rootFile},
+	contigRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$contigRef},
+	cnvBinSizeRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$cnvBinSizeRef},
+	chromosomeReference => { required => 1, defined => 1, strict_type => 1, store => \$chromosomeReference},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	stdoutfile => { strict_type => 1, store => \$stdoutfile},
+	stderrFile => { strict_type => 1, store => \$stderrFile},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     print $FILEHANDLE "cnvnator "; 
     print $FILEHANDLE "-root ".$rootFile." ";  #ROOT file
@@ -23661,7 +24455,6 @@ sub CNVnatorHis {
 	print $FILEHANDLE "2>> ".$stderrFile." ";
     }
     print $FILEHANDLE "; ";
-    
 }
 
 sub CNVnatorStat {
@@ -23675,26 +24468,29 @@ sub CNVnatorStat {
 ##         : $contigRef     => Contig to analyze {REF}
 ##         : $cnvBinSizeRef => The cnvnator bin size {REF}
 ##         : $FILEHANDLE    => Filehandle to write to
-##         : $stdoutfile    => The stdout output file
-##         : $stderrFile    => The stderr output file
+##         : $stdoutfile    => The stdout output file {Optional}
+##         : $stderrFile    => The stderr output file {Optional}
 
     my ($argHashRef) = @_;
     
     ## Flatten argument(s)
-    my $rootFile = ${$argHashRef}{rootFile};
-    my $contigRef = ${$argHashRef}{contigRef};
-    my $cnvBinSizeRef = ${$argHashRef}{cnvBinSizeRef};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $stdoutfile = ${$argHashRef}{stdoutfile};
-    my $stderrFile = ${$argHashRef}{stderrFile};
-    
-    ## Mandatory arguments
-    my %mandatoryArgument = (rootFile => $rootFile,
-			     contigRef => $$contigRef,
-			     cnvBinSizeRef => $$cnvBinSizeRef,
-			     FILEHANDLE => $FILEHANDLE,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, "CNVnatorStat");
+    my $rootFile;
+    my $contigRef;
+    my $cnvBinSizeRef;
+    my $FILEHANDLE;
+    my $stdoutfile;
+    my $stderrFile;
+
+    my $tmpl = { 
+	rootFile => { required => 1, defined => 1, strict_type => 1, store => \$rootFile},
+	contigRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$contigRef},
+	cnvBinSizeRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$cnvBinSizeRef},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	stdoutfile => { strict_type => 1, store => \$stdoutfile},
+	stderrFile => { strict_type => 1, store => \$stderrFile},
+    };
+
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     print $FILEHANDLE "cnvnator "; 
     print $FILEHANDLE "-root ".$rootFile." ";  #ROOT file
@@ -23723,26 +24519,29 @@ sub CNVnatorPartition {
 ##         : $contigRef     => Contig to analyze {REF}
 ##         : $cnvBinSizeRef => The cnvnator bin size {REF}
 ##         : $FILEHANDLE    => Filehandle to write to
-##         : $stdoutfile    => The stdout output file
-##         : $stderrFile    => The stderr output file
+##         : $stdoutfile    => The stdout output file {Optional}
+##         : $stderrFile    => The stderr output file {Optional}
     
     my ($argHashRef) = @_;
     
     ## Flatten argument(s)
-    my $rootFile = ${$argHashRef}{rootFile};
-    my $contigRef = ${$argHashRef}{contigRef};
-    my $cnvBinSizeRef = ${$argHashRef}{cnvBinSizeRef};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $stdoutfile = ${$argHashRef}{stdoutfile};
-    my $stderrFile = ${$argHashRef}{stderrFile};
+    my $rootFile;
+    my $contigRef;
+    my $cnvBinSizeRef;
+    my $FILEHANDLE;
+    my $stdoutfile;
+    my $stderrFile;
     
-    ## Mandatory arguments
-    my %mandatoryArgument = (rootFile => $rootFile,
-			     contigRef => $$contigRef,
-			     cnvBinSizeRef => $$cnvBinSizeRef,
-			     FILEHANDLE => $FILEHANDLE,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, "CNVnatorPartition");
+    my $tmpl = { 
+	rootFile => { required => 1, defined => 1, strict_type => 1, store => \$rootFile},
+	contigRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$contigRef},
+	cnvBinSizeRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$cnvBinSizeRef},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	stdoutfile => { strict_type => 1, store => \$stdoutfile},
+	stderrFile => { strict_type => 1, store => \$stderrFile},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     print $FILEHANDLE "cnvnator "; 
     print $FILEHANDLE "-root ".$rootFile." ";  #ROOT file
@@ -23766,35 +24565,37 @@ sub CNVnatorCalling {
 
 ##Function : CNV Calling
 ##Returns  : ""
-##Arguments: $rootFile, $contigRef, $cnvBinSizeRef, $chromosomeReference, $FILEHANDLE, $stderrFile
+##Arguments: $rootFile, $contigRef, $cnvBinSizeRef, $chromosomeReference, $FILEHANDLE, $outfile, $stderrFile
 ##         : $rootFile            => The root file
 ##         : $contigRef           => Contig to analyze {REF}
 ##         : $cnvBinSizeRef       => The cnvnator bin size {REF}
 ##         : $chromosomeReference => The chrmosome reference X.fa file
 ##         : $FILEHANDLE          => Filehandle to write to
-##         : $stderrFile          => The stderr output file
 ##         : $outfile             => The outfile
+##         : $stderrFile          => The stderr output file {Optional}
    
     my ($argHashRef) = @_;
     
     ## Flatten argument(s)
-    my $rootFile = ${$argHashRef}{rootFile};
-    my $contigRef = ${$argHashRef}{contigRef};
-    my $cnvBinSizeRef = ${$argHashRef}{cnvBinSizeRef};
-    my $chromosomeReference = ${$argHashRef}{chromosomeReference};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $stderrFile = ${$argHashRef}{stderrFile};
-    my $outfile = ${$argHashRef}{outfile};
+    my $rootFile;
+    my $contigRef;
+    my $cnvBinSizeRef;
+    my $chromosomeReference;
+    my $FILEHANDLE;
+    my $stderrFile;
+    my $outfile;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (rootFile => $rootFile,
-			     contigRef => $$contigRef,
-			     cnvBinSizeRef => $$cnvBinSizeRef,
-			     chromosomeReference => $chromosomeReference,
-			     FILEHANDLE => $FILEHANDLE,
-			     outfile => $outfile,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, "CNVnatorCalling");
+     my $tmpl = { 
+	rootFile => { required => 1, defined => 1, strict_type => 1, store => \$rootFile},
+	contigRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$contigRef},
+	cnvBinSizeRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$cnvBinSizeRef},
+	chromosomeReference => { required => 1, defined => 1, strict_type => 1, store => \$chromosomeReference},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	outfile => { required => 1, defined => 1, strict_type => 1, store => \$outfile},
+	stderrFile => { strict_type => 1, store => \$stderrFile},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     print $FILEHANDLE "cnvnator "; 
     print $FILEHANDLE "-root ".$rootFile." ";  #ROOT file
@@ -23831,20 +24632,22 @@ sub RenameVCFSamples {
 
      my ($argHashRef) = @_;
 
-     my $sampleIDArrayRef = ${$argHashRef}{sampleIDArrayRef};
-     my $tempDirectoryRef =  ${$argHashRef}{tempDirectoryRef};
-     my $infile = ${$argHashRef}{infile};
-     my $outfile = ${$argHashRef}{outfile};
-     my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+     ## Flatten argument(s)
+     my $sampleIDArrayRef;
+     my $tempDirectoryRef;
+     my $infile;
+     my $outfile;
+     my $FILEHANDLE;
 
-     ## Mandatory arguments
-     my %mandatoryArgument = (sampleIDArrayRef => ${$sampleIDArrayRef}[0],
-			      tempDirectoryRef => $$tempDirectoryRef,
-			      infile => $infile,
-			      outfile => $outfile,
-			      $FILEHANDLE => $FILEHANDLE,
-	 );
-     &CheckMandatoryArguments(\%mandatoryArgument, "RenameVCFSamples");
+     my $tmpl = { 
+	 sampleIDArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$sampleIDArrayRef},
+	 tempDirectoryRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	 infile => { required => 1, defined => 1, strict_type => 1, store => \$infile},
+	 outfile => { required => 1, defined => 1, strict_type => 1, store => \$outfile},
+	 FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+     };
+     
+     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
      ## Create new sample names file
      say $FILEHANDLE "## Create new sample(s) names file";
@@ -23874,18 +24677,28 @@ sub RemoveElementFromArray {
 ##RemoveElementFromArray
     
 ##Function : Removes an element from array and return new array while leaving orginal arrayRef untouched. 
-##Returns  : "Array"
+##Returns  : "@array"
 ##Tags     : helper, remove, ARRAY, contigs
 ##Arguments: $arrayRef, $element, $contigSwitch
-##         : $arrayRef => Array to remove an element from {REF}
-##         : $element  => Element to remove
+##         : $arrayRef     => Array to remove an element from {REF}
+##         : $element      => Element to remove
 ##         : $contigSwitch => Expect contigs in arrayRef
 
     my ($argHashRef) = @_;
 
-    my $arrayRef = ${$argHashRef}{arrayRef};
-    my $element = ${$argHashRef}{element};
-    my $contigSwitch = ${$argHashRef}{contigSwitch};
+    ## Flatten argument(s)
+    my $arrayRef;
+    my $element;
+    my $contigSwitch;
+
+    my $tmpl = { 
+	arrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$arrayRef},
+	element => { required => 1, defined => 1, strict_type => 1, store => \$element},
+	contigSwitch => { allow => [0, 1],
+			  strict_type => 1, store => \$contigSwitch},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my @array = @{$arrayRef};  #Make local copy
 
@@ -23957,9 +24770,17 @@ sub TrackProgress {
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $logFileRef = ${$argHashRef}{logFileRef};
+    my $jobIDHashRef;
+    my $FILEHANDLE;
+    my $logFileRef;
+
+    my $tmpl = { 
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	logFileRef => { default => \$$, strict_type => 1, store => \$logFileRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     if (keys %{$jobIDHashRef}) {
 	
@@ -24096,16 +24917,23 @@ sub SelectBwaMemBinary {
     my ($argHashRef) = @_;
     
     ## Flatten argument(s)
-    my $humanGenomeReferenceSourceRef = ${$argHashRef}{humanGenomeReferenceSourceRef};
-    my $humanGenomeReferenceVersionRef = ${$argHashRef}{humanGenomeReferenceVersionRef};
+    my $humanGenomeReferenceSourceRef;
+    my $humanGenomeReferenceVersionRef;
     
+     my $tmpl = { 
+	humanGenomeReferenceSourceRef => {required => 1, defined => 1, default => \$$, strict_type => 1, store => \$humanGenomeReferenceSourceRef},
+	humanGenomeReferenceVersionRef => {required => 1, defined => 1, default => \$$, strict_type => 1, store => \$humanGenomeReferenceVersionRef},
+    };
+    
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];  
+
     if($humanGenomeReferenceSourceRef eq "GRCh") {
 	
 	if ($humanGenomeReferenceVersionRef > 37) {
 	    
 	    return "run-bwamem";
 	}
-	else {  #HumanGenome version lesser than GrCh37
+	else {  #HumanGenome version less than GrCh37
 			
 	    return "bwa mem";
 	}
@@ -24116,7 +24944,7 @@ sub SelectBwaMemBinary {
 	    
 	    return "run-bwamem";
 	}
-	else {  #HumanGenome version lesser than hg19
+	else {  #HumanGenome version less than hg19
 	    
 	    return "bwa mem";
 	}
@@ -24234,9 +25062,17 @@ sub GetExomTargetBEDFile {
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $fileEndingRef = ${$argHashRef}{fileEndingRef};
+    my $scriptParameterHashRef;
+    my $sampleIDRef;
+    my $fileEndingRef;
+
+    my $tmpl = { 
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
+	fileEndingRef => { store => \$fileEndingRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my %seen;
 
@@ -24268,28 +25104,29 @@ sub SambambaFlagStat {
 ##SambambaFlagStat
     
 ##Function : Process BAM with sambamba flagstat to produce metric file for downstream analysis
-##Returns  : "|$xargsFileCounter"
+##Returns  : ""
 ##Arguments: $infilePath, $outfilePath, $stderrFilePath, $FILEHANDLE
-##         : $FILEHANDLE => Sbatch filehandle to write to
 ##         : $infilePath     => Infile path
 ##         : $outfilePath    => outfile path 
 ##         : $stderrFilePath => Stderr file path to write to 
+##         : $FILEHANDLE     => Sbatch filehandle to write to
 
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $infilePath = ${$argHashRef}{infilePath};
-    my $outfilePath = ${$argHashRef}{outfilePath};
-    my $stderrFilePath = ${$argHashRef}{stderrFilePath};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $infilePath;
+    my $outfilePath;
+    my $stderrFilePath;
+    my $FILEHANDLE;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (infilePath => $infilePath,
-			     outfilePath => $outfilePath,
-			     stderrFilePath => $stderrFilePath,
-			     FILEHANDLE => $FILEHANDLE,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, "SambambaFlagStat");
+    my $tmpl = { 
+	infilePath => { required => 1, defined => 1, strict_type => 1, store => \$infilePath},
+	outfilePath => { required => 1, defined => 1, strict_type => 1, store => \$outfilePath},
+	stderrFilePath => { required => 1, defined => 1, strict_type => 1, store => \$stderrFilePath},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     print $FILEHANDLE "sambamba ";  #Program
     print $FILEHANDLE "flagstat ";
@@ -24311,7 +25148,13 @@ sub AliasAssemblyVersion {
     my ($argHashRef) = @_;
     
     ## Flatten argument(s)
-    my $assemblyVersionRef = ${$argHashRef}{assemblyVersion};
+    my $assemblyVersionRef;
+    
+    my $tmpl = { 
+	assemblyVersionRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$assemblyVersionRef},
+    };
+    
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     if ($$assemblyVersionRef=~/hg(\d+)/) {
 	
@@ -24330,13 +25173,15 @@ sub GenerateContigSpecificTargetBedFile {
     
 ##Function : Generate contig specific interval_list
 ##Returns  : ""
-##Arguments: $scriptParameterHashRef, $fileInfoHashRef, $FILEHANDLE, $exomeTargetBedFile
+##Arguments: $scriptParameterHashRef, $fileInfoHashRef, $FILEHANDLE, $exomeTargetBedFile, $tempDirectoryRef, $referencesDirRef, $fileEnding
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 ##         : $fileInfoHashRef        => The fileInfo hash {REF}
 ##         : $FILEHANDLE             => Filehandle to write to
 ##         : $exomeTargetBedFile     => Target file to split
-##         : $fileEnding      => File ending to add
-    
+##         : $tempDirectoryRef       => The temporary directory {REF}
+##         : $referencesDirRef       => MIP reference directory {REF}
+##         : $fileEnding             => File ending to add {Optional}
+
     my ($argHashRef) = @_;
     
     ## Default(s)
@@ -24344,14 +25189,27 @@ sub GenerateContigSpecificTargetBedFile {
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     
     ## Flatten argument(s)
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $exomeTargetBedFileRef = ${$argHashRef}{exomeTargetBedFileRef};
-    my $fileEnding = ${$argHashRef}{fileEnding};
+    my $scriptParameterHashRef;
+    my $fileInfoHashRef;
+    my $FILEHANDLE;
+    my $exomeTargetBedFileRef;
+    my $fileEnding;
+
+    my $tmpl = { 
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	exomeTargetBedFileRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$exomeTargetBedFileRef},
+	fileEnding => { strict_type => 1, store => \$fileEnding},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
     my $coreCounter = 1;
+
     say $FILEHANDLE "## Generate contig specific interval_list\n"; 
     for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{contigsSizeOrdered}});$contigsCounter++) {
 	
@@ -24382,24 +25240,27 @@ sub ReplaceIUPAC {
     
 ##Function : Replace the IUPAC code in alternative allels with N for input stream and writes to stream.
 ##Returns  : ""
-##Arguments: $stderrPath, $FILEHANDLE, $xargs
-##         : $stderrPath => Stderr path to errors write to
+##Arguments: $FILEHANDLE, $stderrPath, $xargs
 ##         : $FILEHANDLE => Sbatch filehandle to write to
+##         : $stderrPath => Stderr path to errors write to
 ##         : $xargs      => Write on xargs format
 
     my ($argHashRef) = @_;
 
     ## Default(s)
-    my $xargs = ${$argHashRef}{xargs} //= 1;
+    my $xargs;
 
     ## Flatten argument(s)
-    my $stderrPath = ${$argHashRef}{stderrPath};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
+    my $FILEHANDLE;
+    my $stderrPath;
 
-    ## Mandatory arguments
-    my %mandatoryArgument = (FILEHANDLE => $FILEHANDLE,
-	);
-    &CheckMandatoryArguments(\%mandatoryArgument, "ReplaceIUPAC");
+    my $tmpl = { 
+	FILEHANDLE => { required => 1, defined => 1, strict_type => 1, store => \$FILEHANDLE},
+	stderrPath => { strict_type => 1, store => \$stderrPath},
+	xargs => { default => 1, strict_type => 1, store => \$xargs},
+    };
+    
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     print $FILEHANDLE "| ";  #Pipe
     print $FILEHANDLE "perl -nae ";
