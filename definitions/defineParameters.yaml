@@ -495,7 +495,7 @@ pGATKRealigner:
    - MIP
   chain: MAIN
   dataType: SCALAR
-  default: 1
+  default: 0
   fileTag: _rreal
   fileEnding:
    - .bam

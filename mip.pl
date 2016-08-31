@@ -189,7 +189,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -gtp/--genomeAnalysisToolKitPath  Path to GATK. Mandatory for use of GATK (defaults to "")
                -gbdv/--GATKBundleDownLoadVersion  GATK FTP bundle download version.(defaults to "2.8")
                -gdco/--GATKDownSampleToCoverage Coverage to downsample to at any given locus (defaults to "1000")
-               -pGrA/--pGATKRealigner Realignments of reads using GATK realign (defaults to "1" (=yes))
+               -pGrA/--pGATKRealigner Realignments of reads using GATK realign (defaults to "0" (=no))
                  -graks/--GATKReAlignerINDELKnownSite GATK ReAlignerTargetCreator/IndelRealigner known INDEL site (defaults to "1000G_phase1.indels.b37.vcf", "Mills_and_1000G_gold_standard.indels.b37.vcf")
                -pGbR/--pGATKBaseRecalibration Recalibration of bases using GATK BaseRecalibrator/PrintReads (defaults to "1" (=yes))
                  -gbrcov/--GATKBaseReCalibrationCovariate GATK BaseReCalibration covariates (defaults to "ReadGroupCovariate", "ContextCovariate", "CycleCovariate", "QualityScoreCovariate")
@@ -3008,7 +3008,7 @@ sub Evaluation {
 	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
 	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
 	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
-	sampleIDRef => { required => 1, defined => 1, strict_type => 1, store => \$sampleIDRef},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
 	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
 	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
 	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
