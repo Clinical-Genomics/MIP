@@ -78,6 +78,7 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                -tmd/--tempDirectory Set the temporary directory for all programs (defaults to "/scratch/SLURM_JOB_ID";supply whole path)
                -jul/--javaUseLargePages Use large page memory. (defaults to "0" (=no))
                -nrm/--nodeRamMemory The RAM memory size of the node(s) in GigaBytes (Defaults to 24)
+               -qos/--slurmQualityofService SLURM quality of service command in sbatch scripts (defaults to "normal")
                -sen/--sourceEnvironmentCommand Source environment command in sbatch scripts (defaults to "")
 
                -ges/--genomicSet Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
@@ -456,6 +457,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'sen|sourceEnvironmentCommand=s{,}' => \@{$parameter{sourceEnvironmentCommand}{value}},
 	   'jul|javaUseLargePages=n' => \$parameter{javaUseLargePages}{value},
 	   'nrm|nodeRamMemory=n' => \$parameter{nodeRamMemory}{value},  #Per node
+	   'qos|slurmQualityofService=s' => \$parameter{slurmQualityofService}{value},
            'ges|genomicSet:s' => \$parameter{genomicSet}{value},  #Selection of relevant regions post alignment and sort
 	   'rio|reduceIO=n' => \$parameter{reduceIO}{value},
 	   'riu|replaceIUPAC=n' => \$parameter{replaceIUPAC}{value},
@@ -17753,23 +17755,24 @@ sub ProgramPreRequisites {
     
 ##Function : Creates program directories (info & programData & programScript), program script filenames and writes sbatch header.
 ##Returns  : Path to stdout
-##Arguments: $scriptParameterHashRef, $jobIDHashRef, $sourceEnvironmentCommandArrayRef, $FILEHANDLE, $emailType, $outDataDir, $outScriptDir, $directoryID, $programDirectory, $programName, $callType, $nrofCores, $processTime, $tempDirectory, $errorTrap, $pipefail
+##Arguments: $scriptParameterHashRef, $jobIDHashRef, $FILEHANDLE, $directoryID, $programDirectory, $programName, $callType, $outDataDir, $outScriptDir, $tempDirectory, $emailType, $sourceEnvironmentCommandArrayRef, $slurmQualityofService, $nrofCores, $processTime, $errorTrap, $pipefail
 ##         : $scriptParameterHashRef           => The active parameters for this analysis hash {REF}
 ##         : $jobIDHashRef                     => The jobID hash {REF}
-##         : $sourceEnvironmentCommandArrayRef => Source environment command {REF}
 ##         : $FILEHANDLE                       => FILEHANDLE to write to
-##         : $emailType                        => The email type
-##         : $outDataDir                       => The MIP out data directory
-##         : $outScriptDir                     => The MIP out script directory
 ##         : $directoryID                      => $samplID|$familyID
 ##         : $programDirectory                 => Builds from $directoryID/$alignerOutDir
 ##         : $programName                      => Assigns filename to sbatch script
 ##         : $callType                         => SNV,INDEL or BOTH
-##         : $nrofCores                        => The number of cores to allocate
-##         : $processTime                      => Hours
+##         : $sourceEnvironmentCommandArrayRef => Source environment command {REF}
+##         : $outDataDir                       => The MIP out data directory {Optional}
+##         : $outScriptDir                     => The MIP out script directory {Optional}
 ##         : $tempDirectory                    => Temporary directory for program {Optional}
-##         : $errorTrap                        => Error trap switch
-##         : $pipefail                         => Pipe fail switch
+##         : $emailType                        => The email type
+##         : $slurmQualityofService            => SLURM quality of service priority {Optional}
+##         : $nrofCores                        => The number of cores to allocate {Optional}
+##         : $processTime                      => Allowed process time (Hours) {Optional}
+##         : $errorTrap                        => Error trap switch {Optional}
+##         : $pipefail                         => Pipe fail switch {Optional}
  
     my ($argHashRef) = @_;
 
@@ -17779,10 +17782,11 @@ sub ProgramPreRequisites {
     my $tempDirectory = ${$argHashRef}{tempDirectory} //= ${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $emailType = ${$argHashRef}{emailType} //= ${$argHashRef}{scriptParameterHashRef}{emailType};
     my $sourceEnvironmentCommandArrayRef = ${$argHashRef}{sourceEnvironmentCommandArrayRef} //= ${$argHashRef}{scriptParameterHashRef}{sourceEnvironmentCommand};
-    my $nrofCores = ${$argHashRef}{nrofCores} //= 1;
-    my $processTime = ${$argHashRef}{processTime} //= 1;
-    my $pipefail = ${$argHashRef}{pipefail} //= 1;
-    my $errorTrap = ${$argHashRef}{errorTrap} //= 1;
+    my $slurmQualityofService = ${$argHashRef}{slurmQualityofService} //= ${$argHashRef}{scriptParameterHashRef}{slurmQualityofService};
+    my $nrofCores;
+    my $processTime;
+    my $pipefail;
+    my $errorTrap;
 
     if (defined(${$argHashRef}{callType})) {
 	
@@ -17818,6 +17822,9 @@ sub ProgramPreRequisites {
 	processTime => { default => 1,
 			 allow => qr/^\d+$/,
 			 strict_type => 1, store => \$processTime},
+	slurmQualityofService => { default => "normal",
+				   allow => ["low", "high", "normal"],
+				   strict_type => 1, store => \$slurmQualityofService},
 	pipefail => { default => 1,
 		      allow => [0, 1],
 		      strict_type => 1, store => \$pipefail},
@@ -17878,13 +17885,14 @@ sub ProgramPreRequisites {
     
     say $FILEHANDLE "#! /bin/bash -l";
 
-    if ($pipefail == 1) {
+    if ($pipefail) {
 
 	say $FILEHANDLE "set -o pipefail";  #Detect errors within pipes 
     }
     say $FILEHANDLE "#SBATCH -A ".${$scriptParameterHashRef}{projectID};
     say $FILEHANDLE "#SBATCH -n ".$nrofCores;
-    say $FILEHANDLE "#SBATCH -t ".$processTime.":00:00";	
+    say $FILEHANDLE "#SBATCH -t ".$processTime.":00:00";
+    say $FILEHANDLE "#SBATCH --qos=".$slurmQualityofService;
     say $FILEHANDLE "#SBATCH -J ".$programName."_".$directoryID.$callType;
     say $FILEHANDLE "#SBATCH -e ".$fileInfoPath.$fileNameTracker.".stderr.txt";
     say $FILEHANDLE "#SBATCH -o ".$fileInfoPath.$fileNameTracker.".stdout.txt";
@@ -17920,7 +17928,7 @@ sub ProgramPreRequisites {
 	say $FILEHANDLE q?tempDirectory="?.$tempDirectory.q?"?;  #Assign batch variable
 	say $FILEHANDLE q?mkdir -p $tempDirectory?, "\n";
 	
-	##Create housekeeping function and trap
+	## Create housekeeping function and trap
 	say $FILEHANDLE q?finish() {?, "\n";
 	say $FILEHANDLE "\t".q?## Perform sbatch exit housekeeping?;
 	say $FILEHANDLE "\t".q?rm -rf $tempDirectory?;
@@ -17935,7 +17943,7 @@ sub ProgramPreRequisites {
 	say $FILEHANDLE q?trap finish EXIT TERM INT?, "\n";
     }
 
-    if ($errorTrap == 1) {
+    if ($errorTrap) {
 
 	## Create error handling function and trap
 	say $FILEHANDLE q?error() {?, "\n";

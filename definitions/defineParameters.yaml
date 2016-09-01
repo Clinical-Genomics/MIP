@@ -159,6 +159,12 @@ nodeRamMemory:
   dataType: SCALAR
   default: 128
   type: MIP
+slurmQualityofService:
+  associatedProgram:
+   - MIP
+  dataType: SCALAR
+  default: normal
+  type: MIP
 tempDirectory:
   associatedProgram:
    - MIP
