@@ -23,7 +23,7 @@ familyID:
   associatedProgram:
    - MIP
   dataType: SCALAR
-  type: path
+  type: MIP
 outDataDir:
   associatedProgram:
    - MIP
@@ -111,7 +111,7 @@ sampleIDs:
    - MIP
   elementSeparator: ,
   dataType: ARRAY
-  type: path
+  type: MIP
 inFilesDirs:
   associatedProgram:
    - MIP
