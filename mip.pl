@@ -178,8 +178,8 @@ mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [p
                  -svravwg/--svWholeGene Allow compound pairs in intronic regions (defaults to "0" (=yes))
                  -svravrpf/--svGenmodModelsReducedPenetranceFile File containg genes with reduced penetrance (defaults to "")
                  -svravrm/--svRankModelFile Rank model config file (defaults to "")
-                 -svravbcf/--svRankVariantsBCFFile Produce bcfs from the Rank variants vcfs (defaults to "1" (=yes))
-               
+                 -svravbcf/--svRankVariantBCFFile Produce bcfs from the Rank variants vcfs (defaults to "1" (=yes))
+                             
                ##Samtools
                -pSmp/--pSamToolsMpileUp Variant calling using samTools mpileup and bcfTools (defaults to "1" (=yes))
 
@@ -544,7 +544,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'svravrpf|svGenmodModelsReducedPenetranceFile:s' => \$parameter{svGenmodModelsReducedPenetranceFile}{value},
 	   'svravwg|svWholeGene=n'  => \$parameter{svWholeGene}{value},  #Allow compound pairs in intronic regions
 	   'svravrm|svRankModelFile:s' => \$parameter{svRankModelFile}{value},  #The rank modell config.ini path
-	   'svravbcf|svRankVariantsBCFFile=n' => \$parameter{svRankVariantsBCFFile}{value},  #Produce compressed vcfs
+	   'svravbcf|svRankVariantBCFFile=n' => \$parameter{svRankVariantBCFFile}{value},  #Produce compressed vcfs
 	   'pSmp|pSamToolsMpileUp=n' => \$parameter{pSamToolsMpileUp}{value},
 	   'pFrb|pFreebayes=n' => \$parameter{pFreebayes}{value},
 	   'gtp|genomeAnalysisToolKitPath:s' => \$parameter{genomeAnalysisToolKitPath}{value},  #GATK whole path
@@ -602,7 +602,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'pVeP|pVariantEffectPredictor=n' => \$parameter{pVariantEffectPredictor}{value},  #Annotation of variants using vep
 	   'vepp|vepDirectoryPath:s'  => \$parameter{vepDirectoryPath}{value},  #path to vep script dir
 	   'vepc|vepDirectoryCache:s'  => \$parameter{vepDirectoryCache}{value},  #path to vep cache dir
-	   'vepr|vepReference:s'  => \$parameter{vepReference}{value},  #Use Human reference file with VEP
+	   'vepr|vepReference:n'  => \$parameter{vepReference}{value},  #Use Human reference file with VEP
 	   'vepf|vepFeatures:s'  => \@{$parameter{vepFeatures}{value}},  #Comma separated list
 	   'veppl|vepPlugins:s'  => \@{$parameter{vepPlugins}{value}},  #Comma separated list
 	   'pVcP|pVCFParser=n' => \$parameter{pVCFParser}{value},
@@ -655,8 +655,10 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 ## Change relative path to absolute path for certain parameters 
 &UpdateToAbsolutePath({parameterHashRef => \%parameter,
 		      });
+##Special case:Enable/activate MIP. Cannot be changed from cmd or config
+$scriptParameter{MIP} = $parameter{MIP}{default};
 
-if (exists($parameter{configFile}{value})) {  #Input from cmd
+if (defined($parameter{configFile}{value})) {  #Input from cmd
 
     ## Loads a YAML file into an arbitrary hash and returns it.
     %scriptParameter = &LoadYAML({yamlFile => $parameter{configFile}{value},
@@ -2378,7 +2380,7 @@ if ($scriptParameter{pRemoveRedundantFiles} > 0) {  #Sbatch generation of remova
 			  });	
 }
 
-if ( ($scriptParameter{pAnalysisRunStatus} == 1) && ($scriptParameter{dryRunAll} == 0) ) {
+if ( ($scriptParameter{pAnalysisRunStatus} == 1) && (! $scriptParameter{dryRunAll}) ) {
 
     $sampleInfo{ $scriptParameter{familyID} }{ $scriptParameter{familyID} }{AnalysisRunStatus} = "notFinished";  #Add analysis run status flag.
 }
@@ -2488,7 +2490,7 @@ sub Sacct {
     }
     close($FILEHANDLE);
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -2668,7 +2670,7 @@ sub AnalysisRunStatus {
 
     close($FILEHANDLE); 
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -2854,7 +2856,7 @@ sub MultiQC {
 
     close($FILEHANDLE);
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -2937,7 +2939,7 @@ sub QCCollect {
     
     close($FILEHANDLE); 
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	## Collect QC metadata info for later use
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -3242,7 +3244,7 @@ sub Evaluation {
 
     close($FILEHANDLE); 
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	## Add qcmetrics path to sampleInfo
 	${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{Program}{QCCollect}{QCCollectMetricsFile}{Path} = catfile($outFamilyDirectory, $$familyIDRef."_qcmetrics.yaml");
@@ -3435,7 +3437,7 @@ sub RankVariants {
 		
 		print $XARGSFILEHANDLE "--vep "; 
 	    }
-	    if (${$scriptParameterHashRef}{wholeGene} == 1) {
+	    if (${$scriptParameterHashRef}{wholeGene}) {
 		
 		print $XARGSFILEHANDLE "--whole_gene "; 
 	    }
@@ -3530,7 +3532,7 @@ sub RankVariants {
 			     });
 	say $FILEHANDLE "wait", "\n";
 
-	if (${$scriptParameterHashRef}{rankVariantBCFFile} == 1) {
+	if (${$scriptParameterHashRef}{rankVariantBCFFile}) {
 	
 	    ## Using GATK combined file directly yields error in bcftools - unclear why 
 	    say $FILEHANDLE "\n## Preprocessing for compatibility with bcfTools v1.3\n";
@@ -3563,14 +3565,14 @@ sub RankVariants {
 	    say $FILEHANDLE "wait", "\n";
 	}
 
-	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	    
 	    if ($vcfParserOutputFileCounter == 1) {
 
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{VCFFile}{Clinical}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf");
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{Program}{RankVariants}{Clinical}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf");   #Save clinical candidate list path
 
-		if (${$scriptParameterHashRef}{rankVariantBCFFile} == 1) {
+		if (${$scriptParameterHashRef}{rankVariantBCFFile}) {
 
 		    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{BCFFile}{Clinical}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".bcf");
 		}
@@ -3580,7 +3582,7 @@ sub RankVariants {
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{VCFFile}{Research}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf");
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{Program}{RankVariants}{Research}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf");   #Save research candidate list path
 
-		if (${$scriptParameterHashRef}{rankVariantBCFFile} == 1) {
+		if (${$scriptParameterHashRef}{rankVariantBCFFile}) {
 
 		    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{BCFFile}{Research}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".bcf");
 		}
@@ -3590,7 +3592,7 @@ sub RankVariants {
     
     close($FILEHANDLE);   
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	if (defined(${$scriptParameterHashRef}{rankModelFile})) {  #Add to SampleInfo
 			    
@@ -3832,7 +3834,7 @@ sub GATKVariantEvalExome {
 			 });
     say $FILEHANDLE "wait", "\n";
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	## Collect QC metadata info for later use                                                                                 
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -3847,7 +3849,7 @@ sub GATKVariantEvalExome {
     }
     close($FILEHANDLE);   
  
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -3995,7 +3997,7 @@ sub GATKVariantEvalAll {
 			 });
     say $FILEHANDLE "wait", "\n";
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	## Collect QC metadata info for later use                                                                                                
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -4010,7 +4012,7 @@ sub GATKVariantEvalAll {
     }
     close($FILEHANDLE);   
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -4343,7 +4345,7 @@ sub SnpEff {
 			    });
     }
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	    
 	## Collect QC metadata info for later use
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -4359,7 +4361,7 @@ sub SnpEff {
 	
 	close($FILEHANDLE);
 	
-	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	    
 	    &FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 			   sampleInfoHashRef => $sampleInfoHashRef,
@@ -4621,7 +4623,7 @@ sub Annovar {
 
 	close($FILEHANDLE);
 
-	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	    
 	    &FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 			   sampleInfoHashRef => $sampleInfoHashRef,
@@ -4825,7 +4827,7 @@ sub VCFParser {
 			 });
     say $FILEHANDLE "wait", "\n";
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	## Clear old VCFParser entry if present
 	if (defined(${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$programName})) {
@@ -4916,7 +4918,7 @@ sub VCFParser {
 	close($FILEHANDLE);
     }
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	if ( ! $$reduceIORef) {  #Run as individual sbatch script
 	    
@@ -5098,7 +5100,7 @@ sub VariantEffectPredictor {
 	print $XARGSFILEHANDLE "--dir_cache ".${$scriptParameterHashRef}{vepDirectoryCache}." ";  #Specify the cache directory to use
 	print $XARGSFILEHANDLE "--cache ";  #Enables use of the cache.
 
-	if (${$scriptParameterHashRef}{vepReference} == 1 ) {  #Use reference file for analysis with vep
+	if (${$scriptParameterHashRef}{vepReference}) {  #Use reference file for analysis with vep
 
 	    print $XARGSFILEHANDLE "--fasta ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{humanGenomeReference})." ";  #Reference file
 	}
@@ -5153,7 +5155,7 @@ sub VariantEffectPredictor {
 	say $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file	
     }
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	## Collect QC metadata info for later use                     	
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -5205,7 +5207,7 @@ sub VariantEffectPredictor {
 	say $FILEHANDLE "wait", "\n";	    
     }
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	if ( ! $$reduceIORef) {  #Run as individual sbatch script
 
@@ -5375,7 +5377,7 @@ sub GATKReadBackedPhasing {
 
     close($FILEHANDLE);
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -5490,7 +5492,7 @@ sub GATKPhaseByTransmission {
 
     close($FILEHANDLE);
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -5702,7 +5704,7 @@ sub SampleCheck {
     print $FILEHANDLE "> ".catfile($outFamilyDirectory, $$familyIDRef.".sexcheck")." ";
     say $FILEHANDLE "\n";
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	## Collect QC metadata info for later use                                                                                               
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -5727,7 +5729,7 @@ sub SampleCheck {
     print $FILEHANDLE "--het ";  #Individual inbreeding
     say $FILEHANDLE "--out ".catfile($outFamilyDirectory, $$familyIDRef), "\n";  #Outfile
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	## Collect QC metadata info for later use                                                                                               
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -5759,7 +5761,7 @@ sub SampleCheck {
 	print $FILEHANDLE "--matrix ";  #Create a N x N matrix of genome-wide average IBS pairwise identities
 	say $FILEHANDLE "--out ".catfile($outFamilyDirectory, $$familyIDRef), "\n";  #OutFile
 	
-	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	    
 	    ## Collect QC metadata info for later use                                                                                               
 	    &SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -5782,7 +5784,7 @@ sub SampleCheck {
     
     close($FILEHANDLE); 
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -5966,7 +5968,7 @@ sub VT {
 	my $altFileEnding = "";
 
 	## Remove decomposed '*' entries
-	if (${$scriptParameterHashRef}{VTmissingAltAllele} == 1) {
+	if (${$scriptParameterHashRef}{VTmissingAltAllele}) {
 
 	    $altFileEnding = "_noStar";
 	    print $XARGSFILEHANDLE catfile($removeStarRegExp.$$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.".vcf")." ";
@@ -5976,14 +5978,14 @@ sub VT {
 	}
 
 	## Remove common variants
-	if (${$scriptParameterHashRef}{VTgenmodFilter} > 0) {
+	if (${$scriptParameterHashRef}{VTgenmodFilter}) {
 
 	    print $XARGSFILEHANDLE "genmod ";  #Program
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "annotate ";  #Command
 	    print $XARGSFILEHANDLE "--thousand_g ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{VTgenmodFilter1000G})." ";  #1000G reference
 
-	    if (${$scriptParameterHashRef}{VTgenmodFilterMaxAf} == 1) {
+	    if (${$scriptParameterHashRef}{VTgenmodFilterMaxAf}) {
 
 		print $XARGSFILEHANDLE "--max_af ";  #If the MAX AF should be annotated
 	    }
@@ -6021,7 +6023,7 @@ sub VT {
 
 	close($FILEHANDLE);
     }
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	## Collect QC metadata info for later use
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -6216,7 +6218,7 @@ sub PrepareForVariantAnnotationBlock {
 
 	close($FILEHANDLE);
     }
-if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	if ( ! $$reduceIORef) { #Run as individual sbatch script
 
@@ -6380,7 +6382,7 @@ sub GATKCombineVariantCallSets {
     }
     say $FILEHANDLE "\n";
     
-    if (${$scriptParameterHashRef}{GATKCombineVariantCallSetsBCFFile} == 1) {
+    if (${$scriptParameterHashRef}{GATKCombineVariantCallSetsBCFFile}) {
 	
 	&VcfToBcf({infile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType),
 		   FILEHANDLE => $FILEHANDLE,
@@ -6404,11 +6406,11 @@ sub GATKCombineVariantCallSets {
 
     close($FILEHANDLE);   
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{VCFFile}{ReadyVcf}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.".vcf");
 
-	if (${$scriptParameterHashRef}{GATKCombineVariantCallSetsBCFFile} eq 1) {
+	if (${$scriptParameterHashRef}{GATKCombineVariantCallSetsBCFFile}) {
 
 	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{BCFFile}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.".bcf");
 	}
@@ -6570,7 +6572,7 @@ sub GATKVariantReCalibration {
 	
 		print $FILEHANDLE "-input ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.".SNV.vcf")." ";
 	    }
-	    if (${$scriptParameterHashRef}{GATKVariantReCalibrationDPAnnotation} == 1) {  #Special case: Not to be used with hybrid capture. NOTE: Disable when analysing exom + genomes using '-at genomes' 
+	    if (${$scriptParameterHashRef}{GATKVariantReCalibrationDPAnnotation}) {  #Special case: Not to be used with hybrid capture. NOTE: Disable when analysing exom + genomes using '-at genomes' 
 
 		print $FILEHANDLE "-an DP ";  #The names of the annotations which should used for calculations.
 	    }
@@ -6757,7 +6759,7 @@ sub GATKVariantReCalibration {
     }
 
     ## Produce a bcf compressed and index from vcf
-    if (${$scriptParameterHashRef}{GATKVariantReCalibrationBCFFile} == 1) {
+    if (${$scriptParameterHashRef}{GATKVariantReCalibrationBCFFile}) {
 	
 	&VcfToBcf({infile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType),
 		   FILEHANDLE => $FILEHANDLE,
@@ -6786,7 +6788,7 @@ sub GATKVariantReCalibration {
 
     close($FILEHANDLE);   
     	
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	## Collect QC metadata info for later use
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -6925,7 +6927,7 @@ sub GATKConcatenateGenoTypeGVCFs {
     
     close($FILEHANDLE);
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -7108,7 +7110,7 @@ sub GATKGenoTypeGVCFs {
 	    
 	close($FILEHANDLE);  
 	
-	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	    
 	    ## Collect QC metadata info for later use
 	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{VCFFile}{ReadyVcf}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.".vcf");
@@ -7192,7 +7194,7 @@ sub RCoveragePlots {
     say $FILEHANDLE "wait", "\n";
     close($FILEHANDLE);
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -7314,7 +7316,7 @@ sub GenomeCoverageBED {
     say $FILEHANDLE "wait", "\n";    
     close($FILEHANDLE);
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -7460,7 +7462,7 @@ sub PicardToolsCalculateHSMetrics {
 			 });
     say $FILEHANDLE "wait", "\n";
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	## Collect QC metadata info for later use
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -7475,7 +7477,7 @@ sub PicardToolsCalculateHSMetrics {
     }    
     close($FILEHANDLE);
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -7614,7 +7616,7 @@ sub PicardToolsCollectMultipleMetrics {
 			 });
     say $FILEHANDLE "wait", "\n";
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	## Collect QC metadata info for later use                                                                                             
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -7629,7 +7631,7 @@ sub PicardToolsCollectMultipleMetrics {
     }    
     close($FILEHANDLE);
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -7738,7 +7740,7 @@ sub ChanjoSexCheck {
     print $FILEHANDLE catfile($inSampleDirectory, $infile.$infileTag.".bam")." ";  #InFile
     say $FILEHANDLE "> ".catfile($outSampleDirectory, $infile.$outfileTag), "\n";  #OutFile
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	## Collect QC metadata info for later use
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -7762,7 +7764,7 @@ sub ChanjoSexCheck {
     }
     close($FILEHANDLE);
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -7882,11 +7884,11 @@ sub SambambaDepth {
     print $FILEHANDLE q?--filter '?;
     print $FILEHANDLE "mapping_quality >= ".${$scriptParameterHashRef}{sambambaDepthMappingQuality}." ";  #The minimum mapping quality to include in analysis
     
-    if (${$scriptParameterHashRef}{sambambaDepthNoDuplicates} == 1) {  #Do not include duplicates in coverage calculation
+    if (${$scriptParameterHashRef}{sambambaDepthNoDuplicates}) {  #Do not include duplicates in coverage calculation
 	
 	print $FILEHANDLE "and not duplicate ";
     }
-    if (${$scriptParameterHashRef}{sambambaDepthNoFailedQualityControl} == 1) {  #Do not include failed quality control reads in coverage calculation
+    if (${$scriptParameterHashRef}{sambambaDepthNoFailedQualityControl}) {  #Do not include failed quality control reads in coverage calculation
 	
 	print $FILEHANDLE "and not failed_quality_control";
     }
@@ -7909,14 +7911,14 @@ sub SambambaDepth {
 			 });
     say $FILEHANDLE "wait", "\n";
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{Program}{$programName}{$infile}{Bed}{Path} = catfile($outSampleDirectory, $infile.$outfileTag.".bed");
     }
 
     close($FILEHANDLE);
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -8094,7 +8096,7 @@ sub SVRankVariants {
 		
 		print $XARGSFILEHANDLE "--vep "; 
 	    }
-	    if (${$scriptParameterHashRef}{svWholeGene} == 1) {
+	    if (${$scriptParameterHashRef}{svWholeGene}) {
 		
 		print $XARGSFILEHANDLE "--whole_gene "; 
 	    }
@@ -8170,7 +8172,7 @@ sub SVRankVariants {
 			     });
 	say $FILEHANDLE "wait", "\n";
 
-	if (${$scriptParameterHashRef}{svRankVariantBCFFile} == 1) {
+	if (${$scriptParameterHashRef}{svRankVariantBCFFile}) {
 	
 	    ## Using GATK combined file directly yields error in bcftools - unclear why 
 	    say $FILEHANDLE "\n## Preprocessing for compatibility with bcfTools v1.3\n";
@@ -8204,14 +8206,14 @@ sub SVRankVariants {
 	    say $FILEHANDLE "wait", "\n";
 	}
 
-	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	    
 	    if ($vcfParserOutputFileCounter == 1) {
 		
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{SVVCFFile}{Clinical}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf");
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{Program}{SVRankVariants}{Clinical}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf");   #Save clinical candidate list path
 
-		if (${$scriptParameterHashRef}{svRankVariantBCFFile} == 1) {
+		if (${$scriptParameterHashRef}{svRankVariantBCFFile}) {
 
 		    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{SVBCFFile}{Clinical}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".bcf");
 		}
@@ -8221,7 +8223,7 @@ sub SVRankVariants {
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{SVVCFFile}{Research}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf");
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{Program}{SVRankVariants}{Research}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf");   #Save research candidate list path
 
-		if (${$scriptParameterHashRef}{svRankVariantBCFFile} == 1) {
+		if (${$scriptParameterHashRef}{svRankVariantBCFFile}) {
 
 		    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{SVBCFFile}{Research}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".bcf");
 		}
@@ -8230,7 +8232,7 @@ sub SVRankVariants {
     }
     close($FILEHANDLE);   
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	if (defined(${$scriptParameterHashRef}{svRankModelFile})) {  #Add to SampleInfo
 			    
@@ -8429,7 +8431,7 @@ sub SVVCFParser {
 			 });
     say $FILEHANDLE "wait", "\n";
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	## Clear old VCFParser entry if present
 	if (defined(${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$programName})) {
@@ -8517,7 +8519,7 @@ sub SVVCFParser {
     }
     close($FILEHANDLE);
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -8685,7 +8687,7 @@ sub SVVariantEffectPredictor {
 	print $XARGSFILEHANDLE "--dir_cache ".${$scriptParameterHashRef}{vepDirectoryCache}." ";  #Specify the cache directory to use
 	print $XARGSFILEHANDLE "--cache ";  #Enables use of the cache.
 
-	if (${$scriptParameterHashRef}{vepReference} == 1 ) {  #Use reference file for analysis with vep
+	if (${$scriptParameterHashRef}{vepReference}) {  #Use reference file for analysis with vep
 
 	    print $XARGSFILEHANDLE "--fasta ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{humanGenomeReference})." ";  #Reference file
 	}
@@ -8739,7 +8741,7 @@ sub SVVariantEffectPredictor {
 	say $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
     }
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	## Collect QC metadata info for later use                     	
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -8778,7 +8780,7 @@ sub SVVariantEffectPredictor {
     
     close($FILEHANDLE);
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	## Submitt job
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
@@ -9076,7 +9078,7 @@ sub SVCombineVariantCallSets {
 
 	say $FILEHANDLE "> ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$altFileEnding.".vcf"), "\n";
 	
-	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	    &SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
 			   familyID => ${$scriptParameterHashRef}{familyID},
@@ -9106,7 +9108,7 @@ sub SVCombineVariantCallSets {
 	say $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.".vcf"), "\n";
     }
     
-    if (${$scriptParameterHashRef}{svCombineVariantCallSetsBCFFile} == 1) {
+    if (${$scriptParameterHashRef}{svCombineVariantCallSetsBCFFile}) {
 	
 	&VcfToBcf({infile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType),
 		   FILEHANDLE => $FILEHANDLE,
@@ -9130,11 +9132,11 @@ sub SVCombineVariantCallSets {
     
     close($FILEHANDLE);   
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{SVVCFFile}{ReadyVcf}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.".vcf");	
 
-	if (${$scriptParameterHashRef}{svCombineVariantCallSetsBCFFile} eq 1) {
+	if (${$scriptParameterHashRef}{svCombineVariantCallSetsBCFFile}) {
 
 	    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{SVBCFFile}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.".bcf");
 	}
@@ -9394,7 +9396,7 @@ sub CNVnator {
   
     close($FILEHANDLE);     
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
 		       familyID => $$familyIDRef,
@@ -9627,7 +9629,7 @@ sub Delly {
 			 });
     say $FILEHANDLE "wait", "\n";
     
-	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	    
 	    &SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
 			   familyID => $$familyIDRef,
@@ -9641,7 +9643,7 @@ sub Delly {
 	}  
     close($FILEHANDLE);     
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -9805,7 +9807,7 @@ sub Manta {
 			 });
     say $FILEHANDLE "wait", "\n";
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
 		       familyID => $$familyIDRef,
@@ -9817,7 +9819,7 @@ sub Manta {
     }
     close($FILEHANDLE);     
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -9988,7 +9990,7 @@ sub FindTranslocations {
     say $FILEHANDLE "wait", "\n";
     close($FILEHANDLE);     
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
 		       familyID => $$familyIDRef,
@@ -10199,7 +10201,7 @@ sub SamToolsMpileUp {
 	print $XARGSFILEHANDLE q?-e \'%QUAL<10 || (RPB<0.1 && %QUAL<15) || (AC<2 && %QUAL<15) || %MAX(DV)<=3 || %MAX(DV)/%MAX(DP)<=0.25\' ?;  #exclude sites for which the expression is true
 	print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 
-	if (${$scriptParameterHashRef}{replaceIUPAC} eq 1) {
+	if (${$scriptParameterHashRef}{replaceIUPAC}) {
 	    
 	    ## Replace the IUPAC code in alternative allels with N for input stream and writes to stream
 	    &ReplaceIUPAC({stderrPath => $xargsFileName.".".$$contigRef.".stderr.txt",
@@ -10234,7 +10236,7 @@ sub SamToolsMpileUp {
   
     close($FILEHANDLE);     
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
 		       familyID => $$familyIDRef,
@@ -10422,7 +10424,7 @@ sub Freebayes {
 	print $XARGSFILEHANDLE q?-e \'%QUAL<10 || (AC<2 && %QUAL<15)\' ?;  #exclude sites for which the expression is true
 	print $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 
-	if (${$scriptParameterHashRef}{replaceIUPAC} eq 1) {
+	if (${$scriptParameterHashRef}{replaceIUPAC}) {
 	    
 	    ## Replace the IUPAC code in alternative allels with N for input stream and writes to stream
 	    &ReplaceIUPAC({stderrPath => $xargsFileName.".".$$contigRef.".stderr.txt",
@@ -10456,7 +10458,7 @@ sub Freebayes {
   
     close($FILEHANDLE);     
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
 		       familyID => $$familyIDRef,
@@ -10656,7 +10658,7 @@ sub GATKHaploTypeCaller {
 			  });
 
 	## Filter
-	if (${$scriptParameterHashRef}{GATKHaploTypeCallerSoftClippedBases} == 1) { #Do not analyze soft clipped bases in the reads
+	if (${$scriptParameterHashRef}{GATKHaploTypeCallerSoftClippedBases}) { #Do not analyze soft clipped bases in the reads
 
 	    print $XARGSFILEHANDLE "--dontUseSoftClippedBases ";  #Do not analyze soft clipped bases in the reads
 	}
@@ -10706,7 +10708,7 @@ sub GATKHaploTypeCaller {
 								   });
     close($FILEHANDLE);  
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -10954,7 +10956,7 @@ sub GATKBaseReCalibration {
 	print $XARGSFILEHANDLE "-BQSR ".catfile($intermediarySampleDirectory, $infile.$infileTag."_".$$contigRef.".grp")." ";  #Recalibration table file
 	
 	##Extra read filters
-	if (${$scriptParameterHashRef}{GATKBaseReCalibrationOverClippedRead} == 1) {
+	if (${$scriptParameterHashRef}{GATKBaseReCalibrationOverClippedRead}) {
 	    
 	    print $XARGSFILEHANDLE "-rf OverclippedRead ";  #Filter out reads that are over-soft-clipped
 	}
@@ -10962,7 +10964,7 @@ sub GATKBaseReCalibration {
 	    
 	    print $XARGSFILEHANDLE "--static_quantized_quals ".$level." ";  #Use discrete levels of quality base recalibration
 	}
-	if (${$scriptParameterHashRef}{GATKBaseReCalibrationDisableIndelQual} == 1) {
+	if (${$scriptParameterHashRef}{GATKBaseReCalibrationDisableIndelQual}) {
 	    
 	    print $XARGSFILEHANDLE "--disable_indel_quals  ";  #Do not recalibrate indel base quality (should be done for Pacbio reads)
 	}
@@ -11030,7 +11032,7 @@ sub GATKBaseReCalibration {
     ## Remove Concatenated BAM file at temporary Directory
     say $FILEHANDLE "rm ".catfile($$tempDirectoryRef, $infile.$outfileTag.".b*");
     
-    if ( (${$scriptParameterHashRef}{pGATKBaseRecalibration} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) { 
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) { 
 	
 	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $infile.$outfileTag.".bam");
     }
@@ -11039,7 +11041,7 @@ sub GATKBaseReCalibration {
     
     close($FILEHANDLE);
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) { 
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) { 
 	
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -11309,7 +11311,7 @@ sub GATKReAligner {
 									fileEnding => ".b*",
 								       });
 	
-	if ( (${$scriptParameterHashRef}{pGATKRealigner} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	    
 	    ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $infile.$outfileTag.".bam");	    
 	}	
@@ -11332,7 +11334,7 @@ sub GATKReAligner {
 	
 	close($FILEHANDLE);
 	
-	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	    
 	    &FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 			   sampleInfoHashRef => $sampleInfoHashRef,
@@ -11535,7 +11537,7 @@ sub PicardToolsMarkduplicates {
 			 });
     say $FILEHANDLE "wait", "\n";
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	## Collect QC metadata info for later use
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -11586,7 +11588,7 @@ sub PicardToolsMarkduplicates {
 	
 	close($FILEHANDLE);
 	
-	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	    
 	    &FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 			   sampleInfoHashRef => $sampleInfoHashRef,
@@ -11788,7 +11790,7 @@ sub SambambaMarkduplicates {
 			 });
     say $FILEHANDLE "wait", "\n";
     
-    if ( (${$scriptParameterHashRef}{pSambambaMarkduplicates} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	## Collect QC metadata info for later use
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -11839,7 +11841,7 @@ sub SambambaMarkduplicates {
 	
 	close($FILEHANDLE);
 	
-	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	    
 	    &FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 			   sampleInfoHashRef => $sampleInfoHashRef,
@@ -12079,13 +12081,13 @@ sub PicardToolsMergeSamFiles {
 	}
     }
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $$sampleIDRef."_lanes_".$lanes.$outfileTag.".bam");
     }
     
     ## Merge previously merged files with merged files generated this run
-    if ( (${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{picardToolsMergeSamFilesPrevious} == 1) && (scalar( @{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} }) > 1) ) {
+    if ( (${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{picardToolsMergeSamFilesPrevious}) && (scalar( @{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} }) > 1) ) {
 	
 	for (my $mergeFileCounter=0;$mergeFileCounter<scalar(@{${$scriptParameterHashRef}{picardToolsMergeSamFilesPrevious}});$mergeFileCounter++) {
 	    
@@ -12175,7 +12177,7 @@ sub PicardToolsMergeSamFiles {
 											fileEnding => ".b*",
 										       });
 		    }
-		    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+		    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 			${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $$sampleIDRef."_lanes_".$mergeLanes.$lanes.$outfileTag.".bam");
 		    }
@@ -12185,7 +12187,7 @@ sub PicardToolsMergeSamFiles {
     }
 
     ## Merge files previously merged to single file with single file generated this run
-    elsif (${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{picardToolsMergeSamFilesPrevious} == 1) {
+    elsif (${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{picardToolsMergeSamFilesPrevious}) {
 
 	for (my $mergeFileCounter=0;$mergeFileCounter<scalar(@{${$scriptParameterHashRef}{picardToolsMergeSamFilesPrevious}});$mergeFileCounter++) {
 
@@ -12274,7 +12276,7 @@ sub PicardToolsMergeSamFiles {
 										    fileEnding => ".b*",
 										   });
 		}
-		if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+		if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 		    
 		    ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $$sampleIDRef."_lanes_".$mergeLanes.$lanes.$outfileTag.".bam");
 		}
@@ -12316,7 +12318,7 @@ sub PicardToolsMergeSamFiles {
 	
 	close($FILEHANDLE);
 	
-	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	    
 	    &FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 			   sampleInfoHashRef => $sampleInfoHashRef,
@@ -12472,7 +12474,7 @@ sub BWASampe {
 
 	close($FILEHANDLE);
 
-	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$sampleID}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, ${$infilesLaneNoEndingHashRef}{$sampleID}[$infileCounter].".bam");
 
@@ -12605,7 +12607,7 @@ sub BWAAln {
     
     close($FILEHANDLE);
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {   
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {   
 
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -12750,7 +12752,7 @@ sub PicardToolsMergeRapidReads {
     
     close($FILEHANDLE);
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -12950,7 +12952,7 @@ sub BWAMem {
 
 		close($FILEHANDLE);
 
-		if ( (${$scriptParameterHashRef}{pBwaMem} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+		if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 		    &FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 				   sampleInfoHashRef => $sampleInfoHashRef,
@@ -13022,7 +13024,7 @@ sub BWAMem {
 	    }
 	    else {
 
-		if (${$scriptParameterHashRef}{bwaMemHLA} == 1) {
+		if (${$scriptParameterHashRef}{bwaMemHLA}) {
 
 		    print $FILEHANDLE "-H ";  #Apply HLA typing
 		}
@@ -13092,7 +13094,7 @@ sub BWAMem {
 		say $FILEHANDLE "wait", "\n";
 	    }
 
-	    if (${$scriptParameterHashRef}{bwaMembamStats} == 1) {
+	    if (${$scriptParameterHashRef}{bwaMembamStats}) {
 
 		print $FILEHANDLE "samtools stats ";
 		print $FILEHANDLE catfile($$tempDirectoryRef, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileTag.".bam")." ";
@@ -13109,7 +13111,7 @@ sub BWAMem {
 		say $FILEHANDLE "wait", "\n";
 	    }
 
-	    if (${$scriptParameterHashRef}{bwaMemCram} == 1) {
+	    if (${$scriptParameterHashRef}{bwaMemCram}) {
 
 		say $FILEHANDLE "## Create CRAM file from BAM";
 		print $FILEHANDLE "sambamba ";  #Program
@@ -13131,16 +13133,16 @@ sub BWAMem {
 	    
 	    close($FILEHANDLE);
 
-	    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 		${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].".bam");
 
-		if (${$scriptParameterHashRef}{bwaMemCram} eq 1) {
+		if (${$scriptParameterHashRef}{bwaMemCram}) {
 
 		    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$$sampleIDRef}{Program}{Bwa}{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter]}{Path} = catfile($outSampleDirectory, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileTag.".cram");  #Required for analysisRunStatus check downstream
 		    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$$sampleIDRef}{File}{${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter]}{CramFile} = catfile($outSampleDirectory, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileTag.".cram");  #Fastreference to cram file
 		}
-		if (${$scriptParameterHashRef}{bwaMembamStats} == 1) {
+		if (${$scriptParameterHashRef}{bwaMembamStats}) {
 
 		    if (! ${$fileInfoHashRef}{undeterminedInFileName}{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter] } ) {  #Do not add to SampleInfo and hence skip test of "UndeterminedInFileName" files in QCCollect
 
@@ -13394,7 +13396,7 @@ sub MosaikAlign {
 	    print $FILEHANDLE "BuildBamIndex ";
 	    say $FILEHANDLE "INPUT=".catfile(${$scriptParameterHashRef}{tempDirectory}, $infile.$outfileTag.".bam")." ";  #OutFile
 
-	    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 		
 		## Collect QC metadata info for later use                     	
 		${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$sampleID}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $infile.$outfileTag.".bam");
@@ -13415,7 +13417,7 @@ sub MosaikAlign {
 	
 	close($FILEHANDLE);
 	
-	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	    
 	    ## Collect QC metadata info for later use                     	
 	    &SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
@@ -13563,7 +13565,7 @@ sub MosaikBuild {
         
     close($FILEHANDLE);
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) { 
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) { 
 	
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -14141,14 +14143,14 @@ sub Madeline {
     say $FILEHANDLE catfile($outFamilyDirectory, "madeline_pedigree.txt")." ";
 
     ## Collect QC metadata info for active program for later use
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{Program}{$programName}{Path} = catfile($outFamilyDirectory, $$familyIDRef."_madeline.xml");
     }
 
     close($FILEHANDLE);
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -14283,7 +14285,7 @@ sub FastQC {
 	say $FILEHANDLE "&", "\n";
 
 	## Collect QC metadata info for active program for later use
-	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	    
 	    &SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
 			   familyID => $$familyIDRef,
@@ -14324,7 +14326,7 @@ sub FastQC {
 
     close($FILEHANDLE);
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -14448,7 +14450,7 @@ sub GZipFastq {
     }
     say $FILEHANDLE "wait", "\n";
 
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -14647,7 +14649,7 @@ sub BuildAnnovarPreRequisites {
     say $FILEHANDLE "rm -rf $annovarTemporaryDirectory;", "\n";  #Cleaning up temp directory
     close($FILEHANDLE);
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -14752,7 +14754,7 @@ sub BuildDownLoadablePreRequisites {
     
     close($FILEHANDLE);
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -14946,7 +14948,7 @@ sub BuildPTCHSMetricPreRequisites {
 	
 	close($FILEHANDLE);
 	
-	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	    
 	    &FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 			   sampleInfoHashRef => $sampleInfoHashRef,
@@ -15073,7 +15075,7 @@ sub BuildBwaPreRequisites {
     }
     close($FILEHANDLE);
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
     &FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		   sampleInfoHashRef => $sampleInfoHashRef,
@@ -15201,7 +15203,7 @@ sub BuildMosaikAlignPreRequisites {
     }
     close($FILEHANDLE);
     
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
@@ -15682,7 +15684,7 @@ sub BuildHumanGenomePreRequisites {
 	
 	close($FILEHANDLE);
     
-	if ( (${$scriptParameterHashRef}{"p".$program} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	if ( (${$scriptParameterHashRef}{"p".$program} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	    &FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 			   sampleInfoHashRef => $sampleInfoHashRef,
@@ -17122,7 +17124,7 @@ sub AddToScriptParameter {
     foreach my $associatedProgram (@{$associatedProgramsArrayRef}) {  #Check all programs that use parameter
 
 	my $parameterSetSwitch = 0;
-	
+
 	if (defined(${$scriptParameterHashRef}{$associatedProgram}) && (${$scriptParameterHashRef}{$associatedProgram} > 0) ) {  #Only add active programs parameters	    
 
 	    $parameterSetSwitch = 1;
@@ -17856,7 +17858,7 @@ sub ProgramPreRequisites {
 	);
 
     ## Set paths depending on dry run or not
-    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	$fileName = $fileNamePath;
     }
@@ -18004,7 +18006,7 @@ sub AddMergedInfileName {
     my $mergeLanes;  #To pick up merged lanes later 
     my $picardToolsMergeSamFilesPrevious = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$sampleID}{picardToolsMergeSamFilesPrevious};  #Alias
 
-    if ( (defined($picardToolsMergeSamFilesPrevious)) && ($picardToolsMergeSamFilesPrevious == 1) ) {  # Files merged this round with merged file from previous round
+    if ( (defined($picardToolsMergeSamFilesPrevious)) && ($picardToolsMergeSamFilesPrevious) ) {  # Files merged this round with merged file from previous round
 	
 	for (my $mergeFileCounter=0;$mergeFileCounter<scalar(@{${$scriptParameterHashRef}{picardToolsMergeSamFilesPrevious}});$mergeFileCounter++) {
 	    
@@ -18242,12 +18244,24 @@ sub CheckPedigreeMembers {
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $FILEHANDLE = ${$argHashRef}{FILEHANDLE};
-    my $outFamilyFileDirectoryRef = ${$argHashRef}{outFamilyFileDirectoryRef};
-    my $pedigreeValidationTypeRef = ${$argHashRef}{pedigreeValidationTypeRef};
-    my $parentCounterRef = ${$argHashRef}{parentCounterRef};
-    my $childCounterRef = ${$argHashRef}{childCounterRef};
+    my $scriptParameterHashRef;
+    my $FILEHANDLE;
+    my $outFamilyFileDirectoryRef;
+    my $pedigreeValidationTypeRef;
+    my $parentCounterRef;
+    my $childCounterRef;
+
+    my $tmpl = { 
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	outFamilyFileDirectoryRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$outFamilyFileDirectoryRef},
+	pedigreeValidationTypeRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$pedigreeValidationTypeRef},
+	parentCounterRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$parentCounterRef},
+	childCounterRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$childCounterRef},
+	
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 	    
     if (scalar(@{${$scriptParameterHashRef}{sampleIDs}}) < 4) {  #i.e.1-3 individuals in pedigree		    
 		
@@ -20780,7 +20794,7 @@ sub CreateFamFile {
 
     my $pqFamFile;
 
-    if ($includeHeader == 1) {
+    if ($includeHeader) {
 	
 	$pqFamFile = q?perl -nae 'print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t", $F[5], "\n";' ?;
     }
@@ -21013,7 +21027,7 @@ sub CollectOutFile {
 	
 	push(@{$outfileArrayRef}, $key);
     }
-    if (scalar(@{$outDirectoryArrayRef}) == 1 && (scalar(@{$outfileArrayRef}) == 1) ) {  #Both outDirectory and outfile have been collected, time to join
+    if ( (@{$outDirectoryArrayRef}) && (@{$outfileArrayRef}) ) {  #Both outDirectory and outfile have been collected, time to join
 	
 	push(@{$pathsArrayRef}, catfile(${$outDirectoryArrayRef}[0], ${$outfileArrayRef}[0]));
 	@{$outDirectoryArrayRef} = ();  #Restart
@@ -21752,7 +21766,7 @@ sub AddCaptureKit {
 	    return $captureKit;
 	}
     }
-    if ( (defined($userSuppliedParameterswitch)) && ($userSuppliedParameterswitch == 0) ) {  #Only add if user supplied no info on parameter
+    if ( (defined($userSuppliedParameterswitch)) && (! $userSuppliedParameterswitch) ) {  #Only add if user supplied no info on parameter
 	
 	if ( defined(${$supportedCaptureKitHashRef}{ $captureKit }) ) {  #Supported capture kit alias
 	    
@@ -22465,7 +22479,7 @@ sub AddMostCompleteVCF {
         
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
-    if ( (${$scriptParameterHashRef}{ "p".$programName } == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+    if ( (${$scriptParameterHashRef}{ "p".$programName } == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
 	if ($vcfParserOutputFileCounter == 1) {
 	    
@@ -22790,7 +22804,7 @@ sub AddToSampleInfo {
     }
     if ( (${$scriptParameterHashRef}{pBwaMem} == 1) || (${$scriptParameterHashRef}{pSambambaDepth} == 1) || (${$scriptParameterHashRef}{pSambambaMarkduplicates} == 1)) {  #To enable addition of version to sampleInfo as Sambamba does nit generate version tag in output
 	
-	if (${$scriptParameterHashRef}{dryRunAll} == 0) {
+	if (! ${$scriptParameterHashRef}{dryRunAll}) {
 	    
 	    my $regExp = q?perl -nae 'if($_=~/sambamba\s(\S+)/) {print $1;last;}'?;
 	    my $ret = (`sambamba 2>&1 | $regExp`);
@@ -22800,7 +22814,7 @@ sub AddToSampleInfo {
     }
     if (defined(${$scriptParameterHashRef}{pCNVnator})) {  #To enable addition of version to sampleInfo
 	
-	if ( (${$scriptParameterHashRef}{pCNVnator} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	if ( (${$scriptParameterHashRef}{pCNVnator} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
 	    my $regExp = q?perl -nae 'if($_=~/CNVnator\s+(\S+)/) {print $1;last;}'?;
 	    my $ret = (`cnvnator 2>&1 | $regExp`);
@@ -23377,7 +23391,7 @@ sub VTCore {
 	
 	close($FILEHANDLE);
 	
-	if ( (${$scriptParameterHashRef}{"p".$program} == 1) && (${$scriptParameterHashRef}{dryRunAll} == 0) ) {
+	if ( (${$scriptParameterHashRef}{"p".$program} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	    
 	    &FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 			   sampleInfoHashRef => $sampleInfoHashRef,
@@ -24360,7 +24374,7 @@ sub PrepareGATKTargetIntervals {
 			   });
 	say $FILEHANDLE "wait ";
 	
-	if ($addEnding == 1) {
+	if ($addEnding) {
 	    
 	    $targetIntervalsPath .= ".intervals";
 
@@ -25288,7 +25302,9 @@ sub ReplaceIUPAC {
     my $tmpl = { 
 	FILEHANDLE => { required => 1, defined => 1, strict_type => 1, store => \$FILEHANDLE},
 	stderrPath => { strict_type => 1, store => \$stderrPath},
-	xargs => { default => 1, strict_type => 1, store => \$xargs},
+	xargs => { default => 1, 
+		   allow => [0, 1],
+		   strict_type => 1, store => \$xargs},
     };
     
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
@@ -25296,7 +25312,7 @@ sub ReplaceIUPAC {
     print $FILEHANDLE "| ";  #Pipe
     print $FILEHANDLE "perl -nae ";
 
-    if ($xargs == 1) {  #Add escape char
+    if ($xargs) {  #Add escape char
 
 	print $FILEHANDLE q?\'if($_=~/^#/) {print $_;} else { @F[4] =~ s/W|K|Y|R|S|M/N/g; print join(\"\\\t\", @F), \"\\\n\"; }\' ?;  #substitute IUPAC code with N to not break vcf specifications (GRCh38)
     }
