@@ -49,9 +49,9 @@ BEGIN {
     
     $USAGE =
 	qq{
-mip.pl  -ifd [inFilesDirs,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [project ID] -s [sample ID,.,.,.,n] -em [e-mail] -osd [outdirscripts] -odd [outDataDir] -f [familyID] -p[program]
+mip.pl  -ifd [inFilesDir,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [project ID] -s [sample ID,.,.,.,n] -em [e-mail] -osd [outdirscripts] -odd [outDataDir] -f [familyID] -p[program]
                ####MIP
-               -ifd/--inFilesDirs Infile directory(s) (comma sep; mandatory)
+               -ifd/--inFilesDir Infile directory(s) (Hash inFileDir=sampleID; mandatory)
                -isd/--inScriptDir The pipeline custom script in directory (mandatory)
                -rd/--referencesDir Reference(s) directory (mandatory)
                -p/--projectID The project ID  (mandatory)
@@ -370,7 +370,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 		     filePath => catfile($Bin, "definitions", "defineParameters.yaml"),
 		    });
 
-my $mipVersion = "v3.0.5";	#Set MIP version
+my $mipVersion = "v4.0.0";	#Set MIP version
 
 ## Directories, files, sampleInfo and jobIDs
 my (%infile, %inDirPath, %infilesLaneNoEnding, %lane, %infilesBothStrandsNoEnding, %jobID, %sampleInfo); 
@@ -429,7 +429,7 @@ if(!@ARGV) {
 }
 
 ###User Options
-GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma separated list
+GetOptions('ifd|inFilesDir:s'  => \%{$parameter{inFilesDir}{value}},  #Hash inFilesDir=sampleID
 	   'isd|inScriptDir:s'  => \$parameter{inScriptDir}{value},  #Directory for custom scripts required by the pipeline
 	   'rd|referencesDir:s'  => \$parameter{referencesDir}{value},  #directory containing references
 	   'p|projectID:s'  => \$parameter{projectID}{value},
@@ -509,7 +509,7 @@ GetOptions('ifd|inFilesDirs:s'  => \@{$parameter{inFilesDirs}{value}},  #Comma s
 	   'xcov|GenomeCoverageBEDMaxCoverage=n' => \$parameter{GenomeCoverageBEDMaxCoverage}{value},  #Sets max depth to calculate coverage
 	   'pPtCMM|pPicardToolsCollectMultipleMetrics=n' => \$parameter{pPicardToolsCollectMultipleMetrics}{value},
 	   'pPtCHS|pPicardToolsCalculateHSMetrics=n' => \$parameter{pPicardToolsCalculateHSMetrics}{value},
-	   'extb|exomeTargetBed=s'  => \%{$parameter{exomeTargetBed}{value}},  #Hash value sampleID=file.bed
+	   'extb|exomeTargetBed=s'  => \%{$parameter{exomeTargetBed}{value}},  #Hash value file.bed=sampleID
 	   'pRcP|pRCovPlots=n' => \$parameter{pRCovPlots}{value},
 	   'pCnv|pCNVnator=n' => \$parameter{pCNVnator}{value},
 	   'cnvhbs|cnvBinSize=n' => \$parameter{cnvBinSize}{value},
@@ -836,18 +836,10 @@ if (exists($scriptParameter{email})) {  #Allow no malformed email adress
 		  sampleIdArrayRef => \@{$scriptParameter{sampleIDs}},
 		 });
 
-## Check sampleID provided in exomeTargetBed is included in the analysis and only represented once
-&CheckSampleIDInExomeTargetBed({scriptParameterHashRef => \%scriptParameter,
-				sampleIdArrayRef => \@{$scriptParameter{sampleIDs}},
-			       });
-
-## Compares the number of elements in two arrays and exits if the elements are not equal
-&CompareArrayElements({arrayRef => \@{$scriptParameter{sampleIDs}},
-		       arrayQueryRef => \@{$scriptParameter{inFilesDirs}},
-		       parameterName => "sampleIDs",
-		       parameterNameQuery => "inFileDirs",
-		      });
-
+&CheckSampleIDInHashParameter({scriptParameterHashRef => \%scriptParameter,
+			       sampleIdArrayRef => \@{$scriptParameter{sampleIDs}},
+			       parameterNameArrayRef => ["inFilesDir", "exomeTargetBed"],
+			      });
 
 ## Check that VEP directory and VEP cache match
 &CheckVEPDirectories({vepDirectoryPathRef => \$scriptParameter{vepDirectoryPath},
@@ -16654,8 +16646,14 @@ sub CollectInfiles {
 
     for (my $inputDirectoryCounter=0;$inputDirectoryCounter<scalar(@{${$scriptParameterHashRef}{sampleIDs}});$inputDirectoryCounter++) {  #Collects inputfiles govern by sampleIDs
 	
-	my $inFileDirectoryRef = \${$scriptParameterHashRef}{inFilesDirs}[$inputDirectoryCounter];  #Alias
 	my $sampleIDRef = \${$scriptParameterHashRef}{sampleIDs}[$inputDirectoryCounter];  #Alias 
+
+	my $inFileDirectoryRef = \&GetMatchingValuesKey({scriptParameterHashRef => $scriptParameterHashRef,
+							 queryValueRef => $sampleIDRef,
+							 parameterName => "inFilesDir",
+							});
+	
+	
 	my @infiles;
 
 	## Collect all fastq files in supplied indirectories
@@ -16680,8 +16678,7 @@ sub CollectInfiles {
 	    unless ( $infile =~/$$sampleIDRef/) {
 
 		$logger->fatal("Could not detect sampleID: ".$$sampleIDRef." in supplied infile: ".$$inFileDirectoryRef."/".$infile, "\n");
-		$logger->fatal("Check that the order of supplied: '--sampleIDs' and '--inFilesDirs' correlate.", "\n");
-		$logger->fatal("NOTE: SampleIDs read from pedigree are lexiographically sorted and for instance '--inFileDirs' supplied need to be supplied in the same order to correlate", "\n");
+		$logger->fatal("Check that: '--sampleIDs' and '--inFileDirs' contain the same sampleID and that the filename of the infile contains the sampleID.", "\n");
 		exit 1;
 	    }
 	}
@@ -17149,25 +17146,26 @@ sub AddToScriptParameter {
 	
 		}
 		elsif (exists(${$parameterHashRef}{$parameterName}{default})) {  #Default exists
-
+		    
 		    if (${$parameterHashRef}{$parameterName}{dataType} eq "ARRAY") {  #Array reference
 			
-			## Build default for inFilesDirs
-			if ($parameterName eq "inFilesDirs") {
+			push(@{${$scriptParameterHashRef}{$parameterName}}, @{ ${$parameterHashRef}{$parameterName}{default} });
+		    }
+		    elsif (${$parameterHashRef}{$parameterName}{dataType} eq "HASH") {
+			
+			## Build default for inFilesDir
+			if ($parameterName eq "inFilesDir") {
 			    
-			    for (my $indirectoryCount=0;$indirectoryCount<scalar(@{${$scriptParameterHashRef}{sampleIDs}});$indirectoryCount++) {
+			    foreach my $sampleID (@{${$scriptParameterHashRef}{sampleIDs}}) {
 				
-				push(@{${$scriptParameterHashRef}{inFilesDirs}}, catfile(${$scriptParameterHashRef}{clusterConstantPath}, ${$scriptParameterHashRef}{analysisType}, ${$scriptParameterHashRef}{sampleIDs}[$indirectoryCount], "fastq"));
+				my $path = catfile(${$scriptParameterHashRef}{clusterConstantPath}, ${$scriptParameterHashRef}{analysisType}, $sampleID, "fastq");
+				${$scriptParameterHashRef}{$parameterName}{$path} = $sampleID;
 			    }
 			}
 			else {
 			    
-			    push(@{${$scriptParameterHashRef}{$parameterName}}, @{ ${$parameterHashRef}{$parameterName}{default} });
+			    ${$scriptParameterHashRef}{$parameterName} = ${$parameterHashRef}{$parameterName}{default};
 			}
-		    }
-		    elsif (${$parameterHashRef}{$parameterName}{dataType} eq "HASH") {
-
-			${$scriptParameterHashRef}{$parameterName} = ${$parameterHashRef}{$parameterName}{default};
 		    }
 		    else {  #Scalar
 			
@@ -22612,7 +22610,7 @@ sub UpdateToAbsolutePath {
     
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
-    my @parameterNames = ("inFilesDirs", "inScriptDir", "referencesDir", "outDataDir", "outScriptDir", "pedigreeFile", "configFile", "writeConfigFile", "sampleInfoFile", "logFile", "picardToolsPath", "genomeAnalysisToolKitPath", "vepDirectoryPath", "vepDirectoryCache", "snpEffPath", "annovarPath", "QCCollectSampleInfoFile");
+    my @parameterNames = ("inFilesDir", "inScriptDir", "referencesDir", "outDataDir", "outScriptDir", "pedigreeFile", "configFile", "writeConfigFile", "sampleInfoFile", "logFile", "picardToolsPath", "genomeAnalysisToolKitPath", "vepDirectoryPath", "vepDirectoryCache", "snpEffPath", "annovarPath", "QCCollectSampleInfoFile");
 
     foreach my $parameterName (@parameterNames) {
 	
@@ -22634,6 +22632,20 @@ sub UpdateToAbsolutePath {
 								      }));
 		    }
 		    ${$parameterHashRef}{$parameterName}{value}[$elementCounter] = join(",", @absolutePathElements);  #Replace original input with abolute path entries
+		}
+	    }
+	}
+	if (ref(${$parameterHashRef}{$parameterName}{value}) eq "HASH") {  #Hash reference
+
+	    foreach my $key (keys %{${$parameterHashRef}{$parameterName}{value}}) {
+		
+		if ( (defined(${$parameterHashRef}{$parameterName}{value})) && (${$parameterHashRef}{$parameterName}{value}{$key} ne "nocmdinput") ) {
+		    
+		    ## Find aboslute path for supplied path or croaks and exists if path does not exists
+		    my $updatedKey = &FindAbsolutePath({path => $key,
+							parameterName => $parameterName,
+						       });
+		    ${$parameterHashRef}{$parameterName}{value}{$updatedKey} = delete(${$parameterHashRef}{$parameterName}{value}{$key});
 		}
 	    }
 	}
@@ -25035,62 +25047,68 @@ sub UpdateExomeTargetBed {
 }
 
 
-sub CheckSampleIDInExomeTargetBed {
 
-##CheckSampleIDInExomeTargetBed
+sub CheckSampleIDInHashParameter {
+
+##CheckSampleIDInHashParameter
     
-##Function : Check sampleID provided in exomeTargetBed is included in the analysis and only represented once
+##Function : Check sampleID provided in hash parameter is included in the analysis and only represented once
 ##Returns  : "" 
-##Tags     : check, sampleids, capturekit
-##Arguments: $scriptParameterHashRef, $sampleIdArrayRef
+##Tags     : check, sampleids, hash
+##Arguments: $scriptParameterHashRef, $sampleIdArrayRef, $parameterName
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 ##         : $sampleIDArrayRef       => Array to loop in for parameter {REF}
+##         : $parameterNameArrayRef  => Parameter name list {REF}
 
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
     my $scriptParameterHashRef;
     my $sampleIdArrayRef;
+    my $parameterNameArrayRef;
     
     my $tmpl = { 
 	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
 	sampleIdArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$sampleIdArrayRef},
+	parameterNameArrayRef => { required => 1, defined => 1, default => [], store => \$parameterNameArrayRef},
     };
         
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
-    my %seen;  #Hash to test duplicate sampleIDs later
+    foreach my $parameterName (@{$parameterNameArrayRef}) {  #Lopp through all hash parameters supplied
 
-    foreach my $exomeTargetBedFile (keys %{${$scriptParameterHashRef}{exomeTargetBed}} ) {
-
-	my @captureKitSamples = split(",", ${$scriptParameterHashRef}{exomeTargetBed}{$exomeTargetBedFile});
-
-	foreach my $sampleID (@captureKitSamples) {
-
-	    $seen{ $sampleID }++;  #Increment instance to check duplicates later
-
-	    if ( ! (any {$_ eq $sampleID} @{$sampleIdArrayRef}) ) {  #If captureKit sampleID supplied is not part of sampleID array
+	my %seen;  #Hash to test duplicate sampleIDs later
+	
+	foreach my $key (keys %{${$scriptParameterHashRef}{$parameterName}} ) {
+	    
+	    my @parameterSamples = split(",", ${$scriptParameterHashRef}{$parameterName}{$key});
+	    
+	    foreach my $sampleID (@parameterSamples) {
 		
-		$logger->fatal("Could not detect ".$sampleID." from '-exomeTargetBed' in provided sampleIDs: ".join(", ", @{$sampleIdArrayRef}), "\n");
-		exit 1;
-	    }
-	    if ($seen{ $sampleID } > 1) {  #Check sampleID are unique
+		$seen{ $sampleID }++;  #Increment instance to check duplicates later
 		
-		$logger->fatal("SampleID: ".$sampleID." is not uniqe in '-exomeTargetBed '".$exomeTargetBedFile."=".join(",", @captureKitSamples),"\n");
-		exit 1;
+		if ( ! (any {$_ eq $sampleID} @{$sampleIdArrayRef}) ) {  #If captureKit sampleID supplied is not part of sampleID array
+		    
+		    $logger->fatal("Could not detect ".$sampleID." from '-".$parameterName."' in provided sampleIDs: ".join(", ", @{$sampleIdArrayRef}), "\n");
+		    exit 1;
+		}
+		if ($seen{ $sampleID } > 1) {  #Check sampleID are unique
+		    
+		    $logger->fatal("SampleID: ".$sampleID." is not uniqe in '-".$parameterName." '".$key."=".join(",", @parameterSamples),"\n");
+		    exit 1;
+		}
 	    }
 	}
-    }
-    foreach my $sampleID (@{$sampleIdArrayRef}) {
-
-	if ( ! (any {$_ eq $sampleID} (keys %seen)) ) {  #If sampleID is not present in exomeTargetBed
+	foreach my $sampleID (@{$sampleIdArrayRef}) {
 	    
-	    $logger->fatal("Could not detect ".$sampleID." for '-exomeTargetBed'. Provided sampleIDs are: ".join(", ", (keys %seen)), "\n");
-	    exit 1;
+	    if ( ! (any {$_ eq $sampleID} (keys %seen)) ) {  #If sampleID is not present in parameterName hash
+		
+		$logger->fatal("Could not detect ".$sampleID." for '-".$parameterName."'. Provided sampleIDs are: ".join(", ", (keys %seen)), "\n");
+		exit 1;
+	    }
 	}
     }
 }
-
 
 sub GetExomTargetBEDFile {
 
@@ -25323,6 +25341,41 @@ sub ReplaceIUPAC {
     if ($stderrPath) {
 
 	print $FILEHANDLE "2>> ".$stderrPath." ";  #Redirect output to program specific stderr file
+    }
+}
+
+
+sub GetMatchingValuesKey {
+
+##GetMatchingValuesKey
+    
+##Function : Return the key if the hash value and query match
+##Returns  : "key pointing to matched value"
+##Arguments: $scriptParameterHashRef, $queryValueRef, $parameterName
+##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $queryValueRef          => The value to query in the hash {REF}
+##         : $parameterName          => MIP parameter name
+
+    my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $scriptParameterHashRef;
+    my $queryValueRef;
+    my $parameterName;
+
+    my $tmpl = { 
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	queryValueRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$queryValueRef},
+	parameterName => { required => 1, defined => 1, strict_type => 1, store => \$parameterName},
+    };
+    
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
+    
+    my %r = reverse %{${$scriptParameterHashRef}{$parameterName}};  #Values are now keys and vice versa
+    
+    if ( exists $r{$$queryValueRef} ) {
+	
+	return $r{$$queryValueRef};
     }
 }
 

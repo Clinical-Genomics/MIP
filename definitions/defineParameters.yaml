@@ -112,12 +112,11 @@ sampleIDs:
   elementSeparator: ,
   dataType: ARRAY
   type: MIP
-inFilesDirs:
+inFilesDir:
   associatedProgram:
    - MIP
-  elementSeparator: ,
   existsCheck: directory
-  dataType: ARRAY
+  dataType: HASH
   default:
    - notSetYet
   type: path
