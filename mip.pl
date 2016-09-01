@@ -11547,6 +11547,7 @@ sub PicardToolsMarkduplicates {
 		       outfileEnding => $outfileTag."_metric",
 		       outDataType => "infileDependent"
 		      });
+	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{Program}{MarkDuplicates}{ProcessedBy} = $programName;  #MarkDuplicates can be processed by either PicardToolsMarkDuplicates or Sambamba MarkDuplicates
 	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $infile.$outfileTag."_".${$fileInfoHashRef}{contigsSizeOrdered}[0].".bam");
     }
     
@@ -11799,6 +11800,7 @@ sub SambambaMarkduplicates {
 		       outfileEnding => $outfileTag."_metric",
 		       outDataType => "infileDependent"
 		      });
+	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{Program}{MarkDuplicates}{ProcessedBy} = $programName;  #MarkDuplicates can be processed by either PicardToolsMarkDuplicates or Sambamba MarkDuplicates
 	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $infile.$outfileTag."_".${$fileInfoHashRef}{contigsSizeOrdered}[0].".bam");
     }
     
