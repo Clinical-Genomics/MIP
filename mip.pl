@@ -5574,7 +5574,7 @@ sub SampleCheck {
 							      nrofCores => $nrCores,
 							      processTime => 10,
 							     });
-    #my ($volume, $directories, $stderrFile) = File::Spec->splitpath($programInfoPath.".stderr.txt");  #Split to enable submission to &SampleInfoQC later
+
     my ($volume, $directories, $programInfoFile) = File::Spec->splitpath($programInfoPath);  #Split to enable submission to &SampleInfoQC later
     my $stderrFile = $programInfoFile.".stderr.txt";  #To enable submission to &SampleInfoQC later
     my $stdoutFile = $programInfoFile.".stdout.txt";  #To enable submission to &SampleInfoQC later
@@ -11541,7 +11541,7 @@ sub PicardToolsMarkduplicates {
 		       outfileEnding => $outfileTag."_metric",
 		       outDataType => "infileDependent"
 		      });
-	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{Program}{MarkDuplicates}{ProcessedBy} = $programName;  #MarkDuplicates can be processed by either PicardToolsMarkDuplicates or Sambamba MarkDuplicates
+	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{Program}{MarkDuplicates}{$infile}{ProcessedBy} = $programName;  #MarkDuplicates can be processed by either PicardToolsMarkDuplicates or Sambamba MarkDuplicates
 	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $infile.$outfileTag."_".${$fileInfoHashRef}{contigsSizeOrdered}[0].".bam");
     }
     
@@ -11794,7 +11794,7 @@ sub SambambaMarkduplicates {
 		       outfileEnding => $outfileTag."_metric",
 		       outDataType => "infileDependent"
 		      });
-	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{Program}{MarkDuplicates}{ProcessedBy} = $programName;  #MarkDuplicates can be processed by either PicardToolsMarkDuplicates or Sambamba MarkDuplicates
+	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{Program}{MarkDuplicates}{$infile}{ProcessedBy} = $programName;  #MarkDuplicates can be processed by either PicardToolsMarkDuplicates or Sambamba MarkDuplicates
 	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $infile.$outfileTag."_".${$fileInfoHashRef}{contigsSizeOrdered}[0].".bam");
     }
     
