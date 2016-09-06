@@ -29,6 +29,7 @@ outDataDir:
    - MIP
   dataType: SCALAR
   type: path
+  updatePath: absolutePath
 logFile:
   associatedProgram:
    - MIP
@@ -36,6 +37,7 @@ logFile:
   dataType: SCALAR
   default: NotsetYet
   type: path
+  updatePath: absolutePath
 projectID:
   associatedProgram:
    - MIP
@@ -65,6 +67,7 @@ configFile:
   dataType: SCALAR
   default: 0
   type: path
+  updatePath: absolutePath
 platForm:
   associatedProgram:
    - MIP
@@ -76,18 +79,21 @@ outScriptDir:
    - MIP
   dataType: SCALAR
   type: path
+  updatePath: absolutePath
 writeConfigFile:
   associatedProgram:
    - MIP
   dataType: SCALAR
   default: 0
   type: path
+  updatePath: absolutePath
 pedigreeFile:
   associatedProgram:
    - MIP
   buildFile: noAutoBuild
   dataType: SCALAR
   type: path
+  updatePath: absolutePath
 sourceEnvironmentCommand:
   associatedProgram:
    - MIP
@@ -121,6 +127,7 @@ inFilesDir:
   default:
    - notSetYet
   type: path
+  updatePath: absolutePath
 sampleInfoFile:
   associatedProgram:
    - MIP
@@ -129,6 +136,7 @@ sampleInfoFile:
   default: NotsetYet
   existsCheck: file
   type: path
+  updatePath: absolutePath
 researchEthicalApproval:
   associatedProgram:
    - MIP
@@ -141,12 +149,14 @@ inScriptDir:
   dataType: SCALAR
   existsCheck: directory
   type: path
+  updatePath: absolutePath
 referencesDir:
   associatedProgram:
    - MIP
   dataType: SCALAR
   existsCheck: directory
   type: path
+  updatePath: absolutePath
 dryRunAll:
   associatedProgram:
    - MIP
@@ -1070,6 +1080,7 @@ picardToolsPath:
   dataType: SCALAR
   existsCheck: directory
   type: path
+  updatePath: absolutePath
 ## GATK Genotype Calibration
 pGATKGenoTypeGVCFs:
   associatedProgram:
@@ -1426,12 +1437,14 @@ vepDirectoryPath:
   dataType: SCALAR
   existsCheck: directory
   type: path
+  updatePath: absolutePath
 vepDirectoryCache:
   associatedProgram:
    - pVariantEffectPredictor
   dataType: SCALAR
   existsCheck: directory
   type: path
+  updatePath: absolutePath
 vepReference:
   associatedProgram:
    - pVariantEffectPredictor
@@ -1545,6 +1558,7 @@ annovarPath:
   dataType: SCALAR
   existsCheck: directory
   type: path
+  updatePath: absolutePath
 annovarGenomeBuildVersion:
   associatedProgram:
    - pAnnovar
@@ -1599,6 +1613,7 @@ snpEffPath:
   dataType: SCALAR
   existsCheck: directory
   type: path
+  updatePath: absolutePath
 snpEffAnn:
   associatedProgram:
    - pSnpEff
@@ -1698,6 +1713,7 @@ genomeAnalysisToolKitPath:
   dataType: SCALAR
   existsCheck: directory
   type: path
+  updatePath: absolutePath
 ## SampleCheck
 pSampleCheck:
   associatedProgram:
@@ -1820,6 +1836,7 @@ QCCollectSampleInfoFile:
   dataType: SCALAR
   default: notSetYet
   type: programArgument
+  updatePath: absolutePath
 QCCollectRegExpFile:
   associatedProgram:
    - pQCCollect

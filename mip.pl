@@ -653,9 +653,12 @@ GetOptions('ifd|inFilesDir:s'  => \%{$parameter{inFilesDir}{value}},  #Hash inFi
 		exitCode => 1,
 	       });
 
+
 ## Change relative path to absolute path for certain parameters 
 &UpdateToAbsolutePath({parameterHashRef => \%parameter,
 		      });
+
+
 ##Special case:Enable/activate MIP. Cannot be changed from cmd or config
 $scriptParameter{MIP} = $parameter{MIP}{default};
 
@@ -885,7 +888,6 @@ else {  #Not supplied - Set to 0 to handle correctly in program subroutines
 				       "reference:referencesDir",  #Collects all references in that are supposed to be in referenceDirectory
 				       "removeRedundantFiles:yes"],  #Collect all programs that are variantCallers
 		});
-
 
 ## Check correct value for program mode in MIP
 &CheckProgramMode({parameterHashRef => \%parameter,
@@ -22686,9 +22688,12 @@ sub UpdateToAbsolutePath {
     
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
-    my @parameterNames = ("inFilesDir", "inScriptDir", "referencesDir", "outDataDir", "outScriptDir", "pedigreeFile", "configFile", "writeConfigFile", "sampleInfoFile", "logFile", "picardToolsPath", "genomeAnalysisToolKitPath", "vepDirectoryPath", "vepDirectoryCache", "snpEffPath", "annovarPath", "QCCollectSampleInfoFile");
-
-    foreach my $parameterName (@parameterNames) {
+    ## Adds dynamic aggregate information from definitions to parameterHash
+    &AddToParameter({parameterHashRef => \%parameter,
+		     aggregateArrayRef => ["updatePath:absolutePath"],  #Collect all path that should be made absolute
+		    });
+    
+    foreach my $parameterName (@{${$parameterHashRef}{dynamicParameters}{absolutePath}}) {
 	
 	if (ref(${$parameterHashRef}{$parameterName}{value}) eq "ARRAY") {  #Array reference
 
@@ -24301,7 +24306,7 @@ sub AddToParameter {
 	    my $stringToMatch = $tmpArray[1];
 
 	    if ( (defined(${$parameterHashRef}{$key}{$secondkey})) && (${$parameterHashRef}{$key}{$secondkey} eq $stringToMatch) ) {
-		
+
 		push(@{${$parameterHashRef}{dynamicParameters}{$stringToMatch}}, $key);
 	    }
 	}
