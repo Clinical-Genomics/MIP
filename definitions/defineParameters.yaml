@@ -111,7 +111,7 @@ analysisType:
    - MIP
   dataType: HASH
   default:
-   - genomes
+   - wgs
   type: MIP
 inFilesDir:
   associatedProgram:

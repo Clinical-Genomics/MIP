@@ -64,7 +64,7 @@ mip.pl  -ifd [inFilesDir,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                -ped/--pedigreeFile (defaults to "")
                -hgr/--humanGenomeReference Fasta file for the human genome reference (defaults to "Homo_sapiens.GRCh37.d5.fasta;1000G decoy version 5")
                -ald/--alignerOutDir Setting which aligner out directory was used for alignment in previous analysis (defaults to "{outDataDir}{ {aligner}{outDirectoryName} }")
-               -at/--analysisType Type of analysis to perform (sampleID=analysisType, defaults to "genomes";Valid entries: "genomes", "exomes", "rapid")
+               -at/--analysisType Type of analysis to perform (sampleID=analysisType, defaults to "wgs";Valid entries: "wgs", "wes", "rapid")
                -pl/--platForm Platform/technology used to produce the reads (defaults to "ILLUMINA")
                -mc/--maximumCores The maximum number of cores per node used in the analysis (defaults to "8")
                -c/--configFile YAML config file for script parameters (defaults to "")
@@ -1049,6 +1049,7 @@ if ($scriptParameter{writeConfigFile} ne 0) {  #Write config file for family
 
 ## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
 @{$fileInfo{"SelectFileContigs"}} = &SizeSortSelectFileContigs({fileInfoHashRef =>\%fileInfo,
+								consensusAnalysisTypeRef => \$parameter{dynamicParameters}{consensusAnalysisType},
 								hashKeyToSort => "SelectFileContigs",
 								hashKeySortReference => "contigsSizeOrdered",
 							       });
@@ -1936,7 +1937,7 @@ if ($scriptParameter{pGATKHaploTypeCaller} > 0) {  #Run GATK HaploTypeCaller
 
 	my $sampleIDRef = \$scriptParameter{sampleIDs}[$sampleIDCounter];  #Alias
 
-	if ( ($scriptParameter{dryRunAll} != 1) && ($scriptParameter{analysisType}{$$sampleIDRef} ne "genomes") ) {
+	if ( ($scriptParameter{dryRunAll} != 1) && ($scriptParameter{analysisType}{$$sampleIDRef} ne "wgs") ) {
 	    
 	    &CheckBuildPTCHSMetricPreRequisites({parameterHashRef => \%parameter,
 						 scriptParameterHashRef => \%scriptParameter,
@@ -2019,7 +2020,7 @@ if ($scriptParameter{pGATKVariantRecalibration} > 0) {  #Run GATK VariantRecalib
 
 	my $sampleIDRef = \$scriptParameter{sampleIDs}[$sampleIDCounter];  #Alias
 
-	if ( ($scriptParameter{dryRunAll} != 1) && ($scriptParameter{analysisType}{$$sampleIDRef} ne "genomes") ) {
+	if ( ($scriptParameter{dryRunAll} != 1) && ($scriptParameter{analysisType}{$$sampleIDRef} ne "wgs") ) {
 	    
 	    &CheckBuildPTCHSMetricPreRequisites({parameterHashRef => \%parameter,
 						 scriptParameterHashRef => \%scriptParameter,
@@ -3421,7 +3422,7 @@ sub RankVariants {
 	## Calculate Gene Models
 	say $FILEHANDLE "## Calculate Gene Models";   
 
-	if ($consensusAnalysisType eq "exomes" ) {
+	if ($consensusAnalysisType eq "wes" ) {
 
 	    ## Clear trap for signal(s)
 	    &ClearTrap({FILEHANDLE => $FILEHANDLE,
@@ -3540,7 +3541,7 @@ sub RankVariants {
 	print $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType.".vcf")." ";  #infile
 	say $FILEHANDLE "\n";
 
-	if ($consensusAnalysisType eq "exomes" ) {
+	if ($consensusAnalysisType eq "wes" ) {
 
 	    ## Enable trap for signal(s) and function
 	    &EnableTrap({FILEHANDLE => $FILEHANDLE,
@@ -6553,7 +6554,7 @@ sub GATKVariantReCalibration {
     ## GATK VariantRecalibrator
     my @modes = ("SNP","INDEL");
 
-    if ( ($consensusAnalysisType eq "exomes") || ($consensusAnalysisType eq "rapid") ) {  #Exome/rapid analysis
+    if ( ($consensusAnalysisType eq "wes") || ($consensusAnalysisType eq "rapid") ) {  #Exome/rapid analysis
 	
 	@modes = ("BOTH");
     }
@@ -6577,7 +6578,7 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "-rscriptFile ".catfile($intermediarySampleDirectory, $$familyIDRef.$infileTag.$callType.".intervals.plots.R")." ";
 	print $FILEHANDLE "-tranchesFile ".catfile($intermediarySampleDirectory, $$familyIDRef.$infileTag.$callType.".intervals.tranches")." ";
 
-	if ( ($consensusAnalysisType eq "exomes") || ($consensusAnalysisType eq "rapid") ) {  #Exome/rapid analysis use combined reference for more power
+	if ( ($consensusAnalysisType eq "wes") || ($consensusAnalysisType eq "rapid") ) {  #Exome/rapid analysis use combined reference for more power
 	
 	    print $FILEHANDLE "-input ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType.".vcf")." ";  #Infile HaplotypeCaller combined vcf which used reference gVCFs to create combined vcf (30> samples gCVFs)
 	}
@@ -6596,7 +6597,7 @@ sub GATKVariantReCalibration {
 	
 		print $FILEHANDLE "-input ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.".SNV.vcf")." ";
 	    }
-	    if (${$scriptParameterHashRef}{GATKVariantReCalibrationDPAnnotation}) {  #Special case: Not to be used with hybrid capture. NOTE: Disable when analysing exom + genomes using '-at genomes' 
+	    if (${$scriptParameterHashRef}{GATKVariantReCalibrationDPAnnotation}) {  #Special case: Not to be used with hybrid capture. NOTE: Disable when analysing wes + wgs in the same run
 
 		print $FILEHANDLE "-an DP ";  #The names of the annotations which should used for calculations.
 	    }
@@ -6651,7 +6652,7 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "-recalFile ".catfile($intermediarySampleDirectory, $$familyIDRef.$infileTag.$callType.".intervals")." ";
 	print $FILEHANDLE "-tranchesFile ".catfile($intermediarySampleDirectory, $$familyIDRef.$infileTag.$callType.".intervals.tranches")." ";
 
-	if ( ($consensusAnalysisType eq "exomes") || ($consensusAnalysisType eq "rapid")) {  #Exome/rapid analysis use combined reference for more power
+	if ( ($consensusAnalysisType eq "wes") || ($consensusAnalysisType eq "rapid")) {  #Exome/rapid analysis use combined reference for more power
 	    
 	    print $FILEHANDLE "-input ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType.".vcf")." ";  #Infile HaplotypeCaller combined vcf which used reference gVCFs to create combined vcf file
 	    print $FILEHANDLE "-o ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_filtered.vcf")." ";
@@ -6686,7 +6687,7 @@ sub GATKVariantReCalibration {
     ## GATK SelectVariants
 
     ## Removes all genotype information for exome ref and recalulates meta-data info for remaining samples in new file.
-    if ( ($consensusAnalysisType eq "exomes") || ($consensusAnalysisType eq "rapid") ) {  #Exome/rapid analysis
+    if ( ($consensusAnalysisType eq "wes") || ($consensusAnalysisType eq "rapid") ) {  #Exome/rapid analysis
 	
 	say $FILEHANDLE "## GATK SelectVariants";
 
@@ -7113,7 +7114,7 @@ sub GATKGenoTypeGVCFs {
 
 	print $FILEHANDLE "-L ".${$fileInfoHashRef}{contigs}[$contigsCounter]." ";  #Per contig
 
-	if ( ($consensusAnalysisType eq "exomes") || ($consensusAnalysisType eq "rapid") ) {
+	if ( ($consensusAnalysisType eq "wes") || ($consensusAnalysisType eq "rapid") ) {
 	    			
 	    print $FILEHANDLE "-V ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{GATKGenoTypeGVCFsRefGVCF})." ";
 	}
@@ -8088,7 +8089,7 @@ sub SVRankVariants {
 	## Calculate Gene Models
 	say $FILEHANDLE "## Calculate Gene Models";   
 	
-	if ($consensusAnalysisType eq "exomes") {
+	if ($consensusAnalysisType eq "wes") {
 	    
 	    ## Clear trap for signal(s)
 	    &ClearTrap({FILEHANDLE => $FILEHANDLE,
@@ -8188,7 +8189,7 @@ sub SVRankVariants {
 	print $FILEHANDLE "-o ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf")." ";  #Outfile
 	say $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType.".vcf")." ";  #infile
 	
-	if ($consensusAnalysisType eq "exomes") {
+	if ($consensusAnalysisType eq "wes") {
 	    
 	    ## Enable trap for signal(s) and function
 	    &EnableTrap({FILEHANDLE => $FILEHANDLE,
@@ -9815,7 +9816,7 @@ sub Manta {
     }
     print $FILEHANDLE "--referenceFasta ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{humanGenomeReference})." ";  #Reference file
 
-    if ($consensusAnalysisType ne "genomes") {
+    if ($consensusAnalysisType ne "wgs") {
 	
 	print $FILEHANDLE "--exome ";
     }
@@ -10624,7 +10625,7 @@ sub GATKHaploTypeCaller {
 						    sampleIDRef => $sampleIDRef,
 						    fileEndingRef => \${$fileInfoHashRef}{exomeTargetBed}[2],
 						   });
-    if ( ($$analysisTypeRef eq "exomes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
+    if ( ($$analysisTypeRef eq "wes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
 	
 	## Generate contig specific interval_list
 	&GenerateContigSpecificTargetBedFile({scriptParameterHashRef => $scriptParameterHashRef,
@@ -10695,7 +10696,7 @@ sub GATKHaploTypeCaller {
 
 	    print $XARGSFILEHANDLE "--dontUseSoftClippedBases ";  #Do not analyze soft clipped bases in the reads
 	}
-	if ( ($$analysisTypeRef eq "genomes") && (${$scriptParameterHashRef}{GATKHaploTypeCallerPcrIndelModel} ne 0) ) {
+	if ( ($$analysisTypeRef eq "wgs") && (${$scriptParameterHashRef}{GATKHaploTypeCallerPcrIndelModel} ne 0) ) {
 
 	    print $XARGSFILEHANDLE "--pcr_indel_model ".${$scriptParameterHashRef}{GATKHaploTypeCallerPcrIndelModel}." ";  #Assume that we run pcr-free sequencing (true for Rapid WGS and X-ten) 
 	}
@@ -10711,11 +10712,11 @@ sub GATKHaploTypeCaller {
 	print $XARGSFILEHANDLE "--variant_index_type LINEAR "; 
 	print $XARGSFILEHANDLE "--variant_index_parameter 128000 ";
 
-	if ( ($$analysisTypeRef eq "exomes") || ( $$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
+	if ( ($$analysisTypeRef eq "wes") || ( $$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
 	    
 	    print $XARGSFILEHANDLE "-L ".catfile($$tempDirectoryRef, $$contigRef."_".$exomeTargetBedFile)." "; #Limit to targets kit target file
 	}
-	else {  #genomes
+	else {  #wgs
 	    
 	    print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 	}
@@ -10875,7 +10876,7 @@ sub GATKBaseReCalibration {
 						    sampleIDRef => $sampleIDRef,
 						    fileEndingRef => \${$fileInfoHashRef}{exomeTargetBed}[0],
 						   });
-    if ( ($$analysisTypeRef eq "exomes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
+    if ( ($$analysisTypeRef eq "wes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
 	
 	## Generate contig specific interval_list
 	&GenerateContigSpecificTargetBedFile({scriptParameterHashRef => $scriptParameterHashRef,
@@ -10946,11 +10947,11 @@ sub GATKBaseReCalibration {
 	print $XARGSFILEHANDLE "-nct ".${$scriptParameterHashRef}{maximumCores}." ";  #How many CPU threads should be allocated per data thread to running this analysis
 	print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{GATKDownSampleToCoverage}." ";  #Coverage to downsample to at any given locus	
 
-	if ( ($$analysisTypeRef eq "exomes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
+	if ( ($$analysisTypeRef eq "wes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
 	    
 	    print $XARGSFILEHANDLE "-L ".catfile($$tempDirectoryRef, $$contigRef."_".$exomeTargetBedFile)." "; #Limit to targets kit target file
 	}
-	else {  #genomes
+	else {  #wgs
 
 	    print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 	}    	    
@@ -11002,11 +11003,11 @@ sub GATKBaseReCalibration {
 	    
 	    print $XARGSFILEHANDLE "--disable_indel_quals  ";  #Do not recalibrate indel base quality (should be done for Pacbio reads)
 	}
-	if ( ($$analysisTypeRef eq "exomes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
+	if ( ($$analysisTypeRef eq "wes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
 	    
 	    print $XARGSFILEHANDLE "-L ".catfile($$tempDirectoryRef, $$contigRef."_".$exomeTargetBedFile)." "; #Limit to targets kit target file
 	}
-	else {  #genomes
+	else {  #wgs
 
 	    print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 	}  
@@ -11207,7 +11208,7 @@ sub GATKReAligner {
 						    fileEndingRef => \${$fileInfoHashRef}{exomeTargetBed}[2],
 						   });
     
-    if ( ($$analysisTypeRef eq "exomes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
+    if ( ($$analysisTypeRef eq "wes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
 	
 	## Generate contig specific interval_list
 	&GenerateContigSpecificTargetBedFile({scriptParameterHashRef => $scriptParameterHashRef,
@@ -11272,11 +11273,11 @@ sub GATKReAligner {
 	print $XARGSFILEHANDLE "-known ".join(" -known ", map { catfile($$referencesDirRef, $_) } (@{${$scriptParameterHashRef}{GATKReAlignerINDELKnownSite}}) )." ";  #Input VCF file(s) with known indels
 	print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{GATKDownSampleToCoverage}." ";  #Coverage to downsample to at any given locus	    
 	
-	if ( ($$analysisTypeRef eq "exomes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
+	if ( ($$analysisTypeRef eq "wes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
 	    
 	    print $XARGSFILEHANDLE "-L ".catfile($$tempDirectoryRef, $$contigRef."_".$exomeTargetBedFile)." "; #Limit to targets kit target file
 	}
-	else {  #genomes
+	else {  #wgs
 
 	    print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 	}
@@ -11315,11 +11316,11 @@ sub GATKReAligner {
 	print $XARGSFILEHANDLE "--consensusDeterminationModel USE_READS ";  #Additionally uses indels already present in the original alignments of the reads 
 	print $XARGSFILEHANDLE "-targetIntervals ".catfile($intermediarySampleDirectory, $infile.$outfileTag."_".$$contigRef.".intervals")." ";
 	
-	if ( ($$analysisTypeRef eq "exomes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis	
+	if ( ($$analysisTypeRef eq "wes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis	
 	    
 	    print $XARGSFILEHANDLE "-L ".catfile($$tempDirectoryRef, $$contigRef."_".$exomeTargetBedFile)." "; #Limit to targets kit target file
 	}
-	else {  #genomes
+	else {  #wgs
 
 	    print $XARGSFILEHANDLE "-L ".$$contigRef." ";  #Per contig
 	}
@@ -12422,7 +12423,7 @@ sub BWASampe {
 
     for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all files from BWA aln but process in the same command i.e. both reads per align call
 	 
-	if ($consensusAnalysisType eq "genomes") {
+	if ($consensusAnalysisType eq "wgs") {
 	    
 	    $time = 40;  
 	}
@@ -13275,7 +13276,7 @@ sub MosaikAlign {
 
     for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all infiles per lane
 	   
-	if ($consensusAnalysisType eq "genomes") {
+	if ($consensusAnalysisType eq "wgs") {
 	    
 	    $time = 80;  
 	}
@@ -17225,7 +17226,7 @@ sub AddToScriptParameter {
 
 			    foreach my $sampleID (@{${$scriptParameterHashRef}{sampleIDs}}) {
 
-				${$scriptParameterHashRef}{$parameterName}{$sampleID} = "genomes";
+				${$scriptParameterHashRef}{$parameterName}{$sampleID} = "wgs";
 			    }
 			}
 			## Build default for inFilesDir
@@ -17256,7 +17257,7 @@ sub AddToScriptParameter {
 			## Special cases where the requirement is depending on other variabels
 			if ( ($parameterName eq "bwaMemRapidDb") && ($consensusAnalysisType ne "rapid")) {  #Do nothing since file is not required unless rapid mode is enabled
 			}
-			elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCF") && ($consensusAnalysisType =~/genomes/) ) {  #Do nothing since file is not required unless exome or rapid mode is enabled
+			elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCF") && ($consensusAnalysisType =~/wgs/) ) {  #Do nothing since file is not required unless exome or rapid mode is enabled
 			}
 			elsif ( ($parameterName eq "vcfParserRangeFeatureAnnotationColumns") && ( ${$scriptParameterHashRef}{vcfParserRangeFeatureFile} eq "noUserInfo") ) {  #Do nothing since no SelectFile was given
 			} 
@@ -17482,7 +17483,7 @@ sub CheckParameterFiles {
 		    }
 		    elsif ( ($parameterName eq "bwaMemRapidDb") && ($consensusAnalysisType ne "rapid")) {  #Do nothing since file is not required unless rapid mode is enabled
 		    }
-		    elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCF") && ($consensusAnalysisType =~/genomes/) ) {  #Do nothing since file is not required unless exome mode is enabled
+		    elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCF") && ($consensusAnalysisType =~/wgs/) ) {  #Do nothing since file is not required unless exome mode is enabled
 		    }
 		    elsif ( ($parameterName eq "vcfParserRangeFeatureFile") && ( ${$scriptParameterHashRef}{vcfParserRangeFeatureFile} eq "noUserInfo") ) {  #Do nothing since no RangeFile was given
 		    }
@@ -19679,20 +19680,23 @@ sub SizeSortSelectFileContigs {
     
 ##Function : Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
 ##Returns  : "@sortedArray"
-##Arguments: $fileInfoHashRef, $hashKeyToSort, $hashKeySortReference
-##         : $fileInfoHashRef      => The fileInfo hash {REF}
-##         : $hashKeyToSort        => The keys to sort
-##         : $hashKeySortReference => The hash keys sort reference
+##Arguments: $fileInfoHashRef, $consensusAnalysisTypeRef, $hashKeyToSort, $hashKeySortReference
+##         : $fileInfoHashRef          => The fileInfo hash {REF}
+##         : $consensusAnalysisTypeRef => Consensus analysisType {REF}
+##         : $hashKeyToSort            => The keys to sort
+##         : $hashKeySortReference     => The hash keys sort reference
 
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
     my $fileInfoHashRef;
+    my $consensusAnalysisTypeRef;
     my $hashKeyToSort;
     my $hashKeySortReference;
 
     my $tmpl = { 
 	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	consensusAnalysisTypeRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$consensusAnalysisTypeRef},
 	hashKeyToSort => { required => 1, defined => 1, strict_type => 1, store => \$hashKeyToSort},
 	hashKeySortReference => { required => 1, defined => 1, strict_type => 1, store => \$hashKeySortReference},
     };
@@ -19724,8 +19728,11 @@ sub SizeSortSelectFileContigs {
 	    
 	    if ( ! (any {$_ eq $element} @sortedArray) ) {  #If element is not part of array
 		
-		$logger->fatal("Could not detect '##contig'= ".$element." from meta data header in '-vcfParserSelectFile' in reference contigs collected from '-humanGenomeReference'\n");
-		exit 1;
+		unless ( ($$consensusAnalysisTypeRef eq "wes") && ($element=~/MT$|M$/) ) {  #Special case when analysing wes since Mitochondrial contigs have no baits in exome capture kits
+		    
+		    $logger->fatal("Could not detect '##contig'= ".$element." from meta data header in '-vcfParserSelectFile' in reference contigs collected from '-humanGenomeReference'\n");
+		    exit 1;
+		}
 	    }
 	}
     }
@@ -22311,7 +22318,7 @@ sub SetContigs {
 
 ##SetContigs
 
-##Function : Set contig prefix and contig names depending on reference used. Exclude mitochondrial contig if analysisType is "exomes".  
+##Function : Set contig prefix and contig names depending on reference used. Exclude mitochondrial contig if analysisType is "wes".  
 ##Returns  : ""
 ##Arguments: $scriptParameterHashRef, $fileInfoHashRef
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
@@ -22342,7 +22349,10 @@ sub SetContigs {
 
 	@{${$fileInfoHashRef}{contigsSizeOrdered}} = ("1", "2", "3", "4", "5", "6", "7", "X", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "Y", "MT");  #Chr for filtering of bam file
     }
-    if (${$scriptParameterHashRef}{analysisType} eq "exomes") {
+    ## Detect if all samples has the same sequencing type and return consensus if reached
+    my $consensusAnalysisType = &DetectOverallAnalysisType({analysisTypeHashRef => \%{${$scriptParameterHashRef}{analysisType}},
+											  });
+    if ($consensusAnalysisType eq "wes") {
 
 	pop(@{${$fileInfoHashRef}{contigs}});  #Remove Mitochondrial contig
 	pop(@{${$fileInfoHashRef}{contigsSizeOrdered}});  #Remove Mitochondrial contig
@@ -24440,7 +24450,7 @@ sub PrepareGATKTargetIntervals {
     my $targetIntervalFileListsRef = ${$argHashRef}{targetIntervalFileListsRef};
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef};
 
-    if ( ($$analysisTypeRef eq "exomes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
+    if ( ($$analysisTypeRef eq "wes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
 
 	my $targetIntervalsPath = catfile($$tempDirectoryRef, $$targetIntervalFileListsRef);
 	
@@ -25465,7 +25475,7 @@ sub DetectOverallAnalysisType {
     
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
-    my @analysisTypes = ("exomes", "genomes", "rapid");
+    my @analysisTypes = ("wes", "wgs", "rapid");
 
     foreach my $analysisType (@analysisTypes) {
 
