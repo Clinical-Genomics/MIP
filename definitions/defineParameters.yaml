@@ -65,12 +65,6 @@ configFile:
   dataType: SCALAR
   default: 0
   type: path
-analysisType:
-  associatedProgram:
-   - MIP
-  dataType: SCALAR
-  default: genomes
-  type: MIP
 platForm:
   associatedProgram:
    - MIP
@@ -111,6 +105,13 @@ sampleIDs:
    - MIP
   elementSeparator: ,
   dataType: ARRAY
+  type: MIP
+analysisType:
+  associatedProgram:
+   - MIP
+  dataType: HASH
+  default:
+   - genomes
   type: MIP
 inFilesDir:
   associatedProgram:

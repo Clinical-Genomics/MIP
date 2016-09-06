@@ -29,7 +29,7 @@ use Cwd;
 use IPC::Cmd qw[can_run run];
 use IPC::System::Simple;  #Required for autodie :all
 use vars qw($USAGE);
-use List::Util qw(any);
+use List::Util qw(any all);
 use Time::Piece;
 
 ## Third party module(s)
@@ -64,7 +64,7 @@ mip.pl  -ifd [inFilesDir,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                -ped/--pedigreeFile (defaults to "")
                -hgr/--humanGenomeReference Fasta file for the human genome reference (defaults to "Homo_sapiens.GRCh37.d5.fasta;1000G decoy version 5")
                -ald/--alignerOutDir Setting which aligner out directory was used for alignment in previous analysis (defaults to "{outDataDir}{ {aligner}{outDirectoryName} }")
-               -at/--analysisType Type of analysis to perform (defaults to "genomes";Valid entries: "genomes", "exomes", "rapid")
+               -at/--analysisType Type of analysis to perform (sampleID=analysisType, defaults to "genomes";Valid entries: "genomes", "exomes", "rapid")
                -pl/--platForm Platform/technology used to produce the reads (defaults to "ILLUMINA")
                -mc/--maximumCores The maximum number of cores per node used in the analysis (defaults to "8")
                -c/--configFile YAML config file for script parameters (defaults to "")
@@ -442,7 +442,7 @@ GetOptions('ifd|inFilesDir:s'  => \%{$parameter{inFilesDir}{value}},  #Hash inFi
 	   'ped|pedigreeFile:s' => \$parameter{pedigreeFile}{value},  #Pedigree file
 	   'hgr|humanGenomeReference:s' => \$parameter{humanGenomeReference}{value},  #Human genome reference
 	   'al|alignerOutDir:s' => \$parameter{alignerOutDir}{value},  #determining which aligner out data directory was used previously (if not specified)
-	   'at|analysisType:s' => \$parameter{analysisType}{value},  #Type of analysis
+	   'at|analysisType:s' => \%{$parameter{analysisType}{value}},  #analysisType=sampleID
 	   'pl|platForm:s' => \$parameter{platForm}{value},  #Platform/technology used to produce the reads
 	   'mc|maximumCores=n' => \$parameter{maximumCores}{value},  #Per node
 	   'c|configFile:s' => \$parameter{configFile}{value},
@@ -675,7 +675,7 @@ if (defined($parameter{configFile}{value})) {  #Input from cmd
 		      comparisonHashRef => \%parameter,
 		     });
 
-    my @activeParameters = ("clusterConstantPath", "analysisConstantPath", "analysisType", "alignerOutDir"); 
+    my @activeParameters = ("clusterConstantPath", "analysisConstantPath", "alignerOutDir"); 
 
     ## Replace config parameter with cmd info for active parameter
     &ReplaceConfigParamWithCMDInfo({parameterHashRef => \%parameter,
@@ -751,6 +751,12 @@ foreach my $orderParameterElement (@orderParameters) {
 				    });
 	}	
     }
+    if ($orderParameterElement eq "analysisType") {
+
+	## Detect if all samples has the same sequencing type and return consensus if reached
+	$parameter{dynamicParameters}{consensusAnalysisType} = &DetectOverallAnalysisType({analysisTypeHashRef => \%{$scriptParameter{analysisType}},
+											  });
+    }
     if ($orderParameterElement eq "humanGenomeReference") {  #Supply humanGenomeReference to mosaikAlignReference if required
 
 	if ( (defined($scriptParameter{humanGenomeReference})) && (defined($fileInfo{humanGenomeReferenceNameNoEnding})) ) {
@@ -818,6 +824,7 @@ $parameter{dynamicParameters}{trio} = &DetectTrio({scriptParameterHashRef => \%s
 		 sampleInfoHashRef => \%sampleInfo,
 		});
 
+
 ## Check email adress format
 if (exists($scriptParameter{email})) {  #Allow no malformed email adress
     
@@ -831,20 +838,25 @@ if (exists($scriptParameter{email})) {  #Allow no malformed email adress
 		     scriptParameterHashRef => \%scriptParameter,
 		    });
 
+
 ## Test that the familyID and the sampleID(s) exists and are unique. Check if id sampleID contains "_".
 &CheckUniqueIDNs({scriptParameterHashRef => \%scriptParameter,
 		  sampleIdArrayRef => \@{$scriptParameter{sampleIDs}},
 		 });
 
+
+## Check sampleID provided in hash parameter is included in the analysis and only represented once
 &CheckSampleIDInHashParameter({scriptParameterHashRef => \%scriptParameter,
 			       sampleIdArrayRef => \@{$scriptParameter{sampleIDs}},
 			       parameterNameArrayRef => ["inFilesDir", "exomeTargetBed"],
 			      });
 
+
 ## Check that VEP directory and VEP cache match
 &CheckVEPDirectories({vepDirectoryPathRef => \$scriptParameter{vepDirectoryPath},
 		      vepDirectoryCacheRef => \$scriptParameter{vepDirectoryCache},
 		     });
+
 
 ## PicardToolsMergeSamFilesPrevious
 if(@{$parameter{picardToolsMergeSamFilesPrevious}{value}}) {
@@ -872,6 +884,8 @@ else {  #Not supplied - Set to 0 to handle correctly in program subroutines
 				       "reference:referencesDir",  #Collects all references in that are supposed to be in referenceDirectory
 				       "removeRedundantFiles:yes"],  #Collect all programs that are variantCallers
 		});
+
+
 ## Check correct value for program mode in MIP
 &CheckProgramMode({parameterHashRef => \%parameter,
 		   scriptParameterHashRef => \%scriptParameter
@@ -883,6 +897,7 @@ else {  #Not supplied - Set to 0 to handle correctly in program subroutines
 	       scriptParameterHashRef => \%scriptParameter,
 	       broadcastsArrayRef => \@broadcasts,
 	      });
+
 
 ## Broadcast set parameters info
 foreach my $parameterInfo (@broadcasts) {
@@ -1008,6 +1023,7 @@ foreach my $parameterInfo (@broadcasts) {
 			  supportedCosmidReferenceHashRef => \%supportedCosmidReference
 			 });
 
+
 if ($scriptParameter{writeConfigFile} ne 0) {  #Write config file for family
 
     make_path(dirname($scriptParameter{writeConfigFile}));  #Create directory unless it already exists
@@ -1018,21 +1034,23 @@ if ($scriptParameter{writeConfigFile} ne 0) {  #Write config file for family
 	       });
 }
 
+
 ## Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
 &CheckPrioritizeVariantCallers({parameterHashRef => \%parameter,
 				scriptParameterHashRef => \%scriptParameter,
 			       });
+
 
 ## Set contig prefix and contig names depending on reference used
 &SetContigs({scriptParameterHashRef => \%scriptParameter,
 	     fileInfoHashRef => \%fileInfo,
 	    });
 
+
 ## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
 @{$fileInfo{"SelectFileContigs"}} = &SizeSortSelectFileContigs({fileInfoHashRef =>\%fileInfo,
 								hashKeyToSort => "SelectFileContigs",
 								hashKeySortReference => "contigsSizeOrdered",
-								analysisTypeRef => \$scriptParameter{analysisType},
 							       });
 
 
@@ -1047,6 +1065,7 @@ if ($scriptParameter{writeConfigFile} ne 0) {  #Write config file for family
 		    maleFoundRef => \$scriptParameter{maleFound}
 		   });
 
+
 ## Write CMD to MIP log file
 &WriteCMDMipLog({parameterHashRef => \%parameter,
 		 scriptParameterHashRef => \%scriptParameter,
@@ -1056,11 +1075,13 @@ if ($scriptParameter{writeConfigFile} ne 0) {  #Write config file for family
 		 mipVersionRef => \$mipVersion,
 		});
 
+
 ## Collects the ".fastq(.gz)" files from the supplied infiles directory. Checks if any of the files exist
 &CollectInfiles({scriptParameterHashRef => \%scriptParameter,
 		 inDirPathHashRef => \%inDirPath,
 		 infileHashRef => \%infile,
 		});
+
 
 ## Reformat files for MIP output, which have not yet been created into, correct format so that a sbatch script can be generated with the correct filenames
 my $uncompressedFileSwitch = &InfilesReFormat({scriptParameterHashRef => \%scriptParameter,
@@ -1084,6 +1105,7 @@ my $uncompressedFileSwitch = &InfilesReFormat({scriptParameterHashRef => \%scrip
 		    infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 		    orderParametersArrayRef => \@orderParameters,
 		   });
+
 
 ## Create .fam file to be used in variant calling analyses
 &CreateFamFile({scriptParameterHashRef => \%scriptParameter,
@@ -1910,18 +1932,21 @@ if ($scriptParameter{pGATKHaploTypeCaller} > 0) {  #Run GATK HaploTypeCaller
 				      programName => "GATKHaploTypeCaller",
 				     });
     
-    if ( ($scriptParameter{dryRunAll} != 1) && ($scriptParameter{analysisType} ne "genomes") ) {
-	
-	&CheckBuildPTCHSMetricPreRequisites({parameterHashRef => \%parameter,
-					     scriptParameterHashRef => \%scriptParameter,
-					     sampleInfoHashRef => \%sampleInfo,
-					     fileInfoHashRef => \%fileInfo,
-					     infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
-					     jobIDHashRef => \%jobID,
-					     programName => "GATKHaploTypeCaller",
-					    });
-    }
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {
+
+	my $sampleIDRef = \$scriptParameter{sampleIDs}[$sampleIDCounter];  #Alias
+
+	if ( ($scriptParameter{dryRunAll} != 1) && ($scriptParameter{analysisType}{$$sampleIDRef} ne "genomes") ) {
+	    
+	    &CheckBuildPTCHSMetricPreRequisites({parameterHashRef => \%parameter,
+						 scriptParameterHashRef => \%scriptParameter,
+						 sampleInfoHashRef => \%sampleInfo,
+						 fileInfoHashRef => \%fileInfo,
+						 infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
+						 jobIDHashRef => \%jobID,
+						 programName => "GATKHaploTypeCaller",
+						});
+	}
 	
 	&GATKHaploTypeCaller({parameterHashRef => \%parameter,
 			      scriptParameterHashRef => \%scriptParameter,
@@ -1990,16 +2015,21 @@ if ($scriptParameter{pGATKVariantRecalibration} > 0) {  #Run GATK VariantRecalib
 				      programName => "GATKVariantRecalibration",
 				     });
 
-    if ( ($scriptParameter{dryRunAll} != 1) && ($scriptParameter{analysisType} ne "genomes") ) {
-	
-	&CheckBuildPTCHSMetricPreRequisites({parameterHashRef => \%parameter,
-					     scriptParameterHashRef => \%scriptParameter,
-					     sampleInfoHashRef => \%sampleInfo,
-					     fileInfoHashRef => \%fileInfo,
-					     infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
-					     jobIDHashRef => \%jobID,
-					     programName => "GATKVariantRecalibration",
-					    });
+    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {
+
+	my $sampleIDRef = \$scriptParameter{sampleIDs}[$sampleIDCounter];  #Alias
+
+	if ( ($scriptParameter{dryRunAll} != 1) && ($scriptParameter{analysisType}{$$sampleIDRef} ne "genomes") ) {
+	    
+	    &CheckBuildPTCHSMetricPreRequisites({parameterHashRef => \%parameter,
+						 scriptParameterHashRef => \%scriptParameter,
+						 sampleInfoHashRef => \%sampleInfo,
+						 fileInfoHashRef => \%fileInfo,
+						 infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
+						 jobIDHashRef => \%jobID,
+						 programName => "GATKVariantRecalibration",
+						});
+	}
     }
     &GATKVariantReCalibration({parameterHashRef => \%parameter,
 			       scriptParameterHashRef => \%scriptParameter,
@@ -3325,6 +3355,7 @@ sub RankVariants {
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 20;
+    my $consensusAnalysisType = $parameter{dynamicParameters}{consensusAnalysisType};
 
     ## Set the number of cores
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
@@ -3390,8 +3421,8 @@ sub RankVariants {
 	## Calculate Gene Models
 	say $FILEHANDLE "## Calculate Gene Models";   
 
-	if (${$scriptParameterHashRef}{analysisType} eq "exomes") {
-	    
+	if ($consensusAnalysisType eq "exomes" ) {
+
 	    ## Clear trap for signal(s)
 	    &ClearTrap({FILEHANDLE => $FILEHANDLE,
 		       });
@@ -3509,7 +3540,7 @@ sub RankVariants {
 	print $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType.".vcf")." ";  #infile
 	say $FILEHANDLE "\n";
 
-	if (${$scriptParameterHashRef}{analysisType} eq "exomes") {
+	if ($consensusAnalysisType eq "exomes" ) {
 
 	    ## Enable trap for signal(s) and function
 	    &EnableTrap({FILEHANDLE => $FILEHANDLE,
@@ -6478,6 +6509,7 @@ sub GATKVariantReCalibration {
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
     my $programOutDirectoryName = ${$parameterHashRef}{"p".$programName}{outDirectoryName};
+    my $consensusAnalysisType = $parameter{dynamicParameters}{consensusAnalysisType};
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
@@ -6521,8 +6553,8 @@ sub GATKVariantReCalibration {
     ## GATK VariantRecalibrator
     my @modes = ("SNP","INDEL");
 
-    if ( (${$scriptParameterHashRef}{analysisType} eq "exomes") || (${$scriptParameterHashRef}{analysisType} eq "rapid") ) {  #Exome/rapid analysis
-
+    if ( ($consensusAnalysisType eq "exomes") || ($consensusAnalysisType eq "rapid") ) {  #Exome/rapid analysis
+	
 	@modes = ("BOTH");
     }
 
@@ -6545,7 +6577,7 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "-rscriptFile ".catfile($intermediarySampleDirectory, $$familyIDRef.$infileTag.$callType.".intervals.plots.R")." ";
 	print $FILEHANDLE "-tranchesFile ".catfile($intermediarySampleDirectory, $$familyIDRef.$infileTag.$callType.".intervals.tranches")." ";
 
-	if ( (${$scriptParameterHashRef}{analysisType} eq "exomes") || (${$scriptParameterHashRef}{analysisType} eq "rapid") ) {  #Exome/rapid analysis use combined reference for more power
+	if ( ($consensusAnalysisType eq "exomes") || ($consensusAnalysisType eq "rapid") ) {  #Exome/rapid analysis use combined reference for more power
 	
 	    print $FILEHANDLE "-input ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType.".vcf")." ";  #Infile HaplotypeCaller combined vcf which used reference gVCFs to create combined vcf (30> samples gCVFs)
 	}
@@ -6619,7 +6651,7 @@ sub GATKVariantReCalibration {
 	print $FILEHANDLE "-recalFile ".catfile($intermediarySampleDirectory, $$familyIDRef.$infileTag.$callType.".intervals")." ";
 	print $FILEHANDLE "-tranchesFile ".catfile($intermediarySampleDirectory, $$familyIDRef.$infileTag.$callType.".intervals.tranches")." ";
 
-	if ( (${$scriptParameterHashRef}{analysisType} eq "exomes") || (${$scriptParameterHashRef}{analysisType} eq "rapid")) {  #Exome/rapid analysis use combined reference for more power
+	if ( ($consensusAnalysisType eq "exomes") || ($consensusAnalysisType eq "rapid")) {  #Exome/rapid analysis use combined reference for more power
 	    
 	    print $FILEHANDLE "-input ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType.".vcf")." ";  #Infile HaplotypeCaller combined vcf which used reference gVCFs to create combined vcf file
 	    print $FILEHANDLE "-o ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_filtered.vcf")." ";
@@ -6654,7 +6686,7 @@ sub GATKVariantReCalibration {
     ## GATK SelectVariants
 
     ## Removes all genotype information for exome ref and recalulates meta-data info for remaining samples in new file.
-    if ( (${$scriptParameterHashRef}{analysisType} eq "exomes") || (${$scriptParameterHashRef}{analysisType} eq "rapid") ) {  #Exome/rapid analysis
+    if ( ($consensusAnalysisType eq "exomes") || ($consensusAnalysisType eq "rapid") ) {  #Exome/rapid analysis
 	
 	say $FILEHANDLE "## GATK SelectVariants";
 
@@ -6989,6 +7021,8 @@ sub GATKGenoTypeGVCFs {
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $sbatchScriptTracker=0;
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
+    my $consensusAnalysisType = $parameter{dynamicParameters}{consensusAnalysisType};
+
     my $processTime = 10;
 
     if (${$scriptParameterHashRef}{GATKGenoTypeGVCFsAllSites} eq 1) {
@@ -6996,7 +7030,7 @@ sub GATKGenoTypeGVCFs {
 	$processTime = 50;  #Including all sites requires longer processing time
     }
 
-     ## Assign directories
+    ## Assign directories
     my $outFamilyFileDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef);  #For ".fam" file
 
     ## Create .fam file to be used in variant calling analyses
@@ -7030,12 +7064,14 @@ sub GATKGenoTypeGVCFs {
 	
 	## Collect infiles for all sampleIDs to enable migration to temporary directory
 	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{sampleIDs}});$sampleIDCounter++) {
-	    
+
+	    my $sampleIDRef = \${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter];  #Alias
+
 	    ## Add merged infile name after merging all BAM files per sampleID
-	    my $infile = ${$fileInfoHashRef}{$$familyIDRef}{${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter]}{MergeInfile};  #Alias
+	    my $infile = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MergeInfile};  #Alias
 	    
-	    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, ${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter], $$alignerOutDirRef, "gatk");
-	    my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{ ${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter] }{pGATKHaploTypeCaller}{fileTag};
+	    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk");
+	    my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{ $$sampleIDRef }{pGATKHaploTypeCaller}{fileTag};
 	    
 	    ## Copy file(s) to temporary directory
 	    say $FILEHANDLE "## Copy file(s) to temporary directory"; 
@@ -7077,16 +7113,18 @@ sub GATKGenoTypeGVCFs {
 
 	print $FILEHANDLE "-L ".${$fileInfoHashRef}{contigs}[$contigsCounter]." ";  #Per contig
 
-	if ( (${$scriptParameterHashRef}{analysisType} eq "exomes") || (${$scriptParameterHashRef}{analysisType} eq "rapid") ) {
+	if ( ($consensusAnalysisType eq "exomes") || ($consensusAnalysisType eq "rapid") ) {
 	    			
 	    print $FILEHANDLE "-V ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{GATKGenoTypeGVCFsRefGVCF})." ";
 	}
 	
 	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{sampleIDs}});$sampleIDCounter++) {  #Collect infiles for all sampleIDs
 
+	    my $sampleIDRef = \${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter];  #Alias
+
 	    ## Add merged infile name after merging all BAM files per sampleID
-	    my $infile = ${$fileInfoHashRef}{$$familyIDRef}{${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter]}{MergeInfile};  #Alias	    
-	    my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{ ${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter] }{pGATKHaploTypeCaller}{fileTag};
+	    my $infile = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MergeInfile};  #Alias	    
+	    my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{ $$sampleIDRef }{pGATKHaploTypeCaller}{fileTag};
 	    
 	    print $FILEHANDLE "-V ".catfile($$tempDirectoryRef, $infile.$infileTag."_".${$fileInfoHashRef}{contigs}[$contigsCounter].".vcf")." ";  #InFile
 	} 
@@ -7991,6 +8029,7 @@ sub SVRankVariants {
     
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $consensusAnalysisType = $parameter{dynamicParameters}{consensusAnalysisType};
     my $xargsFileName;
     my $time = 20;
 
@@ -8049,7 +8088,7 @@ sub SVRankVariants {
 	## Calculate Gene Models
 	say $FILEHANDLE "## Calculate Gene Models";   
 	
-	if (${$scriptParameterHashRef}{analysisType} eq "exomes") {
+	if ($consensusAnalysisType eq "exomes") {
 	    
 	    ## Clear trap for signal(s)
 	    &ClearTrap({FILEHANDLE => $FILEHANDLE,
@@ -8149,7 +8188,7 @@ sub SVRankVariants {
 	print $FILEHANDLE "-o ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf")." ";  #Outfile
 	say $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType.".vcf")." ";  #infile
 	
-	if (${$scriptParameterHashRef}{analysisType} eq "exomes") {
+	if ($consensusAnalysisType eq "exomes") {
 	    
 	    ## Enable trap for signal(s) and function
 	    &EnableTrap({FILEHANDLE => $FILEHANDLE,
@@ -9706,9 +9745,10 @@ sub Manta {
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
-    my $time = 30;
+    my $consensusAnalysisType = $parameter{dynamicParameters}{consensusAnalysisType};
     my $programOutDirectoryName = ${$parameterHashRef}{"p".$programName}{outDirectoryName};
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $time = 30;
     
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header    
     my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
@@ -9775,7 +9815,7 @@ sub Manta {
     }
     print $FILEHANDLE "--referenceFasta ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{humanGenomeReference})." ";  #Reference file
 
-    if (${$scriptParameterHashRef}{analysisType} ne "genomes") {
+    if ($consensusAnalysisType ne "genomes") {
 	
 	print $FILEHANDLE "--exome ";
     }
@@ -10541,9 +10581,10 @@ sub GATKHaploTypeCaller {
 
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
-    my $time = 30;
+    my $analysisTypeRef = \${$scriptParameterHashRef}{analysisType}{$$sampleIDRef};
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $time = 30;
     my $xargsFileName;
 	
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -10583,7 +10624,7 @@ sub GATKHaploTypeCaller {
 						    sampleIDRef => $sampleIDRef,
 						    fileEndingRef => \${$fileInfoHashRef}{exomeTargetBed}[2],
 						   });
-    if ( (${$scriptParameterHashRef}{analysisType} eq "exomes") || (${$scriptParameterHashRef}{analysisType} eq "rapid") ) { #Exome/rapid analysis
+    if ( ($$analysisTypeRef eq "exomes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
 	
 	## Generate contig specific interval_list
 	&GenerateContigSpecificTargetBedFile({scriptParameterHashRef => $scriptParameterHashRef,
@@ -10654,7 +10695,7 @@ sub GATKHaploTypeCaller {
 
 	    print $XARGSFILEHANDLE "--dontUseSoftClippedBases ";  #Do not analyze soft clipped bases in the reads
 	}
-	if ( (${$scriptParameterHashRef}{analysisType} eq "genomes") && (${$scriptParameterHashRef}{GATKHaploTypeCallerPcrIndelModel} ne 0) ) {
+	if ( ($$analysisTypeRef eq "genomes") && (${$scriptParameterHashRef}{GATKHaploTypeCallerPcrIndelModel} ne 0) ) {
 
 	    print $XARGSFILEHANDLE "--pcr_indel_model ".${$scriptParameterHashRef}{GATKHaploTypeCallerPcrIndelModel}." ";  #Assume that we run pcr-free sequencing (true for Rapid WGS and X-ten) 
 	}
@@ -10670,7 +10711,7 @@ sub GATKHaploTypeCaller {
 	print $XARGSFILEHANDLE "--variant_index_type LINEAR "; 
 	print $XARGSFILEHANDLE "--variant_index_parameter 128000 ";
 
-	if ( (${$scriptParameterHashRef}{analysisType} eq "exomes") || (${$scriptParameterHashRef}{analysisType} eq "rapid") ) { #Exome/rapid analysis
+	if ( ($$analysisTypeRef eq "exomes") || ( $$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
 	    
 	    print $XARGSFILEHANDLE "-L ".catfile($$tempDirectoryRef, $$contigRef."_".$exomeTargetBedFile)." "; #Limit to targets kit target file
 	}
@@ -10786,6 +10827,7 @@ sub GATKBaseReCalibration {
 
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
+    my $analysisTypeRef = \${$scriptParameterHashRef}{analysisType}{$$sampleIDRef};
     my $gatkTemporaryDirectory = catfile($$tempDirectoryRef, "gatk", "intermediary");
 
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -10833,7 +10875,7 @@ sub GATKBaseReCalibration {
 						    sampleIDRef => $sampleIDRef,
 						    fileEndingRef => \${$fileInfoHashRef}{exomeTargetBed}[0],
 						   });
-    if ( (${$scriptParameterHashRef}{analysisType} eq "exomes") || (${$scriptParameterHashRef}{analysisType} eq "rapid") ) { #Exome/rapid analysis
+    if ( ($$analysisTypeRef eq "exomes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
 	
 	## Generate contig specific interval_list
 	&GenerateContigSpecificTargetBedFile({scriptParameterHashRef => $scriptParameterHashRef,
@@ -10904,7 +10946,7 @@ sub GATKBaseReCalibration {
 	print $XARGSFILEHANDLE "-nct ".${$scriptParameterHashRef}{maximumCores}." ";  #How many CPU threads should be allocated per data thread to running this analysis
 	print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{GATKDownSampleToCoverage}." ";  #Coverage to downsample to at any given locus	
 
-	if ( (${$scriptParameterHashRef}{analysisType} eq "exomes") || (${$scriptParameterHashRef}{analysisType} eq "rapid") ) { #Exome/rapid analysis
+	if ( ($$analysisTypeRef eq "exomes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
 	    
 	    print $XARGSFILEHANDLE "-L ".catfile($$tempDirectoryRef, $$contigRef."_".$exomeTargetBedFile)." "; #Limit to targets kit target file
 	}
@@ -10960,7 +11002,7 @@ sub GATKBaseReCalibration {
 	    
 	    print $XARGSFILEHANDLE "--disable_indel_quals  ";  #Do not recalibrate indel base quality (should be done for Pacbio reads)
 	}
-	if ( (${$scriptParameterHashRef}{analysisType} eq "exomes") || (${$scriptParameterHashRef}{analysisType} eq "rapid") ) { #Exome/rapid analysis
+	if ( ($$analysisTypeRef eq "exomes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
 	    
 	    print $XARGSFILEHANDLE "-L ".catfile($$tempDirectoryRef, $$contigRef."_".$exomeTargetBedFile)." "; #Limit to targets kit target file
 	}
@@ -11119,6 +11161,7 @@ sub GATKReAligner {
 
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
+    my $analysisTypeRef = \${$scriptParameterHashRef}{analysisType}{$$sampleIDRef};
     my $gatkTemporaryDirectory = catfile($$tempDirectoryRef, "gatk", "intermediary");
 
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -11164,7 +11207,7 @@ sub GATKReAligner {
 						    fileEndingRef => \${$fileInfoHashRef}{exomeTargetBed}[2],
 						   });
     
-    if ( (${$scriptParameterHashRef}{analysisType} eq "exomes") || (${$scriptParameterHashRef}{analysisType} eq "rapid") ) { #Exome/rapid analysis
+    if ( ($$analysisTypeRef eq "exomes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
 	
 	## Generate contig specific interval_list
 	&GenerateContigSpecificTargetBedFile({scriptParameterHashRef => $scriptParameterHashRef,
@@ -11229,7 +11272,7 @@ sub GATKReAligner {
 	print $XARGSFILEHANDLE "-known ".join(" -known ", map { catfile($$referencesDirRef, $_) } (@{${$scriptParameterHashRef}{GATKReAlignerINDELKnownSite}}) )." ";  #Input VCF file(s) with known indels
 	print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{GATKDownSampleToCoverage}." ";  #Coverage to downsample to at any given locus	    
 	
-	if ( (${$scriptParameterHashRef}{analysisType} eq "exomes") || (${$scriptParameterHashRef}{analysisType} eq "rapid") ) { #Exome/rapid analysis
+	if ( ($$analysisTypeRef eq "exomes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
 	    
 	    print $XARGSFILEHANDLE "-L ".catfile($$tempDirectoryRef, $$contigRef."_".$exomeTargetBedFile)." "; #Limit to targets kit target file
 	}
@@ -11272,7 +11315,7 @@ sub GATKReAligner {
 	print $XARGSFILEHANDLE "--consensusDeterminationModel USE_READS ";  #Additionally uses indels already present in the original alignments of the reads 
 	print $XARGSFILEHANDLE "-targetIntervals ".catfile($intermediarySampleDirectory, $infile.$outfileTag."_".$$contigRef.".intervals")." ";
 	
-	if ( (${$scriptParameterHashRef}{analysisType} eq "exomes") || (${$scriptParameterHashRef}{analysisType} eq "rapid") ) { #Exome/rapid analysis	
+	if ( ($$analysisTypeRef eq "exomes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis	
 	    
 	    print $XARGSFILEHANDLE "-L ".catfile($$tempDirectoryRef, $$contigRef."_".$exomeTargetBedFile)." "; #Limit to targets kit target file
 	}
@@ -11924,6 +11967,7 @@ sub PicardToolsMergeSamFiles {
 
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
+    my $consensusAnalysisType = $parameter{dynamicParameters}{consensusAnalysisType};
     my $lanes = join("",@{ ${$laneHashRef}{$$sampleIDRef} });  #Extract lanes
 
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -11954,7 +11998,7 @@ sub PicardToolsMergeSamFiles {
     ## Assign fileTags
     my $infileTag;
 
-    if (${$scriptParameterHashRef}{analysisType} ne "rapid") {
+    if ($consensusAnalysisType ne "rapid") {
 
 	$infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{ ${$parameterHashRef}{activeAligner} }{fileTag};
     }    
@@ -12370,6 +12414,7 @@ sub BWASampe {
     my $alignerOutDir = $_[9];
     my $programName = $_[10];
     
+    my $consensusAnalysisType = $parameter{dynamicParameters}{consensusAnalysisType};
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time=0;
     my $infileSize;
@@ -12377,7 +12422,7 @@ sub BWASampe {
 
     for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all files from BWA aln but process in the same command i.e. both reads per align call
 	 
-	if (${$scriptParameterHashRef}{analysisType} eq "genomes") {
+	if ($consensusAnalysisType eq "genomes") {
 	    
 	    $time = 40;  
 	}
@@ -12818,6 +12863,7 @@ sub BWAMem {
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $consensusAnalysisType = $parameter{dynamicParameters}{consensusAnalysisType};
     my $time = 30;
     my $infileSize;
     my $totalSbatchCounter = 0;
@@ -12854,7 +12900,7 @@ sub BWAMem {
         }
 
 	## Parallelize alignment by spliting of alignmnet processes as the files are read
-	if (${$scriptParameterHashRef}{analysisType} eq "rapid") {
+	if ($consensusAnalysisType eq "rapid") {
 	    
 	    my $seqLength = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$$sampleIDRef}{File}{${$infilesLaneNoEndingHashRef}{ $$sampleIDRef }[$infileCounter]}{SequenceLength};
 	    my ($numberNodes, $ReadNrofLines) = &DetermineNrofRapidNodes({seqLength => $seqLength,
@@ -13221,6 +13267,7 @@ sub MosaikAlign {
     my $alignerOutDir = $_[9];
     my $programName = $_[10];
     
+    my $consensusAnalysisType = $parameter{dynamicParameters}{consensusAnalysisType};
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $sbatchScriptTracker=0;
     my $time=0;
@@ -13228,7 +13275,7 @@ sub MosaikAlign {
 
     for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$sampleID} });$infileCounter++) {  #For all infiles per lane
 	   
-	if (${$scriptParameterHashRef}{analysisType} eq "genomes") {
+	if ($consensusAnalysisType eq "genomes") {
 	    
 	    $time = 80;  
 	}
@@ -15794,11 +15841,18 @@ sub ReadPlinkPedigreeFile {
 						      dataRef => \@{${$parameterHashRef}{sampleIDs}{value}},
 						      parameterName => "sampleIDs",
 						     });
+
     ## Determine if the user supplied info on parameter either via cmd or config
     my $userExomeTargetBedSwitch = &CheckUserSuppliedInfo({scriptParameterHashRef => $scriptParameterHashRef,
 							   dataRef => ${$parameterHashRef}{exomeTargetBed}{value},
 							   parameterName => "exomeTargetBed",
 							  });
+
+    ## Determine if the user supplied info on parameter either via cmd or config
+    my $userAnalysisTypeSwitch = &CheckUserSuppliedInfo({scriptParameterHashRef => $scriptParameterHashRef,
+							 dataRef => ${$parameterHashRef}{analysisType}{value},
+							 parameterName => "analysisType",
+							});
     
     ## Defines which entries are allowed and links them to position.
     my %plinkPedigree = &DefinePlinkPedigree();  #Holds allowed entries and positions to be checked for Plink pedigree files
@@ -15859,6 +15913,8 @@ sub ReadPlinkPedigreeFile {
 	    }
 	    for (my $sampleElementsCounter=0;$sampleElementsCounter<scalar(@pedigreeFileElements);$sampleElementsCounter++) {  #All pedigreeFileElements
 		
+		my $pedigreeHeaderRef = \$pedigreeFileElements[$sampleElementsCounter];  #Alias
+
 		if ( defined($lineInfo[$sampleElementsCounter]) && ($lineInfo[$sampleElementsCounter] =~/\S+/) ) {  #Check that we have an non blank entry
 		    
 		    ## Test element for being part of hash of array at supplied key.
@@ -15878,18 +15934,18 @@ sub ReadPlinkPedigreeFile {
 
 		    if ($sampleElementsCounter < 6) {  #Mandatory elements known to be key->value
 			
-			${$sampleInfoHashRef}{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]} = $lineInfo[$sampleElementsCounter];
+			${$sampleInfoHashRef}{$familyID}{$sampleID}{$$pedigreeHeaderRef} = $lineInfo[$sampleElementsCounter];
 		    }	
 		    else {  #Other elements treat as lists
 
 			## Detects if there are elements in arrayQueryRef that are not present in scalarQueryRef or arrayToCheckRef. If unique adds the unique element to arrayToCheckRef.
-			&CheckUniqueArrayElement({arrayToCheckRef => \@{ ${$sampleInfoHashRef}{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]} },
+			&CheckUniqueArrayElement({arrayToCheckRef => \@{ ${$sampleInfoHashRef}{$familyID}{$sampleID}{$$pedigreeHeaderRef} },
 						  queryRef => \@elementInfo,
 						 });  #Check if there are any new info and add it to sampleInfo if so. 
 		    }
-		    if (${$sampleInfoHashRef}{$familyID}{$sampleID}{Capture_kit} && $pedigreeFileElements[$sampleElementsCounter] eq "Capture_kit") {  #Add latest capture kit for each individual
+		    if (${$sampleInfoHashRef}{$familyID}{$sampleID}{Capture_kit} && $$pedigreeHeaderRef eq "Capture_kit") {  #Add latest capture kit for each individual
 			
-			my $captureKit = ${$sampleInfoHashRef}{$familyID}{$sampleID}{$pedigreeFileElements[$sampleElementsCounter]}[-1];  #Use only the last capture kit since it should be the most interesting
+			my $captureKit = ${$sampleInfoHashRef}{$familyID}{$sampleID}{$$pedigreeHeaderRef}[-1];  #Use only the last capture kit since it should be the most interesting
 			
 			
 			## Return a capture kit depending on user info
@@ -15904,12 +15960,21 @@ sub ReadPlinkPedigreeFile {
 			   
 			}
 		    }
+
+		    if (${$sampleInfoHashRef}{$familyID}{$sampleID}{Sequence_type} && $$pedigreeHeaderRef eq "Sequence_type") {  #Add analysisType
+
+			if ( (defined($userAnalysisTypeSwitch)) && ($userAnalysisTypeSwitch == 0) ) {
+
+			    my $analysisType = ${$sampleInfoHashRef}{$familyID}{$sampleID}{$$pedigreeHeaderRef}[-1];  #Use only the last capture kit since it should be the most interesting
+			    ${$scriptParameterHashRef}{analysisType}{$sampleID} = $analysisType;
+			}
+		    }
 		}
 		else {  #No entry in pedigre file element
 		    
 		    if ($sampleElementsCounter < 6) {  #Only check mandatory elements 
 			
-			$logger->fatal($pedigreeFileElements[$sampleElementsCounter], "\t File: ".$filePath." at line ".$.."\tcannot find '".$pedigreeFileElements[$sampleElementsCounter]."' entry in column ".$sampleElementsCounter, "\n");
+			$logger->fatal($$pedigreeHeaderRef, "\t File: ".$filePath." at line ".$.."\tcannot find '".$$pedigreeHeaderRef."' entry in column ".$sampleElementsCounter, "\n");
 			exit 1;
 		    }  
 		}
@@ -16073,11 +16138,12 @@ sub PushToJobID {
         
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
+    my $analysisType = ${$scriptParameterHashRef}{analysisType}{$sampleID};
     my $chainKey;
     
     if ($chainKeyType eq "parallel") {  #Push parallel jobs
 
-	if (${$scriptParameterHashRef}{analysisType} eq "rapid" && ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$sampleID}{pBwaMem}{sbatchBatchProcesses}) {  #Rapid run
+	if ($analysisType eq "rapid" && ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$sampleID}{pBwaMem}{sbatchBatchProcesses}) {  #Rapid run
 
 	    for (my $sbatchCounter=0;$sbatchCounter<${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$sampleID}{pBwaMem}{sbatchBatchProcesses};$sbatchCounter++) {  #Iterate over sbatch processes instead of infile(s)
 
@@ -17117,6 +17183,7 @@ sub AddToScriptParameter {
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $elementSeparatorRef = \${$parameterHashRef}{$parameterName}{elementSeparator};
+    my $consensusAnalysisType = $parameter{dynamicParameters}{consensusAnalysisType};
 
     foreach my $associatedProgram (@{$associatedProgramsArrayRef}) {  #Check all programs that use parameter
 
@@ -17153,12 +17220,20 @@ sub AddToScriptParameter {
 		    }
 		    elsif (${$parameterHashRef}{$parameterName}{dataType} eq "HASH") {
 			
+			## Build default for analysisType
+			if ($parameterName eq "analysisType") {
+
+			    foreach my $sampleID (@{${$scriptParameterHashRef}{sampleIDs}}) {
+
+				${$scriptParameterHashRef}{$parameterName}{$sampleID} = "genomes";
+			    }
+			}
 			## Build default for inFilesDir
-			if ($parameterName eq "inFilesDir") {
+			elsif ($parameterName eq "inFilesDir") {
 			    
 			    foreach my $sampleID (@{${$scriptParameterHashRef}{sampleIDs}}) {
-				
-				my $path = catfile(${$scriptParameterHashRef}{clusterConstantPath}, ${$scriptParameterHashRef}{analysisType}, $sampleID, "fastq");
+
+				my $path = catfile(${$scriptParameterHashRef}{clusterConstantPath}, ${$scriptParameterHashRef}{analysisType}{$sampleID}, $sampleID, "fastq");
 				${$scriptParameterHashRef}{$parameterName}{$path} = $sampleID;
 			    }
 			}
@@ -17179,9 +17254,9 @@ sub AddToScriptParameter {
 		    else {
 
 			## Special cases where the requirement is depending on other variabels
-			if ( ($parameterName eq "bwaMemRapidDb") && (${$scriptParameterHashRef}{analysisType} ne "rapid")) {  #Do nothing since file is not required unless rapid mode is enabled
+			if ( ($parameterName eq "bwaMemRapidDb") && ($consensusAnalysisType ne "rapid")) {  #Do nothing since file is not required unless rapid mode is enabled
 			}
-			elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCF") && (${$scriptParameterHashRef}{analysisType} =~/genomes/) ) {  #Do nothing since file is not required unless exome or rapid mode is enabled
+			elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCF") && ($consensusAnalysisType =~/genomes/) ) {  #Do nothing since file is not required unless exome or rapid mode is enabled
 			}
 			elsif ( ($parameterName eq "vcfParserRangeFeatureAnnotationColumns") && ( ${$scriptParameterHashRef}{vcfParserRangeFeatureFile} eq "noUserInfo") ) {  #Do nothing since no SelectFile was given
 			} 
@@ -17264,7 +17339,7 @@ sub AddToScriptParameter {
 	my $info = "";  #Hold parameters info
 	
 	if (ref(${$scriptParameterHashRef}{$parameterName}) eq "ARRAY") {  #Array reference
-	    	    
+
 	    $info = "Set ".$parameterName." to: ".join($$elementSeparatorRef, @{ ${$scriptParameterHashRef}{ $parameterName } });
 	    push(@{$broadcastsArrayRef}, $info);  #Add info to broadcasts
 	}
@@ -17339,6 +17414,7 @@ sub CheckParameterFiles {
     
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
+    my $consensusAnalysisType = $parameter{dynamicParameters}{consensusAnalysisType};
     my $directory = "";  #Initialize for downstream path generation when required
 
     foreach my $associatedProgram (@{$associatedProgramsArrayRef}) {  #Check all programs that use parameter
@@ -17404,9 +17480,9 @@ sub CheckParameterFiles {
 		    }
 		    elsif ( ($parameterName eq "genomicSet") && (${$scriptParameterHashRef}{genomicSet} eq "noUserInfo") ) {  #Do nothing since this is not a required feature
 		    }
-		    elsif ( ($parameterName eq "bwaMemRapidDb") && (${$scriptParameterHashRef}{analysisType} ne "rapid")) {  #Do nothing since file is not required unless rapid mode is enabled
+		    elsif ( ($parameterName eq "bwaMemRapidDb") && ($consensusAnalysisType ne "rapid")) {  #Do nothing since file is not required unless rapid mode is enabled
 		    }
-		    elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCF") && (${$scriptParameterHashRef}{analysisType} =~/genomes/) ) {  #Do nothing since file is not required unless exome mode is enabled
+		    elsif ( ($parameterName eq "GATKGenoTypeGVCFsRefGVCF") && ($consensusAnalysisType =~/genomes/) ) {  #Do nothing since file is not required unless exome mode is enabled
 		    }
 		    elsif ( ($parameterName eq "vcfParserRangeFeatureFile") && ( ${$scriptParameterHashRef}{vcfParserRangeFeatureFile} eq "noUserInfo") ) {  #Do nothing since no RangeFile was given
 		    }
@@ -17614,6 +17690,7 @@ sub CreateFileEndings {
         
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
+    my $consensusAnalysisType = $parameter{dynamicParameters}{consensusAnalysisType};
     my %tempFileEnding;  #Used to enable seqential build-up of fileTags between modules
     
     foreach my $orderParameterElement (@{$orderParametersArrayRef}) {
@@ -17668,7 +17745,7 @@ sub CreateFileEndings {
 
 			    if ($orderParameterElement eq "pPicardToolsMergeSamFiles") {  #Special case - do nothing
 			    }
-			    elsif ( ($orderParameterElement eq "pPicardToolsMergeRapidReads") && (${$scriptParameterHashRef}{analysisType} ne "rapid") ) {  #Special case - do nothing
+			    elsif ( ($orderParameterElement eq "pPicardToolsMergeRapidReads") && ($consensusAnalysisType ne "rapid") ) {  #Special case - do nothing
 			    }
 			    else {
 				
@@ -18617,10 +18694,6 @@ sub UpdateConfigFile {
 	if (defined(${$scriptParameterHashRef}{analysisConstantPath})) { #Set the project specific path for this cluster
 	 
 	    ${$scriptParameterHashRef}{$$parameterNameRef} =~ s/ANALYSISCONSTANTPATH!/${$scriptParameterHashRef}{analysisConstantPath}/gi;  #Exchange ANALYSISCONSTANTPATH! for the current analysis path
-	}
-	if (defined(${$scriptParameterHashRef}{analysisType})) {  #Set the analysis run type e.g., "exomes", "genomes", "rapid"
-
-	    ${$scriptParameterHashRef}{$$parameterNameRef} =~ s/ANALYSISTYPE!/${$scriptParameterHashRef}{analysisType}/gi;  #Exchange ANALYSISTYPE! for the current analysis type
 	}
 	if (defined($$familyIDRef)) {  #Set the familyID
 
@@ -19606,11 +19679,10 @@ sub SizeSortSelectFileContigs {
     
 ##Function : Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
 ##Returns  : "@sortedArray"
-##Arguments: $fileInfoHashRef, $hashKeyToSort, $hashKeySortReference, $analysisTypeRef
+##Arguments: $fileInfoHashRef, $hashKeyToSort, $hashKeySortReference
 ##         : $fileInfoHashRef      => The fileInfo hash {REF}
 ##         : $hashKeyToSort        => The keys to sort
 ##         : $hashKeySortReference => The hash keys sort reference
-##         : $analysisTypeRef      => Type of analysis
 
     my ($argHashRef) = @_;
 
@@ -19618,13 +19690,11 @@ sub SizeSortSelectFileContigs {
     my $fileInfoHashRef;
     my $hashKeyToSort;
     my $hashKeySortReference;
-    my $analysisTypeRef;
 
     my $tmpl = { 
 	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
 	hashKeyToSort => { required => 1, defined => 1, strict_type => 1, store => \$hashKeyToSort},
 	hashKeySortReference => { required => 1, defined => 1, strict_type => 1, store => \$hashKeySortReference},
-	analysisTypeRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$analysisTypeRef}
     };
         
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
@@ -19649,19 +19719,14 @@ sub SizeSortSelectFileContigs {
 
     ## Test if all contigs collected from select file was sorted by reference contig array
     if ( (@sortedArray) && (scalar(@{${$fileInfoHashRef}{$hashKeyToSort}}) != scalar(@sortedArray)) ) {
-	
-	foreach my $element (@{${$fileInfoHashRef}{$hashKeyToSort}}) {
 
+	foreach my $element (@{${$fileInfoHashRef}{$hashKeyToSort}}) {
+	    
 	    if ( ! (any {$_ eq $element} @sortedArray) ) {  #If element is not part of array
 		
-		unless ( ($$analysisTypeRef eq "exomes") && ($element=~/MT$|M$/) ) {  #Special case when analysing exomes since Mitochondrial contigs have no baits in exome capture kits
-
-		    $logger->fatal("Could not detect '##contig'= ".$element." from meta data header in '-vcfParserSelectFile' in reference contigs collected from '-humanGenomeReference'\n");
+		$logger->fatal("Could not detect '##contig'= ".$element." from meta data header in '-vcfParserSelectFile' in reference contigs collected from '-humanGenomeReference'\n");
 		exit 1;
-		}
-		
 	    }
-	    
 	}
     }
     return @sortedArray;
@@ -20634,8 +20699,8 @@ sub DeafultLog4perlFile {
 
     unless (defined($$cmdInputRef)) {  #No input from cmd i.e. do not create default logging directory or set default
 
-	make_path(catfile($$outDataDirRef, $$familyIDRef, "mip_log", $$dateRef));
-	my $LogFile = catfile($$outDataDirRef, $$familyIDRef, "mip_log", $$dateRef, $$scriptRef."_".$$dateTimeStampRef.".log");  #concatenates log filename	
+	make_path(catfile($$outDataDirRef, "mip_log", $$dateRef));
+	my $LogFile = catfile($$outDataDirRef, "mip_log", $$dateRef, $$scriptRef."_".$$dateTimeStampRef.".log");  #concatenates log filename	
 	return $LogFile;
     }
 }
@@ -25377,6 +25442,39 @@ sub GetMatchingValuesKey {
 	
 	return $r{$$queryValueRef};
     }
+}
+
+
+sub DetectOverallAnalysisType {
+
+##DetectOverallAnalysisType
+    
+##Function : Detect if all samples has the same sequencing type and return consensus or mixed
+##Returns  : "consensus/mixed analysisType"
+##Arguments: $analysisTypeHashRef
+##         : $analysisTypeHashRef => The analysisType hash {REF}
+
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $analysisTypeHashRef;
+
+    my $tmpl = { 
+	analysisTypeHashRef  => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$analysisTypeHashRef},
+    };
+    
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
+    
+    my @analysisTypes = ("exomes", "genomes", "rapid");
+
+    foreach my $analysisType (@analysisTypes) {
+
+	if (all { $_ eq $analysisType } values %{$analysisTypeHashRef}) {
+	    
+	    return $analysisType;
+	}
+    }
+    return "mixed"  # No consensus, then it must be mixed
 }
 
 
