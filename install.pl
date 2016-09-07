@@ -648,6 +648,9 @@ sub InstallBiocondaModules {
 				  "typeHLA.sh",
 				  "fermi2",
 				  "fermi2.pl",
+				  "ropebwt2",
+				  "typeHLA-selctg.js",
+				  "typeHLA.js"
 		);
 
 	    foreach my $binary (@bwaKitBinaries) {
