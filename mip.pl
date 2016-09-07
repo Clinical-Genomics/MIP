@@ -51,7 +51,7 @@ BEGIN {
 	qq{
 mip.pl  -ifd [inFilesDir,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [project ID] -s [sample ID,.,.,.,n] -em [e-mail] -osd [outdirscripts] -odd [outDataDir] -f [familyID] -p[program]
                ####MIP
-               -ifd/--inFilesDir Infile directory(s) (Hash inFileDir=sampleID; mandatory)
+               -ifd/--inFilesDir Infile directory(s) (Hash inFilesDir=sampleID; mandatory)
                -isd/--inScriptDir The pipeline custom script in directory (mandatory)
                -rd/--referencesDir Reference(s) directory (mandatory)
                -p/--projectID The project ID  (mandatory)
@@ -16142,12 +16142,14 @@ sub PushToJobID {
         
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
-    my $analysisType = ${$scriptParameterHashRef}{analysisType}{$sampleID};
+    ## Detect if all samples has the same sequencing type and return consensus if reached
+    my $consensusAnalysisType = &DetectOverallAnalysisType({analysisTypeHashRef => \%{${$scriptParameterHashRef}{analysisType}},
+											  });
     my $chainKey;
     
     if ($chainKeyType eq "parallel") {  #Push parallel jobs
 
-	if ($analysisType eq "rapid" && ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$sampleID}{pBwaMem}{sbatchBatchProcesses}) {  #Rapid run
+	if ($consensusAnalysisType eq "rapid" && ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$sampleID}{pBwaMem}{sbatchBatchProcesses}) {  #Rapid run
 
 	    for (my $sbatchCounter=0;$sbatchCounter<${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$sampleID}{pBwaMem}{sbatchBatchProcesses};$sbatchCounter++) {  #Iterate over sbatch processes instead of infile(s)
 
@@ -17237,7 +17239,7 @@ sub AddToScriptParameter {
 			    
 			    foreach my $sampleID (@{${$scriptParameterHashRef}{sampleIDs}}) {
 
-				my $path = catfile(${$scriptParameterHashRef}{clusterConstantPath}, ${$scriptParameterHashRef}{analysisType}{$sampleID}, $sampleID, "fastq");
+				my $path = catfile(${$scriptParameterHashRef}{clusterConstantPath}, $$familyIDRef, ${$scriptParameterHashRef}{analysisType}{$sampleID}, $sampleID, "fastq");
 				${$scriptParameterHashRef}{$parameterName}{$path} = $sampleID;
 			    }
 			}
@@ -22352,6 +22354,7 @@ sub SetContigs {
 
 	@{${$fileInfoHashRef}{contigsSizeOrdered}} = ("1", "2", "3", "4", "5", "6", "7", "X", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "Y", "MT");  #Chr for filtering of bam file
     }
+
     ## Detect if all samples has the same sequencing type and return consensus if reached
     my $consensusAnalysisType = &DetectOverallAnalysisType({analysisTypeHashRef => \%{${$scriptParameterHashRef}{analysisType}},
 											  });
@@ -23286,8 +23289,8 @@ sub VTCore {
 ##         : $tabix                      => Index compressed output using tabix
 ##         : $InStream                   => Data to vt is supplied as a unix pipe
 ##         : $cmdBreak                   => Command line separator ['"\n\n"'|";"]
-##         : $xargsFileName              => The xargs sbatch script file name
-##         : $contigRef                  => The contig to extract {REF}
+##         : $xargsFileName              => The xargs sbatch script file name {OPTIONAL}
+##         : $contigRef                  => The contig to extract {OPTIONAL, REF}
 
     my ($argHashRef) = @_;
     
@@ -23317,8 +23320,8 @@ sub VTCore {
     my $jobIDHashRef;
     my $infilePath;
     my $FILEHANDLE;
-    my $xargsFileName;
     my $contigRef;
+    my $xargsFileName;
 
     my $tmpl = { 
 	parameterHashRef => { default => {}, strict_type => 1, store => \$parameterHashRef},
@@ -23328,8 +23331,8 @@ sub VTCore {
 	jobIDHashRef => { default => {}, strict_type => 1, store => \$jobIDHashRef},
 	infilePath => { required => 1, defined => 1, strict_type => 1, store => \$infilePath},
 	FILEHANDLE => { store => \$FILEHANDLE},
-	xargsFileName => { required => 1, defined => 1, strict_type => 1, store => \$xargsFileName},
-	contigRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$contigRef},
+	xargsFileName => { strict_type => 1, store => \$xargsFileName},
+	contigRef => { default => \$$, strict_type => 1, store => \$contigRef},
 	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
 	referencesDirRef => { default => \$$, strict_type => 1},
 	humanGenomeReferenceRef => { default => \$$, strict_type => 1},

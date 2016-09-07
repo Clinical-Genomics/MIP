@@ -646,6 +646,7 @@ sub InstallBiocondaModules {
 				  "bwa-postalt.js",
 				  "run-HLA",
 				  "typeHLA.sh",
+				  "fermi2",
 				  "fermi2.pl",
 		);
 
