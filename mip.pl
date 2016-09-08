@@ -3728,7 +3728,7 @@ sub GATKVariantEvalExome {
 
     ## Assign directories
     my $outSampleDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, lc($programName) );
-    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, lc($programName) );
+    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
 
     ## Assign fileTags
     my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{pGATKCombineVariantCallSets}{fileTag};
