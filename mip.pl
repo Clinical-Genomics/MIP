@@ -3057,14 +3057,14 @@ sub Evaluation {
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$familyIDRef,
 					    programName => $programName,
-					    programDirectory => lc($$alignerOutDirRef."/gatk/".$programName),
+					    programDirectory => lc($$alignerOutDirRef.$programName),
 					    tempDirectory => $$tempDirectoryRef,
 					    errorTrap => 0,  #Special case to allow "vcf.idx" to be created
 					   });
     
     ## Assign directories
-    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
-    my $outFamilyDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk", lc($programName));
+    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
+    my $outFamilyDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, lc($programName));
     ${$parameterHashRef}{"p".$programName}{inDirectory} = $outFamilyDirectory;  #Used downstream
 
     ## Assign fileTags
@@ -3378,7 +3378,7 @@ sub RankVariants {
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$familyIDRef,
 							       programName => $programName,
-							       programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
+							       programDirectory => catfile(lc($$alignerOutDirRef)),
 							       nrofCores => $nrCores,
 							       processTime => 10,
 							       tempDirectory => $$tempDirectoryRef
@@ -3386,8 +3386,8 @@ sub RankVariants {
     }
 
     ## Assign directories
-    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
-    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
+    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
+    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
     
     ## Assign fileTags
     my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{pSnpEff}{fileTag};
@@ -3720,15 +3720,15 @@ sub GATKVariantEvalExome {
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$sampleIDRef,
 					    programName => $programName,
-					    programDirectory => catfile(lc($$alignerOutDirRef), "gatk", "varianteval"),
+					    programDirectory => catfile(lc($$alignerOutDirRef), lc($programName)),
 					    callType => $callType,
 					    processTime => 2,
 					    tempDirectory => $$tempDirectoryRef
 					   });
 
     ## Assign directories
-    my $outSampleDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk", "varianteval");
-    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
+    my $outSampleDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, lc($programName) );
+    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, lc($programName) );
 
     ## Assign fileTags
     my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{pGATKCombineVariantCallSets}{fileTag};
@@ -3951,16 +3951,16 @@ sub GATKVariantEvalAll {
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$sampleIDRef,
 					    programName => $programName,
-					    programDirectory => catfile(lc($$alignerOutDirRef), "gatk", "varianteval"),
+					    programDirectory => catfile(lc($$alignerOutDirRef),  lc($programName)),
 					    callType => $callType,
 					    processTime => 2,
 					    tempDirectory => $$tempDirectoryRef,
 					   });
 
     ## Assign directories
-    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk");
-    my $outSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk", "varianteval");
-    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
+    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef);
+    my $outSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, lc($programName));
+    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
 
     ## Assign fileTags
     my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{pGATKCombineVariantCallSets}{fileTag};
@@ -4139,7 +4139,7 @@ sub SnpEff {
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$familyIDRef,
 							       programName => $programName,
-							       programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
+							       programDirectory => catfile(lc($$alignerOutDirRef)),
 							       callType => $callType,
 							       nrofCores => $nrCores,
 							       processTime => 10,
@@ -4148,8 +4148,8 @@ sub SnpEff {
     }
 
     ## Assign directories
-    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
-    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
+    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
+    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
     ${$parameterHashRef}{"p".$programName}{inDirectory} = $outFamilyDirectory;  #Used downstream
     
     ## Assign fileTags
@@ -4495,7 +4495,7 @@ sub Annovar {
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$familyIDRef,
 							       programName => $programName,
-							       programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
+							       programDirectory => catfile(lc($$alignerOutDirRef)),
 							       callType => $callType,
 							       nrofCores => $nrCores,
 							       processTime => 7,
@@ -4504,8 +4504,8 @@ sub Annovar {
     } 
     
     ## Assign directories
-    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
-    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
+    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
+    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
     ${$parameterHashRef}{"p".$programName}{inDirectory} = $outFamilyDirectory;  #Used downstream
 
     ## Assign fileTags
@@ -4754,15 +4754,15 @@ sub VCFParser {
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$familyIDRef,
 							       programName => $programName,
-							       programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
+							       programDirectory => catfile(lc($$alignerOutDirRef)),
 							       callType => $callType,
 							       tempDirectory => $$tempDirectoryRef,
 							      });
     }
 
     ## Assign directories
-    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
-    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
+    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
+    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
     ${$parameterHashRef}{"p".$programName}{inDirectory} = $outFamilyDirectory;  #Used downstream
 
     ## Assign fileTags
@@ -5063,7 +5063,7 @@ sub VariantEffectPredictor {
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$familyIDRef,
 							       programName => $programName,
-							       programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
+							       programDirectory => catfile(lc($$alignerOutDirRef)),
 							       callType => $callType,
 							       nrofCores => ${$scriptParameterHashRef}{maximumCores},
 							       processTime => 10,
@@ -5074,8 +5074,8 @@ sub VariantEffectPredictor {
     my ($volume, $directories, $stderrFile) = File::Spec->splitpath($stderrPath);  #Split to enable submission to &SampleInfoQC later
 
     ## Assign directories
-    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
-    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
+    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
+    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
     ${$parameterHashRef}{"p".$programName}{inDirectory} = $outFamilyDirectory;  #Used downstream
 
     ## Assign fileTags
@@ -5309,7 +5309,7 @@ sub GATKReadBackedPhasing {
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $familyID,
 					    programName => $programName,
-					    programDirectory => catfile(lc($alignerOutDir), "gatk"),
+					    programDirectory => catfile(lc($alignerOutDir)),
 					    callType => $callType,
 					    nrofCores => $nrCores,
 					    processTime => 15,
@@ -5317,8 +5317,8 @@ sub GATKReadBackedPhasing {
 					   });
 
     ## Assign directories
-    my $inFamilyDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $familyID, $alignerOutDir, "gatk");
-    my $outFamilyDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $familyID, $alignerOutDir, "gatk");
+    my $inFamilyDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $familyID, $alignerOutDir);
+    my $outFamilyDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $familyID, $alignerOutDir);
 
     ## Assign fileTags
     my $infileTag;
@@ -5345,11 +5345,13 @@ sub GATKReadBackedPhasing {
     ## Copy BAM file(s) to temporary directory
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{sampleIDs}});$sampleIDCounter++) {  #Collect infiles for all sampleIDs
 
-	my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, ${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter], $alignerOutDir, "gatk");
-	my $infileTag = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{ ${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter] }{pGATKBaseRecalibration}{fileTag};
+	my $sampleIDRef = \${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter];  #Alias
+
+	my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $alignerOutDir);
+	my $infileTag = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{ $$sampleIDRef }{pGATKBaseRecalibration}{fileTag};
 
 	## Add merged infile name after merging all BAM files per sampleID
-	my $infile = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter]}{MergeInfile};  #Alias
+	my $infile = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$$sampleIDRef}{MergeInfile};  #Alias
 
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -5383,10 +5385,12 @@ sub GATKReadBackedPhasing {
 
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{sampleIDs}});$sampleIDCounter++) {  #Collect infiles for all sampleIDs
 	
-	my $infileTag = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{ ${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter] }{pGATKBaseRecalibration}{fileTag};
+	my $sampleIDRef = \${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter];  #Alias
+
+	my $infileTag = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{ $$sampleIDRef }{pGATKBaseRecalibration}{fileTag};
 
 	## Add merged infile name after merging all BAM files per sampleID
-	my $infile = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter]}{MergeInfile};  #Alias
+	my $infile = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$$sampleIDRef}{MergeInfile};  #Alias
 	
 	print $FILEHANDLE "-I ".catfile(${$scriptParameterHashRef}{tempDirectory}, $infile.$infileTag.".bam ");  #InFile
     } 
@@ -5455,7 +5459,7 @@ sub GATKPhaseByTransmission {
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $familyID,
 					    programName => $programName,
-					    programDirectory => catfile(lc($alignerOutDir), "gatk"),
+					    programDirectory => catfile(lc($alignerOutDir)),
 					    callType => $callType,
 					    processTime => 15,
 					    tempDirectory => ${$scriptParameterHashRef}{tempDirectory}
@@ -5463,8 +5467,8 @@ sub GATKPhaseByTransmission {
     
     ## Assign directories
     my $outFamilyFileDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $familyID);
-    my $inFamilyDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $familyID, $alignerOutDir, "gatk");
-    my $outFamilyDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $familyID, $alignerOutDir, "gatk");
+    my $inFamilyDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $familyID, $alignerOutDir);
+    my $outFamilyDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $familyID, $alignerOutDir);
 
     ## Assign fileTags
     my $infileTag = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{ ${$scriptParameterHashRef}{familyID} }{pGATKCombineVariantCallSets}{fileTag};
@@ -5615,7 +5619,7 @@ sub SampleCheck {
     my $stdoutFile = $programInfoFile.".stdout.txt";  #To enable submission to &SampleInfoQC later
     
     ## Assign Directories
-    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
+    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
     my $outFamilyDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, lc($programName));
 
     ## Assign fileTags
@@ -5675,6 +5679,7 @@ sub SampleCheck {
     for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{sampleIDs}});$sampleIDCounter++) {  #Collect infiles for all sampleIDs
 	
 	my $sampleIDRef = \${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter];  #Alias
+
 	my $lineCounter = 2 + $sampleIDCounter;  #Skip header line
 	print $FILEHANDLE q?perl -nae 'if($F[1]=~/?.$$sampleIDRef.q?/) {print $F[0]."\t".$F[1]."\t0\t0\t".$F[4]."\t".$F[5]}' ?;  #Include 1 line and remove founders
 	print $FILEHANDLE catfile(${$scriptParameterHashRef}{outDataDir}, ${$scriptParameterHashRef}{familyID}, ${$scriptParameterHashRef}{familyID}.".fam")." ";
@@ -5920,7 +5925,7 @@ sub VT {
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$familyIDRef,
 							       programName => $programName,
-							       programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
+							       programDirectory => catfile(lc($$alignerOutDirRef)),
 							       callType => $callType,
 							       nrofCores => $nrCores,
 							       processTime => $time,
@@ -5931,8 +5936,8 @@ sub VT {
     my ($volume, $directories, $stderrFile) = File::Spec->splitpath($stderrPath); #Split to enable submission to &SampleInfoQC later
 
     ## Assign directories
-    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
-    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
+    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
+    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
     ${$parameterHashRef}{"p".$programName}{inDirectory} = $outFamilyDirectory;  #Used downstream
 
     ## Assign fileTags
@@ -6176,7 +6181,7 @@ sub PrepareForVariantAnnotationBlock {
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$familyIDRef,
 							       programName => $programName,
-							       programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
+							       programDirectory => catfile(lc($$alignerOutDirRef)),
 							       callType => $callType,
 							       nrofCores => $nrCores,
 							       processTime => $time,
@@ -6187,8 +6192,8 @@ sub PrepareForVariantAnnotationBlock {
     my ($volume, $directories, $stderrFile) = File::Spec->splitpath($stderrPath); #Split to enable submission to &SampleInfoQC later
 
     ## Assign directories
-    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
-    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
+    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
+    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
     ${$parameterHashRef}{"p".$programName}{inDirectory} = $outFamilyDirectory;  #Used downstream
 
     ## Assign fileTags
@@ -6332,14 +6337,14 @@ sub GATKCombineVariantCallSets {
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$familyIDRef,
 					    programName => $programName,
-					    programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
+					    programDirectory => catfile(lc($$alignerOutDirRef)),
 					    callType => $callType,
 					    processTime => 2,
 					    tempDirectory => $$tempDirectoryRef,
 					   });
 
     ## Assign directories
-    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
+    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
     ${$parameterHashRef}{"p".$programName}{inDirectory} = $outFamilyDirectory;  #Used downstream
 
     ## Assign fileTags
@@ -7301,7 +7306,7 @@ sub GenomeCoverageBED {
     my $fileName;
     
     ## Assign directories
-    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk");
+    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef);
     my $outSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "coveragereport");
 
     ## Assign fileTags
@@ -7425,7 +7430,7 @@ sub PicardToolsCalculateHSMetrics {
     my $fileName;
 
     ## Assign directories
-    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk");
+    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef);
     my $outSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "coveragereport");
 
     ## Assign fileTags
@@ -7585,7 +7590,7 @@ sub PicardToolsCollectMultipleMetrics {
     my $fileName;
 
     ## Assign directories
-    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk");
+    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef);
     my $outSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "coveragereport");
 
     ## Assign fileTags
@@ -7737,7 +7742,7 @@ sub ChanjoSexCheck {
     
     ## Assign directories               
     my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef);
-    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk");
+    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef);
     my $outSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "coveragereport");
 
     ## Assign fileTags
@@ -7875,7 +7880,7 @@ sub SambambaDepth {
 
     ## Assign directories
     my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef);
-    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk");
+    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef);
     my $outSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "coveragereport");
 
     ## Assign fileTags
@@ -8049,15 +8054,15 @@ sub SVRankVariants {
 							      FILEHANDLE => $FILEHANDLE,
 							      directoryID => $$familyIDRef,
 							      programName => $programName,
-							      programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
+							      programDirectory => catfile(lc($$alignerOutDirRef)),
 							      nrofCores => $nrCores,
 							      processTime => 10,
 							      tempDirectory => $$tempDirectoryRef
 							     });
 
     ## Assign directories
-    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
-    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
+    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
+    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
     
     ## Assign fileTags
     my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{pSVVCFParser}{fileTag};
@@ -8371,14 +8376,14 @@ sub SVVCFParser {
 							      FILEHANDLE => $FILEHANDLE,
 							      directoryID => $$familyIDRef,
 							      programName => $programName,
-							      programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
+							      programDirectory => catfile(lc($$alignerOutDirRef)),
 							      callType => $callType,
 							      tempDirectory => $$tempDirectoryRef,
 							     });
 
     ## Assign directories
-    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
-    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
+    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
+    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
     ${$parameterHashRef}{"p".$programName}{inDirectory} = $outFamilyDirectory;  #Used downstream
 
     ## Assign fileTags
@@ -8651,7 +8656,7 @@ sub SVVariantEffectPredictor {
 							      FILEHANDLE => $FILEHANDLE,
 							      directoryID => $$familyIDRef,
 							      programName => $programName,
-							      programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
+							      programDirectory => catfile(lc($$alignerOutDirRef)),
 							      callType => $callType,
 							      nrofCores => ${$scriptParameterHashRef}{maximumCores},
 							      processTime => 10,
@@ -8662,8 +8667,8 @@ sub SVVariantEffectPredictor {
     my ($volume, $directories, $stderrFile) = File::Spec->splitpath($stderrPath);  #Split to enable submission to &SampleInfoQC later
 
     ## Assign directories
-    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
-    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
+    my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
+    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
     ${$parameterHashRef}{"p".$programName}{inDirectory} = $outFamilyDirectory;  #Used downstream
 
     ## Assign fileTags
@@ -8895,7 +8900,7 @@ sub SVCombineVariantCallSets {
 							      FILEHANDLE => $FILEHANDLE,
 							      directoryID => $$familyIDRef,
 							      programName => $programName,
-							      programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
+							      programDirectory => catfile(lc($$alignerOutDirRef)),
 							      callType => $callType,
 							      processTime => 2,
 							      tempDirectory => $$tempDirectoryRef,
@@ -8903,7 +8908,7 @@ sub SVCombineVariantCallSets {
     my ($volume, $directories, $stderrFile) = File::Spec->splitpath($programInfoPath.".stderr.txt");  #Split to enable submission to &SampleInfoQC later
 
     ## Assign directories
-    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk");
+    my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
     ${$parameterHashRef}{"p".$programName}{inDirectory} = $outFamilyDirectory;  #Used downstream
 
     ## Assign fileTags
@@ -8920,7 +8925,7 @@ sub SVCombineVariantCallSets {
 	    if ( (${$scriptParameterHashRef}{$structuralVariantCaller} > 0) && ($structuralVariantCaller ne "pManta") ) {  #Expect vcf. Special case: Manta is processed by joint calling and per family
 		
 		my $programOutDirectoryName = ${$parameterHashRef}{$structuralVariantCaller}{outDirectoryName};
-		my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $sampleID, $$alignerOutDirRef, "gatk", $programOutDirectoryName);
+		my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $sampleID, $$alignerOutDirRef, $programOutDirectoryName);
 		my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$sampleID}{$structuralVariantCaller}{fileTag};
 		
 		if (! ( any {$_ eq ${$parameterHashRef}{$structuralVariantCaller}{chain}} @parallelChains ) ) { #If element is not part of array
@@ -8967,7 +8972,7 @@ sub SVCombineVariantCallSets {
 		my $infile = ${$fileInfoHashRef}{$$familyIDRef}{$sampleID}{MergeInfile};  #Alias
 		
 		my $programOutDirectoryName = ${$parameterHashRef}{$structuralVariantCaller}{outDirectoryName};   
-		my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $sampleID, $$alignerOutDirRef, "gatk", $programOutDirectoryName);
+		my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $sampleID, $$alignerOutDirRef, $programOutDirectoryName);
 		my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$sampleID}{$structuralVariantCaller}{fileTag};
 		
 		print $FILEHANDLE catfile($$tempDirectoryRef, $infile.$infileTag.".vcf.gz")." ";  #InFile
@@ -8994,7 +8999,7 @@ sub SVCombineVariantCallSets {
 	if (${$scriptParameterHashRef}{$structuralVariantCaller} > 0  && ($structuralVariantCaller eq "pManta") ) {  #Expect vcf. Special case: Manta is processed by joint calling and per family
 	    
 	    my $programOutDirectoryName = ${$parameterHashRef}{$structuralVariantCaller}{outDirectoryName};   
-	    my $inFamilyDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, "gatk", $programOutDirectoryName);
+	    my $inFamilyDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, $programOutDirectoryName);
 	    my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{$structuralVariantCaller}{fileTag};
 	    
 	    if (! ( any {$_ eq ${$parameterHashRef}{$structuralVariantCaller}{chain}} @parallelChains ) ) { #If element is not part of array
@@ -9264,15 +9269,15 @@ sub CNVnator {
 							      FILEHANDLE => $FILEHANDLE,
 							      directoryID => $$sampleIDRef,
 							      programName => $programName,
-							      programDirectory => catfile(lc($$alignerOutDirRef), "gatk", lc($programOutDirectoryName)),
+							      programDirectory => catfile(lc($$alignerOutDirRef), lc($programOutDirectoryName)),
 							      nrofCores => $nrCores,
 							      processTime => $time,
 							      tempDirectory => $$tempDirectoryRef
 							     });
 
     ## Assign directories
-    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk");
-    my $outSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk", $programOutDirectoryName);
+    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef);
+    my $outSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, $programOutDirectoryName);
     ${$parameterHashRef}{"p".$programName}{$$sampleIDRef}{inDirectory} = $outSampleDirectory; #Used downstream
 
     ## Assign fileTags
@@ -9529,15 +9534,15 @@ sub Delly {
 							      FILEHANDLE => $FILEHANDLE,
 							      directoryID => $$sampleIDRef,
 							      programName => $programName,
-							      programDirectory => catfile(lc($$alignerOutDirRef), "gatk", lc($programOutDirectoryName)),
+							      programDirectory => catfile(lc($$alignerOutDirRef), lc($programOutDirectoryName)),
 							      nrofCores => $nrCores,
 							      processTime => $time,
 							      tempDirectory => $$tempDirectoryRef
 							     });
     
     ## Assign directories
-    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk");
-    my $outSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk", $programOutDirectoryName);
+    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef);
+    my $outSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, $programOutDirectoryName);
     ${$parameterHashRef}{"p".$programName}{$$sampleIDRef}{inDirectory} = $outSampleDirectory; #Used downstream
 
     ## Assign fileTags
@@ -9760,14 +9765,14 @@ sub Manta {
 					    FILEHANDLE => $FILEHANDLE,
 					    directoryID => $$familyIDRef,
 					    programName => $programName,
-					    programDirectory => catfile(lc($$alignerOutDirRef), "gatk", lc($programOutDirectoryName)),
+					    programDirectory => catfile(lc($$alignerOutDirRef), lc($programOutDirectoryName)),
 					    processTime => $time,
 					    nrofCores => $nrCores,
 					    tempDirectory => $$tempDirectoryRef,
 					   });
     
     ## Assign directories
-    my $outFamilyDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, lc($$alignerOutDirRef), "gatk", lc($programOutDirectoryName));
+    my $outFamilyDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, lc($$alignerOutDirRef), lc($programOutDirectoryName));
     ${$parameterHashRef}{"p".$programName}{inDirectory} = $outFamilyDirectory;  #Used downstream
 
     ## Assign fileTags
@@ -9786,7 +9791,7 @@ sub Manta {
 		   });
 	
 	## Assign directories
-	my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $sampleID, $$alignerOutDirRef, "gatk");
+	my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $sampleID, $$alignerOutDirRef);
 
 	## Assign fileTags
 	my $infileTag = ${$fileInfoHashRef}{ $$familyIDRef }{$sampleID}{pGATKBaseRecalibration}{fileTag};
@@ -9938,15 +9943,15 @@ sub FindTranslocations {
 							      FILEHANDLE => $FILEHANDLE,
 							      directoryID => $$sampleIDRef,
 							      programName => $programName,
-							      programDirectory => catfile(lc($$alignerOutDirRef), "gatk", lc($programOutDirectoryName)),
+							      programDirectory => catfile(lc($$alignerOutDirRef), lc($programOutDirectoryName)),
 							      nrofCores => $nrCores,
 							      processTime => $time,
 							      tempDirectory => $$tempDirectoryRef
 							     });
     
     ## Assign directories
-    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk");
-    my $outSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk", $programOutDirectoryName);
+    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef);
+    my $outSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, $programOutDirectoryName);
     ${$parameterHashRef}{"p".$programName}{$$sampleIDRef}{inDirectory} = $outSampleDirectory; #Used downstream
 
     ## Assign fileTags
@@ -10155,7 +10160,7 @@ sub SamToolsMpileUp {
 	
 	    my $sampleIDRef = \${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter];  #Alias
 	    
-	    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk");
+	    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef);
 	    my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{pGATKBaseRecalibration}{fileTag};
 	    
 	    ## Add merged infile name after merging all BAM files per sampleID
@@ -10394,7 +10399,7 @@ sub Freebayes {
 	
 	    my $sampleIDRef = \${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter];  #Alias
 	    
-	    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk");
+	    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef);
 	    my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{pGATKBaseRecalibration}{fileTag};
 	    
 	    ## Add merged infile name after merging all BAM files per sampleID
@@ -10610,7 +10615,7 @@ sub GATKHaploTypeCaller {
 
     ## Assign directories
     my $outFamilyFileDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef);  #For ".fam" file
-    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk");
+    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef);
     my $outSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk");
     ${$parameterHashRef}{"p".$programName}{$$sampleIDRef}{inDirectory} = $outSampleDirectory;  #Used downstream
 
@@ -10848,7 +10853,7 @@ sub GATKBaseReCalibration {
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$sampleIDRef,
 							       programName => $programName,
-							       programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
+							       programDirectory => catfile(lc($$alignerOutDirRef)),
 							       nrofCores => $nrCores,
 							       processTime => 50,
 							       tempDirectory => $gatkTemporaryDirectory,
@@ -10862,9 +10867,9 @@ sub GATKBaseReCalibration {
     }
 
     ## Assign directories
-    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk");
+    my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef);
     my $intermediarySampleDirectory = $gatkTemporaryDirectory;
-    my $outSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk");
+    my $outSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef);
     ${$parameterHashRef}{"p".$programName}{$$sampleIDRef}{inDirectory} = $outSampleDirectory;  #Used downstream
 
     ## Assign fileTags
@@ -11182,7 +11187,7 @@ sub GATKReAligner {
 							       FILEHANDLE => $FILEHANDLE,
 							       directoryID => $$sampleIDRef,
 							       programName => $programName,
-							       programDirectory => catfile(lc($$alignerOutDirRef), "gatk"),
+							       programDirectory => catfile(lc($$alignerOutDirRef)),
 							       nrofCores => $nrCores,
 							       processTime => 40,
 							       tempDirectory => $gatkTemporaryDirectory
@@ -11198,7 +11203,7 @@ sub GATKReAligner {
     ## Assign directories
     my $inSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef);
     my $intermediarySampleDirectory = $gatkTemporaryDirectory;
-    my $outSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef, "gatk");
+    my $outSampleDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$sampleIDRef, $$alignerOutDirRef);
     ${$parameterHashRef}{"p".$programName}{$$sampleIDRef}{inDirectory} = $outSampleDirectory;  #Used downstream
 
     ## Assign fileTags
