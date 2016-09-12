@@ -966,7 +966,7 @@ svRankModelFile:
   existsCheck: file
   reference: referencesDir
   type: path
-svRankVariantBCFFile:
+svRankVariantBinaryFile:
   associatedProgram:
    - pSVRankVariants
   dataType: SCALAR
@@ -1815,7 +1815,7 @@ rankModelFile:
   existsCheck: file
   reference: referencesDir
   type: path
-rankVariantBCFFile:
+rankVariantBinaryFile:
   associatedProgram:
    - pRankVariants
   dataType: SCALAR

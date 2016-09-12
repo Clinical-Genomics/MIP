@@ -178,7 +178,7 @@ mip.pl  -ifd [inFilesDir,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                  -svravwg/--svWholeGene Allow compound pairs in intronic regions (defaults to "0" (=yes))
                  -svravrpf/--svGenmodModelsReducedPenetranceFile File containg genes with reduced penetrance (defaults to "")
                  -svravrm/--svRankModelFile Rank model config file (defaults to "")
-                 -svravbcf/--svRankVariantBCFFile Produce bcfs from the Rank variants vcfs (defaults to "1" (=yes))
+                 -svravbf/--svRankVariantBinaryFile Produce binary file from the Rank variants chromosome sorted vcfs (defaults to "1" (=yes))
                              
                ##Samtools
                -pSmp/--pSamToolsMpileUp Variant calling using samTools mpileup and bcfTools (defaults to "1" (=yes))
@@ -278,7 +278,7 @@ mip.pl  -ifd [inFilesDir,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                  -ravwg/--wholeGene Allow compound pairs in intronic regions (defaults to "1" (=yes))
                  -ravrpf/--genmodModelsReducedPenetranceFile File containg genes with reduced penetrance (defaults to "")
                  -ravrm/--rankModelFile Rank model config file (defaults to "")
-                 -ravbcf/--rankVariantBCFFile Produce bcfs from the Rank variants vcfs (defaults to "1" (=yes))
+                 -ravbf/--rankVariantBinaryFile Produce binary file from the Rank variants chromosomal sorted vcfs (defaults to "1" (=yes))
                
                ###Utility
                -pScK/--pSampleCheck QC for samples gender and relationship (defaults to "1" (=yes) )
@@ -545,7 +545,7 @@ GetOptions('ifd|inFilesDir:s'  => \%{$parameter{inFilesDir}{value}},  #Hash inFi
 	   'svravrpf|svGenmodModelsReducedPenetranceFile:s' => \$parameter{svGenmodModelsReducedPenetranceFile}{value},
 	   'svravwg|svWholeGene=n'  => \$parameter{svWholeGene}{value},  #Allow compound pairs in intronic regions
 	   'svravrm|svRankModelFile:s' => \$parameter{svRankModelFile}{value},  #The rank modell config.ini path
-	   'svravbcf|svRankVariantBCFFile=n' => \$parameter{svRankVariantBCFFile}{value},  #Produce compressed vcfs
+	   'svravbf|svRankVariantBinaryFile=n' => \$parameter{svRankVariantBinaryFile}{value},  #Produce compressed vcfs
 	   'pSmp|pSamToolsMpileUp=n' => \$parameter{pSamToolsMpileUp}{value},
 	   'pFrb|pFreebayes=n' => \$parameter{pFreebayes}{value},
 	   'gtp|genomeAnalysisToolKitPath:s' => \$parameter{genomeAnalysisToolKitPath}{value},  #GATK whole path
@@ -636,7 +636,7 @@ GetOptions('ifd|inFilesDir:s'  => \%{$parameter{inFilesDir}{value}},  #Hash inFi
 	   'ravwg|wholeGene=n'  => \$parameter{wholeGene}{value},  #Allow compound pairs in intronic regions
 	   'ravrpf|genmodModelsReducedPenetranceFile:s' => \$parameter{genmodModelsReducedPenetranceFile}{value},
 	   'ravrm|rankModelFile:s' => \$parameter{rankModelFile}{value},  #The rank modell config.ini path
-	   'ravbcf|rankVariantBCFFile=n' => \$parameter{rankVariantBCFFile}{value},  #Produce compressed vcfs
+	   'ravbf|rankVariantBinaryFile=n' => \$parameter{rankVariantBinaryFile}{value},  #Produce compressed vcfs
 	   'pScK|pSampleCheck=n' => \$parameter{pSampleCheck}{value},  #QC for samples gender and relationship
 	   'pEvL|pEvaluation=n' => \$parameter{pEvaluation}{value},  #Compare concordance with NIST data set
 	   'evlnid|NISTID:s' => \$parameter{NISTID}{value},
@@ -1050,24 +1050,27 @@ if ($scriptParameter{writeConfigFile} ne 0) {  #Write config file for family
 	    });
 
 
-## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
-@{$fileInfo{"SelectFileContigs"}} = &SizeSortSelectFileContigs({fileInfoHashRef =>\%fileInfo,
-								consensusAnalysisTypeRef => \$parameter{dynamicParameters}{consensusAnalysisType},
-								hashKeyToSort => "SelectFileContigs",
-								hashKeySortReference => "contigsSizeOrdered",
-							       });
-
-
 ## Detect the gender included in current analysis
 ($scriptParameter{maleFound}, $scriptParameter{femaleFound}, $scriptParameter{otherFound})  = &DetectSampleIdGender({scriptParameterHashRef => \%scriptParameter,
 														     sampleInfoHashRef => \%sampleInfo,
 														    });
 
 
-## Removes contigY|chrY from SelectFileContigs if no males or 'other' found in analysis
-&UpdateFileContigs({selectFileContigsArrayRef => \@{${fileInfo}{SelectFileContigs}},
-		    maleFoundRef => \$scriptParameter{maleFound}
-		   });
+## Removes contigY|chrY from contigs if no males or 'other' found in analysis
+if (! $scriptParameter{maleFound}) {
+
+    ## Removes contigs from supplied contigsArrayRef
+    &RemoveArrayElement({contigsArrayRef => \@{${fileInfo}{selectFileContigs}},
+			 removeContigsArrayRef => ["Y"],
+			});
+}
+
+## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
+@{$fileInfo{sortedSelectFileContigs}} = &SizeSortSelectFileContigs({fileInfoHashRef =>\%fileInfo,
+								    consensusAnalysisTypeRef => \$parameter{dynamicParameters}{consensusAnalysisType},
+								    hashKeyToSort => "selectFileContigs",
+								    hashKeySortReference => "contigsSizeOrdered",
+								   });
 
 
 ## Write CMD to MIP log file
@@ -2167,10 +2170,14 @@ if ($scriptParameter{pGATKVariantEvalAll} > 0) {  #Run GATK VariantEval for all 
 }
 
 ### If no males or other remove contig Y from all downstream analysis
-## Removes contigY|chrY from SelectFileContigs if no males or other found in analysis
-&UpdateFileContigs({selectFileContigsArrayRef => \@{${fileInfo}{contigsSizeOrdered}},
-		    maleFoundRef => \$scriptParameter{maleFound},
-		   });
+if (! $scriptParameter{maleFound}) {
+
+    ## Removes contigs from supplied contigsArrayRef
+    &RemoveArrayElement({contigsArrayRef => \@{${fileInfo}{contigsSizeOrdered}},
+			 removeContigsArrayRef => ["Y"],
+			});
+}
+
 
 if ($scriptParameter{reduceIO}) {  #Run consecutive models
     
@@ -3395,13 +3402,23 @@ sub RankVariants {
 
     my $vcfParserAnalysisType = "";
     my $vcfParserContigsArrayRef = \@{ ${$fileInfoHashRef}{contigsSizeOrdered} };  #Set default
+    my @vcfParserSubSetContigs = @{ ${$fileInfoHashRef}{contigs} };  #Set default for handling subset of contigs
 
     for (my $vcfParserOutputFileCounter=0;$vcfParserOutputFileCounter<${$scriptParameterHashRef}{VcfParserOutputFileCount};$vcfParserOutputFileCounter++) {
 	
 	if ($vcfParserOutputFileCounter == 1) {
 	    
 	    $vcfParserAnalysisType = ".selected";  #SelectFile variants
-	    $vcfParserContigsArrayRef = \@{${$fileInfoHashRef}{SelectFileContigs}};  #Selectfile contigs
+	    $vcfParserContigsArrayRef = \@{${$fileInfoHashRef}{sortedSelectFileContigs}};  #Selectfile contigs
+	    
+	    if ($consensusAnalysisType eq "wes" ) {  #Remove MT|M since no exome kit so far has mitochondrial probes
+
+		## Removes an element from array and return new array while leaving orginal arrayRef untouched
+		@vcfParserSubSetContigs = &RemoveElementFromArray({arrayRef => \@{${$fileInfoHashRef}{selectFileContigs}},
+								   removeContigsArrayRef => ["MT", "M"],
+								   contigSwitch => 1,
+								  });
+	    }
 	}
 
 	if ( ! $$reduceIORef) { #Run as individual sbatch script
@@ -3500,6 +3517,7 @@ sub RankVariants {
 	    print $XARGSFILEHANDLE "score ";  #Score variants in a vcf file using Weighted sums
 	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{pedigreeFile}." ";  #Pedigree file
 	    print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{genmodModelsFamilyType}." ";  #Family type
+	    print $XARGSFILEHANDLE "--rank_results ";  #Add a info field that shows how the different categories contribute to the rank score
 
 	    if (defined(${$scriptParameterHashRef}{rankModelFile})) {
 		
@@ -3526,15 +3544,44 @@ sub RankVariants {
 	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef."_models_annotate_score_compound.stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    say $XARGSFILEHANDLE "- ";  #InStream
 	}
-	
+
 	## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
 	&ConcatenateVariants({scriptParameterHashRef => $scriptParameterHashRef,
 			      FILEHANDLE => $FILEHANDLE,
-			      arrayRef => $vcfParserContigsArrayRef,
+			      arrayRef => \@vcfParserSubSetContigs,
 			      infilePrefix => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_"), 
 			      infilePostfix => $vcfParserAnalysisType."_models_annotate_score_compound.vcf",
 			      outfile => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType.".vcf"),
 			     });
+
+	if ($consensusAnalysisType eq "wes" ) {
+	    
+	    ## Enable trap for signal(s) and function
+	    &EnableTrap({FILEHANDLE => $FILEHANDLE,
+			});
+	}
+
+	if (${$scriptParameterHashRef}{rankVariantBinaryFile}) {
+
+	    ## Compress or decompress original file or stream to outfile (if supplied)
+	    &Bgzip({FILEHANDLE => $FILEHANDLE,
+		    infilePath => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType.".vcf"),
+		    outfilePath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf.gz"),
+		   });
+	    
+	    ## Index file using tabix 
+	    &Tabix({FILEHANDLE => $FILEHANDLE,
+		    infilePath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf.gz"),
+		   });
+
+	    ## Copies file from temporary directory.
+	    say $FILEHANDLE "## Copy file from temporary directory";
+	    &MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf.gz*"),
+				  filePath => $outFamilyDirectory,
+				  FILEHANDLE => $FILEHANDLE,
+				 });
+	    say $FILEHANDLE "wait", "\n";
+	}
 
 	## Genmod sort
 	print $FILEHANDLE "genmod ";
@@ -3544,13 +3591,6 @@ sub RankVariants {
 	print $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType.".vcf")." ";  #infile
 	say $FILEHANDLE "\n";
 
-	if ($consensusAnalysisType eq "wes" ) {
-
-	    ## Enable trap for signal(s) and function
-	    &EnableTrap({FILEHANDLE => $FILEHANDLE,
-			});
-	}
-
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
 	&MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf"),
@@ -3559,39 +3599,6 @@ sub RankVariants {
 			     });
 	say $FILEHANDLE "wait", "\n";
 
-	if (${$scriptParameterHashRef}{rankVariantBCFFile}) {
-	
-	    ## Using GATK combined file directly yields error in bcftools - unclear why 
-	    say $FILEHANDLE "\n## Preprocessing for compatibility with bcfTools v1.3\n";
-	    print $FILEHANDLE "bcftools view ";
-	    print $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf")." ";
-	    say $FILEHANDLE "> ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType."_tmp.vcf"), "\n";  #Outfile
-
-	    &JavaCore({FILEHANDLE => $FILEHANDLE,
-		       memoryAllocation => "Xmx24g -XX:-UseConcMarkSweepGC",
-		       javaUseLargePagesRef => \${$scriptParameterHashRef}{javaUseLargePages},
-		       javaTemporaryDirectory => ${$scriptParameterHashRef}{tempDirectory},
-		       javaJar => catfile(${$scriptParameterHashRef}{picardToolsPath}, "picard.jar"),
-		      });
-	    print $FILEHANDLE "SortVcf ";
-	    print $FILEHANDLE "I=".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType."_tmp.vcf")." ";
-	    say $FILEHANDLE "O=".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType."_sorted.vcf"), "\n";
-
-	    &VcfToBcf({infile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType."_sorted"),
-		       FILEHANDLE => $FILEHANDLE,
-		       outfile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType),
-
-		      });
-	
-	    ## Copies file from temporary directory.
-	    say $FILEHANDLE "## Copy file from temporary directory";
-	    &MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".bcf*"),
-				  filePath => $outFamilyDirectory,
-				  FILEHANDLE => $FILEHANDLE,
-				 });
-	    say $FILEHANDLE "wait", "\n";
-	}
-
 	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	    
 	    if ($vcfParserOutputFileCounter == 1) {
@@ -3599,9 +3606,9 @@ sub RankVariants {
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{VCFFile}{Clinical}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf");
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{Program}{RankVariants}{Clinical}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf");   #Save clinical candidate list path
 
-		if (${$scriptParameterHashRef}{rankVariantBCFFile}) {
+		if (${$scriptParameterHashRef}{rankVariantBinaryFile}) {
 
-		    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{BCFFile}{Clinical}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".bcf");
+		    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{VCFBinaryFile}{Clinical}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf.gz");
 		}
 	    }
 	    else {
@@ -3609,9 +3616,9 @@ sub RankVariants {
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{VCFFile}{Research}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf");
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{Program}{RankVariants}{Research}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf");   #Save research candidate list path
 
-		if (${$scriptParameterHashRef}{rankVariantBCFFile}) {
+		if (${$scriptParameterHashRef}{rankVariantBinaryFile}) {
 
-		    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{BCFFile}{Research}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".bcf");
+		    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{VCFBinaryFile}{Research}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf.gz");
 		}
 	    }
 	}
@@ -4166,7 +4173,7 @@ sub SnpEff {
 	if ($vcfParserOutputFileCounter == 1) {
     
 	    $vcfParserAnalysisType = ".selected";  #SelectFile variants
-	    $vcfParserContigsArrayRef = \@{${$fileInfoHashRef}{SelectFileContigs}};  #Selectfile contigs
+	    $vcfParserContigsArrayRef = \@{${$fileInfoHashRef}{sortedSelectFileContigs}};  #Selectfile contigs
 	}
 
 	if ( ! $$reduceIORef) {  #Run as individual sbatch script
@@ -4520,7 +4527,7 @@ sub Annovar {
 	if ($vcfParserOutputFileCounter == 1) {
 
 	    $vcfParserAnalysisType = ".selected";  #SelectFile variants
-	    $vcfParserContigsArrayRef = \@{${$fileInfoHashRef}{SelectFileContigs}};  #Selectfile contigs
+	    $vcfParserContigsArrayRef = \@{${$fileInfoHashRef}{sortedSelectFileContigs}};  #Selectfile contigs
 	}
 	my $coreCounter=1;   	    	
 
@@ -4827,7 +4834,7 @@ sub VCFParser {
 	if (${$scriptParameterHashRef}{vcfParserSelectFile} ne "noUserInfo") {
 	 
 	    if (! &CheckEntryHashofArray({hashRef => $fileInfoHashRef,
-					  key => "SelectFileContigs",
+					  key => "selectFileContigs",
 					  element => $$contigRef,
 					 })
 		) {
@@ -4916,7 +4923,7 @@ sub VCFParser {
 	    if ($vcfParserOutputFileCounter == 1) {
 		
 		$vcfParserAnalysisType = ".selected";  #SelectFile variants
-		@vcfParserContigsRef = \@{${$fileInfoHashRef}{SelectFileContigs}};
+		@vcfParserContigsRef = \@{${$fileInfoHashRef}{sortedSelectFileContigs}};
 	    }
 
 	    ## Copies file from temporary directory.
@@ -8070,13 +8077,24 @@ sub SVRankVariants {
 
     my $vcfParserAnalysisType = "";
     my $vcfParserContigsArrayRef = \@{ ${$fileInfoHashRef}{contigsSizeOrdered} };  #Set default
+    my @vcfParserSubSetContigs = @{ ${$fileInfoHashRef}{contigs} };  #Set default for handling subset of contigs
 
     for (my $vcfParserOutputFileCounter=0;$vcfParserOutputFileCounter<${$scriptParameterHashRef}{VcfParserOutputFileCount};$vcfParserOutputFileCounter++) {
 	
 	if ($vcfParserOutputFileCounter == 1) {
 	    
 	    $vcfParserAnalysisType = ".selected";  #SelectFile variants
-	    $vcfParserContigsArrayRef = \@{${$fileInfoHashRef}{SelectFileContigs}};  #Selectfile contigs
+	    $vcfParserContigsArrayRef = \@{${$fileInfoHashRef}{sortedSelectFileContigs}};  #Selectfile contigs
+
+	    if ($consensusAnalysisType eq "wes" ) {  #Remove MT|M since no exome kit so far has mitochondrial probes
+
+		## Removes an element from array and return new array while leaving orginal arrayRef untouched
+		@vcfParserSubSetContigs = &RemoveElementFromArray({arrayRef => \@{${$fileInfoHashRef}{selectFileContigs}},
+								   removeContigsArrayRef => ["MT", "M"],
+								   contigSwitch => 1,
+								  });
+	    }
+
 	}
 	
 	## Copy file(s) to temporary directory
@@ -8153,7 +8171,8 @@ sub SVRankVariants {
 	    print $XARGSFILEHANDLE "score ";  #Score variants in a vcf file using Weighted sums
 	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{pedigreeFile}." ";  #Pedigree file
 	    print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{svGenmodModelsFamilyType}." ";  #Family type
-	    
+	    print $XARGSFILEHANDLE "--rank_results ";  #Add a info field that shows how the different categories contribute to the rank score
+ 
 	    if (defined(${$scriptParameterHashRef}{rankModelFile})) {
 		
 		print $XARGSFILEHANDLE "--score_config ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{svRankModelFile})." ";  #Rank model config.ini file 
@@ -8183,11 +8202,40 @@ sub SVRankVariants {
 	## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
 	&ConcatenateVariants({scriptParameterHashRef => $scriptParameterHashRef,
 			      FILEHANDLE => $FILEHANDLE,
-			      arrayRef => $vcfParserContigsArrayRef,
+			      arrayRef => \@vcfParserSubSetContigs,
 			      infilePrefix => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_"), 
 			      infilePostfix => $vcfParserAnalysisType."_models_score_compound.vcf",
 			      outfile => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType.".vcf"),
 			     });
+
+	if ($consensusAnalysisType eq "wes") {
+	    
+	    ## Enable trap for signal(s) and function
+	    &EnableTrap({FILEHANDLE => $FILEHANDLE,
+			});
+	}
+
+	if (${$scriptParameterHashRef}{svRankVariantBinaryFile}) {
+
+	    ## Compress or decompress original file or stream to outfile (if supplied)
+	    &Bgzip({FILEHANDLE => $FILEHANDLE,
+		    infilePath => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType.".vcf"),
+		    outfilePath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf.gz"),
+		   });
+	    
+	    ## Index file using tabix 
+	    &Tabix({FILEHANDLE => $FILEHANDLE,
+		    infilePath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf.gz"),
+		   });
+	    
+	    ## Copies file from temporary directory.
+	    say $FILEHANDLE "## Copy file from temporary directory";
+	    &MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf.gz*"),
+				  filePath => $outFamilyDirectory,
+				  FILEHANDLE => $FILEHANDLE,
+				 });
+	    say $FILEHANDLE "wait", "\n";
+	}
 
 	## Genmod sort
 	print $FILEHANDLE "genmod ";
@@ -8197,13 +8245,7 @@ sub SVRankVariants {
 	print $FILEHANDLE "-o ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf")." ";  #Outfile
 	say $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType.".vcf")." ";  #infile
 	
-	if ($consensusAnalysisType eq "wes") {
-	    
-	    ## Enable trap for signal(s) and function
-	    &EnableTrap({FILEHANDLE => $FILEHANDLE,
-			});
-	}
-	
+
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
 	&MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf"),
@@ -8212,39 +8254,6 @@ sub SVRankVariants {
 			     });
 	say $FILEHANDLE "wait", "\n";
 
-	if (${$scriptParameterHashRef}{svRankVariantBCFFile}) {
-	
-	    ## Using GATK combined file directly yields error in bcftools - unclear why 
-	    say $FILEHANDLE "\n## Preprocessing for compatibility with bcfTools v1.3\n";
-
-	    print $FILEHANDLE "bcftools view ";
-	    print $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf")." ";
-	    say $FILEHANDLE "> ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType."_tmp.vcf"), "\n";  #Outfile
-
-	    &JavaCore({FILEHANDLE => $FILEHANDLE,
-		       memoryAllocation => "Xmx12g",
-		       javaUseLargePagesRef => \${$scriptParameterHashRef}{javaUseLargePages},
-		       javaTemporaryDirectory => ${$scriptParameterHashRef}{tempDirectory},
-		       javaJar => catfile(${$scriptParameterHashRef}{picardToolsPath}, "picard.jar"),
-		      });
-	    print $FILEHANDLE "SortVcf ";
-	    print $FILEHANDLE "I=".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType."_tmp.vcf")." ";
-	    say $FILEHANDLE "O=".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType."_sorted.vcf"), "\n";
-
-	    &VcfToBcf({infile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType."_sorted"),
-		       FILEHANDLE => $FILEHANDLE,
-		       outfile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType),
-
-		      });
-
-	    ## Copies file from temporary directory.
-	    say $FILEHANDLE "## Copy file from temporary directory";
-	    &MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".bcf*"),
-				  filePath => $outFamilyDirectory,
-				  FILEHANDLE => $FILEHANDLE,
-				 });
-	    say $FILEHANDLE "wait", "\n";
-	}
 
 	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	    
@@ -8253,9 +8262,9 @@ sub SVRankVariants {
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{SVVCFFile}{Clinical}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf");
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{Program}{SVRankVariants}{Clinical}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf");   #Save clinical candidate list path
 
-		if (${$scriptParameterHashRef}{svRankVariantBCFFile}) {
+		if (${$scriptParameterHashRef}{svRankVariantBinaryFile}) {
 
-		    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{SVBCFFile}{Clinical}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".bcf");
+		    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{SVVCFBinaryFile}{Clinical}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf.gz");
 		}
 	    }
 	    else {
@@ -8263,9 +8272,9 @@ sub SVRankVariants {
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{SVVCFFile}{Research}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf");
 		${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{Program}{SVRankVariants}{Research}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf");   #Save research candidate list path
 
-		if (${$scriptParameterHashRef}{svRankVariantBCFFile}) {
+		if (${$scriptParameterHashRef}{svRankVariantBinaryFile}) {
 
-		    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{SVBCFFile}{Research}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".bcf");
+		    ${$sampleInfoHashRef}{$$familyIDRef}{$$familyIDRef}{SVVCFBinaryFile}{Research}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf.gz");
 		}
 	    }
 	}
@@ -8444,7 +8453,7 @@ sub SVVCFParser {
 	if (${$scriptParameterHashRef}{svVcfParserSelectFile} ne "noUserInfo") {
 	 
 	    if (! &CheckEntryHashofArray({hashRef => $fileInfoHashRef,
-					  key => "SelectFileContigs",
+					  key => "selectFileContigs",
 					  element => $$contigRef,
 					 })
 		) {
@@ -8531,7 +8540,7 @@ sub SVVCFParser {
 	if ($vcfParserOutputFileCounter == 1) {
 	    
 	    $vcfParserAnalysisType = ".selected";  #SelectFile variants
-	    @vcfParserContigsRef = \@{${$fileInfoHashRef}{SelectFileContigs}};
+	    @vcfParserContigsRef = \@{${$fileInfoHashRef}{sortedSelectFileContigs}};
 	}
 	
 	## Copies file from temporary directory.
@@ -9551,7 +9560,7 @@ sub Delly {
 
     ## Removes an element from array and return new array while leaving orginal arrayRef untouched
     my @contigs = &RemoveElementFromArray({arrayRef => \@{${$fileInfoHashRef}{contigsSizeOrdered}},
-					   element => "MT",
+					   removeContigsArrayRef => ["MT", "M"],
 					   contigSwitch => 1,
 					  });
     
@@ -17513,7 +17522,7 @@ sub CheckParameterFiles {
 					    });
 			    
 			    ## Collects sequences contigs used in select file
-			    &CollectSelectFileContigs({contigsArrayRef => \@{${$fileInfoHashRef}{SelectFileContigs}},
+			    &CollectSelectFileContigs({contigsArrayRef => \@{${$fileInfoHashRef}{selectFileContigs}},
 						       selectFilePath => catfile($$referencesDirRef, ${$scriptParameterHashRef}{vcfParserSelectFile}),
 						      });
 			    
@@ -24105,37 +24114,36 @@ sub DetectMostCompleteFile {
 }
 
 
-sub UpdateFileContigs {
+sub RemoveArrayElement {
 
-##UpdateFileContigs
+##RemoveArrayElement
     
-##Function : Removes contigY|chrY from SelectFileContigs if no males or 'other' found in analysis
+##Function : Removes contigs from supplied contigsArrayRef
 ##Returns  : ""
-##Arguments: $selectFileContigsArrayRef, $hashKeyToSort, $hashKeySortReference
-##         : $selectFileContigsArrayRef => The select file contigs {REF}
-##         : $maleFoundRef              => If male or 'other' is included in current analysis {REF}
+##Arguments: $contigsArrayRef, $removeContigsArrayRef
+##         : $contigsArrayRef       => The select file contigs {REF}
+##         : $removeContigsArrayRef => Remove this contig
 
     my ($argHashRef) = @_;
     
     ## Flatten argument(s)
-    my $selectFileContigsArrayRef;
-    my $maleFoundRef;
+    my $contigsArrayRef;
+    my $removeContigsArrayRef;
 
     my $tmpl = { 
-	selectFileContigsArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$selectFileContigsArrayRef},
-	maleFoundRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$maleFoundRef},
+	contigsArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$contigsArrayRef},
+	removeContigsArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$removeContigsArrayRef},
     };
         
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
-    if ($$maleFoundRef != 1) {
+    for (my $index=0;$index<scalar(@{$contigsArrayRef});$index++) {
 	
-	for (my $index=0;$index<scalar(@{$selectFileContigsArrayRef});$index++) {
+	foreach my $removeContig (@{$removeContigsArrayRef}) {
 
-	    if( (${$selectFileContigsArrayRef}[$index] eq "Y") || (${$selectFileContigsArrayRef}[$index] eq "chrY") ) {
-
-		splice(@{$selectFileContigsArrayRef}, $index, 1);  #Remove $element from array
-		last;  #Will not occur more than once
+	    if( (${$contigsArrayRef}[$index] eq $removeContig) || (${$contigsArrayRef}[$index] eq "chr".$removeContig) ) {
+	    
+		splice(@{$contigsArrayRef}, $index, 1);  #Remove $element from array
 	    }
 	}
     }
@@ -24825,21 +24833,21 @@ sub RemoveElementFromArray {
 ##Function : Removes an element from array and return new array while leaving orginal arrayRef untouched. 
 ##Returns  : "@array"
 ##Tags     : helper, remove, ARRAY, contigs
-##Arguments: $arrayRef, $element, $contigSwitch
-##         : $arrayRef     => Array to remove an element from {REF}
-##         : $element      => Element to remove
-##         : $contigSwitch => Expect contigs in arrayRef
+##Arguments: $arrayRef, $removeContigsArrayRef, $contigSwitch
+##         : $arrayRef              => Array to remove an element from {REF}
+##         : $removeContigsArrayRef => Remove this contig
+##         : $contigSwitch          => Expect contigs in arrayRef
 
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
     my $arrayRef;
-    my $element;
+    my $removeContigsArrayRef;
     my $contigSwitch;
 
     my $tmpl = { 
 	arrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$arrayRef},
-	element => { required => 1, defined => 1, strict_type => 1, store => \$element},
+	removeContigsArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$removeContigsArrayRef},
 	contigSwitch => { allow => [0, 1],
 			  strict_type => 1, store => \$contigSwitch},
     };
@@ -24850,16 +24858,19 @@ sub RemoveElementFromArray {
 
     for (my $index=0;$index<scalar(@array);$index++) {
 
-	if($contigSwitch) {  #Make sure that contig is removed independent of genome source
+	foreach my $removeContig (@{$removeContigsArrayRef}) {
+
+	    if($contigSwitch) {  #Make sure that contig is removed independent of genome source
 	    
-	    if( (${$arrayRef}[$index] eq $element) || (${$arrayRef}[$index] eq "chr".$element) ) {
+		if( (${$arrayRef}[$index] eq $removeContig) || (${$arrayRef}[$index] eq "chr".$removeContig) ) {
+		    
+		    splice(@array, $index, 1);  #Remove $element from array
+		}
+	    }
+	    elsif( (${$arrayRef}[$index] eq $removeContig) ) {  #Arbitrary element from array
 		
 		splice(@array, $index, 1);  #Remove $element from array
 	    }
-	}
-	elsif( (${$arrayRef}[$index] eq $element) ) {  #Arbitrary element from array
-	    
-	    splice(@array, $index, 1);  #Remove $element from array
 	}
     }
     return @array
@@ -25176,11 +25187,6 @@ sub CheckSampleIDInHashParameter {
 		
 		$seen{ $sampleID }++;  #Increment instance to check duplicates later
 		
-		if ( ! (any {$_ eq $sampleID} @{$sampleIdArrayRef}) ) {  #If captureKit sampleID supplied is not part of sampleID array
-		    
-		    $logger->fatal("Could not detect ".$sampleID." from '-".$parameterName."' in provided sampleIDs: ".join(", ", @{$sampleIdArrayRef}), "\n");
-		    exit 1;
-		}
 		if ($seen{ $sampleID } > 1) {  #Check sampleID are unique
 		    
 		    $logger->fatal("SampleID: ".$sampleID." is not uniqe in '-".$parameterName." '".$key."=".join(",", @parameterSamples),"\n");
