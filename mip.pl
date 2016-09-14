@@ -3551,7 +3551,7 @@ sub RankVariants {
 			      arrayRef => \@vcfParserSubSetContigs,
 			      infilePrefix => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_"), 
 			      infilePostfix => $vcfParserAnalysisType."_models_annotate_score_compound.vcf",
-			      outfile => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType.".vcf"),
+			      outfile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf"),
 			     });
 
 	if ($consensusAnalysisType eq "wes" ) {
@@ -3565,7 +3565,7 @@ sub RankVariants {
 
 	    ## Compress or decompress original file or stream to outfile (if supplied)
 	    &Bgzip({FILEHANDLE => $FILEHANDLE,
-		    infilePath => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType.".vcf"),
+		    infilePath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf"),
 		    outfilePath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf.gz"),
 		   });
 	    
@@ -3573,27 +3573,11 @@ sub RankVariants {
 	    &Tabix({FILEHANDLE => $FILEHANDLE,
 		    infilePath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf.gz"),
 		   });
-
-	    ## Copies file from temporary directory.
-	    say $FILEHANDLE "## Copy file from temporary directory";
-	    &MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf.gz*"),
-				  filePath => $outFamilyDirectory,
-				  FILEHANDLE => $FILEHANDLE,
-				 });
-	    say $FILEHANDLE "wait", "\n";
 	}
-
-	## Genmod sort
-	print $FILEHANDLE "genmod ";
-	print $FILEHANDLE "-v ";  #Increase output verbosity
-	print $FILEHANDLE "sort ";  #Sort a VCF file based on rank score
-	print $FILEHANDLE "-o ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf ");  #Outfile
-	print $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType.".vcf")." ";  #infile
-	say $FILEHANDLE "\n";
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	&MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf"),
+	&MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf*"),
 			      filePath => $outFamilyDirectory,
 			      FILEHANDLE => $FILEHANDLE,
 			     });
@@ -4748,7 +4732,7 @@ sub VCFParser {
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 20;
+    my $time = 5;
     my $xargsFileName;
 
     unless (defined($FILEHANDLE)){ #Run as individual sbatch script
@@ -4764,6 +4748,7 @@ sub VCFParser {
 							       programDirectory => catfile(lc($$alignerOutDirRef)),
 							       callType => $callType,
 							       tempDirectory => $$tempDirectoryRef,
+							       processTime => $time,
 							      });
     }
 
@@ -8205,7 +8190,7 @@ sub SVRankVariants {
 			      arrayRef => \@vcfParserSubSetContigs,
 			      infilePrefix => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_"), 
 			      infilePostfix => $vcfParserAnalysisType."_models_score_compound.vcf",
-			      outfile => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType.".vcf"),
+			      outfile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf"),
 			     });
 
 	if ($consensusAnalysisType eq "wes") {
@@ -8219,7 +8204,7 @@ sub SVRankVariants {
 
 	    ## Compress or decompress original file or stream to outfile (if supplied)
 	    &Bgzip({FILEHANDLE => $FILEHANDLE,
-		    infilePath => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType.".vcf"),
+		    infilePath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf"),
 		    outfilePath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf.gz"),
 		   });
 	    
@@ -8227,28 +8212,11 @@ sub SVRankVariants {
 	    &Tabix({FILEHANDLE => $FILEHANDLE,
 		    infilePath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf.gz"),
 		   });
-	    
-	    ## Copies file from temporary directory.
-	    say $FILEHANDLE "## Copy file from temporary directory";
-	    &MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf.gz*"),
-				  filePath => $outFamilyDirectory,
-				  FILEHANDLE => $FILEHANDLE,
-				 });
-	    say $FILEHANDLE "wait", "\n";
-	}
-
-	## Genmod sort
-	print $FILEHANDLE "genmod ";
-	print $FILEHANDLE "-v ";  #Increase output verbosity
-	print $FILEHANDLE "sort ";  #Sort a VCF file based on rank score
-	print $FILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
-	print $FILEHANDLE "-o ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf")." ";  #Outfile
-	say $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType.".vcf")." ";  #infile
-	
+	}	
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	&MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf"),
+	&MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf*"),
 			      filePath => $outFamilyDirectory,
 			      FILEHANDLE => $FILEHANDLE,
 			     });
