@@ -3551,7 +3551,7 @@ sub RankVariants {
 			      arrayRef => \@vcfParserSubSetContigs,
 			      infilePrefix => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_"), 
 			      infilePostfix => $vcfParserAnalysisType."_models_annotate_score_compound.vcf",
-			      outfile => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType.$vcfParserAnalysisType.".vcf"),
+			      outfile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf"),
 			     });
 
 	if ($consensusAnalysisType eq "wes" ) {
@@ -3565,7 +3565,7 @@ sub RankVariants {
 
 	    ## Compress or decompress original file or stream to outfile (if supplied)
 	    &Bgzip({FILEHANDLE => $FILEHANDLE,
-		    infilePath => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType.$vcfParserAnalysisType.".vcf"),
+		    infilePath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf"),
 		    outfilePath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf.gz"),
 		   });
 	    
@@ -4732,7 +4732,7 @@ sub VCFParser {
     my $reduceIORef = \${$scriptParameterHashRef}{reduceIO};
     my $nrCores = ${$scriptParameterHashRef}{maximumCores};
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 20;
+    my $time = 5;
     my $xargsFileName;
 
     unless (defined($FILEHANDLE)){ #Run as individual sbatch script
@@ -4748,6 +4748,7 @@ sub VCFParser {
 							       programDirectory => catfile(lc($$alignerOutDirRef)),
 							       callType => $callType,
 							       tempDirectory => $$tempDirectoryRef,
+							       processTime => $time,
 							      });
     }
 
@@ -8189,7 +8190,7 @@ sub SVRankVariants {
 			      arrayRef => \@vcfParserSubSetContigs,
 			      infilePrefix => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_"), 
 			      infilePostfix => $vcfParserAnalysisType."_models_score_compound.vcf",
-			      outfile => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType.$vcfParserAnalysisType.".vcf"),
+			      outfile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf"),
 			     });
 
 	if ($consensusAnalysisType eq "wes") {
@@ -8203,7 +8204,7 @@ sub SVRankVariants {
 
 	    ## Compress or decompress original file or stream to outfile (if supplied)
 	    &Bgzip({FILEHANDLE => $FILEHANDLE,
-		    infilePath => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_combined".$vcfParserAnalysisType.".vcf"),
+		    infilePath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf"),
 		    outfilePath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf.gz"),
 		   });
 	    
