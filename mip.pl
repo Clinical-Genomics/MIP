@@ -3238,7 +3238,7 @@ sub Evaluation {
     print $FILEHANDLE "TRUTH_VCF=".catfile($$tempDirectoryRef, "NIST.vcf")." ";
     print $FILEHANDLE "CALL_VCF=".catfile($$tempDirectoryRef, "MIP_lts_refrm.vcf")." ";
     print $FILEHANDLE "OUTPUT=".catfile($$tempDirectoryRef, "compMIP.Vs.NIST_ADM1059A3_genome_bed")," ";
-    print $FILEHANDLE "TRUTH_SAMPLE=ADM1059A3-NIST ";
+    print $FILEHANDLE "TRUTH_SAMPLE=".${$scriptParameterHashRef}{NISTID}."-NIST ";
     print $FILEHANDLE "CALL_SAMPLE=".$$sampleIDRef." ";
     print $FILEHANDLE "MIN_GQ=20 ";
     print $FILEHANDLE "MIN_DP=10 ";
@@ -3257,7 +3257,7 @@ sub Evaluation {
     print $FILEHANDLE "TRUTH_VCF=".catfile($$tempDirectoryRef, "NIST.vcf")." ";
     print $FILEHANDLE "CALL_VCF=".catfile($$tempDirectoryRef, "MIP_lts_refrm.vcf")." ";
     print $FILEHANDLE "OUTPUT=".catfile($$tempDirectoryRef, "compMIP.Vs.NIST_ADM1059A3_genome")." ";
-    print $FILEHANDLE "TRUTH_SAMPLE=ADM1059A3-NIST ";
+    print $FILEHANDLE "TRUTH_SAMPLE=".${$scriptParameterHashRef}{NISTID}."-NIST ";
     print $FILEHANDLE "CALL_SAMPLE=".$$sampleIDRef." ";
     print $FILEHANDLE "MIN_GQ=20 ";
     print $FILEHANDLE "MIN_DP=10 ";
@@ -13022,6 +13022,7 @@ sub BWAMem {
 				path => catfile($inSampleDirectory, ${$infileHashRef}{$$sampleIDRef}[$pairedEndTracker]),
 				tempDirectory => $$tempDirectoryRef,
 			       });  #Read 1
+
 	    if ($sequenceRunMode eq "Paired-end") {  #Second read direction if present
 		
 		&MigrateFileToTemp({FILEHANDLE => $FILEHANDLE, 
@@ -13098,7 +13099,7 @@ sub BWAMem {
 
 		say $FILEHANDLE catfile(dirname(devnull()),"stdin"),"\n";
 
-		## BAMS, HLA files BWAMem logs etc.
+		## BAMS, BWAMem logs etc.
 		&MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].".*"),
 				      filePath => $outSampleDirectory,
 				      FILEHANDLE => $FILEHANDLE,
@@ -13112,6 +13113,16 @@ sub BWAMem {
 		## Copies file from temporary directory.
 		say $FILEHANDLE "## Copy file from temporary directory";
 		&MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileTag.".b*"),
+				      filePath => $outSampleDirectory,
+				      FILEHANDLE => $FILEHANDLE,
+				     });
+		## Run-bwamem logs
+		&MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].".log*"),
+				      filePath => $outSampleDirectory,
+				      FILEHANDLE => $FILEHANDLE,
+				     });
+		## HLA files
+		&MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].".hla*"),
 				      filePath => $outSampleDirectory,
 				      FILEHANDLE => $FILEHANDLE,
 				     });
@@ -13191,20 +13202,20 @@ sub BWAMem {
 				   programName => "Bwa",
 				   infile => ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter],
 				   outDirectory => $directories,
-				   outfileEnding => $outfileTag.".log.bwa",
-				   outDataType => "infileDependent"
+				   outfileEnding => $stderrFile,
+				   outDataType => "infoDirectory"
 				  });
 		}
 		else {
-
+		    
 		    &SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
 				   familyID => ${$scriptParameterHashRef}{familyID},
 				   sampleID => $$sampleIDRef,
 				   programName => "Bwa",
 				   infile => ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter],
-				   outDirectory => $directories,
-				   outfileEnding => $stderrFile,
-				   outDataType => "infoDirectory"
+				   outDirectory => $outSampleDirectory,
+				   outfileEnding => ".log.bwamem",
+				   outDataType => "infileDependent"
 				  });
 		}
 		&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
@@ -25052,9 +25063,9 @@ sub SelectBwaMemBinary {
     
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];  
 
-    if($humanGenomeReferenceSourceRef eq "GRCh") {
-	
-	if ($humanGenomeReferenceVersionRef > 37) {
+    if($$humanGenomeReferenceSourceRef eq "GRCh") {
+
+	if ($$humanGenomeReferenceVersionRef > 37) {
 	    
 	    return "run-bwamem";
 	}
@@ -25065,7 +25076,7 @@ sub SelectBwaMemBinary {
     }
     else {  #hgXX build
 	
-	if ($humanGenomeReferenceVersionRef > 19) {
+	if ($$humanGenomeReferenceVersionRef > 19) {
 	    
 	    return "run-bwamem";
 	}
