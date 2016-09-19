@@ -4237,9 +4237,9 @@ sub SnpEff {
 		my $contigRef = \${$vcfParserContigsArrayRef}[$contigsCounter];
 	    
 		print $XARGSFILEHANDLE "annotate ";
-		
+
 		if (defined(${$scriptParameterHashRef}{snpSiftAnnotationFiles}{$annotationFile})) {
-		    
+
 		    ## Apply specific INFO field output key for easier downstream processing
 		    if (defined(${$scriptParameterHashRef}{snpSiftAnnotationOutInfoKey}{$annotationFile})) {
 			
