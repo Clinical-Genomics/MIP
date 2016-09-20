@@ -13100,7 +13100,7 @@ sub BWAMem {
 		say $FILEHANDLE catfile(dirname(devnull()),"stdin"),"\n";
 
 		## BAMS, BWAMem logs etc.
-		&MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].".*"),
+		&MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileTag.".*"),
 				      filePath => $outSampleDirectory,
 				      FILEHANDLE => $FILEHANDLE,
 				     });
