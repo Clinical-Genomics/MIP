@@ -6783,6 +6783,21 @@ sub GATKVariantReCalibration {
 	say $FILEHANDLE "\n";
     }
 
+    ## BcfTools norm, Left-align and normalize indels, split multiallelics
+    &BcfToolsNorm({FILEHANDLE => $FILEHANDLE,
+		   referencePathRef => \catfile($$referencesDirRef, ${$scriptParameterHashRef}{humanGenomeReference}),
+		   infilePath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.".vcf"),
+		   outfilePath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_normalized.vcf"),
+		   multiAllelics => "-",
+		  });
+
+    ## Change name of file to accomodate downstream
+    say $FILEHANDLE "\n";
+    print $FILEHANDLE "mv ";
+    print $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_normalized.vcf")." ";
+    print $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.".vcf");
+    say $FILEHANDLE "\n";
+    
     ## Produce a bcf compressed and index from vcf
     if (${$scriptParameterHashRef}{GATKVariantReCalibrationBCFFile}) {
 	
@@ -10228,11 +10243,14 @@ sub SamToolsMpileUp {
 	}
 
 	print $XARGSFILEHANDLE "| ";  #Pipe
-	print $XARGSFILEHANDLE "bcftools "; 
-	print $XARGSFILEHANDLE "norm ";  #
-	print $XARGSFILEHANDLE "-f ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{humanGenomeReference})." ";  #Reference file
-	print $XARGSFILEHANDLE "-o ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.".vcf")." "; #OutFile
-	say $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	
+	## BcfTools norm, Left-align and normalize indels, split multiallelics
+	&BcfToolsNorm({FILEHANDLE => $XARGSFILEHANDLE,
+		       referencePathRef => \catfile($$referencesDirRef, ${$scriptParameterHashRef}{humanGenomeReference}),
+		       outfilePath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.".vcf"),
+		       multiAllelics => "-",
+		       stderrFilePath => catfile($xargsFileName.".".$$contigRef.".stderr.txt"),
+		      });
     }
 
     ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
@@ -10449,12 +10467,15 @@ sub Freebayes {
 			   FILEHANDLE => $XARGSFILEHANDLE
 			  });
 	}
-	print $XARGSFILEHANDLE "| ";  #Pipe
-	print $XARGSFILEHANDLE "bcftools "; 
-	print $XARGSFILEHANDLE "norm ";  #
-	print $XARGSFILEHANDLE "-f ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{humanGenomeReference})." ";  #Reference file
-	print $XARGSFILEHANDLE "-o ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.".vcf")." "; #OutFile
-	say $XARGSFILEHANDLE "2>> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE "| ";  #Pipe	
+
+	## BcfTools norm, Left-align and normalize indels, split multiallelics
+	&BcfToolsNorm({FILEHANDLE => $XARGSFILEHANDLE,
+		       referencePathRef => \catfile($$referencesDirRef, ${$scriptParameterHashRef}{humanGenomeReference}),
+		       outfilePath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.".vcf"),
+		       multiAllelics => "-",
+		       stderrFilePath => catfile($xargsFileName.".".$$contigRef.".stderr.txt"),
+		      });
     }
 
     ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
@@ -25484,6 +25505,71 @@ sub DetectOverallAnalysisType {
 	}
     }
     return "mixed"  # No consensus, then it must be mixed
+}
+
+
+sub BcfToolsNorm {
+    
+##BcfToolsNorm
+    
+##Function : BcfTools norm, Left-align and normalize indels, split multiallelics
+##Returns  : ""
+##Arguments: $FILEHANDLE, $referencePathRef, $infilePath, $outfilePath, $multiAllelics, $multiAllelicsType, $stderrFilePath
+##         : $FILEHANDLE        => Filehandle to write to
+##         : $referencePathRef  => Human genome reference path {REF}
+##         : $infilePath        => Infile path to read from
+##         : $outfilePath       => Outfile path to write to
+##         : $multiAllelics     => To split/join multiallelic calls or not
+##         : $multiAllelicsType => Type of multiallelic to split/join {OPTIONAL}
+##         : $stderrFilePath    => Stderr file path to write to {OPTIONAL}
+    
+    my ($argHashRef) = @_;
+    
+    ## Default(s)
+    my $multiAllelicsType;
+    
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $referencePathRef;
+    my $infilePath;
+    my $outfilePath;
+    my $multiAllelics;
+    my $stderrFilePath;
+    
+    my $tmpl = { 
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	referencePathRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$referencePathRef},
+	infilePath => { strict_type => 1, store => \$infilePath},
+	outfilePath => { required => 1, defined => 1, strict_type => 1, store => \$outfilePath},
+	multiAllelics => { allow => ["+", "-"],
+			   strict_type => 1, store => \$multiAllelics},
+	multiAllelicsType => { default => "both",
+			       allow => ["snps", "indels", "both", "any"],
+			       strict_type => 1, store => \$multiAllelicsType},
+	stderrFilePath => { strict_type => 1, store => \$stderrFilePath},
+    };
+    
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
+    
+    print $FILEHANDLE "bcftools "; 
+    print $FILEHANDLE "norm ";  #Left-align and normalize indels
+    
+    if (defined($multiAllelics)) {
+	
+	print $FILEHANDLE "--multiallelics ";
+	print $FILEHANDLE $multiAllelics.$multiAllelicsType." ";  #split multiallelics (-) or join biallelics (+), type: snps|indels|both|any [both]
+    }
+    print $FILEHANDLE "-f ".$$referencePathRef." ";  #Reference file
+    print $FILEHANDLE "-o ".$outfilePath." "; #OutFile
+    
+    if (defined($infilePath)) {
+	
+	print $FILEHANDLE $infilePath." ";
+    }
+    if (defined($stderrFilePath)) {
+	
+	say $FILEHANDLE "2>> ".$stderrFilePath." ";  #Redirect xargs output to program specific stderr file
+    }
 }
 
 
