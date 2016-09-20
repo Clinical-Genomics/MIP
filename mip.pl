@@ -5697,7 +5697,17 @@ sub SampleCheck {
 
 	## Split X to remove PAR regions
 	print $XARGSFILEHANDLE "--bfile ".catfile($$tempDirectoryRef, $sampleID."_vcf_data_unsplit")." ";
-	print $XARGSFILEHANDLE "--split-x b37 no-fail ";  #By default, PLINK errors out when no variants would be affected by --split-x;the 'no-fail' modifier overrides this.
+	print $XARGSFILEHANDLE "--split-x ";
+
+	if(${$fileInfoHashRef}{humanGenomeReferenceSource} eq "GRCh") {
+	    
+	    print $XARGSFILEHANDLE "b".${$fileInfoHashRef}{humanGenomeReferenceVersion}." ";
+	}
+	else {
+
+	    print $XARGSFILEHANDLE "hg".${$fileInfoHashRef}{humanGenomeReferenceVersion}." ";
+	}
+	print $XARGSFILEHANDLE "no-fail ";  #By default, PLINK errors out when no variants would be affected by --split-x;the 'no-fail' modifier overrides this.
 	print $XARGSFILEHANDLE "--make-bed ";
 	print $XARGSFILEHANDLE "--out ".catfile($$tempDirectoryRef, $sampleID."_vcf_data")." ";
 	print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$sampleID."_plink2_splitX.stderr.txt ";  #Redirect xargs output to program specific stderr file	
@@ -5740,18 +5750,60 @@ sub SampleCheck {
 		      });
     }
 
+    if (scalar(@{${$scriptParameterHashRef}{sampleIDs}}) > 1) {  #Only perform if more than 1 sample
 
-    say $FILEHANDLE "#Create Plink .ped and .map file per family using vcfTools";
+	say $FILEHANDLE "## Calculate F-score";
+	say $FILEHANDLE "# Remove indels using vcfTools ";
+	print $FILEHANDLE "vcftools ";
+	print $FILEHANDLE "--remove-indels ";  #Exclude sites that contain an indel
+	print $FILEHANDLE "--vcf ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType.".vcf")." ";  #InFile;
+	print $FILEHANDLE "--recode ";  #Keep INFO fields
+	print $FILEHANDLE "--recode-INFO-all ";  #Recode all INFO-fields 
+	say $FILEHANDLE "--out ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_no_indels")."\n";
+	
+	say $FILEHANDLE "# Create uniq IDs and remove duplicate variants";
+	print $FILEHANDLE "bcftools annotate ";
+	print $FILEHANDLE "-Ov ";  #Output type: b: compressed BCF, u: uncompressed BCF, z: compressed VCF, v: uncompressed VCF [v]
+	print $FILEHANDLE "-x ID ";  #List of annotations to remove
+	print $FILEHANDLE q?-I +'%CHROM:%POS:%REF:%ALT' ?;  #Set ID column
+	print $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_no_indels.recode.vcf")." ";  #InFile
+	print $FILEHANDLE "| ";  #Pipe
+	print $FILEHANDLE "vt uniq ";  #Drops duplicate variants that appear later in the the VCF file
+	print $FILEHANDLE "- ";
+	say $FILEHANDLE "> ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_no_indels_ann_uniq.vcf"), "\n";
+	
+	say $FILEHANDLE "# Create pruning set and uniq IDs for plink2";
+	print $FILEHANDLE "plink2 ";
+	print $FILEHANDLE "--noweb ";  #No web check
+	print $FILEHANDLE "--vcf ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_no_indels_ann_uniq.vcf")." ";
+	print $FILEHANDLE "--vcf-require-gt ";  #Skip variants where the GT field is absent
+	print $FILEHANDLE "--vcf-half-call haploid ";  #Treat half-calls as haploid/homozygous
+	print $FILEHANDLE q?--set-missing-var-ids @:#[?.${$fileInfoHashRef}{humanGenomeReferenceVersion}.q?]\$1,\$2 ?;  #Assign chromosome-and-position-based IDs
+	say $FILEHANDLE "--indep 50 5 2 ", "\n";  #Produce a pruned subset of markers that are in approximate linkage equilibrium with each other
+		
+	print $FILEHANDLE "plink2 ";
+	print $FILEHANDLE "--noweb ";  #No web check
+	print $FILEHANDLE "--vcf ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_no_indels_ann_uniq.vcf")." ";
+	print $FILEHANDLE "--vcf-require-gt ";  #Skip variants where the GT field is absent
+	print $FILEHANDLE "--vcf-half-call haploid ";  #Treat half-calls as haploid/homozygous
+	print $FILEHANDLE q?--set-missing-var-ids @:#[?.${$fileInfoHashRef}{humanGenomeReferenceVersion}.q?]\$1,\$2 ?;  #Assign chromosome-and-position-based IDs
+	print $FILEHANDLE "--het small-sample ";  #Inlcude n/(n-1) multiplier in Nei's expected homozygosity formula
+	print $FILEHANDLE "--ibc ";  #calculates three inbreeding coefficients for each sample
+	print $FILEHANDLE "--extract plink.prune.in ";  #Only LD-based pruning snps
+	say $FILEHANDLE "--out ".catfile($outFamilyDirectory, $$familyIDRef), "\n";  #Outfile
+	
+	# say $FILEHANDLE "#Create vcfTools inbreeding coefficient F per family using vcfTools";
+	# print $FILEHANDLE "vcftools ";
+	# print $FILEHANDLE "--vcf ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType.".vcf")." ";  #InFile
+	# print $FILEHANDLE "--het ";  #Individual inbreeding
+	# say $FILEHANDLE "--out ".catfile($outFamilyDirectory, $$familyIDRef), "\n";  #Outfile
+    }
+    
+    say $FILEHANDLE "## Create Plink .ped and .map file per family using vcfTools";
     print $FILEHANDLE "vcftools ";
     print $FILEHANDLE "--vcf ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType.".vcf")." ";  #InFile
     print $FILEHANDLE "--plink ";  #PLINK format
     say $FILEHANDLE "--out ".catfile($outFamilyDirectory, $$familyIDRef), "\n";  #OutFile (.ped and .map)
-
-    say $FILEHANDLE "#Create vcfTools inbreeding coefficient F per family using vcfTools";
-    print $FILEHANDLE "vcftools ";
-    print $FILEHANDLE "--vcf ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType.".vcf")." ";  #InFile
-    print $FILEHANDLE "--het ";  #Individual inbreeding
-    say $FILEHANDLE "--out ".catfile($outFamilyDirectory, $$familyIDRef), "\n";  #Outfile
 
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
@@ -5776,7 +5828,7 @@ sub SampleCheck {
 
     if (scalar(@{${$scriptParameterHashRef}{sampleIDs}}) > 1) {  #Only perform if more than 1 sample
 	
-	say $FILEHANDLE "#Create Plink .mibs per family"; 
+	say $FILEHANDLE "## Create Plink .mibs per family"; 
 	print $FILEHANDLE "plink2 ";
 	print $FILEHANDLE "--noweb ";  #No web check
 	print $FILEHANDLE "--ped ".catfile($outFamilyDirectory, $$familyIDRef.".ped")." ";  #InFile
