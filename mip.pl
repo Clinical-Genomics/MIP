@@ -190,6 +190,7 @@ mip.pl  -ifd [inFilesDir,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                -gtp/--genomeAnalysisToolKitPath  Path to GATK. Mandatory for use of GATK (defaults to "")
                -gbdv/--GATKBundleDownLoadVersion  GATK FTP bundle download version.(defaults to "2.8")
                -gdco/--GATKDownSampleToCoverage Coverage to downsample to at any given locus (defaults to "1000")
+               -gdai/--GATKDisableAutoIndexAndFileLock Disable auto index creation and locking when reading rods (defaults to "0" (=no))
                -pGrA/--pGATKRealigner Realignments of reads using GATK realign (defaults to "0" (=no))
                  -graks/--GATKReAlignerINDELKnownSite GATK ReAlignerTargetCreator/IndelRealigner known INDEL site (defaults to "1000G_phase1.indels.b37.vcf", "Mills_and_1000G_gold_standard.indels.b37.vcf")
                -pGbR/--pGATKBaseRecalibration Recalibration of bases using GATK BaseRecalibrator/PrintReads (defaults to "1" (=yes))
@@ -551,6 +552,7 @@ GetOptions('ifd|inFilesDir:s'  => \%{$parameter{inFilesDir}{value}},  #Hash inFi
 	   'gtp|genomeAnalysisToolKitPath:s' => \$parameter{genomeAnalysisToolKitPath}{value},  #GATK whole path
 	   'gbdv|GATKBundleDownLoadVersion:s' => \$parameter{GATKBundleDownLoadVersion}{value},  #Sets the GATK FTP Bundle Download version
 	   'gdco|GATKDownSampleToCoverage=n' => \$parameter{GATKDownSampleToCoverage}{value},  #GATK downsample to coverage
+	   'gdai|GATKDisableAutoIndexAndFileLock=n' => \$parameter{GATKDisableAutoIndexAndFileLock}{value},
 	   'pGrA|pGATKRealigner=n' => \$parameter{pGATKRealigner}{value},  #GATK ReAlignerTargetCreator/IndelRealigner
 	   'graks|GATKReAlignerINDELKnownSite:s'  => \@{$parameter{GATKReAlignerINDELKnownSite}{value}},  #Comma separated list
 	   'pGbR|pGATKBaseRecalibration=n' => \$parameter{pGATKBaseRecalibration}{value},  #GATK BaseRecalibrator/PrintReads
@@ -11005,6 +11007,10 @@ sub GATKBaseReCalibration {
 	print $XARGSFILEHANDLE "-nct ".${$scriptParameterHashRef}{maximumCores}." ";  #How many CPU threads should be allocated per data thread to running this analysis
 	print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{GATKDownSampleToCoverage}." ";  #Coverage to downsample to at any given locus	
 
+	if (${$scriptParameterHashRef}{GATKDisableAutoIndexAndFileLock}) {
+
+	    print $XARGSFILEHANDLE "--disable_auto_index_creation_and_locking_when_reading_rods ";  #Disables index auto-creation and related file locking when reading vcfs
+	}
 	if ( ($$analysisTypeRef eq "wes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
 	    
 	    print $XARGSFILEHANDLE "-L ".catfile($$tempDirectoryRef, $$contigRef."_".$exomeTargetBedFile)." "; #Limit to targets kit target file
@@ -11046,6 +11052,12 @@ sub GATKBaseReCalibration {
 	print $XARGSFILEHANDLE "-R ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{humanGenomeReference})." ";  #Reference file
 	print $XARGSFILEHANDLE "-nct ".${$scriptParameterHashRef}{maximumCores}." ";  #How many CPU threads should be allocated per data thread to running this analysis
 	print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{GATKDownSampleToCoverage}." ";  #Coverage to downsample to at any given locus
+
+	if (${$scriptParameterHashRef}{GATKDisableAutoIndexAndFileLock}) {
+
+	    print $XARGSFILEHANDLE "--disable_auto_index_creation_and_locking_when_reading_rods ";  #Disables index auto-creation and related file locking when reading vcfs
+	}
+
 	print $XARGSFILEHANDLE "-BQSR ".catfile($intermediarySampleDirectory, $infile.$infileTag."_".$$contigRef.".grp")." ";  #Recalibration table file
 	
 	##Extra read filters
@@ -11330,7 +11342,11 @@ sub GATKReAligner {
 	print $XARGSFILEHANDLE "-R ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{humanGenomeReference})." ";  #Reference file 
 	print $XARGSFILEHANDLE "-known ".join(" -known ", map { catfile($$referencesDirRef, $_) } (@{${$scriptParameterHashRef}{GATKReAlignerINDELKnownSite}}) )." ";  #Input VCF file(s) with known indels
 	print $XARGSFILEHANDLE "-dcov ".${$scriptParameterHashRef}{GATKDownSampleToCoverage}." ";  #Coverage to downsample to at any given locus	    
-	
+
+	if (${$scriptParameterHashRef}{GATKDisableAutoIndexAndFileLock}) {
+
+	    print $XARGSFILEHANDLE "--disable_auto_index_creation_and_locking_when_reading_rods ";  #Disables index auto-creation and related file locking when reading vcfs
+	}	
 	if ( ($$analysisTypeRef eq "wes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis
 	    
 	    print $XARGSFILEHANDLE "-L ".catfile($$tempDirectoryRef, $$contigRef."_".$exomeTargetBedFile)." "; #Limit to targets kit target file
@@ -11374,6 +11390,10 @@ sub GATKReAligner {
 	print $XARGSFILEHANDLE "--consensusDeterminationModel USE_READS ";  #Additionally uses indels already present in the original alignments of the reads 
 	print $XARGSFILEHANDLE "-targetIntervals ".catfile($intermediarySampleDirectory, $infile.$outfileTag."_".$$contigRef.".intervals")." ";
 	
+	if (${$scriptParameterHashRef}{GATKDisableAutoIndexAndFileLock}) {
+
+	    print $XARGSFILEHANDLE "--disable_auto_index_creation_and_locking_when_reading_rods ";  #Disables index auto-creation and related file locking when reading vcfs
+	}
 	if ( ($$analysisTypeRef eq "wes") || ($$analysisTypeRef eq "rapid") ) { #Exome/rapid analysis	
 	    
 	    print $XARGSFILEHANDLE "-L ".catfile($$tempDirectoryRef, $$contigRef."_".$exomeTargetBedFile)." "; #Limit to targets kit target file

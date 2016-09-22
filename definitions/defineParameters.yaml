@@ -1393,6 +1393,13 @@ GATKDownSampleToCoverage:
   dataType: SCALAR
   default: 1000
   type: programArgument
+GATKDisableAutoIndexAndFileLock:
+  associatedProgram:
+   - pGATKRealigner
+   - pGATKBaseRecalibration
+  dataType: SCALAR
+  default: 0
+  type: programArgument
 ## GATK FTP Bundle Download version. Needed for all programs that download the human genome reference
 GATKBundleDownLoadVersion:
   associatedProgram:
