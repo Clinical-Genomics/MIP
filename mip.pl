@@ -91,6 +91,8 @@ mip.pl  -ifd [inFilesDir,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [pr
                -v/--version Display version of MIP            
                
                ####Programs
+               -pSfQ/--pSplitFastqFiles Split fastq files in batches of X reads and exits (defaults to "0" (=yes))
+                 -sfqrdb/--splitFastqFilesReadBatch The number of sequence reads to place in each batch (defaults to "25,000,000")
                -pGZ/--pGZipFastq GZip fastq files (defaults to "1" (=yes))
                -pFqC/--pFastQC Sequence quality analysis using FastQC (defaults to "1" (=yes))
                -pMaD/--pMadeline Pedigree drawing engine (defaults to "0" (=no))
@@ -470,6 +472,8 @@ GetOptions('ifd|inFilesDir:s'  => \%{$parameter{inFilesDir}{value}},  #Hash inFi
 	   'l|logFile:s' => \$parameter{logFile}{value},
 	   'h|help' => sub { say STDOUT $USAGE; exit;},  #Display help text
 	   'v|version' => sub { say STDOUT "\nMip.pl ".$mipVersion, "\n"; exit;},  #Display version number
+	   'pSfQ|pSplitFastqFiles=n' => \$parameter{pSplitFastqFiles}{value},
+	   'sfqrdb|splitFastqFilesReadBatch=n' => \$parameter{splitFastqFilesReadBatch}{value},
 	   'pGZ|pGZipFastq=n' => \$parameter{pGZipFastq}{value},
 	   'pFqC|pFastQC=n' => \$parameter{pFastQC}{value},
 	   'pMaD|pMadeline=n' => \$parameter{pMadeline}{value},
@@ -1148,6 +1152,28 @@ if ($scriptParameter{dryRunAll} == 0) {
 		       VTDecompose => $scriptParameter{VTDecompose},
 		       VTNormalize => $scriptParameter{VTNormalize},
 		      });
+
+if ($scriptParameter{pSplitFastqFiles} > 0) {  #Split of fastq files in batches
+    
+    $logger->info("[Split fastq files in batches]\n");
+
+    foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {  
+	
+	## Split input fastq files into batches of reads, versions and compress. Moves original file to subdirectory
+	&SplitFastqFiles({parameterHashRef => \%parameter,
+			  scriptParameterHashRef => \%scriptParameter,
+			  sampleInfoHashRef => \%sampleInfo,
+			  infileHashRef => \%infile, 
+			  inDirPathHashRef => \%inDirPath,
+			  infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
+			  jobIDHashRef => \%jobID,
+			  sampleIDRef => \$sampleID,
+			  programName => "SplitFastqFiles",
+			  sequenceReadBatch => $scriptParameter{splitFastqFilesReadBatch},
+			 });	
+    }
+    exit;
+}
 
 if ( ($scriptParameter{pGZipFastq} > 0) && ($uncompressedFileSwitch eq "unCompressed") ) {  #GZip of fastq files
     
@@ -14280,15 +14306,15 @@ sub FastQC {
 ##Function : Raw sequence quality analysis using FASTQC.
 ##Returns  : ""
 ##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $programName
-##         : $parameterHashRef                  => The parameter hash {REF}
-##         : $scriptParameterHashRef            => The active parameters for this analysis hash {REF}
-##         : $sampleInfoHashRef                 => Info on samples and family hash {REF}
-##         : $infileHashRef                     => The infiles hash {REF}
-##         : $inDirPathHashRef                  => The indirectories path(s) hash {REF}
-##         : $infilesLaneNoEndingHashRef        => The infile(s) without the ".ending" {REF}
-##         : $jobIDHashRef                      => The jobID hash {REF}
-##         : $sampleIDRef                       => The sampleID {REF}
-##         : $programName                       => The program name
+##         : $parameterHashRef           => The parameter hash {REF}
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $infileHashRef              => The infiles hash {REF}
+##         : $inDirPathHashRef           => The indirectories path(s) hash {REF}
+##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $sampleIDRef                => The sampleID {REF}
+##         : $programName                => The program name
 
     my ($argHashRef) = @_;
 
@@ -14571,6 +14597,184 @@ sub GZipFastq {
 		       sbatchFileName => $fileName
 		      });
     }
+}
+
+
+sub SplitFastqFiles {
+
+##SplitFastqFiles
+    
+##Function : Split input fastq files into batches of reads, versions and compress. Moves original file to subdirectory. 
+##Returns  : ""
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $programName, sequenceReadBatch
+##         : $parameterHashRef           => The parameter hash {REF}
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $infileHashRef              => The infiles hash {REF}
+##         : $inDirPathHashRef           => The indirectories path(s) hash {REF}
+##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
+##         : $jobIDHashRef               => The jobID hash {REF}
+##         : $sampleIDRef                => The sampleID {REF}
+##         : $programName                => The program name
+##         : $sequenceReadBatch          => Number of sequences in each fastq batch
+
+    my ($argHashRef) = @_;
+
+    ## Default(s)
+    my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
+    my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
+    my $sequenceReadBatch;
+    
+    ## Flatten argument(s)
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $infileHashRef;
+    my $inDirPathHashRef;
+    my $infilesLaneNoEndingHashRef;
+    my $jobIDHashRef;
+    my $sampleIDRef;
+    my $programName;
+
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	infileHashRef => { defined => 1, default => {}, strict_type => 1, store => \$infileHashRef},
+	inDirPathHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$inDirPathHashRef},
+	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
+	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
+	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	sequenceReadBatch => { default => 2500000,
+			       allow => qr/^\d+$/,
+			       strict_type => 1, store => \$sequenceReadBatch},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
+
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $time = 10;
+    my $nrCores = 4;
+    
+    for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infileHashRef}{$$sampleIDRef} });$infileCounter++) {
+	
+	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+	my ($fileName) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
+						jobIDHashRef => $jobIDHashRef,
+						FILEHANDLE => $FILEHANDLE,
+						directoryID => $$sampleIDRef,
+						programName => $programName,
+						programDirectory => lc($programName),
+						nrofCores => $nrCores,
+						processTime => $time,
+						tempDirectory => $$tempDirectoryRef,
+					       });
+
+	## Assign directories
+	my $inSampleDirectory = ${$inDirPathHashRef}{$$sampleIDRef};
+	my $outSampleDirectory = ${$inDirPathHashRef}{$$sampleIDRef};
+    
+	my $coreCounter=1;
+    
+	say $FILEHANDLE "## ".$programName;
+
+	my $fastqFile = $infile{$$sampleIDRef}[$infileCounter];  #Alias
+	my %fastqFileInfo;
+	
+	## Detect fastq file info for later rebuild of filename
+	if ($fastqFile =~/(\d+)_(\d+)_([^_]+)_([^_]+)_([^_]+)_(\d).fastq/) {
+	    
+	    %fastqFileInfo = (lane => $1,
+			      date => $2,
+			      flowCell => $3,
+			      sampleID => $4,
+			      index => $5,
+			      direction => $6,
+		);
+	}
+	## Removes ".fileEnding" in filename.FILENDING(.gz)
+	my $filePrefix = &RemoveFileEnding({fileNameRef => \$fastqFile,
+					    fileEnding => ".fastq",
+					   })."_splitted_";
+	my $fileNameNoEnding = $infilesBothStrandsNoEnding{$$sampleIDRef}[$infileCounter];  #Alias
+	
+	## Copies file to temporary directory.
+	&MigrateFileToTemp({FILEHANDLE => $FILEHANDLE,
+			    path => catfile($inSampleDirectory, $fastqFile),
+			    tempDirectory => $$tempDirectoryRef,
+			   });
+	say $FILEHANDLE "wait ";
+	
+	## Decompress file and split 
+	print $FILEHANDLE "unpigz ";
+	print $FILEHANDLE "-p ".$nrCores." ";  #nr of threads
+	print $FILEHANDLE "-c ";  #Write all processed output to stdout
+	print $FILEHANDLE catfile($$tempDirectoryRef, $fastqFile)." ";  #Infile
+	print $FILEHANDLE "| ";  #Pipe
+	print $FILEHANDLE "split ";
+	print $FILEHANDLE "-l ".($sequenceReadBatch * 4)." ";  #put NUMBER lines per output file
+	print $FILEHANDLE "- ";  #STDIN
+	print $FILEHANDLE "-d ";  #use numeric suffixes instead of alphabetic
+	print $FILEHANDLE "-a 4 ";  #use suffixes of length N
+	say $FILEHANDLE catfile($$tempDirectoryRef, $filePrefix), "\n";
+	
+	## Remove original files 
+	say $FILEHANDLE "rm ".catfile($$tempDirectoryRef, $fastqFile), "\n";
+
+	## Find all splitted files
+	say $FILEHANDLE "splittedFiles=(".catfile($$tempDirectoryRef, "*_splitted_*").")", "\n";
+
+	## Iterate through array using a counter
+	say $FILEHANDLE q?for ((fileCounter=0; fileCounter<${#splittedFiles[@]}; fileCounter++)); do ?;
+    
+	## Rename each element of array to include splitted suffix in FlowCellID
+	print $FILEHANDLE "\t".q?mv ${splittedFiles[$fileCounter]} ?;
+	print $FILEHANDLE catfile($$tempDirectoryRef, "");
+	print $FILEHANDLE $fastqFileInfo{lane}."_";
+	print $FILEHANDLE $fastqFileInfo{date}."_";
+	print $FILEHANDLE $fastqFileInfo{flowCell}.q?"-SP"$fileCounter"?;
+	print $FILEHANDLE "_".$fastqFileInfo{sampleID}."_";
+	print $FILEHANDLE $fastqFileInfo{index}."_";
+	print $FILEHANDLE $fastqFileInfo{direction}.".fastq";
+	say $FILEHANDLE q?"?, "\n";
+
+	say $FILEHANDLE "\t".q?echo "${splittedFiles[$fileCounter]}" ?;
+	say $FILEHANDLE "done";
+
+	## Compress file again
+	my $splittedFile = catfile($inDirPath{$$sampleIDRef}, $filePrefix."*");
+	print $FILEHANDLE "pigz ";
+	say $FILEHANDLE catfile($$tempDirectoryRef, "*.fastq"), "\n";
+
+	## Copies files from temporary folder to source
+	print $FILEHANDLE "cp ";
+	print $FILEHANDLE catfile($$tempDirectoryRef, "*-SP*.fastq.gz")." ";
+	say $FILEHANDLE $outSampleDirectory,"\n";
+
+	## Move original file to not be included in subsequent analysis
+	say $FILEHANDLE "mkdir -p ".catfile($inSampleDirectory, "originalFastqFiles"), "\n";
+
+	print $FILEHANDLE "mv ";
+	print $FILEHANDLE catfile($inSampleDirectory, $fastqFile)." ";
+	say $FILEHANDLE catfile($inSampleDirectory, "originalFastqFiles", $fastqFile), "\n"; 
+
+	if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
+	    
+	    &FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
+			   sampleInfoHashRef => $sampleInfoHashRef,
+			   jobIDHashRef => $jobIDHashRef,
+			   infilesLaneNoEndingHashRef => $infilesLaneNoEndingHashRef,
+			   sampleID => $$sampleIDRef,
+			   dependencies => 2, 
+			   path => ${$parameterHashRef}{"p".$programName}{chain},
+			   sbatchFileName => $fileName
+			  });
+	}
+    }
+    close($FILEHANDLE);
 }
 
 
@@ -16796,6 +17000,7 @@ sub CollectInfiles {
 
 	## Collect all fastq files in supplied indirectories
 	my $rule = Path::Iterator::Rule->new;
+	$rule->skip_subdirs( "originalFastqFiles" );  #Ignore if original fastq files sub directory
 	$rule->name("*.fastq*");  #Only look for fastq or fastq.gz files
 	my $it = $rule->iter( $$inFileDirectoryRef );
 

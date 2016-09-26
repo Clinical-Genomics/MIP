@@ -210,6 +210,24 @@ printProgramMode:
   type: MIP
 ###Programs
 ## GZip
+pSplitFastqFiles:
+  associatedProgram:
+   - MIP
+  chain: MAIN
+  dataType: SCALAR
+  default: 0
+  fileTag: nofileTag
+  programNamePath:
+   - pigz
+   - unpigz
+   - split
+  type: program
+splitFastqFilesReadBatch:
+  associatedProgram:
+   - pSplitFastqFiles
+  dataType: SCALAR
+  default: 25000000
+  type: programArgument
 pGZipFastq:
   associatedProgram:
    - MIP
