@@ -14453,9 +14453,10 @@ sub FastQC {
 			  });
 	}
     }
-    say $FILEHANDLE "wait";    
+    say $FILEHANDLE "wait", "\n";    
 
     ## Copies files from temporary folder to source.
+    $coreCounter=1;
     for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infileHashRef}{$$sampleIDRef} });$infileCounter++) {
 
 	&PrintWait({counterRef => \$infileCounter,
@@ -14477,7 +14478,7 @@ sub FastQC {
 	print $FILEHANDLE $outSampleDirectory." ";
 	say $FILEHANDLE "&", "\n";
     }
-    say $FILEHANDLE "wait"; 
+    say $FILEHANDLE "wait", "\n"; 
 
     close($FILEHANDLE);
     
@@ -21000,11 +21001,11 @@ sub DeafultLog4perlFile {
     
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
-    unless (defined($$cmdInputRef)) {  #No input from cmd i.e. do not create default logging directory or set default
+    unless (defined($$cmdInputRef)) {  #No input from cmd i.e. create default logging directory and set default
 
 	make_path(catfile($$outDataDirRef, "mip_log", $$dateRef));
-	my $LogFile = catfile($$outDataDirRef, "mip_log", $$dateRef, $$scriptRef."_".$$dateTimeStampRef.".log");  #concatenates log filename	
-	return $LogFile;
+	my $logFile = catfile($$outDataDirRef, "mip_log", $$dateRef, $$scriptRef."_".$$dateTimeStampRef.".log");  #concatenates log filename	
+	return $logFile;
     }
 }
 
@@ -21573,7 +21574,7 @@ sub MigrateFilesToTemp {
 
 	    $sequenceRunMode = ${$sampleInfoHashRef}{ $$familyIDRef }{ $sampleID }{File}{ ${$arrayRef}[$fileCounter] }{SequenceRunType}; #Collect paired-end or single-end sequence run mode
 	}
-	&PrintWait({counterRef => \$fileCounter,
+	&PrintWait({counterRef => \$pairedEndTracker,
 		    nrCoresRef => \$nrCores,
 		    coreCounterRef => \$coreCounter,
 		    FILEHANDLE => $FILEHANDLE,

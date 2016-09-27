@@ -1948,7 +1948,7 @@ sub ParseMetaData {
 	push(@{${$metaDataHashRef}{$1}{$2}}, $metaDataString);  #Save metadata string
     }
     else {  #All oddities
-	
+
 	push(@{${$metaDataHashRef}{other}{other}}, $metaDataString);  #Save metadata string
     }
 }
@@ -2039,13 +2039,43 @@ sub WriteMetaData {
     }
     for my $keys (keys %{$metaDataHashRef}) {
 	
-	for my $line ( sort(keys %{${$metaDataHashRef}{$keys}}) ) {
-	    
-	    say $FILEHANDLE @{${$metaDataHashRef}{$keys}{$line}};
+	for my $secondKey (keys %{${$metaDataHashRef}{$keys}}) {
 
-	    if (defined($SELECTFILEHANDLE)) {
+	    if (ref(${$metaDataHashRef}{$keys}{$secondKey}) eq "HASH") {
 		
-		say $SELECTFILEHANDLE @{${$metaDataHashRef}{$keys}{$line}};
+		for my $line ( sort(keys %{${$metaDataHashRef}{$keys}{$secondKey}}) ) {
+
+		    say $FILEHANDLE @{${$metaDataHashRef}{$keys}{$secondKey}{$line}};
+		    
+		    if (defined($SELECTFILEHANDLE)) {
+			
+			say $SELECTFILEHANDLE @{${$metaDataHashRef}{$keys}{$secondKey}{$line}};
+		    }
+		    delete ${$metaDataHashRef}{$keys}{$secondKey}{$line};
+		}
+	    }
+	    elsif (ref(${$metaDataHashRef}{$keys}{$secondKey}) eq "ARRAY") {
+
+		foreach my $element (@{${$metaDataHashRef}{$keys}{$secondKey}}) {
+
+		    say $element;
+
+		    if (defined($SELECTFILEHANDLE)) {
+			
+			say $SELECTFILEHANDLE $element;
+		    }
+		}
+		delete ${$metaDataHashRef}{$keys}{$secondKey};
+	    }
+	    else {
+
+		say $FILEHANDLE @{${$metaDataHashRef}{$keys}{$secondKey}};
+		
+		if (defined($SELECTFILEHANDLE)) {
+		    
+		    say $SELECTFILEHANDLE @{${$metaDataHashRef}{$keys}{$secondKey}};
+		}
+		delete ${$metaDataHashRef}{$keys}{$secondKey};
 	    }
 	}
     }

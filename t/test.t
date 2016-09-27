@@ -76,7 +76,7 @@ use vars qw($USAGE);
 
 BEGIN {
     $USAGE =
-	qq{test.pl infile.vcf [VCF] configFile [YAML]
+	qq{test.t infile.vcf [VCF] configFile [YAML]
            -h/--help Display this help message   
            -v/--version Display version
         };    
@@ -233,7 +233,7 @@ sub CreateLog4perlCongfig {
     my $fileNameRef = $_[0];
 
     my $conf = q?
-        log4perl.category.MIPLogger = TRACE, LogFile, ScreenApp
+        log4perl.category.MIPLogger = TRACE, ScreenApp
         log4perl.appender.LogFile = Log::Log4perl::Appender::File
         log4perl.appender.LogFile.filename = ?.$$fileNameRef.q?
         log4perl.appender.LogFile.layout=PatternLayout

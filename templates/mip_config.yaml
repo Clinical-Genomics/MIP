@@ -22,5 +22,4 @@ projectID: b2010080
 pythonVirtualEnvironment: virtualenv.py.2.7
 referencesDir: CLUSTERCONSTANTPATH!/mip_references
 sampleInfoFile: CLUSTERCONSTANTPATH!/ANALYSISTYPE!/FDN!/FDN!_qc_sampleInfo.yaml
-writeConfigFile: CLUSTERCONSTANTPATH!/ANALYSISTYPE!/FDN!/FDN!_config.yaml[INFO] 2016/04/15 01:09:28 MIPLogger - 1
-
+writeConfigFile: CLUSTERCONSTANTPATH!/ANALYSISTYPE!/FDN!/FDN!_config.yaml

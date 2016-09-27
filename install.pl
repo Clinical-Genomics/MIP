@@ -26,7 +26,7 @@ BEGIN {
            -cdp/--condaPath The conda path (Default: "HOME/miniconda")
            -cdu/--condaUpDate Update conda before installing (Supply flag to enable)
            -bvc/--bioConda Set the module version of the programs that can be installed with bioConda (e.g. 'bwa=0.7.12')
-           -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.5.1')
+           -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.5.4')
 
            ## SHELL
            -pei/--perlInstall Install perl (Supply flag to enable)
@@ -39,7 +39,7 @@ BEGIN {
            -vt/--vt Set the vt version (Default: "0.57")
            -plk/--plink  Set the plink version (Default: "160224")
            -snpg/--snpEffGenomeVersions Set the snpEff genome version (Default: ["GRCh37.75"])
-           -vep/--variantEffectPredictor Set the VEP version (Default: "84")
+           -vep/--variantEffectPredictor Set the VEP version (Default: "85")
 	   -vepc/--vepDirectoryCache Specify the cache directory to use (whole path; defaults to "~/miniconda/envs/condaEnvironment/ensembl-tools-release-variantEffectPredictorVersion/cache")
            -vepa/--vepAssemblies Select the assembly version (Default: ["GRCh37"])
            -vepp/--variantEffectPredictorPlugin Supply a comma separated list of VEP plugins (Default: "UpDownDistance,LoFtool,LoF")
@@ -65,29 +65,29 @@ my %parameter;
 $parameter{condaEnvironment} = "mip";
 $parameter{condaPath} = catdir($ENV{HOME}, "miniconda");
 
-$parameter{bioConda}{bwa} = "0.7.13";
+$parameter{bioConda}{bwa} = "0.7.15";
 $parameter{bioConda}{bwakit} = "0.7.12";
 $parameter{bioCondaBwakitPatch} = "-0";  #For correct softlinking in share and bin in conda env
 $parameter{bioConda}{fastqc} = "0.11.5";
 $parameter{bioConda}{cramtools} = "3.0.b47";
-$parameter{bioConda}{samtools} = "1.3";
-$parameter{bioConda}{bcftools} = "1.3";
+$parameter{bioConda}{samtools} = "1.3.1";
+$parameter{bioConda}{bcftools} = "1.3.1";
 $parameter{bioConda}{snpeff} = "4.2";
 $parameter{bioCondaSnpeffPatch} = "-0";  #For correct softlinking in share and bin in conda env
-$parameter{bioConda}{picard} = "2.3.0";
+$parameter{bioConda}{picard} = "2.5.0";
 $parameter{bioCondaPicardPatch} = "-0";  #For correct softlinking in share and bin in conda env
 $parameter{bioConda}{mosaik} = "2.2.26";
-$parameter{bioConda}{htslib} = "1.3";
-$parameter{bioConda}{bedtools} = "2.25.0";
+$parameter{bioConda}{htslib} = "1.3.1";
+$parameter{bioConda}{bedtools} = "2.26.0";
 $parameter{bioConda}{vt} = "2015.11.10";
-$parameter{bioConda}{sambamba} = "0.6.1";
+$parameter{bioConda}{sambamba} = "0.6.3";
 $parameter{bioConda}{freebayes} = "1.0.2";
 $parameter{bioConda}{delly} = "0.7.2";
-$parameter{bioConda}{manta} = "0.29.6";
+$parameter{bioConda}{manta} = "1.0.0";
 $parameter{bioCondaMantaPatch} = "-0";
-$parameter{bioConda}{multiqc} = "0.6";
+$parameter{bioConda}{multiqc} = "0.8dev0";
 $parameter{bioConda}{plink2} = "1.90b3.35";
-$parameter{bioConda}{vcfanno} = "0.0.11";
+$parameter{bioConda}{vcfanno} = "0.1.0";
 $parameter{bioConda}{gcc} = "4.8.5";  #Required for CNVnator
 #$parameter{bioConda}{cmake} = "3.3.1";
 #$parameter{bioConda}{boost} = "1.57.0";
@@ -98,7 +98,8 @@ $parameter{bioConda}{gcc} = "4.8.5";  #Required for CNVnator
 $parameter{perl} = "5.18.2";
 
 ## PIP
-$parameter{pip}{genmod} = "3.5.2";
+$parameter{pip}{genmod} = "3.5.4";
+$parameter{pip}{variant_integrity} = "0.0.4";
 $parameter{pip}{chanjo} = "3.4.1";
 $parameter{pip}{cosmid} = "0.4.9.1";
 $parameter{pip}{'python-Levenshtein'} = "0.12.0";
@@ -112,13 +113,12 @@ $parameter{bedTools} = "2.25.0";
 $parameter{vt} = "gitRepo";
 $parameter{plink2} = "160316";
 $parameter{snpEff} = "v4_2";
-$parameter{variantEffectPredictor} = "84";
-$parameter{vepDirectoryCache} = catdir($parameter{condaPath}, "envs", $parameter{condaEnvironment}, "ensembl-tools-release-".$parameter{variantEffectPredictor}, "cache");  #Cache directory;
+$parameter{variantEffectPredictor} = "85";
 $parameter{variantEffectPredictorPlugin} = "UpDownDistance,LoFtool,LoF";
 $parameter{CNVnator} = "0.3.2";
 $parameter{FindTranslocations} = "0";
 
-my $installVersion = "0.0.5";
+my $installVersion = "0.0.6";
 
 ###User Options
 GetOptions('env|condaEnvironment:s'  => \$parameter{condaEnvironment},
@@ -151,6 +151,12 @@ GetOptions('env|condaEnvironment:s'  => \$parameter{condaEnvironment},
     ) or &Help({USAGE => $USAGE,
 		exitCode => 1,
 	       });
+
+## Update default parameter dependent on other parameters
+if (! $parameter{vepDirectoryCache}) {
+
+    $parameter{vepDirectoryCache} = catdir($parameter{condaPath}, "envs", $parameter{condaEnvironment}, "ensembl-tools-release-".$parameter{variantEffectPredictor}, "cache");  #Cache directory;)
+}
 
 ## Set default for array parameters
 &SetDefaultArrayParameters({parameterHashRef => \%parameter,
