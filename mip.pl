@@ -5819,12 +5819,6 @@ sub SampleCheck {
 	print $FILEHANDLE "--ibc ";  #calculates three inbreeding coefficients for each sample
 	print $FILEHANDLE "--extract plink.prune.in ";  #Only LD-based pruning snps
 	say $FILEHANDLE "--out ".catfile($outFamilyDirectory, $$familyIDRef), "\n";  #Outfile
-	
-	# say $FILEHANDLE "#Create vcfTools inbreeding coefficient F per family using vcfTools";
-	# print $FILEHANDLE "vcftools ";
-	# print $FILEHANDLE "--vcf ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType.".vcf")." ";  #InFile
-	# print $FILEHANDLE "--het ";  #Individual inbreeding
-	# say $FILEHANDLE "--out ".catfile($outFamilyDirectory, $$familyIDRef), "\n";  #Outfile
     }
     
     say $FILEHANDLE "## Create Plink .ped and .map file per family using vcfTools";
@@ -5832,6 +5826,35 @@ sub SampleCheck {
     print $FILEHANDLE "--vcf ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType.".vcf")." ";  #InFile
     print $FILEHANDLE "--plink ";  #PLINK format
     say $FILEHANDLE "--out ".catfile($outFamilyDirectory, $$familyIDRef), "\n";  #OutFile (.ped and .map)
+
+    ## Variant_integrity
+    if (scalar(@{${$scriptParameterHashRef}{sampleIDs}}) > 1) {  #Only perform if more than 1 sample
+	
+	if (${$parameterHashRef}{dynamicParameters}{trio}) {
+
+	    print $FILEHANDLE "variant_integrity ";
+	    print $FILEHANDLE "--family_file ".${$scriptParameterHashRef}{pedigreeFile}." ";  #Pedigree file
+	    print $FILEHANDLE "--family_type ".${$scriptParameterHashRef}{genmodModelsFamilyType}." ";  #Family type
+	    print $FILEHANDLE "--outfile ".catfile($outFamilyDirectory, $$familyIDRef."_mendel.txt")." ";
+	    print $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType.".vcf")." ";  #InFile
+	    say $FILEHANDLE "mendel ", "\n";
+	}
+	
+	foreach my $sampleID (@{${$scriptParameterHashRef}{sampleIDs}}) {
+	    
+	    my $fatherInfo = ${$sampleInfoHashRef}{${$scriptParameterHashRef}{familyID} }{$sampleID}{Father};  #Alias
+
+	    if ($fatherInfo ne 0) {  #Father is included in analysis
+		
+		print $FILEHANDLE "variant_integrity ";
+		print $FILEHANDLE "--family_file ".${$scriptParameterHashRef}{pedigreeFile}." ";  #Pedigree file
+		print $FILEHANDLE "--family_type ".${$scriptParameterHashRef}{genmodModelsFamilyType}." ";  #Family type
+		print $FILEHANDLE "--outfile ".catfile($outFamilyDirectory, $$familyIDRef."_father.txt")." ";
+		print $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType.".vcf")." ";  #InFile
+		say $FILEHANDLE "father ", "\n";
+	    }
+	}
+    }
 
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
