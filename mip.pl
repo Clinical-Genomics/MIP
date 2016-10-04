@@ -1175,7 +1175,7 @@ if ($scriptParameter{pSplitFastqFiles} > 0) {  #Split of fastq files in batches
 			  sequenceReadBatch => $scriptParameter{splitFastqFilesReadBatch},
 			 });	
     }
-    exit;
+    exit;  #End here if this module is turned on
 }
 
 if ( ($scriptParameter{pGZipFastq} > 0) && ($uncompressedFileSwitch eq "unCompressed") ) {  #GZip of fastq files
@@ -1209,7 +1209,7 @@ if ($scriptParameter{pFastQC} > 0) {  #Run FastQC
     
     $logger->info("[FastQC]\n");
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {  
+    foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
 	
 	&FastQC({parameterHashRef => \%parameter,
 		 scriptParameterHashRef => \%scriptParameter,
@@ -1218,7 +1218,7 @@ if ($scriptParameter{pFastQC} > 0) {  #Run FastQC
 		 inDirPathHashRef => \%inDirPath,
 		 infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 		 jobIDHashRef => \%jobID,
-		 sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
+		 sampleIDRef => \$sampleID,
 		 programName => "FastQC",
 		});	
     }
@@ -1241,8 +1241,8 @@ if ($scriptParameter{pMosaikBuild} > 0) {  #Run MosaikBuild
     
     $logger->info("[MosaikBuild]\n");
     
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {  
-	
+    foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
+
 	&MosaikBuild({parameterHashRef => \%parameter,
 		      scriptParameterHashRef => \%scriptParameter,
 		      sampleInfoHashRef => \%sampleInfo,
@@ -1251,7 +1251,7 @@ if ($scriptParameter{pMosaikBuild} > 0) {  #Run MosaikBuild
 		      infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 		      laneHashRef => \%lane,
 		      jobIDHashRef => \%jobID,
-		      sampleID => \$scriptParameter{sampleIDs}[$sampleIDCounter],
+		      sampleIDRef => \$sampleID,
 		      alignerOutDir => \$scriptParameter{alignerOutDir}, 
 		      programName => "MosaikBuild",
 		     });	
@@ -1275,9 +1275,9 @@ if ($scriptParameter{pMosaikAlign} > 0) {  #Run MosaikAlign
 	    &MoveMosaikNN(\%scriptParameter);
 	}
     }
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {  
-	
-	&MosaikAlign(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infile, \%inDirPath, \%infilesLaneNoEnding, \%jobID, $scriptParameter{sampleIDs}[$sampleIDCounter], $scriptParameter{alignerOutDir}, "MosaikAlign");	
+    foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
+
+	&MosaikAlign(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%infile, \%inDirPath, \%infilesLaneNoEnding, \%jobID, $sampleID, $scriptParameter{alignerOutDir}, "MosaikAlign");	
     }
 }
 
@@ -1302,7 +1302,7 @@ if ($scriptParameter{pBwaMem} > 0) {  #Run BWA Mem
 				   });
 	}
     }
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {  
+    foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
 	
 	&BWAMem({parameterHashRef => \%parameter,
 		 scriptParameterHashRef => \%scriptParameter,
@@ -1312,7 +1312,7 @@ if ($scriptParameter{pBwaMem} > 0) {  #Run BWA Mem
 		 inDirPathHashRef => \%inDirPath,
 		 infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 		 jobIDHashRef => \%jobID,
-		 sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
+		 sampleIDRef => \$sampleID,
 		 programName => "BwaMem",
 		});	
     }    
@@ -1322,8 +1322,8 @@ if ($scriptParameter{pPicardToolsMergeRapidReads} > 0) {  #Run PicardToolsMergeR
     
     $logger->info("[PicardToolsMergeRapidReads]\n");
     
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {  
-	
+    foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
+
         #Merge all read batch processes to 1 file again containing sorted & indexed reads matching clinical test genes
 	&PicardToolsMergeRapidReads({parameterHashRef => \%parameter,
 				     scriptParameterHashRef => \%scriptParameter,
@@ -1332,7 +1332,7 @@ if ($scriptParameter{pPicardToolsMergeRapidReads} > 0) {  #Run PicardToolsMergeR
 				     infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 				     laneHashRef => \%lane,
 				     jobIDHashRef => \%jobID,
-				     sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
+				     sampleIDRef => \$sampleID,
 				     alignerOutDirRef => \$scriptParameter{alignerOutDir}, 
 				     programName => "PicardToolsMergeRapidReads",
 				    });
@@ -1359,9 +1359,9 @@ if ($scriptParameter{pBwaAln} > 0) {  #Run BWA Aln
 				   });
 	}
     }
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {  
-	
-	&BWAAln(\%parameter, \%scriptParameter, \%sampleInfo, \%infile, \%inDirPath, \%infilesLaneNoEnding, \%infilesBothStrandsNoEnding, \%jobID, $scriptParameter{sampleIDs}[$sampleIDCounter], $scriptParameter{alignerOutDir}, "BwaAln");	
+    foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
+
+	&BWAAln(\%parameter, \%scriptParameter, \%sampleInfo, \%infile, \%inDirPath, \%infilesLaneNoEnding, \%infilesBothStrandsNoEnding, \%jobID, $sampleID, $scriptParameter{alignerOutDir}, "BwaAln");	
     }    
 }
 
@@ -1385,9 +1385,8 @@ if ($scriptParameter{pBwaSampe} > 0) {  #Run BWA Sampe
 				   });
 	}
     }
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {  
-	
-	&BWASampe(\%parameter, \%scriptParameter, \%sampleInfo, \%infile, \%inDirPath, \%infilesLaneNoEnding, \%infilesBothStrandsNoEnding, \%jobID, $scriptParameter{sampleIDs}[$sampleIDCounter], $scriptParameter{alignerOutDir}, "BwaSampe");
+    foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
+	&BWASampe(\%parameter, \%scriptParameter, \%sampleInfo, \%infile, \%inDirPath, \%infilesLaneNoEnding, \%infilesBothStrandsNoEnding, \%jobID, $sampleID, $scriptParameter{alignerOutDir}, "BwaSampe");
     }
 }
 
@@ -1416,8 +1415,7 @@ else {
     ##Will also split alignment per contig and copy to temporary directory for '-rio 1' block to enable selective removal of block submodules.
     $logger->info("[PicardTool MergeSamFiles]\n");
     
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {  
-	
+    foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
 	
 	&PicardToolsMergeSamFiles({parameterHashRef => \%parameter,
 				   scriptParameterHashRef => \%scriptParameter,
@@ -1426,7 +1424,7 @@ else {
 				   infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 				   laneHashRef => \%lane,
 				   jobIDHashRef => \%jobID,
-				   sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
+				   sampleIDRef => \$sampleID,
 				   programName => "PicardToolsMergeSamFiles",
 				  });
     }
@@ -1435,8 +1433,8 @@ else {
 	
 	$logger->info("[PicardTools Markduplicates]\n");
 	
-	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {  
-	    
+	foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
+	
 	    &PicardToolsMarkduplicates({parameterHashRef => \%parameter,
 					scriptParameterHashRef => \%scriptParameter,
 					sampleInfoHashRef => \%sampleInfo,
@@ -1444,7 +1442,7 @@ else {
 					infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 					laneHashRef => \%lane,
 					jobIDHashRef => \%jobID,
-					sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
+					sampleIDRef => \$sampleID,
 					programName => "PicardToolsMarkduplicates",
 				       });
 	}
@@ -1454,7 +1452,7 @@ else {
 	
 	$logger->info("[Sambamba Markduplicates]\n");
 	
-	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {  
+	foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
 	    
 	    &SambambaMarkduplicates({parameterHashRef => \%parameter,
 				     scriptParameterHashRef => \%scriptParameter,
@@ -1463,7 +1461,7 @@ else {
 				     infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 				     laneHashRef => \%lane,
 				     jobIDHashRef => \%jobID,
-				     sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
+				     sampleIDRef => \$sampleID,
 				     programName => "SambambaMarkduplicates",
 				    });
 	}
@@ -1503,7 +1501,7 @@ else {
 						 programName => "GATKRealigner",
 						});
 	}
-	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {   
+	foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
 	    
 	    &GATKReAligner({parameterHashRef => \%parameter,
 			    scriptParameterHashRef => \%scriptParameter,
@@ -1511,7 +1509,7 @@ else {
 			    fileInfoHashRef => \%fileInfo,
 			    infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 			    jobIDHashRef => \%jobID,
-			    sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
+			    sampleIDRef => \$sampleID,
 			    programName => "GATKRealigner",
 			   });
 	}
@@ -1551,7 +1549,7 @@ else {
 						 programName => "GATKBaseRecalibration",
 						});
 	}
-	for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {   
+	foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
 	    
 	    &GATKBaseReCalibration({parameterHashRef => \%parameter,
 				    scriptParameterHashRef => \%scriptParameter,
@@ -1559,7 +1557,7 @@ else {
 				    fileInfoHashRef => \%fileInfo,
 				    infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 				    jobIDHashRef => \%jobID,
-				    sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
+				    sampleIDRef => \$sampleID,
 				    programName => "GATKBaseRecalibration",
 				   });
 	}
@@ -1571,7 +1569,7 @@ if ($scriptParameter{pChanjoSexCheck} > 0) {
     
     $logger->info("[ChanjoSexCheck]\n");
     
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {  #For all SampleIDs
+    foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
 	
 	&ChanjoSexCheck({parameterHashRef => \%parameter,
 			 scriptParameterHashRef => \%scriptParameter,
@@ -1579,7 +1577,7 @@ if ($scriptParameter{pChanjoSexCheck} > 0) {
 			 fileInfoHashRef => \%fileInfo,
 			 infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 			 jobIDHashRef => \%jobID,
-			 sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
+			 sampleIDRef => \$sampleID,
 			 programName => "ChanjoSexCheck",
 			});
     }
@@ -1589,7 +1587,7 @@ if ($scriptParameter{pSambambaDepth} > 0) {
     
     $logger->info("[SambambaDepth]\n");
     
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {  #For all SampleIDs
+    foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
 	
 	&SambambaDepth({parameterHashRef => \%parameter,
 			scriptParameterHashRef => \%scriptParameter,
@@ -1597,7 +1595,7 @@ if ($scriptParameter{pSambambaDepth} > 0) {
 			fileInfoHashRef => \%fileInfo,
 			infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 			jobIDHashRef => \%jobID,
-			sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
+			sampleIDRef => \$sampleID,
 			programName => "SambambaDepth",
 		       });
     }
@@ -1608,7 +1606,7 @@ if ($scriptParameter{pGenomeCoverageBED} > 0) {  #Run GenomeCoverageBED
     
     $logger->info("[GenomeCoverageBED]\n"); 
     
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {  
+    foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
 	
 	&GenomeCoverageBED({parameterHashRef => \%parameter,
 			    scriptParameterHashRef => \%scriptParameter,
@@ -1616,7 +1614,7 @@ if ($scriptParameter{pGenomeCoverageBED} > 0) {  #Run GenomeCoverageBED
 			    fileInfoHashRef => \%fileInfo,
 			    infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 			    jobIDHashRef => \%jobID,
-			    sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
+			    sampleIDRef => \$sampleID,
 			    programName => "GenomeCoverageBED",
 			   });
     }
@@ -1635,8 +1633,8 @@ if ($scriptParameter{pPicardToolsCollectMultipleMetrics} > 0) {  #Run PicardTool
 					 supportedCosmidReferenceHashRef => \%supportedCosmidReference,
 					 programName => "PicardToolsCollectMultipleMetrics",
 					});
-    
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {  
+
+    foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
 	
 	&PicardToolsCollectMultipleMetrics({parameterHashRef => \%parameter,
 					    scriptParameterHashRef => \%scriptParameter,
@@ -1644,7 +1642,7 @@ if ($scriptParameter{pPicardToolsCollectMultipleMetrics} > 0) {  #Run PicardTool
 					    fileInfoHashRef => \%fileInfo,
 					    infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 					    jobIDHashRef => \%jobID,
-					    sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
+					    sampleIDRef => \$sampleID,
 					    programName => "PicardToolsCollectMultipleMetrics",
 					   });
     }
@@ -1675,7 +1673,7 @@ if ($scriptParameter{pPicardToolsCalculateHSMetrics} > 0) {  #Run PicardToolsCal
 					     programName => "PicardToolsCalculateHSMetrics",
 					    });
     }
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {  
+    foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
 	
 	&PicardToolsCalculateHSMetrics({parameterHashRef => \%parameter,
 					scriptParameterHashRef => \%scriptParameter,
@@ -1683,7 +1681,7 @@ if ($scriptParameter{pPicardToolsCalculateHSMetrics} > 0) {  #Run PicardToolsCal
 					fileInfoHashRef => \%fileInfo,
 					infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 					jobIDHashRef => \%jobID,
-					sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
+					sampleIDRef => \$sampleID,
 					programName => "PicardToolsCalculateHSMetrics",
 				       });
     }
@@ -1693,9 +1691,9 @@ if ($scriptParameter{pRCovPlots} > 0) {  #Run Rcovplot scripts
     
     $logger->info("[RCovPlots]\n");	
     
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {  
+    foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
 	
-	&RCoveragePlots(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%lane, \%infilesLaneNoEnding, \%jobID, $scriptParameter{sampleIDs}[$sampleIDCounter], $scriptParameter{alignerOutDir}, "RCovPlots");	
+	&RCoveragePlots(\%parameter, \%scriptParameter, \%sampleInfo, \%fileInfo, \%lane, \%infilesLaneNoEnding, \%jobID, $sampleID, $scriptParameter{alignerOutDir}, "RCovPlots");	
     }
 }
 
@@ -1721,7 +1719,7 @@ if ($scriptParameter{pCNVnator} > 0) {  #Run CNVnator
 				      supportedCosmidReferenceHashRef => \%supportedCosmidReference,
 				      programName => "CNVnator",
 				     });
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {  #For all SampleIDs
+    foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
 
 	&CNVnator({parameterHashRef => \%parameter,
 		   scriptParameterHashRef => \%scriptParameter,
@@ -1729,7 +1727,7 @@ if ($scriptParameter{pCNVnator} > 0) {  #Run CNVnator
 		   fileInfoHashRef => \%fileInfo,
 		   infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 		   jobIDHashRef => \%jobID,
-		   sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
+		   sampleIDRef => \$sampleID,
 		   programName => "CNVnator",
 		  });
     }
@@ -1757,7 +1755,8 @@ if ($scriptParameter{pDelly} > 0) {  #Run Delly
 				      supportedCosmidReferenceHashRef => \%supportedCosmidReference,
 				      programName => "Delly",
 				     });
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {  #For all SampleIDs
+
+    foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
 
 	&Delly({parameterHashRef => \%parameter,
 		scriptParameterHashRef => \%scriptParameter,
@@ -1765,7 +1764,7 @@ if ($scriptParameter{pDelly} > 0) {  #Run Delly
 		fileInfoHashRef => \%fileInfo,
 		infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 		jobIDHashRef => \%jobID,
-		sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
+		sampleIDRef => \$sampleID,
 		programName => "Delly",
 	       });
     }
@@ -1806,7 +1805,7 @@ if ($scriptParameter{pFindTranslocations} > 0) {  #Run FindTranslocations
     
     $logger->info("[FindTranslocations]\n");
     
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {  #For all SampleIDs
+    foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
 
 	&FindTranslocations({parameterHashRef => \%parameter,
 			     scriptParameterHashRef => \%scriptParameter,
@@ -1814,7 +1813,7 @@ if ($scriptParameter{pFindTranslocations} > 0) {  #Run FindTranslocations
 			     fileInfoHashRef => \%fileInfo,
 			     infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 			     jobIDHashRef => \%jobID,
-			     sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
+			     sampleIDRef => \$sampleID,
 			     programName => "FindTranslocations",
 			    });
     }
@@ -1968,11 +1967,9 @@ if ($scriptParameter{pGATKHaploTypeCaller} > 0) {  #Run GATK HaploTypeCaller
 				      programName => "GATKHaploTypeCaller",
 				     });
     
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {
+    foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
 
-	my $sampleIDRef = \$scriptParameter{sampleIDs}[$sampleIDCounter];  #Alias
-
-	if ( ($scriptParameter{dryRunAll} != 1) && ($scriptParameter{analysisType}{$$sampleIDRef} ne "wgs") ) {
+	if ( ($scriptParameter{dryRunAll} != 1) && ($scriptParameter{analysisType}{$sampleID} ne "wgs") ) {
 	    
 	    &CheckBuildPTCHSMetricPreRequisites({parameterHashRef => \%parameter,
 						 scriptParameterHashRef => \%scriptParameter,
@@ -1990,7 +1987,7 @@ if ($scriptParameter{pGATKHaploTypeCaller} > 0) {  #Run GATK HaploTypeCaller
 			      fileInfoHashRef => \%fileInfo,
 			      infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 			      jobIDHashRef => \%jobID,
-			      sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
+			      sampleIDRef => \$sampleID,
 			      programName => "GATKHaploTypeCaller",
 			     });
     }
@@ -2051,11 +2048,9 @@ if ($scriptParameter{pGATKVariantRecalibration} > 0) {  #Run GATK VariantRecalib
 				      programName => "GATKVariantRecalibration",
 				     });
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {
+    foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
 
-	my $sampleIDRef = \$scriptParameter{sampleIDs}[$sampleIDCounter];  #Alias
-
-	if ( ($scriptParameter{dryRunAll} != 1) && ($scriptParameter{analysisType}{$$sampleIDRef} ne "wgs") ) {
+	if ( ($scriptParameter{dryRunAll} != 1) && ($scriptParameter{analysisType}{$sampleID} ne "wgs") ) {
 	    
 	    &CheckBuildPTCHSMetricPreRequisites({parameterHashRef => \%parameter,
 						 scriptParameterHashRef => \%scriptParameter,
@@ -2108,9 +2103,9 @@ if ($scriptParameter{pSampleCheck} > 0) {  #Run SampleCheck. Done per family
 
 if ($scriptParameter{pEvaluation} > 0) {  #Run Evaluation. Done per family
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) {
+    foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
 
-	if ($scriptParameter{sampleIDs}[$sampleIDCounter]=~/$scriptParameter{NISTID}/) {
+	if ($sampleID =~/$scriptParameter{NISTID}/) {
 	    
 	    $logger->info("[Evaluation]\n");
 	    
@@ -2120,7 +2115,7 @@ if ($scriptParameter{pEvaluation} > 0) {  #Run Evaluation. Done per family
 			 fileInfoHashRef => \%fileInfo,
 			 infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 			 jobIDHashRef => \%jobID,
-			 sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
+			 sampleIDRef => \$sampleID,
 			 callType => "BOTH",
 			 programName => "Evaluation",
 			});
@@ -2184,7 +2179,7 @@ if ($scriptParameter{pGATKVariantEvalAll} > 0) {  #Run GATK VariantEval for all 
 				      programName => "GATKVariantEvalAll",
 				     });
 
-    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{$scriptParameter{sampleIDs}});$sampleIDCounter++) { 
+    foreach my $sampleID (@{$scriptParameter{sampleIDs}}) {
 	
 	&GATKVariantEvalAll({parameterHashRef => \%parameter,
 			     scriptParameterHashRef => \%scriptParameter,
@@ -2192,7 +2187,7 @@ if ($scriptParameter{pGATKVariantEvalAll} > 0) {  #Run GATK VariantEval for all 
 			     fileInfoHashRef => \%fileInfo,
 			     infilesLaneNoEndingHashRef => \%infilesLaneNoEnding,
 			     jobIDHashRef => \%jobID,
-			     sampleIDRef => \$scriptParameter{sampleIDs}[$sampleIDCounter],
+			     sampleIDRef => \$sampleID,
 			     programName => "GATKVariantEvalAll",
 			      });
     }
@@ -13631,7 +13626,7 @@ sub MosaikBuild {
     
 ##Function : Generates Mosaik hash format on reads using MosaikBuild
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleID, $alignerOutDir, $programName
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $laneHashRef, $jobIDHashRef, $sampleIDRef, $alignerOutDir, $programName
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -13640,7 +13635,7 @@ sub MosaikBuild {
 ##         : $infilesLaneNoEndingHashRef => The infile(s) without the ".ending" {REF}
 ##         : $laneHashRef                => The lane info hash {REF}
 ##         : $jobIDHashRef               => The jobID hash {REF}
-##         : $sampleID                   => The sampleID
+##         : $sampleIDRef                => The sampleID {REF}
 ##         : $alignerOutDir              => The alignerOutDir used
 ##         : $programName                => The program name
 
@@ -13655,7 +13650,7 @@ sub MosaikBuild {
     my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
     my $laneHashRef = ${$argHashRef}{laneHashRef};
     my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleID};
+    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDir};
     my $programName = ${$argHashRef}{programName};
 
