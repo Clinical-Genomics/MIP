@@ -17,7 +17,7 @@ use Getopt::Long;
 use POSIX;
 use YAML;
 
-use vars qw($USAGE);
+our $USAGE;
 
 BEGIN {
     $USAGE =

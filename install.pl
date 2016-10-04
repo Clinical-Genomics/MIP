@@ -14,10 +14,11 @@ use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 use Cwd;
 use FindBin qw($Bin); #Find directory of script
-use vars qw($USAGE);
 use IO::Handle;
 use File::Basename qw(dirname);
 use File::Spec::Functions qw(catfile catdir devnull);
+
+our $USAGE;
 
 BEGIN {
     $USAGE =

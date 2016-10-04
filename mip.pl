@@ -28,7 +28,6 @@ use File::Copy qw(copy);
 use Cwd;
 use IPC::Cmd qw[can_run run];
 use IPC::System::Simple;  #Required for autodie :all
-use vars qw($USAGE);
 use List::Util qw(any all);
 use Time::Piece;
 
@@ -37,6 +36,7 @@ use YAML;
 use Log::Log4perl;
 use Path::Iterator::Rule;
 
+our $USAGE;
 
 BEGIN {
 
@@ -49,7 +49,7 @@ BEGIN {
     
     $USAGE =
 	qq{
-mip.pl  -ifd [inFilesDir,.,.,.,n] -isd [inScriptDir,.,.,.,n] -rd [refdir] -p [project ID] -s [sample ID,.,.,.,n] -em [e-mail] -osd [outdirscripts] -odd [outDataDir] -f [familyID] -p[program]
+mip.pl  -ifd [inFilesDir=sampleID] -isd [inScriptDir] -rd [refdir] -p [project ID] -s [sample ID,.,.,.,n] -em [e-mail] -osd [outdirscripts] -odd [outDataDir] -f [familyID] -p[program] -at [sampleID=analysisType]
                ####MIP
                -ifd/--inFilesDir Infile directory(s) (Hash inFilesDir=sampleID; mandatory)
                -isd/--inScriptDir The pipeline custom script in directory (mandatory)
@@ -423,6 +423,7 @@ my @vtReferences = ("GATKReAlignerINDELKnownSite",
 my @annovarSupportedTableNames = ("refGene", "knownGene", "ensGene", "mce46way", "gerp++elem", "segdup", "gwascatalog", "tfbs", "mirna", "snp137", "snp135", "snp132", "snp131", "snp130", "snp129", "snp137NonFlagged", "snp135NonFlagged", "snp132NonFlagged", "snp131NonFlagged", "snp130NonFlagged", "1000g2012apr_all", "1000g2012apr_amr", "1000g2012apr_eur", "1000g2012apr_asn", "1000g2012apr_afr", "1000g2012feb_all", "esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_ma", "ljb2_fathmm", "ljb2_siphy", "ljb2_lrt", "ljb_all", "ljb2_gerp++", "ljb2_phylop", "caddgt20", "caddgt10");  #Used to print list of supported table names
 
 my %annovarTable;  #Holds annovar tables and features
+
 
 ## Enables cmd "mip.pl" to print usage help
 if(!@ARGV) {

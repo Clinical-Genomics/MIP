@@ -14,7 +14,7 @@ $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 use IO::File;
 use Set::IntervalTree; #CPAN
 
-use vars qw($USAGE);
+our $USAGE;
 
 BEGIN {
     $USAGE =
