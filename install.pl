@@ -81,7 +81,7 @@ $parameter{bioConda}{htslib} = "1.3.1";
 $parameter{bioConda}{bedtools} = "2.26.0";
 $parameter{bioConda}{vt} = "2015.11.10";
 $parameter{bioConda}{sambamba} = "0.6.3";
-$parameter{bioConda}{freebayes} = "1.0.2";
+$parameter{bioConda}{freebayes} = "1.0.2.0";
 $parameter{bioConda}{delly} = "0.7.2";
 $parameter{bioConda}{manta} = "1.0.0";
 $parameter{bioCondaMantaPatch} = "-0";
@@ -98,7 +98,7 @@ $parameter{bioConda}{gcc} = "4.8.5";  #Required for CNVnator
 $parameter{perl} = "5.18.2";
 
 ## PIP
-$parameter{pip}{genmod} = "3.5.4";
+$parameter{pip}{genmod} = "3.5.2";  #3.5.4
 $parameter{pip}{variant_integrity} = "0.0.4";
 $parameter{pip}{chanjo} = "3.4.1";
 $parameter{pip}{cosmid} = "0.4.9.1";
