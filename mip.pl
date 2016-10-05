@@ -2623,13 +2623,6 @@ sub AnalysisRunStatus {
 			 pathsArrayRef => \@pathsArrayRef,
 			});
 
-    ## Collects all programs outfile path(s) created by MIP as OutDirectory->value and outfile->value located in %sampleInfo.
-    &CollectOutDataPathsEntries({parameterHashRef => $parameterHashRef,
-				 scriptParameterHashRef => $scriptParameterHashRef,
-				 sampleInfoHashRef => $sampleInfoHashRef,
-				 pathsArrayRef => \@pathsArrayRef,
-				});
-
     print $FILEHANDLE q?files=(?;  #Create bash array
     foreach my $path (@pathsArrayRef) {
 
@@ -11709,7 +11702,11 @@ sub PicardToolsMarkduplicates {
 		       outDataType => "infileDependent"
 		      });
 	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{Program}{MarkDuplicates}{$infile}{ProcessedBy} = $programName;  #MarkDuplicates can be processed by either PicardToolsMarkDuplicates or Sambamba MarkDuplicates
-	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $infile.$outfileTag."_".${$fileInfoHashRef}{contigsSizeOrdered}[0].".bam");
+
+	if ( ! $$reduceIORef) {  #Run as individual sbatch script
+
+	    ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $infile.$outfileTag."_".${$fileInfoHashRef}{contigsSizeOrdered}[0].".bam");
+	}
     }
     
     if ( ! $$reduceIORef) {  #Run as individual sbatch script
@@ -11962,7 +11959,11 @@ sub SambambaMarkduplicates {
 		       outDataType => "infileDependent"
 		      });
 	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{Program}{MarkDuplicates}{$infile}{ProcessedBy} = $programName;  #MarkDuplicates can be processed by either PicardToolsMarkDuplicates or Sambamba MarkDuplicates
-	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $infile.$outfileTag."_".${$fileInfoHashRef}{contigsSizeOrdered}[0].".bam");
+
+	if ( ! $$reduceIORef) {  #Run as individual sbatch script
+
+	    ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $infile.$outfileTag."_".${$fileInfoHashRef}{contigsSizeOrdered}[0].".bam");
+	}
     }
     
     if ( ! $$reduceIORef) {  #Run as individual sbatch script
@@ -12243,7 +12244,10 @@ sub PicardToolsMergeSamFiles {
     
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
-	${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $$sampleIDRef."_lanes_".$lanes.$outfileTag.".bam");
+	if ( ! $$reduceIORef) {  #Run as individual sbatch script
+
+	    ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $$sampleIDRef."_lanes_".$lanes.$outfileTag.".bam");
+	}
     }
     
     ## Merge previously merged files with merged files generated this run
@@ -12339,7 +12343,10 @@ sub PicardToolsMergeSamFiles {
 		    }
 		    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
-			${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $$sampleIDRef."_lanes_".$mergeLanes.$lanes.$outfileTag.".bam");
+			if ( ! $$reduceIORef) {  #Run as individual sbatch script
+
+			    ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $$sampleIDRef."_lanes_".$mergeLanes.$lanes.$outfileTag.".bam");
+			}
 		    }
 		}
 	    }
@@ -12438,7 +12445,10 @@ sub PicardToolsMergeSamFiles {
 		}
 		if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 		    
-		    ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $$sampleIDRef."_lanes_".$mergeLanes.$lanes.$outfileTag.".bam");
+		    if ( ! $$reduceIORef) {  #Run as individual sbatch script
+
+			${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, $$sampleIDRef."_lanes_".$mergeLanes.$lanes.$outfileTag.".bam");
+		    }
 		}
 	    }
 	}
@@ -21295,133 +21305,6 @@ sub CheckAnnovarTables {
 }
 
 
-sub CollectOutDataPathsEntries {
-    
-##CollectOutDataPathsEntries
-    
-##Function : Collects all programs outfile path(s) created by MIP as OutDirectory->value and outfile->value located in %sampleInfo.  
-##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $pathsArrayRef
-##         : $parameterHashRef       => The parameter hash {REF}
-##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
-##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
-##         : $pathsArrayRef          => Holds the collected paths {REF}
-    
-    my ($argHashRef) = @_;
-
-    ## Default(s)
-    my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
-
-    ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $pathsArrayRef = ${$argHashRef}{pathsArrayRef};
-
-    my $tmpl = { 
-	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
-	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
-	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
-	pathsArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$pathsArrayRef},
-	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
-    };
-        
-    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
-
-    for my $familyID ( keys %{$sampleInfoHashRef} ) {  #For every family id 
-	
-	for my $member ( keys %{ ${$sampleInfoHashRef}{$familyID} }) {  #For every familyID and sampleID
-	    
-	    if (${$sampleInfoHashRef}{$familyID}{$member}{Program}) {  #Only examine programs
-
-		for my $program ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{Program} } ) {  #For every programs           
-		    
-		    if ( (!defined(${$parameterHashRef}{"p".$program}{reduceIO})) || (${$parameterHashRef}{"p".$program}{reduceIO} ==  ${$scriptParameterHashRef}{reduceIO}) ) {  #Only include program that have the correct ReduceIO flag or no does not belog to a reduceIO block
-
-			my @outDirectoryArray;  #Temporary array for collecting outDirectories within the same program
-			my @outfileArray;  #Temporary array for collecting outfile within the same program
-			
-			for my $key ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{Program}{$program} } ) { #For every key within program
-			    
-			    ## Check if KeyName is "OutDirectory" or "OutFile"  and adds to @pathsArrayRef if true.
-			    &CollectOutFile({pathsArrayRef => $pathsArrayRef,
-					     outDirectoryArrayRef => \@outDirectoryArray,
-					     outfileArrayRef => \@outfileArray,
-					     key => ${$sampleInfoHashRef}{$familyID}{$member}{Program}{$program}{$key},
-					     keyName => $key,
-					    });
-			    
-			    if (ref(${$sampleInfoHashRef}{$familyID}{$member}{Program}{$program}{$key}) eq "HASH" ) { #HASH reference indicating more levels
-				
-				for my $secondKey ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{Program}{$program}{$key} } ) { #For every programs
-				    
-				    ## Check if KeyName is "OutDirectory" or "OutFile"  and adds to @pathsArrayRef if true.
-				    &CollectOutFile({pathsArrayRef => $pathsArrayRef,
-						     outDirectoryArrayRef => \@outDirectoryArray,
-						     outfileArrayRef => \@outfileArray,
-						     key => ${$sampleInfoHashRef}{$familyID}{$member}{Program}{$program}{$key}{$secondKey},
-						     keyName => $secondKey,
-						    });
-				}
-			    }
-			}
-		    }
-		}
-	    }
-	}
-    }
-}
-
-
-sub CollectOutFile {
-    
-##CollectOutFile
-    
-##Function  : Check if KeyName is "OutDirectory" or "OutFile"  and adds to @pathsArrayRef if true.
-##Returns   : ""
-##Arguments: $pathsArrayRef, $outDirectoryArrayRef, $outfileArrayRef, $key, $keyName
-##         : $pathsArrayRef        => Holds the collected paths {REF}
-##         : $outDirectoryArrayRef => Holds temporary outDirectory path(s) {Optional, REF}
-##         : $outfileArrayRef      => Holds temporary outDirectory path(s) {Optional, REF}
-##         : $key                  => The hash key pointer
-##         : $keyName              => The actual key  
-    
-    my ($argHashRef) = @_;
-
-    ## Flatten argument(s)
-    my $pathsArrayRef;
-    my $outDirectoryArrayRef;
-    my $outfileArrayRef;
-    my $key;
-    my $keyName;
-
-    my $tmpl = { 
-	pathsArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$pathsArrayRef},
-	outDirectoryArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$outDirectoryArrayRef},
-	outfileArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$outfileArrayRef},
-	key => { required => 1, defined => 1, store => \$key},
-	keyName => { required => 1, defined => 1, strict_type => 1, store => \$keyName},
-    };
-    
-    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];	
-    
-    if ($keyName eq "OutDirectory") {
-	
-	push(@{$outDirectoryArrayRef}, $key);
-    }
-    if ($keyName eq "OutFile") {
-	
-	push(@{$outfileArrayRef}, $key);
-    }
-    if ( (@{$outDirectoryArrayRef}) && (@{$outfileArrayRef}) ) {  #Both outDirectory and outfile have been collected, time to join
-	
-	push(@{$pathsArrayRef}, catfile(${$outDirectoryArrayRef}[0], ${$outfileArrayRef}[0]));
-	@{$outDirectoryArrayRef} = ();  #Restart
-	@{$outfileArrayRef} = ();  #Restart
-    }
-}
-
-
 sub CollectPathEntries {
     
 ##CollectPathEntries
@@ -21445,55 +21328,41 @@ sub CollectPathEntries {
     
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
-    for my $familyID ( keys %{$sampleInfoHashRef} ) {  #For every familyID 
-	
-	for my $member ( keys %{ ${$sampleInfoHashRef}{$familyID} }) {  #For every familyID and sampleID     
-	    
-	    for my $key ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member} } ) {  #For every key within member
-		
-		## Check if KeyName is "Path" and adds to @pathsArrayRef if true.
-		&CheckAndAddToArray({pathsArrayRef => $pathsArrayRef,
-				     key => ${$sampleInfoHashRef}{$familyID}{$member}{$key},
-				     keyName => $key,
-				    });
-		if (ref(${$sampleInfoHashRef}{$familyID}{$member}{$key}) eq "HASH" ) {   #HASH reference indicating more levels
-		    
-		    for my $secondKey ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{$key} } ) { #For every secondkey with program
-			
-			## Check if KeyName is "Path" and adds to @pathsArrayRef if true.
-			&CheckAndAddToArray({pathsArrayRef => $pathsArrayRef,
-					     key => ${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey},
-					     keyName => $secondKey,
-					    });
-		    
-			if (ref(${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey}) eq "HASH" ) {   #HASH reference indicating more levels
-		    
-			    for my $thirdKey ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey} } ) { #For every thirdkey with program
-				
-				## Check if KeyName is "Path" and adds to @pathsArrayRef if true.
-				&CheckAndAddToArray({pathsArrayRef => $pathsArrayRef,
-						     key => ${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey}{$thirdKey},
-						     keyName => $thirdKey,
-						    });
+    my %info = %{$sampleInfoHashRef};  #Copy hash to enable recursive removal of keys
 
-				if (ref(${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey}{$thirdKey}) eq "HASH" ) {   #HASH reference indicating more levels
-				    
-				    for my $fourthKey ( keys %{ ${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey}{$thirdKey} } ) { #For every forthkey with program
-					
-					## Check if KeyName is "Path" and adds to @pathsArrayRef if true.
-					&CheckAndAddToArray({pathsArrayRef => $pathsArrayRef,
-							     key => ${$sampleInfoHashRef}{$familyID}{$member}{$key}{$secondKey}{$thirdKey}{$fourthKey},
-							     keyName => $fourthKey,
-							    });
-				    }
-				}
-			    }
-			}
-		    }
-		}
+    my @outDirectoryArray;  #Temporary array for collecting outDirectories within the same program
+    my @outfileArray;  #Temporary array for collecting outfile within the same program
+
+    while (my ($key, $value) = each %info) {
+	
+	if (ref($value) eq "HASH") {
+
+	    &CollectPathEntries({sampleInfoHashRef => $value,
+				 pathsArrayRef => $pathsArrayRef,
+				});
+	}
+	else {
+
+	    if ($value) {  #Required for first dry-run
+
+		## Check if key is "Path" and adds value to @pathsArrayRef if true.
+		&CheckAndAddToArray({pathsArrayRef => $pathsArrayRef,
+				     value => $value,
+				     key => $key,
+				    });
+		
+		## Check if key is "OutDirectory" or "OutFile"  and adds joined value to @pathsArrayRef if true.
+		&CollectOutFile({pathsArrayRef => $pathsArrayRef,
+				 outDirectoryArrayRef => \@outDirectoryArray,
+				 outfileArrayRef => \@outfileArray,
+				 value => $value,
+				 key => $key,
+				});
+		
+		delete($info{$value});
 	    }
 	}
-    } 
+    }
 }
 
 
@@ -21503,32 +21372,88 @@ sub CheckAndAddToArray {
     
 ##Function  : Check if KeyName is "Path" and adds to @pathsArrayRef if true.
 ##Returns   : ""
-##Arguments: $pathsArrayRef, $key, $keyName
+##Arguments: $pathsArrayRef, $value, $key
 ##         : $pathsArrayRef => Holds the collected paths {REF}
-##         : $key           => The hash key
-##         : $keyName       => The actual key
+##         : $value         => Hash value
+##         : $keyName       => Hash key
     
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
     my $pathsArrayRef;
+    my $value;
     my $key;
-    my $keyName;
 
     my $tmpl = { 
 	pathsArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$pathsArrayRef},
-	keyName => { required => 1, defined => 1, strict_type => 1, store => \$keyName},
-	key => { required => 1, store => \$key},
+	value => { required => 1, store => \$value},
+	key => { required => 1, defined => 1, strict_type => 1, store => \$key},
     };
     
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
-    if ($keyName eq "Path") {
+    if ($key eq "Path") {
 	
-	push(@{$pathsArrayRef}, $key);
+	if (! ( any {$_ eq $value} @{$pathsArrayRef} ) ) { #Do not add same path twice
+
+	    push(@{$pathsArrayRef}, $value);
+	}
     }
 }
 
+
+sub CollectOutFile {
+    
+##CollectOutFile
+    
+##Function  : Check if KeyName is "OutDirectory" or "OutFile"  and adds to @pathsArrayRef if true.
+##Returns   : ""
+##Arguments: $pathsArrayRef, $outDirectoryArrayRef, $outfileArrayRef, $value, $key
+##         : $pathsArrayRef        => Holds the collected paths {REF}
+##         : $outDirectoryArrayRef => Holds temporary outDirectory path(s) {Optional, REF}
+##         : $outfileArrayRef      => Holds temporary outDirectory path(s) {Optional, REF}
+##         : $value                => Hash value
+##         : $key                  => Hash key  
+    
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $pathsArrayRef;
+    my $outDirectoryArrayRef;
+    my $outfileArrayRef;
+    my $value;
+    my $key;
+
+    my $tmpl = { 
+	pathsArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$pathsArrayRef},
+	outDirectoryArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$outDirectoryArrayRef},
+	outfileArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$outfileArrayRef},
+	value => { required => 1, defined => 1, store => \$value},
+	key => { required => 1, defined => 1, strict_type => 1, store => \$key},
+    };
+    
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];	
+    
+    if ($key eq "OutDirectory") {
+	
+	push(@{$outDirectoryArrayRef}, $value);
+    }
+    if ($key eq "OutFile") {
+	
+	push(@{$outfileArrayRef}, $value);
+    }
+    if ( (@{$outDirectoryArrayRef}) && (@{$outfileArrayRef}) ) {  #Both outDirectory and outfile have been collected, time to join
+	
+	my $path = catfile(${$outDirectoryArrayRef}[0], ${$outfileArrayRef}[0]);
+	
+	if (! ( any {$_ eq $path} @{$pathsArrayRef} ) ) { #Do not add same path twice
+	    
+	    push(@{$pathsArrayRef}, catfile(${$outDirectoryArrayRef}[0], ${$outfileArrayRef}[0]));
+	    @{$outDirectoryArrayRef} = ();  #Restart
+	    @{$outfileArrayRef} = ();  #Restart
+	}
+    }
+}
 
 
 sub MigrateFilesToTemp {
