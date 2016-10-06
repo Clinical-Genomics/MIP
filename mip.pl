@@ -3454,10 +3454,7 @@ sub RankVariants {
 							  inDirectory => $inFamilyDirectory,
 							  tempDirectory => ${$scriptParameterHashRef}{tempDirectory},
 							 });
-	}
-	
-	## Calculate Gene Models
-	say $FILEHANDLE "## Calculate Gene Models";   
+	} 
 
 	if ($consensusAnalysisType eq "wes" ) {
 
@@ -3465,6 +3462,9 @@ sub RankVariants {
 	    &ClearTrap({FILEHANDLE => $FILEHANDLE,
 		       });
 	}
+
+	## Genmod
+	say $FILEHANDLE "## GeneMod";  
 
 	## Create file commands for xargs
 	($xargsFileCounter, $xargsFileName) = &XargsCommand({FILEHANDLE => $FILEHANDLE,
@@ -3475,40 +3475,55 @@ sub RankVariants {
 							     xargsFileCounter => $xargsFileCounter,
 							     firstCommand => "genmod",
 							    });
-	 
+
+	my $genmodModule = "";  #Track which genmod modules has been processed
+	
 	## Process per contig
 	for (my $contigsCounter=0;$contigsCounter<scalar(@{$vcfParserContigsArrayRef});$contigsCounter++) {
 	     
 	    my $contigRef = \${$vcfParserContigsArrayRef}[$contigsCounter];
+	    $genmodModule = "";  #Restart for next contig
 
 	    ## Genmod Models
-	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
-	    print $XARGSFILEHANDLE "models ";  #Annotate genetic models for vcf variants
-	    print $XARGSFILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
-	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{pedigreeFile}." ";  #Pedigree file
-	    print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{genmodModelsFamilyType}." ";  #Family type
+	    if ( @{${$parameterHashRef}{dynamicParameters}{unaffected}} eq @{${$scriptParameterHashRef}{sampleIDs}} ) {  #Only unaffected
+	 
+		if ( (! $contigsCounter) && (! $vcfParserOutputFileCounter)) {
 
-	    if (defined(${$scriptParameterHashRef}{genmodModelsReducedPenetranceFile})) {
-
-		print $XARGSFILEHANDLE "--reduced_penetrance ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{genmodModelsReducedPenetranceFile})." ";  #Use list of genes that have been shown to display reduced penetrance
+		    $logger->warn("No affected sample in pedigree - skipping genmod models");
+		}
 	    }
-	    print $XARGSFILEHANDLE "--processes 4 ";  #Define how many processes that should be use for annotation 
+	    else {
 
-	    if (${$scriptParameterHashRef}{pVariantEffectPredictor} > 0) {  #Use VEP annotations in compound models
+		$genmodModule = "_models";
+		print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
+		print $XARGSFILEHANDLE "models ";  #Annotate genetic models for vcf variants
+		print $XARGSFILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
+		print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{pedigreeFile}." ";  #Pedigree file
+		print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{genmodModelsFamilyType}." ";  #Family type
 		
-		print $XARGSFILEHANDLE "--vep "; 
-	    }
-	    if (${$scriptParameterHashRef}{wholeGene}) {
+		if (defined(${$scriptParameterHashRef}{genmodModelsReducedPenetranceFile})) {
+		    
+		    print $XARGSFILEHANDLE "--reduced_penetrance ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{genmodModelsReducedPenetranceFile})." ";  #Use list of genes that have been shown to display reduced penetrance
+		}
+		print $XARGSFILEHANDLE "--processes 4 ";  #Define how many processes that should be use for annotation 
 		
-		print $XARGSFILEHANDLE "--whole_gene "; 
-	    }
+		if (${$scriptParameterHashRef}{pVariantEffectPredictor} > 0) {  #Use VEP annotations in compound models
+		    
+		    print $XARGSFILEHANDLE "--vep "; 
+		}
+		if (${$scriptParameterHashRef}{wholeGene}) {
+		    
+		    print $XARGSFILEHANDLE "--whole_gene "; 
+		}
 	    
-	    print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
-	    print $XARGSFILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf")." ";  #InFile
-	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef."_models.stderr.txt ";  #Redirect xargs output to program specific stderr file
-	    print $XARGSFILEHANDLE "| ";  #Pipe
+		print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
+		print $XARGSFILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf")." ";  #InFile
+		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef."_models.stderr.txt ";  #Redirect xargs output to program specific stderr file
+		print $XARGSFILEHANDLE "| ";  #Pipe
+	    }
 
 	    ## Genmod Annotate
+	    $genmodModule .= "_annotate";
 	    print $XARGSFILEHANDLE "genmod ";
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "annotate ";  #Annotate vcf variants
@@ -3529,6 +3544,7 @@ sub RankVariants {
 	    print $XARGSFILEHANDLE "| ";  #Pipe
 
 	    ## Genmod Score
+	    $genmodModule .= "_score";
 	    print $XARGSFILEHANDLE "genmod ";
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "score ";  #Score variants in a vcf file using Weighted sums
@@ -3544,21 +3560,31 @@ sub RankVariants {
 	    print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
 	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef."_models_annotate_score.stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    print $XARGSFILEHANDLE "- ";  #InStream
-	    print $XARGSFILEHANDLE "| ";  #Pipe
 
 	    ##Genmod Compound
-	    print $XARGSFILEHANDLE "genmod ";
-	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
-	    print $XARGSFILEHANDLE "compound ";  #Adjust score for compound variants in a vcf file
-	    print $XARGSFILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
+	    if ( @{${$parameterHashRef}{dynamicParameters}{unaffected}} eq @{${$scriptParameterHashRef}{sampleIDs}} ) {  #Only unaffected
+	 
+		if ( (! $contigsCounter) && (! $vcfParserOutputFileCounter)) {
 
-	    if (${$scriptParameterHashRef}{pVariantEffectPredictor} > 0) {  #Use VEP annotations in compound models
-		
-		print $XARGSFILEHANDLE "--vep "; 
+		    $logger->warn("No affected sample in pedigree - skipping genmod compound");
+		}
 	    }
+	    else {
 
-	    print $XARGSFILEHANDLE "-o ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_".$$contigRef.$vcfParserAnalysisType."_models_annotate_score_compound.vcf")." ";  #OutFile
-	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef."_models_annotate_score_compound.stderr.txt ";  #Redirect xargs output to program specific stderr file
+		$genmodModule .= "_compound";
+		print $XARGSFILEHANDLE "| ";  #Pipe
+		print $XARGSFILEHANDLE "genmod ";
+		print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
+		print $XARGSFILEHANDLE "compound ";  #Adjust score for compound variants in a vcf file
+		print $XARGSFILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
+		
+		if (${$scriptParameterHashRef}{pVariantEffectPredictor} > 0) {  #Use VEP annotations in compound models
+		    
+		    print $XARGSFILEHANDLE "--vep "; 
+		}
+	    }
+	    print $XARGSFILEHANDLE "-o ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_".$$contigRef.$vcfParserAnalysisType.$genmodModule.".vcf")." ";  #OutFile
+	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.$genmodModule.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    say $XARGSFILEHANDLE "- ";  #InStream
 	}
 
@@ -3567,7 +3593,7 @@ sub RankVariants {
 			      FILEHANDLE => $FILEHANDLE,
 			      arrayRef => \@vcfParserSubSetContigs,
 			      infilePrefix => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_"), 
-			      infilePostfix => $vcfParserAnalysisType."_models_annotate_score_compound.vcf",
+			      infilePostfix => $vcfParserAnalysisType.$genmodModule.".vcf",
 			      outfile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf"),
 			     });
 
@@ -16189,13 +16215,15 @@ sub ReadPlinkPedigreeFile {
 	
 	if ( ($. == 1) && ($_ =~/^\#/) ) {  #Header present overwrite @pedigreeFileElements with header info
 	    
-	    @pedigreeFileElements = split("\t", $'); #')
-		next;
+	    @pedigreeFileElements = split("\t", $'); #');
+	    next;
 	}
 	if (m/^\s+$/) {  # Avoid blank lines
+
 	    next;
 	}
 	if (m/^\#/) {  # Avoid "#"
+
 	    next;
         }		
 	if ($_ =~/(\S+)/) {	
@@ -16206,6 +16234,7 @@ sub ReadPlinkPedigreeFile {
 	    if ($lineInfo[0] =~/\S+/) {  #FamilyID
 		
 		$familyID = $lineInfo[0];
+
 		if ($familyID ne ${$scriptParameterHashRef}{familyID}) {
 
 		    $logger->fatal("File: ".$filePath." at line ".$.." pedigree FamilyID: '".$familyID."' and supplied FamilyId: '".${$scriptParameterHashRef}{familyID}."' does not match\n");
@@ -16259,6 +16288,16 @@ sub ReadPlinkPedigreeFile {
 		    if ($sampleElementsCounter < 6) {  #Mandatory elements known to be key->value
 			
 			${$sampleInfoHashRef}{$familyID}{$sampleID}{$$pedigreeHeaderRef} = $lineInfo[$sampleElementsCounter];
+
+			if ($$pedigreeHeaderRef eq "Phenotype") {  #Phenotype && unaffected
+			    
+			    &DetectPhenotype({parameterHashRef => $parameterHashRef,
+					      phenotype => $lineInfo[$sampleElementsCounter],
+					      sampleIDRef => \$sampleID,
+					     });
+			    
+			    #push(@{${$parameterHashRef}{dynamicParameters}{unaffected}}, $sampleID);
+			}
 		    }	
 		    else {  #Other elements treat as lists
 
@@ -17647,6 +17686,7 @@ sub AddToScriptParameter {
 			       humanGenomeReferenceVersionRef => \${$fileInfoHashRef}{humanGenomeReferenceVersion},
 			      });
     }
+
     ## Parse pedigree file
     if ($parameterName eq "pedigreeFile") {
 	
@@ -25792,6 +25832,51 @@ sub BcfToolsNorm {
 	
 	say $FILEHANDLE "2>> ".$stderrFilePath." ";  #Redirect xargs output to program specific stderr file
     }
+}
+
+
+sub DetectPhenotype {
+
+##DetectPhenotype
+
+##Function : Map each sampleIDs phenotype to dynamic parameter
+##Returns  : ""
+##Arguments: $parameterHashRef, $phenotype, $sampleIDRef
+##         : $parameterHashRef => Holds all parameters
+##         : $phenotype        => Phenotype
+##         : $sampleIDRef      => The sampleID {REF}
+
+    my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $parameterHashRef;
+    my $phenotype;
+    my $sampleIDRef;
+    
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	phenotype => { required => 1, defined => 1, strict_type => 1, store => \$phenotype},
+	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
+    };
+    
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
+    
+    if ($phenotype eq 2) {  #Affected
+
+	push(@{${$parameterHashRef}{dynamicParameters}{affected}}, $$sampleIDRef);
+    }
+    elsif ($phenotype eq 1) {  #Unaffected
+	
+	push(@{${$parameterHashRef}{dynamicParameters}{unaffected}}, $$sampleIDRef);
+    }
+    elsif ( ($phenotype eq -9) || (! $phenotype) ) {  #Missing
+	
+	push(@{${$parameterHashRef}{dynamicParameters}{missing}}, $$sampleIDRef);
+    }
+    else {
+
+	$logger->fatal("Not allowed phenotype".$phenotype." detected in pedigree file");
+    }    
 }
 
 
