@@ -24009,6 +24009,13 @@ sub CheckVT {
 			     maxAF => $vtRegExp{maxAF}{VTgenmodFilter}{Switch},
 			     calculateAF => $vtRegExp{calulateAF}{VTgenmodFilter}{Switch},
 			    });
+
+		    if ( ($vtProgram eq "decompose") || ($vtProgram eq "normalize") ){
+			
+			## Update Switch to avoid modifying same reference twice
+			$vtRegExp{decompose}{VTDecompose}{Switch} = 0;
+			$vtRegExp{normalize}{VTNormalize}{Switch} = 0;
+		    }
 		}
 	    }
 	}
