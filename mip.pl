@@ -3483,13 +3483,14 @@ sub RankVariants {
 	     
 	    my $contigRef = \${$vcfParserContigsArrayRef}[$contigsCounter];
 	    $genmodModule = "";  #Restart for next contig
+	    my $genmodIndata = catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf")." ";  #InFile
 
 	    ## Genmod Models
 	    if ( @{${$parameterHashRef}{dynamicParameters}{unaffected}} eq @{${$scriptParameterHashRef}{sampleIDs}} ) {  #Only unaffected
 	 
 		if ( (! $contigsCounter) && (! $vcfParserOutputFileCounter)) {
 
-		    $logger->warn("No affected sample in pedigree - skipping genmod models");
+		    $logger->warn("Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'compound'");
 		}
 	    }
 	    else {
@@ -3517,14 +3518,17 @@ sub RankVariants {
 		}
 	    
 		print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
-		print $XARGSFILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf")." ";  #InFile
-		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef."_models.stderr.txt ";  #Redirect xargs output to program specific stderr file
+		print $XARGSFILEHANDLE $genmodIndata;  #InFile
+		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.$genmodModule.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		print $XARGSFILEHANDLE "| ";  #Pipe
+		print $XARGSFILEHANDLE "genmod ";
+
+		$genmodIndata = "- ";  #Preparation for next module
+		
 	    }
 
 	    ## Genmod Annotate
 	    $genmodModule .= "_annotate";
-	    print $XARGSFILEHANDLE "genmod ";
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "annotate ";  #Annotate vcf variants
 	    print $XARGSFILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
@@ -3538,40 +3542,42 @@ sub RankVariants {
 		print $XARGSFILEHANDLE "--spidex ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{spidexFile})." ";  #Spidex file
 	    }
 
-	    print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
-	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef."_models_annotate.stderr.txt ";  #Redirect xargs output to program specific stderr file
-	    print $XARGSFILEHANDLE "- ";  #InStream
-	    print $XARGSFILEHANDLE "| ";  #Pipe
-
-	    ## Genmod Score
-	    $genmodModule .= "_score";
-	    print $XARGSFILEHANDLE "genmod ";
-	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
-	    print $XARGSFILEHANDLE "score ";  #Score variants in a vcf file using Weighted sums
-	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{pedigreeFile}." ";  #Pedigree file
-	    print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{genmodModelsFamilyType}." ";  #Family type
-	    print $XARGSFILEHANDLE "--rank_results ";  #Add a info field that shows how the different categories contribute to the rank score
-
-	    if (defined(${$scriptParameterHashRef}{rankModelFile})) {
-		
-		print $XARGSFILEHANDLE "--score_config ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{rankModelFile})." ";  #Rank model config.ini file 
-	    }
-	    
-	    print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
-	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef."_models_annotate_score.stderr.txt ";  #Redirect xargs output to program specific stderr file
-	    print $XARGSFILEHANDLE "- ";  #InStream
-
-	    ##Genmod Compound
 	    if ( @{${$parameterHashRef}{dynamicParameters}{unaffected}} eq @{${$scriptParameterHashRef}{sampleIDs}} ) {  #Only unaffected
-	 
-		if ( (! $contigsCounter) && (! $vcfParserOutputFileCounter)) {
-
-		    $logger->warn("No affected sample in pedigree - skipping genmod compound");
-		}
+		
+		## Write to outputFile - last genmod module
+		print $XARGSFILEHANDLE "-o ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_".$$contigRef.$vcfParserAnalysisType.$genmodModule.".vcf")." ";  #OutFile
+		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.$genmodModule.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		say $XARGSFILEHANDLE $genmodIndata;  #InStream or Infile
 	    }
 	    else {
+		
+		## Write to outputstream
+		print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
+		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.$genmodModule.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		print $XARGSFILEHANDLE $genmodIndata;  #InStream or Infile
+		print $XARGSFILEHANDLE "| ";  #Pipe
 
+		## Genmod Score
+		$genmodModule .= "_score";
+		print $XARGSFILEHANDLE "genmod ";
+		print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
+		print $XARGSFILEHANDLE "score ";  #Score variants in a vcf file using Weighted sums
+		print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{pedigreeFile}." ";  #Pedigree file
+		print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{genmodModelsFamilyType}." ";  #Family type
+		print $XARGSFILEHANDLE "--rank_results ";  #Add a info field that shows how the different categories contribute to the rank score
+		
+		if (defined(${$scriptParameterHashRef}{rankModelFile})) {
+		    
+		    print $XARGSFILEHANDLE "--score_config ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{rankModelFile})." ";  #Rank model config.ini file 
+		}
+		
+		print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
+		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.$genmodModule.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		print $XARGSFILEHANDLE $genmodIndata;  #InStream or Infile
+		
+		##Genmod Compound
 		$genmodModule .= "_compound";
+		
 		print $XARGSFILEHANDLE "| ";  #Pipe
 		print $XARGSFILEHANDLE "genmod ";
 		print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
@@ -3582,10 +3588,11 @@ sub RankVariants {
 		    
 		    print $XARGSFILEHANDLE "--vep "; 
 		}
+		
+		print $XARGSFILEHANDLE "-o ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_".$$contigRef.$vcfParserAnalysisType.$genmodModule.".vcf")." ";  #OutFile
+		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.$genmodModule.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		say $XARGSFILEHANDLE $genmodIndata;  #InStream or Infile
 	    }
-	    print $XARGSFILEHANDLE "-o ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_".$$contigRef.$vcfParserAnalysisType.$genmodModule.".vcf")." ";  #OutFile
-	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.$genmodModule.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-	    say $XARGSFILEHANDLE "- ";  #InStream
 	}
 
 	## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
@@ -8230,9 +8237,6 @@ sub SVRankVariants {
 						      tempDirectory => ${$scriptParameterHashRef}{tempDirectory},
 						     });
 	
-	## Calculate Gene Models
-	say $FILEHANDLE "## Calculate Gene Models";   
-	
 	if ($consensusAnalysisType eq "wes") {
 	    
 	    ## Clear trap for signal(s)
@@ -8240,81 +8244,107 @@ sub SVRankVariants {
 		       });
 	}
 	
-	## Create file commands for xargs
-	($xargsFileCounter, $xargsFileName) = &XargsCommand({FILEHANDLE => $FILEHANDLE,
-							     XARGSFILEHANDLE => $XARGSFILEHANDLE, 
-							     fileName => $fileName,
-							     programInfoPath => $programInfoPath, 
-							     nrCores => $genModnrCores,
-							     xargsFileCounter => $xargsFileCounter,
-							     firstCommand => "genmod",
-							    });
-    
-	## Process per contig
-	for (my $contigsCounter=0;$contigsCounter<scalar(@{$vcfParserContigsArrayRef});$contigsCounter++) {
-	    
-	    my $contigRef = \${$vcfParserContigsArrayRef}[$contigsCounter];
-	    
-	    ## Genmod Models
-	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
-	    print $XARGSFILEHANDLE "models ";  #Annotate genetic models for vcf variants
-	    print $XARGSFILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
-	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{pedigreeFile}." ";  #Pedigree file
-	    print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{svGenmodModelsFamilyType}." ";  #Family type
-	    
-	    if (defined(${$scriptParameterHashRef}{svGenmodModelsReducedPenetranceFile})) {
-		
-		print $XARGSFILEHANDLE "--reduced_penetrance ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{svGenmodModelsReducedPenetranceFile})." ";  #Use list of genes that have been shown to display reduced penetrance
-	    }
-	    print $XARGSFILEHANDLE "--processes 4 ";  #Define how many processes that should be use for annotation 
-	    
-	    if (${$scriptParameterHashRef}{pSVVariantEffectPredictor} > 0) {  #Use VEP annotations in compound models
-		
-		print $XARGSFILEHANDLE "--vep "; 
-	    }
-	    if (${$scriptParameterHashRef}{svWholeGene}) {
-		
-		print $XARGSFILEHANDLE "--whole_gene "; 
-	    }
-	    
-	    print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
-	    print $XARGSFILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf")." ";  #InFile
-	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef."_models.stderr.txt ";  #Redirect xargs output to program specific stderr file
-	    print $XARGSFILEHANDLE "| ";  #Pipe
-	    
-	    
-	    ## Genmod Score
-	    print $XARGSFILEHANDLE "genmod ";
-	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
-	    print $XARGSFILEHANDLE "score ";  #Score variants in a vcf file using Weighted sums
-	    print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{pedigreeFile}." ";  #Pedigree file
-	    print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{svGenmodModelsFamilyType}." ";  #Family type
-	    print $XARGSFILEHANDLE "--rank_results ";  #Add a info field that shows how the different categories contribute to the rank score
- 
-	    if (defined(${$scriptParameterHashRef}{rankModelFile})) {
-		
-		print $XARGSFILEHANDLE "--score_config ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{svRankModelFile})." ";  #Rank model config.ini file 
-	    }
-	    
-	    print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
-	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef."_models_score.stderr.txt ";  #Redirect xargs output to program specific stderr file
-	    print $XARGSFILEHANDLE "- ";  #InStream
-	    print $XARGSFILEHANDLE "| ";  #Pipe
-	    
-	    ##Genmod Compound
-	    print $XARGSFILEHANDLE "genmod ";
-	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
-	    print $XARGSFILEHANDLE "compound ";  #Adjust score for compound variants in a vcf file
-	    print $XARGSFILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
+	my $genmodModule = "";  #Track which genmod modules has been processed
 
-	    if (${$scriptParameterHashRef}{pSVVariantEffectPredictor} > 0) {  #Use VEP annotations in compound models
-		
-		print $XARGSFILEHANDLE "--vep "; 
+	## Genmod
+	if ( @{${$parameterHashRef}{dynamicParameters}{unaffected}} eq @{${$scriptParameterHashRef}{sampleIDs}} ) {  #Only unaffected
+	    		
+	    if (! $vcfParserOutputFileCounter) {
+
+		$logger->warn("Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 'compound'");
 	    }
+	}
+	else {
 	    
-	    print $XARGSFILEHANDLE "-o ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_".$$contigRef.$vcfParserAnalysisType."_models_score_compound.vcf")." ";  #OutFile
-	    print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef."_models_score_compound.stderr.txt ";  #Redirect xargs output to program specific stderr file
-	    say $XARGSFILEHANDLE "- ";  #InStream
+	    ## Calculate Gene Models
+	    say $FILEHANDLE "## Calculate Gene Models";   
+	    
+	    ## Create file commands for xargs
+	    ($xargsFileCounter, $xargsFileName) = &XargsCommand({FILEHANDLE => $FILEHANDLE,
+								 XARGSFILEHANDLE => $XARGSFILEHANDLE, 
+								 fileName => $fileName,
+								 programInfoPath => $programInfoPath, 
+								 nrCores => $genModnrCores,
+								 xargsFileCounter => $xargsFileCounter,
+								 firstCommand => "genmod",
+								});
+	    
+	    ## Process per contig
+	    for (my $contigsCounter=0;$contigsCounter<scalar(@{$vcfParserContigsArrayRef});$contigsCounter++) {
+		
+		my $contigRef = \${$vcfParserContigsArrayRef}[$contigsCounter];
+		$genmodModule = "";  #Restart for next contig
+		my $genmodIndata = catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf")." ";  #InFile
+		
+		## Genmod Models
+		$genmodModule = "_models";
+		
+		print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
+		print $XARGSFILEHANDLE "models ";  #Annotate genetic models for vcf variants
+		print $XARGSFILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
+		print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{pedigreeFile}." ";  #Pedigree file
+		print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{svGenmodModelsFamilyType}." ";  #Family type
+		
+		if (defined(${$scriptParameterHashRef}{svGenmodModelsReducedPenetranceFile})) {
+		    
+		    print $XARGSFILEHANDLE "--reduced_penetrance ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{svGenmodModelsReducedPenetranceFile})." ";  #Use list of genes that have been shown to display reduced penetrance
+		}
+		print $XARGSFILEHANDLE "--processes 4 ";  #Define how many processes that should be use for annotation 
+		
+		if (${$scriptParameterHashRef}{pSVVariantEffectPredictor} > 0) {  #Use VEP annotations in compound models
+		    
+		    print $XARGSFILEHANDLE "--vep "; 
+		}
+		if (${$scriptParameterHashRef}{svWholeGene}) {
+		    
+		    print $XARGSFILEHANDLE "--whole_gene "; 
+		}
+		
+		print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
+		print $XARGSFILEHANDLE $genmodIndata;  #InFile
+		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.$genmodModule.".stderr.txt ";  #Redirect xargs output to program specific stderr file	
+		print $XARGSFILEHANDLE "| ";  #Pipe
+		$genmodIndata = "- ";  #Preparation for next module
+		
+		## Genmod Score
+		$genmodModule .= "_score";
+
+		print $XARGSFILEHANDLE "genmod ";
+		print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
+		print $XARGSFILEHANDLE "score ";  #Score variants in a vcf file using Weighted sums
+		print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{pedigreeFile}." ";  #Pedigree file
+		print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{svGenmodModelsFamilyType}." ";  #Family type
+		print $XARGSFILEHANDLE "--rank_results ";  #Add a info field that shows how the different categories contribute to the rank score
+		
+		if (defined(${$scriptParameterHashRef}{rankModelFile})) {
+		    
+		    print $XARGSFILEHANDLE "--score_config ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{svRankModelFile})." ";  #Rank model config.ini file 
+		}
+		
+		## Write to outputstream
+		print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
+		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.$genmodModule.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		print $XARGSFILEHANDLE $genmodIndata;  #InStream or Infile
+		print $XARGSFILEHANDLE "| ";  #Pipe
+		
+		##Genmod Compound
+		$genmodModule .= "_compound";
+		
+		print $XARGSFILEHANDLE "genmod ";
+		print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
+		print $XARGSFILEHANDLE "compound ";  #Adjust score for compound variants in a vcf file
+		print $XARGSFILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
+		
+		if (${$scriptParameterHashRef}{pSVVariantEffectPredictor} > 0) {  #Use VEP annotations in compound models
+		    
+		    print $XARGSFILEHANDLE "--vep "; 
+		}
+		
+		print $XARGSFILEHANDLE "-o ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_".$$contigRef.$vcfParserAnalysisType.$genmodModule.".vcf")." ";  #OutFile
+		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.$genmodModule.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    
+		say $XARGSFILEHANDLE $genmodIndata;  #InStream or Infile
+	    }
 	}
 	
 	## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
@@ -8322,7 +8352,7 @@ sub SVRankVariants {
 			      FILEHANDLE => $FILEHANDLE,
 			      arrayRef => \@vcfParserSubSetContigs,
 			      infilePrefix => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_"), 
-			      infilePostfix => $vcfParserAnalysisType."_models_score_compound.vcf",
+			      infilePostfix => $vcfParserAnalysisType.$genmodModule.".vcf",
 			      outfile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf"),
 			     });
 
