@@ -35,7 +35,7 @@ BEGIN {
 
 my ($infile, $parseVEP, $rangeFeatureFile, $selectFeatureFile, $selectFeatureMatchingColumn, $selectOutfile, $writeSoftwareTag, $padding) = ("", 0, "", "", "", "", 1, 5000);
 my (@metaData, @selectMetaData, @rangeFeatureAnnotationColumns, @selectFeatureAnnotationColumns); 
-my (%geneAnnotation, %consequenceSeverity, %rangeData, %selectData, %snpEffCmd, %tree, %metaData, %siftTerm, %polyPhenTerm);
+my (%geneAnnotation, %consequenceSeverity, %rangeData, %selectData, %snpEffCmd, %tree, %metaData);
 
 my $vcfParserVersion = "1.2.8";
 
@@ -119,16 +119,12 @@ if ($selectFeatureFile) {
 
 &DefineSnpEffAnnotations();
 &DefineConsequenceSeverity();
-&DefineSiftTerms();
-&DefinePolyPhenTerms();
 
 &ReadInfileVCF({metaDataHashRef => \%metaData,
 		snpEffCmdHashRef => \%snpEffCmd,
 		rangeDataHashRef => \%rangeData,
 		selectDataHashRef => \%selectData,
 		consequenceSeverityHashRef => \%consequenceSeverity,
-		siftTermHashRef => \%siftTerm,
-		polyPhenTermHashRef => \%polyPhenTerm,
 		rangeFeatureAnnotationColumnsArrayRef => \@rangeFeatureAnnotationColumns,
 		selectFeatureAnnotationColumnsArrayRef => \@selectFeatureAnnotationColumns,
 		selectOutFilePath => $selectOutfile,
@@ -282,36 +278,6 @@ sub DefineConsequenceSeverity {
 }
 
 
-sub DefineSiftTerms {
-
-##DefineSiftTerms
-
-##Function : Defines the allowed sift terms
-##Returns  : ""
-##Arguments: None
-
-    $siftTerm{deleterious} = "";
-    $siftTerm{tolerated} = "";
-    $siftTerm{tolerated_low_confidence} = "";
-    $siftTerm{deleterious_low_confidence} = "";
-
-}
-
-sub DefinePolyPhenTerms {
-
-##DefinePolyPhenTerms
-
-##Function : Defines the allowed polyPhen terms
-##Returns  : ""
-##Arguments: None
-
-    $polyPhenTerm{probably_damaging} = "";
-    $polyPhenTerm{possibly_damaging} = "";
-    $polyPhenTerm{benign} = "";
-    $polyPhenTerm{unknown} = "";
-
-}
-
 sub ReadFeatureFile {
 
 ##ReadFeatureFile
@@ -412,14 +378,12 @@ sub ReadInfileVCF {
 
 ##Function : Reads infile in vcf format and adds and parses annotations
 ##Returns  : ""
-##Arguments: $metaDataHashRef, $snpEffCmdHashRef, $rangeDataHashRef, $selectDataHashRef, $consequenceSeverityHashRef, $siftTermHashRef, $polyPhenTermHashRef, $rangeFeatureAnnotationColumnsArrayRef, $selectFeatureAnnotationColumnsArrayRef, $selectOutFilePath, $vcfParserVersion, $selectFeatureFile, $parseVEP, $writeSoftwareTag
+##Arguments: $metaDataHashRef, $snpEffCmdHashRef, $rangeDataHashRef, $selectDataHashRef, $consequenceSeverityHashRef, $rangeFeatureAnnotationColumnsArrayRef, $selectFeatureAnnotationColumnsArrayRef, $selectOutFilePath, $vcfParserVersion, $selectFeatureFile, $parseVEP, $writeSoftwareTag
 ##         : $metaDataHashRef                        => Vcf meta data {REF}
 ##         : $snpEffCmdHashRef                       => SnpEff meta data {REF}
 ##         : $rangeDataHashRef                       => Range file data {REF}
 ##         : $selectDataHashRef                      => Select file data {REF}
 ##         : $consequenceSeverityHashRef             => Consequence severity for SO-terms {REF}
-##         : $siftTermHashRef                        => Sift prediction terms {REF}
-##         : $polyPhenTermHashRef                    => PolyPhen prediction terms {REF}
 ##         : $rangeFeatureAnnotationColumnsArrayRef  => Range feature columns {REF}
 ##         : $selectFeatureAnnotationColumnsArrayRef => Select feature columns {REF}
 ##         : $selectOutFilePath                      => The select file path
@@ -441,8 +405,6 @@ sub ReadInfileVCF {
     my $rangeDataHashRef;
     my $selectDataHashRef;
     my $consequenceSeverityHashRef;
-    my $siftTermHashRef;
-    my $polyPhenTermHashRef;
     my $rangeFeatureAnnotationColumnsArrayRef;
     my $selectFeatureAnnotationColumnsArrayRef;
     my $selectOutFilePath;
@@ -454,8 +416,6 @@ sub ReadInfileVCF {
 	rangeDataHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$rangeDataHashRef},
 	selectDataHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$selectDataHashRef},
 	consequenceSeverityHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$consequenceSeverityHashRef},
-	siftTermHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$siftTermHashRef},
-	polyPhenTermHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$polyPhenTermHashRef},
 	rangeFeatureAnnotationColumnsArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$rangeFeatureAnnotationColumnsArrayRef},
 	selectFeatureAnnotationColumnsArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$selectFeatureAnnotationColumnsArrayRef},
 	selectOutFilePath => { required => 1, defined => 1, strict_type => 1, store => \$selectOutFilePath},
@@ -542,14 +502,6 @@ sub ReadInfileVCF {
 			push(@{${$metaDataHashRef}{INFO}{GeneticRegionAnnotation}}, '##INFO=<ID=GeneticRegionAnnotation,Number=.,Type=String,Description="Genetic region that variant falls into.">');
 			
 		    }
-		    if ($vepFormatFieldColumn{SIFT}) {
-			
-			push(@{${$metaDataHashRef}{INFO}{Sift}}, '##INFO=<ID=Sift,Number=.,Type=String,Description="Sift protein function prediction term">');
-		    }
-		    if ($vepFormatFieldColumn{PolyPhen}) {
-			
-			push(@{${$metaDataHashRef}{INFO}{PolyPhen}}, '##INFO=<ID=PolyPhen,Number=.,Type=String,Description="PolyPhen protein function prediction term">');
-		    }
 		}
 		next;
 	    }
@@ -596,15 +548,6 @@ sub ReadInfileVCF {
 	    if ($parseVEP) {
 
 		@featureFields = ("MostSevereConsequence", "GeneticRegionAnnotation");
-		
-		if ($vepFormatFieldColumn{SIFT}) {
-		    
-		    push(@featureFields, "Sift");
-		}
-		if ($vepFormatFieldColumn{PolyPhen}) {
-		    
-		    push(@featureFields, "PolyPhen");
-		}
 	    }
 	    next;
 	}
@@ -963,27 +906,6 @@ sub ReadInfileVCF {
 						&AddToConsequenceHash({hashKeyRef => \$consequence{ $variantData{Symbol} }{$allele}{MostSevereConsequence},
 								       valueRef => \$consequenceTerm,
 								      });
-						
-						if (defined($vepFormatFieldColumn{SIFT}) ) {
-
-						    &CheckTerms({termHashRef => $siftTermHashRef,
-								 termRef => \$transcriptsEffects[ $vepFormatFieldColumn{SIFT} ],
-								 termName => "Sift",
-								});
-						    &AddToConsequenceHash({hashKeyRef => \$consequence{ $variantData{Symbol} }{$allele}{Sift},
-									   valueRef => \$transcriptsEffects[ $vepFormatFieldColumn{SIFT} ],
-									  });
-						}
-						if (defined($vepFormatFieldColumn{PolyPhen}) ) {
-						    
-						    &CheckTerms({termHashRef => $polyPhenTermHashRef,
-								 termRef => \$transcriptsEffects[ $vepFormatFieldColumn{PolyPhen} ],
-								 termName => "polyPhen",
-								});
-						    &AddToConsequenceHash({hashKeyRef => \$consequence{ $variantData{Symbol} }{$allele}{PolyPhen},
-									   valueRef => \$transcriptsEffects[ $vepFormatFieldColumn{PolyPhen} ],
-									  });
-						}
 					    }
 					}
 					else { #First pass
@@ -997,19 +919,6 @@ sub ReadInfileVCF {
 					    &AddToConsequenceHash({hashKeyRef => \$consequence{ $variantData{Symbol} }{$allele}{MostSevereConsequence},
 								   valueRef => \$consequenceTerm,
 								  });    
-					    
-					    if (defined($vepFormatFieldColumn{SIFT}) ) {
-						
-						&AddToConsequenceHash({hashKeyRef => \$consequence{ $variantData{Symbol} }{$allele}{Sift},
-								       valueRef => \$transcriptsEffects[ $vepFormatFieldColumn{SIFT} ],
-								      });
-					    }
-					    if (defined($vepFormatFieldColumn{PolyPhen}) ) {
-						
-						&AddToConsequenceHash({hashKeyRef => \$consequence{ $variantData{Symbol} }{$allele}{PolyPhen},
-								       valueRef => \$transcriptsEffects[ $vepFormatFieldColumn{PolyPhen} ],
-								      });
-					    }
 					}
 				    }
 				}
@@ -2161,7 +2070,7 @@ sub CheckTerms {
 ##Arguments: $termHashRef, $termRef, $termName
 ##         : $termHashRef => The term hash {REF}
 ##         : $termRef     => The found term {REF}
-##         : $termName    => The origin of the term i.e Sift, PolyPhen, SO
+##         : $termName    => The origin of the term i.e SO
 
     my ($argHashRef) = @_;
 
