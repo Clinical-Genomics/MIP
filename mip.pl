@@ -9281,11 +9281,16 @@ sub SVCombineVariantCallSets {
     }
 
     if ($altFileEnding ne "") {  #Then we have something to rename 
-
-	say $FILEHANDLE "## Rename outfile";
-	print $FILEHANDLE "mv ";
-	print $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$altFileEnding.".vcf")." ";
-	say $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.".vcf"), "\n";
+	
+	## Writes sbatch code to supplied filehandle to sort variants in vcf format
+	&SortVcf({scriptParameterHashRef => $scriptParameterHashRef,
+		  FILEHANDLE => $FILEHANDLE,
+		  sequenceDictFile => catfile($$referencesDirRef, ${$fileInfoHashRef}{humanGenomeReferenceNameNoEnding}.".dict"),
+		  infile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$altFileEnding.".vcf"),
+		  outfile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.".vcf"),
+		 });
+	
+	print $FILEHANDLE "\n";
     }
     
     if (${$scriptParameterHashRef}{svCombineVariantCallSetsBCFFile}) {
