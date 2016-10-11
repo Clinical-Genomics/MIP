@@ -27,7 +27,7 @@ BEGIN {
            -cdp/--condaPath The conda path (Default: "HOME/miniconda")
            -cdu/--condaUpDate Update conda before installing (Supply flag to enable)
            -bvc/--bioConda Set the module version of the programs that can be installed with bioConda (e.g. 'bwa=0.7.12')
-           -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.5.4')
+           -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.5.6')
 
            ## SHELL
            -pei/--perlInstall Install perl (Supply flag to enable)
@@ -99,7 +99,7 @@ $parameter{bioConda}{gcc} = "4.8.5";  #Required for CNVnator
 $parameter{perl} = "5.18.2";
 
 ## PIP
-$parameter{pip}{genmod} = "3.5.2";  #3.5.4
+$parameter{pip}{genmod} = "3.5.6";
 $parameter{pip}{variant_integrity} = "0.0.4";
 $parameter{pip}{chanjo} = "3.4.1";
 $parameter{pip}{cosmid} = "0.4.9.1";
