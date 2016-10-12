@@ -8346,15 +8346,25 @@ sub SVRankVariants {
 		say $XARGSFILEHANDLE $genmodIndata;  #InStream or Infile
 	    }
 	}
-	
+
 	## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
 	&ConcatenateVariants({scriptParameterHashRef => $scriptParameterHashRef,
 			      FILEHANDLE => $FILEHANDLE,
 			      arrayRef => \@vcfParserSubSetContigs,
 			      infilePrefix => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_"), 
 			      infilePostfix => $vcfParserAnalysisType.$genmodModule.".vcf",
-			      outfile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf"),
+			      outfile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType."_cat.vcf"),
 			     });
+
+	## Writes sbatch code to supplied filehandle to sort variants in vcf format
+	&SortVcf({scriptParameterHashRef => $scriptParameterHashRef,
+		  FILEHANDLE => $FILEHANDLE,
+		  sequenceDictFile => catfile($$referencesDirRef, ${$fileInfoHashRef}{humanGenomeReferenceNameNoEnding}.".dict"),
+		  infile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType."_cat.vcf"),
+		  outfile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf"),
+		 });
+		 
+	print $FILEHANDLE "\n";
 
 	if ($consensusAnalysisType eq "wes") {
 	    
