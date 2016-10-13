@@ -8170,8 +8170,8 @@ sub SVRankVariants {
     
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $consensusAnalysisType = $parameter{dynamicParameters}{consensusAnalysisType};
     my $xargsFileName;
+    my $consensusAnalysisType = $parameter{dynamicParameters}{consensusAnalysisType};
     my $time = 20;
 
     ## Set the number of cores
@@ -8198,7 +8198,9 @@ sub SVRankVariants {
     
     ## Assign fileTags
     my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{pSVVCFParser}{fileTag};
+    my $infileEndingStub = $$familyIDRef.$infileTag.$callType;
     my $outfileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"p".$programName}{fileTag};
+    my $outfileEndingStub = $$familyIDRef.$outfileTag.$callType;
 
     my $vcfParserAnalysisType = "";
     my $vcfParserContigsArrayRef = \@{ ${$fileInfoHashRef}{contigsSizeOrdered} };  #Set default
@@ -8210,34 +8212,34 @@ sub SVRankVariants {
 	    
 	    $vcfParserAnalysisType = ".selected";  #SelectFile variants
 	    $vcfParserContigsArrayRef = \@{${$fileInfoHashRef}{sortedSelectFileContigs}};  #Selectfile contigs
-
-	    if ($consensusAnalysisType eq "wes" ) {  #Remove MT|M since no exome kit so far has mitochondrial probes
-
-		## Removes an element from array and return new array while leaving orginal arrayRef untouched
-		@vcfParserSubSetContigs = &RemoveElementFromArray({arrayRef => \@{${$fileInfoHashRef}{selectFileContigs}},
-								   removeContigsArrayRef => ["MT", "M"],
-								   contigSwitch => 1,
-								  });
-	    }
-
 	}
 	
-	## Copy file(s) to temporary directory
-	say $FILEHANDLE "## Copy file(s) to temporary directory";
-	$xargsFileCounter = &XargsMigrateContigFiles({FILEHANDLE => $FILEHANDLE,
-						      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-						      arrayRef => $vcfParserContigsArrayRef,
-						      fileName => $fileName,
-						      programInfoPath => $programInfoPath,
-						      nrCores => $nrCores,
-						      xargsFileCounter => $xargsFileCounter,
-						      infile => $$familyIDRef.$infileTag.$callType,
-						      fileEnding => $vcfParserAnalysisType.".vcf*",
-						      inDirectory => $inFamilyDirectory,
-						      tempDirectory => ${$scriptParameterHashRef}{tempDirectory},
-						     });
-	
-	if ($consensusAnalysisType eq "wes") {
+	if ( ($consensusAnalysisType eq "wgs") || ($consensusAnalysisType eq "mixed") ) {  #Transfer contig files
+	    
+	    ## Copy file(s) to temporary directory
+	    say $FILEHANDLE "## Copy file(s) to temporary directory";
+	    $xargsFileCounter = &XargsMigrateContigFiles({FILEHANDLE => $FILEHANDLE,
+							  XARGSFILEHANDLE => $XARGSFILEHANDLE,
+							  arrayRef => $vcfParserContigsArrayRef,
+							  fileName => $fileName,
+							  programInfoPath => $programInfoPath,
+							  nrCores => $nrCores,
+							  xargsFileCounter => $xargsFileCounter,
+							  infile => $$familyIDRef.$infileTag.$callType,
+							  fileEnding => $vcfParserAnalysisType.".vcf*",
+							  inDirectory => $inFamilyDirectory,
+							  tempDirectory => ${$scriptParameterHashRef}{tempDirectory},
+							 });
+	}
+	else {
+	    
+	    ## Copy file(s) to temporary directory
+	    say $FILEHANDLE "## Copy file(s) to temporary directory"; 
+	    &MigrateFileToTemp({FILEHANDLE => $FILEHANDLE, 
+				path => catfile($inFamilyDirectory, $$familyIDRef.$infileTag.$callType.$vcfParserAnalysisType.".vcf"),
+				tempDirectory => $$tempDirectoryRef
+			       });
+	    say $FILEHANDLE "wait", "\n";
 	    
 	    ## Clear trap for signal(s)
 	    &ClearTrap({FILEHANDLE => $FILEHANDLE,
@@ -8273,8 +8275,19 @@ sub SVRankVariants {
 	    for (my $contigsCounter=0;$contigsCounter<scalar(@{$vcfParserContigsArrayRef});$contigsCounter++) {
 		
 		my $contigRef = \${$vcfParserContigsArrayRef}[$contigsCounter];
+		my $genmodInfileEndingStub = $infileEndingStub;
+		my $genmodOutfileEndingStub = $outfileEndingStub;
+		my $genmodXargsFileName = $xargsFileName;
+		my $genmodIndata = catfile($$tempDirectoryRef, $genmodInfileEndingStub.$vcfParserAnalysisType.".vcf")." ";  #InFile
+
+		if ( ($consensusAnalysisType eq "wgs") || ($consensusAnalysisType eq "mixed") ) {  #Update endings with contig info
+
+		    $genmodInfileEndingStub = $infileEndingStub."_".$$contigRef;
+		    $genmodOutfileEndingStub = $outfileEndingStub."_".$$contigRef;
+		    $genmodXargsFileName = $xargsFileName.".".$$contigRef;
+		    $genmodIndata = catfile($$tempDirectoryRef, $genmodInfileEndingStub.$vcfParserAnalysisType.".vcf")." ";  #InFile
+		}
 		$genmodModule = "";  #Restart for next contig
-		my $genmodIndata = catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_".$$contigRef.$vcfParserAnalysisType.".vcf")." ";  #InFile
 		
 		## Genmod Models
 		$genmodModule = "_models";
@@ -8302,7 +8315,7 @@ sub SVRankVariants {
 		
 		print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
 		print $XARGSFILEHANDLE $genmodIndata;  #InFile
-		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.$genmodModule.".stderr.txt ";  #Redirect xargs output to program specific stderr file	
+		print $XARGSFILEHANDLE "2> ".$genmodXargsFileName.$genmodModule.".stderr.txt ";  #Redirect xargs output to program specific stderr file	
 		print $XARGSFILEHANDLE "| ";  #Pipe
 		$genmodIndata = "- ";  #Preparation for next module
 		
@@ -8323,7 +8336,7 @@ sub SVRankVariants {
 		
 		## Write to outputstream
 		print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
-		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.$genmodModule.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		print $XARGSFILEHANDLE "2> ".$genmodXargsFileName.$genmodModule.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		print $XARGSFILEHANDLE $genmodIndata;  #InStream or Infile
 		print $XARGSFILEHANDLE "| ";  #Pipe
 		
@@ -8340,28 +8353,43 @@ sub SVRankVariants {
 		    print $XARGSFILEHANDLE "--vep "; 
 		}
 		
-		print $XARGSFILEHANDLE "-o ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_".$$contigRef.$vcfParserAnalysisType.$genmodModule.".vcf")." ";  #OutFile
-		print $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.$genmodModule.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		print $XARGSFILEHANDLE "-o ".catfile($$tempDirectoryRef, $genmodOutfileEndingStub.$vcfParserAnalysisType.$genmodModule.".vcf")." ";  #OutFile
+		print $XARGSFILEHANDLE "2> ".$genmodXargsFileName.$genmodModule.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    
 		say $XARGSFILEHANDLE $genmodIndata;  #InStream or Infile
+
+		if ( ($consensusAnalysisType eq "wes") || ($consensusAnalysisType eq "rapid") ) {  #Update endings with contig info
+		    
+		    last;  #Only perform once for exome samples to avoid risking contigs lacking variants throwing errors
+		}
 	    }
 	}
 
-	## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
-	&ConcatenateVariants({scriptParameterHashRef => $scriptParameterHashRef,
-			      FILEHANDLE => $FILEHANDLE,
-			      arrayRef => \@vcfParserSubSetContigs,
-			      infilePrefix => catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_"), 
-			      infilePostfix => $vcfParserAnalysisType.$genmodModule.".vcf",
-			      outfile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType."_cat.vcf"),
-			     });
+	my $concatenateEnding = "";
+	if ( ($consensusAnalysisType eq "wgs") || ($consensusAnalysisType eq "mixed") ) {
+
+	    $concatenateEnding = "_cat";
+
+	    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
+	    &ConcatenateVariants({scriptParameterHashRef => $scriptParameterHashRef,
+				  FILEHANDLE => $FILEHANDLE,
+				  arrayRef => \@vcfParserSubSetContigs,
+				  infilePrefix => catfile($$tempDirectoryRef, $outfileEndingStub."_"), 
+				  infilePostfix => $vcfParserAnalysisType.$genmodModule.".vcf",
+				  outfile => catfile($$tempDirectoryRef, $outfileEndingStub.$vcfParserAnalysisType.$concatenateEnding.".vcf"),
+				 });
+	}
+	else {
+
+	    $concatenateEnding = $genmodModule;
+	}
 
 	## Writes sbatch code to supplied filehandle to sort variants in vcf format
 	&SortVcf({scriptParameterHashRef => $scriptParameterHashRef,
 		  FILEHANDLE => $FILEHANDLE,
 		  sequenceDictFile => catfile($$referencesDirRef, ${$fileInfoHashRef}{humanGenomeReferenceNameNoEnding}.".dict"),
-		  infile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType."_cat.vcf"),
-		  outfile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf"),
+		  infile => catfile($$tempDirectoryRef, $outfileEndingStub.$vcfParserAnalysisType.$concatenateEnding.".vcf"),
+		  outfile => catfile($$tempDirectoryRef, $outfileEndingStub.$vcfParserAnalysisType.".vcf"),
 		 });
 		 
 	print $FILEHANDLE "\n";
@@ -8519,7 +8547,8 @@ sub SVVCFParser {
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargsFileName;
-    
+    my $consensusAnalysisType = $parameter{dynamicParameters}{consensusAnalysisType};
+
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header    
     my ($fileName, $programInfoPath) = &ProgramPreRequisites({scriptParameterHashRef => $scriptParameterHashRef,
 							      jobIDHashRef => $jobIDHashRef,
@@ -8538,21 +8567,37 @@ sub SVVCFParser {
 
     ## Assign fileTags
     my $infileTag = ${$fileInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{pSVVariantEffectPredictor}{fileTag};
+    my $infileEndingStub = $$familyIDRef.$infileTag.$callType;
     my $outfileTag = ${$fileInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{"p".$programName}{fileTag};
+    my $outfileEndingStub = $$familyIDRef.$outfileTag.$callType;
 
-    ## Copy file(s) to temporary directory
-    say $FILEHANDLE "## Copy file(s) to temporary directory"; 
-    ($xargsFileCounter, $xargsFileName) = &XargsMigrateContigFiles({FILEHANDLE => $FILEHANDLE,
-								    XARGSFILEHANDLE => $XARGSFILEHANDLE,
-								    arrayRef => \@{ ${$fileInfoHashRef}{contigsSizeOrdered} },
-								    fileName =>$fileName,
-								    programInfoPath => $programInfoPath,
-								    nrCores => $nrCores,
-								    xargsFileCounter => $xargsFileCounter,
-								    infile => $$familyIDRef.$infileTag.$callType,
-								    inDirectory => $inFamilyDirectory,
-								    tempDirectory => $$tempDirectoryRef,
-								   });
+    if ( ($consensusAnalysisType eq "wgs") || ($consensusAnalysisType eq "mixed") ) {  #Transfer contig files
+
+	## Copy file(s) to temporary directory
+	say $FILEHANDLE "## Copy file(s) to temporary directory"; 
+	($xargsFileCounter, $xargsFileName) = &XargsMigrateContigFiles({FILEHANDLE => $FILEHANDLE,
+									XARGSFILEHANDLE => $XARGSFILEHANDLE,
+									arrayRef => \@{ ${$fileInfoHashRef}{contigsSizeOrdered} },
+									fileName =>$fileName,
+									programInfoPath => $programInfoPath,
+									nrCores => $nrCores,
+									xargsFileCounter => $xargsFileCounter,
+									infile => $infileEndingStub,
+									inDirectory => $inFamilyDirectory,
+									tempDirectory => $$tempDirectoryRef,
+								       });
+    }
+    else {
+
+	## Copy file(s) to temporary directory
+	say $FILEHANDLE "## Copy file(s) to temporary directory"; 
+	&MigrateFileToTemp({FILEHANDLE => $FILEHANDLE, 
+			    path => catfile($inFamilyDirectory, $$familyIDRef.$infileTag.$callType.".vcf"),
+			    tempDirectory => $$tempDirectoryRef
+			   });
+	say $FILEHANDLE "wait", "\n";
+    }
+
     ## VCFParser
     say $FILEHANDLE "## VCFParser";
 
@@ -8569,9 +8614,18 @@ sub SVVCFParser {
     for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{contigsSizeOrdered}});$contigsCounter++) {
 
 	my $contigRef = \${$fileInfoHashRef}{contigsSizeOrdered}[$contigsCounter];
+	my $vcfParserInfileEndingStub = $infileEndingStub;
+	my $vcfParserOutfileEndingStub = $outfileEndingStub;
+	my $vcfParserXargsFileName = $xargsFileName;
 
+	if ( ($consensusAnalysisType eq "wgs") || ($consensusAnalysisType eq "mixed") ) {  #Update endings with contig info
+
+	    $vcfParserInfileEndingStub = $infileEndingStub."_".$$contigRef;
+	    $vcfParserOutfileEndingStub = $outfileEndingStub."_".$$contigRef;
+	    $vcfParserXargsFileName = $xargsFileName.".".$$contigRef;
+	}
 	print $XARGSFILEHANDLE catfile(${$scriptParameterHashRef}{inScriptDir}, "vcfParser.pl")." ";  #Parses the VEP output to tab-sep format
-	print $XARGSFILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_".$$contigRef.".vcf")." ";  #Infile
+	print $XARGSFILEHANDLE catfile($$tempDirectoryRef, $vcfParserInfileEndingStub.".vcf")." ";  #Infile
 	
 	if (${$scriptParameterHashRef}{pSVVariantEffectPredictor} > 0) {
 	    
@@ -8607,19 +8661,31 @@ sub SVVCFParser {
 		    print $XARGSFILEHANDLE "-sf_ac ";  #Select annotation columns
 		    print $XARGSFILEHANDLE join(',', @{${$scriptParameterHashRef}{svVcfParserSelectFeatureAnnotationColumns}})." ";	    
 		}
-		print $XARGSFILEHANDLE "-sof ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.".selected.vcf")." ";
+		print $XARGSFILEHANDLE "-sof ".catfile($$tempDirectoryRef, $vcfParserOutfileEndingStub.".selected.vcf")." ";
 	    }
 	}
-	print $XARGSFILEHANDLE "> ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.".vcf")." ";  #outfile
-	say $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE "> ".catfile($$tempDirectoryRef, $vcfParserOutfileEndingStub.".vcf")." ";  #outfile
+	say $XARGSFILEHANDLE "2> ".$vcfParserXargsFileName.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+
+	if ( ($consensusAnalysisType eq "wes") || ($consensusAnalysisType eq "rapid") ) {  #Update endings with contig info
+	    
+	    last;  #Only perform once for exome samples to avoid risking contigs lacking variants throwing errors
+	}
     }
 
-    ## QC Data File(s)
-    &MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".${$fileInfoHashRef}{contigsSizeOrdered}[0].".vcf"),
-			  filePath => $outFamilyDirectory,
-			  FILEHANDLE => $FILEHANDLE,
-			 });
-    say $FILEHANDLE "wait", "\n";
+    my $outfileEnding = $outfileEndingStub; 
+	
+    if ( ($consensusAnalysisType eq "wgs") || ($consensusAnalysisType eq "mixed") ) {  #Update endings with contig info
+	
+	$outfileEnding .= "_".${$fileInfoHashRef}{contigsSizeOrdered}[0];
+
+	## QC Data File(s)
+	&MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, $outfileEnding.".vcf"),
+			      filePath => $outFamilyDirectory,
+			      FILEHANDLE => $FILEHANDLE,
+			     });
+	say $FILEHANDLE "wait", "\n";
+    }
     
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
@@ -8666,7 +8732,7 @@ sub SVVCFParser {
 		       familyID => $$familyIDRef,
 		       programName => $programName,
 		       outDirectory => $outFamilyDirectory,
-		       outfileEnding => $$familyIDRef.$outfileTag.$callType."_".${$fileInfoHashRef}{contigsSizeOrdered}[0].".vcf",
+		       outfileEnding => $outfileEnding.".vcf",
 		       outDataType => "static"
 		      });
     }
@@ -8684,26 +8750,39 @@ sub SVVCFParser {
 	    @vcfParserContigsRef = \@{${$fileInfoHashRef}{sortedSelectFileContigs}};
 	}
 	
-	## Copies file from temporary directory.
-	say $FILEHANDLE "## Copy file(s) from temporary directory";
-	($xargsFileCounter, $xargsFileName) = &XargsMigrateContigFiles({FILEHANDLE => $FILEHANDLE,
-									XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									arrayRef => @vcfParserContigsRef,
-									fileName =>$fileName,
-									programInfoPath => $programInfoPath,
-									nrCores => $nrCores,
-									xargsFileCounter => $xargsFileCounter,
-									outfile => $$familyIDRef.$outfileTag.$callType,
-									fileEnding => $vcfParserAnalysisType.".vcf*",
-									outDirectory => $outFamilyDirectory,
-									tempDirectory => $$tempDirectoryRef,
-								       });
-	
+	if ( ($consensusAnalysisType eq "wgs") || ($consensusAnalysisType eq "mixed") ) {
+
+	    ## Copies file from temporary directory.
+	    say $FILEHANDLE "## Copy file(s) from temporary directory";
+	    ($xargsFileCounter, $xargsFileName) = &XargsMigrateContigFiles({FILEHANDLE => $FILEHANDLE,
+									    XARGSFILEHANDLE => $XARGSFILEHANDLE,
+									    arrayRef => @vcfParserContigsRef,
+									    fileName =>$fileName,
+									    programInfoPath => $programInfoPath,
+									    nrCores => $nrCores,
+									    xargsFileCounter => $xargsFileCounter,
+									    outfile => $outfileEndingStub,
+									    fileEnding => $vcfParserAnalysisType.".vcf*",
+									    outDirectory => $outFamilyDirectory,
+									    tempDirectory => $$tempDirectoryRef,
+									   });
+	}
+	else {
+
+	    ## Copies file from temporary directory.
+	    say $FILEHANDLE "## Copy file from temporary directory";
+	    &MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, $outfileEndingStub.$vcfParserAnalysisType.".vcf*"),
+				  filePath => $outFamilyDirectory,
+				  FILEHANDLE => $FILEHANDLE,
+				 });
+	    say $FILEHANDLE "wait", "\n";
+	}
+
 	## Adds the most complete vcf file to sampleInfo
 	&AddMostCompleteVCF({scriptParameterHashRef => $scriptParameterHashRef,
 			     sampleInfoHashRef => $sampleInfoHashRef,
 			     programName => $programName,
-			     path => catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.$vcfParserAnalysisType.".vcf"),
+			     path => catfile($outFamilyDirectory, $outfileEndingStub.$vcfParserAnalysisType.".vcf"),
 			     vcfParserOutputFileCounter => $vcfParserOutputFileCounter,
 			    });
     }
@@ -8792,6 +8871,7 @@ sub SVVariantEffectPredictor {
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargsFileName;
+    my $consensusAnalysisType = $parameter{dynamicParameters}{consensusAnalysisType};
     my $nrForkes = 4;  #VariantEffectPredictor forks
 
     ## Set the number of cores to allocate per sbatch job.
@@ -8824,6 +8904,7 @@ sub SVVariantEffectPredictor {
     ## Assign fileTags
     my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{pSVCombineVariantCallSets}{fileTag};
     my $outfileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"p".$programName}{fileTag};
+    my $outfileEndingStub = $$familyIDRef.$outfileTag.$callType;
 
     my $coreCounter = 1;
 
@@ -8871,6 +8952,15 @@ sub SVVariantEffectPredictor {
     for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{contigsSizeOrdered}});$contigsCounter++) {
 
 	my $contigRef = \${$fileInfoHashRef}{contigsSizeOrdered}[$contigsCounter];
+	
+	my $vepOutfileEndingStub = $outfileEndingStub;
+	my $vepXargsFileName = $xargsFileName;
+
+	if ( ($consensusAnalysisType eq "wgs") || ($consensusAnalysisType eq "mixed") ) {  #Update endings with contig info
+	    
+	    $vepOutfileEndingStub = $outfileEndingStub."_".$$contigRef;
+	    $vepXargsFileName = $xargsFileName.".".$$contigRef;
+	}
 
 	print $XARGSFILEHANDLE catfile(${$scriptParameterHashRef}{vepDirectoryPath}, "variant_effect_predictor.pl")." ";  #VEP script
 	print $XARGSFILEHANDLE "--assembly ".$assemblyVersion." "; 
@@ -8882,14 +8972,18 @@ sub SVVariantEffectPredictor {
 	    print $XARGSFILEHANDLE "--fasta ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{humanGenomeReference})." ";  #Reference file
 	}
 
-	print $XARGSFILEHANDLE "--force_overwrite ";  #force the overwrite of the existing file
+	print $XARGSFILEHANDLE "--force_overwrite ";  #Force the overwrite of the existing file
 	print $XARGSFILEHANDLE "--format vcf ";  #Input is in the VCF format
 	print $XARGSFILEHANDLE "--vcf ";  #Writes output in VCF format.
 	print $XARGSFILEHANDLE "--no_progress ";  #Do not show progress in stderr
 	print $XARGSFILEHANDLE "--fork ".$nrForkes." ";  #Enable forking, using the specified number of forks.
 	print $XARGSFILEHANDLE "--buffer_size 100 ";  #Sets the internal buffer size, corresponding to the number of variations that are read in to memory simultaneously 
 	print $XARGSFILEHANDLE "--offline ";  #Use installed assembly 
-	print $XARGSFILEHANDLE "--chr ".$$contigRef." ";
+
+	if ( ($consensusAnalysisType eq "wgs") || ($consensusAnalysisType eq "mixed") ) {  #Add contig info
+
+	    print $XARGSFILEHANDLE "--chr ".$$contigRef." ";
+	}
 
 	##VEPPlugins
 	foreach my $plugin (@{${$scriptParameterHashRef}{svVepPlugins}}) {
@@ -8913,11 +9007,11 @@ sub SVVariantEffectPredictor {
 
 	##VEPFeatures
 	foreach my $vepFeature (@{${$scriptParameterHashRef}{svVepFeatures}}) {
-
+	    
 	    print $XARGSFILEHANDLE "--".$vepFeature." ";  #Add VEP features to the output.
-
+	    
 	    if ( ($$contigRef =~ /MT|M/) && ($vepFeature eq "refseq") ) {  #Special case for mitochondrial contig annotation
-
+		
 		print $XARGSFILEHANDLE "--all_refseq ";
 	    }
 	    if ( ($vepFeature eq "sift") || ($vepFeature eq "polyphen") )  {  #Protein predictions
@@ -8925,20 +9019,33 @@ sub SVVariantEffectPredictor {
 		print $XARGSFILEHANDLE "p ";  #Add prediction term 
 	    }
 	}
+	
 	print $XARGSFILEHANDLE "-i ".catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType."_fixedSVLength.vcf")." ";  #InFile (family vcf)
-	print $XARGSFILEHANDLE "-o ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.".vcf")." ";  #OutFile
-	print $XARGSFILEHANDLE "1> ".$xargsFileName.".".$$contigRef.".stdout.txt ";  #Redirect xargs output to program specific stdout file
-	say $XARGSFILEHANDLE "2> ".$xargsFileName.".".$$contigRef.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE "-o ".catfile($$tempDirectoryRef, $vepOutfileEndingStub.".vcf")." ";  #OutFile
+	print $XARGSFILEHANDLE "1> ".$vepXargsFileName.".stdout.txt ";  #Redirect xargs output to program specific stdout file
+	say $XARGSFILEHANDLE "2> ".$vepXargsFileName.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	
+	if ( ($consensusAnalysisType eq "wes") || ($consensusAnalysisType eq "rapid") ) {  #Update endings with contig info
+	    
+	    last;  #Only perform once for exome samples to avoid risking contigs lacking variants throwing errors
+	}
     }
-
+    
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
+	
+	my $outfileEnding = $outfileEndingStub; 
+	
+	if ( ($consensusAnalysisType eq "wgs") || ($consensusAnalysisType eq "mixed") ) {  #Update endings with contig info
+	    
+	    $outfileEnding .= "_".${$fileInfoHashRef}{contigsSizeOrdered}[0];
+	}
 	
 	## Collect QC metadata info for later use                     	
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
 		       familyID => $$familyIDRef,
 		       programName => $programName."Summary",
 		       outDirectory => $outFamilyDirectory,
-		       outfileEnding => $$familyIDRef.$outfileTag.$callType."_".${$fileInfoHashRef}{contigsSizeOrdered}[0].".vcf_summary.html",
+		       outfileEnding => $outfileEnding.".vcf_summary.html",
 		       outDataType => "static"
 		      });
 	## Collect QC metadata info for later use                     	
@@ -8946,23 +9053,23 @@ sub SVVariantEffectPredictor {
 		       familyID => $$familyIDRef,
 		       programName => $programName,
 		       outDirectory => $outFamilyDirectory,
-		       outfileEnding => $$familyIDRef.$outfileTag.$callType."_".${$fileInfoHashRef}{contigsSizeOrdered}[0].".vcf",
+		       outfileEnding => $outfileEnding.".vcf",
 		       outDataType => "static"
 		      });
     }
-
+    
     ## QC Data File(s)
-    &MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_*.vcf_s*"),
+    &MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, $outfileEndingStub."*.vcf_s*"),
 			  filePath => $outFamilyDirectory,
 			  FILEHANDLE => $FILEHANDLE,
 			 });
     say $FILEHANDLE "wait", "\n";
-
+    
     close($XARGSFILEHANDLE);
-
+    
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    &MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_*.vcf*"),
+    &MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, $outfileEndingStub."*.vcf*"),
 			  filePath => $outFamilyDirectory,
 			  FILEHANDLE => $FILEHANDLE,
 			 });
