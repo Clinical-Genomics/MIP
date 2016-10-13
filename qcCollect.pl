@@ -711,6 +711,10 @@ sub RegExpToYAML {
     
     $regExp{'CollectMultipleMetrics'}{'Header_info'}{'Pair'} = q?perl -nae' if ($_ =~/^PAIR/ ) {print $_;last;}'  ?; #Note return whole line (PAIR)
     
+    $regExp{'CollectMultipleMetricsInsertSize'}{'Header_info'}{'Header'} = q?perl -nae' if ($_ =~/^MEDIAN_INSERT_SIZE/ ) {print $_;last;}' ?; #Note return whole line (Header) 
+    
+    $regExp{'CollectMultipleMetricsInsertSize'}{'Header_info'}{'Data'} = q?perl -nae' if ( ($. ==8) && ($_ =~/(\S+)/) ) {print $_;last;}' ?; #Note return whole line and only look at line 8, where the data action is
+
     $regExp{'VariantEval_All'}{'CompOverlap_header'}{'CompOverlap_header'} = q?perl -nae' if ($_ =~/^CompOverlap\s+\CompRod/ ) {print $_;last;}' ?; #Note return whole line (Header)
     
     $regExp{'VariantEval_All'}{'CompOverlap_header'}{'CompOverlap_data_all'} = q?perl -nae' if ( ($_ =~/^CompOverlap/) && ($_ =~/all/) && ($_ =~/none/)) {print $_;last;}' ?; #Note return whole line

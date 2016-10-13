@@ -7823,6 +7823,15 @@ sub PicardToolsCollectMultipleMetrics {
 		       outfileEnding => $outfileTag.".alignment_summary_metrics",
 		       outDataType => "infileDependent"
 		      });
+	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
+		       familyID => $$familyIDRef,
+		       sampleID => $$sampleIDRef,
+		       programName => "CollectMultipleMetricsInsertSize",
+		       infile => $infile,
+		       outDirectory => $outSampleDirectory,
+		       outfileEnding => $outfileTag.".insert_size_metrics",
+		       outDataType => "infileDependent"
+		      });
     }    
     close($FILEHANDLE);
 
