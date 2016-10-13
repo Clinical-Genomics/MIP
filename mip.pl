@@ -5860,6 +5860,18 @@ sub SampleCheck {
 	    print $FILEHANDLE "--outfile ".catfile($outFamilyDirectory, $$familyIDRef."_mendel.txt")." ";
 	    print $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType.".vcf")." ";  #InFile
 	    say $FILEHANDLE "mendel ", "\n";
+	    
+	    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
+		
+		## Collect QC metadata info for later use                                                                                               
+		&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
+			       familyID => ${$scriptParameterHashRef}{familyID},
+			       programName => "VariantIntegrityMendel",
+			       outDirectory => $outFamilyDirectory,
+			       outfileEnding => $$familyIDRef."_mendel.txt",
+			       outDataType => "infileDependent"
+			      });
+	    }
 	}
 	
 	foreach my $sampleID (@{${$scriptParameterHashRef}{sampleIDs}}) {
@@ -5874,6 +5886,18 @@ sub SampleCheck {
 		print $FILEHANDLE "--outfile ".catfile($outFamilyDirectory, $$familyIDRef."_father.txt")." ";
 		print $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType.".vcf")." ";  #InFile
 		say $FILEHANDLE "father ", "\n";
+
+		if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
+		
+		    ## Collect QC metadata info for later use                                                                                               
+		    &SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
+				   familyID => ${$scriptParameterHashRef}{familyID},
+				   programName => "VariantIntegrityFather",
+				   outDirectory => $outFamilyDirectory,
+				   outfileEnding => $$familyIDRef."_father.txt",
+				   outDataType => "infileDependent"
+				  });
+		}
 	    }
 	}
     }

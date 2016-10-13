@@ -819,6 +819,14 @@ sub RegExpToYAML {
 
     $regExp{'Plink2'}{'Version'} = q?perl -nae 'if($_=~/PLINK\s(\S+\s\S+\s\S+\s\S+\s\S+)/) {my $ret = $1;$ret =~s/\s/_/g;print $ret;last;}' ?; #Collect Plink2 version
 
+    $regExp{'VariantIntegrityMendel'}{'FractionofErrors'}  = q?perl -nae 'unless ($_=~/^#/) {print $F[1];last;}' ?;
+
+    $regExp{'VariantIntegrityMendel'}{'MendelianErrors'}  = q?perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' ?;
+
+    $regExp{'VariantIntegrityFather'}{'FractionofCommonVariants'}  = q?perl -nae 'unless ($_=~/^#/) {print $F[1];last;}' ?;
+
+    $regExp{'VariantIntegrityFather'}{'CommonVariants'}  = q?perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' ?;
+
 #$regExp{''}{''} = ;
 
     
