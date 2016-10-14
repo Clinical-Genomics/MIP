@@ -17743,7 +17743,7 @@ sub CheckInterleaved {
         
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
-    my $interleavedRegExp = q?perl -nae 'chomp($_); if( ($_=~/^@\w+:\w+:\w+:\w+\S+\s(\w+):\w+:\w+:\w+/) && ($.==5) ) {print $1."\n";last;} elsif ($.==6) {last;}' ?;
+    my $interleavedRegExp = q?perl -nae 'chomp($_); if( ($_=~/^@\S+:\w+:\w+:\w+\S+\s(\w+):\w+:\w+:\w+/) && ($.==5) ) {print $1."\n";last;} elsif ($.==6) {last;}' ?;
     
     my $pwd = cwd();  #Save current direcory
     chdir($directory);  #Move to sampleID infile directory
