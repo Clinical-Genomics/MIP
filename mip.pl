@@ -13155,7 +13155,7 @@ sub BWAMem {
     
 ##Function : Performs alignment.
 ##Returns  : ""
-##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $programName, $alignerOutDirRef, $tempDirectoryRef, $referencesDirRef
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $infileHashRef, $inDirPathHashRef, $infilesLaneNoEndingHashRef, $jobIDHashRef, $sampleIDRef, $programName, $familyIDRef, $alignerOutDirRef, $tempDirectoryRef, $referencesDirRef
 ##         : $parameterHashRef           => The parameter hash {REF}
 ##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
 ##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
@@ -13166,6 +13166,7 @@ sub BWAMem {
 ##         : $jobIDHashRef               => The jobID hash {REF}
 ##         : $sampleIDRef                => The sampleID {REF}
 ##         : $programName                => The program name
+##         : $familyIDRef                => The familyID {REF}
 ##         : $alignerOutDirRef           => The alignerOutDir used in the analysis {REF}
 ##         : $tempDirectoryRef           => The temporary directory
 ##         : $referencesDirRef           => MIP reference directory {REF}
@@ -13173,6 +13174,7 @@ sub BWAMem {
     my ($argHashRef) = @_;
 
     ## Default(s)
+    my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
     my $alignerOutDirRef = ${$argHashRef}{alignerOutDirRef} //= \${$argHashRef}{scriptParameterHashRef}{alignerOutDir};
     my $tempDirectoryRef = ${$argHashRef}{tempDirectoryRef} //= \${$argHashRef}{scriptParameterHashRef}{tempDirectory};
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
@@ -13200,8 +13202,9 @@ sub BWAMem {
 	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
 	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
 	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
-	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
 	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
+	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
 	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
     };
         
@@ -13214,17 +13217,20 @@ sub BWAMem {
     my $totalSbatchCounter = 0;
     my $pairedEndTracker = 0;
 
-    my $outfileTag = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$$sampleIDRef}{"p".$programName}{fileTag};
+    my $outfileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{"p".$programName}{fileTag};
 
-    ## Collect fastq file(s) size
+    ## Collect fastq file(s) size and interleaved info
     for (my $infileCounter=0;$infileCounter<scalar( @{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef} });$infileCounter++) {  #For all infiles but process in the same command i.e. both reads per align call
 	
-	my $sequenceRunMode = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$$sampleIDRef}{File}{${$infilesLaneNoEndingHashRef}{ $$sampleIDRef }[$infileCounter]}{SequenceRunType};  #Collect paired-end or single-end sequence run mode
+	my $infileRef = \${$infilesLaneNoEndingHashRef}{ $$sampleIDRef }[$infileCounter];  #Alias
+	my $sequenceRunMode = ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{File}{$$infileRef}{SequenceRunType};  #Collect paired-end or single-end sequence run mode
 	
+	my $interleavedFastqFile = ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{File}{$$infileRef}{Interleaved};
+
 	## Fastq.gz
 	if (${$infileHashRef}{$$sampleIDRef}[$infileCounter] =~/.fastq.gz$/) {  #Files are already gz and presently the scalar for compression has not been investigated. Therefore no automatic time allocation can be performed.
 	
-	    if (${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$$sampleIDRef}{File}{${$infilesLaneNoEndingHashRef}{ $$sampleIDRef }[$infileCounter]}{SequenceRunType} eq "Paired-end") {  #Second read direction if present
+	    if (${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{File}{$$infileRef}{SequenceRunType} eq "Paired-end") {  #Second read direction if present
                 $infileSize = -s catfile(${$inDirPathHashRef}{$$sampleIDRef}, ${$infileHashRef}{$$sampleIDRef}[$infileCounter+$infileCounter]);
 	    }
 	    else {  #Single-end
@@ -13234,7 +13240,7 @@ sub BWAMem {
         }
         else {  #Files are in fastq format
 	    
-	    if (${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$$sampleIDRef}{File}{${$infilesLaneNoEndingHashRef}{ $$sampleIDRef }[$infileCounter]}{SequenceRunType} eq "Paired-end") {  #Second read direction if present        
+	    if (${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{File}{$$infileRef}{SequenceRunType} eq "Paired-end") {  #Second read direction if present        
 
 		$infileSize = -s catfile(${$inDirPathHashRef}{$$sampleIDRef}, ${$infileHashRef}{$$sampleIDRef}[$infileCounter+$infileCounter]);  # collect .fastq file size to enable estimation of time required for aligning, +1 for syncing multiple infiles per sampleID. Hence, filesize will be calculated on read2 (should not matter).
 	    }
@@ -13247,7 +13253,7 @@ sub BWAMem {
 	## Parallelize alignment by spliting of alignmnet processes as the files are read
 	if ($consensusAnalysisType eq "rapid") {
 	    
-	    my $seqLength = ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$$sampleIDRef}{File}{${$infilesLaneNoEndingHashRef}{ $$sampleIDRef }[$infileCounter]}{SequenceLength};
+	    my $seqLength = ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{File}{$$infileRef}{SequenceLength};
 	    my ($numberNodes, $ReadNrofLines) = &DetermineNrofRapidNodes({seqLength => $seqLength,
 									  infileSize => $infileSize,
 									 });
@@ -13289,6 +13295,11 @@ sub BWAMem {
 		print $FILEHANDLE "bwa mem ";
 		print $FILEHANDLE "-M ";  #Mark shorter split hits as secondary (for Picard compatibility). 
 		print $FILEHANDLE "-t ".${$scriptParameterHashRef}{maximumCores}." ";  #Number of threads
+
+		if ($interleavedFastqFile) {
+		    
+		    print $FILEHANDLE "-p ";  #Interleaved fastq mode
+		}
 
 		## Read group header line
 		print $FILEHANDLE q?-R "@RG\t?;
@@ -13415,6 +13426,12 @@ sub BWAMem {
 		print $FILEHANDLE "-o ".catfile($$tempDirectoryRef, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter])." ";  #prefix for output files
 	    }
 	    print $FILEHANDLE "-t ".${$scriptParameterHashRef}{maximumCores}." ";  #Number of threads
+	    
+	    if ($interleavedFastqFile) {
+
+		print $FILEHANDLE "-p ";  #Interleaved fastq mode
+	    }
+
 	    print $FILEHANDLE q?-R "@RG\t?;
 	    print $FILEHANDLE q?ID:?.${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].q?\t?;
 	    print $FILEHANDLE q?SM:?.$$sampleIDRef.q?\t?;
@@ -13529,12 +13546,12 @@ sub BWAMem {
 
 	    if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 
-		${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].".bam");
+		${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MostCompleteBAM}{Path} = catfile($outSampleDirectory, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].".bam");
 
 		if (${$scriptParameterHashRef}{bwaMemCram}) {
 
-		    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$$sampleIDRef}{Program}{Bwa}{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter]}{Path} = catfile($outSampleDirectory, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileTag.".cram");  #Required for analysisRunStatus check downstream
-		    ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$$sampleIDRef}{File}{${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter]}{CramFile} = catfile($outSampleDirectory, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileTag.".cram");  #Fastreference to cram file
+		    ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{Program}{Bwa}{ ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter]}{Path} = catfile($outSampleDirectory, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileTag.".cram");  #Required for analysisRunStatus check downstream
+		    ${$sampleInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{File}{${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter]}{CramFile} = catfile($outSampleDirectory, ${$infilesLaneNoEndingHashRef}{$$sampleIDRef}[$infileCounter].$outfileTag.".cram");  #Fastreference to cram file
 		}
 		if (${$scriptParameterHashRef}{bwaMembamStats}) {
 
@@ -17373,54 +17390,19 @@ sub InfilesReFormat {
 	
         for (my $infileCounter=0;$infileCounter<scalar( @ { ${$infileHashRef}{$sampleID} });$infileCounter++) {  #All inputfiles for all fastq dir and remakes format
 	    
-            if (${$infileHashRef}{$sampleID}[$infileCounter] =~/(\d+)_(\d+)_([^_]+)_([^_]+)_index([^_]+)_(\d).fastq/) {  #Parse 'new' no "index" format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                             
+	    my $fileNameRef = \${$infileHashRef}{$sampleID}[$infileCounter];  #Alias
+	    ## Check if a file is gzipped.
+	    my $compressedSwitch = &CheckGzipped({fileNameRef => $fileNameRef,
+						 });
+	    my $readFileCommand = "zcat";
+	    if (! $compressedSwitch) { #Not compressed
 		
-		## Check if a file is gzipped.
-		my $compressedSwitch = &CheckGzipped({fileNameRef => \${$infileHashRef}{$sampleID}[$infileCounter],
-						     });
-		
-		if (! $compressedSwitch) { #Not compressed
-		    
-		    $uncompressedFileCounter = "unCompressed";  #File needs compression before starting analysis. Note: All files are rechecked downstream and uncompressed ones are gzipped automatically           
-		}
-		## Check that the sampleID provided and sampleID in infile name match.
-		&CheckSampleIDMatch({scriptParameterHashRef => $scriptParameterHashRef,
-				     infileHashRef => $infileHashRef,
-				     sampleID => $sampleID,
-				     infileSampleID => $4,  #$4 = SampleID from filename
-				     infileCounter => $infileCounter,
-				    });
-
-		## Adds information derived from infile name to sampleInfo hash. Tracks the number of lanes sequenced and checks unique array elementents.
-		&AddInfileInfo({scriptParameterHashRef => $scriptParameterHashRef,
-				sampleInfoHashRef => $sampleInfoHashRef,
-				fileInfoHashRef => $fileInfoHashRef,
-				laneHashRef => $laneHashRef,
-				infileHashRef => $infileHashRef,
-				inDirPathHashRef => $inDirPathHashRef,
-				infilesLaneNoEndingHashRef => $infilesLaneNoEndingHashRef,
-				infilesBothStrandsNoEndingHashRef => $infilesBothStrandsNoEndingHashRef,
-				lane => $1,
-				date => $2,
-				flowCell => $3,
-				sampleID => $4,
-				index => $5,
-				direction => $6,
-				laneTrackerRef => \$laneTracker,
-				infileCounter => $infileCounter,
-				compressedInfo => $compressedSwitch,
-			       });
+		$uncompressedFileCounter = "unCompressed";  #File needs compression before starting analysis. Note: All files are rechecked downstream and uncompressed ones are gzipped automatically           
+		$readFileCommand = "cat";
 	    }
-            elsif (${$infileHashRef}{$sampleID}[$infileCounter] =~/(\d+)_(\d+)_([^_]+)_([^_]+)_([^_]+)_(\d).fastq/) {  #Parse 'new' no "index" format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                             
+	    
+            if ($$fileNameRef =~/(\d+)_(\d+)_([^_]+)_([^_]+)_([^_]+)_(\d).fastq/) {  #Parse 'new' no "index" format $1=lane, $2=date, $3=Flow-cell, $4=SampleID, $5=index,$6=direction                             
 		
-		## Check if a file is gzipped.
-		my $compressedSwitch = &CheckGzipped({fileNameRef => \${$infileHashRef}{$sampleID}[$infileCounter],
-						     });
-
-		if ( ! $compressedSwitch) { #Not compressed
-		   
-		    $uncompressedFileCounter = "unCompressed";  #File needs compression before starting analysis. Note: All files are rechecked downstream and uncompressed ones are gzipped automatically           
-		}
 		## Check that the sampleID provided and sampleID in infile name match.
 		&CheckSampleIDMatch({scriptParameterHashRef => $scriptParameterHashRef,
 				     infileHashRef => $infileHashRef,
@@ -17451,9 +17433,43 @@ sub InfilesReFormat {
 	    }
 	    else {  #No regexp match i.e. file does not follow filename convention 
 
-		$logger->fatal("Could not detect MIP file name convention for file: ".${$infileHashRef}{$sampleID}[$infileCounter].". \n");
-		$logger->fatal("Please check that the file name follows the specified convention.", "\n");
-		exit 1;
+		$logger->warn("Could not detect MIP file name convention for file: ".$$fileNameRef.". \n");
+		$logger->warn("Will try to find mandatory information in fastq header.", "\n");
+
+		##Check that file name at least contains sampleID
+		if ($$fileNameRef !~/$sampleID/) {
+
+		    $logger->fatal("Please check that the file name contains the sampleID.", "\n");
+		}
+
+		## Get run info from fastq file header
+		my @fastqInfo = &GetRunInfo({directory => ${$inDirPathHashRef}{$sampleID},
+					     readFileCommand => $readFileCommand,
+					     file => $$fileNameRef,
+					    });
+		
+		## Adds information derived from infile name to sampleInfo hash. Tracks the number of lanes sequenced and checks unique array elementents.
+		&AddInfileInfo({scriptParameterHashRef => $scriptParameterHashRef,
+				sampleInfoHashRef => $sampleInfoHashRef,
+				fileInfoHashRef => $fileInfoHashRef,
+				laneHashRef => $laneHashRef,
+				infileHashRef => $infileHashRef,
+				inDirPathHashRef => $inDirPathHashRef,
+				infilesLaneNoEndingHashRef => $infilesLaneNoEndingHashRef,
+				infilesBothStrandsNoEndingHashRef => $infilesBothStrandsNoEndingHashRef,
+				lane => $fastqInfo[3],
+				date => "000101",  #fastq format does not contain a date of the run, so fake it with constant impossible date
+				flowCell => $fastqInfo[2],
+				sampleID => $sampleID,
+				index => $fastqInfo[5],
+				direction => $fastqInfo[4],
+				laneTrackerRef => \$laneTracker,
+				infileCounter => $infileCounter,
+				compressedSwitch => $compressedSwitch,
+			       });
+
+		$logger->info("Found following information from fastq header: lane=".$fastqInfo[3]." flow-cell=".$fastqInfo[2]." index=".$fastqInfo[5]." direction=".$fastqInfo[4], "\n");
+		$logger->warn("Will add fake date '20010101' to follow file convention since this is not recorded in fastq header\n");
 	    }
         }
     }
@@ -17505,6 +17521,52 @@ sub CheckSampleIDMatch {
 	exit 1;
     }
 }
+
+sub GetRunInfo {
+
+##GetRunInfo
+    
+##Function : Get run info from fastq file header
+##Returns  : ""
+##Arguments: $directory, $readFile, $file
+##         : $directory       => Directory of file
+##         : $readFileCommand => Command used to read file
+##         : $file            => File to parse
+
+    my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $directory;
+    my $readFileCommand;
+    my $file;
+    
+    my $tmpl = { 
+	directory => { required => 1, defined => 1, strict_type => 1, store => \$directory},
+	readFileCommand => { required => 1, defined => 1, strict_type => 1, store => \$readFileCommand},
+	file => { required => 1, defined => 1, strict_type => 1, store => \$file},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
+
+    my $fastqHeaderRegExp = q?perl -nae 'chomp($_); if($_=~/^(@\w+):(\w+):(\w+):(\w+)\S+\s(\w+):\w+:\w+:(\w+)/) {print $1." ".$2." ".$3." ".$4." ".$5." ".$6."\n";} if($.=1) {last;}' ?;
+    
+    my $pwd = cwd();  #Save current direcory
+    chdir($directory);  #Move to sampleID infile directory
+
+    my $fastqInfo = `$readFileCommand $file | $fastqHeaderRegExp;`;  #Collect fastq header info
+    my @fastqInfo = split(" ", $fastqInfo);
+
+    chdir($pwd);  #Move back to original directory
+
+    unless (scalar(@fastqInfo) eq 6) {
+	
+	$logger->fatal("Could not detect reuired sample sequencing run info from fastq file header - PLease proved MIP file in MIP file convention format to proceed\n");
+	exit 1;
+    }
+
+    return @fastqInfo;
+}
+
 
 sub AddInfileInfo {
   
@@ -17592,7 +17654,7 @@ sub AddInfileInfo {
 
     my $parsedDate = Time::Piece->strptime($date, "%y%m%d");
     $parsedDate = $parsedDate->ymd;
-
+    
     if ($compressedSwitch) {
 
 	$readFile = "zcat";  #Read file in compressed format
@@ -17605,7 +17667,7 @@ sub AddInfileInfo {
     if ($direction == 1) {  #Read 1
 
 	push( @{${$laneHashRef}{$sampleID}}, $lane);  #Lane
-	${$infilesLaneNoEndingHashRef}{$sampleID}[$$laneTrackerRef] = $sampleID.".".$date."_".$flowCell."_".$index.".lane".$1;  #Save new format (sampleID_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
+	${$infilesLaneNoEndingHashRef}{$sampleID}[$$laneTrackerRef] = $sampleID.".".$date."_".$flowCell."_".$index.".lane".$lane;  #Save new format (sampleID_date_flow-cell_index_lane) in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry into hash for both strands and .ending is removed (.fastq).
 
 	$fileAtLaneLevelRef = \${$infilesLaneNoEndingHashRef}{$sampleID}[$$laneTrackerRef];  #Alias
 	${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{File}{$$fileAtLaneLevelRef}{SequenceRunType} = "Single-end";  #Single-end until proven otherwise
@@ -17615,6 +17677,13 @@ sub AddInfileInfo {
 															  readFileCommand => $readFile,
 															  file => ${$infileHashRef}{$sampleID}[$infileCounter],
 															 });
+
+	## Check if fastq file is interleaved
+	${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{File}{$$fileAtLaneLevelRef}{Interleaved} = &CheckInterleaved({directory => ${$inDirPathHashRef}{$sampleID},
+														      readFileCommand => $readFile,
+														      file => ${$infileHashRef}{$sampleID}[$infileCounter],
+														     });
+	
 	## Detect "regExp" in string
 	${$fileInfoHashRef}{undeterminedInFileName}{ ${$infilesLaneNoEndingHashRef}{$sampleID}[$$laneTrackerRef] } = &CheckString({string => $flowCell,
 																   regExp => "Undetermined",
@@ -17627,14 +17696,14 @@ sub AddInfileInfo {
 	${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{File}{$$fileAtLaneLevelRef}{SequenceRunType} = "Paired-end";  #$laneTracker -1 since it gets incremented after direction eq 1. 
     }
     
-    ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] = $sampleID.".".$date."_".$flowCell."_".$index.".lane".$1."_".$direction;  #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
+    ${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter] = $sampleID.".".$date."_".$flowCell."_".$index.".lane".$lane."_".$direction;  #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
 
     $fileAtDirectionLevelRef = \${$infilesBothStrandsNoEndingHashRef}{ $sampleID }[$infileCounter];  #Alias
     ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{File}{$$fileAtLaneLevelRef}{ReadDirectionFile}{$$fileAtDirectionLevelRef}{OriginalFileName} = ${$infileHashRef}{$sampleID}[$infileCounter];  #Original fileName
 
-    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{File}{$$fileAtLaneLevelRef}{ReadDirectionFile}{$$fileAtDirectionLevelRef}{OriginalFileNameNoEnding} = $1."_".$date."_".$flowCell."_".$sampleID."_".$index."_".$direction;  #Original fileName, but no ending
+    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{File}{$$fileAtLaneLevelRef}{ReadDirectionFile}{$$fileAtDirectionLevelRef}{OriginalFileNameNoEnding} = $lane."_".$date."_".$flowCell."_".$sampleID."_".$index."_".$direction;  #Original fileName, but no ending
 
-    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{File}{$$fileAtLaneLevelRef}{ReadDirectionFile}{$$fileAtDirectionLevelRef}{Lane} = $1;  #Save sample lane                  
+    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{File}{$$fileAtLaneLevelRef}{ReadDirectionFile}{$$fileAtDirectionLevelRef}{Lane} = $lane;  #Save sample lane                  
 
     ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{File}{$$fileAtLaneLevelRef}{ReadDirectionFile}{$$fileAtDirectionLevelRef}{Date} = $parsedDate;  #Save Sequence run date
 
@@ -17642,9 +17711,65 @@ sub AddInfileInfo {
 
     ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{File}{$$fileAtLaneLevelRef}{ReadDirectionFile}{$$fileAtDirectionLevelRef}{SampleBarcode} = $index;  #Save sample barcode
 
-    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{File}{$$fileAtLaneLevelRef}{ReadDirectionFile}{$$fileAtDirectionLevelRef}{RunBarcode} = $date."_".$flowCell."_".$1."_".$index;  #Save run barcode
+    ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{File}{$$fileAtLaneLevelRef}{ReadDirectionFile}{$$fileAtDirectionLevelRef}{RunBarcode} = $date."_".$flowCell."_".$lane."_".$index;  #Save run barcode
     
     ${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{File}{$$fileAtLaneLevelRef}{ReadDirectionFile}{$$fileAtDirectionLevelRef}{ReadDirection} = $direction;   
+}
+
+
+sub CheckInterleaved {
+
+##CheckInterleaved
+    
+##Function : Check if fastq file is interleaved
+##Returns  : "1(=interleaved)"
+##Arguments: $directory, $readFile, $file
+##         : $directory       => Directory of file
+##         : $readFileCommand => Command used to read file
+##         : $file            => File to parse
+
+    my ($argHashRef) = @_;
+    
+    ## Flatten argument(s)
+    my $directory;
+    my $readFileCommand;
+    my $file;
+    
+    my $tmpl = { 
+	directory => { required => 1, defined => 1, strict_type => 1, store => \$directory},
+	readFileCommand => { required => 1, defined => 1, strict_type => 1, store => \$readFileCommand},
+	file => { required => 1, defined => 1, strict_type => 1, store => \$file},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
+
+    my $interleavedRegExp = q?perl -nae 'chomp($_); if( ($_=~/^@\w+:\w+:\w+:\w+\S+\s(\w+):\w+:\w+:\w+/) && ($.==5) ) {print $1."\n";last;} elsif ($.==6) {last;}' ?;
+    
+    my $pwd = cwd();  #Save current direcory
+    chdir($directory);  #Move to sampleID infile directory
+
+    my $fastqInfo = `$readFileCommand $file | $interleavedRegExp;`;  #Collect interleaved info
+
+    if(! $fastqInfo) {
+
+	my $interleavedRegExp = q?perl -nae 'chomp($_); if( ($_=~/^@\w+-\w+:\w+:\w+:\w+:\w+:\w+:\w+\/(\w+)/) && ($.==5) ) {print $1."\n";last;} elsif ($.==6) {last;}' ?;
+	$fastqInfo = `$readFileCommand $file | $interleavedRegExp;`;  #Collect interleaved info
+    }
+
+    chdir($pwd);  #Move back to original directory
+
+    unless ($fastqInfo=~/[1, 2, 3]/) {
+	
+	$logger->fatal("Malformed fastq file!\n");
+	$logger->fatal("Read direction is: ".$fastqInfo." allowed entries are '1', '2', '3'. Please check fastq file\n");
+	exit 1;
+    }
+    if ($fastqInfo > 1) {
+
+	$logger->info("Found interleaved fastq file: ".$file, "\n");
+	return 1;
+    }
+    return;
 }
 
 
