@@ -7217,7 +7217,8 @@ sub GATKGenoTypeGVCFs {
 						callType => $callType,
 						nrofCores => $nrCores,
 						processTime => $processTime,
-						tempDirectory => $$tempDirectoryRef
+						tempDirectory => $$tempDirectoryRef,
+						sleep => 1,  #Let process sleep randomly for 0-60 seconds to avoid race condition
 					       });
 	
 	## Assign directories
@@ -18511,7 +18512,7 @@ sub ProgramPreRequisites {
     
 ##Function : Creates program directories (info & programData & programScript), program script filenames and writes sbatch header.
 ##Returns  : Path to stdout
-##Arguments: $scriptParameterHashRef, $jobIDHashRef, $FILEHANDLE, $directoryID, $programDirectory, $programName, $callType, $outDataDir, $outScriptDir, $tempDirectory, $emailType, $sourceEnvironmentCommandArrayRef, $slurmQualityofService, $nrofCores, $processTime, $errorTrap, $pipefail
+##Arguments: $scriptParameterHashRef, $jobIDHashRef, $FILEHANDLE, $directoryID, $programDirectory, $programName, $callType, $outDataDir, $outScriptDir, $tempDirectory, $emailType, $sourceEnvironmentCommandArrayRef, $slurmQualityofService, $nrofCores, $processTime, $errorTrap, $pipefail, $sleep
 ##         : $scriptParameterHashRef           => The active parameters for this analysis hash {REF}
 ##         : $jobIDHashRef                     => The jobID hash {REF}
 ##         : $FILEHANDLE                       => FILEHANDLE to write to
@@ -18529,6 +18530,7 @@ sub ProgramPreRequisites {
 ##         : $processTime                      => Allowed process time (Hours) {Optional}
 ##         : $errorTrap                        => Error trap switch {Optional}
 ##         : $pipefail                         => Pipe fail switch {Optional}
+##         : $sleep                            => Sleep for X seconds {Optional} 
  
     my ($argHashRef) = @_;
 
@@ -18543,6 +18545,7 @@ sub ProgramPreRequisites {
     my $processTime;
     my $pipefail;
     my $errorTrap;
+    my $sleep;
 
     if (defined(${$argHashRef}{callType})) {
 	
@@ -18587,6 +18590,9 @@ sub ProgramPreRequisites {
 	errorTrap  => { default => 1,
 			allow => [0, 1],
 			strict_type => 1, store => \$errorTrap},
+	sleep => { default => 0,
+		   allow => [0, 1],
+		   strict_type => 1, store => \$sleep},
     };
         
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
@@ -18673,6 +18679,10 @@ sub ProgramPreRequisites {
     say $FILEHANDLE q?echo "Running on: $(hostname)"?;
     say $FILEHANDLE q?PROGNAME=$(basename $0)?,"\n";
 
+    if ($sleep) {  #Let the process sleep for a random couple of seconds (0-60) to avoid race conditions in mainly conda sourcing activate
+
+	say $FILEHANDLE "sleep ".int(rand(60));
+    }
     if (@{$sourceEnvironmentCommandArrayRef}) {
 
 	say $FILEHANDLE "##Activate environment";
