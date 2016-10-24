@@ -44,8 +44,6 @@ BEGIN {
 	   -vepc/--vepDirectoryCache Specify the cache directory to use (whole path; defaults to "~/miniconda/envs/condaEnvironment/ensembl-tools-release-variantEffectPredictorVersion/cache")
            -vepa/--vepAssemblies Select the assembly version (Default: ["GRCh37"])
            -vepp/--variantEffectPredictorPlugin Supply a comma separated list of VEP plugins (Default: "UpDownDistance,LoFtool,LoF")
-           -cnv/--CNVnator Set the CNVnator version (Default: "0.3.2")
-           -ftr/--FindTranslocations Set the FindTranslocations version (Default: "0")
 
            ## Utility
            -psh/--preferShell Shell will be used for overlapping shell and biconda installations (Supply flag to enable)
@@ -116,8 +114,8 @@ $parameter{plink2} = "160316";
 $parameter{snpEff} = "v4_2";
 $parameter{variantEffectPredictor} = "85";
 $parameter{variantEffectPredictorPlugin} = "UpDownDistance,LoFtool,LoF";
-$parameter{CNVnator} = "0.3.2";
-$parameter{FindTranslocations} = "0";
+#$parameter{CNVnator} = "0.3.2";
+#$parameter{FindTranslocations} = "0";
 
 my $installVersion = "0.0.6";
 
@@ -141,8 +139,8 @@ GetOptions('env|condaEnvironment:s'  => \$parameter{condaEnvironment},
 	   'vepc|vepDirectoryCache:s' => \$parameter{vepDirectoryCache},  #path to vep cache dir
 	   'vepa|vepAssemblies:s' => \@{$parameter{vepAssemblies}},  #Select assembly version to use
 	   'vepp|variantEffectPredictorPlugin:s' => \$parameter{variantEffectPredictorPlugin},  #Comma sep string
-	   'cnv|CNVnator:s' => \$parameter{CNVnator},
-	   'ftr|FindTranslocations:s' => \$parameter{FindTranslocations},
+#	   'cnv|CNVnator:s' => \$parameter{CNVnator},
+#	   'ftr|FindTranslocations:s' => \$parameter{FindTranslocations},
 	   'psh|preferShell' => \$parameter{preferShell},  # Shell will be used for overlapping shell and biconda installations
 	   'ppd|printParameterDefaults' => sub { &PrintParameters({parameterHashRef => \%parameter}); exit;},  #Display parameter defaults
 	   'nup|noUpdate' => \$parameter{noUpdate},
@@ -297,12 +295,12 @@ if (@{$parameter{selectPrograms}}) {
 				 FILEHANDLE => $BASHFILEHANDLE,
 				});
     }
-    if ( ( grep {$_ eq "CNVnator"} @{$parameter{selectPrograms}} ) ) { #If element is part of array
+#    if ( ( grep {$_ eq "CNVnator"} @{$parameter{selectPrograms}} ) ) { #If element is part of array
 	
-	&CNVnator({parameterHashRef => \%parameter,
-		   FILEHANDLE => $BASHFILEHANDLE,
-		  });
-    }
+#	&CNVnator({parameterHashRef => \%parameter,
+#		   FILEHANDLE => $BASHFILEHANDLE,
+#		  });
+#   }
 #    if ( ( grep {$_ eq "FindTranslocations"} @{$parameter{selectPrograms}} ) ) { #If element is part of array
 	
 #	&FindTranslocations({parameterHashRef => \%parameter,
@@ -324,9 +322,9 @@ else {
 			     FILEHANDLE => $BASHFILEHANDLE,
 			    });
 
-    &CNVnator({parameterHashRef => \%parameter,
-	       FILEHANDLE => $BASHFILEHANDLE,
-	      });
+#    &CNVnator({parameterHashRef => \%parameter,
+#	       FILEHANDLE => $BASHFILEHANDLE,
+#	      });
 
 #    &FindTranslocations({parameterHashRef => \%parameter,
 #			 FILEHANDLE => $BASHFILEHANDLE,
