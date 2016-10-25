@@ -71,8 +71,6 @@ mip.pl  -ifd [inFilesDir=sampleID] -isd [inScriptDir] -rd [refdir] -p [project I
                -ccp/--clusterConstantPath Set the cluster constant path (defaults to "")
                -acp/--analysisConstantPath Set the analysis constant path (defaults to "analysis")
                -wc/--writeConfigFile Write YAML configuration file for script parameters (defaults to "")
-               -int/--instanceTag Tag family with instance association in sampleInfo file (comma sep; defaults to "")
-               -rea/--researchEthicalApproval Tag for displaying research candidates in Scout (defaults to "notApproved")
                -sif/--sampleInfoFile YAML file for sample info used in the analysis (defaults to "{outDataDir}/{familyID}/{familyID}_qc_sampleInfo.yaml")
                -dra/--dryRunAll Sets all programs to dry run mode i.e. no sbatch submission (defaults to "0" (=no))
                -tmd/--tempDirectory Set the temporary directory for all programs (defaults to "/scratch/SLURM_JOB_ID";supply whole path)
@@ -455,8 +453,6 @@ GetOptions('ifd|inFilesDir:s'  => \%{$parameter{inFilesDir}{value}},  #Hash inFi
 	   'acp|analysisConstantPath:s' => \$parameter{analysisConstantPath}{value},
 	   'wc|writeConfigFile:s' => \$parameter{writeConfigFile}{value},
 	   'sif|sampleInfoFile:s' => \$parameter{sampleInfoFile}{value},  #Write all info on samples and run to YAML file
-	   'int|instanceTag:s' => \@{$parameter{instanceTag}{value}},
-	   'rea|researchEthicalApproval:s' => \$parameter{researchEthicalApproval}{value},
 	   'dra|dryRunAll=i' => \$parameter{dryRunAll}{value},
 	   'tmd|tempDirectory:s' => \$parameter{tempDirectory}{value},
 	   'sen|sourceEnvironmentCommand=s{,}' => \@{$parameter{sourceEnvironmentCommand}{value}},
@@ -23787,14 +23783,6 @@ sub AddToSampleInfo {
         
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];    
 
-    if (defined(${$scriptParameterHashRef}{instanceTag})) {
-
-	${$sampleInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{InstanceTag} = ${$scriptParameterHashRef}{instanceTag};
-    }
-    if (defined(${$scriptParameterHashRef}{researchEthicalApproval})) {
-
-	${$sampleInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{ResearchEthicalApproval} = ${$scriptParameterHashRef}{researchEthicalApproval};
-    }
     if (defined(${$scriptParameterHashRef}{analysisType})) {
 
 	${$sampleInfoHashRef}{ $$familyIDRef }{ $$familyIDRef }{AnalysisType} = ${$scriptParameterHashRef}{analysisType};

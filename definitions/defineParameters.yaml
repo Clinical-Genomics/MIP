@@ -100,12 +100,6 @@ sourceEnvironmentCommand:
   elementSeparator: " "
   dataType: ARRAY
   type: MIP
-instanceTag:
-  associatedProgram:
-   - MIP
-  elementSeparator: ,
-  dataType: ARRAY
-  type: MIP
 sampleIDs:
   associatedProgram:
    - MIP
@@ -137,12 +131,6 @@ sampleInfoFile:
   existsCheck: file
   type: path
   updatePath: absolutePath
-researchEthicalApproval:
-  associatedProgram:
-   - MIP
-  dataType: SCALAR
-  default: notApproved
-  type: MIP
 inScriptDir:
   associatedProgram:
    - MIP
