@@ -1,0 +1,28 @@
+default_gene_panels:
+  - IEM
+family: '118'
+samples:
+  - analysis_type: wes
+    sample_id: 118-1-2A
+    capture_kit: Agilent_SureSelect.V5
+    father: 118-2-1U
+    mother: 118-2-2U
+    sample_name: 118-1-2A
+    phenotype: affected
+    sex: female
+  - analysis_type: wes
+    sample_id: 118-2-1U
+    capture_kit: Agilent_SureSelect.V5
+    father: '0'
+    mother: '0'
+    sample_name: 118-2-1U
+    phenotype: unaffected
+    sex: male
+  - analysis_type: wes
+    sample_id: 118-2-2U
+    capture_kit: Agilent_SureSelect.V5
+    father: '0'
+    mother: '0'
+    sample_name: 118-2-2U
+    phenotype: unaffected
+    sex: female
