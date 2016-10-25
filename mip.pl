@@ -3410,6 +3410,7 @@ sub RankVariants {
     ## Assign directories
     my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
     my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
+    my $outFamilyFileDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef);
     
     ## Assign fileTags
     my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{pSnpEff}{fileTag};
@@ -3418,6 +3419,15 @@ sub RankVariants {
     my $vcfParserAnalysisType = "";
     my $vcfParserContigsArrayRef = \@{ ${$fileInfoHashRef}{contigsSizeOrdered} };  #Set default
     my @vcfParserSubSetContigs = @{ ${$fileInfoHashRef}{contigs} };  #Set default for handling subset of contigs
+    my $familyFile = catfile($outFamilyFileDirectory, $$familyIDRef.".fam");
+
+    ## Create .fam file to be used in variant calling analyses
+    &CreateFamFile({parameterHashRef => $parameterHashRef,
+		    scriptParameterHashRef => $scriptParameterHashRef,
+		    sampleInfoHashRef => $sampleInfoHashRef,
+		    FILEHANDLE => $FILEHANDLE,
+		    famFilePath => $familyFile,
+		   });
 
     for (my $vcfParserOutputFileCounter=0;$vcfParserOutputFileCounter<${$scriptParameterHashRef}{VcfParserOutputFileCount};$vcfParserOutputFileCounter++) {
 	
@@ -3497,7 +3507,7 @@ sub RankVariants {
 		print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 		print $XARGSFILEHANDLE "models ";  #Annotate genetic models for vcf variants
 		print $XARGSFILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
-		print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{pedigreeFile}." ";  #Pedigree file
+		print $XARGSFILEHANDLE "--family_file ".$familyFile." ";  #Pedigree file
 		print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{genmodModelsFamilyType}." ";  #Family type
 		
 		if (defined(${$scriptParameterHashRef}{genmodModelsReducedPenetranceFile})) {
@@ -3560,7 +3570,7 @@ sub RankVariants {
 		print $XARGSFILEHANDLE "genmod ";
 		print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 		print $XARGSFILEHANDLE "score ";  #Score variants in a vcf file using Weighted sums
-		print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{pedigreeFile}." ";  #Pedigree file
+		print $XARGSFILEHANDLE "--family_file ".$familyFile." ";  #Pedigree file
 		print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{genmodModelsFamilyType}." ";  #Family type
 		print $XARGSFILEHANDLE "--rank_results ";  #Add a info field that shows how the different categories contribute to the rank score
 		
@@ -5662,9 +5672,20 @@ sub SampleCheck {
     ## Assign Directories
     my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
     my $outFamilyDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef, lc($programName));
+    my $outFamilyFileDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef);
 
     ## Assign fileTags
     my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{pGATKCombineVariantCallSets}{fileTag};
+
+    my $familyFile = catfile($outFamilyFileDirectory, $$familyIDRef.".fam");
+
+    ## Create .fam file to be used in variant calling analyses
+    &CreateFamFile({parameterHashRef => $parameterHashRef,
+		    scriptParameterHashRef => $scriptParameterHashRef,
+		    sampleInfoHashRef => $sampleInfoHashRef,
+		    FILEHANDLE => $FILEHANDLE,
+		    famFilePath => $familyFile,
+		   });
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory"; 
@@ -5854,7 +5875,7 @@ sub SampleCheck {
 	if (${$parameterHashRef}{dynamicParameters}{trio}) {
 
 	    print $FILEHANDLE "variant_integrity ";
-	    print $FILEHANDLE "--family_file ".${$scriptParameterHashRef}{pedigreeFile}." ";  #Pedigree file
+	    print $FILEHANDLE "--family_file ".$familyFile." ";  #Pedigree file
 	    print $FILEHANDLE "--family_type ".${$scriptParameterHashRef}{genmodModelsFamilyType}." ";  #Family type
 	    print $FILEHANDLE "--outfile ".catfile($outFamilyDirectory, $$familyIDRef."_mendel.txt")." ";
 	    print $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType.".vcf")." ";  #InFile
@@ -5880,7 +5901,7 @@ sub SampleCheck {
 	    if ($fatherInfo ne 0) {  #Father is included in analysis
 		
 		print $FILEHANDLE "variant_integrity ";
-		print $FILEHANDLE "--family_file ".${$scriptParameterHashRef}{pedigreeFile}." ";  #Pedigree file
+		print $FILEHANDLE "--family_file ".$familyFile." ";  #Pedigree file
 		print $FILEHANDLE "--family_type ".${$scriptParameterHashRef}{genmodModelsFamilyType}." ";  #Family type
 		print $FILEHANDLE "--outfile ".catfile($outFamilyDirectory, $$familyIDRef."_father.txt")." ";
 		print $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$infileTag.$callType.".vcf")." ";  #InFile
@@ -8233,6 +8254,7 @@ sub SVRankVariants {
     ## Assign directories
     my $inFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
     my $outFamilyDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef, $$alignerOutDirRef);
+    my $outFamilyFileDirectory = catfile(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef);
     
     ## Assign fileTags
     my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{pSVVCFParser}{fileTag};
@@ -8243,6 +8265,15 @@ sub SVRankVariants {
     my $vcfParserAnalysisType = "";
     my $vcfParserContigsArrayRef = \@{ ${$fileInfoHashRef}{contigsSizeOrdered} };  #Set default
     my @vcfParserSubSetContigs = @{ ${$fileInfoHashRef}{contigs} };  #Set default for handling subset of contigs
+    my $familyFile = catfile($outFamilyFileDirectory, $$familyIDRef.".fam");
+
+    ## Create .fam file to be used in variant calling analyses
+    &CreateFamFile({parameterHashRef => $parameterHashRef,
+		    scriptParameterHashRef => $scriptParameterHashRef,
+		    sampleInfoHashRef => $sampleInfoHashRef,
+		    FILEHANDLE => $FILEHANDLE,
+		    famFilePath => $familyFile,
+		   });
 
     for (my $vcfParserOutputFileCounter=0;$vcfParserOutputFileCounter<${$scriptParameterHashRef}{VcfParserOutputFileCount};$vcfParserOutputFileCounter++) {
 	
@@ -8333,7 +8364,7 @@ sub SVRankVariants {
 		print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 		print $XARGSFILEHANDLE "models ";  #Annotate genetic models for vcf variants
 		print $XARGSFILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
-		print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{pedigreeFile}." ";  #Pedigree file
+		print $XARGSFILEHANDLE "--family_file ".$familyFile." ";  #Pedigree file
 		print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{svGenmodModelsFamilyType}." ";  #Family type
 		
 		if (defined(${$scriptParameterHashRef}{svGenmodModelsReducedPenetranceFile})) {
@@ -8363,7 +8394,7 @@ sub SVRankVariants {
 		print $XARGSFILEHANDLE "genmod ";
 		print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 		print $XARGSFILEHANDLE "score ";  #Score variants in a vcf file using Weighted sums
-		print $XARGSFILEHANDLE "--family_file ".${$scriptParameterHashRef}{pedigreeFile}." ";  #Pedigree file
+		print $XARGSFILEHANDLE "--family_file ".$familyFile." ";  #Pedigree file
 		print $XARGSFILEHANDLE "--family_type ".${$scriptParameterHashRef}{svGenmodModelsFamilyType}." ";  #Family type
 		print $XARGSFILEHANDLE "--rank_results ";  #Add a info field that shows how the different categories contribute to the rank score
 		

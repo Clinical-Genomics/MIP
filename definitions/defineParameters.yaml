@@ -1789,7 +1789,7 @@ genmodModelsFamilyType:
   associatedProgram:
    - pRankVariants
   dataType: SCALAR
-  default: mip
+  default: ped
   type: programArgument
 genmodcaddFiles:
   associatedProgram:
