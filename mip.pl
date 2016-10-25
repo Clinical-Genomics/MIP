@@ -6155,6 +6155,7 @@ sub VT {
 	    print $XARGSFILEHANDLE "genmod ";  #Program
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "annotate ";  #Command
+	    print $XARGSFILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
 	    print $XARGSFILEHANDLE "--thousand_g ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{VTgenmodFilter1000G})." ";  #1000G reference
 
 	    if (${$scriptParameterHashRef}{VTgenmodFilterMaxAf}) {
@@ -6171,6 +6172,7 @@ sub VT {
 	    print $XARGSFILEHANDLE "genmod ";  #Program
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "filter ";  #Command
+	    print $XARGSFILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
 	    print $XARGSFILEHANDLE "-t ".${$scriptParameterHashRef}{VTgenmodFilterThreshold}." ";  #Threshold for filtering variants
 	    print $XARGSFILEHANDLE "- ";  #InStream
 	    print $XARGSFILEHANDLE "> ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.$altFileEnding.".vcf")." ";  #OutFile
