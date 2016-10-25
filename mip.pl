@@ -6172,7 +6172,6 @@ sub VT {
 	    print $XARGSFILEHANDLE "genmod ";  #Program
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "filter ";  #Command
-	    print $XARGSFILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
 	    print $XARGSFILEHANDLE "-t ".${$scriptParameterHashRef}{VTgenmodFilterThreshold}." ";  #Threshold for filtering variants
 	    print $XARGSFILEHANDLE "- ";  #InStream
 	    print $XARGSFILEHANDLE "> ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_".$$contigRef.$altFileEnding.".vcf")." ";  #OutFile
@@ -9383,6 +9382,7 @@ sub SVCombineVariantCallSets {
 	print $FILEHANDLE "genmod ";  #Program
 	print $FILEHANDLE "-v ";  #Increase output verbosity
 	print $FILEHANDLE "annotate ";  #Command
+	print $FILEHANDLE "--temp_dir ".$$tempDirectoryRef." ";  #Temporary directory
 	print $FILEHANDLE "--thousand_g ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{svGenmodFilter1000G})." ";  #1000G reference
 	print $FILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutStream
 	print $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.$altFileEnding.".vcf")." ";
