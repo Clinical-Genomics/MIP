@@ -1122,7 +1122,9 @@ my $uncompressedFileSwitch = &InfilesReFormat({scriptParameterHashRef => \%scrip
 
 
 ## Create .fam file to be used in variant calling analyses
-&CreateFamFile({scriptParameterHashRef => \%scriptParameter,
+&CreateFamFile({parameterHashRef => \%parameter,
+		scriptParameterHashRef => \%scriptParameter,
+		sampleInfoHashRef => \%sampleInfo,
 		executionMode => "system",
 		famFilePath => catfile($scriptParameter{outDataDir}, $scriptParameter{familyID}, $scriptParameter{familyID}.".fam"),
 	       });
@@ -5517,8 +5519,9 @@ sub GATKPhaseByTransmission {
     my $outfileTag = ${$fileInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{ ${$scriptParameterHashRef}{familyID} }{"p".$programName}{fileTag};
     
     ## Create .fam file to be used in variant calling analyses
-    &CreateFamFile({scriptParameterHashRef => $scriptParameterHashRef,
-		    FILEHANDLE => $FILEHANDLE,
+    &CreateFamFile({parameterHashRef => $parameterHashRef,
+		    scriptParameterHashRef => $scriptParameterHashRef,
+		    sampleInfoHashRef => $sampleInfoHashRef,
 		    famFilePath => catfile($outFamilyFileDirectory, $familyID.".fam"),
 		   });
     
@@ -5767,7 +5770,7 @@ sub SampleCheck {
 	print $XARGSFILEHANDLE "--bfile ".catfile($$tempDirectoryRef, $sampleID."_vcf_data")." ";
 	print $XARGSFILEHANDLE "--check-sex ";
 	
-	unless (${$sampleInfoHashRef}{${$scriptParameterHashRef}{familyID} }{$sampleID}{Sex} == 2) {
+	unless (${$sampleInfoHashRef}{${$scriptParameterHashRef}{familyID} }{$sampleID}{sex} =~/2|female/) {
 	    
 	    print $XARGSFILEHANDLE "y-only ";
 	}
@@ -5876,7 +5879,7 @@ sub SampleCheck {
 	
 	foreach my $sampleID (@{${$scriptParameterHashRef}{sampleIDs}}) {
 	    
-	    my $fatherInfo = ${$sampleInfoHashRef}{${$scriptParameterHashRef}{familyID} }{$sampleID}{Father};  #Alias
+	    my $fatherInfo = ${$sampleInfoHashRef}{${$scriptParameterHashRef}{familyID} }{$sampleID}{father};  #Alias
 
 	    if ($fatherInfo ne 0) {  #Father is included in analysis
 		
@@ -6687,7 +6690,9 @@ sub GATKVariantReCalibration {
     my $outfileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{"p".$programName}{fileTag};
 
     ## Create .fam file to be used in variant calling analyses
-    &CreateFamFile({scriptParameterHashRef => $scriptParameterHashRef,
+    &CreateFamFile({parameterHashRef => $parameterHashRef,
+		    scriptParameterHashRef => $scriptParameterHashRef,
+		    sampleInfoHashRef => $sampleInfoHashRef,
 		    FILEHANDLE => $FILEHANDLE,
 		    famFilePath => catfile($outFamilyFileDirectory, $$familyIDRef.".fam"),
 		   });
@@ -7199,7 +7204,9 @@ sub GATKGenoTypeGVCFs {
     my $outFamilyFileDirectory = catdir(${$scriptParameterHashRef}{outDataDir}, $$familyIDRef);  #For ".fam" file
 
     ## Create .fam file to be used in variant calling analyses
-    &CreateFamFile({scriptParameterHashRef => $scriptParameterHashRef,
+    &CreateFamFile({parameterHashRef => $parameterHashRef,
+		    scriptParameterHashRef => $scriptParameterHashRef,
+		    sampleInfoHashRef => $sampleInfoHashRef,
 		    FILEHANDLE => $FILEHANDLE,
 		    famFilePath => catfile($outFamilyFileDirectory, $$familyIDRef.".fam"),
 		   });
@@ -9586,7 +9593,7 @@ sub CNVnator {
     my $infile = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{MergeInfile};  #Alias
 
     my $rootFile;
-    my $phenoTypeInfo = ${$sampleInfoHashRef}{${$scriptParameterHashRef}{familyID} }{$$sampleIDRef}{Phenotype}; #Alias
+    my $phenoTypeInfo = ${$sampleInfoHashRef}{${$scriptParameterHashRef}{familyID} }{$$sampleIDRef}{phenotype}; #Alias
     
     my $perlVcfFix = q&perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {print q?##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">?, "\n"; print $_."\t".FORMAT."\t&.$$sampleIDRef.q&", "\n"} else {print $_."\tGT\t&;
     if ($phenoTypeInfo eq 2) {  #Affected
@@ -10446,7 +10453,9 @@ sub SamToolsMpileUp {
     my $coreCounter=1;
 
     ## Create .fam file to be used in variant calling analyses
-    &CreateFamFile({scriptParameterHashRef => $scriptParameterHashRef,
+    &CreateFamFile({parameterHashRef => $parameterHashRef,
+		    scriptParameterHashRef => $scriptParameterHashRef,
+		    sampleInfoHashRef => $sampleInfoHashRef,
 		    FILEHANDLE => $FILEHANDLE,
 		    famFilePath => catfile($outFamilyFileDirectory, $$familyIDRef.".fam"),
 		    includeHeader => 0,
@@ -10926,10 +10935,13 @@ sub GATKHaploTypeCaller {
     my $outfileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$sampleIDRef}{"p".$programName}{fileTag};
 
     ## Create .fam file to be used in variant calling analyses
-    &CreateFamFile({scriptParameterHashRef => $scriptParameterHashRef,
+    &CreateFamFile({parameterHashRef => $parameterHashRef,
+		    scriptParameterHashRef => $scriptParameterHashRef,
+		    sampleInfoHashRef => $sampleInfoHashRef,
 		    FILEHANDLE => $FILEHANDLE,
 		    famFilePath => catfile($outFamilyFileDirectory, $$familyIDRef.".fam"),
 		   });
+
     ## Get exomeTargetBed file for specfic sampleID and add fileEnding from fileInfoHash if supplied
     my $exomeTargetBedFile = &GetExomTargetBEDFile({scriptParameterHashRef => $scriptParameterHashRef,
 						    sampleIDRef => $sampleIDRef,
@@ -16356,7 +16368,7 @@ sub ReadPlinkPedigreeFile {
 ##         : $supportedCaptureKitHashRef => The supported capture kits hash {REF}
 ##         : $filePath                   => Pedigree file path
 ##         : $familyIDRef                => FamilyID {RF}
-###FORMAT: FamliyID\tSampleID\tFather\tMother\tSex(1=male; 2=female; other=unknown)\tPhenotype(-9 missing, 0 missing, 1 unaffected, 2 affected)..n
+###FORMAT: famliyID\tsampleID\tfather\tmother\tsex(1=male; 2=female; other=unknown)\tphenotype(-9 missing, 0 missing, 1 unaffected, 2 affected)..n
 
     my ($argHashRef) = @_;
     
@@ -16384,7 +16396,7 @@ sub ReadPlinkPedigreeFile {
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
     
     my %exomtargetBedTestFileTracker;  #Use to collect which sampleIDs have used a certain capture_kit
-    my @pedigreeFileElements = ("FamilyID", "SampleID", "Father", "Mother", "Sex", "Phenotype", );
+    my @pedigreeFileElements = ("familyID", "sampleID", "father", "mother", "sex", "phenotype");
     my @pedigreeSampleIDs;
     my $familyID;
     my $sampleID;
@@ -16416,9 +16428,11 @@ sub ReadPlinkPedigreeFile {
 	
 	chomp $_;  #Remove newline
 	
-	if ( ($. == 1) && ($_ =~/^\#/) ) {  #Header present overwrite @pedigreeFileElements with header info
+	if ( ($. == 1) && ($_ =~/^\#/) ) {  #Header present add to @pedigreeFileElements with header info for non mandatory headers
 	    
-	    @pedigreeFileElements = split("\t", $'); #');
+	    my @headers = split("\t", $'); #');
+	    @headers = splice(@headers, 6, scalar(@headers));  #Remove mandatory headers
+	    push(@pedigreeFileElements, @headers);
 	    next;
 	}
 	if (m/^\s+$/) {  # Avoid blank lines
@@ -16440,7 +16454,7 @@ sub ReadPlinkPedigreeFile {
 
 		if ($familyID ne ${$scriptParameterHashRef}{familyID}) {
 
-		    $logger->fatal("File: ".$filePath." at line ".$.." pedigree FamilyID: '".$familyID."' and supplied FamilyId: '".${$scriptParameterHashRef}{familyID}."' does not match\n");
+		    $logger->fatal("File: ".$filePath." at line ".$.." pedigree FamilyID: '".$familyID."' and supplied FamilyID: '".${$scriptParameterHashRef}{familyID}."' does not match\n");
 		    exit 1;
 		}
 	    }
@@ -16491,15 +16505,12 @@ sub ReadPlinkPedigreeFile {
 		    if ($sampleElementsCounter < 6) {  #Mandatory elements known to be key->value
 			
 			${$sampleInfoHashRef}{$familyID}{$sampleID}{$$pedigreeHeaderRef} = $lineInfo[$sampleElementsCounter];
-
-			if ($$pedigreeHeaderRef eq "Phenotype") {  #Phenotype && unaffected
+			if ($$pedigreeHeaderRef =~/phenotype/i) {
 			    
 			    &DetectPhenotype({parameterHashRef => $parameterHashRef,
 					      phenotype => $lineInfo[$sampleElementsCounter],
 					      sampleIDRef => \$sampleID,
-					     });
-			    
-			    #push(@{${$parameterHashRef}{dynamicParameters}{unaffected}}, $sampleID);
+					     });			    
 			}
 		    }	
 		    else {  #Other elements treat as lists
@@ -16567,7 +16578,7 @@ sub ReadPlinkPedigreeFile {
 	    }
 	}
     }
-    if(%exomtargetBedTestFileTracker) {  #We have read capture kits from pedigree and neded to transfer to scriptParameters
+    if(%exomtargetBedTestFileTracker) {  #We have read capture kits from pedigree and need to transfer to scriptParameters
 
 	foreach my $exomeTargetBedFile (keys %exomtargetBedTestFileTracker) {
 
@@ -16576,6 +16587,268 @@ sub ReadPlinkPedigreeFile {
     }
     $logger->info("Read pedigree file: ".$filePath, "\n");
     close($PEDF);
+}
+
+
+sub ReadYAMLPedigreeFile {
+		
+##ReadYAMLPedigreeFile
+    
+##Function : Reads familyID_pedigree file in YAML format. Checks for pedigree data for allowed entries and correct format. Add data to sampleInfo depending on user info. 
+##Returns  : ""
+##Arguments: $parameterHashRef, $scriptParameterHashRef, $sampleInfoHashRef, $fileInfoHashRef, $supportedCaptureKitHashRef, $pedigreeHashRef, $filePath, $familyIDRef
+##         : $parameterHashRef           => The parameter hash {REF}
+##         : $scriptParameterHashRef     => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef          => Info on samples and family hash {REF}
+##         : $fileInfoHashRef            => The associated reference file endings {REF}
+##         : $supportedCaptureKitHashRef => The supported capture kits hash {REF}
+##         : $pedigreeHashRef            => Pedigree hash {REF}
+##         : $filePath                   => Pedigree file path
+##         : $familyIDRef                => FamilyID {RF}
+    
+    my ($argHashRef) = @_;
+    
+    ## Default(s)
+    my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
+    
+    ## Flatten argument(s)
+    my $parameterHashRef;
+    my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
+    my $fileInfoHashRef;
+    my $supportedCaptureKitHashRef;
+    my $pedigreeHashRef;
+    my $filePath;
+    
+    my $tmpl = { 
+	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
+	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
+	supportedCaptureKitHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supportedCaptureKitHashRef},
+	pedigreeHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$pedigreeHashRef},
+	filePath => { required => 1, defined => 1, strict_type => 1, store => \$filePath},
+	familyIDRef => { default => \$$, strict_type => 1},
+    };
+    
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
+    
+    ## Defines which values are allowed    
+    my %allowedValues = (sex => ["male", "female", "unknow"],
+			 phenotype => ["affected", "unaffected", "unknown"],
+	);
+    my %reformat = (sample_id => "sampleID",
+		    analysis_type => "analysisType",
+		    capture_kit => "captureKit",
+		    default_gene_panels => "defaultGenePanels",  #Clinical gene panels
+	);
+    my %exomtargetBedTestFileTracker;  #Use to collect which sampleIDs have used a certain capture_kit
+    my @pedigreeSampleIDs;
+    my $familyID = ${$pedigreeHashRef}{family};
+    my @mandatoryFamilyKeys = ("family", "samples");
+    my @mandatorySampleKeys = ("sample_id", "father", "mother", "sex", "phenotype");
+    
+    ## Determine if the user supplied info on parameter either via cmd or config
+    my $userSampleIDsSwitch = &CheckUserSuppliedInfo({scriptParameterHashRef => $scriptParameterHashRef,
+						      dataRef => \@{${$parameterHashRef}{sampleIDs}{value}},
+						      parameterName => "sampleIDs",
+						     });
+    
+    ## Determine if the user supplied info on parameter either via cmd or config
+    my $userExomeTargetBedSwitch = &CheckUserSuppliedInfo({scriptParameterHashRef => $scriptParameterHashRef,
+							   dataRef => ${$parameterHashRef}{exomeTargetBed}{value},
+							   parameterName => "exomeTargetBed",
+							  });
+    
+    ## Determine if the user supplied info on parameter either via cmd or config
+    my $userAnalysisTypeSwitch = &CheckUserSuppliedInfo({scriptParameterHashRef => $scriptParameterHashRef,
+							 dataRef => ${$parameterHashRef}{analysisType}{value},
+							 parameterName => "analysisType",
+							});
+
+    ### Check input
+
+    ## Check that we find mandatory family keys
+    foreach my $key (@mandatoryFamilyKeys) {
+	
+	if(! ${$pedigreeHashRef}{$key}) {
+	    
+	    $logger->fatal("File: ".$filePath." cannot find mandatory key: ".$key." in file\n");
+	    exit 1;
+	}
+    }
+    
+    ## Check that supplied cmd and YAML pedigree familyID match
+    if (${$pedigreeHashRef}{family} ne ${$scriptParameterHashRef}{familyID}) {
+	
+	$logger->fatal("File: ".$filePath." for  pedigree FamilyID: '".${$pedigreeHashRef}{family}."' and supplied family: '".${$scriptParameterHashRef}{familyID}."' does not match\n");
+	exit 1;
+    }
+    
+    ## Check sample keys and values
+    foreach my $hashRef (@{${$pedigreeHashRef}{samples}}) {
+	
+	## Check that we find mandatory family keys
+	foreach my $key (@mandatorySampleKeys) {
+	    
+	    if(! defined(${$hashRef}{$key})) {
+		
+		$logger->fatal("File: ".$filePath." cannot find mandatory key: ".$key." in file\n");
+		exit 1;
+	    }
+	    elsif ($allowedValues{$key}){  #Check allowed values
+		
+		if (! ( any {$_ eq ${$hashRef}{$key}} @{$allowedValues{$key}} ) ) { #If element is not part of array
+		    
+		    $logger->fatal("File: ".$filePath." found illegal value: ".${$hashRef}{$key}." allowed values are '".join("' '", @{$allowedValues{$key}}),"'\n");
+		    $logger->fatal("Please correct the entry before analysis.\n");
+		    $logger->fatal("\nMIP: Aborting run.\n\n");
+		    exit 1;
+		}
+	    }
+	}
+    }
+
+    ### Add values family level info
+
+    ## Make keyNames consisent in MIP
+    foreach my $key (keys %{$pedigreeHashRef}) {
+
+	unless ($key eq "samples") {
+
+	    if ($reformat{$key}) {
+		
+		${$sampleInfoHashRef}{$familyID}{$familyID}{ $reformat{$key} } = ${$pedigreeHashRef}{$key};
+	    }
+	    else {
+		
+		${$sampleInfoHashRef}{$familyID}{$familyID}{$key} = ${$pedigreeHashRef}{$key};
+	    }
+	}
+    }
+ 
+    ### Add values sample level info
+    foreach my $hashRef (@{${$pedigreeHashRef}{samples}}) {
+	
+	## SampleID
+	my $sampleID = ${$hashRef}{sample_id};  #Alias
+	
+	if ($userSampleIDsSwitch == 0) {
+	    
+	    push(@{${$scriptParameterHashRef}{sampleIDs}}, $sampleID);  #Save sampleID info
+	}
+	else {  #Save sampleIDs in pedigree to check that user supplied info and sampleID in pedigree match
+	    
+	    push(@pedigreeSampleIDs, $sampleID); #Save pedigree sampleID info 
+	}
+
+	## Add input to sampleInfoHash
+	foreach my $key (keys %{$hashRef}) {
+	    
+	    ## Make keyNames consistent in MIP
+	    if ($reformat{$key}) {
+		
+		${$sampleInfoHashRef}{$familyID}{$sampleID}{ $reformat{$key} } = ${$hashRef}{$key};
+	    }
+	    else {
+		
+		${$sampleInfoHashRef}{$familyID}{$sampleID}{$key} = ${$hashRef}{$key};
+	    }
+	    
+	    ## Add sex to dynamic parameters
+	    if ($key eq "sex") {
+		
+		push(@{${$parameterHashRef}{dynamicParameters}{${$hashRef}{$key}}}, $sampleID);
+
+		if (${$hashRef}{$key} eq "male") {
+
+		   ${$parameterHashRef}{dynamicParameters}{$sampleID}{plink_sex} = 1; 
+		}
+		elsif (${$hashRef}{$key} eq "female") {
+
+		   ${$parameterHashRef}{dynamicParameters}{$sampleID}{plink_sex} = 2; 
+		}
+		else {
+
+		    ${$parameterHashRef}{dynamicParameters}{$sampleID}{plink_sex} = "other";
+		}
+	    }
+	    
+	    ## Add phenotype to dynamic parameters
+	    if ($key eq "phenotype") {
+		
+		push(@{${$parameterHashRef}{dynamicParameters}{${$hashRef}{$key}}}, $sampleID);
+
+		if (${$hashRef}{$key} eq "unaffected") {
+
+		   ${$parameterHashRef}{dynamicParameters}{$sampleID}{plink_phenotype} = 1; 
+		}
+		elsif (${$hashRef}{$key} eq "affected") {
+
+		   ${$parameterHashRef}{dynamicParameters}{$sampleID}{plink_phenotype} = 2; 
+		}
+		else {
+
+		    ${$parameterHashRef}{dynamicParameters}{$sampleID}{plink_phenotype} = 0;
+		}
+	    }
+	}
+	
+	## Add analysisType for each individual
+	if (${$sampleInfoHashRef}{$familyID}{$sampleID}{analysisType}) {  #Add analysisType
+	    
+	    if ( (defined($userAnalysisTypeSwitch)) && ($userAnalysisTypeSwitch == 0) ) {
+		
+		my $analysisType = ${$sampleInfoHashRef}{$familyID}{$sampleID}{analysisType};  #Alias
+		${$scriptParameterHashRef}{analysisType}{$sampleID} = $analysisType;
+	    }
+	}
+	
+	## Add capture kit for each individual
+	if ( (${$sampleInfoHashRef}{$familyID}{$sampleID}{captureKit}) ) {
+	    
+	    my $captureKit = ${$sampleInfoHashRef}{$familyID}{$sampleID}{captureKit};  #Alias
+	    
+	    ## Return a capture kit depending on user info
+	    my $exomeTargetBedFile = &AddCaptureKit({fileInfoHashRef => $fileInfoHashRef,
+						     supportedCaptureKitHashRef => $supportedCaptureKitHashRef, 
+						     captureKit => $captureKit, 
+						     userSuppliedParameterswitch => $userExomeTargetBedSwitch,
+						    });
+	    if($exomeTargetBedFile) {
+		
+		push(@{$exomtargetBedTestFileTracker{$exomeTargetBedFile}}, $sampleID);
+		
+	    }
+	}
+    }
+    if ($userSampleIDsSwitch == 0) {
+	
+	@{${$scriptParameterHashRef}{sampleIDs}} = sort(@{${$scriptParameterHashRef}{sampleIDs}});  #Lexiographical sort to determine the correct order of ids indata
+    }
+    else { #Check that CLI supplied sampleID exists in pedigree
+	
+	## Prepare CLI supplied sampleIDs if comma sep
+	my $valuesArrayRef = \@{${$parameterHashRef}{sampleIDs}{value}};
+	my $elementSeparatorRef = \${$parameterHashRef}{sampleIDs}{elementSeparator};
+	my @tempSampleIDs = split($$elementSeparatorRef, join($$elementSeparatorRef, @{$valuesArrayRef}) );
+	
+	foreach my $sampleID (@tempSampleIDs) {  
+	    
+	    if (! ( any {$_ eq $sampleID} @pedigreeSampleIDs ) ) {  #If element is not part of array
+		
+		$logger->fatal("File: ".$filePath." provided sampleID: ".$sampleID." is not present in file", "\n");
+		exit 1;
+	    }
+	}
+    }
+    if(%exomtargetBedTestFileTracker) {  #We have read capture kits from pedigree and need to transfer to scriptParameters
+	
+	foreach my $exomeTargetBedFile (keys %exomtargetBedTestFileTracker) {
+	    
+	    ${$scriptParameterHashRef}{exomeTargetBed}{$exomeTargetBedFile} = join(",", @{$exomtargetBedTestFileTracker{$exomeTargetBedFile}});
+	}
+    }
 }
 
 
@@ -16792,7 +17065,7 @@ sub FIDSubmitJob {
 ##3 = Dependent on earlier scripts and executed in parallel within step
 ##4 = Dependent on earlier scripts and parallel scripts and executed in parallel within step 
 ##5 = Dependent on earlier scripts both family and sample and adds to both familyID and sampleId jobs
-##6 = Not dependent on earlier scripts and adds to sampleId jobs and familyId jobs, but sbatch is processed at family level i.e. affects all sampleID jobs e.g. building a reference
+##6 = Not dependent on earlier scripts and adds to sampleId jobs and familyID jobs, but sbatch is processed at family level i.e. affects all sampleID jobs e.g. building a reference
 ##7 = Dependent on all earlier scripts in selected chains for familyID jobs i.e. wait for chains jobs before launching
 
 ###Chain
@@ -18002,13 +18275,31 @@ sub AddToScriptParameter {
     if ($parameterName eq "pedigreeFile") {
 	
 	## Reads familyID_pedigree file in PLINK format. Checks for pedigree data for allowed entries and correct format. Add data to sampleInfo depending on user info.
-	&ReadPlinkPedigreeFile({parameterHashRef => $parameterHashRef,
-				scriptParameterHashRef => $scriptParameterHashRef,
-				sampleInfoHashRef => $sampleInfoHashRef,
-				fileInfoHashRef => $fileInfoHashRef,
-				supportedCaptureKitHashRef => $supportedCaptureKitHashRef,
-				filePath => ${$scriptParameterHashRef}{pedigreeFile},
-			       });
+	if (${$scriptParameterHashRef}{pedigreeFile} =~/\.yaml$/) {  #Meta data in YAML format
+	    
+	    ##Loads a YAML file into an arbitrary hash and returns it. Load parameters from previous run from sampleInfoFile
+	    my %pedigree = &LoadYAML({yamlFile => ${$scriptParameterHashRef}{pedigreeFile},
+				     });
+
+	    &ReadYAMLPedigreeFile({parameterHashRef => $parameterHashRef,
+				   scriptParameterHashRef => $scriptParameterHashRef,
+				   sampleInfoHashRef => $sampleInfoHashRef,
+				   fileInfoHashRef => $fileInfoHashRef,
+				   supportedCaptureKitHashRef => $supportedCaptureKitHashRef,
+				   filePath => ${$scriptParameterHashRef}{pedigreeFile},
+				   pedigreeHashRef => \%pedigree,
+				  });
+	}
+	else {  #Expect PLINK pedigree format
+	    
+	    &ReadPlinkPedigreeFile({parameterHashRef => $parameterHashRef,
+				    scriptParameterHashRef => $scriptParameterHashRef,
+				    sampleInfoHashRef => $sampleInfoHashRef,
+				    fileInfoHashRef => $fileInfoHashRef,
+				    supportedCaptureKitHashRef => $supportedCaptureKitHashRef,
+				    filePath => ${$scriptParameterHashRef}{pedigreeFile},
+				   });
+	}
     }
 
     ## Parameter set
@@ -21222,11 +21513,11 @@ sub DetectSampleIdGender {
 
     foreach my $sampleID (@{${$scriptParameterHashRef}{sampleIDs}}) {
 
-	if (${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$sampleID}{Sex} == 1) {  #Female
+	if (${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$sampleID}{sex} =~/1|male/) {  #Male
 	    
 	    $maleFound = 1;  #Male
 	}
-	if (${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$sampleID}{Sex} == 2) {  #Female
+	if (${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} }{$sampleID}{sex} =~/2|female/) {  #Female
 
 	    $femaleFound = 1;
 	}
@@ -21261,11 +21552,13 @@ sub RemovePedigreeElements {
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my %allowedEntries = (Capture_kit => "Capture_kit",
-			  Sex => "Sex",
-			  Mother => "Mother",
-			  Father => "Father",
-			  Phenotype => "Phenotype",
+			  captureKit => "captureKit",
+			  sex => "sex",
+			  mother => "mother",
+			  father => "father",
+			  phenotype => "phenotype",
 			  Clinical_db_gene_annotation => "Clinical_db_gene_annotation",
+			  defaultGenePanels => "defaultGenePanels",  #Clinical gene panels
 			  Sequence_type => "Sequence_type",
 	);
     
@@ -21517,52 +21810,85 @@ sub CreateFamFile {
 
 ##Function : Create .fam file to be used in variant calling analyses. Also checks if file already exists when using executionMode=sbatch.
 ##Returns  : "" 
-##Arguments: $scriptParameterHashRef, $pedigreeFile, $executionMode, $famFilePath, $includeHeader, $FILEHANDLE
+##Arguments: $parameterHashRef, $scriptParameterHashRef, sampleInfoHashRef, $pedigreeFile, $executionMode, $famFilePath, $includeHeader, $FILEHANDLE, $familyIDRef
+##         : $parameterHashRef       => Hash with paremters from yaml file {REF}
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $sampleInfoHashRef      => Info on samples and family hash {REF}
 ##         : $pedigreeFile           => The supplied pedigree file to create the reduced ".fam" file from
 ##         : $executionMode          => Either system (direct) or via sbatch
 ##         : $famFilePath            => The family file path
 ##         : $includeHeader          => Wether to include header ("1") or not ("0")
 ##         : $FILEHANDLE             => Filehandle to write to {Optional unless executionMode=sbatch}
+##         : $familyIDRef            => The familyID {REF}
 
     my ($argHashRef) = @_;
     
     ## Default(s)
+    my $familyIDRef = ${$argHashRef}{familyIDRef} //= \${$argHashRef}{scriptParameterHashRef}{familyID};
     my $pedigreeFile = ${$argHashRef}{pedigreeFile} //= ${$argHashRef}{scriptParameterHashRef}{pedigreeFile};
     my $executionMode;
     my $includeHeader;
     
     ## Flatten argument(s)
+    my $parameterHashRef;
     my $scriptParameterHashRef;
+    my $sampleInfoHashRef;
     my $famFilePath;
     my $FILEHANDLE;
 
     my $tmpl = { 
+	parameterHashRef => { default => {}, strict_type => 1, store => \$parameterHashRef},
 	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
 	famFilePath => { required => 1, defined => 1, strict_type => 1, store => \$famFilePath},
 	FILEHANDLE => { store => \$FILEHANDLE},
 	pedigreeFile => { strict_type => 1, store => \$pedigreeFile},
 	executionMode => { default => "sbatch", allow => ["sbatch", "system"], strict_type => 1, store => \$executionMode},
 	includeHeader => { default => 1, allow => [0, 1], strict_type => 1, store => \$includeHeader},
+	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
     };
         
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     my $pqFamFile;
 
+    my @famHeaders = ("#familyID", "sampleID", "father", "mother", "sex", "phenotype");
+    my @pedigreeLines;
+    my $header;
+
     if ($includeHeader) {
 	
-	$pqFamFile = q?perl -nae 'print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t", $F[5], "\n";' ?;
+	push(@pedigreeLines, join("\t", @famHeaders));
     }
-    else {
-	
-	$pqFamFile = q?perl -nae 'unless ($_=~/^#/) { print $F[0], "\t", $F[1], "\t", $F[2], "\t", $F[3], "\t", $F[4], "\t", $F[5], "\n"; }' ?;
-    }
+    
+    foreach my $sampleID (@{${$scriptParameterHashRef}{sampleIDs}}) { 
 
+	my $sampleLine = $$familyIDRef."\t".$sampleID;
+
+	foreach my $header (@famHeaders) {
+
+	    if(defined(${$parameterHashRef}{dynamicParameters}{$sampleID}{"plink_".$header})) {
+
+		$sampleLine .= "\t".${$parameterHashRef}{dynamicParameters}{$sampleID}{"plink_".$header};
+	    }
+	    elsif(defined(${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{$header})) {
+
+		$sampleLine .= "\t".${$sampleInfoHashRef}{$$familyIDRef}{$sampleID}{$header};
+	    }
+	}
+	push(@pedigreeLines, $sampleLine);
+    }
     if ($executionMode eq "system") {  #Execute directly 
+	
+	my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+	open($FILEHANDLE, ">", $famFilePath) or $logger->logdie("Can't open '".$famFilePath."': ".$!."\n"); 
 
-	`$pqFamFile $pedigreeFile > $famFilePath;`;
+	foreach my $line (@pedigreeLines) {
+
+	    say $FILEHANDLE $line;
+	}
 	$logger->info("Wrote: ".$famFilePath, "\n");
+	close($FILEHANDLE);
     }
     if ($executionMode eq "sbatch") {
 
@@ -21573,7 +21899,14 @@ sub CreateFamFile {
 		my $FILEHANDLE = $FILEHANDLE;
 		
 		say $FILEHANDLE "#Generating '.fam' file for use with GATK ","\n";
-		say $FILEHANDLE $pqFamFile.$pedigreeFile." > ".$famFilePath." ";
+		print $FILEHANDLE "echo ";
+		print $FILEHANDLE "-e ";  #Enable interpretation of i.e. \n
+		print $FILEHANDLE q?-n "?;  #Do not output the trailing newline
+		foreach my $line (@pedigreeLines) {
+		    
+		    print $FILEHANDLE $line.q?\n?;
+		}
+		say $FILEHANDLE q?" ?." > ".$famFilePath,"\n";
 	    }
 	    else {
 		
@@ -24767,8 +25100,8 @@ sub DetectFounders {
     
     foreach my $sampleID (@{${$scriptParameterHashRef}{sampleIDs}}) {
 	
-	my $fatherInfo = ${$sampleInfoHashRef}{${$scriptParameterHashRef}{familyID} }{$sampleID}{Father};  #Alias
-	my $motherInfo = ${$sampleInfoHashRef}{${$scriptParameterHashRef}{familyID} }{$sampleID}{Mother};  #Alias
+	my $fatherInfo = ${$sampleInfoHashRef}{${$scriptParameterHashRef}{familyID} }{$sampleID}{father};  #Alias
+	my $motherInfo = ${$sampleInfoHashRef}{${$scriptParameterHashRef}{familyID} }{$sampleID}{mother};  #Alias
 	
 	if ( (defined($fatherInfo)) && ($fatherInfo ne 0) ) {  #Child
 	    
@@ -24823,8 +25156,8 @@ sub DetectTrio {
 
 	foreach my $sampleID (@{${$scriptParameterHashRef}{sampleIDs}}) {
     
-	    my $fatherInfo = ${$sampleInfoHashRef}{${$scriptParameterHashRef}{familyID} }{$sampleID}{Father};  #Alias
-	    my $motherInfo = ${$sampleInfoHashRef}{${$scriptParameterHashRef}{familyID} }{$sampleID}{Mother};  #Alias
+	    my $fatherInfo = ${$sampleInfoHashRef}{${$scriptParameterHashRef}{familyID} }{$sampleID}{father};  #Alias
+	    my $motherInfo = ${$sampleInfoHashRef}{${$scriptParameterHashRef}{familyID} }{$sampleID}{mother};  #Alias
 
 	    if ( ($fatherInfo ne 0) && ($motherInfo ne 0) ) {  #Child
 		
