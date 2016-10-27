@@ -1645,10 +1645,10 @@ snpSiftAnnotationFiles:
   buildFile: yesAutoBuild
   dataType: HASH
   default:
-     dbsnp_138.b37.excluding_sites_after_129.vcf.gz: CAF
      ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz: AF
      ExAC.r0.3.sites.vep.vcf.gz: AF
-     anon-SRG_joincalled.snp.recalibrated.filtered.chr22.exac_tags.vep.vcf.gz: AF
+     anon-SweGen_STR_NSPHS_1000samples_snp_freq_hg19.vcf.gz: AF
+     anon-SweGen_STR_NSPHS_1000samples_indel_freq_hg19.vcf.gz: AF
   existsCheck: file
   reference: referencesDir
   type: path
@@ -1658,10 +1658,10 @@ snpSiftAnnotationOutInfoKey:
   buildFile: yesAutoBuild
   dataType: HASH
   default:
-     dbsnp_138.b37.excluding_sites_after_129.vcf.gz: Dbsnp129L
      ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz: 1000G
      ExAC.r0.3.sites.vep.vcf.gz: EXAC
-     anon-SRG_joincalled.snp.recalibrated.filtered.chr22.exac_tags.vep.vcf.gz: SWEREF 
+     anon-SweGen_STR_NSPHS_1000samples_snp_freq_hg19.vcf.gz: SWEREF
+     anon-SweGen_STR_NSPHS_1000samples_indel_freq_hg19.vcf.gz: SWEREF
   existsCheck: file
   reference: referencesDir
   type: path
