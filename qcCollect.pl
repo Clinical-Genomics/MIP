@@ -112,7 +112,8 @@ $qcData{Program}{QCCollect}{RegExpFile} = $regExpFile;
 foreach my $sampleID (keys %{$sampleInfo{sample}}) {
 
     ## Defines programs, etrics and thresholds to evaluate
-    &DefineEvaluateMetric({sampleID => $sampleID,
+    &DefineEvaluateMetric({sampleInfoHashRef => \%sampleInfo,
+			   sampleID => $sampleID,
 			  });
 }
 
@@ -485,15 +486,18 @@ sub DefineEvaluateMetric {
 
 ##Function  : Sets programs and program metrics and thresholds to be evaluated
 ##Returns   : ""
-##Arguments : $sampleID
-##          : $sampleID => SampleID
+##Arguments : $sampleInfoHashRef, $sampleID
+##          : $sampleInfoHashRef => Info on samples and family hash {REF}
+##          : $sampleID          => SampleID
 
     my ($argHashRef) = @_;
 
     ## Flatten argument(s)
+    my $sampleInfoHashRef;
     my $sampleID;
     
     my $tmpl = { 
+	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
 	sampleID => { required => 1, defined => 1, strict_type => 1, store => \$sampleID},
     };
     
@@ -505,19 +509,14 @@ sub DefineEvaluateMetric {
     $evaluateMetric{$sampleID}{CalculateHsMetrics}{PCT_TARGET_BASES_10X}{threshold} = 0.95;
     $evaluateMetric{$sampleID}{CollectMultipleMetrics}{PCT_PF_READS_ALIGNED}{threshold} = 0.95;
     $evaluateMetric{$sampleID}{CalculateHsMetrics}{PCT_ADAPTER}{threshold} = 0.0001;
-
+    $evaluateMetric{$sampleID}{CalculateHsMetrics}{MEAN_TARGET_COVERAGE}{threshold} = ${$sampleInfoHashRef}{sample}{$sampleID}{expectedCoverage};
     $evaluateMetric{VariantIntegrityMendel}{FractionofErrors}{GT} = 0.015;
     $evaluateMetric{VariantIntegrityFather}{FractionofCommonVariants}{LT} = 0.6;
 
     if ($sampleInfo{sample}{$sampleID}{analysisType} eq "wes") {
 
-	$evaluateMetric{$sampleID}{CalculateHsMetrics}{MEAN_TARGET_COVERAGE}{threshold} = 100;
 	$evaluateMetric{$sampleID}{CalculateHsMetrics}{PCT_TARGET_BASES_30X}{threshold} = 0.90;
     }
-    else {
-
-	$evaluateMetric{$sampleID}{CalculateHsMetrics}{MEAN_TARGET_COVERAGE}{threshold} = 20;
-    }    
 }
 sub EvaluateQCParameters {
 

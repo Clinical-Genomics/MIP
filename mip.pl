@@ -16670,6 +16670,7 @@ sub ReadYAMLPedigreeFile {
 		    analysis_type => "analysisType",
 		    capture_kit => "captureKit",
 		    default_gene_panels => "defaultGenePanels",  #Clinical gene panels
+		    expected_coverage => "expectedCoverage",
 	);
     my %exomtargetBedTestFileTracker;  #Use to collect which sampleIDs have used a certain capture_kit
     my @pedigreeSampleIDs;
@@ -21590,6 +21591,7 @@ sub RemovePedigreeElements {
 			  Clinical_db_gene_annotation => "Clinical_db_gene_annotation",
 			  defaultGenePanels => "defaultGenePanels",  #Clinical gene panels
 			  Sequence_type => "Sequence_type",
+			  expected_coverage => "expectedCoverage",
 	);
     
     for my $familyID (keys %{$hashRef}) {
