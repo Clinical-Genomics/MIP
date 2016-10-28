@@ -506,6 +506,9 @@ sub DefineEvaluateMetric {
     $evaluateMetric{$sampleID}{CollectMultipleMetrics}{PCT_PF_READS_ALIGNED}{threshold} = 0.95;
     $evaluateMetric{$sampleID}{CalculateHsMetrics}{PCT_ADAPTER}{threshold} = 0.0001;
 
+    $evaluateMetric{VariantIntegrityMendel}{FractionofErrors}{GT} = 0.015;
+    $evaluateMetric{VariantIntegrityFather}{FractionofCommonVariants}{LT} = 0.6;
+
     if ($sampleInfo{sample}{$sampleID}{analysisType} eq "wes") {
 
 	$evaluateMetric{$sampleID}{CalculateHsMetrics}{MEAN_TARGET_COVERAGE}{threshold} = 100;
@@ -541,7 +544,38 @@ sub EvaluateQCParameters {
 
     my $status;
 
-    for my $sampleID ( keys %{${$qcDataHashRef}{sample}} ) { #Can be both sampleID and familyID with current structure
+    for my $program ( keys %{${$qcDataHashRef}{Program}} ) {
+
+	if (defined(${$evaluateMetricHashRef}{$program})) { #Program to be evaluated
+	    
+	    for my $metric ( keys %{${$qcDataHashRef}{Program}{$program}} ) {
+		
+		if (defined(${$evaluateMetricHashRef}{$program}{$metric})) { #metric to be evaluated
+		    
+		    if (${$evaluateMetricHashRef}{$program}{$metric}{GT}) {
+			
+			if (${$qcDataHashRef}{Program}{$program}{$metric} > ${$evaluateMetricHashRef}{$program}{$metric}{GT}) { #Determine status - if greater than add to hash. otherwise PASS and do not include
+			    
+			    $status = "FAILED:".$program."_".$metric.":".${$qcDataHashRef}{Program}{$program}{$metric};
+			    push(@{${$qcDataHashRef}{Evaluation}{$program}}, $status);
+			}
+		    }
+		    if (${$evaluateMetricHashRef}{$program}{$metric}{LT}) {
+
+			if (${$qcDataHashRef}{Program}{$program}{$metric} < ${$evaluateMetricHashRef}{$program}{$metric}{LT}) { #Determine status - if lower than add to hash. otherwise PASS and do not include
+			    
+			    $status = "FAILED:".$program."_".$metric.":".${$qcDataHashRef}{Program}{$program}{$metric};
+			push(@{${$qcDataHashRef}{Evaluation}{$program}}, $status);
+			}
+		    }		
+		    last;
+		}
+	    }
+	}
+    }
+
+    ## Sample level evaluation
+    for my $sampleID ( keys %{${$qcDataHashRef}{sample}} ) {
 	
 	for my $infile ( keys %{${$qcDataHashRef}{sample}{$sampleID}} ) {
 	    
