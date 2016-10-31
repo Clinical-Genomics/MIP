@@ -113,6 +113,12 @@ analysisType:
   default:
    - wgs
   type: MIP
+expectedCoverage:
+  associatedProgram:
+   - MIP
+  dataType: HASH
+  mandatory: no
+  type: MIP
 inFilesDir:
   associatedProgram:
    - MIP

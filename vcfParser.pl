@@ -494,13 +494,10 @@ sub ReadInfileVCF {
 		    }
 		}
 		if ($parseVEP) {
-			
+		    
 		    if ( ($vepFormatFieldColumn{SYMBOL}) && ($vepFormatFieldColumn{HGVSc}) && ($vepFormatFieldColumn{HGVSp})) {
 			
-			push(@{${$metaDataHashRef}{INFO}{HGVScp}}, '##INFO=<ID=HGVScp,Number=.,Type=String,Description="Transcript and protein functional annotation.">');
-			push(@{${$metaDataHashRef}{INFO}{MostSevereConsequence}}, '##INFO=<ID=MostSevereConsequence,Number=.,Type=String,Description="Most severe genomic consequence.">');
-			push(@{${$metaDataHashRef}{INFO}{GeneticRegionAnnotation}}, '##INFO=<ID=GeneticRegionAnnotation,Number=.,Type=String,Description="Genetic region that variant falls into.">');
-			
+			push(@{${$metaDataHashRef}{INFO}{MostSevereConsequence}}, '##INFO=<ID=MostSevereConsequence,Number=.,Type=String,Description="Most severe genomic consequence.">');	
 		    }
 		}
 		next;
@@ -825,23 +822,7 @@ sub ReadInfileVCF {
 				if (${$selectDataHashRef}{ $variantData{Symbol} }) { #Exists in selected Features
 				    
 				    $selectedTranscriptTracker = 1; #Record belongs to selected Features
-				    my $alleleGeneEntry = $transcriptsEffects[ $vepFormatFieldColumn{Allele} ].":".$variantData{Symbol};
-				   
-				    &AddFieldToElementCounter({transcriptCounterRef => \$selectedTranscriptCounter,
-							       lineRef => \$selectedVariantLine,
-							       valueRef => \$alleleGeneEntry,
-							       fieldID => "HGVScp=",
-							      });
 				}
-		
-				## Always include all transcripts in research list
-				my $alleleGeneEntry = $transcriptsEffects[ $vepFormatFieldColumn{Allele} ].":".$variantData{Symbol};
-				    
-				&AddFieldToElementCounter({transcriptCounterRef => \$transcriptsCounter,
-							   lineRef => \$variantLine,
-							   valueRef => \$alleleGeneEntry,
-							   fieldID => "HGVScp=",
-							  });
 			    }
 			    &AddFieldToElement({selectedTranscriptTrackerRef => \$selectedTranscriptTracker,
 						selectedLineRef => \$selectedVariantLine,
@@ -862,6 +843,7 @@ sub ReadInfileVCF {
 					$selectedVariantData{FeatureType} .= ",".$transcriptsEffects[ $vepFormatFieldColumn{Feature_type} ];
 				    }
 				}
+
 				## Always include all transcripts in research list				    
 				if ($transcriptsCounter == 0) { #First Gene
 				    
@@ -891,18 +873,15 @@ sub ReadInfileVCF {
 						});
 				    
 				    if (defined($variantData{Symbol})) {
-
-					if(defined($consequence{ $variantData{Symbol} }{$allele}{Score})) { #Compare to previous record
 					
+					if(defined($consequence{ $variantData{Symbol} }{$allele}{Score})) { #Compare to previous record
+					    
 					    if (${$consequenceSeverityHashRef}{$consequenceTerm}{Rank} < $consequence{ $variantData{Symbol} }{$allele}{Score}) { #Collect most severe consequence
 						
 						&AddToConsequenceHash({hashKeyRef => \$consequence{ $variantData{Symbol} }{$allele}{Score},
 								       valueRef => \${$consequenceSeverityHashRef}{$consequenceTerm}{Rank},
 								      });
 						
-						&AddToConsequenceHash({hashKeyRef => \$consequence{ $variantData{Symbol} }{$allele}{GeneticRegionAnnotation},
-								       valueRef => \${$consequenceSeverityHashRef}{$consequenceTerm}{GeneticRegionAnnotation},
-								      });
 						&AddToConsequenceHash({hashKeyRef => \$consequence{ $variantData{Symbol} }{$allele}{MostSevereConsequence},
 								       valueRef => \$consequenceTerm,
 								      });
@@ -913,71 +892,13 @@ sub ReadInfileVCF {
 					    &AddToConsequenceHash({hashKeyRef => \$consequence{ $variantData{Symbol} }{$allele}{Score},
 								   valueRef => \${$consequenceSeverityHashRef}{$consequenceTerm}{Rank},
 								  });
-					    &AddToConsequenceHash({hashKeyRef => \$consequence{ $variantData{Symbol} }{$allele}{GeneticRegionAnnotation},
-								   valueRef => \${$consequenceSeverityHashRef}{$consequenceTerm}{GeneticRegionAnnotation},
-								  });
+					    
 					    &AddToConsequenceHash({hashKeyRef => \$consequence{ $variantData{Symbol} }{$allele}{MostSevereConsequence},
 								   valueRef => \$consequenceTerm,
 								  });    
 					}
 				    }
 				}
-			    }
-			    if ( (defined($transcriptsEffects[ $vepFormatFieldColumn{STRAND} ])) && ($transcriptsEffects[ $vepFormatFieldColumn{STRAND} ] ne "") ) { #Save strand 
-
-				if ($transcriptsEffects[ $vepFormatFieldColumn{STRAND} ] == 1) { #Remap to "+" or "-"
-
-				    $variantData{Strand} = "s.+";
-				}
-				else {
-				    
-				    $variantData{Strand} = "s.-";
-				}
-				&AddFieldToElement({selectedTranscriptTrackerRef => \$selectedTranscriptTracker,
-						    selectedLineRef => \$selectedVariantLine,
-						    lineRef => \$variantLine,
-						    valueRef => \$variantData{Strand},
-						   });
-			    }
-			    if (defined($transcriptsEffects[ $vepFormatFieldColumn{EXON} ]) && $transcriptsEffects[ $vepFormatFieldColumn{EXON}] =~/^\d/) {
-				
-				$variantData{Exon} = "e.".$transcriptsEffects[ $vepFormatFieldColumn{EXON} ]; #Save exon number "X/Y"
-
-				&AddFieldToElement({selectedTranscriptTrackerRef => \$selectedTranscriptTracker,
-						    selectedLineRef => \$selectedVariantLine,
-						    lineRef => \$variantLine,
-						    valueRef => \$variantData{Exon},
-						   });
-			    }
-			    if (defined($transcriptsEffects[ $vepFormatFieldColumn{INTRON} ]) && $transcriptsEffects[ $vepFormatFieldColumn{INTRON} ] =~/^\d/) {
-				
-				$variantData{Intron} = "i.".$transcriptsEffects[ $vepFormatFieldColumn{INTRON} ]; #Save intron number "X/Y"
-
-				&AddFieldToElement({selectedTranscriptTrackerRef => \$selectedTranscriptTracker,
-						    selectedLineRef => \$selectedVariantLine,
-						    lineRef => \$variantLine,
-						    valueRef => \$variantData{Intron},
-						   });
-			    }
-			    if ( (defined($transcriptsEffects[ $vepFormatFieldColumn{HGVSc} ])) && ($transcriptsEffects[ $vepFormatFieldColumn{HGVSc} ] ne "")) { #Save HGVS cDNA change
-				
-				my @cDNAChanges = split(/:/, $transcriptsEffects[ $vepFormatFieldColumn{HGVSc} ]);
-
-				&AddFieldToElement({selectedTranscriptTrackerRef => \$selectedTranscriptTracker,
-						    selectedLineRef => \$selectedVariantLine,
-						    lineRef => \$variantLine,
-						    valueRef => \$cDNAChanges[1],
-						   });
-			    }
-			    if ( (defined($transcriptsEffects[ $vepFormatFieldColumn{HGVSp} ])) && ($transcriptsEffects[ $vepFormatFieldColumn{HGVSp} ] ne "") ) {
-				
-				my @pAAChanges = split(/:/, $transcriptsEffects[ $vepFormatFieldColumn{HGVSp} ]);
-
-				&AddFieldToElement({selectedTranscriptTrackerRef => \$selectedTranscriptTracker,
-						    selectedLineRef => \$selectedVariantLine,
-						    lineRef => \$variantLine,
-						    valueRef => \$pAAChanges[1],
-						   });
 			    }
 			    if ($selectedTranscriptTracker == 1) {
 				
@@ -1035,27 +956,6 @@ sub ReadInfileVCF {
     say STDERR "Finished Processing VCF";
 }
 
-
-sub PrintTSVField {
-##Prints a TSV field if defined
-
-    my $arrayRef = $_[0]; #FILEHANDLES
-    my $valueRef = $_[1];
-
-    for (my $filehandleCounter=0;$filehandleCounter<scalar(@{$arrayRef});$filehandleCounter++) {
-
-	if (defined($$valueRef)) {
-	    
-	    print {${$arrayRef}[$filehandleCounter]} "\t".$$valueRef;
-	}
-	else {
-	    
-	    print {${$arrayRef}[$filehandleCounter]} "\t";
-	}
-    }
-}
-
-
 sub AddToConsequenceHash {
 
 ##AddToConsequenceHash
@@ -1082,49 +982,6 @@ sub AddToConsequenceHash {
     $$hashKeyRef = $$valueRef;
 }
 
-sub AddFieldToElementCounter {
-
-##AddFieldToElementCounter
-    
-##Function : Adds a field to an element. Adjust addition depending on if field has been seen before.
-##Returns  : ""
-##Arguments: $transcriptCounterRef, $lineRef, $valueRef, $fieldID, $separator
-##         : $transcriptCounterRef => The transcript counter {REF}
-##         : $lineRef              => Variant line to add annotations to {REF}
-##         : $valueRef             => Field value {REF}
-##         : $fieldID              => Field key ID
-##         : $separator            => Separator for field
-
-    my ($argHashRef) = @_;
-
-    ## Default(s)
-    my $separator;
-
-    ## Flatten argument(s)
-    my $transcriptCounterRef;
-    my $lineRef;
-    my $valueRef;
-    my $fieldID;
-
-    my $tmpl = { 
-	transcriptCounterRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$transcriptCounterRef},
-	lineRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$lineRef},
-	separator => { default => ",", strict_type => 1, store => \$separator},
-	valueRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$valueRef},
-	fieldID => { required => 1, defined => 1, strict_type => 1, store => \$fieldID},
-    };
-    
-    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
-    
-    if (! $$transcriptCounterRef) {
-	
-	$$lineRef .= ";".$fieldID.$$valueRef; #First selected feature
-    }
-    else {
-
-	$$lineRef .= $separator.$$valueRef; #Following features
-    }
-}
 
 sub AddFieldToElement {
 
@@ -1167,6 +1024,7 @@ sub AddFieldToElement {
     ## Always include all transcripts in orphan list
     $$lineRef .= $separator.$$valueRef;
 }
+
 
 sub CollectConsequenceGenes {
  
@@ -1354,6 +1212,7 @@ sub AddToLine {
 	}
     }
 }
+
 
 sub ConvertToRange {
 

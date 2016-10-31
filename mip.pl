@@ -66,6 +66,7 @@ mip.pl  -ifd [inFilesDir=sampleID] -isd [inScriptDir] -rd [refdir] -p [project I
                -ald/--alignerOutDir Setting which aligner out directory was used for alignment in previous analysis (defaults to "{outDataDir}{ {aligner}{outDirectoryName} }")
                -at/--analysisType Type of analysis to perform (sampleID=analysisType, defaults to "wgs";Valid entries: "wgs", "wes", "rapid")
                -pl/--platForm Platform/technology used to produce the reads (defaults to "ILLUMINA")
+               -ec/--expectedCoverage Expected mean target coverage for analysis (sampleID=expectedCoverage, defaults to "")
                -mc/--maximumCores The maximum number of cores per node used in the analysis (defaults to "16")
                -c/--configFile YAML config file for script parameters (defaults to "")
                -ccp/--clusterConstantPath Set the cluster constant path (defaults to "")
@@ -445,8 +446,9 @@ GetOptions('ifd|inFilesDir:s'  => \%{$parameter{inFilesDir}{value}},  #Hash inFi
 	   'ped|pedigreeFile:s' => \$parameter{pedigreeFile}{value},  #Pedigree file
 	   'hgr|humanGenomeReference:s' => \$parameter{humanGenomeReference}{value},  #Human genome reference
 	   'al|alignerOutDir:s' => \$parameter{alignerOutDir}{value},  #determining which aligner out data directory was used previously (if not specified)
-	   'at|analysisType:s' => \%{$parameter{analysisType}{value}},  #analysisType=sampleID
+	   'at|analysisType:s' => \%{$parameter{analysisType}{value}},  #sampleID=analysisType
 	   'pl|platForm:s' => \$parameter{platForm}{value},  #Platform/technology used to produce the reads
+	   'ec|expectedCoverage:s' => \%{$parameter{expectedCoverage}{value}},  #sampleID=expectedCoverage
 	   'mc|maximumCores=n' => \$parameter{maximumCores}{value},  #Per node
 	   'c|configFile:s' => \$parameter{configFile}{value},
 	   'ccp|clusterConstantPath:s' => \$parameter{clusterConstantPath}{value},
@@ -851,12 +853,17 @@ if (exists($scriptParameter{email})) {  #Allow no malformed email adress
 		  sampleIdArrayRef => \@{$scriptParameter{sampleIDs}},
 		 });
 
-
 ## Check sampleID provided in hash parameter is included in the analysis and only represented once
 &CheckSampleIDInHashParameter({scriptParameterHashRef => \%scriptParameter,
 			       sampleIdArrayRef => \@{$scriptParameter{sampleIDs}},
-			       parameterNameArrayRef => ["inFilesDir", "exomeTargetBed"],
+			       parameterNameArrayRef => ["expectedCoverage", "analysisType"],
 			      });
+
+## Check sampleID provided in hash path parameter is included in the analysis and only represented once
+&CheckSampleIDInHashPathParameter({scriptParameterHashRef => \%scriptParameter,
+				   sampleIdArrayRef => \@{$scriptParameter{sampleIDs}},
+				   parameterNameArrayRef => ["inFilesDir", "exomeTargetBed"],
+				  });
 
 
 ## Check that VEP directory and VEP cache match
@@ -16696,6 +16703,12 @@ sub ReadYAMLPedigreeFile {
 							 parameterName => "analysisType",
 							});
 
+    ## Determine if the user supplied info on parameter either via cmd or config
+    my $userExpectedCoverageTypeSwitch = &CheckUserSuppliedInfo({scriptParameterHashRef => $scriptParameterHashRef,
+								 dataRef => ${$parameterHashRef}{expectedCoverage}{value},
+								 parameterName => "expectedCoverage",
+								});
+
     ### Check input
 
     ## Check that we find mandatory family keys
@@ -16833,6 +16846,17 @@ sub ReadYAMLPedigreeFile {
 		${$scriptParameterHashRef}{analysisType}{$sampleID} = $analysisType;
 	    }
 	}
+
+	## Add expectedCoverage for each individual
+	if (${$sampleInfoHashRef}{sample}{$sampleID}{expectedCoverage}) {  #Add expectedCoverage
+	    
+	    if ( (defined($userExpectedCoverageTypeSwitch)) && ($userExpectedCoverageTypeSwitch == 0) ) {
+		
+		my $expectedCoverage = ${$sampleInfoHashRef}{sample}{$sampleID}{expectedCoverage};  #Alias
+		${$scriptParameterHashRef}{expectedCoverage}{$sampleID} = $expectedCoverage;
+	    }
+	}
+	
 	
 	## Add capture kit for each individual
 	if ( (${$sampleInfoHashRef}{sample}{$sampleID}{captureKit}) ) {
@@ -21591,7 +21615,7 @@ sub RemovePedigreeElements {
 			  Clinical_db_gene_annotation => "Clinical_db_gene_annotation",
 			  defaultGenePanels => "defaultGenePanels",  #Clinical gene panels
 			  Sequence_type => "Sequence_type",
-			  expected_coverage => "expectedCoverage",
+			  expectedCoverage => "expectedCoverage",
 	);
     
     for my $familyID (keys %{$hashRef}) {
@@ -23825,6 +23849,10 @@ sub AddToSampleInfo {
     if (defined(${$scriptParameterHashRef}{analysisType})) {
 
 	${$sampleInfoHashRef}{AnalysisType} = ${$scriptParameterHashRef}{analysisType};
+    }
+    if (defined(${$scriptParameterHashRef}{expectedCoverage})) {
+
+	${$sampleInfoHashRef}{expectedCoverage} = ${$scriptParameterHashRef}{expectedCoverage};
     }
     if (defined(${$scriptParameterHashRef}{genomeAnalysisToolKitPath})) {
 
@@ -26097,6 +26125,63 @@ sub UpdateExomeTargetBed {
 
 
 
+sub CheckSampleIDInHashPathParameter {
+
+##CheckSampleIDInHashPathParameter
+    
+##Function : Check sampleID provided in hash path parameter is included in the analysis and only represented once
+##Returns  : "" 
+##Tags     : check, sampleids, hash
+##Arguments: $scriptParameterHashRef, $sampleIdArrayRef, $parameterName
+##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
+##         : $sampleIDArrayRef       => Array to loop in for parameter {REF}
+##         : $parameterNameArrayRef  => Parameter name list {REF}
+
+    my ($argHashRef) = @_;
+
+    ## Flatten argument(s)
+    my $scriptParameterHashRef;
+    my $sampleIdArrayRef;
+    my $parameterNameArrayRef;
+    
+    my $tmpl = { 
+	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
+	sampleIdArrayRef => { required => 1, defined => 1, default => [], strict_type => 1, store => \$sampleIdArrayRef},
+	parameterNameArrayRef => { required => 1, defined => 1, default => [], store => \$parameterNameArrayRef},
+    };
+        
+    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
+
+    foreach my $parameterName (@{$parameterNameArrayRef}) {  #Lopp through all hash parameters supplied
+
+	my %seen;  #Hash to test duplicate sampleIDs later
+	
+	foreach my $key (keys %{${$scriptParameterHashRef}{$parameterName}} ) {
+
+	    my @parameterSamples = split(",", ${$scriptParameterHashRef}{$parameterName}{$key});
+	    
+	    foreach my $sampleID (@parameterSamples) {
+
+		$seen{ $sampleID }++;  #Increment instance to check duplicates later
+		
+		if ($seen{ $sampleID } > 1) {  #Check sampleID are unique
+		    
+		    $logger->fatal("SampleID: ".$sampleID." is not uniqe in '-".$parameterName." '".$key."=".join(",", @parameterSamples),"\n");
+		    exit 1;
+		}
+	    }
+	}
+	foreach my $sampleID (@{$sampleIdArrayRef}) {
+	    
+	    if ( ! (any {$_ eq $sampleID} (keys %seen)) ) {  #If sampleID is not present in parameterName hash
+		
+		$logger->fatal("Could not detect ".$sampleID." for '--".$parameterName."'. Provided sampleIDs are: ".join(", ", (keys %seen)), "\n");
+		exit 1;
+	    }
+	}
+    }
+}
+
 sub CheckSampleIDInHashParameter {
 
 ##CheckSampleIDInHashParameter
@@ -26125,34 +26210,29 @@ sub CheckSampleIDInHashParameter {
     check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
 
     foreach my $parameterName (@{$parameterNameArrayRef}) {  #Lopp through all hash parameters supplied
-
-	my %seen;  #Hash to test duplicate sampleIDs later
 	
-	foreach my $key (keys %{${$scriptParameterHashRef}{$parameterName}} ) {
+	if (defined(${$scriptParameterHashRef}{$parameterName})) {
+
+	    foreach my $sampleID (@{$sampleIdArrayRef}) {
 	    
-	    my @parameterSamples = split(",", ${$scriptParameterHashRef}{$parameterName}{$key});
-	    
-	    foreach my $sampleID (@parameterSamples) {
-		
-		$seen{ $sampleID }++;  #Increment instance to check duplicates later
-		
-		if ($seen{ $sampleID } > 1) {  #Check sampleID are unique
+		## Check that a value exists
+		if (! defined(${$scriptParameterHashRef}{$parameterName}{$sampleID})) {
 		    
-		    $logger->fatal("SampleID: ".$sampleID." is not uniqe in '-".$parameterName." '".$key."=".join(",", @parameterSamples),"\n");
+		    $logger->fatal("Could not find value for ".$sampleID." for parameter '--".$parameterName."'", "\n");
+		    exit 1;
+		}
+		
+		## If sampleID is not present in parameterName hash
+		if ( ! (any {$_ eq $sampleID} (keys %{${$scriptParameterHashRef}{$parameterName}})) ) {  
+		    
+		    $logger->fatal("Could not detect ".$sampleID." for parameter '--".$parameterName."'. Provided sampleIDs for parameter are: ".join(", ", (keys %{${$scriptParameterHashRef}{$parameterName}})), "\n");
 		    exit 1;
 		}
 	    }
 	}
-	foreach my $sampleID (@{$sampleIdArrayRef}) {
-	    
-	    if ( ! (any {$_ eq $sampleID} (keys %seen)) ) {  #If sampleID is not present in parameterName hash
-		
-		$logger->fatal("Could not detect ".$sampleID." for '-".$parameterName."'. Provided sampleIDs are: ".join(", ", (keys %seen)), "\n");
-		exit 1;
-	    }
-	}
     }
 }
+
 
 sub GetExomTargetBEDFile {
 
