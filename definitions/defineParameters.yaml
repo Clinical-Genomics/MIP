@@ -364,7 +364,7 @@ bwaMemCram:
   associatedProgram:
    - pBwaMem
   dataType: SCALAR
-  default: 1
+  default: 0
   type: programArgument
 bwaMembamStats:
   associatedProgram:
