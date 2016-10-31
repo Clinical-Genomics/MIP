@@ -1120,6 +1120,12 @@ GATKGenoTypeGVCFsAllSites:
   dataType: SCALAR
   default: 0
   type: programArgument
+GATKConcatenateGenoTypeGVCFsBCFFile:
+  associatedProgram:
+   - pGATKGenoTypeGVCFs
+  dataType: SCALAR
+  default: 0
+  type: programArgument
 pGATKVariantRecalibration:
   associatedProgram:
    - MIP

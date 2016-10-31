@@ -208,6 +208,7 @@ mip.pl  -ifd [inFilesDir=sampleID] -isd [inScriptDir] -rd [refdir] -p [project I
                -pGgT/--pGATKGenoTypeGVCFs Merge gVCF records using GATK GenotypeGVCFs (defaults to "1" (=yes))
                  -ggtgrl/--GATKGenoTypeGVCFsRefGVCF GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping (defaults to "")
                  -ggtals/--GATKGenoTypeGVCFsAllSites Emit non-variant sites to the output VCF
+                 -ggbcf/GATKConcatenateGenoTypeGVCFsBCFFile Produce a bcf from the GATK ConcatenateGenoTypeGVCFs vcf (defaults to "1" (=yes))
                -pGvR/--pGATKVariantRecalibration Variant recalibration using GATK VariantRecalibrator/ApplyRecalibration (defaults to "1" (=yes))
                  -gvrtsh/--GATKVariantReCalibrationTrainingSetHapMap GATK VariantRecalibrator HapMap training set (defaults to "hapmap_3.3.b37.sites.vcf")
                  -gvrtss/--GATKVariantReCalibrationTrainingSetDbSNP GATK VariantRecalibrator dbSNP training set (defaults to "dbsnp_138.b37.vcf")
@@ -572,6 +573,7 @@ GetOptions('ifd|inFilesDir:s'  => \%{$parameter{inFilesDir}{value}},  #Hash inFi
 	   'pGgT|pGATKGenoTypeGVCFs=n' => \$parameter{pGATKGenoTypeGVCFs}{value},  #Merge gVCF records using GATK GenotypeGVCFs
 	   'ggtgrl|GATKGenoTypeGVCFsRefGVCF:s' => \$parameter{GATKGenoTypeGVCFsRefGVCF}{value},  #GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping
 	   'ggtals|GATKGenoTypeGVCFsAllSites=n' => \$parameter{GATKGenoTypeGVCFsAllSites}{value},  #Emit non-variant sites to the output VCF
+	   'ggbcf|GATKConcatenateGenoTypeGVCFsBCFFile=n' => \$parameter{GATKConcatenateGenoTypeGVCFsBCFFile}{value},  #Produce compressed vcf
 	   'pGvR|pGATKVariantRecalibration=n' => \$parameter{pGATKVariantRecalibration}{value},  #GATK VariantRecalibrator/ApplyRecalibration
 	   'gvrtsh|GATKVariantReCalibrationTrainingSetHapMap:s' => \$parameter{GATKVariantReCalibrationTrainingSetHapMap}{value},  #GATK VariantRecalibrator resource
 	   'gvrtss|GATKVariantReCalibrationTrainingSetDbSNP:s' => \$parameter{GATKVariantReCalibrationTrainingSetDbSNP}{value},  #GATK VariantRecalibrator resource
@@ -7110,6 +7112,7 @@ sub GATKConcatenateGenoTypeGVCFs {
     my $infileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{pGATKGenoTypeGVCFs}{fileTag};
     my $outfileTag = ${$fileInfoHashRef}{$$familyIDRef}{$$familyIDRef}{pGATKGenoTypeGVCFs}{fileTag}; 
 
+    my $consensusAnalysisType = $parameter{dynamicParameters}{consensusAnalysisType};
     my $coreCounter = 1;
     for (my $contigsCounter=0;$contigsCounter<scalar(@{${$fileInfoHashRef}{contigs}});$contigsCounter++) {
 	
@@ -7135,6 +7138,54 @@ sub GATKConcatenateGenoTypeGVCFs {
 			  infilePostfix => ".vcf",
 			  outfile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.".vcf"),
 			 });
+
+    ## Produce a bcf compressed and index from vcf
+    if (${$scriptParameterHashRef}{GATKConcatenateGenoTypeGVCFsBCFFile}) {
+
+	if ( ($consensusAnalysisType eq "wes") || ($consensusAnalysisType eq "rapid") ) {  #Exome/rapid analysis
+
+	    say $FILEHANDLE "###Remove extra reference samples","\n";
+	    
+	    say $FILEHANDLE "##GATK SelectVariants","\n";
+	    
+	    ## Writes java core commands to filehandle.
+	    &JavaCore({FILEHANDLE => $FILEHANDLE,
+		       memoryAllocation => "Xmx2g",
+		       javaUseLargePagesRef => \${$scriptParameterHashRef}{javaUseLargePages},
+		       javaTemporaryDirectory => $$tempDirectoryRef,
+		       javaJar => catfile(${$scriptParameterHashRef}{genomeAnalysisToolKitPath}, "GenomeAnalysisTK.jar"),
+		      });
+	    
+	    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run	    
+	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
+	    print $FILEHANDLE "-R ".catfile($$referencesDirRef, ${$scriptParameterHashRef}{humanGenomeReference})." ";  #Reference file	
+	    print $FILEHANDLE "-V: ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.".vcf")." ";  #InFile
+	    print $FILEHANDLE "-o ".catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_incnonvariantloci.vcf")." ";  #OutFile
+	    
+	    for (my $sampleIDCounter=0;$sampleIDCounter<scalar(@{${$scriptParameterHashRef}{sampleIDs}});$sampleIDCounter++) {  #For all sampleIDs
+		
+		print $FILEHANDLE "-sn ".${$scriptParameterHashRef}{sampleIDs}[$sampleIDCounter]." ";  #Include genotypes from this sample
+	    }
+	    say $FILEHANDLE "\n";
+
+	    ## Move to original filename
+	    print $FILEHANDLE "mv ";
+	    print $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType."_incnonvariantloci.vcf")." ";
+	    say $FILEHANDLE catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.".vcf"), "\n";
+	}
+
+	&VcfToBcf({infile => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType),
+		   FILEHANDLE => $FILEHANDLE,
+		  });
+	
+	## Copies file from temporary directory.
+	say $FILEHANDLE "## Copy file from temporary directory";
+	&MigrateFileFromTemp({tempPath => catfile($$tempDirectoryRef, $$familyIDRef.$outfileTag.$callType.".bcf*"),
+			      filePath => $outFamilyDirectory,
+			      FILEHANDLE => $FILEHANDLE,
+			     });
+	say $FILEHANDLE "wait", "\n";
+    }
     
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
@@ -7148,6 +7199,11 @@ sub GATKConcatenateGenoTypeGVCFs {
     
     if ( (${$scriptParameterHashRef}{"p".$programName} == 1) && (! ${$scriptParameterHashRef}{dryRunAll}) ) {
 	
+	if (${$scriptParameterHashRef}{GATKConcatenateGenoTypeGVCFsBCFFile} eq 1) {
+
+	    ${$sampleInfoHashRef}{GBCFFile}{Path} = catfile($outFamilyDirectory, $$familyIDRef.$outfileTag.$callType.".bcf");
+	}
+
 	&FIDSubmitJob({scriptParameterHashRef => $scriptParameterHashRef,
 		       sampleInfoHashRef => $sampleInfoHashRef,
 		       jobIDHashRef => $jobIDHashRef,
