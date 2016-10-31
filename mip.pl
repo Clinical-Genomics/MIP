@@ -6824,7 +6824,8 @@ sub GATKGenoTypeGVCFs {
 						callType => $callType,
 						nrofCores => $nrCores,
 						processTime => $processTime,
-						tempDirectory => $$tempDirectoryRef
+						tempDirectory => $$tempDirectoryRef,
+						sleep => 1,  #Let process sleep randomly for 0-60 seconds to avoid race condition
 					       });
 	
 	## Assign directories
@@ -17069,7 +17070,7 @@ sub ProgramPreRequisites {
     
 ##Function : Creates program directories (info & programData & programScript), program script filenames and writes sbatch header.
 ##Returns  : Path to stdout
-##Arguments: $scriptParameterHashRef, $jobIDHashRef, $FILEHANDLE, $emailType, $outDataDir, $outScriptDir, $directoryID, $programDirectory, $programName, $callType, $nrofCores, $processTime, $tempDirectory, $errorTrap, $pipefail
+##Arguments: $scriptParameterHashRef, $jobIDHashRef, $FILEHANDLE, $emailType, $outDataDir, $outScriptDir, $directoryID, $programDirectory, $programName, $callType, $nrofCores, $processTime, $tempDirectory, $errorTrap, $pipefail, $sleep
 ##         : $scriptParameterHashRef => The active parameters for this analysis hash {REF}
 ##         : $jobIDHashRe            => The jobID hash {REF}
 ##         : $FILEHANDLE             => FILEHANDLE to write to
@@ -17085,7 +17086,8 @@ sub ProgramPreRequisites {
 ##         : $tempDirectory          => Temporary directory for program {Optional}
 ##         : $errorTrap              => Error trap switch
 ##         : $pipefail               => Pipe fail switch
- 
+##         : $sleep                  => Sleep for X seconds {Optional}
+
     my ($argHashRef) = @_;
 
     ## Default(s)
@@ -17098,6 +17100,7 @@ sub ProgramPreRequisites {
     my $processTime = ${$argHashRef}{processTime} //= 1;
     my $pipefail = ${$argHashRef}{pipefail} //= 1;
     my $errorTrap = ${$argHashRef}{errorTrap} //= 1;
+    my $sleep  = ${$argHashRef}{sleep} //= 0;
 
     if (defined(${$argHashRef}{callType})) {
 	
@@ -17201,6 +17204,10 @@ sub ProgramPreRequisites {
     say $FILEHANDLE q?echo "Running on: $(hostname)"?;
     say $FILEHANDLE q?PROGNAME=$(basename $0)?,"\n";
 
+    if ($sleep) {  #Let the process sleep for a random couple of seconds (0-60) to avoid race conditions in mainly conda sourcing activate
+
+	say $FILEHANDLE "sleep ".int(rand(60));
+    }
     if (@{$sourceEnvironmentCommandArrayRef}) {
 
 	say $FILEHANDLE "##Activate environment";
