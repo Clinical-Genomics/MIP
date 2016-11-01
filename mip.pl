@@ -350,7 +350,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 ## Eval parameter hash
 &EvalParameterHash(\%parameter, catfile($Bin, "definitions", "defineParameters.yaml"));
 
-my $mipVersion = "v3.0.5";	#Set MIP version
+my $mipVersion = "v3.0.7";	#Set MIP version
 
 ## Directories, files, sampleInfo and jobIDs
 my (%infile, %inDirPath, %infilesLaneNoEnding, %lane, %infilesBothStrandsNoEnding, %jobID, %sampleInfo); 
@@ -12448,6 +12448,7 @@ sub BWAMem {
 			     sampleIDRef => $$sampleIDRef,
 			     alignerOutDirRef => $$alignerOutDirRef,
 			     programName => $programName,
+			     sleep => 1,  #Let process sleep randomly for 0-60 seconds to avoid race condition
 	);
     
     &CheckMandatoryArguments(\%mandatoryArgument, $programName);
