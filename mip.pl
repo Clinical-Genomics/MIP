@@ -373,7 +373,7 @@ chomp($dateTimeStamp, $date, $script);  #Remove \n;
 		     filePath => catfile($Bin, "definitions", "defineParameters.yaml"),
 		    });
 
-my $mipVersion = "v4.0.0";	#Set MIP version
+my $mipVersion = "v3.0.7";	#Set MIP version
 
 ## Directories, files, sampleInfo and jobIDs
 my (%infile, %inDirPath, %infilesLaneNoEnding, %lane, %infilesBothStrandsNoEnding, %jobID, %sampleInfo); 
@@ -13285,35 +13285,31 @@ sub BWAMem {
     my $referencesDirRef = ${$argHashRef}{referencesDirRef} //= \${$argHashRef}{scriptParameterHashRef}{referencesDir};
     
     ## Flatten argument(s)
-    my $parameterHashRef;
-    my $scriptParameterHashRef;
-    my $sampleInfoHashRef;
-    my $fileInfoHashRef;
-    my $infileHashRef;
-    my $inDirPathHashRef;
-    my $infilesLaneNoEndingHashRef;
-    my $jobIDHashRef;
-    my $sampleIDRef;
-    my $programName;
+    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
+    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
+    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
+    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
+    my $infileHashRef = ${$argHashRef}{infileHashRef};
+    my $inDirPathHashRef = ${$argHashRef}{inDirPathHashRef};
+    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
+    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
+    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
+    my $programName = ${$argHashRef}{programName};
     
-    my $tmpl = { 
-	parameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameterHashRef},
-	scriptParameterHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$scriptParameterHashRef},
-	sampleInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sampleInfoHashRef},
-	fileInfoHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$fileInfoHashRef},
-	infileHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infileHashRef},
-	inDirPathHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$inDirPathHashRef},
-	infilesLaneNoEndingHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infilesLaneNoEndingHashRef},
-	jobIDHashRef => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$jobIDHashRef},
-	sampleIDRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sampleIDRef},
-	programName => { required => 1, defined => 1, strict_type => 1, store => \$programName},
-	familyIDRef => { default => \$$, strict_type => 1, store => \$familyIDRef},
-	alignerOutDirRef => { default => \$$, strict_type => 1, store => \$alignerOutDirRef},
-	tempDirectoryRef => { default => \$$, strict_type => 1, store => \$tempDirectoryRef},
-	referencesDirRef => { default => \$$, strict_type => 1, store => \$referencesDirRef},
-    };
-        
-    check($tmpl, $argHashRef, 1) or die qw[Could not parse arguments!];
+    ## Mandatory arguments
+    my %mandatoryArgument = (parameterHashRef => ${$parameterHashRef}{MIP},  #Any MIP mandatory key will do
+			     scriptParameterHashRef => ${$scriptParameterHashRef}{familyID},  #Any MIP mandatory key will do
+			     sampleInfoHashRef => ${$sampleInfoHashRef}{ ${$scriptParameterHashRef}{familyID} },  #Any MIP mandatory key will do
+			     fileInfoHashRef => ${$fileInfoHashRef}{contigs},  #Any MIP mandatory key will do
+			     infileHashRef => ${$infileHashRef}{$$sampleIDRef}, #Any MIP mandatory key will do
+			     inDirPathHashRef => ${$inDirPathHashRef}{$$sampleIDRef}, #Any MIP mandatory key will do
+			     infilesLaneNoEndingHashRef => ${$infilesLaneNoEndingHashRef}{$$sampleIDRef},  #Any MIP mandatory key will do
+			     sampleIDRef => $$sampleIDRef,
+			     alignerOutDirRef => $$alignerOutDirRef,
+			     programName => $programName,
+	);
+    
+    &CheckMandatoryArguments(\%mandatoryArgument, $programName);
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $consensusAnalysisType = $parameter{dynamicParameters}{consensusAnalysisType};
@@ -13374,6 +13370,7 @@ sub BWAMem {
 									  programDirectory => lc($$alignerOutDirRef),
 									  nrofCores => ${$scriptParameterHashRef}{maximumCores},
 									  processTime => $time,
+									  sleep => 1,  #Let process sleep randomly for 0-60 seconds to avoid race condition
 									 });
 		my ($volume, $directories, $stderrFile) = File::Spec->splitpath($programInfoPath.".stderr.txt");  #Split to enable submission to &SampleInfoQC later
 
@@ -13483,6 +13480,7 @@ sub BWAMem {
 								      nrofCores => ${$scriptParameterHashRef}{maximumCores},
 								      processTime => $time,
 								      tempDirectory => $$tempDirectoryRef,
+								      sleep => 1,  #Let process sleep randomly for 0-60 seconds to avoid race condition
 								     });
 	    my ($volume, $directories, $stderrFile) = File::Spec->splitpath($programInfoPath.".stderr.txt");  #Split to enable submission to &SampleInfoQC later
 
