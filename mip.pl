@@ -12448,7 +12448,6 @@ sub BWAMem {
 			     sampleIDRef => $$sampleIDRef,
 			     alignerOutDirRef => $$alignerOutDirRef,
 			     programName => $programName,
-			     sleep => 1,  #Let process sleep randomly for 0-60 seconds to avoid race condition
 	);
     
     &CheckMandatoryArguments(\%mandatoryArgument, $programName);
