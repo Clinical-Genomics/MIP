@@ -12506,6 +12506,7 @@ sub BWAMem {
 									  programDirectory => lc($$alignerOutDirRef),
 									  nrofCores => ${$scriptParameterHashRef}{maximumCores},
 									  processTime => $time,
+									  sleep => 1,  #Let process sleep randomly for 0-60 seconds to avoid race condition
 									 });
 		my ($volume, $directories, $stderrFile) = File::Spec->splitpath($programInfoPath.".stderr.txt");  #Split to enable submission to &SampleInfoQC later
 
@@ -12610,6 +12611,7 @@ sub BWAMem {
 								      nrofCores => ${$scriptParameterHashRef}{maximumCores},
 								      processTime => $time,
 								      tempDirectory => $$tempDirectoryRef,
+								      sleep => 1,  #Let process sleep randomly for 0-60 seconds to avoid race condition
 								     });
 	    my ($volume, $directories, $stderrFile) = File::Spec->splitpath($programInfoPath.".stderr.txt");  #Split to enable submission to &SampleInfoQC later
 
