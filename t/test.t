@@ -342,11 +342,7 @@ sub ReadInfileVCF {
 		}
 
 		## Keys from vcfParser that are dynamically created from parsing the data
-		my @vcfParserDynamicKeys = ("HGVScp",
-					    "MostSevereConsequence",
-					    "GeneticRegionAnnotation",
-					    "Sift",
-					    "PolyPhen",
+		my @vcfParserDynamicKeys = ("MostSevereConsequence",
 		    );
 
 		foreach my $key (@vcfParserDynamicKeys) {

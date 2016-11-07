@@ -9180,6 +9180,7 @@ sub SVVariantEffectPredictor {
 		       outfileEnding => $outfileEnding.".vcf_summary.html",
 		       outDataType => "static"
 		      });
+
 	## Collect QC metadata info for later use                     	
 	&SampleInfoQC({sampleInfoHashRef => $sampleInfoHashRef,
 		       familyID => $$familyIDRef,
