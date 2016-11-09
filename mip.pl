@@ -8383,17 +8383,15 @@ sub SVRankVariants {
 	    for (my $contigsCounter=0;$contigsCounter<scalar(@$vcfParserContigsArrayRef);$contigsCounter++) {
 		
 		my $contigRef = \$vcfParserContigsArrayRef->[$contigsCounter];
-		my $genmodInfileEndingStub = $infileEndingStub;
-		my $genmodOutfileEndingStub = $outfileEndingStub;
+		my $genmodFileEndingStub = $infileEndingStub;
 		my $genmodXargsFileName = $xargsFileName;
-		my $genmodIndata = catfile($$tempDirectoryRef, $genmodInfileEndingStub.$vcfParserAnalysisType.".vcf")." ";  #InFile
+		my $genmodIndata = catfile($$tempDirectoryRef, $genmodFileEndingStub.$vcfParserAnalysisType.".vcf")." ";  #InFile
 
 		if ( ($consensusAnalysisType eq "wgs") || ($consensusAnalysisType eq "mixed") ) {  #Update endings with contig info
 
-		    $genmodInfileEndingStub = $infileEndingStub."_".$$contigRef;
-		    $genmodOutfileEndingStub = $outfileEndingStub."_".$$contigRef;
+		    $genmodFileEndingStub = $infileEndingStub."_".$$contigRef;
 		    $genmodXargsFileName = $xargsFileName.".".$$contigRef;
-		    $genmodIndata = catfile($$tempDirectoryRef, $genmodInfileEndingStub.$vcfParserAnalysisType.".vcf")." ";  #InFile
+		    $genmodIndata = catfile($$tempDirectoryRef, $genmodFileEndingStub.$vcfParserAnalysisType.".vcf")." ";  #InFile
 		}
 		$genmodModule = "";  #Restart for next contig
 		
@@ -8461,7 +8459,7 @@ sub SVRankVariants {
 		    print $XARGSFILEHANDLE "--vep "; 
 		}
 		
-		print $XARGSFILEHANDLE "-o ".catfile($$tempDirectoryRef, $genmodOutfileEndingStub.$vcfParserAnalysisType.$genmodModule.".vcf")." ";  #OutFile
+		print $XARGSFILEHANDLE "-o ".catfile($$tempDirectoryRef, $genmodFileEndingStub.$vcfParserAnalysisType.$genmodModule.".vcf")." ";  #OutFile
 		print $XARGSFILEHANDLE "2> ".$genmodXargsFileName.$genmodModule.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    
 		say $XARGSFILEHANDLE $genmodIndata;  #InStream or Infile
@@ -8482,9 +8480,9 @@ sub SVRankVariants {
 	    &ConcatenateVariants({scriptParameterHashRef => $scriptParameterHashRef,
 				  FILEHANDLE => $FILEHANDLE,
 				  arrayRef => \@vcfParserSubSetContigs,
-				  infilePrefix => catfile($$tempDirectoryRef, $outfileEndingStub."_"), 
+				  infilePrefix => catfile($$tempDirectoryRef, $infileEndingStub."_"), 
 				  infilePostfix => $vcfParserAnalysisType.$genmodModule.".vcf",
-				  outfile => catfile($$tempDirectoryRef, $outfileEndingStub.$vcfParserAnalysisType.$concatenateEnding.".vcf"),
+				  outfile => catfile($$tempDirectoryRef, $infileEndingStub.$vcfParserAnalysisType.$concatenateEnding.".vcf"),
 				 });
 	}
 	else {
@@ -8496,7 +8494,7 @@ sub SVRankVariants {
 	&SortVcf({scriptParameterHashRef => $scriptParameterHashRef,
 		  FILEHANDLE => $FILEHANDLE,
 		  sequenceDictFile => catfile($$referencesDirRef, $fileInfoHashRef->{humanGenomeReferenceNameNoEnding}.".dict"),
-		  infile => catfile($$tempDirectoryRef, $outfileEndingStub.$vcfParserAnalysisType.$concatenateEnding.".vcf"),
+		  infile => catfile($$tempDirectoryRef, $infileEndingStub.$vcfParserAnalysisType.$concatenateEnding.".vcf"),
 		  outfile => catfile($$tempDirectoryRef, $outfileEndingStub.$vcfParserAnalysisType.".vcf"),
 		 });
 		 

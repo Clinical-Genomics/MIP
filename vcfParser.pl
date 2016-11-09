@@ -464,18 +464,18 @@ sub ReadInfileVCF {
 	    }
 	    if ($_=~/SnpSiftCmd\=/) { #Find SnpEff command meta line
 
-		for my $database (keys %{${$snpEffCmdHashRef}{SnpEff}}) {
+		for my $database (keys %{$snpEffCmdHashRef->{SnpEff}}) {
 
-		    if ($_=~/${$snpEffCmdHashRef}{SnpEff}{$database}{File}/) { #SnpEff/Sift has been used to annotate input vcf
+		    if ($_=~/$snpEffCmdHashRef->{SnpEff}{$database}{File}/) { #SnpEff/Sift has been used to annotate input vcf
 			
 			unless (defined($vcfHeader{INFO}{$database})) { #Unless INFO header is already present add to metaDataHeader
 			    
-			    ${$snpEffCmdHashRef}{Present}{database}{$database} = $database; #Save which frequency db has been used for later
-			    push(@{${$metaDataHashRef}{INFO}{$database}}, ${$snpEffCmdHashRef}{SnpEff}{$database}{INFO});
+			    $snpEffCmdHashRef->{Present}{database}{$database} = $database; #Save which frequency db has been used for later
+			    push(@{${$metaDataHashRef}{INFO}{$database}}, $snpEffCmdHashRef->{SnpEff}{$database}{INFO});
 
-			    if (defined(${$snpEffCmdHashRef}{SnpEff}{$database}{FIX_INFO})) { #If FIX_INFO flag is present add to metaDataHeader
+			    if (defined($snpEffCmdHashRef->{SnpEff}{$database}{FIX_INFO})) { #If FIX_INFO flag is present add to metaDataHeader
 
-				push(@{${$metaDataHashRef}{FIX_INFO}{$database}}, ${$snpEffCmdHashRef}{SnpEff}{$database}{FIX_INFO});
+				push(@{${$metaDataHashRef}{FIX_INFO}{$database}}, $snpEffCmdHashRef->{SnpEff}{$database}{FIX_INFO});
 			    }
 			}
 		    }
@@ -582,7 +582,7 @@ sub ReadInfileVCF {
 		    }
 		}
 	    }
-	    for my $database (keys % {${$snpEffCmdHashRef}{Present}{database}}) { #Note that the vcf should only contain 1 database entry
+	    for my $database (keys % {$snpEffCmdHashRef->{Present}{database}}) { #Note that the vcf should only contain 1 database entry
 
 		if ( ($database eq "Dbsnp129LCAF") || ($database eq "DbsnpLCAF") ) {
 
