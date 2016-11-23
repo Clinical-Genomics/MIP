@@ -24385,10 +24385,10 @@ sub vt_core {
 		print $FILEHANDLE "2>> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    }
 	}
-	if ( ($active_parameter_href->{psnpeff} > 0) && ($calculate_af) ) {  #$calculateAf should not be set to 1 if reference was not part of snpeff parameter
+	if ( ($active_parameter_href->{psnpeff} > 0) && ($calculate_af) ) {  #$calculate_af should not be set to 1 if reference was not part of snpeff parameter
 	    
 	    print $FILEHANDLE "| ";  #Pipe
-	    print $FILEHANDLE "perl ".catfile($Bin, "calculateAF.pl")." ";  #Add AF_
+	    print $FILEHANDLE "perl ".catfile($Bin, "calculate_af.pl")." ";  #Add AF_
 	    print $FILEHANDLE "- ";  #InStream
 	    
 	    if ( (defined($xargs_file_name)) && (defined($$contig_ref)) ) {  #Write stderr for xargs process
@@ -24399,7 +24399,7 @@ sub vt_core {
 	if ( (exists($active_parameter_href->{vt_genmod_filter_1000g})) && ($max_af) ) {
 
 	    print $FILEHANDLE "| ";  #Pipe
-	    print $FILEHANDLE "perl ".catfile($Bin, "maxAF.pl")." ";  #Add MAX_AF
+	    print $FILEHANDLE "perl ".catfile($Bin, "max_af.pl")." ";  #Add MAX_AF
 	    print $FILEHANDLE "- ";  #InStream
 
 	    if ( (defined($xargs_file_name)) && (defined($$contig_ref)) ) {  #Write stderr for xargs process
