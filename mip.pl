@@ -4388,7 +4388,7 @@ sub snpeff {
 	    
 	    my $contig_ref = \$vcfparser_contigs_ref->[$contigs_counter];
 
-	    print $XARGSFILEHANDLE catfile($active_parameter_href->{script_dir}, "vcfParser.pl")." ";  #Parses the vcf output
+	    print $XARGSFILEHANDLE catfile($active_parameter_href->{script_dir}, "vcfparser.pl")." ";  #Parses the vcf output
 	    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.".vcf.".$annotation_infile_number)." ";  #Infile
 	    print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.".vcf")." ";  #Outfile
 	    say $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
@@ -4861,12 +4861,12 @@ sub vcfparser {
 
 	my $contig_ref = \$file_info_href->{contigs_size_ordered}[$contigs_counter];
 
-	print $XARGSFILEHANDLE catfile($active_parameter_href->{script_dir}, "vcfParser.pl")." ";  #Parses the VEP output to tab-sep format
+	print $XARGSFILEHANDLE catfile($active_parameter_href->{script_dir}, "vcfparser.pl")." ";  #Parses the VEP output to tab-sep format
 	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".vcf")." ";  #Infile
 	
 	if ($active_parameter_href->{pvarianteffectpredictor} > 0) {
 	    
-	    print $XARGSFILEHANDLE "--parseVEP ".$active_parameter_href->{vcfparser_vep_transcripts}." ";  #Parse VEP transcript specific entries
+	    print $XARGSFILEHANDLE "--parse_vep ".$active_parameter_href->{vcfparser_vep_transcripts}." ";  #Parse VEP transcript specific entries
 	}
 	if ($$contig_ref =~ /MT|M/) {
 	    
@@ -8734,12 +8734,12 @@ sub sv_vcfparser {
 	    $vcfparser_outfile_ending_stub = $outfile_ending_stub."_".$$contig_ref;
 	    $vcfparser_xargs_file_name = $xargs_file_name.".".$$contig_ref;
 	}
-	print $XARGSFILEHANDLE catfile($active_parameter_href->{script_dir}, "vcfParser.pl")." ";  #Parses the VEP output to tab-sep format
+	print $XARGSFILEHANDLE catfile($active_parameter_href->{script_dir}, "vcfparser.pl")." ";  #Parses the VEP output to tab-sep format
 	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $vcfparser_infile_ending_stub.".vcf")." ";  #Infile
 	
 	if ($active_parameter_href->{psv_varianteffectpredictor} > 0) {
 	    
-	    print $XARGSFILEHANDLE "--parseVEP ".$active_parameter_href->{sv_vcfparser_vep_transcripts}." ";  #Parse VEP transcript specific entries
+	    print $XARGSFILEHANDLE "--parse_vep ".$active_parameter_href->{sv_vcfparser_vep_transcripts}." ";  #Parse VEP transcript specific entries
 	}
 	if ($$contig_ref =~ /MT|M/) {
 	    
@@ -17542,7 +17542,7 @@ sub collect_infiles {
         
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    $logger->info("Reads from Platform\n");
+    $logger->info("Reads from platform:\n");
 
     for (my $input_directory_counter=0;$input_directory_counter<scalar(@{ $active_parameter_href->{sample_ids} });$input_directory_counter++) {  #Collects inputfiles govern by sample_ids
 	
@@ -17583,7 +17583,7 @@ sub collect_infiles {
 		exit 1;
 	    }
 	}
-	$logger->info("Sample ID: ".$$sample_id_ref."\n");
+	$logger->info("Sample id: ".$$sample_id_ref."\n");
 	$logger->info("\tInputfiles:\n");
 
 	## Log each file from platform
@@ -21232,7 +21232,7 @@ sub concatenate_vcfs {
     if ( (defined($_[6])) && $reorder_swith eq "reorder_header") {
 
 	print $FILEHANDLE "| ";  #Pipe
-	print $FILEHANDLE "perl ".catfile($active_parameter_href->{script_dir}, "vcfParser.pl")." ";  #Parses the vcf output	
+	print $FILEHANDLE "perl ".catfile($active_parameter_href->{script_dir}, "vcfparser.pl")." ";  #Parses the vcf output	
     }
     
     print $FILEHANDLE "> ".$outfile;  #OutFile
@@ -23776,6 +23776,7 @@ sub order_parameter_names {
 	    next;
 	}
     }
+    close($DFY);
 }
 
 sub add_to_sampleInfo {
@@ -24663,7 +24664,7 @@ sub check_vt {
 			}
 			else {  #Found vt processing track
 			    
-			    $logger->info("ReferenceCheck: ".$reference_file_path." vt:".$vt_program." - PASS\n");
+			    $logger->info("Reference check: ".$reference_file_path." vt:".$vt_program." - PASS\n");
 			}
 		    }
 		    last;  #No need to test the same reference over and over
@@ -26987,7 +26988,7 @@ sub CheckTemplateFilesPaths {
 
     open(my $TF, "<", $$file_name_ref) or $logger->logdie("Can't open '".$$file_name_ref."':".$!."\n");  
 
-    while (<TF>) {
+    while (<$TF>) {
 
 	chomp $_;
 
