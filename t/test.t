@@ -220,9 +220,9 @@ sub test_modules {
     my $config = create_log4perl_congfig(\$log_file);
 
     ok(Log::Log4perl->init(\$config), "Log::Log4perl: Initate");
-    ok(Log::Log4perl->get_logger("mip_logger"), "Log::Log4perl: Get logger");
+    ok(Log::Log4perl->get_logger("MIP_logger"), "Log::Log4perl: Get logger");
 
-    my $logger = Log::Log4perl->get_logger("mip_logger");
+    my $logger = Log::Log4perl->get_logger("MIP_logger");
     ok($logger->info("1"), "Log::Log4perl: info");
     ok($logger->warn("1"), "Log::Log4perl: warn");
     ok($logger->error("1"), "Log::Log4perl: error");
@@ -247,7 +247,7 @@ sub create_log4perl_congfig {
     my $file_name_ref = $_[0];
 
     my $conf = q?
-        log4perl.category.mip_logger = TRACE, ScreenApp
+        log4perl.category.MIP_logger = TRACE, ScreenApp
         log4perl.appender.LogFile = Log::Log4perl::Appender::File
         log4perl.appender.LogFile.filename = ?.$$file_name_ref.q?
         log4perl.appender.LogFile.layout=PatternLayout
