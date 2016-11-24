@@ -49,7 +49,7 @@ GetOptions('h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help t
 #MAIN
 ###
 
-&read_infile();
+read_infile();
 
 
 ###

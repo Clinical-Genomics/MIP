@@ -46,12 +46,12 @@ GetOptions('h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help t
     );
 
 
-###
+#####
 #MAIN
-###
+#####
 
-&read_infile({calculate_af_version => $calculate_af_version,
-	     });
+read_infile({calculate_af_version => $calculate_af_version,
+	    });
 
 
 
