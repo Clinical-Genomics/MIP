@@ -25,7 +25,7 @@ our $USAGE;
 
 BEGIN {
     $USAGE =
-        qq{qccollect.pl -si [sampleinfo.yaml] -r [regexp.yaml] -o [outfile]
+        qq{qccollect.pl -si [sample_info.yaml] -r [regexp.yaml] -o [outfile]
                -si/--sample_info_file Sample info file (YAML format, Supply whole path, mandatory)
                -r/--regexp_file Regular expression file (YAML format, Supply whole path, mandatory)
                -o/--outfile The data file output (Supply whole path, defaults to "qcmetrics.yaml")
