@@ -268,7 +268,7 @@ mip.pl  -ifd [infile_dirs=sample_id] -sd [script_dir] -rd [reference_dir] -p [pr
                  -sneann/--snpeff_ann Annotate variants using snpeff (defaults to "1" (=yes))
                  -snegbv/--snpeff_genome_build_version snpeff genome build version (defaults to "GRCh37.75")
                  -snesaf/--snpsift_annotation_files Annotation files to use with snpsift (default to (dbsnp_138.b37.excluding_sites_after_129.vcf.gz=CAF ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz=AF ExAC.r0.3.sites.vep.vcf=AF); Hash flag i.e. --Flag key=value)
-                 -snesaoi/--snpsift_annotation_outinfokey snpsift output INFO key (default to (ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz=1000GAF ExAC.r0.3.sites.vep.vcf=EXACAF); Hash flag i.e. --Flag key=value)
+                 -snesaoi/--snpsift_annotation_outinfo_key snpsift output INFO key (default to (ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz=1000GAF ExAC.r0.3.sites.vep.vcf=EXACAF); Hash flag i.e. --Flag key=value)
                  -snesdbnsfp/--snpsift_dbnsfp_file DbNSFP File (defaults to "dbNSFP2.6.txt.gz")
                  -snesdbnsfpa/--snpsift_dbnsfp_annotations DbNSFP annotations to use with snpsift (defaults to ("SIFT_pred","Polyphen2_HDIV_pred","Polyphen2_HVAR_pred","LRT_pred","MutationTaster_pred","GERP++_NR","GERP++_RS","phastCons100way_vertebrate","1000Gp1_AF","ESP6500_AA_AF"); comma sep)
 
@@ -632,7 +632,7 @@ GetOptions('ifd|infile_dirs:s'  => \%{ $parameter{infile_dirs}{value} },  #Hash 
 	   'sneann|snpeff_ann=n' => \$parameter{snpeff_ann}{value},
 	   'snegbv|snpeff_genome_build_version:s'  => \$parameter{snpeff_genome_build_version}{value},
 	   'snesaf|snpsift_annotation_files=s'  => \%{ $parameter{snpsift_annotation_files}{value} },
-	   'snesaoi|snpsift_annotation_outinfokey=s'  => \%{ $parameter{snpsift_annotation_outinfokey}{value} },
+	   'snesaoi|snpsift_annotation_outinfo_key=s'  => \%{ $parameter{snpsift_annotation_outinfo_key}{value} },
 	   'snesdbnsfp|snpsift_dbnsfp_file:s'  => \$parameter{snpsift_dbnsfp_file}{value},  #DbNSFP file
 	   'snesdbnsfpa|snpsift_dbnsfp_annotations:s'  => \@{ $parameter{snpsift_dbnsfp_annotations}{value} },  #Comma separated list
 	   'prav|prankvariant=n' => \$parameter{prankvariant}{value},  #Ranking variants
@@ -2994,7 +2994,7 @@ sub qccollect {
 
     print $FILEHANDLE "perl ".$active_parameter_href->{script_dir}."/qccollect.pl ";
     print $FILEHANDLE "-sample_info_file ".$active_parameter_href->{qccollect_sampleinfo_file}." ";
-    print $FILEHANDLE "-regexpFile ".$$reference_dir_ref."/".$active_parameter_href->{qccollect_regexp_file}." ";
+    print $FILEHANDLE "-regexp_file ".$$reference_dir_ref."/".$active_parameter_href->{qccollect_regexp_file}." ";
     say $FILEHANDLE "-o ".$outfamily_directory."/".$$family_id_ref."_qc_metrics.yaml ", "\n";
 
     close($FILEHANDLE);
@@ -4307,9 +4307,9 @@ sub snpeff {
 		if (defined($active_parameter_href->{snpsift_annotation_files}{$annotation_file})) {
 
 		    ## Apply specific INFO field output key for easier downstream processing
-		    if (defined($active_parameter_href->{snpsift_annotation_outinfokey}{$annotation_file})) {
+		    if (defined($active_parameter_href->{snpsift_annotation_outinfo_key}{$annotation_file})) {
 
-			print $XARGSFILEHANDLE "-name ".$active_parameter_href->{snpsift_annotation_outinfokey}{$annotation_file}." ";
+			print $XARGSFILEHANDLE "-name ".$active_parameter_href->{snpsift_annotation_outinfo_key}{$annotation_file}." ";
 		    }
 		    print $XARGSFILEHANDLE "-info ".$active_parameter_href->{snpsift_annotation_files}{$annotation_file}." ";  #Database
 		}

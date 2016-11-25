@@ -519,7 +519,12 @@ sub define_evaluate_metric {
     $evaluate_metric{$sample_id}{calculatehsmetrics}{PCT_TARGET_BASES_10X}{threshold} = 0.95;
     $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_PF_READS_ALIGNED}{threshold} = 0.95;
     $evaluate_metric{$sample_id}{calculatehsmetrics}{PCT_ADAPTER}{threshold} = 0.0001;
-    $evaluate_metric{$sample_id}{calculatehsmetrics}{MEAN_TARGET_COVERAGE}{threshold} = $sample_info_href->{sample}{$sample_id}{expected_coverage};
+
+    if (exists($sample_info_href->{sample}{$sample_id}{expected_coverage})) {
+
+	$evaluate_metric{$sample_id}{calculatehsmetrics}{MEAN_TARGET_COVERAGE}{threshold} = $sample_info_href->{sample}{$sample_id}{expected_coverage};
+    }
+
     $evaluate_metric{variant_integrity_mendel}{fraction_of_errors}{gt} = 0.035;
     $evaluate_metric{variant_integrity_father}{fraction_of_common_variants}{lt} = 0.6;
 

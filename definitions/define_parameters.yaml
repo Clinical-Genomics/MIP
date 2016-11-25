@@ -1664,7 +1664,7 @@ snpsift_annotation_files:
   exists_check: file
   reference: reference_dir
   type: path
-snpsift_annotation_outinfokey:
+snpsift_annotation_outinfo_key:
   associated_program:
    - psnpeff
   build_file: yes_auto_build
