@@ -28,6 +28,7 @@ BEGIN {
            -cdu/--conda_update Update conda before installing (Supply flag to enable)
            -bvc/--bioconda Set the module version of the programs that can be installed with bioconda (e.g. 'bwa=0.7.12')
            -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.5.9')
+           -pyv/--python_version Set the env python version (Default: "2.7")
 
            ## SHELL
            -pei/--perl_install Install perl (Supply flag to enable)
@@ -63,6 +64,7 @@ my %parameter;
 ##Conda
 $parameter{conda_environment} = "mip";
 $parameter{conda_path} = catdir($ENV{HOME}, "miniconda");
+$parameter{python_version} = "2.7";
 
 $parameter{bioconda}{bwa} = "0.7.15";
 $parameter{bioconda}{bwakit} = "0.7.12";
@@ -123,28 +125,29 @@ my $install_version = "1.0.0";
 GetOptions('env|conda_environment:s'  => \$parameter{conda_environment},
 	   'cdp|conda_path:s' => \$parameter{conda_path},
 	   'cdu|conda_update' => \$parameter{conda_update},
-	   'bcv|bioconda=s' => \%{$parameter{bioconda}},
-	   'pip|pip=s' => \%{$parameter{pip}},
+	   'bcv|bioconda=s' => \%{ $parameter{bioconda} },
+	   'pip|pip=s' => \%{ $parameter{pip} },
+	   'pyv|python_version=s' => \$parameter{python_version},
 	   'pev|perl_version=s' => \$parameter{perl_version},
 	   'pei|perl_install' => \$parameter{perl_install},
-	   'pm|perl_modules:s' => \@{$parameter{perl_modules}},  #Comma separated list
+	   'pm|perl_modules:s' => \@{ $parameter{perl_modules} },  #Comma separated list
 	   'pic|picardtools:s' => \$parameter{picardtools},
 	   'sbb|sambamba:s' => \$parameter{sambamba},
 	   'vct|vcftools:s' => \$parameter{vcftools},
 	   'bet|bedtools:s' =>\$parameter{bedtools},
 	   'vt|vt:s' => \$parameter{vt},
 	   'plk|plink2:s' => \$parameter{plink2},
-	   'snpg|snpeff_genome_versions:s' => \@{$parameter{snpeff_genome_versions}},
+	   'snpg|snpeff_genome_versions:s' => \@{ $parameter{snpeff_genome_versions} },
 	   'vep|varianteffectpredictor:s' => \$parameter{varianteffectpredictor},
 	   'vepc|vep_cache_dir:s' => \$parameter{vep_cache_dir},  #path to vep cache dir
-	   'vepa|vep_assemblies:s' => \@{$parameter{vep_assemblies}},  #Select assembly version to use
+	   'vepa|vep_assemblies:s' => \@{ $parameter{vep_assemblies} },  #Select assembly version to use
 	   'vepp|vep_plugin:s' => \$parameter{vep_plugin},  #Comma sep string
 #	   'cnv|cnvnator:s' => \$parameter{cnvnator},
 #	   'ftr|findtranslocations:s' => \$parameter{findtranslocations},
 	   'psh|prefer_shell' => \$parameter{prefer_shell},  # Shell will be used for overlapping shell and biconda installations
 	   'ppd|print_parameters_default' => sub { print_parameters({parameter_href => \%parameter}); exit;},  #Display parameter defaults
 	   'nup|noupdate' => \$parameter{noupdate},
-	   'sp|select_programs:s' => \@{$parameter{select_programs}},  #Comma sep string
+	   'sp|select_programs:s' => \@{ $parameter{select_programs} },  #Comma sep string
 	   'h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
 	   'v|version' => sub { print STDOUT "\ninstall.pl ".$install_version, "\n\n"; exit;},  #Display version number
     ) or help({USAGE => $USAGE,
@@ -603,6 +606,7 @@ sub create_conda_environment {
 	print $FILEHANDLE "conda create -n ".$parameter_href->{conda_environment}." ";
 	print $FILEHANDLE "-y ";
 	print $FILEHANDLE "pip ";
+	print $FILEHANDLE "python=".$parameter_href->{python_version}." ";
 	print $FILEHANDLE "\n\n";
     }
 }
