@@ -80,7 +80,7 @@ outscript_dir:
   data_type: SCALAR
   type: path
   update_path: absolute_path
-outconfig_file:
+config_file_analysis:
   associated_program:
    - mip
   data_type: SCALAR

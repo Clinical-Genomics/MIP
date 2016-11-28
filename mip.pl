@@ -70,7 +70,7 @@ mip.pl  -ifd [infile_dirs=sample_id] -sd [script_dir] -rd [reference_dir] -p [pr
                -c/--config_file YAML config file for analysis parameters (defaults to "")
                -ccp/--cluster_constant_path Set the cluster constant path (defaults to "")
                -acp/--analysis_constant_path Set the analysis constant path (defaults to "analysis")
-               -ocf/--outconfig_file Write YAML configuration file for analysis parameters (defaults to "")
+               -cfa/--config_file_analysis Write YAML configuration file for analysis parameters (defaults to "")
                -sif/--sample_info_file YAML file for sample info used in the analysis (defaults to "{outdata_dir}/{family_id}/{family_id}_qc_sample_info.yaml")
                -dra/--dry_run_all Sets all programs to dry run mode i.e. no sbatch submission (defaults to "0" (=no))
                -tmd/--temp_directory Set the temporary directory for all programs (defaults to "/scratch/SLURM_JOB_ID";supply whole path)
@@ -453,7 +453,7 @@ GetOptions('ifd|infile_dirs:s'  => \%{ $parameter{infile_dirs}{value} },  #Hash 
 	   'c|config_file:s' => \$parameter{config_file}{value},
 	   'ccp|cluster_constant_path:s' => \$parameter{cluster_constant_path}{value},
 	   'acp|analysis_constant_path:s' => \$parameter{analysis_constant_path}{value},
-	   'ocf|outconfig_file:s' => \$parameter{outconfig_file}{value},
+	   'cfa|config_file_analysis:s' => \$parameter{config_file_analysis}{value},
 	   'sif|sample_info_file:s' => \$parameter{sample_info_file}{value},  #Write all info on samples and run to YAML file
 	   'dra|dry_run_all=i' => \$parameter{dry_run_all}{value},
 	   'tmd|temp_directory:s' => \$parameter{temp_directory}{value},
@@ -1042,14 +1042,17 @@ check_cosmid_installation({parameter_href => \%parameter,
 			  });
 
 
-if ($active_parameter{outconfig_file} ne 0) {  #Write config file for family
+if ($active_parameter{config_file_analysis} ne 0) {  #Write config file for family
 
-    make_path(dirname($active_parameter{outconfig_file}));  #Create directory unless it already exists
+    make_path(dirname($active_parameter{config_file_analysis}));  #Create directory unless it already exists
 
     ## Writes a YAML hash to file
     write_yaml({yaml_href => \%active_parameter,
-		yaml_file_path_ref => \$active_parameter{outconfig_file},
+		yaml_file_path_ref => \$active_parameter{config_file_analysis},
 	       });
+
+    ## Add to qc_sample_info
+    $sample_info{config_file_analysis} = $active_parameter{config_file_analysis};
 }
 
 
@@ -2693,7 +2696,7 @@ sub analysisrunstatus {
 
 	    print $FILEHANDLE q?"test select file" => [ ?;  #Add test for select file using alias
 	    print $FILEHANDLE q?"?.$sample_info_href->{vcf_file}{clinical}{path}.q?", ?;  #Infile
-	    print $FILEHANDLE q?"?.$active_parameter_href->{outconfig_file}.q?", ?;  #ConfigFile
+	    print $FILEHANDLE q?"?.$active_parameter_href->{config_file_analysis}.q?", ?;  #ConfigFile
 	    print $FILEHANDLE q?], ?;
 	}
 
@@ -2701,7 +2704,7 @@ sub analysisrunstatus {
 
 	    print $FILEHANDLE q?"test research file" => [ ?;  #Add test research file using alias
 	    print $FILEHANDLE q?"?.$sample_info_href->{vcf_file}{research}{path}.q?", ?;  #Infile
-	    print $FILEHANDLE q?"?.$active_parameter_href->{outconfig_file}.q?", ?;  #ConfigFile
+	    print $FILEHANDLE q?"?.$active_parameter_href->{config_file_analysis}.q?", ?;  #ConfigFile
 	    print $FILEHANDLE q?], ?;
 	}
 
@@ -21923,6 +21926,9 @@ sub create_fam_file {
 	    }
 	}
     }
+
+    ## Add newly created family file to qc_sample_info
+    $sample_info_href->{pedigree_minimal} = $fam_file_path;
 }
 
 
