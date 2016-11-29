@@ -2685,7 +2685,10 @@ sub analysisrunstatus {
     }
 
     ## Test integrity of vcf data keys in header and body
-    if ( (defined($sample_info_href->{vcf_file}{clinical}{path})) || (defined($sample_info_href->{vcf_file}{research}{path})) ) {
+    if ( (defined($sample_info_href->{vcf_file}{clinical}{path}))
+	 || (defined($sample_info_href->{vcf_file}{research}{path}))
+	 || (defined($sample_info_href->{sv_vcf_file}{clinical}{path}))
+	 || (defined($sample_info_href->{sv_vcf_file}{research}{path})) ) {
 
 	print $FILEHANDLE q?perl -MTest::Harness -e ' ?;  #Execute on cmd
 	print $FILEHANDLE q?my %args = (?;  #Adjust arguments to harness object
@@ -2707,6 +2710,21 @@ sub analysisrunstatus {
 	    print $FILEHANDLE q?"?.$active_parameter_href->{config_file_analysis}.q?", ?;  #ConfigFile
 	    print $FILEHANDLE q?], ?;
 	}
+	if (defined($sample_info_href->{sv_vcf_file}{clinical}{path})) {
+
+	    print $FILEHANDLE q?"test sv select file" => [ ?;  #Add test for select file using alias
+	    print $FILEHANDLE q?"?.$sample_info_href->{vcf_file}{clinical}{path}.q?", ?;  #Infile
+	    print $FILEHANDLE q?"?.$active_parameter_href->{config_file_analysis}.q?", ?;  #ConfigFile
+	    print $FILEHANDLE q?], ?;
+	}
+
+	if (defined($sample_info_href->{sv_vcf_file}{research}{path})) {
+
+	    print $FILEHANDLE q?"test sv research file" => [ ?;  #Add test research file using alias
+	    print $FILEHANDLE q?"?.$sample_info_href->{vcf_file}{research}{path}.q?", ?;  #Infile
+	    print $FILEHANDLE q?"?.$active_parameter_href->{config_file_analysis}.q?", ?;  #ConfigFile
+	    print $FILEHANDLE q?], ?;
+	}
 
 	print $FILEHANDLE q?}); ?;
 	print $FILEHANDLE q?my $harness = TAP::Harness->new( \%args ); ?;  #Create harness using arguments provided
@@ -2720,6 +2738,15 @@ sub analysisrunstatus {
 	if (defined($sample_info_href->{vcf_file}{research}{path})) {
 
 	    print $FILEHANDLE q?["?.catfile($Bin, "t", "test.t").q?", "test research file"], ?;
+	}
+	if (defined($sample_info_href->{sv_vcf_file}{clinical}{path})) {
+
+	    print $FILEHANDLE q?["?.catfile($Bin, "t", "test.t").q?", "test sv select file"], ?;
+	}
+
+	if (defined($sample_info_href->{sv_vcf_file}{research}{path})) {
+
+	    print $FILEHANDLE q?["?.catfile($Bin, "t", "test.t").q?", "test sv research file"], ?;
 	}
 	print $FILEHANDLE q?)'?;
 	say $FILEHANDLE "\n";
