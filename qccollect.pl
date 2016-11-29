@@ -525,8 +525,8 @@ sub define_evaluate_metric {
 	$evaluate_metric{$sample_id}{calculatehsmetrics}{MEAN_TARGET_COVERAGE}{threshold} = $sample_info_href->{sample}{$sample_id}{expected_coverage};
     }
 
-    $evaluate_metric{variant_integrity_mendel}{fraction_of_errors}{gt} = 0.035;
-    $evaluate_metric{variant_integrity_father}{fraction_of_common_variants}{lt} = 0.6;
+    $evaluate_metric{variant_integrity_mendel}{fraction_of_errors}{gt} = 0.06;
+    $evaluate_metric{variant_integrity_father}{fraction_of_common_variants}{lt} = 0.55;
 
     if ($sample_info{sample}{$sample_id}{analysis_type} eq "wes") {
 
