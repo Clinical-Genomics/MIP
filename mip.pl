@@ -23702,9 +23702,11 @@ sub update_to_absolute_path {
 
     foreach my $parameter_name (@{ $parameter_href->{dynamic_parameter}{absolute_path} }) {
 
-	my $parameter_value_ref = $parameter_href->{$parameter_name}{value};  #Alias
+	my $parameter_type = $parameter_href->{$parameter_name}{data_type};  #Alias
 
-	if (ref($parameter_value_ref) eq "ARRAY") {  #Array reference
+	if ($parameter_type eq "ARRAY") {  #Array reference
+
+	    my $parameter_value_ref = $parameter_href->{$parameter_name}{value};  #Alias
 
 	    for (my $element_counter=0;$element_counter<scalar(@$parameter_value_ref);$element_counter++) {
 
@@ -23725,7 +23727,9 @@ sub update_to_absolute_path {
 		}
 	    }
 	}
-	if (ref($parameter_value_ref) eq "HASH") {  #Hash reference
+	elsif ($parameter_type eq "HASH") {  #Hash reference
+
+	    my $parameter_value_ref = $parameter_href->{$parameter_name}{value};  #Alias
 
 	    foreach my $key (keys %$parameter_value_ref) {
 
@@ -23739,15 +23743,22 @@ sub update_to_absolute_path {
 		}
 	    }
 	}
-	elsif ( (defined($parameter_value_ref)) && ($parameter_value_ref ne "nocmd_input") ) {  #Scalar
+	elsif ($parameter_type eq "SCALAR") {  #Scalar - not a reference
 
-	    ## Find aboslute path for supplied path or croaks and exists if path does not exists
-	    $parameter_value_ref = find_absolute_path({path => $parameter_value_ref,
+	    my $parameter_value = $parameter_href->{$parameter_name}{value};  #Alias
+	    	    
+	    if ( (defined($parameter_value)) && ($parameter_value ne "nocmd_input") ) {  #Scalar
+		
+		## Find aboslute path for supplied path or croaks and exists if path does not exists
+		$parameter_value = find_absolute_path({path => $parameter_value,
 						       parameter_name => $parameter_name,
 						      });
+		$parameter_href->{$parameter_name}{value} = $parameter_value;
+	    }
 	}
     }
 }
+
 
 sub find_absolute_path {
 
