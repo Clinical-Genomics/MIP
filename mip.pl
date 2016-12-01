@@ -5776,7 +5776,7 @@ sub samplecheck {
 	my $sample_id_ref = \$active_parameter_href->{sample_ids}[$sample_id_counter];  #Alias
 
 	my $lineCounter = 2 + $sample_id_counter;  #Skip header line
-	print $FILEHANDLE q?perl -nae 'if($F[1]=~/?.$$sample_id_ref.q?/) {print $F[0]."\t".$F[1]."\t0\t0\t".$F[4]."\t".$F[5]}' ?;  #Include 1 line and remove founders
+	print $FILEHANDLE q?perl -nae 'if($F[1] eq "?.$$sample_id_ref.q?") {print $F[0]."\t".$F[1]."\t0\t0\t".$F[4]."\t".$F[5]}' ?;  #Include 1 line and remove founders
 	print $FILEHANDLE catfile($active_parameter_href->{outdata_dir}, $active_parameter_href->{family_id}, $active_parameter_href->{family_id}.".fam")." ";
 	print $FILEHANDLE "> ";
 	print $FILEHANDLE catfile($$temp_directory_ref, $$sample_id_ref."_vcf_data_unsplit.fam")." ";
