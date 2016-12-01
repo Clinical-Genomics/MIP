@@ -3131,7 +3131,7 @@ sub evaluation {
     $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{pgatk_combinevariantcallsets}{file_tag};
+    my $infile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -25822,6 +25822,7 @@ sub rename_vcf_samples {
     }
     print $FILEHANDLE q?" ?;
     say $FILEHANDLE "> ".catfile($$temp_directory_ref, "sample_name.txt")." ";
+    say $FILEHANDLE "\n";
 
     ## Rename samples in VCF
     say $FILEHANDLE "## Rename sample(s) names ion VCF file";
