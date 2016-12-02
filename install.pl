@@ -403,16 +403,24 @@ sub create_bash_file {
 
 ##Function : Create bash file for writing install instructions
 ##Returns  : ""
-##Arguments: $file_name
-##         : $file_name => File name
+##Arguments: $file_name, install_directory
+##         : $file_name        => File name
+##         : install_directory => The temporary installation directory 
+
 
     my ($arg_href) = @_;
+
+    ## Default(s)
+    my $install_directory;
 
     ## Flatten argument(s)
     my $file_name;
 
     my $tmpl = {
 	file_name => { required => 1, defined => 1, strict_type => 1, store => \$file_name},
+	install_directory => { default => ".MIP",
+			       allow => qr/^\.\S+$/,
+			       strict_type => 1, store => \$install_directory},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -424,6 +432,24 @@ sub create_bash_file {
     open ($FILEHANDLE, ">", catfile($pwd, $file_name)) or die("Cannot write to '".catfile($pwd, $file_name)."' :".$!."\n");
 
     print $FILEHANDLE "#!".catfile( dirname( dirname( devnull() ) ) ).catfile("usr", "bin", "env", "bash"), "\n\n";
+
+    ## Create housekeeping function and trap
+    say $FILEHANDLE q?finish() {?, "\n";
+    say $FILEHANDLE "\t".q?## Perform exit housekeeping?;
+    say $FILEHANDLE "\t".q?rm -rf ?.$install_directory;
+
+    say $FILEHANDLE q?}?;
+    say $FILEHANDLE q?trap finish EXIT TERM INT?, "\n";
+
+    ## Create error handling function and trap
+    say $FILEHANDLE q?error() {?, "\n";
+    say $FILEHANDLE "\t".q?## Display error message and exit?;
+    say $FILEHANDLE "\t".q{ret="$?"};
+    say $FILEHANDLE "\t".q?echo "${PROGNAME}: ${1:-"Unknown Error - ExitCode="$ret}" 1>&2?, "\n";
+    say $FILEHANDLE "\t".q?exit 1?;
+
+    say $FILEHANDLE q?}?;
+    say $FILEHANDLE q?trap error ERR?, "\n";
 
     print STDOUT "Will write install instructions to '".catfile($pwd, $file_name), "'\n";
 

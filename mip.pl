@@ -19030,12 +19030,12 @@ sub program_prerequisites {
 
 	say $FILEHANDLE "## Create temporary directory";
 	say $FILEHANDLE q?temp_directory="?.$temp_directory.q?"?;  #Assign batch variable
-	say $FILEHANDLE q?mkdir -p $temp_directory?, "\n";
+	say $FILEHANDLE q?mkdir -p ?.$temp_directory, "\n";
 
 	## Create housekeeping function and trap
 	say $FILEHANDLE q?finish() {?, "\n";
 	say $FILEHANDLE "\t".q?## Perform sbatch exit housekeeping?;
-	say $FILEHANDLE "\t".q?rm -rf $temp_directory?;
+	say $FILEHANDLE "\t".q?rm -rf ?.$temp_directory;
 
 	## Output SLURM info on each job via sacct command and write to MIP Log file(.status)
 	track_progress({job_id_href => $job_id_href,
