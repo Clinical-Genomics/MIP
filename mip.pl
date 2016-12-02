@@ -2133,6 +2133,8 @@ if ($active_parameter{pevaluation} > 0) {  #Run evaluation. Done per family
 			program_name => "evaluation",
 		       });
 	}
+
+	
     }
 }
 
@@ -3120,7 +3122,7 @@ sub evaluation {
 					     FILEHANDLE => $FILEHANDLE,
 					     directory_id => $$family_id_ref,
 					     program_name => $program_name,
-					     program_directory => lc($$outaligner_dir_ref.$program_name),
+					     program_directory => lc($program_name),
 					     temp_directory => $$temp_directory_ref,
 					     error_trap => 0,  #Special case to allow "vcf.idx" to be created
 					    });
