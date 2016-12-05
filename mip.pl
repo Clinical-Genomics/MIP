@@ -3122,7 +3122,7 @@ sub evaluation {
 					     FILEHANDLE => $FILEHANDLE,
 					     directory_id => $$family_id_ref,
 					     program_name => $program_name,
-					     program_directory => lc($program_name),
+					     program_directory => catfile($$outaligner_dir_ref, lc($program_name)),
 					     temp_directory => $$temp_directory_ref,
 					     error_trap => 0,  #Special case to allow "vcf.idx" to be created
 					    });
@@ -3336,9 +3336,6 @@ sub evaluation {
     close($FILEHANDLE);
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
-
-	## Add qc_metrics path to sample_info
-	$sample_info_href->{program}{qccollect}{qccollect_metrics_file}{path} = catfile($outfamily_directory, $$family_id_ref."_qc_metrics.yaml");
 
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
