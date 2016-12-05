@@ -3197,7 +3197,7 @@ sub evaluation {
     print $FILEHANDLE "> ".catfile($$temp_directory_ref, "NIST.bed.dict_body_col_5.interval_list")." ";  #Remove unnecessary info and reformat
     say $FILEHANDLE "\n";
 
-    say $FILEHANDLE "## Create".$active_parameter_href->{nist_high_confidence_call_set_bed}.".interval_list";
+    say $FILEHANDLE "## Create ".$active_parameter_href->{nist_high_confidence_call_set_bed}.".interval_list";
     java_core({FILEHANDLE => $FILEHANDLE,
 	       memory_allocation => "Xmx2g",
 	       java_use_large_pages_ref => \$active_parameter_href->{java_use_large_pages},
@@ -25785,14 +25785,18 @@ sub rename_vcf_samples {
 
 ##Function : Rename vcf samples. The samples array will replace the sample names in the same order as supplied.
 ##Returns  : ""
-##Arguments: $sample_ids_ref, $temp_directory_ref, $infile, $outfile, $FILEHANDLE
+##Arguments: $sample_ids_ref, $temp_directory_ref, $infile, $outfile, $FILEHANDLE, $output_type
 ##         : $sample_ids_ref     => Samples to rename in the same order as in the vcf {REF}
 ##         : $temp_directory_ref => Temporary directory {REF}
 ##         : $infile             => The vcf infile to rename samples for
 ##         : $outfile            => Output vcf with samples renamed
 ##         : $FILEHANDLE         => Filehandle to write to
+##         : $output_type        => Output type
 
     my ($arg_href) = @_;
+
+    ## Default(s)
+    my $output_type;
 
     ## Flatten argument(s)
     my $sample_ids_ref;
@@ -25807,6 +25811,9 @@ sub rename_vcf_samples {
 	infile => { required => 1, defined => 1, strict_type => 1, store => \$infile},
 	outfile => { required => 1, defined => 1, strict_type => 1, store => \$outfile},
 	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	output_type => { default => "v",
+			 allow => ["b", "u", "z", "v"],
+			 strict_type => 1, store => \$output_type},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -25830,6 +25837,11 @@ sub rename_vcf_samples {
     print $FILEHANDLE "-s ";  #New sample names
     print $FILEHANDLE catfile($$temp_directory_ref, "sample_name.txt")." ";
     print $FILEHANDLE " ".$infile." ";  #Infile
+
+    print $FILEHANDLE "| ";  #Pipe
+    print $FILEHANDLE "bcftools ";
+    print $FILEHANDLE "view ";
+    print $FILEHANDLE "--output-type v ";  #Generate uncompressed vcf
     say $FILEHANDLE "> ".$outfile." ";
     say $FILEHANDLE "\n";
 }

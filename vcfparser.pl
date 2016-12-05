@@ -555,7 +555,7 @@ sub read_infile_vcf {
 
 	    if ($parse_vep) {
 
-		@feature_fields = ("most_severe_consequence", "GeneticRegionAnnotation");
+		@feature_fields = ("most_severe_consequence");
 	    }
 	    next;
 	}
