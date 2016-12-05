@@ -18510,7 +18510,7 @@ sub check_parameter_files {
 
 			    ## Collects sequences contigs used in select file
 			    collect_select_file_contigs({contigs_ref => \@{ $file_info_href->{select_file_contigs} },
-							 select_file_path => catfile($$reference_dir_ref, $active_parameter_href->{vcfparser_select_file}),
+							 select_file_path => catfile($active_parameter_href->{vcfparser_select_file}),
 							});
 
 			    $active_parameter_href->{vcfparser_outfile_count} = 2;  #To track if vcfparser was used with a vcfparser_select_file (=2) or not (=1)

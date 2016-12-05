@@ -929,7 +929,6 @@ sv_vcfparser_select_file:
    - psv_vcfparser
   data_type: SCALAR
   exists_check: file
-  reference: reference_dir
   type: path
 sv_vcfparser_select_file_matching_column:
   associated_program:
@@ -1545,7 +1544,6 @@ vcfparser_select_file:
    - pvcfparser
   data_type: SCALAR
   exists_check: file
-  reference: reference_dir
   type: path
 vcfparser_select_file_matching_column:
   associated_program:
