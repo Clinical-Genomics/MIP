@@ -7713,7 +7713,7 @@ sub picardtools_calculatehsmetrics {
     my $padded_interval_list_ending_ref = \$file_info_href->{exome_target_bed}[2];
 
     my $core_counter=1;
-    my $core_number=1;
+    my $core_number=2;
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -7867,7 +7867,7 @@ sub picardtools_collectmultiplemetrics {
     my $infile = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{merge_infile};  #Alias
 
     my $core_number = 1;
-    my $core_counter=1;
+    my $core_counter=2;
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -8147,7 +8147,7 @@ sub sambamba_depth {
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $file_name;
-    my $core_number = 1;
+    my $core_number = 2;
 
     ## Assign directories
     my $outfamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref);
