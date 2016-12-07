@@ -3133,7 +3133,7 @@ sub evaluation {
     $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
+    my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -3453,8 +3453,8 @@ sub rankvariant {
     my $outfamily_file_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref);
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{psnpeff}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $infile_tag = $file_info_href->{$$family_id_ref}{psnpeff}{file_tag};
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
 
     my $vcfparser_analysis_type = "";
     my $vcfparser_contigs_ref = \@{ $file_info_href->{contigs_size_ordered} };  #Set default
@@ -3819,13 +3819,13 @@ sub gatk_variantevalexome {
     my $infamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref);
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
+    my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
 
     my $extract_exonic_regexp = q?perl -ne ' if ( ($_=~/exonic/) || ($_=~/splicing/) ) {print $_;}' ?;
 
     ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{merge_infile};  #Alias
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -3856,7 +3856,7 @@ sub gatk_variantevalexome {
     print $FILEHANDLE "-o ".catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type."_temp.vcf")." ";  #Sample_id exome outfile
     say $FILEHANDLE "-sn ".$$sample_id_ref, "\n";  #Include genotypes from this sample
 
-    $infile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{prankvariant}{file_tag};
+    $infile_tag = $file_info_href->{$$family_id_ref}{prankvariant}{file_tag};
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -4050,11 +4050,11 @@ sub gatk_variantevalall {
     my $infamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref);
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
+    my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
 
     ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{merge_infile};  #Alias
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -4239,8 +4239,8 @@ sub snpeff {
     $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{pannovar}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $infile_tag = $file_info_href->{$$family_id_ref}{pannovar}{file_tag};
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
 
     my $vcfparser_analysis_type = "";
     my $vcfparser_contigs_ref = \@{ $file_info_href->{contigs_size_ordered} };  #Set default
@@ -4594,8 +4594,8 @@ sub annovar {
     $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{pvcfparser}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $infile_tag = $file_info_href->{$$family_id_ref}{pvcfparser}{file_tag};
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
 
     my $vcfparser_analysis_type = "";
     my $vcfparser_contigs_ref = \@{ $file_info_href->{contigs_size_ordered} };  #Set default
@@ -4852,8 +4852,8 @@ sub vcfparser {
     $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{pvarianteffectpredictor}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $infile_tag = $file_info_href->{$$family_id_ref}{pvarianteffectpredictor}{file_tag};
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
 
     if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
 
@@ -5164,8 +5164,8 @@ sub varianteffectpredictor {
     $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{pvt}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $infile_tag = $file_info_href->{$$family_id_ref}{pvt}{file_tag};
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
 
     if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
 
@@ -5408,13 +5408,13 @@ sub gatk_readbackedphasing {
     ## Choose infile ending depending on GATK PhasebyTransmission swith
     if ($active_parameter_href->{pgatk_phasebytransmission} > 0) {
 
-	$infile_tag = $file_info_href->{ $active_parameter_href->{family_id} }{ $active_parameter_href->{family_id} }{pgatk_phasebytransmission}{file_tag};
+	$infile_tag = $file_info_href->{ $active_parameter_href->{family_id} }{pgatk_phasebytransmission}{file_tag};
     }
     else {
 
-	$infile_tag = $file_info_href->{ $active_parameter_href->{family_id} }{ $active_parameter_href->{family_id} }{pgatk_combinevariantcallsets}{file_tag};
+	$infile_tag = $file_info_href->{ $active_parameter_href->{family_id} }{pgatk_combinevariantcallsets}{file_tag};
     }
-    my $outfile_tag = $file_info_href->{ $active_parameter_href->{family_id} }{ $active_parameter_href->{family_id} }{"p".$program_name}{file_tag};
+    my $outfile_tag = $file_info_href->{ $active_parameter_href->{family_id} }{"p".$program_name}{file_tag};
 
     ## Copy VCF file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -5430,10 +5430,10 @@ sub gatk_readbackedphasing {
 	my $sample_id_ref = \$active_parameter_href->{sample_ids}[$sample_id_counter];  #Alias
 
 	my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $outaligner_dir);
-	my $infile_tag = $file_info_href->{ $active_parameter_href->{family_id} }{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+	my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
 
 	## Add merged infile name after merging all BAM files per sample_id
-	my $infile = $file_info_href->{ $active_parameter_href->{family_id} }{$$sample_id_ref}{merge_infile};  #Alias
+	my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -5469,10 +5469,10 @@ sub gatk_readbackedphasing {
 
 	my $sample_id_ref = \$active_parameter_href->{sample_ids}[$sample_id_counter];  #Alias
 
-	my $infile_tag = $file_info_href->{ $active_parameter_href->{family_id} }{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+	my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
 
 	## Add merged infile name after merging all BAM files per sample_id
-	my $infile = $file_info_href->{ $active_parameter_href->{family_id} }{$$sample_id_ref}{merge_infile};  #Alias
+	my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
 	print $FILEHANDLE "-I ".catfile($active_parameter_href->{temp_directory}, $infile.$infile_tag.".bam ");  #InFile
     }
@@ -5553,8 +5553,8 @@ sub gatk_phasebytransmission {
     my $outfamily_directory = catfile($active_parameter_href->{outdata_dir}, $family_id, $outaligner_dir);
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{ $active_parameter_href->{family_id} }{ $active_parameter_href->{family_id} }{pgatk_combinevariantcallsets}{file_tag};
-    my $outfile_tag = $file_info_href->{ $active_parameter_href->{family_id} }{ $active_parameter_href->{family_id} }{"p".$program_name}{file_tag};
+    my $infile_tag = $file_info_href->{ $active_parameter_href->{family_id} }{pgatk_combinevariantcallsets}{file_tag};
+    my $outfile_tag = $file_info_href->{ $active_parameter_href->{family_id} }{"p".$program_name}{file_tag};
 
     ## Create .fam file to be used in variant calling analyses
     create_fam_file({parameter_href => $parameter_href,
@@ -5707,7 +5707,7 @@ sub samplecheck {
     my $outfamily_file_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref);
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
+    my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
 
     my $family_file = catfile($outfamily_file_directory, $$family_id_ref.".fam");
 
@@ -6127,8 +6127,8 @@ sub vt {
     $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
 
     if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
 
@@ -6391,7 +6391,7 @@ sub prepareforvariantannotationblock {
     $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
+    my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -6542,7 +6542,7 @@ sub gatk_combinevariantcallsets {
     $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
 
     ## Assign file_tags
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
 
     foreach my $variant_caller (@{ $parameter_href->{dynamic_parameter}{variant_callers} }) {
 
@@ -6550,7 +6550,7 @@ sub gatk_combinevariantcallsets {
 
 	    my $program_outdirectory_name = $parameter_href->{$variant_caller}{outdir_name};
 	    my $infamily_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref, $program_outdirectory_name);
-	    my $infile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{$variant_caller}{file_tag};
+	    my $infile_tag = $file_info_href->{$$family_id_ref}{$variant_caller}{file_tag};
 
 	    unshift(@variant_callers, $program_outdirectory_name);  #To prioritize downstream - 1. gatk 2. samtools determined by order_parameters order
 
@@ -6590,7 +6590,7 @@ sub gatk_combinevariantcallsets {
 	if ($active_parameter_href->{$variant_caller} > 0) {  #Expect vcf
 
 	    my $program_outdirectory_name = $parameter_href->{$variant_caller}{outdir_name};
-	    my $infile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{$variant_caller}{file_tag};
+	    my $infile_tag = $file_info_href->{$$family_id_ref}{$variant_caller}{file_tag};
 	    print $FILEHANDLE "-V:".$program_outdirectory_name." ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf")." ";  #Family_id infile
 	}
     }
@@ -6736,8 +6736,8 @@ sub gatk_variantrecalibration {
     $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{pgatk_genotypegvcfs}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_genotypegvcfs}{file_tag};
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
 
     ## Create .fam file to be used in variant calling analyses
     create_fam_file({parameter_href => $parameter_href,
@@ -7131,8 +7131,8 @@ sub gatk_concatenate_genotypegvcfs {
     my $outfamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref, "gatk");
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{pgatk_genotypegvcfs}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{pgatk_genotypegvcfs}{file_tag};
+    my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_genotypegvcfs}{file_tag};
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{pgatk_genotypegvcfs}{file_tag};
 
     my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
     my $core_counter = 1;
@@ -7336,7 +7336,7 @@ sub gatk_genotypegvcfs {
 	$parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
 
 	## Assign file_tags
-	my $outfile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{"p".$program_name}{file_tag};
+	my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
 
 	## Collect infiles for all sample_ids to enable migration to temporary directory
 	for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {
@@ -7344,10 +7344,10 @@ sub gatk_genotypegvcfs {
 	    my $sample_id_ref = \$active_parameter_href->{sample_ids}[$sample_id_counter];  #Alias
 
 	    ## Add merged infile name after merging all BAM files per sample_id
-	    my $infile = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{merge_infile};  #Alias
+	    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
 	    my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref, "gatk");
-	    my $infile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{pgatk_haplotypecaller}{file_tag};
+	    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_haplotypecaller}{file_tag};
 
 	    ## Copy file(s) to temporary directory
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -7399,8 +7399,8 @@ sub gatk_genotypegvcfs {
 	    my $sample_id_ref = \$active_parameter_href->{sample_ids}[$sample_id_counter];  #Alias
 
 	    ## Add merged infile name after merging all BAM files per sample_id
-	    my $infile = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{merge_infile};  #Alias
-	    my $infile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{pgatk_haplotypecaller}{file_tag};
+	    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
+	    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_haplotypecaller}{file_tag};
 
 	    print $FILEHANDLE "-V ".catfile($$temp_directory_ref, $infile.$infile_tag."_".$file_info_href->{contigs}[$contigs_counter].".vcf")." ";  #InFile
 	}
@@ -7482,11 +7482,11 @@ sub rcoverageplots {
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id, $outaligner_dir, "coveragereport");
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{ $active_parameter_href->{family_id} }{$sample_id}{pgenomecoveragebed}{file_tag};
-    my $outfile_tag = $file_info_href->{ $active_parameter_href->{family_id} }{$sample_id}{pgatk_baserecalibration}{file_tag};
+    my $infile_tag = $file_info_href->{$sample_id}{pgenomecoveragebed}{file_tag};
+    my $outfile_tag = $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
 
     ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{ $active_parameter_href->{family_id} }{$sample_id}{merge_infile};  #Alias
+    my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
 
     if ( defined($active_parameter_href->{pgenomecoveragebed}) && ($active_parameter_href->{pgenomecoveragebed} > 0) ) {
 
@@ -7577,11 +7577,11 @@ sub genomecoveragebed {
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref, "coveragereport");
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+    my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
     ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{merge_infile};  #Alias
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
     my $core_counter=1;
     my $core_number=1;
@@ -7701,11 +7701,11 @@ sub picardtools_calculatehsmetrics {
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref, "coveragereport");
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+    my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
     ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{merge_infile};  #Alias
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
     ## Alias exome_target_bed endings
     my $infile_list_ending_ref = \$file_info_href->{exome_target_bed}[0];
@@ -7860,11 +7860,11 @@ sub picardtools_collectmultiplemetrics {
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref, "coveragereport");
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+    my $outfile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
 
     ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{merge_infile};  #Alias
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
     my $core_number = 1;
     my $core_counter=2;
@@ -8019,11 +8019,11 @@ sub chanjo_sexcheck {
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref, "coveragereport");
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+    my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
     ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{merge_infile};  #Alias
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
     my $core_counter=1;
 
@@ -8155,11 +8155,11 @@ sub sambamba_depth {
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref, "coveragereport");
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+    my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
     ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{merge_infile};  #Alias
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
     my $core_counter=1;
 
@@ -8337,9 +8337,9 @@ sub sv_rankvariant {
     my $outfamily_file_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref);
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{psv_vcfparser}{file_tag};
+    my $infile_tag = $file_info_href->{$$family_id_ref}{psv_vcfparser}{file_tag};
     my $infile_ending_stub = $$family_id_ref.$infile_tag.$call_type;
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
     my $outfile_ending_stub = $$family_id_ref.$outfile_tag.$call_type;
 
     my $vcfparser_analysis_type = "";
@@ -8712,9 +8712,9 @@ sub sv_vcfparser {
     $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{psv_varianteffectpredictor}{file_tag};
+    my $infile_tag = $file_info_href->{$$family_id_ref}{psv_varianteffectpredictor}{file_tag};
     my $infile_ending_stub = $$family_id_ref.$infile_tag.$call_type;
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
     my $outfile_ending_stub = $$family_id_ref.$outfile_tag.$call_type;
 
     if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Transfer contig files
@@ -9047,8 +9047,8 @@ sub sv_varianteffectpredictor {
     $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{psv_combinevariantcallsets}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $infile_tag = $file_info_href->{$$family_id_ref}{psv_combinevariantcallsets}{file_tag};
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
     my $outfile_ending_stub = $$family_id_ref.$outfile_tag.$call_type;
 
     my $core_counter = 1;
@@ -9313,13 +9313,13 @@ sub sv_combinevariantcallsets {
     $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
 
     ## Assign file_tags
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
 
     ## Collect infiles for all sample_ids to enable migration to temporary directory
     foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
 	## Add merged infile name after merging all BAM files per sample_id
-	my $infile = $file_info_href->{$$family_id_ref}{$sample_id}{merge_infile};  #Alias
+	my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
 
 	foreach my $structural_variant_caller (@{ $parameter_href->{dynamic_parameter}{structural_variant_callers} }) {
 
@@ -9327,7 +9327,7 @@ sub sv_combinevariantcallsets {
 
 		my $program_outdirectory_name = $parameter_href->{$structural_variant_caller}{outdir_name};
 		my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id, $$outaligner_dir_ref, $program_outdirectory_name);
-		my $infile_tag = $file_info_href->{$$family_id_ref}{$sample_id}{$structural_variant_caller}{file_tag};
+		my $infile_tag = $file_info_href->{$sample_id}{$structural_variant_caller}{file_tag};
 
 		if (! ( any {$_ eq $parameter_href->{$structural_variant_caller}{chain}} @parallel_chains ) ) { #If element is not part of array
 
@@ -9370,11 +9370,11 @@ sub sv_combinevariantcallsets {
 	    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {  #Collapse all structural variant calls to one vcf file per variant caller and sample_id
 
 		## Add merged infile name after merging all BAM files per sample_id
-		my $infile = $file_info_href->{$$family_id_ref}{$sample_id}{merge_infile};  #Alias
+		my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
 
 		my $program_outdirectory_name = $parameter_href->{$structural_variant_caller}{outdir_name};
 		my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id, $$outaligner_dir_ref, $program_outdirectory_name);
-		my $infile_tag = $file_info_href->{$$family_id_ref}{$sample_id}{$structural_variant_caller}{file_tag};
+		my $infile_tag = $file_info_href->{$sample_id}{$structural_variant_caller}{file_tag};
 
 		print $FILEHANDLE catfile($$temp_directory_ref, $infile.$infile_tag.".vcf.gz")." ";  #InFile
 	    }
@@ -9401,7 +9401,7 @@ sub sv_combinevariantcallsets {
 
 	    my $program_outdirectory_name = $parameter_href->{$structural_variant_caller}{outdir_name};
 	    my $infamily_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref, $program_outdirectory_name);
-	    my $infile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{$structural_variant_caller}{file_tag};
+	    my $infile_tag = $file_info_href->{$$family_id_ref}{$structural_variant_caller}{file_tag};
 
 	    if (! ( any {$_ eq $parameter_href->{$structural_variant_caller}{chain}} @parallel_chains ) ) { #If element is not part of array
 
@@ -9687,13 +9687,13 @@ sub cnvnator {
     $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory; #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+    my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
     my $core_counter = 1;
 
     ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{merge_infile};  #Alias
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
     my $root_file;
     my $phenotype_info = $sample_info_href->{sample}{$$sample_id_ref}{phenotype}; #Alias
@@ -9951,8 +9951,8 @@ sub delly {
     $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory; #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+    my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
     my @contigs = remove_element({elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
@@ -9961,7 +9961,7 @@ sub delly {
 				 });
 
     ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{merge_infile};  #Alias
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -10180,7 +10180,7 @@ sub manta {
     $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
 
     ## Assign file_tags
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
 
     my $core_counter=1;
     ## Collect infiles for all sample_ids to enable migration to temporary directory
@@ -10198,10 +10198,10 @@ sub manta {
 	my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id, $$outaligner_dir_ref);
 
 	## Assign file_tags
-	my $infile_tag = $file_info_href->{$$family_id_ref}{$sample_id}{pgatk_baserecalibration}{file_tag};
+	my $infile_tag = $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
 
 	## Add merged infile name after merging all BAM files per sample_id
-	my $infile = $file_info_href->{$$family_id_ref}{$sample_id}{merge_infile};  #Alias
+	my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
 
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -10219,10 +10219,10 @@ sub manta {
     foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
 	## Assign file_tags
-	my $infile_tag = $file_info_href->{$$family_id_ref}{$sample_id}{pgatk_baserecalibration}{file_tag};
+	my $infile_tag = $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
 
 	## Add merged infile name after merging all BAM files per sample_id
-	my $infile = $file_info_href->{$$family_id_ref}{$sample_id}{merge_infile};  #Alias
+	my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
 
 	print $FILEHANDLE "--bam ".catfile($$temp_directory_ref, $infile.$infile_tag.".bam")." ";  #Infile
     }
@@ -10358,13 +10358,13 @@ sub findtranslocations {
     $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory; #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+    my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
     my $core_counter=1;
 
     ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{merge_infile};  #Alias
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
     my @findtranslocations_types = ("intra", "inter");
     my $perl_vcf_fix = q&perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {print q?##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">?, "\n"; print $_."\t".FORMAT."\t&.$$sample_id_ref.q&", "\n"} else {print $_."\tGT\t1/1", "\n"}' &;
@@ -10547,7 +10547,7 @@ sub samtools_mpileup {
     $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
 
     ## Assign file_tags
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
 
     my $core_counter=1;
 
@@ -10565,10 +10565,10 @@ sub samtools_mpileup {
 	my $sample_id_ref = \$active_parameter_href->{sample_ids}[$sample_id_counter];  #Alias
 
 	my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
-	my $infile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+	my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
 
 	## Add merged infile name after merging all BAM files per sample_id
-	my $infile = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{merge_infile};  #Alias
+	my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -10615,10 +10615,10 @@ sub samtools_mpileup {
 
 	    my $sample_id_ref = \$active_parameter_href->{sample_ids}[$sample_id_counter];  #Alias
 
-	    my $infile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+	    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
 
 	    ## Add merged infile name after merging all BAM files per sample_id
-	    my $infile = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{merge_infile};  #Alias
+	    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
 	    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $infile.$infile_tag."_".$$contig_ref.".bam")." ";  #InFile
 	}
@@ -10804,7 +10804,7 @@ sub freebayes {
     $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
 
     ## Assign file_tags
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
 
     my $core_counter=1;
 
@@ -10813,10 +10813,10 @@ sub freebayes {
 	my $sample_id_ref = \$active_parameter_href->{sample_ids}[$sample_id_counter];  #Alias
 
 	my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
-	my $infile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+	my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
 
 	## Add merged infile name after merging all BAM files per sample_id
-	my $infile = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{merge_infile};  #Alias
+	my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -10860,10 +10860,10 @@ sub freebayes {
 
 	    my $sample_id_ref = \$active_parameter_href->{sample_ids}[$sample_id_counter];  #Alias
 
-	    my $infile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+	    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
 
 	    ## Add merged infile name after merging all BAM files per sample_id
-	    my $infile = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{merge_infile};  #Alias
+	    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
 	    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $infile.$infile_tag."_".$$contig_ref.".bam")." ";  #InFile
 	}
@@ -11034,8 +11034,8 @@ sub gatk_haplotypecaller {
     $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory;  #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+    my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
     ## Create .fam file to be used in variant calling analyses
     create_fam_file({parameter_href => $parameter_href,
@@ -11062,7 +11062,7 @@ sub gatk_haplotypecaller {
     }
 
     ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{merge_infile};  #Alias
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -11290,8 +11290,8 @@ sub gatk_baserecalibration {
     $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory;  #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{pgatk_realigner}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_realigner}{file_tag};
+    my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
     ## Alias exome_target_bed endings
     my $infile_list_ending_ref = \$file_info_href->{exome_target_bed}[0];
@@ -11315,7 +11315,7 @@ sub gatk_baserecalibration {
     $exome_target_bed_file .= ".intervals";  #Add required GATK ending
 
     ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{merge_infile};  #Alias
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
     my $core_counter = 1;
 
@@ -11634,8 +11634,8 @@ sub gatk_realigner {
     $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory;  #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{psambamba_markduplicates}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_tag = $file_info_href->{$$sample_id_ref}{psambamba_markduplicates}{file_tag};
+    my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
     ## Get exome_target_bed file for specfic sample_id and add file_ending from file_infoHash if supplied
     my $exome_target_bed_file = get_exom_target_bed_file({active_parameter_href => $active_parameter_href,
@@ -11655,7 +11655,7 @@ sub gatk_realigner {
     }
 
     ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{merge_infile};  #Alias
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
     if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
 
@@ -11924,11 +11924,11 @@ sub picardtools_markduplicates {
     $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory;  #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{ppicardtools_mergesamfiles}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_tag = $file_info_href->{$$sample_id_ref}{ppicardtools_mergesamfiles}{file_tag};
+    my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
     ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{merge_infile};  #Alias
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
     ## Sums all mapped and duplicate reads and takes fraction of before finishing
     my $regexp = q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$feature{dup} = $feature{dup} + $1} if($_=~/\d+\smapped/ && $_=~/^(\d+)/) {$feature{map} = $feature{map} + $1} } print "Read Mapped: ".$feature{map}."\nDuplicates: ".$feature{dup}."\n"."Fraction Duplicates: ".$feature{dup}/$feature{map}, "\n"; last;'?;
@@ -12181,11 +12181,11 @@ sub sambamba_markduplicates {
     $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory;  #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{ppicardtools_mergesamfiles}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_tag = $file_info_href->{$$sample_id_ref}{ppicardtools_mergesamfiles}{file_tag};
+    my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
     ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{merge_infile};  #Alias
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
     ## Sums all mapped and duplicate reads and takes fraction of before finishing
     my $regexp = q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$feature{dup} = $feature{dup} + $1} if($_=~/\d+\smapped/ && $_=~/^(\d+)/) {$feature{map} = $feature{map} + $1} } print "Read Mapped: ".$feature{map}."\nDuplicates: ".$feature{dup}."\n"."Fraction Duplicates: ".$feature{dup}/$feature{map}, "\n"; last;'?;
@@ -12450,13 +12450,13 @@ sub picardtools_mergesamfiles {
 
     if ($consensus_analysis_type ne "rapid") {
 
-	$infile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{ $parameter_href->{active_aligner} }{file_tag};
+	$infile_tag = $file_info_href->{$$sample_id_ref}{ $parameter_href->{active_aligner} }{file_tag};
     }
     else {  #Rapid mode used
 
-	$infile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{ppicardtools_mergerapidreads}{file_tag};
+	$infile_tag = $file_info_href->{$$sample_id_ref}{ppicardtools_mergerapidreads}{file_tag};
     }
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{ppicardtools_mergesamfiles}{file_tag};
+    my $outfile_tag = $file_info_href->{$$sample_id_ref}{ppicardtools_mergesamfiles}{file_tag};
 
     ## Copies files from source to temporary folder. Loop over files specified by $files_ref and collects files from $extract_files_ref.
     migrate_files_to_temp({active_parameter_href => $active_parameter_href,
@@ -12576,7 +12576,7 @@ sub picardtools_mergesamfiles {
     }
 
     ## Merge previously merged files with merged files generated this run
-    if ( ($file_info_href->{$$family_id_ref}{$$sample_id_ref}{picardtools_mergesamfiles_previous_bams}) && (scalar( @{ $infile_lane_no_ending_href->{$$sample_id_ref} }) > 1) ) {
+    if ( ($file_info_href->{$$sample_id_ref}{picardtools_mergesamfiles_previous_bams}) && (scalar( @{ $infile_lane_no_ending_href->{$$sample_id_ref} }) > 1) ) {
 
 	for (my $merge_file_counter=0;$merge_file_counter<scalar(@{ $active_parameter_href->{picardtools_mergesamfiles_previous_bams} });$merge_file_counter++) {
 
@@ -12679,7 +12679,7 @@ sub picardtools_mergesamfiles {
     }
 
     ## Merge files previously merged to single file with single file generated this run
-    elsif ($file_info_href->{$$family_id_ref}{$$sample_id_ref}{picardtools_mergesamfiles_previous_bams}) {
+    elsif ($file_info_href->{$$sample_id_ref}{picardtools_mergesamfiles_previous_bams}) {
 
 	for (my $merge_file_counter=0;$merge_file_counter<scalar(@{ $active_parameter_href->{picardtools_mergesamfiles_previous_bams} });$merge_file_counter++) {
 
@@ -13184,8 +13184,8 @@ sub picardtools_mergerapidreads {
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{ $active_parameter_href->{family_id} }{$$sample_id_ref}{pbwa_mem}{file_tag};
-    my $outfile_tag = $file_info_href->{ $active_parameter_href->{family_id} }{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_tag = $file_info_href->{$$sample_id_ref}{pbwa_mem}{file_tag};
+    my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
     my $core_counter=1;
     my $core_tracker=0;  #Required to portion out cores and files before wait and to track the MOS_BU outfiles to correct lane
@@ -13331,7 +13331,7 @@ sub bwa_mem {
     my $total_sbatch_counter = 0;
     my $paired_end_tracker = 0;
 
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
     ## Collect fastq file(s) size and interleaved info
     for (my $infile_counter=0;$infile_counter<scalar( @{ $infile_lane_no_ending_href->{$$sample_id_ref} });$infile_counter++) {  #For all infiles but process in the same command i.e. both reads per align call
@@ -13809,7 +13809,7 @@ sub mosaik_aligner {
 	my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id, $outaligner_dir);
 	my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id, $outaligner_dir);
 	$parameter_href->{"p".$program_name}{$sample_id}{indirectory} = $outsample_directory;  #Used downstream
-	my $outfile_tag = $file_info_href->{ $active_parameter_href->{family_id} }{$sample_id}{"p".$program_name}{file_tag};
+	my $outfile_tag = $file_info_href->{$sample_id}{"p".$program_name}{file_tag};
 
 	## Copies file to temporary directory.
 	say $FILEHANDLE "## Copy file to node";
@@ -18724,30 +18724,30 @@ sub create_file_endings {
 
 				    if (defined($active_parameter_href->{picardtools_mergesamfiles_previous_bams})) {  #Sanity check that we have something to merge and hence to file_tag should be added
 
-					$file_info_href->{$$family_id_ref}{$sample_id}{ppicardtools_mergesamfiles}{file_tag} = $temp_file_ending{$sample_id}.$$file_ending_ref;  #Adds from previous entry
+					$file_info_href->{$sample_id}{ppicardtools_mergesamfiles}{file_tag} = $temp_file_ending{$sample_id}.$$file_ending_ref;  #Adds from previous entry
 				    }
 				    else {
 
-					$file_info_href->{$$family_id_ref}{$sample_id}{ppicardtools_mergesamfiles}{file_tag} = $temp_file_ending{$sample_id}."";
+					$file_info_href->{$sample_id}{ppicardtools_mergesamfiles}{file_tag} = $temp_file_ending{$sample_id}."";
 				    }
 				}
 				else {
 
 				    if (defined($temp_file_ending{$sample_id})) {
 
-					$file_info_href->{$$family_id_ref}{$sample_id}{$order_parameter_element}{file_tag} = $temp_file_ending{$sample_id}.$$file_ending_ref;
+					$file_info_href->{$sample_id}{$order_parameter_element}{file_tag} = $temp_file_ending{$sample_id}.$$file_ending_ref;
 				    }
 				    else  {  #First module that should add filending
 
-					$file_info_href->{$$family_id_ref}{$sample_id}{$order_parameter_element}{file_tag} = $$file_ending_ref;
+					$file_info_href->{$sample_id}{$order_parameter_element}{file_tag} = $$file_ending_ref;
 				    }
 				}
 			    }
 			    else {  #Do not add new module file_tag
 
-				$file_info_href->{$$family_id_ref}{$sample_id}{$order_parameter_element}{file_tag} = $temp_file_ending{$sample_id};
+				$file_info_href->{$sample_id}{$order_parameter_element}{file_tag} = $temp_file_ending{$sample_id};
 			    }
-			    $temp_file_ending{$sample_id} = $file_info_href->{$$family_id_ref}{$sample_id}{$order_parameter_element}{file_tag};  #To enable sequential build-up of fileending
+			    $temp_file_ending{$sample_id} = $file_info_href->{$sample_id}{$order_parameter_element}{file_tag};  #To enable sequential build-up of fileending
 			}
 
 ###MAIN/Per family_id
@@ -18761,18 +18761,18 @@ sub create_file_endings {
 
 				if (defined($temp_file_ending{$$family_id_ref})) {
 
-				    $file_info_href->{$$family_id_ref}{$$family_id_ref}{$order_parameter_element}{file_tag} = $temp_file_ending{$$family_id_ref}.$$file_ending_ref;
+				    $file_info_href->{$$family_id_ref}{$order_parameter_element}{file_tag} = $temp_file_ending{$$family_id_ref}.$$file_ending_ref;
 				}
 				else  {  #First module that should add filending
 
-				    $file_info_href->{$$family_id_ref}{$$family_id_ref}{$order_parameter_element}{file_tag} = $$file_ending_ref;
+				    $file_info_href->{$$family_id_ref}{$order_parameter_element}{file_tag} = $$file_ending_ref;
 				}
-				$temp_file_ending{$$family_id_ref} = $file_info_href->{$$family_id_ref}{$$family_id_ref}{$order_parameter_element}{file_tag};  #To enable sequential build-up of fileending
+				$temp_file_ending{$$family_id_ref} = $file_info_href->{$$family_id_ref}{$order_parameter_element}{file_tag};  #To enable sequential build-up of fileending
 			    }
 			}
 			else {  #Do not add new module file_tag
 
-			    $file_info_href->{$$family_id_ref}{  $$family_id_ref }{$order_parameter_element}{file_tag} = $temp_file_ending{$$family_id_ref};
+			    $file_info_href->{$$family_id_ref}{$order_parameter_element}{file_tag} = $temp_file_ending{$$family_id_ref};
 			}
 		    }
 		}
@@ -18797,18 +18797,18 @@ sub create_file_endings {
 				}
 				if (defined($temp_file_ending{$chain_fork}{$sample_id})) {
 
-				    $file_info_href->{$$family_id_ref}{$sample_id}{$order_parameter_element}{file_tag} = $temp_file_ending{$chain_fork}{$sample_id}.$$file_ending_ref;
+				    $file_info_href->{$sample_id}{$order_parameter_element}{file_tag} = $temp_file_ending{$chain_fork}{$sample_id}.$$file_ending_ref;
 				}
 				else  {  #First module that should add filending
 
-				    $file_info_href->{$$family_id_ref}{$sample_id}{$order_parameter_element}{file_tag} = $$file_ending_ref;
+				    $file_info_href->{$sample_id}{$order_parameter_element}{file_tag} = $$file_ending_ref;
 				}
 			    }
 			    else {  #Do not add new module file_tag
 
-				$file_info_href->{$$family_id_ref}{$sample_id}{$order_parameter_element}{file_tag} = $temp_file_ending{$chain_fork}{$sample_id};
+				$file_info_href->{$sample_id}{$order_parameter_element}{file_tag} = $temp_file_ending{$chain_fork}{$sample_id};
 			    }
-			    $temp_file_ending{$chain_fork}{$sample_id} = $file_info_href->{$$family_id_ref}{$sample_id}{$order_parameter_element}{file_tag};  #To enable sequential build-up of fileending
+			    $temp_file_ending{$chain_fork}{$sample_id} = $file_info_href->{$sample_id}{$order_parameter_element}{file_tag};  #To enable sequential build-up of fileending
 			}
 ###Other/Per family_id
 
@@ -18820,17 +18820,17 @@ sub create_file_endings {
 			    }
 			    if (defined($temp_file_ending{$chain_fork}{$$family_id_ref})) {
 
-				$file_info_href->{$$family_id_ref}{$$family_id_ref}{$order_parameter_element}{file_tag} = $temp_file_ending{$chain_fork}{$$family_id_ref}.$$file_ending_ref;
+				$file_info_href->{$$family_id_ref}{$order_parameter_element}{file_tag} = $temp_file_ending{$chain_fork}{$$family_id_ref}.$$file_ending_ref;
 			    }
 			    else  {  #First module that should add filending
 
-				$file_info_href->{$$family_id_ref}{$$family_id_ref}{$order_parameter_element}{file_tag} = $$file_ending_ref;
+				$file_info_href->{$$family_id_ref}{$order_parameter_element}{file_tag} = $$file_ending_ref;
 			    }
-			    $temp_file_ending{$chain_fork}{$$family_id_ref} = $file_info_href->{$$family_id_ref}{$$family_id_ref}{$order_parameter_element}{file_tag};  #To enable sequential build-up of fileending
+			    $temp_file_ending{$chain_fork}{$$family_id_ref} = $file_info_href->{$$family_id_ref}{$order_parameter_element}{file_tag};  #To enable sequential build-up of fileending
 			}
 			else {  #Do not add new module file_tag
 
-			    $file_info_href->{$$family_id_ref}{  $$family_id_ref }{$order_parameter_element}{file_tag} = $temp_file_ending{$chain_fork}{$$family_id_ref};
+			    $file_info_href->{$$family_id_ref}{$order_parameter_element}{file_tag} = $temp_file_ending{$chain_fork}{$$family_id_ref};
 			}
 		    }
 		}
@@ -19101,7 +19101,7 @@ sub add_merged_infile_name {
 
     my $infile;
     my $merge_lanes;  #To pick up merged lanes later
-    my $picardtools_mergesamfiles_previous_bams = $file_info_href->{ $active_parameter_href->{family_id} }{$sample_id}{picardtools_mergesamfiles_previous_bams};  #Alias
+    my $picardtools_mergesamfiles_previous_bams = $file_info_href->{$sample_id}{picardtools_mergesamfiles_previous_bams};  #Alias
 
     if ( (defined($picardtools_mergesamfiles_previous_bams)) && ($picardtools_mergesamfiles_previous_bams) ) {  # Files merged this round with merged file from previous round
 
@@ -19136,7 +19136,7 @@ sub add_merged_infile_name {
 	    $infile .= $lane_href->{$sample_id}[$lane_counter];  #Extract lanes per sample_id
 	}
     }
-    $file_info_href->{ $active_parameter_href->{family_id} }{$sample_id}{merge_infile} = $infile;
+    $file_info_href->{$sample_id}{merge_infile} = $infile;
 }
 
 
@@ -21822,17 +21822,17 @@ sub check_merge_picardtools_mergesamfiles_previous_bams {
 
 		if ($$bam_file_ref =~ /$$sample_id_ref/) {  #Look for sample_id in previously generated file to be merged with current run to be able to merge correct files
 
-		    $file_info_href->{ $active_parameter_href->{family_id} }{$$sample_id_ref}{picardtools_mergesamfiles_previous_bams} = 1;
+		    $file_info_href->{$$sample_id_ref}{picardtools_mergesamfiles_previous_bams} = 1;
 		}
 		else {
 
-		    $file_info_href->{ $active_parameter_href->{family_id} }{$$sample_id_ref}{picardtools_mergesamfiles_previous_bams} = 0;
+		    $file_info_href->{$$sample_id_ref}{picardtools_mergesamfiles_previous_bams} = 0;
 		}
 	    }
 	}
 	else {  #Not supplied - Set to 0
 
-	    $file_info_href->{ $active_parameter_href->{family_id} }{$$sample_id_ref}{picardtools_mergesamfiles_previous_bams} = 0;
+	    $file_info_href->{$$sample_id_ref}{picardtools_mergesamfiles_previous_bams} = 0;
 	}
     }
 }
@@ -24935,7 +24935,7 @@ sub remove_files {
 		if (defined($sample_id)) {
 
 		    my $indirectory =  $parameter_href->{$program}{$sample_id}{indirectory};
-		    my $outfile_tag = $file_info_href->{$$family_id_ref}{$sample_id}{$program}{file_tag};
+		    my $outfile_tag = $file_info_href->{$sample_id}{$program}{file_tag};
 
 		    ## Single files
 		    if ($parameter_href->{$program}{remove_redundant_file_setting} eq "single") {  #Infiles for prior to potential merge
@@ -24981,7 +24981,7 @@ sub remove_files {
 		    if ($parameter_href->{$program}{remove_redundant_file_setting} eq "merged") {  #Merge infiles
 
 			## Add merged infile name after merging all BAM files per sample_id
-			my $infile = $file_info_href->{$$family_id_ref}{$sample_id}{merge_infile};  #Alias
+			my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
 
 			if ( ( ! $$reduce_io_ref) || ($program eq $last_module_bamcalibrationblock) ) {  #Delete intermediate files or last module in processBlock
 
@@ -25015,7 +25015,7 @@ sub remove_files {
 		else {  #Otherwise these files would be removed for every sample_id
 
 		    my $indirectory =  $parameter_href->{$program}{indirectory};
-		    my $outfile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{$program}{file_tag};
+		    my $outfile_tag = $file_info_href->{$$family_id_ref}{$program}{file_tag};
 
 		    ## Family files
 		    if ($parameter_href->{$program}{remove_redundant_file_setting} eq "family") {
@@ -25042,7 +25042,7 @@ sub remove_files {
 
 			if ( ( ! $$reduce_io_ref) || ($program eq $last_module_variantannotationblock) ) {  #Delete intermediate files or last module in processBlock
 
-			    $outfile_tag = $file_info_href->{$$family_id_ref}{$$family_id_ref}{$program}{file_tag};
+			    $outfile_tag = $file_info_href->{$$family_id_ref}{$program}{file_tag};
 
 			    for (my $file_ending_counter=0;$file_ending_counter < scalar( @{ $parameter_href->{$program}{file_endings} });$file_ending_counter++) {
 
