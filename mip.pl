@@ -3180,7 +3180,7 @@ sub evaluation {
     ## Create .interval_list file from NIST union bed
     say $FILEHANDLE "## Prepare .interval_list file from NIST union bed\n";
 
-    print $FILEHANDLE q?perl -nae 'unless($_=~/NC_007605/ || $_=~/hs37d5/) {print $_}' ?;
+    print $FILEHANDLE q?perl -nae 'unless($_=~/NC_007605/ || $_=~/hs37d5/ || $_=~/GL\d+/) {print $_}' ?;
     print $FILEHANDLE catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict")." ";
     print $FILEHANDLE "> ".catfile($$temp_directory_ref, "Homo_sapiens.GRCh37.dict")." ";
     say $FILEHANDLE "\n";
@@ -3252,7 +3252,7 @@ sub evaluation {
 
     ## Modify since different ref genomes
     say $FILEHANDLE "## Modify since different ref genomes";
-    print $FILEHANDLE q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig=<ID=hs37d5,length=35477943>/) {print $_}' ?;
+    print $FILEHANDLE q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig=<ID=hs37d5,length=35477943>/ || $_=~/##contig=<ID=GL\d+/) {print $_}' ?;
     print $FILEHANDLE catfile($$temp_directory_ref, "MIP_lts.vcf")." ";  #Infile
     print $FILEHANDLE "> ".catfile($$temp_directory_ref, "MIP_lts_refrm.vcf")." ";  #Outfile
     say $FILEHANDLE "\n";
@@ -25842,7 +25842,7 @@ sub rename_vcf_samples {
     print $FILEHANDLE "bcftools ";
     print $FILEHANDLE "view ";
     print $FILEHANDLE "--output-type v ";  #Generate uncompressed vcf
-    say $FILEHANDLE "> ".$outfile." ";
+    print $FILEHANDLE "> ".$outfile." ";
     say $FILEHANDLE "\n";
 }
 
