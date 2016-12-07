@@ -2568,7 +2568,7 @@ sub sacct {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 7,
+		    dependencies => "chain_and_parallel_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name,
 		    job_dependency_type => "afterany",
@@ -2768,7 +2768,7 @@ sub analysisrunstatus {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 7,
+		    dependencies => "chain_and_parallel_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -2954,7 +2954,7 @@ sub multiqc {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 7,
+		    dependencies => "chain_and_parallel_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -3048,7 +3048,7 @@ sub qccollect {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 7,
+		    dependencies => "chain_and_parallel_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -3341,7 +3341,7 @@ sub evaluation {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 2,
+		    dependencies => "case_dependency_dead_end",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -3730,7 +3730,7 @@ sub rankvariant {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 1,
+		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -3969,7 +3969,7 @@ sub gatk_variantevalexome {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 2,
+		    dependencies => "case_dependency_dead_end",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -4131,7 +4131,7 @@ sub gatk_variantevalall {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 2,
+		    dependencies => "case_dependency_dead_end",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -4479,7 +4479,7 @@ sub snpeff {
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
-			dependencies => 1,
+			dependencies => "case_dependency",
 			path => $parameter_href->{"p".$program_name}{chain},
 			sbatch_file_name => $file_name
 		       });
@@ -4741,7 +4741,7 @@ sub annovar {
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
-			dependencies => 1,
+			dependencies => "case_dependency",
 			path => $parameter_href->{"p".$program_name}{chain},
 			sbatch_file_name => $file_name
 		       });
@@ -4918,7 +4918,7 @@ sub vcfparser {
 					    })
 		) {
 
-		print $XARGSFILEHANDLE "-sf ".catfile($$reference_dir_ref, $active_parameter_href->{vcfparser_select_file})." ";  #List of genes to analyse separately
+		print $XARGSFILEHANDLE "-sf ".catfile($active_parameter_href->{vcfparser_select_file})." ";  #List of genes to analyse separately
 		print $XARGSFILEHANDLE "-sf_mc ".$active_parameter_href->{vcfparser_select_file_matching_column}." ";  #Column of HGNC Symbol in SelectFile (-sf)
 
 		if (@{ $active_parameter_href->{vcfparser_select_feature_annotation_columns} }) {
@@ -4969,7 +4969,7 @@ sub vcfparser {
 	    collect_sub_databases({sample_info_href => $sample_info_href,
 				   family_id_ref => $family_id_ref,
 				   program_name_ref => \$program_name,
-				   database_file => catfile($$reference_dir_ref, $active_parameter_href->{vcfparser_select_file}),
+				   database_file => catfile($active_parameter_href->{vcfparser_select_file}),
 				   database_key => "SelectFile",
 				  });
 
@@ -5038,7 +5038,7 @@ sub vcfparser {
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
-			dependencies => 1,
+			dependencies => "case_dependency",
 			path => $parameter_href->{"p".$program_name}{chain},
 			sbatch_file_name => $file_name
 		       });
@@ -5326,7 +5326,7 @@ sub varianteffectpredictor {
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
-			dependencies => 1,
+			dependencies => "case_dependency",
 			path => $parameter_href->{"p".$program_name}{chain},
 			sbatch_file_name => $file_name
 		       });
@@ -5496,7 +5496,7 @@ sub gatk_readbackedphasing {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 2,
+		    dependencies => "case_dependency_dead_end",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -5612,7 +5612,7 @@ sub gatk_phasebytransmission {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 1,
+		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -6008,7 +6008,7 @@ sub samplecheck {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 2,
+		    dependencies => "case_dependency_dead_end",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -6267,7 +6267,7 @@ sub vt {
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
-			dependencies => 1,
+			dependencies => "case_dependency",
 			path => $parameter_href->{"p".$program_name}{chain},
 			sbatch_file_name => $file_name
 		       });
@@ -6453,7 +6453,7 @@ sub prepareforvariantannotationblock {
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
-			dependencies => 1,
+			dependencies => "case_dependency",
 			path => $parameter_href->{"p".$program_name}{chain},
 			sbatch_file_name => $file_name
 		       });
@@ -6645,7 +6645,7 @@ sub gatk_combinevariantcallsets {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 7,
+		    dependencies => "chain_and_parallel_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name,
 		    parallel_chains_ref => \@parallel_chains,
@@ -7052,7 +7052,7 @@ sub gatk_variantrecalibration {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 1,
+		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -7230,7 +7230,7 @@ sub gatk_concatenate_genotypegvcfs {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 1,
+		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -7425,7 +7425,7 @@ sub gatk_genotypegvcfs {
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
-			dependencies => 3,
+			dependencies => "sample_id_dependency_step_in_parallel",
 			path => $parameter_href->{"p".$program_name}{chain},
 			sbatch_file_name => $file_name,
 			sbatch_script_tracker => $sbatch_script_tracker
@@ -7507,7 +7507,7 @@ sub rcoverageplots {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $sample_id,
-		    dependencies => 2,
+		    dependencies => "case_dependency_dead_end",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -7629,7 +7629,7 @@ sub genomecoveragebed {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $$sample_id_ref,
-		    dependencies => 1,
+		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -7789,7 +7789,7 @@ sub picardtools_calculatehsmetrics {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $$sample_id_ref,
-		    dependencies => 1,
+		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -7950,7 +7950,7 @@ sub picardtools_collectmultiplemetrics {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $$sample_id_ref,
-		    dependencies => 1,
+		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -8081,7 +8081,7 @@ sub chanjo_sexcheck {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $$sample_id_ref,
-		    dependencies => 1,
+		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -8235,7 +8235,7 @@ sub sambamba_depth {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $$sample_id_ref,
-		    dependencies => 5,
+		    dependencies => "case_dependency_add_to_case",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -8619,7 +8619,7 @@ sub sv_rankvariant {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 1,
+		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -8799,7 +8799,7 @@ sub sv_vcfparser {
 					    })
 		) {
 
-		print $XARGSFILEHANDLE "-sf ".catfile($$reference_dir_ref, $active_parameter_href->{sv_vcfparser_select_file})." ";  #List of genes to analyse separately
+		print $XARGSFILEHANDLE "-sf ".catfile($active_parameter_href->{sv_vcfparser_select_file})." ";  #List of genes to analyse separately
 		print $XARGSFILEHANDLE "-sf_mc ".$active_parameter_href->{sv_vcfparser_select_file_matching_column}." ";  #Column of HGNC Symbol in SelectFile (-sf)
 
 		if (@{ $active_parameter_href->{sv_vcfparser_select_feature_annotation_columns} }) {
@@ -8862,7 +8862,7 @@ sub sv_vcfparser {
 	    collect_sub_databases({sample_info_href => $sample_info_href,
 				   family_id_ref => $family_id_ref,
 				   program_name_ref => \$program_name,
-				   database_file => catfile($$reference_dir_ref, $active_parameter_href->{sv_vcfparser_select_file}),
+				   database_file => catfile($active_parameter_href->{sv_vcfparser_select_file}),
 				   database_key => "SelectFile",
 				  });
 
@@ -8939,7 +8939,7 @@ sub sv_vcfparser {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 1,
+		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -9228,7 +9228,7 @@ sub sv_varianteffectpredictor {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 1,
+		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -9591,7 +9591,7 @@ sub sv_combinevariantcallsets {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 7,
+		    dependencies => "chain_and_parallel_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name,
 		    parallel_chains_ref => \@parallel_chains,
@@ -9855,7 +9855,7 @@ sub cnvnator {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $$sample_id_ref,
-		    dependencies => 1,
+		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name,
 		   });
@@ -10094,7 +10094,7 @@ sub delly {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $$sample_id_ref,
-		    dependencies => 1,
+		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name,
 		   });
@@ -10269,7 +10269,7 @@ sub manta {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 1,
+		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name,
 		   });
@@ -10447,7 +10447,7 @@ sub findtranslocations {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $$sample_id_ref,
-		    dependencies => 1,
+		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name,
 		   });
@@ -10711,7 +10711,7 @@ sub samtools_mpileup {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 1,
+		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name,
 		   });
@@ -10934,7 +10934,7 @@ sub freebayes {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 1,
+		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name,
 		   });
@@ -11174,7 +11174,7 @@ sub gatk_haplotypecaller {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $$sample_id_ref,
-		    dependencies => 1,
+		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -11518,7 +11518,7 @@ sub gatk_baserecalibration {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $$sample_id_ref,
-		    dependencies => 1,
+		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -11820,7 +11820,7 @@ sub gatk_realigner {
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
 			sample_id => $$sample_id_ref,
-			dependencies => 1,
+			dependencies => "case_dependency",
 			path => $parameter_href->{"p".$program_name}{chain},
 			sbatch_file_name => $file_name
 		       });
@@ -12077,7 +12077,7 @@ sub picardtools_markduplicates {
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
 			sample_id => $$sample_id_ref,
-			dependencies => 1,
+			dependencies => "case_dependency",
 			path => $parameter_href->{"p".$program_name}{chain},
 			sbatch_file_name => $file_name
 		       });
@@ -12333,7 +12333,7 @@ sub sambamba_markduplicates {
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
 			sample_id => $$sample_id_ref,
-			dependencies => 1,
+			dependencies => "case_dependency",
 			path => $parameter_href->{"p".$program_name}{chain},
 			sbatch_file_name => $file_name
 		       });
@@ -12820,7 +12820,7 @@ sub picardtools_mergesamfiles {
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
 			sample_id => $$sample_id_ref,
-			dependencies => 1,
+			dependencies => "case_dependency",
 			path => $parameter_href->{"p".$program_name}{chain},
 			sbatch_file_name => $file_name
 		       });
@@ -12979,7 +12979,7 @@ sub bwa_sampe {
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
 			sample_id => $sample_id,
-			dependencies => 3,
+			dependencies => "sample_id_dependency_step_in_parallel",
 			path => $parameter_href->{"p".$program_name}{chain},
 			sbatch_file_name => $file_name,
 			sbatch_script_tracker => $infile_counter
@@ -13110,7 +13110,7 @@ sub bwa_aln {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $sample_id,
-		    dependencies => 1,
+		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -13255,7 +13255,7 @@ sub picardtools_mergerapidreads {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $$sample_id_ref,
-		    dependencies => 1,
+		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -13468,7 +13468,7 @@ sub bwa_mem {
 				job_id_href => $job_id_href,
 				infile_lane_no_ending_href => $infile_lane_no_ending_href,
 				sample_id => $$sample_id_ref,
-				dependencies => 3,
+				dependencies => "sample_id_dependency_step_in_parallel",
 				path => $parameter_href->{"p".$program_name}{chain},
 				sbatch_file_name => $file_name,
 				sbatch_script_tracker => $total_sbatch_counter
@@ -13712,7 +13712,7 @@ sub bwa_mem {
 			    job_id_href => $job_id_href,
 			    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 			    sample_id => $$sample_id_ref,
-			    dependencies => 3,
+			    dependencies => "sample_id_dependency_step_in_parallel",
 			    path => $parameter_href->{"p".$program_name}{chain},
 			    sbatch_file_name => $file_name,
 			    sbatch_script_tracker => $infile_counter
@@ -13959,7 +13959,7 @@ sub mosaik_aligner {
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
 			sample_id => $sample_id,
-			dependencies => 3,
+			dependencies => "sample_id_dependency_step_in_parallel",
 			path => $parameter_href->{"p".$program_name}{chain},
 			sbatch_file_name => $file_name,
 			sbatch_script_tracker => $sbatch_script_tracker
@@ -14096,7 +14096,7 @@ sub mosaik_build {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $$sample_id_ref,
-		    dependencies => 1,
+		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -14680,7 +14680,7 @@ sub madeline {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 2,
+		    dependencies => "case_dependency_dead_end",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -14857,7 +14857,7 @@ sub fastqc {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $$sample_id_ref,
-		    dependencies => 2,
+		    dependencies => "case_dependency_dead_end",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -14981,7 +14981,7 @@ sub gzip_fastq {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $sample_id,
-		    dependencies => 0,
+		    dependencies => "no_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -15157,7 +15157,7 @@ sub split_fastq_file {
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
 			sample_id => $$sample_id_ref,
-			dependencies => 2,
+			dependencies => "case_dependency_dead_end",
 			path => $parameter_href->{"p".$program_name}{chain},
 			sbatch_file_name => $file_name
 		       });
@@ -15357,7 +15357,7 @@ sub build_annovar_prerequisites {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 6,
+		    dependencies => "no_dependency_add_to_case",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -15462,7 +15462,7 @@ sub build_downloadable_prerequisites {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 6,
+		    dependencies => "no_dependency_add_to_case",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -15655,7 +15655,7 @@ sub build_ptchs_metric_prerequisites {
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
-			dependencies => 6,
+			dependencies => "no_dependency_add_to_case",
 			path => "MIP",
 			sbatch_file_name => $file_name
 		       });
@@ -15782,7 +15782,7 @@ sub build_bwa_prerequisites {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 6,
+		    dependencies => "no_dependency_add_to_case",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -15910,7 +15910,7 @@ sub build_mosaikaligner_prerequisites {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => 6,
+		    dependencies => "no_dependency_add_to_case",
 		    path => $parameter_href->{"p".$program_name}{chain},
 		    sbatch_file_name => $file_name
 		   });
@@ -16391,7 +16391,7 @@ sub build_human_genome_prerequisites {
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
-			dependencies => 6,
+			dependencies => "no_dependency_add_to_case",
 			path => "MIP",
 			sbatch_file_name => $file_name
 		       });
@@ -17069,15 +17069,15 @@ sub submit_job {
 
 ###Dependencies
 
-##-1 = Not dependent on earlier scripts, and are self cul-de-sâcs
-##0 = Not dependent on earlier scripts
-##1 = Dependent on earlier scripts (within sample_id_path or family_id_path)
-##2 = Dependent on earlier scripts (within sample_id_path or family_id_path), but are self cul-de-sâcs.
-##3 = Dependent on earlier scripts and executed in parallel within step
-##4 = Dependent on earlier scripts and parallel scripts and executed in parallel within step
-##5 = Dependent on earlier scripts both family and sample and adds to both family_id and sampleId jobs
-##6 = Not dependent on earlier scripts and adds to sampleId jobs and family_id jobs, but sbatch is processed at family level i.e. affects all sample_id jobs e.g. building a reference
-##7 = Dependent on all earlier scripts in selected chains for family_id jobs i.e. wait for chains jobs before launching
+##-1 = Not dependent on earlier scripts, and are self cul-de-sâcs (no_dependency_dead_end).
+##0 = Not dependent on earlier scripts (no_dependency).
+##1 = Dependent on earlier scripts within sample_id_path or family_id_path (case_dependency).
+##2 = Dependent on earlier scripts within sample_id_path or family_id_path, but are self cul-de-sâcs (case_dependency_dead_end).
+##3 = Dependent on earlier scripts and executed in parallel within step (sample_id_dependency_step_in_parallel)
+##4 = Dependent on earlier scripts and parallel scripts and executed in parallel within step (sample_id_and_parallel_dependency_step_in_parallel)
+##5 = Dependent on earlier scripts both family_id and sample_id and adds to both family_id and sample_id jobs (case_dependency_add_to_case)
+##6 = Not dependent on earlier scripts and adds to sample_id jobs and family_id jobs, but sbatch is processed at family level i.e. affects all sample_id jobs e.g. building a reference (no_dependency_add_to_case)
+##7 = Dependent on all earlier scripts in selected chains for family_id jobs i.e. wait for chains jobs before launching (chain_and_parallel_dependency)
 
 ###Chain
 ##ALL = Dependent on all earlier scripts in all chains, sampleId and family_id jobs i.e. wait for all before launching
@@ -17108,7 +17108,16 @@ sub submit_job {
 	parallel_chains_ref => { default => [], strict_type => 1, store => \$parallel_chains_ref},
 	sample_id => { strict_type => 1, store => \$sample_id},
 	dependencies => { required => 1, defined => 1,
-			  allow => [-1, 0, 1, 2, 3, 4, 5, 6, 7],
+			  allow => ["no_dependency_dead_end",
+				    "no_dependency",
+				    "case_dependency",
+				    "case_dependency_dead_end",
+				    "sample_id_dependency_step_in_parallel",
+				    "sample_id_and_parallel_dependency_step_in_parallel",
+				    "case_dependency_add_to_case",
+				    "no_dependency_add_to_case",
+				    "chain_and_parallel_dependency",
+			      ],
 			  strict_type => 1, store => \$dependencies},
 	path => { required => 1, defined => 1, strict_type => 1, store => \$path},
 	sbatch_file_name => { required => 1, defined => 1, strict_type => 1, store => \$sbatch_file_name},
@@ -17143,12 +17152,12 @@ sub submit_job {
     my $family_id_chain_key = $$family_id_ref."_".$path;  #Family chainkey
     my $job_id;  #The job_id that is returned from submission
 
-    if ($dependencies == -1) {  #Initiate chain - No dependencies, lonely program "sapling"
+    if ($dependencies eq "no_dependency_dead_end") {  #Initiate chain - No dependencies, lonely program "sapling"
 
 	$job_ids_return = `sbatch $sbatch_file_name`;  #No jobs have been run: submit
 	($job_id) = ($job_ids_return =~ /Submitted batch job (\d+)/);  #Just submitted job_id
     }
-    if ($dependencies == 6) {  #Initiate chain - No dependencies, adds to all sample_id(s) and family_id
+    if ($dependencies eq "no_dependency_add_to_case") {  #Initiate chain - No dependencies, adds to all sample_id(s) and family_id
 
 	$job_ids_return = `sbatch $sbatch_file_name`;  #No jobs have been run: submit
 	($job_id) = ($job_ids_return =~ /Submitted batch job (\d+)/);  #Just submitted job_id
@@ -17171,7 +17180,7 @@ sub submit_job {
 			   });
 	}
     }
-    elsif ($dependencies == 0) {  #Initiate chain - No dependencies, initiate Trunk (Main or other)
+    elsif ($dependencies eq "no_dependency") {  #Initiate chain - No dependencies, initiate Trunk (Main or other)
 
 	$job_ids_return = `sbatch $sbatch_file_name`;  #No jobs have been run: submit
 	($job_id) = ($job_ids_return =~ /Submitted batch job (\d+)/);  #Just submitted job_id
@@ -17181,7 +17190,7 @@ sub submit_job {
 
 	if (defined($sample_id)) {  #Check jobs within sample_id (exception if dependencies = 5)
 
-	    if ($dependencies == 5) {  #Add family_id_sample_id jobs to current sample_id chain
+	    if ($dependencies eq "case_dependency_add_to_case") {  #Add family_id_sample_id jobs to current sample_id chain
 
 		## Saves job_id to the correct hash array depending on chaintype
 		push_to_job_id({active_parameter_href => $active_parameter_href,
@@ -17195,7 +17204,7 @@ sub submit_job {
 				chain_key_type => "merged",
 			       });
 	    }
-	    if ( ($dependencies == 1) || ($dependencies == 2) ) {  #Not parallel jobs, but check if last job submission was parallel
+	    if ( ($dependencies eq "case_dependency") || ($dependencies eq "case_dependency_dead_end") ) {  #Not parallel jobs, but check if last job submission was parallel
 
 		## Saves job_id to the correct hash array depending on chaintype
 		push_to_job_id({active_parameter_href => $active_parameter_href,
@@ -17211,7 +17220,8 @@ sub submit_job {
 	    }
 	    if ( (defined($path)) && ($path eq "MAIN") ) {
 
-		if ( ($dependencies == 4) || ($dependencies == 3) ) {  #Parallel jobs
+		if ( ($dependencies eq "sample_id_and_parallel_dependency_step_in_parallel")
+		     || ($dependencies eq "sample_id_dependency_step_in_parallel") ) {  #Parallel jobs
 
 		    ## Add to job_id string
 		    $job_ids = add_to_job_id({job_id_href => $job_id_href,
@@ -17275,7 +17285,7 @@ sub submit_job {
 		$job_ids_return = `sbatch $sbatch_file_name`;  #No jobs have been run: submit
 		($job_id) = ($job_ids_return =~ /Submitted batch job (\d+)/);  #Just submitted job_id
 	    }
-	    if ($dependencies == 1) {  #Ordinary job push to array
+	    if ($dependencies eq "case_dependency") {  #Ordinary job push to array
 
 		@{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} } = ();  #Clear latest family_id/sample_id chain submission
 
@@ -17291,11 +17301,12 @@ sub submit_job {
 		}
 		push ( @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} }, $job_id);  #Add job_id to hash
 	    }
-	    if ( ($dependencies == 3) || ($dependencies == 4) ) {  #Parallel job wait to push to array until all parallel jobs are finished within step
+	    if ( ($dependencies eq "sample_id_dependency_step_in_parallel")
+		 || ($dependencies eq "sample_id_and_parallel_dependency_step_in_parallel") ) {  #Parallel job wait to push to array until all parallel jobs are finished within step
 
 		push ( @{ $job_id_href->{$family_id_chain_key}{$sample_id_parallel_chain_key} }, $job_id);  #Add job_id to hash
 	    }
-	    if ($dependencies == 5) {  #Job dependent on both family_id and sample_id push to array
+	    if ($dependencies eq "case_dependency_add_to_case") {  #Job dependent on both family_id and sample_id push to array
 
 		@{ $job_id_href->{$family_id_chain_key}{$family_id_chain_key."_".$sample_id_chain_key} } = ();  #Clear latest family_id_sample_id chainkey
 		@{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} } = ();  #Clear latest sample_id chainkey
@@ -17312,7 +17323,7 @@ sub submit_job {
 	}
 	else {  #AFTER merging to family_id
 
-	    if ($dependencies == 5) {  #Add family_id_sample_id jobs to current family_id chain
+	    if ($dependencies eq "case_dependency_add_to_case") {  #Add family_id_sample_id jobs to current family_id chain
 
 		for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {  #Check jobs for sample_id
 
@@ -17331,7 +17342,7 @@ sub submit_job {
 				   });
 		}
 	    }
-	    if ( ($dependencies == 1) || ($dependencies == 2) ) {  #Not parallel jobs, but check if last job submission was parallel
+	    if ( ($dependencies eq "case_dependency") || ($dependencies eq "case_dependency_dead_end") ) {  #Not parallel jobs, but check if last job submission was parallel
 
 		if (defined($job_id_href->{$family_id_chain_key})) {
 
@@ -17347,7 +17358,8 @@ sub submit_job {
 	    }
 	    if ( (defined($path)) && ($path eq "MAIN") && ($job_id_href->{$family_id_chain_key}{$family_id_chain_key}) ) {  #Check for any previous job_ids within path MAIN. Test for previous must be done to allow initiating from broken chain. Trunk and not first in chain
 
-		if ( ($dependencies == 4) || ($dependencies == 3) ) {  #Parallel jobs
+		if ( ($dependencies eq "sample_id_and_parallel_dependency_step_in_parallel")
+		     || ($dependencies eq "sample_id_dependency_step_in_parallel") ) {  #Parallel jobs
 
 		    ## Add to job_id string
 		    $job_ids = add_to_job_id({job_id_href => $job_id_href,
@@ -17363,7 +17375,7 @@ sub submit_job {
 					      chain_key => $family_id_chain_key,
 					     });
 		}
-		if ($dependencies == 7) {  #Add jobs from other parallel chains that have branched of from MAIN i.e. merge branch back again
+		if ($dependencies eq "chain_and_parallel_dependency") {  #Add jobs from other parallel chains that have branched of from MAIN i.e. merge branch back again
 
 		    foreach my $parallel_chain (@$parallel_chains_ref) {
 
@@ -17416,7 +17428,7 @@ sub submit_job {
 					      chain_key => $family_id_chain_key,
 					     });  #Family chain
 		}
-		elsif ($dependencies == 7) {  #Add jobs from other parallel chains that have branched of from MAIN i.e. merge branch back again
+		elsif ($dependencies eq "chain_and_parallel_dependency") {  #Add jobs from other parallel chains that have branched of from MAIN i.e. merge branch back again
 
 		    foreach my $parallel_chain (@$parallel_chains_ref) {
 
@@ -17480,7 +17492,7 @@ sub submit_job {
 		$job_ids_return = `sbatch $sbatch_file_name`;  #No jobs have been run: submit
 		($job_id) = ($job_ids_return =~ /Submitted batch job (\d+)/);
 	    }
-	    if ( ($dependencies == 1) || ($dependencies == 7) ) {  #Ordinary job push to array
+	    if ( ($dependencies eq "case_dependency") || ($dependencies eq "chain_and_parallel_dependency") ) {  #Ordinary job push to array
 
 		@{ $job_id_href->{$family_id_chain_key}{$family_id_chain_key} } = ();  #Clear latest family_id/sample_id chain submission
 
@@ -17491,11 +17503,12 @@ sub submit_job {
 		}
 		push ( @{ $job_id_href->{$family_id_chain_key}{$family_id_chain_key} }, $job_id);  #Add job_id to hash
 	    }
-	    if ( ($dependencies == 3) || ($dependencies == 4) ) {  #Parallel job wait to push to array until all parallel jobs are finished within step
+	    if ( ($dependencies eq "sample_id_dependency_step_in_parallel")
+		 || ($dependencies eq "sample_id_and_parallel_dependency_step_in_parallel") ) {  #Parallel job wait to push to array until all parallel jobs are finished within step
 
 		push ( @{ $job_id_href->{$family_id_chain_key}{$family_id_parallel_chain_key} }, $job_id);  #Add job_id to hash.
 	    }
-	    if ($dependencies == 5) {  #Job dependent on both family_id and sample_id push to array
+	    if ($dependencies eq "case_dependency_add_to_case") {  #Job dependent on both family_id and sample_id push to array
 
 		for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {  #Check jobs for sample_id
 
@@ -24506,7 +24519,7 @@ sub vt_core {
 			sample_info_href => $sample_info_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
 			job_id_href => $job_id_href,
-			dependencies => 6,
+			dependencies => "no_dependency_add_to_case",
 			path => $parameter_href->{"p".$program}{chain},
 			sbatch_file_name => $file_name
 		       });
