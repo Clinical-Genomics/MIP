@@ -506,7 +506,7 @@ sub read_infile_vcf {
 		}
 		if ($parse_vep) {
 
-		    if ( ($vep_format_field_column{SYMBOL}) && ($vep_format_field_column{HGVSc}) && ($vep_format_field_column{HGVSp})) {
+		    if ( ($vep_format_field_column{HGNC_ID}) && ($vep_format_field_column{HGVSc}) && ($vep_format_field_column{HGVSp})) {
 
 			push(@{ $meta_data_href->{info}{most_severe_consequence} }, '##INFO=<ID=most_severe_consequence,Number=.,Type=String,Description="Most severe genomic consequence.">');
 		    }
@@ -536,7 +536,7 @@ sub read_infile_vcf {
 						 vcfparser_version => $vcfparser_version,
 						});
 	    }
-	    if (@$select_feature_annotation_columns_ref) { #SelectFile annotations
+	    if ($select_feature_file) { #SelectFile annotations
 
 		write_meta_data({meta_data_href => $meta_data_href,
 				 FILEHANDLE => *STDOUT,
@@ -751,9 +751,9 @@ sub read_infile_vcf {
 
 			    if ( (defined($transcript_effects[ $vep_format_field_column{Feature} ])) && ($transcript_effects[ $vep_format_field_column{Feature} ] ne "") ) {
 
-				if (defined($transcript_effects[ $vep_format_field_column{SYMBOL} ])) {
+				if (defined($transcript_effects[ $vep_format_field_column{HGNC_ID} ])) {
 
-				    $variant_data{symbol} = $transcript_effects[ $vep_format_field_column{SYMBOL} ];  #Save HGNC Symbol
+				    $variant_data{symbol} = $transcript_effects[ $vep_format_field_column{HGNC_ID} ];  #Save HGNC Symbol
 
 				    if ($select_data{ $variant_data{symbol} }) { #Exists in selected Features
 
@@ -830,9 +830,9 @@ sub read_infile_vcf {
 
 			    my $selected_transcript_tracker = 0; #Track if any transcripts belong to selected features
 
-			    if (defined($transcript_effects[ $vep_format_field_column{SYMBOL} ])) { #Save HGNC Symbol
+			    if (defined($transcript_effects[ $vep_format_field_column{HGNC_ID} ])) { #Save HGNC Symbol
 
-				$variant_data{symbol} = $transcript_effects[ $vep_format_field_column{SYMBOL} ];
+				$variant_data{symbol} = $transcript_effects[ $vep_format_field_column{HGNC_ID} ];
 
 				if ($select_data_href->{ $variant_data{symbol} }) { #Exists in selected Features
 
@@ -851,22 +851,22 @@ sub read_infile_vcf {
 
 				    if ($selected_transcript_counter == 0) { #First selected gene
 
-					$selected_variant_data{FeatureType} = $transcript_effects[ $vep_format_field_column{Feature_type} ];
+					$selected_variant_data{feature_type} = $transcript_effects[ $vep_format_field_column{Feature_type} ];
 				    }
 				    else {
 
-					$selected_variant_data{FeatureType} .= ",".$transcript_effects[ $vep_format_field_column{Feature_type} ];
+					$selected_variant_data{feature_type} .= ",".$transcript_effects[ $vep_format_field_column{Feature_type} ];
 				    }
 				}
 
 				## Always include all transcripts in research list
 				if ($transcripts_counter == 0) { #First Gene
 
-				    $variant_data{FeatureType} = $transcript_effects[ $vep_format_field_column{Feature_type} ];
+				    $variant_data{feature_type} = $transcript_effects[ $vep_format_field_column{Feature_type} ];
 				}
 				else {
 
-				    $variant_data{FeatureType} .= ",".$transcript_effects[ $vep_format_field_column{Feature_type} ];
+				    $variant_data{feature_type} .= ",".$transcript_effects[ $vep_format_field_column{Feature_type} ];
 				}
 			    }
 			    if (defined($transcript_effects[ $vep_format_field_column{Consequence} ])) { #Save Consequence

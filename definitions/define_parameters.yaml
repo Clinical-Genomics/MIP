@@ -916,6 +916,7 @@ sv_vcfparser_range_feature_file:
    - psv_vcfparser
   data_type: SCALAR
   exists_check: file
+  mandatory: no
   reference: reference_dir
   type: path
 sv_vcfparser_range_feature_annotation_columns:
@@ -923,6 +924,7 @@ sv_vcfparser_range_feature_annotation_columns:
    - psv_vcfparser
   element_separator: ,
   data_type: ARRAY
+  mandatory: no
   type: program_argument
 sv_vcfparser_select_file:
   associated_program:
@@ -941,6 +943,7 @@ sv_vcfparser_select_feature_annotation_columns:
    - psv_vcfparser
   element_separator: ,
   data_type: ARRAY
+  mandatory: no
   type: program_argument
 psv_rankvariant:
   associated_program:
@@ -1532,6 +1535,7 @@ vcfparser_range_feature_file:
    - pvcfparser
   data_type: SCALAR
   exists_check: file
+  mandatory: no
   reference: reference_dir
   type: path
 vcfparser_range_feature_annotation_columns:
@@ -1539,6 +1543,7 @@ vcfparser_range_feature_annotation_columns:
    - pvcfparser
   element_separator: ,
   data_type: ARRAY
+  mandatory: no
   type: program_argument
 vcfparser_select_file:
   associated_program:
@@ -1557,6 +1562,7 @@ vcfparser_select_feature_annotation_columns:
    - pvcfparser
   element_separator: ,
   data_type: ARRAY
+  mandatory: no
   type: program_argument
 vcfparser_outfile_count:
   associated_program:

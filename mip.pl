@@ -4900,17 +4900,18 @@ sub vcfparser {
 
 	    print $XARGSFILEHANDLE "--padding 10 ";  #Special case for mitochondrial contig annotation
 	}
-	if ($active_parameter_href->{vcfparser_range_feature_file} ne "nouser_info") {
+	if ($active_parameter_href->{vcfparser_range_feature_file}) {
 
 	    print $XARGSFILEHANDLE "-rf ".catfile($$reference_dir_ref, $active_parameter_href->{vcfparser_range_feature_file})." ";  #List of genes to analyse separately
 
-	    if (@{ $active_parameter_href->{vcfparser_range_feature_annotation_columns} }) {
-
+	    if ( ($active_parameter_href->{vcfparser_range_feature_annotation_columns})
+		  && (@{ $active_parameter_href->{vcfparser_range_feature_annotation_columns} }) ) {
+		
 		print $XARGSFILEHANDLE "-rf_ac ";  #Range annotation columns
 		print $XARGSFILEHANDLE join(',', @{ $active_parameter_href->{vcfparser_range_feature_annotation_columns} })." ";
 	    }
 	}
-	if ($active_parameter_href->{vcfparser_select_file} ne "nouser_info") {
+	if ($active_parameter_href->{vcfparser_select_file}) {
 
 	    if (! check_entry_hash_of_array({hash_ref => $file_info_href,
 					     key => "select_file_contigs",
@@ -4921,7 +4922,8 @@ sub vcfparser {
 		print $XARGSFILEHANDLE "-sf ".catfile($active_parameter_href->{vcfparser_select_file})." ";  #List of genes to analyse separately
 		print $XARGSFILEHANDLE "-sf_mc ".$active_parameter_href->{vcfparser_select_file_matching_column}." ";  #Column of HGNC Symbol in SelectFile (-sf)
 
-		if (@{ $active_parameter_href->{vcfparser_select_feature_annotation_columns} }) {
+		if ( ($active_parameter_href->{sv_vcfparser_select_feature_annotation_columns})
+		     && (@{ $active_parameter_href->{vcfparser_select_feature_annotation_columns} }) ) {
 
 		    print $XARGSFILEHANDLE "-sf_ac ";  #Select annotation columns
 		    print $XARGSFILEHANDLE join(',', @{ $active_parameter_href->{vcfparser_select_feature_annotation_columns} })." ";
@@ -4947,15 +4949,15 @@ sub vcfparser {
 
 	    delete($sample_info_href->{$program_name});
 	}
-	if ($active_parameter_href->{vcfparser_range_feature_file} ne "nouser_info") {
+	if ($active_parameter_href->{vcfparser_range_feature_file}) {
 
 	    ## Collect databases(s) from a potentially merged select_file and adds them to sample_info
-	    collect_sub_databases({sample_info_href => $sample_info_href,
-				   family_id_ref => $family_id_ref,
-				   program_name_ref => \$program_name,
-				   database_file => catfile($$reference_dir_ref, $active_parameter_href->{vcfparser_range_feature_file}),
-				   database_key => "RangeFile",
-				  });
+	    collect_gene_panels({sample_info_href => $sample_info_href,
+				 family_id_ref => $family_id_ref,
+				 program_name_ref => \$program_name,
+				 aggregate_gene_panel_file => catfile($$reference_dir_ref, $active_parameter_href->{vcfparser_range_feature_file}),
+				 aggregate_gene_panels_key => "range_file",
+				});
 
 	    if ($active_parameter_href->{vcfparser_range_feature_file}=~/v(\d+\.\d+.\d+|\d+\.\d+)/) {
 
@@ -4963,21 +4965,21 @@ sub vcfparser {
 	    }
 	    $sample_info_href->{$program_name}{range_file}{path} = catfile($$reference_dir_ref, $active_parameter_href->{vcfparser_range_feature_file});
 	}
-	if ($active_parameter_href->{vcfparser_select_file} ne "nouser_info") {
+	if ($active_parameter_href->{vcfparser_select_file}) {
 
 	    ## Collect databases(s) from a potentially merged select_file and adds them to sample_info
-	    collect_sub_databases({sample_info_href => $sample_info_href,
-				   family_id_ref => $family_id_ref,
-				   program_name_ref => \$program_name,
-				   database_file => catfile($active_parameter_href->{vcfparser_select_file}),
-				   database_key => "SelectFile",
-				  });
+	    collect_gene_panels({sample_info_href => $sample_info_href,
+				 family_id_ref => $family_id_ref,
+				 program_name_ref => \$program_name,
+				 aggregate_gene_panel_file => catfile($active_parameter_href->{vcfparser_select_file}),
+				 aggregate_gene_panels_key => "select_file",
+				});
 
 	    if ($active_parameter_href->{vcfparser_select_file}=~/v(\d+\.\d+.\d+|\d+\.\d+)/) {
 
 		$sample_info_href->{$program_name}{select_file}{version} = $1;
 	    }
-	    $sample_info_href->{$program_name}{select_file}{path} = catfile($$reference_dir_ref, $active_parameter_href->{vcfparser_select_file});
+	    $sample_info_href->{$program_name}{select_file}{path} = catfile($active_parameter_href->{vcfparser_select_file});
 	}
 
 	## Collect QC metadata info for later use
@@ -8785,13 +8787,14 @@ sub sv_vcfparser {
 
 	    print $XARGSFILEHANDLE "-rf ".catfile($$reference_dir_ref, $active_parameter_href->{sv_vcfparser_range_feature_file})." ";  #List of genes to analyse separately
 
-	    if (@{ $active_parameter_href->{sv_vcfparser_range_feature_annotation_columns} }) {
+	    if ( ($active_parameter_href->{sv_vcfparser_range_feature_annotation_columns})
+		  && (@{ $active_parameter_href->{sv_vcfparser_range_feature_annotation_columns} }) ) {
 
 		print $XARGSFILEHANDLE "-rf_ac ";  #Range annotation columns
 		print $XARGSFILEHANDLE join(',', @{ $active_parameter_href->{sv_vcfparser_range_feature_annotation_columns} })." ";
 	    }
 	}
-	if ($active_parameter_href->{sv_vcfparser_select_file} ne "nouser_info") {
+	if ($active_parameter_href->{sv_vcfparser_select_file}) {
 
 	    if (! check_entry_hash_of_array({hash_ref => $file_info_href,
 					     key => "select_file_contigs",
@@ -8802,7 +8805,8 @@ sub sv_vcfparser {
 		print $XARGSFILEHANDLE "-sf ".catfile($active_parameter_href->{sv_vcfparser_select_file})." ";  #List of genes to analyse separately
 		print $XARGSFILEHANDLE "-sf_mc ".$active_parameter_href->{sv_vcfparser_select_file_matching_column}." ";  #Column of HGNC Symbol in SelectFile (-sf)
 
-		if (@{ $active_parameter_href->{sv_vcfparser_select_feature_annotation_columns} }) {
+		if ( ($active_parameter_href->{sv_vcfparser_select_feature_annotation_columns})
+		     && (@{ $active_parameter_href->{sv_vcfparser_select_feature_annotation_columns} })) {
 
 		    print $XARGSFILEHANDLE "-sf_ac ";  #Select annotation columns
 		    print $XARGSFILEHANDLE join(',', @{ $active_parameter_href->{sv_vcfparser_select_feature_annotation_columns} })." ";
@@ -8840,15 +8844,15 @@ sub sv_vcfparser {
 
 	    delete($sample_info_href->{$program_name});
 	}
-	if ($active_parameter_href->{sv_vcfparser_range_feature_file} ne "nouser_info") {
+	if ($active_parameter_href->{sv_vcfparser_range_feature_file}) {
 
 	    ## Collect databases(s) from a potentially merged select_file and adds them to sample_info
-	    collect_sub_databases({sample_info_href => $sample_info_href,
-				   family_id_ref => $family_id_ref,
-				   program_name_ref => \$program_name,
-				   database_file => catfile($$reference_dir_ref, $active_parameter_href->{sv_vcfparser_range_feature_file}),
-				   database_key => "RangeFile",
-				  });
+	    collect_gene_panels({sample_info_href => $sample_info_href,
+				 family_id_ref => $family_id_ref,
+				 program_name_ref => \$program_name,
+				 aggregate_gene_panel_file => catfile($$reference_dir_ref, $active_parameter_href->{sv_vcfparser_range_feature_file}),
+				 aggregate_gene_panels_key => "range_file",
+				});
 
 	    if ($active_parameter_href->{sv_vcfparser_range_feature_file}=~/v(\d+\.\d+.\d+|\d+\.\d+)/) {
 
@@ -8856,21 +8860,21 @@ sub sv_vcfparser {
 	    }
 	    $sample_info_href->{$program_name}{range_file}{path} = catfile($$reference_dir_ref, $active_parameter_href->{sv_vcfparser_range_feature_file});
 	}
-	if ($active_parameter_href->{sv_vcfparser_select_file} ne "nouser_info") {
+	if ($active_parameter_href->{sv_vcfparser_select_file}) {
 
 	    ## Collect databases(s) from a potentially merged select_file and adds them to sample_info
-	    collect_sub_databases({sample_info_href => $sample_info_href,
-				   family_id_ref => $family_id_ref,
-				   program_name_ref => \$program_name,
-				   database_file => catfile($active_parameter_href->{sv_vcfparser_select_file}),
-				   database_key => "SelectFile",
-				  });
+	    collect_gene_panels({sample_info_href => $sample_info_href,
+				 family_id_ref => $family_id_ref,
+				 program_name_ref => \$program_name,
+				 aggregate_gene_panel_file => catfile($active_parameter_href->{sv_vcfparser_select_file}),
+				 aggregate_gene_panels_key => "select_file",
+				});
 
 	    if ($active_parameter_href->{sv_vcfparser_select_file}=~/v(\d+\.\d+.\d+|\d+\.\d+)/) {
 
 		$sample_info_href->{$program_name}{select_file}{version} = $1;
 	    }
-	    $sample_info_href->{$program_name}{select_file}{path} = catfile($$reference_dir_ref, $active_parameter_href->{sv_vcfparser_select_file});
+	    $sample_info_href->{$program_name}{select_file}{path} = catfile($active_parameter_href->{sv_vcfparser_select_file});
 	}
 
 	## Collect QC metadata info for later use
@@ -20705,7 +20709,7 @@ sub collect_select_file_contigs {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $pquery_seq_dict = q?perl -nae 'if ($_=~/contig\=\<ID\=(\w+)/) {print $1, ",";} if($_=~/#CHROM/) {last;}' ?;
+    my $pquery_seq_dict = q?perl -nae 'if ($_=~/contig\=(\w+)/) {print $1, ",";} if($_=~/#CHROM/) {last;}' ?;
     @$contigs_ref = `$pquery_seq_dict $select_file_path `;  #Returns a comma seperated string of sequence contigs from file
     @$contigs_ref = split(/,/,join(',', @$contigs_ref));
 
@@ -23447,18 +23451,18 @@ sub enable_trap {
 }
 
 
-sub collect_sub_databases {
+sub collect_gene_panels {
 
-##collect_sub_databases
+##collect_gene_panels
 
 ##Function : Collect databases(s) from a database file and adds them to sample_info
 ##Returns  : ""
-##Arguments: $sample_info_href, $family_id_ref, $program_name_ref, $database_file, $database_key
-##         : $sample_info_href => Info on samples and family hash {REF}
-##         : $family_id_ref    => The family ID {REF}
-##         : $program_name_ref => The program name {REF}
-##         : $database_file    => The database file
-##         : $database_key     => The database key i.e. select or range
+##Arguments: $sample_info_href, $family_id_ref, $program_name_ref, $aggregate_gene_panel_file, $aggregate_gene_panels_key
+##         : $sample_info_href          => Info on samples and family hash {REF}
+##         : $family_id_ref             => The family ID {REF}
+##         : $program_name_ref          => The program name {REF}
+##         : $aggregate_gene_panel_file => The database file
+##         : $aggregate_gene_panels_key => The database key i.e. select or range
 
     my ($arg_href) = @_;
 
@@ -23466,74 +23470,65 @@ sub collect_sub_databases {
     my $sample_info_href;
     my $family_id_ref;
     my $program_name_ref;
-    my $database_file;
-    my $database_key;
+    my $aggregate_gene_panel_file;
+    my $aggregate_gene_panels_key;
 
     my $tmpl = {
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	family_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$family_id_ref},
 	program_name_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$program_name_ref},
-	database_file => { required => 1, defined => 1, strict_type => 1, store => \$database_file},
-	database_key => { required => 1, defined => 1, strict_type => 1, store => \$database_key},
+	aggregate_gene_panel_file => { required => 1, defined => 1, strict_type => 1, store => \$aggregate_gene_panel_file},
+	aggregate_gene_panels_key => { required => 1, defined => 1, strict_type => 1, store => \$aggregate_gene_panels_key},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my %member_database;  #Collect each member database features
-    my %header = ("Database=<ID" => "FileName",
-		  Version => "Version",
-		  Acronym => "Acronym",
-		  Clinical_db_genome_build => "GenomeBuild",
-		  Date => "Date",
-		  'Complete_name' => "CompleteName",
+    my %gene_panel;  #Collect each gene panel features
+    my %header = (gene_panel => "gene_panel",
+		  version => "version",
+		  updated_at => "updated_at",
+		  display_name => "display_name",
 	);
 
-    my $sub_database_regexp = q?perl -nae 'if ($_=~/^##Database=<ID=/) {chomp($_);my @entries=split(/,/, $_); my $entry = join(",", $_); print $entry.":" } if($_=~/^#\w/) {last;}'?;
-    my $ret = `$sub_database_regexp $database_file`;  #Collect databases(s) from select_file header
-    my @databases = split(/:/, $ret);  #Split each member database into array element
+    my $sub_database_regexp = q?perl -nae 'if ($_=~/^##gene_panel=/) {chomp($_);my @entries=split(/,/, $_); my $entry = join(",", $_); print $entry.":" } if($_=~/^#\w/) {last;}'?;
+    my $ret = `$sub_database_regexp $aggregate_gene_panel_file`;  #Collect header_lines(s) from select_file header
+    my @header_lines = split(/:/, $ret);  #Split each gene panel meta data header line into array element
 
-    foreach my $line (@databases) {
+  LINE:
+    foreach my $line (@header_lines) {
 
 	my @features = split(/,/, $line);  #Split each memember database line into features
 
+      ELEMENT:
 	foreach my $feature_element (@features) {
 
-	    foreach my $database_file_header (keys %header) {  #Parse the features using defined header keys
+	    KEY_VALUE:
+	    foreach my $gene_panel_header_element (keys %header) {  #Parse the features using defined header keys
 
-		if ($feature_element=~/^##$database_file_header=(\S+)/) {  #Special case to resolve that "=" occurs two times within feature_element
-
-		    $member_database{ $header{$database_file_header} } = $1;
-		    last;
-		}
-		elsif ($feature_element=~/$database_file_header=/) {
-
+		if ($feature_element=~/$gene_panel_header_element=/) {
+		    
 		    my @temps = split("=", $feature_element);
-		    $member_database{ $header{$database_file_header} } = $temps[1];  #Value
+		    $gene_panel{ $header{$gene_panel_header_element} } = $temps[1];  #Value
 		    last;
 		}
 	    }
 	}
 
-	if ( (defined($member_database{FileName})) && (defined($member_database{Acronym})) ) {
-
-	    my $database_name = $member_database{FileName}."_".$member_database{Acronym};  #Create unique member database ID
+	if (defined($gene_panel{gene_panel})) {
+	    
+	    my $gene_panel_name = $gene_panel{gene_panel};  #Create unique gene panel ID
 
 	    ## Add new entries
-	    foreach my $feature (keys %member_database) {
+	    foreach my $feature (keys %gene_panel) {
 
-		if ($feature eq "Date") {
-
-		    my $parsed_date = Time::Piece->strptime($member_database{$feature}, "%Y%m%d");
-		    $member_database{$feature} = $parsed_date->ymd;
-		}
-		$sample_info_href->{$$program_name_ref}{$database_key}{database}{$database_name}{$feature} = $member_database{$feature};
+		$sample_info_href->{$$program_name_ref}{$aggregate_gene_panels_key}{gene_panel}{$gene_panel_name}{$feature} = $gene_panel{$feature};
 	    }
 	}
 	else {
 
-	    $logger->warn("Unable to write ".$database_key." database to qc_sample_info. Lacking ##Database=<ID=[?] or Acronym=[?] in database header."."\n");
+	    $logger->warn("Unable to write ".$aggregate_gene_panels_key." aggregate gene panel(s) to qc_sample_info. Lacking ##gene_panel=<ID=[?] or version=[?] in aggregate gene panel(s) header."."\n");
 	}
-	%member_database = ();  #Reset hash for next line
+	%gene_panel = ();  #Reset hash for next line
     }
 }
 
