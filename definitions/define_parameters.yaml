@@ -1279,6 +1279,31 @@ pprepareforvariantannotationblock:
   default: 1
   file_tag: nofile_tag
   type: program
+##rhocall
+prhocall:
+  associated_program:
+   - mip
+  chain: MAIN
+  data_type: SCALAR
+  default: 1
+  file_tag: rhocall_
+  program_name_path:
+   - rhocall
+   - bcftools
+  file_endings:
+   - .vcf
+  remove_redundant_file: yes
+  remove_redundant_file_setting: variant_annotation
+  type: program
+rhocall_frequency_file:
+  associated_program:
+   - prhocall
+  build_file: no_auto_build
+  data_type: SCALAR
+  default: anon_SweGen_161019_snp_freq_hg19.tab.gz
+  exists_check: file
+  reference: reference_dir
+  type: path
 ##VT
 pvt:
   associated_program:
