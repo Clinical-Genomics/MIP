@@ -17069,7 +17069,7 @@ sub submit_job {
 ##         : $sbatch_file_name           => Sbatch filename to submit
 ##         : $sbatch_script_tracker      => Track the number of parallel processes (e.g. sbatch scripts for a module)
 ##         : $family_id_ref              => Family id {REF}
-##         : $job_dependency_type        => The job dependency type
+##         : $job_dependency_type        => Job dependency type
 
 ###Dependencies
 
@@ -17152,19 +17152,20 @@ sub submit_job {
 	}
     }
     my $job_ids = "";  #Create string with all previous job_ids
-    my $job_ids_return;  #Return job_id
     my $family_id_chain_key = $$family_id_ref."_".$path;  #Family chainkey
     my $job_id;  #The job_id that is returned from submission
 
     if ($dependencies eq "no_dependency_dead_end") {  #Initiate chain - No dependencies, lonely program "sapling"
 
-	$job_ids_return = `sbatch $sbatch_file_name`;  #No jobs have been run: submit
-	($job_id) = ($job_ids_return =~ /Submitted batch job (\d+)/);  #Just submitted job_id
+	## Sumit jobs to sbatch
+	$job_id = submit_jobs_to_sbatch({sbatch_file_name => $sbatch_file_name,
+					});
     }
     if ($dependencies eq "no_dependency_add_to_case") {  #Initiate chain - No dependencies, adds to all sample_id(s) and family_id
 
-	$job_ids_return = `sbatch $sbatch_file_name`;  #No jobs have been run: submit
-	($job_id) = ($job_ids_return =~ /Submitted batch job (\d+)/);  #Just submitted job_id
+	## Sumit jobs to sbatch
+	$job_id = submit_jobs_to_sbatch({sbatch_file_name => $sbatch_file_name,
+					});
 
 	for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {
 
@@ -17186,8 +17187,10 @@ sub submit_job {
     }
     elsif ($dependencies eq "no_dependency") {  #Initiate chain - No dependencies, initiate Trunk (Main or other)
 
-	$job_ids_return = `sbatch $sbatch_file_name`;  #No jobs have been run: submit
-	($job_id) = ($job_ids_return =~ /Submitted batch job (\d+)/);  #Just submitted job_id
+	## Sumit jobs to sbatch
+	$job_id = submit_jobs_to_sbatch({sbatch_file_name => $sbatch_file_name,
+					});
+
 	push ( @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} }, $job_id);  #Add job_id to hash
     }
     else {  #Dependent on earlier scripts and/or parallel. JobIDs that do not leave dependencies do not get pushed to job_id hash
@@ -17281,13 +17284,17 @@ sub submit_job {
 	    }
 	    if ($job_ids) {  #Previous jobs for chainkey exists
 
-		$job_ids_return = `sbatch --dependency=$job_dependency_type$job_ids $sbatch_file_name`;  #Supply with dependency of previous jobs that this one is dependent on
-		($job_id) = ($job_ids_return =~ /Submitted batch job (\d+)/);  #Just submitted job_id
+		## Sumit jobs to sbatch
+		$job_id = submit_jobs_to_sbatch({sbatch_file_name => $sbatch_file_name,
+						 job_dependency_type => $job_dependency_type,
+						 job_ids => $job_ids,
+						});
 	    }
 	    else {  #No previous jobs
 
-		$job_ids_return = `sbatch $sbatch_file_name`;  #No jobs have been run: submit
-		($job_id) = ($job_ids_return =~ /Submitted batch job (\d+)/);  #Just submitted job_id
+		## Sumit jobs to sbatch
+		$job_id = submit_jobs_to_sbatch({sbatch_file_name => $sbatch_file_name,
+						});
 	    }
 	    if ($dependencies eq "case_dependency") {  #Ordinary job push to array
 
@@ -17488,13 +17495,17 @@ sub submit_job {
 	    }
 	    if ($job_ids) {
 
-		$job_ids_return = `sbatch --dependency=$job_dependency_type$job_ids $sbatch_file_name`;  #Supply with dependency of previous jobs that this one is dependent on
-		($job_id) = ($job_ids_return =~ /Submitted batch job (\d+)/);
+		## Sumit jobs to sbatch
+		$job_id = submit_jobs_to_sbatch({sbatch_file_name => $sbatch_file_name,
+						 job_dependency_type => $job_dependency_type,
+						 job_ids => $job_ids,
+						});
 	    }
 	    else {
 
-		$job_ids_return = `sbatch $sbatch_file_name`;  #No jobs have been run: submit
-		($job_id) = ($job_ids_return =~ /Submitted batch job (\d+)/);
+		## Sumit jobs to sbatch
+		$job_id = submit_jobs_to_sbatch({sbatch_file_name => $sbatch_file_name,
+						});
 	    }
 	    if ( ($dependencies eq "case_dependency") || ($dependencies eq "chain_and_parallel_dependency") ) {  #Ordinary job push to array
 
@@ -17532,17 +17543,63 @@ sub submit_job {
 	    push( @{ $job_id_href->{ALL}{ALL} }, $job_id);  #Add job_id to hash
 	}
     }
-    if ($job_ids_return !~/\d+/) {  #Catch errors since, propper sbatch submission should only return numbers
 
-	$logger->fatal($job_ids_return."\n");
-	$logger->fatal("MIP: Aborting run.\n");
-	exit 1;
-    }
     $logger->info("Sbatch script submitted, job id: $job_id\n");
     $logger->info("To check status of job, please run \'squeue -j $job_id\'\n");
     $logger->info("To cancel job, please run \'scancel $job_id\'\n");
 
     push( @{ $job_id_href->{PAN}{PAN} }, $job_id);  #Add job_id to hash for sacct processing downstream
+}
+
+
+sub submit_jobs_to_sbatch {
+
+##submit_sbatch_to_sbatch
+
+##Function : Sumit jobs to sbatch
+##Returns  : "$job_id"
+##Arguments: $sbatch_file_name, $job_dependency_type, $job_ids
+##         : sbatch_file_name     => Sbatch file to submit
+##         : $job_dependency_type => Job dependency type
+##         : $job_ids             => Job ids string
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $sbatch_file_name;
+    my $job_dependency_type;
+    my $job_ids;
+
+    my $tmpl = { 
+	sbatch_file_name => { required => 1, defined => 1, strict_type => 1, store => \$sbatch_file_name},
+	job_dependency_type => { strict_type => 1, store => \$job_dependency_type},
+	job_ids => { strict_type => 1, store => \$job_ids},
+    };
+    
+   
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    my $job_ids_return;
+    my $job_id;
+
+    if($job_ids) {  #Current submission should use dependencies
+
+	$job_ids_return = `sbatch --dependency=$job_dependency_type$job_ids $sbatch_file_name`;  #Supply with dependency of previous jobs that this one is dependent on
+	($job_id) = ($job_ids_return =~ /Submitted batch job (\d+)/);  #Just submitted job_id
+	
+    }
+    else {  #No dependencies
+
+	$job_ids_return = `sbatch $sbatch_file_name`;  #No jobs have been run: submit
+	($job_id) = ($job_ids_return =~ /Submitted batch job (\d+)/);  #Just submitted job_id
+    }
+    if ($job_ids_return !~/\d+/) {  #Catch errors since, propper sbatch submission should only return numbers
+	
+	$logger->fatal($job_ids_return."\n");
+	$logger->fatal("MIP: Aborting run.\n");
+	exit 1;
+    }
+    return $job_id;
 }
 
 
