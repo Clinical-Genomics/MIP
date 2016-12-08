@@ -150,7 +150,7 @@ if($infile =~/.selected.vcf/) {
     ## Reads a file containg features to be annotated using range queries
     read_range_file({vcfparser_data_href => \%vcfparser_data,
 		     range_coulumns_ref => \@{ $active_parameter{vcfparser_select_feature_annotation_columns} },
-		     infile_path => catfile($active_parameter{reference_dir}, $active_parameter{vcfparser_select_file}),
+		     infile_path => catfile($active_parameter{vcfparser_select_file}),
 		     range_file_key => "select_file",
 		    });
 }
