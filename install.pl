@@ -45,6 +45,8 @@ BEGIN {
 	   -vepc/--vep_cache_dir Specify the cache directory to use (whole path; defaults to "~/miniconda/envs/conda_environment/ensembl-tools-release-varianteffectpredictorVersion/cache")
            -vepa/--vep_assemblies Select the assembly version (Default: ["GRCh37"])
            -vepp/--vep_plugin Supply a comma separated list of VEP plugins (Default: "UpDownDistance,LoFtool,LoF")
+           -rhc/--rhocall Set the rhocall version (Default: "0.1")
+           -rhcp/--rhocall_path Set the path to where to install rhocall (Defaults: "HOME/rhocall")
 
            ## Utility
            -psh/--prefer_shell Shell will be used for overlapping shell and biconda installations (Supply flag to enable)
@@ -116,6 +118,9 @@ $parameter{plink2} = "160316";
 $parameter{snpeff} = "v4_2";
 $parameter{varianteffectpredictor} = "85";
 $parameter{vep_plugin} = "UpDownDistance,LoFtool,LoF";
+$parameter{rhocall} = "0.1";
+$parameter{rhocall_path} = catdir($ENV{HOME}, "rhocall");
+
 #$parameter{cnvnator} = "0.3.2";
 #$parameter{findtranslocations} = "0";
 
@@ -142,6 +147,8 @@ GetOptions('env|conda_environment:s'  => \$parameter{conda_environment},
 	   'vepc|vep_cache_dir:s' => \$parameter{vep_cache_dir},  #path to vep cache dir
 	   'vepa|vep_assemblies:s' => \@{ $parameter{vep_assemblies} },  #Select assembly version to use
 	   'vepp|vep_plugin:s' => \$parameter{vep_plugin},  #Comma sep string
+	   'rhc|rhocall:s' => \$parameter{rhocall},
+	   'rhcp|rhocall_path:s' => \$parameter{rhocall_path},
 #	   'cnv|cnvnator:s' => \$parameter{cnvnator},
 #	   'ftr|findtranslocations:s' => \$parameter{findtranslocations},
 	   'psh|prefer_shell' => \$parameter{prefer_shell},  # Shell will be used for overlapping shell and biconda installations
@@ -193,9 +200,9 @@ install_bioconda_modules({parameter_href => \%parameter,
 			  FILEHANDLE => $BASHFILEHANDLE,
 			 });
 
-if (@{$parameter{select_programs}}) {
+if (@{ $parameter{select_programs} }) {
 
-    if ( ( grep {$_ eq "perl"} @{$parameter{select_programs}} ) ) { #If element is part of array
+    if ( ( grep {$_ eq "perl"} @{ $parameter{select_programs} } ) ) { #If element is part of array
 
 	perl({parameter_href => \%parameter,
 	      FILEHANDLE => $BASHFILEHANDLE,
@@ -216,43 +223,49 @@ pip_install({parameter_href => \%parameter,
 
 if ($parameter{prefer_shell}) {
 
-    if (@{$parameter{select_programs}}) {
+    if (@{ $parameter{select_programs} }) {
 
-	if ( ( grep {$_ eq "picardtools"} @{$parameter{select_programs}} ) ) { #If element is part of array
+	if ( ( grep {$_ eq "picardtools"} @{ $parameter{select_programs} } ) ) { #If element is part of array
 
 	    picardtools({parameter_href => \%parameter,
 			 FILEHANDLE => $BASHFILEHANDLE,
 			});
 	}
-	if ( ( grep {$_ eq "sambamba"} @{$parameter{select_programs}} ) ) { #If element is part of array
+	if ( ( grep {$_ eq "sambamba"} @{ $parameter{select_programs} } ) ) { #If element is part of array
 
 	    sambamba({parameter_href => \%parameter,
 		      FILEHANDLE => $BASHFILEHANDLE,
 		     });
 	}
-	if ( ( grep {$_ eq "bedtools"} @{$parameter{select_programs}} ) ) { #If element is part of array
+	if ( ( grep {$_ eq "bedtools"} @{ $parameter{select_programs} } ) ) { #If element is part of array
 
 	    bedtools({parameter_href => \%parameter,
 		      FILEHANDLE => $BASHFILEHANDLE,
 		     });
 	}
-	if ( ( grep {$_ eq "vt"} @{$parameter{select_programs}} ) ) { #If element is part of array
+	if ( ( grep {$_ eq "vt"} @{ $parameter{select_programs} } ) ) { #If element is part of array
 
 	    vt({parameter_href => \%parameter,
 		FILEHANDLE => $BASHFILEHANDLE,
 	       });
 	}
-	if ( ( grep {$_ eq "snpeff"} @{$parameter{select_programs}} ) ) { #If element is part of array
+	if ( ( grep {$_ eq "snpeff"} @{ $parameter{select_programs} } ) ) { #If element is part of array
 
 	    snpeff({parameter_href => \%parameter,
 		    FILEHANDLE => $BASHFILEHANDLE,
 		   });
 	}
-	if ( ( grep {$_ eq "plink2"} @{$parameter{select_programs}} ) ) { #If element is part of array
+	if ( ( grep {$_ eq "plink2"} @{ $parameter{select_programs} } ) ) { #If element is part of array
 
 	    plink2({parameter_href => \%parameter,
 		    FILEHANDLE => $BASHFILEHANDLE,
 		   });
+	}
+	if ( ( grep {$_ eq "rhocall"} @{ $parameter{select_programs} } ) ) { #If element is part of array
+
+	    rhocall({parameter_href => \%parameter,
+		     FILEHANDLE => $BASHFILEHANDLE,
+		    });
 	}
     }
     else {
@@ -280,36 +293,40 @@ if ($parameter{prefer_shell}) {
 	plink2({parameter_href => \%parameter,
 		FILEHANDLE => $BASHFILEHANDLE,
 	       });
+
+	rhocall({parameter_href => \%parameter,
+		 FILEHANDLE => $BASHFILEHANDLE,
+		});
     }
 }
 
-if (@{$parameter{select_programs}}) {
+if (@{ $parameter{select_programs} }) {
 
-    if ( ( grep {$_ eq "vcftools"} @{$parameter{select_programs}} ) ) { #If element is part of array
+    if ( ( grep {$_ eq "vcftools"} @{ $parameter{select_programs} } ) ) { #If element is part of array
 
 	vcftools({parameter_href => \%parameter,
 		  FILEHANDLE => $BASHFILEHANDLE,
 		 });
     }
-    if ( ( grep {$_ eq "mip_scripts"} @{$parameter{select_programs}} ) ) { #If element is part of array
+    if ( ( grep {$_ eq "mip_scripts"} @{ $parameter{select_programs} } ) ) { #If element is part of array
 
 	mip_scripts({parameter_href => \%parameter,
 		     FILEHANDLE => $BASHFILEHANDLE,
 		    });
     }
-    if ( ( grep {$_ eq "varianteffectpredictor"} @{$parameter{select_programs}} ) ) { #If element is part of array
+    if ( ( grep {$_ eq "varianteffectpredictor"} @{ $parameter{select_programs} } ) ) { #If element is part of array
 
 	varianteffectpredictor({parameter_href => \%parameter,
 				FILEHANDLE => $BASHFILEHANDLE,
 			       });
     }
-#    if ( ( grep {$_ eq "cnvnator"} @{$parameter{select_programs}} ) ) { #If element is part of array
+#    if ( ( grep {$_ eq "cnvnator"} @{ $parameter{select_programs} } ) ) { #If element is part of array
 
 #	cnvnator({parameter_href => \%parameter,
 #		   FILEHANDLE => $BASHFILEHANDLE,
 #		  });
 #   }
-#    if ( ( grep {$_ eq "findtranslocations"} @{$parameter{select_programs}} ) ) { #If element is part of array
+#    if ( ( grep {$_ eq "findtranslocations"} @{ $parameter{select_programs} } ) ) { #If element is part of array
 
 #	findtranslocations({parameter_href => \%parameter,
 #			     FILEHANDLE => $BASHFILEHANDLE,
@@ -2124,6 +2141,86 @@ sub mip_scripts {
 }
 
 
+sub rhocall {
+
+##rhocall
+
+##Function : Install rhocall
+##Returns  : ""
+##Arguments: $parameter_href, $FILEHANDLE
+##         : $parameter_href => Holds all parameters
+##         : $FILEHANDLE     => Filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    my $pwd = cwd();
+
+    ## Check if the binary of the program being installed already exists
+    if (check_conda_bin_file_exists({parameter_href => $parameter_href,
+				     program_name => "rhocall",
+				    })) {
+
+	return
+    }
+
+    ## Activate conda environment
+    activate_conda_environment({parameter_href => $parameter_href,
+				FILEHANDLE => $FILEHANDLE,
+			       });
+
+    ## Install rhocall
+    print $FILEHANDLE "### Install rhocall\n";
+
+    ## Create the temporary install directory
+    create_install_dir({FILEHANDLE => $FILEHANDLE,
+			install_directory => $parameter{rhocall_path},
+		       });
+
+    ## Download
+    print $FILEHANDLE "## Download rhocall\n";
+    print $FILEHANDLE "wget --quiet https://github.com/dnil/rhocall/archive/v".$parameter_href->{rhocall}.".zip ";
+    print $FILEHANDLE "-O rhocall-".$parameter_href->{rhocall}.".zip";  #Download outfile
+    print $FILEHANDLE "\n\n";
+
+    ## Extract
+    print $FILEHANDLE "## Extract\n";
+    print $FILEHANDLE "unzip rhocall-".$parameter_href->{rhocall}.".zip";
+    print $FILEHANDLE "\n\n";
+
+    ## Move to rhocall directory
+    print $FILEHANDLE "## Move to rhocall directory\n";
+    print $FILEHANDLE "cd rhocall-".$parameter_href->{rhocall};
+    print $FILEHANDLE "\n\n";
+
+    ## Configure
+    print $FILEHANDLE "## Configure\n";
+    print $FILEHANDLE "pip install numpy Cython", "\n";
+    print $FILEHANDLE "pip install -r requirements.txt", "\n";
+    print $FILEHANDLE "pip install -e .";
+    print $FILEHANDLE "\n\n";
+
+    ## Moving up
+    print $FILEHANDLE "## Moving back to original working directory\n";
+    print $FILEHANDLE "cd ".$pwd;  #Go back to subroutine origin
+    print $FILEHANDLE "\n\n";
+
+    ## Deactivate conda environment
+    deactivate_conda_environment({FILEHANDLE => $FILEHANDLE,
+				 });
+}
+
+
 sub activate_conda_environment {
 
 ##activate_conda_environment
@@ -2243,7 +2340,6 @@ sub create_install_dir {
     my $tmpl = {
 	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
 	install_directory => { default => ".MIP",
-			       allow => qr/^\.\S+$/,
 			       strict_type => 1, store => \$install_directory},
     };
 
