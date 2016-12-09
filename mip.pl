@@ -2481,7 +2481,6 @@ if ( ($active_parameter{psacct} > 0) && ($active_parameter{dry_run_all} == 0) ) 
 	   sample_info_href => \%sample_info,
 	   infile_lane_no_ending_href => \%infile_lane_no_ending,
 	   job_id_href => \%job_id,
-	   outaligner_dir_ref => \$active_parameter{outaligner_dir},
 	   program_name => "sacct",
 	  });
 }
@@ -2506,7 +2505,7 @@ sub sacct {
 
 ##Function : Output SLURM info on each job via sacct command
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $family_id_ref, $outaligner_dir_ref,
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $family_id_ref
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -2514,13 +2513,11 @@ sub sacct {
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
-##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -2538,7 +2535,6 @@ sub sacct {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -2552,7 +2548,7 @@ sub sacct {
 					     FILEHANDLE => $FILEHANDLE,
 					     directory_id => $$family_id_ref,
 					     program_name => $program_name,
-					     program_directory => $$outaligner_dir_ref,
+					     program_directory => lc($program_name),
 					    });
 
     print $FILEHANDLE "sacct --format=jobid,jobname%50,account,partition,alloccpus,TotalCPU,elapsed,start,end,state,exitcode -j ";
