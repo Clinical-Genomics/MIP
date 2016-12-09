@@ -29,12 +29,13 @@ BEGIN {
                -si/--sample_info_file Sample info file (YAML format, Supply whole path, mandatory)
                -r/--regexp_file Regular expression file (YAML format, Supply whole path, mandatory)
                -o/--outfile The data file output (Supply whole path, defaults to "qcmetrics.yaml")
-               -preg/--print_regexp Print the regexp used at CMMS switch (Defaults to "0" (=no))
-               -prego/--print_regexp_outfile Regexp YAML outfile (Defaults to "qc_regexp.yaml")
+               -preg/--print_regexp Print the regexp used at CMMS switch (defaults to "0" (=no))
+               -prego/--print_regexp_outfile Regexp YAML outfile (defaults to "qc_regexp.yaml")
+               -ske/--skip_evaluation Skip evaluation step
                -h/--help Display this help message
                -v/--version Display version};
 }
-my ($sample_info_file, $regexp_file, $print_regexp);
+my ($sample_info_file, $regexp_file, $print_regexp, $skip_evaluation);
 my ($outfile, $print_regexp_outfile) = ("qcmetrics.yaml", "qc_regexp.yaml");
 my (%qc_data, %evaluate_metric);
 my %qc_header; #Save header(s) in each outfile
@@ -47,6 +48,7 @@ GetOptions('si|sample_info_file:s' => \$sample_info_file,
 	   'o|outfile:s'  => \$outfile,
 	   'preg|print_regexp:n' => \$print_regexp,
 	   'prego|print_regexp_outfile:s' => \$print_regexp_outfile,
+	   'ske|skip_evaluation' => \$skip_evaluation,
 	   'h|help' => sub { say STDOUT $USAGE; exit;},  #Display help text
 	   'v|version' => sub { say STDOUT "\nqccollect.pl ".$qccollect_version, "\n"; exit;},  #Display version number
     )  or help({USAGE => $USAGE,
@@ -117,11 +119,13 @@ foreach my $sample_id (keys %{ $sample_info{sample} }) {
 			   });
 }
 
+if(! $skip_evaluation) {
 
-## Evaluate the metrics
-evaluate_qc_parameters({qc_data_href => \%qc_data,
-			evaluate_metric_href => \%evaluate_metric,
-		       });
+    ## Evaluate the metrics
+    evaluate_qc_parameters({qc_data_href => \%qc_data,
+			    evaluate_metric_href => \%evaluate_metric,
+			   });
+}
 
 ## Writes a YAML hash to file
 write_yaml({yaml_href => \%qc_data,

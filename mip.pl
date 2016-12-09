@@ -291,6 +291,7 @@ mip.pl  -ifd [infile_dirs=sample_id] -sd [script_dir] -rd [reference_dir] -p [pr
                -pqcc/--pqccollect Collect QC metrics from programs processed (defaults to "1" (=yes) )
                  -qccsi/--qccollect_sampleinfo_file SampleInfo file containing info on what to parse from this analysis run (defaults to "{outdata_dir}/{family_id}/{family_id}_qc_sample_info.yaml")
                  -qccref/--qccollect_regexp_file Regular expression file containing the regular expression to be used for each program (defaults to "qc_regexp_v1.13.yaml")
+                 -qccske/--qccollect_skip_evaluation Skip evaluation step in qccollect (boolean)
                -pmqc/--pmultiqc Create aggregate bioinformatics analysis report across many samples (defaults to "1" (=yes))
                -prem/--premoveredundantfiles Generating sbatch script for deletion of redundant files (defaults to "1" (=yes);Note: Must be submitted manually to SLURM)
                -pars/--panalysisrunstatus Sets the analysis run status flag to finished in sample_info_file (defaults to "1" (=yes))
@@ -651,6 +652,7 @@ GetOptions('ifd|infile_dirs:s'  => \%{ $parameter{infile_dirs}{value} },  #Hash 
 	   'pqcc|pqccollect=n' => \$parameter{pqccollect}{value},  #QCmetrics collect
 	   'qccsi|qccollect_sampleinfo_file:s' => \$parameter{qccollect_sampleinfo_file}{value},  #SampleInfo yaml file produced by MIP
 	   'qccref|qccollect_regexp_file:s' => \$parameter{qccollect_regexp_file}{value},  #Regular expression yaml file
+	   'qccske|qccollect_skip_evaluation' => \$parameter{qccollect_skip_evaluation}{value},
 	   'pmqc|pmultiqc=n' => \$parameter{pmultiqc}{value},  #Aggregate bioinformatics reports
 	   'prem|premoveredundantfiles=n' => \$parameter{premoveredundantfiles}{value},
 	   'pars|panalysisrunstatus=n' => \$parameter{panalysisrunstatus}{value},  #analysisrunstatus change flag in sample_info file if allowed to execute
@@ -3027,6 +3029,11 @@ sub qccollect {
     print $FILEHANDLE "perl ".$active_parameter_href->{script_dir}."/qccollect.pl ";
     print $FILEHANDLE "-sample_info_file ".$active_parameter_href->{qccollect_sampleinfo_file}." ";
     print $FILEHANDLE "-regexp_file ".$$reference_dir_ref."/".$active_parameter_href->{qccollect_regexp_file}." ";
+
+    if ($active_parameter_href->{qccollect_skip_evaluation}) {
+
+	print $FILEHANDLE "--skip_evaluation ";
+    }
     say $FILEHANDLE "-o ".$outfamily_directory."/".$$family_id_ref."_qc_metrics.yaml ", "\n";
 
     close($FILEHANDLE);
