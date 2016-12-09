@@ -44,7 +44,7 @@ BEGIN {
            -vep/--varianteffectpredictor Set the VEP version (Default: "85")
 	   -vepc/--vep_cache_dir Specify the cache directory to use (whole path; defaults to "~/miniconda/envs/conda_environment/ensembl-tools-release-varianteffectpredictorVersion/cache")
            -vepa/--vep_assemblies Select the assembly version (Default: ["GRCh37"])
-           -vepp/--vep_plugin Supply a comma separated list of VEP plugins (Default: "UpDownDistance,LoFtool,LoF")
+           -vepp/--vep_plugin Supply a comma separated list of VEP plugins (Default: "UpDownDistance,LoFtool,Lof")
            -rhc/--rhocall Set the rhocall version (Default: "0.1")
            -rhcp/--rhocall_path Set the path to where to install rhocall (Defaults: "HOME/rhocall")
 
@@ -117,7 +117,7 @@ $parameter{vt} = "gitRepo";
 $parameter{plink2} = "160316";
 $parameter{snpeff} = "v4_2";
 $parameter{varianteffectpredictor} = "85";
-$parameter{vep_plugin} = "UpDownDistance,LoFtool,LoF";
+$parameter{vep_plugin} = "UpDownDistance,LoFtool,Lof";
 $parameter{rhocall} = "0.1";
 $parameter{rhocall_path} = catdir($ENV{HOME}, "rhocall");
 
@@ -1732,7 +1732,7 @@ sub varianteffectpredictor {
 	}
     }
 
-    if ( defined($parameter{vep_plugin}) && ($parameter{vep_plugin}=~/LofTool/) ) {
+    if ( defined($parameter{vep_plugin}) && ($parameter{vep_plugin}=~/Loftool/) ) {
 
 	##Add LofTool required text file
 	print $FILEHANDLE "##Add LofTool required text file\n";
