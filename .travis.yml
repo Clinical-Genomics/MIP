@@ -14,5 +14,5 @@ install:
 
 script:
 ## Run MIP install script
-  - perl install.pl -env test_environment
+  - perl install.pl -env test_environment -pei
   - bash mip.sh
