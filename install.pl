@@ -393,7 +393,11 @@ sub set_default_array_parameters {
 					       "Net::SSLeay",  # VEP
 					       "LWP::Simple",  # VEP
 					       "LWP::Protocol::https",  # VEP
-					       "Archive::Zip",  # VEP
+					       "PerlIO::gzip",  #VEP
+                                               "IO::Uncompress::Gunzip",  #VEP
+                                               #"Bio::DB::BigFile",  #VEP
+                                               "HTML::Lint",  #VEP
+                                               #"Archive::Zip",  # VEP
 					       "Archive::Extract",  #VEP
 					       "DBI",  # VEP
 					       "JSON",  # VEP
