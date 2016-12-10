@@ -41,7 +41,7 @@ BEGIN {
            -vt/--vt Set the vt version (Default: "0.57")
            -plk/--plink  Set the plink version (Default: "160224")
            -snpg/--snpeff_genome_versions Set the snpEff genome version (Default: ["GRCh37.75"])
-           -vep/--varianteffectpredictor Set the VEP version (Default: "85")
+           -vep/--varianteffectpredictor Set the VEP version (Default: "87")
 	   -vepc/--vep_cache_dir Specify the cache directory to use (whole path; defaults to "~/miniconda/envs/conda_environment/ensembl-tools-release-varianteffectpredictorVersion/cache")
            -vepa/--vep_assemblies Select the assembly version (Default: ["GRCh37"])
            -vepp/--vep_plugin Supply a comma separated list of VEP plugins (Default: "UpDownDistance,LoFtool,Lof")
@@ -116,7 +116,7 @@ $parameter{bedtools} = "2.25.0";
 $parameter{vt} = "gitRepo";
 $parameter{plink2} = "160316";
 $parameter{snpeff} = "v4_2";
-$parameter{varianteffectpredictor} = "85";
+$parameter{varianteffectpredictor} = "87";
 $parameter{vep_plugin} = "UpDownDistance,LoFtool,Lof";
 $parameter{rhocall} = "0.1";
 $parameter{rhocall_path} = catdir($ENV{HOME}, "rhocall");
