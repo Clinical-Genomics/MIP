@@ -35,6 +35,7 @@ BEGIN {
            -pev/--perl_version Set the perl version (defaults: "5.18.2")
            -pevs/--perl_skip_test Skip "tests" in perl installation
            -pm/--perl_modules Set the perl modules to be installed via cpanm (Default: ["Modern::Perl", "IPC::System::Simple", "Path::Iterator::Rule", "YAML", "Log::Log4perl", "Set::IntervalTree", "Net::SSLeay",P, "LWP::Simple", "LWP::Protocol::https", "Archive::Zip", "Archive::Extract", "DBI","JSON", "DBD::mysql", "CGI", "Sereal::Encoder", "Sereal::Decoder", "Bio::Root::Version", "Module::Build"])
+           -pmf/--perl_modules_force Force installation of perl modules
            -pic/--picardtools Set the picardtools version (Default: "2.3.0"),
            -sbb/--sambamba Set the sambamba version (Default: "0.6.1")
            -vct/--vcftools Set the vcftools version (Default: "0.1.14")
@@ -138,6 +139,7 @@ GetOptions('env|conda_environment:s'  => \$parameter{conda_environment},
 	   'pei|perl_install' => \$parameter{perl_install},
 	   'pevs|perl_skip_test' => \$parameter{perl_skip_test},
 	   'pm|perl_modules:s' => \@{ $parameter{perl_modules} },  #Comma separated list
+           'pmf|perl_modules_force' =>  \$parameter{perl_modules_force},
 	   'pic|picardtools:s' => \$parameter{picardtools},
 	   'sbb|sambamba:s' => \$parameter{sambamba},
 	   'vct|vcftools:s' => \$parameter{vcftools},
@@ -1000,6 +1002,11 @@ sub perl_modules {
     ## Install perl modules via cpanm
     print $FILEHANDLE "## Install perl modules via cpanm\n";
     print $FILEHANDLE "cpanm ";
+
+    if ($parameter{perl_modules_force}) {
+
+	print $FILEHANDLE "--force ";
+    }
     print $FILEHANDLE join(" ", @{ $parameter_href->{perl_modules} })." ";
     print $FILEHANDLE "\n\n";
 }
