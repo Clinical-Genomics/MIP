@@ -44,6 +44,7 @@ BEGIN {
            -plk/--plink  Set the plink version (Default: "160224")
            -snpg/--snpeff_genome_versions Set the snpEff genome version (Default: ["GRCh37.75"])
            -vep/--varianteffectpredictor Set the VEP version (Default: "87")
+           -vepa/--vep_auto_flag Set the VEP auto installer flags
 	   -vepc/--vep_cache_dir Specify the cache directory to use (whole path; defaults to "~/miniconda/envs/conda_environment/ensembl-tools-release-varianteffectpredictorVersion/cache")
            -vepa/--vep_assemblies Select the assembly version (Default: ["GRCh37"])
            -vepp/--vep_plugin Supply a comma separated list of VEP plugins (Default: "UpDownDistance,LoFtool,Lof")
@@ -119,6 +120,7 @@ $parameter{vt} = "gitRepo";
 $parameter{plink2} = "160316";
 $parameter{snpeff} = "v4_2";
 $parameter{varianteffectpredictor} = "87";
+$parameter{vep_auto_flag} = "alcf";
 $parameter{vep_plugin} = "UpDownDistance,LoFtool,Lof";
 $parameter{rhocall} = "0.1";
 $parameter{rhocall_path} = catdir($ENV{HOME}, "rhocall");
@@ -148,6 +150,7 @@ GetOptions('env|conda_environment:s'  => \$parameter{conda_environment},
 	   'plk|plink2:s' => \$parameter{plink2},
 	   'snpg|snpeff_genome_versions:s' => \@{ $parameter{snpeff_genome_versions} },
 	   'vep|varianteffectpredictor:s' => \$parameter{varianteffectpredictor},
+	   'vepai|vep_auto_flag:s' => \$parameter{vep_auto_flag},
 	   'vepc|vep_cache_dir:s' => \$parameter{vep_cache_dir},  #path to vep cache dir
 	   'vepa|vep_assemblies:s' => \@{ $parameter{vep_assemblies} },  #Select assembly version to use
 	   'vepp|vep_plugin:s' => \$parameter{vep_plugin},  #Comma sep string
@@ -1714,7 +1717,7 @@ sub varianteffectpredictor {
     ## Install VEP
     print $FILEHANDLE "## Install VEP\n";
     print $FILEHANDLE "perl INSTALL.pl ";
-    print $FILEHANDLE "--AUTO alcf";  #a (API), l (FAIDX/htslib), c (cache), f (FASTA)
+    print $FILEHANDLE "--AUTO ".$parameter{vep_auto_flag}." ";  #a (API), l (FAIDX/htslib), c (cache), f (FASTA)
 
     if (defined($parameter{vep_plugin})) {
 
