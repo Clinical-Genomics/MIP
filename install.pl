@@ -1717,9 +1717,9 @@ sub varianteffectpredictor {
     ## Install VEP
     print $FILEHANDLE "## Install VEP\n";
     print $FILEHANDLE "perl INSTALL.pl ";
-    print $FILEHANDLE "--AUTO ".$parameter{vep_auto_flag}." ";  #a (API), l (FAIDX/htslib), c (cache), f (FASTA)
+    print $FILEHANDLE "--AUTO ".$parameter{vep_auto_flag};  #a (API), l (FAIDX/htslib), c (cache), f (FASTA)
 
-    if (defined($parameter{vep_plugin})) {
+    if ( (defined($parameter{vep_plugin})) && ($parameter{vep_plugin} ne 0)) {
 
 	print $FILEHANDLE "p ";  #p (plugins)
 	print $FILEHANDLE "-g ".$parameter{vep_plugin}." ";  #Plugins in comma sep string
