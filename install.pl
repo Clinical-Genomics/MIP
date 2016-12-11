@@ -33,6 +33,7 @@ BEGIN {
            ## SHELL
            -pei/--perl_install Install perl (Supply flag to enable)
            -pev/--perl_version Set the perl version (defaults: "5.18.2")
+           -pevs/--perl_skip_test Skip "tests" in perl installation
            -pm/--perl_modules Set the perl modules to be installed via cpanm (Default: ["Modern::Perl", "IPC::System::Simple", "Path::Iterator::Rule", "YAML", "Log::Log4perl", "Set::IntervalTree", "Net::SSLeay",P, "LWP::Simple", "LWP::Protocol::https", "Archive::Zip", "Archive::Extract", "DBI","JSON", "DBD::mysql", "CGI", "Sereal::Encoder", "Sereal::Decoder", "Bio::Root::Version", "Module::Build"])
            -pic/--picardtools Set the picardtools version (Default: "2.3.0"),
            -sbb/--sambamba Set the sambamba version (Default: "0.6.1")
@@ -135,6 +136,7 @@ GetOptions('env|conda_environment:s'  => \$parameter{conda_environment},
 	   'pyv|python_version=s' => \$parameter{python_version},
 	   'pev|perl_version=s' => \$parameter{perl_version},
 	   'pei|perl_install' => \$parameter{perl_install},
+	   'pevs|perl_skip_test' => \$parameter{perl_skip_test},
 	   'pm|perl_modules:s' => \@{ $parameter{perl_modules} },  #Comma separated list
 	   'pic|picardtools:s' => \$parameter{picardtools},
 	   'sbb|sambamba:s' => \$parameter{sambamba},
@@ -395,9 +397,8 @@ sub set_default_array_parameters {
 					       "LWP::Protocol::https",  # VEP
 					       "PerlIO::gzip",  #VEP
                                                "IO::Uncompress::Gunzip",  #VEP
-                                               #"Bio::DB::BigFile",  #VEP
                                                "HTML::Lint",  #VEP
-                                               #"Archive::Zip",  # VEP
+                                               "Archive::Zip",  # VEP
 					       "Archive::Extract",  #VEP
 					       "DBI",  # VEP
 					       "JSON",  # VEP
@@ -926,7 +927,11 @@ sub install_perl_cpnam {
     print $FILEHANDLE "## Configure\n";
     print $FILEHANDLE q?./Configure -des -Dprefix=$HOME/perl-?.$parameter_href->{perl_version}, "\n";
     print $FILEHANDLE "make", "\n";
-    print $FILEHANDLE "make test", "\n";
+
+    if ($parameter{perl_skip_test}) {
+
+	print $FILEHANDLE "make test", "\n";
+    }
     print $FILEHANDLE "make install", "\n\n";
 
     if ($path) {
