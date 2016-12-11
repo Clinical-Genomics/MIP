@@ -14,5 +14,5 @@ install:
 
 script:
 ## Run MIP install script
-  - perl install.pl -env test_environment -pei --perl_skip_test --perl_modules_force
+  - perl install.pl -env test_environment -pei --perl_skip_test --perl_modules_force -vep 85
   - bash mip.sh
