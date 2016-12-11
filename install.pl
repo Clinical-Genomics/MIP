@@ -928,7 +928,7 @@ sub install_perl_cpnam {
     print $FILEHANDLE q?./Configure -des -Dprefix=$HOME/perl-?.$parameter_href->{perl_version}, "\n";
     print $FILEHANDLE "make", "\n";
 
-    if ($parameter{perl_skip_test}) {
+    if (! $parameter{perl_skip_test}) {
 
 	print $FILEHANDLE "make test", "\n";
     }
