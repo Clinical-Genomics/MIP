@@ -410,6 +410,7 @@ sub set_default_array_parameters {
 					       "Sereal::Decoder",  # VEP
 					       "Bio::Root::Version",  #VEP
 					       "Module::Build", #VEP
+                                               "File::Copy::Recursive", #VEP
 	];
 
     foreach my $parameter_name (keys %array_parameter) {
