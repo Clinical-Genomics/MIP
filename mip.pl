@@ -2670,18 +2670,20 @@ sub analysisrunstatus {
     }
 
     ## Test if FAIL exists in qccollect file i.e. issues with samples e.g. Sex and seq data correlation, relationship etc
-    if (defined($sample_info_href->{program}{qccollect}{outfile})) {
+    if (! $active_parameter_href->{qccollect_skip_evaluation}) {
 
-	my $qccollect_file = catfile($sample_info_href->{program}{qccollect}{outdirectory}, $sample_info_href->{program}{qccollect}{outfile});
+	if (defined($sample_info_href->{program}{qccollect}{outfile})) {
 
-	print $FILEHANDLE q?if grep -q "FAIL" ?;  #not output the matched text only return the exit status code
-	say $FILEHANDLE $qccollect_file.q?; then?;  #Infile
-	say $FILEHANDLE "\t".q?status="1"?;  #Found pattern
-	say $FILEHANDLE "\t".q?echo "qccollect status=FAILED for file: ?.$qccollect_file.q?" >&2?;  #Echo
-	say $FILEHANDLE q?else?;  #Infile is clean
-	say $FILEHANDLE "\t".q?echo "qccollect status=PASSED for file: ?.$qccollect_file.q?" >&2?;  #Echo
-	say $FILEHANDLE q?fi?, "\n";
+	    my $qccollect_file = catfile($sample_info_href->{program}{qccollect}{outdirectory}, $sample_info_href->{program}{qccollect}{outfile});
 
+	    print $FILEHANDLE q?if grep -q "FAIL" ?;  #not output the matched text only return the exit status code
+	    say $FILEHANDLE $qccollect_file.q?; then?;  #Infile
+	    say $FILEHANDLE "\t".q?status="1"?;  #Found pattern
+	    say $FILEHANDLE "\t".q?echo "qccollect status=FAILED for file: ?.$qccollect_file.q?" >&2?;  #Echo
+	    say $FILEHANDLE q?else?;  #Infile is clean
+	    say $FILEHANDLE "\t".q?echo "qccollect status=PASSED for file: ?.$qccollect_file.q?" >&2?;  #Echo
+	    say $FILEHANDLE q?fi?, "\n";
+	}
     }
 
     ## Test integrity of vcf data keys in header and body
