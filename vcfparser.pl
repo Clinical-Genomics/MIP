@@ -592,6 +592,8 @@ sub read_infile_vcf {
 		    }
 		}
 	    }
+	    my @temps = split(/;/, $line_elements[7]);  #Split INFO field to key=value items
+
 	    for my $database (keys % {$snpeff_cmd_href->{present}{database}}) { #Note that the vcf should only contain 1 database entry
 
 		if ( ($database eq "Dbsnp129LCAF") || ($database eq "DbsnpLCAF") ) {
@@ -733,6 +735,77 @@ sub read_infile_vcf {
 		say STDERR "Displaying malformed line: ".$_;
 		exit 1;
 	    }
+
+	    ## Collect key value pairs in INFO field
+	    my %record;
+	    foreach my $key_value (@temps) {
+
+		my @pairs = split(/=/, $key_value);
+
+		$record{$pairs[0]} = $pairs[1];
+	    }
+
+	    parse_vep_csq({record_href => \%record,
+			   vep_format_field_column_href => \%vep_format_field_column,
+			   select_data_href => $select_data_href,
+			   variant_data_href => \%variant_data,
+			  });
+sub parse_vep_csq {
+
+##parse_vep_csq
+
+##Function : 
+##Returns  : ""
+##Arguments: $record_href, 
+##         : $record_href => Key value pair record
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+
+    ## Flatten argument(s)
+    my $record_href;
+    my $vep_format_field_column_href;
+    my $select_data_href;
+    my $variant_data_href;
+
+    my $tmpl = { 
+	record_href  => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$record_href},
+	vep_format_field_column_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$vep_format_field_column_href},
+	select_data_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$select_data_href},
+	variant_data_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$variant_data_href},
+    };
+    
+   
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    my %variant_line_data;
+
+    if($record_href->{CSQ}) {
+
+	my @transcripts = split(/,/, $record_href->{CSQ});  #Split into transcripts
+
+	foreach my $transcript (@transcripts) {
+
+	    my @transcript_effects = split(/\|/, $transcript); #Split in "|"
+
+	    if (defined($transcript_effects[ $vep_format_field_column_href->{HGNC_ID} ])) {
+
+		$variant_data_href->{HGNC_ID} = $transcript_effects[ $vep_format_field_column_href->{HGNC_ID} ];  #Alias HGNC Symbol
+
+		if ($select_data_href->{ $variant_data_href->{HGNC_ID} }) { #Exists in selected Features
+
+		    push(@{ $variant_line_data{select} }, join("\|", @transcript_effects));  #Add to selected
+		}
+		push(@{ $variant_line_data{research} }, join("\|", @transcript_effects));  #Add to research
+	    }
+	}
+    }
+    else {
+
+	##ADD NO CSQ to variant_line_data
+    }
+}
 	    my $csq_transcripts;
 
 	    for (my $variant_effects_counter=0;$variant_effects_counter<scalar(@variant_effects);$variant_effects_counter++) {
