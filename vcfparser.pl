@@ -28,13 +28,14 @@ BEGIN {
            -sf_ac/--select_feature_annotation_columns
            -sof/--select_outfile (vcf)
            -pad/--padding (Default: "5000" nucleotides)
+           -peg/--per_gene Output most severe consequence transcript (Default: 0 (=no))
            -wst/--write_software_tag (Default: "1")
            -h/--help Display this help message
            -v/--version Display version
         };
 }
 
-my ($infile, $parse_vep, $range_feature_file, $select_feature_file, $select_feature_matching_column, $select_outfile, $write_software_tag, $padding) = ("", 0, "", "", "", "", 1, 5000);
+my ($infile, $parse_vep, $range_feature_file, $select_feature_file, $select_feature_matching_column, $select_outfile, $write_software_tag, $padding, $per_gene) = ("", 0, "", "", "", "", 1, 5000, 0);
 my (@range_feature_annotation_columns, @select_feature_annotation_columns);
 my (%consequence_severity, %range_data, %select_data, %snpeff_cmd, %tree, %meta_data);
 
@@ -62,6 +63,7 @@ GetOptions('pvep|parse_vep:s' => \$parse_vep,
 	   'sof|select_outfile:s' => \$select_outfile,
 	   'wst|write_software_tag:n' => \$write_software_tag,
 	   'pad|padding:n' => \$padding,
+	   'peg|per_gene:n' => \$per_gene,  
 	   'h|help' => sub { say STDOUT $USAGE; exit;},  #Display help text
 	   'v|version' => sub { say STDOUT "\nvcfparser.pl ".$vcfparser_version, "\n"; exit;},  #Display version number
     )  or help({USAGE => $USAGE,
@@ -135,6 +137,7 @@ read_infile_vcf({meta_data_href => \%meta_data,
 		 select_outfile_path => $select_outfile,
 		 vcfparser_version => $vcfparser_version,
 		 select_feature_file => $select_feature_file,
+		 per_gene => $per_gene,
 		 parse_vep => $parse_vep,
 		 write_software_tag => $write_software_tag,
 		});
@@ -171,22 +174,6 @@ sub define_snpeff_annotations {
 ##Function : Defines the snpEff annotations that can be parsed and modified
 ##Returns  : ""
 ##Arguments: None
-
-    $snpeff_cmd{snpeff}{Dbsnp129LCAF}{File} = q?dbsnp_\S+.excluding_sites_after_129.vcf?;
-    $snpeff_cmd{snpeff}{Dbsnp129LCAF}{info} = q?##INFO=<ID=Dbsnp129LCAF,Number=1,Type=Float,Description="Least common AF in dbSNP excluding sites after 129.">?;
-    $snpeff_cmd{snpeff}{Dbsnp129LCAF}{fix_info} = q?##INFO=<ID=SnpSift_CAF,Number=.,Type=String,Description="An ordered, comma delimited list of allele frequencies based on 1000Genomes, starting with the reference allele followed by alternate alleles as ordered in the ALT column. Where a 1000Genomes alternate allele is not in the dbSNPs alternate allele set, the allele is added to the ALT column.  The minor allele is the second largest value in the list, and was previuosly reported in VCF as the GMAF.  This is the GMAF reported on the RefSNP and EntrezSNP pages and VariationReporter">?;
-
-    $snpeff_cmd{snpeff}{DbsnpLCAF}{File} = q?dbsnp_\d+.\w\d+.vcf?;
-    $snpeff_cmd{snpeff}{DbsnpLCAF}{info} = q?##INFO=<ID=DbsnpLCAF,Number=1,Type=Float,Description="Least common AF in the DbSNP database.">?;
-    $snpeff_cmd{snpeff}{DbsnpLCAF}{fix_info} = q?##INFO=<ID=SnpSift_CAF,Number=.,Type=String,Description="An ordered, comma delimited list of allele frequencies based on 1000Genomes, starting with the reference allele followed by alternate alleles as ordered in the ALT column. Where a 1000Genomes alternate allele is not in the dbSNPs alternate allele set, the allele is added to the ALT column.  The minor allele is the second largest value in the list, and was previuosly reported in VCF as the GMAF.  This is the GMAF reported on the RefSNP and EntrezSNP pages and VariationReporter">?;
-
-    $snpeff_cmd{snpeff}{ESPMAF}{File} = q?ESP\d+SI-V\d+-\w+.updatedProteinHgvs.snps_indels.vcf?;
-    $snpeff_cmd{snpeff}{ESPMAF}{info} = q?##INFO=<ID=ESPMAF,Number=1,Type=Float,Description="Global Minor Allele Frequency in the ESP database.">?;
-    $snpeff_cmd{snpeff}{ESPMAF}{fix_info} = q?##INFO=<ID=SnpSift_MAF,Number=.,Type=String,Description="Minor Allele Frequency in percent in the order of EA,AA,All">?;
-
-    $snpeff_cmd{snpeff}{EXACMAXAF}{File} = q?ExAC.r\d+.\d+.sites.vep.vcf?;
-    $snpeff_cmd{snpeff}{EXACMAXAF}{info} = q?##INFO=<ID=EXACMAXAF,Number=A,Type=Float,Description="Estimated max allele frequency in the range (0,1) in Exac">?;
-    $snpeff_cmd{snpeff}{EXACMAXAF}{fix_info} = q?##INFO=<ID=SnpSift_AF,Number=.,Type=String,Description="Estimated max allele frequency in the range (0,1)">?;
 
     $snpeff_cmd{snpeff}{phastCons100way_vertebrate_prediction_term}{File} = q?SnpSift dbnsfp?;
     $snpeff_cmd{snpeff}{phastCons100way_vertebrate_prediction_term}{info} = q?##INFO=<ID=phastCons100way_vertebrate_prediction_term,Number=A,Type=String,Description="PhastCons conservation prediction term">?;
@@ -387,7 +374,7 @@ sub read_infile_vcf {
 
 ##Function : Reads infile in vcf format and adds and parses annotations
 ##Returns  : ""
-##Arguments: $meta_data_href, $snpeff_cmd_href, $range_data_href, $select_data_href, $consequence_severity_href, $tree_href, $range_feature_annotation_columns_ref, $select_feature_annotation_columns_ref, $select_outfile_path, $vcfparser_version, $select_feature_file, $parse_vep, $write_software_tag
+##Arguments: $meta_data_href, $snpeff_cmd_href, $range_data_href, $select_data_href, $consequence_severity_href, $tree_href, $range_feature_annotation_columns_ref, $select_feature_annotation_columns_ref, $select_outfile_path, $vcfparser_version, $select_feature_file, $parse_vep, $write_software_tag, $per_gene_ref
 ##         : $meta_data_href                        => Vcf meta data {REF}
 ##         : $snpeff_cmd_href                       => SnpEff meta data {REF}
 ##         : $range_data_href                       => Range file data {REF}
@@ -401,6 +388,7 @@ sub read_infile_vcf {
 ##         : $select_feature_file                   => The select feature file
 ##         : $parse_vep                             => Parse VEP output
 ##         : $write_software_tag                    => Write software tag to vcf header switch
+##         : $per_gene                              => Only collect most severe transcript per gene
 
     my ($arg_href) = @_;
 
@@ -420,6 +408,7 @@ sub read_infile_vcf {
     my $select_feature_annotation_columns_ref;
     my $select_outfile_path;
     my $vcfparser_version;
+    my $per_gene;
 
     my $tmpl = {
 	meta_data_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$meta_data_href},
@@ -434,6 +423,9 @@ sub read_infile_vcf {
 	vcfparser_version => { required => 1, defined => 1, strict_type => 1, store => \$vcfparser_version},
 	select_feature_file => { default => 0,
 				 strict_type => 1, store => \$select_feature_file},
+	per_gene => { default => 0,
+		      allow => [0, 1],
+		      strict_type => 1, store => \$per_gene},
 	parse_vep => { default => 0,
 		       allow => [0, 1],
 		       strict_type => 1, store => \$parse_vep},
@@ -445,26 +437,27 @@ sub read_infile_vcf {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     my @vep_format_fields;
-    my @feature_fields;
     my %vep_format_field_column;
     my %vcf_header;
 
+    my @vcf_format_columns;  #Catch #vcf header #CHROM line
+    
     my $WOSFTSV;  #Select feature file filehandle
 
     if ($select_feature_file) {
-
+	
 	open($WOSFTSV, ">".$select_outfile_path) or die "Cannot open ".$select_outfile_path.":".$!, "\n";
     }
-
+    
     while (<>) {
-
+	
 	chomp $_;  # Remove newline
-
+	
 	if (m/^\s+$/) {	# Avoid blank lines
 	    next;
 	}
 	if ($_=~/^##(\S+)=/) {  # MetaData
-
+	    
 	    parse_meta_data({meta_data_href => $meta_data_href,
 			     meta_data_string => $_,
 			    });
@@ -474,18 +467,18 @@ sub read_infile_vcf {
 		$vcf_header{info}{$1} = $1; #Save to hash
 	    }
 	    if ($_=~/SnpSiftCmd\=/) { #Find SnpEff command meta line
-
+		
 		for my $database (keys %{ $snpeff_cmd_href->{snpeff} }) {
-
+		    
 		    if ($_=~/$snpeff_cmd_href->{snpeff}{$database}{File}/) { #SnpEff/Sift has been used to annotate input vcf
-
+			
 			unless (defined($vcf_header{info}{$database})) { #Unless INFO header is already present add to meta_dataHeader
-
+			    
 			    $snpeff_cmd_href->{present}{database}{$database} = $database; #Save which frequency db has been used for later
 			    push(@{ $meta_data_href->{info}{$database} }, $snpeff_cmd_href->{snpeff}{$database}{info});
-
+			    
 			    if (defined($snpeff_cmd_href->{snpeff}{$database}{fix_info})) { #If FIX_INFO flag is present add to meta_dataHeader
-
+				
 				push(@{ $meta_data_href->{fix_info}{$database} }, $snpeff_cmd_href->{snpeff}{$database}{fix_info});
 			    }
 			}
@@ -494,20 +487,20 @@ sub read_infile_vcf {
 		next;
 	    }
 	    if ($_=~/INFO\=\<ID\=CSQ/) { #Find VEP INFO Field
-
+		
 		if ($_=~/Format:\s(\S+)"\>/) { #Locate Format within VEP INFO meta line
-
+		    
 		    @vep_format_fields = split(/\|/, $1);
-
+		    
 		    for (my $field_counter=0;$field_counter<scalar(@vep_format_fields);$field_counter++) {
-
+			
 			$vep_format_field_column{$vep_format_fields[$field_counter]} = $field_counter; #Save the order of VEP features
 		    }
 		}
 		if ($parse_vep) {
-
-		    if ( ($vep_format_field_column{HGNC_ID}) && ($vep_format_field_column{HGVSc}) && ($vep_format_field_column{HGVSp})) {
-
+		    
+		    if ( ($vep_format_field_column{HGNC_ID}) && ($vep_format_field_column{Consequence}) ) {
+			
 			push(@{ $meta_data_href->{info}{most_severe_consequence} }, '##INFO=<ID=most_severe_consequence,Number=.,Type=String,Description="Most severe genomic consequence.">');
 		    }
 		}
@@ -516,7 +509,9 @@ sub read_infile_vcf {
 	    next;
 	}
 	if ($_=~/^#CHROM/) {
-
+	    
+	    @vcf_format_columns = split(/\t/, $_);  #Split vcf format line
+	    
 	    add_feature_file_meta_data_to_vcf({meta_data_href => $meta_data_href,
 					       vcf_header_href => \%vcf_header,
 					       feature_annotation_columns_ref => $range_feature_annotation_columns_ref,
@@ -529,15 +524,15 @@ sub read_infile_vcf {
 					       data_href => $select_data_href,
 					       file_key => "Select",
 					      });
-
+	    
 	    if ($write_software_tag) {
-
+		
 		add_program_to_meta_data_header({meta_data_href => $meta_data_href,
 						 vcfparser_version => $vcfparser_version,
 						});
 	    }
 	    if ($select_feature_file) { #SelectFile annotations
-
+		
 		write_meta_data({meta_data_href => $meta_data_href,
 				 FILEHANDLE => *STDOUT,
 				 SELECTFILEHANDLE => $WOSFTSV,
@@ -546,218 +541,236 @@ sub read_infile_vcf {
 		say $WOSFTSV $_;  #Write #CHROM header line
 	    }
 	    else {
-
+		
 		write_meta_data({meta_data_href => $meta_data_href,
 				 FILEHANDLE => *STDOUT,
 				});
 		say STDOUT $_;  #Write #CHROM header line
 	    }
-
-	    if ($parse_vep) {
-
-		@feature_fields = ("most_severe_consequence");
-	    }
 	    next;
 	}
 	if ( $_ =~/^(\S+)/ ) {
-
-	    my %variant_data;
-	    my %selected_variant_data;
+	    
+	    my %record;
 	    my %consequence;
 	    my %noid_region;
 	    my $variant_line;
-	    my $selected_variant_line;
-	    my $sample_id_info;
-	    my $transcripts_counter = 0; #Tracks the number of transcripts to enable print of ", and ;" at correct position
-	    my $selected_transcript_counter = 0; #Tracks the number of selected transcripts to enable print of ", and ;" at correct position
-
-	    my @line_elements = split("\t",$_);  #Loads database elements description
-
-	    for (my $line_elements_counter=0;$line_elements_counter<scalar(@line_elements);$line_elements_counter++) { #Add until INFO field
-
-		if ($line_elements_counter < 7) { #Save fields until INFO field
-
-		    $variant_line .= $line_elements[$line_elements_counter]."\t";
-		    $selected_variant_line .= $line_elements[$line_elements_counter]."\t"; #Copy vcf info to enable selective print downstream;
-		}
-		elsif ($line_elements_counter > 7) { #Save GT:PL: and sample(s) GT Call fields and add to proper line last
-
-		    if ($line_elements_counter == (scalar(@line_elements) - 1)) {
-
-			$sample_id_info .= $line_elements[$line_elements_counter];
-		    }
-		    else {
-
-			$sample_id_info .= $line_elements[$line_elements_counter]."\t";
-		    }
-		}
-	    }
-	    my @temps = split(/;/, $line_elements[7]);  #Split INFO field to key=value items
-
-	    for my $database (keys % {$snpeff_cmd_href->{present}{database}}) { #Note that the vcf should only contain 1 database entry
-
-		if ( ($database eq "Dbsnp129LCAF") || ($database eq "DbsnpLCAF") ) {
-
-		    my @temps = split(/;/, $line_elements[7]);  #Split INFO field to key=value items
-
-		    my $temp_maf_list = find_af({elements_ref => \@temps,
-						 regexp => "Dbsnp\\S+CAF=",
-						});
-
-		    if (defined($temp_maf_list)) {
-
-			my $temp_maf;
-
-			if ($temp_maf_list =~/^\[(.+)\],/) {  #Multiple entries in database for variant
-
-			    $temp_maf_list = $';  #Pick last block as they should be identical. '
-			}
-			if ($temp_maf_list =~/\[(.+)\]/) {  #Single entry in database for variant
-
-			    $temp_maf = $1;
-			}
-
-			my @temp_mafs = sort {$a <=> $b} grep { $_ ne "." } split(",", $temp_maf); #Split on ",", remove entries containing only "." and sort remaining entries numerically
-			if (scalar(@temp_mafs) > 0) {
-
-			    ## Save LCAF frequency info
-			    $variant_line .= $database."=".$temp_mafs[0].";";
-			    $selected_variant_line .= $database."=".$temp_mafs[0].";";
-			}
-		    }
-		}
-		elsif($database eq "ESPMAF") {
-
-		    my @temps = split(/;/, $line_elements[7]);  #Split INFO field to key=value items
-
-		    my $temp_maf = FindLCAF({elements_ref => \@temps,
-					     regexp => "\\S+_MAF=",
-					     frequencyPosition => "2",
-					    });
-
-		    if (defined($temp_maf)) {
-
-			$temp_maf = $temp_maf / 100; #fraction for consistent representation
-
-			## Save MAF frequency info
-			$variant_line .= $database."=".$temp_maf.";";
-			$selected_variant_line .= $database."=".$temp_maf.";";
-		    }
-		}
-		elsif($database eq "EXACMAXAF") {
-
-		    my @temps = split(/;/, $line_elements[7]);  #Split INFO field to key=value items
-
-		    my $temp_maf = find_af({elements_ref => \@temps,
-					    regexp => "\\S+_EXACAFMAX_AF=",
-					   });
-
-		    if (defined($temp_maf)) {
-
-			## Save Alternative Allele frequency info
-			$variant_line .= $database."=".$temp_maf.";";
-			$selected_variant_line .= $database."=".$temp_maf.";";
-		    }
-		}
-		elsif($database eq "phastCons100way_vertebrate_prediction_term") {
-
-		    my @temps = split(/;/, $line_elements[7]);  #Split INFO field to key=value items
-
-		    my $conservation_term = find_conserved({elements_ref => \@temps,
-							    regexp => "\\S+_phastCons100way_vertebrate=",
-							    score_cutoff => 0.8,
-							   });
-
-		    if (defined($conservation_term)) {
-
-			## Save database info
-			$variant_line .= $database."=".$conservation_term.";";
-			$selected_variant_line .= $database."=".$conservation_term.";";
-		    }
-		}
-		elsif($database eq "phyloP100way_vertebrate_prediction_term") {
-
-		    my @temps = split(/;/, $line_elements[7]);  #Split INFO field to key=value items
-
-		    my $conservation_term = find_conserved({elements_ref => \@temps,
-							    regexp => "\\S+_phyloP100way_vertebrate=",
-							    score_cutoff => 2.5,
-							   });
-
-		    if (defined($conservation_term)) {
-
-			## Save database info
-			$variant_line .= $database."=".$conservation_term.";";
-			$selected_variant_line .= $database."=".$conservation_term.";";
-		    }
-		}
-		elsif($database eq "GERP++_RS_prediction_term") {
-
-
-		    my @temps = split(/;/, $line_elements[7]);  #Split INFO field to key=value items
-
-		    my $conservation_term = find_conserved({elements_ref => \@temps,
-							    regexp => "\\S+_GERP\\+\\+_RS=",
-							    score_cutoff => 2,
-							   });
-
-		    if (defined($conservation_term)) {
-
-			## Save database info
-			$variant_line .= $database."=".$conservation_term.";";
-			$selected_variant_line .= $database."=".$conservation_term.";";
-		    }
-		}
-	    }
-
-	    ## Checks if an interval tree exists (per chr) and collects features from input array and adds annotations to line
-	    %noid_region = tree_annotations({tree_href => $tree_href,
-					     data_href => $select_data_href,
-					     line_elements_ref => \@line_elements,
-					     range_file_key => "select_feature",
-					     print_line_ref => \$selected_variant_line,
-					    });  #noid_region is only for selectfile since all variants are passed to research file
-
-	    ## Checks if an interval tree exists (per chr) and collects features from input array and adds annotations to line
-	    tree_annotations({tree_href => $tree_href,
-			      range_file_key => "range_feature",
-			      line_elements_ref => \@line_elements,
-			      data_href => $range_data_href,
-			      print_line_ref => \$variant_line,
-			     });
-
-	    my @variant_effects = split(/;/, $line_elements[7]); #Split INFO field
-
+	    my $selected_variant_line;	    
+	    
+	    my @line_elements = split("\t", $_);  #Loads vcf file elements
+	    
 	    ##Check that we have an INFO field
 	    unless ($line_elements[7]) {
-
+		
 		say STDERR "No INFO field at line number: ".$.;
 		say STDERR "Displaying malformed line: ".$_;
 		exit 1;
 	    }
-
+	    
+	    ##Add line elements to record hash
+	    for (my $line_elements_counter=0;$line_elements_counter<scalar(@line_elements);$line_elements_counter++) {  #Parse line elements
+		
+		$record{ $vcf_format_columns[$line_elements_counter] } = $line_elements[$line_elements_counter];
+	    }
+	    
+	    my @temps = split(/;/, $record{INFO});  #Add INFO elements to temps
+	    
 	    ## Collect key value pairs in INFO field
-	    my %record;
 	    foreach my $key_value (@temps) {
-
+		
 		my @pairs = split(/=/, $key_value);
-
-		$record{$pairs[0]} = $pairs[1];
+		
+		$record{INFO_key_value}{$pairs[0]} = $pairs[1];
 	    }
 
-	    parse_vep_csq({record_href => \%record,
-			   vep_format_field_column_href => \%vep_format_field_column,
-			   select_data_href => $select_data_href,
-			   variant_data_href => \%variant_data,
-			  });
+	    for my $database (keys % {$snpeff_cmd_href->{present}{database}}) { #Note that the vcf should only contain 1 database entry
+				    
+		if ($record{INFO_key_value}{$database}) {
+			
+		    my @allele_scores = split(",", $record{INFO_key_value}{$database}); #Split on ","
+		    my $conservation_term;
+		
+		    if($database eq "phastCons100way_vertebrate_prediction_term") {
+	
+			$conservation_term = find_conserved({elements_ref => \@allele_scores,
+							     regexp => "\\S+_phastCons100way_vertebrate=",
+							     score_cutoff => 0.8,
+							    });
+		    }
+		    if($database eq "phyloP100way_vertebrate_prediction_term") {
+			
+			$conservation_term = find_conserved({elements_ref => \@allele_scores,
+							     regexp => "\\S+_phyloP100way_vertebrate=",
+							     score_cutoff => 2.5,
+							    });
+		    }
+		    if($database eq "GERP++_RS_prediction_term") {
+
+			$conservation_term = find_conserved({elements_ref => \@allele_scores,
+							     regexp => "\\S+_GERP\\+\\+_RS=",
+							     score_cutoff => 2,
+							    });
+		    }
+		    
+		    if (defined($conservation_term)) {
+			
+			## Save database info
+			$record{INFO_addition}{$database} = $conservation_term;
+		    }
+		}
+	    }
+	    
+	    ## Checks if an interval tree exists (per chr) and collects features from input array and adds annotations to line
+	    %noid_region = tree_annotations({tree_href => $tree_href,
+					     data_href => $select_data_href,
+					     record_href => \%record,
+					     line_elements_ref => \@line_elements,
+					     range_file_key => "select_feature",
+					    });  #noid_region is only for selectfile since all variants are passed to research file
+	    
+	    ## Checks if an interval tree exists (per chr) and collects features from input array and adds annotations to line
+	    tree_annotations({tree_href => $tree_href,
+			      data_href => $range_data_href,
+			      record_href => \%record,
+			      range_file_key => "range_feature",
+			      line_elements_ref => \@line_elements,
+			     });	   
+	    
+	    if ($parse_vep) {
+		
+		parse_vep_csq({record_href => \%record,
+			       vep_format_field_column_href => \%vep_format_field_column,
+			       select_data_href => $select_data_href,
+			       consequence_href => \%consequence,
+			       consequence_severity_href => $consequence_severity_href,
+			       per_gene => $per_gene,
+			      });
+	    }
+	    
+	    for (my $line_elements_counter=0;$line_elements_counter<scalar(@line_elements);$line_elements_counter++) { #Add until INFO field
+		
+		if ($line_elements_counter < 7) { #Save fields until INFO field
+		  
+		    if ($record{select_transcripts}) {
+
+			print $WOSFTSV $record{ $vcf_format_columns[$line_elements_counter] }."\t";
+		    }
+		    print STDOUT $record{ $vcf_format_columns[$line_elements_counter] }."\t";
+		}
+		if ($line_elements_counter == 7) {
+
+		    if(! $per_gene) {
+
+			print STDOUT $record{ $vcf_format_columns[$line_elements_counter] };
+		    }
+		    else {
+
+			if($record{INFO_key_value}{CSQ}) {
+
+			    if ($record{range_transcripts}) {
+				
+				$record{INFO_key_value}{CSQ} = join(",", @{ $record{range_transcripts} });
+			    }
+			    if ($record{select_transcripts}) {
+				
+				$record{INFO_key_value}{CSQ} = join(",", @{ $record{select_transcripts} });
+			    }
+			}
+			my $counter = 0;
+			foreach my $key (keys %{ $record{INFO_key_value} }) { 
+			    
+			    if (! $counter) {
+				
+				if (defined($record{INFO_key_value}{$key})) {
+				    
+				    print $WOSFTSV $key."=".$record{INFO_key_value}{$key};
+				    print STDOUT $key."=".$record{INFO_key_value}{$key};
+				}
+				else {
+
+				    print $WOSFTSV $key;
+				    print STDOUT $key;
+				}
+			    }
+			    else {
+				
+				if (defined($record{INFO_key_value}{$key})) {
+				    
+				    print $WOSFTSV ";".$key."=".$record{INFO_key_value}{$key};
+				     print STDOUT ";".$key."=".$record{INFO_key_value}{$key};
+				}
+				else {
+
+				    print $WOSFTSV ";".$key;
+				    print STDOUT ";".$key;
+				}
+			    }
+			    $counter++;
+			}
+		    }
+		    
+		    foreach my $key (keys %{ $record{INFO_addition} }) {
+			
+			if ($record{select_transcripts}) {
+
+			    print $WOSFTSV ";".$key."=".$record{INFO_addition}{$key};
+			}
+			print STDOUT ";".$key."=".$record{INFO_addition}{$key};
+		    }
+		    if ($record{select_transcripts}) {
+
+			foreach my $key (keys %{ $record{INFO_addition_select_feature} }) {
+			    
+			    print $WOSFTSV ";".$key."=".$record{INFO_addition_select_feature}{$key};
+			}
+		    }
+		    foreach my $key (keys %{ $record{INFO_addition_range_feature} }) {
+			
+			print STDOUT ";".$key."=".$record{INFO_addition_range_feature}{$key};
+		    }
+		    
+		    if ($record{select_transcripts}) {
+
+			print $WOSFTSV "\t";
+		    }
+		    print STDOUT "\t";
+		}
+		if ($line_elements_counter > 7) {
+		    
+		    if ($record{select_transcripts}) {
+
+			print $WOSFTSV $record{ $vcf_format_columns[$line_elements_counter] }."\t";
+		    }
+		    print STDOUT $record{ $vcf_format_columns[$line_elements_counter] }."\t";
+		}
+	    }
+	    if ($record{select_transcripts}) {
+
+		print $WOSFTSV "\n";
+	    }
+	    print STDOUT "\n";
+	}
+    }
+    if ($select_feature_file) {
+	
+	close($WOSFTSV);
+    }
+    say STDERR "Finished Processing VCF";
+}
+
 sub parse_vep_csq {
 
 ##parse_vep_csq
 
 ##Function : 
 ##Returns  : ""
-##Arguments: $record_href, 
-##         : $record_href => Key value pair record
+##Arguments: $record_href, $vep_format_field_column_href, select_data_href, consequence_href, consequence_severity_href, $per_gene
+##         : $record_href                  => VCF record {REF}
+##         : $vep_format_field_column_href => VEP format columns {REF}
+##         : $select_data_href             => Select file data {REF}
+##         : $consequence_href             => Variant consequence {REF}
+##         : $consequence_severity_href    => Consequence severity for SO-terms {REF}
+##         : $per_gene                     => Only collect most severe transcript per gene
 
     my ($arg_href) = @_;
 
@@ -767,282 +780,132 @@ sub parse_vep_csq {
     my $record_href;
     my $vep_format_field_column_href;
     my $select_data_href;
-    my $variant_data_href;
+    my $consequence_href;
+    my $consequence_severity_href;
+    my $per_gene;
 
     my $tmpl = { 
 	record_href  => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$record_href},
 	vep_format_field_column_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$vep_format_field_column_href},
 	select_data_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$select_data_href},
-	variant_data_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$variant_data_href},
+	consequence_href  => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$consequence_href},
+	consequence_severity_href  => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$consequence_severity_href},
+	per_gene => { default => 0,
+		      allow => [0, 1],
+		      strict_type => 1, store => \$per_gene},
     };
     
    
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my %variant_line_data;
+    if($record_href->{INFO_key_value}{CSQ}) {
 
-    if($record_href->{CSQ}) {
-
-	my @transcripts = split(/,/, $record_href->{CSQ});  #Split into transcripts
+	my %most_severe_transcript;  #Collect most severe transcript per gene
+	my @transcripts = split(/,/, $record_href->{INFO_key_value}{CSQ});  #Split into transcripts
 
 	foreach my $transcript (@transcripts) {
 
 	    my @transcript_effects = split(/\|/, $transcript); #Split in "|"
 
-	    if (defined($transcript_effects[ $vep_format_field_column_href->{HGNC_ID} ])) {
+	    my $hgnc_id_column_ref = \$vep_format_field_column_href->{HGNC_ID};  #Alias hgnc_id column number
 
-		$variant_data_href->{HGNC_ID} = $transcript_effects[ $vep_format_field_column_href->{HGNC_ID} ];  #Alias HGNC Symbol
+	    if ( (defined($transcript_effects[$$hgnc_id_column_ref]))
+		 && $transcript_effects[$$hgnc_id_column_ref] ne "") {  #If gene
+		
+		my $hgnc_id_ref = \$transcript_effects[$$hgnc_id_column_ref];  #Alias HGNC Symbol
+		my $transcript_id_ref = \$transcript_effects[ $vep_format_field_column_href->{Feature} ];  #Alias transcript_id
+		my $allele_ref = \$transcript_effects[ $vep_format_field_column_href->{Allele} ];  #Alias allele
 
-		if ($select_data_href->{ $variant_data_href->{HGNC_ID} }) { #Exists in selected Features
+		my @consequences = split(/\&/, $transcript_effects[ $vep_format_field_column_href->{Consequence} ]); #Split consequence
+		
+		foreach my $consequence_term (@consequences) {
+		    
+		    check_terms({data_href => $consequence_severity_href,
+				 term_ref => \$consequence_term,
+				 data_category_name => "SO",
+				});
+		    
+		    my $most_severe_consequence = $$hgnc_id_ref.":".$$allele_ref."|".$consequence_term;
 
-		    push(@{ $variant_line_data{select} }, join("\|", @transcript_effects));  #Add to selected
-		}
-		push(@{ $variant_line_data{research} }, join("\|", @transcript_effects));  #Add to research
-	    }
-	}
-    }
-    else {
+		    if(defined($consequence_href->{$$hgnc_id_ref}{$$allele_ref}{score})) { #Compare to previous record
+	
+			if ($consequence_severity_href->{$consequence_term}{rank} < $consequence_href->{$$hgnc_id_ref}{$$allele_ref}{score}) { #Collect most severe consequence
+			    
+			    add_to_consequence_hash({key_ref => \$consequence_href->{$$hgnc_id_ref}{$$allele_ref}{score},
+						     value_ref => \$consequence_severity_href->{$consequence_term}{rank},
+						    });
 
-	##ADD NO CSQ to variant_line_data
-    }
-}
-	    my $csq_transcripts;
-
-	    for (my $variant_effects_counter=0;$variant_effects_counter<scalar(@variant_effects);$variant_effects_counter++) {
-
-		if ($parse_vep) {
-
-		    ## Find CSQ field and extract transripts that belong to select genes
-		    if ($variant_effects[$variant_effects_counter]=~/CSQ\=(\S+)/) { #Find CSQ
-
-			$csq_transcripts = $1;
-			my @transcripts = split(/,/, $csq_transcripts); #Split into transcripts elements
-
-			for (my $field_counter=0;$field_counter<scalar(@transcripts);$field_counter++) { #CSQ field
-
-			    my @transcript_effects = split(/\|/, $transcripts[$field_counter]); #Split in "|"
-
-			    if ( (defined($transcript_effects[ $vep_format_field_column{Feature} ])) && ($transcript_effects[ $vep_format_field_column{Feature} ] ne "") ) {
-
-				if (defined($transcript_effects[ $vep_format_field_column{HGNC_ID} ])) {
-
-				    $variant_data{symbol} = $transcript_effects[ $vep_format_field_column{HGNC_ID} ];  #Save HGNC Symbol
-
-				    if ($select_data{ $variant_data{symbol} }) { #Exists in selected Features
-
-					if ($selected_transcript_counter > 0) {
-
-					    $selected_variant_line .= ",".$transcripts[$field_counter];
-					}
-					else {
-
-					    $selected_variant_line .= "CSQ=".$transcripts[$field_counter];
-					}
-					$selected_transcript_counter++;
-				    }
-				}
-			    }
-
-			    ## Always include all transcripts in research list
-			    if ($transcripts_counter > 0) {
-
-				$variant_line .= ",".$transcripts[$field_counter];
-			    }
-			    else {
-
-				$variant_line .= "CSQ=".$transcripts[$field_counter];
-			    }
-			    $transcripts_counter++;
+			    add_to_consequence_hash({key_ref => \$consequence_href->{$$hgnc_id_ref}{$$allele_ref}{most_severe_consequence},
+						     value_ref => \$most_severe_consequence,
+						    });
+			    add_to_consequence_hash({key_ref => \$consequence_href->{$$hgnc_id_ref}{$$allele_ref}{most_severe_transcript},
+						     value_ref => \$transcript,
+						    });
 			}
 		    }
-		    else { #Not CSQ field from VEP
-
-			if ($variant_effects_counter == scalar(@variant_effects)-1) {
-
-			    $variant_line .= $variant_effects[$variant_effects_counter];
-			    $selected_variant_line .= $variant_effects[$variant_effects_counter];
-			}
-			else {
-
-			    $variant_line .= $variant_effects[$variant_effects_counter].";";
-			    $selected_variant_line .= $variant_effects[$variant_effects_counter].";";
-			}
-		    }
-		}
-		else { #No CSQ field from VEP
-
-		    if ($variant_effects_counter == scalar(@variant_effects)-1) {
-
-			$variant_line .= $variant_effects[$variant_effects_counter];
-			$selected_variant_line .= $variant_effects[$variant_effects_counter];
-		    }
-		    else {
-
-			$variant_line .= $variant_effects[$variant_effects_counter].";";
-			$selected_variant_line .= $variant_effects[$variant_effects_counter].";";
-		    }
-		}
-	    }
-	    if ($parse_vep) {
-
-		$transcripts_counter = 0;
-		$selected_transcript_counter = 0;
-
-		if (defined($csq_transcripts)) {
-
-		    my @transcripts = split(/,/, $csq_transcripts);
-
-		  CSQFIELD:
-		    for (my $field_counter=0;$field_counter<scalar(@transcripts);$field_counter++) { #CSQ field
-
-			my @transcript_effects = split(/\|/, $transcripts[$field_counter]); #Split in "|"
-
-			if ( (defined($transcript_effects[ $vep_format_field_column{Feature} ]))
-			     && ($transcript_effects[ $vep_format_field_column{Feature} ] ne "")
-			     && ($transcript_effects[ $vep_format_field_column{Feature} ] !~/ENSR\d+/) ) { #All but regulatory regions, since there currently is no HGNC_Symbol annotated for them
-
-			    my $selected_transcript_tracker = 0; #Track if any transcripts belong to selected features
-
-			    if (defined($transcript_effects[ $vep_format_field_column{HGNC_ID} ])) { #Save HGNC Symbol
-
-				$variant_data{symbol} = $transcript_effects[ $vep_format_field_column{HGNC_ID} ];
-
-				if ($select_data_href->{ $variant_data{symbol} }) { #Exists in selected Features
-
-				    $selected_transcript_tracker = 1; #Record belongs to selected Features
-				}
-			    }
-			    add_field_to_element({selected_transcript_tracker_ref => \$selected_transcript_tracker,
-						  selected_line_ref => \$selected_variant_line,
-						  line_ref => \$variant_line,
-						  value_ref => \$transcript_effects[ $vep_format_field_column{Feature} ],
-						 }); #Save transcript
-
-			    if (defined($transcript_effects[ $vep_format_field_column{Feature_type} ])) { #Save Feature_type
-
-				if ($selected_transcript_tracker == 1) {
-
-				    if ($selected_transcript_counter == 0) { #First selected gene
-
-					$selected_variant_data{feature_type} = $transcript_effects[ $vep_format_field_column{Feature_type} ];
-				    }
-				    else {
-
-					$selected_variant_data{feature_type} .= ",".$transcript_effects[ $vep_format_field_column{Feature_type} ];
-				    }
-				}
-
-				## Always include all transcripts in research list
-				if ($transcripts_counter == 0) { #First Gene
-
-				    $variant_data{feature_type} = $transcript_effects[ $vep_format_field_column{Feature_type} ];
-				}
-				else {
-
-				    $variant_data{feature_type} .= ",".$transcript_effects[ $vep_format_field_column{Feature_type} ];
-				}
-			    }
-			    if (defined($transcript_effects[ $vep_format_field_column{Consequence} ])) { #Save Consequence
-
-				add_field_to_element({selected_transcript_tracker_ref => \$selected_transcript_tracker,
-						      selected_line_ref => \$selected_variant_line,
-						      line_ref => \$variant_line,
-						      value_ref => \$transcript_effects[ $vep_format_field_column{Consequence} ],
-						     });
-
-				my @consequences = split(/\&/, $transcript_effects[ $vep_format_field_column{Consequence} ]); #Find "most_severe_consequence
-				my $allele = $transcript_effects[ $vep_format_field_column{Allele} ];
-
-				foreach my $consequence_term (@consequences) {
-
-				    check_terms({data_href => $consequence_severity_href,
-						 term_ref => \$consequence_term,
-						 data_category_name => "SO",
+		    else { #First pass
+			
+			add_to_consequence_hash({key_ref => \$consequence_href->{$$hgnc_id_ref}{$$allele_ref}{score},
+						 value_ref => \$consequence_severity_href->{$consequence_term}{rank},
 						});
-
-				    if (defined($variant_data{symbol})) {
-
-					if(defined($consequence{ $variant_data{symbol} }{$allele}{score})) { #Compare to previous record
-
-					    if ($consequence_severity_href->{$consequence_term}{rank} < $consequence{ $variant_data{symbol} }{$allele}{score}) { #Collect most severe consequence
-
-						add_to_consequence_hash({key_ref => \$consequence{ $variant_data{symbol} }{$allele}{score},
-									 value_ref => \$consequence_severity_href->{$consequence_term}{rank},
-									});
-
-						add_to_consequence_hash({key_ref => \$consequence{ $variant_data{symbol} }{$allele}{most_severe_consequence},
-									 value_ref => \$consequence_term,
-									});
-					    }
-					}
-					else { #First pass
-
-					    add_to_consequence_hash({key_ref => \$consequence{ $variant_data{symbol} }{$allele}{score},
-								     value_ref => \$consequence_severity_href->{$consequence_term}{rank},
-								    });
-
-					    add_to_consequence_hash({key_ref => \$consequence{ $variant_data{symbol} }{$allele}{most_severe_consequence},
-								     value_ref => \$consequence_term,
-								    });
-					}
-				    }
-				}
-			    }
-			    if ($selected_transcript_tracker == 1) {
-
-				$selected_transcript_counter++;
-			    }
-			    ## Always include all transcripts in research list
-			    $transcripts_counter++;
-			}
+			
+			add_to_consequence_hash({key_ref => \$consequence_href->{$$hgnc_id_ref}{$$allele_ref}{most_severe_consequence},
+						 value_ref => \$most_severe_consequence,
+						});
+			 add_to_consequence_hash({key_ref => \$consequence_href->{$$hgnc_id_ref}{$$allele_ref}{most_severe_transcript},
+						  value_ref => \$transcript,
+						 });
 		    }
-		    collect_consequence_genes({consequence_href => \%consequence,
-					       select_data_href => $select_data_href,
-					       fields_ref => \@feature_fields,
-					       selected_variant_line_ref => \$selected_variant_line,
-					       variant_line_ref => \$variant_line,
-					      });
 		}
-	    }
+		
+		if(! $per_gene) {
 
-	    $selected_variant_line .= "\t".$sample_id_info;
-	    $variant_line .= "\t".$sample_id_info;
+		    if ($select_data_href->{$$hgnc_id_ref}) { #Exists in selected Features
 
-	    if ($parse_vep) {
-
-		if ($selected_transcript_counter > 0) { #Write to selected file
-
-		    say $WOSFTSV $selected_variant_line;
-		}
-		if ($transcripts_counter > 0) { #Write to transcript file
-
-		    if (%noid_region) {  #No HGNC_symbol or EnsemblGeneID, but clinically relevant
-
-			say $WOSFTSV $selected_variant_line;
+			push(@{ $record_href->{select_transcripts} }, $transcript);  #Add all transcripts to selected transcripts
 		    }
-		    say STDOUT $variant_line;
+		    push(@{ $record_href->{range_transcripts} }, $transcript);  #Add all transcripts to range transcripts
 		}
-		elsif ( (! $selected_transcript_counter) && (! $transcripts_counter) ) {
-
-		    if (%noid_region) {  #No HGNC_symbol or EnsemblGeneID, but clinically relevant
-
-			say $WOSFTSV $selected_variant_line;
-		    }
-		    say STDOUT $variant_line;
-		}
-	    }
-	    else {
-
-		say STDOUT $variant_line;
+		
 	    }
 	}
-    }
-    if ($select_feature_file) {
+	my @most_severe_select_consequences;
+	my @most_severe_range_consequences;
 
-	close($WOSFTSV);
+      GENES:
+	for my $gene (keys %$consequence_href) {
+	    
+	  ALLELS:
+	    for my $allele (keys %{ $consequence_href->{$gene} }) {  #All alleles
+		
+		if ($select_data_href->{$gene}) { #Exists in selected Features
+		    
+		    push(@most_severe_select_consequences, $consequence_href->{$gene}{$allele}{most_severe_consequence});
+
+		    if($per_gene) {
+
+			push(@{ $record_href->{select_transcripts} }, $consequence_href->{$gene}{$allele}{most_severe_transcript});
+		    }
+		}
+		push(@most_severe_range_consequences, $consequence_href->{$gene}{$allele}{most_severe_consequence});
+
+		if($per_gene) {
+		    
+		    push(@{ $record_href->{range_transcripts} }, $consequence_href->{$gene}{$allele}{most_severe_transcript});
+		}
+	    }
+	}
+	if(@most_severe_select_consequences) {
+
+	    $record_href->{INFO_addition_select_feature}{most_severe_consequence} = join(",", @most_severe_select_consequences);
+	}
+	if(@most_severe_range_consequences) {
+
+	    $record_href->{INFO_addition_range_feature}{most_severe_consequence} = join(",", @most_severe_range_consequences);
+	}
     }
-    say STDERR "Finished Processing VCF";
 }
+
 
 sub add_to_consequence_hash {
 
@@ -1512,28 +1375,28 @@ sub tree_annotations {
 
 ##Function : Checks if an interval tree exists (per chr) and collects features from input array and adds annotations to line.
 ##Returns  : ""
-##Arguments: $tree_href, $data_href, $line_elements_ref, $range_file_key, $print_line_ref
+##Arguments: $tree_href, $data_href, $record_href, $line_elements_ref, $range_file_key,
 ##         : $tree_href         => Interval tree hash {REF}
 ##         : $data_href         => Range file hash {REF}
+##         : $record_href       => Record hash info {REF}
 ##         : $line_elements_ref => Infile vcf line elements array {REF}
 ##         : $range_file_key    => Range file key
-##         : $print_line_ref    => Line to add annotations to {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $tree_href;
     my $data_href;
+    my $record_href;
     my $line_elements_ref;
     my $range_file_key;
-    my $print_line_ref;
 
     my $tmpl = {
 	tree_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$tree_href},
 	data_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$data_href},
+	record_href  => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$record_href},
 	line_elements_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$line_elements_ref},
 	range_file_key => { required => 1, defined => 1, strict_type => 1, store => \$range_file_key},
-	print_line_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$print_line_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -1594,7 +1457,7 @@ sub tree_annotations {
 				}
 				if ( (defined($collected_annotation{$annotations_counter})) && (@{ $collected_annotation{$annotations_counter} }) ) {
 
-				    $$print_line_ref .= $range_annotation."=".join(",", @{ $collected_annotation{$annotations_counter} }).";"; #Add to corresponding line
+				    $record_href->{"INFO_addition_".$range_file_key}{$range_annotation} = join(",", @{ $collected_annotation{$annotations_counter} });
 				}
 			    }
 			}
@@ -1680,21 +1543,18 @@ sub find_conserved {
 
 ##Function : Adds the least common alternative allele frequency to each line
 ##Returns  : "" or string prediction terms
-##Arguments: $elements_ref, $regexp, $score_cutoff
+##Arguments: $elements_ref, $score_cutoff
 ##         : $elements_ref => The INFO array {REF}
-##         : $regexp       => The regexp to used to locate correct ID field
 ##         : $score_cutoff => Cut-off for conserved or not
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $elements_ref;
-    my $regexp;
     my $score_cutoff;
 
     my $tmpl = {
 	elements_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$elements_ref},
-	regexp => { required => 1, defined => 1, strict_type => 1, store => \$regexp},
 	score_cutoff => { required => 1, defined => 1, strict_type => 1, store => \$score_cutoff},
     };
 
@@ -1702,33 +1562,23 @@ sub find_conserved {
 
     my @allel_values;
 
-    for my $element (@$elements_ref) {
-
-	if ($element =~/$regexp/) {  #Find the key=value field
-
-	    my @value = split(/=/, $element);  #Split key=value pair
-
-	    my @temps = split(",", $value[1]); #Split on ","
-
-	    for my $allel_value (@temps) {
-
-		if ($allel_value >= $score_cutoff) {
-
-		    push(@allel_values, "Conserved");
-		}
-		else {
-
-		    push(@allel_values, "NotConserved");
-		}
-	    }
+    for my $allel_value (@$elements_ref) {
+	
+	if ($allel_value >= $score_cutoff) {
+	    
+	    push(@allel_values, "Conserved");
+	}
+	else {
+	    
+	    push(@allel_values, "NotConserved");
 	}
     }
     if (scalar(@allel_values) > 0) {
-
+	
 	return join(',', @allel_values);
     }
     else {
-
+	
 	return
     }
 }
