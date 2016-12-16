@@ -903,8 +903,11 @@ sub parse_vep_csq {
 		    push(@{ $record_href->{range_transcripts} }, $transcript);  #Add all transcripts to range transcripts
 		}
 	    }
+	    else {
+
 	    ## Intergenic
 	    push(@{ $record_href->{range_transcripts} }, $transcript);  #Add all transcripts to range transcripts
+	    }
 	}
 	my @most_severe_select_consequences;
 	my @most_severe_range_consequences;
