@@ -911,6 +911,12 @@ sv_vcfparser_vep_transcripts:
   data_type: SCALAR
   default: 0
   type: program_argument
+sv_vcfparser_per_gene:
+  associated_program:
+   - psv_vcfparser
+  data_type: SCALAR
+  default: 1
+  type: program_argument
 sv_vcfparser_range_feature_file:
   associated_program:
    - psv_vcfparser
