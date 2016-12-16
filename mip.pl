@@ -168,6 +168,7 @@ mip.pl  -ifd [infile_dirs=sample_id] -sd [script_dir] -rd [reference_dir] -p [pr
                -svveppl/--sv_vep_plugins VEP plugins (defaults to ("UpDownDistance, LoFtool, LoF"); comma sep)
                -psvvcp/--psv_vcfparser Parse structural variants using vcfParser.pl (defaults to "1" (=yes))
                  -svvcpvt/--sv_vcfparser_vep_transcripts Parse VEP transcript specific entries (defaults to "0" (=no))
+                 -vcppg/--vcfparser_per_gene Keep only most severe consequence per gene (defaults to "1" (=yes))
                  -svvcprff/--sv_vcfparser_range_feature_file Range annotations file (defaults to ""; tab-sep)
                  -svvcprfa/--sv_vcfparser_range_feature_annotation_columns Range annotations feature columns (defaults to ""; comma sep)
                  -svvcpsf/--sv_vcfparser_select_file File containging list of genes to analyse seperately (defaults to "";tab-sep file and HGNC Symbol required)
@@ -434,15 +435,15 @@ if(!@ARGV) {
 }
 
 ###User Options
-GetOptions('ifd|infile_dirs:s'  => \%{ $parameter{infile_dirs}{value} },  #Hash infile_dirs=sample_id
-	   'sd|script_dir:s'  => \$parameter{script_dir}{value},  #Directory for custom scripts required by the pipeline
-	   'rd|reference_dir:s'  => \$parameter{reference_dir}{value},  #directory containing references
-	   'p|project_id:s'  => \$parameter{project_id}{value},
-	   's|sample_ids:s'  => \@{ $parameter{sample_ids}{value} },  #Comma separated list
-	   'em|email:s'  => \$parameter{email}{value},  #Email adress
-	   'emt|email_type:s'  => \$parameter{email_type}{value},  #Email type
-	   'odd|outdata_dir:s'  => \$parameter{outdata_dir}{value},  #One dir above sample id, must supply whole path i.e. /proj/...
-	   'osd|outscript_dir:s'  => \$parameter{outscript_dir}{value},   #One dir above sample id, must supply whole path i.e. /proj/...
+GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash infile_dirs=sample_id
+	   'sd|script_dir:s' => \$parameter{script_dir}{value},  #Directory for custom scripts required by the pipeline
+	   'rd|reference_dir:s' => \$parameter{reference_dir}{value},  #directory containing references
+	   'p|project_id:s' => \$parameter{project_id}{value},
+	   's|sample_ids:s' => \@{ $parameter{sample_ids}{value} },  #Comma separated list
+	   'em|email:s' => \$parameter{email}{value},  #Email adress
+	   'emt|email_type:s' => \$parameter{email_type}{value},  #Email type
+	   'odd|outdata_dir:s' => \$parameter{outdata_dir}{value},  #One dir above sample id, must supply whole path i.e. /proj/...
+	   'osd|outscript_dir:s' => \$parameter{outscript_dir}{value},   #One dir above sample id, must supply whole path i.e. /proj/...
 	   'f|family_id:s' => \$parameter{family_id}{value},  #Family group ID (Merged to same vcf file after GATK Base Recalibration)
 	   'ped|pedigree_file:s' => \$parameter{pedigree_file}{value},  #Pedigree file
 	   'hgr|human_genome_reference:s' => \$parameter{human_genome_reference}{value},  #Human genome reference
@@ -515,12 +516,12 @@ GetOptions('ifd|infile_dirs:s'  => \%{ $parameter{infile_dirs}{value} },  #Hash 
 	   'xcov|genomecoveragebed_max_coverage=n' => \$parameter{genomecoveragebed_max_coverage}{value},  #Sets max depth to calculate coverage
 	   'pptcmm|ppicardtools_collectmultiplemetrics=n' => \$parameter{ppicardtools_collectmultiplemetrics}{value},
 	   'pptchs|ppicardtools_calculatehsmetrics=n' => \$parameter{ppicardtools_calculatehsmetrics}{value},
-	   'extb|exome_target_bed=s'  => \%{ $parameter{exome_target_bed}{value} },  #Hash value file.bed=sample_id
+	   'extb|exome_target_bed=s' => \%{ $parameter{exome_target_bed}{value} },  #Hash value file.bed=sample_id
 	   'prcp|prcovplots=n' => \$parameter{prcovplots}{value},
 	   'pcnv|pcnvnator=n' => \$parameter{pcnvnator}{value},
 	   'cnvhbs|cnv_bin_size=n' => \$parameter{cnv_bin_size}{value},
 	   'pdel|pdelly=n' => \$parameter{pdelly}{value},
-	   'deltyp|delly_types:s'  => \@{ $parameter{delly_types}{value} },
+	   'deltyp|delly_types:s' => \@{ $parameter{delly_types}{value} },
 	   'pmna|pmanta=n' => \$parameter{pmanta}{value},
 	   'pfit|pfindtranslocations=n' => \$parameter{pfindtranslocations}{value},
 	   'fitmsp|findtranslocations_minimum_supporting_pairs=n' => \$parameter{findtranslocations_minimum_supporting_pairs}{value},
@@ -531,24 +532,25 @@ GetOptions('ifd|infile_dirs:s'  => \%{ $parameter{infile_dirs}{value} },  #Hash 
 	   'svcval|sv_vcfanno_lua:s' => \$parameter{sv_vcfanno_lua}{value},  #Lua file postscripting
 	   'svcvac|sv_vcfanno_config:s' => \$parameter{sv_vcfanno_config}{value},  #Toml config of what to annotate
 	   'svcvah|sv_vcfannotation_header_lines_file:s' => \$parameter{sv_vcfannotation_header_lines_file}{value},  #Adjust for postscript by adding required header lines to vcf
-	   'svcgmf|sv_genmod_filter=n'  => \$parameter{sv_genmod_filter}{value},  #Remove common structural variants from vcf
-	   'svcgfr|sv_genmod_filter_1000g:s'  => \$parameter{sv_genmod_filter_1000g}{value},  #Genmod annotate structural variants from 1000G reference
-	   'svcgft|sv_genmod_filter_threshold:s'  => \$parameter{sv_genmod_filter_threshold}{value},  #Threshold for filtering structural variants
+	   'svcgmf|sv_genmod_filter=n' => \$parameter{sv_genmod_filter}{value},  #Remove common structural variants from vcf
+	   'svcgfr|sv_genmod_filter_1000g:s' => \$parameter{sv_genmod_filter_1000g}{value},  #Genmod annotate structural variants from 1000G reference
+	   'svcgft|sv_genmod_filter_threshold:s' => \$parameter{sv_genmod_filter_threshold}{value},  #Threshold for filtering structural variants
 	   'svcbcf|sv_combinevariantcallsets_bcf_file=n' => \$parameter{sv_combinevariantcallsets_bcf_file}{value},  #Produce compressed vcf
 	   'psvv|psv_varianteffectpredictor=n' => \$parameter{psv_varianteffectpredictor}{value},
-	   'svvepf|sv_vep_features:s'  => \@{ $parameter{sv_vep_features}{value} },  #Comma separated list
-	   'svvepl|sv_vep_plugins:s'  => \@{ $parameter{sv_vep_plugins}{value} },  #Comma separated list
+	   'svvepf|sv_vep_features:s' => \@{ $parameter{sv_vep_features}{value} },  #Comma separated list
+	   'svvepl|sv_vep_plugins:s' => \@{ $parameter{sv_vep_plugins}{value} },  #Comma separated list
 	   'psvvcp|psv_vcfparser=n' => \$parameter{psv_vcfparser}{value},
 	   'svvcpvt|sv_vcfparser_vep_transcripts=n' => \$parameter{sv_vcfparser_vep_transcripts}{value},
+	   'svvcppg|sv_vcfparser_per_gene=n' => \$parameter{sv_vcfparser_per_gene}{value},
 	   'svvcprff|sv_vcfparser_range_feature_file:s' => \$parameter{sv_vcfparser_range_feature_file}{value},  #path to vcfparser_range_feature_file
-	   'svvcprfa|sv_vcfparser_range_feature_annotation_columns:s'  => \@{ $parameter{sv_vcfparser_range_feature_annotation_columns}{value} },  #Comma separated list
-	   'svvcpsf|sv_vcfparser_select_file:s'  => \$parameter{sv_vcfparser_select_file}{value},  #path to vcfparser_select_file
+	   'svvcprfa|sv_vcfparser_range_feature_annotation_columns:s' => \@{ $parameter{sv_vcfparser_range_feature_annotation_columns}{value} },  #Comma separated list
+	   'svvcpsf|sv_vcfparser_select_file:s' => \$parameter{sv_vcfparser_select_file}{value},  #path to vcfparser_select_file
 	   'svvcpsfm|sv_vcfparser_select_file_matching_column=n' => \$parameter{sv_vcfparser_select_file_matching_column}{value},  #Column of HGNC Symbol in SelectFile
-	   'svvcpsfa|sv_vcfparser_select_feature_annotation_columns:s'  => \@{ $parameter{sv_vcfparser_select_feature_annotation_columns}{value} },  #Comma separated list
+	   'svvcpsfa|sv_vcfparser_select_feature_annotation_columns:s' => \@{ $parameter{sv_vcfparser_select_feature_annotation_columns}{value} },  #Comma separated list
 	   'psvr|psv_rankvariant=n' => \$parameter{psv_rankvariant}{value},  #Ranking of SV variants
 	   'svravgft|sv_genmod_models_family_type:s' => \$parameter{sv_genmod_models_family_type}{value},
 	   'svravrpf|sv_genmod_models_reduced_penetrance_file:s' => \$parameter{sv_genmod_models_reduced_penetrance_file}{value},
-	   'svravwg|sv_whole_gene=n'  => \$parameter{sv_whole_gene}{value},  #Allow compound pairs in intronic regions
+	   'svravwg|sv_whole_gene=n' => \$parameter{sv_whole_gene}{value},  #Allow compound pairs in intronic regions
 	   'svravrm|sv_rank_model_file:s' => \$parameter{sv_rank_model_file}{value},  #The rank modell config.ini path
 	   'svravbf|sv_rankvariant_binary_file=n' => \$parameter{sv_rankvariant_binary_file}{value},  #Produce compressed vcfs
 	   'psmp|psamtools_mpileup=n' => \$parameter{psamtools_mpileup}{value},
@@ -558,15 +560,15 @@ GetOptions('ifd|infile_dirs:s'  => \%{ $parameter{infile_dirs}{value} },  #Hash 
 	   'gdco|gatk_downsample_to_coverage=n' => \$parameter{gatk_downsample_to_coverage}{value},  #GATK downsample to coverage
 	   'gdai|gatk_disable_auto_index_and_file_lock=n' => \$parameter{gatk_disable_auto_index_and_file_lock}{value},
 	   'pgra|pgatk_realigner=n' => \$parameter{pgatk_realigner}{value},  #GATK ReAlignerTargetCreator/IndelRealigner
-	   'graks|gatk_realigner_indel_known_sites:s'  => \@{ $parameter{gatk_realigner_indel_known_sites}{value} },  #Comma separated list
+	   'graks|gatk_realigner_indel_known_sites:s' => \@{ $parameter{gatk_realigner_indel_known_sites}{value} },  #Comma separated list
 	   'pgbr|pgatk_baserecalibration=n' => \$parameter{pgatk_baserecalibration}{value},  #GATK baserecalibrator/printreads
-	   'gbrcov|gatk_baserecalibration_covariates:s'  => \@{ $parameter{gatk_baserecalibration_covariates}{value} },  #Comma separated list
-	   'gbrkst|gatk_baserecalibration_known_sites:s'  => \@{ $parameter{gatk_baserecalibration_known_sites}{value} },  #Comma separated list
+	   'gbrcov|gatk_baserecalibration_covariates:s' => \@{ $parameter{gatk_baserecalibration_covariates}{value} },  #Comma separated list
+	   'gbrkst|gatk_baserecalibration_known_sites:s' => \@{ $parameter{gatk_baserecalibration_known_sites}{value} },  #Comma separated list
 	   'gbrocr|gatk_baserecalibration_over_clipped_read=n' => \$parameter{gatk_baserecalibration_over_clipped_read}{value},  #Filter out reads that are over-soft-clipped
 	   'gbrdiq|gatk_baserecalibration_disable_indel_qual=n' => \$parameter{gatk_baserecalibration_disable_indel_qual}{value},  #Disable indel quality scores
-	   'gbrsqq|gatk_baserecalibration_static_quantized_quals:s'  => \@{ $parameter{gatk_baserecalibration_static_quantized_quals}{value} },  #Comma separated list
+	   'gbrsqq|gatk_baserecalibration_static_quantized_quals:s' => \@{ $parameter{gatk_baserecalibration_static_quantized_quals}{value} },  #Comma separated list
 	   'pghc|pgatk_haplotypecaller=n' => \$parameter{pgatk_haplotypecaller}{value},  #GATK Haplotypecaller
-	   'ghcann|gatk_haplotypecaller_annotation:s'  => \@{ $parameter{gatk_haplotypecaller_annotation}{value} },  #Comma separated list
+	   'ghcann|gatk_haplotypecaller_annotation:s' => \@{ $parameter{gatk_haplotypecaller_annotation}{value} },  #Comma separated list
 	   'ghckse|gatk_haplotypecaller_snp_known_set:s' => \$parameter{gatk_haplotypecaller_snp_known_set}{value},  #Known SNP set to be used in GATK HaplotypeCaller
 	   'ghcscb|gatk_haplotypecaller_soft_clipped_bases=n' => \$parameter{gatk_haplotypecaller_soft_clipped_bases}{value},  #Do not include soft clipped bases in the variant calling
 	   'ghcpim|gatk_haplotypecaller_pcr_indel_model:s' => \$parameter{gatk_haplotypecaller_pcr_indel_model}{value},  #The PCR indel model to use
@@ -602,45 +604,45 @@ GetOptions('ifd|infile_dirs:s'  => \%{ $parameter{infile_dirs}{value} },  #Hash 
 	   'pvt|pvt=n' => \$parameter{pvt}{value},  #VT program
 	   'vtddec|vt_decompose=n' => \$parameter{vt_decompose}{value},  #vt decompose (split multiallelic variants)
 	   'vtdnor|vt_normalize=n' => \$parameter{vt_normalize}{value},  #vt normalize varaints according to genomic reference
-	   'vtmaa|vt_missing_alt_allele=n'  => \$parameter{vt_missing_alt_allele}{value},  #vt remove '*' entries from vcf
-	   'vtgmf|vt_genmod_filter=n'  => \$parameter{vt_genmod_filter}{value},  #vt Remove common variants from vcf
-	   'vtgfr|vt_genmod_filter_1000g:s'  => \$parameter{vt_genmod_filter_1000g}{value},  #vt Genmod annotate 1000G reference
+	   'vtmaa|vt_missing_alt_allele=n' => \$parameter{vt_missing_alt_allele}{value},  #vt remove '*' entries from vcf
+	   'vtgmf|vt_genmod_filter=n' => \$parameter{vt_genmod_filter}{value},  #vt Remove common variants from vcf
+	   'vtgfr|vt_genmod_filter_1000g:s' => \$parameter{vt_genmod_filter_1000g}{value},  #vt Genmod annotate 1000G reference
 	   'vtmaf|vt_genmod_filter_max_af=n' => \$parameter{vt_genmod_filter_max_af}{value},
-	   'vtgft|vt_genmod_filter_threshold:s'  => \$parameter{vt_genmod_filter_threshold}{value},  #vt Threshold for filtering variants
+	   'vtgft|vt_genmod_filter_threshold:s' => \$parameter{vt_genmod_filter_threshold}{value},  #vt Threshold for filtering variants
 	   'pvep|pvarianteffectpredictor=n' => \$parameter{pvarianteffectpredictor}{value},  #Annotation of variants using vep
-	   'vepp|vep_directory_path:s'  => \$parameter{vep_directory_path}{value},  #path to vep script dir
-	   'vepc|vep_directory_cache:s'  => \$parameter{vep_directory_cache}{value},  #path to vep cache dir
-	   'vepr|vep_reference:n'  => \$parameter{vep_reference}{value},  #Use Human reference file with VEP
-	   'vepf|vep_features:s'  => \@{ $parameter{vep_features}{value} },  #Comma separated list
-	   'veppl|vep_plugins:s'  => \@{ $parameter{vep_plugins}{value}},  #Comma separated list
+	   'vepp|vep_directory_path:s' => \$parameter{vep_directory_path}{value},  #path to vep script dir
+	   'vepc|vep_directory_cache:s' => \$parameter{vep_directory_cache}{value},  #path to vep cache dir
+	   'vepr|vep_reference:n' => \$parameter{vep_reference}{value},  #Use Human reference file with VEP
+	   'vepf|vep_features:s' => \@{ $parameter{vep_features}{value} },  #Comma separated list
+	   'veppl|vep_plugins:s' => \@{ $parameter{vep_plugins}{value}},  #Comma separated list
 	   'pvcp|pvcfparser=n' => \$parameter{pvcfparser}{value},
 	   'vcpvt|vcfparser_vep_transcripts=n' => \$parameter{vcfparser_vep_transcripts}{value},
-	   'vcprff|vcfparser_range_feature_file:s'  => \$parameter{vcfparser_range_feature_file}{value},  #path to vcfparser_range_feature_file
-	   'vcprfa|vcfparser_range_feature_annotation_columns:s'  => \@{ $parameter{vcfparser_range_feature_annotation_columns}{value} },  #Comma separated list
-	   'vcpsf|vcfparser_select_file:s'  => \$parameter{vcfparser_select_file}{value},  #path to vcfparser_select_file
+	   'vcprff|vcfparser_range_feature_file:s' => \$parameter{vcfparser_range_feature_file}{value},  #path to vcfparser_range_feature_file
+	   'vcprfa|vcfparser_range_feature_annotation_columns:s' => \@{ $parameter{vcfparser_range_feature_annotation_columns}{value} },  #Comma separated list
+	   'vcpsf|vcfparser_select_file:s' => \$parameter{vcfparser_select_file}{value},  #path to vcfparser_select_file
 	   'vcpsfm|vcfparser_select_file_matching_column=n' => \$parameter{vcfparser_select_file_matching_column}{value},  #Column of HGNC Symbol in SelectFile
-	   'vcpsfa|vcfparser_select_feature_annotation_columns:s'  => \@{ $parameter{vcfparser_select_feature_annotation_columns}{value} },  #Comma separated list
+	   'vcpsfa|vcfparser_select_feature_annotation_columns:s' => \@{ $parameter{vcfparser_select_feature_annotation_columns}{value} },  #Comma separated list
 	   'panv|pannovar=n' => \$parameter{pannovar}{value},  #Performs annovar filter gene, region and filter analysis
-	   'anvp|annovar_path:s'  => \$parameter{annovar_path}{value},  #path to annovar script dir
-	   'anvgbv|annovar_genome_build_version:s'  => \$parameter{annovar_genome_build_version}{value},
-	   'anvtn|annovar_table_names:s'  => \@{ $parameter{annovar_table_names}{value} },  #Comma separated list
+	   'anvp|annovar_path:s' => \$parameter{annovar_path}{value},  #path to annovar script dir
+	   'anvgbv|annovar_genome_build_version:s' => \$parameter{annovar_genome_build_version}{value},
+	   'anvtn|annovar_table_names:s' => \@{ $parameter{annovar_table_names}{value} },  #Comma separated list
 	   'anvstn|annovar_supported_table_names' => sub { print_supported_annovar_table_names({active_parameter_href => \%active_parameter,
 												annovar_supported_table_names_ref => \@annovar_supported_table_names,
 											       })},  #Generates a list of supported table names
 	   'anvarmafth|annovar_maf_threshold=n' => \$parameter{annovar_maf_threshold}{value},
 	   'psne|psnpeff=n' => \$parameter{psnpeff}{value},
-	   'snep|snpeff_path:s'  => \$parameter{snpeff_path}{value},  #path to snpEff directory
+	   'snep|snpeff_path:s' => \$parameter{snpeff_path}{value},  #path to snpEff directory
 	   'sneann|snpeff_ann=n' => \$parameter{snpeff_ann}{value},
-	   'snegbv|snpeff_genome_build_version:s'  => \$parameter{snpeff_genome_build_version}{value},
-	   'snesaf|snpsift_annotation_files=s'  => \%{ $parameter{snpsift_annotation_files}{value} },
-	   'snesaoi|snpsift_annotation_outinfo_key=s'  => \%{ $parameter{snpsift_annotation_outinfo_key}{value} },
-	   'snesdbnsfp|snpsift_dbnsfp_file:s'  => \$parameter{snpsift_dbnsfp_file}{value},  #DbNSFP file
-	   'snesdbnsfpa|snpsift_dbnsfp_annotations:s'  => \@{ $parameter{snpsift_dbnsfp_annotations}{value} },  #Comma separated list
+	   'snegbv|snpeff_genome_build_version:s' => \$parameter{snpeff_genome_build_version}{value},
+	   'snesaf|snpsift_annotation_files=s' => \%{ $parameter{snpsift_annotation_files}{value} },
+	   'snesaoi|snpsift_annotation_outinfo_key=s' => \%{ $parameter{snpsift_annotation_outinfo_key}{value} },
+	   'snesdbnsfp|snpsift_dbnsfp_file:s' => \$parameter{snpsift_dbnsfp_file}{value},  #DbNSFP file
+	   'snesdbnsfpa|snpsift_dbnsfp_annotations:s' => \@{ $parameter{snpsift_dbnsfp_annotations}{value} },  #Comma separated list
 	   'prav|prankvariant=n' => \$parameter{prankvariant}{value},  #Ranking variants
 	   'ravgft|genmod_models_family_type:s' => \$parameter{genmod_models_family_type}{value},
-	   'ravcad|genmod_annotate_cadd_files:s'  => \@{ $parameter{genmod_annotate_cadd_files}{value} },  #Comma separated list
+	   'ravcad|genmod_annotate_cadd_files:s' => \@{ $parameter{genmod_annotate_cadd_files}{value} },  #Comma separated list
 	   'ravspi|genmod_annotate_spidex_file:s' => \$parameter{genmod_annotate_spidex_file}{value},
-	   'ravwg|whole_gene=n'  => \$parameter{whole_gene}{value},  #Allow compound pairs in intronic regions
+	   'ravwg|whole_gene=n' => \$parameter{whole_gene}{value},  #Allow compound pairs in intronic regions
 	   'ravrpf|genmod_models_reduced_penetrance_file:s' => \$parameter{genmod_models_reduced_penetrance_file}{value},
 	   'ravrm|rank_model_file:s' => \$parameter{rank_model_file}{value},  #The rank modell config.ini path
 	   'ravbf|rankvariant_binary_file=n' => \$parameter{rankvariant_binary_file}{value},  #Produce compressed vcfs
@@ -8783,6 +8785,10 @@ sub sv_vcfparser {
 	if ($active_parameter_href->{psv_varianteffectpredictor} > 0) {
 
 	    print $XARGSFILEHANDLE "--parse_vep ".$active_parameter_href->{sv_vcfparser_vep_transcripts}." ";  #Parse VEP transcript specific entries
+	}
+	if ($active_parameter_href->{sv_vcfparser_per_gene}) {
+	    
+	    print $XARGSFILEHANDLE "--per_gene ".$active_parameter_href->{sv_vcfparser_per_gene}." ";  #Keep only most severe consequence per gene
 	}
 	if ($$contig_ref =~ /MT|M/) {
 
