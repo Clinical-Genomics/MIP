@@ -176,12 +176,15 @@ sub define_snpeff_annotations {
 ##Arguments: None
 
     $snpeff_cmd{snpeff}{phastCons100way_vertebrate_prediction_term}{File} = q?SnpSift dbnsfp?;
+    $snpeff_cmd{snpeff}{phastCons100way_vertebrate_prediction_term}{vcf_key} = q?dbNSFP_phastCons100way_vertebrate?;
     $snpeff_cmd{snpeff}{phastCons100way_vertebrate_prediction_term}{info} = q?##INFO=<ID=phastCons100way_vertebrate_prediction_term,Number=A,Type=String,Description="PhastCons conservation prediction term">?;
 
     $snpeff_cmd{snpeff}{phyloP100way_vertebrate_prediction_term}{File} = q?SnpSift dbnsfp?;
+    $snpeff_cmd{snpeff}{phyloP100way_vertebrate_prediction_term}{vcf_key} = q?dbNSFP_phyloP100way_vertebrate?;
     $snpeff_cmd{snpeff}{phyloP100way_vertebrate_prediction_term}{info} = q?##INFO=<ID=phyloP100way_vertebrate_prediction_term,Number=A,Type=String,Description="PhyloP conservation prediction term">?;
 
     $snpeff_cmd{snpeff}{'GERP++_RS_prediction_term'}{File} = q?SnpSift dbnsfp?;
+    $snpeff_cmd{snpeff}{'GERP++_RS_prediction_term'}{vcf_key} = q?dbNSFP_GERP___RS?;
     $snpeff_cmd{snpeff}{'GERP++_RS_prediction_term'}{info} = q?##INFO=<ID=GERP++_RS_prediction_term,Number=A,Type=String,Description="GERP RS conservation prediction term">?;
 
 }
@@ -585,29 +588,28 @@ sub read_infile_vcf {
 
 	    for my $database (keys % {$snpeff_cmd_href->{present}{database}}) { #Note that the vcf should only contain 1 database entry
 				    
-		if ($record{INFO_key_value}{$database}) {
+		my $vcf_key = $snpeff_cmd_href->{snpeff}{$database}{vcf_key};
+
+		if ($record{INFO_key_value}{$vcf_key}) {
 			
-		    my @allele_scores = split(",", $record{INFO_key_value}{$database}); #Split on ","
+		    my @allele_scores = split(",", $record{INFO_key_value}{$vcf_key}); #Split on ","
 		    my $conservation_term;
 		
 		    if($database eq "phastCons100way_vertebrate_prediction_term") {
 	
 			$conservation_term = find_conserved({elements_ref => \@allele_scores,
-							     regexp => "\\S+_phastCons100way_vertebrate=",
 							     score_cutoff => 0.8,
 							    });
 		    }
 		    if($database eq "phyloP100way_vertebrate_prediction_term") {
 			
 			$conservation_term = find_conserved({elements_ref => \@allele_scores,
-							     regexp => "\\S+_phyloP100way_vertebrate=",
 							     score_cutoff => 2.5,
 							    });
 		    }
 		    if($database eq "GERP++_RS_prediction_term") {
 
 			$conservation_term = find_conserved({elements_ref => \@allele_scores,
-							     regexp => "\\S+_GERP\\+\\+_RS=",
 							     score_cutoff => 2,
 							    });
 		    }
@@ -657,25 +659,19 @@ sub read_infile_vcf {
 		    }
 		    print STDOUT $record{ $vcf_format_columns[$line_elements_counter] }."\t";
 		}
+
 		if ($line_elements_counter == 7) {
 
-		    if(! $per_gene) {
+		    if (! $parse_vep) {
 
+			if ($record{select_transcripts}) {
+			    
+			    print $WOSFTSV $record{ $vcf_format_columns[$line_elements_counter] };
+			}
 			print STDOUT $record{ $vcf_format_columns[$line_elements_counter] };
 		    }
 		    else {
 
-			if($record{INFO_key_value}{CSQ}) {
-
-			    if ($record{range_transcripts}) {
-				
-				$record{INFO_key_value}{CSQ} = join(",", @{ $record{range_transcripts} });
-			    }
-			    if ($record{select_transcripts}) {
-				
-				$record{INFO_key_value}{CSQ} = join(",", @{ $record{select_transcripts} });
-			    }
-			}
 			my $counter = 0;
 			foreach my $key (keys %{ $record{INFO_key_value} }) { 
 			    
@@ -683,12 +679,32 @@ sub read_infile_vcf {
 				
 				if (defined($record{INFO_key_value}{$key})) {
 				    
-				    print $WOSFTSV $key."=".$record{INFO_key_value}{$key};
-				    print STDOUT $key."=".$record{INFO_key_value}{$key};
+				    if($key eq "CSQ") {
+					
+					if ($record{range_transcripts}) {
+					    
+					    print STDOUT $key."=".join(",", @{ $record{range_transcripts} });
+					}
+					if ($record{select_transcripts}) {
+					    
+					    print $WOSFTSV $key."=".join(",", @{ $record{select_transcripts} });
+					}
+				    }
+				    else {
+					
+					if ($record{select_transcripts}) {
+					    
+					    print $WOSFTSV $key."=".$record{INFO_key_value}{$key};
+					}
+					print STDOUT $key."=".$record{INFO_key_value}{$key};
+				    }
 				}
 				else {
-
-				    print $WOSFTSV $key;
+				    
+				    if ($record{select_transcripts}) {
+					
+					print $WOSFTSV $key;
+				    }
 				    print STDOUT $key;
 				}
 			    }
@@ -696,12 +712,32 @@ sub read_infile_vcf {
 				
 				if (defined($record{INFO_key_value}{$key})) {
 				    
-				    print $WOSFTSV ";".$key."=".$record{INFO_key_value}{$key};
-				     print STDOUT ";".$key."=".$record{INFO_key_value}{$key};
+				    if($key eq "CSQ") {
+					
+					if ($record{range_transcripts}) {
+					    
+					    print STDOUT ";".$key."=".join(",", @{ $record{range_transcripts} });
+					}
+					if ($record{select_transcripts}) {
+					    
+					    print $WOSFTSV ";".$key."=".join(",", @{ $record{select_transcripts} });
+					}
+				    }
+				    else {
+					
+					if ($record{select_transcripts}) {
+					    
+					    print $WOSFTSV ";".$key."=".$record{INFO_key_value}{$key};
+					}
+					print STDOUT ";".$key."=".$record{INFO_key_value}{$key};
+				    }
 				}
 				else {
-
-				    print $WOSFTSV ";".$key;
+				    
+				    if ($record{select_transcripts}) {			    
+					
+					print $WOSFTSV ";".$key;
+				    }
 				    print STDOUT ";".$key;
 				}
 			    }
@@ -712,13 +748,13 @@ sub read_infile_vcf {
 		    foreach my $key (keys %{ $record{INFO_addition} }) {
 			
 			if ($record{select_transcripts}) {
-
+			    
 			    print $WOSFTSV ";".$key."=".$record{INFO_addition}{$key};
 			}
 			print STDOUT ";".$key."=".$record{INFO_addition}{$key};
 		    }
 		    if ($record{select_transcripts}) {
-
+			
 			foreach my $key (keys %{ $record{INFO_addition_select_feature} }) {
 			    
 			    print $WOSFTSV ";".$key."=".$record{INFO_addition_select_feature}{$key};
@@ -738,14 +774,14 @@ sub read_infile_vcf {
 		if ($line_elements_counter > 7) {
 		    
 		    if ($record{select_transcripts}) {
-
+			
 			print $WOSFTSV $record{ $vcf_format_columns[$line_elements_counter] }."\t";
 		    }
 		    print STDOUT $record{ $vcf_format_columns[$line_elements_counter] }."\t";
 		}
 	    }
 	    if ($record{select_transcripts}) {
-
+		
 		print $WOSFTSV "\n";
 	    }
 	    print STDOUT "\n";
@@ -866,8 +902,9 @@ sub parse_vep_csq {
 		    }
 		    push(@{ $record_href->{range_transcripts} }, $transcript);  #Add all transcripts to range transcripts
 		}
-		
 	    }
+	    ## Intergenic
+	    push(@{ $record_href->{range_transcripts} }, $transcript);  #Add all transcripts to range transcripts
 	}
 	my @most_severe_select_consequences;
 	my @most_severe_range_consequences;
