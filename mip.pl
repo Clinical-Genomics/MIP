@@ -16813,6 +16813,7 @@ sub read_yaml_pedigree_file {
 
 	## Sample_id
 	my $sample_id = $pedigree_sample_href->{sample_id};  #Alias
+	push(@pedigree_sample_ids, $sample_id); #Save pedigree sample_id info
 
 	if ($user_supply_switch{sample_ids} == 0) {
 
@@ -16834,7 +16835,7 @@ sub read_yaml_pedigree_file {
 
 	    if (any {$_ eq $sample_id} @user_input_sample_ids) {  #If element is part of array
 
-		push(@pedigree_sample_ids, $sample_id); #Save pedigree sample_id info
+		push(@{ $active_parameter_href->{sample_ids} }, $sample_id);  #Save sample_id info
 
 		## Reformat pedigree keys to plink format and collect sample info to various hashes
 		get_pedigree_sample_info({parameter_href => $parameter_href,
@@ -16850,6 +16851,12 @@ sub read_yaml_pedigree_file {
 	    }
 	}
     }
+
+    ##Check that founder_ids are included in the pedigree info and the analysis run
+    check_founder_id({pedigree_href => $pedigree_href,
+		      pedigree_sample_ids_ref => \@{ $active_parameter_href->{sample_ids} },
+		     });
+
     if (! $user_supply_switch{sample_ids}) {
 
 	@{ $active_parameter_href->{sample_ids} } = sort(@{ $active_parameter_href->{sample_ids} });  #Lexiographical sort to determine the correct order of ids indata
@@ -16864,6 +16871,7 @@ sub read_yaml_pedigree_file {
 		exit 1;
 	    }
 	}
+	
     }
     if(%exom_target_bed_test_file_tracker) {  #We have read capture kits from pedigree and need to transfer to active_parameters
 
@@ -26953,6 +26961,51 @@ sub get_pedigree_sample_info {
 
 	    push(@{ $exom_target_bed_test_file_tracker_href->{$exome_target_bed_file} }, $sample_id);
 
+	}
+    }
+}
+
+
+sub check_founder_id {
+
+##check_founder_id
+
+##Function : Check that founder_ids are included in the pedigree info
+##Returns  : ""
+##Arguments: $pedigree_href, $pedigree_sample_ids_ref
+##         : $pedigree_href           => Pedigree info {REF}
+##         : $pedigree_sample_ids_ref => Array of pedigree samples {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $pedigree_href;
+    my $pedigree_sample_ids_ref;
+
+    my $tmpl = { 
+	pedigree_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$pedigree_href},
+	pedigree_sample_ids_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$pedigree_sample_ids_ref},
+    };
+    
+   
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+  SAMPLE:
+    foreach my $pedigree_sample_href (@{ $pedigree_href->{samples} }) {
+	
+	my @founders = ($pedigree_sample_href->{father}, $pedigree_sample_href->{mother});
+
+      FOUNDER:
+	foreach my $founder (@founders) {
+
+	    if ($founder) {
+		
+		if (! ( any {$_ eq $founder} @$pedigree_sample_ids_ref ) ) {  #If element is not part of array
+		    
+		    $logger->fatal("Could not find founder sample_id: ".$founder." in pedigree file\n");
+		    exit 1;
+		}
+	    }	
 	}
     }
 }
