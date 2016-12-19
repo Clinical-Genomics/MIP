@@ -13309,16 +13309,16 @@ sub bwa_mem {
     my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
 
     ## Flatten argument(s)
-    my $parameterHashRef = ${$argHashRef}{parameterHashRef};
-    my $scriptParameterHashRef = ${$argHashRef}{scriptParameterHashRef};
-    my $sampleInfoHashRef = ${$argHashRef}{sampleInfoHashRef};
-    my $fileInfoHashRef = ${$argHashRef}{fileInfoHashRef};
-    my $infileHashRef = ${$argHashRef}{infileHashRef};
-    my $inDirPathHashRef = ${$argHashRef}{inDirPathHashRef};
-    my $infilesLaneNoEndingHashRef = ${$argHashRef}{infilesLaneNoEndingHashRef};
-    my $jobIDHashRef = ${$argHashRef}{jobIDHashRef};
-    my $sampleIDRef = ${$argHashRef}{sampleIDRef};
-    my $programName = ${$argHashRef}{programName};
+    my $parameter_href;
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $file_info_href;
+    my $infile_href;
+    my $indir_path_href;
+    my $infile_lane_no_ending_href;
+    my $job_id_href;
+    my $sample_id_ref;
+    my $program_name;
     
     my $tmpl = {
 	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
