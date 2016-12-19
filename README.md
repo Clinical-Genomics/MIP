@@ -1,5 +1,7 @@
 #MIP - Mutation Identification Pipeline
 
+[![Build Status](https://travis-ci.org/henrikstranneheim/MIP.svg?branch=develop)](https://travis-ci.org/henrikstranneheim/MIP)
+
 MIP enables identification of potential disease causing variants from sequencing
 data. 
 
