@@ -106,7 +106,7 @@ $parameter{perl_version} = "5.18.2";
 ## PIP
 $parameter{pip}{genmod} = "3.5.9";
 $parameter{pip}{variant_integrity} = "0.0.4";
-$parameter{pip}{chanjo} = "3.4.1";
+$parameter{pip}{chanjo} = "4.0.0";
 $parameter{pip}{cosmid} = "0.4.9.1";
 $parameter{pip}{'python-Levenshtein'} = "0.12.0";
 
