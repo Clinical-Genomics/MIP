@@ -16850,7 +16850,6 @@ sub read_yaml_pedigree_file {
 	    }
 	}
     }
-
     if (! $user_supply_switch{sample_ids}) {
 
 	@{ $active_parameter_href->{sample_ids} } = sort(@{ $active_parameter_href->{sample_ids} });  #Lexiographical sort to determine the correct order of ids indata
