@@ -236,6 +236,8 @@ mip.pl  -ifd [infile_dirs=sample_id] -sd [script_dir] -rd [reference_dir] -p [pr
 
                ###Annotation
                -ppvab/--pprepareforvariantannotationblock Prepare for variant annotation block by copying and splitting files per contig (Mandatory)
+               -prhc/--prhocall Rhocall performs annotation of variants in autozygosity regions (defaults to "1" (=yes))
+               -rhcf/--rhocall_frequency_file Frequency file for bcftools roh calculation (defaults to "anon_SweGen_161019_snp_freq_hg19.tab.gz", tab sep)
                -pvt/--pvt VT decompose and normalize (defaults to "1" (=yes))
                  -vtdec/--vt_decompose Split multi allelic records into single records (defaults to "1" (=yes))
                  -vtnor/--vt_normalize Normalize variants (defaults to "1" (=yes))
@@ -601,6 +603,8 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'gveedbs|gatk_varianteval_dbsnp:s' => \$parameter{gatk_varianteval_dbsnp}{value},
 	   'gveedbg|gatk_varianteval_gold:s' => \$parameter{gatk_variantrecalibration_training_set_mills}{value},
 	   'ppvab|pprepareforvariantannotationblock=n' => \$parameter{pprepareforvariantannotationblock}{value},
+	   'prhc|prhocall=n' => \$parameter{prhocall}{value},  #rhocall program
+	   'rhcf|rhocall_frequency_file:s' => \$parameter{rhocall_frequency_file}{value},
 	   'pvt|pvt=n' => \$parameter{pvt}{value},  #VT program
 	   'vtddec|vt_decompose=n' => \$parameter{vt_decompose}{value},  #vt decompose (split multiallelic variants)
 	   'vtdnor|vt_normalize=n' => \$parameter{vt_normalize}{value},  #vt normalize varaints according to genomic reference
@@ -2254,6 +2258,20 @@ else {
 				      program_name => "prepareforvariantannotationblock",
 				     });
 
+    if ($active_parameter{prhocall} > 0) {  #Run rhocall. Done per family
+
+	$logger->info("[Rhocall]\n");
+
+	rhocall({parameter_href => \%parameter,
+		 active_parameter_href => \%active_parameter,
+		 sample_info_href => \%sample_info,
+		 file_info_href => \%file_info,
+		 infile_lane_no_ending_href => \%infile_lane_no_ending,
+		 job_id_href => \%job_id,
+		 call_type => "BOTH",
+		 program_name => "rhocall",
+		});
+    }
     if ($active_parameter{pvt} > 0) {  #Run vt. Done per family
 
 	$logger->info("[Vt]\n");
@@ -3673,11 +3691,13 @@ sub rankvariant {
 		   infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf"),
 		   outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf.gz"),
 		  });
+	    say $FILEHANDLE "\n";
 
 	    ## Index file using tabix
 	    tabix({FILEHANDLE => $FILEHANDLE,
 		   infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf.gz"),
 		  });
+	    say $FILEHANDLE "\n";
 	}
 
 	## Copies file from temporary directory.
@@ -5059,6 +5079,7 @@ sub vcfparser {
     }
 }
 
+
 sub varianteffectpredictor {
 
 ##varianteffectpredictor
@@ -6136,7 +6157,7 @@ sub vt {
     $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
+    my $infile_tag = $file_info_href->{$$family_id_ref}{prhocall}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
 
     if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
@@ -6253,6 +6274,202 @@ sub vt {
 	print $XARGSFILEHANDLE "mv ";
 	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$$contig_ref.$alt_file_ending.".vcf")." ";
 	say $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$$contig_ref.".vcf")." ";
+    }
+
+    if ( ! $$reduce_io_ref) { #Run as individual sbatch script
+
+	## Copies file from temporary directory.
+	say $FILEHANDLE "## Copy file from temporary directory";
+	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_*.vcf*"),
+				file_path => $outfamily_directory,
+				FILEHANDLE => $FILEHANDLE,
+			       });
+	say $FILEHANDLE "wait", "\n";
+
+	close($FILEHANDLE);
+    }
+    if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
+
+	if ( ! $$reduce_io_ref) { #Run as individual sbatch script
+
+	    ## Submitt job
+	    submit_job({active_parameter_href => $active_parameter_href,
+			sample_info_href => $sample_info_href,
+			job_id_href => $job_id_href,
+			infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			dependencies => "case_dependency",
+			path => $parameter_href->{"p".$program_name}{chain},
+			sbatch_file_name => $file_name
+		       });
+	}
+    }
+    if ($$reduce_io_ref) {
+
+	return $xargs_file_counter;  #Track the number of created xargs scripts per module for Block algorithm
+    }
+}
+
+
+sub rhocall {
+
+##rhocall
+
+##Function : Rhocall performs annotation of autozygosity regions
+##Returns  : "|$xargs_file_counter"
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##         : $parameter_href             => The parameter hash {REF}
+##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
+##         : $sample_info_href           => Info on samples and family hash {REF}
+##         : $file_info_href             => The file_info hash {REF}
+##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $job_id_href                => The job_id hash {REF}
+##         : $program_name               => The program name
+##         : $program_info_path          => The program info path
+##         : $file_name                  => File name
+##         : $stderr_path                => The stderr path of the block script
+##         : $FILEHANDLE                 => Filehandle to write to
+##         : $family_id_ref              => The family_id {REF}
+##         : $temp_directory_ref         => The temporary directory {REF}
+##         : $reference_dir_ref          => MIP reference directory {REF}
+##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
+##         : $call_type                  => The variant call type
+##         : $xargs_file_counter         => The xargs file counter
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
+    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
+    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
+    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $call_type;
+    my $xargs_file_counter;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $file_info_href;
+    my $infile_lane_no_ending_href;
+    my $job_id_href;
+    my $program_name;
+    my $program_info_path;
+    my $file_name;
+    my $stderr_path;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
+	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
+	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
+	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
+	program_info_path => { strict_type => 1, store => \$program_info_path},
+	file_name => { strict_type => 1, store => \$file_name},
+	stderr_path => { strict_type => 1, store => \$stderr_path},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
+	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
+	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
+	xargs_file_counter => { default => 0,
+				allow => qr/^\d+$/,
+				strict_type => 1, store => \$xargs_file_counter},
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    my $reduce_io_ref = \$active_parameter_href->{reduce_io};
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $xargs_file_name;
+    my $time = 5;
+
+    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
+
+	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    }
+
+    ## Set the number of cores to allocate per sbatch job.
+    my $core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
+					      core_number => scalar(@{ $file_info_href->{contigs} })
+					     });  #Detect the number of cores to use
+
+    if ( ! $$reduce_io_ref) { #Run as individual sbatch script
+
+	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+	($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
+								  job_id_href => $job_id_href,
+								  FILEHANDLE => $FILEHANDLE,
+								  directory_id => $$family_id_ref,
+								  program_name => $program_name,
+								  program_directory => catfile(lc($$outaligner_dir_ref)),
+								  call_type => $call_type,
+								  core_number => $core_number,
+								  process_time => $time,
+								  temp_directory => $$temp_directory_ref,
+								 });
+	$stderr_path = $program_info_path.".stderr.txt";
+    }
+    my ($volume, $directory, $stderr_file) = File::Spec->splitpath($stderr_path); #Split to enable submission to &sample_info_qc later
+
+    ## Assign directories
+    my $infamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref);
+    my $outfamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref);
+    $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
+
+    ## Assign file_tags
+    my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
+
+    if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
+
+	## Copy file(s) to temporary directory
+	say $FILEHANDLE "## Copy file(s) to temporary directory";
+	($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
+									      XARGSFILEHANDLE => $XARGSFILEHANDLE,
+									      files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+									      file_name =>$file_name,
+									      program_info_path => $program_info_path,
+									      core_number => $core_number,
+									      xargs_file_counter => $xargs_file_counter,
+									      infile => $$family_id_ref.$infile_tag.$call_type,
+									      indirectory => $infamily_directory,
+									      temp_directory => $$temp_directory_ref,
+									     });
+    }
+
+    say $FILEHANDLE "## bcftools rho calculation\n";
+    ## Create file commands for xargs
+    ($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
+							     XARGSFILEHANDLE => $XARGSFILEHANDLE,
+							     file_name => $file_name,
+							     program_info_path => $program_info_path,
+							     core_number => $core_number,
+							     xargs_file_counter => $xargs_file_counter,
+							     first_command => "bcftools roh",
+							    });
+
+    for (my $contigs_counter=0;$contigs_counter<scalar(@{ $file_info_href->{contigs_size_ordered} });$contigs_counter++) {
+
+	my $contig_ref = \$file_info_href->{contigs_size_ordered}[$contigs_counter];
+
+	print $XARGSFILEHANDLE "--AF-file ".catfile($$reference_dir_ref, $active_parameter_href->{rhocall_frequency_file})." ";
+	print $XARGSFILEHANDLE "--skip-indels ";  #Skip indels as their genotypes are enriched for errors
+	print $XARGSFILEHANDLE "--sample ".$parameter_href->{dynamic_parameter}{affected}[0]." ";
+	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".vcf.gz")." ";
+	print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".roh"), "; ";
+
+	print $XARGSFILEHANDLE "rhocall aggregate ";
+	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".roh")." ";
+	print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".roh.bed")."; ";
+
+	print $XARGSFILEHANDLE "rhocall annotate ";
+	print $XARGSFILEHANDLE "-b ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".roh.bed")." ";
+	print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".vcf")." ";
+	say $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".vcf.gz");
     }
 
     if ( ! $$reduce_io_ref) { #Run as individual sbatch script
@@ -6415,11 +6632,13 @@ sub prepareforvariantannotationblock {
 	   infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf"),
 	   outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf.gz"),
 	  });
+    say $FILEHANDLE "\n";
 
     ## Index file using tabix
     tabix({FILEHANDLE => $FILEHANDLE,
 	   infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf.gz"),
 	  });
+    say $FILEHANDLE "\n";
 
     ## Create file commands for xargs
     ($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
@@ -6438,7 +6657,20 @@ sub prepareforvariantannotationblock {
 	print $XARGSFILEHANDLE "-h ";  #Include header
 	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf.gz")." ";
 	print $XARGSFILEHANDLE $$contig_ref." ";
-	say $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".vcf");
+	print $XARGSFILEHANDLE "| ";
+
+	## Compress or decompress original file or stream to outfile (if supplied)
+	bgzip({FILEHANDLE => $XARGSFILEHANDLE,
+	       infile_path => "-",
+	       outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".vcf.gz"),
+	      });
+	print $XARGSFILEHANDLE "; ";
+
+	## Index file using tabix
+	tabix({FILEHANDLE => $XARGSFILEHANDLE,
+	       infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".vcf.gz"),
+	      });
+	print $XARGSFILEHANDLE "\n";
     }
 
     if ( ! $$reduce_io_ref) { #Run as individual sbatch script
@@ -8563,11 +8795,13 @@ sub sv_rankvariant {
 		   infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf"),
 		   outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf.gz"),
 		  });
+	    say $FILEHANDLE "\n";
 
 	    ## Index file using tabix
 	    tabix({FILEHANDLE => $FILEHANDLE,
 		   infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf.gz"),
 		  });
+	    say $FILEHANDLE "\n";
 	}
 
 	## Copies file from temporary directory.
@@ -9368,6 +9602,7 @@ sub sv_combinevariantcallsets {
 		tabix({FILEHANDLE => $FILEHANDLE,
 		       infile_path => catfile($$temp_directory_ref, $infile.$infile_tag.".vcf.gz"),
 		      });
+		say $FILEHANDLE "\n";
 	    }
 	}
 	say $FILEHANDLE "wait", "\n";
@@ -9400,11 +9635,13 @@ sub sv_combinevariantcallsets {
 		   infile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf"),
 		   outfile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf.gz"),
 		  });
+	    say $FILEHANDLE "\n";
 
 	    ## Index file using tabix
 	    tabix({FILEHANDLE => $FILEHANDLE,
 		   infile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf.gz"),
 		  });
+	    say $FILEHANDLE "\n";
 	}
     }
 
@@ -9442,6 +9679,7 @@ sub sv_combinevariantcallsets {
 	    tabix({FILEHANDLE => $FILEHANDLE,
 		   infile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf.gz"),
 		  });
+	    say $FILEHANDLE "\n";
 	}
     }
 
@@ -14186,6 +14424,10 @@ sub variantannotationblock {
 
     $logger->info("\t[Prepareforvariantannotationblock]\n");
 
+    if ($active_parameter_href->{prhocall} > 0) {  #Run rhocall. Done per family
+
+	$logger->info("\t[rhocall]\n");
+    }
     if ($active_parameter_href->{pvt} > 0) {
 
 	$logger->info("\t[Vt]\n");  #Run vt. Done per family
@@ -14282,6 +14524,23 @@ sub variantannotationblock {
 										xargs_file_counter => $xargs_file_counter,
 										stderr_path => $program_info_path.".stderr.txt",
 									       });
+    if ($active_parameter_href->{prhocall} > 0) {  #Run vt. Done per family
+
+	($xargs_file_counter, $xargs_file_name) = rhocall({parameter_href => $parameter_href,
+							   active_parameter_href => $active_parameter_href,
+							   sample_info_href => $sample_info_href,
+							   file_info_href => $file_info_href,
+							   infile_lane_no_ending_href => $infile_lane_no_ending_href,
+							   job_id_href => $job_id_href,
+							   call_type => $call_type,
+							   program_name => "rhocall",
+							   file_name => $file_name,
+							   program_info_path => $program_info_path,
+							   FILEHANDLE => $FILEHANDLE,
+							   xargs_file_counter => $xargs_file_counter,
+							   stderr_path => $program_info_path.".stderr.txt",
+							  });
+    }
     if ($active_parameter_href->{pvt} > 0) {  #Run vt. Done per family
 
 	($xargs_file_counter, $xargs_file_name) = vt({parameter_href => $parameter_href,
@@ -24882,7 +25141,11 @@ sub bgzip {
     if ( ($compress) && defined($outfile_path) ) {  #Compress and stream
 
 	print $FILEHANDLE "-c ";
-	print $FILEHANDLE $infile_path." ";
+
+	if ($infile_path ne "-") {  #Bgzip will assume stream
+
+	    print $FILEHANDLE $infile_path." ";
+	}
 	print $FILEHANDLE "> ".$outfile_path." ";
     }
     elsif ($compress) {  #Compress original file
@@ -24901,8 +25164,6 @@ sub bgzip {
 	print $FILEHANDLE "-d ";
 	print $FILEHANDLE $infile_path." ";
     }
-    say $FILEHANDLE "\n";
-
 }
 
 sub tabix {
@@ -24937,7 +25198,6 @@ sub tabix {
     print $FILEHANDLE "-p ".$preset." ";  #Preset
     print $FILEHANDLE "-f ";  #Force to overwrite the index
     print $FILEHANDLE $infile_path." ";  #Temporary outfile
-    say $FILEHANDLE "\n";
 }
 
 
