@@ -6468,7 +6468,7 @@ sub rhocall {
 
 	print $XARGSFILEHANDLE "rhocall annotate ";
 	print $XARGSFILEHANDLE "-b ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".roh.bed")." ";
-	print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".vcf")." ";
+	print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$$contig_ref.".vcf")." ";
 	say $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".vcf.gz");
     }
 
