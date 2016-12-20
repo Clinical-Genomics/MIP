@@ -8049,7 +8049,6 @@ sub chanjo_sexcheck {
     ## chanjo_sexcheck
     say $FILEHANDLE "## Predicting sex from alignment";
     print $FILEHANDLE "chanjo ";  #Program
-    print $FILEHANDLE "--log-level ";  #Incrementing "-v" for increased verbosity
     print $FILEHANDLE "--log-file ".catfile($outsample_directory, $infile.$infile_tag."_chanjo_sexcheck.log")." ";
     print $FILEHANDLE "sex ";  #Sub command
 
