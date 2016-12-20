@@ -72,6 +72,7 @@ BEGIN {
 		"utf8",
 		"strict",
 		"TAP::Harness",
+		"YAML",
 	);
 
     for my $module (@modules) {

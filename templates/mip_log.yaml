@@ -555,3 +555,7 @@ mip_log: 1
 [WARN] 2016/12/20 14:45:39 MIP_logger - 1
 [ERROR] 2016/12/20 14:45:39 MIP_logger - 1
 [FATAL] 2016/12/20 14:45:39 MIP_logger - 1
+[INFO] 2016/12/20 15:33:36 MIP_logger - 1
+[WARN] 2016/12/20 15:33:36 MIP_logger - 1
+[ERROR] 2016/12/20 15:33:36 MIP_logger - 1
+[FATAL] 2016/12/20 15:33:36 MIP_logger - 1
