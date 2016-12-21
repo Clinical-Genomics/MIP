@@ -122,7 +122,7 @@ $parameter{snpeff} = "v4_2";
 $parameter{varianteffectpredictor} = "87";
 $parameter{vep_auto_flag} = "alcf";
 $parameter{vep_plugin} = "UpDownDistance,LoFtool,Lof";
-$parameter{rhocall} = "0.1";
+$parameter{rhocall} = "0.3";
 $parameter{rhocall_path} = catdir($ENV{HOME}, "rhocall");
 
 #$parameter{cnvnator} = "0.3.2";
@@ -2209,7 +2209,7 @@ sub rhocall {
 
     ## Download
     print $FILEHANDLE "## Download rhocall\n";
-    print $FILEHANDLE "wget --quiet https://github.com/dnil/rhocall/archive/v".$parameter_href->{rhocall}.".zip ";
+    print $FILEHANDLE "wget --quiet https://github.com/dnil/rhocall/archive/".$parameter_href->{rhocall}.".zip ";
     print $FILEHANDLE "-O rhocall-".$parameter_href->{rhocall}.".zip";  #Download outfile
     print $FILEHANDLE "\n\n";
 
