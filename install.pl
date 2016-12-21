@@ -34,7 +34,7 @@ BEGIN {
            -pei/--perl_install Install perl (Supply flag to enable)
            -pev/--perl_version Set the perl version (defaults: "5.18.2")
            -pevs/--perl_skip_test Skip "tests" in perl installation
-           -pm/--perl_modules Set the perl modules to be installed via cpanm (Default: ["Modern::Perl", "IPC::System::Simple", "Path::Iterator::Rule", "YAML", "Log::Log4perl", "Set::IntervalTree", "Net::SSLeay",P, "LWP::Simple", "LWP::Protocol::https", "Archive::Zip", "Archive::Extract", "DBI","JSON", "DBD::mysql", "CGI", "Sereal::Encoder", "Sereal::Decoder", "Bio::Root::Version", "Module::Build"])
+           -pm/--perl_modules Set the perl modules to be installed via cpanm (Default: ["Modern::Perl", "List::Util", "IPC::System::Simple", "Path::Iterator::Rule", "YAML", "Log::Log4perl", "Set::IntervalTree", "Net::SSLeay",P, "LWP::Simple", "LWP::Protocol::https", "Archive::Zip", "Archive::Extract", "DBI","JSON", "DBD::mysql", "CGI", "Sereal::Encoder", "Sereal::Decoder", "Bio::Root::Version", "Module::Build"])
            -pmf/--perl_modules_force Force installation of perl modules
            -pic/--picardtools Set the picardtools version (Default: "2.3.0"),
            -sbb/--sambamba Set the sambamba version (Default: "0.6.1")
@@ -396,6 +396,7 @@ sub set_default_array_parameters {
 					       "Path::Iterator::Rule",  #MIP
 					       "YAML",  #MIP
 					       "Log::Log4perl",  #MIP
+					       "List::Util",  #MIP
 					       "Set::IntervalTree",  # MIP/vcfParser.pl
 					       "Net::SSLeay",  # VEP
 					       "LWP::Simple",  # VEP

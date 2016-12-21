@@ -290,7 +290,8 @@ sub mip_scripts{
 			     "test.t",
 			     "install.t",
 	];
-    $mip_sub_scripts{"templates"} = ["mip_travis_config.yaml",
+    $mip_sub_scripts{"templates"} = ["mip_config.yaml",
+				     "mip_travis_config.yaml",
 				     "643594-miptest_pedigree.yaml",
 				     "mip_log.yaml",
 	];

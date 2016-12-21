@@ -28,13 +28,13 @@ use File::Copy qw(copy);
 use Cwd;
 use IPC::Cmd qw[can_run run];
 use IPC::System::Simple;  #Required for autodie :all
-use List::Util qw(any all);
 use Time::Piece;
 
 ## Third party module(s)
 use YAML;
 use Log::Log4perl;
 use Path::Iterator::Rule;
+use List::Util qw(any all);
 
 our $USAGE;
 
