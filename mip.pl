@@ -374,7 +374,7 @@ eval_parameter_hash({parameter_href => \%parameter,
 		     file_path => catfile($Bin, "definitions", "define_parameters.yaml"),
 		    });
 
-my $mip_version = "v4.0.0";	#Set MIP version
+my $mip_version = "v4.0.2";	#Set MIP version
 
 ## Directories, files, sample_info and job_ids
 my (%infile, %indir_path, %infile_lane_no_ending, %lane, %infile_both_strands_no_ending, %job_id, %sample_info);
@@ -5901,6 +5901,17 @@ sub samplecheck {
 	print $FILEHANDLE "--ibc ";  #calculates three inbreeding coefficients for each sample
 	print $FILEHANDLE "--extract plink.prune.in ";  #Only LD-based pruning snps
 	say $FILEHANDLE "--out ".catfile($outfamily_directory, $$family_id_ref), "\n";  #Outfile
+
+	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
+
+	    ## Collect QC metadata info for later use
+	    sample_info_qc({sample_info_href => $sample_info_href,
+			    program_name => "inbreeding_factor",
+			    outdirectory => $outfamily_directory,
+			    outfile_ending => $$family_id_ref.".het",
+			    outdata_type => "infile_dependent"
+			   });
+	}
     }
 
     say $FILEHANDLE "## Create Plink .ped and .map file per family using vcfTools";
@@ -5964,14 +5975,6 @@ sub samplecheck {
 
 	## Collect QC metadata info for later use
 	sample_info_qc({sample_info_href => $sample_info_href,
-			program_name => "inbreeding_factor",
-			outdirectory => $outfamily_directory,
-			outfile_ending => $$family_id_ref.".het",
-			outdata_type => "infile_dependent"
-		       });
-
-	## Collect QC metadata info for later use
-	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => "vcftools",
 			outdirectory => $directory,
 			outfile_ending => $stderr_file,
@@ -5999,6 +6002,7 @@ sub samplecheck {
 			    outfile_ending => $$family_id_ref.".mibs",
 			    outdata_type => "infile_dependent"
 			   });
+
 	    ## Collect QC metadata info for later use
 	    sample_info_qc({sample_info_href => $sample_info_href,
 			    program_name => "plink2",
