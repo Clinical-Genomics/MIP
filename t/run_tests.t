@@ -73,6 +73,7 @@ BEGIN {
 		"strict",
 		"TAP::Harness",
 		"YAML",
+		"warnings",
 	);
 
     for my $module (@modules) {
