@@ -113,7 +113,7 @@ done_testing(); # Reached the end safely
 my %args = (verbosity => 1);
 
 my $harness = TAP::Harness->new( \%args );
-my @tests = ("/mnt/hds/proj/cust003/develop/modules/MIP/t/mip.t",
+my @tests = (catfile(getcwd(), "mip.t"),
     );
 $harness->runtests(@tests);
 
