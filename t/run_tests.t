@@ -101,6 +101,7 @@ GetOptions('h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help t
 );
 
 use TAP::Harness;
+use Cwd;
 
 ## Test central perl modules and import functions
 test_modules();
@@ -112,9 +113,9 @@ done_testing(); # Reached the end safely
 my %args = (verbosity => 1);
 
 my $harness = TAP::Harness->new( \%args );
-my @tests = [ "install.t" ];
+my @tests = ("/mnt/hds/proj/cust003/develop/modules/MIP/t/mip.t",
+    );
 $harness->runtests(@tests);
-
 
 ######################
 ####SubRoutines#######
@@ -144,7 +145,7 @@ sub test_modules {
     
     use YAML;
     
-    my $yaml_file = catdir(dirname($Bin), "templates", "118_pedigree.yaml");
+    my $yaml_file = catdir(dirname($Bin), "templates", "643594-miptest_pedigree.yaml");
     ok( -f $yaml_file,"YAML: File= $yaml_file in MIP/templates directory");
     
     my $yaml = YAML::LoadFile($yaml_file);  #Create an object
@@ -289,8 +290,8 @@ sub mip_scripts{
 			     "test.t",
 			     "install.t",
 	];
-    $mip_sub_scripts{"templates"} = ["mip_config.yaml",
-				     "118_pedigree.yaml",
+    $mip_sub_scripts{"templates"} = ["mip_travis_config.yaml",
+				     "643594-miptest_pedigree.yaml",
 				     "mip_log.yaml",
 	];
 

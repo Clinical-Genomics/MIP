@@ -1,0 +1,94 @@
+---
+cluster_constant_path: /mnt/hds/proj/cust003/develop
+analysis_constant_path: analysis
+java_use_large_pages: 1
+outscript_dir: cluster_constant_path!/family_id!/analysis_constant_path!/scripts
+gatk_downsample_to_coverage: 1000
+gatk_haplotypecaller_snp_known_set: dbsnp_138.b37.vcf
+gatk_realigner_indel_known_sites:
+  - 1000G_phase1.indels.b37.vcf
+  - Mills_and_1000G_gold_standard.indels.b37.vcf
+gatk_varianteval_dbsnp: dbsnp_138.b37.excluding_sites_after_129.vcf
+gatk_varianteval_gold: Mills_and_1000G_gold_standard.indels.b37.vcf
+gatk_variantrecalibration_training_set_1000g_omni: 1000G_omni2.5.b37.sites.vcf
+gatk_variantrecalibration_training_set_dbsnp: dbsnp_138.b37.vcf
+gatk_variantrecalibration_training_set_hapmap: hapmap_3.3.b37.sites.vcf
+gatk_variantrecalibration_training_set_mills: Mills_and_1000G_gold_standard.indels.b37.vcf
+gatk_genotypegvcfs_ref_gvcf: merged_reference_infiles.gvcf
+gatk_concatenate_genotypegvcfs_bcf_file: 1
+gatk_combinevariants_prioritize_caller: gatk,samtools,freebayes
+qccollect_regexp_file: qc_regexp_v1.13.yaml
+qccollect_sampleinfo_file: cluster_constant_path!/family_id!/analysis_constant_path!/family_id!_qc_sample_info.yaml
+sambamba_depth_bed: CCDS.current.bed
+dry_run_all: 0
+gatk_path: cluster_constant_path!/modules/GenomeAnalysisTK-3.6
+human_genome_reference: Homo_sapiens.GRCh37.d5.fasta
+script_dir: /mnt/hds/proj/cust003/develop/modules/miniconda2/envs/mip4.0/bin
+core_processor_number: 16
+outdata_dir: cluster_constant_path!/family_id!/analysis_constant_path!
+pbwa_mem: 1
+psambamba_depth: 1
+pchanjo_sexcheck: 1
+pfastqc: 1
+pgatk_baserecalibration: 1
+pgatk_haplotypecaller: 1
+pgatk_genotypegvcfs: 1
+pgatk_realigner: 0
+pgatk_variantevalall: 1
+pgatk_variantevalexome: 1
+pgatk_variantrecalibration: 1
+pgzip_fastq: 1
+ppicardtools_calculatehsmetrics: 1
+ppicardtools_collectmultiplemetrics: 1
+ppicardtools_mergesamfiles: 1
+pqccollect: 1
+prankvariant: 1
+premoveredundantfiles: 1
+psamplecheck: 1
+pedigree_file: cluster_constant_path!/family_id!/family_id!_pedigree.yaml
+picardtools_path: /mnt/hds/proj/cust003/develop/modules/miniconda2/envs/mip4.0/bin
+project_id: travis_test
+reference_dir: cluster_constant_path!/references
+sample_info_file: cluster_constant_path!/family_id!/analysis_constant_path!/family_id!_qc_sample_info.yaml
+config_file_analysis: cluster_constant_path!/family_id!/analysis_constant_path!/family_id!_config.yaml
+sv_vcfanno_lua: vcfanno_custom.v1.0.lua
+sv_vcfanno_config: vcfanno_config.v1.0.toml
+sv_vcfannotation_header_lines_file: vcfanno_headerLines.v1.0.txt
+vep_directory_path: cluster_constant_path!/modules/miniconda2/envs/mip4.0/ensembl-tools-release-87/scripts/variant_effect_predictor
+vep_directory_cache:  cluster_constant_path!/modules/miniconda2/envs/mip4.0/ensembl-tools-release-87/cache
+vcfparser_vep_transcripts: 1
+vcfparser_select_file: cluster_constant_path!/family_id!/aggregated_gene_panel_test.txt
+vcfparser_select_file_matching_column: 3
+sv_vcfparser_vep_transcripts: 1
+sv_vcfparser_select_file: cluster_constant_path!/family_id!/aggregated_gene_panel_test.txt
+sv_vcfparser_select_file_matching_column: 3
+snpeff_path: /mnt/hds/proj/cust003/develop/modules/miniconda2/envs/mip4.0/bin
+snpsift_annotation_files:
+  clinvar_GRCh37_20161003.vcf.gz: CLNSIG,CLNACC,CLNREVSTAT
+  ExAC.r0.3.sites.vep.vcf.gz: AF,MAX_AF
+  anon-SweGen_STR_NSPHS_1000samples_snp_freq_hg19.vcf.gz: AF,AC_Hom,AC_Het,AC_Hemi
+  anon-SweGen_STR_NSPHS_1000samples_indel_freq_hg19.vcf.gz: AF,AC_Hom,AC_Het,AC_Hemi
+  loqusdb.2016-09-26.vcf.gz: Obs
+  genbank_haplogroup_2015_August.vcf.gz: MTAF
+snpsift_dbnsfp_annotations:
+  - GERP++_RS
+  - GERP++_NR
+  - phyloP46way_primate
+  - phyloP100way_vertebrate
+  - phastCons46way_primate
+  - phastCons100way_vertebrate
+genmod_annotate_cadd_files:
+  - whole_genome_SNVs.v1.3_ge10.tsv.gz
+  - 1000G_phase3.v1.3.tsv.gz
+  - ExAC_r0.3.v1.3.tsv.gz
+genmod_models_reduced_penetrance_file: cust003-CMMS-red-pen.txt.csv 
+genmod_annotate_spidex_file: spidex_public_noncommercial_v1_0.tab.gz 
+rank_model_file: rank_model_cmms_v1.18.ini
+sv_genmod_models_family_type: cmms
+sv_genmod_models_reduced_penetrance_file: cust003-CMMS-red-pen.txt.csv
+sv_rank_model_file: svrank_model_cmms_v1.0.ini
+source_environment_commands:
+  - source
+  - activate
+  - mip4.0
+slurm_quality_of_service: low

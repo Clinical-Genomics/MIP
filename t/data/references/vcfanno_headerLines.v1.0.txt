@@ -1,0 +1,2 @@
+##INFO=<ID=right_1000GAF,Number=.,Type=String,Description="1000 genomes frequency SV right interval">
+##INFO=<ID=left_1000GAF,Number=.,Type=String,Description="1000 genomes frequency SV left interval">

@@ -19,4 +19,5 @@ script:
   - bash mip.sh
   - source ~/.bash_profile
   - source ~/.bashrc
+  - source activate test_environment
   - cd t; perl run_tests.t

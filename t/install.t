@@ -111,19 +111,19 @@ GetOptions('h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help t
 	   'v|version' => sub { print STDOUT "\ntest.t ".$install_version, "\n\n"; exit;},  #Display version number
 );
 
-ok(check_command_in_path({program => "conda"}), "Checking execution of conda binary");
+ok(check_command_in_path({program => "conda"}), "Checking can run of conda binary");
 
 ok(catfile(dirname($Bin), "install.pl"), "Locating install script in MIP dir");
 
 my $install_script = catfile(dirname($Bin), "install.pl");
 
 ## Test execution of install.pl
-my $verbose = 0;
+my $verbose = 1;
 
 my $cmds_ref = ["perl", $install_script, "-sp", "mip_scripts"];  # Create array ref for cmd
 my( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
     run( command => $cmds_ref, verbose => $verbose );
-ok($success, "Execute install.pl");
+ok($success, "Executed install.pl");
 
 is(-e catfile(getcwd(), "mip.sh"), 1, "Locating created mip.sh in MIP dir");
 
