@@ -23730,7 +23730,7 @@ sub update_sample_info_hash {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    foreach my $sample_id (keys $sample_info_href->{sample}) {
+    foreach my $sample_id (keys %{ $sample_info_href->{sample} }) {
 
 	foreach my $key (keys $sample_info_href->{sample}{$sample_id}) {
 
