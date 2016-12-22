@@ -959,6 +959,12 @@ psv_rankvariant:
   default: 1
   file_tag: ranked_
   type: program
+sv_genmod_annotate_regions:
+  associated_program:
+   - psv_rankvariant
+  data_type: SCALAR
+  default: 1
+  type: program_argument
 sv_genmod_models_family_type:
   associated_program:
    - psv_rankvariant

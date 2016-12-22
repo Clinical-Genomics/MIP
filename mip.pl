@@ -175,6 +175,7 @@ mip.pl  -ifd [infile_dirs=sample_id] -sd [script_dir] -rd [reference_dir] -p [pr
                  -svvcpsfm/--sv_vcfparser_select_file_matching_column Position of HGNC Symbol column in select file (defaults to "")
                  -svvcpsfa/--sv_vcfparser_select_feature_annotation_columns Feature columns to use in annotation (defaults to ""; comma sep)
                -psvr/--psv_rankvariant Ranking of annotated SV variants (defaults to "1" (=yes))
+                 -svravanr/--sv_genmod_annotate_regions Use predefined gene annotation supplied with genmod for defining genes (defaults to "1" (=yes))
                  -svravgft/--sv_genmod_models_family_type Use one of the known setups (defaults to "mip")
                  -svravwg/--sv_genmod_models_whole_gene Allow compound pairs in intronic regions (defaults to "0" (=yes))
                  -svravrpf/--sv_genmod_models_reduced_penetrance_file File containg genes with reduced penetrance (defaults to "")
@@ -549,6 +550,7 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'svvcpsfm|sv_vcfparser_select_file_matching_column=n' => \$parameter{sv_vcfparser_select_file_matching_column}{value},  #Column of HGNC Symbol in SelectFile
 	   'svvcpsfa|sv_vcfparser_select_feature_annotation_columns:s' => \@{ $parameter{sv_vcfparser_select_feature_annotation_columns}{value} },  #Comma separated list
 	   'psvr|psv_rankvariant=n' => \$parameter{psv_rankvariant}{value},  #Ranking of SV variants
+	   'svravanr|sv_genmod_annotate_regions:n' => \$parameter{sv_genmod_annotate_regions}{value},
 	   'svravgft|sv_genmod_models_family_type:s' => \$parameter{sv_genmod_models_family_type}{value},
 	   'svravrpf|sv_genmod_models_reduced_penetrance_file:s' => \$parameter{sv_genmod_models_reduced_penetrance_file}{value},
 	   'svravwg|sv_genmod_models_whole_gene=n' => \$parameter{sv_genmod_models_whole_gene}{value},  #Allow compound pairs in intronic regions
@@ -8414,7 +8416,7 @@ sub sv_rankvariant {
 
 	my $genmod_module = "";  #Track which genmod modules has been processed
 
-	## Genmod
+	## Check affected/unaffected status
 	if ( (defined($parameter_href->{dynamic_parameter}{unaffected})) && (@{ $parameter_href->{dynamic_parameter}{unaffected} } eq @{ $active_parameter_href->{sample_ids} }) ) {  #Only unaffected
 
 	    if (! $vcfparser_outfile_counter) {
@@ -8422,77 +8424,105 @@ sub sv_rankvariant {
 		$logger->warn("Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 'compound'");
 	    }
 	}
-	else {
 
-	    ## Calculate Gene Models
-	    say $FILEHANDLE "## Calculate Gene Models";
-
-	    ## Create file commands for xargs
-	    ($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
-								     XARGSFILEHANDLE => $XARGSFILEHANDLE,
-								     file_name => $file_name,
-								     program_info_path => $program_info_path,
-								     core_number => $genmod_core_number,
-								     xargs_file_counter => $xargs_file_counter,
-								     first_command => "genmod",
-								    });
-
-	    ## Process per contig
-	    for (my $contigs_counter=0;$contigs_counter<scalar(@$vcfparser_contigs_ref);$contigs_counter++) {
-
-		my $contig_ref = \$vcfparser_contigs_ref->[$contigs_counter];
-		my $genmod_file_ending_stub = $infile_ending_stub;
-		my $genmod_xargs_file_name = $xargs_file_name;
-		my $genmod_indata = catfile($$temp_directory_ref, $genmod_file_ending_stub.$vcfparser_analysis_type.".vcf")." ";  #InFile
-
-		if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Update endings with contig info
-
-		    $genmod_file_ending_stub = $infile_ending_stub."_".$$contig_ref;
-		    $genmod_xargs_file_name = $xargs_file_name.".".$$contig_ref;
-		    $genmod_indata = catfile($$temp_directory_ref, $genmod_file_ending_stub.$vcfparser_analysis_type.".vcf")." ";  #InFile
+	## Genmod
+	say $FILEHANDLE "## Genmod";
+	
+	## Create file commands for xargs
+	($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
+								 XARGSFILEHANDLE => $XARGSFILEHANDLE,
+								 file_name => $file_name,
+								 program_info_path => $program_info_path,
+								 core_number => $genmod_core_number,
+								 xargs_file_counter => $xargs_file_counter,
+								 first_command => "genmod",
+								});
+	
+	## Process per contig
+	for (my $contigs_counter=0;$contigs_counter<scalar(@$vcfparser_contigs_ref);$contigs_counter++) {
+	    
+	    my $contig_ref = \$vcfparser_contigs_ref->[$contigs_counter];
+	    my $genmod_file_ending_stub = $infile_ending_stub;
+	    my $genmod_xargs_file_name = $xargs_file_name;
+	    my $genmod_indata = catfile($$temp_directory_ref, $genmod_file_ending_stub.$vcfparser_analysis_type.".vcf")." ";  #InFile
+	    
+	    if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Update endings with contig info
+		
+		$genmod_file_ending_stub = $infile_ending_stub."_".$$contig_ref;
+		$genmod_xargs_file_name = $xargs_file_name.".".$$contig_ref;
+		$genmod_indata = catfile($$temp_directory_ref, $genmod_file_ending_stub.$vcfparser_analysis_type.".vcf")." ";  #InFile
+	    }
+	    $genmod_module = "";  #Restart for next contig
+	    
+	    ## Genmod Annotate
+	    $genmod_module = "_annotate";
+	    
+	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
+	    print $XARGSFILEHANDLE "annotate ";  #Annotate vcf variants
+	    print $XARGSFILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
+	    
+	    if ($active_parameter_href->{sv_genmod_annotate_regions}) {
+		
+		print $XARGSFILEHANDLE "--annotate_regions ";  #Use predefined annotation file distributed with genmod
 		}
-		$genmod_module = "";  #Restart for next contig
+	    if ( (defined($parameter_href->{dynamic_parameter}{unaffected})) && (@{ $parameter_href->{dynamic_parameter}{unaffected} } eq @{ $active_parameter_href->{sample_ids} }) ) {  #Only unaffected
+		
+		## Write to outputFile - last genmod module
+		print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.$genmod_module.".vcf")." ";  #OutFile
+		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		say $XARGSFILEHANDLE $genmod_indata;  #Infile
+	    }
+	    else {
 
+		## Write to outputstream
+		print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
+		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		print $XARGSFILEHANDLE $genmod_indata;  #InStream or Infile
+		print $XARGSFILEHANDLE "| ";  #Pipe
+		    
+		$genmod_indata = "- ";  #Preparation for next module
+		
 		## Genmod Models
-		$genmod_module = "_models";
-
+		$genmod_module .= "_models";
+		print $XARGSFILEHANDLE "genmod ";
 		print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 		print $XARGSFILEHANDLE "models ";  #Annotate genetic models for vcf variants
 		print $XARGSFILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
 		print $XARGSFILEHANDLE "--family_file ".$family_file." ";  #Pedigree file
 		print $XARGSFILEHANDLE "--family_type ".$active_parameter_href->{sv_genmod_models_family_type}." ";  #Family type
-
+		
 		if (defined($active_parameter_href->{sv_genmod_models_reduced_penetrance_file})) {
-
+			
 		    print $XARGSFILEHANDLE "--reduced_penetrance ".catfile($$reference_dir_ref, $active_parameter_href->{sv_genmod_models_reduced_penetrance_file})." ";  #Use list of genes that have been shown to display reduced penetrance
 		}
 		print $XARGSFILEHANDLE "--processes 4 ";  #Define how many processes that should be use for annotation
-
-		if ($active_parameter_href->{psv_varianteffectpredictor} > 0) {  #Use VEP annotations in compound models
-
-		    print $XARGSFILEHANDLE "--vep ";
+		
+		if ( ($active_parameter_href->{psv_varianteffectpredictor} > 0)
+		    && (! $active_parameter_href->{sv_genmod_annotate_regions}) ) {  #Use VEP annotations in compound models
+			
+			print $XARGSFILEHANDLE "--vep ";
 		}
 		if ($active_parameter_href->{sv_genmod_models_whole_gene}) {
-
+		    
 		    print $XARGSFILEHANDLE "--whole_gene ";
 		}
-
+		
 		print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
 		print $XARGSFILEHANDLE $genmod_indata;  #InFile
 		print $XARGSFILEHANDLE "2> ".$genmod_xargs_file_name.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		print $XARGSFILEHANDLE "| ";  #Pipe
 		$genmod_indata = "- ";  #Preparation for next module
-
+		    
 		## Genmod Score
 		$genmod_module .= "_score";
-
+		    
 		print $XARGSFILEHANDLE "genmod ";
 		print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 		print $XARGSFILEHANDLE "score ";  #Score variants in a vcf file using Weighted sums
 		print $XARGSFILEHANDLE "--family_file ".$family_file." ";  #Pedigree file
 		print $XARGSFILEHANDLE "--family_type ".$active_parameter_href->{sv_genmod_models_family_type}." ";  #Family type
 		print $XARGSFILEHANDLE "--rank_results ";  #Add a info field that shows how the different categories contribute to the rank score
-
+		    
 		if (defined($active_parameter_href->{rank_model_file})) {
 
 		    print $XARGSFILEHANDLE "--score_config ".catfile($$reference_dir_ref, $active_parameter_href->{sv_rank_model_file})." ";  #Rank model config.ini file
@@ -8506,22 +8536,23 @@ sub sv_rankvariant {
 
 		##Genmod Compound
 		$genmod_module .= "_compound";
-
+		
 		print $XARGSFILEHANDLE "genmod ";
 		print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 		print $XARGSFILEHANDLE "compound ";  #Adjust score for compound variants in a vcf file
 		print $XARGSFILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
-
-		if ($active_parameter_href->{psv_varianteffectpredictor} > 0) {  #Use VEP annotations in compound models
-
+		
+		if ( ($active_parameter_href->{psv_varianteffectpredictor} > 0)
+		     && (! $active_parameter_href->{sv_genmod_annotate_regions}) ) {  #Use VEP annotations in compound models
+		    
 		    print $XARGSFILEHANDLE "--vep ";
 		}
 
 		print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $genmod_file_ending_stub.$vcfparser_analysis_type.$genmod_module.".vcf")." ";  #OutFile
 		print $XARGSFILEHANDLE "2> ".$genmod_xargs_file_name.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-
+		
 		say $XARGSFILEHANDLE $genmod_indata;  #InStream or Infile
-
+		
 		if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid") ) {  #Update endings with contig info
 
 		    last;  #Only perform once for exome samples to avoid risking contigs lacking variants throwing errors
@@ -8531,9 +8562,9 @@ sub sv_rankvariant {
 
 	my $concatenate_ending = "";
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {
-
+	    
 	    $concatenate_ending = "_cat";
-
+	    
 	    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
 	    concatenate_variants({active_parameter_href => $active_parameter_href,
 				  FILEHANDLE => $FILEHANDLE,
