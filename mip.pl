@@ -176,7 +176,7 @@ mip.pl  -ifd [infile_dirs=sample_id] -sd [script_dir] -rd [reference_dir] -p [pr
                  -svvcpsfa/--sv_vcfparser_select_feature_annotation_columns Feature columns to use in annotation (defaults to ""; comma sep)
                -psvr/--psv_rankvariant Ranking of annotated SV variants (defaults to "1" (=yes))
                  -svravgft/--sv_genmod_models_family_type Use one of the known setups (defaults to "mip")
-                 -svravwg/--sv_whole_gene Allow compound pairs in intronic regions (defaults to "0" (=yes))
+                 -svravwg/--sv_genmod_models_whole_gene Allow compound pairs in intronic regions (defaults to "0" (=yes))
                  -svravrpf/--sv_genmod_models_reduced_penetrance_file File containg genes with reduced penetrance (defaults to "")
                  -svravrm/--sv_rank_model_file Rank model config file (defaults to "")
                  -svravbf/--sv_rankvariant_binary_file Produce binary file from the rank variant chromosome sorted vcfs (defaults to "1" (=yes))
@@ -276,9 +276,10 @@ mip.pl  -ifd [infile_dirs=sample_id] -sd [script_dir] -rd [reference_dir] -p [pr
                ##Rankvariant
                -prav/--prankvariant Ranking of annotated variants (defaults to "1" (=yes))
                  -ravgft/--genmod_models_family_type Use one of the known setups (defaults to "mip")
+                 -ravanr/--genmod_annotate_regions Use predefined gene annotation supplied with genmod for defining genes (defaults to "1" (=yes))
                  -ravcad/--genmod_annotate_cadd_files CADD score files (defaults to ""; comma sep)
                  -ravspi/--genmod_annotate_spidex_file Spidex database for alternative splicing (defaults to "")
-                 -ravwg/--whole_gene Allow compound pairs in intronic regions (defaults to "1" (=yes))
+                 -ravwg/--genmod_models_whole_gene Allow compound pairs in intronic regions (defaults to "1" (=yes))
                  -ravrpf/--genmod_models_reduced_penetrance_file File containg genes with reduced penetrance (defaults to "")
                  -ravrm/--rank_model_file Rank model config file (defaults to "")
                  -ravbf/--rankvariant_binary_file Produce binary file from the rank variant chromosomal sorted vcfs (defaults to "1" (=yes))
@@ -550,7 +551,7 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'psvr|psv_rankvariant=n' => \$parameter{psv_rankvariant}{value},  #Ranking of SV variants
 	   'svravgft|sv_genmod_models_family_type:s' => \$parameter{sv_genmod_models_family_type}{value},
 	   'svravrpf|sv_genmod_models_reduced_penetrance_file:s' => \$parameter{sv_genmod_models_reduced_penetrance_file}{value},
-	   'svravwg|sv_whole_gene=n' => \$parameter{sv_whole_gene}{value},  #Allow compound pairs in intronic regions
+	   'svravwg|sv_genmod_models_whole_gene=n' => \$parameter{sv_genmod_models_whole_gene}{value},  #Allow compound pairs in intronic regions
 	   'svravrm|sv_rank_model_file:s' => \$parameter{sv_rank_model_file}{value},  #The rank modell config.ini path
 	   'svravbf|sv_rankvariant_binary_file=n' => \$parameter{sv_rankvariant_binary_file}{value},  #Produce compressed vcfs
 	   'psmp|psamtools_mpileup=n' => \$parameter{psamtools_mpileup}{value},
@@ -640,9 +641,10 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'snesdbnsfpa|snpsift_dbnsfp_annotations:s' => \@{ $parameter{snpsift_dbnsfp_annotations}{value} },  #Comma separated list
 	   'prav|prankvariant=n' => \$parameter{prankvariant}{value},  #Ranking variants
 	   'ravgft|genmod_models_family_type:s' => \$parameter{genmod_models_family_type}{value},
+	   'ravanr|genmod_annotate_regions:n' => \$parameter{genmod_annotate_regions}{value},
 	   'ravcad|genmod_annotate_cadd_files:s' => \@{ $parameter{genmod_annotate_cadd_files}{value} },  #Comma separated list
 	   'ravspi|genmod_annotate_spidex_file:s' => \$parameter{genmod_annotate_spidex_file}{value},
-	   'ravwg|whole_gene=n' => \$parameter{whole_gene}{value},  #Allow compound pairs in intronic regions
+	   'ravwg|genmod_models_whole_gene=n' => \$parameter{genmod_models_whole_gene}{value},  #Allow compound pairs in intronic regions
 	   'ravrpf|genmod_models_reduced_penetrance_file:s' => \$parameter{genmod_models_reduced_penetrance_file}{value},
 	   'ravrm|rank_model_file:s' => \$parameter{rank_model_file}{value},  #The rank modell config.ini path
 	   'ravbf|rankvariant_binary_file=n' => \$parameter{rankvariant_binary_file}{value},  #Produce compressed vcfs
@@ -3540,7 +3542,7 @@ sub rankvariant {
 	    $genmod_module = "";  #Restart for next contig
 	    my $genmod_indata = catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.".vcf")." ";  #InFile
 
-	    ## Genmod Models
+	    ## Check affected/unaffected status
 	    if ( (defined($parameter_href->{dynamic_parameter}{unaffected})) && (@{ $parameter_href->{dynamic_parameter}{unaffected} } eq @{ $active_parameter_href->{sample_ids} }) ) {  #Only unaffected
 
 		if ( (! $contigs_counter) && (! $vcfparser_outfile_counter)) {
@@ -3548,9 +3550,45 @@ sub rankvariant {
 		    $logger->warn("Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'compound'");
 		}
 	    }
+
+	    ## Genmod Annotate
+	    $genmod_module = "_annotate";
+	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
+	    print $XARGSFILEHANDLE "annotate ";  #Annotate vcf variants
+	    print $XARGSFILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
+
+	    if ($active_parameter_href->{genmod_annotate_regions}) {
+		
+		print $XARGSFILEHANDLE "--annotate_regions ";  #Use predefined annotation file distributed with genmod
+	    }
+	    foreach my $cadd_file (@{ $active_parameter_href->{genmod_annotate_cadd_files} }) {
+
+		print $XARGSFILEHANDLE "--cadd_file ".catfile($$reference_dir_ref, $cadd_file)." ";  #CADD score file(s)
+	    }
+	    if (defined($active_parameter_href->{genmod_annotate_spidex_file})) {
+
+		print $XARGSFILEHANDLE "--spidex ".catfile($$reference_dir_ref, $active_parameter_href->{genmod_annotate_spidex_file})." ";  #Spidex file
+	    }
+	    if ( (defined($parameter_href->{dynamic_parameter}{unaffected})) && (@{ $parameter_href->{dynamic_parameter}{unaffected} } eq @{ $active_parameter_href->{sample_ids} }) ) {  #Only unaffected
+
+		## Write to outputFile - last genmod module
+		print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.$genmod_module.".vcf")." ";  #OutFile
+		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		say $XARGSFILEHANDLE $genmod_indata;  #Infile
+	    }
 	    else {
 
-		$genmod_module = "_models";
+		## Write to outputstream
+		print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
+		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		print $XARGSFILEHANDLE $genmod_indata;  #InStream or Infile
+		print $XARGSFILEHANDLE "| ";  #Pipe
+
+		$genmod_indata = "- ";  #Preparation for next module
+
+		## Genmod Models
+		$genmod_module .= "_models";
+		print $XARGSFILEHANDLE "genmod ";
 		print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 		print $XARGSFILEHANDLE "models ";  #Annotate genetic models for vcf variants
 		print $XARGSFILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
@@ -3563,11 +3601,12 @@ sub rankvariant {
 		}
 		print $XARGSFILEHANDLE "--processes 4 ";  #Define how many processes that should be use for annotation
 
-		if ($active_parameter_href->{pvarianteffectpredictor} > 0) {  #Use VEP annotations in compound models
+		if ( ($active_parameter_href->{pvarianteffectpredictor} > 0)
+		    && (! $active_parameter_href->{genmod_annotate_regions}) ) {  #Use VEP annotations in compound models
 
 		    print $XARGSFILEHANDLE "--vep ";
 		}
-		if ($active_parameter_href->{whole_gene}) {
+		if ($active_parameter_href->{genmod_models_whole_gene}) {
 
 		    print $XARGSFILEHANDLE "--whole_gene ";
 		}
@@ -3575,41 +3614,6 @@ sub rankvariant {
 		print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
 		print $XARGSFILEHANDLE $genmod_indata;  #InFile
 		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-		print $XARGSFILEHANDLE "| ";  #Pipe
-		print $XARGSFILEHANDLE "genmod ";
-
-		$genmod_indata = "- ";  #Preparation for next module
-
-	    }
-
-	    ## Genmod Annotate
-	    $genmod_module .= "_annotate";
-	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
-	    print $XARGSFILEHANDLE "annotate ";  #Annotate vcf variants
-	    print $XARGSFILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
-
-	    foreach my $cadd_file (@{ $active_parameter_href->{genmod_annotate_cadd_files} }) {
-
-		print $XARGSFILEHANDLE "--cadd_file ".catfile($$reference_dir_ref, $cadd_file)." ";  #CADD score file(s)
-	    }
-	    if (defined($active_parameter_href->{genmod_annotate_spidex_file})) {
-
-		print $XARGSFILEHANDLE "--spidex ".catfile($$reference_dir_ref, $active_parameter_href->{genmod_annotate_spidex_file})." ";  #Spidex file
-	    }
-
-	    if ( (defined($parameter_href->{dynamic_parameter}{unaffected})) && (@{ $parameter_href->{dynamic_parameter}{unaffected} } eq @{ $active_parameter_href->{sample_ids} }) ) {  #Only unaffected
-
-		## Write to outputFile - last genmod module
-		print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.$genmod_module.".vcf")." ";  #OutFile
-		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-		say $XARGSFILEHANDLE $genmod_indata;  #InStream or Infile
-	    }
-	    else {
-
-		## Write to outputstream
-		print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
-		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-		print $XARGSFILEHANDLE $genmod_indata;  #InStream or Infile
 		print $XARGSFILEHANDLE "| ";  #Pipe
 
 		## Genmod Score
@@ -3639,14 +3643,15 @@ sub rankvariant {
 		print $XARGSFILEHANDLE "compound ";  #Adjust score for compound variants in a vcf file
 		print $XARGSFILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
 
-		if ($active_parameter_href->{pvarianteffectpredictor} > 0) {  #Use VEP annotations in compound models
+		if ( ($active_parameter_href->{pvarianteffectpredictor} > 0)
+		    && (! $active_parameter_href->{genmod_annotate_regions}) ) {  #Use VEP annotations in compound models
 
 		    print $XARGSFILEHANDLE "--vep ";
 		}
 
 		print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.$genmod_module.".vcf")." ";  #OutFile
 		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-		say $XARGSFILEHANDLE $genmod_indata;  #InStream or Infile
+		say $XARGSFILEHANDLE $genmod_indata;  #InFile
 	    }
 	}
 
@@ -8467,7 +8472,7 @@ sub sv_rankvariant {
 
 		    print $XARGSFILEHANDLE "--vep ";
 		}
-		if ($active_parameter_href->{sv_whole_gene}) {
+		if ($active_parameter_href->{sv_genmod_models_whole_gene}) {
 
 		    print $XARGSFILEHANDLE "--whole_gene ";
 		}
@@ -22685,9 +22690,9 @@ sub migrate_file_from_temp {
 }
 
 
-sub RemoveDirectory {
+sub remove_directory {
 
-##RemoveDirectory
+##remove_directory
 
 ##Function : Writes command to removes directory to filehandle.
 ##Returns  : ""
