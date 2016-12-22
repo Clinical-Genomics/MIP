@@ -51,11 +51,16 @@ BEGIN {
     ##Modules with import
     my %perl_module;
 
+    $perl_module{autodie} = qw(open close :all);
     $perl_module{charnames} = qw( :full :short );
+    $perl_module{Cwd} = qw(abs_path);
     $perl_module{File::Basename} = qw(dirname);
+    $perl_module{File::Path} = qw(make_path remove_tree);
     $perl_module{File::Spec::Functions} =  qw(catfile catdir devnull);
     $perl_module{FindBin} = qw($Bin);
+    $perl_module{List::Util} = qw(any all);
     $perl_module{IPC::Cmd} = qw[can_run run];
+    $perl_module{Modern::Perl} = qw(2014);
     $perl_module{open} = qw( :encoding(UTF-8) :std );
     $perl_module{Params::Check} = qw[check allow last_error];
     $perl_module{warnings} = qw( FATAL utf8 );
@@ -69,9 +74,14 @@ BEGIN {
     @modules = ("Cwd",
 		"Getopt::Long",
 		"IO::Handle",
-		"utf8",
+		"IPC::System::Simple",
+		"Log::Log4perl",
+		"Path::Iterator::Rule",
+		"POSIX",
 		"strict",
 		"TAP::Harness",
+		"Time::Piece",
+		"utf8",
 		"YAML",
 		"warnings",
 	);
@@ -130,21 +140,28 @@ sub test_modules {
 ##Arguments: 
 ##         : 
 
-    use FindBin qw($Bin); #Find directory of script
+    use Cwd;
+    ok(getcwd(), "Cwd: Locate current working directory");
 
+    use FindBin qw($Bin); #Find directory of script
     ok(defined($Bin),"FindBin: Locate directory of script");
 
     use File::Basename qw(dirname);  #Strip the last part of directory
-
     ok(dirname($Bin), "File::Basename qw(dirname): Strip the last part of directory");
  
     use File::Spec::Functions qw(catfile catdir);
-
     ok(catdir(dirname($Bin), "t"),"File::Spec::Functions qw(catdir): Concatenate directories");
     ok(catfile($Bin, "run_tests.pl"),"File::Spec::Functions qw(catfile): Concatenate files");
-    
-    use YAML;
-    
+ 
+    use Cwd qw(abs_path);
+    ok(abs_path( catfile($Bin, "run_tests.pl") ), "Cwd_abs_path: Add absolute path");
+
+    use File::Path qw(make_path remove_tree);
+    ok(make_path("TEST"), "File::Path_make_path: Create path");
+    ##Clean-up
+    ok(remove_tree("TEST"), "File::Path_remove_tree: Remove path");
+
+    use YAML;    
     my $yaml_file = catdir(dirname($Bin), "templates", "643594-miptest_pedigree.yaml");
     ok( -f $yaml_file,"YAML: File= $yaml_file in MIP/templates directory");
     

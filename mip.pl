@@ -5,7 +5,7 @@
 ###Copyright 2011 Henrik Stranneheim
 
 use v5.18;  #Require at least perl 5.18
-use Modern::Perl '2014';
+use Modern::Perl qw(2014);
 use autodie qw(open close :all);
 
 ##Unicode boilerplate
@@ -19,13 +19,13 @@ use Getopt::Long;
 use POSIX;
 use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
-use Cwd 'abs_path';  #Export absolute path function
+use Cwd;
+use Cwd qw(abs_path);  #Export absolute path function
 use FindBin qw($Bin);  #Find directory of script
 use File::Basename qw(dirname);
 use File::Spec::Functions qw(catdir catfile devnull);
 use File::Path qw(make_path);
 use File::Copy qw(copy);
-use Cwd;
 use IPC::Cmd qw[can_run run];
 use IPC::System::Simple;  #Required for autodie :all
 use Time::Piece;
@@ -785,7 +785,7 @@ foreach my $order_parameter_element (@order_parameters) {
 				    file_info_href => \%file_info,
 				    broadcasts_ref => \@broadcasts,
 				    parameter_name => "mosaik_align_reference",
-				    referenceFile_ending_ref => \$file_info{mosaik_align_reference},
+				    reference_file_ending_ref => \$file_info{mosaik_align_reference},
 				    reference_file_name_ref => \$file_info{human_genome_reference_name_no_ending},
 				   });
 	    set_auto_build_feature({parameter_href => \%parameter,
@@ -793,7 +793,7 @@ foreach my $order_parameter_element (@order_parameters) {
 				    file_info_href => \%file_info,
 				    broadcasts_ref => \@broadcasts,
 				    parameter_name => "mosaik_jump_db_stub",
-				    referenceFile_ending_ref => \$file_info{mosaik_jump_db_stub},
+				    reference_file_ending_ref => \$file_info{mosaik_jump_db_stub},
 				    reference_file_name_ref => \$file_info{human_genome_reference_name_no_ending},
 				   });
 	    set_auto_build_feature({parameter_href => \%parameter,
@@ -801,7 +801,7 @@ foreach my $order_parameter_element (@order_parameters) {
 				    file_info_href => \%file_info,
 				    broadcasts_ref => \@broadcasts,
 				    parameter_name => "bwa_build_reference",
-				    referenceFile_ending_ref => \$file_info{bwa_build_reference},
+				    reference_file_ending_ref => \$file_info{bwa_build_reference},
 				    reference_file_name_ref => \$active_parameter{human_genome_reference},
 				   });
 	}
@@ -20376,16 +20376,16 @@ sub set_auto_build_feature {
 
 ##Function : Sets parameters with auto_build enabled to the new value dependent on $reference_file_name_ref
 ##Returns  : ""
-##Arguments: $parameterHasRef, $active_parameter_href, $file_info_href, $broadcasts_ref, $parameter_name, $referenceFile_ending_ref, $reference_file_name_ref, $print_switch, $sample_id_ref
-##         : $parameter_href           => The parameter hash {REF}
-##         : $active_parameter_href    => The activa parameters for this analysis hash {REF}
-##         : $file_info_href           => The file_info hash {REF}
-##         : $broadcasts_ref           => Holds the parameters info for broadcasting later {REF}
-##         : $parameter_name           => MIP parameter name
-##         : $referenceFile_ending_ref => Reference file name ending {REF}
-##         : $reference_file_name_ref  => Reference file name {REF}
-##         : $print_switch             => To print or not
-##         : $sample_id_ref            => Sample_id {REF}
+##Arguments: $parameterHasRef, $active_parameter_href, $file_info_href, $broadcasts_ref, $parameter_name, $reference_file_ending_ref, $reference_file_name_ref, $print_switch, $sample_id_ref
+##         : $parameter_href            => The parameter hash {REF}
+##         : $active_parameter_href     => The activa parameters for this analysis hash {REF}
+##         : $file_info_href            => The file_info hash {REF}
+##         : $broadcasts_ref            => Holds the parameters info for broadcasting later {REF}
+##         : $parameter_name            => MIP parameter name
+##         : $reference_file_ending_ref => Reference file name ending {REF}
+##         : $reference_file_name_ref   => Reference file name {REF}
+##         : $print_switch              => To print or not
+##         : $sample_id_ref             => Sample_id {REF}
 
     my ($arg_href) = @_;
 
@@ -20397,7 +20397,7 @@ sub set_auto_build_feature {
     my $active_parameter_href;
     my $file_info_href;
     my $broadcasts_ref;
-    my $referenceFile_ending_ref;
+    my $reference_file_ending_ref;
     my $reference_file_name_ref;
     my $sample_id_ref;
     my $parameter_name;
@@ -20407,7 +20407,7 @@ sub set_auto_build_feature {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
 	broadcasts_ref => { default => [], strict_type => 1, store => \$broadcasts_ref},
-	referenceFile_ending_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$referenceFile_ending_ref},
+	reference_file_ending_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$reference_file_ending_ref},
 	reference_file_name_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$reference_file_name_ref},
 	sample_id_ref => { strict_type => 1, store => \$sample_id_ref},
 	parameter_name => { required => 1, defined => 1, strict_type => 1, store => \$parameter_name},
@@ -20419,7 +20419,7 @@ sub set_auto_build_feature {
 
     if( defined($active_parameter_href->{$parameter_name}) && ($active_parameter_href->{$parameter_name} eq "not_set_yet") ) {
 
-	$active_parameter_href->{$parameter_name} = $$reference_file_name_ref.$$referenceFile_ending_ref;
+	$active_parameter_href->{$parameter_name} = $$reference_file_name_ref.$$reference_file_ending_ref;
 
 	if ($print_switch) {
 
