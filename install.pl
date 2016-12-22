@@ -48,7 +48,7 @@ BEGIN {
 	   -vepc/--vep_cache_dir Specify the cache directory to use (whole path; defaults to "~/miniconda/envs/conda_environment/ensembl-tools-release-varianteffectpredictorVersion/cache")
            -vepa/--vep_assemblies Select the assembly version (Default: ["GRCh37"])
            -vepp/--vep_plugin Supply a comma separated list of VEP plugins (Default: "UpDownDistance,LoFtool,Lof")
-           -rhc/--rhocall Set the rhocall version (Default: "0.1")
+           -rhc/--rhocall Set the rhocall version (Default: "0.3")
            -rhcp/--rhocall_path Set the path to where to install rhocall (Defaults: "HOME/rhocall")
 
            ## Utility
@@ -354,6 +354,9 @@ else {
 			    FILEHANDLE => $BASHFILEHANDLE,
 			   });
 
+    rhocall({parameter_href => \%parameter,
+	     FILEHANDLE => $BASHFILEHANDLE,
+	    });
 #    cnvnator({parameter_href => \%parameter,
 #	       FILEHANDLE => $BASHFILEHANDLE,
 #	      });
