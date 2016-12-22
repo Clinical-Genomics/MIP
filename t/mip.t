@@ -11,6 +11,7 @@ use charnames qw( :full :short );
 use Test::More;
 use FindBin qw($Bin);
 use File::Basename qw(dirname);
+use File::Path qw(remove_tree);
 use File::Spec::Functions qw(catfile catdir devnull);
 use Params::Check qw[check allow last_error];
 use IPC::Cmd qw[can_run run];
@@ -58,9 +59,7 @@ my( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
 ok($success, "Executed mip.pl");
 
 ##Clean-up
-$cmds_ref = ["rm", catfile(getcwd(), "data", "643594-miptest", "analysis")];
-( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
-    run( command => $cmds_ref, verbose => $verbose );
+remove_tree(catfile(getcwd(), "data", "643594-miptest", "analysis"));
 
 done_testing();
 
