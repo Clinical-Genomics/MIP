@@ -959,13 +959,19 @@ psv_rankvariant:
   default: 1
   file_tag: ranked_
   type: program
+sv_genmod_annotate_regions:
+  associated_program:
+   - psv_rankvariant
+  data_type: SCALAR
+  default: 1
+  type: program_argument
 sv_genmod_models_family_type:
   associated_program:
    - psv_rankvariant
   data_type: SCALAR
   default: mip
   type: program_argument
-sv_whole_gene:
+sv_genmod_models_whole_gene:
   associated_program:
    - psv_rankvariant
   data_type: SCALAR
@@ -1809,11 +1815,11 @@ prankvariant:
   default: 1
   file_tag: ranked_
   type: program
-genmod_models_family_type:
+genmod_annotate_regions:
   associated_program:
    - prankvariant
   data_type: SCALAR
-  default: ped
+  default: 1
   type: program_argument
 genmod_annotate_cadd_files:
   associated_program:
@@ -1832,11 +1838,17 @@ genmod_annotate_spidex_file:
   exists_check: file
   reference: reference_dir
   type: path
-whole_gene:
+genmod_models_whole_gene:
   associated_program:
    - prankvariant
   data_type: SCALAR
   default: 1
+  type: program_argument
+genmod_models_family_type:
+  associated_program:
+   - prankvariant
+  data_type: SCALAR
+  default: ped
   type: program_argument
 genmod_models_reduced_penetrance_file:
   associated_program:
