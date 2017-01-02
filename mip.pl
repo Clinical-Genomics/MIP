@@ -378,7 +378,7 @@ eval_parameter_hash({parameter_href => \%parameter,
 		     file_path => catfile($Bin, "definitions", "define_parameters.yaml"),
 		    });
 
-my $mip_version = "v4.0.3";	#Set MIP version
+my $mip_version = "v4.0.4";	#Set MIP version
 
 ## Directories, files, sample_info and job_ids
 my (%infile, %indir_path, %infile_lane_no_ending, %lane, %infile_both_strands_no_ending, %job_id, %sample_info);
@@ -3176,9 +3176,16 @@ sub evaluation {
     rename_vcf_samples({sample_ids_ref => [$active_parameter_href->{nist_id}."-NIST"],
 			temp_directory_ref => $temp_directory_ref,
 			infile => catfile($$reference_dir_ref, $active_parameter_href->{nist_high_confidence_call_set}),
-			outfile => catfile($$temp_directory_ref, "NIST.vcf"),
+			outfile => catfile($$temp_directory_ref, "NIST_refrm.vcf"),
 			FILEHANDLE => $FILEHANDLE,
 		       });
+
+    ## Modify since different ref genomes
+    say $FILEHANDLE "## Modify since different ref genomes";
+    print $FILEHANDLE q?perl -nae 'unless($_=~/##contig=<ID=GL\d+/) {print $_}' ?;
+    print $FILEHANDLE catfile($$temp_directory_ref, "NIST_refrm.vcf")." ";  #Infile
+    print $FILEHANDLE "> ".catfile($$temp_directory_ref, "NIST.vcf")." ";  #Outfile
+    say $FILEHANDLE "\n";
 
     ## BcfTools Stats
     say $FILEHANDLE "## bcftools stats";
