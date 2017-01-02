@@ -3158,9 +3158,16 @@ sub evaluation {
     rename_vcf_samples({sample_ids_ref => [$active_parameter_href->{nist_id}."-NIST"],
 			temp_directory_ref => $temp_directory_ref,
 			infile => catfile($$reference_dir_ref, $active_parameter_href->{nist_high_confidence_call_set}),
-			outfile => catfile($$temp_directory_ref, "NIST.vcf"),
+			outfile => catfile($$temp_directory_ref, "NIST_refrm.vcf"),
 			FILEHANDLE => $FILEHANDLE,
 		       });
+
+    ## Modify since different ref genomes
+    say $FILEHANDLE "## Modify since different ref genomes";
+    print $FILEHANDLE q?perl -nae 'unless($_=~/##contig=<ID=GL\d+/) {print $_}' ?;
+    print $FILEHANDLE catfile($$temp_directory_ref, "NIST_refrm.vcf")." ";  #Infile
+    print $FILEHANDLE "> ".catfile($$temp_directory_ref, "NIST.vcf")." ";  #Outfile
+    say $FILEHANDLE "\n";
 
     ## BcfTools Stats
     say $FILEHANDLE "## bcftools stats";
