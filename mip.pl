@@ -1080,15 +1080,11 @@ set_contigs({active_parameter_href => \%active_parameter,
 ($active_parameter{male_found}, $active_parameter{female_found}, $active_parameter{other_found})  = detect_sample_id_gender({active_parameter_href => \%active_parameter,
 															     sample_info_href => \%sample_info,
 															    });
-
-## Removes contigY|chrY from contigs if no males or 'other' found in analysis
-if (! $active_parameter{male_found}) {
-
-    ## Removes contigs from supplied contigs_ref
-    remove_array_element({contigs_ref => \@{ $file_info{select_file_contigs} },
-			  remove_contigs_ref => ["Y"],
-			 });
-}
+## Removes contig_names from contigs array if no male or 'other' found
+remove_contigs({active_parameter_href => \%active_parameter,
+		contigs_ref => \@{ $file_info{select_file_contigs} },
+		contig_names_ref => ["Y"],
+	       });
 
 
 ## Sorts array depending on reference array. NOTE: Only entries present in reference array will survive in sorted array.
@@ -2217,14 +2213,16 @@ if ($active_parameter{pgatk_variantevalall} > 0) {  #Run GATK varianteval for al
 }
 
 ### If no males or other remove contig Y from all downstream analysis
-if (! $active_parameter{male_found}) {
+my @file_info_contig_keys = ("contigs_size_ordered", "contigs");
 
-    ## Removes contigs from supplied contigs_ref
-    remove_array_element({contigs_ref => \@{ $file_info{contigs_size_ordered} },
-			  remove_contigs_ref => ["Y"],
-			 });
+foreach my $key (@file_info_contig_keys) {
+
+    ## Removes contig_names from contigs array if no male or 'other' found
+    remove_contigs({active_parameter_href => \%active_parameter,
+		    contigs_ref => \@{ $file_info{$key} },
+		    contig_names_ref => ["Y"],
+		   });
 }
-
 
 if ($active_parameter{reduce_io}) {  #Run consecutive models
 
@@ -8369,8 +8367,21 @@ sub sv_rankvariant {
     my $outfile_ending_stub = $$family_id_ref.$outfile_tag.$call_type;
 
     my $vcfparser_analysis_type = "";
-    my $vcfparser_contigs_ref = \@{ $file_info_href->{contigs_size_ordered} };  #Set default
-    my @vcfparser_subset_contigs = @{ $file_info_href->{contigs} };  #Set default for handling subset of contigs
+    my @contigs = @{ $file_info_href->{contigs_size_ordered} };  #Set default
+    my @subset_contigs = @{ $file_info_href->{contigs} };  #Set default for handling subset of contigs
+
+    ### If no males or other remove contig Y from all downstream analysis
+    my @contig_arrays = (\@contigs, \@subset_contigs);
+    
+    foreach my $array_ref (@contig_arrays) {
+	
+	## Removes contig_names from contigs array if no male or other found
+	remove_contigs({active_parameter_href => $active_parameter_href,
+			contigs_ref => $array_ref,
+			contig_names_ref => ["Y"],
+		       });
+    }
+
     my $family_file = catfile($outfamily_file_directory, $$family_id_ref.".fam");
 
     ## Create .fam file to be used in variant calling analyses
@@ -8386,7 +8397,7 @@ sub sv_rankvariant {
 	if ($vcfparser_outfile_counter == 1) {
 
 	    $vcfparser_analysis_type = ".selected";  #SelectFile variants
-	    $vcfparser_contigs_ref = \@{ $file_info_href->{sorted_select_file_contigs} };  #Selectfile contigs
+	    @contigs = @{ $file_info_href->{sorted_select_file_contigs} };  #Selectfile contigs
 	}
 
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Transfer contig files
@@ -8395,7 +8406,7 @@ sub sv_rankvariant {
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
 	    $xargs_file_counter = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 							      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-							      files_ref => $vcfparser_contigs_ref,
+							      files_ref => \@contigs,
 							      file_name => $file_name,
 							      program_info_path => $program_info_path,
 							      core_number => $core_number,
@@ -8446,9 +8457,9 @@ sub sv_rankvariant {
 								});
 	
 	## Process per contig
-	for (my $contigs_counter=0;$contigs_counter<scalar(@$vcfparser_contigs_ref);$contigs_counter++) {
+	for (my $contigs_counter=0;$contigs_counter<scalar(@contigs);$contigs_counter++) {
 	    
-	    my $contig_ref = \$vcfparser_contigs_ref->[$contigs_counter];
+	    my $contig_ref = \$contigs[$contigs_counter];
 	    my $genmod_file_ending_stub = $infile_ending_stub;
 	    my $genmod_xargs_file_name = $xargs_file_name;
 	    my $genmod_indata = catfile($$temp_directory_ref, $genmod_file_ending_stub.$vcfparser_analysis_type.".vcf")." ";  #InFile
@@ -8475,15 +8486,15 @@ sub sv_rankvariant {
 	    if ( (defined($parameter_href->{dynamic_parameter}{unaffected})) && (@{ $parameter_href->{dynamic_parameter}{unaffected} } eq @{ $active_parameter_href->{sample_ids} }) ) {  #Only unaffected
 		
 		## Write to outputFile - last genmod module
-		print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.$genmod_module.".vcf")." ";  #OutFile
-		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $genmod_file_ending_stub.$vcfparser_analysis_type.$genmod_module.".vcf")." ";  #OutFile
+		print $XARGSFILEHANDLE "2> ".$genmod_xargs_file_name.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		say $XARGSFILEHANDLE $genmod_indata;  #Infile
 	    }
 	    else {
 
 		## Write to outputstream
 		print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
-		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		print $XARGSFILEHANDLE "2> ".$genmod_xargs_file_name.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		print $XARGSFILEHANDLE $genmod_indata;  #InStream or Infile
 		print $XARGSFILEHANDLE "| ";  #Pipe
 		    
@@ -8559,11 +8570,11 @@ sub sv_rankvariant {
 		print $XARGSFILEHANDLE "2> ".$genmod_xargs_file_name.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		
 		say $XARGSFILEHANDLE $genmod_indata;  #InStream or Infile
-		
-		if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid") ) {  #Update endings with contig info
+	    }
 
-		    last;  #Only perform once for exome samples to avoid risking contigs lacking variants throwing errors
-		}
+	    if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid") ) {  #Update endings with contig info
+		
+		last;  #Only perform once for exome samples to avoid risking contigs lacking variants throwing errors
 	    }
 	}
 
@@ -8575,7 +8586,7 @@ sub sv_rankvariant {
 	    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
 	    concatenate_variants({active_parameter_href => $active_parameter_href,
 				  FILEHANDLE => $FILEHANDLE,
-				  elements_ref => \@vcfparser_subset_contigs,
+				  elements_ref => \@subset_contigs,
 				  infile_prefix => catfile($$temp_directory_ref, $infile_ending_stub."_"),
 				  infile_postfix => $vcfparser_analysis_type.$genmod_module.".vcf",
 				  outfile => catfile($$temp_directory_ref, $infile_ending_stub.$vcfparser_analysis_type.$concatenate_ending.".vcf"),
@@ -8772,13 +8783,22 @@ sub sv_vcfparser {
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
     my $outfile_ending_stub = $$family_id_ref.$outfile_tag.$call_type;
 
+    my @contigs = @{ $file_info_href->{contigs_size_ordered} };  #Set default
+
+    ### If no males or other remove contig Y from all downstream analysis
+    ## Removes contig_names from contigs array if no male or other found
+    remove_contigs({active_parameter_href => $active_parameter_href,
+		    contigs_ref => \@contigs,
+		    contig_names_ref => ["Y"],
+		   });
+
     if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Transfer contig files
 
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
 	($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 									      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									      files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+									      files_ref => \@contigs,
 									      file_name =>$file_name,
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
@@ -8812,9 +8832,9 @@ sub sv_vcfparser {
 							     first_command => "perl",
 							    });
 
-    for (my $contigs_counter=0;$contigs_counter<scalar(@{ $file_info_href->{contigs_size_ordered} });$contigs_counter++) {
+    for (my $contigs_counter=0;$contigs_counter<scalar(@contigs);$contigs_counter++) {
 
-	my $contig_ref = \$file_info_href->{contigs_size_ordered}[$contigs_counter];
+	my $contig_ref = \$contigs[$contigs_counter];
 	my $vcfparser_infile_ending_stub = $infile_ending_stub;
 	my $vcfparser_outfile_ending_stub = $outfile_ending_stub;
 	my $vcfparser_xargs_file_name = $xargs_file_name;
@@ -8884,7 +8904,7 @@ sub sv_vcfparser {
 
     if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Update endings with contig info
 
-	$outfile_ending .= "_".$file_info_href->{contigs_size_ordered}[0];
+	$outfile_ending .= "_".$contigs[0];
 
 	## QC Data File(s)
 	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $outfile_ending.".vcf"),
@@ -8946,14 +8966,13 @@ sub sv_vcfparser {
     close($XARGSFILEHANDLE);
 
     my $vcfparser_analysis_type = "";
-    my @vcfparser_contigs_ref = \@{ $file_info_href->{contigs_size_ordered} };
 
     for (my $vcfparser_outfile_counter=0;$vcfparser_outfile_counter<$active_parameter_href->{vcfparser_outfile_count};$vcfparser_outfile_counter++) {
 
 	if ($vcfparser_outfile_counter == 1) {
 
 	    $vcfparser_analysis_type = ".selected";  #SelectFile variants
-	    @vcfparser_contigs_ref = \@{ $file_info_href->{sorted_select_file_contigs} };
+	    @contigs = @{ $file_info_href->{sorted_select_file_contigs} };
 	}
 
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {
@@ -8962,7 +8981,7 @@ sub sv_vcfparser {
 	    say $FILEHANDLE "## Copy file(s) from temporary directory";
 	    ($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 										  XARGSFILEHANDLE => $XARGSFILEHANDLE,
-										  files_ref => @vcfparser_contigs_ref,
+										  files_ref => \@contigs,
 										  file_name =>$file_name,
 										  program_info_path => $program_info_path,
 										  core_number => $core_number,
@@ -9080,9 +9099,18 @@ sub sv_varianteffectpredictor {
     my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
     my $fork_number = 4;  #varianteffectpredictor forks
 
+    my @contigs = @{ $file_info_href->{contigs_size_ordered} };  #Set default
+    
+    ### If no males or other remove contig Y from all downstream analysis
+    ## Removes contig_names from contigs array if no male or other found
+    remove_contigs({active_parameter_href => $active_parameter_href,
+		    contigs_ref => \@contigs,
+		    contig_names_ref => ["Y"],
+		   });
+
     ## Set the number of cores to allocate per sbatch job.
     my $core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
-					      core_number => scalar(@{ $file_info_href->{contigs} })
+					      core_number => scalar(@contigs),
 					     });
     $core_number = floor($core_number / $fork_number);  #Adjust for the number of forks
 
@@ -9111,8 +9139,6 @@ sub sv_varianteffectpredictor {
     my $infile_tag = $file_info_href->{$$family_id_ref}{psv_combinevariantcallsets}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
     my $outfile_ending_stub = $$family_id_ref.$outfile_tag.$call_type;
-
-    my $core_counter = 1;
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -9155,9 +9181,9 @@ sub sv_varianteffectpredictor {
 							     first_command => "perl",
 							    });
 
-    for (my $contigs_counter=0;$contigs_counter<scalar(@{ $file_info_href->{contigs_size_ordered} });$contigs_counter++) {
+    for (my $contigs_counter=0;$contigs_counter<scalar(@contigs);$contigs_counter++) {
 
-	my $contig_ref = \$file_info_href->{contigs_size_ordered}[$contigs_counter];
+	my $contig_ref = \$contigs[$contigs_counter];
 
 	my $vep_outfile_ending_stub = $outfile_ending_stub;
 	my $vep_xargs_file_name = $xargs_file_name;
@@ -9243,7 +9269,7 @@ sub sv_varianteffectpredictor {
 
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Update endings with contig info
 
-	    $outfile_ending .= "_".$file_info_href->{contigs_size_ordered}[0];
+	    $outfile_ending .= "_".$contigs[0];
 	}
 
 	## Collect QC metadata info for later use
@@ -27000,6 +27026,43 @@ sub get_pedigree_sample_info {
 	    push(@{ $exom_target_bed_test_file_tracker_href->{$exome_target_bed_file} }, $sample_id);
 
 	}
+    }
+}
+
+
+sub remove_contigs {
+
+##remove_contigs
+
+##Function : Removes contig_names from contigs array if no male or other found
+##Returns  : ""
+##Arguments: $active_parameter_href, $contigs_ref
+##         : $active_parameter_href => The active parameters for this analysis hash {REF}
+##         : $contigs_ref           => Contigs array to update {REF}
+##         : $contig_names_ref      => Contig names to remove {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $contigs_ref;
+    my $contig_names_ref;
+
+    my $tmpl = { 
+	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	contigs_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$contigs_ref},
+	contig_names_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$contig_names_ref},
+    };
+    
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## Removes contigY|chrY from contigs if no males or 'other' found in analysis
+    if (! $active_parameter_href->{male_found}) {
+	
+	## Removes contigs from supplied contigs_ref
+	remove_array_element({contigs_ref => $contigs_ref,
+			      remove_contigs_ref => $contig_names_ref,
+			     });
     }
 }
 
