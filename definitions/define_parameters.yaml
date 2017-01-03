@@ -180,8 +180,8 @@ genomic_set:
    - mip
   build_file: no_auto_build
   data_type: SCALAR
-  default: nouser_info
   exists_check: file
+  mandatory: no
   reference: reference_dir
   type: path
 reduce_io:
@@ -202,6 +202,32 @@ print_program_mode:
   data_type: SCALAR
   default: 2
   type: mip
+## HumanGenomeReference
+human_genome_reference:
+  associated_program:
+   - mip
+   - pbwa_mem
+   - pbwa_aln
+   - pbwa_sampe
+   - pgatk_realigner
+   - pgatk_baserecalibration
+   - pgatk_haplotypecaller
+   - pgatk_genotypegvcfs
+   - psamtools_mpileup
+   - pgatk_variantrecalibration
+   - pgatk_phasebytransmission
+   - pgatk_readbackedphasing
+   - pgatk_variantevalall
+   - pgatk_variantevalexome
+   - pannovar
+   - ppicardtools_calculatehsmetrics
+   - ppicardtools_collectmultiplemetrics
+  build_file: yes_auto_downLoad
+  data_type: SCALAR
+  default: Homo_sapiens.GRCh37.d5.fasta
+  exists_check: file
+  reference: reference_dir
+  type: path
 ###Programs
 ## GZip
 psplit_fastq_file:
@@ -1965,31 +1991,6 @@ psacct:
   default: 1
   file_tag: nofile_tag
   type: program
-## HumanGenomeReference
-human_genome_reference:
-  associated_program:
-   - pbwa_mem
-   - pbwa_aln
-   - pbwa_sampe
-   - pgatk_realigner
-   - pgatk_baserecalibration
-   - pgatk_haplotypecaller
-   - pgatk_genotypegvcfs
-   - psamtools_mpileup
-   - pgatk_variantrecalibration
-   - pgatk_phasebytransmission
-   - pgatk_readbackedphasing
-   - pgatk_variantevalall
-   - pgatk_variantevalexome
-   - pannovar
-   - ppicardtools_calculatehsmetrics
-   - ppicardtools_collectmultiplemetrics
-  build_file: yes_auto_downLoad
-  data_type: SCALAR
-  default: Homo_sapiens.GRCh37.d5.fasta
-  exists_check: file
-  reference: reference_dir
-  type: path
 exome_target_bed:
   associated_program:
    - ppicardtools_calculatehsmetrics

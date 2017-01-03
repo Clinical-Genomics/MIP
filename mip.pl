@@ -22,7 +22,7 @@ $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 use Cwd;
 use Cwd qw(abs_path);  #Export absolute path function
 use FindBin qw($Bin);  #Find directory of script
-use File::Basename qw(dirname);
+use File::Basename qw(dirname basename);
 use File::Spec::Functions qw(catdir catfile devnull);
 use File::Path qw(make_path);
 use File::Copy qw(copy);
@@ -714,9 +714,14 @@ if (defined($parameter{config_file}{value})) {  #Input from cmd
 			   });
     }
 
-    ##Remove previous analysis specific info not relevant for current run e.g. log file
-    delete($active_parameter{log_file});
+    ##Remove previous analysis specific info not relevant for current run e.g. log file, sample_ids which are read from pedigree or cmd
+    my @remove_keys = ("log_file", "sample_ids");
+    foreach my $key (@remove_keys) {
+
+	delete($active_parameter{$key});
+    }
 }
+
 
 ###Populate active_parameters{parameter_name} => 'Value'
 foreach my $order_parameter_element (@order_parameters) {
@@ -778,37 +783,6 @@ foreach my $order_parameter_element (@order_parameters) {
 	## Detect if all samples has the same sequencing type and return consensus if reached
 	$parameter{dynamic_parameter}{consensus_analysis_type} = detect_overall_analysis_type({analysis_type_hef => \%{ $active_parameter{analysis_type} },
 											      });
-    }
-    if ($order_parameter_element eq "human_genome_reference") {  #Supply human_genome_reference to mosaik_align_reference if required
-
-	if ( (defined($active_parameter{human_genome_reference})) && (defined($file_info{human_genome_reference_name_no_ending})) ) {
-
-	    ## Sets parameters with auto_build enabled to the new value dependent on $reference_file_name_ref
-	    set_auto_build_feature({parameter_href => \%parameter,
-				    active_parameter_href => \%active_parameter,
-				    file_info_href => \%file_info,
-				    broadcasts_ref => \@broadcasts,
-				    parameter_name => "mosaik_align_reference",
-				    reference_file_ending_ref => \$file_info{mosaik_align_reference},
-				    reference_file_name_ref => \$file_info{human_genome_reference_name_no_ending},
-				   });
-	    set_auto_build_feature({parameter_href => \%parameter,
-				    active_parameter_href => \%active_parameter,
-				    file_info_href => \%file_info,
-				    broadcasts_ref => \@broadcasts,
-				    parameter_name => "mosaik_jump_db_stub",
-				    reference_file_ending_ref => \$file_info{mosaik_jump_db_stub},
-				    reference_file_name_ref => \$file_info{human_genome_reference_name_no_ending},
-				   });
-	    set_auto_build_feature({parameter_href => \%parameter,
-				    active_parameter_href => \%active_parameter,
-				    file_info_href => \%file_info,
-				    broadcasts_ref => \@broadcasts,
-				    parameter_name => "bwa_build_reference",
-				    reference_file_ending_ref => \$file_info{bwa_build_reference},
-				    reference_file_name_ref => \$active_parameter{human_genome_reference},
-				   });
-	}
     }
 }
 
@@ -16293,7 +16267,7 @@ sub check_build_human_genome_prerequisites {
 						  infile_lane_no_ending_href => $infile_lane_no_ending_href,
 						  job_id_href => $job_id_href,
 						  supported_cosmid_reference_href => $supported_cosmid_reference_href,
-						  family_id => $active_parameter_href->{family_id},
+						  family_id_ref => \$active_parameter_href->{family_id},
 						  outaligner_dir_ref => \$active_parameter_href->{outaligner_dir},
 						  program => $program_name,
 						 });
@@ -16568,7 +16542,7 @@ sub build_human_genome_prerequisites {
 	supported_cosmid_reference_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supported_cosmid_reference_href},
 	program => { required => 1, defined => 1, strict_type => 1, store => \$program},
 	FILEHANDLE => { store => \$FILEHANDLE},
-	random_integer => { required => 1, defined => 1, strict_type => 1, store => \$random_integer},
+	random_integer => { strict_type => 1, store => \$random_integer},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
@@ -17122,7 +17096,10 @@ sub read_yaml_pedigree_file {
 
 	if ($user_supply_switch{sample_ids} == 0) {
 
-	    push(@{ $active_parameter_href->{sample_ids} }, $sample_id);  #Save sample_id info
+	    if (! any {$_ eq $sample_id} @{ $active_parameter_href->{sample_ids} }) {  #Too avoid duplicates if sample_ids are present in config
+
+		push(@{ $active_parameter_href->{sample_ids} }, $sample_id);  #Save sample_id info
+	    }
 
 	    ## Reformat pedigree keys to plink format and collect sample info to various hashes
 	    get_pedigree_sample_info({parameter_href => $parameter_href,
@@ -17138,7 +17115,7 @@ sub read_yaml_pedigree_file {
 	}
 	else {  #Save sample_ids in pedigree to check that user supplied info and sample_id in pedigree match
 
-	    if (any {$_ eq $sample_id} @user_input_sample_ids) {  #If element is part of array
+	    if (any {$_ eq $sample_id} @user_input_sample_ids) {  #Update sample_id info
 
 		push(@{ $active_parameter_href->{sample_ids} }, $sample_id);  #Save sample_id info
 
@@ -18586,6 +18563,7 @@ sub add_to_active_parameter {
 		@{ $active_parameter_href->{$parameter_name} } = split($$element_separator_ref, join($$element_separator_ref, @$values_ref) );
 	    }
 	    elsif ( ($parameter_href->{$parameter_name}{data_type} eq "HASH") && (keys $parameter_href->{$parameter_name}{value}) ) {  #Hash reference
+
 		$active_parameter_href->{$parameter_name} = $parameter_href->{$parameter_name}{value};
 	    }
 	    elsif (defined($parameter_href->{$parameter_name}{value}) && (ref($parameter_href->{$parameter_name}{value})!~/ARRAY|HASH/)) {  #Scalar input from cmd
@@ -18694,9 +18672,15 @@ sub add_to_active_parameter {
     ## Parse Human Genome Reference
     if ($parameter_name eq "human_genome_reference") {
 
+	## Update path for supplied reference(s) associated with parameter that should reside in the mip reference directory to full path
+	update_mip_reference_path({parameter_href => $parameter_href,
+				   active_parameter_href => $active_parameter_href,
+				   parameter_name => "human_genome_reference",  #Special case to make sure that complete path is supplied
+				  });
+	
 	## Detect version and source of the human_genome_reference: Source (hg19 or GRCh).
 	parse_human_genome_reference({file_info_href => $file_info_href,
-				      human_genome_reference_ref => \$active_parameter_href->{human_genome_reference},
+				      human_genome_reference_ref => \basename($active_parameter_href->{human_genome_reference}),
 				     });
 
 	## Update exome_target_bed files with human_genome_reference_source_ref and human_genome_reference_version_ref
@@ -18819,7 +18803,6 @@ sub check_parameter_files {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
-    my $directory = "";  #Initialize for downstream path generation when required
 
     foreach my $associated_program (@$associated_programs_ref) {  #Check all programs that use parameter
 
@@ -18829,16 +18812,21 @@ sub check_parameter_files {
 
 	    $parameter_set_switch = 1;
 
-	    if (exists($parameter_href->{$parameter_name}{reference})) {  #Expect file to be in referenceDirectory
-
-		$directory = $$reference_dir_ref;
+	    if (exists($parameter_href->{$parameter_name}{reference})) {  #Expect file to be in reference directory
+		
+		## Update path for supplied reference(s) associated with parameter that should reside in the mip reference directory to full path
+		update_mip_reference_path({parameter_href => $parameter_href,
+					   active_parameter_href => $active_parameter_href,
+					   parameter_name => $parameter_name,
+					  });
 	    }
+
 	    if (defined($active_parameter_href->{$parameter_name}) ) {  #Check parameter existence
-
+    
 		if ($parameter_href->{$parameter_name}{data_type} eq "SCALAR") {
-
-		    my $path .= catfile($directory, $active_parameter_href->{$parameter_name});
-
+	
+		    my $path = catfile($active_parameter_href->{$parameter_name});
+		    
 		    if ($parameter_name eq "mosaik_jump_db_stub") {
 
 			## Checks files to be built by combining filename stub with fileendings
@@ -18856,7 +18844,7 @@ sub check_parameter_files {
 						     active_parameter_href => $active_parameter_href,
 						     file_endings_ref => \@{ $file_info_href->{bwa_build_reference_file_endings} },
 						     parameter_name => "bwa_build_reference",
-						     file_name => $active_parameter_href->{bwa_build_reference},
+						     file_name => $active_parameter_href->{human_genome_reference},
 						    });
 		    }
 		    elsif ($parameter_name eq "sample_info_file") {
@@ -18867,7 +18855,7 @@ sub check_parameter_files {
 
 				if (defined($active_parameter_href->{log_file})) {
 
-				    $logger->info("Read Yaml file: ". $active_parameter_href->{sample_info_file}, "\n");
+				    $logger->info("Load Yaml file: ". $active_parameter_href->{sample_info_file}, "\n");
 				}
 
 				##Loads a YAML file into an arbitrary hash and returns it. Load parameters from previous run from sample_info_file
@@ -18900,7 +18888,7 @@ sub check_parameter_files {
 
 			    check_existance({parameter_href => $parameter_href,
 					     active_parameter_href => $active_parameter_href,
-					     item_name_ref => \$path,
+					     item_name_ref => \$active_parameter_href->{$parameter_name},
 					     parameter_name_ref => \$parameter_name,
 					     item_type_to_check => $parameter_exists_check,
 					    });
@@ -18920,6 +18908,7 @@ sub check_parameter_files {
 			if (!defined($active_parameter_href->{rank_model_file})) {  #Do nothing since no rank model config file was given. Use default supplied by ranking script
 			}
 			else {  #To enable addition of rankModel file and version to sample_info
+
 			    check_existance({parameter_href => $parameter_href,
 					     active_parameter_href => $active_parameter_href,
 					     item_name_ref => \$path,
@@ -18936,6 +18925,7 @@ sub check_parameter_files {
 					 parameter_name_ref => \$parameter_name,
 					 item_type_to_check => $parameter_exists_check,
 					});
+
 			if ($path =~/\.gz$/) {  #Check for tabix index as well
 
 			    $path .=".tbi";
@@ -18977,9 +18967,8 @@ sub check_parameter_files {
 		    }
 		    else {
 
-			foreach my $file (@{ $active_parameter_href->{$parameter_name} }) {
+			foreach my $path (@{ $active_parameter_href->{$parameter_name} }) {
 
-			    my $path .= catfile($directory, $file);
 			    check_existance({parameter_href => $parameter_href,
 					     active_parameter_href => $active_parameter_href,
 					     item_name_ref => \$path,
@@ -18987,14 +18976,14 @@ sub check_parameter_files {
 					     item_type_to_check => $parameter_exists_check,
 					    });
 
-			    if ($file =~/\.gz$/) {  #Check for tabix index as well
+			    if ($path =~/\.gz$/) {  #Check for tabix index as well
 
-				my $file_index = $file.".tbi";
-				$path .=".tbi";
+				my $path_index = $path.".tbi";
+
 				check_existance({parameter_href => $parameter_href,
 						 active_parameter_href => $active_parameter_href,
-						 item_name_ref => \$path,
-						 parameter_name_ref => \$file_index,
+						 item_name_ref => \$path_index,
+						 parameter_name_ref => \$path_index,
 						 item_type_to_check => $parameter_exists_check,
 						});
 			    }
@@ -19003,15 +18992,13 @@ sub check_parameter_files {
 		}
 		if ($parameter_href->{$parameter_name}{data_type} eq "HASH") {
 
-		    for my $file (keys $active_parameter_href->{$parameter_name}) {
-
-			my $path .= catfile($directory, $file);
+		    for my $path (keys $active_parameter_href->{$parameter_name}) {
 
 			if ($parameter_name eq "exome_target_bed") {
 
 			    ## Check that supplied target file ends with ".bed" and otherwise exists
 			    check_target_bed_file_exist({active_parameter_href => $active_parameter_href,
-							 file => $file,
+							 file => $path,
 							 parameter_name => $parameter_name,
 							});
 
@@ -19020,25 +19007,24 @@ sub check_parameter_files {
 							 active_parameter_href => $active_parameter_href,
 							 file_endings_ref => \@{ $file_info_href->{exome_target_bed} },
 							 parameter_name => "exome_target_bed",
-							 file_name => $file,
+							 file_name => $path,
 							});
 			}
 			check_existance({parameter_href => $parameter_href,
 					 active_parameter_href => $active_parameter_href,
 					 item_name_ref => \$path,
-					 parameter_name_ref => \$file,
+					 parameter_name_ref => \$path,
 					 item_type_to_check => $parameter_exists_check,
 					});
 
 
-			if ($file =~/\.gz$/) {  #Check for tabix index as well
+			if ($path =~/\.gz$/) {  #Check for tabix index as well
 
-			    my $file_index = $file.".tbi";
-			    $path .=".tbi";
+			    my $path_index = $path.".tbi";
 			    check_existance({parameter_href => $parameter_href,
 					     active_parameter_href => $active_parameter_href,
 					     item_name_ref => \$path,
-					     parameter_name_ref => \$file_index,
+					     parameter_name_ref => \$path_index,
 					     item_type_to_check => $parameter_exists_check,
 					    });
 			}
@@ -20233,21 +20219,22 @@ sub parse_human_genome_reference {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    if ($$human_genome_reference_ref =~/^Homo_sapiens.GRCh(\d+\.\d+|\d+)/) {  #Used to change capture kit genome reference version later
+    if ($$human_genome_reference_ref =~/Homo_sapiens.GRCh(\d+\.\d+|\d+)/) {  #Used to change capture kit genome reference version later
 
 	$file_info_href->{human_genome_reference_version} = $1;
 	$file_info_href->{human_genome_reference_source} = "GRCh";  #Ensembl
     }
-    elsif ($$human_genome_reference_ref =~/^Homo_sapiens.hg(\d+)/) {  #Used to change capture kit genome reference version later
+    elsif ($$human_genome_reference_ref =~/Homo_sapiens.hg(\d+)/) {  #Used to change capture kit genome reference version later
 
 	$file_info_href->{human_genome_reference_version} = $1;
 	$file_info_href->{human_genome_reference_source} = "hg";  #Refseq
     }
     else {
 
-	$logger->warn("MIP cannot detect what kind of human_genome_reference you have supplied. If you want to automatically set the capture kits used please supply the refrence on this format: [species].[source][version].", "\n");
+	$logger->warn("MIP cannot detect what kind of human_genome_reference you have supplied. If you want to automatically set the capture kits used please supply the reference on this format: [species].[source][version].", "\n");
     }
     ## Removes ".file_ending" in filename.FILENDING(.gz)
+    
     $file_info_href->{human_genome_reference_name_no_ending} = remove_file_ending({file_name_ref => $human_genome_reference_ref,
 										   file_ending => ".fasta",
 										  });
@@ -20295,7 +20282,8 @@ sub check_file_endings_to_build {
 
     foreach my $file_ending (@$file_endings_ref) {
 
-	my $path = catfile($$reference_dir_ref, $file_name.$file_ending);
+	my $path = catfile($file_name.$file_ending);
+
 	check_existance({parameter_href => $parameter_href,
 			 active_parameter_href => $active_parameter_href,
 			 item_name_ref => \$path,
@@ -20413,112 +20401,6 @@ sub check_existance {
 }
 
 
-sub set_auto_build_feature {
-
-##set_auto_build_feature
-
-##Function : Sets parameters with auto_build enabled to the new value dependent on $reference_file_name_ref
-##Returns  : ""
-##Arguments: $parameterHasRef, $active_parameter_href, $file_info_href, $broadcasts_ref, $parameter_name, $reference_file_ending_ref, $reference_file_name_ref, $print_switch, $sample_id_ref
-##         : $parameter_href            => The parameter hash {REF}
-##         : $active_parameter_href     => The activa parameters for this analysis hash {REF}
-##         : $file_info_href            => The file_info hash {REF}
-##         : $broadcasts_ref            => Holds the parameters info for broadcasting later {REF}
-##         : $parameter_name            => MIP parameter name
-##         : $reference_file_ending_ref => Reference file name ending {REF}
-##         : $reference_file_name_ref   => Reference file name {REF}
-##         : $print_switch              => To print or not
-##         : $sample_id_ref             => Sample_id {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $print_switch = $arg_href->{'print_switch'} //= 0;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $file_info_href;
-    my $broadcasts_ref;
-    my $reference_file_ending_ref;
-    my $reference_file_name_ref;
-    my $sample_id_ref;
-    my $parameter_name;
-
-    my $tmpl = {
-	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
-	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	broadcasts_ref => { default => [], strict_type => 1, store => \$broadcasts_ref},
-	reference_file_ending_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$reference_file_ending_ref},
-	reference_file_name_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$reference_file_name_ref},
-	sample_id_ref => { strict_type => 1, store => \$sample_id_ref},
-	parameter_name => { required => 1, defined => 1, strict_type => 1, store => \$parameter_name},
-	print_switch => { strict_type => 1, store => \$print_switch},
-
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    if( defined($active_parameter_href->{$parameter_name}) && ($active_parameter_href->{$parameter_name} eq "not_set_yet") ) {
-
-	$active_parameter_href->{$parameter_name} = $$reference_file_name_ref.$$reference_file_ending_ref;
-
-	if ($print_switch) {
-
-	    if (@$broadcasts_ref) {
-
-		my $info = "Set ".$parameter_name." to: ".$active_parameter_href->{$parameter_name};
-		push(@$broadcasts_ref, $info);  #Add info to broadcasts
-	    }
-	}
-	if ($parameter_name eq "bwa_build_reference") {
-
-	    ## Checks files to be built by combining filename stub with fileendings
-	    check_file_endings_to_build({parameter_href => $parameter_href,
-					 active_parameter_href => $active_parameter_href,
-					 file_endings_ref => \@{ $file_info_href->{bwa_build_reference_file_endings} },
-					 parameter_name => "bwa_build_reference",
-					 file_name => $active_parameter_href->{bwa_build_reference},
-					});
-	}
-	elsif ($parameter_name eq "mosaik_jump_db_stub") {
-
-	    ## Checks files to be built by combining filename stub with fileendings
-	    check_file_endings_to_build({parameter_href => $parameter_href,
-					 active_parameter_href => $active_parameter_href,
-					 file_endings_ref => \@{ $file_info_href->{mosaik_jump_db_stub_file_endings} },
-					 parameter_name => "mosaik_jump_db_stub",
-					 file_name => $active_parameter_href->{mosaik_jump_db_stub},
-					});
-	}
-	else {  #Complete file_name - No stubs
-
-	    my $path = catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{$parameter_name});
-	    if ( (defined($$sample_id_ref)) && ($$sample_id_ref) ) {
-
-		check_existance({parameter_href => $parameter_href,
-				 active_parameter_href => $active_parameter_href,
-				 item_name_ref => \$path,
-				 parameter_name_ref => \$parameter_name,
-				 item_type_to_check => "file",
-				 sample_id_ref => $sample_id_ref,
-				});
-	    }
-	    else {
-
-		check_existance({parameter_href => $parameter_href,
-				 active_parameter_href => $active_parameter_href,
-				 item_name_ref => \$path,
-				 parameter_name_ref => \$parameter_name,
-				 item_type_to_check => "file",
-				});
-	    }
-	}
-    }
-}
-
-
 sub move_mosaik_nn {
 
 ##move_mosaik_nn
@@ -20582,7 +20464,7 @@ sub check_user_supplied_info {
 
    	    if (defined($active_parameter_href->{$parameter_name})) {  #User supplied info in config file
 
-		$user_supplied_info_switch = 1;  #No user supplied cmd info, but present in config file do NOT overwrite using info from pedigree file
+		$user_supplied_info_switch = 0;  #No user supplied cmd info, but present in config file overwrite using info from pedigree file
 	    }
 	    else {  #No sample_ids info in config file
 
@@ -20600,7 +20482,7 @@ sub check_user_supplied_info {
 
 	    if (defined($active_parameter_href->{$parameter_name})) {  #User supplied info in config file
 
-		$user_supplied_info_switch = 1;  #No user supplied cmd info, but present in config file do NOT overwrite using info from pedigree file
+		$user_supplied_info_switch = 0;  #No user supplied cmd info, but present in config file overwrite using info from pedigree file
 	    }
 	    else {  #No sample_ids info in config file
 
@@ -21975,30 +21857,32 @@ sub remove_pedigree_elements {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my %allowed_entries = (capture_kit => "capture_kit",
+    my %allowed_entries = (family => "family",
+			   default_gene_panels => "default_gene_panels",  #Clinical gene panels
+			   sample => "sample",
+			   capture_kit => "capture_kit",
 			   sex => "sex",
 			   mother => "mother",
 			   father => "father",
 			   phenotype => "phenotype",
-			   Clinical_db_gene_annotation => "Clinical_db_gene_annotation",
-			   defaultGenePanels => "defaultGenePanels",  #Clinical gene panels
 			   sequence_type => "sequence_type",
 			   expected_coverage => "expected_coverage",
 	);
 
-    for my $family_id (keys %$hash_ref) {
+    for my $key (keys %$hash_ref) {
+	
+	unless (exists($allowed_entries{$key})) {
 
-	if(ref($family_id) eq "HASH") {
+		delete($hash_ref->{$key});
+	    }
+    }
+    foreach my $sample_id (keys %{ $hash_ref->{sample} }) {
 
-	    for my $sample_id (keys $hash_ref->{$family_id})  {
+	for my $pedigree_elements (keys $hash_ref->{sample}{$sample_id})  {
 
-		for my $pedigree_elements (keys $hash_ref->{$family_id}{$sample_id})  {
+	    unless (exists($allowed_entries{$pedigree_elements})) {
 
-		    unless (exists($allowed_entries{$pedigree_elements})) {
-
-			delete($hash_ref->{$family_id}{$sample_id}{$pedigree_elements});
-		    }
-		}
+		delete($hash_ref->{sample}{$sample_id}{$pedigree_elements});
 	    }
 	}
     }
@@ -22163,7 +22047,8 @@ sub check_human_genome_file_endings {
 	## Enable auto_build of metafiles
 	$parameter_href->{$$parameter_name_ref.$human_genome_reference_file_ending}{build_file} = "yes_auto_build";
 
-	my $path = catfile($$reference_dir_ref, $$human_genome_reference_name_no_ending_ref.$human_genome_reference_file_ending);
+	my $path = catfile(dirname($active_parameter_href->{human_genome_reference}), $$human_genome_reference_name_no_ending_ref);  #Add mip_reference path
+        $path = $path.$human_genome_reference_file_ending;  #Add current ending
 	my $complete_parameter_name = $$parameter_name_ref.$human_genome_reference_file_ending;
 
 	check_existance({parameter_href => $parameter_href,
@@ -24957,13 +24842,11 @@ sub check_vt_for_references {
 
 	foreach my $parameter_name (@$vt_references_ref) {
 
-	    my $reference_file_path;
-
 	    if ($parameter_href->{$parameter_name}{data_type} eq "SCALAR") {
 
-		$reference_file_path = catfile($$reference_dir_ref, $active_parameter{$parameter_name});
+		my $annotation_file = catfile($active_parameter{$parameter_name});
 
-		unless (exists($seen{$reference_file_path})) {
+		unless (exists($seen{$annotation_file})) {
 
 		    ## Check if vt has processed references using regexp
 		    check_vt({parameter_href => $parameter_href,
@@ -24971,19 +24854,17 @@ sub check_vt_for_references {
 			      sample_info_href => $sample_info_href,
 			      infile_lane_no_ending_href => $infile_lane_no_ending_href,
 			      job_id_href => $job_id_href,
-			      reference_file_path => $reference_file_path,
+			      reference_file_path => $annotation_file,
 			      parameter_name => $parameter_name,
 			     });
 		}
-		$seen{$reference_file_path} = 1;
+		$seen{$annotation_file} = 1;
 	    }
 	    elsif ($parameter_href->{$parameter_name}{data_type} eq "ARRAY") {  #ARRAY reference
 
 		foreach my $annotation_file (@{ $active_parameter_href->{$parameter_name} }) {
 
-		    $reference_file_path = catfile($$reference_dir_ref, $annotation_file);
-
-		    unless (exists($seen{$reference_file_path})) {
+		    unless (exists($seen{$annotation_file})) {
 
 			## Check if vt has processed references using regexp
 			check_vt({parameter_href => $parameter_href,
@@ -24991,20 +24872,18 @@ sub check_vt_for_references {
 				  sample_info_href => $sample_info_href,
 				  infile_lane_no_ending_href => $infile_lane_no_ending_href,
 				  job_id_href => $job_id_href,
-				  reference_file_path => $reference_file_path,
+				  reference_file_path => $annotation_file,
 				  parameter_name => $parameter_name,
 				 });
 		    }
-		    $seen{$reference_file_path} = 1;
+		    $seen{$annotation_file} = 1;
 		}
 	    }
 	    elsif ($parameter_href->{$parameter_name}{data_type} eq "HASH") {  #Hash reference
 
 		for my $annotation_file (keys $active_parameter_href->{$parameter_name}) {
 
-		    $reference_file_path = catfile($$reference_dir_ref, $annotation_file);
-
-		    unless (exists($seen{$reference_file_path})) {
+		    unless (exists($seen{$annotation_file})) {
 
 			## Check if vt has processed references using regexp
 			check_vt({parameter_href => $parameter_href,
@@ -25012,11 +24891,11 @@ sub check_vt_for_references {
 				  sample_info_href => $sample_info_href,
 				  infile_lane_no_ending_href => $infile_lane_no_ending_href,
 				  job_id_href => $job_id_href,
-				  reference_file_path => $reference_file_path,
+				  reference_file_path => $annotation_file,
 				  parameter_name => $parameter_name,
 				 });
 		    }
-		    $seen{$reference_file_path} = 1;
+		    $seen{$annotation_file} = 1;
 		}
 	    }
 	}
@@ -27116,14 +26995,14 @@ sub get_user_supplied_info {
     ## Detect user supplied info
     foreach my $parameter (keys %user_supply_switch) {
 
-	if (ref($parameter_href->{$parameter}{value} eq "HASH")) {
+	if (ref($parameter_href->{$parameter}{value}) eq "HASH") {
 
 	    $user_supply_switch{$parameter} = check_user_supplied_info({active_parameter_href => $active_parameter_href,
 									data_ref => \%{ $parameter_href->{$parameter}{value} },
 									parameter_name => $parameter,
 								       });
 	}
-	if (ref($parameter_href->{$parameter}{value} eq "ARRAY")) {
+	if (ref($parameter_href->{$parameter}{value}) eq "ARRAY") {
 
 	    $user_supply_switch{$parameter} = check_user_supplied_info({active_parameter_href => $active_parameter_href,
 									data_ref => \@{ $parameter_href->{$parameter}{value} },
@@ -27186,7 +27065,7 @@ sub get_pedigree_sample_info {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    ## Add input to sample_infoHash for at sample level
+    ## Add input to sample_info hash for at sample level
     foreach my $key (keys %$pedigree_sample_href) {
 
 	$sample_info_href->{sample}{$sample_id}{$key} = $pedigree_sample_href->{$key};
@@ -27312,6 +27191,60 @@ sub check_founder_id {
 		    exit 1;
 		}
 	    }	
+	}
+    }
+}
+
+
+sub update_mip_reference_path {
+    
+##update_mip_reference_path
+    
+##Function : Update path for supplied reference(s) associated with parameter that should reside in the mip reference directory to full path.
+##Returns  : ""
+##Arguments: $parameter_href, $active_parameter_href, $parameter_name
+##         : $parameter_href        => The parameter hash {REF}
+##         : $active_parameter_href => The active parameters for this analysis hash {REF}
+##         : $parameter_name        => Parameter to update
+    
+    my ($arg_href) = @_;
+    
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $parameter_name;
+    
+    my $tmpl = { 
+	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	parameter_name => { required => 1, defined => 1, strict_type => 1, store => \$parameter_name},
+    };
+    
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    
+    my $reference_dir_ref = \$active_parameter_href->{reference_dir};
+    
+    if ($parameter_href->{$parameter_name}{data_type} eq "SCALAR"
+	&& defined($active_parameter_href->{$parameter_name}) ) {
+	
+	my ($volume, $directory, $file_name) = File::Spec->splitpath($active_parameter_href->{$parameter_name});  #Split to restate
+	$active_parameter_href->{$parameter_name} = $file_name;  #Restate to allow for changing mip reference directory between runs
+	$active_parameter_href->{$parameter_name} = catfile($$reference_dir_ref, $active_parameter_href->{$parameter_name});  #Update original value
+    }
+    elsif ($parameter_href->{$parameter_name}{data_type} eq "ARRAY") {
+	
+	foreach my $file (@{ $active_parameter_href->{$parameter_name} }) {
+	    
+	    my ($volume, $directory, $file_name) = File::Spec->splitpath($file);  #Split to restate
+	    $file = catfile($$reference_dir_ref, $file_name);  #Update original element
+	}
+    }
+    elsif ($parameter_href->{$parameter_name}{data_type} eq "HASH") {
+	
+	foreach my $file (keys $active_parameter_href->{$parameter_name}) {
+	    
+	    my ($volume, $directory, $file_name) = File::Spec->splitpath($file);  #Split to restate
+	    $active_parameter_href->{$parameter_name}{ catfile($$reference_dir_ref, $file_name) } = delete($active_parameter_href->{$parameter_name}{$file});  #Update original value
 	}
     }
 }
