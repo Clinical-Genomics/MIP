@@ -21769,6 +21769,8 @@ sub remove_pedigree_elements {
     my @allowed_entries = ("family",
 			   "default_gene_panels",
 			   "sample",
+			   "sample_id",
+			   "sample_name",
 			   "capture_kit",
 			   "sex",
 			   "mother",
