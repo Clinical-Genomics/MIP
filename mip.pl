@@ -2842,9 +2842,7 @@ sub removeredundantfiles {
 					     program_directory => $$outaligner_dir_ref,
 					    });
 
-    for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {
-
-	my $sample_id = $active_parameter_href->{sample_ids}[$sample_id_counter];
+    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
 	## Sample files
 	##Removes intermediate files from the MIP analysis depending on set MIP parameters
@@ -2861,6 +2859,7 @@ sub removeredundantfiles {
 		      program_name => "remove_files",
 		     });
     }
+
     ## Family files
     ##Removes intermediate files from the MIP analysis depending on set MIP parameters
     remove_files({parameter_href => $parameter_href,
@@ -25051,7 +25050,8 @@ sub remove_files {
 
 	if ($active_parameter_href->{$program} > 0) {
 
-	    if ( (defined($parameter_href->{$program}{remove_redundant_file})) && ($parameter_href->{$program}{remove_redundant_file} eq "yes")) {
+	    if ( (defined($parameter_href->{$program}{remove_redundant_file}))
+		 && ($parameter_href->{$program}{remove_redundant_file} eq "yes")) {
 
 		if (defined($sample_id)) {
 
@@ -25061,30 +25061,30 @@ sub remove_files {
 		    ## Single files
 		    if ($parameter_href->{$program}{remove_redundant_file_setting} eq "single") {  #Infiles for prior to potential merge
 
-			for (my $infile_counter=0;$infile_counter < scalar( @{ $infile_lane_no_ending_href->{$sample_id} });$infile_counter++) {
+		      INFILE:
+			foreach my $infile (@{ $infile_lane_no_ending_href->{$sample_id} }) {
 
-			    my $infile = $infile_lane_no_ending_href->{$sample_id}[$infile_counter];
-
-			    for (my $file_ending_counter=0;$file_ending_counter < scalar( @{ $parameter_href->{$program}{file_endings} });$file_ending_counter++) {
+			  FILE_ENDINGS:
+			    foreach my $file_ending (@{ $parameter_href->{$program}{file_endings} }) {
 
 				my $file_path;
 
 				if (defined($outfile_tag)) {
 
-				    $file_path = catfile($indirectory, $infile.$outfile_tag.$parameter_href->{$program}{file_endings}[$file_ending_counter]);
+				    $file_path = catfile($indirectory, $infile.$outfile_tag.$file_ending);
 				}
 				else {
 
-				    $file_path = catfile($indirectory, $infile.$parameter_href->{$program}{file_endings}[$file_ending_counter]);
+				    $file_path = catfile($indirectory, $infile.$file_ending);
 				}
 
 				my $most_complete_ref;
 
-				if ($parameter_href->{$program}{file_endings}[$file_ending_counter]=~/vcf|bam/) {
+				if ($file_ending=~/vcf|bam/) {
 
 				    ## Detect which most_complete_path to use depending on file_ending
 				    $most_complete_ref = detect_most_complete_file({sample_info_href => $sample_info_href,
-										    file_ending_ref => \$parameter_href->{$program}{file_endings}[$file_ending_counter],
+										    file_ending_ref => \$file_ending,
 										    sample_id_ref => \$sample_id,
 										    family_id_ref => $family_id_ref,
 										   });
@@ -25093,7 +25093,7 @@ sub remove_files {
 				check_most_complete_and_remove_file({FILEHANDLE => $FILEHANDLE,
 								     most_complete_ref => $most_complete_ref,
 								     file_path_ref => \$file_path,
-								     file_ending => $parameter_href->{$program}{file_endings}[$file_ending_counter],
+								     file_ending => $file_ending,
 								    });
 			    }
 			}
