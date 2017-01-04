@@ -2966,7 +2966,7 @@ sub qccollect {
 
 ##Function : Collect qc metrics for this analysis run.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, family_id_ref, $reference_dir_ref, $call_type,
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, family_id_ref, $call_type,
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -2974,14 +2974,12 @@ sub qccollect {
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $call_type                  => The variant call type
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $call_type;
 
     ## Flatten argument(s)
@@ -3000,7 +2998,6 @@ sub qccollect {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
     };
 
@@ -3024,7 +3021,7 @@ sub qccollect {
 
     print $FILEHANDLE "perl ".$active_parameter_href->{script_dir}."/qccollect.pl ";
     print $FILEHANDLE "-sample_info_file ".$active_parameter_href->{qccollect_sampleinfo_file}." ";
-    print $FILEHANDLE "-regexp_file ".$$reference_dir_ref."/".$active_parameter_href->{qccollect_regexp_file}." ";
+    print $FILEHANDLE "-regexp_file ".$active_parameter_href->{qccollect_regexp_file}." ";
 
     if ($active_parameter_href->{qccollect_skip_evaluation}) {
 
@@ -3149,7 +3146,7 @@ sub evaluation {
     ## Rename vcf samples. The samples array will replace the sample names in the same order as supplied.
     rename_vcf_samples({sample_ids_ref => [$active_parameter_href->{nist_id}."-NIST"],
 			temp_directory_ref => $temp_directory_ref,
-			infile => catfile($$reference_dir_ref, $active_parameter_href->{nist_high_confidence_call_set}),
+			infile => $active_parameter_href->{nist_high_confidence_call_set},
 			outfile => catfile($$temp_directory_ref, "NIST_refrm.vcf"),
 			FILEHANDLE => $FILEHANDLE,
 		       });
@@ -3181,7 +3178,7 @@ sub evaluation {
 
     print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
     print $FILEHANDLE "-V: ".catfile($$temp_directory_ref, "NIST.vcf")." ";
     print $FILEHANDLE "-o ".catfile($$temp_directory_ref, "NISTXXX.vcf")." ";
     print $FILEHANDLE "-sn ".$$sample_id_ref."XXX ";  #Include genotypes from this sample
@@ -3197,7 +3194,7 @@ sub evaluation {
 
     print $FILEHANDLE "cat ";
     print $FILEHANDLE catfile($$temp_directory_ref, "Homo_sapiens.GRCh37.dict")." ";
-    print $FILEHANDLE catfile($$reference_dir_ref, $active_parameter_href->{nist_high_confidence_call_set_bed})." ";
+    print $FILEHANDLE $active_parameter_href->{nist_high_confidence_call_set_bed}." ";
     print $FILEHANDLE "> ".catfile($$temp_directory_ref, "NIST.bed.dict_body")." ";
     say $FILEHANDLE "\n";
 
@@ -3234,7 +3231,7 @@ sub evaluation {
 
     print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
     print $FILEHANDLE "-V: ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf")." ";  #Family_id infile
     print $FILEHANDLE "-o ".catfile($$temp_directory_ref, "MIP.vcf")." ";  #Sample_id exome outfile
     print $FILEHANDLE "-sn ".$$sample_id_ref." ";  #Include genotypes from this sample
@@ -3254,7 +3251,7 @@ sub evaluation {
 
     print $FILEHANDLE "-T LeftAlignAndTrimVariants ";  #Type of analysis to run
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
     print $FILEHANDLE "--splitMultiallelics ";
     print $FILEHANDLE "--variant ".catfile($$temp_directory_ref, "MIP.vcf")." ";  #Sample_id infile
     print $FILEHANDLE "-o ".catfile($$temp_directory_ref, "MIP_lts.vcf")." ";  #Outfile
@@ -3287,7 +3284,7 @@ sub evaluation {
 
     print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
     print $FILEHANDLE "-V: ".catfile($$temp_directory_ref, "MIP_lts_refrm.vcf")." ";
     print $FILEHANDLE "-o ".catfile($$temp_directory_ref, "MIPXXX.vcf")." ";
     print $FILEHANDLE "-sn ".$$sample_id_ref."XXX ";  #Include genotypes from this sample
@@ -3365,7 +3362,7 @@ sub rankvariant {
 
 ##Function : Annotate and score variants depending on mendelian inheritance, frequency and phenotype etc.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -3378,7 +3375,6 @@ sub rankvariant {
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 ##         : $call_type                  => The variant call type
 ##         : $xargs_file_counter         => The xargs file counter
@@ -3388,7 +3384,6 @@ sub rankvariant {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $call_type;
     my $xargs_file_counter;
@@ -3418,7 +3413,6 @@ sub rankvariant {
 	FILEHANDLE => { store => \$FILEHANDLE},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
@@ -3564,11 +3558,11 @@ sub rankvariant {
 	    }
 	    foreach my $cadd_file (@{ $active_parameter_href->{genmod_annotate_cadd_files} }) {
 
-		print $XARGSFILEHANDLE "--cadd_file ".catfile($$reference_dir_ref, $cadd_file)." ";  #CADD score file(s)
+		print $XARGSFILEHANDLE "--cadd_file ".$cadd_file." ";  #CADD score file(s)
 	    }
 	    if (defined($active_parameter_href->{genmod_annotate_spidex_file})) {
 
-		print $XARGSFILEHANDLE "--spidex ".catfile($$reference_dir_ref, $active_parameter_href->{genmod_annotate_spidex_file})." ";  #Spidex file
+		print $XARGSFILEHANDLE "--spidex ".$active_parameter_href->{genmod_annotate_spidex_file}." ";  #Spidex file
 	    }
 	    if ( (defined($parameter_href->{dynamic_parameter}{unaffected})) && (@{ $parameter_href->{dynamic_parameter}{unaffected} } eq @{ $active_parameter_href->{sample_ids} }) ) {  #Only unaffected
 
@@ -3598,7 +3592,7 @@ sub rankvariant {
 
 		if (defined($active_parameter_href->{genmod_models_reduced_penetrance_file})) {
 
-		    print $XARGSFILEHANDLE "--reduced_penetrance ".catfile($$reference_dir_ref, $active_parameter_href->{genmod_models_reduced_penetrance_file})." ";  #Use list of genes that have been shown to display reduced penetrance
+		    print $XARGSFILEHANDLE "--reduced_penetrance ".$active_parameter_href->{genmod_models_reduced_penetrance_file}." ";  #Use list of genes that have been shown to display reduced penetrance
 		}
 		print $XARGSFILEHANDLE "--processes 4 ";  #Define how many processes that should be use for annotation
 
@@ -3628,7 +3622,7 @@ sub rankvariant {
 
 		if (defined($active_parameter_href->{rank_model_file})) {
 
-		    print $XARGSFILEHANDLE "--score_config ".catfile($$reference_dir_ref, $active_parameter_href->{rank_model_file})." ";  #Rank model config.ini file
+		    print $XARGSFILEHANDLE "--score_config ".$active_parameter_href->{rank_model_file}." ";  #Rank model config.ini file
 		}
 
 		print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
@@ -3731,8 +3725,8 @@ sub rankvariant {
 
 		$sample_info_href->{program}{rankvariant}{rank_model}{version} = $1;
 	    }
-	    $sample_info_href->{program}{rankvariant}{rank_model}{file} = $active_parameter_href->{rank_model_file};
-	    $sample_info_href->{program}{rankvariant}{rank_model}{path} = catfile($$reference_dir_ref, $active_parameter_href->{rank_model_file});
+	    $sample_info_href->{program}{rankvariant}{rank_model}{file} = basename($active_parameter_href->{rank_model_file});
+	    $sample_info_href->{program}{rankvariant}{rank_model}{path} = $active_parameter_href->{rank_model_file};
 
 	}
 	sample_info_qc({sample_info_href => $sample_info_href,
@@ -3763,27 +3757,25 @@ sub gatk_variantevalexome {
 
 ##Function : GATK varianteval for exome variants.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type,
-##         : $parameter_href           => The parameter hash {REF}
-##         : $active_parameter_href     => The active parameters for this analysis hash {REF}
-##         : $sample_info_href          => Info on samples and family hash {REF}
-##         : $file_info_href            => The file_info hash {REF}
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type,
+##         : $parameter_href             => The parameter hash {REF}
+##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
+##         : $sample_info_href           => Info on samples and family hash {REF}
+##         : $file_info_href             => The file_info hash {REF}
 ##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
-##         : $job_id_href               => The job_id hash {REF}
-##         : $sample_id_ref                => The sample_id {REF}
-##         : $program_name                => The program name {REF}
-##         : $family_id_ref                => The family_id {REF}
-##         : $temp_directory_ref           => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
-##         : $outaligner_dir_ref           => The outaligner_dir used in the analysis {REF}
-##         : $call_type                   => The variant call type
+##         : $job_id_href                => The job_id hash {REF}
+##         : $sample_id_ref              => The sample_id {REF}
+##         : $program_name               => The program name {REF}
+##         : $family_id_ref              => The family_id {REF}
+##         : $temp_directory_ref         => The temporary directory {REF}
+##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
+##         : $call_type                  => The variant call type
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $call_type;
 
@@ -3808,7 +3800,6 @@ sub gatk_variantevalexome {
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
     };
@@ -3866,7 +3857,7 @@ sub gatk_variantevalexome {
 
     print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
     print $FILEHANDLE "-V: ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf")." ";  #Family_id infile
     print $FILEHANDLE "-o ".catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type."_temp.vcf")." ";  #Sample_id exome outfile
     say $FILEHANDLE "-sn ".$$sample_id_ref, "\n";  #Include genotypes from this sample
@@ -3950,9 +3941,9 @@ sub gatk_variantevalexome {
 
     print $FILEHANDLE "-T VariantEval ";  #Type of analysis to run
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
-    print $FILEHANDLE "-D ".catfile($$reference_dir_ref, $active_parameter_href->{gatk_varianteval_dbsnp})." ";  #dbSNP file
-    print $FILEHANDLE "-gold ".catfile($$reference_dir_ref, $active_parameter_href->{gatk_varianteval_gold})." ";  #Evaluations that count calls at sites of true variation (e.g., indel calls) will use this argument as their gold standard for comparison
+    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
+    print $FILEHANDLE "-D ".$active_parameter_href->{gatk_varianteval_dbsnp}." ";  #dbSNP file
+    print $FILEHANDLE "-gold ".$active_parameter_href->{gatk_varianteval_gold}." ";  #Evaluations that count calls at sites of true variation (e.g., indel calls) will use this argument as their gold standard for comparison
     print $FILEHANDLE "--eval ".catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type."_exome.vcf")." ";  #InFile
     say $FILEHANDLE "-o ".catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type."_exome.vcf.varianteval"), "\n";  #OutFile
 
@@ -4013,7 +4004,6 @@ sub gatk_variantevalall {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $call_type;
 
@@ -4038,7 +4028,6 @@ sub gatk_variantevalall {
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
     };
@@ -4094,7 +4083,7 @@ sub gatk_variantevalall {
 
     print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
     print $FILEHANDLE "-V: ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf")." ";  #Family_id infile
     print $FILEHANDLE "-o ".catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type.".vcf")." ";  #Sample_id outfile
     say $FILEHANDLE "-sn ".$$sample_id_ref, "\n";  #Include genotypes from this sample
@@ -4112,9 +4101,9 @@ sub gatk_variantevalall {
 
     print $FILEHANDLE "-T VariantEval ";  #Type of analysis to run
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
-    print $FILEHANDLE "-D ".catfile($$reference_dir_ref, $active_parameter_href->{gatk_varianteval_dbsnp})." ";  #dbSNP file
-    print $FILEHANDLE "-gold ".catfile($$reference_dir_ref, $active_parameter_href->{gatk_varianteval_gold})." ";  #Evaluations that count calls at sites of true variation (e.g., indel calls) will use this argument as their gold standard for comparison
+    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
+    print $FILEHANDLE "-D ".$active_parameter_href->{gatk_varianteval_dbsnp}." ";  #dbSNP file
+    print $FILEHANDLE "-gold ".$active_parameter_href->{gatk_varianteval_gold}." ";  #Evaluations that count calls at sites of true variation (e.g., indel calls) will use this argument as their gold standard for comparison
     print $FILEHANDLE "--eval ".catfile($$temp_directory_ref, $infile.$infile_tag.$call_type.".vcf")." ";  #InFile
     say $FILEHANDLE "-o ".catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type.".vcf.varianteval"), "\n";  #OutFile
 
@@ -4160,7 +4149,7 @@ sub snpeff {
 
 ##Function : snpeff annotates variants from different sources.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -4173,7 +4162,6 @@ sub snpeff {
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 ##         : $call_type                  => The variant call type
 
@@ -4182,7 +4170,6 @@ sub snpeff {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $call_type;
     my $xargs_file_counter;
@@ -4212,7 +4199,6 @@ sub snpeff {
 	FILEHANDLE => { store => \$FILEHANDLE},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
@@ -4357,7 +4343,7 @@ sub snpeff {
 		    }
 		    print $XARGSFILEHANDLE "-info ".$active_parameter_href->{snpsift_annotation_files}{$annotation_file}." ";  #Database
 		}
-		print $XARGSFILEHANDLE catfile($$reference_dir_ref, $annotation_file)." ";  #Database
+		print $XARGSFILEHANDLE $annotation_file." ";  #Database
 
 		if ($annotation_file_counter == 0) {  #First file per contig
 
@@ -4402,7 +4388,7 @@ sub snpeff {
 		my $contig_ref = \$vcfparser_contigs_ref->[$contigs_counter];
 
 		print $XARGSFILEHANDLE "dbnsfp ";
-		print $XARGSFILEHANDLE "-db ".catfile($$reference_dir_ref, $active_parameter_href->{snpsift_dbnsfp_file})." ";  #DbNSFP file
+		print $XARGSFILEHANDLE "-db ".$active_parameter_href->{snpsift_dbnsfp_file}." ";  #DbNSFP file
 		print $XARGSFILEHANDLE "-f ";  #fields to add
 		print $XARGSFILEHANDLE join(',', @{ $active_parameter_href->{snpsift_dbnsfp_annotations} })." ";  #Databases
 		print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.".vcf.".$annotation_infile_number)." ";  #Infile
@@ -4513,7 +4499,7 @@ sub annovar {
 
 ##Function : Annotate and filter SNVs by gene, region and databases.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $annovar_table_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $annovar_table_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -4527,7 +4513,6 @@ sub annovar {
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 ##         : $call_type                  => The variant call type
 ##         : $xargs_file_counter         => The xargs file counter
@@ -4775,7 +4760,7 @@ sub vcfparser {
 
 ##Function : vcfparser performs parsing of varianteffectpredictor annotated variants
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -4788,7 +4773,6 @@ sub vcfparser {
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 ##         : $call_type                  => The variant call type
 ##         : $xargs_file_counter         => The xargs file counter
@@ -4798,7 +4782,6 @@ sub vcfparser {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $call_type;
     my $xargs_file_counter;
@@ -4828,7 +4811,6 @@ sub vcfparser {
 	FILEHANDLE => { store => \$FILEHANDLE},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
@@ -4917,7 +4899,7 @@ sub vcfparser {
 	}
 	if ($active_parameter_href->{vcfparser_range_feature_file}) {
 
-	    print $XARGSFILEHANDLE "-rf ".catfile($$reference_dir_ref, $active_parameter_href->{vcfparser_range_feature_file})." ";  #List of genes to analyse separately
+	    print $XARGSFILEHANDLE "-rf ".$active_parameter_href->{vcfparser_range_feature_file}." ";  #List of genes to analyse separately
 
 	    if ( ($active_parameter_href->{vcfparser_range_feature_annotation_columns})
 		  && (@{ $active_parameter_href->{vcfparser_range_feature_annotation_columns} }) ) {
@@ -4970,7 +4952,7 @@ sub vcfparser {
 	    collect_gene_panels({sample_info_href => $sample_info_href,
 				 family_id_ref => $family_id_ref,
 				 program_name_ref => \$program_name,
-				 aggregate_gene_panel_file => catfile($$reference_dir_ref, $active_parameter_href->{vcfparser_range_feature_file}),
+				 aggregate_gene_panel_file => $active_parameter_href->{vcfparser_range_feature_file},
 				 aggregate_gene_panels_key => "range_file",
 				});
 
@@ -4978,7 +4960,7 @@ sub vcfparser {
 
 		$sample_info_href->{$program_name}{range_file}{version} = $1;
 	    }
-	    $sample_info_href->{$program_name}{range_file}{path} = catfile($$reference_dir_ref, $active_parameter_href->{vcfparser_range_feature_file});
+	    $sample_info_href->{$program_name}{range_file}{path} = $active_parameter_href->{vcfparser_range_feature_file};
 	}
 	if ($active_parameter_href->{vcfparser_select_file}) {
 
@@ -5074,7 +5056,7 @@ sub varianteffectpredictor {
 
 ##Function : varianteffectpredictor performs annotation of variants.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -5088,7 +5070,6 @@ sub varianteffectpredictor {
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 ##         : $call_type                  => The variant call type
 ##         : $xargs_file_counter         => The xargs file counter
@@ -5098,7 +5079,6 @@ sub varianteffectpredictor {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $call_type;
     my $xargs_file_counter;
@@ -5130,7 +5110,6 @@ sub varianteffectpredictor {
 	FILEHANDLE => { store => \$FILEHANDLE},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
@@ -5232,7 +5211,7 @@ sub varianteffectpredictor {
 
 	if ($active_parameter_href->{vep_reference}) {  #Use reference file for analysis with vep
 
-	    print $XARGSFILEHANDLE "--fasta ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+	    print $XARGSFILEHANDLE "--fasta ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 	}
 
 	print $XARGSFILEHANDLE "--force_overwrite ";  #force the overwrite of the existing file
@@ -5475,7 +5454,7 @@ sub gatk_readbackedphasing {
 
     print $FILEHANDLE "-T ReadBackedPhasing ";  #Type of analysis to run
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
     print $FILEHANDLE "--phaseQualityThresh ".$active_parameter_href->{gatk_readbackedphasing_phase_quality_threshold}." ";
 
     if ($active_parameter_href->{pgatk_phasebytransmission} > 0) {
@@ -5602,7 +5581,7 @@ sub gatk_phasebytransmission {
 
     print $FILEHANDLE "-T PhaseByTransmission ";  #Type of analysis to run
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
     print $FILEHANDLE "-V: ".catfile($active_parameter_href->{temp_directory}, $family_id.$infile_tag.$call_type.".vcf")." ";  #InFile (family vcf)
 
     ## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
@@ -5644,7 +5623,7 @@ sub samplecheck {
 
 ##Function : Tests sample for correct relatives (only performed for samples with relatives defined in pedigree file) performed on sequence data.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -5654,7 +5633,6 @@ sub samplecheck {
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 ##         : $call_type                  => The variant call type
 
@@ -5663,7 +5641,6 @@ sub samplecheck {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $call_type;
 
@@ -5686,7 +5663,6 @@ sub samplecheck {
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
     };
@@ -5770,7 +5746,7 @@ sub samplecheck {
 
 	print $XARGSFILEHANDLE "-T SelectVariants ";  #Type of analysis to run
 	print $XARGSFILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	print $XARGSFILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+	print $XARGSFILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 	print $XARGSFILEHANDLE "-V: ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf")." ";  #Family_id infile
 	print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $sample_id.".vcf")." ";  #Sample_id outfile
 	print $XARGSFILEHANDLE "-sn ".$sample_id." ";  #Include genotypes from this sample
@@ -6044,7 +6020,7 @@ sub vt {
 
 ##Function : Split multi allelic records into single records and normalize
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -6058,7 +6034,6 @@ sub vt {
 ##         : $FILEHANDLE                 => Filehandle to write to
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 ##         : $call_type                  => The variant call type
 ##         : $xargs_file_counter         => The xargs file counter
@@ -6068,7 +6043,6 @@ sub vt {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $call_type;
     my $xargs_file_counter;
@@ -6100,7 +6074,6 @@ sub vt {
 	FILEHANDLE => { store => \$FILEHANDLE},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
@@ -6240,7 +6213,7 @@ sub vt {
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "annotate ";  #Command
 	    print $XARGSFILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
-	    print $XARGSFILEHANDLE "--thousand_g ".catfile($$reference_dir_ref, $active_parameter_href->{vt_genmod_filter_1000g})." ";  #1000G reference
+	    print $XARGSFILEHANDLE "--thousand_g ".$active_parameter_href->{vt_genmod_filter_1000g}." ";  #1000G reference
 
 	    if ($active_parameter_href->{vt_genmod_filter_max_af}) {
 
@@ -6308,7 +6281,7 @@ sub rhocall {
 
 ##Function : Rhocall performs annotation of autozygosity regions
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -6322,7 +6295,6 @@ sub rhocall {
 ##         : $FILEHANDLE                 => Filehandle to write to
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 ##         : $call_type                  => The variant call type
 ##         : $xargs_file_counter         => The xargs file counter
@@ -6332,7 +6304,6 @@ sub rhocall {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $call_type;
     my $xargs_file_counter;
@@ -6364,7 +6335,6 @@ sub rhocall {
 	FILEHANDLE => { store => \$FILEHANDLE},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
@@ -6448,7 +6418,7 @@ sub rhocall {
 
 	my $contig_ref = \$file_info_href->{contigs_size_ordered}[$contigs_counter];
 
-	print $XARGSFILEHANDLE "--AF-file ".catfile($$reference_dir_ref, $active_parameter_href->{rhocall_frequency_file})." ";
+	print $XARGSFILEHANDLE "--AF-file ".$active_parameter_href->{rhocall_frequency_file}." ";
 	print $XARGSFILEHANDLE "--skip-indels ";  #Skip indels as their genotypes are enriched for errors
 	print $XARGSFILEHANDLE "--sample ".$parameter_href->{dynamic_parameter}{affected}[0]." ";
 	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".vcf.gz")." ";
@@ -6504,7 +6474,7 @@ sub prepareforvariantannotationblock {
 
 ##Function : Copy files for variantannotationblock to enable restart and skip of modules within block
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $stderr_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -6518,7 +6488,6 @@ sub prepareforvariantannotationblock {
 ##         : $FILEHANDLE                 => Filehandle to write to
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 ##         : $call_type                  => The variant call type
 ##         : $xargs_file_counter         => The xargs file counter
@@ -6528,7 +6497,6 @@ sub prepareforvariantannotationblock {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $call_type;
     my $xargs_file_counter;
@@ -6560,7 +6528,6 @@ sub prepareforvariantannotationblock {
 	FILEHANDLE => { store => \$FILEHANDLE},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
@@ -6705,7 +6672,7 @@ sub gatk_combinevariantcallsets {
 
 ##Function : GATK CombineVariants to combine all variants call from different callers.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -6715,7 +6682,6 @@ sub gatk_combinevariantcallsets {
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 ##         : $call_type                  => The variant call type
 
@@ -6724,7 +6690,6 @@ sub gatk_combinevariantcallsets {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $call_type;
 
@@ -6747,7 +6712,6 @@ sub gatk_combinevariantcallsets {
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
     };
@@ -6815,7 +6779,7 @@ sub gatk_combinevariantcallsets {
 
     print $FILEHANDLE "-T CombineVariants ";  #Type of analysis to run
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
     print $FILEHANDLE "-env ";  #Do not include loci found to be non-variant after the subsetting procedure.
 
     foreach my $variant_caller (@{ $parameter_href->{dynamic_parameter}{variant_callers} }) {
@@ -6893,7 +6857,7 @@ sub gatk_variantrecalibration {
 
 ##Function : GATK VariantRecalibrator/ApplyRecalibration.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -6903,7 +6867,6 @@ sub gatk_variantrecalibration {
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 ##         : $call_type                  => The variant call type
 
@@ -6912,7 +6875,6 @@ sub gatk_variantrecalibration {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $call_type;
 
@@ -6935,7 +6897,6 @@ sub gatk_variantrecalibration {
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
     };
@@ -7010,7 +6971,7 @@ sub gatk_variantrecalibration {
 
 	print $FILEHANDLE "-T VariantRecalibrator ";  #Type of analysis to run
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	print $FILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+	print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 	print $FILEHANDLE "-recalFile ".catfile($intermediary_sample_directory, $$family_id_ref.$infile_tag.$call_type.".intervals")." ";
 	print $FILEHANDLE "-rscriptFile ".catfile($intermediary_sample_directory, $$family_id_ref.$infile_tag.$call_type.".intervals.plots.R")." ";
 	print $FILEHANDLE "-tranchesFile ".catfile($intermediary_sample_directory, $$family_id_ref.$infile_tag.$call_type.".intervals.tranches")." ";
@@ -7041,21 +7002,21 @@ sub gatk_variantrecalibration {
 	}
 	if ( ($modes[$mode_counter] eq "SNP") || ($modes[$mode_counter] eq "BOTH") ) {
 
-	    print $FILEHANDLE "-resource:hapmap,VCF,known=false,training=true,truth=true,prior=15.0 ".catfile($$reference_dir_ref, $active_parameter_href->{gatk_variantrecalibration_training_set_hapmap})." ";  #A list of sites for which to apply a prior probability of being correct but which are not used by the algorithm
-	    print $FILEHANDLE "-resource:omni,VCF,known=false,training=true,truth=false,prior=12.0 ".catfile($$reference_dir_ref, $active_parameter_href->{gatk_variantrecalibration_training_set_1000g_omni})." ";  #A list of sites for which to apply a prior probability of being correct but which are not used by the algorithm
-	    print $FILEHANDLE "-resource:1000G,known=false,training=true,truth=false,prior=10.0 ".catfile($$reference_dir_ref, $active_parameter_href->{gatk_variantrecalibration_training_set_1000gsnp})." ";  #A list of sites for which to apply a prior probability of being correct but which are not used by the algorithm
+	    print $FILEHANDLE "-resource:hapmap,VCF,known=false,training=true,truth=true,prior=15.0 ".$active_parameter_href->{gatk_variantrecalibration_training_set_hapmap}." ";  #A list of sites for which to apply a prior probability of being correct but which are not used by the algorithm
+	    print $FILEHANDLE "-resource:omni,VCF,known=false,training=true,truth=false,prior=12.0 ".$active_parameter_href->{gatk_variantrecalibration_training_set_1000g_omni}." ";  #A list of sites for which to apply a prior probability of being correct but which are not used by the algorithm
+	    print $FILEHANDLE "-resource:1000G,known=false,training=true,truth=false,prior=10.0 ".$active_parameter_href->{gatk_variantrecalibration_training_set_1000gsnp}." ";  #A list of sites for which to apply a prior probability of being correct but which are not used by the algorithm
 	    print $FILEHANDLE "-an MQ ";  #The names of the annotations which should used for calculations.
 	}
 	if ( ($modes[$mode_counter] eq "INDEL") || ($modes[$mode_counter] eq "BOTH") ) {
 
-	    print $FILEHANDLE "-resource:mills,VCF,known=true,training=true,truth=true,prior=12.0 ".catfile($$reference_dir_ref, $active_parameter_href->{gatk_variantrecalibration_training_set_mills})." ";  #A list of sites for which to apply a prior probability of being correct but which are not used by the algorithm
+	    print $FILEHANDLE "-resource:mills,VCF,known=true,training=true,truth=true,prior=12.0 ".$active_parameter_href->{gatk_variantrecalibration_training_set_mills}." ";  #A list of sites for which to apply a prior probability of being correct but which are not used by the algorithm
 
 	    if ($active_parameter_href->{gatk_variantrecalibration_indel_max_gaussians} ne 0) {
 
 		print $FILEHANDLE "--maxGaussians 4 ";  #Use hard filtering
 	    }
 	}
-	print $FILEHANDLE "-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 ".catfile($$reference_dir_ref, $active_parameter_href->{gatk_variantrecalibration_training_set_dbsnp})." ";  #A list of sites for which to apply a prior probability of being correct but which are not used by the algorithm
+	print $FILEHANDLE "-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 ".$active_parameter_href->{gatk_variantrecalibration_training_set_dbsnp}." ";  #A list of sites for which to apply a prior probability of being correct but which are not used by the algorithm
 
 	print $FILEHANDLE "-an QD ";  #The names of the annotations which should used for calculations
 	print $FILEHANDLE "-an MQRankSum ";  #The names of the annotations which should used for calculations
@@ -7085,7 +7046,7 @@ sub gatk_variantrecalibration {
 
 	print $FILEHANDLE "-T ApplyRecalibration ";
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	print $FILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+	print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 	print $FILEHANDLE "-recalFile ".catfile($intermediary_sample_directory, $$family_id_ref.$infile_tag.$call_type.".intervals")." ";
 	print $FILEHANDLE "-tranchesFile ".catfile($intermediary_sample_directory, $$family_id_ref.$infile_tag.$call_type.".intervals.tranches")." ";
 
@@ -7138,7 +7099,7 @@ sub gatk_variantrecalibration {
 
 	print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	print $FILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+	print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 	print $FILEHANDLE "-env ";  #Do not include loci found to be non-variant after the subsetting procedure.
 	print $FILEHANDLE "-V: ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_filtered.vcf")." ";  #InFile
 
@@ -7164,7 +7125,7 @@ sub gatk_variantrecalibration {
 
 	    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
 	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	    print $FILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+	    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 	    print $FILEHANDLE "-V: ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_filtered.vcf")." ";  #InFile
 	    print $FILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_incnonvariantloci.vcf")." ";  #OutFile
 
@@ -7199,7 +7160,7 @@ sub gatk_variantrecalibration {
 
 	print $FILEHANDLE "-T CalculateGenotypePosteriors ";  #Type of analysis to run
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	print $FILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+	print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 
 	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
 	gatk_pedigree_flag({active_parameter_href => $active_parameter_href,
@@ -7208,7 +7169,7 @@ sub gatk_variantrecalibration {
 			    program_name => $program_name,
 			   });
 
-	print $FILEHANDLE "--supporting ".catfile($$reference_dir_ref, $active_parameter_href->{gatk_calculategenotypeposteriors_support_set})." ";  #Supporting data set
+	print $FILEHANDLE "--supporting ".$active_parameter_href->{gatk_calculategenotypeposteriors_support_set}." ";  #Supporting data set
 	print $FILEHANDLE "-V ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf")." ";  #Infile
 	print $FILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_refined.vcf")." ";  #Outfile
 	say $FILEHANDLE "\n";
@@ -7222,7 +7183,7 @@ sub gatk_variantrecalibration {
 
     ## BcfTools norm, Left-align and normalize indels, split multiallelics
     bcftools_norm({FILEHANDLE => $FILEHANDLE,
-		   reference_path_ref => \catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference}),
+		   reference_path_ref => \$active_parameter_href->{human_genome_reference},
 		   infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf"),
 		   outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_normalized.vcf"),
 		   multiallelic => "-",
@@ -7313,7 +7274,6 @@ sub gatk_concatenate_genotypegvcfs {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $call_type;
 
@@ -7336,7 +7296,6 @@ sub gatk_concatenate_genotypegvcfs {
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
     };
@@ -7413,7 +7372,7 @@ sub gatk_concatenate_genotypegvcfs {
 
 	    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
 	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	    print $FILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+	    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 	    print $FILEHANDLE "-V: ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf")." ";  #InFile
 	    print $FILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_incnonvariantloci.vcf")." ";  #OutFile
 
@@ -7494,7 +7453,6 @@ sub gatk_genotypegvcfs {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $call_type;
 
@@ -7517,7 +7475,6 @@ sub gatk_genotypegvcfs {
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
     };
@@ -7604,8 +7561,8 @@ sub gatk_genotypegvcfs {
 
 	print $FILEHANDLE "-T GenotypeGVCFs ";  #Type of analysis to run
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	print $FILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
-	print $FILEHANDLE "-D ".catfile($$reference_dir_ref, $active_parameter_href->{gatk_haplotypecaller_snp_known_set})." ";  #Known SNPs to use for annotation SNPs
+	print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
+	print $FILEHANDLE "-D ".$active_parameter_href->{gatk_haplotypecaller_snp_known_set}." ";  #Known SNPs to use for annotation SNPs
 	print $FILEHANDLE "-nt 16 ";  #How many data threads should be allocated to running this analysis.
 
 	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
@@ -7624,7 +7581,7 @@ sub gatk_genotypegvcfs {
 
 	if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid") ) {
 
-	    print $FILEHANDLE "-V ".catfile($$reference_dir_ref, $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf})." ";
+	    print $FILEHANDLE "-V ".$active_parameter_href->{gatk_genotypegvcfs_ref_gvcf}." ";
 	}
 
 	for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {  #Collect infiles for all sample_ids
@@ -7877,7 +7834,7 @@ sub picardtools_calculatehsmetrics {
 
 ##Function : Calculates coverage on exonic part of BAM files.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -7888,7 +7845,6 @@ sub picardtools_calculatehsmetrics {
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 
     my ($arg_href) = @_;
@@ -7896,7 +7852,6 @@ sub picardtools_calculatehsmetrics {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
 
     ## Flatten argument(s)
@@ -7920,7 +7875,6 @@ sub picardtools_calculatehsmetrics {
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
     };
 
@@ -7982,7 +7936,7 @@ sub picardtools_calculatehsmetrics {
     print $FILEHANDLE "CalculateHsMetrics ";
     print $FILEHANDLE "INPUT=".catfile($$temp_directory_ref, $infile.$infile_tag.".bam")." ";  #InFile
     print $FILEHANDLE "OUTPUT=".catfile($$temp_directory_ref, $infile.$outfile_tag)." ";  #OutFile
-    print $FILEHANDLE "REFERENCE_SEQUENCE=".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+    print $FILEHANDLE "REFERENCE_SEQUENCE=".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 
     ## Get exome_target_bed file for specfic sample_id and add file_ending from file_infoHash if supplied
     my $exome_target_bed_file = get_exom_target_bed_file({active_parameter_href => $active_parameter_href,
@@ -7990,8 +7944,8 @@ sub picardtools_calculatehsmetrics {
 							 });
 
 
-    print $FILEHANDLE "BAIT_INTERVALS=".catfile($$reference_dir_ref, $exome_target_bed_file.$$padded_infile_list_ending_ref)." ";  #Capture kit padded target infile_list file
-    say $FILEHANDLE "TARGET_INTERVALS=".catfile($$reference_dir_ref, $exome_target_bed_file.$$infile_list_ending_ref), "\n";  #Capture kit target infile_list file
+    print $FILEHANDLE "BAIT_INTERVALS=".$exome_target_bed_file.$$padded_infile_list_ending_ref." ";  #Capture kit padded target infile_list file
+    say $FILEHANDLE "TARGET_INTERVALS=".$exome_target_bed_file.$$infile_list_ending_ref, "\n";  #Capture kit target infile_list file
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
@@ -8036,7 +7990,7 @@ sub picardtools_collectmultiplemetrics {
 
 ##Function : Calculates coverage and alignment metrics on BAM files.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -8047,7 +8001,6 @@ sub picardtools_collectmultiplemetrics {
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 
     my ($arg_href) = @_;
@@ -8055,7 +8008,6 @@ sub picardtools_collectmultiplemetrics {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
 
     ## Flatten argument(s)
@@ -8079,7 +8031,6 @@ sub picardtools_collectmultiplemetrics {
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
     };
 
@@ -8136,7 +8087,7 @@ sub picardtools_collectmultiplemetrics {
     print $FILEHANDLE "CollectMultipleMetrics ";
     print $FILEHANDLE "INPUT=".catfile($$temp_directory_ref, $infile.$infile_tag.".bam")." ";  #InFile
     print $FILEHANDLE "OUTPUT=".catfile($$temp_directory_ref, $infile.$outfile_tag)." ";  #OutFile
-    say $FILEHANDLE "R=".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference}), "\n";  #Reference file
+    say $FILEHANDLE "R=".$active_parameter_href->{human_genome_reference}, "\n";  #Reference file
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
@@ -8327,7 +8278,7 @@ sub sambamba_depth {
 
 ##Function : Generate coverage bed outfile for each individual.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -8339,7 +8290,6 @@ sub sambamba_depth {
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 
     my ($arg_href) = @_;
@@ -8347,7 +8297,6 @@ sub sambamba_depth {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
 
     ## Flatten argument(s)
@@ -8371,7 +8320,6 @@ sub sambamba_depth {
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
     };
 
@@ -8420,7 +8368,7 @@ sub sambamba_depth {
     print $FILEHANDLE "sambamba ";  #Program
     print $FILEHANDLE "depth ";  #Sub command
     print $FILEHANDLE "region "; #Mode
-    print $FILEHANDLE "--regions ".catfile($$reference_dir_ref, $active_parameter_href->{sambamba_depth_bed})." ";  #Region to calculate coverage on
+    print $FILEHANDLE "--regions ".$active_parameter_href->{sambamba_depth_bed}." ";  #Region to calculate coverage on
     print $FILEHANDLE "--fix-mate-overlaps ";
     print $FILEHANDLE "--min-base-quality ".$active_parameter_href->{sambamba_depth_base_quality}." ";  #The minimum base quality to include in analysis
     print $FILEHANDLE q?--filter '?;
@@ -8706,7 +8654,7 @@ sub sv_rankvariant {
 		
 		if (defined($active_parameter_href->{sv_genmod_models_reduced_penetrance_file})) {
 			
-		    print $XARGSFILEHANDLE "--reduced_penetrance ".catfile($$reference_dir_ref, $active_parameter_href->{sv_genmod_models_reduced_penetrance_file})." ";  #Use list of genes that have been shown to display reduced penetrance
+		    print $XARGSFILEHANDLE "--reduced_penetrance ".$active_parameter_href->{sv_genmod_models_reduced_penetrance_file}." ";  #Use list of genes that have been shown to display reduced penetrance
 		}
 		print $XARGSFILEHANDLE "--processes 4 ";  #Define how many processes that should be use for annotation
 		
@@ -8738,7 +8686,7 @@ sub sv_rankvariant {
 		    
 		if (defined($active_parameter_href->{rank_model_file})) {
 
-		    print $XARGSFILEHANDLE "--score_config ".catfile($$reference_dir_ref, $active_parameter_href->{sv_rank_model_file})." ";  #Rank model config.ini file
+		    print $XARGSFILEHANDLE "--score_config ".$active_parameter_href->{sv_rank_model_file}." ";  #Rank model config.ini file
 		}
 
 		## Write to outputstream
@@ -8868,8 +8816,8 @@ sub sv_rankvariant {
 
 		$sample_info_href->{program}{sv_rankvariant}{rank_model}{version} = $1;
 	    }
-	    $sample_info_href->{program}{sv_rankvariant}{rank_model}{file} = $active_parameter_href->{sv_rank_model_file};
-	    $sample_info_href->{program}{sv_rankvariant}{rank_model}{path} = catfile($$reference_dir_ref, $active_parameter_href->{sv_rank_model_file});
+	    $sample_info_href->{program}{sv_rankvariant}{rank_model}{file} = basename($active_parameter_href->{sv_rank_model_file});
+	    $sample_info_href->{program}{sv_rankvariant}{rank_model}{path} = $active_parameter_href->{sv_rank_model_file};
 
 	}
 	sample_info_qc({sample_info_href => $sample_info_href,
@@ -8896,7 +8844,7 @@ sub sv_vcfparser {
 
 ##Function : sv_vcfparser performs parsing of varianteffectpredictor annotated variants
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $file_name, $program_info_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $file_name, $program_info_path, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -8907,7 +8855,6 @@ sub sv_vcfparser {
 ##         : $FILEHANDLE                 => Sbatch filehandle to write to
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 ##         : $call_type                  => The variant call type
 ##         : $xargs_file_counter         => The xargs file counter
@@ -8917,7 +8864,6 @@ sub sv_vcfparser {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $call_type;
     my $xargs_file_counter;
@@ -8941,7 +8887,6 @@ sub sv_vcfparser {
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "SV", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
@@ -9050,7 +8995,7 @@ sub sv_vcfparser {
 	}
 	if ($active_parameter_href->{sv_vcfparser_range_feature_file}) {
 
-	    print $XARGSFILEHANDLE "-rf ".catfile($$reference_dir_ref, $active_parameter_href->{sv_vcfparser_range_feature_file})." ";  #List of genes to analyse separately
+	    print $XARGSFILEHANDLE "-rf ".$active_parameter_href->{sv_vcfparser_range_feature_file}." ";  #List of genes to analyse separately
 
 	    if ( ($active_parameter_href->{sv_vcfparser_range_feature_annotation_columns})
 		  && (@{ $active_parameter_href->{sv_vcfparser_range_feature_annotation_columns} }) ) {
@@ -9115,7 +9060,7 @@ sub sv_vcfparser {
 	    collect_gene_panels({sample_info_href => $sample_info_href,
 				 family_id_ref => $family_id_ref,
 				 program_name_ref => \$program_name,
-				 aggregate_gene_panel_file => catfile($$reference_dir_ref, $active_parameter_href->{sv_vcfparser_range_feature_file}),
+				 aggregate_gene_panel_file => $active_parameter_href->{sv_vcfparser_range_feature_file},
 				 aggregate_gene_panels_key => "range_file",
 				});
 
@@ -9123,7 +9068,7 @@ sub sv_vcfparser {
 
 		$sample_info_href->{$program_name}{range_file}{version} = $1;
 	    }
-	    $sample_info_href->{$program_name}{range_file}{path} = catfile($$reference_dir_ref, $active_parameter_href->{sv_vcfparser_range_feature_file});
+	    $sample_info_href->{$program_name}{range_file}{path} = $active_parameter_href->{sv_vcfparser_range_feature_file};
 	}
 	if ($active_parameter_href->{sv_vcfparser_select_file}) {
 
@@ -9222,7 +9167,7 @@ sub sv_varianteffectpredictor {
 
 ##Function : SV varianteffectpredictor performs annotation of SV variants.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, $stderr_path, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, $stderr_path, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -9236,7 +9181,6 @@ sub sv_varianteffectpredictor {
 ##         : $stderr_path                 => The stderr path of the block script
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 ##         : $call_type                  => The variant call type
 ##         : $xargs_file_counter         => The xargs file counter
@@ -9246,7 +9190,6 @@ sub sv_varianteffectpredictor {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $call_type;
     my $xargs_file_counter;
@@ -9271,7 +9214,6 @@ sub sv_varianteffectpredictor {
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "SV", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
@@ -9383,7 +9325,7 @@ sub sv_varianteffectpredictor {
 
 	if ($active_parameter_href->{vep_reference}) {  #Use reference file for analysis with vep
 
-	    print $XARGSFILEHANDLE "--fasta ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+	    print $XARGSFILEHANDLE "--fasta ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 	}
 
 	print $XARGSFILEHANDLE "--force_overwrite ";  #Force the overwrite of the existing file
@@ -9762,7 +9704,7 @@ sub sv_combinevariantcallsets {
 	print $FILEHANDLE "-v ";  #Increase output verbosity
 	print $FILEHANDLE "annotate ";  #Command
 	print $FILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
-	print $FILEHANDLE "--thousand_g ".catfile($$reference_dir_ref, $active_parameter_href->{sv_genmod_filter_1000g})." ";  #1000G reference
+	print $FILEHANDLE "--thousand_g ".$active_parameter_href->{sv_genmod_filter_1000g}." ";  #1000G reference
 	print $FILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutStream
 	print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf")." ";
 	print $FILEHANDLE "| ";
@@ -9782,9 +9724,9 @@ sub sv_combinevariantcallsets {
 
 	say $FILEHANDLE "## Annotate 1000G structural variants";
 	print $FILEHANDLE "vcfanno ";  #Program
-	print $FILEHANDLE "-lua ".catfile($$reference_dir_ref, $active_parameter_href->{sv_vcfanno_lua})." ";  #Increase output verbosity
+	print $FILEHANDLE "-lua ".$active_parameter_href->{sv_vcfanno_lua}." ";  #Increase output verbosity
 	print $FILEHANDLE "-ends ";  #Annotate the start and end as well as the interval itself
-	print $FILEHANDLE catfile($$reference_dir_ref, $active_parameter_href->{sv_vcfanno_config})." ";  #Config
+	print $FILEHANDLE $active_parameter_href->{sv_vcfanno_config}." ";  #Config
 	print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf")." ";
 	print $FILEHANDLE "| ";
 	print $FILEHANDLE q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", @F), "\n"}' ?;  #Remove "[" and "]" from INFO as it breaks vcf format
@@ -9805,7 +9747,7 @@ sub sv_combinevariantcallsets {
 
 	say $FILEHANDLE "## Add header for 1000G annotation of structural variants";
 	print $FILEHANDLE "bcftools annotate ";
-	print $FILEHANDLE "--header-lines ".catfile($$reference_dir_ref, $active_parameter_href->{sv_vcfannotation_header_lines_file})." ";
+	print $FILEHANDLE "--header-lines ".$active_parameter_href->{sv_vcfannotation_header_lines_file}." ";
 	print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf")." ";
 
 	$alt_file_ending .= "_bcftools_annotate";  #Update ending
@@ -9986,7 +9928,7 @@ sub cnvnator {
 
     ## Add contigs to vcfheader
     print $FILEHANDLE $perl_add_contigs." ";
-    print $FILEHANDLE catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference}).".fai "; #Reference fai file
+    print $FILEHANDLE $active_parameter_href->{human_genome_reference}.".fai "; #Reference fai file
     say $FILEHANDLE "> ".catfile($$temp_directory_ref, "contig_header.txt")." ";
 
     ## Create by cnvnator required "chr.fa" files
@@ -10002,7 +9944,7 @@ sub cnvnator {
 		   });
 
 	print $FILEHANDLE "samtools faidx ";
-	print $FILEHANDLE catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";
+	print $FILEHANDLE $active_parameter_href->{human_genome_reference}." ";
 	print $FILEHANDLE $$contig_ref." ";
 	say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$contig_ref.".fa")." &";
     }
@@ -10282,7 +10224,7 @@ sub delly {
 		print $XARGSFILEHANDLE "-t ".$sv_type." ";  #The SV to call
 		print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig."_".$sv_type.".vcf")." ";
 		print $XARGSFILEHANDLE "-x human.hg19.excl.tsv ";  #to exclude telomere and centromere regions
-		print $XARGSFILEHANDLE "-g ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." "; #Reference file
+		print $XARGSFILEHANDLE "-g ".$active_parameter_href->{human_genome_reference}." "; #Reference file
 		print $XARGSFILEHANDLE catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.".bam")." ";  #InFile
 		print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$contig.".".$sv_type.".stdout.txt ";  #Redirect xargs output to program specific stdout file
 		say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".".$sv_type.".stderr.txt ";  #Redirect xargs output to program specific stderr file
@@ -10381,7 +10323,7 @@ sub manta {
 
 ##Function : Joint analysis of structural variation
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -10391,7 +10333,6 @@ sub manta {
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 ##         : $call_type                  => The variant call type
 
@@ -10400,7 +10341,6 @@ sub manta {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $call_type;
 
@@ -10423,7 +10363,6 @@ sub manta {
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "SV", strict_type => 1, store => \$call_type},
     };
@@ -10499,7 +10438,7 @@ sub manta {
 
 	print $FILEHANDLE "--bam ".catfile($$temp_directory_ref, $infile.$infile_tag.".bam")." ";  #Infile
     }
-    print $FILEHANDLE "--referenceFasta ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+    print $FILEHANDLE "--referenceFasta ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 
     if ($consensus_analysis_type ne "wgs") {
 
@@ -10645,7 +10584,7 @@ sub findtranslocations {
 
     ## Add contigs to vcfheader
     print $FILEHANDLE $perl_add_contigs." ";
-    print $FILEHANDLE catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference}).".fai "; #Reference fai file
+    print $FILEHANDLE $active_parameter_href->{human_genome_reference}.".fai "; #Reference fai file
     say $FILEHANDLE "> ".catfile($$temp_directory_ref, "contig_header.txt")." ";
 
     ## Copy file(s) to temporary directory
@@ -10734,7 +10673,7 @@ sub samtools_mpileup {
 
 ##Function : samtools_mpileup
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -10745,7 +10684,6 @@ sub samtools_mpileup {
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 ##         : $call_type                  => The variant call type
 ##         : $xargs_file_counter          => The xargs file counter
@@ -10755,7 +10693,6 @@ sub samtools_mpileup {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $call_type;
     my $xargs_file_counter;
@@ -10780,7 +10717,6 @@ sub samtools_mpileup {
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
@@ -10882,7 +10818,7 @@ sub samtools_mpileup {
 	print $XARGSFILEHANDLE "-C 50 ";  #Adjust mapping quality
 	print $XARGSFILEHANDLE "-p ";  #Apply -m and -F per-sample for increased sensitivity
 	print $XARGSFILEHANDLE "-t DV,AD "; #Optional tags to output; Allelic depth
-	print $XARGSFILEHANDLE "-f ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+	print $XARGSFILEHANDLE "-f ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 
 	for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) { #Collect infiles for all sample_ids
 
@@ -10931,7 +10867,7 @@ sub samtools_mpileup {
 
 	## BcfTools norm, Left-align and normalize indels, split multiallelics
 	bcftools_norm({FILEHANDLE => $XARGSFILEHANDLE,
-		       reference_path_ref => \catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference}),
+		       reference_path_ref => \$active_parameter_href->{human_genome_reference},
 		       outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$$contig_ref.".vcf"),
 		       multiallelic => "-",
 		       stderr_file_path => catfile($xargs_file_name.".".$$contig_ref.".stderr.txt"),
@@ -11012,7 +10948,6 @@ sub freebayes {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $call_type;
     my $xargs_file_counter;
@@ -11037,7 +10972,6 @@ sub freebayes {
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
@@ -11127,7 +11061,7 @@ sub freebayes {
 
 	print $XARGSFILEHANDLE "--standard-filters "; #Equivalent to -m 30 -q 20 -R 0 -S 0
 	print $XARGSFILEHANDLE "--genotype-qualities ";  #Calculate the marginal probability of genotypes and report as GQ
-	print $XARGSFILEHANDLE "--fasta-reference ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+	print $XARGSFILEHANDLE "--fasta-reference ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 
 	for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) { #Collect infiles for all sample_ids
 
@@ -11162,7 +11096,7 @@ sub freebayes {
 
 	## BcfTools norm, Left-align and normalize indels, split multiallelics
 	bcftools_norm({FILEHANDLE => $XARGSFILEHANDLE,
-		       reference_path_ref => \catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference}),
+		       reference_path_ref => \$active_parameter_href->{human_genome_reference},
 		       outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$$contig_ref.".vcf"),
 		       multiallelic => "-",
 		       stderr_file_path => catfile($xargs_file_name.".".$$contig_ref.".stderr.txt"),
@@ -11221,7 +11155,7 @@ sub gatk_haplotypecaller {
 
 ##Function : gatk_haplotypecaller.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -11232,7 +11166,6 @@ sub gatk_haplotypecaller {
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 ##         : $xargs_file_counter         => The xargs file counter
 
@@ -11241,7 +11174,6 @@ sub gatk_haplotypecaller {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $xargs_file_counter;
 
@@ -11266,7 +11198,6 @@ sub gatk_haplotypecaller {
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
@@ -11332,6 +11263,7 @@ sub gatk_haplotypecaller {
 						  exome_target_bed_file_ref => \$exome_target_bed_file,
 						 });
 
+	$exome_target_bed_file = basename($exome_target_bed_file);  #Reroute to only filename
     }
 
     ## Add merged infile name after merging all BAM files per sample_id
@@ -11376,8 +11308,8 @@ sub gatk_haplotypecaller {
 
 	print $XARGSFILEHANDLE "-T HaplotypeCaller ";  #Type of analysis to run
 	print $XARGSFILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	print $XARGSFILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
-	print $XARGSFILEHANDLE "-D ".catfile($$reference_dir_ref, $active_parameter_href->{gatk_haplotypecaller_snp_known_set})." ";  #Known SNPs to use for annotation SNPs
+	print $XARGSFILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
+	print $XARGSFILEHANDLE "-D ".$active_parameter_href->{gatk_haplotypecaller_snp_known_set}." ";  #Known SNPs to use for annotation SNPs
 	print $XARGSFILEHANDLE "-stand_call_conf 30.0 ";  #The minimum phred-scaled confidence threshold at which variants should be called
 	print $XARGSFILEHANDLE "-stand_emit_conf 30.0 ";  #The minimum phred-scaled confidence threshold at which variants should be emitted
 	print $XARGSFILEHANDLE "-nct 1 ";  #Number of CPU Threads per data thread
@@ -11584,8 +11516,8 @@ sub gatk_baserecalibration {
 						  file_ending => ".intervals",
 						 });
 
+	$exome_target_bed_file = basename($exome_target_bed_file).".intervals";  #Add required GATK ending and reroute to only filename
     }
-    $exome_target_bed_file .= ".intervals";  #Add required GATK ending
 
     ## Add merged infile name after merging all BAM files per sample_id
     my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
@@ -11639,7 +11571,7 @@ sub gatk_baserecalibration {
 
 	print $XARGSFILEHANDLE "-T BaseRecalibrator ";  #Type of analysis to run
 	print $XARGSFILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	print $XARGSFILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+	print $XARGSFILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 	print $XARGSFILEHANDLE "-cov ".join(" -cov ", (@{ $active_parameter_href->{gatk_baserecalibration_covariates} }) )." ";  #Covariates to be used in the recalibration
 	print $XARGSFILEHANDLE "-knownSites ".join(" -knownSites ", map { catfile($$reference_dir_ref, $_) } (@{ $active_parameter_href->{gatk_baserecalibration_known_sites} }) )." ";
 	print $XARGSFILEHANDLE "-nct ".$active_parameter_href->{core_processor_number}." ";  #How many CPU threads should be allocated per data thread to running this analysis
@@ -11687,7 +11619,7 @@ sub gatk_baserecalibration {
 
 	print $XARGSFILEHANDLE "-T PrintReads ";  #Type of analysis to run
 	print $XARGSFILEHANDLE "-l INFO ";  #Set the minimum level of logging"
-	print $XARGSFILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+	print $XARGSFILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 	print $XARGSFILEHANDLE "-nct ".$active_parameter_href->{core_processor_number}." ";  #How many CPU threads should be allocated per data thread to running this analysis
 	print $XARGSFILEHANDLE "-dcov ".$active_parameter_href->{gatk_downsample_to_coverage}." ";  #Coverage to downsample to at any given locus
 
@@ -11924,7 +11856,7 @@ sub gatk_realigner {
 						  FILEHANDLE => $FILEHANDLE,
 						  exome_target_bed_file_ref => \$exome_target_bed_file,
 						 });
-
+	$exome_target_bed_file = basename($exome_target_bed_file);  #Reroute to only filename
     }
 
     ## Add merged infile name after merging all BAM files per sample_id
@@ -11977,7 +11909,7 @@ sub gatk_realigner {
 
 	print $XARGSFILEHANDLE "-T RealignerTargetCreator ";  #Type of analysis to run
 	print $XARGSFILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	print $XARGSFILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+	print $XARGSFILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 	print $XARGSFILEHANDLE "-known ".join(" -known ", map { catfile($$reference_dir_ref, $_) } (@{ $active_parameter_href->{gatk_realigner_indel_known_sites} }) )." ";  #Input VCF file(s) with known indels
 	print $XARGSFILEHANDLE "-dcov ".$active_parameter_href->{gatk_downsample_to_coverage}." ";  #Coverage to downsample to at any given locus
 
@@ -12022,7 +11954,7 @@ sub gatk_realigner {
 
 	print $XARGSFILEHANDLE "-T IndelRealigner ";
 	print $XARGSFILEHANDLE "-l INFO ";
-	print $XARGSFILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+	print $XARGSFILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 	print $XARGSFILEHANDLE "-known ".join(" -known ", map { catfile($$reference_dir_ref, $_) } (@{ $active_parameter_href->{gatk_realigner_indel_known_sites} }) )." ";  #Input VCF file(s) with known indels
 	print $XARGSFILEHANDLE "-dcov ".$active_parameter_href->{gatk_downsample_to_coverage}." ";  #Coverage to downsample to at any given locus
 	print $XARGSFILEHANDLE "--consensusDeterminationModel USE_READS ";  #Additionally uses indels already present in the original alignments of the reads
@@ -12112,7 +12044,7 @@ sub picardtools_markduplicates {
 
 ##Function : Mark duplicated reads using Picardtools markduplicates in files generated from alignment (sorted, merged).
 ##Returns  : "$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $lane_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, $file_name, $FILEHANDLE, $family_id_ref, temp_directory_ref, reference_dir_ref, outaligner_dir_ref, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $lane_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, $file_name, $FILEHANDLE, $family_id_ref, temp_directory_ref, outaligner_dir_ref, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -12127,7 +12059,6 @@ sub picardtools_markduplicates {
 ##         : $FILEHANDLE                 => Filehandle to write to
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 ##         : $xargs_file_counter         => The xargs file counter
 
@@ -12136,7 +12067,6 @@ sub picardtools_markduplicates {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $xargs_file_counter;
 
@@ -12170,7 +12100,6 @@ sub picardtools_markduplicates {
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
 				strict_type => 1, store => \$xargs_file_counter},
@@ -12369,7 +12298,7 @@ sub sambamba_markduplicates {
 
 ##Function : Mark duplicated reads using Sambamba markduplicates in files generated from alignment (sorted, merged).
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $lane_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, $file_name,, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $lane_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, $file_name,, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -12384,7 +12313,6 @@ sub sambamba_markduplicates {
 ##         : $FILEHANDLE                 => Filehandle to write to
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 ##         : $xargs_file_counter         => The xargs file counter
 
@@ -12393,7 +12321,6 @@ sub sambamba_markduplicates {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $xargs_file_counter;
 
@@ -12426,7 +12353,6 @@ sub sambamba_markduplicates {
 	FILEHANDLE => { store => \$FILEHANDLE},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
@@ -13542,7 +13468,7 @@ sub bwa_mem {
 
 ##Function : Performs alignment.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_href, $indir_path_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, $family_id_ref, $outaligner_dir_ref, $temp_directory_ref, $reference_dir_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_href, $indir_path_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, $family_id_ref, $outaligner_dir_ref, $temp_directory_ref
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -13556,7 +13482,6 @@ sub bwa_mem {
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 ##         : $temp_directory_ref         => The temporary directory
-##         : $reference_dir_ref          => MIP reference directory {REF}
 
     my ($arg_href) = @_;
 
@@ -13564,7 +13489,6 @@ sub bwa_mem {
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -13592,7 +13516,6 @@ sub bwa_mem {
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -13695,7 +13618,7 @@ sub bwa_mem {
 		print $FILEHANDLE q?SM:?.$$sample_id_ref.q?\t?;
 		print $FILEHANDLE q?PL:?.$active_parameter_href->{platform}.q?" ?;
 
-		print $FILEHANDLE catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference
+		print $FILEHANDLE $active_parameter_href->{human_genome_reference}." ";  #Reference
 		print $FILEHANDLE "<( ";  #Pipe to BWA Mem (Read 1)
 		print $FILEHANDLE "zcat ";  #Decompress Read 1
 		print $FILEHANDLE catfile($bwa_insample_directory, $infile)." ";  #Read 1
@@ -13722,7 +13645,7 @@ sub bwa_mem {
 		print $FILEHANDLE "| ";  #Pipe
 		print $FILEHANDLE "intersectBed ";  #Limit output to only clinically interesting genes
 		print $FILEHANDLE "-abam stdin ";  #The A input file is in BAM format.  Output will be BAM as well.
-		print $FILEHANDLE "-b ".catfile($$reference_dir_ref, $active_parameter_href->{bwa_mem_rapid_db})." ";  #Db file of clinically relevant variants
+		print $FILEHANDLE "-b ".$active_parameter_href->{bwa_mem_rapid_db}." ";  #Db file of clinically relevant variants
 		say $FILEHANDLE "> ".catfile($bwa_outsample_directory, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter]."_".$sbatch_counter.".bam"), "\n";  #Outfile (BAM)
 
 		print $FILEHANDLE "samtools sort ";
@@ -13825,7 +13748,7 @@ sub bwa_mem {
 	    print $FILEHANDLE q?ID:?.$infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].q?\t?;
 	    print $FILEHANDLE q?SM:?.$$sample_id_ref.q?\t?;
 	    print $FILEHANDLE q?PL:?.$active_parameter_href->{platform}.q?" ?;  #Read group header line
-	    print $FILEHANDLE catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference
+	    print $FILEHANDLE $active_parameter_href->{human_genome_reference}." ";  #Reference
 	    print $FILEHANDLE catfile($$temp_directory_ref, $infile_href->{$$sample_id_ref}[$paired_end_tracker])." ";  #Read 1
 
 	    if ($sequence_run_mode eq "paired_end") {  #Second read direction if present
@@ -13918,7 +13841,7 @@ sub bwa_mem {
 		print $FILEHANDLE "view ";  #Commmand
 		print $FILEHANDLE "-f cram "; #Write output to CRAM-format
 		print $FILEHANDLE "-h ";  #print header before reads
-		print $FILEHANDLE "-T ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference
+		print $FILEHANDLE "-T ".$active_parameter_href->{human_genome_reference}." ";  #Reference
 		print $FILEHANDLE "--output-filename ".catfile($$temp_directory_ref, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].$outfile_tag.".cram")." ";
 		say $FILEHANDLE catfile($$temp_directory_ref, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].$outfile_tag.".bam"), "\n";
 
@@ -15467,7 +15390,7 @@ sub build_annovar_prerequisites {
 
 ##Function : Creates the annovarPreRequisites.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $infile_lane_no_ending_href, $job_id_href, $annovar_table_href, $program_name, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref
+##Arguments: $parameter_href, $active_parameter_href, $infile_lane_no_ending_href, $job_id_href, $annovar_table_href, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
@@ -15476,7 +15399,6 @@ sub build_annovar_prerequisites {
 ##         : $program_name               => The program name
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 
 
@@ -15485,7 +15407,6 @@ sub build_annovar_prerequisites {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
 
     ## Flatten argument(s)
@@ -15507,7 +15428,6 @@ sub build_annovar_prerequisites {
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
     };
 
@@ -15858,7 +15778,7 @@ sub build_ptchs_metric_prerequisites {
 		  });
 
 	print $FILEHANDLE "CreateSequenceDictionary ";
-	print $FILEHANDLE "R=".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference genome
+	print $FILEHANDLE "R=".$active_parameter_href->{human_genome_reference}." ";  #Reference genome
 	say $FILEHANDLE "OUTPUT=".catfile($$reference_dir_ref, $exome_target_bed_file_random.".dict"), "\n";  #Output sequence dictionnary
 
 	say $FILEHANDLE "## Add target file to headers from sequenceDictionary";
@@ -15963,7 +15883,7 @@ sub build_bwa_prerequisites {
 
 ##Function : Creates the BwaPreRequisites using active_parameters{'human_genome_reference'} as reference.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $supported_cosmid_reference_href, $bwa_build_reference_file_endings_ref, $program_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $human_genome_reference_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $supported_cosmid_reference_href, $bwa_build_reference_file_endings_ref, $program_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $human_genome_reference_ref
 ##         : $parameter_href                       => The parameter hash {REF}
 ##         : $active_parameter_href                => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href                     => Info on samples and family hash {REF}
@@ -15977,7 +15897,6 @@ sub build_bwa_prerequisites {
 ##         : $program_name                         => The program name
 ##         : $family_id_ref                        => The family_id {REF}
 ##         : $temp_directory_ref                   => The temporary directory {REF}
-##         : $reference_dir_ref                    => MIP reference directory {REF}
 ##         : $outaligner_dir_ref                   => The outaligner_dir used in the analysis {REF}
 ##         : $human_genome_reference_ref           => Human genome reference {REF}
 
@@ -15986,7 +15905,6 @@ sub build_bwa_prerequisites {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
     my $human_genome_reference_ref = $arg_href->{'human_genome_reference_ref'} //= \$arg_href->{'active_parameter_href'}{'human_genome_reference'},
 
@@ -16013,7 +15931,6 @@ sub build_bwa_prerequisites {
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
 	human_genome_reference_ref => { default => \$$, strict_type => 1, store => \$human_genome_reference_ref},
     };
@@ -16051,14 +15968,14 @@ sub build_bwa_prerequisites {
 
 	say $FILEHANDLE "## Building BWA index";
 	print $FILEHANDLE "bwa index ";  #Index sequences in the FASTA format
-	print $FILEHANDLE "-p ".catfile($$reference_dir_ref, $$human_genome_reference_ref."_".$random_integer)." "; #Prefix of the index
+	print $FILEHANDLE "-p ".$$human_genome_reference_ref."_".$random_integer." "; #Prefix of the index
 	print $FILEHANDLE "-a bwtsw ";  #BWT construction algorithm
-	say $FILEHANDLE catfile($$reference_dir_ref, $$human_genome_reference_ref), "\n";  #The FASTA reference sequences file
+	say $FILEHANDLE $$human_genome_reference_ref, "\n";  #The FASTA reference sequences file
 
-	for (my $file_endings_counter=0;$file_endings_counter<scalar(@$bwa_build_reference_file_endings_ref);$file_endings_counter++) {  #All file_endings
+	foreach my $file (@$bwa_build_reference_file_endings_ref) {
 
-	    my $intended_file_path = catfile($$reference_dir_ref, $$human_genome_reference_ref.$bwa_build_reference_file_endings_ref->[$file_endings_counter]);
-	    my $temporary_file_path = catfile($$reference_dir_ref, $$human_genome_reference_ref."_".$random_integer.$bwa_build_reference_file_endings_ref->[$file_endings_counter]);
+	    my $intended_file_path = $$human_genome_reference_ref.$file;
+	    my $temporary_file_path = $$human_genome_reference_ref."_".$random_integer.$file;
 
 	    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
 	    print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
@@ -16597,7 +16514,7 @@ sub build_human_genome_prerequisites {
 
 	print $FILEHANDLE "gzip ";
 	print $FILEHANDLE "-d ";  #Decompress
-	say $FILEHANDLE catfile($$reference_dir_ref, $$human_genome_reference_ref), "\n";
+	say $FILEHANDLE $$human_genome_reference_ref, "\n";
 
 	## Enable trap for signal(s) and function
 	enable_trap({FILEHANDLE => $FILEHANDLE,
@@ -16633,7 +16550,7 @@ sub build_human_genome_prerequisites {
 		      });
 
 	    print $FILEHANDLE "CreateSequenceDictionary ";
-	    print $FILEHANDLE "R=".catfile($$reference_dir_ref, $$human_genome_reference_ref)." ";  #Reference genome
+	    print $FILEHANDLE "R=".$$human_genome_reference_ref." ";  #Reference genome
 	    say $FILEHANDLE "OUTPUT=".catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}."_".$random_integer.".dict"), "\n";  #Output sequence dictionnary
 
 	    my $intended_file_path = catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict");
@@ -16654,14 +16571,14 @@ sub build_human_genome_prerequisites {
 
 	    say $FILEHANDLE "## Fai file from reference";
 	    print $FILEHANDLE "ln -s ";  #Softlink
-	    print $FILEHANDLE catfile($$reference_dir_ref, $$human_genome_reference_ref)." ";  #Reference genome
-	    say $FILEHANDLE catfile($$reference_dir_ref, $$human_genome_reference_ref."_".$random_integer), "\n";  #Softlink to Reference genome
+	    print $FILEHANDLE $$human_genome_reference_ref." ";  #Reference genome
+	    say $FILEHANDLE $$human_genome_reference_ref."_".$random_integer, "\n";  #Softlink to reference genome
 
 	    print $FILEHANDLE "samtools faidx ";#index/extract FASTA
-	    say $FILEHANDLE catfile($$reference_dir_ref, $$human_genome_reference_ref."_".$random_integer), "\n";  #Softlink to Reference genome
+	    say $FILEHANDLE $$human_genome_reference_ref."_".$random_integer, "\n";  #Softlink to reference genome
 
-	    my $intended_file_path = catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".fasta.fai");
-	    my $temporary_file_path = catfile($$reference_dir_ref, $$human_genome_reference_ref."_".$random_integer.".fai");
+	    my $intended_file_path = $$human_genome_reference_ref.".fai";
+	    my $temporary_file_path = $$human_genome_reference_ref."_".$random_integer.".fai";
 
 	    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
 	    print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
@@ -16670,7 +16587,7 @@ sub build_human_genome_prerequisites {
 					    });
 
 	    print $FILEHANDLE "rm ";  #Remove softLink
-	    say $FILEHANDLE catfile($$reference_dir_ref, $$human_genome_reference_ref."_".$random_integer), "\n";  #Softlink to reference genome
+	    say $FILEHANDLE $$human_genome_reference_ref."_".$random_integer, "\n";  #Softlink to reference genome
 
 	    $parameter_href->{"human_genome_reference.fasta.fai"}{build_file} = 0;  #Only create once
 	}
@@ -17096,10 +17013,7 @@ sub read_yaml_pedigree_file {
 
 	if ($user_supply_switch{sample_ids} == 0) {
 
-	    if (! any {$_ eq $sample_id} @{ $active_parameter_href->{sample_ids} }) {  #Too avoid duplicates if sample_ids are present in config
-
-		push(@{ $active_parameter_href->{sample_ids} }, $sample_id);  #Save sample_id info
-	    }
+	    push(@{ $active_parameter_href->{sample_ids} }, $sample_id);  #Save sample_id info
 
 	    ## Reformat pedigree keys to plink format and collect sample info to various hashes
 	    get_pedigree_sample_info({parameter_href => $parameter_href,
@@ -18607,7 +18521,14 @@ sub add_to_active_parameter {
 		    }
 		    else {  #Scalar
 
-			$active_parameter_href->{$parameter_name} = $parameter_href->{$parameter_name}{default};
+			if ($parameter_name eq "bwa_build_reference") {
+
+			    $active_parameter_href->{$parameter_name} = $active_parameter_href->{human_genome_reference};  #Now we now what human genome refrence to build from
+			}
+			else {
+
+			    $active_parameter_href->{$parameter_name} = $parameter_href->{$parameter_name}{default};
+			}
 		    }
 		}
 		else {  ## No default
@@ -18639,6 +18560,7 @@ sub add_to_active_parameter {
 							       capture_kit => "latest",
 							      });
 			    $active_parameter_href->{$parameter_name}{$capture_kit} = join(",", @{ $active_parameter_href->{sample_ids} });
+
 			    ## Update exome_target_bed files with human_genome_reference_source_ref and human_genome_reference_version_ref
 			    update_exome_target_bed({exome_target_bed_file_href => $active_parameter_href->{exome_target_bed},
 						     human_genome_reference_source_ref => \$file_info_href->{human_genome_reference_source},
@@ -18750,7 +18672,7 @@ sub check_parameter_files {
 
 ##Function : Checks that files/directories exists and if file_endings need to be built also updates SampleInfoHash information with information from pedigree
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $supported_capture_kit_href, $annovar_table_href, $broadcasts_ref, $annovar_supported_table_names_ref, $associated_programs_ref, $family_id_ref, $parameter_name $parameter_exists_check, $reference_dir_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $supported_capture_kit_href, $annovar_table_href, $broadcasts_ref, $annovar_supported_table_names_ref, $associated_programs_ref, $family_id_ref, $parameter_name $parameter_exists_check
 ##         : $parameter_href                    => Holds all parameters
 ##         : $active_parameter_href             => Holds all set parameter for analysis
 ##         : $sample_info_href                  => Info on samples and family hash {REF}
@@ -18763,13 +18685,11 @@ sub check_parameter_files {
 ##         : $family_id_ref                     => The family_id_ref {REF}
 ##         : $parameter_name                    => Parameter name
 ##         : $parameter_exists_check            => Check if intendent file exists in reference directory
-##         : $reference_dir_ref                 => MIP reference directory
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -18797,7 +18717,6 @@ sub check_parameter_files {
 	parameter_name => { required => 1, defined => 1, strict_type => 1, store => \$parameter_name},
 	parameter_exists_check => { required => 1, defined => 1, strict_type => 1, store => \$parameter_exists_check},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -20250,17 +20169,13 @@ sub check_file_endings_to_build {
 
 ##Function : Checks files to be built by combining filename stub with fileendings.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, file_endings_ref, $parameter_name, $reference_dir_ref
+##Arguments: $parameter_href, $active_parameter_href, file_endings_ref, $parameter_name
 ##         : $parameter_href        => The parameter hash {REF}
 ##         : $active_parameter_href => The active parameters for this analysis hash {REF}
 ##         : $file_endings_ref      => Reference to the file_endings to be added to the filename stub {REF}
 ##         : $parameter_name        => MIP parameter name
-##         : $reference_dir_ref     => MIP reference directory
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -20275,18 +20190,15 @@ sub check_file_endings_to_build {
 	file_endings_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$file_endings_ref},
 	parameter_name => { required => 1, defined => 1, strict_type => 1, store => \$parameter_name},
 	file_name => { required => 1, defined => 1, strict_type => 1, store => \$file_name},
-	reference_dir_ref => { default => \$$, strict_type => 1},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     foreach my $file_ending (@$file_endings_ref) {
 
-	my $path = catfile($file_name.$file_ending);
-
 	check_existance({parameter_href => $parameter_href,
 			 active_parameter_href => $active_parameter_href,
-			 item_name_ref => \$path,
+			 item_name_ref => \catfile($file_name.$file_ending),
 			 parameter_name_ref => \$parameter_name,
 			 item_type_to_check => "file",
 			});
@@ -21672,20 +21584,18 @@ sub concatenate_variants {
 
 ##Function : Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
 ##Returns  : ""
-##Arguments: $active_parameter_href, $FILEHANDLE, $elements_ref, $infile_prefix, $infile_postfix, $outfile, $reference_dir_ref, $human_genome_reference_ref
+##Arguments: $active_parameter_href, $FILEHANDLE, $elements_ref, $infile_prefix, $infile_postfix, $outfile, $human_genome_reference_ref
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $FILEHANDLE                 => SBATCH script FILEHANDLE to print to
 ##         : $elements_ref               => Holding the number and part of file names to be combined
 ##         : $infile_prefix              => Will be combined with the each array element
 ##         : $infile_postfix             => Will be combined with the each array element
 ##         : $outfile                    => The combined outfile
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $human_genome_reference_ref => Human genome reference {REF}
 
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $human_genome_reference_ref = $arg_href->{human_genome_reference_ref} //= \$arg_href->{active_parameter_href}{human_genome_reference};
 
     ## Flatten argument(s)
@@ -21703,7 +21613,6 @@ sub concatenate_variants {
 	infile_prefix => { required => 1, defined => 1, strict_type => 1, store => \$infile_prefix},
 	infile_postfix => { strict_type => 1, store => \$infile_postfix},
 	outfile => { strict_type => 1, store => \$outfile},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	human_genome_reference_ref => { default => \$$, strict_type => 1, store => \$human_genome_reference_ref},
     };
 
@@ -21729,7 +21638,7 @@ sub concatenate_variants {
 
     print $FILEHANDLE "-cp ".catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar")." org.broadinstitute.gatk.tools.CatVariants ";  #Type of analysis to run
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".catfile($$reference_dir_ref, $$human_genome_reference_ref)." ";  #Reference file
+    print $FILEHANDLE "-R ".$$human_genome_reference_ref." ";  #Reference file
     print $FILEHANDLE "-assumeSorted ";  #assumeSorted should be true if the input files are already sorted
 
     for (my $element_counter=0;$element_counter<scalar(@$elements_ref);$element_counter++) {
@@ -21857,32 +21766,36 @@ sub remove_pedigree_elements {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my %allowed_entries = (family => "family",
-			   default_gene_panels => "default_gene_panels",  #Clinical gene panels
-			   sample => "sample",
-			   capture_kit => "capture_kit",
-			   sex => "sex",
-			   mother => "mother",
-			   father => "father",
-			   phenotype => "phenotype",
-			   sequence_type => "sequence_type",
-			   expected_coverage => "expected_coverage",
+    my @allowed_entries = ("family",
+			   "default_gene_panels",
+			   "sample",
+			   "capture_kit",
+			   "sex",
+			   "mother",
+			   "father",
+			   "phenotype",
+			   "sequence_type",
+			   "expected_coverage",
 	);
 
+  FAMILY_INFO:
     for my $key (keys %$hash_ref) {
 	
-	unless (exists($allowed_entries{$key})) {
+	if (! any {$_ eq $key} @allowed_entries) {  #If element is not part of array
 
 		delete($hash_ref->{$key});
-	    }
+	}
     }
+
+  SAMPLE:
     foreach my $sample_id (keys %{ $hash_ref->{sample} }) {
 
-	for my $pedigree_elements (keys $hash_ref->{sample}{$sample_id})  {
+      SAMPLE_INFO:
+	for my $pedigree_element (keys $hash_ref->{sample}{$sample_id})  {
 
-	    unless (exists($allowed_entries{$pedigree_elements})) {
+	    if (! any {$_ eq $pedigree_element} @allowed_entries) {  #If element is not part of array
 
-		delete($hash_ref->{sample}{$sample_id}{$pedigree_elements});
+		delete($hash_ref->{sample}{$sample_id}{$pedigree_element});
 	    }
 	}
     }
@@ -24116,18 +24029,16 @@ sub add_to_sampleInfo {
 
 ##Function : Adds parameter info to sample_info
 ##Returns  : ""
-##Arguments: $active_parameter_href, $sample_info_href, $file_info_href, $family_id_ref, $reference_dir_ref
+##Arguments: $active_parameter_href, $sample_info_href, $file_info_href, $family_id_ref
 ##         : $active_parameter_href => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href      => Info on samples and family hash {REF}
 ##         : $file_info_href        => The file_info hash {REF}
 ##         : $family_id_ref         => The family_id_ref {REF}
-##         : $reference_dir_ref     => MIP reference directory {REF}
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $human_genome_reference_ref = $arg_href->{human_genome_reference_ref} //= \$arg_href->{active_parameter_href}{human_genome_reference};
     my $outdata_dir = $arg_href->{outdata_dir} //= $arg_href->{active_parameter_href}{outdata_dir};
 
@@ -24141,7 +24052,6 @@ sub add_to_sampleInfo {
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1},
 	human_genome_reference_ref => { default => \$$, strict_type => 1},
 	outdata_dir => { strict_type => 1},
     };
@@ -24206,7 +24116,7 @@ sub add_to_sampleInfo {
     }
     if (defined($$human_genome_reference_ref)) {  #To enable addition of version to sample_info
 
-	$sample_info_href->{human_genome_build}{path} = catfile($$reference_dir_ref, $$human_genome_reference_ref);
+	$sample_info_href->{human_genome_build}{path} = $$human_genome_reference_ref;
 	$sample_info_href->{human_genome_build}{source} = $file_info_href->{human_genome_reference_source};
 	$sample_info_href->{human_genome_build}{version} = $file_info_href->{human_genome_reference_version};
     }
@@ -24582,7 +24492,6 @@ sub vt_core {
 
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $human_genome_reference_ref = $arg_href->{human_genome_reference_ref} //= \$arg_href->{active_parameter_href}{human_genome_reference};
     my $outfile_path = $arg_href->{outfile_path} //= $arg_href->{infile_path};
     my $core_number;
@@ -24620,7 +24529,6 @@ sub vt_core {
 	xargs_file_name => { strict_type => 1, store => \$xargs_file_name},
 	contig_ref => { default => \$$, strict_type => 1, store => \$contig_ref},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1},
 	human_genome_reference_ref => { default => \$$, strict_type => 1},
 	outfile_path => { strict_type => 1},
 	core_number => { default => 1,
@@ -24708,7 +24616,7 @@ sub vt_core {
 	    print $FILEHANDLE "| ";  #Pipe
 	    print $FILEHANDLE "vt normalize ";  #Normalize variants in a VCF.The normalized variants are reordered and output in an ordered fashion
 	    print $FILEHANDLE "-n ";  #Do not fail when REF is inconsistent with reference sequence for non SNPs
-	    print $FILEHANDLE "-r ".catfile($$reference_dir_ref, $$human_genome_reference_ref)." ";  #Reference file
+	    print $FILEHANDLE "-r ".$$human_genome_reference_ref." ";  #Reference file
 	    print $FILEHANDLE "- ";  #InStream
 
 	    if ( (defined($xargs_file_name)) && (defined($$contig_ref)) ) {  #Write stderr for xargs process
@@ -24794,19 +24702,17 @@ sub check_vt_for_references {
 
 ##Function : Check if vt has processed references
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_no_ending_href, $job_id_href, $vt_references_ref, $reference_dir_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_no_ending_href, $job_id_href, $vt_references_ref
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $vt_references_ref          => The references to check with vt {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $vt_decompose;
     my $vt_normalize;
 
@@ -24825,7 +24731,6 @@ sub check_vt_for_references {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	vt_references_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$vt_references_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1},
 	vt_decompose => { default => 0,
 			  allow => [0, 1],
 			  strict_type => 1, store => \$vt_decompose},
@@ -24858,7 +24763,7 @@ sub check_vt_for_references {
 			      parameter_name => $parameter_name,
 			     });
 		}
-		$seen{$annotation_file} = 1;
+		$seen{$annotation_file} = undef;
 	    }
 	    elsif ($parameter_href->{$parameter_name}{data_type} eq "ARRAY") {  #ARRAY reference
 
@@ -24876,7 +24781,7 @@ sub check_vt_for_references {
 				  parameter_name => $parameter_name,
 				 });
 		    }
-		    $seen{$annotation_file} = 1;
+		    $seen{$annotation_file} = undef;
 		}
 	    }
 	    elsif ($parameter_href->{$parameter_name}{data_type} eq "HASH") {  #Hash reference
@@ -24895,7 +24800,7 @@ sub check_vt_for_references {
 				  parameter_name => $parameter_name,
 				 });
 		    }
-		    $seen{$annotation_file} = 1;
+		    $seen{$annotation_file} = undef;
 		}
 	    }
 	}
@@ -25718,57 +25623,6 @@ sub vcf_to_bcf {
     else {
 
 	say $FILEHANDLE $infile.".bcf", "\n";  #Bcf file to index
-    }
-}
-
-
-sub PrepareGATKTargetIntervals {
-
-##PrepareGATKTargetIntervals
-
-##Function : Prepare target interval file. Copies file to temporary directory, and adds fileExtension to fit GATK
-##Returns  : "$target_interval_path"
-##Arguments: $analysis_type_ref, $target_interval_file_list_ref, $reference_dir_ref, $temp_directory_ref, $FILEHANDLE
-##         : $analysis_type_ref             => The analysis type {REF}
-##         : $target_interval_file_list_ref => Target interval list file {REF}
-##         : $reference_dir_ref             => Reference directory {REF}
-##         : $temp_directory_ref            => Temporary directory {REF}
-##         : $FILEHANDLE                    => Filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $call_type = $arg_href->{call_type} //= "BOTH";
-    my $add_ending = $arg_href->{add_ending} //= 1;
-
-    ## Flatten argument(s)
-    my $analysis_type_ref = $arg_href->{analysis_type_ref};
-    my $FILEHANDLE = $arg_href->{FILEHANDLE};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref};
-    my $target_interval_file_list_ref = $arg_href->{target_interval_file_list_ref};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref};
-
-    if ( ($$analysis_type_ref eq "wes") || ($$analysis_type_ref eq "rapid") ) { #Exome/rapid analysis
-
-	my $target_interval_path = catfile($$temp_directory_ref, $$target_interval_file_list_ref);
-
-	## Copies file to temporary directory.
-	migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			      path => catfile($$reference_dir_ref, $$target_interval_file_list_ref),
-			      temp_directory => $$temp_directory_ref,
-			     });
-	say $FILEHANDLE "wait ";
-
-	if ($add_ending) {
-
-	    $target_interval_path .= ".intervals";
-
-	    ## Add the by GATK required ".interval" ending
-	    print $FILEHANDLE "mv ";
-	    print $FILEHANDLE catfile($$temp_directory_ref, $$target_interval_file_list_ref)." ";
-	    say $FILEHANDLE catfile($$temp_directory_ref, $$target_interval_file_list_ref.".intervals")." ";
-	}
-	return $target_interval_path;
     }
 }
 
@@ -26727,7 +26581,7 @@ sub generate_contig_specific_target_bed_file {
 	split_target_file({FILEHANDLE => $FILEHANDLE,
 			   indirectory_ref => $reference_dir_ref,
 			   outdirectory_ref => $temp_directory_ref,
-			   infile_ref => $exome_target_bed_file_ref,
+			   infile_ref => \basename($$exome_target_bed_file_ref),
 			   contig_ref => $contig_ref,
 			   file_ending => $file_ending,
 			  });
@@ -27276,6 +27130,57 @@ elsif ($@) {
 ####
 
 
+sub prepare_gatk_target_intervals {
+
+##prepare_gatk_target_intervals
+
+##Function : Prepare target interval file. Copies file to temporary directory, and adds fileExtension to fit GATK
+##Returns  : "$target_interval_path"
+##Arguments: $analysis_type_ref, $target_interval_file_list_ref, $reference_dir_ref, $temp_directory_ref, $FILEHANDLE
+##         : $analysis_type_ref             => The analysis type {REF}
+##         : $target_interval_file_list_ref => Target interval list file {REF}
+##         : $reference_dir_ref             => Reference directory {REF}
+##         : $temp_directory_ref            => Temporary directory {REF}
+##         : $FILEHANDLE                    => Filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $call_type = $arg_href->{call_type} //= "BOTH";
+    my $add_ending = $arg_href->{add_ending} //= 1;
+
+    ## Flatten argument(s)
+    my $analysis_type_ref = $arg_href->{analysis_type_ref};
+    my $FILEHANDLE = $arg_href->{FILEHANDLE};
+    my $reference_dir_ref = $arg_href->{reference_dir_ref};
+    my $target_interval_file_list_ref = $arg_href->{target_interval_file_list_ref};
+    my $temp_directory_ref = $arg_href->{temp_directory_ref};
+
+    if ( ($$analysis_type_ref eq "wes") || ($$analysis_type_ref eq "rapid") ) { #Exome/rapid analysis
+
+	my $target_interval_path = catfile($$temp_directory_ref, $$target_interval_file_list_ref);
+
+	## Copies file to temporary directory.
+	migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
+			      path => catfile($$reference_dir_ref, $$target_interval_file_list_ref),
+			      temp_directory => $$temp_directory_ref,
+			     });
+	say $FILEHANDLE "wait ";
+
+	if ($add_ending) {
+
+	    $target_interval_path .= ".intervals";
+
+	    ## Add the by GATK required ".interval" ending
+	    print $FILEHANDLE "mv ";
+	    print $FILEHANDLE catfile($$temp_directory_ref, $$target_interval_file_list_ref)." ";
+	    say $FILEHANDLE catfile($$temp_directory_ref, $$target_interval_file_list_ref.".intervals")." ";
+	}
+	return $target_interval_path;
+    }
+}
+
+
 sub MergeTargetListFlag {
 
 ##MergeTargetListFlag
@@ -27284,14 +27189,13 @@ sub MergeTargetListFlag {
 ##Returns  : "Filepath"
 ##Arguments: $active_parameter_href, $FILEHANDLE, $contig_ref
 ##         : $active_parameter_href => The active parameters for this analysis hash {REF}
-##         : $FILEHANDLE             => FILEHANDLE to write to
-##         : $contig_ref              => The contig to extract {REF}
+##         : $FILEHANDLE            => FILEHANDLE to write to
+##         : $contig_ref            => The contig to extract {REF}
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
 
     ## Flatten argument(s)
     my $active_parameter_href = $arg_href->{active_parameter_href};
@@ -27316,7 +27220,7 @@ sub MergeTargetListFlag {
 
 	foreach my $targetFile (keys $active_parameter_href->{exome_target_bed}) {
 
-	    print $FILEHANDLE "INPUT=".catfile($$reference_dir_ref, $targetFile)." ";
+	    print $FILEHANDLE "INPUT=".$targetFile." ";
 	}
 	say $FILEHANDLE "OUTPUT=".catfile($$temp_directory_ref, "merged.interval_list"), "\n";  #Merged outfile
     }
