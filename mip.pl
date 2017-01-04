@@ -3566,11 +3566,11 @@ sub rankvariant {
 
 	    if ($active_parameter_href->{genmod_annotate_regions}) {
 		
-		print $XARGSFILEHANDLE "--annotate_regions ";  #Use predefined annotation file distributed with genmod
+		print $XARGSFILEHANDLE "--regions ";  #Use predefined annotation file distributed with genmod
 	    }
 	    foreach my $cadd_file (@{ $active_parameter_href->{genmod_annotate_cadd_files} }) {
 
-		print $XARGSFILEHANDLE "--cadd_file ".catfile($$reference_dir_ref, $cadd_file)." ";  #CADD score file(s)
+		print $XARGSFILEHANDLE "--cadd-file ".catfile($$reference_dir_ref, $cadd_file)." ";  #CADD score file(s)
 	    }
 	    if (defined($active_parameter_href->{genmod_annotate_spidex_file})) {
 
@@ -6243,11 +6243,11 @@ sub vt {
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "annotate ";  #Command
 	    print $XARGSFILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
-	    print $XARGSFILEHANDLE "--thousand_g ".catfile($$reference_dir_ref, $active_parameter_href->{vt_genmod_filter_1000g})." ";  #1000G reference
+	    print $XARGSFILEHANDLE "--thousand-g ".catfile($$reference_dir_ref, $active_parameter_href->{vt_genmod_filter_1000g})." ";  #1000G reference
 
 	    if ($active_parameter_href->{vt_genmod_filter_max_af}) {
 
-		print $XARGSFILEHANDLE "--max_af ";  #If the MAX AF should be annotated
+		print $XARGSFILEHANDLE "--max-af ";  #If the MAX AF should be annotated
 	    }
 	    print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutStream
 	    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$$contig_ref.$alt_file_ending.".vcf")." ";
@@ -8481,7 +8481,7 @@ sub sv_rankvariant {
 	    
 	    if ($active_parameter_href->{sv_genmod_annotate_regions}) {
 		
-		print $XARGSFILEHANDLE "--annotate_regions ";  #Use predefined annotation file distributed with genmod
+		print $XARGSFILEHANDLE "--regions ";  #Use predefined annotation file distributed with genmod
 		}
 	    if ( (defined($parameter_href->{dynamic_parameter}{unaffected})) && (@{ $parameter_href->{dynamic_parameter}{unaffected} } eq @{ $active_parameter_href->{sample_ids} }) ) {  #Only unaffected
 		
@@ -9576,7 +9576,7 @@ sub sv_combinevariantcallsets {
 	print $FILEHANDLE "-v ";  #Increase output verbosity
 	print $FILEHANDLE "annotate ";  #Command
 	print $FILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
-	print $FILEHANDLE "--thousand_g ".catfile($$reference_dir_ref, $active_parameter_href->{sv_genmod_filter_1000g})." ";  #1000G reference
+	print $FILEHANDLE "--thousand-g ".catfile($$reference_dir_ref, $active_parameter_href->{sv_genmod_filter_1000g})." ";  #1000G reference
 	print $FILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutStream
 	print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf")." ";
 	print $FILEHANDLE "| ";
