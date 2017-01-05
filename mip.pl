@@ -4338,7 +4338,7 @@ sub snpeff {
 		}
 		print $XARGSFILEHANDLE $annotation_file." ";  #Database
 
-		if ($annotation_file_counter == 0) {  #First file per contig
+		if (! $annotation_file_counter) {  #First file per contig
 
 		    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf")." "; #Infile
 		}
@@ -5404,15 +5404,13 @@ sub gatk_readbackedphasing {
     say $FILEHANDLE "wait", "\n";
 
     ## Copy BAM file(s) to temporary directory
-    for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {  #Collect infiles for all sample_ids
+    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
-	my $sample_id_ref = \$active_parameter_href->{sample_ids}[$sample_id_counter];  #Alias
-
-	my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $outaligner_dir);
-	my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+	my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id, $outaligner_dir);
+	my $infile_tag = $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
 
 	## Add merged infile name after merging all BAM files per sample_id
-	my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
+	my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
 
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -5444,14 +5442,12 @@ sub gatk_readbackedphasing {
 	print $FILEHANDLE "-respectPhaseInInput ";  #Already phased data - respect calls
     }
 
-    for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {  #Collect infiles for all sample_ids
+    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
-	my $sample_id_ref = \$active_parameter_href->{sample_ids}[$sample_id_counter];  #Alias
-
-	my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+	my $infile_tag = $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
 
 	## Add merged infile name after merging all BAM files per sample_id
-	my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
+	my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
 
 	print $FILEHANDLE "-I ".catfile($active_parameter_href->{temp_directory}, $infile.$infile_tag.".bam ");  #InFile
     }
@@ -5746,16 +5742,14 @@ sub samplecheck {
 
     ## Add a subsetet and correct .fam file for analysis
     say $FILEHANDLE "## Add a subsetet and correct .fam file for analysis";
-    for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {  #Collect infiles for all sample_ids
+    while (my ($sample_id_index, $sample_id) = each(@{ $active_parameter_href->{sample_ids} }) ) {  #Collect infiles for all sample_ids
 
-	my $sample_id_ref = \$active_parameter_href->{sample_ids}[$sample_id_counter];  #Alias
-
-	my $lineCounter = 2 + $sample_id_counter;  #Skip header line
-	print $FILEHANDLE q?perl -nae 'if($F[1] eq "?.$$sample_id_ref.q?") {print $F[0]."\t".$F[1]."\t0\t0\t".$F[4]."\t".$F[5]}' ?;  #Include 1 line and remove founders
-	print $FILEHANDLE catfile($active_parameter_href->{outdata_dir}, $active_parameter_href->{family_id}, $active_parameter_href->{family_id}.".fam")." ";
+	my $lineCounter = 2 + $sample_id_index;  #Skip header line
+	print $FILEHANDLE q?perl -nae 'if($F[1] eq "?.$sample_id.q?") {print $F[0]."\t".$F[1]."\t0\t0\t".$F[4]."\t".$F[5]}' ?;  #Include 1 line and remove founders
+	print $FILEHANDLE catfile($active_parameter_href->{outdata_dir}, $$family_id_ref, $$family_id_ref.".fam")." ";
 	print $FILEHANDLE "> ";
-	print $FILEHANDLE catfile($$temp_directory_ref, $$sample_id_ref."_vcf_data_unsplit.fam")." ";
-	say $FILEHANDLE "2> ".$xargs_file_name.".".$$sample_id_ref."_sampleFam.stderr.txt ", "\n";  #Redirect xargs output to program specific stderr file
+	print $FILEHANDLE catfile($$temp_directory_ref, $sample_id."_vcf_data_unsplit.fam")." ";
+	say $FILEHANDLE "2> ".$xargs_file_name.".".$sample_id."_sampleFam.stderr.txt ", "\n";  #Redirect xargs output to program specific stderr file
     }
 
     ## Perform sex-check on individual samples and sample_id.fam  using Plink2
@@ -5805,9 +5799,7 @@ sub samplecheck {
 
     ## Concatenate files for qc downsteam
     print $FILEHANDLE "cat ";
-    for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {  #Collect infiles for all sample_ids
-
-	my $sample_id = $active_parameter_href->{sample_ids}[$sample_id_counter];  #Alias
+    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
 	print $FILEHANDLE catfile($outfamily_directory, $sample_id."_vcf_data.sexcheck")." ";
     }
@@ -7360,9 +7352,9 @@ sub gatk_concatenate_genotypegvcfs {
 	    print $FILEHANDLE "-V: ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf")." ";  #InFile
 	    print $FILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_incnonvariantloci.vcf")." ";  #OutFile
 
-	    for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {  #For all sample_ids
+	    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
-		print $FILEHANDLE "-sn ".$active_parameter_href->{sample_ids}[$sample_id_counter]." ";  #Include genotypes from this sample
+		print $FILEHANDLE "-sn ".$sample_id." ";  #Include genotypes from this sample
 	    }
 	    say $FILEHANDLE "\n";
 
@@ -7489,7 +7481,7 @@ sub gatk_genotypegvcfs {
 		    });
 
     ## Split per contig
-    for (my $contigs_counter=0;$contigs_counter<scalar(@{ $file_info_href->{contigs} });$contigs_counter++) {
+    foreach my $contig (@{ $file_info_href->{contigs} }) {
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -7513,20 +7505,18 @@ sub gatk_genotypegvcfs {
 	my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
 
 	## Collect infiles for all sample_ids to enable migration to temporary directory
-	for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {
-
-	    my $sample_id_ref = \$active_parameter_href->{sample_ids}[$sample_id_counter];  #Alias
+	foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
 	    ## Add merged infile name after merging all BAM files per sample_id
-	    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
+	    my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
 
-	    my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref, "gatk");
-	    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_haplotypecaller}{file_tag};
+	    my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id, $$outaligner_dir_ref, "gatk");
+	    my $infile_tag = $file_info_href->{$sample_id}{pgatk_haplotypecaller}{file_tag};
 
 	    ## Copy file(s) to temporary directory
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
 	    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-				  path => catfile($insample_directory, $infile.$infile_tag."_".$file_info_href->{contigs}[$contigs_counter].".vcf*"),
+				  path => catfile($insample_directory, $infile.$infile_tag."_".$contig.".vcf*"),
 				  temp_directory => $$temp_directory_ref
 				 });
 	    say $FILEHANDLE "wait", "\n";
@@ -7561,28 +7551,26 @@ sub gatk_genotypegvcfs {
 	    print $FILEHANDLE "-allSites ";  #Include loci found to be non-variant after genotyping
 	}
 
-	print $FILEHANDLE "-L ".$file_info_href->{contigs}[$contigs_counter]." ";  #Per contig
+	print $FILEHANDLE "-L ".$contig." ";  #Per contig
 
 	if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid") ) {
 
 	    print $FILEHANDLE "-V ".$active_parameter_href->{gatk_genotypegvcfs_ref_gvcf}." ";
 	}
 
-	for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {  #Collect infiles for all sample_ids
-
-	    my $sample_id_ref = \$active_parameter_href->{sample_ids}[$sample_id_counter];  #Alias
+	foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
 	    ## Add merged infile name after merging all BAM files per sample_id
-	    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
-	    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_haplotypecaller}{file_tag};
+	    my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
+	    my $infile_tag = $file_info_href->{$sample_id}{pgatk_haplotypecaller}{file_tag};
 
-	    print $FILEHANDLE "-V ".catfile($$temp_directory_ref, $infile.$infile_tag."_".$file_info_href->{contigs}[$contigs_counter].".vcf")." ";  #InFile
+	    print $FILEHANDLE "-V ".catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.".vcf")." ";  #InFile
 	}
-	say $FILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$file_info_href->{contigs}[$contigs_counter].".vcf"), "\n";  #OutFile
+	say $FILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf"), "\n";  #OutFile
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$file_info_href->{contigs}[$contigs_counter].".vcf*"),
+	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf*"),
 				file_path => $outfamily_directory,
 				FILEHANDLE => $FILEHANDLE,
 			       });
@@ -7757,7 +7745,6 @@ sub genomecoveragebed {
     ## Add merged infile name after merging all BAM files per sample_id
     my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
-    my $core_counter=1;
     my $core_number=1;
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -7883,7 +7870,6 @@ sub picardtools_calculatehsmetrics {
     my $padded_infile_list_ending_ref = \$file_info_href->{exome_target_bed}[1];
     my $padded_interval_list_ending_ref = \$file_info_href->{exome_target_bed}[2];
 
-    my $core_counter=1;
     my $core_number=2;
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -8035,7 +8021,6 @@ sub picardtools_collectmultiplemetrics {
     my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
     my $core_number = 1;
-    my $core_counter=2;
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -8193,8 +8178,6 @@ sub chanjo_sexcheck {
     ## Add merged infile name after merging all BAM files per sample_id
     my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
-    my $core_counter=1;
-
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
 					  job_id_href => $job_id_href,
@@ -8324,8 +8307,6 @@ sub sambamba_depth {
 
     ## Add merged infile name after merging all BAM files per sample_id
     my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
-
-    my $core_counter=1;
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -8597,17 +8578,16 @@ sub sv_rankvariant {
 								});
 	
 	## Process per contig
-	for (my $contigs_counter=0;$contigs_counter<scalar(@contigs);$contigs_counter++) {
-	    
-	    my $contig_ref = \$contigs[$contigs_counter];
+	foreach my $contig (@contigs) {
+
 	    my $genmod_file_ending_stub = $infile_ending_stub;
 	    my $genmod_xargs_file_name = $xargs_file_name;
 	    my $genmod_indata = catfile($$temp_directory_ref, $genmod_file_ending_stub.$vcfparser_analysis_type.".vcf")." ";  #InFile
 	    
 	    if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Update endings with contig info
 		
-		$genmod_file_ending_stub = $infile_ending_stub."_".$$contig_ref;
-		$genmod_xargs_file_name = $xargs_file_name.".".$$contig_ref;
+		$genmod_file_ending_stub = $infile_ending_stub."_".$contig;
+		$genmod_xargs_file_name = $xargs_file_name.".".$contig;
 		$genmod_indata = catfile($$temp_directory_ref, $genmod_file_ending_stub.$vcfparser_analysis_type.".vcf")." ";  #InFile
 	    }
 	    $genmod_module = "";  #Restart for next contig
@@ -8971,18 +8951,17 @@ sub sv_vcfparser {
 							     first_command => "perl",
 							    });
 
-    for (my $contigs_counter=0;$contigs_counter<scalar(@contigs);$contigs_counter++) {
+    foreach my $contig (@contigs) {
 
-	my $contig_ref = \$contigs[$contigs_counter];
 	my $vcfparser_infile_ending_stub = $infile_ending_stub;
 	my $vcfparser_outfile_ending_stub = $outfile_ending_stub;
 	my $vcfparser_xargs_file_name = $xargs_file_name;
 
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Update endings with contig info
 
-	    $vcfparser_infile_ending_stub = $infile_ending_stub."_".$$contig_ref;
-	    $vcfparser_outfile_ending_stub = $outfile_ending_stub."_".$$contig_ref;
-	    $vcfparser_xargs_file_name = $xargs_file_name.".".$$contig_ref;
+	    $vcfparser_infile_ending_stub = $infile_ending_stub."_".$contig;
+	    $vcfparser_outfile_ending_stub = $outfile_ending_stub."_".$contig;
+	    $vcfparser_xargs_file_name = $xargs_file_name.".".$contig;
 	}
 	print $XARGSFILEHANDLE catfile($active_parameter_href->{script_dir}, "vcfparser.pl")." ";  #Parses the VEP output to tab-sep format
 	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $vcfparser_infile_ending_stub.".vcf")." ";  #Infile
@@ -8995,7 +8974,7 @@ sub sv_vcfparser {
 	    
 	    print $XARGSFILEHANDLE "--per_gene ".$active_parameter_href->{sv_vcfparser_per_gene}." ";  #Keep only most severe consequence per gene
 	}
-	if ($$contig_ref =~ /MT|M/) {
+	if ($contig =~ /MT|M/) {
 
 	    print $XARGSFILEHANDLE "--padding 10 ";  #Special case for mitochondrial contig annotation
 	}
@@ -9014,7 +8993,7 @@ sub sv_vcfparser {
 
 	    if (! check_entry_hash_of_array({hash_ref => $file_info_href,
 					     key => "select_file_contigs",
-					     element => $$contig_ref,
+					     element => $contig,
 					    })
 		) {
 
@@ -9317,17 +9296,15 @@ sub sv_varianteffectpredictor {
 							     first_command => "perl",
 							    });
 
-    for (my $contigs_counter=0;$contigs_counter<scalar(@contigs);$contigs_counter++) {
-
-	my $contig_ref = \$contigs[$contigs_counter];
+    foreach my $contig (@contigs) {
 
 	my $vep_outfile_ending_stub = $outfile_ending_stub;
 	my $vep_xargs_file_name = $xargs_file_name;
 
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Update endings with contig info
 
-	    $vep_outfile_ending_stub = $outfile_ending_stub."_".$$contig_ref;
-	    $vep_xargs_file_name = $xargs_file_name.".".$$contig_ref;
+	    $vep_outfile_ending_stub = $outfile_ending_stub."_".$contig;
+	    $vep_xargs_file_name = $xargs_file_name.".".$contig;
 	}
 
 	print $XARGSFILEHANDLE catfile($active_parameter_href->{vep_directory_path}, "variant_effect_predictor.pl")." ";  #VEP script
@@ -9350,7 +9327,7 @@ sub sv_varianteffectpredictor {
 
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Add contig info
 
-	    print $XARGSFILEHANDLE "--chr ".$$contig_ref." ";
+	    print $XARGSFILEHANDLE "--chr ".$contig." ";
 	}
 
 	##VEPPlugins
@@ -9362,7 +9339,7 @@ sub sv_varianteffectpredictor {
 	    }
 	    elsif ($plugin eq "UpDownDistance") {  #Special case for mitochondrial contig annotation
 
-		if ($$contig_ref =~ /MT|M/) {
+		if ($contig =~ /MT|M/) {
 
 		    print $XARGSFILEHANDLE "--plugin UpDownDistance,10,10 ";
 		}
@@ -9378,7 +9355,7 @@ sub sv_varianteffectpredictor {
 
 	    print $XARGSFILEHANDLE "--".$vep_feature." ";  #Add VEP features to the output.
 
-	    if ( ($$contig_ref =~ /MT|M/) && ($vep_feature eq "refseq") ) {  #Special case for mitochondrial contig annotation
+	    if ( ($contig =~ /MT|M/) && ($vep_feature eq "refseq") ) {  #Special case for mitochondrial contig annotation
 
 		print $XARGSFILEHANDLE "--all_refseq ";
 	    }
@@ -9917,8 +9894,6 @@ sub cnvnator {
     my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
-    my $core_counter = 1;
-
     ## Add merged infile name after merging all BAM files per sample_id
     my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
@@ -9943,13 +9918,12 @@ sub cnvnator {
     print $FILEHANDLE $active_parameter_href->{human_genome_reference}.".fai "; #Reference fai file
     say $FILEHANDLE "> ".catfile($$temp_directory_ref, "contig_header.txt")." ";
 
+    my $core_counter=1;
     ## Create by cnvnator required "chr.fa" files
     say $FILEHANDLE "## Create by cnvnator required 'chr.fa' files";
-    for (my $contigs_counter=0;$contigs_counter<scalar(@{ $file_info_href->{contigs} });$contigs_counter++) {
+    while ( my ($contig_index, $contig) = each(@{ $file_info_href->{contigs} }) ) {
 
-	my $contig_ref = \$file_info_href->{contigs}[$contigs_counter];
-
-	print_wait({counter_ref => \$contigs_counter,
+	print_wait({counter_ref => \$contig_index,
 		    core_number_ref => \$core_number,
 		    core_counter_ref => \$core_counter,
 		    FILEHANDLE => $FILEHANDLE,
@@ -9957,8 +9931,8 @@ sub cnvnator {
 
 	print $FILEHANDLE "samtools faidx ";
 	print $FILEHANDLE $active_parameter_href->{human_genome_reference}." ";
-	print $FILEHANDLE $$contig_ref." ";
-	say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$contig_ref.".fa")." &";
+	print $FILEHANDLE $contig." ";
+	say $FILEHANDLE "> ".catfile($$temp_directory_ref, $contig.".fa")." &";
     }
     say $FILEHANDLE "wait", "\n";
 
@@ -9991,50 +9965,48 @@ sub cnvnator {
 							    });
 
     ## Process per contig
-    for (my $contigs_counter=0;$contigs_counter<scalar(@{ $file_info_href->{contigs_size_ordered} });$contigs_counter++) {
+    foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
-	my $contig_ref = \$file_info_href->{contigs_size_ordered}[$contigs_counter];
-
-	print $XARGSFILEHANDLE "-chrom ".$$contig_ref." ";  #chromosome name
+	print $XARGSFILEHANDLE "-chrom ".$contig." ";  #chromosome name
 	print $XARGSFILEHANDLE "-unique ";  #To have correct q0 field for CNV calls
 
-	$root_file = catfile($$temp_directory_ref, $infile.$infile_tag."_".$$contig_ref.".root");  #Output ROOT file
+	$root_file = catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.".root");  #Output ROOT file
 
 	print $XARGSFILEHANDLE "-root ".$root_file." ";
-	print $XARGSFILEHANDLE "-tree ".catfile($$temp_directory_ref, $infile.$infile_tag."_".$$contig_ref.".bam")." ";  #InFile
-	print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$$contig_ref.".stdout.txt ";  #Redirect xargs output to program specific stdout file
-	print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE "-tree ".catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.".bam")." ";  #InFile
+	print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$contig.".stdout.txt ";  #Redirect xargs output to program specific stdout file
+	print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	print $XARGSFILEHANDLE "; ";
 
 	cnvnator_his({root_file => $root_file,
-		      contig_ref => $contig_ref,
+		      contig_ref => \$contig,
 		      cnv_bin_size_ref => \$active_parameter_href->{cnv_bin_size},
-		      chromosome_reference => catfile($$temp_directory_ref, $$contig_ref.".fa"),
+		      chromosome_reference => catfile($$temp_directory_ref, $contig.".fa"),
 		      FILEHANDLE => $XARGSFILEHANDLE,
-		      stdout_file => $xargs_file_name.".".$$contig_ref.".stdout.txt",
-		      stderr_file => $xargs_file_name.".".$$contig_ref.".stderr.txt",
+		      stdout_file => $xargs_file_name.".".$contig.".stdout.txt",
+		      stderr_file => $xargs_file_name.".".$contig.".stderr.txt",
 		     });
 	cnvnator_stat({root_file => $root_file,
-		       contig_ref => $contig_ref,
+		       contig_ref => \$contig,
 		       cnv_bin_size_ref => \$active_parameter_href->{cnv_bin_size},
 		       FILEHANDLE => $XARGSFILEHANDLE,
-		       stdout_file => $xargs_file_name.".".$$contig_ref.".stdout.txt",
-		       stderr_file => $xargs_file_name.".".$$contig_ref.".stderr.txt",
+		       stdout_file => $xargs_file_name.".".$contig.".stdout.txt",
+		       stderr_file => $xargs_file_name.".".$contig.".stderr.txt",
 		      });
 	cnvnator_partition({root_file => $root_file,
-			    contig_ref => $contig_ref,
+			    contig_ref => \$contig,
 			    cnv_bin_size_ref => \$active_parameter_href->{cnv_bin_size},
 			    FILEHANDLE => $XARGSFILEHANDLE,
-			    stdout_file => $xargs_file_name.".".$$contig_ref.".stdout.txt",
-			    stderr_file => $xargs_file_name.".".$$contig_ref.".stderr.txt",
+			    stdout_file => $xargs_file_name.".".$contig.".stdout.txt",
+			    stderr_file => $xargs_file_name.".".$contig.".stderr.txt",
 			   });
 	cnvnator_calling({root_file => $root_file,
-			  contig_ref => $contig_ref,
+			  contig_ref => \$contig,
 			  cnv_bin_size_ref => \$active_parameter_href->{cnv_bin_size},
 			  chromosome_reference => $$reference_dir_ref,
 			  FILEHANDLE => $XARGSFILEHANDLE,
-			  stderr_file => $xargs_file_name.".".$$contig_ref.".stderr.txt",
-			  outfile => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$$contig_ref.".vcf"), #OutFile
+			  stderr_file => $xargs_file_name.".".$contig.".stderr.txt",
+			  outfile => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.".vcf"), #OutFile
 			 });
 	print $XARGSFILEHANDLE "\n";
     }
@@ -10408,11 +10380,9 @@ sub manta {
 
     my $core_counter=1;
     ## Collect infiles for all sample_ids to enable migration to temporary directory
-    for (my $sample_id_counter=0;$sample_id_counter < scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {
+    while ( my ($sample_id_index, $sample_id) = each (@{ $active_parameter_href->{sample_ids} }) ) {
 
-	my $sample_id = $active_parameter_href->{sample_ids}[$sample_id_counter];  #Alias
-
-	print_wait({counter_ref => \$sample_id_counter,
+	print_wait({counter_ref => \$sample_id_index,
 		    core_number_ref => \$core_number,
 		    core_counter_ref => \$core_counter,
 		    FILEHANDLE => $FILEHANDLE,
@@ -10584,8 +10554,6 @@ sub findtranslocations {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
-
-    my $core_counter=1;
 
     ## Add merged infile name after merging all BAM files per sample_id
     my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
@@ -10769,8 +10737,6 @@ sub samtools_mpileup {
 
     ## Assign file_tags
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-
-    my $core_counter=1;
 
     ## Create .fam file to be used in variant calling analyses
     create_fam_file({parameter_href => $parameter_href,
@@ -12662,7 +12628,6 @@ sub picardtools_mergesamfiles {
 								      core_number => $core_number,
 								      xargs_file_counter => $xargs_file_counter,
 								      temp_directory_ref => $temp_directory_ref,
-								      xargs_file_counter => $xargs_file_counter,
 								      infile => $infile.$infile_tag
 								     });
     }
@@ -13051,7 +13016,7 @@ sub bwa_sampe {
     my $infile_size;
     my $paired_end_tracker = 0;
 
-    for (my $infile_counter=0;$infile_counter<scalar( @{ $infile_lane_no_ending_href->{$sample_id} });$infile_counter++) {  #For all files from BWA aln but process in the same command i.e. both reads per align call
+    while ( my ($infile_no_ending_index, $infile_no_ending) = each (@{ $infile_lane_no_ending_href->{$sample_id} }) ) {  #For all files from BWA aln but process in the same command i.e. both reads per align call
 
 	if ($consensus_analysis_type eq "wgs") {
 
@@ -13063,7 +13028,7 @@ sub bwa_sampe {
 	}
 
 	my $core_number = 2;
-	my $sequence_run_mode = $sample_info_href->{sample}{$sample_id}{file}{$infile_lane_no_ending_href->{$sample_id}[$infile_counter]}{sequence_run_type};  #Collect paired-end or single-end sequence run mode
+	my $sequence_run_mode = $sample_info_href->{sample}{$sample_id}{file}{$infile_no_ending}{sequence_run_type};  #Collect paired-end or single-end sequence run mode
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -13106,10 +13071,10 @@ sub bwa_sampe {
 	say $FILEHANDLE "## Aligning reads";
 	print $FILEHANDLE "bwa sampe ";
 	print $FILEHANDLE q?-r "@RG\t?;
-	print $FILEHANDLE q?ID:?.$infile_lane_no_ending_href->{$sample_id}[$infile_counter].q?\t?;
+	print $FILEHANDLE q?ID:?.$infile_no_ending.q?\t?;
 	print $FILEHANDLE q?SM:?.$sample_id.q?\t?;
 	print $FILEHANDLE q?PL:?.$active_parameter_href->{platform}.q?" ?;  #Read group header line
-	print $FILEHANDLE catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{human_genome_reference})." ";  #Reference
+	print $FILEHANDLE $active_parameter_href->{human_genome_reference}." ";  #Reference
 	print $FILEHANDLE catfile($active_parameter_href->{temp_directory}, $infile_both_strands_no_ending_href->{$sample_id}[$paired_end_tracker].".sai")." ";  #Read 1
 
 	if ( $sequence_run_mode eq "paired_end") {
@@ -13125,16 +13090,16 @@ sub bwa_sampe {
 	    print $FILEHANDLE catfile($active_parameter_href->{temp_directory}, $infile_href->{$sample_id}[$paired_end_tracker])." ";  #Fastq read 2
 	}
 
-	say $FILEHANDLE "> ".catfile($active_parameter_href->{temp_directory}, $infile_lane_no_ending_href->{$sample_id}[$infile_counter].".sam"), "\n";  #Outfile (SAM)
+	say $FILEHANDLE "> ".catfile($active_parameter_href->{temp_directory}, $infile_no_ending.".sam"), "\n";  #Outfile (SAM)
 
 	## Convert SAM to BAM using samtools view
 	say $FILEHANDLE "## Convert SAM to BAM";
-	print $FILEHANDLE "samtools view -bS ".catfile($active_parameter_href->{temp_directory}, $infile_lane_no_ending_href->{$sample_id}[$infile_counter].".sam")." ";  #Infile (SAM)
-	say $FILEHANDLE "> ".catfile($active_parameter_href->{temp_directory}, $infile_lane_no_ending_href->{$sample_id}[$infile_counter].".bam"), "\n";  #Outfile (BAM)
+	print $FILEHANDLE "samtools view -bS ".catfile($active_parameter_href->{temp_directory}, $infile_no_ending.".sam")." ";  #Infile (SAM)
+	say $FILEHANDLE "> ".catfile($active_parameter_href->{temp_directory}, $infile_no_ending.".bam"), "\n";  #Outfile (BAM)
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => catfile($active_parameter_href->{temp_directory}, $infile_lane_no_ending_href->{$sample_id}[$infile_counter].".bam"),
+	migrate_file_from_temp({temp_path => catfile($active_parameter_href->{temp_directory}, $infile_no_ending.".bam"),
 				file_path => $outsample_directory,
 				FILEHANDLE => $FILEHANDLE,
 			       });
@@ -13144,7 +13109,7 @@ sub bwa_sampe {
 
 	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
-	    $sample_info_href->{sample}{$sample_id}{most_complete_bam}{path} = catfile($outsample_directory, $infile_lane_no_ending_href->{$sample_id}[$infile_counter].".bam");
+	    $sample_info_href->{sample}{$sample_id}{most_complete_bam}{path} = catfile($outsample_directory, $infile_no_ending.".bam");
 
 	    submit_job({active_parameter_href => $active_parameter_href,
 			sample_info_href => $sample_info_href,
@@ -13154,7 +13119,7 @@ sub bwa_sampe {
 			dependencies => "sample_id_dependency_step_in_parallel",
 			path => $parameter_href->{"p".$program_name}{chain},
 			sbatch_file_name => $file_name,
-			sbatch_script_tracker => $infile_counter
+			sbatch_script_tracker => $infile_no_ending_index,
 		       });
 	}
 	$paired_end_tracker++;
@@ -13197,13 +13162,11 @@ sub bwa_aln {
     my $time = ceil(2.5*scalar( @{ $infile_lane_no_ending_href->{$sample_id} }));  #One full lane on Hiseq takes approx. 2,5 h for bwa_aln to process, round up to nearest full hour.
     my $core_number = 0;
 
-    for (my $infile_counter=0;$infile_counter<scalar( @{ $infile_lane_no_ending_href->{$sample_id} });$infile_counter++) {  #For all files
-
-	my $infile_ref = \$infile_lane_no_ending_href->{$sample_id}[$infile_counter];  #Alias
+    foreach my $infile (@{ $infile_lane_no_ending_href->{$sample_id} }) {  #For all files
 
 	## Adjust the number of cores to be used in the analysis according to sequencing mode requirements.
 	adjust_core_number_to_seq_mode({core_number_ref => \$core_number,
-					sequence_run_type_ref => \$sample_info_href->{sample}{$sample_id}{file}{$$infile_ref}{sequence_run_type},
+					sequence_run_type_ref => \$sample_info_href->{sample}{$sample_id}{file}{$infile}{sequence_run_type},
 				       });
     }
 
@@ -13229,8 +13192,6 @@ sub bwa_aln {
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id, lc($outaligner_dir));
     $parameter_href->{"p".$program_name}{$sample_id}{indirectory} = $outsample_directory;  #Used downstream
 
-    my $core_counter=1;
-
     ## Copies files from source to temporary folder. Loop over files specified by $files_ref and collects files from $extract_files_ref
     migrate_files_to_temp({active_parameter_href => $active_parameter_href,
 			   files_ref => \@{ $infile_href->{$sample_id} },
@@ -13242,24 +13203,23 @@ sub bwa_aln {
 
     ## BWA Aln
     say $FILEHANDLE "## Creating .sai index";
-    for (my $infile_counter=0;$infile_counter<scalar( @{ $infile_href->{$sample_id} });$infile_counter++) {
+    my $core_counter=1;
+    while ( my ($infile_counter_index, $infile) = each (@{ $infile_href->{$sample_id} }) ) {
 
-	print_wait({counter_ref => \$infile_counter,
+	print_wait({counter_ref => \$infile_counter_index,
 		    core_number_ref => \$core_number,
 		    core_counter_ref => \$core_counter,
 		    FILEHANDLE => $FILEHANDLE,
 		   });
-
-	my $infile = $infile_href->{$sample_id}[$infile_counter];
 
 	print $FILEHANDLE "bwa aln ";
 	print $FILEHANDLE "-k 1 ";  #maximum differences in the seed
 	print $FILEHANDLE "-t 4 ";  #number of threads
 	print $FILEHANDLE "-n 3 ";  #max diff (int) or missing prob under 0.02 err rate (float)
 	print $FILEHANDLE "-q ".$active_parameter_href->{bwa_aln_quality_trimming}." ";  #Quality trimming
-	print $FILEHANDLE catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{human_genome_reference})." ";  #Reference
+	print $FILEHANDLE $active_parameter_href->{human_genome_reference}." ";  #Reference
 	print $FILEHANDLE catfile($active_parameter_href->{temp_directory}, $infile)." ";  #InFile
-	say $FILEHANDLE "> ".catfile($active_parameter_href->{temp_directory}, $infile_both_strands_no_ending_href->{$sample_id}[$infile_counter].".sai")." &\n";  #OutFile
+	say $FILEHANDLE "> ".catfile($active_parameter_href->{temp_directory}, $infile_both_strands_no_ending_href->{$sample_id}[$infile_counter_index].".sai")." &\n";  #OutFile
     }
     say $FILEHANDLE "wait", "\n";
 
