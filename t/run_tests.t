@@ -54,7 +54,7 @@ BEGIN {
     $perl_module{autodie} = qw(open close :all);
     $perl_module{charnames} = qw( :full :short );
     $perl_module{Cwd} = qw(abs_path);
-    $perl_module{File::Basename} = qw(dirname);
+    $perl_module{File::Basename} = qw(dirname basename);
     $perl_module{File::Path} = qw(make_path remove_tree);
     $perl_module{File::Spec::Functions} =  qw(catfile catdir devnull);
     $perl_module{FindBin} = qw($Bin);
@@ -143,16 +143,21 @@ sub test_modules {
     use Cwd;
     ok(getcwd(), "Cwd: Locate current working directory");
 
-    use FindBin qw($Bin); #Find directory of script
+    use FindBin qw($Bin);
     ok(defined($Bin),"FindBin: Locate directory of script");
 
-    use File::Basename qw(dirname);  #Strip the last part of directory
+    use File::Basename qw(dirname);
     ok(dirname($Bin), "File::Basename qw(dirname): Strip the last part of directory");
  
-    use File::Spec::Functions qw(catfile catdir);
+    use File::Spec::Functions qw(catfile catdir devnull);
     ok(catdir(dirname($Bin), "t"),"File::Spec::Functions qw(catdir): Concatenate directories");
-    ok(catfile($Bin, "run_tests.pl"),"File::Spec::Functions qw(catfile): Concatenate files");
+    ok(catfile($Bin, "run_tests.t"),"File::Spec::Functions qw(catfile): Concatenate files");
+    ok(catfile(dirname(devnull()), "stdout"), "File::Spec::Functions qw(devnull): Use devnull");
  
+    use File::Basename qw(basename);
+    my $file_path = catfile($Bin, "run_tests.t");
+    ok(basename($file_path), "File::Basename qw(basename): Strip directories");
+
     use Cwd qw(abs_path);
     ok(abs_path( catfile($Bin, "run_tests.pl") ), "Cwd_abs_path: Add absolute path");
 

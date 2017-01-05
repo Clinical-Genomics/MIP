@@ -614,6 +614,7 @@ sub evaluate_qc_parameters {
 
 		next;
 	    }
+
 	  PROGRAM:
 	    for my $program ( keys %{$qc_data_href->{sample}{$sample_id}{$infile}} ) {
 

@@ -871,9 +871,9 @@ if(@{ $parameter{picardtools_mergesamfiles_previous_bams}{value} }) {
 }
 else {  #Not supplied - Set to 0 to handle correctly in program subroutines
 
-    for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter{sample_ids} });$sample_id_counter++) {  #Set for all sample_ids
+    foreach my $sample_id (@{ $active_parameter{sample_ids} }) {  #Set for all sample_ids
 
-	$file_info{ $active_parameter{family_id} }{ $active_parameter{sample_ids}[$sample_id_counter] }{picardtools_mergesamfiles_previous_bams} = 0;
+	$file_info{ $active_parameter{family_id} }{$sample_id}{picardtools_mergesamfiles_previous_bams} = 0;
     }
 }
 
@@ -1177,11 +1177,13 @@ if ( ($active_parameter{pgzip_fastq} > 0) && ($uncompressed_file_switch eq "unco
 
     $logger->info("[Gzip for fastq files]\n");
 
-    for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter{sample_ids} });$sample_id_counter++) {
+  SAMPLES:
+    foreach my $sample_id (@{ $active_parameter{sample_ids} }) {  #Restrict to subset if subset supplied
 
-	for (my $infile_counter=0;$infile_counter<scalar( @{ $infile{$active_parameter{sample_ids}[$sample_id_counter]} });$infile_counter++) {  #To determine which sample_id had the uncompressed files
+      INFILES:
+	foreach my $infile (@{ $infile{$sample_id} }) {  #To determine which sample_id had the uncompressed files
 
-	    if ($infile{$active_parameter{sample_ids}[$sample_id_counter]}[$infile_counter] =~/.fastq$/) {
+	    if ($infile =~/.fastq$/) {
 
 		## Automatically gzips fastq files
 		gzip_fastq({parameter_href => \%parameter,
@@ -1191,7 +1193,7 @@ if ( ($active_parameter{pgzip_fastq} > 0) && ($uncompressed_file_switch eq "unco
 			    indir_path_href => \%indir_path,
 			    infile_lane_no_ending_href => \%infile_lane_no_ending,
 			    job_id_href => \%job_id,
-			    sample_id => $active_parameter{sample_ids}[$sample_id_counter],
+			    sample_id => $sample_id,
 			    program_name => "gzip_fastq"
 			   });
 		last;  #Return to sample_id loop i.e. only call subroutine gzip_fastq once per sample_id
@@ -2393,7 +2395,7 @@ if ($active_parameter{pgatk_variantevalexome} > 0) {  #Run GATK varianteval for 
 					program_name => "gatk_variantevalexome",
 				       });
 
-    for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter{sample_ids} });$sample_id_counter++) {
+    foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
 	gatk_variantevalexome({parameter_href => \%parameter,
 			       active_parameter_href => \%active_parameter,
@@ -2401,7 +2403,7 @@ if ($active_parameter{pgatk_variantevalexome} > 0) {  #Run GATK varianteval for 
 			       file_info_href => \%file_info,
 			       infile_lane_no_ending_href => \%infile_lane_no_ending,
 			       job_id_href => \%job_id,
-			       sample_id_ref => \$active_parameter{sample_ids}[$sample_id_counter],
+			       sample_id_ref => \$sample_id,
 			       program_name => "gatk_variantevalexome",
 			      });
     }
@@ -3528,16 +3530,16 @@ sub rankvariant {
 	my $genmod_module = "";  #Track which genmod modules has been processed
 
 	## Process per contig
-	for (my $contigs_counter=0;$contigs_counter<scalar(@$vcfparser_contigs_ref);$contigs_counter++) {
+	while ( my ($contig_index, $contig) = each(@$vcfparser_contigs_ref) ) {
 
-	    my $contig_ref = \$vcfparser_contigs_ref->[$contigs_counter];
 	    $genmod_module = "";  #Restart for next contig
-	    my $genmod_indata = catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.".vcf")." ";  #InFile
+	    my $genmod_indata = catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf")." ";  #InFile
 
 	    ## Check affected/unaffected status
-	    if ( (defined($parameter_href->{dynamic_parameter}{unaffected})) && (@{ $parameter_href->{dynamic_parameter}{unaffected} } eq @{ $active_parameter_href->{sample_ids} }) ) {  #Only unaffected
+	    if ( (defined($parameter_href->{dynamic_parameter}{unaffected}))
+		 && (@{ $parameter_href->{dynamic_parameter}{unaffected} } eq @{ $active_parameter_href->{sample_ids} }) ) {  #Only unaffected
 
-		if ( (! $contigs_counter) && (! $vcfparser_outfile_counter)) {
+		if ( (! $contig_index) && (! $vcfparser_outfile_counter) ) {
 
 		    $logger->warn("Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'compound'");
 		}
@@ -3555,7 +3557,7 @@ sub rankvariant {
 	    }
 	    foreach my $cadd_file (@{ $active_parameter_href->{genmod_annotate_cadd_files} }) {
 
-		print $XARGSFILEHANDLE "--cadd-file ".catfile($$reference_dir_ref, $cadd_file)." ";  #CADD score file(s)
+		print $XARGSFILEHANDLE "--cadd-file ".$cadd_file." ";  #CADD score file(s)
 	    }
 	    if (defined($active_parameter_href->{genmod_annotate_spidex_file})) {
 
@@ -3564,15 +3566,15 @@ sub rankvariant {
 	    if ( (defined($parameter_href->{dynamic_parameter}{unaffected})) && (@{ $parameter_href->{dynamic_parameter}{unaffected} } eq @{ $active_parameter_href->{sample_ids} }) ) {  #Only unaffected
 
 		## Write to outputFile - last genmod module
-		print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.$genmod_module.".vcf")." ";  #OutFile
-		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.$genmod_module.".vcf")." ";  #OutFile
+		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		say $XARGSFILEHANDLE $genmod_indata;  #Infile
 	    }
 	    else {
 
 		## Write to outputstream
 		print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
-		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		print $XARGSFILEHANDLE $genmod_indata;  #InStream or Infile
 		print $XARGSFILEHANDLE "| ";  #Pipe
 
@@ -3605,7 +3607,7 @@ sub rankvariant {
 
 		print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
 		print $XARGSFILEHANDLE $genmod_indata;  #InFile
-		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		print $XARGSFILEHANDLE "| ";  #Pipe
 
 		## Genmod Score
@@ -3623,7 +3625,7 @@ sub rankvariant {
 		}
 
 		print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
-		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		print $XARGSFILEHANDLE $genmod_indata;  #InStream or Infile
 
 		##Genmod Compound
@@ -3641,8 +3643,8 @@ sub rankvariant {
 		    print $XARGSFILEHANDLE "--vep ";
 		}
 
-		print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.$genmod_module.".vcf")." ";  #OutFile
-		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.$genmod_module.".vcf")." ";  #OutFile
+		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		say $XARGSFILEHANDLE $genmod_indata;  #InFile
 	    }
 	}
@@ -4245,8 +4247,6 @@ sub snpeff {
 
     for (my $vcfparser_outfile_counter=0;$vcfparser_outfile_counter<$active_parameter_href->{vcfparser_outfile_count};$vcfparser_outfile_counter++) {
 
-	my $core_counter = 1;
-
 	if ($vcfparser_outfile_counter == 1) {
 
 	    $vcfparser_analysis_type = ".selected";  #SelectFile variants
@@ -4292,17 +4292,15 @@ sub snpeff {
 								     java_jar => catfile($active_parameter_href->{snpeff_path}, "snpEff.jar"),
 								    });
 
-	    for (my $contigs_counter=0;$contigs_counter<scalar(@$vcfparser_contigs_ref);$contigs_counter++) {
-
-		my $contig_ref = \$vcfparser_contigs_ref->[$contigs_counter];
+	    foreach my $contig (@$vcfparser_contigs_ref) {
 
 		print $XARGSFILEHANDLE "ann ";
 		print $XARGSFILEHANDLE "-v ";  #Verbose mode
 		print $XARGSFILEHANDLE $active_parameter_href->{snpeff_genome_build_version}." ";  #Reference genome
 		print $XARGSFILEHANDLE "-c ".catfile($active_parameter_href->{snpeff_path}, "snpEff.config")." ";  #Specify config file
-		print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.".vcf")." "; #Infile
-		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-		say $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.".vcf.".$xargs_file_counter)." "; #Outfile;
+		print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf")." "; #Infile
+		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		say $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf.".$xargs_file_counter)." "; #Outfile;
 	    }
 	    $annotation_file_counter = $xargs_file_counter;
 	}
@@ -4325,9 +4323,7 @@ sub snpeff {
 								     java_jar => catfile($active_parameter_href->{snpeff_path}, "SnpSift.jar"),
 								    });
 
-	    for (my $contigs_counter=0;$contigs_counter<scalar(@$vcfparser_contigs_ref);$contigs_counter++) {
-
-		my $contig_ref = \$vcfparser_contigs_ref->[$contigs_counter];
+	    foreach my $contig (@$vcfparser_contigs_ref) {
 
 		print $XARGSFILEHANDLE "annotate ";
 
@@ -4344,16 +4340,16 @@ sub snpeff {
 
 		if ($annotation_file_counter == 0) {  #First file per contig
 
-		    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.".vcf")." "; #Infile
+		    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf")." "; #Infile
 		}
 		else {
 
 		    my $annotation_infile_number = $xargs_file_counter - 1;
-		    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.".vcf.".$annotation_infile_number)." ";  #Infile from previous round
-
+		    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf.".$annotation_infile_number)." ";  #Infile from previous round
 		}
-		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-		say $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.".vcf.".$xargs_file_counter)." ";  #Outfile
+
+		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		say $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf.".$xargs_file_counter)." ";  #Outfile
 	    }
 	    $annotation_file_counter++;  #Increment counter
 	    close($XARGSFILEHANDLE);
@@ -4380,17 +4376,15 @@ sub snpeff {
 
 	    my $annotation_infile_number = $xargs_file_counter - 1;
 
-	    for (my $contigs_counter=0;$contigs_counter<scalar(@$vcfparser_contigs_ref);$contigs_counter++) {
-
-		my $contig_ref = \$vcfparser_contigs_ref->[$contigs_counter];
+	    foreach my $contig (@$vcfparser_contigs_ref) {
 
 		print $XARGSFILEHANDLE "dbnsfp ";
 		print $XARGSFILEHANDLE "-db ".$active_parameter_href->{snpsift_dbnsfp_file}." ";  #DbNSFP file
 		print $XARGSFILEHANDLE "-f ";  #fields to add
 		print $XARGSFILEHANDLE join(',', @{ $active_parameter_href->{snpsift_dbnsfp_annotations} })." ";  #Databases
-		print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.".vcf.".$annotation_infile_number)." ";  #Infile
-		print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-		say $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.".vcf.".$xargs_file_counter)." ";  #Outfile
+		print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf.".$annotation_infile_number)." ";  #Infile
+		print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		say $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf.".$xargs_file_counter)." ";  #Outfile
 	    }
 	    close($XARGSFILEHANDLE);
 	}
@@ -4410,14 +4404,12 @@ sub snpeff {
 
 	my $annotation_infile_number = $xargs_file_counter - 1;
 
-	for (my $contigs_counter=0;$contigs_counter<scalar(@$vcfparser_contigs_ref);$contigs_counter++) {
-
-	    my $contig_ref = \$vcfparser_contigs_ref->[$contigs_counter];
+	foreach my $contig (@$vcfparser_contigs_ref) {
 
 	    print $XARGSFILEHANDLE catfile($active_parameter_href->{script_dir}, "vcfparser.pl")." ";  #Parses the vcf output
-	    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.".vcf.".$annotation_infile_number)." ";  #Infile
-	    print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.".vcf")." ";  #Outfile
-	    say $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf.".$annotation_infile_number)." ";  #Infile
+	    print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf")." ";  #Outfile
+	    say $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	}
 
 	if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
@@ -4604,7 +4596,6 @@ sub annovar {
 	    $vcfparser_analysis_type = ".selected";  #SelectFile variants
 	    $vcfparser_contigs_ref = \@{ $file_info_href->{sorted_select_file_contigs} };  #Selectfile contigs
 	}
-	my $core_counter=1;
 
 	if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
 
@@ -4637,17 +4628,15 @@ sub annovar {
 								 first_command => "perl",
 								});
 
-	for (my $contigs_counter=0;$contigs_counter<scalar(@$vcfparser_contigs_ref);$contigs_counter++) {
-
-	    my $contig_ref = \$vcfparser_contigs_ref->[$contigs_counter];
+	foreach my $contig (@$vcfparser_contigs_ref) {
 
 	    print $XARGSFILEHANDLE catfile($active_parameter_href->{annovar_path}, "table_annovar.pl")." ";  #annovar script
-	    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.".vcf")." ";  #Infile
+	    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf")." ";  #Infile
 	    print $XARGSFILEHANDLE catfile($active_parameter_href->{annovar_path}, "humandb")." ";  #annovar/humandb directory is assumed
 	    print $XARGSFILEHANDLE "-buildver ".$active_parameter_href->{annovar_genome_build_version}." ";  #Genome build version
 	    print $XARGSFILEHANDLE "-vcfinput ";  #Input format
 	    print $XARGSFILEHANDLE "--remove ";  #Remove all temporary files
-	    print $XARGSFILEHANDLE "-out ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.".vcf")." ";  #Outfile prefix
+	    print $XARGSFILEHANDLE "-out ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf")." ";  #Outfile prefix
 	    print $XARGSFILEHANDLE "-protocol ";  #Comma-delimited string specifying database protocol
 
 	    print $XARGSFILEHANDLE join(',', @{ $active_parameter_href->{annovar_table_names} })." ";  #Databases to use
@@ -4696,10 +4685,10 @@ sub annovar {
 		    print $XARGSFILEHANDLE ",";
 		}
 	    }
-	    print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    print $XARGSFILEHANDLE "; ";
-	    print $XARGSFILEHANDLE "mv ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.".vcf.".$active_parameter_href->{annovar_genome_build_version}."_multianno.vcf")." ";
-	    say $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.".vcf");
+	    print $XARGSFILEHANDLE "mv ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf.".$active_parameter_href->{annovar_genome_build_version}."_multianno.vcf")." ";
+	    say $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf");
 	}
 	if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
 
@@ -4879,18 +4868,16 @@ sub vcfparser {
 							     first_command => "perl",
 							    });
 
-    for (my $contigs_counter=0;$contigs_counter<scalar(@{ $file_info_href->{contigs_size_ordered} });$contigs_counter++) {
-
-	my $contig_ref = \$file_info_href->{contigs_size_ordered}[$contigs_counter];
+    foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
 	print $XARGSFILEHANDLE catfile($active_parameter_href->{script_dir}, "vcfparser.pl")." ";  #Parses the VEP output to tab-sep format
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".vcf")." ";  #Infile
+	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf")." ";  #Infile
 
 	if ($active_parameter_href->{pvarianteffectpredictor} > 0) {
 
 	    print $XARGSFILEHANDLE "--parse_vep ".$active_parameter_href->{vcfparser_vep_transcripts}." ";  #Parse VEP transcript specific entries
 	}
-	if ($$contig_ref =~ /MT|M/) {
+	if ($contig =~ /MT|M/) {
 
 	    print $XARGSFILEHANDLE "--padding 10 ";  #Special case for mitochondrial contig annotation
 	}
@@ -4909,7 +4896,7 @@ sub vcfparser {
 
 	    if (! check_entry_hash_of_array({hash_ref => $file_info_href,
 					     key => "select_file_contigs",
-					     element => $$contig_ref,
+					     element => $contig,
 					    })
 		) {
 
@@ -4922,11 +4909,11 @@ sub vcfparser {
 		    print $XARGSFILEHANDLE "-sf_ac ";  #Select annotation columns
 		    print $XARGSFILEHANDLE join(',', @{ $active_parameter_href->{vcfparser_select_feature_annotation_columns} })." ";
 		}
-		print $XARGSFILEHANDLE "-sof ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$$contig_ref.".selected.vcf")." ";
+		print $XARGSFILEHANDLE "-sof ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".selected.vcf")." ";
 	    }
 	}
-	print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$$contig_ref.".vcf")." ";  #outfile
-	say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf")." ";  #outfile
+	say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
     }
 
     ## QC Data File(s)
@@ -5197,9 +5184,7 @@ sub varianteffectpredictor {
 							     first_command => "perl",
 							    });
 
-    for (my $contigs_counter=0;$contigs_counter<scalar(@{ $file_info_href->{contigs_size_ordered} });$contigs_counter++) {
-
-	my $contig_ref = \$file_info_href->{contigs_size_ordered}[$contigs_counter];
+    foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
 	print $XARGSFILEHANDLE catfile($active_parameter_href->{vep_directory_path}, "variant_effect_predictor.pl")." ";  #VEP script
 	print $XARGSFILEHANDLE "--assembly ".$assembly_version." ";
@@ -5218,7 +5203,7 @@ sub varianteffectpredictor {
 	print $XARGSFILEHANDLE "--fork ".$fork_number." ";  #Enable forking, using the specified number of forks.
 	print $XARGSFILEHANDLE "--buffer_size 20000 ";  #Sets the internal buffer size, corresponding to the number of variations that are read in to memory simultaneously
 	print $XARGSFILEHANDLE "--offline ";  #Use installed assembly
-	print $XARGSFILEHANDLE "--chr ".$$contig_ref." ";
+	print $XARGSFILEHANDLE "--chr ".$contig." ";
 
 	##VEPPlugins
 	foreach my $plugin (@{ $active_parameter_href->{vep_plugins} }) {
@@ -5229,7 +5214,7 @@ sub varianteffectpredictor {
 	    }
 	    elsif ($plugin eq "UpDownDistance") {  #Special case for mitochondrial contig annotation
 
-		if ($$contig_ref =~ /MT|M/) {
+		if ($contig =~ /MT|M/) {
 
 		    print $XARGSFILEHANDLE "--plugin UpDownDistance,10,10 ";
 		}
@@ -5245,7 +5230,7 @@ sub varianteffectpredictor {
 
 	    print $XARGSFILEHANDLE "--".$vep_feature." ";  #Add VEP features to the output.
 
-	    if ( ($$contig_ref =~ /MT|M/) && ($vep_feature eq "refseq") ) {  #Special case for mitochondrial contig annotation
+	    if ( ($contig =~ /MT|M/) && ($vep_feature eq "refseq") ) {  #Special case for mitochondrial contig annotation
 
 		print $XARGSFILEHANDLE "--all_refseq ";
 	    }
@@ -5255,10 +5240,10 @@ sub varianteffectpredictor {
 	    }
 	}
 
-	print $XARGSFILEHANDLE "-i ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".vcf")." ";  #InFile (family vcf)
-	print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$$contig_ref.".vcf")." ";  #OutFile
-	print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$$contig_ref.".stdout.txt ";  #Redirect xargs output to program specific stdout file
-	say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE "-i ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf")." ";  #InFile (family vcf)
+	print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf")." ";  #OutFile
+	print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$contig.".stdout.txt ";  #Redirect xargs output to program specific stdout file
+	say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
     }
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
@@ -6152,11 +6137,9 @@ sub vt {
     my $remove_star_regexp = q?perl -nae \'unless\($F\[4\] eq \"\*\") \{print $_\}\' ?;  #VEP does not annotate '*' since the alt allele does not exist, this is captured in the upsream indel and SNV record associated with '*'
 
     ## Split vcf into contigs
-    for (my $contigs_counter=0;$contigs_counter<scalar(@{ $file_info_href->{contigs_size_ordered} });$contigs_counter++) {
+    while ( my ($contig_index, $contig) = each(@{ $file_info_href->{contigs_size_ordered} }) ) {
 
-	my $contig_ref = \$file_info_href->{contigs_size_ordered}[$contigs_counter];
-
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".vcf")." ";  #Infile
+	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf")." ";  #Infile
 
 	## vt - Split multi allelic records into single records and normalize
 	vt_core({active_parameter_href => $active_parameter_href,
@@ -6165,17 +6148,17 @@ sub vt {
 		 job_id_href => $job_id_href,
 		 FILEHANDLE => $XARGSFILEHANDLE,
 		 infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf"),
-		 outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$$contig_ref.".vcf"),
+		 outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf"),
 		 decompose => $active_parameter_href->{vt_decompose},
 		 normalize => $active_parameter_href->{vt_normalize},
 		 sed => 1,
 		 instream => 1,
 		 cmd_break => ";",
 		 xargs_file_name => $xargs_file_name,
-		 contig_ref => $contig_ref,
+		 contig_ref => \$contig,
 		});
 
-	if ( ($contigs_counter == 0)
+	if ( ($contig_index == 0)
 	     && ($active_parameter_href->{"p".$program_name} == 1)
 	     && (! $active_parameter_href->{dry_run_all})
 	    ) {
@@ -6186,7 +6169,7 @@ sub vt {
 	    sample_info_qc({sample_info_href => $sample_info_href,
 			    program_name => "vt",
 			    outdirectory => $directory,
-			    outfile_ending => $stderr_file.".".$$contig_ref.".stderr.txt",
+			    outfile_ending => $stderr_file.".".$contig.".stderr.txt",
 			    outdata_type => "info_directory"
 			   });
 	}
@@ -6197,9 +6180,9 @@ sub vt {
 	if ($active_parameter_href->{vt_missing_alt_allele}) {
 
 	    $alt_file_ending = "_nostar";
-	    print $XARGSFILEHANDLE catfile($remove_star_regexp.$$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$$contig_ref.".vcf")." ";
-	    print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$$contig_ref.$alt_file_ending.".vcf")." ";
-	    print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    print $XARGSFILEHANDLE catfile($remove_star_regexp.$$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf")." ";
+	    print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.".vcf")." ";
+	    print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    print $XARGSFILEHANDLE "; ";
 	}
 
@@ -6210,15 +6193,15 @@ sub vt {
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "annotate ";  #Command
 	    print $XARGSFILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
-	    print $XARGSFILEHANDLE "--thousand-g ".catfile($$reference_dir_ref, $active_parameter_href->{vt_genmod_filter_1000g})." ";  #1000G reference
+	    print $XARGSFILEHANDLE "--thousand-g ".$active_parameter_href->{vt_genmod_filter_1000g}." ";  #1000G reference
 
 	    if ($active_parameter_href->{vt_genmod_filter_max_af}) {
 
 		print $XARGSFILEHANDLE "--max-af ";  #If the MAX AF should be annotated
 	    }
 	    print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutStream
-	    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$$contig_ref.$alt_file_ending.".vcf")." ";
-	    print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.".vcf")." ";
+	    print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    print $XARGSFILEHANDLE "| ";
 
 	    $alt_file_ending .= "_genmod_filter";  #Update ending
@@ -6228,14 +6211,14 @@ sub vt {
 	    print $XARGSFILEHANDLE "filter ";  #Command
 	    print $XARGSFILEHANDLE "-t ".$active_parameter_href->{vt_genmod_filter_threshold}." ";  #Threshold for filtering variants
 	    print $XARGSFILEHANDLE "- ";  #InStream
-	    print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$$contig_ref.$alt_file_ending.".vcf")." ";  #OutFile
-	    print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.".vcf")." ";  #OutFile
+	    print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    print $XARGSFILEHANDLE "; ";
 	}
 
 	print $XARGSFILEHANDLE "mv ";
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$$contig_ref.$alt_file_ending.".vcf")." ";
-	say $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$$contig_ref.".vcf")." ";
+	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.".vcf")." ";
+	say $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf")." ";
     }
 
     if ( ! $$reduce_io_ref) { #Run as individual sbatch script
@@ -6411,24 +6394,22 @@ sub rhocall {
 							     first_command => "bcftools roh",
 							    });
 
-    for (my $contigs_counter=0;$contigs_counter<scalar(@{ $file_info_href->{contigs_size_ordered} });$contigs_counter++) {
-
-	my $contig_ref = \$file_info_href->{contigs_size_ordered}[$contigs_counter];
+    foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
 	print $XARGSFILEHANDLE "--AF-file ".$active_parameter_href->{rhocall_frequency_file}." ";
 	print $XARGSFILEHANDLE "--skip-indels ";  #Skip indels as their genotypes are enriched for errors
 	print $XARGSFILEHANDLE "--sample ".$parameter_href->{dynamic_parameter}{affected}[0]." ";
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".vcf.gz")." ";
-	print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".roh"), "; ";
+	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf.gz")." ";
+	print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".roh"), "; ";
 
 	print $XARGSFILEHANDLE "rhocall aggregate ";
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".roh")." ";
-	print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".roh.bed")."; ";
+	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".roh")." ";
+	print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".roh.bed")."; ";
 
 	print $XARGSFILEHANDLE "rhocall annotate ";
-	print $XARGSFILEHANDLE "-b ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".roh.bed")." ";
-	print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$$contig_ref.".vcf")." ";
-	say $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".vcf.gz");
+	print $XARGSFILEHANDLE "-b ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".roh.bed")." ";
+	print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf")." ";
+	say $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf.gz");
     }
 
     if ( ! $$reduce_io_ref) { #Run as individual sbatch script
@@ -6574,25 +6555,27 @@ sub prepareforvariantannotationblock {
 
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
+    my $file_name_noending = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_noending = catfile($$temp_directory_ref, $file_name_noending);
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			  path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf*"),
+			  path => catfile($infamily_directory, $file_name_noending.".vcf*"),
 			  temp_directory => $$temp_directory_ref
 			 });
     say $FILEHANDLE "wait", "\n";
 
     ## Compress or decompress original file or stream to outfile (if supplied)
     bgzip({FILEHANDLE => $FILEHANDLE,
-	   infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf"),
-	   outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf.gz"),
+	   infile_path => $file_path_noending.".vcf",
+	   outfile_path => $file_path_noending.".vcf.gz",
 	  });
     say $FILEHANDLE "\n";
 
     ## Index file using tabix
     tabix({FILEHANDLE => $FILEHANDLE,
-	   infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf.gz"),
+	   infile_path => $file_path_noending.".vcf.gz",
 	  });
     say $FILEHANDLE "\n";
 
@@ -6606,25 +6589,23 @@ sub prepareforvariantannotationblock {
 							    });
 
     ## Split vcf into contigs
-    for (my $contigs_counter=0;$contigs_counter<scalar(@{ $file_info_href->{contigs_size_ordered} });$contigs_counter++) {
-
-	my $contig_ref = \$file_info_href->{contigs_size_ordered}[$contigs_counter];
+    foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
 	print $XARGSFILEHANDLE "-h ";  #Include header
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf.gz")." ";
-	print $XARGSFILEHANDLE $$contig_ref." ";
+	print $XARGSFILEHANDLE $file_path_noending.".vcf.gz"." ";
+	print $XARGSFILEHANDLE $contig." ";
 	print $XARGSFILEHANDLE "| ";
 
 	## Compress or decompress original file or stream to outfile (if supplied)
 	bgzip({FILEHANDLE => $XARGSFILEHANDLE,
 	       infile_path => "-",
-	       outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".vcf.gz"),
+	       outfile_path => $file_path_noending."_".$contig.".vcf.gz",
 	      });
 	print $XARGSFILEHANDLE "; ";
 
 	## Index file using tabix
 	tabix({FILEHANDLE => $XARGSFILEHANDLE,
-	       infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.".vcf.gz"),
+	       infile_path => $file_path_noending."_".$contig.".vcf.gz",
 	      });
 	print $XARGSFILEHANDLE "\n";
     }
@@ -6633,7 +6614,7 @@ sub prepareforvariantannotationblock {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_*.vcf*"),
+	migrate_file_from_temp({temp_path => $file_path_noending."_*.vcf*",
 				file_path => $outfamily_directory,
 				FILEHANDLE => $FILEHANDLE,
 			       });
@@ -6929,6 +6910,12 @@ sub gatk_variantrecalibration {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_genotypegvcfs}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $infile_name_noending = $$family_id_ref.$infile_tag.$call_type;
+    my $intermediary_file_path_noending = catfile($intermediary_sample_directory, $infile_name_noending);
+    my $file_path_noending = catfile($$temp_directory_ref, $infile_name_noending);
+    my $outfile_name_noending = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_noending = catfile($$temp_directory_ref, $outfile_name_noending);
+ 
 
     ## Create .fam file to be used in variant calling analyses
     create_fam_file({parameter_href => $parameter_href,
@@ -6941,7 +6928,7 @@ sub gatk_variantrecalibration {
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			  path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf*"),
+			  path => catfile($infamily_directory, $infile_name_noending.".vcf*"),
 			  temp_directory => $$temp_directory_ref
 			 });
     say $FILEHANDLE "wait", "\n";
@@ -6954,7 +6941,7 @@ sub gatk_variantrecalibration {
 	@modes = ("BOTH");
     }
 
-    for (my $mode_counter=0;$mode_counter<scalar(@modes);$mode_counter++) {  #SNP and INDEL will be recalibrated successively in the same file because when you specify eg SNP mode, the indels are emitted without modification, and vice-versa. Exome and Rapid will be processed using mode BOTH since there are to few INDELS to use in the recalibration model even though using 30 exome BAMS in Haplotypecaller step.
+    foreach my $mode (@modes) {  #SNP and INDEL will be recalibrated successively in the same file because when you specify eg SNP mode, the indels are emitted without modification, and vice-versa. Exome and Rapid will be processed using mode BOTH since there are to few INDELS to use in the recalibration model even though using 30 exome BAMS in Haplotypecaller step.
 
 	say $FILEHANDLE "## GATK VariantRecalibrator";
 
@@ -6969,42 +6956,42 @@ sub gatk_variantrecalibration {
 	print $FILEHANDLE "-T VariantRecalibrator ";  #Type of analysis to run
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-	print $FILEHANDLE "-recalFile ".catfile($intermediary_sample_directory, $$family_id_ref.$infile_tag.$call_type.".intervals")." ";
-	print $FILEHANDLE "-rscriptFile ".catfile($intermediary_sample_directory, $$family_id_ref.$infile_tag.$call_type.".intervals.plots.R")." ";
-	print $FILEHANDLE "-tranchesFile ".catfile($intermediary_sample_directory, $$family_id_ref.$infile_tag.$call_type.".intervals.tranches")." ";
+	print $FILEHANDLE "-recalFile ".$intermediary_file_path_noending.".intervals"." ";
+	print $FILEHANDLE "-rscriptFile ".$intermediary_file_path_noending.".intervals.plots.R"." ";
+	print $FILEHANDLE "-tranchesFile ".$intermediary_file_path_noending.".intervals.tranches"." ";
 
 	if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid") ) {  #Exome/rapid analysis use combined reference for more power
 
-	    print $FILEHANDLE "-input ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf")." ";  #Infile HaplotypeCaller combined vcf which used reference gVCFs to create combined vcf (30> samples gCVFs)
+	    print $FILEHANDLE "-input ".$file_path_noending.".vcf"." ";  #Infile HaplotypeCaller combined vcf which used reference gVCFs to create combined vcf (30> samples gCVFs)
 	}
 	else {  #WGS
 
-	    if ($modes[$mode_counter] eq "SNP") {
+	    if ($mode eq "SNP") {
 
-		print $FILEHANDLE "-input ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf")." ";
+		print $FILEHANDLE "-input ".$file_path_noending.".vcf"." ";
 
 		if ($active_parameter_href->{gatk_variantrecalibration_snv_max_gaussians} ne 0) {
 
 		    print $FILEHANDLE "--maxGaussians 4 ";  #Use hard filtering
 		}
 	    }
-	    if ($modes[$mode_counter] eq "INDEL") {#Use created recalibrated snp vcf as input
+	    if ($mode eq "INDEL") {#Use created recalibrated snp vcf as input
 
-		print $FILEHANDLE "-input ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".SNV.vcf")." ";
+		print $FILEHANDLE "-input ".$outfile_path_noending.".SNV.vcf"." ";
 	    }
 	    if ($active_parameter_href->{gatk_variantrecalibration_dp_annotation}) {  #Special case: Not to be used with hybrid capture. NOTE: Disable when analysing wes + wgs in the same run
 
 		print $FILEHANDLE "-an DP ";  #The names of the annotations which should used for calculations.
 	    }
 	}
-	if ( ($modes[$mode_counter] eq "SNP") || ($modes[$mode_counter] eq "BOTH") ) {
+	if ( ($mode eq "SNP") || ($mode eq "BOTH") ) {
 
 	    print $FILEHANDLE "-resource:hapmap,VCF,known=false,training=true,truth=true,prior=15.0 ".$active_parameter_href->{gatk_variantrecalibration_training_set_hapmap}." ";  #A list of sites for which to apply a prior probability of being correct but which are not used by the algorithm
 	    print $FILEHANDLE "-resource:omni,VCF,known=false,training=true,truth=false,prior=12.0 ".$active_parameter_href->{gatk_variantrecalibration_training_set_1000g_omni}." ";  #A list of sites for which to apply a prior probability of being correct but which are not used by the algorithm
 	    print $FILEHANDLE "-resource:1000G,known=false,training=true,truth=false,prior=10.0 ".$active_parameter_href->{gatk_variantrecalibration_training_set_1000gsnp}." ";  #A list of sites for which to apply a prior probability of being correct but which are not used by the algorithm
 	    print $FILEHANDLE "-an MQ ";  #The names of the annotations which should used for calculations.
 	}
-	if ( ($modes[$mode_counter] eq "INDEL") || ($modes[$mode_counter] eq "BOTH") ) {
+	if ( ($mode eq "INDEL") || ($mode eq "BOTH") ) {
 
 	    print $FILEHANDLE "-resource:mills,VCF,known=true,training=true,truth=true,prior=12.0 ".$active_parameter_href->{gatk_variantrecalibration_training_set_mills}." ";  #A list of sites for which to apply a prior probability of being correct but which are not used by the algorithm
 
@@ -7020,7 +7007,7 @@ sub gatk_variantrecalibration {
 	print $FILEHANDLE "-an ReadPosRankSum ";  #The names of the annotations which should used for calculations
 	print $FILEHANDLE "-an FS ";  #The names of the annotations which should used for calculations
 	print $FILEHANDLE "-an SOR ";  #The names of the annotations which should used for calculations
-	print $FILEHANDLE "--mode ".$modes[$mode_counter]." ";  #Recalibration mode to employ (SNP|INDEL|BOTH)
+	print $FILEHANDLE "--mode ".$mode." ";  #Recalibration mode to employ (SNP|INDEL|BOTH)
 	print $FILEHANDLE "-nt ".$active_parameter_href->{core_processor_number}." ";  #How many data threads should be allocated to running this analysis
 
 	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
@@ -7044,26 +7031,26 @@ sub gatk_variantrecalibration {
 	print $FILEHANDLE "-T ApplyRecalibration ";
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-	print $FILEHANDLE "-recalFile ".catfile($intermediary_sample_directory, $$family_id_ref.$infile_tag.$call_type.".intervals")." ";
-	print $FILEHANDLE "-tranchesFile ".catfile($intermediary_sample_directory, $$family_id_ref.$infile_tag.$call_type.".intervals.tranches")." ";
+	print $FILEHANDLE "-recalFile ".$intermediary_file_path_noending.".intervals"." ";
+	print $FILEHANDLE "-tranchesFile ".$intermediary_file_path_noending.".intervals.tranches"." ";
 
 	if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid")) {  #Exome/rapid analysis use combined reference for more power
 
-	    print $FILEHANDLE "-input ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf")." ";  #Infile HaplotypeCaller combined vcf which used reference gVCFs to create combined vcf file
-	    print $FILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_filtered.vcf")." ";
+	    print $FILEHANDLE "-input ".$file_path_noending.".vcf"." ";  #Infile HaplotypeCaller combined vcf which used reference gVCFs to create combined vcf file
+	    print $FILEHANDLE "-o ".$outfile_path_noending."_filtered.vcf"." ";
 	}
 	else  {  #WGS
 
-	    if ($modes[$mode_counter] eq "SNP") {
+	    if ($mode eq "SNP") {
 
-		print $FILEHANDLE "-input ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf")." ";
-		print $FILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".SNV.vcf")." ";
+		print $FILEHANDLE "-input ".$file_path_noending.".vcf"." ";
+		print $FILEHANDLE "-o ".$outfile_path_noending.".SNV.vcf"." ";
 		print $FILEHANDLE "--ts_filter_level ".$active_parameter_href->{gatk_variantrecalibration_snv_tsfilter_level}." ";
 	    }
-	    if ($modes[$mode_counter] eq "INDEL") {#Use created recalibrated snp vcf as input
+	    if ($mode eq "INDEL") {#Use created recalibrated snp vcf as input
 
-		print $FILEHANDLE "-input ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".SNV.vcf")." ";
-		print $FILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf")." ";
+		print $FILEHANDLE "-input ".$outfile_path_noending.".SNV.vcf"." ";
+		print $FILEHANDLE "-o ".$outfile_path_noending.".vcf"." ";
 		print $FILEHANDLE "--ts_filter_level ".$active_parameter_href->{gatk_variantrecalibration_indel_tsfilter_level}." ";
 	    }
 	}
@@ -7075,7 +7062,7 @@ sub gatk_variantrecalibration {
 			    program_name => $program_name,
 			   });
 
-	print $FILEHANDLE "--mode ".$modes[$mode_counter]." ";  #Recalibration mode to employ (SNP|INDEL|BOTH)
+	print $FILEHANDLE "--mode ".$mode." ";  #Recalibration mode to employ (SNP|INDEL|BOTH)
 	say $FILEHANDLE "\n";
     }
 
@@ -7098,13 +7085,13 @@ sub gatk_variantrecalibration {
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 	print $FILEHANDLE "-env ";  #Do not include loci found to be non-variant after the subsetting procedure.
-	print $FILEHANDLE "-V: ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_filtered.vcf")." ";  #InFile
+	print $FILEHANDLE "-V: ".$outfile_path_noending."_filtered.vcf"." ";  #InFile
 
-	for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {  #For all sample_ids
+	foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {  #For all sample_ids
 
-	    print $FILEHANDLE "-sn ".$active_parameter_href->{sample_ids}[$sample_id_counter]." ";  #Include genotypes from this sample
+	    print $FILEHANDLE "-sn ".$sample_id." ";  #Include genotypes from this sample
 	}
-	print $FILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf")." ";  #OutFile
+	print $FILEHANDLE "-o ".$outfile_path_noending.".vcf"." ";  #OutFile
 	print $FILEHANDLE " &";
 
 	## Produces another vcf file containing non-variant loci (useful for example in MAF comparisons), but is not used downstream in MIP
@@ -7123,18 +7110,18 @@ sub gatk_variantrecalibration {
 	    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
 	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-	    print $FILEHANDLE "-V: ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_filtered.vcf")." ";  #InFile
-	    print $FILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_incnonvariantloci.vcf")." ";  #OutFile
+	    print $FILEHANDLE "-V: ".$outfile_path_noending."_filtered.vcf"." ";  #InFile
+	    print $FILEHANDLE "-o ".$outfile_path_noending."_incnonvariantloci.vcf"." ";  #OutFile
 
-	    for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {  #For all sample_ids
+	    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {  #For all sample_ids
 
-		print $FILEHANDLE "-sn ".$active_parameter_href->{sample_ids}[$sample_id_counter]." ";  #Include genotypes from this sample
+		print $FILEHANDLE "-sn ".$sample_id." ";  #Include genotypes from this sample
 	    }
 	    say $FILEHANDLE "\n\nwait\n";
 
 	    ## Copies file from temporary directory.
 	    say $FILEHANDLE "## Copy file from temporary directory";
-	    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_incnonvariantloci.vcf*"),
+	    migrate_file_from_temp({temp_path => $outfile_path_noending."_incnonvariantloci.vcf*",
 				    file_path => $outfamily_directory,
 				    FILEHANDLE => $FILEHANDLE,
 				   });
@@ -7167,42 +7154,42 @@ sub gatk_variantrecalibration {
 			   });
 
 	print $FILEHANDLE "--supporting ".$active_parameter_href->{gatk_calculategenotypeposteriors_support_set}." ";  #Supporting data set
-	print $FILEHANDLE "-V ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf")." ";  #Infile
-	print $FILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_refined.vcf")." ";  #Outfile
+	print $FILEHANDLE "-V ".$outfile_path_noending.".vcf"." ";  #Infile
+	print $FILEHANDLE "-o ".$outfile_path_noending."_refined.vcf"." ";  #Outfile
 	say $FILEHANDLE "\n";
 
 	## Change name of file to accomodate downstream
 	print $FILEHANDLE "mv ";
-	print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_refined.vcf")." ";
-	print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf");
+	print $FILEHANDLE $outfile_path_noending."_refined.vcf"." ";
+	print $FILEHANDLE $outfile_path_noending.".vcf";
 	say $FILEHANDLE "\n";
     }
 
     ## BcfTools norm, Left-align and normalize indels, split multiallelics
     bcftools_norm({FILEHANDLE => $FILEHANDLE,
 		   reference_path_ref => \$active_parameter_href->{human_genome_reference},
-		   infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf"),
-		   outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_normalized.vcf"),
+		   infile_path => $outfile_path_noending.".vcf",
+		   outfile_path => $outfile_path_noending."_normalized.vcf",
 		   multiallelic => "-",
 		  });
 
     ## Change name of file to accomodate downstream
     say $FILEHANDLE "\n";
     print $FILEHANDLE "mv ";
-    print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_normalized.vcf")." ";
-    print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf");
+    print $FILEHANDLE $outfile_path_noending."_normalized.vcf"." ";
+    print $FILEHANDLE $outfile_path_noending.".vcf";
     say $FILEHANDLE "\n";
 
     ## Produce a bcf compressed and index from vcf
     if ($active_parameter_href->{gatk_variantrecalibration_bcf_file}) {
 
-	vcf_to_bcf({infile => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type),
+	vcf_to_bcf({infile => $outfile_path_noending,
 		    FILEHANDLE => $FILEHANDLE,
 		   });
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".bcf*"),
+	migrate_file_from_temp({temp_path => $outfile_path_noending.".bcf*",
 				file_path => $outfamily_directory,
 				FILEHANDLE => $FILEHANDLE,
 			       });
@@ -7211,11 +7198,11 @@ sub gatk_variantrecalibration {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf*"),
+    migrate_file_from_temp({temp_path => $outfile_path_noending.".vcf*",
 			    file_path => $outfamily_directory,
 			    FILEHANDLE => $FILEHANDLE,
 			   });
-    migrate_file_from_temp({temp_path => catfile($intermediary_sample_directory, $$family_id_ref.$infile_tag.$call_type.".intervals.tranches.pdf"),
+    migrate_file_from_temp({temp_path => $intermediary_file_path_noending.".intervals.tranches.pdf",
 			    file_path => $outfamily_directory,
 			    FILEHANDLE => $FILEHANDLE,
 			   });
@@ -7229,14 +7216,14 @@ sub gatk_variantrecalibration {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => "pedigree_check",  #Disabled pedigreeCheck to not include relationship test is qccollect
 			outdirectory => $outfamily_directory,
-			outfile_ending => $$family_id_ref.$outfile_tag.$call_type.".vcf",
+			outfile_ending => $outfile_name_noending.".vcf",
 			outdata_type => "infile_dependent"
 		       });
-	$sample_info_href->{vcf_file}{ready_vcf}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.".vcf");
+	$sample_info_href->{vcf_file}{ready_vcf}{path} = catfile($outfamily_directory, $outfile_name_noending.".vcf");
 
 	if ($active_parameter_href->{gatk_variantrecalibration_bcf_file} eq 1) {
 
-	    $sample_info_href->{bcf_file}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.".bcf");
+	    $sample_info_href->{bcf_file}{path} = catfile($outfamily_directory, $outfile_name_noending.".bcf");
 	}
 
 	submit_job({active_parameter_href => $active_parameter_href,
@@ -7325,9 +7312,9 @@ sub gatk_concatenate_genotypegvcfs {
 
     my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
     my $core_counter = 1;
-    for (my $contigs_counter=0;$contigs_counter<scalar(@{ $file_info_href->{contigs} });$contigs_counter++) {
+    while ( my ($contig_index, $contig) = each(@{ $file_info_href->{contigs} }) ) {
 
-	print_wait({counter_ref => \$contigs_counter,
+	print_wait({counter_ref => \$contig_index,
 		    core_number_ref => \$core_number,
 		    core_counter_ref => \$core_counter,
 		    FILEHANDLE => $FILEHANDLE,
@@ -7335,7 +7322,7 @@ sub gatk_concatenate_genotypegvcfs {
 
 	## Copy file(s) to temporary directory
 	migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			      path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type."_".$file_info_href->{contigs}[$contigs_counter].".vcf*"),
+			      path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf*"),
 			      temp_directory => $$temp_directory_ref
 			     });
     }
@@ -9729,7 +9716,7 @@ sub sv_combinevariantcallsets {
 	print $FILEHANDLE "-v ";  #Increase output verbosity
 	print $FILEHANDLE "annotate ";  #Command
 	print $FILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
-	print $FILEHANDLE "--thousand-g ".catfile($$reference_dir_ref, $active_parameter_href->{sv_genmod_filter_1000g})." ";  #1000G reference
+	print $FILEHANDLE "--thousand-g ".$active_parameter_href->{sv_genmod_filter_1000g}." ";  #1000G reference
 	print $FILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutStream
 	print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf")." ";
 	print $FILEHANDLE "| ";
