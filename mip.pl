@@ -376,7 +376,7 @@ eval_parameter_hash({parameter_href => \%parameter,
 		     file_path => catfile($Bin, "definitions", "define_parameters.yaml"),
 		    });
 
-my $mip_version = "v4.0.5";	#Set MIP version
+my $mip_version = "v4.0.6";	#Set MIP version
 
 ## Directories, files, sample_info and job_ids
 my (%infile, %indir_path, %infile_lane_no_ending, %lane, %infile_both_strands_no_ending, %job_id, %sample_info);
@@ -13758,18 +13758,15 @@ sub bwa_mem {
 		}
 		if ($active_parameter_href->{bwa_mem_bamstats}) {
 
-		    if (! $file_info_href->{undetermined_in_file_name}{ $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter] } ) {  #Do not add to SampleInfo and hence skip test of "UndeterminedInFileName" files in qccollect
-
-			## Collect QC metadata info for later use
-			sample_info_qc({sample_info_href => $sample_info_href,
-					sample_id => $$sample_id_ref,
-					program_name => "bamstats",
-					infile => $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter],
-					outdirectory => $outsample_directory,
-					outfile_ending => $outfile_tag.".stats",
-					outdata_type => "infile_dependent"
-				       });
-		    }
+		    ## Collect QC metadata info for later use
+		    sample_info_qc({sample_info_href => $sample_info_href,
+				    sample_id => $$sample_id_ref,
+				    program_name => "bamstats",
+				    infile => $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter],
+				    outdirectory => $outsample_directory,
+				    outfile_ending => $outfile_tag.".stats",
+				    outdata_type => "infile_dependent"
+				   });
 		}
 
 		if ($bwa_binary eq "bwa mem") {

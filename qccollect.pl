@@ -41,7 +41,7 @@ my (%qc_data, %evaluate_metric);
 my %qc_header; #Save header(s) in each outfile
 my %qc_program_data; #Save data in each outfile
 
-my $qccollect_version = "2.0.0";
+my $qccollect_version = "2.0.1";
 
 GetOptions('si|sample_info_file:s' => \$sample_info_file,
 	   'r|regexp_file:s' => \$regexp_file,
@@ -610,10 +610,15 @@ sub evaluate_qc_parameters {
 		}
 		next;
 	    }
-	    if ($infile =~/evaluation/) { #Special case
+	    elsif ($infile =~/evaluation/) { #Special case
 
 		next;
 	    }
+	    elsif ($infile =~/Undetermined/) { #Special case do not evaluate fastq files with Undetermined in file name
+		
+		next;
+	    }
+
 	  PROGRAM:
 	    for my $program ( keys %{$qc_data_href->{sample}{$sample_id}{$infile}} ) {
 
