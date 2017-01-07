@@ -376,7 +376,7 @@ eval_parameter_hash({parameter_href => \%parameter,
 		     file_path => catfile($Bin, "definitions", "define_parameters.yaml"),
 		    });
 
-my $mip_version = "v4.0.6";	#Set MIP version
+my $mip_version = "v4.0.7";	#Set MIP version
 
 ## Directories, files, sample_info and job_ids
 my (%infile, %indir_path, %infile_lane_no_ending, %lane, %infile_both_strands_no_ending, %job_id, %sample_info);
@@ -6913,6 +6913,18 @@ sub gatk_variantrecalibration {
 	say $FILEHANDLE "\n";
     }
 
+    if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid")) {  #Exome/rapid analysis use combined reference for more power
+	## BcfTools norm, Left-align and normalize indels, split multiallelics
+	bcftools_norm({FILEHANDLE => $FILEHANDLE,
+		       reference_path_ref => \catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference}),
+		       infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_filtered.vcf"),
+		       outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_filtered_normalized.vcf"),
+		       multiallelic => "-",
+		       stderr_file_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_filtered_normalized.stderr"),
+		      });
+	print $FILEHANDLE "\n";
+    }
+
     ## GATK SelectVariants
 
     ## Removes all genotype information for exome ref and recalulates meta-data info for remaining samples in new file.
@@ -6932,7 +6944,7 @@ sub gatk_variantrecalibration {
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-R ".catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference})." ";  #Reference file
 	print $FILEHANDLE "-env ";  #Do not include loci found to be non-variant after the subsetting procedure.
-	print $FILEHANDLE "-V: ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_filtered.vcf")." ";  #InFile
+	print $FILEHANDLE "-V: ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_filtered_normalized.vcf")." ";  #InFile
 
 	for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {  #For all sample_ids
 
