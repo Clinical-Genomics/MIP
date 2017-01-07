@@ -6548,7 +6548,7 @@ sub prepareforvariantannotationblock {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
     my $file_name_noending = $$family_id_ref.$infile_tag.$call_type;
-    my $file_path_noending = catfile($$temp_directory_ref, $file_name_noending);
+    my $file_path_no_ending = catfile($$temp_directory_ref, $file_name_noending);
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -6560,14 +6560,14 @@ sub prepareforvariantannotationblock {
 
     ## Compress or decompress original file or stream to outfile (if supplied)
     bgzip({FILEHANDLE => $FILEHANDLE,
-	   infile_path => $file_path_noending.".vcf",
-	   outfile_path => $file_path_noending.".vcf.gz",
+	   infile_path => $file_path_no_ending.".vcf",
+	   outfile_path => $file_path_no_ending.".vcf.gz",
 	  });
     say $FILEHANDLE "\n";
 
     ## Index file using tabix
     tabix({FILEHANDLE => $FILEHANDLE,
-	   infile_path => $file_path_noending.".vcf.gz",
+	   infile_path => $file_path_no_ending.".vcf.gz",
 	  });
     say $FILEHANDLE "\n";
 
@@ -6584,20 +6584,20 @@ sub prepareforvariantannotationblock {
     foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
 	print $XARGSFILEHANDLE "-h ";  #Include header
-	print $XARGSFILEHANDLE $file_path_noending.".vcf.gz"." ";
+	print $XARGSFILEHANDLE $file_path_no_ending.".vcf.gz"." ";
 	print $XARGSFILEHANDLE $contig." ";
 	print $XARGSFILEHANDLE "| ";
 
 	## Compress or decompress original file or stream to outfile (if supplied)
 	bgzip({FILEHANDLE => $XARGSFILEHANDLE,
 	       infile_path => "-",
-	       outfile_path => $file_path_noending."_".$contig.".vcf.gz",
+	       outfile_path => $file_path_no_ending."_".$contig.".vcf.gz",
 	      });
 	print $XARGSFILEHANDLE "; ";
 
 	## Index file using tabix
 	tabix({FILEHANDLE => $XARGSFILEHANDLE,
-	       infile_path => $file_path_noending."_".$contig.".vcf.gz",
+	       infile_path => $file_path_no_ending."_".$contig.".vcf.gz",
 	      });
 	print $XARGSFILEHANDLE "\n";
     }
@@ -6606,7 +6606,7 @@ sub prepareforvariantannotationblock {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => $file_path_noending."_*.vcf*",
+	migrate_file_from_temp({temp_path => $file_path_no_ending."_*.vcf*",
 				file_path => $outfamily_directory,
 				FILEHANDLE => $FILEHANDLE,
 			       });
@@ -6902,11 +6902,11 @@ sub gatk_variantrecalibration {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_genotypegvcfs}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-    my $infile_name_noending = $$family_id_ref.$infile_tag.$call_type;
-    my $intermediary_file_path_noending = catfile($intermediary_sample_directory, $infile_name_noending);
-    my $file_path_noending = catfile($$temp_directory_ref, $infile_name_noending);
-    my $outfile_name_noending = $$family_id_ref.$outfile_tag.$call_type;
-    my $outfile_path_noending = catfile($$temp_directory_ref, $outfile_name_noending);
+    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+    my $intermediary_file_path_noending = catfile($intermediary_sample_directory, $infile_no_ending);
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
  
 
     ## Create .fam file to be used in variant calling analyses
@@ -6920,7 +6920,7 @@ sub gatk_variantrecalibration {
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			  path => catfile($infamily_directory, $infile_name_noending.".vcf*"),
+			  path => catfile($infamily_directory, $infile_no_ending.".vcf*"),
 			  temp_directory => $$temp_directory_ref
 			 });
     say $FILEHANDLE "wait", "\n";
@@ -6954,13 +6954,13 @@ sub gatk_variantrecalibration {
 
 	if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid") ) {  #Exome/rapid analysis use combined reference for more power
 
-	    print $FILEHANDLE "-input ".$file_path_noending.".vcf"." ";  #Infile HaplotypeCaller combined vcf which used reference gVCFs to create combined vcf (30> samples gCVFs)
+	    print $FILEHANDLE "-input ".$file_path_no_ending.".vcf"." ";  #Infile HaplotypeCaller combined vcf which used reference gVCFs to create combined vcf (30> samples gCVFs)
 	}
 	else {  #WGS
 
 	    if ($mode eq "SNP") {
 
-		print $FILEHANDLE "-input ".$file_path_noending.".vcf"." ";
+		print $FILEHANDLE "-input ".$file_path_no_ending.".vcf"." ";
 
 		if ($active_parameter_href->{gatk_variantrecalibration_snv_max_gaussians} ne 0) {
 
@@ -6969,7 +6969,7 @@ sub gatk_variantrecalibration {
 	    }
 	    if ($mode eq "INDEL") {#Use created recalibrated snp vcf as input
 
-		print $FILEHANDLE "-input ".$outfile_path_noending.".SNV.vcf"." ";
+		print $FILEHANDLE "-input ".$outfile_path_no_ending.".SNV.vcf"." ";
 	    }
 	    if ($active_parameter_href->{gatk_variantrecalibration_dp_annotation}) {  #Special case: Not to be used with hybrid capture. NOTE: Disable when analysing wes + wgs in the same run
 
@@ -7028,21 +7028,21 @@ sub gatk_variantrecalibration {
 
 	if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid")) {  #Exome/rapid analysis use combined reference for more power
 
-	    print $FILEHANDLE "-input ".$file_path_noending.".vcf"." ";  #Infile HaplotypeCaller combined vcf which used reference gVCFs to create combined vcf file
-	    print $FILEHANDLE "-o ".$outfile_path_noending."_filtered.vcf"." ";
+	    print $FILEHANDLE "-input ".$file_path_no_ending.".vcf"." ";  #Infile HaplotypeCaller combined vcf which used reference gVCFs to create combined vcf file
+	    print $FILEHANDLE "-o ".$outfile_path_no_ending."_filtered.vcf"." ";
 	}
 	else  {  #WGS
 
 	    if ($mode eq "SNP") {
 
-		print $FILEHANDLE "-input ".$file_path_noending.".vcf"." ";
-		print $FILEHANDLE "-o ".$outfile_path_noending.".SNV.vcf"." ";
+		print $FILEHANDLE "-input ".$file_path_no_ending.".vcf"." ";
+		print $FILEHANDLE "-o ".$outfile_path_no_ending.".SNV.vcf"." ";
 		print $FILEHANDLE "--ts_filter_level ".$active_parameter_href->{gatk_variantrecalibration_snv_tsfilter_level}." ";
 	    }
 	    if ($mode eq "INDEL") {#Use created recalibrated snp vcf as input
 
-		print $FILEHANDLE "-input ".$outfile_path_noending.".SNV.vcf"." ";
-		print $FILEHANDLE "-o ".$outfile_path_noending.".vcf"." ";
+		print $FILEHANDLE "-input ".$outfile_path_no_ending.".SNV.vcf"." ";
+		print $FILEHANDLE "-o ".$outfile_path_no_ending.".vcf"." ";
 		print $FILEHANDLE "--ts_filter_level ".$active_parameter_href->{gatk_variantrecalibration_indel_tsfilter_level}." ";
 	    }
 	}
@@ -7095,7 +7095,7 @@ sub gatk_variantrecalibration {
 
 	    print $FILEHANDLE "-sn ".$sample_id." ";  #Include genotypes from this sample
 	}
-	print $FILEHANDLE "-o ".$outfile_path_noending.".vcf"." ";  #OutFile
+	print $FILEHANDLE "-o ".$outfile_path_no_ending.".vcf"." ";  #OutFile
 	print $FILEHANDLE " &";
 
 	## Produces another vcf file containing non-variant loci (useful for example in MAF comparisons), but is not used downstream in MIP
@@ -7114,8 +7114,8 @@ sub gatk_variantrecalibration {
 	    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
 	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-	    print $FILEHANDLE "-V: ".$outfile_path_noending."_filtered.vcf"." ";  #InFile
-	    print $FILEHANDLE "-o ".$outfile_path_noending."_incnonvariantloci.vcf"." ";  #OutFile
+	    print $FILEHANDLE "-V: ".$outfile_path_no_ending."_filtered.vcf"." ";  #InFile
+	    print $FILEHANDLE "-o ".$outfile_path_no_ending."_incnonvariantloci.vcf"." ";  #OutFile
 
 	    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {  #For all sample_ids
 
@@ -7125,7 +7125,7 @@ sub gatk_variantrecalibration {
 
 	    ## Copies file from temporary directory.
 	    say $FILEHANDLE "## Copy file from temporary directory";
-	    migrate_file_from_temp({temp_path => $outfile_path_noending."_incnonvariantloci.vcf*",
+	    migrate_file_from_temp({temp_path => $outfile_path_no_ending."_incnonvariantloci.vcf*",
 				    file_path => $outfamily_directory,
 				    FILEHANDLE => $FILEHANDLE,
 				   });
@@ -7158,42 +7158,42 @@ sub gatk_variantrecalibration {
 			   });
 
 	print $FILEHANDLE "--supporting ".$active_parameter_href->{gatk_calculategenotypeposteriors_support_set}." ";  #Supporting data set
-	print $FILEHANDLE "-V ".$outfile_path_noending.".vcf"." ";  #Infile
-	print $FILEHANDLE "-o ".$outfile_path_noending."_refined.vcf"." ";  #Outfile
+	print $FILEHANDLE "-V ".$outfile_path_no_ending.".vcf"." ";  #Infile
+	print $FILEHANDLE "-o ".$outfile_path_no_ending."_refined.vcf"." ";  #Outfile
 	say $FILEHANDLE "\n";
 
 	## Change name of file to accomodate downstream
 	print $FILEHANDLE "mv ";
-	print $FILEHANDLE $outfile_path_noending."_refined.vcf"." ";
-	print $FILEHANDLE $outfile_path_noending.".vcf";
+	print $FILEHANDLE $outfile_path_no_ending."_refined.vcf"." ";
+	print $FILEHANDLE $outfile_path_no_ending.".vcf";
 	say $FILEHANDLE "\n";
     }
 
     ## BcfTools norm, Left-align and normalize indels, split multiallelics
     bcftools_norm({FILEHANDLE => $FILEHANDLE,
 		   reference_path_ref => \$active_parameter_href->{human_genome_reference},
-		   infile_path => $outfile_path_noending.".vcf",
-		   outfile_path => $outfile_path_noending."_normalized.vcf",
+		   infile_path => $outfile_path_no_ending.".vcf",
+		   outfile_path => $outfile_path_no_ending."_normalized.vcf",
 		   multiallelic => "-",
 		  });
 
     ## Change name of file to accomodate downstream
     say $FILEHANDLE "\n";
     print $FILEHANDLE "mv ";
-    print $FILEHANDLE $outfile_path_noending."_normalized.vcf"." ";
-    print $FILEHANDLE $outfile_path_noending.".vcf";
+    print $FILEHANDLE $outfile_path_no_ending."_normalized.vcf"." ";
+    print $FILEHANDLE $outfile_path_no_ending.".vcf";
     say $FILEHANDLE "\n";
 
     ## Produce a bcf compressed and index from vcf
     if ($active_parameter_href->{gatk_variantrecalibration_bcf_file}) {
 
-	vcf_to_bcf({infile => $outfile_path_noending,
+	vcf_to_bcf({infile => $outfile_path_no_ending,
 		    FILEHANDLE => $FILEHANDLE,
 		   });
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => $outfile_path_noending.".bcf*",
+	migrate_file_from_temp({temp_path => $outfile_path_no_ending.".bcf*",
 				file_path => $outfamily_directory,
 				FILEHANDLE => $FILEHANDLE,
 			       });
@@ -7202,7 +7202,7 @@ sub gatk_variantrecalibration {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => $outfile_path_noending.".vcf*",
+    migrate_file_from_temp({temp_path => $outfile_path_no_ending.".vcf*",
 			    file_path => $outfamily_directory,
 			    FILEHANDLE => $FILEHANDLE,
 			   });
@@ -7220,14 +7220,14 @@ sub gatk_variantrecalibration {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => "pedigree_check",  #Disabled pedigreeCheck to not include relationship test is qccollect
 			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_name_noending.".vcf",
+			outfile_ending => $outfile_no_ending.".vcf",
 			outdata_type => "infile_dependent"
 		       });
-	$sample_info_href->{vcf_file}{ready_vcf}{path} = catfile($outfamily_directory, $outfile_name_noending.".vcf");
+	$sample_info_href->{vcf_file}{ready_vcf}{path} = catfile($outfamily_directory, $outfile_no_ending.".vcf");
 
 	if ($active_parameter_href->{gatk_variantrecalibration_bcf_file} eq 1) {
 
-	    $sample_info_href->{bcf_file}{path} = catfile($outfamily_directory, $outfile_name_noending.".bcf");
+	    $sample_info_href->{bcf_file}{path} = catfile($outfamily_directory, $outfile_no_ending.".bcf");
 	}
 
 	submit_job({active_parameter_href => $active_parameter_href,
@@ -13470,45 +13470,55 @@ sub bwa_mem {
     my $time = 30;
     my $infile_size;
     my $total_sbatch_counter = 0;
-    my $paired_end_tracker = 0;
+    my $paired_end_tracker = 0;  #Too avoid adjusting infile_index in submitting to jobs
 
+    ## Assign directories
+    my $insample_directory = $indir_path_href->{$$sample_id_ref};
+    my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
+    $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory;  #Used downstream
+ 
+    ## Assign file_tags
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
     ## Collect fastq file(s) size and interleaved info
-    for (my $infile_counter=0;$infile_counter<scalar( @{ $infile_lane_no_ending_href->{$$sample_id_ref} });$infile_counter++) {  #For all infiles but process in the same command i.e. both reads per align call
+    while ( my ($infile_index, $infile_no_ending) = each(@{ $infile_lane_no_ending_href->{$$sample_id_ref} }) ) {
 
-	my $infile_ref = \$infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter];  #Alias
-	my $sequence_run_mode = $sample_info_href->{sample}{$$sample_id_ref}{file}{$$infile_ref}{sequence_run_type};  #Collect paired-end or single-end sequence run mode
+	## Assign file alias
+	my $outfile_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending.$outfile_tag);
+	my $sequence_run_mode = $sample_info_href->{sample}{$$sample_id_ref}{file}{$infile_no_ending}{sequence_run_type};  #Collect paired-end or single-end sequence run mode
 
-	my $interleaved_fastq_file = $sample_info_href->{sample}{$$sample_id_ref}{file}{$$infile_ref}{interleaved};
+	my $interleaved_fastq_file = $sample_info_href->{sample}{$$sample_id_ref}{file}{$infile_no_ending}{interleaved};
+	my $fastq_file_first = $infile_href->{$$sample_id_ref}[$infile_index];
+	my $fastq_file_second;  #Initiate
 
 	## Fastq.gz
-	if ($infile_href->{$$sample_id_ref}[$infile_counter] =~/.fastq.gz$/) {  #Files are already gz and presently the scalar for compression has not been investigated. Therefore no automatic time allocation can be performed.
+	if ($fastq_file_first =~/.fastq.gz$/) {  #Files are already gz and presently the scalar for compression has not been investigated. Therefore no automatic time allocation can be performed.
 
-	    if ($sample_info_href->{sample}{$$sample_id_ref}{file}{$$infile_ref}{sequence_run_type} eq "paired_end") {  #Second read direction if present
-                $infile_size = -s catfile($indir_path_href->{$$sample_id_ref}, $infile_href->{$$sample_id_ref}[$infile_counter+$infile_counter]);
+	    if ($sample_info_href->{sample}{$$sample_id_ref}{file}{$infile_no_ending}{sequence_run_type} eq "paired_end") {  #Second read direction if present
+		$fastq_file_second = $infile_href->{$$sample_id_ref}[$infile_index+$infile_index];
+                $infile_size = -s catfile($insample_directory, $fastq_file_second);
 	    }
 	    else {  #Single_end
 
-                $infile_size = -s catfile($indir_path_href->{$$sample_id_ref}, $infile_href->{$$sample_id_ref}[$infile_counter]);
+                $infile_size = -s catfile($insample_directory, $fastq_file_first);
 	    }
         }
         else {  #Files are in fastq format
 
-	    if ($sample_info_href->{sample}{$$sample_id_ref}{file}{$$infile_ref}{sequence_run_type} eq "paired_end") {  #Second read direction if present
-
-		$infile_size = -s catfile($indir_path_href->{$$sample_id_ref}, $infile_href->{$$sample_id_ref}[$infile_counter+$infile_counter]);  # collect .fastq file size to enable estimation of time required for aligning, +1 for syncing multiple infiles per sample_id. Hence, filesize will be calculated on read2 (should not matter).
+	    if ($sample_info_href->{sample}{$$sample_id_ref}{file}{$infile_no_ending}{sequence_run_type} eq "paired_end") {  #Second read direction if present
+		$fastq_file_second = $infile_href->{$$sample_id_ref}[$infile_index+$infile_index];
+		$infile_size = -s catfile($insample_directory, $fastq_file_second);  # collect .fastq file size to enable estimation of time required for aligning, +1 for syncing multiple infiles per sample_id. Hence, filesize will be calculated on read2 (should not matter).
 	    }
 	    else {  #Single_end
 
-                $infile_size = -s catfile($indir_path_href->{$$sample_id_ref}, $infile_href->{$$sample_id_ref}[$infile_counter]);
+                $infile_size = -s catfile($insample_directory, $fastq_file_first);
 	    }
         }
 
 	## Parallelize alignment by spliting of alignment processes as the files are read
 	if ($consensus_analysis_type eq "rapid") {
 
-	    my $seq_length = $sample_info_href->{sample}{$$sample_id_ref}{file}{$$infile_ref}{sequence_length};
+	    my $seq_length = $sample_info_href->{sample}{$$sample_id_ref}{file}{$infile_no_ending}{sequence_length};
 	    my ($number_nodes, $read_nr_of_lines) = determine_nr_of_rapid_nodes({seq_length => $seq_length,
 										 infile_size => $infile_size,
 										});
@@ -13531,20 +13541,15 @@ sub bwa_mem {
 		my $read_start = $sbatch_counter *  $read_nr_of_lines;  #Constant for gz files
 		my $read_stop = $read_start + ceil( $read_nr_of_lines + 1);  #Constant for gz files
 
-		## Assign directories
-		my $bwa_insample_directory = $indir_path_href->{$$sample_id_ref};
-		my $bwa_outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
-		$parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $bwa_outsample_directory;  #Used downstream
-
 		my $infile;
 
 		if ($sequence_run_mode eq "paired_end") {  #Second read direction if present
 
-		    $infile = $infile_href->{$$sample_id_ref}[$infile_counter+$infile_counter];  #For required .fastq file
+		    $infile = $fastq_file_second;  #For required .fastq file
                 }
                 else {  #Single_end
 
-		    $infile = $infile_href->{$$sample_id_ref}[$infile_counter];  #For required .fastq file
+		    $infile = $fastq_file_first;  #For required .fastq file
                 }
 
 		## BWA Mem for each read batch
@@ -13559,14 +13564,14 @@ sub bwa_mem {
 
 		## Read group header line
 		print $FILEHANDLE q?-R "@RG\t?;
-		print $FILEHANDLE q?ID:?.$infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].q?\t?;
+		print $FILEHANDLE q?ID:?.$infile_no_ending.q?\t?;
 		print $FILEHANDLE q?SM:?.$$sample_id_ref.q?\t?;
 		print $FILEHANDLE q?PL:?.$active_parameter_href->{platform}.q?" ?;
 
 		print $FILEHANDLE $active_parameter_href->{human_genome_reference}." ";  #Reference
 		print $FILEHANDLE "<( ";  #Pipe to BWA Mem (Read 1)
 		print $FILEHANDLE "zcat ";  #Decompress Read 1
-		print $FILEHANDLE catfile($bwa_insample_directory, $infile)." ";  #Read 1
+		print $FILEHANDLE catfile($insample_directory, $infile)." ";  #Read 1
 		print $FILEHANDLE "| ";  #Pipe
 		print $FILEHANDLE q?perl -ne 'if ( ($.>?.$read_start.q?) && ($.<?.$read_stop.q?) ) {print $_;}' ?;  #Limit to sbatch script interval
 		print $FILEHANDLE ") ";  #End Read 1
@@ -13575,7 +13580,7 @@ sub bwa_mem {
 
 		    print $FILEHANDLE "<( ";  #Pipe to BWA Mem (Read 2)
 		    print $FILEHANDLE "zcat ";  #Decompress Read 2
-		    print $FILEHANDLE catfile($bwa_insample_directory, $infile_href->{$$sample_id_ref}[$infile_counter+$infile_counter+1])." ";  #Read 2
+		    print $FILEHANDLE catfile($insample_directory, $infile_href->{$$sample_id_ref}[$infile_index+$infile_index+1])." ";  #Read 2
 		    print $FILEHANDLE "| ";  #Pipe
 		    print $FILEHANDLE q?perl -ne 'if ( ($.>?.$read_start.q?) && ($.<?.$read_stop.q?) ) {print $_;}' ?;  #Limit to sbatch script interval
 		    print $FILEHANDLE ") ";  #End Read 2
@@ -13591,14 +13596,14 @@ sub bwa_mem {
 		print $FILEHANDLE "intersectBed ";  #Limit output to only clinically interesting genes
 		print $FILEHANDLE "-abam stdin ";  #The A input file is in BAM format.  Output will be BAM as well.
 		print $FILEHANDLE "-b ".$active_parameter_href->{bwa_mem_rapid_db}." ";  #Db file of clinically relevant variants
-		say $FILEHANDLE "> ".catfile($bwa_outsample_directory, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter]."_".$sbatch_counter.".bam"), "\n";  #Outfile (BAM)
+		say $FILEHANDLE "> ".catfile($outsample_directory, $infile_no_ending."_".$sbatch_counter.".bam"), "\n";  #Outfile (BAM)
 
 		print $FILEHANDLE "samtools sort ";
-		print $FILEHANDLE catfile($bwa_outsample_directory, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter]."_".$sbatch_counter.".bam")." ";  #Infile
-		say $FILEHANDLE catfile($bwa_outsample_directory, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter]."_".$sbatch_counter.$outfile_tag), "\n";  #OutFile
+		print $FILEHANDLE catfile($outsample_directory, $infile_no_ending."_".$sbatch_counter.".bam")." ";  #Infile
+		say $FILEHANDLE catfile($outsample_directory, $infile_no_ending."_".$sbatch_counter.$outfile_tag), "\n";  #OutFile
 
 		print $FILEHANDLE "samtools index ";
-		say $FILEHANDLE catfile($bwa_outsample_directory, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter]."_".$sbatch_counter.$outfile_tag.".bam"), "\n";  #OutFile
+		say $FILEHANDLE catfile($outsample_directory, $infile_no_ending."_".$sbatch_counter.$outfile_tag.".bam"), "\n";  #OutFile
 
 		close($FILEHANDLE);
 
@@ -13618,7 +13623,7 @@ sub bwa_mem {
 		$total_sbatch_counter++;
 
                 ## Save sbatch Counter to track how many read batch processes we have engaged
-		$sample_info_href->{sample}{$$sample_id_ref}{ $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter] }{pbwa_mem}{read_batch_process} = $sbatch_counter+1;  #Used to be  $sbatch_counter
+		$sample_info_href->{sample}{$$sample_id_ref}{ $infile_no_ending }{pbwa_mem}{read_batch_process} = $sbatch_counter+1;  #Used to be  $sbatch_counter
 		$sample_info_href->{sample}{$$sample_id_ref}{pbwa_mem}{sbatch_batch_processes} = $total_sbatch_counter;
 	    }
 	}
@@ -13637,11 +13642,6 @@ sub bwa_mem {
 									 sleep => 1,  #Let process sleep randomly for 0-60 seconds to avoid race condition
 									});
 	    my ($volume, $directory, $stderr_file) = File::Spec->splitpath($program_info_path.".stderr.txt");  #Split to enable submission to &sample_info_qc later
-
-	    ## Assign directories
-	    my $insample_directory = $indir_path_href->{$$sample_id_ref};
-	    my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
-	    $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory;  #Used downstream
 
 	    ## Copies file to temporary directory.
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -13680,7 +13680,7 @@ sub bwa_mem {
 
 		    print $FILEHANDLE "-H ";  #Apply HLA typing
 		}
-		print $FILEHANDLE "-o ".catfile($$temp_directory_ref, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter])." ";  #prefix for output files
+		print $FILEHANDLE "-o ".catfile($$temp_directory_ref, $infile_no_ending)." ";  #prefix for output files
 	    }
 	    print $FILEHANDLE "-t ".$active_parameter_href->{core_processor_number}." ";  #Number of threads
 
@@ -13690,7 +13690,7 @@ sub bwa_mem {
 	    }
 
 	    print $FILEHANDLE q?-R "@RG\t?;
-	    print $FILEHANDLE q?ID:?.$infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].q?\t?;
+	    print $FILEHANDLE q?ID:?.$infile_no_ending.q?\t?;
 	    print $FILEHANDLE q?SM:?.$$sample_id_ref.q?\t?;
 	    print $FILEHANDLE q?PL:?.$active_parameter_href->{platform}.q?" ?;  #Read group header line
 	    print $FILEHANDLE $active_parameter_href->{human_genome_reference}." ";  #Reference
@@ -13726,14 +13726,14 @@ sub bwa_mem {
 	    print $FILEHANDLE "-m ".$active_parameter_href->{bwa_sambamba_sort_memory_limit}." ";  #Memory limit
 	    print $FILEHANDLE "--tmpdir=".$$temp_directory_ref." ";  #Directory for storing intermediate files
 	    print $FILEHANDLE "--show-progress ";  #Show progressbar in STDERR
-	    print $FILEHANDLE "--out=".catfile($$temp_directory_ref, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].$outfile_tag.".bam")." ";  #Outfile
+	    print $FILEHANDLE "--out=".$outfile_path_no_ending.".bam"." ";  #Outfile
 
 	    if ($bwa_binary eq "bwa mem") {  #Pipe from samtools view
 
 		say $FILEHANDLE catfile(dirname(devnull()),"stdin"),"\n";
 
 		## BAMS, bwa_mem logs etc.
-		migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].$outfile_tag.".*"),
+		migrate_file_from_temp({temp_path => $outfile_path_no_ending.".*",
 					file_path => $outsample_directory,
 					FILEHANDLE => $FILEHANDLE,
 				       });
@@ -13741,21 +13741,21 @@ sub bwa_mem {
 	    }
 	    else {  #Sort directly from run-bwakit
 
-		say $FILEHANDLE catfile($$temp_directory_ref, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].".aln.bam"), "\n";
+		say $FILEHANDLE catfile($$temp_directory_ref, $infile_no_ending.".aln.bam"), "\n";
 
 		## Copies file from temporary directory.
 		say $FILEHANDLE "## Copy file from temporary directory";
-		migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].$outfile_tag.".b*"),
+		migrate_file_from_temp({temp_path => $outfile_path_no_ending.".b*",
 					file_path => $outsample_directory,
 					FILEHANDLE => $FILEHANDLE,
 				       });
 		## Run-bwa_mem logs
-		migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].".log*"),
+		migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile_no_ending.".log*"),
 					file_path => $outsample_directory,
 					FILEHANDLE => $FILEHANDLE,
 				       });
 		## HLA files
-		migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].".hla*"),
+		migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile_no_ending.".hla*"),
 					file_path => $outsample_directory,
 					FILEHANDLE => $FILEHANDLE,
 				       });
@@ -13765,14 +13765,14 @@ sub bwa_mem {
 	    if ($active_parameter_href->{bwa_mem_bamstats}) {
 
 		print $FILEHANDLE "samtools stats ";
-		print $FILEHANDLE catfile($$temp_directory_ref, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].$outfile_tag.".bam")." ";
+		print $FILEHANDLE $outfile_path_no_ending.".bam"." ";
 		print $FILEHANDLE "| ";
 		print $FILEHANDLE q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\s+(\d+)/) {$raw = $1;} elsif($_=~/reads mapped:\s+(\d+)/) {$map = $1; $p = ($map / $raw ) * 100; print "percentage mapped reads:\t".$p."\n"}' ?;
-		say $FILEHANDLE "> ".catfile($$temp_directory_ref, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].$outfile_tag.".stats")." ", "\n";
+		say $FILEHANDLE "> ".$outfile_path_no_ending.".stats"." ", "\n";
 
 		## Copies file from temporary directory.
 		say $FILEHANDLE "## Copy file from temporary directory";
-		migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].$outfile_tag.".stats"),
+		migrate_file_from_temp({temp_path => $outfile_path_no_ending.".stats",
 					file_path => $outsample_directory,
 					FILEHANDLE => $FILEHANDLE,
 				       });
@@ -13787,12 +13787,12 @@ sub bwa_mem {
 		print $FILEHANDLE "-f cram "; #Write output to CRAM-format
 		print $FILEHANDLE "-h ";  #print header before reads
 		print $FILEHANDLE "-T ".$active_parameter_href->{human_genome_reference}." ";  #Reference
-		print $FILEHANDLE "--output-filename ".catfile($$temp_directory_ref, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].$outfile_tag.".cram")." ";
-		say $FILEHANDLE catfile($$temp_directory_ref, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].$outfile_tag.".bam"), "\n";
+		print $FILEHANDLE "--output-filename ".$outfile_path_no_ending.".cram"." ";
+		say $FILEHANDLE $outfile_path_no_ending.".bam", "\n";
 
 		## Copies file from temporary directory.
 		say $FILEHANDLE "## Copy file from temporary directory";
-		migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].$outfile_tag.".cram"),
+		migrate_file_from_temp({temp_path => $outfile_path_no_ending.".cram",
 					file_path => $outsample_directory,
 					FILEHANDLE => $FILEHANDLE,
 				       });
@@ -13803,12 +13803,12 @@ sub bwa_mem {
 
 	    if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
-		$sample_info_href->{sample}{$$sample_id_ref}{most_complete_bam}{path} = catfile($outsample_directory, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].".bam");
+		$sample_info_href->{sample}{$$sample_id_ref}{most_complete_bam}{path} = catfile($outsample_directory, $infile_no_ending.".bam");
 
 		if ($active_parameter_href->{bwa_mem_cram}) {
 
-		    $sample_info_href->{sample}{$$sample_id_ref}{program}{bwa}{ $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter]}{path} = catfile($outsample_directory, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].$outfile_tag.".cram");  #Required for analysisRunStatus check downstream
-		    $sample_info_href->{sample}{$$sample_id_ref}{file}{$infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter]}{cram_file} = catfile($outsample_directory, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].$outfile_tag.".cram");  #Fastreference to cram file
+		    $sample_info_href->{sample}{$$sample_id_ref}{program}{bwa}{$infile_no_ending}{path} = catfile($outsample_directory, $infile_no_ending.$outfile_tag.".cram");  #Required for analysisRunStatus check downstream
+		    $sample_info_href->{sample}{$$sample_id_ref}{file}{$infile_no_ending}{cram_file} = catfile($outsample_directory, $infile_no_ending.$outfile_tag.".cram");  #Fastreference to cram file
 		}
 		if ($active_parameter_href->{bwa_mem_bamstats}) {
 
@@ -13816,7 +13816,7 @@ sub bwa_mem {
 		    sample_info_qc({sample_info_href => $sample_info_href,
 				    sample_id => $$sample_id_ref,
 				    program_name => "bamstats",
-				    infile => $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter],
+				    infile => $infile_no_ending,
 				    outdirectory => $outsample_directory,
 				    outfile_ending => $outfile_tag.".stats",
 				    outdata_type => "infile_dependent"
@@ -13828,7 +13828,7 @@ sub bwa_mem {
 		    sample_info_qc({sample_info_href => $sample_info_href,
 				    sample_id => $$sample_id_ref,
 				    program_name => "bwa",
-				    infile => $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter],
+				    infile => $infile_no_ending,
 				    outdirectory => $directory,
 				    outfile_ending => $stderr_file,
 				    outdata_type => "info_directory"
@@ -13839,7 +13839,7 @@ sub bwa_mem {
 		    sample_info_qc({sample_info_href => $sample_info_href,
 				    sample_id => $$sample_id_ref,
 				    program_name => "Bwa",
-				    infile => $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter],
+				    infile => $infile_no_ending,
 				    outdirectory => $outsample_directory,
 				    outfile_ending => ".log.bwamem",
 				    outdata_type => "infile_dependent"
@@ -13853,7 +13853,7 @@ sub bwa_mem {
 			    dependencies => "sample_id_dependency_step_in_parallel",
 			    path => $parameter_href->{"p".$program_name}{chain},
 			    sbatch_file_name => $file_name,
-			    sbatch_script_tracker => $infile_counter
+			    sbatch_script_tracker => $infile_index
 			   });
 	    }
 	}
