@@ -7058,10 +7058,10 @@ sub gatk_variantrecalibration {
 	say $FILEHANDLE "\n";
     }
 
-    if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid")) {  #Exome/rapid analysis use combined reference for more power
+    if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid")) {
 	## BcfTools norm, Left-align and normalize indels, split multiallelics
 	bcftools_norm({FILEHANDLE => $FILEHANDLE,
-		       reference_path_ref => \catfile($$reference_dir_ref, $active_parameter_href->{human_genome_reference}),
+		       reference_path_ref => \$active_parameter_href->{human_genome_reference},
 		       infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_filtered.vcf"),
 		       outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_filtered_normalized.vcf"),
 		       multiallelic => "-",
