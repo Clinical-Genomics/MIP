@@ -392,7 +392,7 @@ my %file_info = (mosaik_align_reference => ".dat",
 		 exome_target_bed => [".infile_list", ".pad100.infile_list", ".pad100.interval_list"],
 		 mosaik_jump_db_stub_file_endings => ["_keys.jmp", "_meta.jmp", "_positions.jmp"],  #MosaikJumpDatabase file endings
 		 bwa_build_reference_file_endings => [".amb", ".ann", ".bwt", ".pac", ".sa"],  #BWA human genome reference file endings
-		 human_genome_reference_file_endings => [".dict", ".fasta.fai"],  #Meta files
+		 human_genome_reference_file_endings => [".dict", ".fai"],  #Meta files
     );
 
 ## Capture kit aliases supported from pedigree file.
@@ -8505,7 +8505,7 @@ sub sv_rankvariant {
     my @contigs = @{ $file_info_href->{contigs} };  #Set default for handling subset of contigs
 
     ### If no males or other remove contig Y from all downstream analysis
-    my @contig_arrays = (\@contigs_size_ordered), \@contigs);
+    my @contig_arrays = (\@contigs_size_ordered, \@contigs);
     
     foreach my $array_ref (@contig_arrays) {
 	
@@ -9932,7 +9932,7 @@ sub cnvnator {
     print $FILEHANDLE $active_parameter_href->{human_genome_reference}.".fai "; #Reference fai file
     say $FILEHANDLE "> ".catfile($$temp_directory_ref, "contig_header.txt")." ";
 
-    my $core_counter=1;
+    my $core_counter = 1;
     ## Create by cnvnator required "chr.fa" files
     say $FILEHANDLE "## Create by cnvnator required 'chr.fa' files";
     while ( my ($contig_index, $contig) = each(@{ $file_info_href->{contigs} }) ) {
@@ -10392,7 +10392,7 @@ sub manta {
     ## Assign file_tags
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
 
-    my $core_counter=1;
+    my $core_counter = 1;
     ## Collect infiles for all sample_ids to enable migration to temporary directory
     while ( my ($sample_id_index, $sample_id) = each (@{ $active_parameter_href->{sample_ids} }) ) {
 
@@ -11645,7 +11645,7 @@ sub gatk_baserecalibration {
     if ($$reduce_io_ref) {  #Run as block sbatch script
 
 	## Remove file at temporary Directory
-	remove_contig_file_at_temp_directory({elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
+	remove_contig_file_at_temp_directory({files_ref => \@{ $file_info_href->{contigs_size_ordered} },
 					      FILEHANDLE => $FILEHANDLE,
 					      core_number => $core_number,
 					      file_name => $infile.$infile_tag,
@@ -11675,8 +11675,10 @@ sub gatk_baserecalibration {
     say $FILEHANDLE "wait", "\n";
 
     ## Remove Concatenated BAM file at temporary Directory
-    say $FILEHANDLE "rm ".catfile($$temp_directory_ref, $infile.$outfile_tag.".b*");
-
+    remove_file({file_ref => \catfile($$temp_directory_ref, $infile.$outfile_tag.".b*"),
+		 FILEHANDLE => $FILEHANDLE,
+		});
+    
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
 	$sample_info_href->{sample}{$$sample_id_ref}{most_complete_bam}{path} = catfile($outsample_directory, $infile.$outfile_tag.".bam");
@@ -11969,7 +11971,7 @@ sub gatk_realigner {
     else {
 
 	## Remove file at temporary Directory
-	remove_contig_file_at_temp_directory({elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
+	remove_contig_file_at_temp_directory({files_ref => \@{ $file_info_href->{contigs_size_ordered} },
 					      FILEHANDLE => $FILEHANDLE,
 					      core_number => $core_number,
 					      file_name => $infile.$infile_tag,
@@ -12221,7 +12223,7 @@ sub picardtools_markduplicates {
     else {
 
 	## Remove file at temporary Directory
-	remove_contig_file_at_temp_directory({elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
+	remove_contig_file_at_temp_directory({files_ref => \@{ $file_info_href->{contigs_size_ordered} },
 					      FILEHANDLE => $FILEHANDLE,
 					      core_number => $core_number,
 					      file_name => $infile.$infile_tag,
@@ -12472,7 +12474,7 @@ sub sambamba_markduplicates {
     else {
 
 	## Remove file at temporary Directory
-	remove_contig_file_at_temp_directory({elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
+	remove_contig_file_at_temp_directory({files_ref => \@{ $file_info_href->{contigs_size_ordered} },
 					      FILEHANDLE => $FILEHANDLE,
 					      core_number => $core_number,
 					      file_name => $infile.$infile_tag,
@@ -13217,7 +13219,7 @@ sub bwa_aln {
 
     ## BWA Aln
     say $FILEHANDLE "## Creating .sai index";
-    my $core_counter=1;
+    my $core_counter = 1;
     while ( my ($infile_counter_index, $infile) = each (@{ $infile_href->{$sample_id} }) ) {
 
 	print_wait({counter_ref => \$infile_counter_index,
@@ -13333,7 +13335,7 @@ sub picardtools_mergerapidreads {
     my $infile_tag = $file_info_href->{$$sample_id_ref}{pbwa_mem}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
-    my $core_counter=1;
+    my $core_counter = 1;
     my $core_tracker=0;  #Required to portion out cores and files before wait and to track the MOS_BU outfiles to correct lane
 
     for (my $infile_counter=0;$infile_counter<scalar( @{ $infile_lane_no_ending_href->{$$sample_id_ref} });$infile_counter++) {  #For all files from
@@ -13388,12 +13390,13 @@ sub picardtools_mergerapidreads {
     }
     say $FILEHANDLE "wait", "\n";
 
-    say $FILEHANDLE "## Remove Temp Directory";
-    print $FILEHANDLE "rm ";
-    say $FILEHANDLE "-rf ".$active_parameter_href->{temp_directory}, "\n";  #Remove Temp Directory
-
+    ## Remove Temp Directory
+    remove_directory({directory_ref => \$active_parameter_href->{temp_directory},
+		      FILEHANDLE => $FILEHANDLE,
+		     });
+    
     close($FILEHANDLE);
-
+    
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
 	submit_job({active_parameter_href => $active_parameter_href,
@@ -14171,7 +14174,7 @@ sub mosaik_build {
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
     $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory;  ##Used downstream
 
-    my $core_counter=1;
+    my $core_counter = 1;
     my $paired_end_tracker = 0;
     my $st_parameter = $active_parameter_href->{platform};
 
@@ -14944,7 +14947,7 @@ sub fastqc {
 
     say $FILEHANDLE "## ".$program_name;
 
-    my $core_counter=1;
+    my $core_counter = 1;
     while ( my ($index, $infile) = each(@{ $infile_href->{$$sample_id_ref} }) ) {
 
 	print_wait({counter_ref => \$index,
@@ -14980,7 +14983,7 @@ sub fastqc {
     say $FILEHANDLE "wait", "\n";
 
     ## Copies files from temporary folder to source.
-    $core_counter=1;
+    $core_counter = 1;
     while ( my ($index, $infile) = each(@{ $infile_href->{$$sample_id_ref} }) ) {
 
 	print_wait({counter_ref => \$index,
@@ -15101,7 +15104,7 @@ sub gzip_fastq {
     ## Assign directories
     my $insample_directory = $indir_path_href->{$sample_id};
 
-    my $core_counter=1;
+    my $core_counter = 1;
     my $uncompressed_file_counter = 0;  #Used to print wait at the right times since infiles cannot be used (can be a mixture of .gz and .fast files)
 
     say $FILEHANDLE "cd ".$indir_path_href->{$sample_id}, "\n";
@@ -15257,7 +15260,10 @@ sub split_fastq_file {
 	say $FILEHANDLE catfile($$temp_directory_ref, $file_prefix), "\n";
 
 	## Remove original files
-	say $FILEHANDLE "rm ".catfile($$temp_directory_ref, $fastq_file), "\n";
+	remove_file({file_ref => \catfile($$temp_directory_ref, $fastq_file),
+		     FILEHANDLE => $FILEHANDLE,
+		    });
+	say $FILEHANDLE "\n";
 
 	## Find all splitted files
 	say $FILEHANDLE "splitted_files=(".catfile($$temp_directory_ref, "*_splitted_*").")", "\n";
@@ -15619,7 +15625,7 @@ sub build_ptchs_metric_prerequisites {
 
 ##Function : Creates the target "infiles_list" "padded.infile_list" and interval_list files.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $FILEHANDLE, $family_id_ref, $outaligner_dir_ref, $reference_dir_ref, temp_directory_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $FILEHANDLE, $family_id_ref, $outaligner_dir_ref, temp_directory_ref
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -15630,7 +15636,6 @@ sub build_ptchs_metric_prerequisites {
 ##         : $FILEHANDLE                 => Filehandle to write to
 ##         : $family_id_ref              => Family ID {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $temp_directory_ref         => The temporary directory
 
     my ($arg_href) = @_;
@@ -15638,7 +15643,6 @@ sub build_ptchs_metric_prerequisites {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
 
     ## Flatten argument(s)
@@ -15662,7 +15666,6 @@ sub build_ptchs_metric_prerequisites {
 	FILEHANDLE => { store => \$FILEHANDLE},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
     };
 
@@ -15708,20 +15711,20 @@ sub build_ptchs_metric_prerequisites {
 
 	print $FILEHANDLE "CreateSequenceDictionary ";
 	print $FILEHANDLE "R=".$active_parameter_href->{human_genome_reference}." ";  #Reference genome
-	say $FILEHANDLE "OUTPUT=".catfile($$reference_dir_ref, $exome_target_bed_file_random.".dict"), "\n";  #Output sequence dictionnary
+	say $FILEHANDLE "OUTPUT=".$exome_target_bed_file_random.".dict", "\n";  #Output sequence dictionnary
 
 	say $FILEHANDLE "## Add target file to headers from sequenceDictionary";
 	print $FILEHANDLE "cat ";  #Concatenate
-	print $FILEHANDLE catfile($$reference_dir_ref, $exome_target_bed_file_random.".dict")." ";  #Sequence dictionnary
-	print $FILEHANDLE catfile($$reference_dir_ref, $exome_target_bed_file)." ";  #Bed file
+	print $FILEHANDLE $exome_target_bed_file_random.".dict"." ";  #Sequence dictionnary
+	print $FILEHANDLE $exome_target_bed_file." ";  #Bed file
 	print $FILEHANDLE "> ";  #Write to
-	say $FILEHANDLE catfile($$reference_dir_ref, $exome_target_bed_file_random.".dict_body"), "\n";  #Add bed body to dictionnary
+	say $FILEHANDLE $exome_target_bed_file_random.".dict_body", "\n";  #Add bed body to dictionnary
 
 	say $FILEHANDLE "#Remove target annotations, 'track', 'browse' and keep only 5 columns";
 	print $FILEHANDLE q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^browser/) {} else {print @F[0], "\t", (@F[1] + 1), "\t", @F[2], "\t", "+", "\t", "-", "\n";}' ?;
-	print $FILEHANDLE catfile($$reference_dir_ref, $exome_target_bed_file_random.".dict_body")." ";  #Infile
+	print $FILEHANDLE $exome_target_bed_file_random.".dict_body"." ";  #Infile
 	print $FILEHANDLE "> ";  #Write to
-	say $FILEHANDLE catfile($$reference_dir_ref, $exome_target_bed_file_random.".dict_body_col_5.interval_list"), "\n";  #Remove unnecessary info and reformat
+	say $FILEHANDLE $exome_target_bed_file_random.".dict_body_col_5.interval_list", "\n";  #Remove unnecessary info and reformat
 
 	say $FILEHANDLE "## Create".$$infile_list_ending_ref;
 	java_core({FILEHANDLE => $FILEHANDLE,
@@ -15732,11 +15735,11 @@ sub build_ptchs_metric_prerequisites {
 		  });
 
 	print $FILEHANDLE "IntervalListTools ";
-	print $FILEHANDLE "INPUT=".catfile($$reference_dir_ref, $exome_target_bed_file_random.".dict_body_col_5.interval_list")." ";
-	say $FILEHANDLE "OUTPUT=".catfile($$reference_dir_ref, $exome_target_bed_file_random.".dict_body_col_5_".$$infile_list_ending_ref), "\n";
+	print $FILEHANDLE "INPUT=".$exome_target_bed_file_random.".dict_body_col_5.interval_list"." ";
+	say $FILEHANDLE "OUTPUT=".$exome_target_bed_file_random.".dict_body_col_5_".$$infile_list_ending_ref, "\n";
 
-	my $intended_file_path = catfile($$reference_dir_ref, $exome_target_bed_file.$$infile_list_ending_ref);
-	my $temporary_file_path = catfile($$reference_dir_ref, $exome_target_bed_file_random.".dict_body_col_5_".$$infile_list_ending_ref);
+	my $intended_file_path = $exome_target_bed_file.$$infile_list_ending_ref;
+	my $temporary_file_path = $exome_target_bed_file_random.".dict_body_col_5_".$$infile_list_ending_ref;
 
 	## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
 	print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
@@ -15754,11 +15757,11 @@ sub build_ptchs_metric_prerequisites {
 
 	print $FILEHANDLE "IntervalListTools ";
 	print $FILEHANDLE "PADDING=100 ";  #Add 100 nt on both sides of bed entry
-	print $FILEHANDLE "INPUT=".catfile($$reference_dir_ref, $exome_target_bed_file_random.".dict_body_col_5.interval_list")." ";
-	say $FILEHANDLE "OUTPUT=".catfile($$reference_dir_ref, $exome_target_bed_file_random.".dict_body_col_5".$$padded_infile_list_ending_ref), "\n";
+	print $FILEHANDLE "INPUT=".$exome_target_bed_file_random.".dict_body_col_5.interval_list"." ";
+	say $FILEHANDLE "OUTPUT=".$exome_target_bed_file_random.".dict_body_col_5".$$padded_infile_list_ending_ref, "\n";
 
-	$intended_file_path = catfile($$reference_dir_ref, $exome_target_bed_file.$$padded_infile_list_ending_ref);
-	$temporary_file_path = catfile($$reference_dir_ref, $exome_target_bed_file_random.".dict_body_col_5".$$padded_infile_list_ending_ref);
+	$intended_file_path = $exome_target_bed_file.$$padded_infile_list_ending_ref;
+	$temporary_file_path = $exome_target_bed_file_random.".dict_body_col_5".$$padded_infile_list_ending_ref;
 
 	## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
 	print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
@@ -15770,23 +15773,25 @@ sub build_ptchs_metric_prerequisites {
 
 	##Softlink '.interval_list' to padded .infile_list", "\n";
 	print $FILEHANDLE "ln -f -s ";  #Softlink
-	print $FILEHANDLE catfile($$reference_dir_ref, $exome_target_bed_file.$$padded_infile_list_ending_ref)." ";  #Origin file
-	print $FILEHANDLE catfile($$reference_dir_ref, $exome_target_bed_file.$$padded_interval_list_ending_ref);  #interval_list file
+	print $FILEHANDLE $exome_target_bed_file.$$padded_infile_list_ending_ref." ";  #Origin file
+	print $FILEHANDLE $exome_target_bed_file.$$padded_interval_list_ending_ref;  #interval_list file
 
 	say $FILEHANDLE "\n";
 
+	## Remove temporary files
 	say $FILEHANDLE "#Remove temporary files";
 
-	print $FILEHANDLE "rm ";
-	say $FILEHANDLE catfile($$reference_dir_ref, $exome_target_bed_file_random.".dict_body_col_5.interval_list"), "\n";
-
-	print $FILEHANDLE "rm ";
-	say $FILEHANDLE catfile($$reference_dir_ref, $exome_target_bed_file_random.".dict_body"), "\n";
-
-	print $FILEHANDLE "rm ";
-	say $FILEHANDLE catfile($$reference_dir_ref, $exome_target_bed_file_random.".dict"), "\n";
-
-
+	my @temp_files = ($exome_target_bed_file_random.".dict_body_col_5.interval_list",
+			  $exome_target_bed_file_random.".dict_body",
+			  $exome_target_bed_file_random.".dict",
+	    );
+	foreach my $file (@temp_files) {
+	    
+	    remove_file({file_ref => \$file,
+			 FILEHANDLE => $FILEHANDLE,
+			});
+	    say $FILEHANDLE "\n";
+	}
     }
     unless(defined($FILEHANDLE)) { #Unless FILEHANDLE was supplied close filehandle and submit
 
@@ -16318,8 +16323,10 @@ sub download_reference {
 		   });
 
 	## Remove temporary Cosmid ".cosmid.yaml" file
-	print $FILEHANDLE "rm ";
-	say $FILEHANDLE catfile($$cosmid_resource_directory_ref, ".cosmid.yaml"), "\n";
+	remove_file({file_ref => \catfile($$cosmid_resource_directory_ref, ".cosmid.yaml"),
+		     FILEHANDLE => $FILEHANDLE,
+		    });
+	say $FILEHANDLE "\n";
 
 	## Enable trap for signal(s) and function
 	enable_trap({FILEHANDLE => $FILEHANDLE,
@@ -16464,61 +16471,67 @@ sub build_human_genome_prerequisites {
 					    FILEHANDLE => $FILEHANDLE,
 					   });
 
-    for (my $file_endings_counter=0;$file_endings_counter<scalar(@{ $file_info_href->{human_genome_reference_file_endings} });$file_endings_counter++) {  #All meta files
+    foreach my $file_ending (@{ $file_info_href->{human_genome_reference_file_endings} }) {
 
-	if ($parameter_href->{"human_genome_reference.dict"}{build_file} eq 1) {  #.dict file
+	if ($parameter_href->{"human_genome_reference".$file_ending}{build_file} eq 1) {
 
-	    $logger->warn("Will try to create dict file for ".$$human_genome_reference_ref." before executing ".$program."\n");
+	    if ($file_ending eq ".dict") {
 
-	    say $FILEHANDLE "#CreateSequenceDictionary from reference";
-	    java_core({FILEHANDLE => $FILEHANDLE,
-		       memory_allocation => "Xmx2g",
-		       java_use_large_pages_ref => \$active_parameter_href->{java_use_large_pages},
-		       java_temporary_directory => $active_parameter_href->{temp_directory},
-		       java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
-		      });
+		$logger->warn("Will try to create ".$file_ending." file for ".$$human_genome_reference_ref." before executing ".$program."\n");
 
-	    print $FILEHANDLE "CreateSequenceDictionary ";
-	    print $FILEHANDLE "R=".$$human_genome_reference_ref." ";  #Reference genome
-	    say $FILEHANDLE "OUTPUT=".catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}."_".$random_integer.".dict"), "\n";  #Output sequence dictionnary
+		my $filename_no_ending = catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending});
 
-	    my $intended_file_path = catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict");
-	    my $temporary_file_path = catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}."_".$random_integer.".dict");
+		say $FILEHANDLE "#CreateSequenceDictionary from reference";
+		java_core({FILEHANDLE => $FILEHANDLE,
+			   memory_allocation => "Xmx2g",
+			   java_use_large_pages_ref => \$active_parameter_href->{java_use_large_pages},
+			   java_temporary_directory => $active_parameter_href->{temp_directory},
+			   java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
+			  });
 
-	    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-	    print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
-					     intended_file_path_ref => \$intended_file_path,
-					     temporary_file_path_ref => \$temporary_file_path,
-					    });
+		print $FILEHANDLE "CreateSequenceDictionary ";
+		print $FILEHANDLE "R=".$$human_genome_reference_ref." ";  #Reference genome
+		say $FILEHANDLE "OUTPUT=".$filename_no_ending."_".$random_integer.$file_ending, "\n";  #Output sequence dictionnary
 
-	    $parameter_href->{"human_genome_reference.dict"}{build_file} = 0;  #Only create once
+		my $intended_file_path = $filename_no_ending.$file_ending;
+		my $temporary_file_path = $filename_no_ending."_".$random_integer.$file_ending;
 
-	}
-	if ($parameter_href->{"human_genome_reference.fasta.fai"}{build_file} eq 1) {
+		## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
+		print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
+						 intended_file_path_ref => \$intended_file_path,
+						 temporary_file_path_ref => \$temporary_file_path,
+						});		
+	    }
+	    if ($file_ending eq ".fai") {
 
-	    $logger->warn("Will try to create .fai file for ".$$human_genome_reference_ref." before executing ".$program."\n");
+		$logger->warn("Will try to create ".$file_ending." file for ".$$human_genome_reference_ref." before executing ".$program."\n");
 
-	    say $FILEHANDLE "## Fai file from reference";
-	    print $FILEHANDLE "ln -s ";  #Softlink
-	    print $FILEHANDLE $$human_genome_reference_ref." ";  #Reference genome
-	    say $FILEHANDLE $$human_genome_reference_ref."_".$random_integer, "\n";  #Softlink to reference genome
+		my $human_genome_reference_temp_file = $$human_genome_reference_ref."_".$random_integer;
 
-	    print $FILEHANDLE "samtools faidx ";#index/extract FASTA
-	    say $FILEHANDLE $$human_genome_reference_ref."_".$random_integer, "\n";  #Softlink to reference genome
+		say $FILEHANDLE "## Fai file from reference";
+		print $FILEHANDLE "ln -s ";  #Softlink
+		print $FILEHANDLE $$human_genome_reference_ref." ";  #Reference genome
+		say $FILEHANDLE $human_genome_reference_temp_file, "\n";  #Softlink to reference genome
 
-	    my $intended_file_path = $$human_genome_reference_ref.".fai";
-	    my $temporary_file_path = $$human_genome_reference_ref."_".$random_integer.".fai";
+		print $FILEHANDLE "samtools faidx ";#index/extract FASTA
+		say $FILEHANDLE $human_genome_reference_temp_file, "\n";  #Softlink to reference genome
 
-	    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-	    print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
-					     intended_file_path_ref => \$intended_file_path,
-					     temporary_file_path_ref => \$temporary_file_path,
-					    });
+		my $intended_file_path = $$human_genome_reference_ref.$file_ending;
+		my $temporary_file_path = $human_genome_reference_temp_file.$file_ending;
 
-	    print $FILEHANDLE "rm ";  #Remove softLink
-	    say $FILEHANDLE $$human_genome_reference_ref."_".$random_integer, "\n";  #Softlink to reference genome
+		## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
+		print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
+						 intended_file_path_ref => \$intended_file_path,
+						 temporary_file_path_ref => \$temporary_file_path,
+						});
 
-	    $parameter_href->{"human_genome_reference.fasta.fai"}{build_file} = 0;  #Only create once
+		## Remove softLink
+		remove_file({file_ref => \$human_genome_reference_temp_file,
+			     FILEHANDLE => $FILEHANDLE,
+			    });
+		say $FILEHANDLE "\n";  #Softlink to reference genome
+	    }
+	    $parameter_href->{"human_genome_reference".$file_ending}{build_file} = 0;  #Only create once
 	}
     }
     unless(defined($FILEHANDLE)) { #Unless FILEHANDLE was supplied close it and submit
@@ -17057,23 +17070,23 @@ sub add_to_job_id {
 
     if ($chain_job_id_href) {
 
-	for (my $job_counter=0;$job_counter<scalar( @{ $chain_job_id_href });$job_counter++) {   #All previous job_ids
+	while ( my ($job_index, $job_id) = each (@{ $chain_job_id_href }) ) {
 
-	    if ( (! $job_counter) && (scalar( @{ $chain_job_id_href }) == 1) ) {  #Only 1 previous job_id
+	    if ( (! $job_index) && (scalar( @{ $chain_job_id_href }) == 1) ) {  #Only 1 previous job_id
 
-		$job_id_string .= ":".$chain_job_id_href->[$job_counter];  #First and last job_id start with ":" and end without ":"
+		$job_id_string .= ":".$job_id;  #First and last job_id start with ":" and end without ":"
 	    }
-	    elsif (! $job_counter) {  #First job_id
+	    elsif (! $job_index) {  #First job_id
 
-		$job_id_string .= ":".$chain_job_id_href->[$job_counter].":";  #First job_id start with :
+		$job_id_string .= ":".$job_id.":";  #First job_id start with :
 	    }
-	    elsif ($job_counter eq (scalar( @{ $chain_job_id_href }) -1) ) {  #Last job_id
+	    elsif ($job_index eq (scalar( @{ $chain_job_id_href }) -1) ) {  #Last job_id
 
-		$job_id_string .= $chain_job_id_href->[$job_counter];  #Last job_id finish without :
+		$job_id_string .= $job_id;  #Last job_id finish without :
 	    }
 	    else {  #JobIDs in the middle
 
-		$job_id_string .= $chain_job_id_href->[$job_counter].":";
+		$job_id_string .= $job_id.":";
 	    }
 	}
     }
@@ -17159,15 +17172,17 @@ sub push_to_job_id {
 	}
 	else {
 
-	    for (my $infile_counter=0;$infile_counter<scalar( @{ $infile_lane_no_ending_href->{$sample_id} });$infile_counter++) {  #All infiles
+	  INFILES:
+	    while ( my ($infile_index) = each($infile_lane_no_ending_href->{$sample_id}) ) {  #All infiles
 
-		$chain_key = $sample_id."_".$chain_key_type."_".$path.$infile_counter;  #Set key
+		$chain_key = $sample_id."_".$chain_key_type."_".$path.$infile_index;  #Set key
 
 		if ($job_id_href->{$family_id_chain_key}{$chain_key}) {  #Job exists
 
-		    for (my $job_counter=0;$job_counter<scalar( @{ $job_id_href->{$family_id_chain_key}{$chain_key} });$job_counter++) {  #All previous jobs i.e. jobs in this case equals to infiles in number
+		  JOB_IDS:
+		    while (my ($job_index) = each($job_id_href->{$family_id_chain_key}{$chain_key}) ) {  #All previous jobs i.e. jobs in this case equals to infiles in number
 
-			push ( @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} }, $job_id_href->{$family_id_chain_key}{$chain_key}[$job_counter]);  #Add job_id to hash
+			push ( @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} }, $job_id_href->{$family_id_chain_key}{$chain_key}[$job_index]);  #Add job_id to hash
 		    }
 		}
 	    }
@@ -17178,15 +17193,16 @@ sub push_to_job_id {
 	$chain_key = $family_id_chain_key."_".$sample_id_chain_key;  #Set key
 
 	if ($job_id_href->{$family_id_chain_key}{$chain_key}) {  #Job exists
-
-	    for (my $job_counter=0;$job_counter<scalar( @{ $job_id_href->{$family_id_chain_key}{$chain_key} });$job_counter++) {  #All previous jobs i.e. jobs in this case equals to infiles in number
+	    
+	  JOB_IDS:
+	    while (my ($job_index) = each($job_id_href->{$family_id_chain_key}{$chain_key}) ) {  #All previous jobs i.e. jobs in this case equals to infiles in number
 
 		if ($chain_key_type eq "family_merged") {  #Use $family_id_chain_key instead of $sample_id_chain_key
 
-		    push ( @{ $job_id_href->{$family_id_chain_key}{$family_id_chain_key} }, $job_id_href->{$family_id_chain_key}{$chain_key}[$job_counter]);  #Add job_id hash
+		    push ( @{ $job_id_href->{$family_id_chain_key}{$family_id_chain_key} }, $job_id_href->{$family_id_chain_key}{$chain_key}[$job_index]);  #Add job_id hash
 		}
 		else {
-		    push ( @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} }, $job_id_href->{$family_id_chain_key}{$chain_key}[$job_counter]);  #Add job_id to hash
+		    push ( @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} }, $job_id_href->{$family_id_chain_key}{$chain_key}[$job_index]);  #Add job_id to hash
 		}
 	    }
 	}
@@ -17310,11 +17326,11 @@ sub submit_job {
 	$job_id = submit_jobs_to_sbatch({sbatch_file_name => $sbatch_file_name,
 					});
 
-	for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {
-
-	    my $sample_id_chain_key =  $active_parameter_href->{sample_ids}[$sample_id_counter]."_".$path;
+	foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
+	    
+	    my $sample_id_chain_key =  $sample_id."_".$path;
 	    push ( @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} }, $job_id);  #Add job_id to hash
-
+	    
 	    ## Saves job_id to the correct hash array depending on chaintype
 	    push_to_job_id({active_parameter_href => $active_parameter_href,
 			    sample_info_href => $sample_info_href,
@@ -17322,7 +17338,6 @@ sub submit_job {
 			    job_id_href => $job_id_href,
 			    family_id_chain_key => $family_id_chain_key,
 			    sample_id_chain_key => $sample_id_chain_key,
-			    sample_id => $sample_id,
 			    path => $path,
 			    chain_key_type => "family_merged",
 			   });
@@ -17444,9 +17459,9 @@ sub submit_job {
 		@{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} } = ();  #Clear latest family_id/sample_id chain submission
 
 		##Clear all latest parallel jobs within chainkey
-		for (my $infile_counter=0;$infile_counter<scalar( @{ $infile_lane_no_ending_href->{$sample_id} });$infile_counter++) {
+		while (my ($infile_index) = each($infile_lane_no_ending_href->{$sample_id}) ) {
 
-		    my $sample_id_parallel_chain_key = $sample_id."_parallel_".$path.$infile_counter;  #Create key
+		    my $sample_id_parallel_chain_key = $sample_id."_parallel_".$path.$infile_index;  #Create key
 
 		    if ($job_id_href->{$family_id_chain_key}{$sample_id_parallel_chain_key}) {  #Parallel job exists
 
@@ -17479,9 +17494,9 @@ sub submit_job {
 
 	    if ($dependencies eq "case_dependency_add_to_case") {  #Add family_id_sample_id jobs to current family_id chain
 
-		for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {  #Check jobs for sample_id
+		foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
-		    my $sample_id_chain_key = $active_parameter_href->{sample_ids}[$sample_id_counter]."_".$path;  #Current chain
+		    my $sample_id_chain_key = $sample_id."_".$path;  #Current chain
 
 		    ## Saves job_id to the correct hash array depending on chaintype
 		    push_to_job_id({active_parameter_href => $active_parameter_href,
@@ -17490,7 +17505,6 @@ sub submit_job {
 				    job_id_href => $job_id_href,
 				    family_id_chain_key => $family_id_chain_key,
 				    sample_id_chain_key => $sample_id_chain_key,
-				    sample_id => $sample_id,
 				    path => $path,
 				    chain_key_type => "family_merged",
 				   });
@@ -17544,9 +17558,9 @@ sub submit_job {
 	    elsif ((defined($path)) && $path eq "MAIN") {  #First family_id MAIN chain
 
 		##Add all previous jobId(s) from sample_id chainkey(s)
-		for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {
+		foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
-		    my $sample_id_chain_key = $active_parameter_href->{sample_ids}[$sample_id_counter]."_".$path;
+		    my $sample_id_chain_key = $sample_id."_".$path;
 
 		    if ($job_id_href->{$family_id_chain_key}{$sample_id_chain_key}) {
 
@@ -17557,9 +17571,9 @@ sub submit_job {
 						  });
 
 		    }
-		    for (my $infile_counter=0;$infile_counter<scalar( @{ $infile_lane_no_ending_href->{ $active_parameter_href->{sample_ids}[$sample_id_counter] } });$infile_counter++) {
+		    while (my ($infile_index) = each($infile_lane_no_ending_href->{$sample_id}) ) {
 
-			my $sample_id_parallel_chain_key = $active_parameter_href->{sample_ids}[$sample_id_counter]."_parallel_".$path.$infile_counter;  #Create key
+			my $sample_id_parallel_chain_key = $sample_id."_parallel_".$path.$infile_index;  #Create key
 
 			if ($job_id_href->{$family_id_chain_key}{$sample_id_parallel_chain_key}) {  #Parallel job exists
 
@@ -17612,10 +17626,10 @@ sub submit_job {
 		}
 		else {  #First job in new path and first family_id MAIN chain
 
-		    for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {
+		    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
 			my $family_id_chain_key = $$family_id_ref."_MAIN";
-			my $sample_id_chain_key = $active_parameter_href->{sample_ids}[$sample_id_counter]."_MAIN";
+			my $sample_id_chain_key = $sample_id."_MAIN";
 
 			if ($job_id_href->{$family_id_chain_key}{$sample_id_chain_key}) {
 
@@ -17668,9 +17682,9 @@ sub submit_job {
 	    }
 	    if ($dependencies eq "case_dependency_add_to_case") {  #Job dependent on both family_id and sample_id push to array
 
-		for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {  #Check jobs for sample_id
+		foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
-		    my $sample_id_chain_key = $active_parameter_href->{sample_ids}[$sample_id_counter]."_".$path;  #Current chain
+		    my $sample_id_chain_key = $sample_id."_".$path;  #Current chain
 		    @{ $job_id_href->{$family_id_chain_key}{$family_id_chain_key."_".$sample_id_chain_key} } = ();
 		    @{ $job_id_href->{$family_id_chain_key}{$family_id_chain_key} } = ();  #Clear latest sample_id chainkey
 		    push ( @{ $job_id_href->{$family_id_chain_key}{$family_id_chain_key."_".$sample_id_chain_key} }, $job_id);
@@ -17805,12 +17819,11 @@ sub collect_infiles {
 
     $logger->info("Reads from platform:\n");
 
-    for (my $input_directory_counter=0;$input_directory_counter<scalar(@{ $active_parameter_href->{sample_ids} });$input_directory_counter++) {  #Collects inputfiles govern by sample_ids
+    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {  #Collects inputfiles govern by sample_ids
 
-	my $sample_id_ref = \$active_parameter_href->{sample_ids}[$input_directory_counter];  #Alias
-
+	## Return the key if the hash value and query match
 	my $infile_directory_ref = \get_matching_values_key({active_parameter_href => $active_parameter_href,
-							     query_value_ref => $sample_id_ref,
+							     query_value_ref => \$sample_id,
 							     parameter_name => "infile_dirs",
 							    });
 
@@ -17837,14 +17850,14 @@ sub collect_infiles {
 	}
 	foreach my $infile (@infiles) {  #Check that inFileDirs/infile contains sample_id in filename
 
-	    unless ( $infile =~/$$sample_id_ref/) {
+	    unless ( $infile =~/$sample_id/) {
 
-		$logger->fatal("Could not detect sample_id: ".$$sample_id_ref." in supplied infile: ".$$infile_directory_ref."/".$infile, "\n");
+		$logger->fatal("Could not detect sample_id: ".$sample_id." in supplied infile: ".$$infile_directory_ref."/".$infile, "\n");
 		$logger->fatal("Check that: '--sample_ids' and '--inFileDirs' contain the same sample_id and that the filename of the infile contains the sample_id.", "\n");
 		exit 1;
 	    }
 	}
-	$logger->info("Sample id: ".$$sample_id_ref."\n");
+	$logger->info("Sample id: ".$sample_id."\n");
 	$logger->info("\tInputfiles:\n");
 
 	## Log each file from platform
@@ -17852,8 +17865,8 @@ sub collect_infiles {
 
 	    $logger->info("\t\t", $file, "\n");  #Indent for visability
 	}
-	$indir_path_href->{$$sample_id_ref} = $$infile_directory_ref;   #Catch inputdir path
-	$infile_href->{$$sample_id_ref}  = [@infiles];  #Reload files into hash
+	$indir_path_href->{$sample_id} = $$infile_directory_ref;   #Catch inputdir path
+	$infile_href->{$sample_id}  = [@infiles];  #Reload files into hash
     }
 }
 
@@ -17916,12 +17929,10 @@ sub infiles_reformat {
 
         my $lane_tracker=0;  #Needed to be able to track when lanes are finished
 
-        for (my $infile_counter=0;$infile_counter<scalar( @ { $infile_href->{$sample_id} });$infile_counter++) {  #All inputfiles for all fastq dir and remakes format
-
-	    my $file_name_ref = \$infile_href->{$sample_id}[$infile_counter];  #Alias
+	while (my ($file_index, $file_name) = each(@ { $infile_href->{$sample_id} }) ) {
 
 	    ## Check if a file is gzipped.
-	    my $compressed_switch = check_gzipped({file_name_ref => $file_name_ref,
+	    my $compressed_switch = check_gzipped({file_name_ref => \$file_name,
 						  });
 	    my $read_file_command = "zcat";
 
@@ -17931,14 +17942,14 @@ sub infiles_reformat {
 		$read_file_command = "cat";
 	    }
 
-            if ($$file_name_ref =~/(\d+)_(\d+)_([^_]+)_([^_]+)_([^_]+)_(\d).fastq/) {  #Parse 'new' no "index" format $1=lane, $2=date, $3=Flow-cell, $4=Sample_id, $5=index,$6=direction
+            if ($file_name =~/(\d+)_(\d+)_([^_]+)_([^_]+)_([^_]+)_(\d).fastq/) {  #Parse 'new' no "index" format $1=lane, $2=date, $3=Flow-cell, $4=Sample_id, $5=index,$6=direction
 
 		## Check that the sample_id provided and sample_id in infile name match.
 		check_sample_id_match({active_parameter_href => $active_parameter_href,
 				       infile_href => $infile_href,
 				       sample_id => $sample_id,
 				       infile_sample_id => $4,  #$4 = Sample_id from filename
-				       infile_counter => $infile_counter,
+				       file_index => $file_index,
 				      });
 
 		## Adds information derived from infile name to sample_info hash. Tracks the number of lanes sequenced and checks unique array elementents.
@@ -17957,17 +17968,17 @@ sub infiles_reformat {
 				 index => $5,
 				 direction => $6,
 				 lane_tracker_ref => \$lane_tracker,
-				 infile_counter => $infile_counter,
+				 file_index => $file_index,
 				 compressed_switch => $compressed_switch,
 				});
 	    }
 	    else {  #No regexp match i.e. file does not follow filename convention
 
-		$logger->warn("Could not detect MIP file name convention for file: ".$$file_name_ref.". \n");
+		$logger->warn("Could not detect MIP file name convention for file: ".$file_name.". \n");
 		$logger->warn("Will try to find mandatory information in fastq header.", "\n");
 
 		##Check that file name at least contains sample_id
-		if ($$file_name_ref !~/$sample_id/) {
+		if ($file_name !~/$sample_id/) {
 
 		    $logger->fatal("Please check that the file name contains the sample_id.", "\n");
 		}
@@ -17975,7 +17986,7 @@ sub infiles_reformat {
 		## Get run info from fastq file header
 		my @fastq_info_headers = get_run_info({directory => $indir_path_href->{$sample_id},
 						       read_file_command => $read_file_command,
-						       file => $$file_name_ref,
+						       file => $file_name,
 						      });
 
 		## Adds information derived from infile name to sample_info hash. Tracks the number of lanes sequenced and checks unique array elementents.
@@ -17994,7 +18005,7 @@ sub infiles_reformat {
 				 index => $fastq_info_headers[5],
 				 direction => $fastq_info_headers[4],
 				 lane_tracker_ref => \$lane_tracker,
-				 infile_counter => $infile_counter,
+				 file_index => $file_index,
 				 compressed_switch => $compressed_switch,
 				});
 
@@ -18013,12 +18024,12 @@ sub check_sample_id_match {
 
 ##Function : Check that the sample_id provided and sample_id in infile name match.
 ##Returns  : ""
-##Arguments: $active_parameter_href, $infile_href, $sample_id, $infile_sample_id, $infile_counter
+##Arguments: $active_parameter_href, $infile_href, $sample_id, $infile_sample_id, $file_index
 ##         : $active_parameter_href => The active parameters for this analysis hash {REF}
 ##         : $infile_href           => The infiles hash {REF}
 ##         : $sample_id             => Sample id from user
 ##         : $infile_sample_id      => Sample_id collect with regexp from infile
-##         : $infile_counter        => Counts the number of infiles
+##         : $file_index            => Counts the number of infiles
 
     my ($arg_href) = @_;
 
@@ -18027,27 +18038,27 @@ sub check_sample_id_match {
     my $infile_href;
     my $sample_id;
     my $infile_sample_id;
-    my $infile_counter;
+    my $file_index;
 
     my $tmpl = {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	infile_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_href},
 	sample_id => { required => 1, defined => 1, strict_type => 1, store => \$sample_id},
 	infile_sample_id => { required => 1, defined => 1, strict_type => 1, store => \$infile_sample_id},
-	infile_counter => { required => 1, defined => 1, strict_type => 1, store => \$infile_counter},
+	file_index => { required => 1, defined => 1, strict_type => 1, store => \$file_index},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     my %seen = ($infile_sample_id => 1);  #Add input as first increment
 
-    for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {
+    foreach my $sample_id_supplied (@{ $active_parameter_href->{sample_ids} }) {
 
-	$seen{$active_parameter_href->{sample_ids}[ $sample_id_counter]}++;
+	$seen{$sample_id_supplied}++;
     }
     unless ($seen{$infile_sample_id} > 1) {
 
-	$logger->fatal($sample_id." supplied and sample_id ".$infile_sample_id." found in file : ".$infile_href->{$sample_id}[$infile_counter]." does not match. Please rename file to match sample_id: ".$sample_id."\n");
+	$logger->fatal($sample_id." supplied and sample_id ".$infile_sample_id." found in file : ".$infile_href->{$sample_id}[$file_index]." does not match. Please rename file to match sample_id: ".$sample_id."\n");
 	exit 1;
     }
 }
@@ -18104,7 +18115,7 @@ sub add_infile_info {
 
 ##Function : Adds information derived from infile name to sample_info hash. Tracks the number of lanes sequenced and checks unique array elementents.
 ##Returns  : ""
-##Arguments: $active_parameter_href, $sample_info_href, $file_info_href, $infile_href, $infile_lane_no_ending_href, $infile_both_strands_no_ending_href, $indir_path_href, $lane_href, $lane, $date, $flowcell, $sample_id, $index, $direction, $lane_tracker_ref, $infile_counter, $compressed_switch
+##Arguments: $active_parameter_href, $sample_info_href, $file_info_href, $infile_href, $infile_lane_no_ending_href, $infile_both_strands_no_ending_href, $indir_path_href, $lane_href, $lane, $date, $flowcell, $sample_id, $index, $direction, $lane_tracker_ref, $file_index, $compressed_switch
 ##         : $active_parameter_href              => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href                   => Info on samples and family hash {REF}
 ##         : $file_info_href                     => The file_info hash {REF}
@@ -18120,7 +18131,7 @@ sub add_infile_info {
 ##         : $index                              => The DNA library preparation molecular barcode
 ##         : $direction                          => Sequencing read direction
 ##         : $lane_tracker_ref                   => Counts the number of lanes sequenced {REF}
-##         : $infile_counter                     => Counts the number of infiles
+##         : $file_index                         => Index of file
 ##         : $compressed_switch                  => ".fastq.gz" or ".fastq" info governs zcat or cat downstream
 
     my ($arg_href) = @_;
@@ -18144,7 +18155,7 @@ sub add_infile_info {
     my $flowcell;
     my $index;
     my $direction;
-    my $infile_counter;
+    my $file_index;
     my $compressed_switch;
 
     my $tmpl = {
@@ -18167,9 +18178,9 @@ sub add_infile_info {
 	direction => { required => 1, defined => 1,
 		       allow => [1, 2],
 		       strict_type => 1, store => \$direction},
-	infile_counter => { required => 1, defined => 1,
-			    allow => qr/^\d+$/,
-			    strict_type => 1, store => \$infile_counter},
+	file_index => { required => 1, defined => 1,
+			allow => qr/^\d+$/,
+			strict_type => 1, store => \$file_index},
 	compressed_switch => { required => 1, defined => 1,
 			       allow => [0, 1],
 			       strict_type => 1, store => \$compressed_switch},
@@ -18205,13 +18216,13 @@ sub add_infile_info {
 	## Collect read length from an infile
 	$sample_info_href->{sample}{$sample_id}{file}{$$file_at_lane_level_ref}{sequence_length} = collect_read_length({directory => $indir_path_href->{$sample_id},
 															read_file_command => $read_file,
-															file => $infile_href->{$sample_id}[$infile_counter],
+															file => $infile_href->{$sample_id}[$file_index],
 														       });
 
 	## Check if fastq file is interleaved
 	$sample_info_href->{sample}{$sample_id}{file}{$$file_at_lane_level_ref}{interleaved} = detect_interleaved({directory => $indir_path_href->{$sample_id},
 														   read_file_command => $read_file,
-														   file => $infile_href->{$sample_id}[$infile_counter],
+														   file => $infile_href->{$sample_id}[$file_index],
 														  });
 
 	## Detect "regexp" in string
@@ -18226,10 +18237,10 @@ sub add_infile_info {
 	$sample_info_href->{sample}{$sample_id}{file}{$$file_at_lane_level_ref}{sequence_run_type} = "paired_end";  #$lane_tracker -1 since it gets incremented after direction eq 1.
     }
 
-    $infile_both_strands_no_ending_href->{$sample_id}[$infile_counter] = $sample_id.".".$date."_".$flowcell."_".$index.".lane".$lane."_".$direction;  #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
+    $infile_both_strands_no_ending_href->{$sample_id}[$file_index] = $sample_id.".".$date."_".$flowcell."_".$index.".lane".$lane."_".$direction;  #Save new format in hash with samplid as keys and inputfiles in array. Note: These files have not been created yet and there is one entry per strand and .ending is removed (.fastq).
 
-    $file_at_direction_level_ref = \$infile_both_strands_no_ending_href->{$sample_id}[$infile_counter];  #Alias
-    $sample_info_href->{sample}{$sample_id}{file}{$$file_at_lane_level_ref}{read_direction_file}{$$file_at_direction_level_ref}{original_file_name} = $infile_href->{$sample_id}[$infile_counter];  #Original file_name
+    $file_at_direction_level_ref = \$infile_both_strands_no_ending_href->{$sample_id}[$file_index];  #Alias
+    $sample_info_href->{sample}{$sample_id}{file}{$$file_at_lane_level_ref}{read_direction_file}{$$file_at_direction_level_ref}{original_file_name} = $infile_href->{$sample_id}[$file_index];  #Original file_name
 
     $sample_info_href->{sample}{$sample_id}{file}{$$file_at_lane_level_ref}{read_direction_file}{$$file_at_direction_level_ref}{original_file_name_noending} = $lane."_".$date."_".$flowcell."_".$sample_id."_".$index."_".$direction;  #Original file_name, but no ending
 
@@ -18940,14 +18951,12 @@ sub create_file_endings {
 
 		if ($parameter_href->{$order_parameter_element}{chain} eq "MAIN") {  #MAIN chain
 
-		    if ($parameter_href->{$order_parameter_element}{file_tag} ne "nofile_tag") {  #FileEnding exist
+		    if ($parameter_href->{$order_parameter_element}{file_tag} ne "nofile_tag") {  #File_tag exist
 
 			my $file_ending_ref = \$parameter_href->{$order_parameter_element}{file_tag}; #Alias
 
 ###MAIN/Per sample_id
-			for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {
-
-			    my $sample_id = $active_parameter_href->{sample_ids}[$sample_id_counter];  #Alias
+			foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
 			    if ($active_parameter_href->{$order_parameter_element} > 0) {  #File_ending should be added
 
@@ -19011,14 +19020,12 @@ sub create_file_endings {
 
 		    my $chain_fork = $parameter_href->{$order_parameter_element}{chain};
 
-		    if ($parameter_href->{$order_parameter_element}{file_tag} ne "nofile_tag") {  #FileEnding exist
+		    if ($parameter_href->{$order_parameter_element}{file_tag} ne "nofile_tag") {  #File_tag exist
 
 			my $file_ending_ref = \$parameter_href->{$order_parameter_element}{file_tag};  #Alias
 
 ###OTHER/Per sample_id
-			for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {
-
-			    my $sample_id = $active_parameter_href->{sample_ids}[$sample_id_counter];  #Alias
+			foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
 			    if ($active_parameter_href->{$order_parameter_element} > 0) {  #File_ending should be added
 
@@ -19336,9 +19343,9 @@ sub add_merged_infile_name {
 
     if ( (defined($picardtools_mergesamfiles_previous_bams)) && ($picardtools_mergesamfiles_previous_bams) ) {  # Files merged this round with merged file from previous round
 
-	for (my $merge_file_counter=0;$merge_file_counter<scalar(@{ $active_parameter_href->{picardtools_mergesamfiles_previous_bams} });$merge_file_counter++) {
+	foreach my $merge_sam_file (@{ $active_parameter_href->{picardtools_mergesamfiles_previous_bams} }) {
 
-	    if ($active_parameter_href->{picardtools_mergesamfiles_previous_bams}[$merge_file_counter] =~ /lane(\d+)|s_(\d+)/) {  #Look for lanes_ or lane\d in previously generated file to be merged with current run to be able to extract previous lanes
+	    if ($merge_sam_file =~ /lane(\d+)|s_(\d+)/) {  #Look for lanes_ or lane\d in previously generated file to be merged with current run to be able to extract previous lanes
 
 		##Make sure to always supply lanes from previous regexp
 		if($1) {
@@ -19351,9 +19358,9 @@ sub add_merged_infile_name {
 		}
 		$infile = $sample_id."_lanes_".$merge_lanes;
 
-		for (my $lane_counter=0;$lane_counter<scalar(@ { $lane_href->{$sample_id} });$lane_counter++) {
+		foreach my $lane_id (@ { $lane_href->{$sample_id} }) {
 
-		    $infile .= $lane_href->{$sample_id}[$lane_counter];  #Extract lanes per sample_id
+		    $infile .= $lane_id;  #Extract lanes per sample_id
 		}
 	    }
 	}
@@ -19362,9 +19369,9 @@ sub add_merged_infile_name {
 
 	$infile = $sample_id."_lanes_";
 
-	for (my $lane_counter=0;$lane_counter<scalar(@{ $lane_href->{$sample_id} });$lane_counter++) {
+	foreach my $lane_id (@ { $lane_href->{$sample_id} }) {
 
-	    $infile .= $lane_href->{$sample_id}[$lane_counter];  #Extract lanes per sample_id
+	    $infile .= $lane_id;  #Extract lanes per sample_id
 	}
     }
     $file_info_href->{$sample_id}{merge_infile} = $infile;
@@ -19869,6 +19876,9 @@ sub check_unique_ids {
 
     my ($arg_href) = @_;
 
+    ## Default(s)
+    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
+
     ## Flatten argument(s)
     my $active_parameter_href;
     my $sample_ids_ref;
@@ -19876,6 +19886,7 @@ sub check_unique_ids {
     my $tmpl = {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_ids_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$sample_ids_ref},
+	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -19888,23 +19899,23 @@ sub check_unique_ids {
 	exit 1;
     }
 
-    for (my $sample_id_counter=0;$sample_id_counter<scalar(@$sample_ids_ref);$sample_id_counter++) {
+    foreach my $sample_id (@$sample_ids_ref) {
 
-	$seen{ $sample_ids_ref->[$sample_id_counter] }++;  #Increment instance to check duplicates later
+	$seen{$sample_id}++;  #Increment instance to check duplicates later
 
-	if ($active_parameter_href->{family_id} eq $sample_ids_ref->[$sample_id_counter]) {  #Family_id cannot be the same as sample_id
+	if ($$family_id_ref eq $sample_id) {  #Family_id cannot be the same as sample_id
 
-	    $logger->fatal("Family_id: ".$active_parameter_href->{family_id}." equals sample_id: ".$sample_ids_ref->[$sample_id_counter].". Please make sure that the family_id and sample_id(s) are unique.\n");
+	    $logger->fatal("Family_id: ".$$family_id_ref." equals sample_id: ".$sample_id.". Please make sure that the family_id and sample_id(s) are unique.\n");
 	    exit 1;
 	}
-	if ($seen{ $sample_ids_ref->[$sample_id_counter] } > 1) {  #Check sample_id are unique
+	if ($seen{$sample_id} > 1) {  #Check sample_id are unique
 
-	    $logger->fatal("Sample_id: ".$sample_ids_ref->[$sample_id_counter]." is not uniqe.\n");
+	    $logger->fatal("Sample_id: ".$sample_id." is not uniqe.\n");
 	    exit 1;
 	}
-	if ($sample_ids_ref->[$sample_id_counter] =~/_/) {  #Sample_id contains "_", which is not allowed according to filename conventions
+	if ($sample_id =~/_/) {  #Sample_id contains "_", which is not allowed according to filename conventions
 
-	    $logger->fatal("Sample_id: ".$sample_ids_ref->[$sample_id_counter]." contains '_'. Please rename sample_id according to MIP's filename convention, removing the '_'.\n");
+	    $logger->fatal("Sample_id: ".$sample_id." contains '_'. Please rename sample_id according to MIP's filename convention, removing the '_'.\n");
 	    exit 1;
 	}
     }
@@ -21280,8 +21291,10 @@ sub check_most_complete_and_remove_file {
 					       });
 
 	    ##Print removal of file to sbatch script
-	    print $FILEHANDLE "rm ";
-	    say $FILEHANDLE $file_name, "\n";  #Remove file(s)
+	    remove_file({file_ref => \$file_name,
+			 FILEHANDLE => $FILEHANDLE,
+			});
+	    say $FILEHANDLE "\n";  #Remove file(s)
 	}
     }
     else {
@@ -21292,8 +21305,10 @@ sub check_most_complete_and_remove_file {
 					   });
 
 	##Print removal of file to sbatch script
-	print $FILEHANDLE "rm ";
-	say $FILEHANDLE $file_name, "\n";  #Remove file(s)
+	remove_file({file_ref => \$file_name,
+		     FILEHANDLE => $FILEHANDLE,
+		    });
+	say $FILEHANDLE "\n";  #Remove file(s)
     }
 }
 
@@ -21389,16 +21404,16 @@ sub concatenate_vcfs {
 
     print $FILEHANDLE "split -j ";  #Joinf VCFs together
 
-    for (my $element_counter=0;$element_counter<scalar(@$arrays_ref);$element_counter++) {
-
-	print $FILEHANDLE $infile_prefix.$arrays_ref->[$element_counter].$infile_postfix." ";  #files to combined
+    foreach my $element (@$arrays_ref) {
+	
+	print $FILEHANDLE $infile_prefix.$element.$infile_postfix." ";  #files to combined
     }
     if ( (defined($_[6])) && $reorder_swith eq "reorder_header") {
-
+	
 	print $FILEHANDLE "| ";  #Pipe
 	print $FILEHANDLE "perl ".catfile($active_parameter_href->{script_dir}, "vcfparser.pl")." ";  #Parses the vcf output
     }
-
+    
     print $FILEHANDLE "> ".$outfile;  #OutFile
 }
 
@@ -21444,11 +21459,11 @@ sub combinevariants {
 
     print $FILEHANDLE "-T CombineVariants ";  #Type of analysis to run
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{human_genome_reference})." ";  #Reference file
+    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 
-    for (my $element_counter=0;$element_counter<scalar(@$arrays_ref);$element_counter++) {
+    foreach my $element (@$arrays_ref) {
 
-	print $FILEHANDLE "-V: ".$infile_prefix.$arrays_ref->[$element_counter].$infile_postfix." ";  #files to combined
+	print $FILEHANDLE "-V: ".$infile_prefix.$element.$infile_postfix." ";  #files to combined
     }
     print $FILEHANDLE "-genotypeMergeOptions UNSORTED ";  #Take the genotypes in any order. Should be fine since the same order and number of samples exists in all files
 
@@ -21499,9 +21514,9 @@ sub combinegvcfs {
     print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
     print $FILEHANDLE "-R ".catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{human_genome_reference})." ";  #Reference file
 
-    for (my $element_counter=0;$element_counter<scalar(@$arrays_ref);$element_counter++) {
+    foreach my $element (@$arrays_ref) {
 
-	print $FILEHANDLE "-V: ".$infile_prefix.$arrays_ref->[$element_counter].$infile_postfix." ";  #files to combined
+	print $FILEHANDLE "-V: ".$infile_prefix.$element.$infile_postfix." ";  #files to combined
     }
     say $FILEHANDLE "-o ".$outfile, "\n";  #OutFile
 }
@@ -21570,9 +21585,9 @@ sub concatenate_variants {
     print $FILEHANDLE "-R ".$$human_genome_reference_ref." ";  #Reference file
     print $FILEHANDLE "-assumeSorted ";  #assumeSorted should be true if the input files are already sorted
 
-    for (my $element_counter=0;$element_counter<scalar(@$elements_ref);$element_counter++) {
+    foreach my $file_element (@$elements_ref) {
 
-	print $FILEHANDLE "-V: ".$infile_prefix.$elements_ref->[$element_counter].$infile_postfix." ";  #files to combined
+	print $FILEHANDLE "-V: ".$infile_prefix.$file_element.$infile_postfix." ";  #files to combined
     }
     say $FILEHANDLE "-out ".$outfile, "\n";  #OutFile
 }
@@ -21884,16 +21899,23 @@ sub check_human_genome_file_endings {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    for (my $file_endings_counter=0;$file_endings_counter<scalar(@{ $file_info_href->{human_genome_reference_file_endings} });$file_endings_counter++) {
+    foreach my $file_ending (@{ $file_info_href->{human_genome_reference_file_endings} }) {
 
-	my $human_genome_reference_file_ending = $file_info_href->{human_genome_reference_file_endings}[$file_endings_counter];  #Alias
+	my $path = catfile($active_parameter_href->{human_genome_reference});
 
 	## Enable auto_build of metafiles
-	$parameter_href->{$$parameter_name_ref.$human_genome_reference_file_ending}{build_file} = "yes_auto_build";
+	$parameter_href->{$$parameter_name_ref.$file_ending}{build_file} = "yes_auto_build";
 
-	my $path = catfile(dirname($active_parameter_href->{human_genome_reference}), $$human_genome_reference_name_no_ending_ref);  #Add mip_reference path
-        $path = $path.$human_genome_reference_file_ending;  #Add current ending
-	my $complete_parameter_name = $$parameter_name_ref.$human_genome_reference_file_ending;
+	if ($file_ending eq ".dict") {
+
+	    ## Removes ".file_ending" in filename.FILENDING(.gz)
+	    $path = remove_file_ending({file_name_ref => \$active_parameter_href->{human_genome_reference},
+					file_ending => ".fasta",
+				       });
+	}
+
+        $path = $path.$file_ending;  #Add current ending
+	my $complete_parameter_name = $$parameter_name_ref.$file_ending;
 
 	check_existance({parameter_href => $parameter_href,
 			 active_parameter_href => $active_parameter_href,
@@ -21936,29 +21958,27 @@ sub check_merge_picardtools_mergesamfiles_previous_bams {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    for (my $sample_id_counter=0;$sample_id_counter<scalar(@{ $active_parameter_href->{sample_ids} });$sample_id_counter++) {  #Check all samples to check, which are to be merged with previous files later
-
-	my $sample_id_ref = \$active_parameter_href->{sample_ids}[$sample_id_counter];  #Alias
+  SAMPLE_IDS:
+    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
 	if (@{ $active_parameter_href->{picardtools_mergesamfiles_previous_bams} }) {  #Supplied info - check for which sample_id(s)
 
-	    for (my $merge_file_counter=0;$merge_file_counter<scalar(@{ $active_parameter_href->{picardtools_mergesamfiles_previous_bams} });$merge_file_counter++) {
+	  MERGE_FILES:
+	    foreach my $bam_file (@{ $active_parameter_href->{picardtools_mergesamfiles_previous_bams} }) {
 
-		my $bam_file_ref = \$active_parameter_href->{picardtools_mergesamfiles_previous_bams}[$merge_file_counter];  #Alias
+		if ($bam_file =~ /$sample_id/) {  #Look for sample_id in previously generated file to be merged with current run to be able to merge correct files
 
-		if ($$bam_file_ref =~ /$$sample_id_ref/) {  #Look for sample_id in previously generated file to be merged with current run to be able to merge correct files
-
-		    $file_info_href->{$$sample_id_ref}{picardtools_mergesamfiles_previous_bams} = 1;
+		    $file_info_href->{$sample_id}{picardtools_mergesamfiles_previous_bams} = 1;
 		}
 		else {
 
-		    $file_info_href->{$$sample_id_ref}{picardtools_mergesamfiles_previous_bams} = 0;
+		    $file_info_href->{$sample_id}{picardtools_mergesamfiles_previous_bams} = 0;
 		}
 	    }
 	}
 	else {  #Not supplied - Set to 0
 
-	    $file_info_href->{$$sample_id_ref}{picardtools_mergesamfiles_previous_bams} = 0;
+	    $file_info_href->{$sample_id}{picardtools_mergesamfiles_previous_bams} = 0;
 	}
     }
 }
@@ -22367,16 +22387,16 @@ sub migrate_files_to_temp {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     my $paired_end_tracker = 0;
-    my $core_counter=1;
+    my $core_counter = 1;
 
     say $FILEHANDLE "## Copying file(s) to temporary directory";
-    for (my $file_counter=0;$file_counter<scalar( @$files_ref);$file_counter++) { #For all files
+    foreach my $file (@$files_ref) {
 
 	my $sequence_run_mode;
 
 	if ( (defined($sample_info_href)) && (defined($sample_id)) ) {
 
-	    $sequence_run_mode = $sample_info_href->{sample}{$sample_id}{file}{ $files_ref->[$file_counter] }{sequence_run_type}; #Collect paired-end or single-end sequence run mode
+	    $sequence_run_mode = $sample_info_href->{sample}{$sample_id}{file}{$file}{sequence_run_type}; #Collect paired-end or single-end sequence run mode
 	}
 	print_wait({counter_ref => \$paired_end_tracker,
 		    core_number_ref => \$core_number,
@@ -22464,49 +22484,49 @@ sub remove_files_at_temp {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     my $paired_end_tracker = 0;
-    my $core_counter=1;
+    my $core_counter = 1;
 
     say $FILEHANDLE "## Removing file(s) at temporary directory";
 
-    for (my $file_counter=0;$file_counter<scalar( @$files_ref);$file_counter++) {  #For all files
+    while (my ($file_index, $file) = each(@$files_ref) ) {  #For all files
 
 	my $sequence_run_mode;
 
 	if ( (defined($sample_info_href)) && (defined($sample_id)) ) {
 
-	    $sequence_run_mode = $sample_info_href->{sample}{$sample_id}{file}{ $files_ref->[$file_counter] }{sequence_run_type};  #Collect paired-end or single-end sequence run mode
+	    $sequence_run_mode = $sample_info_href->{sample}{$sample_id}{file}{$file}{sequence_run_type};  #Collect paired-end or single-end sequence run mode
 	}
 
 	## Remove file(s) at temporary directory.
 	if ($file_info_href) {  #Contigs
 
-	    my $core_counter=1;
-	    for (my $contigs_counter=0;$contigs_counter<scalar(@{ $file_info_href->{contigs_size_ordered} });$contigs_counter++) {
+	    my $core_counter = 1;
+	    while (my ($contig_index, $contig) = each(@{ $file_info_href->{contigs_size_ordered} }) ) {
 
-		my $contig_ref = \$file_info_href->{contigs_size_ordered}[$contigs_counter];
-
-		print_wait({counter_ref => \$contigs_counter,
+		print_wait({counter_ref => \$contig_index,
 			    core_number_ref => \$core_number,
 			    core_counter_ref => \$core_counter,
 			    FILEHANDLE => $FILEHANDLE,
 			   });
 
-		print $FILEHANDLE "rm ";  #Delete
-		print $FILEHANDLE catfile($$temp_directory_ref, $extract_files_ref->[$paired_end_tracker].$infile_tag."_".$$contig_ref.$file_ending)." ";  #File
+		remove_file({file_ref => \catfile($$temp_directory_ref, $extract_files_ref->[$paired_end_tracker].$infile_tag."_".$contig.$file_ending),
+			     FILEHANDLE => $FILEHANDLE,
+			    });
 		say $FILEHANDLE "& ";
 	    }
 	}
 	else {
 
-	    print_wait({counter_ref => \$file_counter,
+	    print_wait({counter_ref => \$file_index,
 			core_number_ref => \$core_number,
 			core_counter_ref => \$core_counter,
 			FILEHANDLE => $FILEHANDLE,
 		       });
 
 	    ## Remove file(s) at temporary directory.
-	    print $FILEHANDLE "rm ";  #Delete
-	    print $FILEHANDLE catfile($$temp_directory_ref, $extract_files_ref->[$paired_end_tracker].$infile_tag.$file_ending)." ";  #File
+	    remove_file({file_ref => \catfile($$temp_directory_ref, $extract_files_ref->[$paired_end_tracker].$infile_tag.$file_ending),
+			 FILEHANDLE => $FILEHANDLE,
+			});
 	    say $FILEHANDLE "& ";
 
 	    if ( (defined($sequence_run_mode)) && ($sequence_run_mode eq "paired_end") ) {
@@ -22514,8 +22534,9 @@ sub remove_files_at_temp {
 		$paired_end_tracker = $paired_end_tracker+1;  #Increment to collect correct read 2
 
 		## Remove file(s) at temporary directory.
-		print $FILEHANDLE "rm ";  #Delete
-		print $FILEHANDLE catfile($$temp_directory_ref, $extract_files_ref->[$paired_end_tracker].$infile_tag.$file_ending)." ";  #File
+		remove_file({file_ref => \catfile($$temp_directory_ref, $extract_files_ref->[$paired_end_tracker].$infile_tag.$file_ending),
+			     FILEHANDLE => $FILEHANDLE,
+			    });
 		say $FILEHANDLE "& ";
 	    }
 	    $paired_end_tracker++;  #Increment to correctly track both single-end runs and paired-end runs
@@ -22563,19 +22584,19 @@ sub migrate_files_from_temp {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $core_counter=1;
+    my $core_counter = 1;
 
     say $FILEHANDLE "## Copying file(s) from temporary folder";
-    for (my $file_counter=0;$file_counter<scalar( @$files_ref);$file_counter++) { #For all files
+    while (my ($file_index) = each($files_ref) ) {  #For all files
 
-	print_wait({counter_ref => \$file_counter,
+	print_wait({counter_ref => \$file_index,
 		    core_number_ref => \$core_number,
 		    core_counter_ref => \$core_counter,
 		    FILEHANDLE => $FILEHANDLE,
 		   });
 
 	## Copies file from temporary directory.
-	migrate_file_from_temp({temp_path => catfile($temp_directory, $extract_files_ref->[$file_counter].$file_ending),
+	migrate_file_from_temp({temp_path => catfile($temp_directory, $extract_files_ref->[$file_index].$file_ending),
 				file_path => $outsample_directory,
 				FILEHANDLE => $FILEHANDLE,
 			       });
@@ -22730,17 +22751,68 @@ sub remove_directory {
 
 ##Function : Writes command to removes directory to filehandle.
 ##Returns  : ""
-##Arguments: $directoryRef, $FILEHANDLE
-##         : $directoryRef => the directory to remove
-##         : $FILEHANDLE   => Filehandle to write to
+##Arguments: $directory_ref, $FILEHANDLE
+##         : $directory_ref => the directory to remove
+##         : $FILEHANDLE    => Filehandle to write to
+##         : $options_ref   => Option to rm {Optional}
 
-    my $temp_directory_ref = $_[0];
-    my $FILEHANDLE = $_[1];
+    my ($arg_href) = @_;
 
-    say $FILEHANDLE "## Remove directory";
+    ## Default(s)
+    my $options_ref;
+
+    ## Flatten argument(s)
+    my $directory_ref;
+    my $FILEHANDLE;
+
+    my $tmpl = { 
+	directory_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$directory_ref},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	options_ref => { default => ["r", "f"],
+			 allow => ["d", "f", "i", "P", "R", "r", "v", "W"],
+			 strict_type => 1, store => \$options_ref},
+    };
+     
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
     print $FILEHANDLE "rm ";  #Remove
-    print $FILEHANDLE "-rf ";  #Directory
-    say $FILEHANDLE $$temp_directory_ref, "\n";  #Directory to remove
+    print $FILEHANDLE "-".join(" -", @$options_ref)." ";  #Options
+    print $FILEHANDLE $$directory_ref." ";  #Directory to remove
+}
+
+sub remove_file {
+
+##remove_file
+
+##Function : Writes command to removes file to filehandle.
+##Returns  : ""
+##Arguments: $file_ref, $FILEHANDLE
+##         : $file_ref    => the directory to remove
+##         : $FILEHANDLE  => Filehandle to write to
+##         : $options_ref => Option to rm {Optional}
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $options_ref;
+
+    ## Flatten argument(s)
+    my $file_ref;
+    my $FILEHANDLE;
+
+    my $tmpl = { 
+	file_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$file_ref},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	options_ref => { default => ["f"],
+			 allow => ["d", "f", "i", "P", "R", "r", "v", "W"],
+			 strict_type => 1, store => \$options_ref},
+    };
+     
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    print $FILEHANDLE "rm ";  #Remove
+    print $FILEHANDLE "-".join(" -", @$options_ref)." ";  #Options
+    print $FILEHANDLE $$file_ref." ";  #File to remove
 }
 
 
@@ -22750,8 +22822,8 @@ sub remove_contig_file_at_temp_directory {
 
 ##Function : Removes files at temporary directory dictated by supplied array.
 ##Returns  : ""
-##Arguments: $elements_ref, $FILEHANDLE, $core_number, $file_name, $file_ending, $temp_directory
-##         : $elements_ref   => Array to use for file iteration {REF}
+##Arguments: $files_ref, $FILEHANDLE, $core_number, $file_name, $file_ending, $temp_directory
+##         : $files_ref      => Array to use for file iteration {REF}
 ##         : $FILEHANDLE     => Sbatch filehandle to write to
 ##         : $core_number    => The number of cores to use
 ##         : $file_name      => File name without ending attached
@@ -22761,7 +22833,7 @@ sub remove_contig_file_at_temp_directory {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $elements_ref;
+    my $files_ref;
     my $FILEHANDLE;
     my $core_number;
     my $file_name;
@@ -22769,7 +22841,7 @@ sub remove_contig_file_at_temp_directory {
     my $temp_directory;
 
     my $tmpl = {
-	elements_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$elements_ref},
+	files_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$files_ref},
 	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
 	core_number => { required => 1, defined => 1, strict_type => 1, store => \$core_number},
 	file_name => { required => 1, defined => 1, strict_type => 1, store => \$file_name},
@@ -22779,23 +22851,22 @@ sub remove_contig_file_at_temp_directory {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $core_counter=1;
+    my $core_counter = 1;
 
     ## Remove infile at temporary Directory
     say $FILEHANDLE "## Remove file at temporary Directory";
 
-    for (my $element_counter=0;$element_counter<scalar(@$elements_ref);$element_counter++) {
+    while (my ($file_index, $file) = each (@$files_ref) ) {
 
-	my $element_ref = \$elements_ref->[$element_counter];
-
-	print_wait({counter_ref => \$element_counter,
+	print_wait({counter_ref => \$file_index,
 		    core_number_ref => \$core_number,
 		    core_counter_ref => \$core_counter,
 		    FILEHANDLE => $FILEHANDLE,
 		   });
 
-	print $FILEHANDLE "rm ";
-	print $FILEHANDLE catfile($temp_directory, $file_name."_".$$element_ref.$file_ending)." ";  #File to be removed
+	remove_file({file_ref => \catfile($temp_directory, $file_name."_".$file.$file_ending),
+		     FILEHANDLE => $FILEHANDLE,
+		    });
 	say $FILEHANDLE "& ";
     }
     say $FILEHANDLE "wait", "\n";
