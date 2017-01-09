@@ -3301,7 +3301,7 @@ sub evaluation {
     print $FILEHANDLE "GenotypeConcordance ";
     print $FILEHANDLE "TRUTH_VCF=".catfile($$temp_directory_ref, "NIST.vcf")." ";
     print $FILEHANDLE "CALL_VCF=".catfile($$temp_directory_ref, "MIP_lts_refrm.vcf")." ";
-    print $FILEHANDLE "OUTPUT=".catfile($$temp_directory_ref, "compMIP.Vs.NIST_ADM1059A3_genome_bed")," ";
+    print $FILEHANDLE "OUTPUT=".catfile($$temp_directory_ref, "compMIP.Vs.".$active_parameter_href->{nist_id}."-NIST_genome_bed")," ";
     print $FILEHANDLE "TRUTH_SAMPLE=".$active_parameter_href->{nist_id}."-NIST ";
     print $FILEHANDLE "CALL_SAMPLE=".$$sample_id_ref." ";
     print $FILEHANDLE "MIN_GQ=20 ";
@@ -3320,7 +3320,7 @@ sub evaluation {
     print $FILEHANDLE "GenotypeConcordance ";
     print $FILEHANDLE "TRUTH_VCF=".catfile($$temp_directory_ref, "NIST.vcf")." ";
     print $FILEHANDLE "CALL_VCF=".catfile($$temp_directory_ref, "MIP_lts_refrm.vcf")." ";
-    print $FILEHANDLE "OUTPUT=".catfile($$temp_directory_ref, "compMIP.Vs.NIST_ADM1059A3_genome")." ";
+    print $FILEHANDLE "OUTPUT=".catfile($$temp_directory_ref, "compMIP.Vs.".$active_parameter_href->{nist_id}."-NIST_genome")." ";
     print $FILEHANDLE "TRUTH_SAMPLE=".$active_parameter_href->{nist_id}."-NIST ";
     print $FILEHANDLE "CALL_SAMPLE=".$$sample_id_ref." ";
     print $FILEHANDLE "MIN_GQ=20 ";
@@ -3329,14 +3329,14 @@ sub evaluation {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, "compMIP.Vs.NIST_ADM1059A3_genome*"),
+    my @outfiles = ("compMIP.Vs.NIST_ADM1059A3_genome*", "*vcf.stats");
+    foreach my $outfile (@outfiles) {
+
+	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $outfile),
 			    file_path => $outfamily_directory,
 			    FILEHANDLE => $FILEHANDLE,
 			   });
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, "*vcf.stats"),
-			    file_path => $outfamily_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    }
     say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
@@ -3496,7 +3496,7 @@ sub rankvariant {
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
 	    $xargs_file_counter = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 							      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-							      files_ref => $contigs_size_ordered_ref,
+							      contigs_ref => $contigs_size_ordered_ref,
 							      file_name => $file_name,
 							      program_info_path => $program_info_path,
 							      core_number => $core_number,
@@ -4260,7 +4260,7 @@ sub snpeff {
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
 	    ($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 										  XARGSFILEHANDLE => $XARGSFILEHANDLE,
-										  files_ref => $vcfparser_contigs_ref,
+										  contigs_ref => $vcfparser_contigs_ref,
 										  file_name =>$file_name,
 										  program_info_path => $program_info_path,
 										  core_number => $core_number,
@@ -4419,7 +4419,7 @@ sub snpeff {
 	    say $FILEHANDLE "## Copy file from temporary directory";
 	    ($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 										  XARGSFILEHANDLE => $XARGSFILEHANDLE,
-										  files_ref => $vcfparser_contigs_ref,
+										  contigs_ref => $vcfparser_contigs_ref,
 										  file_name =>$file_name,
 										  program_info_path => $program_info_path,
 										  core_number => $active_parameter_href->{core_processor_number},
@@ -4604,7 +4604,7 @@ sub annovar {
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
 	    ($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 										  XARGSFILEHANDLE => $XARGSFILEHANDLE,
-										  files_ref => $vcfparser_contigs_ref,
+										  contigs_ref => $vcfparser_contigs_ref,
 										  file_name =>$file_name,
 										  program_info_path => $program_info_path,
 										  core_number => $core_number,
@@ -4697,7 +4697,7 @@ sub annovar {
 	    say $FILEHANDLE "## Copy file from temporary directory";
 	    ($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 										  XARGSFILEHANDLE => $XARGSFILEHANDLE,
-										  files_ref => $vcfparser_contigs_ref,
+										  contigs_ref => $vcfparser_contigs_ref,
 										  file_name =>$file_name,
 										  program_info_path => $program_info_path,
 										  core_number => $core_number,
@@ -4845,7 +4845,7 @@ sub vcfparser {
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
 	($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 									      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									      files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+									      contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
 									      file_name =>$file_name,
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
@@ -4992,7 +4992,7 @@ sub vcfparser {
 	    say $FILEHANDLE "## Copy file(s) from temporary directory";
 	    ($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 										  XARGSFILEHANDLE => $XARGSFILEHANDLE,
-										  files_ref => @vcfparser_contigs_ref,
+										  contigs_ref => @vcfparser_contigs_ref,
 										  file_name =>$file_name,
 										  program_info_path => $program_info_path,
 										  core_number => $core_number,
@@ -5155,7 +5155,7 @@ sub varianteffectpredictor {
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
 	($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 									      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									      files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+									      contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
 									      file_name =>$file_name,
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
@@ -6106,7 +6106,7 @@ sub vt {
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
 	($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 									      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									      files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+									      contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
 									      file_name =>$file_name,
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
@@ -6365,7 +6365,7 @@ sub rhocall {
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
 	($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 									      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									      files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+									      contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
 									      file_name =>$file_name,
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
@@ -7203,14 +7203,14 @@ sub gatk_variantrecalibration {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => $outfile_path_no_ending.".vcf*",
-			    file_path => $outfamily_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
-    migrate_file_from_temp({temp_path => $intermediary_file_path_noending.".intervals.tranches.pdf",
-			    file_path => $outfamily_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    my @outfiles = ($outfile_path_no_ending.".vcf*", $intermediary_file_path_noending.".intervals.tranches.pdf");
+    foreach my $outfile (@outfiles) {
+
+	migrate_file_from_temp({temp_path => $outfile,
+				file_path => $outfamily_directory,
+				FILEHANDLE => $FILEHANDLE,
+			       });
+    }
     say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
@@ -8073,18 +8073,17 @@ sub picardtools_collectmultiplemetrics {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile.$outfile_tag.".alignment_summary_metrics"),
-			    file_path => $outsample_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile.$outfile_tag.".quality*"),
-			    file_path => $outsample_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile.$outfile_tag.".insert*"),
-			    file_path => $outsample_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    my @outfiles = ($infile.$outfile_tag.".alignment_summary_metrics",
+		    $infile.$outfile_tag.".quality*",
+		    $infile.$outfile_tag.".insert*",
+	);
+    foreach my $outfile (@outfiles) {
+
+	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $outfile),
+				file_path => $outsample_directory,
+				FILEHANDLE => $FILEHANDLE,
+			       });
+    }
     say $FILEHANDLE "wait", "\n";
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
@@ -8541,7 +8540,7 @@ sub sv_rankvariant {
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
 	    $xargs_file_counter = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 							      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-							      files_ref => \@contigs_size_ordered,
+							      contigs_ref => \@contigs_size_ordered,
 							      file_name => $file_name,
 							      program_info_path => $program_info_path,
 							      core_number => $core_number,
@@ -8931,7 +8930,7 @@ sub sv_vcfparser {
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
 	($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 									      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									      files_ref => \@contigs,
+									      contigs_ref => \@contigs,
 									      file_name =>$file_name,
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
@@ -9113,7 +9112,7 @@ sub sv_vcfparser {
 	    say $FILEHANDLE "## Copy file(s) from temporary directory";
 	    ($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 										  XARGSFILEHANDLE => $XARGSFILEHANDLE,
-										  files_ref => \@contigs,
+										  contigs_ref => \@contigs,
 										  file_name =>$file_name,
 										  program_info_path => $program_info_path,
 										  core_number => $core_number,
@@ -9954,7 +9953,7 @@ sub cnvnator {
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     ($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 									  XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									  files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+									  contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
 									  file_name =>$file_name,
 									  program_info_path => $program_info_path,
 									  core_number => $core_number,
@@ -10188,7 +10187,7 @@ sub delly {
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     ($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 									  XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									  files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+									  contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
 									  file_name =>$file_name,
 									  program_info_path => $program_info_path,
 									  core_number => $core_number,
@@ -10773,7 +10772,7 @@ sub samtools_mpileup {
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
 	($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 									      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									      files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+									      contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
 									      file_name =>$file_name,
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
@@ -11011,7 +11010,7 @@ sub freebayes {
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
 	($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 									      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									      files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+									      contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
 									      file_name =>$file_name,
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
@@ -11251,7 +11250,7 @@ sub gatk_haplotypecaller {
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     ($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 									  XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									  files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+									  contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
 									  file_name =>$file_name,
 									  program_info_path => $program_info_path,
 									  core_number => $core_number,
@@ -11336,7 +11335,7 @@ sub gatk_haplotypecaller {
     say $FILEHANDLE "## Copy file from temporary directory";
     ($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 									  XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									  files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+									  contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
 									  file_name =>$file_name,
 									  program_info_path => $program_info_path,
 									  core_number => $core_number,
@@ -11504,7 +11503,7 @@ sub gatk_baserecalibration {
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
 	($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 									      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									      files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+									      contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
 									      file_name =>$file_name,
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
@@ -11631,7 +11630,7 @@ sub gatk_baserecalibration {
     say $FILEHANDLE "## Copy file from temporary directory";
     ($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 									  XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									  files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+									  contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
 									  file_name =>$file_name,
 									  program_info_path => $program_info_path,
 									  core_number => $core_number,
@@ -11840,7 +11839,7 @@ sub gatk_realigner {
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
 	($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 									      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									      files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+									      contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
 									      file_name =>$file_name,
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
@@ -11952,7 +11951,7 @@ sub gatk_realigner {
 	say $FILEHANDLE "## Copy file from temporary directory";
 	($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 									      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									      files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+									      contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
 									      file_name =>$file_name,
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
@@ -12121,7 +12120,7 @@ sub picardtools_markduplicates {
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
 	($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 									      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									      files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+									      contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
 									      file_name =>$file_name,
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
@@ -12209,7 +12208,7 @@ sub picardtools_markduplicates {
 	say $FILEHANDLE "## Copy file from temporary directory";
 	($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 									      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									      files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+									      contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
 									      file_name =>$file_name,
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
@@ -12373,7 +12372,7 @@ sub sambamba_markduplicates {
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
 	($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 									      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									      files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+									      contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
 									      file_name =>$file_name,
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
@@ -12460,7 +12459,7 @@ sub sambamba_markduplicates {
 	say $FILEHANDLE "## Copy file from temporary directory";
 	($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 									      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									      files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+									      contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
 									      file_name =>$file_name,
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
@@ -12809,7 +12808,7 @@ sub picardtools_mergesamfiles {
 			say $FILEHANDLE "## Copy file from temporary directory";
 			($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 											      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-											      files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+											      contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
 											      file_name =>$file_name,
 											      program_info_path => $program_info_path,
 											      core_number => $core_number,
@@ -12910,7 +12909,7 @@ sub picardtools_mergesamfiles {
 		    say $FILEHANDLE "## Copy file from temporary directory";
 		    ($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 											  XARGSFILEHANDLE => $XARGSFILEHANDLE,
-											  files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+											  contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
 											  file_name =>$file_name,
 											  program_info_path => $program_info_path,
 											  core_number => $core_number,
@@ -12939,7 +12938,7 @@ sub picardtools_mergesamfiles {
 	    say $FILEHANDLE "## Copy file from temporary directory";
 	    ($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 										  XARGSFILEHANDLE => $XARGSFILEHANDLE,
-										  files_ref => \@{ $file_info_href->{contigs_size_ordered} },
+										  contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
 										  file_name =>$file_name,
 										  program_info_path => $program_info_path,
 										  core_number => $core_number,
@@ -13750,20 +13749,17 @@ sub bwa_mem {
 
 		## Copies file from temporary directory.
 		say $FILEHANDLE "## Copy file from temporary directory";
-		migrate_file_from_temp({temp_path => $outfile_path_no_ending.".b*",
-					file_path => $outsample_directory,
-					FILEHANDLE => $FILEHANDLE,
-				       });
-		## Run-bwa_mem logs
-		migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile_no_ending.".log*"),
-					file_path => $outsample_directory,
-					FILEHANDLE => $FILEHANDLE,
-				       });
-		## HLA files
-		migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile_no_ending.".hla*"),
-					file_path => $outsample_directory,
-					FILEHANDLE => $FILEHANDLE,
-				       });
+		my @outfiles = ($outfile_path_no_ending.".b*",
+				catfile($$temp_directory_ref, $infile_no_ending.".log*"),
+				catfile($$temp_directory_ref, $infile_no_ending.".hla*"),
+		    );
+		foreach my $outfile (@outfiles) {
+
+		    migrate_file_from_temp({temp_path => $outfile,
+					    file_path => $outsample_directory,
+					    FILEHANDLE => $FILEHANDLE,
+					   });
+		}
 		say $FILEHANDLE "wait", "\n";
 	    }
 
@@ -14073,14 +14069,14 @@ sub mosaik_aligner {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => catfile($active_parameter_href->{temp_directory}, $infile.$outfile_tag.".b*"),
-				file_path => $outsample_directory,
-				FILEHANDLE => $FILEHANDLE,
-			       });
-	migrate_file_from_temp({temp_path => catfile($active_parameter_href->{temp_directory}, $infile.".stat"),
-				file_path => $outsample_directory,
-				FILEHANDLE => $FILEHANDLE,
-			       });
+	my @outfiles = ($infile.$outfile_tag.".b*", $infile.".stat");
+	foreach my $outfile (@outfiles) {
+
+	    migrate_file_from_temp({temp_path => catfile($active_parameter_href->{temp_directory}, $outfile),
+				    file_path => $outsample_directory,
+				    FILEHANDLE => $FILEHANDLE,
+				   });
+	}
 	say $FILEHANDLE "wait", "\n";
 
 	close($FILEHANDLE);
@@ -22610,14 +22606,14 @@ sub migrate_file_to_temp {
 
 ##Function : Copy file to temporary directory.
 ##Returns  : "$file_name"
-##Arguments: $FILEHANDLE, $path, $temp_directory, $file_ending, $xargs, $xargs_file_name, $element_counter,
+##Arguments: $FILEHANDLE, $path, $temp_directory, $file_ending, $xargs, $xargs_file_name, $file_index,
 ##         : $FILEHANDLE      => Filehandle to write to
 ##         : $path            => The infile path
 ##         : $temp_directory  => The node directory to copy to
 ##         : $file_ending     => File ending {Optional}
 ##         : $xargs           => Use xargs if defined {Optional}
 ##         : $xargs_file_name => xargs file name {Optional, but required with xargs}
-##         : $element_counter => The counts the elements that have been processed {Optional, but required with xargs}
+##         : $file_index      => Index of file elements that have been processed {Optional, but required with xargs}
 
     my ($arg_href) = @_;
 
@@ -22628,7 +22624,7 @@ sub migrate_file_to_temp {
     my $file_ending;
     my $xargs;
     my $xargs_file_name;
-    my $element_counter;
+    my $file_index;
 
     my $tmpl = {
 	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
@@ -22637,7 +22633,7 @@ sub migrate_file_to_temp {
 	file_ending => { strict_type => 1, store => \$file_ending},
 	xargs => { strict_type => 1, store => \$xargs},
 	xargs_file_name => { strict_type => 1, store => \$xargs_file_name},
-	element_counter => {strict_type => 1, store => \$element_counter},
+	file_index => {strict_type => 1, store => \$file_index},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -22661,13 +22657,13 @@ sub migrate_file_to_temp {
 
     if (defined($xargs)) {
 
-	if ( (defined($xargs_file_name)) && (defined($element_counter))) {
+	if ( (defined($xargs_file_name)) && (defined($file_index))) {
 
-	    print $FILEHANDLE "2> ".$xargs_file_name.".".$element_counter.".stderr.txt ";
+	    print $FILEHANDLE "2> ".$xargs_file_name.".".$file_index.".stderr.txt ";
 	}
 	else {
 
-	    $logger->fatal("Lacking xargs_file_name or element_counter in supplied arguments. Please supply arguments xargs_file_name and element_counter if xargs is supplied");
+	    $logger->fatal("Lacking xargs_file_name or file_index in supplied arguments. Please supply arguments xargs_file_name and file_index if xargs is supplied");
 	    exit 1;
 	}
     }
@@ -22687,13 +22683,13 @@ sub migrate_file_from_temp {
 
 ##Function : Copy file from temporary directory.
 ##Returns  : ""
-##Arguments: $temp_path, $file_path, $FILEHANDLE, $xargs, $xargs_file_name, element_counter
+##Arguments: $temp_path, $file_path, $FILEHANDLE, $xargs, $xargs_file_name, file_index
 ##         : $temp_path       => The node temp file path
 ##         : $file_path       => The node directory to copy to
 ##         : $FILEHANDLE      => Filehandle to write to
 ##         : $xargs           => Use xargs if defined {Optional}
 ##         : $xargs_file_name => xargs file name {Optional, but required with xargs}
-##         : $element_counter => The counts the elements that have been processed {Optional, but required with xargs}
+##         : $file_index      => Index of file elements that have been processed {Optional, but required with xargs}
 
     my ($arg_href) = @_;
 
@@ -22703,7 +22699,7 @@ sub migrate_file_from_temp {
     my $FILEHANDLE;
     my $xargs;
     my $xargs_file_name;
-    my $element_counter;
+    my $file_index;
 
     my $tmpl = {
 	temp_path => { required => 1, defined => 1, strict_type => 1, store => \$temp_path},
@@ -22711,7 +22707,7 @@ sub migrate_file_from_temp {
 	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
 	xargs => { strict_type => 1, store => \$xargs},
 	xargs_file_name => { strict_type => 1, store => \$xargs_file_name},
-	element_counter => {strict_type => 1, store => \$element_counter},
+	file_index => {strict_type => 1, store => \$file_index},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -22727,13 +22723,13 @@ sub migrate_file_from_temp {
 
     if (defined($xargs)) {
 
-	if ( (defined($xargs_file_name)) && (defined($element_counter))) {
+	if ( (defined($xargs_file_name)) && (defined($file_index))) {
 
-	    print $FILEHANDLE "2> ".$xargs_file_name.".".$element_counter.".stderr.txt ";
+	    print $FILEHANDLE "2> ".$xargs_file_name.".".$file_index.".stderr.txt ";
 	}
 	else {
 
-	    $logger->fatal("Lacking xargs_file_name or element_counter in supplied arguments. Please supply arguments xargs_file_name and element_counter if xargs is supplied");
+	    $logger->fatal("Lacking xargs_file_name or file_index in supplied arguments. Please supply arguments xargs_file_name and file_index if xargs is supplied");
 	    exit 1;
 	}
     }
@@ -23098,8 +23094,8 @@ sub xargs_migrate_contig_files {
 
 ##Function : Migrates file(s) to or from temporary directory (depending on supplied arguments) using xargs.
 ##Returns  : "xargs_file_counter"
-##Arguments: $files_ref, $FILEHANDLE, $XARGSFILEHANDLE, $file_name, $temp_directory, $program_info_path, $infile, $indirectory, $outfile, $outdirectory, $core_number, $first_command, $xargs_file_counter, $file_ending
-##         : $files_ref          => The file_info hash {REF}
+##Arguments: $contigs_ref, $FILEHANDLE, $XARGSFILEHANDLE, $file_name, $temp_directory, $program_info_path, $infile, $indirectory, $outfile, $outdirectory, $core_number, $first_command, $xargs_file_counter, $file_ending
+##         : $contigs_ref        => Contigs to iterate over {REF}
 ##         : $FILEHANDLE         => Sbatch filehandle to write to
 ##         : $XARGSFILEHANDLE    => XARGS filehandle to write to
 ##         : $file_name          => File name
@@ -23123,7 +23119,7 @@ sub xargs_migrate_contig_files {
     my $core_number;
 
     ## Flatten argument(s)
-    my $files_ref;
+    my $contigs_ref;
     my $FILEHANDLE;
     my $XARGSFILEHANDLE;
     my $file_name;
@@ -23135,7 +23131,7 @@ sub xargs_migrate_contig_files {
     my $outdirectory;
 
     my $tmpl = {
-	files_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$files_ref},
+	contigs_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$contigs_ref},
 	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
 	XARGSFILEHANDLE => { required => 1, defined => 1, store => \$XARGSFILEHANDLE},
 	file_name => { required => 1, defined => 1, strict_type => 1, store => \$file_name},
@@ -23171,30 +23167,28 @@ sub xargs_migrate_contig_files {
 							     first_command => $first_command,
 							    });
 
-    for (my $element_counter=0;$element_counter<scalar(@$files_ref);$element_counter++) {
-
-	my $element_ref = \$files_ref->[$element_counter];  #Alias
+    foreach my $contig (@$contigs_ref) {
 
 	if (defined($infile)) {
 
 	    ## Copy file(s) to temporary directory.
 	    migrate_file_to_temp({FILEHANDLE => $XARGSFILEHANDLE,
-				  path => catfile($indirectory, $infile."_".$$element_ref.$file_ending),
+				  path => catfile($indirectory, $infile."_".$contig.$file_ending),
 				  temp_directory => $temp_directory,
 				  xargs => "xargs",
 				  xargs_file_name => $xargs_file_name,
-				  element_counter => $$element_ref,
+				  file_index => $contig,
 				 });
 	}
 	if ( (defined($outfile)) && (defined($outdirectory)) ) {
 
 	    ## Copy file(s) from temporary directory.
-	    migrate_file_from_temp({temp_path => catfile($temp_directory, $outfile."_".$$element_ref.$file_ending),
+	    migrate_file_from_temp({temp_path => catfile($temp_directory, $outfile."_".$contig.$file_ending),
 				    file_path => $outdirectory,
 				    FILEHANDLE => $XARGSFILEHANDLE,
 				    xargs => "xargs",
 				    xargs_file_name => $xargs_file_name,
-				    element_counter => $$element_ref,
+				    file_index => $contig,
 				   });
 	}
     }
@@ -23362,17 +23356,15 @@ sub split_bam {
 							    });
 
     ## Split by contig
-    for (my $contigs_counter=0;$contigs_counter<scalar(@$contigs_ref);$contigs_counter++) {
-
-	my $contig_ref = \$contigs_ref->[$contigs_counter];
+    foreach my $contig (@$contigs_ref) {
 
 	print $XARGSFILEHANDLE "view ";
 	print $XARGSFILEHANDLE "-h "; #Include header
 	print $XARGSFILEHANDLE "-b ";  #BAM output
 	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $infile.".bam")." ";  #InFile
-	print $XARGSFILEHANDLE $$contig_ref." ";
-	print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $infile."_".$$contig_ref.".bam")." ";  #Write to file
-	print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE $contig." ";
+	print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $infile."_".$contig.".bam")." ";  #Write to file
+	print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	print $XARGSFILEHANDLE "; ";  #Wait
 
 	## Writes java core commands to filehandle.
@@ -23384,8 +23376,8 @@ sub split_bam {
 		  });
 
 	print $XARGSFILEHANDLE "BuildBamIndex ";
-	print $XARGSFILEHANDLE "INPUT=".catfile($$temp_directory_ref, $infile."_".$$contig_ref.".bam")." ";  #InFile
-	say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE "INPUT=".catfile($$temp_directory_ref, $infile."_".$contig.".bam")." ";  #InFile
+	say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
     }
     return $xargs_file_counter;
 }
@@ -23460,26 +23452,24 @@ sub split_bam_sambamba {
 							    });
 
     ## Split by contig
-    for (my $contigs_counter=0;$contigs_counter<scalar(@$contigs_ref);$contigs_counter++) {
-
-	my $contig_ref = \$contigs_ref->[$contigs_counter];
+    foreach my $contig (@$contigs_ref) {
 
 	print $XARGSFILEHANDLE "view ";  #Command
 	print $XARGSFILEHANDLE "-h ";  #Include header
 	print $XARGSFILEHANDLE "--format bam ";  #BAM output
 	print $XARGSFILEHANDLE "--show-progress ";  #Show progress bar in STDERR
-	print $XARGSFILEHANDLE "--output-filename=".catfile($$temp_directory_ref, $infile."_".$$contig_ref.".bam")." ";  #Write to file
+	print $XARGSFILEHANDLE "--output-filename=".catfile($$temp_directory_ref, $infile."_".$contig.".bam")." ";  #Write to file
 	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $infile.".bam")." ";  #InFile
-	print $XARGSFILEHANDLE $$contig_ref." ";
-	print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE $contig." ";
+	print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	print $XARGSFILEHANDLE "; ";  #Wait
 
 	## Index
 	print $XARGSFILEHANDLE $first_command." ";  #Program
 	print $XARGSFILEHANDLE "index ";  #Command
 	print $XARGSFILEHANDLE "--show-progress ";  #Show progress bar in STDERR
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $infile."_".$$contig_ref.".bam")." ";  #InFile
-	say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $infile."_".$contig.".bam")." ";  #InFile
+	say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
     }
     return $xargs_file_counter;
 }
@@ -23507,9 +23497,9 @@ sub find_max_seq_length_for_sample_id {
 
     my $max_sequence_length = 0;
 
-    for (my $infile_counter=0;$infile_counter<scalar( @{ $infile_lane_no_ending_href->{$$sample_id_ref} });$infile_counter++) {  #For all infiles per lane
+    foreach my $infile (@{ $infile_lane_no_ending_href->{$$sample_id_ref} }) {  #For all infiles per lane
 
-	my $seq_length = $sample_info_href->{sample}{$$sample_id_ref}{file}{ $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter] }{sequence_length};
+	my $seq_length = $sample_info_href->{sample}{$$sample_id_ref}{file}{$infile}{sequence_length};
 
 	if ($seq_length > $max_sequence_length) {
 
@@ -23893,14 +23883,12 @@ sub update_to_absolute_path {
 
 	if ($parameter_type eq "ARRAY") {  #Array reference
 
-	    my $parameter_value_ref = $parameter_href->{$parameter_name}{value};  #Alias
+	    foreach my $parameter_value (@{ $parameter_href->{$parameter_name}{value} }) {
 
-	    for (my $element_counter=0;$element_counter<scalar(@$parameter_value_ref);$element_counter++) {
-
-		if ( (defined($parameter_value_ref)) && ($parameter_value_ref->[$element_counter] ne "nocmd_input") ) {
+		if($parameter_value ne "nocmd_input") {
 
 		    my $element_separator_ref = \$parameter_href->{$parameter_name}{element_separator};  #Alias - Find what seperates array
-		    my @seperate_elements = split($$element_separator_ref, $parameter_value_ref->[$element_counter]);  #Split into seperate elements if written in 1 string on cmd
+		    my @seperate_elements = split($$element_separator_ref, $parameter_value);  #Split into seperate elements if written in 1 string on cmd
 		    my @absolute_path_elements;
 
 		    foreach my $element (@seperate_elements) {
@@ -23910,7 +23898,7 @@ sub update_to_absolute_path {
 									  parameter_name => $parameter_name,
 									 }));
 		    }
-		    $parameter_value_ref->[$element_counter] = join(",", @absolute_path_elements);  #Replace original input with abolute path entries
+		    $parameter_value = join(",", @absolute_path_elements);  #Replace original input with abolute path entries
 		}
 	    }
 	}
@@ -23918,7 +23906,7 @@ sub update_to_absolute_path {
 
 	    my $parameter_value_ref = $parameter_href->{$parameter_name}{value};  #Alias
 
-	    foreach my $key (keys %$parameter_value_ref) {
+	    foreach my $key (keys %$parameter_value_ref) {  #Cannot use each since we are updating key
 
 		if ( (defined($parameter_value_ref)) && ($parameter_value_ref->{$key} ne "nocmd_input") ) {
 
@@ -25161,18 +25149,17 @@ sub remove_files {
 
 			if ( ( ! $$reduce_io_ref) || ($program eq $last_module_bamcalibrationblock) ) {  #Delete intermediate files or last module in processBlock
 
-			    for (my $file_ending_counter=0;$file_ending_counter < scalar( @{ $parameter_href->{$program}{file_endings} });$file_ending_counter++) {
+			  FILE_ENDINGS:
+			    foreach my $file_ending (@{ $parameter_href->{$program}{file_endings} }) {
 
-				## Process per contig
-				for (my $contigs_counter=0;$contigs_counter<scalar(@$vcfparser_contigs_ref);$contigs_counter++) {
+			      CONTIGS:
+				foreach my $contig (@$vcfparser_contigs_ref) {
 
-				    my $contig_ref = \$vcfparser_contigs_ref->[$contigs_counter];  #Alias
-
-				    my $file_path = catfile($indirectory, $infile.$outfile_tag."_".$$contig_ref.$parameter_href->{$program}{file_endings}[$file_ending_counter]);
+				    my $file_path = catfile($indirectory, $infile.$outfile_tag."_".$contig.$file_ending);
 
 				    ## Detect which most_complete_path to use depending on file_ending
 				    my $most_complete_ref = detect_most_complete_file({sample_info_href => $sample_info_href,
-										       file_ending_ref => \$parameter_href->{$program}{file_endings}[$file_ending_counter],
+										       file_ending_ref => \$file_ending,
 										       sample_id_ref => \$sample_id,
 										       family_id_ref => \$active_parameter_href->{family_id},
 										      });
@@ -25181,7 +25168,7 @@ sub remove_files {
 				    check_most_complete_and_remove_file({FILEHANDLE => $FILEHANDLE,
 									 most_complete_ref => $most_complete_ref,
 									 file_path_ref => \$file_path,
-									 file_ending => $parameter_href->{$program}{file_endings}[$file_ending_counter],
+									 file_ending => $file_ending,
 									});
 				}
 			    }
@@ -25196,13 +25183,14 @@ sub remove_files {
 		    ## Family files
 		    if ($parameter_href->{$program}{remove_redundant_file_setting} eq "family") {
 
-			for (my $file_ending_counter=0;$file_ending_counter < scalar( @{ $parameter_href->{$program}{file_endings} });$file_ending_counter++) {
+		      FILE_ENDINGS:
+			foreach my $file_ending (@{ $parameter_href->{$program}{file_endings} }) {
 
-			    my $file_path = catfile($indirectory, $$family_id_ref.$outfile_tag.$call_type."*".$parameter_href->{$program}{file_endings}[$file_ending_counter]);
+			    my $file_path = catfile($indirectory, $$family_id_ref.$outfile_tag.$call_type."*".$file_ending);
 
 			    ## Detect which most_complete_path to use depending on file_ending
 			    my $most_complete_ref = detect_most_complete_file({sample_info_href => $sample_info_href,
-									       file_ending_ref => \$parameter_href->{$program}{file_endings}[$file_ending_counter],
+									       file_ending_ref => \$file_ending,
 									       family_id_ref => \$active_parameter_href->{family_id},
 									      });
 
@@ -25210,7 +25198,7 @@ sub remove_files {
 			    check_most_complete_and_remove_file({FILEHANDLE => $FILEHANDLE,
 								 most_complete_ref => $most_complete_ref,
 								 file_path_ref => \$file_path,
-								 file_ending => $parameter_href->{$program}{file_endings}[$file_ending_counter],
+								 file_ending => $file_ending,
 								});
 			}
 		    }
@@ -25220,13 +25208,13 @@ sub remove_files {
 
 			    $outfile_tag = $file_info_href->{$$family_id_ref}{$program}{file_tag};
 
-			    for (my $file_ending_counter=0;$file_ending_counter < scalar( @{ $parameter_href->{$program}{file_endings} });$file_ending_counter++) {
+			    foreach my $file_ending (@{ $parameter_href->{$program}{file_endings} }) {
 
-				my $file_path = catfile($indirectory, $$family_id_ref.$outfile_tag.$call_type."*".$parameter_href->{$program}{file_endings}[$file_ending_counter]);
+				my $file_path = catfile($indirectory, $$family_id_ref.$outfile_tag.$call_type."*".$file_ending);
 
 				## Detect which most_complete_path to use depending on file_ending
 				my $most_complete_ref = detect_most_complete_file({sample_info_href => $sample_info_href,
-										   file_ending_ref => \$parameter_href->{$program}{file_endings}[$file_ending_counter],
+										   file_ending_ref => \$file_ending,
 										   family_id_ref => \$active_parameter_href->{family_id},
 										  });
 
@@ -25234,7 +25222,7 @@ sub remove_files {
 				check_most_complete_and_remove_file({FILEHANDLE => $FILEHANDLE,
 								     most_complete_ref => $most_complete_ref,
 								     file_path_ref => \$file_path,
-								     file_ending => $parameter_href->{$program}{file_endings}[$file_ending_counter],
+								     file_ending => $file_ending,
 								    });
 			    }
 			}
@@ -26570,11 +26558,10 @@ sub generate_contig_specific_target_bed_file {
     my $core_counter = 1;
 
     say $FILEHANDLE "## Generate contig specific interval_list\n";
-    for (my $contigs_counter=0;$contigs_counter<scalar(@{ $file_info_href->{contigs_size_ordered} });$contigs_counter++) {
 
-	my $contig_ref = \$file_info_href->{contigs_size_ordered}[$contigs_counter];
+    while (my ($contig_index, $contig) = each(@{ $file_info_href->{contigs_size_ordered} }) ) {
 
-	print_wait({counter_ref => \$contigs_counter,
+	print_wait({counter_ref => \$contig_index,
 		    core_number_ref => \$core_number,
 		    core_counter_ref => \$core_counter,
 		    FILEHANDLE => $FILEHANDLE,
@@ -26585,7 +26572,7 @@ sub generate_contig_specific_target_bed_file {
 			   indirectory_ref => $reference_dir_ref,
 			   outdirectory_ref => $temp_directory_ref,
 			   infile_ref => \basename($$exome_target_bed_file_ref),
-			   contig_ref => $contig_ref,
+			   contig_ref => \$contig,
 			   file_ending => $file_ending,
 			  });
     }
