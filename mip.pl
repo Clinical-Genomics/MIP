@@ -3460,8 +3460,8 @@ sub rankvariant {
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
 
     my $vcfparser_analysis_type = "";
-    my $vcfparser_contigs_ref = \@{ $file_info_href->{contigs_size_ordered} };  #Set default
-    my @vcfparser_subset_contigs = @{ $file_info_href->{contigs} };  #Set default for handling subset of contigs
+    my $contigs_size_ordered_ref = \@{ $file_info_href->{contigs_size_ordered} };  #Set default for size ordered contigs
+    my @contigs = @{ $file_info_href->{contigs} };  #Set default for contigs
     my $family_file = catfile($outfamily_file_directory, $$family_id_ref.".fam");
 
     ## Create .fam file to be used in variant calling analyses
@@ -3477,15 +3477,15 @@ sub rankvariant {
 	if ($vcfparser_outfile_counter == 1) {
 
 	    $vcfparser_analysis_type = ".selected";  #SelectFile variants
-	    $vcfparser_contigs_ref = \@{ $file_info_href->{sorted_select_file_contigs} };  #Selectfile contigs
+	    $contigs_size_ordered_ref = \@{ $file_info_href->{sorted_select_file_contigs} };  #Selectfile contigs
 
 	    if ($consensus_analysis_type eq "wes" ) {  #Remove MT|M since no exome kit so far has mitochondrial probes
 
 		## Removes an element from array and return new array while leaving orginal elements_ref untouched
-		@vcfparser_subset_contigs = remove_element({elements_ref => \@{ $file_info_href->{select_file_contigs} },
-							    remove_contigs_ref => ["MT", "M"],
-							    contig_switch => 1,
-							   });
+		@contigs = remove_element({elements_ref => \@{ $file_info_href->{select_file_contigs} },
+					   remove_contigs_ref => ["MT", "M"],
+					   contig_switch => 1,
+					  });
 	    }
 	}
 
@@ -3495,7 +3495,7 @@ sub rankvariant {
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
 	    $xargs_file_counter = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 							      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-							      files_ref => $vcfparser_contigs_ref,
+							      files_ref => $contigs_size_ordered_ref,
 							      file_name => $file_name,
 							      program_info_path => $program_info_path,
 							      core_number => $core_number,
@@ -3530,7 +3530,7 @@ sub rankvariant {
 	my $genmod_module = "";  #Track which genmod modules has been processed
 
 	## Process per contig
-	while ( my ($contig_index, $contig) = each(@$vcfparser_contigs_ref) ) {
+	while ( my ($contig_index, $contig) = each(@$contigs_size_ordered_ref) ) {
 
 	    $genmod_module = "";  #Restart for next contig
 	    my $genmod_indata = catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf")." ";  #InFile
@@ -3652,7 +3652,7 @@ sub rankvariant {
 	## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
 	concatenate_variants({active_parameter_href => $active_parameter_href,
 			      FILEHANDLE => $FILEHANDLE,
-			      elements_ref => \@vcfparser_subset_contigs,
+			      elements_ref => \@contigs,
 			      infile_prefix => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_"),
 			      infile_postfix => $vcfparser_analysis_type.$genmod_module.".vcf",
 			      outfile => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf"),
@@ -8500,11 +8500,11 @@ sub sv_rankvariant {
     my $outfile_ending_stub = $$family_id_ref.$outfile_tag.$call_type;
 
     my $vcfparser_analysis_type = "";
-    my @contigs = @{ $file_info_href->{contigs_size_ordered} };  #Set default
-    my @subset_contigs = @{ $file_info_href->{contigs} };  #Set default for handling subset of contigs
+    my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };  #Set default
+    my @contigs = @{ $file_info_href->{contigs} };  #Set default for handling subset of contigs
 
     ### If no males or other remove contig Y from all downstream analysis
-    my @contig_arrays = (\@contigs, \@subset_contigs);
+    my @contig_arrays = (\@contigs_size_ordered), \@contigs);
     
     foreach my $array_ref (@contig_arrays) {
 	
@@ -8530,7 +8530,7 @@ sub sv_rankvariant {
 	if ($vcfparser_outfile_counter == 1) {
 
 	    $vcfparser_analysis_type = ".selected";  #SelectFile variants
-	    @contigs = @{ $file_info_href->{sorted_select_file_contigs} };  #Selectfile contigs
+	    @contigs_size_ordered = @{ $file_info_href->{sorted_select_file_contigs} };  #Selectfile contigs
 	}
 
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Transfer contig files
@@ -8539,7 +8539,7 @@ sub sv_rankvariant {
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
 	    $xargs_file_counter = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 							      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-							      files_ref => \@contigs,
+							      files_ref => \@contigs_size_ordered,
 							      file_name => $file_name,
 							      program_info_path => $program_info_path,
 							      core_number => $core_number,
@@ -8590,7 +8590,7 @@ sub sv_rankvariant {
 								});
 	
 	## Process per contig
-	foreach my $contig (@contigs) {
+	foreach my $contig (@contigs_size_ordered) {
 
 	    my $genmod_file_ending_stub = $infile_ending_stub;
 	    my $genmod_xargs_file_name = $xargs_file_name;
@@ -8718,7 +8718,7 @@ sub sv_rankvariant {
 	    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
 	    concatenate_variants({active_parameter_href => $active_parameter_href,
 				  FILEHANDLE => $FILEHANDLE,
-				  elements_ref => \@subset_contigs,
+				  elements_ref => \@contigs,
 				  infile_prefix => catfile($$temp_directory_ref, $infile_ending_stub."_"),
 				  infile_postfix => $vcfparser_analysis_type.$genmod_module.".vcf",
 				  outfile => catfile($$temp_directory_ref, $infile_ending_stub.$vcfparser_analysis_type.$concatenate_ending.".vcf"),
