@@ -6875,7 +6875,7 @@ sub gatk_variantrecalibration {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $core_number = $active_parameter_href->{core_processor_number};
+    my $core_number = 4;  #gatk VQSR do not benefit from paralellization ref gatk blog, but we need some java heap allocation
     my $program_outdirectory_name = $parameter_href->{"p".$program_name}{outdir_name};
     my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
 
@@ -7001,7 +7001,6 @@ sub gatk_variantrecalibration {
 	print $FILEHANDLE "-an FS ";  #The names of the annotations which should used for calculations
 	print $FILEHANDLE "-an SOR ";  #The names of the annotations which should used for calculations
 	print $FILEHANDLE "--mode ".$mode." ";  #Recalibration mode to employ (SNP|INDEL|BOTH)
-	print $FILEHANDLE "-nt ".$active_parameter_href->{core_processor_number}." ";  #How many data threads should be allocated to running this analysis
 
 	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
 	gatk_pedigree_flag({active_parameter_href => $active_parameter_href,
@@ -7472,7 +7471,7 @@ sub gatk_genotypegvcfs {
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $sbatch_script_tracker=0;
-    my $core_number = $active_parameter_href->{core_processor_number};
+    my $core_number = 4;  #gatk genotype is most safely processed in single thread mode, , but we need some java heap allocation
     my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
 
     my $process_time = 10;
@@ -7550,7 +7549,6 @@ sub gatk_genotypegvcfs {
 	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 	print $FILEHANDLE "-D ".$active_parameter_href->{gatk_haplotypecaller_snp_known_set}." ";  #Known SNPs to use for annotation SNPs
-	print $FILEHANDLE "-nt 16 ";  #How many data threads should be allocated to running this analysis.
 
 	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
 	gatk_pedigree_flag({active_parameter_href => $active_parameter_href,
@@ -11285,9 +11283,7 @@ sub gatk_haplotypecaller {
 	print $XARGSFILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $XARGSFILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 	print $XARGSFILEHANDLE "-D ".$active_parameter_href->{gatk_haplotypecaller_snp_known_set}." ";  #Known SNPs to use for annotation SNPs
-	print $XARGSFILEHANDLE "-stand_call_conf 30.0 ";  #The minimum phred-scaled confidence threshold at which variants should be called
-	print $XARGSFILEHANDLE "-stand_emit_conf 30.0 ";  #The minimum phred-scaled confidence threshold at which variants should be emitted
-	print $XARGSFILEHANDLE "-nct 1 ";  #Number of CPU Threads per data thread
+	print $XARGSFILEHANDLE "-stand_call_conf 10.0 ";  #The minimum phred-scaled confidence threshold at which variants should be called
 
 	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
 	gatk_pedigree_flag({active_parameter_href => $active_parameter_href,
