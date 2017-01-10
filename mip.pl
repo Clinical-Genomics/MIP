@@ -6391,7 +6391,16 @@ sub rhocall {
 
 	print $XARGSFILEHANDLE "--AF-file ".$active_parameter_href->{rhocall_frequency_file}." ";
 	print $XARGSFILEHANDLE "--skip-indels ";  #Skip indels as their genotypes are enriched for errors
-	print $XARGSFILEHANDLE "--sample ".$parameter_href->{dynamic_parameter}{affected}[0]." ";
+
+	if ( (defined($parameter_href->{dynamic_parameter}{affected}))
+	     && (@{ $parameter_href->{dynamic_parameter}{affected} }) ) {
+
+	    print $XARGSFILEHANDLE "--sample ".$parameter_href->{dynamic_parameter}{affected}[0]." ";
+	}
+	else {
+
+	    print $XARGSFILEHANDLE "--sample ".$active_parameter_href->{sample_ids}[0]." ";  #No affected - pick any sample_id
+	}
 	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf.gz")." ";
 	print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".roh"), "; ";
 
