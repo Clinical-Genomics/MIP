@@ -40,7 +40,7 @@ our $USAGE;
 
 BEGIN {
 
-    my @modules = ("YAML", "Log::Log4perl", "Path::Iterator::Rule");
+    my @modules = ("YAML", "Log::Log4perl", "Path::Iterator::Rule", "List::Util");
 
     ## Evaluate that all modules required are installed
     eval_modules({modules_ref => \@modules,
@@ -20034,7 +20034,7 @@ sub check_auto_build {
 	    }
 	    else {
 
-		$logger->fatal("Could not find file ".catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{$$parameter_name_ref}), "\n");
+		$logger->fatal("Could not find file ".$active_parameter_href->{$$parameter_name_ref}, "\n");
 		$logger->fatal("Make sure that file exists or use the default for this parameter to enable automatic download via Cosmid", "\n");
 		exit 1;
 	    }

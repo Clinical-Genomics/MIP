@@ -1,5 +1,5 @@
 ---
-cluster_constant_path: /mnt/hds/proj/cust003/develop
+cluster_constant_path: /mnt/hds/proj/cust003/develop/modules/MIP/t/data
 analysis_constant_path: analysis
 java_use_large_pages: 1
 outscript_dir: cluster_constant_path!/family_id!/analysis_constant_path!/scripts

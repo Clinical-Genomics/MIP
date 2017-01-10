@@ -168,17 +168,17 @@ sub test_modules {
 
     use YAML;    
     my $yaml_file = catdir(dirname($Bin), "templates", "643594-miptest_pedigree.yaml");
-    ok( -f $yaml_file,"YAML: File= $yaml_file in MIP/templates directory");
+    ok( -f $yaml_file, "YAML: File= $yaml_file in MIP/templates directory");
     
     my $yaml = YAML::LoadFile($yaml_file);  #Create an object
-    ok( defined $yaml,"YAML: Load File" );  #Check that we got something
-    ok(Dump( $yaml ),"YAML: Dump file");
+    ok( defined $yaml, "YAML: Load File" );  #Check that we got something
+    ok(Dump( $yaml ), "YAML: Dump file");
 
     use Log::Log4perl;
     use Params::Check qw[check allow last_error];
     ## Creates log
     my $log_file = catdir(dirname($Bin), "templates", "mip_log.yaml");
-    ok( -f $log_file,"Log::Log4perl: File= $log_file in MIP directory");
+    ok( -f $log_file, "Log::Log4perl: File= $log_file in MIP directory");
 
     ## Create log4perl config file
     my $config = &create_log4perl_congfig({file_path_ref => \$log_file});
