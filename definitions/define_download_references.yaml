@@ -1,0 +1,217 @@
+---
+## Version: 0.0.1
+#Not implemented:  http://www.mitomap.org/pub/MITOMAP/Mitobank/genbank_haplogroup_2015_August.zip
+reference:
+  human_reference:
+    - decoy_5
+    - decoy_hla
+  1000g_all_wgs:
+    - phase3_v5b.20130502
+  exac:
+    - r0.3.1
+  clinvar:
+    - 20170104
+  1000g_omni:
+    - 2.5
+  1000g_indels:
+    - phase1
+  1000g_snps:
+    - phase1
+  1000g_sites:
+    - phase3_v4_20130502
+  mills_and_1000g_indels:
+    - gold_standard
+  dbsnp:
+    - 138_esa_129
+    - 138
+    - 146
+  hapmap:
+    - 3.3
+  dbnsfp:
+    - 2.9
+human_reference:
+  grch37:
+    decoy_5:
+      file_name: hs37d5.fa.gz 
+      file_name_index: hs37d5.fa.gz.fai
+      outfile_name: homo_sapiens_GRCh37_d5.fasta
+      outfile_name_index: homo_sapiens_GRCh37_d5.fasta.fai
+      url_prefix: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/phase2_reference_assembly_sequence/
+  hg38:
+    decoy_hla:
+      file_name: GRCh38_full_analysis_set_plus_decoy_hla.fa
+      file_name_index: GRCh38_full_analysis_set_plus_decoy_hla.fa.fai
+      outfile_name: homo_sapiens_hg38_decoy_hla.fasta
+      outfile_name_index: homo_sapiens_hg38_decoy_hla.fasta.fai
+      url_prefix: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/GRCh38_reference_genome/
+1000g_all_wgs:
+  grch37:
+    phase3_v5b.20130502:
+      file_name: ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
+      file_name_index: ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz.tbi
+      outfile_name: all_wgs_GRCh37_phase3_v5b.20130502.vcf.gz
+      outfile_name_index: all_wgs_GRCh37_phase3_v5b.20130502.vcf.gz.tbi
+      url_prefix: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/
+exac:
+  grch37:
+    r0.3.1:
+      file_name: ExAC.r0.3.1.sites.vep.vcf.gz
+      file_name_index: ExAC.r0.3.1.sites.vep.vcf.gz.tbi
+      outfile_name: exac_GRCh37_r0.3.1.vcf.gz
+      outfile_name_index: exac_GRCh37_r0.3.1.vcf.gz.tbi
+      outfile_reformat_command: "bcftools view -h exac_GRCh37_r0.3.1.vcf.gz > header.txt; perl -i -p -e 's/ID=Adj_AF/ID=AF_Adj/' header.txt; bcftools reheader -h header.txt exac_GRCh37_r0.3.1.vcf.gz | bcftools view -o exac_GRCh37_r0.3.1_reheader.vcf.gz -O z"
+      outfile_tabix_command: 'tabix -p vcf exac_GRCh37_r0.3.1_reheader.vcf.gz'
+      url_prefix: ftp://ftp.broadinstitute.org/pub/ExAC_release/release0.3.1/
+clinvar:
+  grch37:
+    20170104:
+      file_name: clinvar_20170104.vcf.gz
+      file_name_index: clinvar_20170104.vcf.gz.tbi
+      outfile_name: clinvar_GRCh37_20170104.vcf.gz
+      outfile_name_index: clinvar_GRCh37_20170104.vcf.gz.tbi
+      url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/
+  hg38:
+    20170104:
+      file_name: clinvar_20170104.vcf.gz
+      file_name_index: clinvar_20170104.vcf.gz.tbi
+      outfile_name: clinvar_hg38_20170104.vcf.gz
+      outfile_name_index: clinvar_hg38_20170104.vcf.gz.tbi
+      url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/
+1000g_omni:
+  grch37:
+    2.5:
+      file_name: 1000G_omni2.5.b37.vcf.gz
+      file_name_index: 1000G_omni2.5.b37.vcf.idx.gz
+      outfile_name: 1000g_omni_GRCh37_2.5.vcf.gz
+      outfile_name_index: 1000g_omni_GRCh37_2.5.vcf.idx.gz
+      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
+      outfile_decompress: gzip
+      outfile_index_decompress: gzip
+  hg38:
+    2.5:
+      file_name: 1000G_omni2.5.hg38.vcf.gz
+      file_name_index: 1000G_omni2.5.hg38.vcf.gz.tbi
+      outfile_name: 1000g_omni_hg38_2.5.vcf.gz
+      outfile_name_index: 1000g_omni_hg38_2.5.vcf.gz.tbi
+      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
+      outfile_decompress: gzip
+1000g_indels:
+  grch37:
+    phase1:
+      file_name: 1000G_phase1.indels.b37.vcf.gz
+      file_name_index: 1000G_phase1.indels.b37.vcf.idx.gz
+      outfile_name: 1000g_indels_GRCh37_phase1.vcf.gz
+      outfile_name_index: 1000g_indels_GRCh37_phase1.vcf.idx.gz
+      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
+      outfile_decompress: gzip
+      outfile_index_decompress: gzip
+1000g_snps:
+  grch37:
+    phase1:
+      file_name: 1000G_phase1.snps.high_confidence.b37.vcf.gz
+      file_name_index: 1000G_phase1.snps.high_confidence.b37.vcf.idx.gz
+      outfile_name: 1000G_snps_high_confidence_GRCh37_phase1.vcf.gz
+      outfile_name_index: 1000G_snps_high_confidence_GRCh37_phase1.vcf.idx.gz
+      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
+      outfile_decompress: gzip
+      outfile_index_decompress: gzip
+  hg38:
+    phase1:
+      file_name: 1000G_phase1.snps.high_confidence.hg38.vcf.gz
+      file_name_index: 1000G_phase1.snps.high_confidence.hg38.vcf.gz.tbi
+      outfile_name: 1000G_snps_high_confidence_hg38_phase1.vcf.gz
+      outfile_name_index: 1000G_snps_high_confidence_hg38_phase1.vcf.gz.tbi
+      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
+      outfile_decompress: gzip
+1000g_sites:
+  grch37:
+    phase3_v4_20130502:
+      file_name: 1000G_phase3_v4_20130502.sites.vcf.gz
+      file_name_index: 1000G_phase3_v4_20130502.sites.vcf.gz.tbi
+      outfile_name: 1000g_sites_GRCh37_phase3_v4_20130502.vcf.gz
+      outfile_name_index: 1000g_sites_GRCh37_phase3_v4_20130502.vcf.gz.tbi
+      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
+      outfile_decompress: gzip
+mills_and_1000g_indels:
+  grch37:
+    gold_standard:
+      file_name: Mills_and_1000G_gold_standard.indels.b37.vcf.gz
+      file_name_index: Mills_and_1000G_gold_standard.indels.b37.vcf.idx.gz
+      outfile_name: mills_and_1000g_indels_GRCh37_gold_standard.vcf.gz
+      outfile_name_index: mills_and_1000g_indels_GRCh37_gold_standard.vcf.idx.gz
+      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
+      outfile_decompress: gzip
+      outfile_index_decompress: gzip
+  hg38:
+    gold_standard:
+      file_name: Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
+      file_name_index: Mills_and_1000G_gold_standard.indels.hg38.vcf.gz.tbi
+      outfile_name: mills_and_1000g_indels_hg38_gold_standard.vcf.gz
+      outfile_name_index: mills_and_1000g_indels_hg38_gold_standard.vcf.gz.tbi
+      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
+      outfile_decompress: gzip
+dbsnp:
+  grch37:
+    138_esa_129:
+      file_name: dbsnp_138.b37.excluding_sites_after_129.vcf.gz 
+      file_name_index: dbsnp_138.b37.excluding_sites_after_129.vcf.idx.gz
+      outfile_name: dbsnp_GRCh37_138_esa_129.vcf.gz
+      outfile_name_index: dbsnp_GRCh37_138_esa_129.vcf.idx.gz
+      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
+      outfile_decompress: gzip
+      outfile_index_decompress: gzip
+    138:
+      file_name: dbsnp_138.b37.vcf.gz
+      file_name_index: dbsnp_138.b37.vcf.idx.gz
+      outfile_name: dbsnp_GRCh37_138.vcf.gz
+      outfile_name_index: dbsnp_GRCh37.vcf.idx.gz
+      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
+      outfile_decompress: gzip
+      outfile_index_decompress: gzip
+  hg38:
+    146:
+      file_name: dbsnp_146.hg38.vcf.gz
+      file_name_index: dbsnp_146.hg38.vcf.gz.tbi
+      outfile_name: dbsnp_hg38_146.vcf.gz
+      outfile_name_index: dbsnp_hg38_146.vcf.gz.tbi
+      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
+      outfile_decompress: gzip
+hapmap:
+  grch37:
+    3.3:
+      file_name: hapmap_3.3.b37.vcf.gz 
+      file_name_index: hapmap_3.3.b37.vcf.idx.gz
+      outfile_name: hapmap_GRCh37_3.3.vcf.gz
+      outfile_name_index: hapmap_GRCh37_3.3.vcf.idx.gz
+      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
+      outfile_decompress: gzip
+      outfile_index_decompress: gzip
+  hg38:
+    3.3:
+      file_name: hapmap_3.3.hg38.vcf.gz
+      file_name_index: hapmap_3.3.hg38.vcf.gz.tbi
+      outfile_name: hapmap_hg38_3.3.vcf.gz
+      outfile_name_index: hapmap_hg38_3.3.vcf.gz.tbi
+      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
+      outfile_decompress: gzip
+dbnsfp:
+  grch37:
+    2.9:
+      file_name: dbNSFPv2.9.zip
+      outfile_name: dbnsfp_GRCh37_v2.9.zip
+      url_prefix: ftp://dbnsfp:dbnsfp@dbnsfp.softgenetics.com/
+      outfile_decompress: unzip
+      outfile_reformat_command: '(cat dbNSFP2.9_variant.chr* | grep -v "^#" ) > dbnsfp2.9.txt; rm dbNSFP2.9_variant.chr*'
+      outfile_bgzip_command: 'bgzip dbnsfp2.9.txt'
+      outfile_tabix_command: 'tabix -s 1 -b 2 -e 2 dbnsfp2.9.txt.gz'
+  hg38:
+    3.2:
+      file_name: dbNSFPv3.2.zip
+      outfile_name: dbnsfp_GRCh37_v3.2.zip
+      url_prefix: ftp://dbnsfp:dbnsfp@dbnsfp.softgenetics.com/
+      outfile_decompress: unzip
+      outfile_reformat_command: '(cat dbNSFP3.2_variant.chr* | grep -v "^#" ) > dbnsfp3.2.txt; rm dbNSFP3.2_variant.chr*'
+      outfile_bgzip_command: 'bgzip dbnsfp3.2.txt'
+      outfile_tabix_command: 'tabix -s 1 -b 2 -e 2 dbnsfp3.2.txt.gz'
+absolute_paths:
+  - reference_dir
