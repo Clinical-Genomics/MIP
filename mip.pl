@@ -376,7 +376,7 @@ eval_parameter_hash({parameter_href => \%parameter,
 		     file_path => catfile($Bin, "definitions", "define_parameters.yaml"),
 		    });
 
-my $mip_version = "v4.0.8";	#Set MIP version
+my $mip_version = "v4.0.9";	#Set MIP version
 
 ## Directories, files, sample_info and job_ids
 my (%infile, %indir_path, %infile_lane_no_ending, %lane, %infile_both_strands_no_ending, %job_id, %sample_info);
@@ -710,8 +710,12 @@ if (defined($parameter{config_file}{value})) {  #Input from cmd
 			   });
     }
 
-    ##Remove previous analysis specific info not relevant for current run e.g. log file
-    delete($active_parameter{log_file});
+    ##Remove previous analysis specific info not relevant for current run e.g. log file, sample_ids which are read from pedigree or cmd
+    my @remove_keys = ("log_file", "sample_ids");
+    foreach my $key (@remove_keys) {
+
+	delete($active_parameter{$key});
+    }
 }
 
 ###Populate active_parameters{parameter_name} => 'Value'
