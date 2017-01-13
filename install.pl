@@ -3112,6 +3112,7 @@ sub decompress_file {
     if( (defined($file_decompress)) && ($file_decompress eq "unzip") ) {
 	
 	print $FILEHANDLE "unzip ";
+	print $FILEHANDLE "-d ".$parameter_href->{reference_dir}." ";
 	print $FILEHANDLE $outfile_path, "\n\n";;
     }
 }
