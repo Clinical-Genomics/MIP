@@ -378,7 +378,7 @@ eval_parameter_hash({parameter_href => \%parameter,
 		     file_path => catfile($Bin, "definitions", "define_parameters.yaml"),
 		    });
 
-my $mip_version = "v4.0.10";	#Set MIP version
+my $mip_version = "v4.0.11";	#Set MIP version
 
 ## Directories, files, sample_info and job_ids
 my (%infile, %indir_path, %infile_lane_no_ending, %lane, %infile_both_strands_no_ending, %job_id, %sample_info);
@@ -8210,7 +8210,7 @@ sub chanjo_sexcheck {
     ## chanjo_sexcheck
     say $FILEHANDLE "## Predicting sex from alignment";
     print $FILEHANDLE "chanjo ";  #Program
-    print $FILEHANDLE "--log-level DEBUG";
+    print $FILEHANDLE "--log-level DEBUG ";
     print $FILEHANDLE "--log-file ".catfile($outsample_directory, $infile.$infile_tag."_chanjo_sexcheck.log")." ";
     print $FILEHANDLE "sex ";  #Sub command
 
