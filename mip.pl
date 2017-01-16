@@ -61,7 +61,7 @@ mip.pl  -ifd [infile_dirs=sample_id] -sd [script_dir] -rd [reference_dir] -p [pr
                -osd/--outscript_dir The script files (.sh) output directory (mandatory)
                -f/--family_id Group id of samples to be compared (defaults to "", (Ex: 1 for IDN 1-1-1A))
                -ped/--pedigree_file Meta data on samples (defaults to "")
-               -hgr/--human_genome_reference Fasta file for the human genome reference (defaults to "Homo_sapiens.GRCh37.d5.fasta;1000G decoy version 5")
+               -hgr/--human_genome_reference Fasta file for the human genome reference (defaults to "homo_sapiens_GRCh37_d5.fasta;1000G decoy version 5")
                -ald/--outaligner_dir Setting which aligner out directory was used for alignment in previous analysis (defaults to "{outdata_dir}{outaligner_dir}")
                -at/--analysis_type Type of analysis to perform (sample_id=analysis_type, defaults to "wgs";Valid entries: "wgs", "wes", "rapid")
                -pl/--platform Platform/technology used to produce the reads (defaults to "ILLUMINA")
@@ -3188,11 +3188,11 @@ sub evaluation {
 
     print $FILEHANDLE q?perl -nae 'unless($_=~/NC_007605/ || $_=~/hs37d5/ || $_=~/GL\d+/) {print $_}' ?;
     print $FILEHANDLE catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict")." ";
-    print $FILEHANDLE "> ".catfile($$temp_directory_ref, "Homo_sapiens.GRCh37.dict")." ";
+    print $FILEHANDLE "> ".catfile($$temp_directory_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict")." ";
     say $FILEHANDLE "\n";
 
     print $FILEHANDLE "cat ";
-    print $FILEHANDLE catfile($$temp_directory_ref, "Homo_sapiens.GRCh37.dict")." ";
+    print $FILEHANDLE catfile($$temp_directory_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict")." ";
     print $FILEHANDLE $active_parameter_href->{nist_high_confidence_call_set_bed}." ";
     print $FILEHANDLE "> ".catfile($$temp_directory_ref, "NIST.bed.dict_body")." ";
     say $FILEHANDLE "\n";
@@ -16007,7 +16007,7 @@ sub build_mosaikaligner_prerequisites {
 	say $FILEHANDLE "#Building MosaikAligner Reference";
 	print $FILEHANDLE "MosaikBuild ";
 	print $FILEHANDLE "-fr ".catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{human_genome_reference})." ";  #The FASTA reference sequences file
-	print $FILEHANDLE "-sn Homo_sapiens ";  #Species name
+	print $FILEHANDLE "-sn homo_sapiens ";  #Species name
 	print $FILEHANDLE "-ga ".$$human_genome_reference_source_ref.$$human_genome_reference_version_ref." ";  #The genome assembly ID
 	say $FILEHANDLE "-oa ".catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{mosaik_align_reference}."_".$random_integer), "\n";  #Temporary outfile
 
@@ -20079,19 +20079,19 @@ sub parse_human_genome_reference {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    if ($$human_genome_reference_ref =~/Homo_sapiens.GRCh(\d+\.\d+|\d+)/) {  #Used to change capture kit genome reference version later
+    if ($$human_genome_reference_ref =~/homo_sapiens_GRCh(\d+\.\d+|\d+)/) {  #Used to change capture kit genome reference version later
 
 	$file_info_href->{human_genome_reference_version} = $1;
 	$file_info_href->{human_genome_reference_source} = "GRCh";  #Ensembl
     }
-    elsif ($$human_genome_reference_ref =~/Homo_sapiens.hg(\d+)/) {  #Used to change capture kit genome reference version later
+    elsif ($$human_genome_reference_ref =~/homo_sapiens_hg(\d+)/) {  #Used to change capture kit genome reference version later
 
 	$file_info_href->{human_genome_reference_version} = $1;
 	$file_info_href->{human_genome_reference_source} = "hg";  #Refseq
     }
     else {
 
-	$logger->warn("MIP cannot detect what kind of human_genome_reference you have supplied. If you want to automatically set the capture kits used please supply the reference on this format: [species].[source][version].", "\n");
+	$logger->warn("MIP cannot detect what kind of human_genome_reference you have supplied. If you want to automatically set the capture kits used please supply the reference on this format: [species]_[source]_[version].", "\n");
     }
     ## Removes ".file_ending" in filename.FILENDING(.gz)
     

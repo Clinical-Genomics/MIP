@@ -1190,7 +1190,7 @@ gatk_variantrecalibration_training_set_hapmap:
    - pgatk_variantrecalibration
   build_file: yes_auto_downLoad
   data_type: SCALAR
-  default: hapmap_GRCh37_3.3.vcf.gz
+  default: hapmap_GRCh37_3.3.vcf
   exists_check: file
   reference: reference_dir
   type: path
@@ -1742,7 +1742,7 @@ snpsift_annotation_outinfo_key:
   data_type: HASH
   default:
      all_wgs_GRCh37_phase3_v5b.20130502.vcf: 1000G
-     ExAC.r0.3.sites.vep.vcf.gz: EXAC
+     exac_GRCh37_r0.3.1_reheader.vcf.gz: EXAC
      anon-SweGen_STR_NSPHS_1000samples_snp_freq_hg19.vcf.gz: SWEREF
      anon-SweGen_STR_NSPHS_1000samples_indel_freq_hg19.vcf.gz: SWEREF
   exists_check: file
@@ -1752,7 +1752,7 @@ snpsift_dbnsfp_file:
   associated_program:
    - psnpeff
   data_type: SCALAR
-  default: dbnsfp2.9.txt.gz
+  default: dbnsfp_GRCh37_v2.9.txt.gz
   exists_check: file
   reference: reference_dir
   type: path
