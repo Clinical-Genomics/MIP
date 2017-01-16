@@ -201,9 +201,9 @@ dbnsfp:
       outfile_name: dbnsfp_GRCh37_v2.9.zip
       url_prefix: ftp://dbnsfp:dbnsfp@dbnsfp.softgenetics.com/
       outfile_decompress: unzip
-      outfile_reformat_command: '(cat dbNSFP2.9_variant.chr* | grep -v "^#" ) > dbnsfp2.9.txt; rm dbNSFP2.9_variant.chr*; rm tryhg*.in; rm search_dbNSFP29*'
-      outfile_bgzip_command: 'bgzip dbnsfp2.9.txt'
-      outfile_tabix_command: 'tabix -s 1 -b 2 -e 2 dbnsfp2.9.txt.gz'
+      outfile_reformat_command: '(cat dbNSFP2.9_variant.chr* | grep -v "^#" ) > dbnsfpv2.9.txt; rm dbNSFP2.9_variant.chr*; rm tryhg*.in; rm search_dbNSFP29*'
+      outfile_bgzip_command: 'bgzip dbnsfpv2.9.txt'
+      outfile_tabix_command: 'tabix -s 1 -b 2 -e 2 dbnsfpv2.9.txt.gz'
   hg38:
     v3.2:
       file_name: dbNSFPv3.2.zip
