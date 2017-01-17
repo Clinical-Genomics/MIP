@@ -562,8 +562,8 @@ gatk_realigner_indel_known_sites:
   element_separator: ,
   data_type: ARRAY
   default:
-   - 1000G_phase1.indels.b37.vcf
-   - Mills_and_1000G_gold_standard.indels.b37.vcf
+   - 1000g_indels_GRCh37_phase1.vcf
+   - mills_and_1000g_indels_GRCh37_gold_standard.vcf
   reference: reference_dir
   type: path
 pgatk_baserecalibration:
@@ -595,9 +595,9 @@ gatk_baserecalibration_known_sites:
   element_separator: ,
   data_type: ARRAY
   default:
-   - dbsnp_138.b37.vcf
-   - 1000G_phase1.indels.b37.vcf
-   - Mills_and_1000G_gold_standard.indels.b37.vcf
+   - dbsnp_GRCh37_138.vcf
+   - 1000g_indels_GRCh37_phase1.vcf
+   - mills_and_1000g_indels_GRCh37_gold_standard.vcf
   reference: reference_dir
   type: path
 gatk_baserecalibration_over_clipped_read:
@@ -868,7 +868,7 @@ sv_genmod_filter_1000g:
    - psv_combinevariantcallsets
   build_file: no_auto_build
   data_type: SCALAR
-  default: ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
+  default: all_wgs_GRCh37_phase3_v5b.20130502.vcf.gz
   exists_check: file
   reference: reference_dir
   type: path
@@ -1108,7 +1108,7 @@ gatk_haplotypecaller_snp_known_set:
    - pgatk_haplotypecaller
   build_file: yes_auto_downLoad
   data_type: SCALAR
-  default: dbsnp_138.b37.vcf
+  default: dbsnp_GRCh37_138.vcf
   exists_check: file
   reference: reference_dir
   type: path
@@ -1190,7 +1190,7 @@ gatk_variantrecalibration_training_set_hapmap:
    - pgatk_variantrecalibration
   build_file: yes_auto_downLoad
   data_type: SCALAR
-  default: hapmap_3.3.b37.sites.vcf
+  default: hapmap_GRCh37_3.3.vcf
   exists_check: file
   reference: reference_dir
   type: path
@@ -1199,7 +1199,7 @@ gatk_variantrecalibration_training_set_dbsnp:
    - pgatk_variantrecalibration
   build_file: yes_auto_downLoad
   data_type: SCALAR
-  default: dbsnp_138.b37.vcf
+  default: dbsnp_GRCh37_138.vcf
   exists_check: file
   reference: reference_dir
   type: path
@@ -1208,7 +1208,7 @@ gatk_variantrecalibration_training_set_1000gsnp:
    - pgatk_variantrecalibration
   build_file: yes_auto_downLoad
   data_type: SCALAR
-  default: 1000G_phase1.snps.high_confidence.b37.vcf
+  default: 1000G_snps_high_confidence_GRCh37_phase1.vcf
   exists_check: file
   reference: reference_dir
   type: path
@@ -1217,7 +1217,7 @@ gatk_variantrecalibration_training_set_1000g_omni:
    - pgatk_variantrecalibration
   build_file: yes_auto_downLoad
   data_type: SCALAR
-  default: 1000G_omni2.5.b37.sites.vcf
+  default: 1000g_omni_GRCh37_2.5.vcf
   exists_check: file
   reference: reference_dir
   type: path
@@ -1226,7 +1226,7 @@ gatk_variantrecalibration_training_set_mills:
    - pgatk_variantrecalibration
   build_file: yes_auto_downLoad
   data_type: SCALAR
-  default: Mills_and_1000G_gold_standard.indels.b37.vcf
+  default: mills_and_1000g_indels_GRCh37_gold_standard.vcf
   exists_check: file
   reference: reference_dir
   type: path
@@ -1277,7 +1277,7 @@ gatk_calculategenotypeposteriors_support_set:
    - pgatk_variantrecalibration
   build_file: no_auto_build
   data_type: SCALAR
-  default: 1000G_phase3_v4_20130502.sites.vcf
+  default: 1000g_sites_GRCh37_phase3_v4_20130502.vcf
   exists_check: file
   reference: reference_dir
   type: path
@@ -1395,7 +1395,7 @@ vt_genmod_filter_1000g:
    - pvt
   build_file: no_auto_build
   data_type: SCALAR
-  default: ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz
+  default: all_wgs_GRCh37_phase3_v5b.20130502.vcf.gz
   exists_check: file
   reference: reference_dir
   type: path
@@ -1457,7 +1457,7 @@ gatk_varianteval_dbsnp:
    - pgatk_variantevalexome
   build_file: yes_auto_downLoad
   data_type: SCALAR
-  default: dbsnp_138.b37.excluding_sites_after_129.vcf
+  default: dbsnp_GRCh37_138_esa_129.vcf
   exists_check: file
   reference: reference_dir
   type: path
@@ -1467,7 +1467,7 @@ gatk_varianteval_gold:
    - pgatk_variantevalexome
   build_file: yes_auto_downLoad
   data_type: SCALAR
-  default: Mills_and_1000G_gold_standard.indels.b37.vcf
+  default: mills_and_1000g_indels_GRCh37_gold_standard.vcf
   exists_check: file
   reference: reference_dir
   type: path
@@ -1728,7 +1728,7 @@ snpsift_annotation_files:
   build_file: yes_auto_build
   data_type: HASH
   default:
-     ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz: AF
+     all_wgs_GRCh37_phase3_v5b.20130502.vcf: AF
      ExAC.r0.3.sites.vep.vcf.gz: AF
      anon-SweGen_STR_NSPHS_1000samples_snp_freq_hg19.vcf.gz: AF
      anon-SweGen_STR_NSPHS_1000samples_indel_freq_hg19.vcf.gz: AF
@@ -1741,8 +1741,8 @@ snpsift_annotation_outinfo_key:
   build_file: yes_auto_build
   data_type: HASH
   default:
-     ALL.wgs.phase3_shapeit2_mvncall_integrated_v5b.20130502.sites.vcf.gz: 1000G
-     ExAC.r0.3.sites.vep.vcf.gz: EXAC
+     all_wgs_GRCh37_phase3_v5b.20130502.vcf: 1000G
+     exac_GRCh37_r0.3.1_reheader.vcf.gz: EXAC
      anon-SweGen_STR_NSPHS_1000samples_snp_freq_hg19.vcf.gz: SWEREF
      anon-SweGen_STR_NSPHS_1000samples_indel_freq_hg19.vcf.gz: SWEREF
   exists_check: file
@@ -1752,7 +1752,7 @@ snpsift_dbnsfp_file:
   associated_program:
    - psnpeff
   data_type: SCALAR
-  default: dbNSFP2.9.txt.gz
+  default: dbnsfp_GRCh37_v2.9.txt.gz
   exists_check: file
   reference: reference_dir
   type: path
