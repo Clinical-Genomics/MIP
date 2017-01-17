@@ -263,3 +263,6 @@ dbnsfp:
       outfile_tabix_command: 'tabix -s 1 -b 2 -e 2 dbnsfp3.2.txt.gz'
 absolute_paths:
   - reference_dir
+reference_genome_versions:
+  - GRCh37
+  - hg38 
