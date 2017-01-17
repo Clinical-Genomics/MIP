@@ -2242,7 +2242,7 @@ sub rhocall {
 			install_directory => $parameter{rhocall_path},
 		       });
 
-    ## Download
+    ## Downloads files
     print $FILEHANDLE "## Download rhocall\n";
     print $FILEHANDLE "wget --quiet https://github.com/dnil/rhocall/archive/".$parameter_href->{rhocall}.".zip ";
     print $FILEHANDLE "-O rhocall-".$parameter_href->{rhocall}.".zip";  #Download outfile
@@ -2309,6 +2309,9 @@ sub references {
     print $FILEHANDLE "## Create reference directory\n";
     print $FILEHANDLE "mkdir -p ".$parameter_href->{reference_dir}, "\n\n";
 
+    ## Since all commands should assume working directory to be the reference directory
+    print $FILEHANDLE "cd ".$parameter_href->{reference_dir}, "\n\n";
+
 REFERENCE:
     while (my ($reference_id, $versions_ref) = each(%{ $parameter_href->{reference} }) ) {
 
@@ -2325,57 +2328,56 @@ REFERENCE:
 		    && (exists($parameter_href->{$reference_id}{$genome_version}{$reference_version})) ) {
 
 		    ## Build file name and path
-		    my $file_name = $reference_href->{file_name};
-		    my $outfile_name = $reference_href->{outfile_name};
+		    my $outfile_name = $reference_href->{outfile};
 		    my $outfile_path = catfile($parameter_href->{reference_dir}, $outfile_name);
 	    
-		    ## Check if reference already exists
+		    ## Check if reference already exists in reference directory
 		    if (! -f $outfile_path) {
 		    
 			print STDERR "Cannot find reference file:".$outfile_path, "\n";
 			print STDERR "Will try to download reference", "\n";
-		    
-			## Install reference
-			download({parameter_href => $parameter_href,
-				  FILEHANDLE => $FILEHANDLE,
-				  url => $reference_href->{url_prefix}.$file_name,
-				  outfile_path => $outfile_path,
-				  file_id => $reference_id,
-				 });
 
-			## Check if file needs to be decompress and write decompression if so
-			decompress_file({parameter_href => $parameter_href,
-					 FILEHANDLE => $FILEHANDLE,
-					 outfile_path => $outfile_path,
-					 file_decompress => $reference_href->{outfile_decompress},
-					});
+			## Potential download files
+			my @file_keys = ("file",
+					 "file_check",
+					 "file_index",
+					 "file_index_check");
 
-			## Install reference
-			if (exists($reference_href->{file_name_index})) {
-			    
-			    my $file_name_index = $reference_href->{file_name_index};
-			    my $outfile_name_index = $reference_href->{outfile_name_index};
-			    my $outfile_path_index = catfile($parameter_href->{reference_dir}, $outfile_name_index);
-			    
-			    download({parameter_href => $parameter_href,
-				      FILEHANDLE => $FILEHANDLE,
-				      url => $reference_href->{url_prefix}.$file_name_index,
-				      outfile_path => $outfile_path_index,
-				      file_id => $reference_id,
-				     });
+		      REFERENCE_FILES:
+			foreach my $key (@file_keys) {
 
-			    ## Check if file needs to be decompress and write decompression if so
-			    decompress_file({parameter_href => $parameter_href,
-					     FILEHANDLE => $FILEHANDLE,
-					     outfile_path => $outfile_path_index,
-					     file_decompress => $reference_href->{outfile_index_decompress},
-					    });
+			    ## Install reference
+			    if (exists($reference_href->{$key})) {
+				
+				my $file = $reference_href->{$key};
+				my $outfile = $reference_href->{"out".$key};
+				my $outfile_path = catfile($parameter_href->{reference_dir}, $outfile);
+				
+				download({parameter_href => $parameter_href,
+					  FILEHANDLE => $FILEHANDLE,
+					  url => $reference_href->{url_prefix}.$file,
+					  outfile_path => $outfile_path,
+					  file_id => $reference_id,
+					 });
+				
+				## Check if file needs to be decompress and write decompression if so
+				decompress_file({parameter_href => $parameter_href,
+						 FILEHANDLE => $FILEHANDLE,
+						 outfile_path => $outfile_path,
+						 file_decompress => $reference_href->{"out".$key."_decompress"},
+						});
+
+				## Check file integrity of file
+				check_file({FILEHANDLE => $FILEHANDLE,
+					    outfile_path => $outfile_path,
+					    outfile_path_check => $outfile_path,
+					    check_method => $reference_href->{"out".$key."_method"},
+					   });
+			    }
 			}
 
+			## Process reference with commands
 			if ( ( map { $_ =~/_command$/ } keys %$reference_href ) ) { #If key contains command
-
-			    ## Since all commands should assume working directory to be the reference directory
-			    print $FILEHANDLE "cd ".$parameter_href->{reference_dir}, "\n\n";
 
 			    ## Reformat command
 			    if (exists($reference_href->{outfile_reformat_command})) {
@@ -2394,32 +2396,15 @@ REFERENCE:
 				
 				print $FILEHANDLE $reference_href->{outfile_tabix_command}, "\n\n";
 			    }
-
-			    ## Move back to original
-			    print $FILEHANDLE "cd ".$pwd, "\n\n";
-			}
-
-			## Recompress and index
-			if ( (exists($reference_href->{outfile_tabix_preset}))
-			     && ($reference_href->{outfile_tabix_preset} eq "vcf") ) {
-			    
-			    ## Removes ".file_ending" in filename.FILENDING(.gz)
-			    my $outfile_path_no_ending = remove_file_ending({file_name_ref => \$outfile_path,
-									     file_ending => ".gz",
-									    });
-			    print $FILEHANDLE "bgzip ";
-			    print $FILEHANDLE $outfile_path_no_ending, "\n";
-			    
-			    print $FILEHANDLE "tabix ";
-			    print $FILEHANDLE "-f ";
-			    print $FILEHANDLE "-p ".$reference_href->{outfile_tabix_preset}." ";
-			    print $FILEHANDLE $outfile_path, "\n\n";
 			}
 		    }
 		}
 	    }
 	}
     }
+
+    ## Move back to original
+    print $FILEHANDLE "cd ".$pwd, "\n\n";
 
     ## Deactivate conda environment
     deactivate_conda_environment({FILEHANDLE => $FILEHANDLE,
@@ -3077,7 +3062,7 @@ sub decompress_file {
 ##         : $parameter_href   => Holds all parameters
 ##         : $FILEHANDLE       => Filehandle to write to
 ##         : $outfile_path     => Outfile path
-##         : $file_decompress => Decompress the downloaded file
+##         : $file_decompress  => Decompress the downloaded file
  
     my ($arg_href) = @_;
 
@@ -3096,23 +3081,73 @@ sub decompress_file {
      
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    if( (defined($file_decompress)) && ($file_decompress eq "gzip") ) {
+    if (defined($outfile_path)) {
 
-	## Removes ".file_ending" in filename.FILENDING(.gz)
-	my $outfile_path_no_ending = remove_file_ending({file_name_ref => \$outfile_path,
+	if ( (defined($file_decompress)) && ($file_decompress eq "gzip") ) {
+
+	    ## Removes ".file_ending" in filename.FILENDING(.gz)
+	    my $outfile_path_no_ending = remove_file_ending({file_name_ref => \$outfile_path,
 							 file_ending => ".gz",
 							});
 	
-	print $FILEHANDLE "gzip ";
-	print $FILEHANDLE "-d ";
-	print $FILEHANDLE "-c ";
-	print $FILEHANDLE $outfile_path." ";
-	print $FILEHANDLE "> ".$outfile_path_no_ending, "\n\n";
-    }
-    if( (defined($file_decompress)) && ($file_decompress eq "unzip") ) {
+	    print $FILEHANDLE "gzip ";
+	    print $FILEHANDLE "-d ";
+	    print $FILEHANDLE "-c ";
+	    print $FILEHANDLE $outfile_path." ";
+	    print $FILEHANDLE "> ".$outfile_path_no_ending, "\n\n";
+	}
+
+	if ( (defined($file_decompress)) && ($file_decompress eq "unzip") ) {
 	
-	print $FILEHANDLE "unzip ";
-	print $FILEHANDLE "-d ".$parameter_href->{reference_dir}." ";
-	print $FILEHANDLE $outfile_path, "\n\n";;
+	    print $FILEHANDLE "unzip ";
+	    print $FILEHANDLE "-d ".$parameter_href->{reference_dir}." ";
+	    print $FILEHANDLE $outfile_path, "\n\n";;
+	}
+    }
+}
+
+
+sub check_file {
+
+##check_file
+
+##Function : Check file integrity of file
+##Returns  : ""
+##Arguments: $FILEHANDLE, $outfile_path, $outfile_path_check, $check_method
+##         : $FILEHANDLE          => Filehandle to write to
+##         : $outfile_path        => Outfile path
+##         : $outfile_path_check  => File to check
+##         : check_method         => Method to perform file check
+ 
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $outfile_path;
+    my $outfile_path_check;
+    my $check_method;
+
+    my $tmpl = { 
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	outfile_path => { required => 1, defined => 1, strict_type => 1, store => \$outfile_path},
+	outfile_path_check => { strict_type => 1, store => \$outfile_path_check},
+	check_method => { strict_type => 1, store => \$check_method},
+    };
+     
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    if( (defined($check_method)) && ($check_method eq "md5sum") ) {
+
+	## Removes ".file_ending" in filename.FILENDING(.gz)
+	my $outfile_path_no_ending = remove_file_ending({file_name_ref => \$outfile_path,
+							 file_ending => ".md5",
+							});
+	if (defined($outfile_path_no_ending)) {
+	    
+	    my $perl_regexp = q?perl -nae 'print $F[0]."  ?.$outfile_path_no_ending.q?" ' ?.$outfile_path_check;
+	    print $FILEHANDLE $perl_regexp." > md5sum_check.txt", "\n\n";
+	    print $FILEHANDLE "md5sum ";
+	    print $FILEHANDLE "-c md5sum_check.txt", "\n\n";
+	}
     }
 }
