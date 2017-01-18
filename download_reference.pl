@@ -40,17 +40,22 @@ BEGIN {
 my %parameter = load_yaml({yaml_file => catfile($Bin, "definitions", "define_download_references.yaml"),
 			  });
 
-my $download_version = "0.0.1";
+my $download_reference_version = "0.0.1";
 
 ###User Options
 GetOptions('rd|reference_dir:s' => \$parameter{reference_dir},  #MIPs reference directory
 	   'r|reference:s' => \%{ $parameter{reference} },
 	   'rg|reference_genome_versions:s' => \@{ $parameter{reference_genome_versions} },
 	   'h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
-	   'v|version' => sub { print STDOUT "\ninstall.pl ".$download_version, "\n\n"; exit;},  #Display version number
+	   'v|version' => sub { print STDOUT "\ninstall.pl ".$download_reference_version, "\n\n"; exit;},  #Display version number
     ) or help({USAGE => $USAGE,
 	       exit_code => 1,
 	      });
+
+## Set default for array parameters
+set_default_array_parameters({parameter_href => \%parameter,
+			     });
+
 
 ## Change relative path to absolute path for certain parameters
 update_to_absolute_path({parameter_href => \%parameter,
@@ -62,7 +67,7 @@ update_to_absolute_path({parameter_href => \%parameter,
 
 
 ## Create bash file for writing install instructions
-my $BASHFILEHANDLE = create_bash_file({file_name => "mip.sh",
+my $BASHFILEHANDLE = create_bash_file({file_name => "download_reference.sh",
 				      });
 
 references({parameter_href => \%parameter,
@@ -92,7 +97,7 @@ sub create_bash_file {
 
     my $tmpl = {
 	file_name => { required => 1, defined => 1, strict_type => 1, store => \$file_name},
-	install_directory => { default => ".MIP",
+	install_directory => { default => ".download_reference",
 			       allow => qr/^\.\S+$/,
 			       strict_type => 1, store => \$install_directory},
     };
@@ -565,4 +570,37 @@ sub load_yaml {
     close($YAML);
 
     return %yaml;
+}
+
+
+sub set_default_array_parameters {
+
+##set_default_array_parameters
+
+##Function : Set default for array parameters
+##Returns  : ""
+##Arguments: $parameter_href
+##         : $parameter_href => Holds all parameters
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+
+    my $tmpl = {
+	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    my %array_parameter;
+    $array_parameter{reference_genome_versions}{default} = ["GRCh37", "hg38"];
+
+    foreach my $parameter_name (keys %array_parameter) {
+
+	if (! @{ $parameter_href->{$parameter_name} }) {  #Unless parameter was supplied on cmd
+
+	    $parameter_href->{$parameter_name} = $array_parameter{$parameter_name}{default};
+	}
+    }
 }

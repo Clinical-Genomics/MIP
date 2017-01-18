@@ -299,6 +299,7 @@ sub mip_scripts{
 		       "qccollect.pl",
 		       "vcfparser.pl",
 		       "install.pl",
+		       "download_reference.pl",
 	);
 
     foreach my $script (@mip_scripts) {

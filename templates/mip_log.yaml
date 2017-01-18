@@ -859,3 +859,7 @@ mip_log: 1
 [WARN] 2017/01/10 15:36:22 MIP_logger - 1
 [ERROR] 2017/01/10 15:36:22 MIP_logger - 1
 [FATAL] 2017/01/10 15:36:22 MIP_logger - 1
+[INFO] 2017/01/18 08:32:35 MIP_logger - 1
+[WARN] 2017/01/18 08:32:35 MIP_logger - 1
+[ERROR] 2017/01/18 08:32:35 MIP_logger - 1
+[FATAL] 2017/01/18 08:32:35 MIP_logger - 1

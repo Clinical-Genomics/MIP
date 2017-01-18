@@ -57,6 +57,8 @@ BEGIN {
            -ppd/--print_parameters_default Print the parameter defaults
            -nup/--noupdate Do not update already installed programs (Supply flag to enable)
            -sp/--select_programs Install supplied programs e.g. -sp perl -sp bedtools (Default: "")
+           -rd/--reference_dir Reference(s) directory (Default: "")
+           -rd/--reference_genome_versions Reference versions to download ((Default: ["GRCh37", "hg38"]))
            -h/--help Display this help message
            -v/--version Display version
         };
@@ -164,6 +166,8 @@ GetOptions('env|conda_environment:s'  => \$parameter{conda_environment},
 	   'ppd|print_parameters_default' => sub { print_parameters({parameter_href => \%parameter}); exit;},  #Display parameter defaults
 	   'nup|noupdate' => \$parameter{noupdate},
 	   'sp|select_programs:s' => \@{ $parameter{select_programs} },  #Comma sep string
+	   'rd|reference_dir:s' => \$parameter{reference_dir},  #MIPs reference directory
+	   'rg|reference_genome_versions:s' => \@{ $parameter{reference_genome_versions} },
 	   'h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
 	   'v|version' => sub { print STDOUT "\ninstall.pl ".$install_version, "\n\n"; exit;},  #Display version number
     ) or help({USAGE => $USAGE,
@@ -371,6 +375,12 @@ else {
 #			});
 }
 
+if(defined($parameter{reference_dir})) {
+    
+    references({parameter_href => \%parameter,
+		FILEHANDLE => $BASHFILEHANDLE,
+	       });
+}
 
 close($BASHFILEHANDLE);
 #close($LOGFILEHANDLE);
@@ -400,6 +410,7 @@ sub set_default_array_parameters {
     my %array_parameter;
     $array_parameter{vep_assemblies}{default} = ["GRCh37"];
     $array_parameter{snpeff_genome_versions}{default} = ["GRCh37.75"];  #GRCh38.82 but check current on the snpEff sourceForge
+    $array_parameter{reference_genome_versions}{default} = ["GRCh37", "hg38"];
     $array_parameter{perl_modules}{default} = ["Modern::Perl",  #MIP
 					       "IPC::System::Simple",  #MIP
 					       "Path::Iterator::Rule",  #MIP
@@ -2120,6 +2131,7 @@ sub mip_scripts {
 		       "qccollect.pl",
 		       "vcfparser.pl",
 		       "install.pl",
+		       "download_reference.pl",
 	);
     my %mip_sub_scripts;
     $mip_sub_scripts{"definitions"} = ["define_parameters.yaml"];
@@ -2682,3 +2694,52 @@ sub help {
 }
 
 
+sub references {
+
+##references
+
+##Function : Install references
+##Returns  : ""
+##Arguments: $parameter_href, $FILEHANDLE
+##         : $parameter_href => Holds all parameters
+##         : $FILEHANDLE     => Filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    my $pwd = cwd();
+
+    ## Activate conda environment
+    activate_conda_environment({parameter_href => $parameter_href,
+				FILEHANDLE => $FILEHANDLE,
+			       });
+
+    print STDERR "Writting install instructions for references\n";
+
+    print $FILEHANDLE "perl ";
+    print $FILEHANDLE catfile($Bin, "download_reference.pl")." ";
+    print $FILEHANDLE "--reference_dir ".$parameter_href->{reference_dir}." ";
+    
+    print $FILEHANDLE "--reference_genome_versions ".join(" --reference_genome_versions ", @{ $parameter_href->{reference_genome_versions} })." ";
+    print $FILEHANDLE "\n\n";
+
+    ##Launch bash
+    print $FILEHANDLE "bash download_reference.sh", "\n\n";
+
+    ##Cleanup
+    print $FILEHANDLE "rm download_reference.sh", "\n\n";
+
+    ## Deactivate conda environment
+    deactivate_conda_environment({FILEHANDLE => $FILEHANDLE,
+				 });
+}
