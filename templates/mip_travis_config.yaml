@@ -22,7 +22,7 @@ qccollect_sampleinfo_file: cluster_constant_path!/family_id!/analysis_constant_p
 sambamba_depth_bed: CCDS.current.bed
 dry_run_all: 0
 gatk_path: cluster_constant_path!/modules/GenomeAnalysisTK-3.6
-human_genome_reference: Homo_sapiens.GRCh37.d5.fasta
+human_genome_reference: homo_sapiens_GRCh37_d5.fasta
 script_dir: /home/travis/miniconda/envs/test_environment/bin
 core_processor_number: 16
 outdata_dir: cluster_constant_path!/family_id!/analysis_constant_path!
