@@ -378,7 +378,7 @@ eval_parameter_hash({parameter_href => \%parameter,
 		     file_path => catfile($Bin, "definitions", "define_parameters.yaml"),
 		    });
 
-my $mip_version = "v4.0.11";	#Set MIP version
+my $mip_version = "v4.0.12";	#Set MIP version
 
 ## Directories, files, sample_info and job_ids
 my (%infile, %indir_path, %infile_lane_no_ending, %lane, %infile_both_strands_no_ending, %job_id, %sample_info);
@@ -17081,7 +17081,7 @@ sub read_yaml_pedigree_file {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     ## Defines which values are allowed
-    my %allowed_values = (sex => ["male", "female", "unknow"],
+    my %allowed_values = (sex => ["male", "female", "unknown"],
 			  phenotype => ["affected", "unaffected", "unknown"],
 	);
 
