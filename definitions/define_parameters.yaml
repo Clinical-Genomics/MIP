@@ -750,13 +750,24 @@ cnv_bin_size:
   data_type: SCALAR
   default: 1000
   type: program_argument
-pdelly:
+pdelly_call:
   associated_program:
    - mip
   chain: SVDEL
   data_type: SCALAR
-  default: 0
-  file_tag: _delly
+  default: 1
+  file_tag: _dellycall
+  program_name_path:
+   - delly
+  outdir_name: delly
+  type: program
+pdelly_reformat:
+  associated_program:
+   - mip
+  chain: SVDEL
+  data_type: SCALAR
+  default: 1
+  file_tag: _dellyreformat
   program_name_path:
    - delly
    - bcftools
@@ -765,7 +776,8 @@ pdelly:
   type: program
 delly_types:
   associated_program:
-   - pdelly
+   - pdelly_call
+   - pdelly_reformat
   element_separator: ,
   data_type: ARRAY
   default:
@@ -774,6 +786,16 @@ delly_types:
    - INV
    - INS
   type: program_argument
+delly_exclude_file:
+  associated_program:
+   - pdelly_call
+   - pdelly_reformat
+  build_file: no_auto_build
+  data_type: SCALAR
+  default: human.hg19.excl.tsv
+  exists_check: file
+  reference: reference_dir
+  type: path
 pmanta:
   associated_program:
    - mip
