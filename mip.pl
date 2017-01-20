@@ -9581,7 +9581,7 @@ sub sv_combinevariantcallsets {
 
 	foreach my $structural_variant_caller (@{ $parameter_href->{dynamic_parameter}{structural_variant_callers} }) {
 
-	    if ( ($active_parameter_href->{$structural_variant_caller} > 0) && ($structural_variant_caller ne "pmanta") ) {  #Expect vcf. Special case: manta is processed by joint calling and per family
+	    if ( ($active_parameter_href->{$structural_variant_caller} > 0) && ($structural_variant_caller !~/pmanta|pdelly_reformat/) ) {  #Expect vcf. Special case: manta and delly are processed by joint calling and per family
 
 		my $program_outdirectory_name = $parameter_href->{$structural_variant_caller}{outdir_name};
 		my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id, $$outaligner_dir_ref, $program_outdirectory_name);
@@ -9615,14 +9615,13 @@ sub sv_combinevariantcallsets {
 		say $FILEHANDLE "\n";
 	    }
 	}
-	say $FILEHANDLE "wait", "\n";
     }
 
     ## Merge all structural variant caller's vcf files per sample_id
     say $FILEHANDLE "## Merge all structural variant caller's vcf files per sample_id";
     foreach my $structural_variant_caller (@{ $parameter_href->{dynamic_parameter}{structural_variant_callers} }) {
 
-	if ($active_parameter_href->{$structural_variant_caller} > 0 && ($structural_variant_caller ne "pmanta") ) {  #Expect vcf. Special case: manta is processed by joint calling and per family
+	if ($active_parameter_href->{$structural_variant_caller} > 0 && ($structural_variant_caller !~/pmanta|pdelly_reformat/) ) {  #Expect vcf. Special case: manta is processed by joint calling and per family
 
 	    print $FILEHANDLE "bcftools merge ";
 
@@ -9655,10 +9654,10 @@ sub sv_combinevariantcallsets {
 	}
     }
 
-    ## Add joint calling per family callers like MANTA
+    ## Add joint calling per family callers like Manta and Delly
     foreach my $structural_variant_caller (@{ $parameter_href->{dynamic_parameter}{structural_variant_callers} }) {
 
-	if ($active_parameter_href->{$structural_variant_caller} > 0  && ($structural_variant_caller eq "pmanta") ) {  #Expect vcf. Special case: manta is processed by joint calling and per family
+	if ($active_parameter_href->{$structural_variant_caller} > 0  && ($structural_variant_caller =~/pmanta|pdelly_reformat/) ) {  #Expect vcf. Special case: manta and delly are processed by joint calling and per family
 
 	    my $program_outdirectory_name = $parameter_href->{$structural_variant_caller}{outdir_name};
 	    my $infamily_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref, $program_outdirectory_name);
