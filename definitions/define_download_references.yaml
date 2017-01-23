@@ -20,10 +20,11 @@ reference:
   1000g_sites:
     - phase3_v4_20130502
   mills_and_1000g_indels:
-    - gold_standard
+    - gold_standard_indel
   dbsnp:
     - 138_esa_129
     - 138
+    - gold_standard_dbsnp
     - 146
   hapmap:
     - 3.3
@@ -147,8 +148,8 @@ clinvar:
     phase1:
       file: 1000G_phase1.snps.high_confidence.hg38.vcf.gz
       file_index: 1000G_phase1.snps.high_confidence.hg38.vcf.gz.tbi
-      outfile: hg38_1000G_snps_high_confidence_-phase1-.vcf.gz
-      outfile_index: hg38_1000G_snps_high_confidence_-phase1-.vcf.gz.tbi
+      outfile: hg38_1000g_snps_high_confidence_-phase1-.vcf.gz
+      outfile_index: hg38_1000g_snps_high_confidence_-phase1-.vcf.gz.tbi
       outfile_decompress: gzip
       url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
 1000g_sites:
@@ -162,26 +163,26 @@ clinvar:
       url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
 mills_and_1000g_indels:
   grch37:
-    gold_standard:
+    gold_standard_indels:
       file: Mills_and_1000G_gold_standard.indels.b37.vcf.gz
       file_check: Mills_and_1000G_gold_standard.indels.b37.vcf.gz.md5
       file_index: Mills_and_1000G_gold_standard.indels.b37.vcf.idx.gz
       file_index_check: Mills_and_1000G_gold_standard.indels.b37.vcf.idx.gz.md5
-      outfile: GRCh37_mills_and_1000g_indels_-gold_standard-.vcf.gz
-      outfile_check: GRCh37_mills_and_1000g_indels_-gold_standard-.vcf.gz.md5
-      outfile_index: GRCh37_mills_and_1000g_indels_-gold_standard-.vcf.idx.gz
-      outfile_index_check: GRCh37_mills_and_1000g_indels_-gold_standard-.vcf.idx.gz.md5
+      outfile: GRCh37_mills_and_1000g_-gold_standard_indels-.vcf.gz
+      outfile_check: GRCh37_mills_and_1000g_-gold_standard_indels-.vcf.gz.md5
+      outfile_index: GRCh37_mills_and_1000g_-gold_standard_indels-.vcf.idx.gz
+      outfile_index_check: GRCh37_mills_and_1000g_-gold_standard_indels-.vcf.idx.gz.md5
       outfile_decompress: gzip
       outfile_index_decompress: gzip
       outfile_check_method: md5sum
       outfile_index_check_method: md5sum
       url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
   hg38:
-    gold_standard:
+    gold_standard_indels:
       file: Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
       file_index: Mills_and_1000G_gold_standard.indels.hg38.vcf.gz.tbi
-      outfile: hg38_mills_and_1000g_indels_-gold_standard-.vcf.gz
-      outfile_index: hg38_mills_and_1000g_indels_-gold_standard-.vcf.gz.tbi
+      outfile: hg38_mills_and_1000g_-gold_standard_indels-.vcf.gz
+      outfile_index: hg38_mills_and_1000g_-gold_standard_indels-.vcf.gz.tbi
       outfile_decompress: gzip
       url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/
 dbsnp:
@@ -215,6 +216,13 @@ dbsnp:
       outfile_index_check_method: md5sum
       url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/b37/
   hg38:
+    gold_standard_dbsnp:
+      file: Homo_sapiens_assembly38.variantEvalGoldStandard.vcf.gz
+      file_index: Homo_sapiens_assembly38.variantEvalGoldStandard.vcf.gz.tbi
+      outfile: hg38_variant_-gold_standard_dbsnp-.vcf.gz
+      outfile_index: hg38_variant_-gold_standard_dbsnp-.vcf.gz.tbi
+      url_prefix: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/beta/
+      outfile_decompress: gzip
     146:
       file: dbsnp_146.hg38.vcf.gz
       file_index: dbsnp_146.hg38.vcf.gz.tbi

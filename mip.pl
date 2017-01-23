@@ -20581,7 +20581,7 @@ sub parse_human_genome_reference {
 	$file_info_href->{human_genome_reference_version} = $1;
 	$file_info_href->{human_genome_reference_source} = "GRCh";  #Ensembl
     }
-    elsif ($$human_genome_reference_ref =~/_hg(\d+)_homo_sapiens/) {  #Used to change capture kit genome reference version later
+    elsif ($$human_genome_reference_ref =~/hg(\d+)_homo_sapiens/) {  #Used to change capture kit genome reference version later
 
 	$file_info_href->{human_genome_reference_version} = $1;
 	$file_info_href->{human_genome_reference_source} = "hg";  #Refseq
