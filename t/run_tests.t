@@ -106,8 +106,8 @@ BEGIN {
 my $run_tests_version = "0.0.0";
 
 ###User Options
-GetOptions('h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
-	   'v|version' => sub { print STDOUT "\ntest.t ".$run_tests_version, "\n\n"; exit;},  #Display version number
+GetOptions('h|help' => sub { done_testing(); print STDOUT $USAGE, "\n"; exit;},  #Display help text
+	   'v|version' => sub { done_testing(); print STDOUT "\ntest.t ".$run_tests_version, "\n\n"; exit;},  #Display version number
 );
 
 use TAP::Harness;

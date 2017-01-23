@@ -386,6 +386,8 @@ sub decompress_file {
 							});
 	
 	    print $FILEHANDLE "gzip ";
+	    print $FILEHANDLE "-f ";
+	    print $FILEHANDLE "--quiet ";
 	    print $FILEHANDLE "-d ";
 	    print $FILEHANDLE "-c ";
 	    print $FILEHANDLE $outfile_path." ";
@@ -443,6 +445,10 @@ sub check_file {
 	    print $FILEHANDLE $perl_regexp." > md5sum_check.txt", "\n\n";
 	    print $FILEHANDLE "md5sum ";
 	    print $FILEHANDLE "-c md5sum_check.txt", "\n\n";
+
+	    ## Clean-up
+	    print $FILEHANDLE "rm ";
+	    print $FILEHANDLE "md5sum_check.txt", "\n\n";
 	}
     }
 }

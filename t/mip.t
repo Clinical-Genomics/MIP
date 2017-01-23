@@ -23,7 +23,7 @@ our $USAGE;
 BEGIN {
     $USAGE =
 	qq{mip.t
-           -c/--config_file YAML config file for analysis parameters (defaults to "$Bin/templates/mip_travis_config.yaml")
+           -c/--config_file YAML config file for analysis parameters (defaults to ../templates/mip_travis_config.yaml")
            -h/--help Display this help message   
            -v/--version Display version
         };    
