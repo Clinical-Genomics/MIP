@@ -10,7 +10,7 @@ qccollect_sampleinfo_file: cluster_constant_path!/family_id!/analysis_constant_p
 sambamba_depth_bed: GRCh37_scout_exons_-2017-01-.bed
 gatk_path: cluster_constant_path!/modules/GenomeAnalysisTK-3.6
 human_genome_reference: GRCh37_homo_sapiens_-d5-.fasta
-script_dir: /mnt/hds/proj/cust003/develop/modules/miniconda2/envs/mip4.0/bin
+script_dir: /home/travis/miniconda/envs/test_environment/bin
 core_processor_number: 16
 outdata_dir: cluster_constant_path!/family_id!/analysis_constant_path!
 pedigree_file: cluster_constant_path!/family_id!/family_id!_pedigree.yaml
@@ -22,8 +22,8 @@ config_file_analysis: cluster_constant_path!/family_id!/analysis_constant_path!/
 sv_vcfanno_lua: vcfanno_custom_-v1.0-.lua
 sv_vcfanno_config: GRCh37_vcfanno_config_-v1.0-.toml
 sv_vcfannotation_header_lines_file: vcfanno_headerLines_-v1.0-.txt
-vep_directory_path: cluster_constant_path!/modules/miniconda2/envs/mip4.0/ensembl-tools-release-87/scripts/variant_effect_predictor
-vep_directory_cache:  cluster_constant_path!/modules/miniconda2/envs/mip4.0/ensembl-tools-release-87/cache
+vep_directory_path: /home/travis/miniconda/envs/test_environment/ensembl-tools-release-87/scripts/variant_effect_predictor
+vep_directory_cache:  /home/travis/miniconda/envs/test_environment/ensembl-tools-release-87/cache
 vcfparser_vep_transcripts: 1
 vcfparser_select_file: cluster_constant_path!/family_id!/aggregated_gene_panel_test.txt
 vcfparser_select_file_matching_column: 3
