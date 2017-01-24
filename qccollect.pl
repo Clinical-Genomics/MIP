@@ -41,7 +41,7 @@ my (%qc_data, %evaluate_metric);
 my %qc_header; #Save header(s) in each outfile
 my %qc_program_data; #Save data in each outfile
 
-my $qccollect_version = "2.0.1";
+my $qccollect_version = "2.0.2";
 
 GetOptions('si|sample_info_file:s' => \$sample_info_file,
 	   'r|regexp_file:s' => \$regexp_file,
@@ -832,6 +832,10 @@ sub gender_check {
 
 	$qc_data_href->{sample}{$$sample_id_ref}{$$infile_ref}{gender_check} = "PASS";
     }
+    elsif ($$sample_id_sex_ref =~/other|unknown/) { #Other|Unknown
+	
+	$qc_data_href->{sample}{$$sample_id_ref}{$$infile_ref}{gender_check} = "PASS";
+    }
     else {
 
 	$qc_data_href->{sample}{$$sample_id_ref}{$$infile_ref}{gender_check} = "FAIL";
@@ -877,6 +881,10 @@ sub plink_gender_check {
     }
     elsif ( ($$plink_sexcheck_gender_ref eq "1") && ($$sample_id_sex_ref =~/1|^male/) ) { #Male
 
+	push(@{$qc_data_href->{program}{plink_gender_check}}, $$sample_id_ref.":PASS");
+    }
+    elsif ($$sample_id_sex_ref =~/other|unknown/) { #Other|Unknown
+	
 	push(@{$qc_data_href->{program}{plink_gender_check}}, $$sample_id_ref.":PASS");
     }
     else {
