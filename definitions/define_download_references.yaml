@@ -87,6 +87,10 @@ clinvar:
       outfile_check: hg38_clinvar_-2017-01-04-.vcf.gz.md5
       outfile_index: hg38_clinvar_-2017-01-04-.vcf.gz.tbi
       outfile_check_method: md5sum
+      outfile_decompress: gzip
+      outfile_reformat_command: "perl -n -a -e ' if($_=~/^#/) { print $_; } else {$_ =~ s/^(.+)/chr$1/g; print $_; }' hg38_clinvar_-2017-01-04-.vcf | perl -n -a -e ' if($_=~/^#/) { print $_;} else { $_ =~ s/^(M)/MT/g; print $_;}' > hg38_clinvar_reformat_-2017-01-04-.vcf"
+      outfile_bgzip_command: 'bgzip hg38_clinvar_reformat_-2017-01-04-.vcf'
+      outfile_tabix_command: 'tabix -p vcf hg38_clinvar_reformat_-2017-01-04-.vcf.gz'
       url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/
 1000g_omni:
   grch37:
