@@ -160,6 +160,7 @@ mip.pl  -ifd [infile_dirs=sample_id] -sd [script_dir] -rd [reference_dir] -p [pr
                  -svcvan/--sv_vcfanno Annotate structural variants (defaults to "1" (=yes)
                  -svcval/--sv_vcfanno_lua vcfAnno lua postscripting file (defaults to "")
                  -svcvac/--sv_vcfanno_config vcfAnno toml config (defaults to "")
+                 -svcvacf/--sv_vcfanno_config_file Annotation file within vcfAnno config toml file (defaults to "GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz")
                  -svcvah/--sv_vcfannotation_header_lines_file Adjust for postscript by adding required header lines to vcf (defaults to "")
                  -svcgmf/--sv_genmod_filter Remove common structural variants from vcf (defaults to "1" (=yes))
                  -svcgfr/--sv_genmod_filter_1000g Genmod annotate structural variants from 1000G reference (defaults to "GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz")
@@ -539,6 +540,7 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'svcvan|sv_vcfanno=n' => \$parameter{sv_vcfanno}{value},
 	   'svcval|sv_vcfanno_lua:s' => \$parameter{sv_vcfanno_lua}{value},  #Lua file postscripting
 	   'svcvac|sv_vcfanno_config:s' => \$parameter{sv_vcfanno_config}{value},  #Toml config of what to annotate
+	   'svcvacf|sv_vcfanno_config_file:s' => \$parameter{sv_vcfanno_config_file}{value},  #Annotation file within vcfAnno config toml file
 	   'svcvah|sv_vcfannotation_header_lines_file:s' => \$parameter{sv_vcfannotation_header_lines_file}{value},  #Adjust for postscript by adding required header lines to vcf
 	   'svcgmf|sv_genmod_filter=n' => \$parameter{sv_genmod_filter}{value},  #Remove common structural variants from vcf
 	   'svcgfr|sv_genmod_filter_1000g:s' => \$parameter{sv_genmod_filter_1000g}{value},  #Genmod annotate structural variants from 1000G reference
@@ -863,6 +865,11 @@ check_sample_id_in_parameter_path({active_parameter_href => \%active_parameter,
 check_vep_directories({vep_directory_path_ref => \$active_parameter{vep_directory_path},
 		       vep_directory_cache_ref => \$active_parameter{vep_directory_cache},
 		      });
+
+## Check that the supplied vcfanno toml frequency file match record 'file=' within toml config file
+check_vcfanno_toml({vcfanno_file_toml => $active_parameter{sv_vcfanno_config},
+		    vcfanno_file_freq => $active_parameter{sv_vcfanno_config_file},
+		   });
 
 
 ## picardtools_mergesamfiles_previous_bams
@@ -27630,6 +27637,52 @@ sub update_mip_reference_path {
 	    $active_parameter_href->{$parameter_name}{ catfile($$reference_dir_ref, $file_name) } = delete($active_parameter_href->{$parameter_name}{$file});  #Update original value
 	}
     }
+}
+
+
+sub check_vcfanno_toml {
+
+##
+
+##Function : Check that the supplied vcfanno toml frequency file match record 'file=' within toml config file
+##Returns  : ""
+##Arguments: $vcfanno_file_toml, $vcfanno_file_freq
+##         : $vcfanno_file_toml => Toml config file
+##         : $vcfanno_file_freq => Frequency file recorded inside toml file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $vcfanno_file_toml;
+    my $vcfanno_file_freq;
+
+    my $tmpl = { 
+	vcfanno_file_toml => { required => 1, defined => 1, strict_type => 1, store => \$vcfanno_file_toml},
+	vcfanno_file_freq => { required => 1, defined => 1, strict_type => 1, store => \$vcfanno_file_freq},
+    };
+     
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    open($FILEHANDLE, "<", $vcfanno_file_toml) or $logger->logdie("Can't open '".$vcfanno_file_toml."': ".$!."\n");
+
+    while (<$FILEHANDLE>) {
+
+	chomp $_; #Remove newline
+	
+	if($_=~/^file="(\S+)"/) {
+
+	    my $file_path_freq = $1;
+
+	    if($file_path_freq ne $vcfanno_file_freq) {
+
+		$logger->fatal("The supplied vcfanno_config_file: ".$vcfanno_file_freq." does not match record 'file=".$file_path_freq."' in the sv_vcfanno_config file: ".$vcfanno_file_toml);
+		exit 1;
+	    }
+	    last;
+	}
+    }
+    close($FILEHANDLE);
 }
 
 
