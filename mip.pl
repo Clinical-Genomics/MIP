@@ -9964,16 +9964,7 @@ sub cnvnator {
     my $root_file;
     my $phenotype_info = $sample_info_href->{sample}{$$sample_id_ref}{phenotype}; #Alias
 
-    my $perl_vcf_fix = q&perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {print q?##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">?, "\n"; print $_."\t".FORMAT."\t&.$$sample_id_ref.q&", "\n"} else {print $_."\tGT\t&;
-    if ($phenotype_info eq 2) {  #Affected
-
-	$perl_vcf_fix .= q&1/1"&;
-    }
-    if ($phenotype_info ne 2) {  #Unaffected
-
-	$perl_vcf_fix .= q&0/1"&;
-    }
-    $perl_vcf_fix .= q&, "\n"}' &;
+    my $perl_vcf_fix = q?perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {my @a = split("\t", $_); pop(@a);print join("\t", @a)."\t".?.$$sample_id_ref.q?, "\n"} else {print $_, "\n"}'?;
 
     my $perl_add_contigs = q?perl -nae '{print "##contig=<ID=".$F[0].",length=".$F[1].">", "\n"}'?;
 
@@ -10045,7 +10036,7 @@ sub cnvnator {
 	cnvnator_his({root_file => $root_file,
 		      contig_ref => \$contig,
 		      cnv_bin_size_ref => \$active_parameter_href->{cnv_bin_size},
-		      chromosome_reference => catfile($$temp_directory_ref, $contig.".fa"),
+		      chromosome_reference => $$temp_directory_ref,
 		      FILEHANDLE => $XARGSFILEHANDLE,
 		      stdout_file => $xargs_file_name.".".$contig.".stdout.txt",
 		      stderr_file => $xargs_file_name.".".$contig.".stderr.txt",
@@ -10067,7 +10058,7 @@ sub cnvnator {
 	cnvnator_calling({root_file => $root_file,
 			  contig_ref => \$contig,
 			  cnv_bin_size_ref => \$active_parameter_href->{cnv_bin_size},
-			  chromosome_reference => $$reference_dir_ref,
+			  chromosome_reference => $$temp_directory_ref,
 			  FILEHANDLE => $XARGSFILEHANDLE,
 			  stderr_file => $xargs_file_name.".".$contig.".stderr.txt",
 			  outfile => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.".vcf"), #OutFile

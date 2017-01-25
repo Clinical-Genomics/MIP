@@ -129,7 +129,7 @@ $parameter{vep_plugin} = "UpDownDistance,LoFtool,Lof";
 $parameter{rhocall} = "0.3";
 $parameter{rhocall_path} = catdir($ENV{HOME}, "rhocall");
 
-#$parameter{cnvnator} = "0.3.2";
+$parameter{cnvnator} = "0.3.3";
 #$parameter{findtranslocations} = "0";
 
 my $install_version = "1.0.0";
@@ -160,7 +160,7 @@ GetOptions('env|conda_environment:s'  => \$parameter{conda_environment},
 	   'vepp|vep_plugin:s' => \$parameter{vep_plugin},  #Comma sep string
 	   'rhc|rhocall:s' => \$parameter{rhocall},
 	   'rhcp|rhocall_path:s' => \$parameter{rhocall_path},
-#	   'cnv|cnvnator:s' => \$parameter{cnvnator},
+	   'cnv|cnvnator:s' => \$parameter{cnvnator},
 #	   'ftr|findtranslocations:s' => \$parameter{findtranslocations},
 	   'psh|prefer_shell' => \$parameter{prefer_shell},  # Shell will be used for overlapping shell and biconda installations
 	   'ppd|print_parameters_default' => sub { print_parameters({parameter_href => \%parameter}); exit;},  #Display parameter defaults
@@ -336,12 +336,12 @@ if (@{ $parameter{select_programs} }) {
 				FILEHANDLE => $BASHFILEHANDLE,
 			       });
     }
-#    if ( ( grep {$_ eq "cnvnator"} @{ $parameter{select_programs} } ) ) { #If element is part of array
-
-#	cnvnator({parameter_href => \%parameter,
-#		   FILEHANDLE => $BASHFILEHANDLE,
-#		  });
-#   }
+    if ( ( grep {$_ eq "cnvnator"} @{ $parameter{select_programs} } ) ) { #If element is part of array
+	
+	cnvnator({parameter_href => \%parameter,
+		  FILEHANDLE => $BASHFILEHANDLE,
+		 });
+    }
 #    if ( ( grep {$_ eq "findtranslocations"} @{ $parameter{select_programs} } ) ) { #If element is part of array
 
 #	findtranslocations({parameter_href => \%parameter,
@@ -366,9 +366,9 @@ else {
     rhocall({parameter_href => \%parameter,
 	     FILEHANDLE => $BASHFILEHANDLE,
 	    });
-#    cnvnator({parameter_href => \%parameter,
-#	       FILEHANDLE => $BASHFILEHANDLE,
-#	      });
+    cnvnator({parameter_href => \%parameter,
+	      FILEHANDLE => $BASHFILEHANDLE,
+	     });
 
 #    findtranslocations({parameter_href => \%parameter,
 #			 FILEHANDLE => $BASHFILEHANDLE,
