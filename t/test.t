@@ -11,13 +11,14 @@ use utf8;  #Allow unicode characters in this script
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
 
-use Params::Check qw[check allow last_error];
+use Cwd  qw(abs_path);
 use File::Spec::Functions qw(catdir catfile devnull);
 use File::Basename qw(dirname);
-use Cwd  qw(abs_path);
-use lib dirname(dirname abs_path $0) . '/lib';
+use FindBin qw($Bin);  #Find directory of script
+use Params::Check qw[check allow last_error];
 
 ##MIPs lib/
+use lib catdir(dirname($Bin), "lib");
 use File::Format::Yaml qw(load_yaml);
 
 BEGIN {

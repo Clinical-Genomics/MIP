@@ -20,21 +20,24 @@ use POSIX;
 use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 use Cwd;
-use Cwd qw(abs_path);  #Export absolute path function
-use FindBin qw($Bin);  #Find directory of script
+use Cwd qw(abs_path);  #Import absolute path function
 use File::Basename qw(dirname basename);
 use File::Spec::Functions qw(catdir catfile devnull);
 use File::Path qw(make_path);
 use File::Copy qw(copy);
+use FindBin qw($Bin);  #Find directory of script
 use IPC::Cmd qw[can_run run];
 use IPC::System::Simple;  #Required for autodie :all
 use Time::Piece;
 
 ## Third party module(s)
-use YAML;
 use Log::Log4perl;
 use Path::Iterator::Rule;
 use List::Util qw(any all);
+
+##MIPs lib/
+use lib catdir($Bin, "lib");
+use File::Format::Yaml qw(load_yaml write_yaml);
 
 our $USAGE;
 
@@ -778,6 +781,7 @@ foreach my $order_parameter_element (@order_parameters) {
 	    write_yaml({yaml_href => \%sample_info,
 			yaml_file_path_ref => \$yaml_file,
 		       });
+	    $logger->info("Wrote: ".$yaml_file, "\n");
 
 	    ## Removes all elements at hash third level except keys in allowed_entries
 	    remove_pedigree_elements({hash_ref => \%sample_info,
@@ -1047,6 +1051,7 @@ if ($active_parameter{config_file_analysis} ne 0) {  #Write config file for fami
     write_yaml({yaml_href => \%active_parameter,
 		yaml_file_path_ref => \$active_parameter{config_file_analysis},
 	       });
+    $logger->info("Wrote: ".$active_parameter{config_file_analysis}, "\n");
 
     ## Add to qc_sample_info
     $sample_info{config_file_analysis} = $active_parameter{config_file_analysis};
@@ -2534,6 +2539,7 @@ if ($active_parameter{sample_info_file} ne 0) {#Write SampleInfo to yaml file
     write_yaml({yaml_href => \%sample_info,
 		yaml_file_path_ref =>  \$active_parameter{sample_info_file},
 	       });
+    $logger->info("Wrote: ".$active_parameter{sample_info_file}, "\n");
 }
 
 
@@ -20199,69 +20205,6 @@ sub write_cmd_mip_log {
     $logger->info($cmd_line,"\n");
     $logger->info("MIP Version: ".$$mip_version_ref, "\n");
     $logger->info("Script parameters and info from ".$$script_ref." are saved in file: ".$$log_file_ref, "\n");
-}
-
-
-sub write_yaml {
-
-##write_yaml
-
-##Function : Writes a YAML hash to file
-##Returns  : ""
-##Arguments: $yaml_href, $yaml_file_path_ref
-##         : $yaml_href          => The hash to dump {REF}
-##         : $yaml_file_path_ref => The yaml file to write to {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $yaml_href;
-    my $yaml_file_path_ref;
-
-    my $tmpl = {
-	yaml_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$yaml_href},
-	yaml_file_path_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$yaml_file_path_ref},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    open (my $YAML, ">", $$yaml_file_path_ref) or $logger->logdie("Can't open '".$$yaml_file_path_ref."':".$!."\n");
-    local $YAML::QuoteNumericStrings = 1;  #Force numeric values to strings in YAML representation
-    say $YAML Dump( $yaml_href );
-    close($YAML);
-
-    $logger->info("Wrote: ".$$yaml_file_path_ref, "\n");
-}
-
-sub load_yaml {
-
-##load_yaml
-
-##Function : Loads a YAML file into an arbitrary hash and returns it.
-##Returns  : %yaml
-##Arguments: $yaml_file
-##         : $yaml_file => The yaml file to load
-
-    my ($arg_href) = @_;
-
-    ##Flatten argument(s)
-    my $yaml_file;
-
-    my $tmpl = {
-	yaml_file => { required => 1, defined => 1, strict_type => 1, store => \$yaml_file},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    my %yaml;
-
-    open (my $YAML, "<", $yaml_file) or die "can't open ".$yaml_file.":".$!, "\n";  #Log4perl not initialised yet, hence no logdie
-    local $YAML::QuoteNumericStrings = 1;  #Force numeric values to strings in YAML representation
-    %yaml = %{ YAML::LoadFile($yaml_file) };  #Load hashreference as hash
-
-    close($YAML);
-
-    return %yaml;
 }
 
 

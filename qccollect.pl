@@ -11,15 +11,23 @@ use charnames qw( :full :short );
 ##Collects MPS QC from MIP. Loads information on files to examine and values to extract from in YAML format and outputs exracted metrics in YAML format.
 #Copyright 2013 Henrik Stranneheim
 
-use Pod::Usage;
-use Pod::Text;
+use Cwd qw(abs_path);  #Import absolute path function
+use File::Basename qw(dirname);
+use File::Spec::Functions qw(catdir catfile devnull);
+use FindBin qw($Bin);  #Find directory of script
 use Getopt::Long;
-use POSIX;
 use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
+use Pod::Usage;
+use Pod::Text;
+use POSIX;
 
 ## Third party module(s)
 use YAML;
+
+##MIPs lib/
+use lib catdir($Bin, "lib");
+use File::Format::Yaml qw(load_yaml write_yaml);
 
 our $USAGE;
 
@@ -131,6 +139,7 @@ if(! $skip_evaluation) {
 write_yaml({yaml_href => \%qc_data,
 	    yaml_file_path_ref => \$outfile,
 	   });
+say STDERR "Wrote: ".$outfile, "\n";
 
 ####SubRoutines
 
@@ -892,65 +901,6 @@ sub plink_gender_check {
 	push(@{$qc_data_href->{program}{plink_gender_check}}, $$sample_id_ref.":FAIL");
     }
     return;
-}
-
-sub write_yaml {
-
-##write_yaml
-
-##Function : Writes a YAML hash to file
-##Returns  : ""
-##Arguments: $yaml_href, $yaml_file_path_ref
-##         : $yaml_href          => The hash to dump {REF}
-##         : $yaml_file_path_ref => The yaml file to write to {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $yaml_href;
-    my $yaml_file_path_ref;
-
-    my $tmpl = {
-	yaml_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$yaml_href},
-	yaml_file_path_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$yaml_file_path_ref},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    open (my $YAML, ">", $$yaml_file_path_ref) or die "can't open ".$$yaml_file_path_ref.": $!\n";
-    say $YAML Dump( $yaml_href );
-    close($YAML);
-}
-
-sub load_yaml {
-
-##load_yaml
-
-##Function : Loads a YAML file into an arbitrary hash and returns it.
-##Returns  : %yaml_hash
-##Arguments: $yaml_file
-##         : $yaml_file => The yaml file to load
-
-    my ($arg_href) = @_;
-
-    ##Flatten argument(s)
-    my $yaml_file;
-
-    my $tmpl = {
-	yaml_file => { required => 1, defined => 1, strict_type => 1, store => \$yaml_file},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    my %yaml;
-
-    open (my $YAML, "<", $yaml_file) or die "can't open ".$yaml_file.":".$!, "\n";
-
-    %yaml = %{ YAML::LoadFile($yaml_file) };  #Load hashreference as hash
-
-    close($YAML);
-
-    return %yaml;
 }
 
 
