@@ -6176,7 +6176,7 @@ sub vt {
     ## Split vcf into contigs
     while ( my ($contig_index, $contig) = each(@{ $file_info_href->{contigs_size_ordered} }) ) {
 
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf")." ";  #Infile
+	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf.gz")." ";  #Infile
 
 	## vt - Split multi allelic records into single records and normalize
 	vt_core({active_parameter_href => $active_parameter_href,
@@ -6445,7 +6445,7 @@ sub rhocall {
 
 	    print $XARGSFILEHANDLE "--sample ".$active_parameter_href->{sample_ids}[0]." ";  #No affected - pick any sample_id
 	}
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf.gz")." ";
+	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf.gz")." ";  #Infile
 	print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".roh"), "; ";
 
 	print $XARGSFILEHANDLE "rhocall aggregate ";

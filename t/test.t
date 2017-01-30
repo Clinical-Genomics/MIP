@@ -13,6 +13,12 @@ use charnames qw( :full :short );
 
 use Params::Check qw[check allow last_error];
 use File::Spec::Functions qw(catdir catfile devnull);
+use File::Basename qw(dirname);
+use Cwd  qw(abs_path);
+use lib dirname(dirname abs_path $0) . '/lib';
+
+##MIPs lib/
+use File::Format::Yaml qw(load_yaml);
 
 BEGIN {
 
@@ -100,7 +106,7 @@ BEGIN {
 }
 
 my ($infile, $config_file);
-my (%active_parameter, %vcfparser_data, %consequence_severity);
+my (%parameter, %active_parameter, %pedigree, %vcfparser_data, %consequence_severity);
 
 my $test_version = "2.0.0";
 
@@ -141,7 +147,28 @@ test_modules();
 if (defined($config_file)) {  #Input from cmd
 
     ## Loads a YAML file into an arbitrary hash and returns it.
-    %active_parameter = load_yaml($config_file);  #Load parameters from configfile
+    %active_parameter = load_yaml({yaml_file => $config_file,
+				  });  
+}
+
+if (exists($active_parameter{pedigree_file})) {
+    
+    ## Loads a YAML file into an arbitrary hash and returns it.
+    %pedigree = load_yaml({yaml_file => $active_parameter{pedigree_file},
+			  });
+    
+    ### Sample level info
+    foreach my $pedigree_sample_href (@{ $pedigree{samples} }) {
+	
+	## Sample_id
+	my $sample_id = $pedigree_sample_href->{sample_id};  #Alias
+
+	## Phenotype
+	push(@{ $parameter{dynamic_parameter}{$pedigree_sample_href->{phenotype}} }, $sample_id);
+
+	## Sex
+	push(@{ $parameter{dynamic_parameter}{$pedigree_sample_href->{sex}} }, $sample_id);
+    }
 }
 
 
@@ -165,7 +192,8 @@ else {  #Range file
 }
 
 ## Reads infile in vcf format and parses annotations
-read_infile_vcf({active_parameter_href => \%active_parameter,
+read_infile_vcf({parameter_href => \%parameter,
+		 active_parameter_href => \%active_parameter,
 		 vcfparser_data_href => \%vcfparser_data,
 		 consequence_severity_href => \%consequence_severity,
 		 infile => $infile,
@@ -266,7 +294,8 @@ sub read_infile_vcf {
 
 ##Function : Reads infile in vcf format and adds and parses annotations
 ##Returns  : ""
-##Arguments: $active_parameter_href, $vcfparser_data_href, $consequence_severity_href, $infile
+##Arguments: $parameter_href, $active_parameter_href, $vcfparser_data_href, $consequence_severity_href, $infile
+##         : $parameter_href            => The parameter hash {REF}
 ##         : $active_parameter_href     => The active parameters for this analysis hash {REF}
 ##         : vcfparser_data_href        => The keys from vcfParser i.e. range file and select file
 ##         : $consequence_severity_href => Consequence severity for SO-terms {REF}
@@ -275,12 +304,14 @@ sub read_infile_vcf {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
+    my $parameter_href;
     my $active_parameter_href;
     my $vcfparser_data_href;
     my $consequence_severity_href;
     my $infile;
 
     my $tmpl = {
+	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	vcfparser_data_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$vcfparser_data_href},
 	consequence_severity_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$consequence_severity_href},
@@ -412,11 +443,19 @@ sub read_infile_vcf {
 	    if ($active_parameter_href->{prankvariant} > 0) {
 
 		## Keys from genmod
-		my @genmod_keys = ("Compounds",
-				   "RankScore",
-				   "ModelScore",
-				   "GeneticModels",
-		    );
+		my @genmod_keys;
+
+		if ( (defined($parameter_href->{dynamic_parameter}{unaffected}))
+		 && (@{ $parameter_href->{dynamic_parameter}{unaffected} } eq @{ $active_parameter_href->{sample_ids} }) ) {  #Only unaffected - do nothing
+		}
+		else {
+
+		    @genmod_keys = ("Compounds",
+				    "RankScore",
+				    "ModelScore",
+				    "GeneticModels",
+			);
+		}
 
 		foreach my $key (@genmod_keys) {
 
@@ -431,7 +470,7 @@ sub read_infile_vcf {
 		## CADD key from genmodAnnotate
 		if ( ($active_parameter_href->{genmod_annotate_cadd_files}) || ($active_parameter_href->{genmod_annotate_cadd_files}) ) {
 
-		    ok( defined($vcf_header{INFO}{CADD}), "GENMODAnnotate: CADD key");
+		    ok( defined($vcf_header{INFO}{CADD}), "Genmod annotate: CADD key");
 		}
 	    }
 	    next;
@@ -559,28 +598,3 @@ sub parse_meta_data {
     }
 }
 
-
-sub load_yaml {
-
-##load_yaml
-
-##Function : Loads a YAML file into an arbitrary hash and returns it. Note: Currently only supports hashreferences and hashes and no mixed entries.
-##Returns  : %yaml_hash
-##Arguments: $yaml_file
-##         : $yaml_file => The yaml file to load
-
-    my $yaml_file = $_[0];
-
-    my %yaml_hash;
-
-    open (my $YAML, "<", $yaml_file) or die "cannot open ".$yaml_file.":".$!, "\n";  #Log4perl not initialised yet, hence no logdie
-
-    local $YAML::QuoteNumericStrings=1;  #Force numeric values to strings in YAML representation
-    if (defined ($YAML::QuoteNumericStrings) && $YAML::QuoteNumericStrings == 1) {
-
-	%yaml_hash = %{ YAML::LoadFile($yaml_file) };  #Load hashreference as hash
-    }
-    close($YAML);
-
-    return %yaml_hash;
-}
