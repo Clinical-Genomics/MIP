@@ -2134,9 +2134,17 @@ sub mip_scripts {
 		       "download_reference.pl",
 	);
     my %mip_sub_scripts;
-    $mip_sub_scripts{"definitions"} = ["define_parameters.yaml"];
-    $mip_sub_scripts{"t"} = ["test.t"];
+    $mip_sub_scripts{"definitions"} = ["define_parameters.yaml",
+				       "define_download_references.yaml"];
+    $mip_sub_scripts{"t"} = ["install.t",
+			     "mip.t",
+			     "run_tests.t",
+			     "test.t",
+	];
     $mip_sub_scripts{"templates"} = ["mip_config.yaml"];
+
+    my @mip_directories = ("lib",
+	catdir("t", "data"));
 
     ## Check if the binary of the program being installed already exists
     if (check_conda_bin_file_exists({parameter_href => $parameter_href,
@@ -2154,6 +2162,15 @@ sub mip_scripts {
     foreach my $directory (keys %mip_sub_scripts) {
 
 	print $FILEHANDLE "mkdir -p ";
+	print $FILEHANDLE catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", $directory);
+	print $FILEHANDLE "\n\n";
+    }
+    ## Copy directory to conda env
+    print $FILEHANDLE "## Copy directory to conda env\n\n";
+    foreach my $directory (@mip_directories) {
+
+	print $FILEHANDLE "cp -r ";
+	print $FILEHANDLE catdir($Bin, $directory)." ";
 	print $FILEHANDLE catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", $directory);
 	print $FILEHANDLE "\n\n";
     }

@@ -299,3 +299,5 @@ giab:
       url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv2.19/
 absolute_paths:
   - reference_dir
+  - log_file
+log_file: download_reference.log

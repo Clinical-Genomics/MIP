@@ -31,14 +31,13 @@ use IPC::System::Simple;  #Required for autodie :all
 use Time::Piece;
 
 ## Third party module(s)
-use Log::Log4perl;
 use Path::Iterator::Rule;
 use List::Util qw(any all);
 
 ##MIPs lib/
 use lib catdir($Bin, "lib");
 use File::Format::Yaml qw(load_yaml write_yaml);
-use MIP_log::Log4perl qw(initiate_logger create_log4perl_congfig);
+use MIP_log::Log4perl qw(initiate_logger);
 
 our $USAGE;
 
@@ -371,8 +370,8 @@ chomp($date_time_stamp, $date, $script);  #Remove \n;
 ###Project specific
 
 ## Loads a YAML file into an arbitrary hash and returns it.
-%parameter = load_yaml({yaml_file => catfile($Bin, "definitions", "define_parameters.yaml"),
-		       });
+%parameter = File::Format::Yaml::load_yaml({yaml_file => catfile($Bin, "definitions", "define_parameters.yaml"),
+					   });
 
 ## Adds the order of first level keys from yaml file to array
 order_parameter_names({order_parameters_ref => \@order_parameters,
@@ -692,8 +691,8 @@ $active_parameter{mip} = $parameter{mip}{default};
 if (defined($parameter{config_file}{value})) {  #Input from cmd
 
     ## Loads a YAML file into an arbitrary hash and returns it.
-    %active_parameter = load_yaml({yaml_file => $parameter{config_file}{value},
-				  });
+    %active_parameter = File::Format::Yaml::load_yaml({yaml_file => $parameter{config_file}{value},
+						      });
 
     ##Special case:Enable/activate MIP. Cannot be changed from cmd or config
     $active_parameter{mip} = $parameter{mip}{default};
@@ -764,7 +763,7 @@ foreach my $order_parameter_element (@order_parameters) {
     }
     if ($order_parameter_element eq "log_file") {
 
-	## Creates log object for the master script
+	## Creates log object
 	my $log = initiate_logger({file_path_ref => \$active_parameter{log_file},
 				      log_name => "MIP",
 				     });
@@ -780,9 +779,9 @@ foreach my $order_parameter_element (@order_parameters) {
 	    my $yaml_file = catfile($active_parameter{outdata_dir}, $active_parameter{family_id}, "qc_pedigree.yaml");
 
 	    ## Writes a YAML hash to file
-	    write_yaml({yaml_href => \%sample_info,
-			yaml_file_path_ref => \$yaml_file,
-		       });
+	    File::Format::Yaml::write_yaml({yaml_href => \%sample_info,
+					    yaml_file_path_ref => \$yaml_file,
+					   });
 	    $log->info("Wrote: ".$yaml_file, "\n");
 
 	    ## Removes all elements at hash third level except keys in allowed_entries
@@ -1054,9 +1053,9 @@ if ($active_parameter{config_file_analysis} ne 0) {  #Write config file for fami
     make_path(dirname($active_parameter{config_file_analysis}));  #Create directory unless it already exists
 
     ## Writes a YAML hash to file
-    write_yaml({yaml_href => \%active_parameter,
-		yaml_file_path_ref => \$active_parameter{config_file_analysis},
-	       });
+    File::Format::Yaml::write_yaml({yaml_href => \%active_parameter,
+				    yaml_file_path_ref => \$active_parameter{config_file_analysis},
+				   });
     $log->info("Wrote: ".$active_parameter{config_file_analysis}, "\n");
 
     ## Add to qc_sample_info
@@ -2542,9 +2541,9 @@ if ( ($active_parameter{psacct} > 0) && ($active_parameter{dry_run_all} == 0) ) 
 if ($active_parameter{sample_info_file} ne 0) {#Write SampleInfo to yaml file
 
     ## Writes a YAML hash to file
-    write_yaml({yaml_href => \%sample_info,
-		yaml_file_path_ref =>  \$active_parameter{sample_info_file},
-	       });
+    File::Format::Yaml::write_yaml({yaml_href => \%sample_info,
+				    yaml_file_path_ref =>  \$active_parameter{sample_info_file},
+				   });
     $log->info("Wrote: ".$active_parameter{sample_info_file}, "\n");
 }
 
@@ -19139,8 +19138,9 @@ sub add_to_active_parameter {
 	if ($active_parameter_href->{pedigree_file} =~/\.yaml$/) {  #Meta data in YAML format
 
 	    ##Loads a YAML file into an arbitrary hash and returns it. Load parameters from previous run from sample_info_file
-	    my %pedigree = load_yaml({yaml_file => $active_parameter_href->{pedigree_file},
-				     });
+	    my %pedigree = File::Format::Yaml::load_yaml({yaml_file => $active_parameter_href->{pedigree_file},
+							 });
+	    $log->info("Loaded: ".$active_parameter_href->{pedigree_file}, "\n");
 
 	    read_yaml_pedigree_file({parameter_href => $parameter_href,
 				     active_parameter_href => $active_parameter_href,
@@ -19297,12 +19297,12 @@ sub check_parameter_files {
 
 				if (defined($active_parameter_href->{log_file})) {
 
-				    $log->info("Load Yaml file: ". $active_parameter_href->{sample_info_file}, "\n");
+				    $log->info("Loaded: ". $active_parameter_href->{sample_info_file}, "\n");
 				}
 
 				##Loads a YAML file into an arbitrary hash and returns it. Load parameters from previous run from sample_info_file
-				my %temp = load_yaml({yaml_file => $active_parameter_href->{sample_info_file},
-						     });
+				my %temp = File::Format::Yaml::load_yaml({yaml_file => $active_parameter_href->{sample_info_file},
+									 });
 
 				## Update sample_info with information from pedigree
 				update_sample_info_hash({sample_info_href => $sample_info_href,
@@ -21573,9 +21573,10 @@ sub check_cosmid_yaml {
     if (-f $active_parameter_href->{reference_dir}."/cosmid.yaml") {  #Cosmid.yaml file exists in reference directory
 
 	## Loads a YAML file into an arbitrary hash and returns it.
-	%cosmid_resources = load_yaml({yaml_file => catfile($active_parameter_href->{reference_dir}, "cosmid.yaml"),
-				      });
-
+	%cosmid_resources = File::Format::Yaml::load_yaml({yaml_file => catfile($active_parameter_href->{reference_dir}, "cosmid.yaml"),
+							  });
+	$log->info("Loaded: ".catfile($active_parameter_href->{reference_dir}, "cosmid.yaml") , "\n");
+	
 	unless (defined($cosmid_resources{directory})) {  #Set Directory entry if not defined
 
 	    $cosmid_resources{directory} = catfile($active_parameter_href->{reference_dir}, "resources");  #Set the Cosmid default directory

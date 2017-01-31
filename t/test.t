@@ -252,11 +252,11 @@ sub test_modules {
     my $log_file = catdir(dirname($Bin), "templates", "mip_config.yaml");
     ok( -f $log_file,"Log::Log4perl: File= $log_file in MIP directory");
 
-    ## Creates log object for the master script
+    ## Creates log object
     my $log = initiate_logger({categories_ref => ["TRACE", "ScreenApp"],
-				  file_path_ref => \$log_file,
-				  log_name => "Test",
-				 });
+			       file_path_ref => \$log_file,
+			       log_name => "Test",
+			      });
 
     ok($log->info("1"), "Log::Log4perl: info");
     ok($log->warn("1"), "Log::Log4perl: warn");
