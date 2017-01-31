@@ -495,9 +495,9 @@ sub read_infile_vcf {
 		    
 		    @vep_format_fields = split(/\|/, $1);
 		    
-		    for (my $field_counter=0;$field_counter<scalar(@vep_format_fields);$field_counter++) {
-			
-			$vep_format_field_column{$vep_format_fields[$field_counter]} = $field_counter; #Save the order of VEP features
+		    while (my ($field_index, $field) = each (@vep_format_fields) ) {
+
+			$vep_format_field_column{$field} = $field_index; #Save the order of VEP features
 		    }
 		}
 		if ($parse_vep) {
@@ -571,19 +571,19 @@ sub read_infile_vcf {
 	    }
 	    
 	    ##Add line elements to record hash
-	    for (my $line_elements_counter=0;$line_elements_counter<scalar(@line_elements);$line_elements_counter++) {  #Parse line elements
-		
-		$record{ $vcf_format_columns[$line_elements_counter] } = $line_elements[$line_elements_counter];
+	    while (my ($element_index, $element) = each (@line_elements) ) {
+
+		$record{ $vcf_format_columns[$element_index] } = $element;  #Link vcf format headers to the line elements
 	    }
 	    
-	    my @temps = split(/;/, $record{INFO});  #Add INFO elements to temps
+	    my @info_elements = split(/;/, $record{INFO});  #Add INFO elements
 	    
 	    ## Collect key value pairs in INFO field
-	    foreach my $key_value (@temps) {
+	    foreach my $element (@info_elements) {
 		
-		my @pairs = split(/=/, $key_value);
+		my @key_value_pairs = split("=", $element);  #key index = 0 and value index = 1
 		
-		$record{INFO_key_value}{$pairs[0]} = $pairs[1];
+		$record{INFO_key_value}{$key_value_pairs[0]} = $key_value_pairs[1];
 	    }
 
 	    for my $database (keys % {$snpeff_cmd_href->{present}{database}}) { #Note that the vcf should only contain 1 database entry

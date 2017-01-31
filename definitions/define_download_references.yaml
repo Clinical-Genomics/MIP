@@ -30,6 +30,7 @@ reference:
     - 3.3
   dbnsfp:
     - v2.9
+    - v3.2
   giab:
     - v2.19_wgs
     - v2.19_bed
