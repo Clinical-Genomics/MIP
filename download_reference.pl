@@ -17,9 +17,9 @@ use IO::Handle;
 use File::Basename qw(dirname);
 use File::Spec::Functions qw(catfile catdir devnull);
 
-## Third party module(s)
-use YAML;
-$YAML::QuoteNumericStrings = 1;
+##MIPs lib/
+use lib catdir($Bin, "lib");
+use File::Format::Yaml qw(load_yaml);
 
 our $USAGE;
 
@@ -544,38 +544,6 @@ sub find_absolute_path {
 	exit 1;
     }
     return $path;
-}
-
-
-sub load_yaml {
-
-##load_yaml
-
-##Function : Loads a YAML file into an arbitrary hash and returns it.
-##Returns  : %yaml
-##Arguments: $yaml_file
-##         : $yaml_file => The yaml file to load
-
-    my ($arg_href) = @_;
-
-    ##Flatten argument(s)
-    my $yaml_file;
-
-    my $tmpl = {
-	yaml_file => { required => 1, defined => 1, strict_type => 1, store => \$yaml_file},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    my %yaml;
-
-    open (my $YAML, "<", $yaml_file) or die "can't open ".$yaml_file.":".$!, "\n";  #Log4perl not initialised yet, hence no logdie
-    local $YAML::QuoteNumericStrings = 1;  #Force numeric values to strings in YAML representation
-    %yaml = %{ YAML::LoadFile($yaml_file) };  #Load hashreference as hash
-
-    close($YAML);
-
-    return %yaml;
 }
 
 

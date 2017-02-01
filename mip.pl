@@ -20,21 +20,24 @@ use POSIX;
 use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 use Cwd;
-use Cwd qw(abs_path);  #Export absolute path function
-use FindBin qw($Bin);  #Find directory of script
+use Cwd qw(abs_path);  #Import absolute path function
 use File::Basename qw(dirname basename);
 use File::Spec::Functions qw(catdir catfile devnull);
 use File::Path qw(make_path);
 use File::Copy qw(copy);
+use FindBin qw($Bin);  #Find directory of script
 use IPC::Cmd qw[can_run run];
 use IPC::System::Simple;  #Required for autodie :all
 use Time::Piece;
 
 ## Third party module(s)
-use YAML;
 use Log::Log4perl;
 use Path::Iterator::Rule;
 use List::Util qw(any all);
+
+##MIPs lib/
+use lib catdir($Bin, "lib");
+use File::Format::Yaml qw(load_yaml write_yaml);
 
 our $USAGE;
 
@@ -160,6 +163,7 @@ mip.pl  -ifd [infile_dirs=sample_id] -sd [script_dir] -rd [reference_dir] -p [pr
                  -svcvan/--sv_vcfanno Annotate structural variants (defaults to "1" (=yes)
                  -svcval/--sv_vcfanno_lua vcfAnno lua postscripting file (defaults to "")
                  -svcvac/--sv_vcfanno_config vcfAnno toml config (defaults to "")
+                 -svcvacf/--sv_vcfanno_config_file Annotation file within vcfAnno config toml file (defaults to "GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz")
                  -svcvah/--sv_vcfannotation_header_lines_file Adjust for postscript by adding required header lines to vcf (defaults to "")
                  -svcgmf/--sv_genmod_filter Remove common structural variants from vcf (defaults to "1" (=yes))
                  -svcgfr/--sv_genmod_filter_1000g Genmod annotate structural variants from 1000G reference (defaults to "GRCh37_all_wgs_-phase3_v5b.2013-05-02-.vcf.gz")
@@ -539,6 +543,7 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'svcvan|sv_vcfanno=n' => \$parameter{sv_vcfanno}{value},
 	   'svcval|sv_vcfanno_lua:s' => \$parameter{sv_vcfanno_lua}{value},  #Lua file postscripting
 	   'svcvac|sv_vcfanno_config:s' => \$parameter{sv_vcfanno_config}{value},  #Toml config of what to annotate
+	   'svcvacf|sv_vcfanno_config_file:s' => \$parameter{sv_vcfanno_config_file}{value},  #Annotation file within vcfAnno config toml file
 	   'svcvah|sv_vcfannotation_header_lines_file:s' => \$parameter{sv_vcfannotation_header_lines_file}{value},  #Adjust for postscript by adding required header lines to vcf
 	   'svcgmf|sv_genmod_filter=n' => \$parameter{sv_genmod_filter}{value},  #Remove common structural variants from vcf
 	   'svcgfr|sv_genmod_filter_1000g:s' => \$parameter{sv_genmod_filter_1000g}{value},  #Genmod annotate structural variants from 1000G reference
@@ -776,6 +781,7 @@ foreach my $order_parameter_element (@order_parameters) {
 	    write_yaml({yaml_href => \%sample_info,
 			yaml_file_path_ref => \$yaml_file,
 		       });
+	    $logger->info("Wrote: ".$yaml_file, "\n");
 
 	    ## Removes all elements at hash third level except keys in allowed_entries
 	    remove_pedigree_elements({hash_ref => \%sample_info,
@@ -863,6 +869,11 @@ check_sample_id_in_parameter_path({active_parameter_href => \%active_parameter,
 check_vep_directories({vep_directory_path_ref => \$active_parameter{vep_directory_path},
 		       vep_directory_cache_ref => \$active_parameter{vep_directory_cache},
 		      });
+
+## Check that the supplied vcfanno toml frequency file match record 'file=' within toml config file
+check_vcfanno_toml({vcfanno_file_toml => $active_parameter{sv_vcfanno_config},
+		    vcfanno_file_freq => $active_parameter{sv_vcfanno_config_file},
+		   });
 
 
 ## picardtools_mergesamfiles_previous_bams
@@ -1040,6 +1051,7 @@ if ($active_parameter{config_file_analysis} ne 0) {  #Write config file for fami
     write_yaml({yaml_href => \%active_parameter,
 		yaml_file_path_ref => \$active_parameter{config_file_analysis},
 	       });
+    $logger->info("Wrote: ".$active_parameter{config_file_analysis}, "\n");
 
     ## Add to qc_sample_info
     $sample_info{config_file_analysis} = $active_parameter{config_file_analysis};
@@ -2527,6 +2539,7 @@ if ($active_parameter{sample_info_file} ne 0) {#Write SampleInfo to yaml file
     write_yaml({yaml_href => \%sample_info,
 		yaml_file_path_ref =>  \$active_parameter{sample_info_file},
 	       });
+    $logger->info("Wrote: ".$active_parameter{sample_info_file}, "\n");
 }
 
 
@@ -6438,7 +6451,7 @@ sub rhocall {
 
 	    print $XARGSFILEHANDLE "--sample ".$active_parameter_href->{sample_ids}[0]." ";  #No affected - pick any sample_id
 	}
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf.gz")." ";
+	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf.gz")." ";  #Infile
 	print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".roh"), "; ";
 
 	print $XARGSFILEHANDLE "rhocall aggregate ";
@@ -20195,69 +20208,6 @@ sub write_cmd_mip_log {
 }
 
 
-sub write_yaml {
-
-##write_yaml
-
-##Function : Writes a YAML hash to file
-##Returns  : ""
-##Arguments: $yaml_href, $yaml_file_path_ref
-##         : $yaml_href          => The hash to dump {REF}
-##         : $yaml_file_path_ref => The yaml file to write to {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $yaml_href;
-    my $yaml_file_path_ref;
-
-    my $tmpl = {
-	yaml_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$yaml_href},
-	yaml_file_path_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$yaml_file_path_ref},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    open (my $YAML, ">", $$yaml_file_path_ref) or $logger->logdie("Can't open '".$$yaml_file_path_ref."':".$!."\n");
-    local $YAML::QuoteNumericStrings = 1;  #Force numeric values to strings in YAML representation
-    say $YAML Dump( $yaml_href );
-    close($YAML);
-
-    $logger->info("Wrote: ".$$yaml_file_path_ref, "\n");
-}
-
-sub load_yaml {
-
-##load_yaml
-
-##Function : Loads a YAML file into an arbitrary hash and returns it.
-##Returns  : %yaml
-##Arguments: $yaml_file
-##         : $yaml_file => The yaml file to load
-
-    my ($arg_href) = @_;
-
-    ##Flatten argument(s)
-    my $yaml_file;
-
-    my $tmpl = {
-	yaml_file => { required => 1, defined => 1, strict_type => 1, store => \$yaml_file},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    my %yaml;
-
-    open (my $YAML, "<", $yaml_file) or die "can't open ".$yaml_file.":".$!, "\n";  #Log4perl not initialised yet, hence no logdie
-    local $YAML::QuoteNumericStrings = 1;  #Force numeric values to strings in YAML representation
-    %yaml = %{ YAML::LoadFile($yaml_file) };  #Load hashreference as hash
-
-    close($YAML);
-
-    return %yaml;
-}
-
-
 sub check_unique_array_element {
 
 ##check_unique_array_element
@@ -27630,6 +27580,52 @@ sub update_mip_reference_path {
 	    $active_parameter_href->{$parameter_name}{ catfile($$reference_dir_ref, $file_name) } = delete($active_parameter_href->{$parameter_name}{$file});  #Update original value
 	}
     }
+}
+
+
+sub check_vcfanno_toml {
+
+##
+
+##Function : Check that the supplied vcfanno toml frequency file match record 'file=' within toml config file
+##Returns  : ""
+##Arguments: $vcfanno_file_toml, $vcfanno_file_freq
+##         : $vcfanno_file_toml => Toml config file
+##         : $vcfanno_file_freq => Frequency file recorded inside toml file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $vcfanno_file_toml;
+    my $vcfanno_file_freq;
+
+    my $tmpl = { 
+	vcfanno_file_toml => { required => 1, defined => 1, strict_type => 1, store => \$vcfanno_file_toml},
+	vcfanno_file_freq => { required => 1, defined => 1, strict_type => 1, store => \$vcfanno_file_freq},
+    };
+     
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    open($FILEHANDLE, "<", $vcfanno_file_toml) or $logger->logdie("Can't open '".$vcfanno_file_toml."': ".$!."\n");
+
+    while (<$FILEHANDLE>) {
+
+	chomp $_; #Remove newline
+	
+	if($_=~/^file="(\S+)"/) {
+
+	    my $file_path_freq = $1;
+
+	    if($file_path_freq ne $vcfanno_file_freq) {
+
+		$logger->fatal("The supplied vcfanno_config_file: ".$vcfanno_file_freq." does not match record 'file=".$file_path_freq."' in the sv_vcfanno_config file: ".$vcfanno_file_toml);
+		exit 1;
+	    }
+	    last;
+	}
+    }
+    close($FILEHANDLE);
 }
 
 
