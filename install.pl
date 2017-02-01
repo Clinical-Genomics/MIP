@@ -42,7 +42,7 @@ BEGIN {
            -bet/--bedtools Set the bedtools version (Default: "2.25.0")
            -vt/--vt Set the vt version (Default: "0.57")
            -plk/--plink  Set the plink version (Default: "160224")
-           -snpg/--snpeff_genome_versions Set the snpEff genome version (Default: ["GRCh37.75"])
+           -snpg/--snpeff_genome_versions Set the snpEff genome version (Default: ["GRCh37.75", "GRCh38.82"])
            -vep/--varianteffectpredictor Set the VEP version (Default: "87")
            -vepa/--vep_auto_flag Set the VEP auto installer flags
 	   -vepc/--vep_cache_dir Specify the cache directory to use (whole path; defaults to "~/miniconda/envs/conda_environment/ensembl-tools-release-varianteffectpredictorVersion/cache")
@@ -408,8 +408,8 @@ sub set_default_array_parameters {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     my %array_parameter;
-    $array_parameter{vep_assemblies}{default} = ["GRCh37"];
-    $array_parameter{snpeff_genome_versions}{default} = ["GRCh37.75"];  #GRCh38.82 but check current on the snpEff sourceForge
+    $array_parameter{vep_assemblies}{default} = ["GRCh37", "GRCh38"];
+    $array_parameter{snpeff_genome_versions}{default} = ["GRCh37.75", "GRCh38.82"];  #GRCh38.82 but check current on the snpEff sourceForge
     $array_parameter{reference_genome_versions}{default} = ["GRCh37", "hg38"];
     $array_parameter{perl_modules}{default} = ["Modern::Perl",  #MIP
 					       "IPC::System::Simple",  #MIP
