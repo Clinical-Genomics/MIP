@@ -7,6 +7,8 @@ reference:
     - decoy_hla
   1000g_all_wgs:
     - phase3_v5b.20130502
+  1000g_all_sv:
+    - phase3_v2.20130502
   exac:
     - r0.3.1
   clinvar:
@@ -74,6 +76,14 @@ exac:
       outfile_reformat_command: "bcftools view -h GRCh37_exac_-r0.3.1-.vcf.gz > header.txt; perl -i -p -e 's/ID=Adj_AF/ID=AF_Adj/' header.txt; bcftools reheader -h header.txt GRCh37_exac_-r0.3.1-.vcf.gz | bcftools view -o GRCh37_exac_reheader_-r0.3.1-.vcf.gz -O z"
       outfile_tabix_command: 'tabix -p vcf GRCh37_exac_reheader_-r0.3.1-.vcf.gz'
       url_prefix: ftp://ftp.broadinstitute.org/pub/ExAC_release/release0.3.1/
+1000g_all_sv:
+  grch37:
+    phase3_v2.20130502:
+      file: ALL.wgs.integrated_sv_map_v2.20130502.svs.genotypes.vcf.gz
+      file_index: ALL.wgs.integrated_sv_map_v2.20130502.svs.genotypes.vcf.gz.tbi
+      outfile: GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz
+      outfile_index: GRCh37_all_sv_-phase3_v2.2013-05-02-.vcf.gz.tbi
+      url_prefix: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/phase3/integrated_sv_map/
 clinvar:
   grch37:
     20170104:
