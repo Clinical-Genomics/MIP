@@ -11,6 +11,7 @@ use charnames qw( :full :short );
 ##Collects MPS QC from MIP. Loads information on files to examine and values to extract from in YAML format and outputs exracted metrics in YAML format.
 #Copyright 2013 Henrik Stranneheim
 
+use Cwd;
 use Cwd qw(abs_path);  #Import absolute path function
 use File::Basename qw(dirname);
 use File::Spec::Functions qw(catdir catfile devnull);
@@ -28,6 +29,7 @@ use YAML;
 ##MIPs lib/
 use lib catdir($Bin, "lib");
 use File::Format::Yaml qw(load_yaml write_yaml);
+use MIP_log::Log4perl qw(initiate_logger);
 
 our $USAGE;
 
@@ -40,11 +42,15 @@ BEGIN {
                -preg/--print_regexp Print the regexp used at CMMS switch (defaults to "0" (=no))
                -prego/--print_regexp_outfile Regexp YAML outfile (defaults to "qc_regexp.yaml")
                -ske/--skip_evaluation Skip evaluation step
+               -l/--log_file Log file (Default: "qccollect.log")
                -h/--help Display this help message
                -v/--version Display version};
 }
 my ($sample_info_file, $regexp_file, $print_regexp, $skip_evaluation);
-my ($outfile, $print_regexp_outfile) = ("qcmetrics.yaml", "qc_regexp.yaml");
+
+##Scalar parameters with defaults
+my ($outfile, $print_regexp_outfile, $log_file) = ("qcmetrics.yaml", "qc_regexp.yaml", catfile(cwd(), "qccollect.log"));
+
 my (%qc_data, %evaluate_metric);
 my %qc_header; #Save header(s) in each outfile
 my %qc_program_data; #Save data in each outfile
@@ -57,46 +63,51 @@ GetOptions('si|sample_info_file:s' => \$sample_info_file,
 	   'preg|print_regexp:n' => \$print_regexp,
 	   'prego|print_regexp_outfile:s' => \$print_regexp_outfile,
 	   'ske|skip_evaluation' => \$skip_evaluation,
+	   'l|log_file:s' => \$log_file,
 	   'h|help' => sub { say STDOUT $USAGE; exit;},  #Display help text
 	   'v|version' => sub { say STDOUT "\nqccollect.pl ".$qccollect_version, "\n"; exit;},  #Display version number
     )  or help({USAGE => $USAGE,
 		exit_code => 1,
 	       });
 
+## Creates log object
+my $log = MIP_log::Log4perl::initiate_logger({file_path_ref => \$log_file,
+					      log_name => "Qccollect",
+					     });
+
 if ($print_regexp) {
 
     ## Write default regexp to YAML
     regexp_to_yaml({print_regexp_outfile => $print_regexp_outfile,
 		   });
-    print STDOUT "Wrote regexp YAML file to: ".$print_regexp_outfile, "\n";
+    $log->info("Wrote regexp YAML file to: ".$print_regexp_outfile, "\n");
     exit;
 }
 
 if (! $sample_info_file) {
 
-    print STDERR "\n";
-    print STDOUT $USAGE, "\n";
-    print STDERR "Must supply a '-sample_info_file' (supply whole path)", "\n\n";
+    $log->info($USAGE);
+    $log->fatal("Must supply a '-sample_info_file' (supply whole path)", "\n\n");
     exit;
 }
 if (! $regexp_file) {
 
-    print STDERR "\n";
-    print STDOUT $USAGE, "\n";
-    print STDERR "Must supply a '-regexp_file' (supply whole path)", "\n\n";
+    $log->info($USAGE);
+    $log->fatal("Must supply a '-regexp_file' (supply whole path)", "\n\n");
     exit;
 }
 
 ####MAIN
 
 ## Loads a YAML file into an arbitrary hash and returns it
-my %sample_info = load_yaml({yaml_file => $sample_info_file,
-			    });
+my %sample_info = File::Format::Yaml::load_yaml({yaml_file => $sample_info_file,
+						});
+$log->info("Loaded: ".$sample_info_file, "\n");
 
 ## Loads a YAML file into an arbitrary hash and returns it
-my %regexp = load_yaml({yaml_file => $regexp_file,
-		       });
-
+my %regexp = File::Format::Yaml::load_yaml({yaml_file => $regexp_file,
+					   });
+$log->info("Loaded: ".$regexp_file, "\n");
 
 ## Extracts all qcdata on sample_id level using information in %sample_info and %regexp
 sample_qc({sample_info_href => \%sample_info,
@@ -136,10 +147,10 @@ if(! $skip_evaluation) {
 }
 
 ## Writes a YAML hash to file
-write_yaml({yaml_href => \%qc_data,
-	    yaml_file_path_ref => \$outfile,
-	   });
-say STDERR "Wrote: ".$outfile, "\n";
+File::Format::Yaml::write_yaml({yaml_href => \%qc_data,
+				yaml_file_path_ref => \$outfile,
+			       });
+$log->info("Wrote: ".$outfile, "\n");
 
 ####SubRoutines
 
@@ -1120,8 +1131,6 @@ sub regexp_to_yaml {
     $regexp{variant_integrity_father}{fraction_of_common_variants}  = q?perl -nae 'unless ($_=~/^#/) {print $F[1];last;}' ?;
 
     $regexp{variant_integrity_father}{common_variants}  = q?perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' ?;
-
-#$regexp{}{} = ;
 
     ## Writes a YAML hash to file
     write_yaml({yaml_href => \%regexp,

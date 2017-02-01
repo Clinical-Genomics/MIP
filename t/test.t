@@ -20,6 +20,7 @@ use Params::Check qw[check allow last_error];
 ##MIPs lib/
 use lib catdir(dirname($Bin), "lib");
 use File::Format::Yaml qw(load_yaml);
+use MIP_log::Log4perl qw(initiate_logger);
 
 BEGIN {
 
@@ -175,21 +176,27 @@ if (exists($active_parameter{pedigree_file})) {
 
 if($infile =~/.selected.vcf/) {
 
-    ## Reads a file containg features to be annotated using range queries
-    read_range_file({vcfparser_data_href => \%vcfparser_data,
-		     range_coulumns_ref => \@{ $active_parameter{vcfparser_select_feature_annotation_columns} },
-		     infile_path => catfile($active_parameter{vcfparser_select_file}),
-		     range_file_key => "select_file",
-		    });
+    if ( (defined($active_parameter{vcfparser_select_file})) && ($active_parameter{vcfparser_select_file}) ) {
+
+	## Reads a file containg features to be annotated using range queries
+	read_range_file({vcfparser_data_href => \%vcfparser_data,
+			 range_coulumns_ref => \@{ $active_parameter{vcfparser_select_feature_annotation_columns} },
+			 infile_path => catfile($active_parameter{vcfparser_select_file}),
+			 range_file_key => "select_file",
+			});
+    }
 }
 else {  #Range file
 
-    ## Reads a file containg features to be annotated using range queries
-    read_range_file({vcfparser_data_href => \%vcfparser_data,
-		     range_coulumns_ref => \@{ $active_parameter{vcfparser_range_feature_annotation_columns} },
-		     infile_path => catfile($active_parameter{reference_dir}, $active_parameter{vcfparser_range_feature_file}),
-		     range_file_key => "range_file",
-		    });
+    if ( (defined($active_parameter{vcfparser_range_feature_file})) && ($active_parameter{vcfparser_range_feature_file}) ) {
+
+	## Reads a file containg features to be annotated using range queries
+	read_range_file({vcfparser_data_href => \%vcfparser_data,
+			 range_coulumns_ref => \@{ $active_parameter{vcfparser_range_feature_annotation_columns} },
+			 infile_path => catfile($active_parameter{vcfparser_range_feature_file}),
+			 range_file_key => "range_file",
+			});
+    }
 }
 
 ## Reads infile in vcf format and parses annotations
@@ -245,47 +252,22 @@ sub test_modules {
     my $log_file = catdir(dirname($Bin), "templates", "mip_config.yaml");
     ok( -f $log_file,"Log::Log4perl: File= $log_file in MIP directory");
 
-    ## Create log4perl config file
-    my $config = create_log4perl_congfig(\$log_file);
+    ## Creates log object
+    my $log = initiate_logger({categories_ref => ["TRACE", "ScreenApp"],
+			       file_path_ref => \$log_file,
+			       log_name => "Test",
+			      });
 
-    ok(Log::Log4perl->init(\$config), "Log::Log4perl: Initate");
-    ok(Log::Log4perl->get_logger("MIP_logger"), "Log::Log4perl: Get logger");
-
-    my $logger = Log::Log4perl->get_logger("MIP_logger");
-    ok($logger->info("1"), "Log::Log4perl: info");
-    ok($logger->warn("1"), "Log::Log4perl: warn");
-    ok($logger->error("1"), "Log::Log4perl: error");
-    ok($logger->fatal("1"), "Log::Log4perl: fatal");
+    ok($log->info("1"), "Log::Log4perl: info");
+    ok($log->warn("1"), "Log::Log4perl: warn");
+    ok($log->error("1"), "Log::Log4perl: error");
+    ok($log->fatal("1"), "Log::Log4perl: fatal");
 
     use Getopt::Long;
     push(@ARGV, ("-verbose", "2"));
     my $verbose = 1;
     ok(GetOptions("verbose:n"  => \$verbose), "Getopt::Long: Get options call");
     ok ($verbose == 2, "Getopt::Long: Get options modified");
-}
-
-sub create_log4perl_congfig {
-
-##create_log4perl_congfig
-
-##Function : Create log4perl config file.
-##Returns  : "$config"
-##Arguments: $file_name
-##         : $file_name => log4perl config file {REF}
-
-    my $file_name_ref = $_[0];
-
-    my $conf = q?
-        log4perl.category.MIP_logger = TRACE, ScreenApp
-        log4perl.appender.LogFile = Log::Log4perl::Appender::File
-        log4perl.appender.LogFile.filename = ?.$$file_name_ref.q?
-        log4perl.appender.LogFile.layout=PatternLayout
-        log4perl.appender.LogFile.layout.ConversionPattern = [%p] %d %c - %m%n
-        log4perl.appender.ScreenApp = Log::Log4perl::Appender::Screen
-        log4perl.appender.ScreenApp.layout = PatternLayout
-        log4perl.appender.ScreenApp.layout.ConversionPattern = [%p] %d %c - %m%n
-        ?;
-    return $conf;
 }
 
 
@@ -321,18 +303,24 @@ sub read_infile_vcf {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object now that log_file has been set
+    my $log = Log::Log4perl->get_logger("Test");
+
     my @vep_format_fields;
-    my %vep_format_fields_column;
+    my %vep_format_field_column;
 
     my %meta_data;
     my %vcf_header;
+    my @vcf_format_columns;  #Catch #vcf header #CHROM line
     my %vcf_info_key;
+    my %vcf_info_csq_key;
 
-    print STDOUT "\nTesting vcf header:\n\n";
+    $log->info("Testing vcf header in file: ".$infile,"\n\n");
 
-    open(my $VCF, "<".$infile) or die "Cannot open ".$infile.":".$!, "\n";
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    open($FILEHANDLE, "<".$infile) or $log->logdie("Cannot open ".$infile.":".$!, "\n");
 
-    while (<$VCF>) {
+    while (<$FILEHANDLE>) {
 
 	chomp $_;  # Remove newline
 	if($. > 5000) {  #Exit after parsing X lines
@@ -357,9 +345,9 @@ sub read_infile_vcf {
 
 		    @vep_format_fields = split(/\|/, $1);
 
-		    for (my $field_counter=0;$field_counter<scalar(@vep_format_fields);$field_counter++) {
+		    while (my ($field_index, $field) = each (@vep_format_fields) ) {
 
-			$vep_format_fields_column{$vep_format_fields[$field_counter]} = $field_counter; #Save the order of VEP features
+			$vep_format_field_column{$field} = $field_index; #Save the order of VEP features
 		    }
 		}
 		next;
@@ -367,6 +355,8 @@ sub read_infile_vcf {
 	    next;
 	}
 	if ($_=~/^#CHROM/) {
+
+	    @vcf_format_columns = split(/\t/, $_);  #Split vcf format line
 
 	    ### Check Header now that we read all
 
@@ -478,27 +468,62 @@ sub read_infile_vcf {
 	}
 	if ( $_ =~/^(\S+)/ ) {
 
+	    my %record;
+
 	    my @line_elements = split("\t",$_); #Loads vcf elements
 
-	    my @key_values = split(/;/, $line_elements[7]); #Split INFO field to key=value items
+	    ##Add line elements to record hash
+	  LINE:
+	    while (my ($element_index, $element) = each (@line_elements) ) {
+		
+		$record{ $vcf_format_columns[$element_index] } = $element;  #Link vcf format headers to the line elements
+	    }
 
-	    for my $element (@key_values) {
+	    my @info_elements = split(/;/, $record{INFO}); #Split INFO field to key=value items
 
-		my @keys = split("=", $element);  #key = 0 and value = 1
+	    ##Add INFO to record hash as separate key 
+	  INFO:
+	    for my $element (@info_elements) {
 
-		$vcf_info_key{$keys[0]}++;  #Increment
+		my @key_value_pairs = split("=", $element);  #key index = 0 and value index = 1
+
+		$vcf_info_key{$key_value_pairs[0]}++;  #Increment
+		$record{INFO_key_value}{$key_value_pairs[0]} = $key_value_pairs[1];
+	    }
+	    if(exists($record{INFO_key_value}{CSQ})) {
+
+		my @transcripts = split(/,/, $record{INFO_key_value}{CSQ});  #Split into transcripts
+		
+	      CSQ_TRANSCRIPT:
+		foreach my $transcript (@transcripts) {
+
+		    my @transcript_effects = split(/\|/, $transcript); #Split in "|"
+
+		  CSQ_TRANSCRIPT_EFFECTS:
+		    foreach my $effect (keys %vep_format_field_column) {
+
+			if( (defined($transcript_effects[ $vep_format_field_column{$effect} ]) )
+			    && ($transcript_effects[ $vep_format_field_column{$effect} ]) ) {
+
+			    $vcf_info_csq_key{$effect}++;  #Increment
+			}
+		    }
+		}
 	    }
 	}
     }
-    close($VCF);
+    close($FILEHANDLE);
 
     ##Check keys found in INFO field
-
-    print STDOUT "\nTesting vcf INFO fields and presence in header:\n\n";
-
+    $log->info("Testing vcf INFO fields and presence in header: ".$infile, "\n\n");
     foreach my $key (keys %vcf_info_key) {
 
-	ok( defined($vcf_header{INFO}{$key}), "Found both header and line field key for: $key. key count: ".$vcf_info_key{$key});
+	ok( defined($vcf_header{INFO}{$key}), "Found both header and line field key for: ".$key." with key count: ".$vcf_info_key{$key});
+    }
+
+    foreach my $key (keys %vcf_info_csq_key) {
+
+	ok($vcf_info_csq_key{$key}, "Found entry for CSQ field key for: ".$key." with key count: ".$vcf_info_csq_key{$key});
     }
 }
 
@@ -535,11 +560,15 @@ sub read_range_file {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object now that log_file has been set
+    my $log = Log::Log4perl->get_logger("Test");
+
     my @headers; #Save headers from rangeFile
 
-    open(my $RRF, "<".$infile_path) or die "Cannot open ".$infile_path.":".$!, "\n";
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    open($FILEHANDLE, "<".$infile_path) or $log->logdie("Cannot open ".$infile_path.":".$!, "\n");
 
-    while (<$RRF>) {
+    while (<$FILEHANDLE>) {
 
 	chomp $_; #Remove newline
 
@@ -563,8 +592,8 @@ sub read_range_file {
 	    next;
 	}
     }
-    close($RRF);
-    print STDOUT "\nFinished reading ".$range_file_key." file: ".$infile_path,"\n";
+    close($FILEHANDLE);
+    $log->info("Finished reading ".$range_file_key." file: ".$infile_path,"\n");
 }
 
 

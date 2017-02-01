@@ -20,6 +20,7 @@ use File::Spec::Functions qw(catfile catdir devnull);
 ##MIPs lib/
 use lib catdir($Bin, "lib");
 use File::Format::Yaml qw(load_yaml);
+use MIP_log::Log4perl qw(initiate_logger);
 
 our $USAGE;
 
@@ -29,6 +30,7 @@ BEGIN {
            -rd/--reference_dir Reference(s) directory (Default: "")
            -r/--reference Reference to download (e.g. 'clinvar=20170104')
            -rd/--reference_genome_versions Reference versions to download ((Default: ["GRCh37", "hg38"]))
+           -l/--log_file Log file (Default: "download_reference.log")
            -h/--help Display this help message
            -v/--version Display version
         };
@@ -42,15 +44,22 @@ my %parameter = load_yaml({yaml_file => catfile($Bin, "definitions", "define_dow
 
 my $download_reference_version = "0.0.1";
 
+
 ###User Options
 GetOptions('rd|reference_dir:s' => \$parameter{reference_dir},  #MIPs reference directory
 	   'r|reference:s' => \%{ $parameter{reference} },
 	   'rg|reference_genome_versions:s' => \@{ $parameter{reference_genome_versions} },
+	   'l|log_file:s' => \$parameter{log_file},
 	   'h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
 	   'v|version' => sub { print STDOUT "\ninstall.pl ".$download_reference_version, "\n\n"; exit;},  #Display version number
     ) or help({USAGE => $USAGE,
 	       exit_code => 1,
 	      });
+
+## Creates log object
+my $log = MIP_log::Log4perl::initiate_logger({file_path_ref => \$parameter{log_file},
+					      log_name => "Download_reference",
+					     });
 
 ## Set default for array parameters
 set_default_array_parameters({parameter_href => \%parameter,
@@ -104,11 +113,14 @@ sub create_bash_file {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object now that log_file has been set
+    my $log = Log::Log4perl->get_logger("Download_reference");
+
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $pwd = cwd();
 
     ## Open batch file
-    open ($FILEHANDLE, ">", catfile($pwd, $file_name)) or die("Cannot write to '".catfile($pwd, $file_name)."' :".$!."\n");
+    open ($FILEHANDLE, ">", catfile($pwd, $file_name)) or $log->logdie("Cannot write to '".catfile($pwd, $file_name)."' :".$!."\n");
 
     print $FILEHANDLE "#!".catfile( dirname( dirname( devnull() ) ) ).catfile("usr", "bin", "env", "bash"), "\n\n";
 
@@ -130,7 +142,7 @@ sub create_bash_file {
     say $FILEHANDLE q?}?;
     say $FILEHANDLE q?trap error ERR?, "\n";
 
-    print STDOUT "Will write install instructions to '".catfile($pwd, $file_name), "'\n";
+    $log->info("Will write install instructions to '".catfile($pwd, $file_name), "'\n");
 
     return $FILEHANDLE;
 }
@@ -158,6 +170,9 @@ sub references {
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## Retrieve logger object now that log_file has been set
+    my $log = Log::Log4perl->get_logger("Download_reference");
 
     my $pwd = cwd();
 
@@ -189,8 +204,8 @@ sub references {
 		    ## Check if reference already exists in reference directory
 		    if (! -f $outfile_path) {
 		    
-			print STDERR "Cannot find reference file:".$outfile_path, "\n";
-			print STDERR "Will try to download reference", "\n";
+			$log->warn("Cannot find reference file:".$outfile_path, "\n");
+			$log->warn("Will try to download reference", "\n");
 
 			## Potential download files
 			my @file_keys = ("file",
@@ -534,13 +549,16 @@ sub find_absolute_path {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object now that log_file has been set
+    my $log = Log::Log4perl->get_logger("Download_reference");
+
     my $tmp_path = $path;
 
     $path = abs_path($path);
 
     unless(defined($path)) {
 
-	warn("Could not find absolute path for ".$parameter_name.": ".$tmp_path.". Please check the supplied path!\n");
+	$log->warn("Could not find absolute path for ".$parameter_name.": ".$tmp_path.". Please check the supplied path!\n");
 	exit 1;
     }
     return $path;

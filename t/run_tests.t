@@ -113,6 +113,7 @@ GetOptions('h|help' => sub { done_testing(); print STDOUT $USAGE, "\n"; exit;}, 
 use TAP::Harness;
 use Cwd;
 
+
 ## Test central perl modules and import functions
 test_modules();
 
@@ -166,31 +167,35 @@ sub test_modules {
     ##Clean-up
     ok(remove_tree("TEST"), "File::Path_remove_tree: Remove path");
 
+    ##MIPs lib/
+    use lib catdir(dirname($Bin), "lib");
+    use File::Format::Yaml qw(load_yaml);
     use YAML;    
     my $yaml_file = catdir(dirname($Bin), "templates", "643594-miptest_pedigree.yaml");
     ok( -f $yaml_file, "YAML: File= $yaml_file in MIP/templates directory");
     
-    my $yaml = YAML::LoadFile($yaml_file);  #Create an object
+    my $yaml = File::Format::Yaml::load_yaml({yaml_file => $yaml_file,
+					     });
     ok( defined $yaml, "YAML: Load File" );  #Check that we got something
     ok(Dump( $yaml ), "YAML: Dump file");
-
-    use Log::Log4perl;
+    
     use Params::Check qw[check allow last_error];
+    use Log::Log4perl;
     ## Creates log
     my $log_file = catdir(dirname($Bin), "templates", "mip_log.yaml");
     ok( -f $log_file, "Log::Log4perl: File= $log_file in MIP directory");
 
-    ## Create log4perl config file
-    my $config = &create_log4perl_congfig({file_path_ref => \$log_file});
+    use MIP_log::Log4perl qw(initiate_logger);
+    ## Creates log object
+    my $log = MIP_log::Log4perl::initiate_logger({categories_ref => ["TRACE", "ScreenApp"],
+						  file_path_ref => \$log_file,
+						  log_name => "Run_tests",
+						 });
     
-    ok(Log::Log4perl->init(\$config), "Log::Log4perl: Initate");
-    ok(Log::Log4perl->get_logger("MIP_logger"), "Log::Log4perl: Get logger");
-    
-    my $logger = Log::Log4perl->get_logger("MIP_logger");
-    ok($logger->info("1"), "Log::Log4perl: info");
-    ok($logger->warn("1"), "Log::Log4perl: warn");
-    ok($logger->error("1"), "Log::Log4perl: error");
-    ok($logger->fatal("1"), "Log::Log4perl: fatal");
+    ok($log->info("1"), "Log::Log4perl: info");
+    ok($log->warn("1"), "Log::Log4perl: warn");
+    ok($log->error("1"), "Log::Log4perl: error");
+    ok($log->fatal("1"), "Log::Log4perl: fatal");
 
     use Getopt::Long;
     push(@ARGV, ("-verbose", "2"));
@@ -215,72 +220,6 @@ sub test_modules {
     use IPC::Cmd qw[can_run run];
     ok(can_run("perl"), "Can run IPC::Cmd");
     ok($bool = IPC::Cmd->can_capture_buffer, "IPC::Cmd can capture buffer");
-}
-
-sub create_log4perl_congfig {
-
-##create_log4perl_congfig
-
-##Function : Create log4perl config file.
-##Returns  : "$config"
-##Arguments: $file_path_ref
-##         : $file_path_ref => log4perl config file path {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_path_ref;
-
-    my $tmpl = {
-	file_path_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$file_path_ref},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    my $config = q?
-        log4perl.category.MIP_logger = TRACE, LogFile, ScreenApp
-        log4perl.appender.LogFile = Log::Log4perl::Appender::File
-        log4perl.appender.LogFile.filename = ?.$$file_path_ref.q?
-        log4perl.appender.LogFile.layout=PatternLayout
-        log4perl.appender.LogFile.layout.ConversionPattern = [%p] %d %c - %m%n
-
-        log4perl.appender.ScreenApp = Log::Log4perl::Appender::Screen
-        log4perl.appender.ScreenApp.layout = PatternLayout
-        log4perl.appender.ScreenApp.layout.ConversionPattern = [%p] %d %c - %m%n
-        ?;
-    return $config;
-}
-
-
-sub LoadYAML {
- 
-##LoadYAML
-    
-##Function : Loads a YAML file into an arbitrary hash and returns it. Note: Currently only supports hashreferences and hashes and no mixed entries.
-##Returns  : %yaml_hash
-##Arguments: $yaml_file
-##         : $yaml_file => The yaml file to load
-
-    my ($arg_hef) = @_;
-
-    ##Flatten argument(s)
-    my $yaml_file;
-
-    my $tmpl = { 
-	yaml_file => { required => 1, defined => 1, strict_type => 1, store => \$yaml_file},
-    };
-
-    check($tmpl, $arg_hef, 1) or die qw[Could not parse arguments!];
-
-    my %yaml_hash;
-
-    open (my $YAML, "<", $yaml_file) or die "can't open ".$yaml_file.":".$!, "\n";  #Log4perl not initialised yet, hence no logdie
-    local $YAML::QuoteNumericStrings = 1;  #Force numeric values to strings in YAML representation
-    %yaml_hash = %{ YAML::LoadFile($yaml_file) };  #Load hashreference as hash
-        
-    close($YAML);
-
-    return %yaml_hash;
 }
 
 

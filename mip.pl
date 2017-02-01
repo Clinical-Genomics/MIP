@@ -31,13 +31,13 @@ use IPC::System::Simple;  #Required for autodie :all
 use Time::Piece;
 
 ## Third party module(s)
-use Log::Log4perl;
 use Path::Iterator::Rule;
 use List::Util qw(any all);
 
 ##MIPs lib/
 use lib catdir($Bin, "lib");
 use File::Format::Yaml qw(load_yaml write_yaml);
+use MIP_log::Log4perl qw(initiate_logger);
 
 our $USAGE;
 
@@ -355,7 +355,6 @@ mip.pl  -ifd [infile_dirs=sample_id] -sd [script_dir] -rd [reference_dir] -p [pr
 my %parameter;  #Holds all parameters for MIP
 my %active_parameter;  #Holds all active parameters after the value has been set
 
-my $logger;  #Will hold the logger object for the MIP log
 my @order_parameters;  #To add/write parameters in the correct order
 my @broadcasts;  #Holds all set parameters info after add_to_active_parameter
 
@@ -371,8 +370,8 @@ chomp($date_time_stamp, $date, $script);  #Remove \n;
 ###Project specific
 
 ## Loads a YAML file into an arbitrary hash and returns it.
-%parameter = load_yaml({yaml_file => catfile($Bin, "definitions", "define_parameters.yaml"),
-		       });
+%parameter = File::Format::Yaml::load_yaml({yaml_file => catfile($Bin, "definitions", "define_parameters.yaml"),
+					   });
 
 ## Adds the order of first level keys from yaml file to array
 order_parameter_names({order_parameters_ref => \@order_parameters,
@@ -692,8 +691,8 @@ $active_parameter{mip} = $parameter{mip}{default};
 if (defined($parameter{config_file}{value})) {  #Input from cmd
 
     ## Loads a YAML file into an arbitrary hash and returns it.
-    %active_parameter = load_yaml({yaml_file => $parameter{config_file}{value},
-				  });
+    %active_parameter = File::Format::Yaml::load_yaml({yaml_file => $parameter{config_file}{value},
+						      });
 
     ##Special case:Enable/activate MIP. Cannot be changed from cmd or config
     $active_parameter{mip} = $parameter{mip}{default};
@@ -764,24 +763,26 @@ foreach my $order_parameter_element (@order_parameters) {
     }
     if ($order_parameter_element eq "log_file") {
 
-	## Creates log for the master script
-	my $config = create_log4perl_congfig({file_path_ref => \$active_parameter{log_file},
-					     });
-	Log::Log4perl->init(\$config);
-	$logger = Log::Log4perl->get_logger("MIP_logger");
+	## Creates log object
+	my $log = initiate_logger({file_path_ref => \$active_parameter{log_file},
+				      log_name => "MIP",
+				     });
     }
     if ($order_parameter_element eq "pedigree_file") {  #Write QC for only pedigree data used in analysis
 
 	if (defined($active_parameter{pedigree_file})) {
 
+	    ## Retrieve logger object now that log_file has been set
+	    my $log = Log::Log4perl->get_logger("MIP");
+
 	    make_path(catdir($active_parameter{outdata_dir}, $active_parameter{family_id}));  #Create family directory
 	    my $yaml_file = catfile($active_parameter{outdata_dir}, $active_parameter{family_id}, "qc_pedigree.yaml");
 
 	    ## Writes a YAML hash to file
-	    write_yaml({yaml_href => \%sample_info,
-			yaml_file_path_ref => \$yaml_file,
-		       });
-	    $logger->info("Wrote: ".$yaml_file, "\n");
+	    File::Format::Yaml::write_yaml({yaml_href => \%sample_info,
+					    yaml_file_path_ref => \$yaml_file,
+					   });
+	    $log->info("Wrote: ".$yaml_file, "\n");
 
 	    ## Removes all elements at hash third level except keys in allowed_entries
 	    remove_pedigree_elements({hash_ref => \%sample_info,
@@ -795,6 +796,10 @@ foreach my $order_parameter_element (@order_parameters) {
 											      });
     }
 }
+
+
+## Retrieve logger object now that log_file has been set
+my $log = Log::Log4perl->get_logger("MIP");
 
 
 ###Checks
@@ -920,7 +925,7 @@ check_aligner({parameter_href => \%parameter,
 ## Broadcast set parameters info
 foreach my $parameter_info (@broadcasts) {
 
-    $logger->info($parameter_info, "\n");
+    $log->info($parameter_info, "\n");
 }
 
 
@@ -1048,10 +1053,10 @@ if ($active_parameter{config_file_analysis} ne 0) {  #Write config file for fami
     make_path(dirname($active_parameter{config_file_analysis}));  #Create directory unless it already exists
 
     ## Writes a YAML hash to file
-    write_yaml({yaml_href => \%active_parameter,
-		yaml_file_path_ref => \$active_parameter{config_file_analysis},
-	       });
-    $logger->info("Wrote: ".$active_parameter{config_file_analysis}, "\n");
+    File::Format::Yaml::write_yaml({yaml_href => \%active_parameter,
+				    yaml_file_path_ref => \$active_parameter{config_file_analysis},
+				   });
+    $log->info("Wrote: ".$active_parameter{config_file_analysis}, "\n");
 
     ## Add to qc_sample_info
     $sample_info{config_file_analysis} = $active_parameter{config_file_analysis};
@@ -1169,7 +1174,7 @@ check_vt_for_references({parameter_href => \%parameter,
 
 if ($active_parameter{psplit_fastq_file} > 0) {  #Split of fastq files in batches
 
-    $logger->info("[Split fastq files in batches]\n");
+    $log->info("[Split fastq files in batches]\n");
 
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
@@ -1191,7 +1196,7 @@ if ($active_parameter{psplit_fastq_file} > 0) {  #Split of fastq files in batche
 
 if ( ($active_parameter{pgzip_fastq} > 0) && ($uncompressed_file_switch eq "uncompressed") ) {  #GZip of fastq files
 
-    $logger->info("[Gzip for fastq files]\n");
+    $log->info("[Gzip for fastq files]\n");
 
   SAMPLES:
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {  #Restrict to subset if subset supplied
@@ -1220,7 +1225,7 @@ if ( ($active_parameter{pgzip_fastq} > 0) && ($uncompressed_file_switch eq "unco
 
 if ($active_parameter{pfastqc} > 0) {  #Run FastQC
 
-    $logger->info("[Fastqc]\n");
+    $log->info("[Fastqc]\n");
 
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
@@ -1239,7 +1244,7 @@ if ($active_parameter{pfastqc} > 0) {  #Run FastQC
 
 if ($active_parameter{pmadeline} > 0) {  #Run madeline
 
-    $logger->info("[Madeline]\n");
+    $log->info("[Madeline]\n");
 
     madeline({parameter_href => \%parameter,
 	      active_parameter_href => \%active_parameter,
@@ -1252,7 +1257,7 @@ if ($active_parameter{pmadeline} > 0) {  #Run madeline
 
 if ($active_parameter{pmosaik_build} > 0) {  #Run MosaikBuild
 
-    $logger->info("[MosaikBuild]\n");
+    $log->info("[MosaikBuild]\n");
 
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
@@ -1273,7 +1278,7 @@ if ($active_parameter{pmosaik_build} > 0) {  #Run MosaikBuild
 
 if ($active_parameter{pmosaik_aligner} > 0) {  #Run mosaik_aligner
 
-    $logger->info("[MosaikAlign]\n");
+    $log->info("[MosaikAlign]\n");
 
     if ($active_parameter{dry_run_all} != 1) {
 
@@ -1297,7 +1302,7 @@ if ($active_parameter{pmosaik_aligner} > 0) {  #Run mosaik_aligner
 
 if ($active_parameter{pbwa_mem} > 0) {  #Run BWA Mem
 
-    $logger->info("[BWA Mem]\n");
+    $log->info("[BWA Mem]\n");
 
     if ($active_parameter{dry_run_all} != 1) {
 
@@ -1333,7 +1338,7 @@ if ($active_parameter{pbwa_mem} > 0) {  #Run BWA Mem
 
 if ($active_parameter{ppicardtools_mergerapidreads} > 0) {  #Run PicardtoolsMergeRapidReads - Relevant only in rapid mode
 
-    $logger->info("[Picardtools mergerapidreads]\n");
+    $log->info("[Picardtools mergerapidreads]\n");
 
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
@@ -1354,7 +1359,7 @@ if ($active_parameter{ppicardtools_mergerapidreads} > 0) {  #Run PicardtoolsMerg
 
 if ($active_parameter{pbwa_aln} > 0) {  #Run BWA Aln
 
-    $logger->info("[BWA Aln]\n");
+    $log->info("[BWA Aln]\n");
 
     if ($active_parameter{dry_run_all} != 1) {
 
@@ -1380,7 +1385,7 @@ if ($active_parameter{pbwa_aln} > 0) {  #Run BWA Aln
 
 if ($active_parameter{pbwa_sampe} > 0) {  #Run BWA Sampe
 
-    $logger->info("[BWA Sampe]\n");
+    $log->info("[BWA Sampe]\n");
 
     if ($active_parameter{dry_run_all} != 1) {
 
@@ -1407,7 +1412,7 @@ if ($active_parameter{pbwa_sampe} > 0) {  #Run BWA Sampe
 if ($active_parameter{reduce_io}) {  #Run consecutive models
 
     $active_parameter{pbamcalibrationblock} = 1;  #Enable as program
-    $logger->info("[Bamcalibrationblock]\n");
+    $log->info("[Bamcalibrationblock]\n");
 
     bamcalibrationblock({parameter_href => \%parameter,
 			 active_parameter_href => \%active_parameter,
@@ -1426,7 +1431,7 @@ else {
 
     ##Always run even for single samples to rename them correctly for standardised downstream processing.
     ##Will also split alignment per contig and copy to temporary directory for '-rio 1' block to enable selective removal of block submodules.
-    $logger->info("[Picardtools mergesamfiles]\n");
+    $log->info("[Picardtools mergesamfiles]\n");
 
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
@@ -1444,7 +1449,7 @@ else {
 
     if ($active_parameter{ppicardtools_markduplicates} > 0) {  #Picardtools markduplicates
 
-	$logger->info("[Picardtools markduplicates]\n");
+	$log->info("[Picardtools markduplicates]\n");
 
 	foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
@@ -1463,7 +1468,7 @@ else {
 
     if ($active_parameter{psambamba_markduplicates} > 0) {  #Sambamba markduplicates
 
-	$logger->info("[Sambamba markduplicates]\n");
+	$log->info("[Sambamba markduplicates]\n");
 
 	foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
@@ -1482,7 +1487,7 @@ else {
 
     if ($active_parameter{pgatk_realigner} > 0) {  #Run GATK realignertargetcreator/indelrealigner
 
-	$logger->info("[GATK realignertargetcreator/indelrealigner]\n");
+	$log->info("[GATK realignertargetcreator/indelrealigner]\n");
 
 	check_build_human_genome_prerequisites({parameter_href => \%parameter,
 						active_parameter_href => \%active_parameter,
@@ -1530,7 +1535,7 @@ else {
 
     if ($active_parameter{pgatk_baserecalibration} > 0) {  #Run GATK baserecalibrator/printreads
 
-	$logger->info("[GATK baserecalibrator/printreads]\n");
+	$log->info("[GATK baserecalibrator/printreads]\n");
 
 	check_build_human_genome_prerequisites({parameter_href => \%parameter,
 						active_parameter_href => \%active_parameter,
@@ -1580,7 +1585,7 @@ else {
 
 if ($active_parameter{pchanjo_sexcheck} > 0) {
 
-    $logger->info("[Chanjo sexcheck]\n");
+    $log->info("[Chanjo sexcheck]\n");
 
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
@@ -1598,7 +1603,7 @@ if ($active_parameter{pchanjo_sexcheck} > 0) {
 
 if ($active_parameter{psambamba_depth} > 0) {
 
-    $logger->info("[Sambamba depth]\n");
+    $log->info("[Sambamba depth]\n");
 
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
@@ -1617,7 +1622,7 @@ if ($active_parameter{psambamba_depth} > 0) {
 
 if ($active_parameter{pgenomecoveragebed} > 0) {  #Run genomecoveragebed
 
-    $logger->info("[Genomecoveragebed]\n");
+    $log->info("[Genomecoveragebed]\n");
 
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
@@ -1635,7 +1640,7 @@ if ($active_parameter{pgenomecoveragebed} > 0) {  #Run genomecoveragebed
 
 if ($active_parameter{ppicardtools_collectmultiplemetrics} > 0) {  #Run picardtools_collectmultiplemetrics
 
-    $logger->info("[Picardtools collectmultiplemetrics]\n");
+    $log->info("[Picardtools collectmultiplemetrics]\n");
 
     check_build_human_genome_prerequisites({parameter_href => \%parameter,
 					    active_parameter_href => \%active_parameter,
@@ -1663,7 +1668,7 @@ if ($active_parameter{ppicardtools_collectmultiplemetrics} > 0) {  #Run picardto
 
 if ($active_parameter{ppicardtools_calculatehsmetrics} > 0) {  #Run Picardtools_calculatehsmetrics
 
-    $logger->info("[Picardtools calculatehsmetrics]\n");
+    $log->info("[Picardtools calculatehsmetrics]\n");
 
     check_build_human_genome_prerequisites({parameter_href => \%parameter,
 					    active_parameter_href => \%active_parameter,
@@ -1702,7 +1707,7 @@ if ($active_parameter{ppicardtools_calculatehsmetrics} > 0) {  #Run Picardtools_
 
 if ($active_parameter{prcovplots} > 0) {  #Run Rcovplot scripts
 
-    $logger->info("[Rcovplots]\n");
+    $log->info("[Rcovplots]\n");
 
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
@@ -1713,7 +1718,7 @@ if ($active_parameter{prcovplots} > 0) {  #Run Rcovplot scripts
 
 if ($active_parameter{pcnvnator} > 0) {  #Run CNVnator
 
-    $logger->info("[CNVnator]\n");
+    $log->info("[CNVnator]\n");
 
     check_build_human_genome_prerequisites({parameter_href => \%parameter,
 					    active_parameter_href => \%active_parameter,
@@ -1749,7 +1754,7 @@ if ($active_parameter{pcnvnator} > 0) {  #Run CNVnator
 
 if ($active_parameter{pdelly_call} > 0) {  #Run delly_call
 
-    $logger->info("[Delly_call]\n");
+    $log->info("[Delly_call]\n");
 
     check_build_human_genome_prerequisites({parameter_href => \%parameter,
 					    active_parameter_href => \%active_parameter,
@@ -1786,7 +1791,7 @@ if ($active_parameter{pdelly_call} > 0) {  #Run delly_call
 
 if ($active_parameter{pdelly_reformat} > 0) {  #Run Delly merge, regenotype, bcftools merge
 
-    $logger->info("[delly_reformat]\n");
+    $log->info("[delly_reformat]\n");
 
     check_build_human_genome_prerequisites({parameter_href => \%parameter,
 					    active_parameter_href => \%active_parameter,
@@ -1818,7 +1823,7 @@ if ($active_parameter{pdelly_reformat} > 0) {  #Run Delly merge, regenotype, bcf
 
 if ($active_parameter{pmanta} > 0) {  #Run Manta
 
-    $logger->info("[Manta]\n");
+    $log->info("[Manta]\n");
 
     check_build_human_genome_prerequisites({parameter_href => \%parameter,
 					    active_parameter_href => \%active_parameter,
@@ -1849,7 +1854,7 @@ if ($active_parameter{pmanta} > 0) {  #Run Manta
 
 if ($active_parameter{pfindtranslocations} > 0) {  #Run FindTranslocations
 
-    $logger->info("[Findtranslocations]\n");
+    $log->info("[Findtranslocations]\n");
 
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
@@ -1868,7 +1873,7 @@ if ($active_parameter{pfindtranslocations} > 0) {  #Run FindTranslocations
 
 if ($active_parameter{psv_combinevariantcallsets} > 0) {  #Run combinevariantcallsets. For all Sample_ids and StructuralVariantCallers
 
-    $logger->info("[SV combinevariantcallsets]\n");
+    $log->info("[SV combinevariantcallsets]\n");
 
     sv_combinevariantcallsets({parameter_href => \%parameter,
 			       active_parameter_href => \%active_parameter,
@@ -1882,7 +1887,7 @@ if ($active_parameter{psv_combinevariantcallsets} > 0) {  #Run combinevariantcal
 
 if ($active_parameter{psv_varianteffectpredictor} > 0) {  #Run sv_varianteffectpredictor. Done per family
 
-    $logger->info("[SV varianteffectpredictor]\n");
+    $log->info("[SV varianteffectpredictor]\n");
 
     sv_varianteffectpredictor({parameter_href => \%parameter,
 			       active_parameter_href => \%active_parameter,
@@ -1897,7 +1902,7 @@ if ($active_parameter{psv_varianteffectpredictor} > 0) {  #Run sv_varianteffectp
 
 if ($active_parameter{psv_vcfparser} > 0) {  #Run sv_vcfparser. Done per family
 
-    $logger->info("[SV vcfparser]\n");
+    $log->info("[SV vcfparser]\n");
 
     sv_vcfparser({parameter_href => \%parameter,
 		  active_parameter_href => \%active_parameter,
@@ -1912,7 +1917,7 @@ if ($active_parameter{psv_vcfparser} > 0) {  #Run sv_vcfparser. Done per family
 
 if ($active_parameter{psv_rankvariant} > 0) {  #Run sv_rankvariant. Done per family
 
-    $logger->info("[SV rankvariant]\n");
+    $log->info("[SV rankvariant]\n");
 
     sv_rankvariant({parameter_href => \%parameter,
 		    active_parameter_href => \%active_parameter,
@@ -1927,7 +1932,7 @@ if ($active_parameter{psv_rankvariant} > 0) {  #Run sv_rankvariant. Done per fam
 
 if ($active_parameter{psamtools_mpileup} > 0) {  #Run samtools mpileup
 
-    $logger->info("[Samtools mpileup]\n");
+    $log->info("[Samtools mpileup]\n");
 
     check_build_human_genome_prerequisites({parameter_href => \%parameter,
 					    active_parameter_href => \%active_parameter,
@@ -1959,7 +1964,7 @@ if ($active_parameter{psamtools_mpileup} > 0) {  #Run samtools mpileup
 
 if ($active_parameter{pfreebayes} > 0) {  #Run Freebayes
 
-    $logger->info("[Freebayes]\n");
+    $log->info("[Freebayes]\n");
 
     check_build_human_genome_prerequisites({parameter_href => \%parameter,
 					    active_parameter_href => \%active_parameter,
@@ -1992,7 +1997,7 @@ if ($active_parameter{pfreebayes} > 0) {  #Run Freebayes
 
 if ($active_parameter{pgatk_haplotypecaller} > 0) {  #Run GATK haplotypecaller
 
-    $logger->info("[GATK haplotypecaller]\n");
+    $log->info("[GATK haplotypecaller]\n");
 
     check_build_human_genome_prerequisites({parameter_href => \%parameter,
 					    active_parameter_href => \%active_parameter,
@@ -2041,7 +2046,7 @@ if ($active_parameter{pgatk_haplotypecaller} > 0) {  #Run GATK haplotypecaller
 
 if ($active_parameter{pgatk_genotypegvcfs} > 0) {  #Run GATK genotypegvcfs. Done per family
 
-    $logger->info("[GATK genotypegvcfs]\n");
+    $log->info("[GATK genotypegvcfs]\n");
 
     check_build_human_genome_prerequisites({parameter_href => \%parameter,
 					    active_parameter_href => \%active_parameter,
@@ -2074,7 +2079,7 @@ if ($active_parameter{pgatk_genotypegvcfs} > 0) {  #Run GATK genotypegvcfs. Done
 
 if ($active_parameter{pgatk_variantrecalibration} > 0) {  #Run GATK VariantRecalibrator/ApplyRecalibration. Done per family
 
-    $logger->info("[GATK variantrecalibrator/applyrecalibration]\n");
+    $log->info("[GATK variantrecalibrator/applyrecalibration]\n");
 
     check_build_human_genome_prerequisites({parameter_href => \%parameter,
 					    active_parameter_href => \%active_parameter,
@@ -2121,7 +2126,7 @@ if ($active_parameter{pgatk_variantrecalibration} > 0) {  #Run GATK VariantRecal
 
 if ($active_parameter{pgatk_combinevariantcallsets} > 0) {  #Run gatk_combinevariantcallsets. Done per family
 
-    $logger->info("[GATK combinevariantcallsets]\n");
+    $log->info("[GATK combinevariantcallsets]\n");
 
     gatk_combinevariantcallsets({parameter_href => \%parameter,
 				 active_parameter_href => \%active_parameter,
@@ -2135,7 +2140,7 @@ if ($active_parameter{pgatk_combinevariantcallsets} > 0) {  #Run gatk_combinevar
 
 if ($active_parameter{psamplecheck} > 0) {  #Run samplecheck. Done per family
 
-    $logger->info("[Samplecheck]\n");
+    $log->info("[Samplecheck]\n");
 
     samplecheck({parameter_href => \%parameter,
 		 active_parameter_href => \%active_parameter,
@@ -2153,7 +2158,7 @@ if ($active_parameter{pevaluation} > 0) {  #Run evaluation. Done per family
 
 	if ($sample_id =~/$active_parameter{nist_id}/) {
 
-	    $logger->info("[Evaluation]\n");
+	    $log->info("[Evaluation]\n");
 
 	    evaluation({parameter_href => \%parameter,
 			active_parameter_href => \%active_parameter,
@@ -2174,7 +2179,7 @@ if ($active_parameter{pevaluation} > 0) {  #Run evaluation. Done per family
 
 if ($active_parameter{pgatk_phasebytransmission} > 0) {  #Run GATK phasebytransmission. Done per family
 
-    $logger->info("[GATK phasebytransmission]\n");
+    $log->info("[GATK phasebytransmission]\n");
 
     check_build_human_genome_prerequisites({parameter_href => \%parameter,
 					    active_parameter_href => \%active_parameter,
@@ -2190,7 +2195,7 @@ if ($active_parameter{pgatk_phasebytransmission} > 0) {  #Run GATK phasebytransm
 
 if ($active_parameter{pgatk_readbackedphasing} > 0) {  #Run GATK ReadBackedPhasing. Done per family. NOTE: Needs phased calls
 
-    $logger->info("[GATK ReadBackedPhasing]\n");
+    $log->info("[GATK ReadBackedPhasing]\n");
 
     check_build_human_genome_prerequisites({parameter_href => \%parameter,
 					    active_parameter_href => \%active_parameter,
@@ -2206,7 +2211,7 @@ if ($active_parameter{pgatk_readbackedphasing} > 0) {  #Run GATK ReadBackedPhasi
 
 if ($active_parameter{pgatk_variantevalall} > 0) {  #Run GATK varianteval for all variants. Done per sample_id
 
-    $logger->info("[GATK variantevalall]\n");
+    $log->info("[GATK variantevalall]\n");
 
     check_build_human_genome_prerequisites({parameter_href => \%parameter,
 					    active_parameter_href => \%active_parameter,
@@ -2256,7 +2261,7 @@ foreach my $key (@file_info_contig_keys) {
 if ($active_parameter{reduce_io}) {  #Run consecutive models
 
     $active_parameter{pvariantannotationblock} = 1;  #Enable as program
-    $logger->info("[Variantannotationblock]\n");
+    $log->info("[Variantannotationblock]\n");
 
     variantannotationblock({parameter_href => \%parameter,
 			    active_parameter_href => \%active_parameter,
@@ -2273,7 +2278,7 @@ if ($active_parameter{reduce_io}) {  #Run consecutive models
 }
 else {
 
-    $logger->info("[Prepareforvariantannotationblock]\n");
+    $log->info("[Prepareforvariantannotationblock]\n");
 
     prepareforvariantannotationblock({parameter_href => \%parameter,
 				      active_parameter_href => \%active_parameter,
@@ -2287,7 +2292,7 @@ else {
 
     if ($active_parameter{prhocall} > 0) {  #Run rhocall. Done per family
 
-	$logger->info("[Rhocall]\n");
+	$log->info("[Rhocall]\n");
 
 	rhocall({parameter_href => \%parameter,
 		 active_parameter_href => \%active_parameter,
@@ -2301,7 +2306,7 @@ else {
     }
     if ($active_parameter{pvt} > 0) {  #Run vt. Done per family
 
-	$logger->info("[Vt]\n");
+	$log->info("[Vt]\n");
 
 	vt({parameter_href => \%parameter,
 	    active_parameter_href => \%active_parameter,
@@ -2315,7 +2320,7 @@ else {
     }
     if ($active_parameter{pvarianteffectpredictor} > 0) {  #Run varianteffectpredictor. Done per family
 
-	$logger->info("[varianteffectpredictor]\n");
+	$log->info("[varianteffectpredictor]\n");
 
 	varianteffectpredictor({parameter_href => \%parameter,
 				active_parameter_href => \%active_parameter,
@@ -2329,7 +2334,7 @@ else {
     }
     if ($active_parameter{pvcfparser} > 0) {  #Run pvcfparser. Done per family
 
-	$logger->info("[Vcfparser]\n");
+	$log->info("[Vcfparser]\n");
 
 	vcfparser({parameter_href => \%parameter,
 		   active_parameter_href => \%active_parameter,
@@ -2344,7 +2349,7 @@ else {
 
     if ($active_parameter{pannovar} > 0) {  #Run annovar. Done per family
 
-	$logger->info("[Annovar]\n");
+	$log->info("[Annovar]\n");
 
 	check_build_human_genome_prerequisites({parameter_href => \%parameter,
 						active_parameter_href => \%active_parameter,
@@ -2385,7 +2390,7 @@ else {
 
     if ($active_parameter{psnpeff} > 0) {  #Run snpEff. Done per family
 
-	$logger->info("[Snpeff]\n");
+	$log->info("[Snpeff]\n");
 
 	check_build_download_prerequisites({parameter_href => \%parameter,
 					    active_parameter_href => \%active_parameter,
@@ -2408,7 +2413,7 @@ else {
     }
     if ($active_parameter{prankvariant} > 0) {  #Run rankvariant. Done per family
 
-	$logger->info("[Rankvariant]\n");
+	$log->info("[Rankvariant]\n");
 
 	rankvariant({parameter_href => \%parameter,
 		     active_parameter_href => \%active_parameter,
@@ -2424,7 +2429,7 @@ else {
 
 if ($active_parameter{pgatk_variantevalexome} > 0) {  #Run GATK varianteval for exome variants. Done per sample_id
 
-    $logger->info("[GATK variantevalexome]\n");
+    $log->info("[GATK variantevalexome]\n");
 
     check_build_human_genome_prerequisites({parameter_href => \%parameter,
 					    active_parameter_href => \%active_parameter,
@@ -2460,7 +2465,7 @@ if ($active_parameter{pgatk_variantevalexome} > 0) {  #Run GATK varianteval for 
 
 if ($active_parameter{pqccollect} > 0) {  #Run qccollect. Done per family
 
-    $logger->info("[Qccollect]\n");
+    $log->info("[Qccollect]\n");
 
     qccollect({parameter_href => \%parameter,
 	       active_parameter_href => \%active_parameter,
@@ -2474,7 +2479,7 @@ if ($active_parameter{pqccollect} > 0) {  #Run qccollect. Done per family
 
 if ($active_parameter{pmultiqc} > 0) {
 
-    $logger->info("[Multiqc]\n");
+    $log->info("[Multiqc]\n");
 
     multiqc({parameter_href => \%parameter,
 	     active_parameter_href => \%active_parameter,
@@ -2488,7 +2493,7 @@ if ($active_parameter{pmultiqc} > 0) {
 
 if ($active_parameter{premoveredundantfiles} > 0) {  #Sbatch generation of removal of alignment files
 
-    $logger->info("[Removal of redundant files]\n");
+    $log->info("[Removal of redundant files]\n");
 
     removeredundantfiles({parameter_href => \%parameter,
 			  active_parameter_href => \%active_parameter,
@@ -2508,7 +2513,7 @@ if ( ($active_parameter{panalysisrunstatus} == 1) && (! $active_parameter{dry_ru
 
 if ($active_parameter{panalysisrunstatus} > 0) {
 
-    $logger->info("[Analysis run status]\n");
+    $log->info("[Analysis run status]\n");
 
     analysisrunstatus({parameter_href => \%parameter,
 		       active_parameter_href => \%active_parameter,
@@ -2521,7 +2526,7 @@ if ($active_parameter{panalysisrunstatus} > 0) {
 
 if ( ($active_parameter{psacct} > 0) && ($active_parameter{dry_run_all} == 0) ) {  #Sbatch generation of sacct job_id data info
 
-    $logger->info("[Sacct]\n");
+    $log->info("[Sacct]\n");
 
     sacct({parameter_href => \%parameter,
 	   active_parameter_href => \%active_parameter,
@@ -2536,10 +2541,10 @@ if ( ($active_parameter{psacct} > 0) && ($active_parameter{dry_run_all} == 0) ) 
 if ($active_parameter{sample_info_file} ne 0) {#Write SampleInfo to yaml file
 
     ## Writes a YAML hash to file
-    write_yaml({yaml_href => \%sample_info,
-		yaml_file_path_ref =>  \$active_parameter{sample_info_file},
-	       });
-    $logger->info("Wrote: ".$active_parameter{sample_info_file}, "\n");
+    File::Format::Yaml::write_yaml({yaml_href => \%sample_info,
+				    yaml_file_path_ref =>  \$active_parameter{sample_info_file},
+				   });
+    $log->info("Wrote: ".$active_parameter{sample_info_file}, "\n");
 }
 
 
@@ -3471,6 +3476,9 @@ sub rankvariant {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 20;
@@ -3592,7 +3600,7 @@ sub rankvariant {
 
 		if ( (! $contig_index) && (! $vcfparser_outfile_counter) ) {
 
-		    $logger->warn("Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'compound'");
+		    $log->warn("Only unaffected sample in pedigree - skipping genmod 'models', 'score' and 'compound'");
 		}
 	    }
 
@@ -8522,6 +8530,9 @@ sub sv_rankvariant {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargs_file_name;
@@ -8631,7 +8642,7 @@ sub sv_rankvariant {
 
 	    if (! $vcfparser_outfile_counter) {
 
-		$logger->warn("Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 'compound'");
+		$log->warn("Only unaffected sample(s) in pedigree - skipping genmod 'models', 'score' and 'compound'");
 	    }
 	}
 
@@ -14817,6 +14828,9 @@ sub variantannotationblock {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 80;
 
@@ -14824,15 +14838,15 @@ sub variantannotationblock {
     my $core_number = $active_parameter_href->{core_processor_number};
     my $xargs_file_name;
 
-    $logger->info("\t[Prepareforvariantannotationblock]\n");
+    $log->info("\t[Prepareforvariantannotationblock]\n");
 
     if ($active_parameter_href->{prhocall} > 0) {  #Run rhocall. Done per family
 
-	$logger->info("\t[rhocall]\n");
+	$log->info("\t[rhocall]\n");
     }
     if ($active_parameter_href->{pvt} > 0) {
 
-	$logger->info("\t[Vt]\n");  #Run vt. Done per family
+	$log->info("\t[Vt]\n");  #Run vt. Done per family
 
 	check_build_human_genome_prerequisites({parameter_href => $parameter_href,
 						active_parameter_href => $active_parameter_href,
@@ -14846,15 +14860,15 @@ sub variantannotationblock {
     }
     if ($active_parameter_href->{pvarianteffectpredictor} > 0) {  #Run varianteffectpredictor. Done per family
 
-	$logger->info("\t[Varianteffectpredictor]\n");
+	$log->info("\t[Varianteffectpredictor]\n");
     }
     if ($active_parameter_href->{pvcfparser} > 0) {  #Run pvcfparser. Done per family
 
-	$logger->info("\t[Vcfparser]\n");
+	$log->info("\t[Vcfparser]\n");
     }
     if ($active_parameter_href->{pannovar} > 0) {  #Run annovar. Done per family
 
-	$logger->info("\t[Annovar]\n");
+	$log->info("\t[Annovar]\n");
 
 	check_build_human_genome_prerequisites({parameter_href => $parameter_href,
 						active_parameter_href => $active_parameter_href,
@@ -14884,7 +14898,7 @@ sub variantannotationblock {
     }
     if ($active_parameter_href->{psnpeff} > 0) {  #Run snpEff. Done per family
 
-	$logger->info("\t[Snpeff]\n");
+	$log->info("\t[Snpeff]\n");
 
 	check_build_download_prerequisites({parameter_href => $parameter_href,
 					    active_parameter_href => $active_parameter_href,
@@ -14897,7 +14911,7 @@ sub variantannotationblock {
     }
     if ($active_parameter_href->{prankvariant} > 0) { #Run rankvariant. Done per family
 
-	$logger->info("\t[Rankvariant]\n");
+	$log->info("\t[Rankvariant]\n");
     }
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -15098,6 +15112,9 @@ sub bamcalibrationblock {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 80;
 
@@ -15106,19 +15123,19 @@ sub bamcalibrationblock {
 
     ##Always run even for single samples to rename them correctly for standardised downstream processing.
     ##Will also split alignment per contig and copy to temporary directory for '-rio 1' block to enable selective removal of block submodules.
-    $logger->info("\t[Picardtools mergesamfiles]\n");
+    $log->info("\t[Picardtools mergesamfiles]\n");
 
     if ($active_parameter{ppicardtools_markduplicates} > 0) {  #Picardtools markduplicates
 
-	$logger->info("\t[Picardtools markduplicates]\n");
+	$log->info("\t[Picardtools markduplicates]\n");
     }
     if ($active_parameter{psambamba_markduplicates} > 0) {  #Sambamba markduplicates
 
-	$logger->info("\t[Sambamba markduplicates]\n");
+	$log->info("\t[Sambamba markduplicates]\n");
     }
     if ($active_parameter{pgatk_realigner} > 0) {  #Run GATK realignertargetcreator/indelrealigner
 
-	$logger->info("\t[GATK realignertargetcreator/indelrealigner]\n");
+	$log->info("\t[GATK realignertargetcreator/indelrealigner]\n");
 
 	check_build_human_genome_prerequisites({parameter_href => $parameter_href,
 						active_parameter_href => $active_parameter_href,
@@ -15140,7 +15157,7 @@ sub bamcalibrationblock {
     }
     if ($active_parameter{pgatk_baserecalibration} > 0) {  #Run GATK baserecalibrator/printreads
 
-	$logger->info("\t[GATK baserecalibrator/printreads]\n");
+	$log->info("\t[GATK baserecalibrator/printreads]\n");
 
 	check_build_human_genome_prerequisites({parameter_href => $parameter_href,
 						active_parameter_href => $active_parameter_href,
@@ -15879,6 +15896,9 @@ sub build_annovar_prerequisites {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     $parameter_href->{annovar_build_reference}{build_file} = 0;  #Ensure that this subrutine is only executed once
     my $annovar_temporary_directory = catfile($active_parameter_href->{annovar_path}, "humandb", "Db_temporary");  #Temporary download directory
@@ -15894,7 +15914,7 @@ sub build_annovar_prerequisites {
 					     temp_directory => $$temp_directory_ref
 					    });
 
-    $logger->warn("Will try to create required annovar database files before executing ".$program_name."\n");
+    $log->warn("Will try to create required annovar database files before executing ".$program_name."\n");
 
     say $FILEHANDLE "## Make temporary download directory\n";
     say $FILEHANDLE "mkdir -p ".$annovar_temporary_directory."; ", "\n";
@@ -16182,6 +16202,9 @@ sub build_ptchs_metric_prerequisites {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my $file_name;
 
     unless(defined($FILEHANDLE)) {  #No supplied FILEHANDLE i.e. create new sbatch script
@@ -16207,7 +16230,7 @@ sub build_ptchs_metric_prerequisites {
 
     foreach my $exome_target_bed_file (keys $active_parameter_href->{exome_target_bed}) {
 
-	$logger->warn("Will try to create required ".$exome_target_bed_file." associated file(s) before executing ".$program_name."\n");
+	$log->warn("Will try to create required ".$exome_target_bed_file." associated file(s) before executing ".$program_name."\n");
 
 	my $exome_target_bed_file_random = $exome_target_bed_file."_".$random_integer;  #Add random integer
 
@@ -16382,6 +16405,9 @@ sub build_bwa_prerequisites {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $random_integer = int(rand(10000));  #Generate a random integer between 0-10,000.
 
@@ -16409,7 +16435,7 @@ sub build_bwa_prerequisites {
 
     if ($parameter_href->{bwa_build_reference}{build_file} eq 1) {
 
-	$logger->warn("Will try to create required ".$$human_genome_reference_ref." index files before executing ".$program_name."\n");
+	$log->warn("Will try to create required ".$$human_genome_reference_ref." index files before executing ".$program_name."\n");
 
 	say $FILEHANDLE "## Building BWA index";
 	print $FILEHANDLE "bwa index ";  #Index sequences in the FASTA format
@@ -16481,9 +16507,12 @@ sub build_mosaikaligner_prerequisites {
     my $outaligner_dir = $_[11];
     my $program_name = $_[12];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $random_integer = int(rand(10000));  #Generate a random integer between 0-10,000.
-
+    
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header.
     my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
 					     job_id_href => $job_id_href,
@@ -16512,7 +16541,7 @@ sub build_mosaikaligner_prerequisites {
 
     if ($parameter_href->{mosaik_align_reference}{build_file} eq 1) {  ##Begin auto_build of MosaikAlignReference
 
-	$logger->warn("Will try to create required ".$active_parameter_href->{mosaik_align_reference}." before executing ".$program_name."\n");
+	$log->warn("Will try to create required ".$active_parameter_href->{mosaik_align_reference}." before executing ".$program_name."\n");
 
 	say $FILEHANDLE "#Building MosaikAligner Reference";
 	print $FILEHANDLE "MosaikBuild ";
@@ -16532,7 +16561,7 @@ sub build_mosaikaligner_prerequisites {
     }
     if ($parameter_href->{mosaik_jump_db_stub}{build_file} eq 1) {  ##Begin auto_build of MosaikJump Database
 
-	$logger->warn("Will try to create required ".$active_parameter_href->{mosaik_jump_db_stub}." before executing ".$program_name."\n");
+	$log->warn("Will try to create required ".$active_parameter_href->{mosaik_jump_db_stub}." before executing ".$program_name."\n");
 
 	say $FILEHANDLE "#Building MosaikAligner JumpDatabase";
 	say $FILEHANDLE "mkdir -p ".catfile("scratch", "mosaik_tmp");
@@ -16750,6 +16779,9 @@ sub download_reference {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my @vt_references = ("indels", "mills", "dbsnp", "hapmap", "dbsnpex", "1000g_snps");  #Should be decomposed and normalzed using vt out of downloadable references using Cosmid
 
     if ($parameter_href->{$parameter_name}{build_file} eq 1) {  #Reference need to be built a.k.a downloaded
@@ -16757,11 +16789,11 @@ sub download_reference {
 	## Use $parameter instead of $active_parameter to cater for annotation files that are arrays and not supplied as flag => value
 	if (defined($active_parameter_href->{$parameter_name})) {
 
-	    $logger->warn("Will try to download ".$active_parameter_href->{$parameter_name}." before executing ".$$program_ref."\n");
+	    $log->warn("Will try to download ".$active_parameter_href->{$parameter_name}." before executing ".$$program_ref."\n");
 	}
 	else {
 
-	    $logger->warn("Will try to download ".$parameter_name." before executing ".$$program_ref."\n");
+	    $log->warn("Will try to download ".$parameter_name." before executing ".$$program_ref."\n");
 	}
 
 	print $FILEHANDLE "cosmid ";  #Database download manager
@@ -16915,6 +16947,9 @@ sub build_human_genome_prerequisites {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my $file_name;
 
     unless(defined($FILEHANDLE)) {  #No supplied FILEHANDLE i.e. create new sbatch script
@@ -16953,7 +16988,7 @@ sub build_human_genome_prerequisites {
     ## Check for compressed files
     if ($file_info_href->{human_genome_compressed} eq "compressed") {
 
-	$logger->warn("Will try to decompres ".$$human_genome_reference_ref." before executing ".$program."\n");
+	$log->warn("Will try to decompres ".$$human_genome_reference_ref." before executing ".$program."\n");
 
 	## Clear trap for signal(s)
 	clear_trap({FILEHANDLE => $FILEHANDLE,
@@ -16968,7 +17003,7 @@ sub build_human_genome_prerequisites {
 		    });
 
 	$$human_genome_reference_ref =~ s/.fasta.gz/.fasta/g;  #Replace the .fasta.gz ending with .fasta since this will execute before the analysis, hence changing the original file name ending from ".fastq" to ".fastq.gz".
-	$logger->info("Set human_genome_reference to: ".$$human_genome_reference_ref, "\n");
+	$log->info("Set human_genome_reference to: ".$$human_genome_reference_ref, "\n");
 	$file_info_href->{human_genome_compressedRef} = "uncompressed";
     }
 
@@ -16988,7 +17023,7 @@ sub build_human_genome_prerequisites {
 
 	    if ($file_ending eq ".dict") {
 
-		$logger->warn("Will try to create ".$file_ending." file for ".$$human_genome_reference_ref." before executing ".$program."\n");
+		$log->warn("Will try to create ".$file_ending." file for ".$$human_genome_reference_ref." before executing ".$program."\n");
 
 		my $filename_no_ending = catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending});
 
@@ -17015,7 +17050,7 @@ sub build_human_genome_prerequisites {
 	    }
 	    if ($file_ending eq ".fai") {
 
-		$logger->warn("Will try to create ".$file_ending." file for ".$$human_genome_reference_ref." before executing ".$program."\n");
+		$log->warn("Will try to create ".$file_ending." file for ".$$human_genome_reference_ref." before executing ".$program."\n");
 
 		my $human_genome_reference_temp_file = $$human_genome_reference_ref."_".$random_integer;
 
@@ -17090,24 +17125,27 @@ sub check_cosmid_installation {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my $ret;
 
     for my $parameter_name (keys %$supported_cosmid_reference_href) {
 
 	if ($parameter_href->{$parameter_name}{build_file} eq 1) {
 
-	    $logger->info("Checking your Cosmid installation in preparation for download of ".$active_parameter_href->{$parameter_name}."\n");
+	    $log->info("Checking your Cosmid installation in preparation for download of ".$active_parameter_href->{$parameter_name}."\n");
 
 	    $ret = `which cosmid;`;
 
 	    if ($ret eq "") {
 
-		$logger->fatal("MIP uses cosmid to download ".$active_parameter_href->{$parameter_name}." and MIP could not find a cosmid installation in your environment ","\n");
+		$log->fatal("MIP uses cosmid to download ".$active_parameter_href->{$parameter_name}." and MIP could not find a cosmid installation in your environment ","\n");
 		exit 1;
 	    }
 	    else {  #Test ok
 
-		$logger->info("Found installation in ".$ret);
+		$log->info("Found installation in ".$ret);
 	    }
 	    last;  #Only need to check once per analysis run
 	}
@@ -17156,6 +17194,9 @@ sub read_plink_pedigree_file {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my %exom_target_bed_test_file_tracker;  #Use to collect which sample_ids have used a certain capture_kit
     my @pedigree_file_elements = ("family_id", "sample_id", "father", "mother", "sex", "phenotype");
     my @pedigree_sample_ids;
@@ -17169,7 +17210,7 @@ sub read_plink_pedigree_file {
     ## Defines which entries are allowed and links them to my.
     my %plink_pedigree = define_plink_pedigree();  #Holds allowed entries and positions to be checked for Plink pedigree files
 
-    open(my $PEDF, "<", $file_path) or $logger->logdie("Can't open '".$file_path."': ".$!."\n");
+    open(my $PEDF, "<", $file_path) or $log->logdie("Can't open '".$file_path."': ".$!."\n");
 
     while (<$PEDF>) {
 
@@ -17201,13 +17242,13 @@ sub read_plink_pedigree_file {
 
 		if ($family_id ne $active_parameter_href->{family_id}) {
 
-		    $logger->fatal("File: ".$file_path." at line ".$.." pedigree Family_id: '".$family_id."' and supplied family_id: '".$active_parameter_href->{family_id}."' does not match\n");
+		    $log->fatal("File: ".$file_path." at line ".$.." pedigree Family_id: '".$family_id."' and supplied family_id: '".$active_parameter_href->{family_id}."' does not match\n");
 		    exit 1;
 		}
 	    }
 	    else {
 
-		$logger->fatal("File: ".$file_path." at line ".$.." cannot find family_id in column 1\n");
+		$log->fatal("File: ".$file_path." at line ".$.." cannot find family_id in column 1\n");
 		exit 1;
 	    }
 	    if ($line_info[1] =~/\S+/) { #Sample_id
@@ -17225,7 +17266,7 @@ sub read_plink_pedigree_file {
 	    }
 	    else {
 
-		$logger->fatal("File: ".$file_path." at line ".$.." cannot find Sample_id in column 2\n");
+		$log->fatal("File: ".$file_path." at line ".$.." cannot find Sample_id in column 2\n");
 		exit 1;
 	    }
 	    for (my $sample_elements_counter=0;$sample_elements_counter<scalar(@pedigree_file_elements);$sample_elements_counter++) {  #All pedigree_file_elements
@@ -17241,9 +17282,9 @@ sub read_plink_pedigree_file {
 						  })
 			) {
 
-			$logger->fatal("Found illegal element: '".$line_info[$sample_elements_counter]."' in column '".$sample_elements_counter."' in pedigree file: '".$file_path."' at line '".$.."'\n");
-			$logger->fatal("Please correct the entry before analysis.\n");
-			$logger->fatal("\nMIP: Aborting run.\n\n");
+			$log->fatal("Found illegal element: '".$line_info[$sample_elements_counter]."' in column '".$sample_elements_counter."' in pedigree file: '".$file_path."' at line '".$.."'\n");
+			$log->fatal("Please correct the entry before analysis.\n");
+			$log->fatal("\nMIP: Aborting run.\n\n");
 			exit 1;
 		    }
 
@@ -17299,7 +17340,7 @@ sub read_plink_pedigree_file {
 
 		    if ($sample_elements_counter < 6) {  #Only check mandatory elements
 
-			$logger->fatal($$pedigree_header_ref, "\t File: ".$file_path." at line ".$.."\tcannot find '".$$pedigree_header_ref."' entry in column ".$sample_elements_counter, "\n");
+			$log->fatal($$pedigree_header_ref, "\t File: ".$file_path." at line ".$.."\tcannot find '".$$pedigree_header_ref."' entry in column ".$sample_elements_counter, "\n");
 			exit 1;
 		    }
 		}
@@ -17321,7 +17362,7 @@ sub read_plink_pedigree_file {
 
 	    if (! ( any {$_ eq $sample_id} @pedigree_sample_ids ) ) {  #If element is not part of array
 
-		$logger->fatal("Provided sample_id: ".$sample_id." is not present in pedigree file: ".$file_path, "\n");
+		$log->fatal("Provided sample_id: ".$sample_id." is not present in pedigree file: ".$file_path, "\n");
 		exit 1;
 	    }
 	}
@@ -17333,7 +17374,7 @@ sub read_plink_pedigree_file {
 	    $active_parameter_href->{exome_target_bed}{$exome_target_bed_file} = join(",", @{ $exom_target_bed_test_file_tracker{$exome_target_bed_file} });
 	}
     }
-    $logger->info("Read pedigree file: ".$file_path, "\n");
+    $log->info("Read pedigree file: ".$file_path, "\n");
     close($PEDF);
 }
 
@@ -17381,6 +17422,9 @@ sub read_yaml_pedigree_file {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     ## Defines which values are allowed
     my %allowed_values = (sex => ["male", "female", "unknown"],
 			  phenotype => ["affected", "unaffected", "unknown"],
@@ -17412,7 +17456,7 @@ sub read_yaml_pedigree_file {
 
 	if(! $pedigree_href->{$key}) {
 
-	    $logger->fatal("File: ".$file_path." cannot find mandatory key: ".$key." in file\n");
+	    $log->fatal("File: ".$file_path." cannot find mandatory key: ".$key." in file\n");
 	    exit 1;
 	}
     }
@@ -17420,7 +17464,7 @@ sub read_yaml_pedigree_file {
     ## Check that supplied cmd and YAML pedigree family_id match
     if ($pedigree_href->{family} ne $active_parameter_href->{family_id}) {
 
-	$logger->fatal("File: ".$file_path." for  pedigree family_id: '".$pedigree_href->{family}."' and supplied family: '".$active_parameter_href->{family_id}."' does not match\n");
+	$log->fatal("File: ".$file_path." for  pedigree family_id: '".$pedigree_href->{family}."' and supplied family: '".$active_parameter_href->{family_id}."' does not match\n");
 	exit 1;
     }
 
@@ -17432,16 +17476,16 @@ sub read_yaml_pedigree_file {
 
 	    if(! defined($pedigree_sample_href->{$key})) {
 
-		$logger->fatal("File: ".$file_path." cannot find mandatory key: ".$key." in file\n");
+		$log->fatal("File: ".$file_path." cannot find mandatory key: ".$key." in file\n");
 		exit 1;
 	    }
 	    elsif ($allowed_values{$key}){  #Check allowed values
 
 		if (! ( any {$_ eq $pedigree_sample_href->{$key}} @{ $allowed_values{$key} } ) ) { #If element is not part of array
 
-		    $logger->fatal("File: ".$file_path." found illegal value: ".$pedigree_sample_href->{$key}." allowed values are '".join("' '", @{ $allowed_values{$key} }),"'\n");
-		    $logger->fatal("Please correct the entry before analysis.\n");
-		    $logger->fatal("\nMIP: Aborting run.\n\n");
+		    $log->fatal("File: ".$file_path." found illegal value: ".$pedigree_sample_href->{$key}." allowed values are '".join("' '", @{ $allowed_values{$key} }),"'\n");
+		    $log->fatal("Please correct the entry before analysis.\n");
+		    $log->fatal("\nMIP: Aborting run.\n\n");
 		    exit 1;
 		}
 	    }
@@ -17516,7 +17560,7 @@ sub read_yaml_pedigree_file {
 
 	    if (! ( any {$_ eq $sample_id} @pedigree_sample_ids ) ) {  #If element is not part of array
 
-		$logger->fatal("File: ".$file_path." provided sample_id: ".$sample_id." is not present in file", "\n");
+		$log->fatal("File: ".$file_path." provided sample_id: ".$sample_id." is not present in file", "\n");
 		exit 1;
 	    }
 	}
@@ -17803,6 +17847,9 @@ sub submit_job {
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
 
     my $sample_id_chain_key;
     my $sample_id_parallel_chain_key;
@@ -18212,9 +18259,9 @@ sub submit_job {
 	}
     }
 
-    $logger->info("Sbatch script submitted, job id: $job_id\n");
-    $logger->info("To check status of job, please run \'squeue -j $job_id\'\n");
-    $logger->info("To cancel job, please run \'scancel $job_id\'\n");
+    $log->info("Sbatch script submitted, job id: $job_id\n");
+    $log->info("To check status of job, please run \'squeue -j $job_id\'\n");
+    $log->info("To cancel job, please run \'scancel $job_id\'\n");
 
     push( @{ $job_id_href->{PAN}{PAN} }, $job_id);  #Add job_id to hash for sacct processing downstream
 }
@@ -18247,6 +18294,9 @@ sub submit_jobs_to_sbatch {
    
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my $job_ids_return;
     my $job_id;
 
@@ -18263,8 +18313,8 @@ sub submit_jobs_to_sbatch {
     }
     if ($job_ids_return !~/\d+/) {  #Catch errors since, propper sbatch submission should only return numbers
 	
-	$logger->fatal($job_ids_return."\n");
-	$logger->fatal("MIP: Aborting run.\n");
+	$log->fatal($job_ids_return."\n");
+	$log->fatal("MIP: Aborting run.\n");
 	exit 1;
     }
     return $job_id;
@@ -18328,7 +18378,10 @@ sub collect_infiles {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    $logger->info("Reads from platform:\n");
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
+    $log->info("Reads from platform:\n");
 
     foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {  #Collects inputfiles govern by sample_ids
 
@@ -18356,25 +18409,25 @@ sub collect_infiles {
 
 	if (!@infiles) {  #No "*.fastq*" infiles
 
-	    $logger->fatal("Could not find any '.fastq' files in supplied infiles directory ".$$infile_directory_ref, "\n");
+	    $log->fatal("Could not find any '.fastq' files in supplied infiles directory ".$$infile_directory_ref, "\n");
 	    exit 1;
 	}
 	foreach my $infile (@infiles) {  #Check that inFileDirs/infile contains sample_id in filename
 
 	    unless ( $infile =~/$sample_id/) {
 
-		$logger->fatal("Could not detect sample_id: ".$sample_id." in supplied infile: ".$$infile_directory_ref."/".$infile, "\n");
-		$logger->fatal("Check that: '--sample_ids' and '--inFileDirs' contain the same sample_id and that the filename of the infile contains the sample_id.", "\n");
+		$log->fatal("Could not detect sample_id: ".$sample_id." in supplied infile: ".$$infile_directory_ref."/".$infile, "\n");
+		$log->fatal("Check that: '--sample_ids' and '--inFileDirs' contain the same sample_id and that the filename of the infile contains the sample_id.", "\n");
 		exit 1;
 	    }
 	}
-	$logger->info("Sample id: ".$sample_id."\n");
-	$logger->info("\tInputfiles:\n");
+	$log->info("Sample id: ".$sample_id."\n");
+	$log->info("\tInputfiles:\n");
 
 	## Log each file from platform
 	foreach my $file (@infiles) {
 
-	    $logger->info("\t\t", $file, "\n");  #Indent for visability
+	    $log->info("\t\t", $file, "\n");  #Indent for visability
 	}
 	$indir_path_href->{$sample_id} = $$infile_directory_ref;   #Catch inputdir path
 	$infile_href->{$sample_id}  = [@infiles];  #Reload files into hash
@@ -18434,6 +18487,9 @@ sub infiles_reformat {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my $uncompressed_file_counter = 0;  #Used to decide later if any inputfiles needs to be compressed before starting analysis
 
     for my $sample_id (keys %$infile_href) {  #For every sample_id
@@ -18485,13 +18541,13 @@ sub infiles_reformat {
 	    }
 	    else {  #No regexp match i.e. file does not follow filename convention
 
-		$logger->warn("Could not detect MIP file name convention for file: ".$file_name.". \n");
-		$logger->warn("Will try to find mandatory information in fastq header.", "\n");
+		$log->warn("Could not detect MIP file name convention for file: ".$file_name.". \n");
+		$log->warn("Will try to find mandatory information in fastq header.", "\n");
 
 		##Check that file name at least contains sample_id
 		if ($file_name !~/$sample_id/) {
 
-		    $logger->fatal("Please check that the file name contains the sample_id.", "\n");
+		    $log->fatal("Please check that the file name contains the sample_id.", "\n");
 		}
 
 		## Get run info from fastq file header
@@ -18520,8 +18576,8 @@ sub infiles_reformat {
 				 compressed_switch => $compressed_switch,
 				});
 
-		$logger->info("Found following information from fastq header: lane=".$fastq_info_headers[3]." flow-cell=".$fastq_info_headers[2]." index=".$fastq_info_headers[5]." direction=".$fastq_info_headers[4], "\n");
-		$logger->warn("Will add fake date '20010101' to follow file convention since this is not recorded in fastq header\n");
+		$log->info("Found following information from fastq header: lane=".$fastq_info_headers[3]." flow-cell=".$fastq_info_headers[2]." index=".$fastq_info_headers[5]." direction=".$fastq_info_headers[4], "\n");
+		$log->warn("Will add fake date '20010101' to follow file convention since this is not recorded in fastq header\n");
 	    }
         }
     }
@@ -18561,6 +18617,9 @@ sub check_sample_id_match {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my %seen = ($infile_sample_id => 1);  #Add input as first increment
 
     foreach my $sample_id_supplied (@{ $active_parameter_href->{sample_ids} }) {
@@ -18569,7 +18628,7 @@ sub check_sample_id_match {
     }
     unless ($seen{$infile_sample_id} > 1) {
 
-	$logger->fatal($sample_id." supplied and sample_id ".$infile_sample_id." found in file : ".$infile_href->{$sample_id}[$file_index]." does not match. Please rename file to match sample_id: ".$sample_id."\n");
+	$log->fatal($sample_id." supplied and sample_id ".$infile_sample_id." found in file : ".$infile_href->{$sample_id}[$file_index]." does not match. Please rename file to match sample_id: ".$sample_id."\n");
 	exit 1;
     }
 }
@@ -18600,6 +18659,9 @@ sub get_run_info {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my $fastq_header_regexp = q?perl -nae 'chomp($_); if($_=~/^(@\w+):(\w+):(\w+):(\w+)\S+\s(\w+):\w+:\w+:(\w+)/) {print $1." ".$2." ".$3." ".$4." ".$5." ".$6."\n";} if($.=1) {last;}' ?;
 
     my $pwd = cwd();  #Save current direcory
@@ -18612,7 +18674,7 @@ sub get_run_info {
 
     unless (scalar(@fastq_info_headers) eq 6) {
 
-	$logger->fatal("Could not detect reuired sample sequencing run info from fastq file header - PLease proved MIP file in MIP file convention format to proceed\n");
+	$log->fatal("Could not detect reuired sample sequencing run info from fastq file header - PLease proved MIP file in MIP file convention format to proceed\n");
 	exit 1;
     }
 
@@ -18795,6 +18857,9 @@ sub detect_interleaved {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my $interleaved_regexp = q?perl -nae 'chomp($_); if( ($_=~/^@\S+:\w+:\w+:\w+\S+\s(\w+):\w+:\w+:\w+/) && ($.==5) ) {print $1."\n";last;} elsif ($.==6) {last;}' ?;
 
     my $pwd = cwd();  #Save current direcory
@@ -18812,13 +18877,13 @@ sub detect_interleaved {
 
     unless ($fastq_info_headers=~/[1, 2, 3]/) {
 
-	$logger->fatal("Malformed fastq file!\n");
-	$logger->fatal("Read direction is: ".$fastq_info_headers." allowed entries are '1', '2', '3'. Please check fastq file\n");
+	$log->fatal("Malformed fastq file!\n");
+	$log->fatal("Read direction is: ".$fastq_info_headers." allowed entries are '1', '2', '3'. Please check fastq file\n");
 	exit 1;
     }
     if ($fastq_info_headers > 1) {
 
-	$logger->info("Found interleaved fastq file: ".$file, "\n");
+	$log->info("Found interleaved fastq file: ".$file, "\n");
 	return 1;
     }
     return;
@@ -18909,6 +18974,9 @@ sub add_to_active_parameter {
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
 
     my $element_separator_ref = \$parameter_href->{$parameter_name}{element_separator};
     my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
@@ -19017,14 +19085,14 @@ sub add_to_active_parameter {
 						     human_genome_reference_source_ref => \$file_info_href->{human_genome_reference_source},
 						     human_genome_reference_version_ref => \$file_info_href->{human_genome_reference_version},
 						    });
-			    $logger->warn("Could not detect a supplied capture kit. Will Try to use 'latest' capture kit: ".$capture_kit, "\n");
+			    $log->warn("Could not detect a supplied capture kit. Will Try to use 'latest' capture kit: ".$capture_kit, "\n");
 			}
 			else {
 
-			    if (defined($logger)) {  #We have a logg object and somewhere to write
+			    if (defined($log)) {  #We have a logg object and somewhere to write
 
-				$logger->fatal($USAGE, "\n");
-				$logger->fatal("Supply '-".$parameter_name."' if you want to run ".$associated_program, "\n");
+				$log->fatal($USAGE, "\n");
+				$log->fatal("Supply '-".$parameter_name."' if you want to run ".$associated_program, "\n");
 			    }
 			    else {
 
@@ -19070,8 +19138,9 @@ sub add_to_active_parameter {
 	if ($active_parameter_href->{pedigree_file} =~/\.yaml$/) {  #Meta data in YAML format
 
 	    ##Loads a YAML file into an arbitrary hash and returns it. Load parameters from previous run from sample_info_file
-	    my %pedigree = load_yaml({yaml_file => $active_parameter_href->{pedigree_file},
-				     });
+	    my %pedigree = File::Format::Yaml::load_yaml({yaml_file => $active_parameter_href->{pedigree_file},
+							 });
+	    $log->info("Loaded: ".$active_parameter_href->{pedigree_file}, "\n");
 
 	    read_yaml_pedigree_file({parameter_href => $parameter_href,
 				     active_parameter_href => $active_parameter_href,
@@ -19172,6 +19241,9 @@ sub check_parameter_files {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
 
     foreach my $associated_program (@$associated_programs_ref) {  #Check all programs that use parameter
@@ -19225,12 +19297,12 @@ sub check_parameter_files {
 
 				if (defined($active_parameter_href->{log_file})) {
 
-				    $logger->info("Load Yaml file: ". $active_parameter_href->{sample_info_file}, "\n");
+				    $log->info("Loaded: ". $active_parameter_href->{sample_info_file}, "\n");
 				}
 
 				##Loads a YAML file into an arbitrary hash and returns it. Load parameters from previous run from sample_info_file
-				my %temp = load_yaml({yaml_file => $active_parameter_href->{sample_info_file},
-						     });
+				my %temp = File::Format::Yaml::load_yaml({yaml_file => $active_parameter_href->{sample_info_file},
+									 });
 
 				## Update sample_info with information from pedigree
 				update_sample_info_hash({sample_info_href => $sample_info_href,
@@ -19681,6 +19753,9 @@ sub program_prerequisites {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     ### Sbatch script names and directory creation
 
     my $file_name_end = ".sh";
@@ -19708,13 +19783,13 @@ sub program_prerequisites {
 
 	$file_name = $dry_run_file_name_path;
 	$file_info_path = $dry_run_file_info_path;
-	$logger->info("Dry run:\n");
+	$log->info("Dry run:\n");
     }
     else {  #Dry run
 
 	$file_name = $dry_run_file_name_path;
 	$file_info_path = $dry_run_file_info_path;
-	$logger->info("Dry run:\n");
+	$log->info("Dry run:\n");
     }
 
     ## Check if a file with with a filename consisting of $file_path_ref.$file_counter.$file_ending_ref exist. If so bumps the version number and return new filename and sbatch version number.
@@ -19723,11 +19798,11 @@ sub program_prerequisites {
 							      });
 
 ###Info and Log
-    $logger->info("Creating sbatch script for ".$program_name." and writing script file(s) to: ".$file_name."\n");
-    $logger->info("Sbatch script ".$program_name." data files will be written to: ".$program_data_directory."\n");
+    $log->info("Creating sbatch script for ".$program_name." and writing script file(s) to: ".$file_name."\n");
+    $log->info("Sbatch script ".$program_name." data files will be written to: ".$program_data_directory."\n");
 
 ###Sbatch header
-    open ($FILEHANDLE, ">",$file_name) or $logger->logdie("Can't write to '".$file_name."' :".$!."\n");
+    open ($FILEHANDLE, ">",$file_name) or $log->logdie("Can't write to '".$file_name."' :".$!."\n");
 
     say $FILEHANDLE "#! /bin/bash -l";
 
@@ -19929,6 +20004,9 @@ sub sample_info_qc {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     unless (defined($sample_id)) {
 
 	$sample_info_href->{program}{$program_name}{outdirectory} = $outdirectory;  #OutDirectory of QC file
@@ -19949,7 +20027,7 @@ sub sample_info_qc {
     }
     else {
 
-	$logger->fatal("Please provide infile to enable storing of sample_id data in hash\n");
+	$log->fatal("Please provide infile to enable storing of sample_id data in hash\n");
 	exit 1;
     }
 }
@@ -20106,6 +20184,9 @@ sub check_pedigree_members {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     if (scalar(@{ $active_parameter_href->{sample_ids} }) < 4) {  #i.e.1-3 individuals in pedigree
 
 	if ( ($$child_counter_ref == 1) && ($$parent_counter_ref > 0) ) {  #Parent/child or trio
@@ -20115,22 +20196,22 @@ sub check_pedigree_members {
 	else {
 
 	    $active_parameter_href->{pgatk_phasebytransmission} = 0;  #Override input since pedigree is not valid for analysis
-	    $logger->info("Switched GATK PhaseByTransmission to 'no run' mode since MIP did not detect a valid pedigree for this type of analysis.");
+	    $log->info("Switched GATK PhaseByTransmission to 'no run' mode since MIP did not detect a valid pedigree for this type of analysis.");
 
 	    if ($active_parameter_href->{pgatk_readbackedphasing} > 0) {  #Broadcast
 
-		$logger->info("MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n");
+		$log->info("MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n");
 	    }
 	}
     }
     else {
 
 	$active_parameter_href->{pgatk_phasebytransmission} = 0;  #Override input since pedigree is not valid for analysis
-	$logger->info("Switched GATK PhaseByTransmission to 'no run' mode since MIP did not detect a valid pedigree for this type of analysis.");
+	$log->info("Switched GATK PhaseByTransmission to 'no run' mode since MIP did not detect a valid pedigree for this type of analysis.");
 
 	if ($active_parameter_href->{pgatk_readbackedphasing} > 0) {  #Broadcast
 
-	    $logger->info("MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n");
+	    $log->info("MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n");
 	}
     }
 }
@@ -20171,6 +20252,9 @@ sub write_cmd_mip_log {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my $cmd_line = $$script_ref." ";
 
     my @nowrite = ("mip", "bwa_build_reference", "pbamcalibrationblock", "pvariantannotationblock");
@@ -20202,9 +20286,9 @@ sub write_cmd_mip_log {
 	    }
 	}
     }
-    $logger->info($cmd_line,"\n");
-    $logger->info("MIP Version: ".$$mip_version_ref, "\n");
-    $logger->info("Script parameters and info from ".$$script_ref." are saved in file: ".$$log_file_ref, "\n");
+    $log->info($cmd_line,"\n");
+    $log->info("MIP Version: ".$$mip_version_ref, "\n");
+    $log->info("Script parameters and info from ".$$script_ref." are saved in file: ".$$log_file_ref, "\n");
 }
 
 
@@ -20276,6 +20360,9 @@ sub determine_nr_of_rapid_nodes {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my $number_nodes = 0;  #Nodes to allocate
     my $read_position_weight = 1;  #Scales the read_start and read_stop position
     my $read_nr_of_lines;
@@ -20284,25 +20371,25 @@ sub determine_nr_of_rapid_nodes {
 
 	$read_nr_of_lines = 190000000;  #Read batch size
 	$number_nodes = floor($infile_size / (12 * $read_nr_of_lines) );  #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.
-	$logger->info("Number of Nodes: ".$number_nodes, "\n");
+	$log->info("Number of Nodes: ".$number_nodes, "\n");
     }
     if ($seq_length > 50 && $seq_length <= 75) {
 
 	$read_nr_of_lines = 190000000;  #Read batch size
 	$number_nodes = floor($infile_size / (9.75 * $read_nr_of_lines) );  #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.
-	$logger->info("Number of Nodes: ".$number_nodes, "\n");
+	$log->info("Number of Nodes: ".$number_nodes, "\n");
     }
     if ($seq_length >= 50 && $seq_length < 75) {
 
 	$read_nr_of_lines = 130000000;  #Read batch size
 	$number_nodes = floor($infile_size / (7 * $read_nr_of_lines) );  #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.
-	$logger->info("Number of Nodes: ".$number_nodes, "\n");
+	$log->info("Number of Nodes: ".$number_nodes, "\n");
     }
     if ($seq_length >= 35 && $seq_length < 50) {
 
 	$read_nr_of_lines = 95000000;  #Read batch size
 	$number_nodes = floor($infile_size / (6 * $read_nr_of_lines) );  #Determines the number of nodes to use, 150000000 ~ 37,5 million reads, 13 = 2 sdtdev from sample population - currently poor estimate with compression confunding calculation.
-	$logger->info("Number of Nodes: ".$number_nodes, "\n");
+	$log->info("Number of Nodes: ".$number_nodes, "\n");
     }
     if ($number_nodes <= 1) {
 
@@ -20339,11 +20426,14 @@ sub check_unique_ids {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my %seen;  #Hash to test duplicate sample_ids later
 
     if (! @$sample_ids_ref) {
 
-	$logger->fatal("Please provide sample_id(s)\n");
+	$log->fatal("Please provide sample_id(s)\n");
 	exit 1;
     }
 
@@ -20353,17 +20443,17 @@ sub check_unique_ids {
 
 	if ($$family_id_ref eq $sample_id) {  #Family_id cannot be the same as sample_id
 
-	    $logger->fatal("Family_id: ".$$family_id_ref." equals sample_id: ".$sample_id.". Please make sure that the family_id and sample_id(s) are unique.\n");
+	    $log->fatal("Family_id: ".$$family_id_ref." equals sample_id: ".$sample_id.". Please make sure that the family_id and sample_id(s) are unique.\n");
 	    exit 1;
 	}
 	if ($seen{$sample_id} > 1) {  #Check sample_id are unique
 
-	    $logger->fatal("Sample_id: ".$sample_id." is not uniqe.\n");
+	    $log->fatal("Sample_id: ".$sample_id." is not uniqe.\n");
 	    exit 1;
 	}
 	if ($sample_id =~/_/) {  #Sample_id contains "_", which is not allowed according to filename conventions
 
-	    $logger->fatal("Sample_id: ".$sample_id." contains '_'. Please rename sample_id according to MIP's filename convention, removing the '_'.\n");
+	    $log->fatal("Sample_id: ".$sample_id." contains '_'. Please rename sample_id according to MIP's filename convention, removing the '_'.\n");
 	    exit 1;
 	}
     }
@@ -20453,6 +20543,9 @@ sub check_auto_build {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     if ( (defined($$sample_id_ref)) && ($$sample_id_ref) ) {
 
 	if ($parameter_href->{$$family_id_ref}{$$sample_id_ref}{$$parameter_name_ref}{build_file} eq "yes_auto_build") {
@@ -20490,8 +20583,8 @@ sub check_auto_build {
 	    }
 	    else {
 
-		$logger->fatal("Could not find file ".$active_parameter_href->{$$parameter_name_ref}, "\n");
-		$logger->fatal("Make sure that file exists or use the default for this parameter to enable automatic download via Cosmid", "\n");
+		$log->fatal("Could not find file ".$active_parameter_href->{$$parameter_name_ref}, "\n");
+		$log->fatal("Make sure that file exists or use the default for this parameter to enable automatic download via Cosmid", "\n");
 		exit 1;
 	    }
 	}
@@ -20526,6 +20619,9 @@ sub parse_human_genome_reference {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     if ($$human_genome_reference_ref =~/GRCh(\d+\.\d+|\d+)_homo_sapiens_/) {  #Used to change capture kit genome reference version later
 
 	$file_info_href->{human_genome_reference_version} = $1;
@@ -20538,7 +20634,7 @@ sub parse_human_genome_reference {
     }
     else {
 
-	$logger->warn("MIP cannot detect what kind of human_genome_reference you have supplied. If you want to automatically set the capture kits used please supply the reference on this format: [source]_[species]_[version].", "\n");
+	$log->warn("MIP cannot detect what kind of human_genome_reference you have supplied. If you want to automatically set the capture kits used please supply the reference on this format: [source]_[species]_[version].", "\n");
     }
     ## Removes ".file_ending" in filename.FILENDING(.gz)
     
@@ -20638,12 +20734,15 @@ sub check_existance {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     if ($item_type_to_check eq "directory") {
 
 	unless (-d $$item_name_ref) {  #Check existence of supplied directory
 
-	    $logger->fatal($USAGE, "\n");
-	    $logger->fatal("Could not find intended ".$$parameter_name_ref." directory: ".$$item_name_ref, "\n");
+	    $log->fatal($USAGE, "\n");
+	    $log->fatal("Could not find intended ".$$parameter_name_ref." directory: ".$$item_name_ref, "\n");
 	    exit 1;
 	}
     }
@@ -20662,8 +20761,8 @@ sub check_existance {
 
 		if ($parameter_href->{$$family_id_ref}{$$sample_id_ref}{$$parameter_name_ref}{build_file} == 0) {  #No autobuild
 
-		    $logger->fatal($USAGE, "\n");
-		    $logger->fatal("Could not find intended ".$$parameter_name_ref." file: ".$$item_name_ref, "\n");
+		    $log->fatal($USAGE, "\n");
+		    $log->fatal("Could not find intended ".$$parameter_name_ref." file: ".$$item_name_ref, "\n");
 		    exit 1;
 		}
 	    }
@@ -20677,8 +20776,8 @@ sub check_existance {
 
 		if ($parameter_href->{$$parameter_name_ref}{build_file} == 0) {  #No autobuild
 
-		    $logger->fatal($USAGE, "\n");
-		    $logger->fatal("Could not find intended ".$$parameter_name_ref." file: ".$$item_name_ref, "\n");
+		    $log->fatal($USAGE, "\n");
+		    $log->fatal("Could not find intended ".$$parameter_name_ref." file: ".$$item_name_ref, "\n");
 		    exit 1;
 		}
 	    }
@@ -20712,6 +20811,9 @@ sub move_mosaik_nn {
 
     my $active_parameter_href = $_[0];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my @paths = split(/:/,$ENV{PATH});  #Find Mosaik installation path
 
     for (my $paths_counter=0;$paths_counter<scalar(@paths);$paths_counter++) {
@@ -20720,8 +20822,8 @@ sub move_mosaik_nn {
 
 	    $paths[$paths_counter] =~ s/bin\//src\/networkFile/g;  #Location of NN files
 
-	    $logger->warn("Could not find Mosaik Network Files in ".$active_parameter_href->{reference_dir},"\n");
-	    $logger->info("Copying Mosaik Network Files ".$active_parameter_href->{mosaik_align_neural_network_se_file}." and ".$active_parameter_href->{mosaik_align_neural_network_pe_file}." to ".$active_parameter_href->{reference_dir}." from ".$paths[$paths_counter], "\n");
+	    $log->warn("Could not find Mosaik Network Files in ".$active_parameter_href->{reference_dir},"\n");
+	    $log->info("Copying Mosaik Network Files ".$active_parameter_href->{mosaik_align_neural_network_se_file}." and ".$active_parameter_href->{mosaik_align_neural_network_pe_file}." to ".$active_parameter_href->{reference_dir}." from ".$paths[$paths_counter], "\n");
 	    copy(catfile($paths[$paths_counter], $active_parameter_href->{mosaik_align_neural_network_se_file}), $active_parameter_href->{reference_dir});
 	    copy(catfile($paths[$paths_counter], $active_parameter_href->{mosaikAlignNeuralNetworkPeFile}), $active_parameter_href->{reference_dir});
 	    last;
@@ -20888,9 +20990,12 @@ sub check_target_bed_file_exist {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     if ($file !~/.bed$/) {
 
-	$logger->fatal("Could not find intendended '.bed file ending' for target file: ".$file." in parameter '-".$parameter_name."'", "\n");
+	$log->fatal("Could not find intendended '.bed file ending' for target file: ".$file." in parameter '-".$parameter_name."'", "\n");
 	exit 1;
     }
 }
@@ -20925,9 +21030,12 @@ sub compare_array_elements {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     if (scalar(@$elements_ref) != scalar(@$array_queries_ref)) {
 
-	$logger->fatal("The number of supplied '-".$parameter_name_query."' (=".scalar(@$array_queries_ref).") do not equal the number of '-".$parameter_name."' (=".scalar(@$elements_ref)."). Please specify a equal number of elements for both parameters", "\n");
+	$log->fatal("The number of supplied '-".$parameter_name_query."' (=".scalar(@$array_queries_ref).") do not equal the number of '-".$parameter_name."' (=".scalar(@$elements_ref)."). Please specify a equal number of elements for both parameters", "\n");
 	exit 1;
     }
 }
@@ -20985,7 +21093,7 @@ sub define_snpeff_files {
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
+    
     my %snpeff_file;
     my @snpsift_downloadable_files = ("dbsnp_138.b37.excluding_sites_after_129.vcf",
 				      "dbsnp_138.b37.vcf", "1000G_phase1.indels.b37.vcf",
@@ -21271,13 +21379,16 @@ sub collect_select_file_contigs {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my $pquery_seq_dict = q?perl -nae 'if ($_=~/contig\=(\w+)/) {print $1, ",";} if($_=~/#CHROM/) {last;}' ?;
     @$contigs_ref = `$pquery_seq_dict $select_file_path `;  #Returns a comma seperated string of sequence contigs from file
     @$contigs_ref = split(/,/,join(',', @$contigs_ref));
 
     if (! @$contigs_ref) {
 
-	$logger->fatal("Could not detect any '##contig' in meta data header in select file: ".$select_file_path."\n");
+	$log->fatal("Could not detect any '##contig' in meta data header in select file: ".$select_file_path."\n");
 	exit 1;
     }
 }
@@ -21312,6 +21423,9 @@ sub size_sort_select_file_contigs {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my @sorted_contigs;
 
     ##Sort the contigs depending on reference array
@@ -21339,7 +21453,7 @@ sub size_sort_select_file_contigs {
 
 		unless ( ($$consensus_analysis_type_ref eq "wes") && ($element=~/MT$|M$/) ) {  #Special case when analysing wes since Mitochondrial contigs have no baits in exome capture kits
 
-		    $logger->fatal("Could not detect '##contig'= ".$element." from meta data header in '-vcfparser_select_file' in reference contigs collected from '-human_genome_reference'\n");
+		    $log->fatal("Could not detect '##contig'= ".$element." from meta data header in '-vcfparser_select_file' in reference contigs collected from '-human_genome_reference'\n");
 		    exit 1;
 		}
 	    }
@@ -21459,9 +21573,10 @@ sub check_cosmid_yaml {
     if (-f $active_parameter_href->{reference_dir}."/cosmid.yaml") {  #Cosmid.yaml file exists in reference directory
 
 	## Loads a YAML file into an arbitrary hash and returns it.
-	%cosmid_resources = load_yaml({yaml_file => catfile($active_parameter_href->{reference_dir}, "cosmid.yaml"),
-				      });
-
+	%cosmid_resources = File::Format::Yaml::load_yaml({yaml_file => catfile($active_parameter_href->{reference_dir}, "cosmid.yaml"),
+							  });
+	$log->info("Loaded: ".catfile($active_parameter_href->{reference_dir}, "cosmid.yaml") , "\n");
+	
 	unless (defined($cosmid_resources{directory})) {  #Set Directory entry if not defined
 
 	    $cosmid_resources{directory} = catfile($active_parameter_href->{reference_dir}, "resources");  #Set the Cosmid default directory
@@ -21643,13 +21758,16 @@ sub print_supported_annovar_table_names {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     if ($active_parameter_href->{log_file}) {
 
-	$logger->info("These annovar databases are supported by MIP:\n");
+	$log->info("These annovar databases are supported by MIP:\n");
 
 	foreach my $annovar_supported_table_name (@$annovar_supported_table_names_ref) {
 
-	    $logger->info($annovar_supported_table_name, "\n");
+	    $log->info($annovar_supported_table_name, "\n");
 	}
     }
     else {
@@ -22226,41 +22344,6 @@ sub write_use_large_pages {
 }
 
 
-sub create_log4perl_congfig {
-
-##create_log4perl_congfig
-
-##Function : Create log4perl config file.
-##Returns  : "$config"
-##Arguments: $file_path_ref
-##         : $file_path_ref => log4perl config file path {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_path_ref;
-
-    my $tmpl = {
-	file_path_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$file_path_ref},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    my $config = q?
-        log4perl.category.MIP_logger = TRACE, LogFile, ScreenApp
-        log4perl.appender.LogFile = Log::Log4perl::Appender::File
-        log4perl.appender.LogFile.filename = ?.$$file_path_ref.q?
-        log4perl.appender.LogFile.layout=PatternLayout
-        log4perl.appender.LogFile.layout.ConversionPattern = [%p] %d %c - %m%n
-
-        log4perl.appender.ScreenApp = Log::Log4perl::Appender::Screen
-        log4perl.appender.ScreenApp.layout = PatternLayout
-        log4perl.appender.ScreenApp.layout.ConversionPattern = [%p] %d %c - %m%n
-        ?;
-    return $config;
-}
-
-
 sub deafult_log4perl_file {
 
 ##deafult_log4perl_file
@@ -22482,6 +22565,9 @@ sub create_fam_file {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my @fam_headers = ("#family_id", "sample_id", "father", "mother", "sex", "phenotype");
     my @pedigree_lines;
     my $header;
@@ -22511,13 +22597,13 @@ sub create_fam_file {
     if ($execution_mode eq "system") {  #Execute directly
 
 	my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-	open($FILEHANDLE, ">", $fam_file_path) or $logger->logdie("Can't open '".$fam_file_path."': ".$!."\n");
+	open($FILEHANDLE, ">", $fam_file_path) or $log->logdie("Can't open '".$fam_file_path."': ".$!."\n");
 
 	foreach my $line (@pedigree_lines) {
 
 	    say $FILEHANDLE $line;
 	}
-	$logger->info("Wrote: ".$fam_file_path, "\n");
+	$log->info("Wrote: ".$fam_file_path, "\n");
 	close($FILEHANDLE);
     }
     if ($execution_mode eq "sbatch") {
@@ -22541,7 +22627,7 @@ sub create_fam_file {
 	    }
 	    else {
 
-		$logger->fatal("Create fam file[subroutine]:Using 'execution_mode=sbatch' requires a filehandle to write to. Please supply filehandle to subroutine call.", "\n");
+		$log->fatal("Create fam file[subroutine]:Using 'execution_mode=sbatch' requires a filehandle to write to. Please supply filehandle to subroutine call.", "\n");
 		exit 1;
 	    }
 	}
@@ -22580,6 +22666,9 @@ sub check_annovar_tables {
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
 
     my $path;
 
@@ -22623,7 +22712,7 @@ sub check_annovar_tables {
 	}
 	else {  #annovar Table not supported by MIP
 
-	    $logger->error("You supplied annovar database: ".$active_parameter_href->{annovar_table_names}[$table_names_counter]." which is not supported by MIP. MIP can only process supported annovar databases\n");
+	    $log->error("You supplied annovar database: ".$active_parameter_href->{annovar_table_names}[$table_names_counter]." which is not supported by MIP. MIP can only process supported annovar databases\n");
 	    print_supported_annovar_table_names({active_parameter_href => $active_parameter_href,
 						 annovar_supported_table_names_ref => $annovar_supported_table_names_ref,
 						});
@@ -23090,6 +23179,9 @@ sub migrate_file_to_temp {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     ## Split relative path to file(s)
     my ($path_volume, $path_directory, $path_file_name) = File::Spec->splitpath($path);
 
@@ -23115,7 +23207,7 @@ sub migrate_file_to_temp {
 	}
 	else {
 
-	    $logger->fatal("Lacking xargs_file_name or file_index in supplied arguments. Please supply arguments xargs_file_name and file_index if xargs is supplied");
+	    $log->fatal("Lacking xargs_file_name or file_index in supplied arguments. Please supply arguments xargs_file_name and file_index if xargs is supplied");
 	    exit 1;
 	}
     }
@@ -23164,6 +23256,9 @@ sub migrate_file_from_temp {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     unless (defined($xargs)) {
 
 	print $FILEHANDLE "cp ";  #Copy
@@ -23181,7 +23276,7 @@ sub migrate_file_from_temp {
 	}
 	else {
 
-	    $logger->fatal("Lacking xargs_file_name or file_index in supplied arguments. Please supply arguments xargs_file_name and file_index if xargs is supplied");
+	    $log->fatal("Lacking xargs_file_name or file_index in supplied arguments. Please supply arguments xargs_file_name and file_index if xargs is supplied");
 	    exit 1;
 	}
     }
@@ -23391,11 +23486,14 @@ sub check_email_address {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     $$email_ref =~ /[ |\t|\r|\n]*\"?([^\"]+\"?@[^ <>\t]+\.[^ <>\t][^ <>\t]+)[ |\t|\r|\n]*/;
 
     unless (defined($1)) {
 
-	$logger->fatal("The supplied email: ".$$email_ref." seem to be malformed. ", "\n");
+	$log->fatal("The supplied email: ".$$email_ref." seem to be malformed. ", "\n");
 	exit 1;
     }
 }
@@ -23702,6 +23800,9 @@ sub xargs_command {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my $xargs_file_name;
 
     ##Check if there is a xargs_file_name to concatenate
@@ -23734,7 +23835,7 @@ sub xargs_command {
 	print $FILEHANDLE $first_command." ";
     }
     say $FILEHANDLE q? {} "?, "\n";  #Set placeholder
-    open ($XARGSFILEHANDLE, ">",$file_name.".".$xargs_file_counter.".xargs") or $logger->logdie("Can't write to '".$file_name.".".$xargs_file_counter.".xargs"."' :".$!."\n\n");  #Open XARGSFILEHANDLE
+    open ($XARGSFILEHANDLE, ">",$file_name.".".$xargs_file_counter.".xargs") or $log->logdie("Can't write to '".$file_name.".".$xargs_file_counter.".xargs"."' :".$!."\n\n");  #Open XARGSFILEHANDLE
     return ( ($xargs_file_counter + 1), $xargs_file_name);  #Increment to not overwrite xargs file with next call (if used) and xargs_file_name stub
 }
 
@@ -24105,6 +24206,9 @@ sub collect_gene_panels {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my %gene_panel;  #Collect each gene panel features
     my %header = (gene_panel => "gene_panel",
 		  version => "version",
@@ -24148,7 +24252,7 @@ sub collect_gene_panels {
 	}
 	else {
 
-	    $logger->warn("Unable to write ".$aggregate_gene_panels_key." aggregate gene panel(s) to qc_sample_info. Lacking ##gene_panel=<ID=[?] or version=[?] in aggregate gene panel(s) header."."\n");
+	    $log->warn("Unable to write ".$aggregate_gene_panels_key." aggregate gene panel(s) to qc_sample_info. Lacking ##gene_panel=<ID=[?] or version=[?] in aggregate gene panel(s) header."."\n");
 	}
 	%gene_panel = ();  #Reset hash for next line
     }
@@ -24228,6 +24332,9 @@ sub check_commandin_path {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my %seen;  #Track program paths that have already been checked
 
     foreach my $parameter_name (keys %$active_parameter_href) {
@@ -24244,12 +24351,12 @@ sub check_commandin_path {
 
 			if(can_run($program)) {  #IPC::Cmd
 
-			    $logger->info("Program check: ".$program." installed\n");
+			    $log->info("Program check: ".$program." installed\n");
 			    $seen{$program} = 1;
 			}
 			else {
 
-			    $logger->fatal("Could not detect ".$program." in your Path\n");
+			    $log->fatal("Could not detect ".$program." in your Path\n");
 			    exit 1;
 			}
 		    }
@@ -24885,13 +24992,16 @@ sub check_vep_directories {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     if ($$vep_directory_path_ref=~/ensembl-tools-release-(\d+)/) {
 
 	my $vep_directory_path_version = $1;
 
 	unless ($$vep_directory_cache_ref=~/ensembl-tools-release-$vep_directory_path_version/) {
 
-	    print $logger->fatal("Differing versions between '-vep_directory_path': ".$$vep_directory_path_ref." and '-vep_directory_cache': ".$$vep_directory_cache_ref, "\n");
+	    print $log->fatal("Differing versions between '-vep_directory_path': ".$$vep_directory_path_ref." and '-vep_directory_cache': ".$$vep_directory_cache_ref, "\n");
 	    exit 1;
 	}
     }
@@ -25288,6 +25398,9 @@ sub check_vt {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my %vt_regexp;
 
     $vt_regexp{decompose}{vt_decompose}{vcf_key} = "OLD_MULTIALLELIC";
@@ -25321,22 +25434,22 @@ sub check_vt {
 			    if ( ($vt_program eq "decompose") || ($vt_program eq "normalize") ){
 
 				$vt_regexp{$vt_program}{$vt_parameter_name}{switch} = 1;
-				$logger->warn("Cannot detect that ".$vt_program." has processed reference: ".$reference_file_path."\n");
+				$log->warn("Cannot detect that ".$vt_program." has processed reference: ".$reference_file_path."\n");
 			    }
 			    if ( ($vt_program eq "maxAF") && (any {$reference_file_path=~/$_/} @max_af_references) ) {
 
 				$vt_regexp{$vt_program}{$vt_parameter_name}{switch} = 1;
-				$logger->warn("Cannot detect that ".$vt_program." has processed reference: ".$reference_file_path."\n");
+				$log->warn("Cannot detect that ".$vt_program." has processed reference: ".$reference_file_path."\n");
 			    }
 			    if ( ($vt_program eq "calulate_af") && (any {$reference_file_path=~/$_/} @calulate_af_references) ) {
 
 				$vt_regexp{$vt_program}{$vt_parameter_name}{switch} = 1;
-				$logger->warn("Cannot detect that ".$vt_program." has processed reference: ".$reference_file_path."\n");
+				$log->warn("Cannot detect that ".$vt_program." has processed reference: ".$reference_file_path."\n");
 			    }
 			}
 			else {  #Found vt processing track
 
-			    $logger->info("Reference check: ".$reference_file_path." vt:".$vt_program." - PASS\n");
+			    $log->info("Reference check: ".$reference_file_path." vt:".$vt_program." - PASS\n");
 			}
 		    }
 		    last;  #No need to test the same reference over and over
@@ -25846,11 +25959,14 @@ sub detect_trio {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my %trio;
 
     if (scalar(@{ $active_parameter_href->{sample_ids} }) eq 1) {
 
-	$logger->info("Found single sample: ".$active_parameter_href->{sample_ids}[0], "\n");
+	$log->info("Found single sample: ".$active_parameter_href->{sample_ids}[0], "\n");
 	return
     }
     elsif (scalar(@{ $active_parameter_href->{sample_ids} }) eq 3) {
@@ -25876,7 +25992,7 @@ sub detect_trio {
 	}
 	if (scalar(keys %trio) == 3) {
 
-	    $logger->info("Found trio: Child = ".$trio{child}.", Father = ".$trio{father}.", Mother = ".$trio{mother}, "\n");
+	    $log->info("Found trio: Child = ".$trio{child}.", Father = ".$trio{father}.", Mother = ".$trio{mother}, "\n");
 	    return 1
 	}
     }
@@ -25976,6 +26092,9 @@ sub check_prioritize_variant_callers {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my @priority_calls = split(",", $active_parameter_href->{gatk_combinevariants_prioritize_caller});
     my @variant_caller_aliases;  #No matching variant caller
 
@@ -25989,7 +26108,7 @@ sub check_prioritize_variant_callers {
 
 	    if (! ( any {$_ eq $$program_outdirectory_name_ref} @priority_calls ) ) {  #If element is not part of string
 
-		$logger->fatal("gatk_combinevariants_prioritize_caller does not contain active variant caller: '".$$program_outdirectory_name_ref."'");
+		$log->fatal("gatk_combinevariants_prioritize_caller does not contain active variant caller: '".$$program_outdirectory_name_ref."'");
 		exit 1;
 	    }
 	}
@@ -25997,7 +26116,7 @@ sub check_prioritize_variant_callers {
 
 	    if ( ( any {$_ eq $$program_outdirectory_name_ref} @priority_calls ) ) {  #If element IS part of string
 
-		$logger->fatal("gatk_combinevariants_prioritize_caller contains deactivated variant caller: '".$$program_outdirectory_name_ref."'");
+		$log->fatal("gatk_combinevariants_prioritize_caller contains deactivated variant caller: '".$$program_outdirectory_name_ref."'");
 		exit 1;
 	    }
 	}
@@ -26008,7 +26127,7 @@ sub check_prioritize_variant_callers {
 
 	if (! ( any {$_ eq $prioritize_call} @variant_caller_aliases ) ) {  #If element is not part of string
 
-	    $logger->fatal("gatk_combinevariants_prioritize_caller: '".$prioritize_call."' does not match any supported variant caller: '".join(",", @variant_caller_aliases)."'");
+	    $log->fatal("gatk_combinevariants_prioritize_caller: '".$prioritize_call."' does not match any supported variant caller: '".join(",", @variant_caller_aliases)."'");
 	    exit 1;
 	}
     }
@@ -26101,6 +26220,9 @@ sub check_aligner {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my %aligner;
 
     foreach my $aligner (@{ $parameter_href->{dynamic_parameter}{aligners} }) {
@@ -26122,8 +26244,8 @@ sub check_aligner {
     }
     if ($aligner{total_active_aligner_count} > 1) {
 
-	$logger->fatal($USAGE, "\n");
-	$logger->fatal("You have activate more than 1 aligner: ".join(", ", @{ $aligner{active_aligners} }).". MIP currently only supports 1 aligner per analysis.", "\n");
+	$log->fatal($USAGE, "\n");
+	$log->fatal("You have activate more than 1 aligner: ".join(", ", @{ $aligner{active_aligners} }).". MIP currently only supports 1 aligner per analysis.", "\n");
 	exit 1;
     }
 }
@@ -26609,13 +26731,16 @@ sub check_program_mode {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my @allowed_values = (0, 1, 2);
 
     foreach my $program (@{ $parameter_href->{dynamic_parameter}{program} }) {
 
 	if (! ( any {$_ eq $active_parameter_href->{$program}} @allowed_values ) ) { #If element is not part of array
 
-	    $logger->fatal("'".$active_parameter_href->{$program}."' Is not an allowed mode for program '--".$program."'. Set to: ".join("|", @allowed_values));
+	    $log->fatal("'".$active_parameter_href->{$program}."' Is not an allowed mode for program '--".$program."'. Set to: ".join("|", @allowed_values));
 	    exit 1;
 	}
     }
@@ -26764,6 +26889,9 @@ sub check_sample_id_in_parameter_path {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     foreach my $parameter_name (@$parameter_names_ref) {  #Lopp through all hash parameters supplied
 
 	my %seen;  #Hash to test duplicate sample_ids later
@@ -26778,7 +26906,7 @@ sub check_sample_id_in_parameter_path {
 
 		if ($seen{$sample_id} > 1) {  #Check sample_id are unique
 
-		    $logger->fatal("Sample_id: ".$sample_id." is not uniqe in '-".$parameter_name." '".$key."=".join(",", @parameter_samples),"\n");
+		    $log->fatal("Sample_id: ".$sample_id." is not uniqe in '-".$parameter_name." '".$key."=".join(",", @parameter_samples),"\n");
 		    exit 1;
 		}
 	    }
@@ -26787,7 +26915,7 @@ sub check_sample_id_in_parameter_path {
 
 	    if ( ! (any {$_ eq $sample_id} (keys %seen)) ) {  #If sample_id is not present in parameter_name hash
 
-		$logger->fatal("Could not detect ".$sample_id." for '--".$parameter_name."'. Provided sample_ids are: ".join(", ", (keys %seen)), "\n");
+		$log->fatal("Could not detect ".$sample_id." for '--".$parameter_name."'. Provided sample_ids are: ".join(", ", (keys %seen)), "\n");
 		exit 1;
 	    }
 	}
@@ -26821,6 +26949,9 @@ sub check_sample_id_in_parameter {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     foreach my $parameter_name (@$parameter_names_ref) {  #Lopp through all hash parameters supplied
 
 	if (defined($active_parameter_href->{$parameter_name})) {
@@ -26830,14 +26961,14 @@ sub check_sample_id_in_parameter {
 		## Check that a value exists
 		if (! defined($active_parameter_href->{$parameter_name}{$sample_id})) {
 
-		    $logger->fatal("Could not find value for ".$sample_id." for parameter '--".$parameter_name."'", "\n");
+		    $log->fatal("Could not find value for ".$sample_id." for parameter '--".$parameter_name."'", "\n");
 		    exit 1;
 		}
 
 		## If sample_id is not present in parameter_name hash
 		if ( ! (any {$_ eq $sample_id} (keys $active_parameter_href->{$parameter_name})) ) {
 
-		    $logger->fatal("Could not detect ".$sample_id." for parameter '--".$parameter_name."'. Provided sample_ids for parameter are: ".join(", ", (keys $active_parameter_href->{$parameter_name})), "\n");
+		    $log->fatal("Could not detect ".$sample_id." for parameter '--".$parameter_name."'. Provided sample_ids for parameter are: ".join(", ", (keys $active_parameter_href->{$parameter_name})), "\n");
 		    exit 1;
 		}
 	    }
@@ -26873,6 +27004,9 @@ sub get_exom_target_bed_file {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my %seen;
 
     foreach my $exome_target_bed_file (keys $active_parameter_href->{exome_target_bed}) {
@@ -26892,7 +27026,7 @@ sub get_exom_target_bed_file {
     }
     if ( ! defined($seen{$$sample_id_ref})) {
 
-	$logger->fatal("Could not detect ".$sample_id_ref." in '-exome_target_bed' associated files in sub routine get_exom_target_bed_file", "\n");
+	$log->fatal("Could not detect ".$sample_id_ref." in '-exome_target_bed' associated files in sub routine get_exom_target_bed_file", "\n");
 	exit 1;
     }
 }
@@ -27239,6 +27373,9 @@ sub detect_phenotype {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     if ($phenotype eq 2) {  #Affected
 
 	push(@{ $parameter_href->{dynamic_parameter}{affected} }, $$sample_id_ref);
@@ -27253,7 +27390,7 @@ sub detect_phenotype {
     }
     else {
 
-	$logger->fatal("Not allowed phenotype".$phenotype." detected in pedigree file");
+	$log->fatal("Not allowed phenotype".$phenotype." detected in pedigree file");
     }
 }
 
@@ -27470,7 +27607,10 @@ sub check_founder_id {
     
    
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
+    
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+    
   SAMPLE:
     foreach my $pedigree_sample_href (@{ $pedigree_href->{samples} }) {
 	
@@ -27483,7 +27623,7 @@ sub check_founder_id {
 		
 		if (! ( any {$_ eq $founder} @$pedigree_sample_ids_ref ) ) {  #If element is not part of array
 		    
-		    $logger->fatal("Could not find founder sample_id: ".$founder." in pedigree file\n");
+		    $log->fatal("Could not find founder sample_id: ".$founder." in pedigree file\n");
 		    exit 1;
 		}
 	    }	
@@ -27607,7 +27747,11 @@ sub check_vcfanno_toml {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
     
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    open($FILEHANDLE, "<", $vcfanno_file_toml) or $logger->logdie("Can't open '".$vcfanno_file_toml."': ".$!."\n");
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
+    open($FILEHANDLE, "<", $vcfanno_file_toml) or $log->logdie("Can't open '".$vcfanno_file_toml."': ".$!."\n");
 
     while (<$FILEHANDLE>) {
 
@@ -27619,7 +27763,7 @@ sub check_vcfanno_toml {
 
 	    if($file_path_freq ne $vcfanno_file_freq) {
 
-		$logger->fatal("The supplied vcfanno_config_file: ".$vcfanno_file_freq." does not match record 'file=".$file_path_freq."' in the sv_vcfanno_config file: ".$vcfanno_file_toml);
+		$log->fatal("The supplied vcfanno_config_file: ".$vcfanno_file_freq." does not match record 'file=".$file_path_freq."' in the sv_vcfanno_config file: ".$vcfanno_file_toml);
 		exit 1;
 	    }
 	    last;
@@ -27853,7 +27997,10 @@ sub CheckTemplateFilesPaths {
     my $file_name_ref = $_[0];
     my $parameter_name = $_[1];
 
-    open(my $TF, "<", $$file_name_ref) or $logger->logdie("Can't open '".$$file_name_ref."':".$!."\n");
+    ## Retrieve logger object now that log_file has been set
+    my $log = Log::Log4perl->get_logger("MIP");
+
+    open(my $TF, "<", $$file_name_ref) or $log->logdie("Can't open '".$$file_name_ref."':".$!."\n");
 
     while (<$TF>) {
 
