@@ -35,23 +35,30 @@ use Path::Iterator::Rule;
 use List::Util qw(any all);
 
 ##MIPs lib/
-use lib catdir($Bin, "lib");
+use lib catdir($Bin, "lib");  #Add MIPs internal lib
 use File::Format::Yaml qw(load_yaml write_yaml);
 use MIP_log::Log4perl qw(initiate_logger);
+use Check::Check_modules qw(check_modules);
 
 our $USAGE;
 
 BEGIN {
 
-    my @modules = ("YAML", "Log::Log4perl", "Path::Iterator::Rule", "List::Util");
+    my @modules = ("YAML",
+		   "Path::Iterator::Rule",
+		   "List::Util",
+		   "File::Format::Yaml",
+		   "Log::Log4perl",
+		   "MIP_log::Log4perl",
+	);
 
     ## Evaluate that all modules required are installed
-    eval_modules({modules_ref => \@modules,
-		 });
+    Check::Check_modules::check_modules({modules_ref => \@modules,
+					 program_name => $0,
+					}); 
 
     $USAGE =
-	qq{
-mip.pl  -ifd [infile_dirs=sample_id] -sd [script_dir] -rd [reference_dir] -p [project_id] -s [sample_ids,.,.,.,n] -em [email] -osd [outscript_dir] -odd [outdata_dir] -f [family_id] -p[program] -at [sample_id=analysis_type]
+	basename($0).qq{ -ifd [infile_dirs=sample_id] -sd [script_dir] -rd [reference_dir] -p [project_id] -s [sample_ids,.,.,.,n] -em [email] -osd [outscript_dir] -odd [outdata_dir] -f [family_id] -p[program] -at [sample_id=analysis_type]
                ####MIP
                -ifd/--infile_dirs Infile directory(s) (Hash infile_dirs=sample_id; mandatory)
                -sd/--script_dir The pipeline custom script in directory (mandatory)
@@ -308,46 +315,6 @@ mip.pl  -ifd [infile_dirs=sample_id] -sd [script_dir] -rd [reference_dir] -p [pr
                -pars/--panalysisrunstatus Sets the analysis run status flag to finished in sample_info_file (defaults to "1" (=yes))
                -psac/--psacct Generating sbatch script for SLURM info on each submitted job (defaults to "1" (=yes);Note: Must be submitted manually to SLURM)
 	   };
-
-    sub eval_modules {
-
-	##eval_modules
-
-	##Function : Evaluate that all modules required are installed
-	##Returns  : ""
-	##Arguments: $modules_ref
-	##         : $modules_ref => Array of module names
-
-	local $Params::Check::PRESERVE_CASE = 1;
-
-	my ($arg_href) = @_;
-
-	##Flatten argument(s)
-	my $modules_ref;
-
-	my $tmpl = {
-	    modules_ref => { required => 1, default => [], strict_type => 1, store => \$modules_ref},
-	};
-
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-	foreach my $module (@$modules_ref) {
-
-	    $module =~s/::/\//g;  #Replace "::" with "/" since the automatic replacement magic only occurs for barewords.
-	    $module .= ".pm";  #Add perl module ending for the same reason
-
-	    eval {
-
-		require $module;
-	    };
-	    if($@) {
-
-		warn("NOTE: ".$module." not installed - Please install to run MIP.\n");
-		warn("NOTE: Aborting!\n");
-		exit 1;
-	    }
-	}
-    }
 }
 
 ####Script parameters
@@ -482,7 +449,7 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 						     }); exit;},
 	   'l|log_file:s' => \$parameter{log_file}{value},
 	   'h|help' => sub { say STDOUT $USAGE; exit;},  #Display help text
-	   'v|version' => sub { say STDOUT "\nMip.pl ".$mip_version, "\n"; exit;},  #Display version number
+	   'v|version' => sub { say STDOUT "\n".basename($0)." ".$mip_version, "\n"; exit;},  #Display version number
 	   'psfq|psplit_fastq_file=n' => \$parameter{psplit_fastq_file}{value},
 	   'sfqrdb|split_fastq_file_read_batch=n' => \$parameter{split_fastq_file_read_batch}{value},
 	   'pgz|pgzip_fastq=n' => \$parameter{pgzip_fastq}{value},

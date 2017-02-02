@@ -10,7 +10,7 @@ use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
 use Test::More;
 use FindBin qw($Bin);
-use File::Basename qw(dirname);
+use File::Basename qw(dirname basename);
 use File::Path qw(remove_tree);
 use File::Spec::Functions qw(catfile catdir devnull);
 use Params::Check qw[check allow last_error];
@@ -21,22 +21,26 @@ use Cwd;
 our $USAGE;
 
 BEGIN {
+
     $USAGE =
-	qq{mip.t
+	basename($0).qq{
            -c/--config_file YAML config file for analysis parameters (defaults to ../templates/mip_travis_config.yaml")
+           -vb/--verbose Verbose
            -h/--help Display this help message   
            -v/--version Display version
         };    
 }
 
-my $mip_version = "0.0.0";
+my $verbose = 1;
+my $mip_version = "0.0.1";
 
 my $config_file = catfile(dirname($Bin), "templates", "mip_travis_config.yaml");
 
 ###User Options
-GetOptions('c|config_file:s' => \$config_file,
+GetOptions('vb|verbose' => $verbose,
+	   'c|config_file:s' => \$config_file,
 	   'h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
-	   'v|version' => sub { print STDOUT "\ntest.t ".$mip_version, "\n\n"; exit;},  #Display version number
+	   'v|version' => sub { print STDOUT "\n".basename($0)." ".$mip_version, "\n\n"; exit;},  #Display version number
 );
 
 ok(check_command_in_path({program => "mip.pl"}), "Checking can run mip.pl");
@@ -44,8 +48,6 @@ ok(check_command_in_path({program => "mip.pl"}), "Checking can run mip.pl");
 my $mip_script = catfile(dirname($Bin), "mip.pl");
 
 ## Test execution of mip.pl
-my $verbose = 1;
-
 my $cmds_ref = [$mip_script,
 		"-f", "643594-miptest",
 		"-c", $config_file,

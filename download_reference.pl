@@ -1,32 +1,48 @@
 #!/usr/bin/env perl
 
-use strict;
-use warnings;
+use Modern::Perl '2014';
 use warnings qw( FATAL utf8 );
+use autodie qw(open close :all);
+use v5.18;  #Require at least perl 5.18
 use utf8;
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
 
-use Getopt::Long;
-use Params::Check qw[check allow last_error];
-$Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 use Cwd;
 use Cwd qw(abs_path);
-use FindBin qw($Bin); #Find directory of script
-use IO::Handle;
-use File::Basename qw(dirname);
+use File::Basename qw(dirname basename);
 use File::Spec::Functions qw(catfile catdir devnull);
+use FindBin qw($Bin); #Find directory of script
+use Getopt::Long;
+use IO::Handle;
+use Params::Check qw[check allow last_error];
+$Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 
 ##MIPs lib/
 use lib catdir($Bin, "lib");
 use File::Format::Yaml qw(load_yaml);
 use MIP_log::Log4perl qw(initiate_logger);
+use Check::Check_modules qw(check_modules);
 
 our $USAGE;
 
 BEGIN {
+
+    my @modules = ("Modern::Perl",
+		   "autodie",
+		   "YAML",
+		   "File::Format::Yaml",
+		   "Log::Log4perl",
+		   "MIP_log::Log4perl",
+	);
+
+    ## Evaluate that all modules required are installed
+    Check::Check_modules::check_modules({modules_ref => \@modules,
+					 program_name => "download_reference",
+					});
+
     $USAGE =
-	qq{download.pl [options]
+	basename($0).qq{ [options]
            -rd/--reference_dir Reference(s) directory (Default: "")
            -r/--reference Reference to download (e.g. 'clinvar=20170104')
            -rd/--reference_genome_versions Reference versions to download ((Default: ["GRCh37", "hg38"]))
@@ -51,7 +67,7 @@ GetOptions('rd|reference_dir:s' => \$parameter{reference_dir},  #MIPs reference 
 	   'rg|reference_genome_versions:s' => \@{ $parameter{reference_genome_versions} },
 	   'l|log_file:s' => \$parameter{log_file},
 	   'h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
-	   'v|version' => sub { print STDOUT "\ninstall.pl ".$download_reference_version, "\n\n"; exit;},  #Display version number
+	   'v|version' => sub { print STDOUT "\n".basename($0)." ".$download_reference_version, "\n\n"; exit;},  #Display version number
     ) or help({USAGE => $USAGE,
 	       exit_code => 1,
 	      });

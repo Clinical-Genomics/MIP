@@ -14,7 +14,7 @@ use Cwd;
 use Cwd qw(abs_path);
 use FindBin qw($Bin); #Find directory of script
 use IO::Handle;
-use File::Basename qw(dirname);
+use File::Basename qw(dirname basename);
 use File::Spec::Functions qw(catfile catdir devnull);
 
 
@@ -22,7 +22,7 @@ our $USAGE;
 
 BEGIN {
     $USAGE =
-	qq{install.pl [options]
+	basename($0).qq{ [options]
            -env/--conda_environment Conda environment (Default: "mip")
            -cdp/--conda_path The conda path (Default: "HOME/miniconda")
            -cdu/--conda_update Update conda before installing (Supply flag to enable)
@@ -169,7 +169,7 @@ GetOptions('env|conda_environment:s'  => \$parameter{conda_environment},
 	   'rd|reference_dir:s' => \$parameter{reference_dir},  #MIPs reference directory
 	   'rg|reference_genome_versions:s' => \@{ $parameter{reference_genome_versions} },
 	   'h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
-	   'v|version' => sub { print STDOUT "\ninstall.pl ".$install_version, "\n\n"; exit;},  #Display version number
+	   'v|version' => sub { print STDOUT "\n".basename($0)." ".$install_version, "\n\n"; exit;},  #Display version number
     ) or help({USAGE => $USAGE,
 	       exit_code => 1,
 	      });
@@ -2126,16 +2126,17 @@ sub mip_scripts {
 
     ## Define MIP scripts and yaml files
     my @mip_scripts = ("calculate_af.pl",
+		       "download_reference.pl",
+		       "install.pl",
 		       "max_af.pl",
 		       "mip.pl",
 		       "qccollect.pl",
 		       "vcfparser.pl",
-		       "install.pl",
-		       "download_reference.pl",
 	);
     my %mip_sub_scripts;
-    $mip_sub_scripts{"definitions"} = ["define_parameters.yaml",
-				       "define_download_references.yaml"];
+    $mip_sub_scripts{"definitions"} = ["define_download_references.yaml",
+				       "define_parameters.yaml",
+	];
     $mip_sub_scripts{"t"} = ["install.t",
 			     "mip.t",
 			     "run_tests.t",
@@ -2144,7 +2145,8 @@ sub mip_scripts {
     $mip_sub_scripts{"templates"} = ["mip_config.yaml"];
 
     my @mip_directories = ("lib",
-	catdir("t", "data"));
+			   catdir("t", "data"),
+	);
 
     ## Check if the binary of the program being installed already exists
     if (check_conda_bin_file_exists({parameter_href => $parameter_href,

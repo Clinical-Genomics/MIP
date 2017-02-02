@@ -1,8 +1,8 @@
 #!/usr/bin/env perl
 
-use Modern::Perl '2014';
+use Modern::Perl '2014';    #CPAN
 use warnings qw( FATAL utf8 );
-use autodie;
+use autodie qw(open close :all);    #CPAN
 use v5.18;  #Require at least perl 5.18
 use utf8;  #Allow unicode characters in this script
 use open qw( :encoding(UTF-8) :std );
@@ -13,7 +13,7 @@ use charnames qw( :full :short );
 
 use Cwd;
 use Cwd qw(abs_path);  #Import absolute path function
-use File::Basename qw(dirname);
+use File::Basename qw(dirname basename);
 use File::Spec::Functions qw(catdir catfile devnull);
 use FindBin qw($Bin);  #Find directory of script
 use Getopt::Long;
@@ -30,12 +30,27 @@ use YAML;
 use lib catdir($Bin, "lib");
 use File::Format::Yaml qw(load_yaml write_yaml);
 use MIP_log::Log4perl qw(initiate_logger);
+use Check::Check_modules qw(check_modules);
 
 our $USAGE;
 
 BEGIN {
+
+    my @modules = ("Modern::Perl",
+		   "autodie",
+		   "YAML",
+		   "File::Format::Yaml",
+		   "Log::Log4perl",
+		   "MIP_log::Log4perl",
+	);
+
+    ## Evaluate that all modules required are installed
+    Check::Check_modules::check_modules({modules_ref => \@modules,
+					 program_name => "qccollect",
+					});
+
     $USAGE =
-        qq{qccollect.pl -si [sample_info.yaml] -r [regexp.yaml] -o [outfile]
+        basename($0).qq{ -si [sample_info.yaml] -r [regexp.yaml] -o [outfile]
                -si/--sample_info_file Sample info file (YAML format, Supply whole path, mandatory)
                -r/--regexp_file Regular expression file (YAML format, Supply whole path, mandatory)
                -o/--outfile The data file output (Supply whole path, defaults to "qcmetrics.yaml")
@@ -65,7 +80,7 @@ GetOptions('si|sample_info_file:s' => \$sample_info_file,
 	   'ske|skip_evaluation' => \$skip_evaluation,
 	   'l|log_file:s' => \$log_file,
 	   'h|help' => sub { say STDOUT $USAGE; exit;},  #Display help text
-	   'v|version' => sub { say STDOUT "\nqccollect.pl ".$qccollect_version, "\n"; exit;},  #Display version number
+	   'v|version' => sub { say STDOUT "\n".basename($0)." ".$qccollect_version, "\n"; exit;},  #Display version number
     )  or help({USAGE => $USAGE,
 		exit_code => 1,
 	       });

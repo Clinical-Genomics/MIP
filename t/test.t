@@ -5,103 +5,67 @@
 
 use Modern::Perl '2014';
 use warnings qw( FATAL utf8 );
-use autodie;
+use autodie qw(open close :all);
 use v5.18;  #Require at least perl 5.18
 use utf8;  #Allow unicode characters in this script
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
 
 use Cwd  qw(abs_path);
+use File::Basename qw(dirname basename);
 use File::Spec::Functions qw(catdir catfile devnull);
-use File::Basename qw(dirname);
 use FindBin qw($Bin);  #Find directory of script
+use Getopt::Long;
 use Params::Check qw[check allow last_error];
+use Test::More;
+
 
 ##MIPs lib/
 use lib catdir(dirname($Bin), "lib");
 use File::Format::Yaml qw(load_yaml);
 use MIP_log::Log4perl qw(initiate_logger);
+use Check::Check_modules qw(check_modules);
+
+our $USAGE;
 
 BEGIN {
 
-
-    my @modules = ("YAML",
-		   "Log::Log4perl",
-		   "Path::Iterator::Rule",
-		   "Set::IntervalTree",  # vcfParser
+    my @modules = ("Modern::Perl",  #MIP
+		   "autodie",  #MIP
+		   "IPC::System::Simple",  #MIP
+		   "Path::Iterator::Rule",  #MIP
+		   "YAML",  #MIP
+		   "File::Format::Yaml", #MIP
+		   "Log::Log4perl",  #MIP
+		   "MIP_log::Log4perl",  #MIP
+		   "List::Util",  #MIP
+		   "Set::IntervalTree",  # MIP/vcfParser.pl
 		   "Net::SSLeay",  # VEP
 		   "LWP::Simple",  # VEP
 		   "LWP::Protocol::https",  # VEP
+		   "PerlIO::gzip",  #VEP
+		   "IO::Uncompress::Gunzip",  #VEP
+		   "HTML::Lint",  #VEP
 		   "Archive::Zip",  # VEP
+		   "Archive::Extract",  #VEP
 		   "DBI",  # VEP
 		   "JSON",  # VEP
 		   "DBD::mysql",  # VEP
 		   "CGI",  # VEP
 		   "Sereal::Encoder",  # VEP
 		   "Sereal::Decoder",  # VEP
+		   "Bio::Root::Version",  #VEP
+		   "Module::Build", #VEP
+		   "File::Copy::Recursive", #VEP
 	);
 
     ## Evaluate that all modules required are installed
-    eval_modules({modules_ref => \@modules,
-		 });
-
-
-    sub eval_modules {
-
-	##eval_modules
-
-	##Function : Evaluate that all modules required are installed
-	##Returns  : ""
-	##Arguments: $modules_ref
-	##         : $modules_ref => Array of module names
-
-	local $Params::Check::PRESERVE_CASE = 1;
-
-	my ($arg_href) = @_;
-
-	##Flatten argument(s)
-	my $modules_ref;
-
-	my $tmpl = {
-	    modules_ref => { required => 1, default => [], strict_type => 1, store => \$modules_ref},
-	};
-
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-	foreach my $module (@$modules_ref) {
-
-	    $module =~s/::/\//g;  #Replace "::" with "/" since the automatic replacement magic only occurs for barewords.
-	    $module .= ".pm";  #Add perl module ending for the same reason
-
-	    eval {
-
-		require $module;
-	    };
-	    if($@) {
-
-		warn("NOTE: ".$module." not installed - Please install to run MIP.\n");
-		warn("NOTE: Aborting!\n");
-		exit 1;
-	    }
-	}
-    }
-}
-
-use Test::More;
-use Getopt::Long;
-use FindBin qw($Bin); #Find directory of script
-use File::Basename qw(dirname);
-use File::Spec::Functions qw(catdir);
-
-##Cpan
-use YAML;
-
-use vars qw($USAGE);
-
-BEGIN {
+    Check::Check_modules::check_modules({modules_ref => \@modules,
+					 program_name => $0,
+					});
 
     $USAGE =
-	qq{test.t infile.vcf [VCF] config_file [YAML]
+	basename($0).qq{ infile.vcf [VCF] config_file [YAML]
            -h/--help Display this help message
            -v/--version Display version
         };
@@ -128,7 +92,7 @@ $config_file = $ARGV[1];
 
 ###User Options
 GetOptions('h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
-	   'v|version' => sub { print STDOUT "\ninstall.pl ".$test_version, "\n\n"; exit;},  #Display version number
+	   'v|version' => sub { print STDOUT "\n".basename($0)." ".$test_version, "\n\n"; exit;},  #Display version number
     );
 
 unless (defined($infile)) {
@@ -149,15 +113,15 @@ test_modules();
 if (defined($config_file)) {  #Input from cmd
 
     ## Loads a YAML file into an arbitrary hash and returns it.
-    %active_parameter = load_yaml({yaml_file => $config_file,
-				  });  
+    %active_parameter = File::Format::Yaml::load_yaml({yaml_file => $config_file,
+						      });  
 }
 
 if (exists($active_parameter{pedigree_file})) {
     
     ## Loads a YAML file into an arbitrary hash and returns it.
-    %pedigree = load_yaml({yaml_file => $active_parameter{pedigree_file},
-			  });
+    %pedigree = File::Format::Yaml::load_yaml({yaml_file => $active_parameter{pedigree_file},
+					      });
     
     ### Sample level info
     foreach my $pedigree_sample_href (@{ $pedigree{samples} }) {

@@ -1,8 +1,8 @@
 #!/usr/bin/env perl
 
-use Modern::Perl '2014';
+use Modern::Perl '2014';  #CPAN
 use warnings qw( FATAL utf8 );
-use autodie;
+use autodie qw(open close :all);    #CPAN
 use v5.18;  #Require at least perl 5.18
 use utf8;  #Allow unicode characters in this script
 use open qw( :encoding(UTF-8) :std );
@@ -10,23 +10,39 @@ use charnames qw( :full :short );
 
 use Cwd;
 use FindBin qw($Bin);  #Find directory of script
+use File::Basename qw(basename);
 use File::Spec::Functions qw(catdir catfile devnull);
 use Getopt::Long;
 use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 use IO::File;
+
+## Third party module(s)
 use Set::IntervalTree; #CPAN
 
 ##MIPs lib/
 use lib catdir($Bin, "lib");
 use MIP_log::Log4perl qw(initiate_logger);
+use Check::Check_modules qw(check_modules);
 
 our $USAGE;
 
 BEGIN {
 
+    my @modules = ("Modern::Perl",
+		   "autodie",
+		   "Set::IntervalTree",
+		   "Log::Log4perl",
+		   "MIP_log::Log4perl",
+	);
+
+    ## Evaluate that all modules required are installed
+    Check::Check_modules::check_modules({modules_ref => \@modules,
+					 program_name => $0,
+					});
+
     $USAGE =
-	qq{vcfparser.pl infile.vcf > outfile.vcf
+	basename($0).qq{ infile.vcf > outfile.vcf
            -pvep/--parse_vep Parse VEP transcript specific entries (Default: 0 (=no))
            -rf/--range_feature_file (tsv)
            -rf_ac/--range_feature_annotation_columns
@@ -78,7 +94,7 @@ GetOptions('pvep|parse_vep:s' => \$parse_vep,
 	   'peg|per_gene:n' => \$per_gene,
 	   'l|log_file:s' => \$log_file,
 	   'h|help' => sub { say STDOUT $USAGE; exit;},  #Display help text
-	   'v|version' => sub { say STDOUT "\nvcfparser.pl ".$vcfparser_version, "\n"; exit;},  #Display version number
+	   'v|version' => sub { say STDOUT "\n".basename($0)." ".$vcfparser_version, "\n"; exit;},  #Display version number
     )  or help({USAGE => $USAGE,
 		exit_code => 1,
 	       });

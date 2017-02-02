@@ -9,11 +9,11 @@ BEGIN {
 	);
 
     ## Evaluate that all modules required are installed
-    &EvalModules(\@modules);
+    &check_modules(\@modules);
     
-    sub EvalModules {
+    sub check_modules {
 	
-	##EvalModules
+	##check_modules
 	
 	##Function : Evaluate that all modules required are installed 
 	##Returns  : ""
@@ -22,7 +22,7 @@ BEGIN {
 	
 	my $modules_ref = $_[0];
 	
-	foreach my $module (@{$modules_ref}) {
+	foreach my $module (@$modules_ref) {
 	    
 	    $module =~s/::/\//g;  #Replace "::" with "/" since the automatic replacement magic only occurs for barewords.
 	    $module .= ".pm";  #Add perl module ending for the same reason
@@ -33,7 +33,7 @@ BEGIN {
 	    };
 	    if($@) {
 		
-		warn("NOTE: ".$module." not installed - Please install to run mip tests.\n");
+		warn("NOTE: ".$module." not installed - Please install to run install.t.\n");
 		warn("NOTE: Aborting!\n");
 		exit 1;
 	    }
@@ -51,18 +51,18 @@ BEGIN {
     ##Modules with import
     my %perl_module;
 
-    $perl_module{charnames} = qw( :full :short );
-    $perl_module{File::Basename} = qw(dirname);
-    $perl_module{File::Spec::Functions} =  qw(catfile catdir devnull);
-    $perl_module{FindBin} = qw($Bin);
-    $perl_module{IPC::Cmd} = qw[can_run run];
-    $perl_module{open} = qw( :encoding(UTF-8) :std );
-    $perl_module{Params::Check} = qw[check allow last_error];
-    $perl_module{warnings} = qw( FATAL utf8 );
+    $perl_module{charnames} = [qw(:full :short)];
+    $perl_module{"File::Basename"} = [qw(dirname basename)];
+    $perl_module{"File::Spec::Functions"} =  [qw(catfile catdir devnull)];
+    $perl_module{FindBin} = [qw($Bin)];
+    $perl_module{"IPC::Cmd"} = [qw(can_run run)];
+    $perl_module{open} = [qw(:encoding(UTF-8) :std )];
+    $perl_module{"Params::Check"} = [qw(check allow last_error)];
+    $perl_module{warnings} = [qw(FATAL utf8 )];
     
     while (my ($module, $module_import) = each %perl_module) { 
 
-	use_ok($module, $module_import) or BAIL_OUT "Can't load $module";
+	use_ok($module, @$module_import) or BAIL_OUT "Can't load $module";
     }
     
     ##Modules
@@ -74,6 +74,7 @@ BEGIN {
 	);
 
     for my $module (@modules) {
+
 	require_ok($module) or BAIL_OUT "Can't load $module";
     }
 }
@@ -87,7 +88,7 @@ use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
 use Test::More;
 use FindBin qw($Bin);
-use File::Basename qw(dirname);
+use File::Basename qw(dirname basename);
 use File::Spec::Functions qw(catfile catdir devnull);
 use Params::Check qw[check allow last_error];
 use IPC::Cmd qw[can_run run];
@@ -97,18 +98,22 @@ use Cwd;
 our $USAGE;
 
 BEGIN {
+
     $USAGE =
-	qq{install.t
+	basename($0).qq{
+           -vb/--verbose Verbose
            -h/--help Display this help message   
            -v/--version Display version
         };    
 }
 
+my $verbose = 1;
 my $install_version = "0.0.0";
 
 ###User Options
-GetOptions('h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
-	   'v|version' => sub { print STDOUT "\ntest.t ".$install_version, "\n\n"; exit;},  #Display version number
+GetOptions('vb|verbose' => $verbose,
+    'h|help' => sub { done_testing(); print STDOUT $USAGE, "\n"; exit;},  #Display help text
+	   'v|version' => sub { done_testing(); print STDOUT "\n".basename($0)." ".$install_version, "\n\n"; exit;},  #Display version number
 );
 
 ok(check_command_in_path({program => "conda"}), "Checking can run of conda binary");
@@ -118,8 +123,6 @@ ok(catfile(dirname($Bin), "install.pl"), "Locating install script in MIP dir");
 my $install_script = catfile(dirname($Bin), "install.pl");
 
 ## Test execution of install.pl
-my $verbose = 1;
-
 my $cmds_ref = ["perl", $install_script, "-sp", "mip_scripts"];  # Create array ref for cmd
 my( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
     run( command => $cmds_ref, verbose => $verbose );

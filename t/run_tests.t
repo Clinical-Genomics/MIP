@@ -2,43 +2,32 @@
 
 ###Copyright 2016 Henrik Stranneheim
 
+use Modern::Perl '2014';
+use warnings qw( FATAL utf8 );
+use autodie;
+use v5.18;  #Require at least perl 5.18
+use utf8;
+use open qw( :encoding(UTF-8) :std );
+use charnames qw( :full :short );
+
+use FindBin qw($Bin);  #Find directory of script
+use File::Basename qw(dirname basename);
+use File::Spec::Functions qw(catdir catfile devnull);
+
+##MIPs lib/
+use lib catdir(dirname($Bin), "lib");
+use Check::Check_modules qw(check_modules);
+
 BEGIN {
 
     ## Special case to initiate testing
     my @modules = ("Test::More",
 	);
 
-    ## Evaluate that all modules required are installed
-    &EvalModules(\@modules);
-    
-    sub EvalModules {
-	
-	##EvalModules
-	
-	##Function : Evaluate that all modules required are installed 
-	##Returns  : ""
-	##Arguments: $modules_ref
-	##         : $modules_ref => Array of module names
-	
-	my $modules_ref = $_[0];
-	
-	foreach my $module (@{$modules_ref}) {
-	    
-	    $module =~s/::/\//g;  #Replace "::" with "/" since the automatic replacement magic only occurs for barewords.
-	    $module .= ".pm";  #Add perl module ending for the same reason
-	    
-	    eval { 
-		
-		require $module; 
-	    };
-	    if($@) {
-		
-		warn("NOTE: ".$module." not installed - Please install to run mip tests.\n");
-		warn("NOTE: Aborting!\n");
-		exit 1;
-	    }
-	}
-    }
+    # Evaluate that all modules required are installed
+    Check::Check_modules::check_modules({modules_ref => \@modules,
+					 program_name => $0,
+					});
 
     ##Initate tests
     print STDOUT "Initiate tests:\n";
@@ -51,23 +40,23 @@ BEGIN {
     ##Modules with import
     my %perl_module;
 
-    $perl_module{autodie} = qw(open close :all);
-    $perl_module{charnames} = qw( :full :short );
-    $perl_module{Cwd} = qw(abs_path);
-    $perl_module{File::Basename} = qw(dirname basename);
-    $perl_module{File::Path} = qw(make_path remove_tree);
-    $perl_module{File::Spec::Functions} =  qw(catfile catdir devnull);
-    $perl_module{FindBin} = qw($Bin);
-    $perl_module{List::Util} = qw(any all);
-    $perl_module{IPC::Cmd} = qw[can_run run];
-    $perl_module{Modern::Perl} = qw(2014);
-    $perl_module{open} = qw( :encoding(UTF-8) :std );
-    $perl_module{Params::Check} = qw[check allow last_error];
-    $perl_module{warnings} = qw( FATAL utf8 );
+    $perl_module{autodie} = [qw(open close :all)];
+    $perl_module{charnames} = [qw(:full :short)];
+    $perl_module{Cwd} = [qw(abs_path)];
+    $perl_module{"File::Basename"} = [qw(dirname basename)];
+    $perl_module{"File::Path"} = [qw(make_path remove_tree)];
+    $perl_module{"File::Spec::Functions"} =  [qw(catfile catdir devnull)];
+    $perl_module{FindBin} = [qw($Bin)];
+    $perl_module{"List::Util"} = [qw(any all)];
+    $perl_module{"IPC::Cmd"} = [qw(can_run run)];
+    $perl_module{"Modern::Perl"} = [qw(2014)];
+    $perl_module{open} = [qw(:encoding(UTF-8) :std)];
+    $perl_module{"Params::Check"} = [qw(check allow last_error)];
+    $perl_module{warnings} = [qw(FATAL utf8)];
     
     while (my ($module, $module_import) = each %perl_module) { 
 
-	use_ok($module, $module_import) or BAIL_OUT "Can't load $module";
+	use_ok($module, @$module_import) or BAIL_OUT "Can't load $module";
     }
     
     ##Modules
@@ -87,6 +76,7 @@ BEGIN {
 	);
 
     for my $module (@modules) {
+
 	require_ok($module) or BAIL_OUT "Can't load $module";
     }
 }
@@ -97,7 +87,7 @@ our $USAGE;
 
 BEGIN {
     $USAGE =
-	qq{run_tests.t
+	basename($0).qq{
            -h/--help Display this help message   
            -v/--version Display version
         };    
@@ -107,7 +97,7 @@ my $run_tests_version = "0.0.0";
 
 ###User Options
 GetOptions('h|help' => sub { done_testing(); print STDOUT $USAGE, "\n"; exit;},  #Display help text
-	   'v|version' => sub { done_testing(); print STDOUT "\ntest.t ".$run_tests_version, "\n\n"; exit;},  #Display version number
+	   'v|version' => sub { done_testing(); print STDOUT "\n".basename($0)." ".$run_tests_version, "\n\n"; exit;},  #Display version number
 );
 
 use TAP::Harness;
@@ -219,7 +209,7 @@ sub test_modules {
     ## Execution of programs
     use IPC::Cmd qw[can_run run];
     ok(can_run("perl"), "Can run IPC::Cmd");
-    ok($bool = IPC::Cmd->can_capture_buffer, "IPC::Cmd can capture buffer");
+    ok(my $bool = IPC::Cmd->can_capture_buffer, "IPC::Cmd can capture buffer");
 }
 
 
@@ -233,12 +223,12 @@ sub mip_scripts{
 ##         :
 
     my @mip_scripts = ("calculate_af.pl",
+		       "download_reference.pl",
+		       "install.pl",
 		       "max_af.pl",
 		       "mip.pl",
 		       "qccollect.pl",
 		       "vcfparser.pl",
-		       "install.pl",
-		       "download_reference.pl",
 	);
 
     foreach my $script (@mip_scripts) {
@@ -247,10 +237,14 @@ sub mip_scripts{
     }
 
     my %mip_sub_scripts;
-    $mip_sub_scripts{"definitions"} = ["define_parameters.yaml"];
-    $mip_sub_scripts{"t"} = ["run_tests.t",
+    $mip_sub_scripts{"definitions"} = ["define_download_references.yaml",
+				       "define_parameters.yaml",
+	];
+    $mip_sub_scripts{"t"} = ["install.t",
+			     "mip.t",
+			     "run_tests.t",
 			     "test.t",
-			     "install.t",
+			     
 	];
     $mip_sub_scripts{"templates"} = ["mip_config.yaml",
 				     "mip_travis_config.yaml",
@@ -264,5 +258,12 @@ sub mip_scripts{
 	    
 	    is(-e catfile(dirname($Bin), $directory, $script), 1, "Found MIP file: ".$script);
 	}
+    }
+    my @mip_directories = ("lib",
+			   catdir("t", "data"),
+	);
+    foreach my $directory (@mip_directories) {
+	
+	is(-e catfile(dirname($Bin), $directory), 1, "Found MIP dir: ".$directory);
     }
 }
