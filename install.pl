@@ -2153,7 +2153,7 @@ sub mip_scripts {
     $mip_sub_scripts{"templates"} = ["mip_config.yaml"];
 
     my @mip_directories = ("lib",
-			   catdir("t", "data"),
+			   "t",
 	);
 
     ## Check if the binary of the program being installed already exists
@@ -2181,7 +2181,7 @@ sub mip_scripts {
 
 	print $FILEHANDLE "cp -r ";
 	print $FILEHANDLE catdir($Bin, $directory)." ";
-	print $FILEHANDLE catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", $directory);
+	print $FILEHANDLE catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin");
 	print $FILEHANDLE "\n\n";
     }
 
