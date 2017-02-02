@@ -50,7 +50,8 @@ BEGIN {
            -vepp/--vep_plugin Supply a comma separated list of VEP plugins (Default: "UpDownDistance,LoFtool,Lof")
            -rhc/--rhocall Set the rhocall version (Default: "0.3")
            -rhcp/--rhocall_path Set the path to where to install rhocall (Defaults: "HOME/rhocall")
-
+           -cnvn/--cnvnator Set the cnvnator version (Default: 0.3.3)
+           -cnvnr/--cnvnator_root_binary Set the cnvnator root binary (Default: "root_v5.34.34.Linux-slc6-x86_64-gcc4.4.tar.gz") 
 
            ## Utility
            -psh/--prefer_shell Shell will be used for overlapping shell and biconda installations (Supply flag to enable)
@@ -130,6 +131,7 @@ $parameter{rhocall} = "0.3";
 $parameter{rhocall_path} = catdir($ENV{HOME}, "rhocall");
 
 $parameter{cnvnator} = "0.3.3";
+$parameter{cnvnator_root_binary} = "root_v5.34.34.Linux-slc6-x86_64-gcc4.4.tar.gz";
 #$parameter{findtranslocations} = "0";
 
 my $install_version = "1.0.1";
@@ -161,6 +163,7 @@ GetOptions('env|conda_environment:s'  => \$parameter{conda_environment},
 	   'rhc|rhocall:s' => \$parameter{rhocall},
 	   'rhcp|rhocall_path:s' => \$parameter{rhocall_path},
 	   'cnv|cnvnator:s' => \$parameter{cnvnator},
+	   'cnvnr|cnvnator_root_binary:s' => \$parameter{cnvnator_root_binary},
 #	   'ftr|findtranslocations:s' => \$parameter{findtranslocations},
 	   'psh|prefer_shell' => \$parameter{prefer_shell},  # Shell will be used for overlapping shell and biconda installations
 	   'ppd|print_parameters_default' => sub { print_parameters({parameter_href => \%parameter}); exit;},  #Display parameter defaults
@@ -1896,12 +1899,12 @@ sub cnvnator {
     print $FILEHANDLE "## Download Root\n";
 
     print $FILEHANDLE "wget --quiet https://root.cern.ch/download/root_v5.34.34.Linux-slc6-x86_64-gcc4.4.tar.gz ";  #Currently hardcoded
-    print $FILEHANDLE "-O root_v5.34.34.Linux-slc6-x86_64-gcc4.4.tar.gz ";  #Download outfile
+    print $FILEHANDLE "-O ".$parameter{cnvnator_root_binary}." ";  #Download outfile
     print $FILEHANDLE "\n\n";
 
     ## Extract
     print $FILEHANDLE "## Extract\n";
-    print $FILEHANDLE "tar xvf root_v5.34.34.Linux-slc6-x86_64-gcc4.4.tar.gz ";
+    print $FILEHANDLE "tar xvf ".$parameter{cnvnator_root_binary}." ";
     print $FILEHANDLE "\n\n";
 
     unless ($ENV{PATH}=~/$parameter{conda_path}\/envs\/$parameter_href->{conda_environment}\/root\/bin/) {
