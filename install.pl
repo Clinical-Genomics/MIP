@@ -682,7 +682,6 @@ sub create_conda_environment {
 	## Create conda environment
 	print $FILEHANDLE "### Creating Conda Environment and install: ".$parameter_href->{conda_environment}, "\n";
 	print $FILEHANDLE "conda create ";
-	print $FILEHANDLE "--quiet ";
 	print $FILEHANDLE "-n ".$parameter_href->{conda_environment}." ";
 	print $FILEHANDLE "-y ";
 	print $FILEHANDLE "pip ";
@@ -717,7 +716,6 @@ sub install_bioconda_modules {
     ## Install into conda environment using bioconda channel
     print $FILEHANDLE "### Installing into Conda Environment: ".$parameter_href->{conda_environment}, "\n";
     print $FILEHANDLE "conda install ";
-    print $FILEHANDLE "--quiet ";
     print $FILEHANDLE "-n ".$parameter_href->{conda_environment}." ";
     print $FILEHANDLE "-y ";
     print $FILEHANDLE "-c bioconda ";
