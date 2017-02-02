@@ -1076,6 +1076,7 @@ sub pip_install {
     ## Install PIP packages
     print $FILEHANDLE "## Install PIP packages\n";
     print $FILEHANDLE "pip install ";
+    print $FILEHANDLE "--quiet ";
 
     ## Install all PIP packages
     foreach my $program (keys %{ $parameter_href->{pip} }) {
