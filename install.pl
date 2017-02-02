@@ -75,7 +75,7 @@ $parameter{conda_environment} = "mip";
 $parameter{conda_path} = catdir($ENV{HOME}, "miniconda");
 $parameter{python_version} = "2.7";
 
-$parameter{bioconda}{bwa} = "0.7.15";
+$parameter{bioconda}{bwa} = "0.7.15-0";
 $parameter{bioconda}{bwakit} = "0.7.12";
 $parameter{bioconda_bwakit_patch} = "-0";  #For correct softlinking in share and bin in conda env
 $parameter{bioconda}{fastqc} = "0.11.5";
