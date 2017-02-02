@@ -99,9 +99,9 @@ $parameter{bioconda}{multiqc} = "0.8dev0";
 $parameter{bioconda}{plink2} = "1.90b3.35";
 $parameter{bioconda}{vcfanno} = "0.1.0";
 $parameter{bioconda}{gcc} = "4.8.5";  #Required for CNVnator
-$parameter{bioconda}{cmake} = "3.3.1";
-$parameter{bioconda}{boost} = "1.57.0";
-$parameter{bioconda_boost_patch} = "-4";
+#$parameter{bioconda}{cmake} = "3.3.1";
+#$parameter{bioconda}{boost} = "1.57.0";
+#$parameter{bioconda_boost_patch} = "-4";
 
 
 ##Perl Modules
