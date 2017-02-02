@@ -15,7 +15,7 @@ install:
 script:
 ## Run MIP install script
   - cd t; perl install.t; cd -
-  - perl install.pl -env test_environment -pei --perl_skip_test --perl_modules_force -vep 85 --vep_auto_flag al --vep_plugin 0
+  - perl install.pl -env test_environment -pei --perl_skip_test --perl_modules_force -vep 87 --vep_auto_flag al --vep_plugin 0
   - bash mip.sh
   - source ~/.bash_profile
   - source ~/.bashrc

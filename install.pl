@@ -132,7 +132,7 @@ $parameter{rhocall_path} = catdir($ENV{HOME}, "rhocall");
 $parameter{cnvnator} = "0.3.3";
 #$parameter{findtranslocations} = "0";
 
-my $install_version = "1.0.0";
+my $install_version = "1.0.1";
 
 ###User Options
 GetOptions('env|conda_environment:s'  => \$parameter{conda_environment},
@@ -678,7 +678,9 @@ sub create_conda_environment {
 
 	## Create conda environment
 	print $FILEHANDLE "### Creating Conda Environment and install: ".$parameter_href->{conda_environment}, "\n";
-	print $FILEHANDLE "conda create -n ".$parameter_href->{conda_environment}." ";
+	print $FILEHANDLE "conda create ";
+	print $FILEHANDLE "--quiet ";
+	print $FILEHANDLE "-n ".$parameter_href->{conda_environment}." ";
 	print $FILEHANDLE "-y ";
 	print $FILEHANDLE "pip ";
 	print $FILEHANDLE "python=".$parameter_href->{python_version}." ";
@@ -712,6 +714,7 @@ sub install_bioconda_modules {
     ## Install into conda environment using bioconda channel
     print $FILEHANDLE "### Installing into Conda Environment: ".$parameter_href->{conda_environment}, "\n";
     print $FILEHANDLE "conda install ";
+    print $FILEHANDLE "--quiet ";
     print $FILEHANDLE "-n ".$parameter_href->{conda_environment}." ";
     print $FILEHANDLE "-y ";
     print $FILEHANDLE "-c bioconda ";
@@ -1757,7 +1760,7 @@ sub varianteffectpredictor {
     print $FILEHANDLE "--ASSEMBLY ".$parameter_href->{vep_assemblies}[0]." ";
     print $FILEHANDLE "\n\n";
 
-    if (scalar( @{$parameter_href->{vep_assemblies}} ) > 1 ) {
+    if ( (scalar( @{$parameter_href->{vep_assemblies}} ) > 1) && ($parameter{vep_auto_flag}=~/c|f/ ) ) {
 
 	for (my $assembly_version=1;$assembly_version<scalar(@{$parameter_href->{vep_assemblies}});$assembly_version++) {
 
