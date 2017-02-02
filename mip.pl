@@ -26310,7 +26310,7 @@ sub cnvnator_stat {
     }
     if (defined($stderr_file)) {
 
-	print $FILEHANDLE "2> ".$stderr_file." ";
+	print $FILEHANDLE "2>> ".$stderr_file." ";
     }
     print $FILEHANDLE "; ";
 }
@@ -26411,7 +26411,7 @@ sub cnvnator_calling {
 
     if (defined($stderr_file)) {
 
-	print $FILEHANDLE "2> ".$stderr_file." ";
+	print $FILEHANDLE "2>> ".$stderr_file." ";
     }
     print $FILEHANDLE "> ".$outfile.".tmp ";
     print $FILEHANDLE "; ";

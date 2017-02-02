@@ -51,7 +51,7 @@ BEGIN {
            -rhc/--rhocall Set the rhocall version (Default: "0.3")
            -rhcp/--rhocall_path Set the path to where to install rhocall (Defaults: "HOME/rhocall")
            -cnvn/--cnvnator Set the cnvnator version (Default: 0.3.3)
-           -cnvnr/--cnvnator_root_binary Set the cnvnator root binary (Default: "root_v5.34.34.Linux-slc6-x86_64-gcc4.4.tar.gz") 
+           -cnvnr/--cnvnator_root_binary Set the cnvnator root binary (Default: "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz") 
 
            ## Utility
            -psh/--prefer_shell Shell will be used for overlapping shell and biconda installations (Supply flag to enable)
@@ -99,9 +99,9 @@ $parameter{bioconda}{multiqc} = "0.8dev0";
 $parameter{bioconda}{plink2} = "1.90b3.35";
 $parameter{bioconda}{vcfanno} = "0.1.0";
 $parameter{bioconda}{gcc} = "4.8.5";  #Required for CNVnator
-#$parameter{bioconda}{cmake} = "3.3.1";
-#$parameter{bioconda}{boost} = "1.57.0";
-#$parameter{bioconda_boost_patch} = "-4";
+$parameter{bioconda}{cmake} = "3.3.1";
+$parameter{bioconda}{boost} = "1.57.0";
+$parameter{bioconda_boost_patch} = "-4";
 
 
 ##Perl Modules
@@ -131,7 +131,7 @@ $parameter{rhocall} = "0.3";
 $parameter{rhocall_path} = catdir($ENV{HOME}, "rhocall");
 
 $parameter{cnvnator} = "0.3.3";
-$parameter{cnvnator_root_binary} = "root_v5.34.34.Linux-slc6-x86_64-gcc4.4.tar.gz";
+$parameter{cnvnator_root_binary} = "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz";
 #$parameter{findtranslocations} = "0";
 
 my $install_version = "1.0.1";
@@ -1954,14 +1954,15 @@ sub cnvnator {
 
     ## Configure
     print $FILEHANDLE "## Configure CNVnator samTools specific version\n";
-    print $FILEHANDLE "make";
+    print $FILEHANDLE "./configure --without-curses", "\n";
+    print $FILEHANDLE "make ";
     print $FILEHANDLE "\n\n";
 
     print $FILEHANDLE "## Move to CNVnator directory\n";
     print $FILEHANDLE "cd ..";
     print $FILEHANDLE "\n";
 
-    print $FILEHANDLE "make";
+    print $FILEHANDLE "make OMP=no";
     print $FILEHANDLE "\n\n";
 
     ## Make available from conda environment
