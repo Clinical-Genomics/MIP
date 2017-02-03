@@ -137,13 +137,6 @@ sample_info_file:
   exists_check: file
   type: path
   update_path: absolute_path
-script_dir:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  exists_check: directory
-  type: path
-  update_path: absolute_path
 reference_dir:
   associated_program:
    - mip

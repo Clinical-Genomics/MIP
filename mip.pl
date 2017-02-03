@@ -58,10 +58,9 @@ BEGIN {
 					}); 
 
     $USAGE =
-	basename($0).qq{ -ifd [infile_dirs=sample_id] -sd [script_dir] -rd [reference_dir] -p [project_id] -s [sample_ids,.,.,.,n] -em [email] -osd [outscript_dir] -odd [outdata_dir] -f [family_id] -p[program] -at [sample_id=analysis_type]
+	basename($0).qq{ -ifd [infile_dirs=sample_id] -rd [reference_dir] -p [project_id] -s [sample_ids,.,.,.,n] -em [email] -osd [outscript_dir] -odd [outdata_dir] -f [family_id] -p[program] -at [sample_id=analysis_type]
                ####MIP
                -ifd/--infile_dirs Infile directory(s) (Hash infile_dirs=sample_id; mandatory)
-               -sd/--script_dir The pipeline custom script in directory (mandatory)
                -rd/--reference_dir Reference(s) directory (mandatory)
                -p/--project_id The project ID (mandatory)
                -s/--sample_ids The sample ID(s)(comma sep; mandatory)
@@ -413,7 +412,6 @@ if(!@ARGV) {
 
 ###User Options
 GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash infile_dirs=sample_id
-	   'sd|script_dir:s' => \$parameter{script_dir}{value},  #Directory for custom scripts required by the pipeline
 	   'rd|reference_dir:s' => \$parameter{reference_dir}{value},  #directory containing references
 	   'p|project_id:s' => \$parameter{project_id}{value},
 	   's|sample_ids:s' => \@{ $parameter{sample_ids}{value} },  #Comma separated list
@@ -3041,7 +3039,7 @@ sub qccollect {
     my $infamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref);
     my $outfamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref);
 
-    print $FILEHANDLE "perl ".$active_parameter_href->{script_dir}."/qccollect.pl ";
+    print $FILEHANDLE "qccollect ";
     print $FILEHANDLE "-sample_info_file ".$active_parameter_href->{qccollect_sampleinfo_file}." ";
     print $FILEHANDLE "-regexp_file ".$active_parameter_href->{qccollect_regexp_file}." ";
 
@@ -4426,14 +4424,13 @@ sub snpeff {
 								 program_info_path => $program_info_path,
 								 core_number => $core_number,
 								 xargs_file_counter => $xargs_file_counter,
-								 first_command => "perl",
+								 first_command => "vcfparser",
 								});
 
 	my $annotation_infile_number = $xargs_file_counter - 1;
 
 	foreach my $contig (@$vcfparser_contigs_ref) {
 
-	    print $XARGSFILEHANDLE catfile($active_parameter_href->{script_dir}, "vcfparser.pl")." ";  #Parses the vcf output
 	    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf.".$annotation_infile_number)." ";  #Infile
 	    print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf")." ";  #Outfile
 	    say $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
@@ -4892,12 +4889,11 @@ sub vcfparser {
 							     program_info_path => $program_info_path,
 							     core_number => $core_number,
 							     xargs_file_counter => $xargs_file_counter,
-							     first_command => "perl",
+							     first_command => "vcfparser",
 							    });
 
     foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
-	print $XARGSFILEHANDLE catfile($active_parameter_href->{script_dir}, "vcfparser.pl")." ";  #Parses the VEP output to tab-sep format
 	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf")." ";  #Infile
 
 	if ($active_parameter_href->{pvarianteffectpredictor} > 0) {
@@ -7698,8 +7694,7 @@ sub rcoverageplots {
 
     if ( defined($active_parameter_href->{pgenomecoveragebed}) && ($active_parameter_href->{pgenomecoveragebed} > 0) ) {
 
-	print $FILEHANDLE "Rscript ";
-	print $FILEHANDLE catfile($active_parameter_href->{script_dir}, "covplots_genome.R")."  ";
+	print $FILEHANDLE "covplots_genome ";
 	print $FILEHANDLE catfile($insample_directory, $infile.$infile_tag)." ";  #InFile
 	print $FILEHANDLE $infile." ";  #Sample name
 	print $FILEHANDLE $active_parameter_href->{genomecoveragebed_max_coverage}." ";  #X-axis max scale
@@ -8998,7 +8993,7 @@ sub sv_vcfparser {
 							     program_info_path => $program_info_path,
 							     core_number => $core_number,
 							     xargs_file_counter => $xargs_file_counter,
-							     first_command => "perl",
+							     first_command => "vcfparser",
 							    });
 
     foreach my $contig (@contigs) {
@@ -9013,7 +9008,6 @@ sub sv_vcfparser {
 	    $vcfparser_outfile_ending_stub = $outfile_ending_stub."_".$contig;
 	    $vcfparser_xargs_file_name = $xargs_file_name.".".$contig;
 	}
-	print $XARGSFILEHANDLE catfile($active_parameter_href->{script_dir}, "vcfparser.pl")." ";  #Parses the VEP output to tab-sep format
 	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $vcfparser_infile_ending_stub.".vcf")." ";  #Infile
 
 	if ($active_parameter_href->{psv_varianteffectpredictor} > 0) {
@@ -21936,7 +21930,7 @@ sub concatenate_vcfs {
     if ( (defined($_[6])) && $reorder_swith eq "reorder_header") {
 	
 	print $FILEHANDLE "| ";  #Pipe
-	print $FILEHANDLE "perl ".catfile($active_parameter_href->{script_dir}, "vcfparser.pl")." ";  #Parses the vcf output
+	print $FILEHANDLE "vcfparser ";  #Parses the vcf output
     }
     
     print $FILEHANDLE "> ".$outfile;  #OutFile

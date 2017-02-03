@@ -43,12 +43,11 @@ GetOptions('vb|verbose' => $verbose,
 	   'v|version' => sub { print STDOUT "\n".basename($0)." ".$mip_version, "\n\n"; exit;},  #Display version number
 );
 
-ok(check_command_in_path({program => "mip.pl"}), "Checking can run mip.pl");
+ok(check_command_in_path({program => "mip"}), "Checking can run mip");
 
-my $mip_script = catfile(dirname($Bin), "mip.pl");
 
-## Test execution of mip.pl
-my $cmds_ref = [$mip_script,
+## Test execution of mip
+my $cmds_ref = ["mip",
 		"-f", "643594-miptest",
 		"-c", $config_file,
 		"-ifd", catfile("data", "643594-miptest", "test_data", "ADM1059A1", "fastq=ADM1059A1"),
@@ -62,7 +61,7 @@ my $cmds_ref = [$mip_script,
 
 my( $success, $error_message, $full_buf, $stdout_buf, $stderr_buf ) =
     run( command => $cmds_ref, verbose => $verbose );
-ok($success, "Executed mip.pl");
+ok($success, "Executed mip");
 
 
 my $qc_pedigree = catfile(getcwd(), "data", "643594-miptest", "analysis", "643594-miptest", "qc_pedigree.yaml");

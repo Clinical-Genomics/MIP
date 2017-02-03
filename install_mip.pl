@@ -14,7 +14,7 @@ use Cwd;
 use Cwd qw(abs_path);
 use FindBin qw($Bin); #Find directory of script
 use IO::Handle;
-use File::Basename qw(dirname basename);
+use File::Basename qw(dirname basename fileparse);
 use File::Spec::Functions qw(catfile catdir devnull);
 
 
@@ -2133,17 +2133,18 @@ sub mip_scripts {
     ## Define MIP scripts and yaml files
     my @mip_scripts = ("calculate_af.pl",
 		       "download_reference.pl",
-		       "install.pl",
+		       "install_mip.pl",
 		       "max_af.pl",
 		       "mip.pl",
 		       "qccollect.pl",
 		       "vcfparser.pl",
+		       "covplots_genome.R"
 	);
     my %mip_sub_scripts;
     $mip_sub_scripts{"definitions"} = ["define_download_references.yaml",
 				       "define_parameters.yaml",
 	];
-    $mip_sub_scripts{"t"} = ["install.t",
+    $mip_sub_scripts{"t"} = ["install_mip.t",
 			     "mip.t",
 			     "run_tests.t",
 			     "test.t",
@@ -2187,10 +2188,12 @@ sub mip_scripts {
     print $FILEHANDLE "## Copy mip scripts and subdirectory scripts to conda env and make executable\n\n";
     foreach my $script (@mip_scripts) {
 
+	my $script_no_ending = fileparse($script, qr/\.[^.]*/);
+
 	print $FILEHANDLE "cp ";
 	print $FILEHANDLE catfile($Bin, $script)." ";
-	print $FILEHANDLE catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"), "\n";
-	print $FILEHANDLE "chmod a+x ".catfile($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", $script);
+	print $FILEHANDLE catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", $script_no_ending), "\n";
+	print $FILEHANDLE "chmod a+x ".catfile($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", $script_no_ending);
 	print $FILEHANDLE "\n\n";
     }
 
@@ -2751,8 +2754,7 @@ sub references {
 
     print STDERR "Writting install instructions for references\n";
 
-    print $FILEHANDLE "perl ";
-    print $FILEHANDLE catfile($Bin, "download_reference.pl")." ";
+    print $FILEHANDLE "download_reference ";
     print $FILEHANDLE "--reference_dir ".$parameter_href->{reference_dir}." ";
     
     print $FILEHANDLE "--reference_genome_versions ".join(" --reference_genome_versions ", @{ $parameter_href->{reference_genome_versions} })." ";

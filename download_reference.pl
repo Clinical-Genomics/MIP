@@ -58,6 +58,9 @@ BEGIN {
 my %parameter = load_yaml({yaml_file => catfile($Bin, "definitions", "define_download_references.yaml"),
 			  });
 
+## Set parameter default
+$parameter{reference_dir} = cwd();
+
 my $download_reference_version = "0.0.1";
 
 

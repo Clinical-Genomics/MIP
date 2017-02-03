@@ -10,7 +10,6 @@ qccollect_sampleinfo_file: cluster_constant_path!/family_id!/analysis_constant_p
 sambamba_depth_bed: GRCh37_scout_exons_-2017-01-.bed
 gatk_path: cluster_constant_path!/modules/GenomeAnalysisTK-3.6
 human_genome_reference: GRCh37_homo_sapiens_-d5-.fasta
-script_dir: /mnt/hds/proj/cust003/develop/modules/miniconda2/envs/mip4.0/bin
 core_processor_number: 16
 outdata_dir: cluster_constant_path!/family_id!/analysis_constant_path!
 pedigree_file: cluster_constant_path!/family_id!/family_id!_pedigree.yaml
