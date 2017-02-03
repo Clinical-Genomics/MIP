@@ -147,7 +147,7 @@ $qc_data{program}{qccollect}{regexp_file} = $regexp_file;
 
 foreach my $sample_id (keys %{ $sample_info{sample} }) {
 
-    ## Defines programs, etrics and thresholds to evaluate
+    ## Defines programs, metrics and thresholds to evaluate
     define_evaluate_metric({sample_info_href => \%sample_info,
 			    sample_id => $sample_id,
 			   });
@@ -552,35 +552,38 @@ sub define_evaluate_metric {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    $evaluate_metric{$sample_id}{mosaik_aligner}{total_aligned}{threshold} = 95;
-    $evaluate_metric{$sample_id}{mosaik_aligner}{uniquely_aligned_mates}{threshold} = 90;
-    $evaluate_metric{$sample_id}{bamstats}{percentage_mapped_reads}{threshold} = 0.95;
-    $evaluate_metric{$sample_id}{calculatehsmetrics}{PCT_TARGET_BASES_10X}{threshold} = 0.95;
-    $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_PF_READS_ALIGNED}{threshold} = 0.95;
-    $evaluate_metric{$sample_id}{calculatehsmetrics}{PCT_ADAPTER}{threshold} = 0.0001;
+    $evaluate_metric{$sample_id}{mosaik_aligner}{total_aligned}{lt} = 95;
+    $evaluate_metric{$sample_id}{mosaik_aligner}{uniquely_aligned_mates}{lt} = 90;
+    $evaluate_metric{$sample_id}{bamstats}{percentage_mapped_reads}{lt} = 95;
+    $evaluate_metric{$sample_id}{calculatehsmetrics}{PCT_TARGET_BASES_10X}{lt} = 0.95;
+    $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_PF_READS_ALIGNED}{lt} = 0.95;
+    $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_ADAPTER}{gt} = 0.0005;
+    $evaluate_metric{$sample_id}{markduplicates}{fraction_duplicates}{gt} = 0.2;
 
     if (exists($sample_info_href->{sample}{$sample_id}{expected_coverage})) {
 
-	$evaluate_metric{$sample_id}{calculatehsmetrics}{MEAN_TARGET_COVERAGE}{threshold} = $sample_info_href->{sample}{$sample_id}{expected_coverage};
+	$evaluate_metric{$sample_id}{calculatehsmetrics}{MEAN_TARGET_COVERAGE}{lt} = $sample_info_href->{sample}{$sample_id}{expected_coverage};
     }
 
     $evaluate_metric{variant_integrity_mendel}{fraction_of_errors}{gt} = 0.06;
     $evaluate_metric{variant_integrity_father}{fraction_of_common_variants}{lt} = 0.55;
 
-    if ($sample_info{sample}{$sample_id}{analysis_type} eq "wes") {
+    if ($sample_info{analysis_type}{$sample_id} eq "wes") {
 
-	$evaluate_metric{$sample_id}{calculatehsmetrics}{PCT_TARGET_BASES_30X}{threshold} = 0.90;
+	$evaluate_metric{$sample_id}{calculatehsmetrics}{PCT_TARGET_BASES_30X}{lt} = 0.90;
     }
 }
+
+
 sub evaluate_qc_parameters {
 
 ##evaluate_qc_parameters
 
-##Function  : Evaluate parameters to detect parameters falling below threshold
-##Returns   : ""
-##Arguments : $qc_data_href, $evaluate_metric_href
-##          : $qc_data_href         => QCData hash {REF}
-##          : $evaluate_metric_href => HAsh for metrics to evaluate
+##Function : Evaluate parameters to detect parameters falling below threshold
+##Returns  : ""
+##Arguments: $qc_data_href, $evaluate_metric_href
+##         : $qc_data_href         => QCData hash {REF}
+##         : $evaluate_metric_href => HAsh for metrics to evaluate
 
     my ($arg_href) = @_;
 
@@ -595,42 +598,30 @@ sub evaluate_qc_parameters {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $status;
-
   PROGRAM:
     for my $program ( keys %{$qc_data_href->{program}} ) {
 
-	if (defined($evaluate_metric_href->{$program})) { #Program to be evaluated
+	if (exists($evaluate_metric_href->{$program})) { #Program to be evaluated
 
 	  METRIC:
 	    for my $metric ( keys %{$qc_data_href->{program}{$program}} ) {
 
-		if (defined($evaluate_metric_href->{$program}{$metric})) { #metric to be evaluated
+	      FAMILY_LEVEL:
+		if (exists($evaluate_metric_href->{$program}{$metric})) { #metric to be evaluated
 
-		    if ($evaluate_metric_href->{$program}{$metric}{gt}) {
+		    check_metric({qc_data_href => $qc_data_href,
+				  reference_metric_href => $evaluate_metric_href->{$program}{$metric},
+				  program => $program,
+				  metric => $metric,
+				  qc_metric_value => $qc_data_href->{program}{$program}{$metric},
+				 });
 
-			if ($qc_data_href->{program}{$program}{$metric} > $evaluate_metric_href->{$program}{$metric}{gt}) { #Determine status - if greater than add to hash. otherwise PASS and do not include
-
-			    $status = "FAILED:".$program."_".$metric.":".$qc_data_href->{program}{$program}{$metric};
-			    push(@{$qc_data_href->{evaluation}{$program}}, $status);
-			}
-		    }
-		    if ($evaluate_metric_href->{$program}{$metric}{lt}) {
-
-			if ($qc_data_href->{program}{$program}{$metric} < $evaluate_metric_href->{$program}{$metric}{lt}) { #Determine status - if lower than add to hash. otherwise PASS and do not include
-
-			    $status = "FAILED:".$program."_".$metric.":".$qc_data_href->{program}{$program}{$metric};
-			    push(@{$qc_data_href->{evaluation}{$program}}, $status);
-			}
-		    }
-		    last;
 		}
 	    }
 	}
     }
 
-    ## Sample level evaluation
-  SAMPLE_ID:
+  SAMPLE_LEVEL:
     for my $sample_id ( keys %{$qc_data_href->{sample}} ) {
 
       INFILE:
@@ -640,7 +631,7 @@ sub evaluate_qc_parameters {
 
 		if ($qc_data_href->{sample}{$sample_id}{$infile} ne "PASS") {
 
-		    $status = "Status:".$infile.":".$qc_data_href->{sample}{$sample_id}{$infile};
+		    my $status = "Status:".$infile.":".$qc_data_href->{sample}{$sample_id}{$infile};
 		    push(@{$qc_data_href->{evaluation}{$infile}}, $status); #Add to QC data at family level
 		}
 		next;
@@ -657,45 +648,97 @@ sub evaluate_qc_parameters {
 	  PROGRAM:
 	    for my $program ( keys %{$qc_data_href->{sample}{$sample_id}{$infile}} ) {
 
-		if (defined($evaluate_metric_href->{$sample_id}{$program})) { #Program to be evaluated
+		if (exists($evaluate_metric_href->{$sample_id}{$program})) { #Program to be evaluated
 
 		  METRIC:
 		    for my $metric ( keys %{$evaluate_metric_href->{$sample_id}{$program}}) { #Metric to be evaluated
 
-			if (defined($qc_data_href->{sample}{$sample_id}{$infile}{$program}{$metric})) {
+			if (exists($qc_data_href->{sample}{$sample_id}{$infile}{$program}{$metric})) {
 
-			    if ($qc_data_href->{sample}{$sample_id}{$infile}{$program}{$metric} < $evaluate_metric_href->{$sample_id}{$program}{$metric}{threshold}) { #Determine status - if below add to hash. otherwise PASS and do not include
-
-				$status = "FAILED:".$sample_id."_".$program."_".$metric.":".$qc_data_href->{sample}{$sample_id}{$infile}{$program}{$metric};
-				push(@{$qc_data_href->{evaluation}{$program}}, $status);
-			    }
-			    last;
+			    check_metric({qc_data_href => $qc_data_href,
+					  reference_metric_href => $evaluate_metric_href->{$sample_id}{$program}{$metric},
+					  program => $program,
+					  metric => $metric,
+					  qc_metric_value => $qc_data_href->{sample}{$sample_id}{$infile}{$program}{$metric},
+					 });
 			}
 			else {
 
-			    for my $key ( keys %{$qc_data_href->{sample}{$sample_id}{$infile}{$program}} ) {
+			    if (exists($qc_data_href->{sample}{$sample_id}{$infile}{$program}{header}) ) {
+			    
+				for my $data_header ( keys %{$qc_data_href->{sample}{$sample_id}{$infile}{$program}{header}} ) {
 
-				if ($key eq "header") {
-
-				    for my $data_header ( keys %{$qc_data_href->{sample}{$sample_id}{$infile}{$program}{$key}} ) {
-
-					if (defined($qc_data_href->{sample}{$sample_id}{$infile}{$program}{$key}{$data_header}{$metric})) {
-
-					    if ($qc_data_href->{sample}{$sample_id}{$infile}{$program}{$key}{$data_header}{$metric} < $evaluate_metric_href->{$sample_id}{$program}{$metric}{threshold}) { #Determine status - if below add to hash. otherwise PASS and do not include
-
-						$status = "FAILED:".$sample_id."_".$program."_".$metric.":".$qc_data_href->{sample}{$sample_id}{$infile}{$program}{$key}{$data_header}{$metric};
-						push(@{$qc_data_href->{evaluation}{$program}}, $status);
-					    }
-					    next; #Metric go to next section
-					}
+				    if (exists($qc_data_href->{sample}{$sample_id}{$infile}{$program}{header}{$data_header}{$metric})) {
+					
+					check_metric({qc_data_href => $qc_data_href,
+						      reference_metric_href => $evaluate_metric_href->{$sample_id}{$program}{$metric},
+						      program => $program,
+						      metric => $metric,
+						      qc_metric_value => $qc_data_href->{sample}{$sample_id}{$infile}{$program}{header}{$data_header}{$metric},
+						     });
 				    }
-				    last; #Metric found no need to continue
 				}
 			    }
 			}
 		    }
 		}
 	    }
+	}
+    }
+}
+
+
+sub check_metric {
+
+##check_metric
+
+##Function : Check and add result of check if below threshold 
+##Returns  : ""
+##Arguments: $qc_data_href, $reference_metric_href, $program, $metric, $qc_metric_value
+##         : $qc_data_href           => QCData hash {REF}
+##         : $reference_metric_href  => Metrics to evaluate
+##         : $program                => The program to examine
+##         : $metric                 => Metric to evaluate
+##         : $qc_metric_value        => Qc metric value
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    
+    ## Flatten argument(s)
+    my $qc_data_href;
+    my $reference_metric_href;
+    my $program;
+    my $metric;
+    my $qc_metric_value;
+
+    my $tmpl = { 
+	qc_data_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$qc_data_href},
+	reference_metric_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$reference_metric_href},
+	program => { required => 1, defined => 1, strict_type => 1, store => \$program},
+	metric => { required => 1, defined => 1, strict_type => 1, store => \$metric},
+	qc_metric_value => { required => 1, defined => 1, strict_type => 1, store => \$qc_metric_value},
+    };
+     
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    my $status = "FAILED:";
+
+    if (exists($reference_metric_href->{lt}) ) {
+	
+	if ($qc_metric_value < $reference_metric_href->{lt}) {  #Determine status - if lower than add to hash. otherwise PASS and do not include
+
+	    $status .= $program."_".$metric.":".$qc_metric_value;
+	    push(@{$qc_data_href->{evaluation}{$program}}, $status);
+	}
+    }
+
+    if (exists($reference_metric_href->{gt}) ) {
+	
+	if ($qc_metric_value > $reference_metric_href->{gt}) {  #Determine status - if greater than add to hash. otherwise PASS and do not include
+
+	    $status .= $program."_".$metric.":".$qc_metric_value;
+	    push(@{$qc_data_href->{evaluation}{$program}}, $status);
 	}
     }
 }
