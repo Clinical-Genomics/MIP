@@ -95,6 +95,10 @@ use IPC::Cmd qw[can_run run];
 use Getopt::Long;
 use Cwd;
 
+##MIPs lib/
+use lib catdir(dirname($Bin), "lib");
+use Script::Utils qw(help);
+
 our $USAGE;
 
 BEGIN {
@@ -112,15 +116,17 @@ my $install_version = "0.0.0";
 
 ###User Options
 GetOptions('vb|verbose' => $verbose,
-    'h|help' => sub { done_testing(); print STDOUT $USAGE, "\n"; exit;},  #Display help text
+	   'h|help' => sub { done_testing(); print STDOUT $USAGE, "\n"; exit;},  #Display help text
 	   'v|version' => sub { done_testing(); print STDOUT "\n".basename($0)." ".$install_version, "\n\n"; exit;},  #Display version number
-);
+    ) or done_testing(), Script::Utils::help({USAGE => $USAGE,
+					      exit_code => 1,
+					     });;
 
 ok(check_command_in_path({program => "conda"}), "Checking can run of conda binary");
 
-ok(catfile(dirname($Bin), "install.pl"), "Locating install script in MIP dir");
+ok(catfile(dirname($Bin), "install_mip.pl"), "Locating install script in MIP dir");
 
-my $install_script = catfile(dirname($Bin), "install.pl");
+my $install_script = catfile(dirname($Bin), "install_mip.pl");
 
 ## Test execution of install.pl
 my $cmds_ref = ["perl", $install_script, "-sp", "mip_scripts"];  # Create array ref for cmd

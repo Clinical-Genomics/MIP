@@ -23,6 +23,7 @@ use lib catdir($Bin, "lib");
 use File::Format::Yaml qw(load_yaml);
 use MIP_log::Log4perl qw(initiate_logger);
 use Check::Check_modules qw(check_modules);
+use Script::Utils qw(help);
 
 our $USAGE;
 
@@ -71,9 +72,9 @@ GetOptions('rd|reference_dir:s' => \$parameter{reference_dir},  #MIPs reference 
 	   'l|log_file:s' => \$parameter{log_file},
 	   'h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
 	   'v|version' => sub { print STDOUT "\n".basename($0)." ".$download_reference_version, "\n\n"; exit;},  #Display version number
-    ) or help({USAGE => $USAGE,
-	       exit_code => 1,
-	      });
+    ) or Script::Utils::help({USAGE => $USAGE,
+			      exit_code => 1,
+			     });
 
 ## Creates log object
 my $log = MIP_log::Log4perl::initiate_logger({file_path_ref => \$parameter{log_file},

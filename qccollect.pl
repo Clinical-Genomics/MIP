@@ -23,14 +23,12 @@ use Pod::Usage;
 use Pod::Text;
 use POSIX;
 
-## Third party module(s)
-use YAML;
-
 ##MIPs lib/
 use lib catdir($Bin, "lib");
 use File::Format::Yaml qw(load_yaml write_yaml);
 use MIP_log::Log4perl qw(initiate_logger);
 use Check::Check_modules qw(check_modules);
+use Script::Utils qw(help);
 
 our $USAGE;
 
@@ -61,6 +59,7 @@ BEGIN {
                -h/--help Display this help message
                -v/--version Display version};
 }
+
 my ($sample_info_file, $regexp_file, $print_regexp, $skip_evaluation);
 
 ##Scalar parameters with defaults
@@ -72,6 +71,7 @@ my %qc_program_data; #Save data in each outfile
 
 my $qccollect_version = "2.0.2";
 
+###User Options
 GetOptions('si|sample_info_file:s' => \$sample_info_file,
 	   'r|regexp_file:s' => \$regexp_file,
 	   'o|outfile:s'  => \$outfile,
@@ -81,9 +81,9 @@ GetOptions('si|sample_info_file:s' => \$sample_info_file,
 	   'l|log_file:s' => \$log_file,
 	   'h|help' => sub { say STDOUT $USAGE; exit;},  #Display help text
 	   'v|version' => sub { say STDOUT "\n".basename($0)." ".$qccollect_version, "\n"; exit;},  #Display version number
-    )  or help({USAGE => $USAGE,
-		exit_code => 1,
-	       });
+    ) or Script::Utils::help({USAGE => $USAGE,
+			       exit_code => 1,
+			      });
 
 ## Creates log object
 my $log = MIP_log::Log4perl::initiate_logger({file_path_ref => \$log_file,
@@ -1191,36 +1191,8 @@ sub regexp_to_yaml {
     $regexp{variant_integrity_father}{common_variants}  = q?perl -nae 'unless ($_=~/^#/) {print $F[2];last;}' ?;
 
     ## Writes a YAML hash to file
-    write_yaml({yaml_href => \%regexp,
-		yaml_file_path_ref => \$print_regexp_outfile,
-	       });
-
-}
-
-
-sub help {
-
-##help
-
-##Function : Print help text and exit with supplied exit code
-##Returns  : ""
-##Arguments: $USAGE, $exit_code
-##         : $USAGE    => Help text
-##         : $exit_code => Exit code
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $USAGE;
-    my $exit_code;
-
-    my $tmpl = {
-	USAGE => {required => 1, defined => 1, strict_type => 1, store => \$USAGE},
-	exit_code => { default => 0, strict_type => 1, store => \$exit_code},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    say STDOUT $USAGE;
-    exit $exit_code;
+    File::Format::Yaml::write_yaml({yaml_href => \%regexp,
+				    yaml_file_path_ref => \$print_regexp_outfile,
+				   });
+    
 }

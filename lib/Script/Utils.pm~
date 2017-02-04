@@ -1,0 +1,17 @@
+package Script::Utils;
+
+use Modern::Perl '2014';
+use warnings qw( FATAL utf8 );
+use autodie;
+use v5.18;  #Require at least perl 5.18
+use utf8;  #Allow unicode characters in this script
+use open qw( :encoding(UTF-8) :std );
+use charnames qw( :full :short );
+
+use Params::Check qw[check allow last_error];
+ 
+use Exporter qw(import);
+ 
+our @EXPORT_OK = ("help",
+    );
+

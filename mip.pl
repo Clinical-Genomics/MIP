@@ -39,6 +39,7 @@ use lib catdir($Bin, "lib");  #Add MIPs internal lib
 use File::Format::Yaml qw(load_yaml write_yaml);
 use MIP_log::Log4perl qw(initiate_logger);
 use Check::Check_modules qw(check_modules);
+use Script::Utils qw(help);
 
 our $USAGE;
 
@@ -641,9 +642,9 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'prem|premoveredundantfiles=n' => \$parameter{premoveredundantfiles}{value},
 	   'pars|panalysisrunstatus=n' => \$parameter{panalysisrunstatus}{value},  #analysisrunstatus change flag in sample_info file if allowed to execute
 	   'psac|psacct=n' => \$parameter{psacct}{value},
-    ) or help({USAGE => $USAGE,
-	       exit_code => 1,
-	      });
+    ) or Script::Utils::help({USAGE => $USAGE,
+			      exit_code => 1,
+			     });
 
 
 ## Change relative path to absolute path for certain parameters
@@ -26697,34 +26698,6 @@ sub check_program_mode {
 	    exit 1;
 	}
     }
-}
-
-
-sub help {
-
-##help
-
-##Function : Print help text and exit with supplied exit code
-##Returns  : ""
-##Arguments: $USAGE, $exit_code
-##         : $USAGE     => Help text
-##         : $exit_code => Exit code
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $USAGE;
-    my $exit_code;
-
-    my $tmpl = {
-	USAGE => {required => 1, defined => 1, strict_type => 1, store => \$USAGE},
-	exit_code => { default => 0, strict_type => 1, store => \$exit_code},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    say STDOUT $USAGE;
-    exit $exit_code;
 }
 
 

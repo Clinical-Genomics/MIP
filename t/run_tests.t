@@ -13,10 +13,14 @@ use charnames qw( :full :short );
 use FindBin qw($Bin);  #Find directory of script
 use File::Basename qw(dirname basename);
 use File::Spec::Functions qw(catdir catfile devnull);
+use Getopt::Long;
 
 ##MIPs lib/
 use lib catdir(dirname($Bin), "lib");
 use Check::Check_modules qw(check_modules);
+use Script::Utils qw(help);
+
+our $USAGE;
 
 BEGIN {
 
@@ -79,13 +83,7 @@ BEGIN {
 
 	require_ok($module) or BAIL_OUT "Can't load $module";
     }
-}
 
-use Getopt::Long;
-
-our $USAGE;
-
-BEGIN {
     $USAGE =
 	basename($0).qq{
            -h/--help Display this help message   
@@ -93,12 +91,16 @@ BEGIN {
         };    
 }
 
+
+
 my $run_tests_version = "0.0.0";
 
 ###User Options
 GetOptions('h|help' => sub { done_testing(); print STDOUT $USAGE, "\n"; exit;},  #Display help text
 	   'v|version' => sub { done_testing(); print STDOUT "\n".basename($0)." ".$run_tests_version, "\n\n"; exit;},  #Display version number
-);
+    ) or done_testing(), Script::Utils::help({USAGE => $USAGE,
+					      exit_code => 1,
+					     });
 
 use TAP::Harness;
 use Cwd;

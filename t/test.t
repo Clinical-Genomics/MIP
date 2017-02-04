@@ -25,6 +25,7 @@ use lib catdir(dirname($Bin), "lib");
 use File::Format::Yaml qw(load_yaml);
 use MIP_log::Log4perl qw(initiate_logger);
 use Check::Check_modules qw(check_modules);
+use Script::Utils qw(help);
 
 our $USAGE;
 
@@ -93,7 +94,9 @@ $config_file = $ARGV[1];
 ###User Options
 GetOptions('h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
 	   'v|version' => sub { print STDOUT "\n".basename($0)." ".$test_version, "\n\n"; exit;},  #Display version number
-    );
+    ) or Script::Utils::help({USAGE => $USAGE,
+			      exit_code => 1,
+			     });
 
 unless (defined($infile)) {
 

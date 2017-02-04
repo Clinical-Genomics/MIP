@@ -24,6 +24,7 @@ use Set::IntervalTree; #CPAN
 use lib catdir($Bin, "lib");
 use MIP_log::Log4perl qw(initiate_logger);
 use Check::Check_modules qw(check_modules);
+use Script::Utils qw(help);
 
 our $USAGE;
 
@@ -95,9 +96,9 @@ GetOptions('pvep|parse_vep:s' => \$parse_vep,
 	   'l|log_file:s' => \$log_file,
 	   'h|help' => sub { say STDOUT $USAGE; exit;},  #Display help text
 	   'v|version' => sub { say STDOUT "\n".basename($0)." ".$vcfparser_version, "\n"; exit;},  #Display version number
-    )  or help({USAGE => $USAGE,
-		exit_code => 1,
-	       });
+    )  or Script::Utils::help({USAGE => $USAGE,
+			       exit_code => 1,
+			      });
 
 ## Creates log object
 my $log = MIP_log::Log4perl::initiate_logger({file_path_ref => \$log_file,
@@ -1989,31 +1990,4 @@ sub check_terms {
 	    exit 1;
 	}
     }
-}
-
-sub help {
-
-##help
-
-##Function : Print help text and exit with supplied exit code
-##Returns  : ""
-##Arguments: $USAGE, $exit_code
-##         : $USAGE     => Help text
-##         : $exit_code => Exit code
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $USAGE;
-    my $exit_code;
-
-    my $tmpl = {
-	USAGE => {required => 1, defined => 1, strict_type => 1, store => \$USAGE},
-	exit_code => { default => 0, strict_type => 1, store => \$exit_code},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    say STDOUT $USAGE;
-    exit $exit_code;
 }

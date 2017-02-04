@@ -2,21 +2,28 @@
 
 ###Copyright 2016 Henrik Stranneheim
 
-use strict;
-use warnings;
+use Modern::Perl '2014';    #CPAN
 use warnings qw( FATAL utf8 );
+use autodie qw(open close :all);    #CPAN
+use v5.18;  #Require at least perl 5.18
 use utf8;
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
+
 use Test::More;
 use FindBin qw($Bin);
 use File::Basename qw(dirname basename);
 use File::Path qw(remove_tree);
 use File::Spec::Functions qw(catfile catdir devnull);
 use Params::Check qw[check allow last_error];
+$Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 use IPC::Cmd qw[can_run run];
 use Getopt::Long;
 use Cwd;
+
+##MIPs lib/
+use lib catdir(dirname($Bin), "lib");
+use Script::Utils qw(help);
 
 our $USAGE;
 
@@ -41,7 +48,9 @@ GetOptions('vb|verbose' => $verbose,
 	   'c|config_file:s' => \$config_file,
 	   'h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
 	   'v|version' => sub { print STDOUT "\n".basename($0)." ".$mip_version, "\n\n"; exit;},  #Display version number
-);
+    ) or Script::Utils::help({USAGE => $USAGE,
+			      exit_code => 1,
+			     });
 
 ok(check_command_in_path({program => "mip"}), "Checking can run mip");
 
