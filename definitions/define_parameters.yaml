@@ -1847,6 +1847,7 @@ genmod_models_whole_gene:
 genmod_models_family_type:
   associated_program:
    - prankvariant
+   - psamplecheck
   data_type: SCALAR
   default: ped
   type: program_argument
@@ -1872,6 +1873,15 @@ rankvariant_binary_file:
   data_type: SCALAR
   default: 1
   type: program_argument
+##Endvariantannotationblock
+pendvariantannotationblock:
+  associated_program:
+   - mip
+  chain: MAIN
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  type: program
 ## QCCollect
 pqccollect:
   associated_program:
