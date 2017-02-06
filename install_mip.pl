@@ -31,7 +31,7 @@ BEGIN {
            -cq/--conda_quiet Do not display progress bar (Supply to enable)
            -cdu/--conda_update Update conda before installing (Supply flag to enable)
            -bvc/--bioconda Set the module version of the programs that can be installed with bioconda (e.g. 'bwa=0.7.12')
-           -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.5.12')
+           -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.7.0')
            -pq/--pip_quiet Do not display progress bar (Supply to enable)
            -pyv/--python_version Set the env python version (Default: "2.7")
 
@@ -113,7 +113,7 @@ $parameter{bioconda}{gcc} = "4.8.5";  #Required for CNVnator
 $parameter{perl_version} = "5.18.2";
 
 ## PIP
-$parameter{pip}{genmod} = "3.5.12";
+$parameter{pip}{genmod} = "3.7.0";
 $parameter{pip}{variant_integrity} = "0.0.4";
 $parameter{pip}{chanjo} = "4.0.0";
 $parameter{pip}{cosmid} = "0.4.9.1";
