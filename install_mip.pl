@@ -690,7 +690,7 @@ sub create_conda_environment {
 	print $FILEHANDLE "### Creating Conda Environment and install: ".$parameter_href->{conda_environment}, "\n";
 	print $FILEHANDLE "conda create ";
 
-	if (exists($parameter_href->{conda_quiet})) {
+	if ($parameter_href->{conda_quiet}) {
 
 	    print $FILEHANDLE "--quiet ";  #Do not display progress bar
 	}
@@ -729,7 +729,7 @@ sub install_bioconda_modules {
     print $FILEHANDLE "### Installing into Conda Environment: ".$parameter_href->{conda_environment}, "\n";
     print $FILEHANDLE "conda install ";
 
-    if (exists($parameter_href->{conda_quiet})) {
+    if ($parameter_href->{conda_quiet}) {
 	
 	print $FILEHANDLE "--quiet ";  #Do not display progress bar
     }
@@ -1096,7 +1096,7 @@ sub pip_install {
     print $FILEHANDLE "## Install PIP packages\n";
     print $FILEHANDLE "pip install ";
 
-    if (exists($parameter_href->{pip_quiet})) {
+    if ($parameter_href->{pip_quiet}) {
 
 	print $FILEHANDLE "--quiet ";  #Do not display progress bar
     }

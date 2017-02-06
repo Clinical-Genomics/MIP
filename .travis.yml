@@ -10,7 +10,7 @@ install:
   - cd /lib/x86_64-linux-gnu
   - sudo ln -s libssl.so.1.0.0 libssl.so.10
   - sudo ln -s libcrypto.so.1.0.0 libcrypto.so.10
-
+  - cd -
 
 ## Install conda
   - wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
