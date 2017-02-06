@@ -5,8 +5,8 @@ sudo: required
  
 install:
 ##SSL
-sudo apt-get update
-sudo apt-get install libssl1.0.0 libssl-dev
+- sudo apt-get update
+- sudo apt-get install libssl1.0.0 libssl-dev
 
 ## Install conda
   - wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
