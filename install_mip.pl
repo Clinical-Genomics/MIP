@@ -28,9 +28,11 @@ BEGIN {
 	basename($0).qq{ [options]
            -env/--conda_environment Conda environment (Default: "mip")
            -cdp/--conda_path The conda path (Default: "HOME/miniconda")
+           -cq/--conda_quiet Do not display progress bar (Supply to enable)
            -cdu/--conda_update Update conda before installing (Supply flag to enable)
            -bvc/--bioconda Set the module version of the programs that can be installed with bioconda (e.g. 'bwa=0.7.12')
            -pip/--pip Set the module version of the programs that can be installed with pip (e.g. 'genmod=3.5.12')
+           -pq/--pip_quiet Do not display progress bar (Supply to enable)
            -pyv/--python_version Set the env python version (Default: "2.7")
 
            ## SHELL
@@ -96,7 +98,7 @@ $parameter{bioconda}{vt} = "2015.11.10";
 $parameter{bioconda}{sambamba} = "0.6.3";
 $parameter{bioconda}{freebayes} = "1.0.2.0";
 $parameter{bioconda}{delly} = "0.7.6";
-$parameter{bioconda}{manta} = "1.0.0";
+$parameter{bioconda}{manta} = "1.0.3";
 $parameter{bioconda_manta_patch} = "-0";
 $parameter{bioconda}{multiqc} = "0.8dev0";
 $parameter{bioconda}{plink2} = "1.90b3.35";
@@ -142,9 +144,11 @@ my $install_version = "1.0.1";
 ###User Options
 GetOptions('env|conda_environment:s'  => \$parameter{conda_environment},
 	   'cdp|conda_path:s' => \$parameter{conda_path},
+	   'cq|conda_quiet' => \$parameter{conda_quiet},
 	   'cdu|conda_update' => \$parameter{conda_update},
 	   'bcv|bioconda=s' => \%{ $parameter{bioconda} },
 	   'pip|pip=s' => \%{ $parameter{pip} },
+	   'pq|pip_quiet' => \$parameter{pip_quiet},
 	   'pyv|python_version=s' => \$parameter{python_version},
 	   'pev|perl_version=s' => \$parameter{perl_version},
 	   'pei|perl_install' => \$parameter{perl_install},
@@ -685,6 +689,11 @@ sub create_conda_environment {
 	## Create conda environment
 	print $FILEHANDLE "### Creating Conda Environment and install: ".$parameter_href->{conda_environment}, "\n";
 	print $FILEHANDLE "conda create ";
+
+	if (exists($parameter_href->{conda_quiet})) {
+
+	    print $FILEHANDLE "--quiet ";  #Do not display progress bar
+	}
 	print $FILEHANDLE "-n ".$parameter_href->{conda_environment}." ";
 	print $FILEHANDLE "-y ";
 	print $FILEHANDLE "pip ";
@@ -719,6 +728,12 @@ sub install_bioconda_modules {
     ## Install into conda environment using bioconda channel
     print $FILEHANDLE "### Installing into Conda Environment: ".$parameter_href->{conda_environment}, "\n";
     print $FILEHANDLE "conda install ";
+
+    if (exists($parameter_href->{conda_quiet})) {
+	
+	print $FILEHANDLE "--quiet ";  #Do not display progress bar
+    }
+
     print $FILEHANDLE "-n ".$parameter_href->{conda_environment}." ";
     print $FILEHANDLE "-y ";
     print $FILEHANDLE "-c bioconda ";
@@ -1080,8 +1095,12 @@ sub pip_install {
     ## Install PIP packages
     print $FILEHANDLE "## Install PIP packages\n";
     print $FILEHANDLE "pip install ";
-    print $FILEHANDLE "--quiet ";
 
+    if (exists($parameter_href->{pip_quiet})) {
+
+	print $FILEHANDLE "--quiet ";  #Do not display progress bar
+    }
+    
     ## Install all PIP packages
     foreach my $program (keys %{ $parameter_href->{pip} }) {
 
