@@ -182,7 +182,7 @@ mip.pl  -ifd [infile_dirs=sample_id] -sd [script_dir] -rd [reference_dir] -p [pr
                  -svravrm/--sv_rank_model_file Rank model config file (defaults to "")
                -psvre/psv_reformat Concatenating files (defaults to "1" (=yes))
                  -svrevbf/--sv_rankvariant_binary_file Produce binary file from the rank variant chromosome sorted vcfs (defaults to "1" (=yes))
-                 -svrergf/--sv_reformat_remove_genes_file Remove variants in hgnc_ids (defaults to "aggregate_acmg_-2017-02-07-.txt")
+                 -svrergf/--sv_reformat_remove_genes_file Remove variants in hgnc_ids (defaults to "GRCh37_aggregate_acmg_-2017-02-07-.txt")
 
                ##Samtools
                -psmp/--psamtools_mpileup Variant calling using samtools mpileup and bcftools (defaults to "1" (=yes))
@@ -288,6 +288,7 @@ mip.pl  -ifd [infile_dirs=sample_id] -sd [script_dir] -rd [reference_dir] -p [pr
 
                -pevab/--pendvariantannotationblock End variant annotation block by concatenating files (defaults to "1" (=yes))
                  -ravbf/--rankvariant_binary_file Produce binary file from the rank variant chromosomal sorted vcfs (defaults to "1" (=yes))
+                 -evabrgf/--endvariantannotationblock_remove_genes_file Remove variants in hgnc_ids (defaults to "GRCh37_aggregate_acmg_-2017-02-07-.txt")
 
                ###Utility
                -psck/--psamplecheck QC for samples gender and relationship (defaults to "1" (=yes) )
@@ -656,6 +657,7 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'ravrpf|genmod_models_reduced_penetrance_file:s' => \$parameter{genmod_models_reduced_penetrance_file}{value},
 	   'ravrm|rank_model_file:s' => \$parameter{rank_model_file}{value},  #The rank modell config.ini path
 	   'pevab|pendvariantannotationblock=n' => \$parameter{pendvariantannotationblock}{value},
+	   'evabrgf|endvariantannotationblock_remove_genes_file:s' => \$parameter{endvariantannotationblock_remove_genes_file}{value},
 	   'ravbf|rankvariant_binary_file=n' => \$parameter{rankvariant_binary_file}{value},  #Produce compressed vcfs
 	   'psck|psamplecheck=n' => \$parameter{psamplecheck}{value},  #QC for samples gender and relationship
 	   'pevl|pevaluation=n' => \$parameter{pevaluation}{value},  #Compare concordance with NIST data set

@@ -1015,7 +1015,7 @@ sv_reformat_remove_genes_file:
    - psv_reformat
   build_file: no_auto_build
   data_type: SCALAR
-  default: aggregate_acmg_-2017-02-07-.txt
+  default: GRCh37_aggregate_acmg_-2017-02-07-.txt
   exists_check: file
   reference: reference_dir
   type: path
@@ -1895,6 +1895,8 @@ pendvariantannotationblock:
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
+  program_name_path:
+   - grep
   type: program
 rankvariant_binary_file:
   associated_program:
@@ -1907,7 +1909,7 @@ endvariantannotationblock_remove_genes_file:
    - pendvariantannotationblock
   build_file: no_auto_build
   data_type: SCALAR
-  default: aggregate_acmg_-2017-02-07-.txt
+  default: GRCh37_aggregate_acmg_-2017-02-07-.txt
   exists_check: file
   reference: reference_dir
   type: path
