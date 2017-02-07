@@ -180,7 +180,9 @@ mip.pl  -ifd [infile_dirs=sample_id] -sd [script_dir] -rd [reference_dir] -p [pr
                  -svravwg/--sv_genmod_models_whole_gene Allow compound pairs in intronic regions (defaults to "0" (=yes))
                  -svravrpf/--sv_genmod_models_reduced_penetrance_file File containg genes with reduced penetrance (defaults to "")
                  -svravrm/--sv_rank_model_file Rank model config file (defaults to "")
-                 -svravbf/--sv_rankvariant_binary_file Produce binary file from the rank variant chromosome sorted vcfs (defaults to "1" (=yes))
+               -psvre/psv_reformat Concatenating files (defaults to "1" (=yes))
+                 -svrevbf/--sv_rankvariant_binary_file Produce binary file from the rank variant chromosome sorted vcfs (defaults to "1" (=yes))
+                 -svrergf/--sv_reformat_remove_genes_file Remove variants in hgnc_ids (defaults to "aggregate_acmg_-2017-02-07-.txt")
 
                ##Samtools
                -psmp/--psamtools_mpileup Variant calling using samtools mpileup and bcftools (defaults to "1" (=yes))
@@ -284,7 +286,7 @@ mip.pl  -ifd [infile_dirs=sample_id] -sd [script_dir] -rd [reference_dir] -p [pr
                  -ravrpf/--genmod_models_reduced_penetrance_file File containg genes with reduced penetrance (defaults to "")
                  -ravrm/--rank_model_file Rank model config file (defaults to "")
 
-               -pevab/--pendvariantannotationblock End variant annotation block by concatenating files (Mandatory)
+               -pevab/--pendvariantannotationblock End variant annotation block by concatenating files (defaults to "1" (=yes))
                  -ravbf/--rankvariant_binary_file Produce binary file from the rank variant chromosomal sorted vcfs (defaults to "1" (=yes))
 
                ###Utility
@@ -557,7 +559,9 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'svravrpf|sv_genmod_models_reduced_penetrance_file:s' => \$parameter{sv_genmod_models_reduced_penetrance_file}{value},
 	   'svravwg|sv_genmod_models_whole_gene=n' => \$parameter{sv_genmod_models_whole_gene}{value},  #Allow compound pairs in intronic regions
 	   'svravrm|sv_rank_model_file:s' => \$parameter{sv_rank_model_file}{value},  #The rank modell config.ini path
-	   'svravbf|sv_rankvariant_binary_file=n' => \$parameter{sv_rankvariant_binary_file}{value},  #Produce compressed vcfs
+	   'psvre|psv_reformat=n' => \$parameter{psv_reformat}{value},
+	   'svrevbf|sv_rankvariant_binary_file=n' => \$parameter{sv_rankvariant_binary_file}{value},  #Produce compressed vcfs
+	   'svrergf|sv_reformat_remove_genes_file:s' => \$parameter{sv_reformat_remove_genes_file}{value},
 	   'psmp|psamtools_mpileup=n' => \$parameter{psamtools_mpileup}{value},
 	   'pfrb|pfreebayes=n' => \$parameter{pfreebayes}{value},
 	   'gtp|gatk_path:s' => \$parameter{gatk_path}{value},  #GATK whole path
@@ -1902,6 +1906,20 @@ if ($active_parameter{psv_rankvariant} > 0) {  #Run sv_rankvariant. Done per fam
 		   });
 }
 
+if ($active_parameter{psv_reformat} > 0) {  #Run sv_reformat. Done per family
+
+    $logger->info("[SV reformat]\n");
+
+    sv_reformat({parameter_href => \%parameter,
+		 active_parameter_href => \%active_parameter,
+		 sample_info_href => \%sample_info,
+		 file_info_href => \%file_info,
+		 infile_lane_no_ending_href => \%infile_lane_no_ending,
+		 job_id_href => \%job_id,
+		 program_name => "sv_reformat",
+		});
+}
+
 
 if ($active_parameter{psamtools_mpileup} > 0) {  #Run samtools mpileup
 
@@ -2384,17 +2402,20 @@ else {
 		     program_name => "rankvariant",
 		    });
     }
-    $logger->info("[Endvariantannotationblock]\n");
+    if ($active_parameter{pendvariantannotationblock} > 0) {  #Run endvariantannotationblock. Done per family
 
-    endvariantannotationblock({parameter_href => \%parameter,
-			       active_parameter_href => \%active_parameter,
-			       sample_info_href => \%sample_info,
-			       file_info_href => \%file_info,
-			       infile_lane_no_ending_href => \%infile_lane_no_ending,
-			       job_id_href => \%job_id,
-			       call_type => "BOTH",
-			       program_name => "endvariantannotationblock",
-			      });
+	$logger->info("[Endvariantannotationblock]\n");
+	
+	endvariantannotationblock({parameter_href => \%parameter,
+				   active_parameter_href => \%active_parameter,
+				   sample_info_href => \%sample_info,
+				   file_info_href => \%file_info,
+				   infile_lane_no_ending_href => \%infile_lane_no_ending,
+				   job_id_href => \%job_id,
+				   call_type => "BOTH",
+				   program_name => "endvariantannotationblock",
+				  });
+    }
 }
 
 if ($active_parameter{pgatk_variantevalexome} > 0) {  #Run GATK varianteval for exome variants. Done per sample_id
@@ -3409,6 +3430,7 @@ sub endvariantannotationblock {
 
     my ($arg_href) = @_;
 
+
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
@@ -3485,7 +3507,12 @@ sub endvariantannotationblock {
 
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{prankvariant}{file_tag};
+    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
     my $outfile_tag = $file_info_href->{$$family_id_ref}{prankvariant}{file_tag};
+    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type);
+    my $final_path_no_ending = catfile($outfamily_directory, $outfile_no_ending);
 
     my $vcfparser_analysis_type = "";
     my $contigs_size_ordered_ref = \@{ $file_info_href->{contigs_size_ordered} };  #Set default for size ordered contigs
@@ -3520,7 +3547,7 @@ sub endvariantannotationblock {
 							      program_info_path => $program_info_path,
 							      core_number => $core_number,
 							      xargs_file_counter => $xargs_file_counter,
-							      infile => $$family_id_ref.$infile_tag.$call_type,
+							      infile => $infile_no_ending,
 							      file_ending => $vcfparser_analysis_type.".vcf*",
 							      indirectory => $infamily_directory,
 							      temp_directory => $active_parameter_href->{temp_directory},
@@ -3531,28 +3558,56 @@ sub endvariantannotationblock {
 	concatenate_variants({active_parameter_href => $active_parameter_href,
 			      FILEHANDLE => $FILEHANDLE,
 			      elements_ref => \@contigs,
-			      infile_prefix => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_"),
+			      infile_prefix => $file_path_no_ending."_",
 			      infile_postfix => $vcfparser_analysis_type.".vcf",
-			      outfile => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf"),
+			      outfile => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf",
 			     });
+
+	## Remove variants in hgnc_id list from vcf
+	if ($active_parameter_href->{endvariantannotationblock_remove_genes_file}) {
+
+	    ## Removes contig_names from contigs array if no male or other found
+	    grep_remove({filter_file => catfile($$reference_dir_ref, $active_parameter_href->{sv_reformat_remove_genes_file}),
+			 infile => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf",
+			 outfile => $outfile_path_no_ending.$vcfparser_analysis_type."_filtered.vcf",
+			 FILEHANDLE => $FILEHANDLE,
+			});
+
+	    if ($vcfparser_outfile_counter == 1) {
+
+		$sample_info_href->{program}{$program_name}{reformat_remove_genes_file}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type."_filtered.vcf";   #Save filtered file
+	    }
+	    else {
+
+		$sample_info_href->{program}{$program_name}{reformat_remove_genes_file}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type."_filtered.vcf";   #Save filtered file
+	    }
+
+	    ## Copies file from temporary directory.
+	    say $FILEHANDLE "## Copy file from temporary directory";
+	    migrate_file_from_temp({temp_path => $outfile_path_no_ending.$vcfparser_analysis_type."_filtered.vcf",
+				    file_path => $outfamily_directory,
+				    FILEHANDLE => $FILEHANDLE,
+				   });
+	    say $FILEHANDLE "wait", "\n";
+	}
 
 	if ($active_parameter_href->{rankvariant_binary_file}) {
 
 	    ## Compress or decompress original file or stream to outfile (if supplied)
 	    bgzip({FILEHANDLE => $FILEHANDLE,
-		   infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf"),
-		   outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf.gz"),
+		   infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf",
+		   outfile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf.gz",
 		  });
 
 	    ## Index file using tabix
 	    tabix({FILEHANDLE => $FILEHANDLE,
-		   infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf.gz"),
+		   infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf.gz",
 		  });
 	}
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf*"),
+	migrate_file_from_temp({temp_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf*",
 				file_path => $outfamily_directory,
 				FILEHANDLE => $FILEHANDLE,
 			       });
@@ -3562,7 +3617,7 @@ sub endvariantannotationblock {
 	add_most_complete_vcf({active_parameter_href => $active_parameter_href,
 			       sample_info_href => $sample_info_href,
 			       program_name => $program_name,
-			       path => catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf"),
+			       path => $final_path_no_ending.$vcfparser_analysis_type.".vcf",
 			       vcfparser_outfile_counter => $vcfparser_outfile_counter,
 			      });
 
@@ -3570,20 +3625,20 @@ sub endvariantannotationblock {
 
 	    if ($vcfparser_outfile_counter == 1) {
 
-		$sample_info_href->{program}{$program_name}{clinical}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf");   #Save clinical candidate list path
+		$sample_info_href->{program}{$program_name}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type.".vcf";   #Save clinical candidate list path
 
 		if ($active_parameter_href->{rankvariant_binary_file}) {
 
-		    $sample_info_href->{vcf_binary_file}{clinical}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf.gz");
+		    $sample_info_href->{vcf_binary_file}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type.".vcf.gz";
 		}
 	    }
 	    else {
 
-		$sample_info_href->{program}{$program_name}{research}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf");   #Save research candidate list path
+		$sample_info_href->{program}{$program_name}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type.".vcf";   #Save research candidate list path
 
 		if ($active_parameter_href->{rankvariant_binary_file}) {
 
-		    $sample_info_href->{vcf_binary_file}{research}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf.gz");
+		    $sample_info_href->{vcf_binary_file}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type.".vcf.gz";
 		}
 	    }
 	}
@@ -8495,6 +8550,280 @@ sub sambamba_depth {
 }
 
 
+sub sv_reformat {
+
+##sv_reformat
+
+##Function : Concatenate contig files.
+##Returns  : "|$xargs_file_counter"
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
+##         : $parameter_href             => The parameter hash {REF}
+##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
+##         : $sample_info_href           => Info on samples and family hash {REF}
+##         : $file_info_href             => The file_info hash {REF}
+##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $job_id_href                => The job_id hash {REF}
+##         : $family_id_ref              => The family_id_ref {REF}
+##         : $call_type                  => The variant call type
+##         : $program_name               => The program name
+##         : $file_name                  => File name
+##         : $FILEHANDLE                 => Sbatch filehandle to write to
+##         : $family_id_ref              => The family_id {REF}
+##         : $temp_directory_ref         => The temporary directory {REF}
+##         : $reference_dir_ref          => MIP reference directory {REF}
+##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
+##         : $call_type                  => The variant call type
+##         : $xargs_file_counter         => The xargs file counter
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
+    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
+    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
+    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $call_type;
+    my $xargs_file_counter;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $file_info_href;
+    my $infile_lane_no_ending_href;
+    my $job_id_href;
+    my $program_name;
+
+    my $tmpl = {
+	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
+	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
+	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
+	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
+	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
+	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
+	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	call_type => { default => "SV", strict_type => 1, store => \$call_type},
+	xargs_file_counter => { default => 0,
+				allow => qr/^\d+$/,
+				strict_type => 1, store => \$xargs_file_counter},
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $xargs_file_name;
+    my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
+    my $time = 20;
+
+    ## Set the number of cores
+    my $core_number = 1;
+
+    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
+								 job_id_href => $job_id_href,
+								 FILEHANDLE => $FILEHANDLE,
+								 directory_id => $$family_id_ref,
+								 program_name => $program_name,
+								 program_directory => catfile(lc($$outaligner_dir_ref)),
+								 core_number => $core_number,
+								 process_time => 10,
+								 temp_directory => $$temp_directory_ref
+								});
+
+    ## Assign directories
+    my $infamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref);
+    my $outfamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref);
+    my $outfamily_file_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref);
+
+    ## Assign file_tags
+    my $infile_tag = $file_info_href->{$$family_id_ref}{psv_rankvariant}{file_tag};
+    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{psv_rankvariant}{file_tag};
+    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type);
+    my $final_path_no_ending = catfile($outfamily_directory, $outfile_no_ending);
+
+    my $vcfparser_analysis_type = "";
+    my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };  #Set default
+    my @contigs = @{ $file_info_href->{contigs} };  #Set default for handling subset of contigs
+
+    ### If no males or other remove contig Y from all downstream analysis
+    my @contig_arrays = (\@contigs_size_ordered, \@contigs);
+    
+    foreach my $array_ref (@contig_arrays) {
+	
+	## Removes contig_names from contigs array if no male or other found
+	remove_contigs({active_parameter_href => $active_parameter_href,
+			contigs_ref => $array_ref,
+			contig_names_ref => ["Y"],
+		       });
+    }
+
+    for (my $vcfparser_outfile_counter=0;$vcfparser_outfile_counter<$active_parameter_href->{vcfparser_outfile_count};$vcfparser_outfile_counter++) {
+
+	if ($vcfparser_outfile_counter == 1) {
+
+	    $vcfparser_analysis_type = ".selected";  #SelectFile variants
+	    @contigs_size_ordered = @{ $file_info_href->{sorted_select_file_contigs} };  #Selectfile contigs
+	    @contigs = @{ $file_info_href->{select_file_contigs} };
+	}
+
+	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Transfer contig files
+
+	    ## Copy file(s) to temporary directory
+	    say $FILEHANDLE "## Copy file(s) to temporary directory";
+	    $xargs_file_counter = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
+							      XARGSFILEHANDLE => $XARGSFILEHANDLE,
+							      files_ref => \@contigs_size_ordered,
+							      file_name => $file_name,
+							      program_info_path => $program_info_path,
+							      core_number => $core_number,
+							      xargs_file_counter => $xargs_file_counter,
+							      infile => $infile_no_ending,
+							      file_ending => $vcfparser_analysis_type.".vcf*",
+							      indirectory => $infamily_directory,
+							      temp_directory => $active_parameter_href->{temp_directory},
+							     });
+	}
+	else {
+
+	    ## Copy file(s) to temporary directory
+	    say $FILEHANDLE "## Copy file(s) to temporary directory";
+	    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
+				  path => catfile($infamily_directory, $infile_no_ending.$vcfparser_analysis_type.".vcf"),
+				  temp_directory => $$temp_directory_ref
+				 });
+	    say $FILEHANDLE "wait", "\n";
+	}
+
+	my $concatenate_ending = "";
+	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {
+	    
+	    $concatenate_ending = "_cat";
+	    
+	    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
+	    concatenate_variants({active_parameter_href => $active_parameter_href,
+				  FILEHANDLE => $FILEHANDLE,
+				  elements_ref => \@contigs,
+				  infile_prefix => $file_path_no_ending."_",
+				  infile_postfix => $vcfparser_analysis_type.".vcf",
+				  outfile => $file_path_no_ending.$vcfparser_analysis_type.$concatenate_ending.".vcf",
+				 });
+	}
+
+	## Writes sbatch code to supplied filehandle to sort variants in vcf format
+	sort_vcf({active_parameter_href => $active_parameter_href,
+		  FILEHANDLE => $FILEHANDLE,
+		  sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict"),
+		  infile => $file_path_no_ending.$vcfparser_analysis_type.$concatenate_ending.".vcf",
+		  outfile => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf",
+		 });
+
+	print $FILEHANDLE "\n";
+
+	## Remove variants in hgnc_id list from vcf
+	if ($active_parameter_href->{sv_reformat_remove_genes_file}) {
+
+	    ## Removes contig_names from contigs array if no male or other found
+	    grep_remove({filter_file => catfile($$reference_dir_ref, $active_parameter_href->{sv_reformat_remove_genes_file}),
+			 infile => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf",
+			 outfile => $outfile_path_no_ending.$vcfparser_analysis_type."_filtered.vcf",
+			 FILEHANDLE => $FILEHANDLE,
+			});
+
+	    if ($vcfparser_outfile_counter == 1) {
+
+		$sample_info_href->{program}{$program_name}{sv_reformat_remove_genes_file}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type."_filtered.vcf";   #Save filtered file
+	    }
+	    else {
+
+		$sample_info_href->{program}{$program_name}{sv_reformat_remove_genes_file}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type."_filtered.vcf";   #Save filtered file
+	    }
+
+	    ## Copies file from temporary directory.
+	    say $FILEHANDLE "## Copy file from temporary directory";
+	    migrate_file_from_temp({temp_path => $outfile_path_no_ending.$vcfparser_analysis_type."_filtered.vcf",
+				    file_path => $outfamily_directory,
+				    FILEHANDLE => $FILEHANDLE,
+				   });
+	    say $FILEHANDLE "wait", "\n";
+	}
+
+	if ($active_parameter_href->{sv_rankvariant_binary_file}) {
+
+	    ## Compress or decompress original file or stream to outfile (if supplied)
+	    bgzip({FILEHANDLE => $FILEHANDLE,
+		   infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf",
+		   outfile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf.gz",
+		  });
+
+	    ## Index file using tabix
+	    tabix({FILEHANDLE => $FILEHANDLE,
+		   infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf.gz",
+		  });
+	}
+
+	## Copies file from temporary directory.
+	say $FILEHANDLE "## Copy file from temporary directory";
+	migrate_file_from_temp({temp_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf*",
+				file_path => $outfamily_directory,
+				FILEHANDLE => $FILEHANDLE,
+			       });
+	say $FILEHANDLE "wait", "\n";
+
+	## Adds the most complete vcf file to sample_info
+	add_most_complete_vcf({active_parameter_href => $active_parameter_href,
+			       sample_info_href => $sample_info_href,
+			       program_name => $program_name,
+			       path => $final_path_no_ending.$vcfparser_analysis_type.".vcf",
+			       vcfparser_outfile_counter => $vcfparser_outfile_counter,
+			       vcf_file_key => "sv_vcf_file",
+			      });
+
+	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
+
+	    if ($vcfparser_outfile_counter == 1) {
+
+		$sample_info_href->{program}{$program_name}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type.".vcf";   #Save clinical candidate list path
+
+		if ($active_parameter_href->{sv_rankvariant_binary_file}) {
+
+		    $sample_info_href->{sv_vcf_binary_file}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type.".vcf.gz";
+		}
+	    }
+	    else {
+
+		$sample_info_href->{program}{$program_name}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type.".vcf";   #Save research candidate list path
+
+		if ($active_parameter_href->{sv_rankvariant_binary_file}) {
+
+		    $sample_info_href->{sv_vcf_binary_file}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type.".vcf.gz";
+		}
+	    }
+	}
+    }
+    close($FILEHANDLE);
+
+    if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
+
+	submit_job({active_parameter_href => $active_parameter_href,
+		    sample_info_href => $sample_info_href,
+		    job_id_href => $job_id_href,
+		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    dependencies => "case_dependency",
+		    path => $parameter_href->{"p".$program_name}{chain},
+		    sbatch_file_name => $file_name
+		   });
+    }
+}
+
+
 sub sv_rankvariant {
 
 ##sv_rankvariant
@@ -8807,70 +9136,48 @@ sub sv_rankvariant {
 	    }
 	}
 
-	my $concatenate_ending = "";
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {
-	    
-	    $concatenate_ending = "_cat";
-	    
-	    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
-	    concatenate_variants({active_parameter_href => $active_parameter_href,
-				  FILEHANDLE => $FILEHANDLE,
-				  elements_ref => \@contigs,
-				  infile_prefix => catfile($$temp_directory_ref, $infile_ending_stub."_"),
-				  infile_postfix => $vcfparser_analysis_type.$genmod_module.".vcf",
-				  outfile => catfile($$temp_directory_ref, $infile_ending_stub.$vcfparser_analysis_type.$concatenate_ending.".vcf"),
-				 });
+
+	    ## Copies file from temporary directory.
+	    say $FILEHANDLE "## Copy file(s) from temporary directory";
+	    ($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
+										  XARGSFILEHANDLE => $XARGSFILEHANDLE,
+										  files_ref => \@contigs,
+										  file_name =>$file_name,
+										  program_info_path => $program_info_path,
+										  core_number => $core_number,
+										  xargs_file_counter => $xargs_file_counter,
+										  outfile => $outfile_ending_stub,
+										  file_ending => $vcfparser_analysis_type.".vcf*",
+										  outdirectory => $outfamily_directory,
+										  temp_directory => $$temp_directory_ref,
+										 });
 	}
 	else {
 
-	    $concatenate_ending = $genmod_module;
+	    ## Copies file from temporary directory.
+	    say $FILEHANDLE "## Copy file from temporary directory";
+	    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $outfile_ending_stub.$vcfparser_analysis_type.".vcf*"),
+				    file_path => $outfamily_directory,
+				    FILEHANDLE => $FILEHANDLE,
+				   });
+	    say $FILEHANDLE "wait", "\n";
 	}
 
-	## Writes sbatch code to supplied filehandle to sort variants in vcf format
-	sort_vcf({active_parameter_href => $active_parameter_href,
-		  FILEHANDLE => $FILEHANDLE,
-		  sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict"),
-		  infile => catfile($$temp_directory_ref, $infile_ending_stub.$vcfparser_analysis_type.$concatenate_ending.".vcf"),
-		  outfile => catfile($$temp_directory_ref, $outfile_ending_stub.$vcfparser_analysis_type.".vcf"),
-		 });
+	## Adds the most complete vcf file to sample_info
+	add_most_complete_vcf({active_parameter_href => $active_parameter_href,
+			       sample_info_href => $sample_info_href,
+			       program_name => $program_name,
+			       path => catfile($outfamily_directory, $outfile_ending_stub.$vcfparser_analysis_type.".vcf"),
+			       vcfparser_outfile_counter => $vcfparser_outfile_counter,
+			       vcf_file_key => "sv_vcf_file",
+			      });
 
-	print $FILEHANDLE "\n";
-
-	if ($consensus_analysis_type eq "wes") {
-
-	    ## Enable trap for signal(s) and function
-	    enable_trap({FILEHANDLE => $FILEHANDLE,
-			});
-	}
-
-	if ($active_parameter_href->{sv_rankvariant_binary_file}) {
-
-	    ## Compress or decompress original file or stream to outfile (if supplied)
-	    bgzip({FILEHANDLE => $FILEHANDLE,
-		   infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf"),
-		   outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf.gz"),
-		  });
-
-	    ## Index file using tabix
-	    tabix({FILEHANDLE => $FILEHANDLE,
-		   infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf.gz"),
-		  });
-	}
-
-	## Copies file from temporary directory.
-	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf*"),
-				file_path => $outfamily_directory,
-				FILEHANDLE => $FILEHANDLE,
-			       });
-	say $FILEHANDLE "wait", "\n";
-
-
+	
 	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
 	    if ($vcfparser_outfile_counter == 1) {
 
-		$sample_info_href->{sv_vcf_file}{clinical}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf");
 		$sample_info_href->{program}{sv_rankvariant}{clinical}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf");   #Save clinical candidate list path
 
 		if ($active_parameter_href->{sv_rankvariant_binary_file}) {
@@ -8880,7 +9187,6 @@ sub sv_rankvariant {
 	    }
 	    else {
 
-		$sample_info_href->{sv_vcf_file}{research}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf");
 		$sample_info_href->{program}{sv_rankvariant}{research}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf");   #Save research candidate list path
 
 		if ($active_parameter_href->{sv_rankvariant_binary_file}) {
@@ -9238,6 +9544,7 @@ sub sv_vcfparser {
 			       program_name => $program_name,
 			       path => catfile($outfamily_directory, $outfile_ending_stub.$vcfparser_analysis_type.".vcf"),
 			       vcfparser_outfile_counter => $vcfparser_outfile_counter,
+			       vcf_file_key => "sv_vcf_file",
 			      });
     }
     close($FILEHANDLE);
@@ -14554,7 +14861,10 @@ sub variantannotationblock {
 
 	$logger->info("\t[Rankvariant]\n");
     }
-    $logger->info("\t[Endvariantannotationblock]\n");
+    if ($active_parameter{pendvariantannotationblock} > 0) {  #Run endvariantannotationblock. Done per family
+
+	$logger->info("\t[Endvariantannotationblock]\n");
+    }
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -14681,20 +14991,23 @@ sub variantannotationblock {
 							       xargs_file_counter => $xargs_file_counter,
 							      });
     }
-    ## Run endvariantannotationblock. Done per family
-    ($xargs_file_counter, $xargs_file_name) = endvariantannotationblock({parameter_href => $parameter_href,
-									 active_parameter_href => $active_parameter_href,
-									 sample_info_href => $sample_info_href,
-									 file_info_href => $file_info_href,
-									 infile_lane_no_ending_href => $infile_lane_no_ending_href,
-									 job_id_href => $job_id_href,
-									 call_type => $call_type,
-									 program_name => "endvariantannotationblock",
-									 file_name => $file_name,
-									 program_info_path => $program_info_path,
-									 FILEHANDLE => $FILEHANDLE,
-									 xargs_file_counter => $xargs_file_counter,
-									});
+    if ($active_parameter{pendvariantannotationblock} > 0) {  #Run endvariantannotationblock. Done per family
+
+	## Run endvariantannotationblock. Done per family
+	($xargs_file_counter, $xargs_file_name) = endvariantannotationblock({parameter_href => $parameter_href,
+									     active_parameter_href => $active_parameter_href,
+									     sample_info_href => $sample_info_href,
+									     file_info_href => $file_info_href,
+									     infile_lane_no_ending_href => $infile_lane_no_ending_href,
+									     job_id_href => $job_id_href,
+									     call_type => $call_type,
+									     program_name => "endvariantannotationblock",
+									     file_name => $file_name,
+									     program_info_path => $program_info_path,
+									     FILEHANDLE => $FILEHANDLE,
+									     xargs_file_counter => $xargs_file_counter,
+									    });
+    }
 }
 
 
@@ -23926,11 +24239,14 @@ sub add_most_complete_vcf {
 ##         : $program_name              => Program name
 ##         : $family_id_ref             => The family ID {REF}
 ##         : $vcfparser_outfile_counter => Number of outfile files from in vcfParser (select, range)
+##         : $vcf_file_key              => Key for labelling most complete vcf
 
     my ($arg_href) = @_;
 
+    ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $vcfparser_outfile_counter;
+    my $vcf_file_key;
 
     ## Flatten argument(s)
     my $active_parameter_href;
@@ -23945,6 +24261,9 @@ sub add_most_complete_vcf {
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	vcfparser_outfile_counter => { default => 0, strict_type => 1, store => \$vcfparser_outfile_counter},
+	vcf_file_key => { default => "vcf_file",
+			  allow => ["vcf_file", "sv_vcf_file"],
+			  strict_type => 1, store => \$vcf_file_key},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -23953,11 +24272,11 @@ sub add_most_complete_vcf {
 
 	if ($vcfparser_outfile_counter == 1) {
 
-	    $sample_info_href->{vcf_file}{clinical}{path} = $path;
+	    $sample_info_href->{$vcf_file_key}{clinical}{path} = $path;
 	}
 	else {
 
-	    $sample_info_href->{vcf_file}{research}{path} = $path;
+	    $sample_info_href->{$vcf_file_key}{research}{path} = $path;
 	}
     }
 }
@@ -27305,6 +27624,43 @@ sub remove_contigs {
 			      remove_contigs_ref => $contig_names_ref,
 			     });
     }
+}
+
+
+sub grep_remove {
+
+##grep_remove
+
+##Function : Removes line according to string in file.
+##Returns  : ""
+##Arguments: $filter_file, $infile, $outfile, $FILEHANDLE
+##         : $filter_file => Filter file containing strings to filter
+##         : $infile      => Infile to filter
+##         : $outfile     => Outfile
+##         : $FILEHANDLE  => Filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $filter_file;
+    my $infile;
+    my $outfile;
+    my $FILEHANDLE;
+    
+    my $tmpl = { 
+	filter_file => { required => 1, defined => 1, strict_type => 1, store => \$filter_file},
+	infile => { required => 1, defined => 1, strict_type => 1, store => \$infile},
+	outfile => { required => 1, defined => 1, strict_type => 1, store => \$outfile},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+    };
+     
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    print $FILEHANDLE "grep ";
+    print $FILEHANDLE "-v ";
+    print $FILEHANDLE "-f ".$filter_file." ";
+    print $FILEHANDLE $infile." ";
+    say $FILEHANDLE "> ".$outfile, "\n";
 }
 
 

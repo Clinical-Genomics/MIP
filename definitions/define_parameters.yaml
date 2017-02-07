@@ -993,12 +993,32 @@ sv_rank_model_file:
   exists_check: file
   reference: reference_dir
   type: path
+##Sv_reformat
+psv_reformat:
+  associated_program:
+   - mip
+  chain: MAIN
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  program_name_path:
+   - grep
+  type: program
 sv_rankvariant_binary_file:
   associated_program:
-   - psv_rankvariant
+   - psv_reformat
   data_type: SCALAR
   default: 1
   type: program_argument
+sv_reformat_remove_genes_file:
+  associated_program:
+   - psv_reformat
+  build_file: no_auto_build
+  data_type: SCALAR
+  default: aggregate_acmg_-2017-02-07-.txt
+  exists_check: file
+  reference: reference_dir
+  type: path
 ##Samtools
 psamtools_mpileup:
   associated_program:
@@ -1867,12 +1887,6 @@ rank_model_file:
   exists_check: file
   reference: reference_dir
   type: path
-rankvariant_binary_file:
-  associated_program:
-   - prankvariant
-  data_type: SCALAR
-  default: 1
-  type: program_argument
 ##Endvariantannotationblock
 pendvariantannotationblock:
   associated_program:
@@ -1882,6 +1896,21 @@ pendvariantannotationblock:
   default: 1
   file_tag: nofile_tag
   type: program
+rankvariant_binary_file:
+  associated_program:
+   - pendvariantannotationblock
+  data_type: SCALAR
+  default: 1
+  type: program_argument
+endvariantannotationblock_remove_genes_file:
+  associated_program:
+   - pendvariantannotationblock
+  build_file: no_auto_build
+  data_type: SCALAR
+  default: aggregate_acmg_-2017-02-07-.txt
+  exists_check: file
+  reference: reference_dir
+  type: path
 ## QCCollect
 pqccollect:
   associated_program:
