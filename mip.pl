@@ -182,7 +182,7 @@ mip.pl  -ifd [infile_dirs=sample_id] -sd [script_dir] -rd [reference_dir] -p [pr
                  -svravrm/--sv_rank_model_file Rank model config file (defaults to "")
                -psvre/psv_reformat Concatenating files (defaults to "1" (=yes))
                  -svrevbf/--sv_rankvariant_binary_file Produce binary file from the rank variant chromosome sorted vcfs (defaults to "1" (=yes))
-                 -svrergf/--sv_reformat_remove_genes_file Remove variants in hgnc_ids (defaults to "GRCh37_aggregate_acmg_-2017-02-07-.txt")
+                 -svrergf/--sv_reformat_remove_genes_file Remove variants in hgnc_ids (defaults to "")
 
                ##Samtools
                -psmp/--psamtools_mpileup Variant calling using samtools mpileup and bcftools (defaults to "1" (=yes))
@@ -288,7 +288,7 @@ mip.pl  -ifd [infile_dirs=sample_id] -sd [script_dir] -rd [reference_dir] -p [pr
 
                -pevab/--pendvariantannotationblock End variant annotation block by concatenating files (defaults to "1" (=yes))
                  -ravbf/--rankvariant_binary_file Produce binary file from the rank variant chromosomal sorted vcfs (defaults to "1" (=yes))
-                 -evabrgf/--endvariantannotationblock_remove_genes_file Remove variants in hgnc_ids (defaults to "GRCh37_aggregate_acmg_-2017-02-07-.txt")
+                 -evabrgf/--endvariantannotationblock_remove_genes_file Remove variants in hgnc_ids (defaults to "")
 
                ###Utility
                -psck/--psamplecheck QC for samples gender and relationship (defaults to "1" (=yes) )
@@ -2299,7 +2299,7 @@ else {
     }
     if ($active_parameter{pvarianteffectpredictor} > 0) {  #Run varianteffectpredictor. Done per family
 
-	$logger->info("[varianteffectpredictor]\n");
+	$logger->info("[Varianteffectpredictor]\n");
 
 	varianteffectpredictor({parameter_href => \%parameter,
 				active_parameter_href => \%active_parameter,

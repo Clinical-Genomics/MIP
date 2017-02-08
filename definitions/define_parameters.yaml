@@ -1015,8 +1015,8 @@ sv_reformat_remove_genes_file:
    - psv_reformat
   build_file: no_auto_build
   data_type: SCALAR
-  default: GRCh37_aggregate_acmg_-2017-02-07-.txt
   exists_check: file
+  mandatory: no
   reference: reference_dir
   type: path
 ##Samtools
@@ -1909,8 +1909,8 @@ endvariantannotationblock_remove_genes_file:
    - pendvariantannotationblock
   build_file: no_auto_build
   data_type: SCALAR
-  default: GRCh37_aggregate_acmg_-2017-02-07-.txt
   exists_check: file
+  mandatory: no
   reference: reference_dir
   type: path
 ## QCCollect
