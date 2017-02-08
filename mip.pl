@@ -8533,8 +8533,16 @@ sub sv_rankvariant {
     my $outfile_ending_stub = $$family_id_ref.$outfile_tag.$call_type;
 
     my $vcfparser_analysis_type = "";
-    my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };  #Set default
-    my @contigs = @{ $file_info_href->{contigs} };  #Set default for handling subset of contigs
+    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
+    my @contigs_size_ordered = remove_element({elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
+					       remove_contigs_ref => ["MT", "M"],
+					       contig_switch => 1,
+					      });
+    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
+    my @contigs = remove_element({elements_ref => \@{ $file_info_href->{contigs} },
+				  remove_contigs_ref => ["MT", "M"],
+				  contig_switch => 1,
+				 });
 
     ### If no males or other remove contig Y from all downstream analysis
     my @contig_arrays = (\@contigs_size_ordered, \@contigs);
@@ -8563,8 +8571,17 @@ sub sv_rankvariant {
 	if ($vcfparser_outfile_counter == 1) {
 
 	    $vcfparser_analysis_type = ".selected";  #SelectFile variants
-	    @contigs_size_ordered = @{ $file_info_href->{sorted_select_file_contigs} };  #Selectfile contigs
-	    @contigs = @{ $file_info_href->{select_file_contigs} };
+	    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
+	    @contigs = remove_element({elements_ref => \@{ $file_info_href->{select_file_contigs} },
+				       remove_contigs_ref => ["MT", "M"],
+				       contig_switch => 1,
+				      });
+
+	    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
+	    @contigs_size_ordered = remove_element({elements_ref => \@{ $file_info_href->{sorted_select_file_contigs} },
+						    remove_contigs_ref => ["MT", "M"],
+						    contig_switch => 1,
+						   });
 	}
 
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Transfer contig files
@@ -8948,7 +8965,11 @@ sub sv_vcfparser {
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
     my $outfile_ending_stub = $$family_id_ref.$outfile_tag.$call_type;
 
-    my @contigs = @{ $file_info_href->{contigs_size_ordered} };  #Set default
+    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
+    my @contigs = remove_element({elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
+				  remove_contigs_ref => ["MT", "M"],
+				  contig_switch => 1,
+				 });
 
     ### If no males or other remove contig Y from all downstream analysis
     ## Removes contig_names from contigs array if no male or other found
@@ -9135,7 +9156,12 @@ sub sv_vcfparser {
 	if ($vcfparser_outfile_counter == 1) {
 
 	    $vcfparser_analysis_type = ".selected";  #SelectFile variants
-	    @contigs = @{ $file_info_href->{sorted_select_file_contigs} };
+
+	    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
+	    @contigs = remove_element({elements_ref => \@{ $file_info_href->{sorted_select_file_contigs} },
+				       remove_contigs_ref => ["MT", "M"],
+				       contig_switch => 1,
+				      });
 	}
 
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {
@@ -9259,7 +9285,11 @@ sub sv_varianteffectpredictor {
     my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
     my $fork_number = 4;  #varianteffectpredictor forks
 
-    my @contigs = @{ $file_info_href->{contigs_size_ordered} };  #Set default
+    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
+    my @contigs = remove_element({elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
+				  remove_contigs_ref => ["MT", "M"],
+				  contig_switch => 1,
+				 });
     
     ### If no males or other remove contig Y from all downstream analysis
     ## Removes contig_names from contigs array if no male or other found
