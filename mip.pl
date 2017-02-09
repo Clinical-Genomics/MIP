@@ -8652,9 +8652,18 @@ sub sv_reformat {
     my $final_path_no_ending = catfile($outfamily_directory, $outfile_no_ending);
 
     my $vcfparser_analysis_type = "";
-    my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };  #Set default
-    my @contigs = @{ $file_info_href->{contigs} };  #Set default for handling subset of contigs
 
+    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
+    @contigs = remove_element({elements_ref => \@{ $file_info_href->{contigs} },
+			       remove_contigs_ref => ["MT", "M"],
+			       contig_switch => 1,
+			      });
+
+    my @contigs_size_ordered = remove_element({elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
+					       remove_contigs_ref => ["MT", "M"],
+					       contig_switch => 1,
+					      });
+    
     ### If no males or other remove contig Y from all downstream analysis
     my @contig_arrays = (\@contigs_size_ordered, \@contigs);
     
@@ -8672,8 +8681,17 @@ sub sv_reformat {
 	if ($vcfparser_outfile_counter == 1) {
 
 	    $vcfparser_analysis_type = ".selected";  #SelectFile variants
-	    @contigs_size_ordered = @{ $file_info_href->{sorted_select_file_contigs} };  #Selectfile contigs
-	    @contigs = @{ $file_info_href->{select_file_contigs} };
+
+	    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
+	    @contigs_size_ordered = remove_element({elements_ref => \@{ $file_info_href->{sorted_select_file_contigs} },
+						    remove_contigs_ref => ["MT", "M"],
+						    contig_switch => 1,
+						   });
+
+	    @contigs = remove_element({elements_ref => \@{ $file_info_href->{select_file_contigs} },
+				       remove_contigs_ref => ["MT", "M"],
+				       contig_switch => 1,
+				      });
 	}
 
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Transfer contig files
@@ -9140,6 +9158,15 @@ sub sv_rankvariant {
 
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {
 
+	    $outfile_ending .= "_".$contigs[0];
+
+	    ## QC Data File(s)
+	    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $outfile_ending.".vcf"),
+				    file_path => $outfamily_directory,
+				    FILEHANDLE => $FILEHANDLE,
+				   });
+	    say $FILEHANDLE "wait", "\n";
+
 	    ## Copies file from temporary directory.
 	    say $FILEHANDLE "## Copy file(s) from temporary directory";
 	    ($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
@@ -9164,16 +9191,16 @@ sub sv_rankvariant {
 				    FILEHANDLE => $FILEHANDLE,
 				   });
 	    say $FILEHANDLE "wait", "\n";
-	}
 
-	## Adds the most complete vcf file to sample_info
-	add_most_complete_vcf({active_parameter_href => $active_parameter_href,
-			       sample_info_href => $sample_info_href,
-			       program_name => $program_name,
-			       path => catfile($outfamily_directory, $outfile_ending_stub.$vcfparser_analysis_type.".vcf"),
-			       vcfparser_outfile_counter => $vcfparser_outfile_counter,
-			       vcf_file_key => "sv_vcf_file",
-			      });
+	    ## Adds the most complete vcf file to sample_info
+	    add_most_complete_vcf({active_parameter_href => $active_parameter_href,
+				   sample_info_href => $sample_info_href,
+				   program_name => $program_name,
+				   path => catfile($outfamily_directory, $outfile_ending_stub.$vcfparser_analysis_type.".vcf"),
+				   vcfparser_outfile_counter => $vcfparser_outfile_counter,
+				   vcf_file_key => "sv_vcf_file",
+				  });
+	}
 
 	
 	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
@@ -9454,10 +9481,19 @@ sub sv_vcfparser {
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
 	## Clear old vcfparser entry if present
-	if (defined($sample_info_href->{$program_name})) {
+	if (exists($sample_info_href->{$program_name})) {
 
 	    delete($sample_info_href->{$program_name});
 	}
+
+	## Collect QC metadata info for later use
+	sample_info_qc({sample_info_href => $sample_info_href,
+			program_name => $program_name,
+			outdirectory => $outfamily_directory,
+			outfile_ending => $outfile_ending.".vcf",
+			outdata_type => "static"
+		       });
+
 	if ($active_parameter_href->{sv_vcfparser_range_feature_file}) {
 
 	    ## Collect databases(s) from a potentially merged select_file and adds them to sample_info
@@ -9490,14 +9526,6 @@ sub sv_vcfparser {
 	    }
 	    $sample_info_href->{$program_name}{select_file}{path} = catfile($active_parameter_href->{sv_vcfparser_select_file});
 	}
-
-	## Collect QC metadata info for later use
-	sample_info_qc({sample_info_href => $sample_info_href,
-			program_name => $program_name,
-			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_ending.".vcf",
-			outdata_type => "static"
-		       });
     }
 
     close($XARGSFILEHANDLE);
@@ -9538,16 +9566,16 @@ sub sv_vcfparser {
 				    FILEHANDLE => $FILEHANDLE,
 				   });
 	    say $FILEHANDLE "wait", "\n";
+	    
+	    ## Adds the most complete vcf file to sample_info
+	    add_most_complete_vcf({active_parameter_href => $active_parameter_href,
+				   sample_info_href => $sample_info_href,
+				   program_name => $program_name,
+				   path => catfile($outfamily_directory, $outfile_ending_stub.$vcfparser_analysis_type.".vcf"),
+				   vcfparser_outfile_counter => $vcfparser_outfile_counter,
+				   vcf_file_key => "sv_vcf_file",
+				  });
 	}
-
-	## Adds the most complete vcf file to sample_info
-	add_most_complete_vcf({active_parameter_href => $active_parameter_href,
-			       sample_info_href => $sample_info_href,
-			       program_name => $program_name,
-			       path => catfile($outfamily_directory, $outfile_ending_stub.$vcfparser_analysis_type.".vcf"),
-			       vcfparser_outfile_counter => $vcfparser_outfile_counter,
-			       vcf_file_key => "sv_vcf_file",
-			      });
     }
     close($FILEHANDLE);
 
