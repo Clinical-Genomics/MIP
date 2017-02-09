@@ -1905,7 +1905,7 @@ if ($active_parameter{psv_rankvariant} > 0) {  #Run sv_rankvariant. Done per fam
 
 if ($active_parameter{psv_reformat} > 0) {  #Run sv_reformat. Done per family
 
-    $logger->info("[SV reformat]\n");
+    $log->info("[SV reformat]\n");
 
     sv_reformat({parameter_href => \%parameter,
 		 active_parameter_href => \%active_parameter,
@@ -2415,7 +2415,7 @@ else {
     }
     if ($active_parameter{pendvariantannotationblock} > 0) {  #Run endvariantannotationblock. Done per family
 
-	$logger->info("[Endvariantannotationblock]\n");
+	$log->info("[Endvariantannotationblock]\n");
 	
 	endvariantannotationblock({parameter_href => \%parameter,
 				   active_parameter_href => \%active_parameter,
@@ -4015,8 +4015,8 @@ sub rankvariant {
 		    
 		    $sample_info_href->{program}{rankvariant}{rank_model}{version} = $1;
 		}
-		$sample_info_href->{program}{rankvariant}{rank_model}{file} = $active_parameter_href->{rank_model_file};
-		$sample_info_href->{program}{rankvariant}{rank_model}{path} = catfile($$reference_dir_ref, $active_parameter_href->{rank_model_file});
+		$sample_info_href->{program}{rankvariant}{rank_model}{file} = basename($active_parameter_href->{rank_model_file});
+		$sample_info_href->{program}{rankvariant}{rank_model}{path} = $active_parameter_href->{rank_model_file};
 	    }
 	}
     }
@@ -8628,7 +8628,7 @@ sub sambamba_depth {
     print $FILEHANDLE "sambamba ";  #Program
     print $FILEHANDLE "depth ";  #Sub command
     print $FILEHANDLE "region "; #Mode
-    print $FILEHANDLE "--regions ".catfile($$reference_dir_ref, $active_parameter_href->{sambamba_depth_bed})." ";  #Region to calculate coverage on
+    print $FILEHANDLE "--regions ".$active_parameter_href->{sambamba_depth_bed}." ";  #Region to calculate coverage on
     print $FILEHANDLE "--fix-mate-overlaps ";
     print $FILEHANDLE "--min-base-quality ".$active_parameter_href->{sambamba_depth_base_quality}." ";  #The minimum base quality to include in analysis
     print $FILEHANDLE q?--filter '?;
@@ -9187,13 +9187,13 @@ sub sv_rankvariant {
 	## Process per contig
 	foreach my $contig (@contigs_size_ordered) {
 
-	    my $genmod_file_ending_stub = $infile_ending_stub;
+	    my $genmod_file_ending_stub = $infile_no_ending;
 	    my $genmod_xargs_file_name = $xargs_file_name;
 	    my $genmod_indata = catfile($$temp_directory_ref, $genmod_file_ending_stub.$vcfparser_analysis_type.".vcf")." ";  #InFile
 	    
 	    if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Update endings with contig info
 		
-		$genmod_file_ending_stub = $infile_ending_stub."_".$contig;
+		$genmod_file_ending_stub = $infile_no_ending."_".$contig;
 		$genmod_xargs_file_name = $xargs_file_name.".".$contig;
 		$genmod_indata = catfile($$temp_directory_ref, $genmod_file_ending_stub.$vcfparser_analysis_type.".vcf")." ";  #InFile
 	    }
@@ -9213,7 +9213,7 @@ sub sv_rankvariant {
 	    if ( (defined($parameter_href->{dynamic_parameter}{unaffected})) && (@{ $parameter_href->{dynamic_parameter}{unaffected} } eq @{ $active_parameter_href->{sample_ids} }) ) {  #Only unaffected
 		
 		## Write to outputFile - last genmod module
-		print $XARGSFILEHANDLE "-o ".$outfile_path_no_ending."_".$$contig_ref.$vcfparser_analysis_type.".vcf ";  #OutFile
+		print $XARGSFILEHANDLE "-o ".$outfile_path_no_ending."_".$contig.$vcfparser_analysis_type.".vcf ";  #OutFile
 		print $XARGSFILEHANDLE "2> ".$genmod_xargs_file_name.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		say $XARGSFILEHANDLE $genmod_indata;  #Infile
 	    }
@@ -9293,7 +9293,7 @@ sub sv_rankvariant {
 		    print $XARGSFILEHANDLE "--vep ";
 		}
 
-		print $XARGSFILEHANDLE "-o ".$outfile_path_no_ending."_".$$contig_ref.$vcfparser_analysis_type.".vcf ";  #OutFile
+		print $XARGSFILEHANDLE "-o ".$outfile_path_no_ending."_".$contig.$vcfparser_analysis_type.".vcf ";  #OutFile
 		print $XARGSFILEHANDLE "2> ".$genmod_xargs_file_name.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		
 		say $XARGSFILEHANDLE $genmod_indata;  #InStream or Infile
@@ -15420,7 +15420,7 @@ sub variantannotationblock {
     }
     if ($active_parameter{pendvariantannotationblock} > 0) {  #Run endvariantannotationblock. Done per family
 
-	$logger->info("\t[Endvariantannotationblock]\n");
+	$log->info("\t[Endvariantannotationblock]\n");
     }
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
