@@ -86,10 +86,10 @@ $parameter{bioconda}{mosaik} = "2.2.26";
 $parameter{bioconda}{htslib} = "1.3.1";
 $parameter{bioconda}{bedtools} = "2.26.0";
 $parameter{bioconda}{vt} = "2015.11.10";
-$parameter{bioconda}{sambamba} = "0.6.3";
+$parameter{bioconda}{sambamba} = "0.6.5";
 $parameter{bioconda}{freebayes} = "1.0.2.0";
 $parameter{bioconda}{delly} = "0.7.2";
-$parameter{bioconda}{manta} = "1.0.0";
+$parameter{bioconda}{manta} = "1.0.3";
 $parameter{bioconda_manta_patch} = "-0";
 $parameter{bioconda}{multiqc} = "0.8dev0";
 $parameter{bioconda}{plink2} = "1.90b3.35";
@@ -104,7 +104,7 @@ $parameter{bioconda}{gcc} = "4.8.5";  #Required for CNVnator
 $parameter{perl_version} = "5.18.2";
 
 ## PIP
-$parameter{pip}{genmod} = "3.5.12";
+$parameter{pip}{genmod} = "3.7.0";
 $parameter{pip}{variant_integrity} = "0.0.4";
 $parameter{pip}{chanjo} = "4.0.0";
 $parameter{pip}{cosmid} = "0.4.9.1";
