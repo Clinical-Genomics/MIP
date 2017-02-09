@@ -1023,6 +1023,10 @@ check_cosmid_installation({parameter_href => \%parameter,
 			   supported_cosmid_reference_href => \%supported_cosmid_reference
 			  });
 
+## Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
+check_prioritize_variant_callers({parameter_href => \%parameter,
+				  active_parameter_href => \%active_parameter,
+				 });
 
 if ($active_parameter{config_file_analysis} ne 0) {  #Write config file for family
 
@@ -1037,12 +1041,6 @@ if ($active_parameter{config_file_analysis} ne 0) {  #Write config file for fami
     ## Add to qc_sample_info
     $sample_info{config_file_analysis} = $active_parameter{config_file_analysis};
 }
-
-
-## Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
-check_prioritize_variant_callers({parameter_href => \%parameter,
-				  active_parameter_href => \%active_parameter,
-				 });
 
 
 ## Set contig prefix and contig names depending on reference used
@@ -11155,7 +11153,7 @@ sub delly_reformat {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => "delly",
 			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_no_ending."vcf",
+			outfile_ending => $outfile_no_ending.".vcf",
 			outdata_type => "static"
 		       });
     }
