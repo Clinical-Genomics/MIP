@@ -1045,12 +1045,32 @@ sv_rank_model_file:
   exists_check: file
   reference: reference_dir
   type: path
+##Sv_reformat
+psv_reformat:
+  associated_program:
+   - mip
+  chain: MAIN
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  program_name_path:
+   - grep
+  type: program
 sv_rankvariant_binary_file:
   associated_program:
-   - psv_rankvariant
+   - psv_reformat
   data_type: SCALAR
   default: 1
   type: program_argument
+sv_reformat_remove_genes_file:
+  associated_program:
+   - psv_reformat
+  build_file: no_auto_build
+  data_type: SCALAR
+  exists_check: file
+  mandatory: no
+  reference: reference_dir
+  type: path
 ##Samtools
 psamtools_mpileup:
   associated_program:
@@ -1920,6 +1940,7 @@ genmod_models_whole_gene:
 genmod_models_family_type:
   associated_program:
    - prankvariant
+   - psamplecheck
   data_type: SCALAR
   default: ped
   type: program_argument
@@ -1939,12 +1960,32 @@ rank_model_file:
   exists_check: file
   reference: reference_dir
   type: path
+##Endvariantannotationblock
+pendvariantannotationblock:
+  associated_program:
+   - mip
+  chain: MAIN
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  program_name_path:
+   - grep
+  type: program
 rankvariant_binary_file:
   associated_program:
-   - prankvariant
+   - pendvariantannotationblock
   data_type: SCALAR
   default: 1
   type: program_argument
+endvariantannotationblock_remove_genes_file:
+  associated_program:
+   - pendvariantannotationblock
+  build_file: no_auto_build
+  data_type: SCALAR
+  exists_check: file
+  mandatory: no
+  reference: reference_dir
+  type: path
 ## QCCollect
 pqccollect:
   associated_program:
