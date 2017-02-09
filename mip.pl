@@ -3771,13 +3771,17 @@ sub rankvariant {
 
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{psnpeff}{file_tag};
+    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
     my $vcfparser_analysis_type = "";
-    my $contigs_size_ordered_ref = \@{ $file_info_href->{contigs_size_ordered} };  #Set default for size ordered contigs
+    my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };  #Set default for size ordered contigs
     my @contigs = @{ $file_info_href->{contigs} };  #Set default for contigs
     my $family_file = catfile($outfamily_file_directory, $$family_id_ref.".fam");
-
+    
     ## Create .fam file to be used in variant calling analyses
     create_fam_file({parameter_href => $parameter_href,
 		     active_parameter_href => $active_parameter_href,
@@ -3791,16 +3795,22 @@ sub rankvariant {
 	if ($vcfparser_outfile_counter == 1) {
 
 	    $vcfparser_analysis_type = ".selected";  #SelectFile variants
-	    $contigs_size_ordered_ref = \@{ $file_info_href->{sorted_select_file_contigs} };  #Selectfile contigs
+	    @contigs_size_ordered = @{ $file_info_href->{sorted_select_file_contigs} };  #Selectfile contigs
 	    @contigs = @{ $file_info_href->{select_file_contigs} };
 
 	    if ($consensus_analysis_type eq "wes" ) {  #Remove MT|M since no exome kit so far has mitochondrial probes
 
 		## Removes an element from array and return new array while leaving orginal elements_ref untouched
 		@contigs = remove_element({elements_ref => \@{ $file_info_href->{select_file_contigs} },
-							    remove_contigs_ref => ["MT", "M"],
-							    contig_switch => 1,
-							   });
+					   remove_contigs_ref => ["MT", "M"],
+					   contig_switch => 1,
+					  });
+
+		## Removes an element from array and return new array while leaving orginal elements_ref untouched
+		@contigs_size_ordered = remove_element({elements_ref => \@{ $file_info_href->{sorted_select_file_contigs} },
+							remove_contigs_ref => ["MT", "M"],
+							contig_switch => 1,
+						       });
 	    }
 	}
 
@@ -3810,12 +3820,12 @@ sub rankvariant {
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
 	    $xargs_file_counter = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 							      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-							      files_ref => $contigs_size_ordered_ref,
+							      files_ref => \@contigs_size_ordered,
 							      file_name => $file_name,
 							      program_info_path => $program_info_path,
 							      core_number => $core_number,
 							      xargs_file_counter => $xargs_file_counter,
-							      infile => $$family_id_ref.$infile_tag.$call_type,
+							      infile => $infile_no_ending,
 							      file_ending => $vcfparser_analysis_type.".vcf*",
 							      indirectory => $infamily_directory,
 							      temp_directory => $active_parameter_href->{temp_directory},
@@ -3838,11 +3848,11 @@ sub rankvariant {
 	my $genmod_module = "";  #Track which genmod modules has been processed
 
 	## Process per contig
-	for (my $contigs_counter=0;$contigs_counter<scalar(@$contigs_size_ordered_ref);$contigs_counter++) {
+	for (my $contigs_counter=0;$contigs_counter<scalar(@contigs_size_ordered);$contigs_counter++) {
 
-	    my $contig_ref = \$contigs_size_ordered_ref->[$contigs_counter];
+	    my $contig_ref = \$contigs_size_ordered[$contigs_counter];
 	    $genmod_module = "";  #Restart for next contig
-	    my $genmod_indata = catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.".vcf")." ";  #InFile
+	    my $genmod_indata = $file_path_no_ending."_".$$contig_ref.$vcfparser_analysis_type.".vcf ";  #InFile
 
 	    ## Check affected/unaffected status
 	    if ( (defined($parameter_href->{dynamic_parameter}{unaffected})) && (@{ $parameter_href->{dynamic_parameter}{unaffected} } eq @{ $active_parameter_href->{sample_ids} }) ) {  #Only unaffected
@@ -3874,12 +3884,12 @@ sub rankvariant {
 	    if ( (defined($parameter_href->{dynamic_parameter}{unaffected})) && (@{ $parameter_href->{dynamic_parameter}{unaffected} } eq @{ $active_parameter_href->{sample_ids} }) ) {  #Only unaffected
 
 		## Write to outputFile - last genmod module
-		print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.$genmod_module.".vcf")." ";  #OutFile
+		print $XARGSFILEHANDLE "-o ".$outfile_path_no_ending."_".$$contig_ref.$vcfparser_analysis_type.".vcf ";  #OutFile
 		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		say $XARGSFILEHANDLE $genmod_indata;  #Infile
 	    }
 	    else {
-
+		
 		## Write to outputstream
 		print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
 		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
@@ -3951,7 +3961,7 @@ sub rankvariant {
 		    print $XARGSFILEHANDLE "--vep ";
 		}
 
-		print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$$contig_ref.$vcfparser_analysis_type.$genmod_module.".vcf")." ";  #OutFile
+		print $XARGSFILEHANDLE "-o ".$outfile_path_no_ending."_".$$contig_ref.$vcfparser_analysis_type.".vcf ";  #OutFile
 		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		say $XARGSFILEHANDLE $genmod_indata;  #InFile
 	    }
@@ -3963,12 +3973,12 @@ sub rankvariant {
 	    say $FILEHANDLE "## Copy file from temporary directory";
 	    ($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 										  XARGSFILEHANDLE => $XARGSFILEHANDLE,
-										  files_ref => $contigs_size_ordered_ref,
+										  files_ref => \@contigs_size_ordered,
 										  file_name =>$file_name,
 										  program_info_path => $program_info_path,
 										  core_number => $active_parameter_href->{core_processor_number},
 										  xargs_file_counter => $xargs_file_counter,
-										  outfile => $$family_id_ref.$outfile_tag.$call_type,
+										  outfile => $outfile_no_ending,
 										  file_ending => $vcfparser_analysis_type.".vcf*",
 										  outdirectory => $outfamily_directory,
 										  temp_directory => $$temp_directory_ref,
@@ -3977,45 +3987,39 @@ sub rankvariant {
 	else {
 	    
 	    ## QC Data File(s)
-	    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.".vcf"),
+	    migrate_file_from_temp({temp_path => $outfile_path_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.".vcf",
 				    file_path => $outfamily_directory,
 				    FILEHANDLE => $FILEHANDLE,
 				   });
 	    say $FILEHANDLE "wait", "\n";
 	}
-	
-	## Adds the most complete vcf file to sample_info
-	add_most_complete_vcf({active_parameter_href => $active_parameter_href,
-			       sample_info_href => $sample_info_href,
-			       program_name => $program_name,
-			       path => catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf"),
-			       vcfparser_outfile_counter => $vcfparser_outfile_counter,
-			      });
-    }
 
-    if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
+	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
-	if (defined($active_parameter_href->{rank_model_file})) {  #Add to SampleInfo
+	    sample_info_qc({sample_info_href => $sample_info_href,
+			    program_name => "genmod",
+			    outdirectory => $outfamily_directory,
+			    outfile_ending => $outfile_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.".vcf",
+			    outdata_type => "static"
+			   });
 
-	    if ($active_parameter_href->{rank_model_file}=~/v(\d+\.\d+.\d+|\d+\.\d+)/) {
-
-		$sample_info_href->{program}{rankvariant}{rank_model}{version} = $1;
+	    if (defined($active_parameter_href->{rank_model_file})) {  #Add to SampleInfo
+		
+		if ($active_parameter_href->{rank_model_file}=~/v(\d+\.\d+.\d+|\d+\.\d+)/) {
+		    
+		    $sample_info_href->{program}{rankvariant}{rank_model}{version} = $1;
+		}
+		$sample_info_href->{program}{rankvariant}{rank_model}{file} = $active_parameter_href->{rank_model_file};
+		$sample_info_href->{program}{rankvariant}{rank_model}{path} = catfile($$reference_dir_ref, $active_parameter_href->{rank_model_file});
 	    }
-	    $sample_info_href->{program}{rankvariant}{rank_model}{file} = $active_parameter_href->{rank_model_file};
-	    $sample_info_href->{program}{rankvariant}{rank_model}{path} = catfile($$reference_dir_ref, $active_parameter_href->{rank_model_file});
-
 	}
-	sample_info_qc({sample_info_href => $sample_info_href,
-			program_name => "genmod",
-			outdirectory => $outfamily_directory,
-			outfile_ending => $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf",
-			outdata_type => "static"
-		       });
-
-	if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
+    }
+    if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
 	    
-	    close($FILEHANDLE);
-
+	close($FILEHANDLE);
+    
+	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
+	    
 	    submit_job({active_parameter_href => $active_parameter_href,
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
@@ -4027,7 +4031,7 @@ sub rankvariant {
 	}
     }
     if ($$reduce_io_ref) {
-
+	
 	return $xargs_file_counter;  #Track the number of created xargs scripts per module for Block algorithm
     }
 }
@@ -4739,14 +4743,6 @@ sub snpeff {
 				   });
 	    say $FILEHANDLE "wait", "\n";
 	}
-
-	## Adds the most complete vcf file to sample_info
-	add_most_complete_vcf({active_parameter_href => $active_parameter_href,
-			       sample_info_href => $sample_info_href,
-			       program_name => $program_name,
-			       path => catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf"),
-			       vcfparser_outfile_counter => $vcfparser_outfile_counter,
-			      });
     }
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
@@ -5311,14 +5307,6 @@ sub vcfparser {
 										  outdirectory => $outfamily_directory,
 										  temp_directory => $$temp_directory_ref,
 										 });
-
-	    ## Adds the most complete vcf file to sample_info
-	    add_most_complete_vcf({active_parameter_href => $active_parameter_href,
-				   sample_info_href => $sample_info_href,
-				   program_name => $program_name,
-				   path => catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf"),
-				   vcfparser_outfile_counter => $vcfparser_outfile_counter,
-				  });
 	}
 	close($FILEHANDLE);
     }
@@ -8654,10 +8642,10 @@ sub sv_reformat {
     my $vcfparser_analysis_type = "";
 
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
-    @contigs = remove_element({elements_ref => \@{ $file_info_href->{contigs} },
-			       remove_contigs_ref => ["MT", "M"],
-			       contig_switch => 1,
-			      });
+    my @contigs = remove_element({elements_ref => \@{ $file_info_href->{contigs} },
+				  remove_contigs_ref => ["MT", "M"],
+				  contig_switch => 1,
+				 });
 
     my @contigs_size_ordered = remove_element({elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
 					       remove_contigs_ref => ["MT", "M"],
@@ -8939,9 +8927,10 @@ sub sv_rankvariant {
 
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{psv_vcfparser}{file_tag};
-    my $infile_ending_stub = $$family_id_ref.$infile_tag.$call_type;
+    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-    my $outfile_ending_stub = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
     my $vcfparser_analysis_type = "";
 
@@ -9008,7 +8997,7 @@ sub sv_rankvariant {
 							      program_info_path => $program_info_path,
 							      core_number => $core_number,
 							      xargs_file_counter => $xargs_file_counter,
-							      infile => $$family_id_ref.$infile_tag.$call_type,
+							      infile => $infile_no_ending,
 							      file_ending => $vcfparser_analysis_type.".vcf*",
 							      indirectory => $infamily_directory,
 							      temp_directory => $active_parameter_href->{temp_directory},
@@ -9019,14 +9008,10 @@ sub sv_rankvariant {
 	    ## Copy file(s) to temporary directory
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
 	    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-				  path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.$vcfparser_analysis_type.".vcf"),
+				  path => catfile($infamily_directory, $infile_no_ending.$vcfparser_analysis_type.".vcf"),
 				  temp_directory => $$temp_directory_ref
 				 });
 	    say $FILEHANDLE "wait", "\n";
-
-	    ## Clear trap for signal(s)
-	    clear_trap({FILEHANDLE => $FILEHANDLE,
-		       });
 	}
 
 	my $genmod_module = "";  #Track which genmod modules has been processed
@@ -9057,13 +9042,13 @@ sub sv_rankvariant {
 	for (my $contigs_counter=0;$contigs_counter<scalar(@contigs_size_ordered);$contigs_counter++) {
 	    
 	    my $contig_ref = \$contigs_size_ordered[$contigs_counter];
-	    my $genmod_file_ending_stub = $infile_ending_stub;
+	    my $genmod_file_ending_stub = $infile_no_ending;
 	    my $genmod_xargs_file_name = $xargs_file_name;
 	    my $genmod_indata = catfile($$temp_directory_ref, $genmod_file_ending_stub.$vcfparser_analysis_type.".vcf")." ";  #InFile
 	    
 	    if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Update endings with contig info
 		
-		$genmod_file_ending_stub = $infile_ending_stub."_".$$contig_ref;
+		$genmod_file_ending_stub = $infile_no_ending."_".$$contig_ref;
 		$genmod_xargs_file_name = $xargs_file_name.".".$$contig_ref;
 		$genmod_indata = catfile($$temp_directory_ref, $genmod_file_ending_stub.$vcfparser_analysis_type.".vcf")." ";  #InFile
 	    }
@@ -9083,7 +9068,7 @@ sub sv_rankvariant {
 	    if ( (defined($parameter_href->{dynamic_parameter}{unaffected})) && (@{ $parameter_href->{dynamic_parameter}{unaffected} } eq @{ $active_parameter_href->{sample_ids} }) ) {  #Only unaffected
 		
 		## Write to outputFile - last genmod module
-		print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $genmod_file_ending_stub.$vcfparser_analysis_type.$genmod_module.".vcf")." ";  #OutFile
+		print $XARGSFILEHANDLE "-o ".$outfile_path_no_ending."_".$$contig_ref.$vcfparser_analysis_type.".vcf ";  #OutFile
 		print $XARGSFILEHANDLE "2> ".$genmod_xargs_file_name.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		say $XARGSFILEHANDLE $genmod_indata;  #Infile
 	    }
@@ -9163,7 +9148,7 @@ sub sv_rankvariant {
 		    print $XARGSFILEHANDLE "--vep ";
 		}
 
-		print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $genmod_file_ending_stub.$vcfparser_analysis_type.$genmod_module.".vcf")." ";  #OutFile
+		print $XARGSFILEHANDLE "-o ".$outfile_path_no_ending."_".$$contig_ref.$vcfparser_analysis_type.".vcf ";  #OutFile
 		print $XARGSFILEHANDLE "2> ".$genmod_xargs_file_name.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		
 		say $XARGSFILEHANDLE $genmod_indata;  #InStream or Infile
@@ -9177,15 +9162,6 @@ sub sv_rankvariant {
 
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {
 
-	    $outfile_ending .= "_".$contigs[0];
-
-	    ## QC Data File(s)
-	    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $outfile_ending.".vcf"),
-				    file_path => $outfamily_directory,
-				    FILEHANDLE => $FILEHANDLE,
-				   });
-	    say $FILEHANDLE "wait", "\n";
-
 	    ## Copies file from temporary directory.
 	    say $FILEHANDLE "## Copy file(s) from temporary directory";
 	    ($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
@@ -9195,7 +9171,7 @@ sub sv_rankvariant {
 										  program_info_path => $program_info_path,
 										  core_number => $core_number,
 										  xargs_file_counter => $xargs_file_counter,
-										  outfile => $outfile_ending_stub,
+										  outfile => $outfile_no_ending,
 										  file_ending => $vcfparser_analysis_type.".vcf*",
 										  outdirectory => $outfamily_directory,
 										  temp_directory => $$temp_directory_ref,
@@ -9205,7 +9181,7 @@ sub sv_rankvariant {
 
 	    ## Copies file from temporary directory.
 	    say $FILEHANDLE "## Copy file from temporary directory";
-	    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $outfile_ending_stub.$vcfparser_analysis_type.".vcf*"),
+	    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $outfile_no_ending.$vcfparser_analysis_type.".vcf*"),
 				    file_path => $outfamily_directory,
 				    FILEHANDLE => $FILEHANDLE,
 				   });
@@ -9215,7 +9191,7 @@ sub sv_rankvariant {
 	    add_most_complete_vcf({active_parameter_href => $active_parameter_href,
 				   sample_info_href => $sample_info_href,
 				   program_name => $program_name,
-				   path => catfile($outfamily_directory, $outfile_ending_stub.$vcfparser_analysis_type.".vcf"),
+				   path => catfile($outfamily_directory, $outfile_no_ending.$vcfparser_analysis_type.".vcf"),
 				   vcfparser_outfile_counter => $vcfparser_outfile_counter,
 				   vcf_file_key => "sv_vcf_file",
 				  });
