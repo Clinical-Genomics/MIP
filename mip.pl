@@ -8670,16 +8670,26 @@ sub sv_reformat {
 
 	    $vcfparser_analysis_type = ".selected";  #SelectFile variants
 
+	    @contigs = remove_element({elements_ref => \@{ $file_info_href->{select_file_contigs} },
+				       remove_contigs_ref => ["MT", "M"],
+				       contig_switch => 1,
+				      });
+
+	    ## Removes contigs from supplied contigs_ref
+	    remove_array_element({contigs_ref => \@contigs,
+				  remove_contigs_ref => ["Y"],
+				 });
+
 	    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
 	    @contigs_size_ordered = remove_element({elements_ref => \@{ $file_info_href->{sorted_select_file_contigs} },
 						    remove_contigs_ref => ["MT", "M"],
 						    contig_switch => 1,
 						   });
 
-	    @contigs = remove_element({elements_ref => \@{ $file_info_href->{select_file_contigs} },
-				       remove_contigs_ref => ["MT", "M"],
-				       contig_switch => 1,
-				      });
+	    ## Removes contigs from supplied contigs_ref
+	    remove_array_element({contigs_ref => \@contigs_size_ordered,
+				  remove_contigs_ref => ["Y"],
+				 });
 	}
 
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Transfer contig files
@@ -8974,17 +8984,28 @@ sub sv_rankvariant {
 
 	    $vcfparser_analysis_type = ".selected";  #SelectFile variants
 
+	    ### Always skip MT and Y in select files  
 	    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
 	    @contigs = remove_element({elements_ref => \@{ $file_info_href->{select_file_contigs} },
 				       remove_contigs_ref => ["MT", "M"],
 				       contig_switch => 1,
 				      });
 
+	    ## Removes contigs from supplied contigs_ref
+	    remove_array_element({contigs_ref => \@contigs,
+				  remove_contigs_ref => ["Y"],
+				 });
+	    
 	    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
 	    @contigs_size_ordered = remove_element({elements_ref => \@{ $file_info_href->{sorted_select_file_contigs} },
 						    remove_contigs_ref => ["MT", "M"],
 						    contig_switch => 1,
 						   });
+
+	    ## Removes contigs from supplied contigs_ref
+	    remove_array_element({contigs_ref => \@contigs_size_ordered,
+				  remove_contigs_ref => ["Y"],
+				 });
 	}
 
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Transfer contig files
