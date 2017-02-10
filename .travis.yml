@@ -8,8 +8,8 @@ install:
   - sudo apt-get update
   - sudo apt-get install libssl1.0.0 libssl-dev
   - cd /lib/x86_64-linux-gnu
-  - sudo ln -s libssl.so.1.0.0 libssl.so.10
-  - sudo ln -s libcrypto.so.1.0.0 libcrypto.so.10
+  - sudo ln -s libssl.so.1.0.0 /usr/lib/libssl.so.10
+  - sudo ln -s libcrypto.so.1.0.0 /usr/lib/libcrypto.so.10
   - cd -
 
 ## Install conda
