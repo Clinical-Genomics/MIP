@@ -2056,17 +2056,6 @@ sub tiddit {
 				FILEHANDLE => $FILEHANDLE,
 			       });
 
-#    ## Add to bashrc
-#    unless (-d catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "FindTranslocations", "bin")) {
-
-#	## Export path
-#	print $FILEHANDLE "## Export to bashrc\n";
-#	print $FILEHANDLE q?printf '\nif [ -f ?.$parameter{conda_path}.q?/envs/?.$parameter_href->{conda_environment}.q?/FindTranslocations/bin/FindTranslocations ]; then\n?;
-#	print $FILEHANDLE q?\t\texport LD_LIBRARY_PATH=$LD_LIBRARY_PATH:?.$parameter{conda_path}.q?/pkgs/boost-?.$parameter{bioconda}{boost}.$parameter{bioconda_boost_patch}.q?/lib\n?;
-#	print $FILEHANDLE q?fi\n\n' >> ~/.bashrc?;
-#	print $FILEHANDLE "\n\n";
-#    }
-
     ## Move to miniconda environment
     print $FILEHANDLE "cd ".catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment});
     print $FILEHANDLE "\n\n";
@@ -2105,10 +2094,12 @@ sub tiddit {
     print $FILEHANDLE catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"), "\n\n";
 
     ## Clean-up
-    print $FILEHANDLE "cd ".catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment});
-    print $FILEHANDLE "\n\n";
-    print $FILEHANDLE "rm -rf Tiddit-".$parameter_href->{tiddit}.".zip";
-    print $FILEHANDLE "\n\n";
+    print $FILEHANDLE "cd ".catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}), "\n\n";
+    print $FILEHANDLE "rm -rf Tiddit-".$parameter_href->{tiddit}.".zip", "\n\n";
+
+    ## Moving up
+    print $FILEHANDLE "## Moving back to original working directory\n";
+    print $FILEHANDLE "cd ".$pwd, "\n\n";  #Go back to subroutine origin
 
     ## Deactivate conda environment
     deactivate_conda_environment({FILEHANDLE => $FILEHANDLE,
