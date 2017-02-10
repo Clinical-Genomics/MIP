@@ -56,7 +56,8 @@ BEGIN {
            -rhc/--rhocall Set the rhocall version (Default: "0.3")
            -rhcp/--rhocall_path Set the path to where to install rhocall (Defaults: "HOME/rhocall")
            -cnvn/--cnvnator Set the cnvnator version (Default: 0.3.3)
-           -cnvnr/--cnvnator_root_binary Set the cnvnator root binary (Default: "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz") 
+           -cnvnr/--cnvnator_root_binary Set the cnvnator root binary (Default: "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz")
+           -tid/--tiddit Set the tiddit version (Default: "TIDDIT3")
 
            ## Utility
            -psh/--prefer_shell Shell will be used for overlapping shell and biconda installations (Supply flag to enable)
@@ -104,7 +105,7 @@ $parameter{bioconda}{multiqc} = "0.8dev0";
 $parameter{bioconda}{plink2} = "1.90b3.35";
 $parameter{bioconda}{vcfanno} = "0.1.0";
 $parameter{bioconda}{gcc} = "4.8.5";  #Required for CNVnator
-#$parameter{bioconda}{cmake} = "3.3.1";
+$parameter{bioconda}{cmake} = "3.3.1";
 #$parameter{bioconda}{boost} = "1.57.0";
 #$parameter{bioconda_boost_patch} = "-4";
 
@@ -137,7 +138,7 @@ $parameter{rhocall_path} = catdir($ENV{HOME}, "rhocall");
 
 $parameter{cnvnator} = "0.3.3";
 $parameter{cnvnator_root_binary} = "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz";
-#$parameter{findtranslocations} = "0";
+$parameter{tiddit} = "0";
 
 my $install_version = "1.0.1";
 
@@ -171,7 +172,7 @@ GetOptions('env|conda_environment:s'  => \$parameter{conda_environment},
 	   'rhcp|rhocall_path:s' => \$parameter{rhocall_path},
 	   'cnv|cnvnator:s' => \$parameter{cnvnator},
 	   'cnvnr|cnvnator_root_binary:s' => \$parameter{cnvnator_root_binary},
-#	   'ftr|findtranslocations:s' => \$parameter{findtranslocations},
+	   'tid|tiddit:s' => \$parameter{tiddit},
 	   'psh|prefer_shell' => \$parameter{prefer_shell},  # Shell will be used for overlapping shell and biconda installations
 	   'ppd|print_parameters_default' => sub { print_parameters({parameter_href => \%parameter}); exit;},  #Display parameter defaults
 	   'nup|noupdate' => \$parameter{noupdate},
@@ -352,12 +353,12 @@ if (@{ $parameter{select_programs} }) {
 		  FILEHANDLE => $BASHFILEHANDLE,
 		 });
     }
-#    if ( ( grep {$_ eq "findtranslocations"} @{ $parameter{select_programs} } ) ) { #If element is part of array
+    if ( ( grep {$_ eq "tiddit"} @{ $parameter{select_programs} } ) ) { #If element is part of array
 
-#	findtranslocations({parameter_href => \%parameter,
-#			     FILEHANDLE => $BASHFILEHANDLE,
-#			    });
-#    }
+	tiddit({parameter_href => \%parameter,
+		FILEHANDLE => $BASHFILEHANDLE,
+	       });
+    }
 }
 else {
 
@@ -380,9 +381,9 @@ else {
 	      FILEHANDLE => $BASHFILEHANDLE,
 	     });
 
-#    findtranslocations({parameter_href => \%parameter,
-#			 FILEHANDLE => $BASHFILEHANDLE,
-#			});
+    tiddit({parameter_href => \%parameter,
+	    FILEHANDLE => $BASHFILEHANDLE,
+	   });
 }
 
 if(defined($parameter{reference_dir})) {
@@ -2014,11 +2015,11 @@ sub cnvnator {
 }
 
 
-sub findtranslocations {
+sub tiddit {
 
-##findtranslocations
+##tiddit
 
-##Function : Install findtranslocations
+##Function : Install tiddit
 ##Returns  : ""
 ##Arguments: $parameter_href, $FILEHANDLE
 ##         : $parameter_href => Holds all parameters
@@ -2041,14 +2042,14 @@ sub findtranslocations {
 
     ## Check if the binary of the program being installed already exists
     if (check_conda_bin_file_exists({parameter_href => $parameter_href,
-				     program_name => "findtranslocations",
+				     program_name => "tiddit",
 				    })) {
 
 	return
     }
 
-    ## Install findtranslocations
-    print $FILEHANDLE "### Install findtranslocations\n";
+    ## Install tiddit
+    print $FILEHANDLE "### Install tiddit\n";
 
     ## Activate conda environment
     activate_conda_environment({parameter_href => $parameter_href,
