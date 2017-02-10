@@ -2074,7 +2074,7 @@ sub tiddit {
     ## Download
     print $FILEHANDLE "## Download Tiddit\n";
     print $FILEHANDLE "wget --quiet https://github.com/J35P312/TIDDIT/archive/".$parameter_href->{tiddit}.".zip ";
-    print $FILEHANDLE "-O tidit-".$parameter_href->{tiddit}.".zip";  #Download outfile
+    print $FILEHANDLE "-O TIDDIT-".$parameter_href->{tiddit}.".zip";  #Download outfile
     print $FILEHANDLE "\n\n";
 
     ## Extract
