@@ -138,7 +138,7 @@ $parameter{rhocall_path} = catdir($ENV{HOME}, "rhocall");
 
 $parameter{cnvnator} = "0.3.3";
 $parameter{cnvnator_root_binary} = "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz";
-$parameter{tiddit} = "0";
+$parameter{tiddit} = "TIDDIT3";
 
 my $install_version = "1.0.1";
 
@@ -2056,70 +2056,58 @@ sub tiddit {
 				FILEHANDLE => $FILEHANDLE,
 			       });
 
-    ## Add to bashrc
-    unless (-d catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "FindTranslocations", "bin")) {
+#    ## Add to bashrc
+#    unless (-d catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "FindTranslocations", "bin")) {
 
-	## Export path
-	print $FILEHANDLE "## Export to bashrc\n";
-	print $FILEHANDLE q?printf '\nif [ -f ?.$parameter{conda_path}.q?/envs/?.$parameter_href->{conda_environment}.q?/FindTranslocations/bin/FindTranslocations ]; then\n?;
-	print $FILEHANDLE q?\t\texport LD_LIBRARY_PATH=$LD_LIBRARY_PATH:?.$parameter{conda_path}.q?/pkgs/boost-?.$parameter{bioconda}{boost}.$parameter{bioconda_boost_patch}.q?/lib\n?;
-	print $FILEHANDLE q?fi\n\n' >> ~/.bashrc?;
-	print $FILEHANDLE "\n\n";
-    }
+#	## Export path
+#	print $FILEHANDLE "## Export to bashrc\n";
+#	print $FILEHANDLE q?printf '\nif [ -f ?.$parameter{conda_path}.q?/envs/?.$parameter_href->{conda_environment}.q?/FindTranslocations/bin/FindTranslocations ]; then\n?;
+#	print $FILEHANDLE q?\t\texport LD_LIBRARY_PATH=$LD_LIBRARY_PATH:?.$parameter{conda_path}.q?/pkgs/boost-?.$parameter{bioconda}{boost}.$parameter{bioconda_boost_patch}.q?/lib\n?;
+#	print $FILEHANDLE q?fi\n\n' >> ~/.bashrc?;
+#	print $FILEHANDLE "\n\n";
+#    }
 
     ## Move to miniconda environment
     print $FILEHANDLE "cd ".catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment});
     print $FILEHANDLE "\n\n";
 
     ## Download
-    print $FILEHANDLE "## Download FindTranslocations\n";
-    print $FILEHANDLE "wget --quiet https://github.com/J35P312/FindTranslocations/archive/version_".$parameter_href->{findtranslocations}.".zip ";
-    print $FILEHANDLE "-O FindTranslocations-".$parameter_href->{findtranslocations}.".zip";  #Download outfile
+    print $FILEHANDLE "## Download Tiddit\n";
+    print $FILEHANDLE "wget --quiet https://github.com/J35P312/TIDDIT/archive/".$parameter_href->{tiddit}.".zip ";
+    print $FILEHANDLE "-O tidit-".$parameter_href->{tiddit}.".zip";  #Download outfile
     print $FILEHANDLE "\n\n";
 
     ## Extract
     print $FILEHANDLE "## Extract\n";
-    print $FILEHANDLE "rm -rf FindTranslocations";
-    print $FILEHANDLE "\n\n";
-    print $FILEHANDLE "unzip FindTranslocations-".$parameter_href->{findtranslocations}.".zip ";
-    print $FILEHANDLE "\n\n";
-    print $FILEHANDLE "mv FindTranslocations-version_".$parameter_href->{findtranslocations}." ";
-    print $FILEHANDLE "FindTranslocations ";
-    print $FILEHANDLE "\n\n";
+    print $FILEHANDLE "rm -rf TIDDIT-".$parameter_href->{tiddit}, "\n\n";
+    print $FILEHANDLE "unzip TIDDIT-".$parameter_href->{tiddit}.".zip", "\n\n";
 
-    ## Move to FindTranslocations directory
-    print $FILEHANDLE "## Move to FindTranslocations directory\n";
-    print $FILEHANDLE "cd FindTranslocations";
-    print $FILEHANDLE "\n\n";
-    print $FILEHANDLE "mkdir -p build";
-    print $FILEHANDLE "\n\n";
-    print $FILEHANDLE "cd build";
-    print $FILEHANDLE "\n\n";
+    ## Move to Tiddit directory
+    print $FILEHANDLE "## Move to Tiddit directory\n";
+    print $FILEHANDLE "cd TIDDIT-".$parameter_href->{tiddit}, "\n\n";
+    print $FILEHANDLE "mkdir -p build", "\n\n";
+    print $FILEHANDLE "cd build", "\n\n";
 
     ## Configure
     print $FILEHANDLE "## Configure\n";
-    print $FILEHANDLE "cmake .. -DBoost_NO_BOOST_CMAKE=ON";
-    print $FILEHANDLE "\n\n";
+    print $FILEHANDLE "cmake .. ", "\n\n";
 
-    print $FILEHANDLE "make";
-    print $FILEHANDLE "\n\n";
+    print $FILEHANDLE "make", "\n\n";
 
-    print $FILEHANDLE "cd ../bin";
-    print $FILEHANDLE "\n\n";
-    print $FILEHANDLE "chmod a+x FindTranslocations";
-    print $FILEHANDLE "\n\n";
+    print $FILEHANDLE "cd ../bin", "\n\n";
+    print $FILEHANDLE "chmod a+x TIDDIT", "\n\n";
 
     ## Make available from conda environment
     my $cwd = cwd();
     print $FILEHANDLE "## Make available from conda environment\n";
     print $FILEHANDLE "ln -f -s  ";
-    print $FILEHANDLE catfile($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "FindTranslocations", "bin", "FindTranslocations")." ".catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin");
-    print $FILEHANDLE "\n\n";
+    print $FILEHANDLE catfile($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "TIDDIT-".$parameter_href->{tiddit}, "bin", "TIDDIT")." ";
+    print $FILEHANDLE catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"), "\n\n";
 
     ## Clean-up
     print $FILEHANDLE "cd ".catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment});
     print $FILEHANDLE "\n\n";
-    print $FILEHANDLE "rm -rf FindTranslocations-".$parameter_href->{findtranslocations}.".zip";
+    print $FILEHANDLE "rm -rf Tiddit-".$parameter_href->{tiddit}.".zip";
     print $FILEHANDLE "\n\n";
 
     ## Deactivate conda environment
