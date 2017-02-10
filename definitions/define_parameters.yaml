@@ -997,7 +997,7 @@ sv_rank_model_file:
 psv_reformat:
   associated_program:
    - mip
-  chain: MAIN
+  chain: SV
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
