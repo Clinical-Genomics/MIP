@@ -8813,16 +8813,26 @@ sub sv_reformat {
 
 	    $vcfparser_analysis_type = ".selected";  #SelectFile variants
 
+	    @contigs = remove_element({elements_ref => \@{ $file_info_href->{select_file_contigs} },
+				       remove_contigs_ref => ["MT", "M"],
+				       contig_switch => 1,
+				      });
+
+	    ## Removes contigs from supplied contigs_ref
+	    remove_array_element({contigs_ref => \@contigs,
+				  remove_contigs_ref => ["Y"],
+				 });
+
 	    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
 	    @contigs_size_ordered = remove_element({elements_ref => \@{ $file_info_href->{sorted_select_file_contigs} },
 						    remove_contigs_ref => ["MT", "M"],
 						    contig_switch => 1,
 						   });
 
-	    @contigs = remove_element({elements_ref => \@{ $file_info_href->{select_file_contigs} },
-				       remove_contigs_ref => ["MT", "M"],
-				       contig_switch => 1,
-				      });
+	    ## Removes contigs from supplied contigs_ref
+	    remove_array_element({contigs_ref => \@contigs_size_ordered,
+				  remove_contigs_ref => ["Y"],
+				 });
 	}
 
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Transfer contig files
@@ -9077,6 +9087,7 @@ sub sv_rankvariant {
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
     my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+    my $final_path_no_ending = catfile($outfamily_directory, $outfile_no_ending);
 
     my $vcfparser_analysis_type = "";
 
@@ -9119,17 +9130,28 @@ sub sv_rankvariant {
 
 	    $vcfparser_analysis_type = ".selected";  #SelectFile variants
 
+	    ### Always skip MT and Y in select files  
 	    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
 	    @contigs = remove_element({elements_ref => \@{ $file_info_href->{select_file_contigs} },
 				       remove_contigs_ref => ["MT", "M"],
 				       contig_switch => 1,
 				      });
 
+	    ## Removes contigs from supplied contigs_ref
+	    remove_array_element({contigs_ref => \@contigs,
+				  remove_contigs_ref => ["Y"],
+				 });
+	    
 	    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
 	    @contigs_size_ordered = remove_element({elements_ref => \@{ $file_info_href->{sorted_select_file_contigs} },
 						    remove_contigs_ref => ["MT", "M"],
 						    contig_switch => 1,
 						   });
+
+	    ## Removes contigs from supplied contigs_ref
+	    remove_array_element({contigs_ref => \@contigs_size_ordered,
+				  remove_contigs_ref => ["Y"],
+				 });
 	}
 
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Transfer contig files
@@ -9188,12 +9210,14 @@ sub sv_rankvariant {
 	foreach my $contig (@contigs_size_ordered) {
 
 	    my $genmod_file_ending_stub = $infile_no_ending;
+	    my $genmod_outfile_path_no_ending = $outfile_path_no_ending;
 	    my $genmod_xargs_file_name = $xargs_file_name;
 	    my $genmod_indata = catfile($$temp_directory_ref, $genmod_file_ending_stub.$vcfparser_analysis_type.".vcf")." ";  #InFile
 	    
 	    if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Update endings with contig info
 		
 		$genmod_file_ending_stub = $infile_no_ending."_".$contig;
+		$genmod_outfile_path_no_ending = $outfile_path_no_ending."_".$contig;
 		$genmod_xargs_file_name = $xargs_file_name.".".$contig;
 		$genmod_indata = catfile($$temp_directory_ref, $genmod_file_ending_stub.$vcfparser_analysis_type.".vcf")." ";  #InFile
 	    }
@@ -9213,7 +9237,7 @@ sub sv_rankvariant {
 	    if ( (defined($parameter_href->{dynamic_parameter}{unaffected})) && (@{ $parameter_href->{dynamic_parameter}{unaffected} } eq @{ $active_parameter_href->{sample_ids} }) ) {  #Only unaffected
 		
 		## Write to outputFile - last genmod module
-		print $XARGSFILEHANDLE "-o ".$outfile_path_no_ending."_".$contig.$vcfparser_analysis_type.".vcf ";  #OutFile
+		print $XARGSFILEHANDLE "-o ".$genmod_outfile_path_no_ending."_".$$vcfparser_analysis_type.".vcf ";  #OutFile
 		print $XARGSFILEHANDLE "2> ".$genmod_xargs_file_name.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		say $XARGSFILEHANDLE $genmod_indata;  #Infile
 	    }
@@ -9293,7 +9317,8 @@ sub sv_rankvariant {
 		    print $XARGSFILEHANDLE "--vep ";
 		}
 
-		print $XARGSFILEHANDLE "-o ".$outfile_path_no_ending."_".$contig.$vcfparser_analysis_type.".vcf ";  #OutFile
+
+		print $XARGSFILEHANDLE "-o ".$genmod_outfile_path_no_ending.$vcfparser_analysis_type.".vcf ";  #OutFile
 		print $XARGSFILEHANDLE "2> ".$genmod_xargs_file_name.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		
 		say $XARGSFILEHANDLE $genmod_indata;  #InStream or Infile
@@ -9347,20 +9372,20 @@ sub sv_rankvariant {
 
 	    if ($vcfparser_outfile_counter == 1) {
 
-		$sample_info_href->{program}{sv_rankvariant}{clinical}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf");   #Save clinical candidate list path
+		$sample_info_href->{program}{sv_rankvariant}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type.".vcf";   #Save clinical candidate list path
 
 		if ($active_parameter_href->{sv_rankvariant_binary_file}) {
 
-		    $sample_info_href->{sv_vcf_binary_file}{clinical}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf.gz");
+		    $sample_info_href->{sv_vcf_binary_file}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type.".vcf.gz";
 		}
 	    }
 	    else {
 
-		$sample_info_href->{program}{sv_rankvariant}{research}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf");   #Save research candidate list path
+		$sample_info_href->{program}{sv_rankvariant}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type.".vcf";   #Save research candidate list path
 
 		if ($active_parameter_href->{sv_rankvariant_binary_file}) {
 
-		    $sample_info_href->{sv_vcf_binary_file}{research}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.$vcfparser_analysis_type.".vcf.gz");
+		    $sample_info_href->{sv_vcf_binary_file}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type.".vcf.gz";
 		}
 	    }
 	}
