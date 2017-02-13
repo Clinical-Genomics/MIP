@@ -381,7 +381,7 @@ eval_parameter_hash({parameter_href => \%parameter,
 		     file_path => catfile($Bin, "definitions", "define_parameters.yaml"),
 		    });
 
-my $mip_version = "v4.0.15";	#Set MIP version
+my $mip_version = "v4.0.16";	#Set MIP version
 
 ## Directories, files, sample_info and job_ids
 my (%infile, %indir_path, %infile_lane_no_ending, %lane, %infile_both_strands_no_ending, %job_id, %sample_info);
@@ -4037,7 +4037,7 @@ sub rankvariant {
 }
 
 
-sub gatk_variantevalexome {
+sub gatk_varantevalexome {
 
 ##gatk_variantevalexome
 
@@ -7054,7 +7054,7 @@ sub gatk_variantrecalibration {
 
 	## Writes java core commands to filehandle.
 	java_core({FILEHANDLE => $FILEHANDLE,
-		   memory_allocation => "Xmx6g",
+		   memory_allocation => "Xmx8g",
 		   java_use_large_pages_ref => \$active_parameter_href->{java_use_large_pages},
 		   java_temporary_directory => $$temp_directory_ref,
 		   java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
