@@ -9092,7 +9092,7 @@ sub sv_rankvariant {
 	    if ( (defined($parameter_href->{dynamic_parameter}{unaffected})) && (@{ $parameter_href->{dynamic_parameter}{unaffected} } eq @{ $active_parameter_href->{sample_ids} }) ) {  #Only unaffected
 		
 		## Write to outputFile - last genmod module
-		print $XARGSFILEHANDLE "-o ".$genmod_outfile_path_no_ending."_".$$vcfparser_analysis_type.".vcf ";  #OutFile
+		print $XARGSFILEHANDLE "-o ".$genmod_outfile_path_no_ending."_".$vcfparser_analysis_type.".vcf ";  #OutFile
 		print $XARGSFILEHANDLE "2> ".$genmod_xargs_file_name.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		say $XARGSFILEHANDLE $genmod_indata;  #Infile
 	    }
