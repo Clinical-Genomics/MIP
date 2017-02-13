@@ -4037,7 +4037,7 @@ sub rankvariant {
 }
 
 
-sub gatk_varantevalexome {
+sub gatk_variantevalexome {
 
 ##gatk_variantevalexome
 
