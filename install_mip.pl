@@ -19,7 +19,7 @@ use File::Spec::Functions qw(catfile catdir devnull);
 
 ##MIPs lib/
 use lib catdir($Bin, "lib");  #Add MIPs internal lib
-use Script::Utils qw(help);
+use Script::Utils qw(help set_default_array_parameters);
 
 our $USAGE;
 
@@ -139,6 +139,37 @@ $parameter{cnvnator} = "0.3.3";
 $parameter{cnvnator_root_binary} = "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz";
 #$parameter{findtranslocations} = "0";
 
+## Define default parameters
+my %array_parameter;
+$array_parameter{vep_assemblies}{default} = ["GRCh37", "GRCh38"];
+$array_parameter{snpeff_genome_versions}{default} = ["GRCh37.75", "GRCh38.82"];  #GRCh38.82 but check current on the snpEff sourceForge
+$array_parameter{reference_genome_versions}{default} = ["GRCh37", "hg38"];
+$array_parameter{perl_modules}{default} = ["Modern::Perl",  #MIP
+					   "IPC::System::Simple",  #MIP
+					   "Path::Iterator::Rule",  #MIP
+					   "YAML",  #MIP
+					   "Log::Log4perl",  #MIP
+					   "List::Util",  #MIP
+					   "Set::IntervalTree",  # MIP/vcfParser.pl
+					   "Net::SSLeay",  # VEP
+					   "LWP::Simple",  # VEP
+					   "LWP::Protocol::https",  # VEP
+					   "PerlIO::gzip",  #VEP
+					   "IO::Uncompress::Gunzip",  #VEP
+					   "HTML::Lint",  #VEP
+					   "Archive::Zip",  # VEP
+					   "Archive::Extract",  #VEP
+					   "DBI",  # VEP
+					   "JSON",  # VEP
+					   "DBD::mysql",  # VEP
+					   "CGI",  # VEP
+					   "Sereal::Encoder",  # VEP
+					   "Sereal::Decoder",  # VEP
+					   "Bio::Root::Version",  #VEP
+					   "Module::Build", #VEP
+					   "File::Copy::Recursive", #VEP
+    ];
+
 my $install_version = "1.0.1";
 
 ###User Options
@@ -173,7 +204,9 @@ GetOptions('env|conda_environment:s'  => \$parameter{conda_environment},
 	   'cnvnr|cnvnator_root_binary:s' => \$parameter{cnvnator_root_binary},
 #	   'ftr|findtranslocations:s' => \$parameter{findtranslocations},
 	   'psh|prefer_shell' => \$parameter{prefer_shell},  # Shell will be used for overlapping shell and biconda installations
-	   'ppd|print_parameters_default' => sub { print_parameters({parameter_href => \%parameter}); exit;},  #Display parameter defaults
+	   'ppd|print_parameters_default' => sub { print_parameters({parameter_href => \%parameter,
+								     array_parameter_href => \%array_parameter,
+								    }); exit;},  #Display parameter defaults
 	   'nup|noupdate' => \$parameter{noupdate},
 	   'sp|select_programs:s' => \@{ $parameter{select_programs} },  #Comma sep string
 	   'rd|reference_dir:s' => \$parameter{reference_dir},  #MIPs reference directory
@@ -193,8 +226,9 @@ if (! $parameter{vep_cache_dir}) {
 
 
 ## Set default for array parameters
-set_default_array_parameters({parameter_href => \%parameter,
-			     });
+Script::Utils::set_default_array_parameters({parameter_href => \%parameter,
+					     array_parameter_href => \%array_parameter,
+					    });
 
 
 ##########
@@ -397,64 +431,6 @@ close($BASHFILEHANDLE);
 
 ###SubRoutines###
 
-sub set_default_array_parameters {
-
-##set_default_array_parameters
-
-##Function : Set default for array parameters
-##Returns  : ""
-##Arguments: $parameter_href
-##         : $parameter_href => Holds all parameters
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-
-    my $tmpl = {
-	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    my %array_parameter;
-    $array_parameter{vep_assemblies}{default} = ["GRCh37", "GRCh38"];
-    $array_parameter{snpeff_genome_versions}{default} = ["GRCh37.75", "GRCh38.82"];  #GRCh38.82 but check current on the snpEff sourceForge
-    $array_parameter{reference_genome_versions}{default} = ["GRCh37", "hg38"];
-    $array_parameter{perl_modules}{default} = ["Modern::Perl",  #MIP
-					       "IPC::System::Simple",  #MIP
-					       "Path::Iterator::Rule",  #MIP
-					       "YAML",  #MIP
-					       "Log::Log4perl",  #MIP
-					       "List::Util",  #MIP
-					       "Set::IntervalTree",  # MIP/vcfParser.pl
-					       "Net::SSLeay",  # VEP
-					       "LWP::Simple",  # VEP
-					       "LWP::Protocol::https",  # VEP
-					       "PerlIO::gzip",  #VEP
-                                               "IO::Uncompress::Gunzip",  #VEP
-                                               "HTML::Lint",  #VEP
-                                               "Archive::Zip",  # VEP
-					       "Archive::Extract",  #VEP
-					       "DBI",  # VEP
-					       "JSON",  # VEP
-					       "DBD::mysql",  # VEP
-					       "CGI",  # VEP
-					       "Sereal::Encoder",  # VEP
-					       "Sereal::Decoder",  # VEP
-					       "Bio::Root::Version",  #VEP
-					       "Module::Build", #VEP
-                                               "File::Copy::Recursive", #VEP
-	];
-
-    foreach my $parameter_name (keys %array_parameter) {
-
-	if (! @{ $parameter_href->{$parameter_name} }) {  #Unless parameter was supplied on cmd
-
-	    $parameter_href->{$parameter_name} = $array_parameter{$parameter_name}{default};
-	}
-    }
-}
 
 sub create_bash_file {
 
@@ -549,24 +525,28 @@ sub print_parameters {
 
 ##Function : Print all parameters and the default values
 ##Returns  : ""
-##Arguments: $parameter_href
-##         : $parameter_href => Holds all parameters
+##Arguments: $parameter_href, $array_parameter_href
+##         : $parameter_href => Holds all parameters {REF}
+##         : $array_parameter_href => Hold the array parameter defaults as {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $parameter_href;
+    my $array_parameter_href;
 
     my $tmpl = {
 	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	array_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$array_parameter_href},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     ## Set default for array parameters
-    set_default_array_parameters({parameter_href => $parameter_href,
-				 });
-
+    Script::Utils::set_default_array_parameters({parameter_href => $parameter_href,
+						 array_parameter_href => \%array_parameter,
+						});
+    
     foreach my $key (keys %{$parameter_href}) {
 
 	if (ref($parameter_href->{$key})!~/ARRAY|HASH/) {

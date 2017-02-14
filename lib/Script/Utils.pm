@@ -11,6 +11,7 @@ $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 use Exporter qw(import);
  
 our @EXPORT_OK = ("help",
+		  "set_default_array_parameters",
     );
 
 
@@ -45,3 +46,35 @@ sub help {
     exit $exit_code;
 }
 
+
+sub set_default_array_parameters {
+
+##set_default_array_parameters
+
+##Function : Set default for array parameters unless parameter already exists in parameter hash
+##Returns  : ""
+##Arguments: $parameter_href, $array_parameter_href
+##         : $parameter_href       => Parameters hash {REF}
+##         : $array_parameter_href => Hold the array parameter defaults as {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $array_parameter_href;
+
+    my $tmpl = {
+	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	array_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$array_parameter_href},
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    foreach my $parameter_name (keys %$array_parameter_href) {
+
+	if (! @{ $parameter_href->{$parameter_name} }) {  #Unless parameter already exists
+
+	    $parameter_href->{$parameter_name} = $array_parameter_href->{$parameter_name}{default};
+	}
+    }
+}

@@ -52,8 +52,7 @@ GetOptions('vb|verbose' => $verbose,
 			      exit_code => 1,
 			     });
 
-ok(check_command_in_path({program => "mip"}), "Checking can run mip");
-
+ok(can_run("mip"), "Checking can run mip");
 
 ## Test execution of mip
 my $cmds_ref = ["mip",
@@ -85,34 +84,3 @@ done_testing();
 ######################
 ####SubRoutines#######
 ######################
-
-
-sub check_command_in_path {
-
-##check_command_in_path
-
-##Function : Checking command in your path and executable
-##Returns  : ""
-##Arguments: $program
-##         : $program => Program to check
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $program;
-
-    my $tmpl = { 
-	program => { required => 1, defined => 1, strict_type => 1, store => \$program},
-    };
-        
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    if(can_run($program)) {  #IPC::Cmd
-
-	return 1;
-    }
-    else {
-	
-	return 0;
-    }
-}

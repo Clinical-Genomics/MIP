@@ -37,6 +37,7 @@ use List::Util qw(any all);
 ##MIPs lib/
 use lib catdir($Bin, "lib");  #Add MIPs internal lib
 use File::Format::Yaml qw(load_yaml write_yaml);
+use File::Parse::Parse qw(find_absolute_path);
 use MIP_log::Log4perl qw(initiate_logger);
 use Check::Check_modules qw(check_modules);
 use Script::Utils qw(help);
@@ -821,9 +822,9 @@ if (exists($active_parameter{email})) {  #Allow no malformed email adress
 
 
 ## Check programs in path, and executable
-check_commandin_path({parameter_href => \%parameter,
-		      active_parameter_href => \%active_parameter,
-		     });
+check_command_in_path({parameter_href => \%parameter,
+		       active_parameter_href => \%active_parameter,
+		      });
 
 
 ## Test that the family_id and the sample_id(s) exists and are unique. Check if id sample_id contains "_".
@@ -24830,9 +24831,9 @@ sub add_most_complete_vcf {
 }
 
 
-sub check_commandin_path {
+sub check_command_in_path {
 
-##check_commandin_path
+##check_command_in_path
 
 ##Function : Checking commands in your path and executable
 ##Returns  : ""
@@ -24974,9 +24975,10 @@ sub update_to_absolute_path {
 		    foreach my $element (@seperate_elements) {
 
 			## Find aboslute path for supplied path or croaks and exists if path does not exists
-			push(@absolute_path_elements, find_absolute_path({path => $element,
-									  parameter_name => $parameter_name,
-									 }));
+			push(@absolute_path_elements, File::Parse::Parse::find_absolute_path({path => $element,
+											      parameter_name => $parameter_name,
+											     })
+			    );
 		    }
 		    $parameter_value = join(",", @absolute_path_elements);  #Replace original input with abolute path entries
 		}
@@ -24991,9 +24993,9 @@ sub update_to_absolute_path {
 		if ( (defined($parameter_value_ref)) && ($parameter_value_ref->{$key} ne "nocmd_input") ) {
 
 		    ## Find aboslute path for supplied path or croaks and exists if path does not exists
-		    my $updated_key = find_absolute_path({path => $key,
-							  parameter_name => $parameter_name,
-							 });
+		    my $updated_key = File::Parse::Parse::find_absolute_path({path => $key,
+									      parameter_name => $parameter_name,
+									     });
 		    $parameter_value_ref->{$updated_key} = delete($parameter_value_ref->{$key});
 		}
 	    }
@@ -25004,51 +25006,15 @@ sub update_to_absolute_path {
 	    	    
 	    if ( (defined($parameter_value)) && ($parameter_value ne "nocmd_input") ) {  #Scalar
 		
-		## Find aboslute path for supplied path or croaks and exists if path does not exists
-		$parameter_value = find_absolute_path({path => $parameter_value,
-						       parameter_name => $parameter_name,
-						      });
+		$parameter_value = File::Parse::Parse::find_absolute_path({path => $parameter_value,
+									   parameter_name => $parameter_name,
+									  });
 		$parameter_href->{$parameter_name}{value} = $parameter_value;
 	    }
 	}
     }
 }
 
-
-sub find_absolute_path {
-
-##find_absolute_path
-
-##Function : Find aboslute path for supplied path or croaks and exists if path does not exists
-##Returns  : "$path - absolute path"
-##Arguments: $path, $parameter_name
-##         : $path           => The supplied path to be updated/evaluated
-##         : $parameter_name => The parameter to be evaluated
-
-    my ($arg_href) = @_;
-
-    ##Flatten argument(s)
-    my $path;
-    my $parameter_name;
-
-    my $tmpl = {
-	path => { required => 1, defined => 1, store => \$path},
-	parameter_name => { required => 1, defined => 1, strict_type => 1, store => \$parameter_name},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    my $tmp_path = $path;
-
-    $path = abs_path($path);
-
-    unless(defined($path)) {
-
-	warn("Could not find absolute path for ".$parameter_name.": ".$tmp_path.". Please check the supplied path!\n");
-	exit 1;
-    }
-    return $path;
-}
 
 sub order_parameter_names {
 

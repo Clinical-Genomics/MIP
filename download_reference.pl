@@ -21,9 +21,10 @@ $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 ##MIPs lib/
 use lib catdir($Bin, "lib");
 use File::Format::Yaml qw(load_yaml);
+use File::Parse::Parse qw(find_absolute_path);
 use MIP_log::Log4perl qw(initiate_logger);
 use Check::Check_modules qw(check_modules);
-use Script::Utils qw(help);
+use Script::Utils qw(help set_default_array_parameters);
 
 our $USAGE;
 
@@ -46,7 +47,7 @@ BEGIN {
 	basename($0).qq{ [options]
            -rd/--reference_dir Reference(s) directory (Default: "")
            -r/--reference Reference to download (e.g. 'clinvar=20170104')
-           -rd/--reference_genome_versions Reference versions to download ((Default: ["GRCh37", "hg38"]))
+           -rg/--reference_genome_versions Reference versions to download ((Default: ["GRCh37", "hg38"]))
            -l/--log_file Log file (Default: "download_reference.log")
            -h/--help Display this help message
            -v/--version Display version
@@ -61,6 +62,10 @@ my %parameter = load_yaml({yaml_file => catfile($Bin, "definitions", "define_dow
 
 ## Set parameter default
 $parameter{reference_dir} = cwd();
+
+## Define default parameters
+my %array_parameter;
+$array_parameter{reference_genome_versions}{default} = ["GRCh37", "hg38"];
 
 my $download_reference_version = "0.0.1";
 
@@ -82,9 +87,9 @@ my $log = MIP_log::Log4perl::initiate_logger({file_path_ref => \$parameter{log_f
 					     });
 
 ## Set default for array parameters
-set_default_array_parameters({parameter_href => \%parameter,
-			     });
-
+Script::Utils::set_default_array_parameters({parameter_href => \%parameter,
+					     array_parameter_href => \%array_parameter,
+					    });
 
 ## Change relative path to absolute path for certain parameters
 update_to_absolute_path({parameter_href => \%parameter,
@@ -509,6 +514,9 @@ sub update_to_absolute_path {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
     
+    ## Retrieve logger object now that log_file has been set
+    my $log = Log::Log4perl->get_logger("Download_reference");
+    
     foreach my $parameter_name (@{ $parameter_href->{absolute_paths} }) {
 
 	if(defined($parameter{$parameter_name})) {
@@ -518,9 +526,10 @@ sub update_to_absolute_path {
 		foreach my $parameter_value (@{ $parameter_href->{$parameter_name} }) {
 		
 		    ## Replace original input with abolute path for supplied path or croaks and exists if path does not exists
-		    $parameter_value = find_absolute_path({path => $parameter_value,
-							   parameter_name => $parameter_name,
-							  });
+		    $parameter_value = File::Parse::Parse::find_absolute_path({path => $parameter_value,
+									       parameter_name => $parameter_name,
+									       log => $log,
+									      });
 		}
 	    }
 	    elsif (ref($parameter_href->{$parameter_name}) eq "HASH") {  #Hash reference
@@ -528,91 +537,22 @@ sub update_to_absolute_path {
 		foreach my $key (keys %{ $parameter_href->{$parameter_name} }) {  #Cannot use each since we are updating key
 
 		    ## Find aboslute path for supplied path or croaks and exists if path does not exists
-		    my $updated_key = find_absolute_path({path => $key,
-							  parameter_name => $parameter_name,
-							 });
+		    my $updated_key = File::Parse::Parse::find_absolute_path({path => $key,
+									      parameter_name => $parameter_name,
+									      log => $log,
+									     });
 		    $parameter_href->{$parameter_name}{$updated_key} = delete($parameter_href->{$parameter_name}{$key});
 		}
 	    }
 	    else {  #Scalar - not a reference
 		
 		## Find aboslute path for supplied path or croaks and exists if path does not exists
-		$parameter_href->{$parameter_name} = find_absolute_path({path => $parameter_href->{$parameter_name},
-									 parameter_name => $parameter_name,
-									});
+		$parameter_href->{$parameter_name} = File::Parse::Parse::find_absolute_path({path => $parameter_href->{$parameter_name},
+											     parameter_name => $parameter_name,
+											     log => $log,
+											    });
 	    }
 	}
     }
 }
 
-
-sub find_absolute_path {
-
-##find_absolute_path
-
-##Function : Find aboslute path for supplied path or croaks and exists if path does not exists
-##Returns  : "$path - absolute path"
-##Arguments: $path, $parameter_name
-##         : $path           => The supplied path to be updated/evaluated
-##         : $parameter_name => The parameter to be evaluated
-
-    my ($arg_href) = @_;
-
-    ##Flatten argument(s)
-    my $path;
-    my $parameter_name;
-
-    my $tmpl = {
-	path => { required => 1, defined => 1, store => \$path},
-	parameter_name => { required => 1, defined => 1, strict_type => 1, store => \$parameter_name},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    ## Retrieve logger object now that log_file has been set
-    my $log = Log::Log4perl->get_logger("Download_reference");
-
-    my $tmp_path = $path;
-
-    $path = abs_path($path);
-
-    unless(defined($path)) {
-
-	$log->warn("Could not find absolute path for ".$parameter_name.": ".$tmp_path.". Please check the supplied path!\n");
-	exit 1;
-    }
-    return $path;
-}
-
-
-sub set_default_array_parameters {
-
-##set_default_array_parameters
-
-##Function : Set default for array parameters
-##Returns  : ""
-##Arguments: $parameter_href
-##         : $parameter_href => Holds all parameters
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-
-    my $tmpl = {
-	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    my %array_parameter;
-    $array_parameter{reference_genome_versions}{default} = ["GRCh37", "hg38"];
-
-    foreach my $parameter_name (keys %array_parameter) {
-
-	if (! @{ $parameter_href->{$parameter_name} }) {  #Unless parameter was supplied on cmd
-
-	    $parameter_href->{$parameter_name} = $array_parameter{$parameter_name}{default};
-	}
-    }
-}
