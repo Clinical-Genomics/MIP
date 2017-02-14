@@ -21,7 +21,7 @@ use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 use Cwd;
 use Cwd qw(abs_path);  #Import absolute path function
-use File::Basename qw(dirname basename);
+use File::Basename qw(dirname basename fileparse);
 use File::Spec::Functions qw(catdir catfile devnull);
 use File::Path qw(make_path);
 use File::Copy qw(copy);
@@ -13808,10 +13808,9 @@ sub picardtools_mergesamfiles {
 
 		    my $merge_lanes; if($1) {$merge_lanes = $1;} else {$merge_lanes = $2;}  #Make sure to always supply lanes from previous regexp
 
-		    ## Removes ".file_ending" in filename.FILENDING(.gz)
-		    my $picardtools_mergesamfiles_previous_bams_file_noending = remove_file_ending({file_name_ref => \$picardtools_mergesamfiles_previous_bams_file,
-												    file_ending => ".bam",
-												   });
+		    ## Removes ".file_ending" in filename.FILENDING
+		    my $picardtools_mergesamfiles_previous_bams_file_noending = fileparse($picardtools_mergesamfiles_previous_bams_file,
+											  qr/\.bam/);
 
 		    ## Split BAMs using Samtools
 		    say $FILEHANDLE "## Split alignment files per contig";
@@ -13918,9 +13917,8 @@ sub picardtools_mergesamfiles {
 						      });  #To not exceed maximum
 
 		## Removes ".file_ending" in filename.FILENDING(.gz)
-		my $picardtools_mergesamfiles_previous_bams_file_noending = remove_file_ending({file_name_ref => \$picardtools_mergesamfiles_previous_bams_file,
-												file_ending => ".bam",
-											       });
+		my $picardtools_mergesamfiles_previous_bams_file_noending = fileparse($picardtools_mergesamfiles_previous_bams_file,
+											  qr/\.bam/);
 
 		## Split BAMs using Samtools
 		say $FILEHANDLE "## Split alignment files per contig";
@@ -16039,9 +16037,8 @@ sub fastqc {
 		   });
 
 	## Removes ".file_ending" in filename.FILENDING(.gz)
-	my $file_at_lane_level = remove_file_ending({file_name_ref => \$infile,
-						     file_ending => ".fastq",
-						    });
+	my $file_at_lane_level = fileparse($infile,
+					   qr/\.fastq|\.fastq\.gz/);
 
 	print $FILEHANDLE "fastqc ";
 	print $FILEHANDLE catfile($$temp_directory_ref, $infile)." ";  #InFile
@@ -16075,9 +16072,8 @@ sub fastqc {
 		   });
 
 	## Removes ".file_ending" in filename.FILENDING(.gz)
-	my $file_at_lane_level = remove_file_ending({file_name_ref => \$infile,
-						     file_ending => ".fastq",
-						    });
+	my $file_at_lane_level = fileparse($infile,
+					   qr/\.fastq|\.fastq\.gz/);
 
 	## Copies files from temporary folder to source
 	print $FILEHANDLE "cp -r ";
@@ -16317,9 +16313,8 @@ sub split_fastq_file {
 		);
 	}
 	## Removes ".file_ending" in filename.FILENDING(.gz)
-	my $file_prefix = remove_file_ending({file_name_ref => \$fastq_file,
-					      file_ending => ".fastq",
-					     })."_splitted_";
+	my $file_prefix = fileparse($fastq_file,
+				    qr/\.fastq|\.fastq\.gz/)."_splitted_";
 
 	## Copies file to temporary directory.
 	migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
@@ -21190,11 +21185,10 @@ sub parse_human_genome_reference {
 
 	$log->warn("MIP cannot detect what kind of human_genome_reference you have supplied. If you want to automatically set the capture kits used please supply the reference on this format: [source]_[species]_[version].", "\n");
     }
-    ## Removes ".file_ending" in filename.FILENDING(.gz)
-    
-    $file_info_href->{human_genome_reference_name_no_ending} = remove_file_ending({file_name_ref => $human_genome_reference_ref,
-										   file_ending => ".fasta",
-										  });
+
+    ## Removes ".file_ending" in filename.FILENDING(.gz)    
+    $file_info_href->{human_genome_reference_name_no_ending} = fileparse($$human_genome_reference_ref,
+									 qr/\.fasta|\.fasta\.gz/);
 
     $file_info_href->{human_genome_compressed} = check_gzipped({file_name_ref => $human_genome_reference_ref,
 							       });
@@ -21481,39 +21475,6 @@ sub check_gzipped {
 	$file_compression_status = 1;
     }
     return $file_compression_status;
-}
-
-
-sub remove_file_ending {
-
-##remove_file_ending
-
-##Function : Removes ".file_ending" in filename.file_ending(.gz)
-##Returns  : File name with supplied $file_ending or $file_ending(.gz) removed
-##Arguments: $file_name_ref, $file_ending
-##         : $file_name_ref => File name {REF}
-##         : $file_ending   => File ending to be removed
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $file_name_ref;
-    my $file_ending;
-
-    my $tmpl = {
-	file_name_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$file_name_ref},
-	file_ending => { required => 1, defined => 1, strict_type => 1, store => \$file_ending},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    my $file_name_noending;
-
-    if ( (defined($$file_name_ref)) && ($$file_name_ref =~/(\S+)($file_ending$|$file_ending.gz$)/) ) {
-
-	$file_name_noending = $1;
-    }
-    return $file_name_noending;
 }
 
 
@@ -22456,12 +22417,12 @@ sub modify_file_ending {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    ## Removes ".file_ending" in filename.FILENDING(.gz)
-    my $file_name = remove_file_ending({file_name_ref => $file_path_ref,
-					file_ending => $file_ending,
-				       });
+    ## Removes ".file_ending" in filename.FILENDING
+    my ($file_name, $dir_path) = fileparse($$file_path_ref,
+					   $file_ending);
+    my $file_path_no_ending = catfile($dir_path, $file_name);
 
-    if (defined($file_name)) {  #Successfully removed file ending using &remove_file_ending
+    if (defined($file_path_no_ending)) {  #Successfully removed file ending
 
 	my $end = ".*";  #Remove all files with ending with ".*"
 
@@ -22473,7 +22434,7 @@ sub modify_file_ending {
 
 	    $end = ".vcf*";  #Removes both .vcf and .vcf.idx
 	}
-	return $file_name.$end;
+	return $file_path_no_ending.$end;
     }
     else {
 
@@ -22994,9 +22955,9 @@ sub check_human_genome_file_endings {
 	if ($file_ending eq ".dict") {
 
 	    ## Removes ".file_ending" in filename.FILENDING(.gz)
-	    $path = remove_file_ending({file_name_ref => \$active_parameter_href->{human_genome_reference},
-					file_ending => ".fasta",
-				       });
+	    my ($file, $dir_path) = fileparse($active_parameter_href->{human_genome_reference},
+					      qr/\.fasta|\.fasta\.gz/);
+	    $path = catfile($dir_path, $file);
 	}
 
         $path = $path.$file_ending;  #Add current ending
