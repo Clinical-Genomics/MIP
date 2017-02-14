@@ -36,6 +36,7 @@ use List::Util qw(any all);
 
 ##MIPs lib/
 use lib catdir($Bin, "lib");  #Add MIPs internal lib
+use File::Format::Shell qw(create_housekeeping_function create_trap_function);
 use File::Format::Yaml qw(load_yaml write_yaml);
 use File::Parse::Parse qw(find_absolute_path);
 use MIP_log::Log4perl qw(initiate_logger);
@@ -17359,17 +17360,9 @@ sub download_reference {
 	## Check if reference comes decompressed or not
 	if ($supported_cosmid_reference_href->{$parameter_name}{compressed_switch} eq "compressed") {
 
-	    ## Clear trap for signal(s)
-	    clear_trap({FILEHANDLE => $FILEHANDLE,
-		       });
-
 	    print $FILEHANDLE "gzip ";
 	    print $FILEHANDLE "-d ";  #Decompress
 	    say $FILEHANDLE catfile($$cosmid_resource_directory_ref, $supported_cosmid_reference_href->{$parameter_name}{cosmid_name}, "*.gz"), "\n";
-
-	    ## Enable trap for signal(s) and function
-	    enable_trap({FILEHANDLE => $FILEHANDLE,
-			});
 	}
 
 	my $temporary_file_path = catfile($$cosmid_resource_directory_ref, $supported_cosmid_reference_href->{$parameter_name}{cosmid_name}, "*");
@@ -17411,19 +17404,11 @@ sub download_reference {
 	print $FILEHANDLE "rm -rf ";
 	say $FILEHANDLE catfile($$cosmid_resource_directory_ref, $supported_cosmid_reference_href->{$parameter_name}{cosmid_name}, ";"), "\n";
 
-	## Clear trap for signal(s)
-	clear_trap({FILEHANDLE => $FILEHANDLE,
-		   });
-
 	## Remove temporary Cosmid ".cosmid.yaml" file
 	remove_file({file_ref => \catfile($$cosmid_resource_directory_ref, ".cosmid.yaml"),
 		     FILEHANDLE => $FILEHANDLE,
 		    });
 	say $FILEHANDLE "\n";
-
-	## Enable trap for signal(s) and function
-	enable_trap({FILEHANDLE => $FILEHANDLE,
-		    });
 
 	for my $supported_parameter_name (keys %$supported_cosmid_reference_href) {
 
@@ -17540,17 +17525,9 @@ sub build_human_genome_prerequisites {
 
 	$log->warn("Will try to decompres ".$$human_genome_reference_ref." before executing ".$program."\n");
 
-	## Clear trap for signal(s)
-	clear_trap({FILEHANDLE => $FILEHANDLE,
-		   });
-
 	print $FILEHANDLE "gzip ";
 	print $FILEHANDLE "-d ";  #Decompress
 	say $FILEHANDLE $$human_genome_reference_ref, "\n";
-
-	## Enable trap for signal(s) and function
-	enable_trap({FILEHANDLE => $FILEHANDLE,
-		    });
 
 	$$human_genome_reference_ref =~ s/.fasta.gz/.fasta/g;  #Replace the .fasta.gz ending with .fasta since this will execute before the analysis, hence changing the original file name ending from ".fastq" to ".fastq.gz".
 	$log->info("Set human_genome_reference to: ".$$human_genome_reference_ref, "\n");
@@ -20403,38 +20380,24 @@ sub program_prerequisites {
 	say $FILEHANDLE q?temp_directory="?.$temp_directory.q?"?;  #Assign batch variable
 	say $FILEHANDLE q?mkdir -p ?.$temp_directory, "\n";
 
-	## Create housekeeping function and trap
-	say $FILEHANDLE q?finish() {?, "\n";
-	say $FILEHANDLE "\t".q?## Perform sbatch exit housekeeping?;
-	say $FILEHANDLE "\t".q?rm -rf ?.$temp_directory;
-
-	## Output SLURM info on each job via sacct command and write to MIP Log file(.status)
-	track_progress({job_id_href => $job_id_href,
-			FILEHANDLE => $FILEHANDLE,
-			log_file_ref => \$active_parameter_href->{log_file},
-		       });
-
-	say $FILEHANDLE q?}?;
-	say $FILEHANDLE q?trap finish EXIT TERM INT?, "\n";
+	create_housekeeping_function({job_id_href => $job_id_href,
+				      log_file_ref => \$active_parameter_href->{log_file},
+				      FILEHANDLE => $FILEHANDLE,
+				      directory_remove => $temp_directory,
+				      trap_signals_ref => ["EXIT", "TERM", "INT"],
+				      trap_function => "finish",
+				     });
     }
 
     if ($error_trap) {
 
 	## Create error handling function and trap
-	say $FILEHANDLE q?error() {?, "\n";
-	say $FILEHANDLE "\t".q?## Display error message and exit?;
-	say $FILEHANDLE "\t".q{ret="$?"};
-	say $FILEHANDLE "\t".q?echo "${PROGNAME}: ${1:-"Unknown Error - ExitCode="$ret}" 1>&2?, "\n";
-	say $FILEHANDLE "\t".q?exit 1?;
-
-	## Output SLURM info on each job via sacct command and write to MIP Log file(.status)
-	track_progress({job_id_href => $job_id_href,
-			FILEHANDLE => $FILEHANDLE,
-			log_file_ref => \$active_parameter_href->{log_file},
-		       });
-
-	say $FILEHANDLE q?}?;
-	say $FILEHANDLE q?trap error ERR?, "\n";
+	create_trap_function({job_id_href => $job_id_href,
+			      log_file_ref => \$active_parameter_href->{log_file},
+			      FILEHANDLE => $FILEHANDLE,
+			      trap_signals_ref => ["ERR"],
+			      trap_function => "error",
+			     });
     }
     return ($file_name, $file_info_path.$file_name_tracker);  #Return filen name, file path for stdout/stderr for QC check later
 }
@@ -24625,71 +24588,6 @@ sub set_contigs {
 }
 
 
-sub clear_trap {
-
-##clear_trap
-
-##Function : Clear trap for signal(s), e.g. in exome analysis since the might be no variants in MT or Y contigs. This will cause premature exit from sbatch
-##Returns  : ""
-##Arguments: $FILEHANDLE, $trap_signals_ref
-##         : $FILEHANDLE       => The FILEHANDLE to write to
-##         : $trap_signals_ref => Array with signals to clear trap for {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $trap_signals_ref = $arg_href->{trap_signals_ref} //= ["ERR"];
-
-    ## Flatten argument(s)
-    my $FILEHANDLE;
-
-    my $tmpl = {
-	FILEHANDLE => { required => 1, store => \$FILEHANDLE},
-	trap_signals_ref => { default => [], strict_type => 1, store => \$trap_signals_ref},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    ## Clear trap for signal ERR
-    say $FILEHANDLE "## Clear trap for signal(s) ".join(" ", @$trap_signals_ref);
-    say $FILEHANDLE "trap - ".join(" ", @$trap_signals_ref);
-    say $FILEHANDLE "trap", "\n";
-}
-
-
-sub enable_trap {
-
-##enable_trap
-
-##Function : Enable trap for signal(s).
-##Returns  : ""
-##Arguments: $trap_signals_ref, $trap_function, $FILEHANDLE
-##         : $FILEHANDLE       => The FILEHANDLE to write to
-##         : $trap_signals_ref => Array with signals to clear trap for {REF}
-##         : $trap_function    => The trap function argument
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $trap_signals_ref = $arg_href->{trap_signals_ref} //= ["ERR"];
-    my $trap_function = $arg_href->{trap_function} //= "error",
-
-    ## Flatten argument(s)
-    my $FILEHANDLE;
-
-    my $tmpl = {
-	FILEHANDLE => { required => 1, store => \$FILEHANDLE},
-	trap_signals_ref => { default => [], strict_type => 1, store => \$trap_signals_ref},
-	trap_function => { strict_type => 1, store => \$trap_function},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    say $FILEHANDLE "## Enable cleared trap for signal(s) ".join(" ", @$trap_signals_ref)." again";
-    say $FILEHANDLE "trap ".$trap_function." ".join(" ", @$trap_signals_ref), "\n";
-}
-
-
 sub collect_gene_panels {
 
 ##collect_gene_panels
@@ -27107,42 +27005,6 @@ sub collect_read_length {
     return $ret;
 }
 
-
-sub track_progress {
-
-##track_progress
-
-##Function : Output SLURM info on each job via sacct command and write to MIP Log file(.status)
-##Returns  : ""
-##Arguments: $job_id_href, $FILEHANDLE, $log_file_ref
-##         : $job_id_href  => The job_id hash {REF}
-##         : $FILEHANDLE   => Sbatch filehandle to write to
-##         : $log_file_ref => The log file {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $job_id_href;
-    my $FILEHANDLE;
-    my $log_file_ref;
-
-    my $tmpl = {
-	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
-	FILEHANDLE => { store => \$FILEHANDLE},
-	log_file_ref => { default => \$$, strict_type => 1, store => \$log_file_ref},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    if (keys %$job_id_href) {
-
-	print $FILEHANDLE "\t".q?sacct --format=jobid,jobname%50,account,partition,alloccpus,TotalCPU,elapsed,start,end,state,exitcode -j ?;
-	print $FILEHANDLE join(',', @{ $job_id_href->{PAN}{PAN} }), " ";
-	print $FILEHANDLE q?| ?;
-	print $FILEHANDLE q?perl -nae 'my @headers=(jobid,jobname,account,partition,alloccpus,TotalCPU,elapsed,start,end,state,exitcode); if($. == 1) {print "#".join("\t", @headers), "\n"} if ($.>=3 && $F[0]!~/.batch/) {print join("\t", @F), "\n"}' ?;
-	say $FILEHANDLE q?> ?.$$log_file_ref.".status";
-    }
-}
 
 sub print_program {
 

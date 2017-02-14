@@ -20,6 +20,7 @@ $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 
 ##MIPs lib/
 use lib catdir($Bin, "lib");
+use File::Format::Shell qw(create_bash_file);
 use File::Format::Yaml qw(load_yaml);
 use File::Parse::Parse qw(find_absolute_path);
 use MIP_log::Log4perl qw(initiate_logger);
@@ -101,76 +102,17 @@ update_to_absolute_path({parameter_href => \%parameter,
 
 
 ## Create bash file for writing install instructions
-my $BASHFILEHANDLE = create_bash_file({file_name => "download_reference.sh",
-				      });
+my $BASHFILEHANDLE = File::Format::Shell::create_bash_file({file_name => "download_reference.sh",
+							    directory_remove => ".download_reference",
+							    log => $log,
+							   });
+$log->info("Will write install instructions to '".catfile(cwd(), "download_reference.sh"), "'\n");
 
 references({parameter_href => \%parameter,
 	    FILEHANDLE => $BASHFILEHANDLE,
 	   });
 
 ###SubRoutines###
-
-sub create_bash_file {
-
-##create_bash_file
-
-##Function : Create bash file for writing install instructions
-##Returns  : ""
-##Arguments: $file_name, install_directory
-##         : $file_name        => File name
-##         : install_directory => The temporary installation directory 
-
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $install_directory;
-
-    ## Flatten argument(s)
-    my $file_name;
-
-    my $tmpl = {
-	file_name => { required => 1, defined => 1, strict_type => 1, store => \$file_name},
-	install_directory => { default => ".download_reference",
-			       allow => qr/^\.\S+$/,
-			       strict_type => 1, store => \$install_directory},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    ## Retrieve logger object now that log_file has been set
-    my $log = Log::Log4perl->get_logger("Download_reference");
-
-    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $pwd = cwd();
-
-    ## Open batch file
-    open ($FILEHANDLE, ">", catfile($pwd, $file_name)) or $log->logdie("Cannot write to '".catfile($pwd, $file_name)."' :".$!."\n");
-
-    print $FILEHANDLE "#!".catfile( dirname( dirname( devnull() ) ) ).catfile("usr", "bin", "env", "bash"), "\n\n";
-
-    ## Create housekeeping function and trap
-    say $FILEHANDLE q?finish() {?, "\n";
-    say $FILEHANDLE "\t".q?## Perform exit housekeeping?;
-    say $FILEHANDLE "\t".q?rm -rf ?.$install_directory;
-
-    say $FILEHANDLE q?}?;
-    say $FILEHANDLE q?trap finish EXIT TERM INT?, "\n";
-
-    ## Create error handling function and trap
-    say $FILEHANDLE q?error() {?, "\n";
-    say $FILEHANDLE "\t".q?## Display error message and exit?;
-    say $FILEHANDLE "\t".q{ret="$?"};
-    say $FILEHANDLE "\t".q?echo "${PROGNAME}: ${1:-"Unknown Error - ExitCode="$ret}" 1>&2?, "\n";
-    say $FILEHANDLE "\t".q?exit 1?;
-
-    say $FILEHANDLE q?}?;
-    say $FILEHANDLE q?trap error ERR?, "\n";
-
-    $log->info("Will write install instructions to '".catfile($pwd, $file_name), "'\n");
-
-    return $FILEHANDLE;
-}
 
 
 sub references {
