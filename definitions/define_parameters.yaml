@@ -1885,7 +1885,7 @@ nist_high_confidence_call_set:
   associated_program:
    - pevaluation
   build_file: no_auto_build
-  default: GRCh37_nist_na12878_hg001_-v2.19-.vcf
+  default: GRCh37_nist_hg001_-na12878_v2.19-.vcf
   data_type: SCALAR
   exists_check: file
   reference: reference_dir
@@ -1894,7 +1894,7 @@ nist_high_confidence_call_set_bed:
   associated_program:
    - pevaluation
   build_file: no_auto_build
-  default: GRCh37_nist_na12878_hg001_-v2.19-.bed
+  default: GRCh37_nist_hg001_-na12878_v2.19-.bed
   data_type: SCALAR
   exists_check: file
   reference: reference_dir

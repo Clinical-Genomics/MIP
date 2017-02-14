@@ -309,8 +309,8 @@ BEGIN {
                -psck/--psamplecheck QC for samples gender and relationship (defaults to "1" (=yes) )
                -pevl/--pevaluation Compare concordance with NIST data set (defaults to "0" (=no) )
                  -evlnid/--nist_id NIST high-confidence sample_id (defaults to "NA12878")
-                 -evlnhc/--nist_high_confidence_call_set NIST high-confidence variant calls (defaults to "GRCh37_nist_na12878_hg001_-v2.19-.vcf")
-                 -evlnil/--nist_high_confidence_call_set_bed NIST high-confidence variant calls interval list (defaults to "GRCh37_nist_na12878_hg001_-v2.19-.bed")
+                 -evlnhc/--nist_high_confidence_call_set NIST high-confidence variant calls (defaults to "GRCh37_nist_hg001_-na12878_v2.19-.vcf")
+                 -evlnil/--nist_high_confidence_call_set_bed NIST high-confidence variant calls interval list (defaults to "GRCh37_nist_hg001_-na12878_v2.19-.bed")
                -pqcc/--pqccollect Collect QC metrics from programs processed (defaults to "1" (=yes) )
                  -qccsi/--qccollect_sampleinfo_file SampleInfo file containing info on what to parse from this analysis run (defaults to "{outdata_dir}/{family_id}/{family_id}_qc_sample_info.yaml")
                  -qccref/--qccollect_regexp_file Regular expression file containing the regular expression to be used for each program (defaults to "qc_regexp_-v1.13-.yaml")
@@ -856,6 +856,9 @@ check_vcfanno_toml({vcfanno_file_toml => $active_parameter{sv_vcfanno_config},
 		    vcfanno_file_freq => $active_parameter{sv_vcfanno_config_file},
 		   });
 
+check_snpsift_keys({snpsift_annotation_files_href => \%{ $active_parameter{snpsift_annotation_files} },
+		    snpsift_annotation_outinfo_key_href => \%{ $active_parameter{snpsift_annotation_outinfo_key} },
+		   });
 
 ## picardtools_mergesamfiles_previous_bams
 if(@{ $parameter{picardtools_mergesamfiles_previous_bams}{value} }) {
@@ -28265,7 +28268,6 @@ sub check_vcfanno_toml {
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-
     my $vcfanno_file_toml;
     my $vcfanno_file_freq;
 
@@ -28300,6 +28302,44 @@ sub check_vcfanno_toml {
 	}
     }
     close($FILEHANDLE);
+}
+
+
+sub check_snpsift_keys {
+
+##check_snpsift_keys
+
+##Function : Check that the supplied 
+##Returns  : ""
+##Arguments: $snpsift_annotation_files_href, $snpsift_annotation_outinfo_key_href
+##         : $snpsift_annotation_files_href       => Snpsift annotation files {REF}
+##         : $snpsift_annotation_outinfo_key_href => File and outinfo key to add to vcf {REF} 
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $snpsift_annotation_files_href;
+    my $snpsift_annotation_outinfo_key_href;
+
+    my $tmpl = { 
+	snpsift_annotation_files_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$snpsift_annotation_files_href},
+	snpsift_annotation_outinfo_key_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$snpsift_annotation_outinfo_key_href},
+    };
+     
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
+    foreach my $file (keys %$snpsift_annotation_outinfo_key_href) {
+
+	unless (exists($snpsift_annotation_files_href->{$file})) {
+	    
+	    $log->fatal("The supplied snpsift_annotation_outinfo_key file: ".$file." does not match any file in '--snpsift_annotation_files'");
+	    $log->fatal("Supplied snpsift_annotation_files files:\n".join("\n", keys %$snpsift_annotation_files_href));
+	    exit 1;
+	}
+    }
 }
 
 

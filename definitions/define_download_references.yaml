@@ -34,8 +34,14 @@ reference:
     - v2.9
     - v3.2a
   giab:
-    - v2.19_wgs
-    - v2.19_bed
+    - na12878_v2.19_wgs
+    - na12878_v2.19_bed
+    - na12878_v3.3.2_wgs
+    - na12878_v3.3.2_bed
+    - na24385_v3.3.2_wgs
+    - na24385_v3.3.2_bed
+    - na24631_v3.3.2_wgs
+    - na24631_v3.3.2_bed
 human_reference:
   grch37:
     decoy_5:
@@ -297,16 +303,43 @@ dbnsfp:
       outfile_tabix_command: 'tabix -s 1 -b 2 -e 2 hg38_dbnsfp_-v3.2a-.txt.gz'
 giab:
   grch37:
-    v2.19_wgs:
+    na12878_v2.19_wgs:
       file: NISTIntegratedCalls_14datasets_131103_allcall_UGHapMerge_HetHomVarPASS_VQSRv2.19_2mindatasets_5minYesNoRatio_all_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs.vcf.gz
-      outfile: GRCh37_nist_na12878_hg001_-v2.19-.vcf.gz
+      outfile: GRCh37_nist_hg001_-na12878_v2.19-.vcf.gz
       outfile_decompress: gzip
       url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv2.19/
-    v2.19_bed:
+    na12878_v2.19_bed:
       file: union13callableMQonlymerged_addcert_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs_v2.19_2mindatasets_5minYesNoRatio.bed.gz
-      outfile: GRCh37_nist_na12878_hg001_-v2.19-.bed.gz
+      outfile: GRCh37_nist_hg001_-na12878_v2.19-.bed.gz
       outfile_decompress: gzip
       url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv2.19/
+    na12878_v3.3.2_wgs:
+      file: HG001_GRCh37_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_PGandRTGphasetransfer.vcf.gz
+      outfile: GRCh37_nist_hg001_-na12878_v3.3.2-.vcf.gz
+      outfile_decompress: gzip
+      url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv3.3.2/GRCh37/
+    na12878_v3.3.2_bed:
+      file: HG001_GRCh37_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-X_v.3.3.2_highconf_nosomaticdel.bed
+      outfile: GRCh37_nist_hg001_-na12878_v3.3.2-.bed
+      url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/NA12878_HG001/NISTv3.3.2/GRCh37/
+    na24385_v3.3.2_wgs:
+      file: HG002_GRCh37_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-22_v.3.3.2_highconf_triophased.vcf.gz
+      outfile: GRCh37_nist_hg001_-na24385_v3.3.2-.vcf.gz
+      outfile_decompress: gzip
+      url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/AshkenazimTrio/HG002_NA24385_son/NISTv3.3.2/GRCh37/
+    na24385_v3.3.2_bed:
+      file: HG002_GRCh37_GIAB_highconf_CG-IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-22_v.3.3.2_highconf_noinconsistent.bed
+      outfile: GRCh37_nist_hg001_-na24385_v3.3.2-.bed
+      url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/AshkenazimTrio/HG002_NA24385_son/NISTv3.3.2/GRCh37/
+    na24631_v3.3.2_wgs:
+      file: HG005_GRCh37_highconf_CG-IllFB-IllGATKHC-Ion-SOLID_CHROM1-22_v.3.3.2_highconf.vcf.gz
+      outfile: GRCh37_nist_hg001_-na24631_v3.3.2-.vcf.gz
+      outfile_decompress: gzip
+      url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/ChineseTrio/HG005_NA24631_son/NISTv3.3.2/GRCh37/
+    na24631_v3.3.2_bed:
+      file: HG005_GRCh37_highconf_CG-IllFB-IllGATKHC-Ion-SOLID_CHROM1-22_v.3.3.2_highconf_noMetaSV.bed
+      outfile: GRCh37_nist_hg001_-na24631_v3.3.2-.bed
+      url_prefix: ftp://ftp-trace.ncbi.nlm.nih.gov/giab/ftp/release/ChineseTrio/HG005_NA24631_son/NISTv3.3.2/GRCh37/
 absolute_paths:
   - reference_dir
   - log_file
