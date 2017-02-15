@@ -1,5 +1,7 @@
 package Program::Wget;
 
+use strict;
+use warnings;
 use warnings qw( FATAL utf8 );
 use utf8;  #Allow unicode characters in this script
 use open qw( :encoding(UTF-8) :std );

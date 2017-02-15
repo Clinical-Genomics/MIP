@@ -122,7 +122,7 @@ GetOptions('vb|verbose' => $verbose,
 					      exit_code => 1,
 					     });;
 
-ok(check_command_in_path({program => "conda"}), "Checking can run of conda binary");
+ok(can_run("conda")), "Checking can run of conda binary");
 
 ok(catfile(dirname($Bin), "install_mip.pl"), "Locating install script in MIP dir");
 
@@ -147,37 +147,6 @@ done_testing();
 ######################
 ####SubRoutines#######
 ######################
-
-
-sub check_command_in_path {
-
-##check_command_in_path
-
-##Function : Checking command in your path and executable
-##Returns  : ""
-##Arguments: $program
-##         : $program => Program to check
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $program;
-
-    my $tmpl = { 
-	program => { required => 1, defined => 1, strict_type => 1, store => \$program},
-    };
-        
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    if(can_run($program)) {  #IPC::Cmd
-
-	return 1;
-    }
-    else {
-	
-	return 0;
-    }
-}
 
 
 
