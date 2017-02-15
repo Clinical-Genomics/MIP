@@ -8846,7 +8846,7 @@ sub sv_reformat {
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
 	    $xargs_file_counter = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 							      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-							      files_ref => \@contigs_size_ordered,
+							      contigs_ref => \@contigs_size_ordered,
 							      file_name => $file_name,
 							      program_info_path => $program_info_path,
 							      core_number => $core_number,
@@ -9341,7 +9341,7 @@ sub sv_rankvariant {
 	    say $FILEHANDLE "## Copy file(s) from temporary directory";
 	    ($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 										  XARGSFILEHANDLE => $XARGSFILEHANDLE,
-										  files_ref => \@contigs,
+										  contigs_ref => \@contigs,
 										  file_name =>$file_name,
 										  program_info_path => $program_info_path,
 										  core_number => $core_number,
@@ -20371,24 +20371,24 @@ sub program_prerequisites {
 	say $FILEHANDLE q?temp_directory="?.$temp_directory.q?"?;  #Assign batch variable
 	say $FILEHANDLE q?mkdir -p ?.$temp_directory, "\n";
 
-	create_housekeeping_function({job_id_href => $job_id_href,
-				      log_file_ref => \$active_parameter_href->{log_file},
-				      FILEHANDLE => $FILEHANDLE,
-				      directory_remove => $temp_directory,
-				      trap_signals_ref => ["EXIT", "TERM", "INT"],
-				      trap_function => "finish",
-				     });
+	File::Parse::Parse::create_housekeeping_function({job_id_href => $job_id_href,
+							  log_file_ref => \$active_parameter_href->{log_file},
+							  FILEHANDLE => $FILEHANDLE,
+							  directory_remove => $temp_directory,
+							  trap_signals_ref => ["EXIT", "TERM", "INT"],
+							  trap_function => "finish",
+							 });
     }
 
     if ($error_trap) {
 
 	## Create error handling function and trap
-	create_trap_function({job_id_href => $job_id_href,
-			      log_file_ref => \$active_parameter_href->{log_file},
-			      FILEHANDLE => $FILEHANDLE,
-			      trap_signals_ref => ["ERR"],
-			      trap_function => "error",
-			     });
+	File::Parse::Parse::create_trap_function({job_id_href => $job_id_href,
+						  log_file_ref => \$active_parameter_href->{log_file},
+						  FILEHANDLE => $FILEHANDLE,
+						  trap_signals_ref => ["ERR"],
+						  trap_function => "error",
+						 });
     }
     return ($file_name, $file_info_path.$file_name_tracker);  #Return filen name, file path for stdout/stderr for QC check later
 }

@@ -20,11 +20,12 @@ $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 
 ##MIPs lib/
 use lib catdir($Bin, "lib");
+use Check::Check_modules qw(check_modules);
 use File::Format::Shell qw(create_bash_file);
 use File::Format::Yaml qw(load_yaml);
 use File::Parse::Parse qw(find_absolute_path);
 use MIP_log::Log4perl qw(initiate_logger);
-use Check::Check_modules qw(check_modules);
+use Program::Wget qw(wget);
 use Script::Utils qw(help set_default_array_parameters);
 
 our $USAGE;
@@ -51,7 +52,8 @@ BEGIN {
            -rg/--reference_genome_versions Reference versions to download ((Default: ["GRCh37", "hg38"]))
            -l/--log_file Log file (Default: "download_reference.log")
            -h/--help Display this help message
-           -v/--version Display version
+           -ver/--version Display version
+           -v/--verbose Set verbosity
         };
 }
 
@@ -77,7 +79,8 @@ GetOptions('rd|reference_dir:s' => \$parameter{reference_dir},  #MIPs reference 
 	   'rg|reference_genome_versions:s' => \@{ $parameter{reference_genome_versions} },
 	   'l|log_file:s' => \$parameter{log_file},
 	   'h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
-	   'v|version' => sub { print STDOUT "\n".basename($0)." ".$download_reference_version, "\n\n"; exit;},  #Display version number
+	   'ver|version' => sub { print STDOUT "\n".basename($0)." ".$download_reference_version, "\n\n"; exit;},  #Display version number
+	   'v|verbose' => \$parameter{verbose},
     ) or Script::Utils::help({USAGE => $USAGE,
 			      exit_code => 1,
 			     });
@@ -121,11 +124,15 @@ sub references {
 
 ##Function : Install references
 ##Returns  : ""
-##Arguments: $parameter_href, $FILEHANDLE
+##Arguments: $parameter_href, $FILEHANDLE, $verbose
 ##         : $parameter_href => Holds all parameters
 ##         : $FILEHANDLE     => Filehandle to write to
+##         : $verbose        => Verbosity
 
     my ($arg_href) = @_;
+
+    ## Default(s)
+    my $verbose;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -134,6 +141,8 @@ sub references {
     my $tmpl = {
 	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
 	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	verbose => { default => $arg_href->{parameter_href}{verbose},
+		     strict_type => 1, store => \$verbose},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -251,18 +260,22 @@ sub download {
 
 ##Function : Downloads files
 ##Returns  : ""
-##Arguments: $parameter_href, $FILEHANDLE, $url, $outfile_path, $file_id, $program
+##Arguments: $parameter_href, $FILEHANDLE, $url, $outfile_path, $file_id, $program, $quiet, $verbose
 ##         : $parameter_href => Holds all parameters
 ##         : $FILEHANDLE     => Filehandle to write to
 ##         : $url            => Url to use for download
 ##         : $outfile_path   => Outfile path 
 ##         : $program        => Program to use for download
 ##         : $file_id        => File id
+##         : $quiet          => Quiet (no output)
+##         : $verbose        => Verbosity
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $program;
+    my $quiet;
+    my $verbose;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -280,6 +293,11 @@ sub download {
 	program => { default => "wget",
 		     allow => ["wget"],
 		     strict_type => 1, store => \$program},
+	quiet => { default => 1,
+		   allow => [0, 1],
+		   strict_type => 1, store => \$quiet},
+	verbose => { default => $arg_href->{parameter_href}{verbose},
+		     strict_type => 1, store => \$verbose},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -289,9 +307,12 @@ sub download {
 
     if($program eq "wget") {
 
-	print $FILEHANDLE "wget --quiet ".$url." ";
-	print $FILEHANDLE "-O ".$outfile_path;  #Outfile
-	print $FILEHANDLE "\n\n";
+	Program::Wget::wget({url => $url,
+			     FILEHANDLE => $FILEHANDLE,
+			     quiet => $quiet,
+			     verbose => $verbose,
+			     outfile_path => $outfile_path,
+			    });
     }
 }
 

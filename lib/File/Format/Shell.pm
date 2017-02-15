@@ -74,7 +74,7 @@ sub create_bash_file {
 	open ($FILEHANDLE, ">", catfile($pwd, $file_name)) or die("Cannot write to '".catfile($pwd, $file_name)."' :".$!."\n");
     }
 
-    print $FILEHANDLE "#!".catfile( dirname( dirname( devnull() ) ) ).catfile("usr", "bin", "env", "bash"), "\n\n";
+    say $FILEHANDLE "#!".catfile( dirname( dirname( devnull() ) ) ).catfile("usr", "bin", "env", "bash"), "\n";
 
     ## Create housekeeping function which removes entire directory when finished
     create_housekeeping_function({directory_remove => $directory_remove,
@@ -91,7 +91,7 @@ sub create_bash_file {
     }
     else {
 
-	say STDERR "Created bash file: '".catfile($pwd, $file_name), "'\n";
+	say STDERR "Created bash file: '".catfile($pwd, $file_name), "'";
     }
     return $FILEHANDLE;
 }
