@@ -164,8 +164,8 @@ BEGIN {
                  -deltyp/--delly_types Type of SV to call (defaults to "DEL,DUP,INV,TRA"; comma sep)
                  -delexc/--delly_exclude_file Exclude centomere and telemore regions in delly calling (defaults to "hg19_human_excl_-0.7.6-.tsv")
                -pmna/--pmanta Structural variant calling using Manta (defaults to "1" (=yes))
-               -pfit/--pfindtranslocations Structural variant calling using Findtranslocations (defaults to "0" (=no))
-                 -fitmsp/--findtranslocations_minimum_supporting_pairs The minimum number of supporting reads (defaults to "6")
+               -ptid/--ptiddit Structural variant calling using Tiddit (defaults to "0" (=no))
+                 -tidmsp/--tiddit_minimum_supporting_pairs The minimum number of supporting reads (defaults to "6")
                -psvc/--psv_combinevariantcallsets Combine variant call sets (defaults to "1" (=yes))
                  -svcvtd/--sv_vt_decompose Split multi allelic records into single records (defaults to "1" (=yes))
                  -svcbtv/--sv_bcftools_view_filter Include structural variants with PASS in FILTER column (defaults to "1" (=yes))
@@ -508,8 +508,8 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'deltyp|delly_types:s' => \@{ $parameter{delly_types}{value} },
 	   'delexc|delly_exclude_file:s' => \$parameter{delly_exclude_file}{value}, 
 	   'pmna|pmanta=n' => \$parameter{pmanta}{value},
-	   'pfit|pfindtranslocations=n' => \$parameter{pfindtranslocations}{value},
-	   'fitmsp|findtranslocations_minimum_supporting_pairs=n' => \$parameter{findtranslocations_minimum_supporting_pairs}{value},
+	   'ptid|ptiddit=n' => \$parameter{ptiddit}{value},
+	   'tidmsp|tiddit_minimum_supporting_pairs=n' => \$parameter{tiddit_minimum_supporting_pairs}{value},
 	   'psvc|psv_combinevariantcallsets=n' => \$parameter{psv_combinevariantcallsets}{value},  #Combine structural variant call sets
 	   'svcvtd|sv_vt_decompose=n' => \$parameter{sv_vt_decompose}{value},  #VT decompose (split multiallelic variants)
 	   'svcbtv|sv_bcftools_view_filter=n' => \$parameter{sv_bcftools_view_filter}{value},  #Include structural variants with PASS in FILTER column
@@ -1831,21 +1831,21 @@ if ($active_parameter{pmanta} > 0) {  #Run Manta
 	  });
 }
 
-if ($active_parameter{pfindtranslocations} > 0) {  #Run FindTranslocations
+if ($active_parameter{ptiddit} > 0) {  #Run Tiddit
 
-    $log->info("[Findtranslocations]\n");
+    $log->info("[Tiddit]\n");
 
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
-	findtranslocations({parameter_href => \%parameter,
-			    active_parameter_href => \%active_parameter,
-			    sample_info_href => \%sample_info,
-			    file_info_href => \%file_info,
-			    infile_lane_no_ending_href => \%infile_lane_no_ending,
-			    job_id_href => \%job_id,
-			    sample_id_ref => \$sample_id,
-			    program_name => "findtranslocations",
-			   });
+	tiddit({parameter_href => \%parameter,
+		active_parameter_href => \%active_parameter,
+		sample_info_href => \%sample_info,
+		file_info_href => \%file_info,
+		infile_lane_no_ending_href => \%infile_lane_no_ending,
+		job_id_href => \%job_id,
+		sample_id_ref => \$sample_id,
+		program_name => "tiddit",
+	       });
     }
 }
 
@@ -11547,11 +11547,11 @@ sub manta {
 }
 
 
-sub findtranslocations {
+sub tiddit {
 
-##findtranslocations
+##tiddit
 
-##Function : Call structural variants using findtranslocations
+##Function : Call structural variants using tiddit
 ##Returns  : ""
 ##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref
 ##         : $parameter_href             => The parameter hash {REF}
@@ -11601,7 +11601,7 @@ sub findtranslocations {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $core_number = 2;
+    my $core_number = 1;
     my $program_outdirectory_name = $parameter_href->{"p".$program_name}{outdir_name};
 
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -11634,8 +11634,7 @@ sub findtranslocations {
     ## Add merged infile name after merging all BAM files per sample_id
     my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
-    my @findtranslocations_types = ("intra", "inter");
-    my $perl_vcf_fix = q&perl -nae 'chomp($_); if($_=~/^##/) {print $_, "\n"} elsif($_=~/^#CHROM/) {print q?##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">?, "\n"; print $_."\t".FORMAT."\t&.$$sample_id_ref.q&", "\n"} else {print $_."\tGT\t1/1", "\n"}' &;
+    my @tiddit_types = ("intra", "inter");
     my $perl_add_contigs = q?perl -nae '{print "##contig=<ID=".$F[0].",length=".$F[1].">", "\n"}'?;
 
     ## Add contigs to vcfheader
@@ -11651,45 +11650,37 @@ sub findtranslocations {
 			 });
     say $FILEHANDLE "wait", "\n";
 
-    ## Findtranslocations
-    say $FILEHANDLE "## FindTranslocations";
-    print $FILEHANDLE "FindTranslocations ";
+    ## Tiddit
+    say $FILEHANDLE "## Tiddit";
+    print $FILEHANDLE "TIDDIT ";
     print $FILEHANDLE "--sv ";
-    print $FILEHANDLE "--auto ";
-    print $FILEHANDLE "--bam ".catfile($$temp_directory_ref, $infile.$infile_tag.".bam")." ";  #Infile
-    print $FILEHANDLE "--bai ".catfile($$temp_directory_ref, $infile.$infile_tag.".bai")." ";  #Infile index
-    print $FILEHANDLE "--minimum-supporting-pairs ".$active_parameter_href->{findtranslocations_minimum_supporting_pairs}." ";
-    say $FILEHANDLE "--output ".catfile($$temp_directory_ref, $infile.$outfile_tag)." ";
+    print $FILEHANDLE "-b ".catfile($$temp_directory_ref, $infile.$infile_tag.".bam")." ";  #Infile
+    print $FILEHANDLE "-p ".$active_parameter_href->{tiddit_minimum_supporting_pairs}." ";
+    say $FILEHANDLE "-o ".catfile($$temp_directory_ref, $infile.$outfile_tag)." ";
 
-    foreach my $sv_type (@findtranslocations_types) {
-
-	## Fix GT FORMAT in header and Sample_id and GT and Genotype call
-	print $FILEHANDLE $perl_vcf_fix." ";
-	print $FILEHANDLE catfile($$temp_directory_ref, $infile.$outfile_tag."_".$sv_type."_chr_events.vcf")." ";
-	say $FILEHANDLE "> ".catfile($$temp_directory_ref, $infile.$outfile_tag."_".$sv_type."_glfixed.vcf")." ";
+    foreach my $sv_type (@tiddit_types) {
 
 	##Add contigs to header
 	print $FILEHANDLE "bcftools annotate ";
 	print $FILEHANDLE "-h ".catfile($$temp_directory_ref, "contig_header.txt")." ";
-	print $FILEHANDLE catfile($$temp_directory_ref, $infile.$outfile_tag."_".$sv_type."_glfixed.vcf")." ";
-	say $FILEHANDLE "> ".catfile($$temp_directory_ref, $infile.$outfile_tag."_".$sv_type."_glfixed_contig_header.vcf")." ";
+	print $FILEHANDLE catfile($$temp_directory_ref, $infile.$outfile_tag."_".$sv_type."_chr_events.vcf")." ";
+	say $FILEHANDLE "> ".catfile($$temp_directory_ref, $infile.$outfile_tag."_".$sv_type."_contig_header.vcf"), "\n";
     }
 
     ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
     concatenate_variants({active_parameter_href => $active_parameter_href,
 			  FILEHANDLE => $FILEHANDLE,
-			  elements_ref => \@findtranslocations_types,
+			  elements_ref => \@tiddit_types,
 			  infile_prefix => catfile($$temp_directory_ref, $infile.$outfile_tag."_"),
-			  infile_postfix => "_glfixed_contig_header.vcf",
-			  outfile => catfile($$temp_directory_ref, $infile.$outfile_tag."_glfixed_contig_header_concat.vcf"),
+			  infile_postfix => "_contig_header.vcf",
+			  outfile => catfile($$temp_directory_ref, $infile.$outfile_tag."_contig_header_concat.vcf"),
 			 });
 
     ## Writes sbatch code to supplied filehandle to sort variants in vcf format
     sort_vcf({active_parameter_href => $active_parameter_href,
-	      file_info_href => $file_info_href,
 	      FILEHANDLE => $FILEHANDLE,
 	      sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict"),
-	      infile => catfile($$temp_directory_ref, $infile.$outfile_tag."_glfixed_contig_header_concat.vcf"),
+	      infile => catfile($$temp_directory_ref, $infile.$outfile_tag."_contig_header_concat.vcf"),
 	      outfile => catfile($$temp_directory_ref, $infile.$outfile_tag.".vcf")." ",
 	     });
 
@@ -11705,7 +11696,7 @@ sub findtranslocations {
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
 	sample_info_qc({sample_info_href => $sample_info_href,
-			program_name => "findtranslocations",
+			program_name => "tiddit",
 			outdirectory => $outsample_directory,
 			outfile_ending => $infile.$outfile_tag.".vcf",
 			outdata_type => "static"
@@ -22684,7 +22675,7 @@ sub sort_vcf {
 
     print $FILEHANDLE "INPUT=".$infile." ";  #File to sort
     print $FILEHANDLE "OUTPUT=".$outfile." ";  #OutFile
-    say $FILEHANDLE "SEQUENCE_DICTIONARY=".$sequence_dict_file;
+    say $FILEHANDLE "SEQUENCE_DICTIONARY=".$sequence_dict_file, "\n";
 }
 
 
