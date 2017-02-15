@@ -57,7 +57,7 @@ BEGIN {
            -rhcp/--rhocall_path Set the path to where to install rhocall (Defaults: "HOME/rhocall")
            -cnvn/--cnvnator Set the cnvnator version (Default: 0.3.3)
            -cnvnr/--cnvnator_root_binary Set the cnvnator root binary (Default: "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz")
-           -tid/--tiddit Set the tiddit version (Default: "TIDDIT3")
+           -tid/--tiddit Set the tiddit version (Default: "1.0.1")
 
            ## Utility
            -psh/--prefer_shell Shell will be used for overlapping shell and biconda installations (Supply flag to enable)
@@ -138,7 +138,7 @@ $parameter{rhocall_path} = catdir($ENV{HOME}, "rhocall");
 
 $parameter{cnvnator} = "0.3.3";
 $parameter{cnvnator_root_binary} = "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz";
-$parameter{tiddit} = "TIDDIT3";
+$parameter{tiddit} = "1.0.1";
 
 my $install_version = "1.0.1";
 
@@ -2062,7 +2062,7 @@ sub tiddit {
 
     ## Download
     print $FILEHANDLE "## Download Tiddit\n";
-    print $FILEHANDLE "wget --quiet https://github.com/J35P312/TIDDIT/archive/".$parameter_href->{tiddit}.".zip ";
+    print $FILEHANDLE "wget --quiet https://github.com/SciLifeLab/TIDDIT/archive/".$parameter_href->{tiddit}.".zip ";
     print $FILEHANDLE "-O TIDDIT-".$parameter_href->{tiddit}.".zip";  #Download outfile
     print $FILEHANDLE "\n\n";
 
