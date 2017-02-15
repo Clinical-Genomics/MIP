@@ -226,7 +226,7 @@ sub mip_scripts{
 
     my @mip_scripts = ("calculate_af.pl",
 		       "download_reference.pl",
-		       "install_mip.pl",
+		       "mip_install.pl",
 		       "max_af.pl",
 		       "mip.pl",
 		       "qccollect.pl",
@@ -242,7 +242,7 @@ sub mip_scripts{
     $mip_sub_scripts{"definitions"} = ["define_download_references.yaml",
 				       "define_parameters.yaml",
 	];
-    $mip_sub_scripts{"t"} = ["install_mip.t",
+    $mip_sub_scripts{"t"} = ["mip_install.t",
 			     "mip.t",
 			     "run_tests.t",
 			     "test.t",

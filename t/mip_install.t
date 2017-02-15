@@ -122,11 +122,11 @@ GetOptions('vb|verbose' => $verbose,
 					      exit_code => 1,
 					     });;
 
-ok(can_run("conda")), "Checking can run of conda binary");
+ok(can_run("conda"), "Checking can run of conda binary");
 
-ok(catfile(dirname($Bin), "install_mip.pl"), "Locating install script in MIP dir");
+ok(catfile(dirname($Bin), "mip_install.pl"), "Locating install script in MIP dir");
 
-my $install_script = catfile(dirname($Bin), "install_mip.pl");
+my $install_script = catfile(dirname($Bin), "mip_install.pl");
 
 ## Test execution of install.pl
 my $cmds_ref = ["perl", $install_script, "-sp", "mip_scripts"];  # Create array ref for cmd
