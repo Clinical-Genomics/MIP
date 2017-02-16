@@ -118,7 +118,6 @@ $parameter{perl_version} = "5.18.2";
 $parameter{pip}{genmod} = "3.7.0";
 $parameter{pip}{variant_integrity} = "0.0.4";
 $parameter{pip}{chanjo} = "4.0.0";
-$parameter{pip}{'python-Levenshtein'} = "0.12.0";
 
 ## Programs currently installable by SHELL
 $parameter{mip_scripts} = "Your current MIP version";
