@@ -78,6 +78,7 @@ BEGIN {
                -osd/--outscript_dir The script files (.sh) output directory (mandatory)
                -f/--family_id Group id of samples to be compared (defaults to "", (Ex: 1 for IDN 1-1-1A))
                -sck/--supported_capture_kit Set the capture kit acronym shortcut in pedigree file
+               -dnr/--decompose_normalize_references Set the references to be decomposed and normalized (defaults: "gatk_realigner_indel_known_sites", "gatk_baserecalibration_known_sites","gatk_haplotypecaller_snp_known_set", "gatk_variantrecalibration_training_set_hapmap", "gatk_variantrecalibration_training_set_mills", "gatk_variantrecalibration_training_set_1000g_omni", "gatk_variantrecalibration_training_set_1000gsnp", "gatk_variantrecalibration_training_set_dbsnp", "vt_genmod_filter_1000g", "sv_vcfanno_config_file", "gatk_varianteval_gold", "gatk_varianteval_dbsnp","snpsift_annotation_files")
                -ped/--pedigree_file Meta data on samples (defaults to "")
                -hgr/--human_genome_reference Fasta file for the human genome reference (defaults to "GRCh37_homo_sapiens_-d5-.fasta;1000G decoy version 5")
                -ald/--outaligner_dir Setting which aligner out directory was used for alignment in previous analysis (defaults to "{outdata_dir}{outaligner_dir}")
@@ -369,22 +370,6 @@ my %file_info = (bwa_build_reference => "",
     );
 
 
-## Reference that should be decomposed and normalized using vt
-my @vt_references = ("gatk_realigner_indel_known_sites",
-		     "gatk_baserecalibration_known_sites",
-		     "gatk_haplotypecaller_snp_known_set",
-		     "gatk_variantrecalibration_training_set_hapmap",
-		     "gatk_variantrecalibration_training_set_mills",
-		     "gatk_variantrecalibration_training_set_1000g_omni",
-		     "gatk_variantrecalibration_training_set_1000gsnp",
-		     "gatk_variantrecalibration_training_set_dbsnp",
-		     "vt_genmod_filter_1000g",
-		     "sv_vcfanno_config_file",
-		     "gatk_varianteval_gold",
-		     "gatk_varianteval_dbsnp",
-		     "snpsift_annotation_files",
-    );
-
 ## Set supported annovar table name filtering options
 my @annovar_supported_table_names = ("refGene", "knownGene", "ensGene", "mce46way", "gerp++elem", "segdup", "gwascatalog", "tfbs", "mirna", "snp137", "snp135", "snp132", "snp131", "snp130", "snp129", "snp137NonFlagged", "snp135NonFlagged", "snp132NonFlagged", "snp131NonFlagged", "snp130NonFlagged", "1000g2012apr_all", "1000g2012apr_amr", "1000g2012apr_eur", "1000g2012apr_asn", "1000g2012apr_afr", "1000g2012feb_all", "esp6500si_all", "esp6500_all", "esp6500_aa", "esp6500_ea", "esp5400_all", "esp5400_aa", "esp5400_ea","clinvar_20131105", "ljb2_sift", "ljb2_pp2hdiv", "ljb2_pp2hvar", "ljb2_mt", "ljb2_ma", "ljb2_fathmm", "ljb2_siphy", "ljb2_lrt", "ljb_all", "ljb2_gerp++", "ljb2_phylop", "caddgt20", "caddgt10");  #Used to print list of supported table names
 
@@ -410,6 +395,7 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'osd|outscript_dir:s' => \$parameter{outscript_dir}{value},   #One dir above sample id, must supply whole path i.e. /proj/...
 	   'f|family_id:s' => \$parameter{family_id}{value},  #Family group ID (Merged to same vcf file after GATK Base Recalibration)
 	   'sck|supported_capture_kit:s' => \%{ $parameter{supported_capture_kit}{value} },
+	   'dnr|decompose_normalize_references:s' => \@{ $parameter{decompose_normalize_references}{value} }, #Reference that should be decomposed and normalized
 	   'ped|pedigree_file:s' => \$parameter{pedigree_file}{value},  #Pedigree file
 	   'hgr|human_genome_reference:s' => \$parameter{human_genome_reference}{value},  #Human genome reference
 	   'al|outaligner_dir:s' => \$parameter{outaligner_dir}{value},  #determining which aligner out data directory was used previously (if not specified)
@@ -1000,7 +986,7 @@ check_vt_for_references({parameter_href => \%parameter,
 			 sample_info_href => \%sample_info,
 			 infile_lane_no_ending_href => \%infile_lane_no_ending,
 			 job_id_href => \%job_id,
-			 vt_references_ref => \@vt_references,
+			 vt_references_ref => \@{ $active_parameter{decompose_normalize_references} },
 			 vt_decompose => $active_parameter{vt_decompose},
 			 vt_normalize => $active_parameter{vt_normalize},
 			});
@@ -12221,7 +12207,7 @@ sub gatk_baserecalibration {
 
 ##Function : GATK baserecalibrator/printreads to recalibrate bases before variant calling. Both BaseRecalibrator/PrintReads will be executed within the same sbatch script.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -12235,7 +12221,6 @@ sub gatk_baserecalibration {
 ##         : $FILEHANDLE                 => Filehandle to write to
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 ##         : $xargs_file_counter         => The xargs file counter
 
@@ -12244,7 +12229,6 @@ sub gatk_baserecalibration {
     ## Default(s)
     my $family_id_ref;
     my $temp_directory_ref;
-    my $reference_dir_ref;
     my $outaligner_dir_ref;
     my $xargs_file_counter;
 
@@ -12277,8 +12261,6 @@ sub gatk_baserecalibration {
 			   strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
 				strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$arg_href->{active_parameter_href}{reference_dir},
-			       strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
 				strict_type => 1, store => \$outaligner_dir_ref},
 	xargs_file_counter => { default => 0,
@@ -12401,7 +12383,7 @@ sub gatk_baserecalibration {
 	print $XARGSFILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $XARGSFILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 	print $XARGSFILEHANDLE "-cov ".join(" -cov ", (@{ $active_parameter_href->{gatk_baserecalibration_covariates} }) )." ";  #Covariates to be used in the recalibration
-	print $XARGSFILEHANDLE "-knownSites ".join(" -knownSites ", map { catfile($$reference_dir_ref, $_) } (@{ $active_parameter_href->{gatk_baserecalibration_known_sites} }) )." ";
+	print $XARGSFILEHANDLE "-knownSites ".join(" -knownSites ", (@{ $active_parameter_href->{gatk_baserecalibration_known_sites} }) )." ";
 	print $XARGSFILEHANDLE "-nct ".$active_parameter_href->{core_processor_number}." ";  #How many CPU threads should be allocated per data thread to running this analysis
 	print $XARGSFILEHANDLE "-dcov ".$active_parameter_href->{gatk_downsample_to_coverage}." ";  #Coverage to downsample to at any given locus
 
@@ -12565,7 +12547,7 @@ sub gatk_realigner {
 
 ##Function : GATK ReAlignerTargetCreator/IndelRealigner to rearrange reads around INDELs. Both ReAlignerTargetCreator and IndelRealigner will be executed within the same sbatch script.
 ##Returns  : "|$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $xargs_file_counter
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -12579,7 +12561,6 @@ sub gatk_realigner {
 ##         : $FILEHANDLE                 => Filehandle to write to
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 ##         : $xargs_file_counter         => The xargs file counter
 
@@ -12588,7 +12569,6 @@ sub gatk_realigner {
     ## Default(s)
     my $family_id_ref;
     my $temp_directory_ref;
-    my $reference_dir_ref;
     my $outaligner_dir_ref;
     my $xargs_file_counter;
 
@@ -12621,8 +12601,6 @@ sub gatk_realigner {
 			   strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
 				strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$arg_href->{active_parameter_href}{reference_dir},
-			       strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
 				strict_type => 1, store => \$outaligner_dir_ref},
 	xargs_file_counter => { default => 0,
@@ -12740,7 +12718,7 @@ sub gatk_realigner {
 	print $XARGSFILEHANDLE "-T RealignerTargetCreator ";  #Type of analysis to run
 	print $XARGSFILEHANDLE "-l INFO ";  #Set the minimum level of logging
 	print $XARGSFILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-	print $XARGSFILEHANDLE "-known ".join(" -known ", map { catfile($$reference_dir_ref, $_) } (@{ $active_parameter_href->{gatk_realigner_indel_known_sites} }) )." ";  #Input VCF file(s) with known indels
+	print $XARGSFILEHANDLE "-known ".join(" -known ", (@{ $active_parameter_href->{gatk_realigner_indel_known_sites} }) )." ";  #Input VCF file(s) with known indels
 	print $XARGSFILEHANDLE "-dcov ".$active_parameter_href->{gatk_downsample_to_coverage}." ";  #Coverage to downsample to at any given locus
 
 	if ($active_parameter_href->{gatk_disable_auto_index_and_file_lock}) {
@@ -12783,7 +12761,7 @@ sub gatk_realigner {
 	print $XARGSFILEHANDLE "-T IndelRealigner ";
 	print $XARGSFILEHANDLE "-l INFO ";
 	print $XARGSFILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-	print $XARGSFILEHANDLE "-known ".join(" -known ", map { catfile($$reference_dir_ref, $_) } (@{ $active_parameter_href->{gatk_realigner_indel_known_sites} }) )." ";  #Input VCF file(s) with known indels
+	print $XARGSFILEHANDLE "-known ".join(" -known ", (@{ $active_parameter_href->{gatk_realigner_indel_known_sites} }) )." ";  #Input VCF file(s) with known indels
 	print $XARGSFILEHANDLE "-dcov ".$active_parameter_href->{gatk_downsample_to_coverage}." ";  #Coverage to downsample to at any given locus
 	print $XARGSFILEHANDLE "--consensusDeterminationModel USE_READS ";  #Additionally uses indels already present in the original alignments of the reads
 	print $XARGSFILEHANDLE "-targetIntervals ".catfile($intermediary_sample_directory, $infile.$outfile_tag."_".$contig.".intervals")." ";
@@ -24103,7 +24081,19 @@ sub check_vt_for_references {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my %seen;  #Avoid checking the same reference multiple times
+
+    foreach my $parameter_name (@$vt_references_ref) {
+
+	if (! exists($parameter_href->{$parameter_name})) {
+
+	    $log->fatal("Reference parameter flag: ".$parameter_name." for decompose_normalize_references does not exist as a parameter");
+	    exit 1;
+	}
+    }
 
     if ( ($vt_decompose) || ($vt_normalize) ) {
 

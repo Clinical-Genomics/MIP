@@ -102,6 +102,26 @@ supported_capture_kit:
     agilent_sureselect_focusedexome.v1: genome_reference_source_version_agilent_sureselect_targets_focusedexome_-v1-.bed
     latest: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
   type: mip
+decompose_normalize_references:
+  associated_program:
+   - mip
+  data_type: ARRAY
+  default:
+   - gatk_realigner_indel_known_sites
+   - gatk_baserecalibration_known_sites
+   - gatk_haplotypecaller_snp_known_set
+   - gatk_variantrecalibration_training_set_hapmap
+   - gatk_variantrecalibration_training_set_mills
+   - gatk_variantrecalibration_training_set_1000g_omni
+   - gatk_variantrecalibration_training_set_1000gsnp
+   - gatk_variantrecalibration_training_set_dbsnp
+   - vt_genmod_filter_1000g
+   - sv_vcfanno_config_file
+   - gatk_varianteval_gold
+   - gatk_varianteval_dbsnp
+   - snpsift_annotation_files
+  element_separator: ,
+  type: mip
 pedigree_file:
   associated_program:
    - mip
@@ -499,6 +519,7 @@ gatk_realigner_indel_known_sites:
   default:
    - GRCh37_1000g_indels_-phase1-.vcf
    - GRCh37_mills_and_1000g_indels_-gold_standard-.vcf
+  exists_check: file
   reference: reference_dir
   type: path
 pgatk_baserecalibration:
@@ -533,6 +554,7 @@ gatk_baserecalibration_known_sites:
    - GRCh37_dbsnp_-138-.vcf
    - GRCh37_1000g_indels_-phase1-.vcf
    - GRCh37_mills_and_1000g_indels_-gold_standard-.vcf
+  exists_check: file
   reference: reference_dir
   type: path
 gatk_baserecalibration_over_clipped_read:
