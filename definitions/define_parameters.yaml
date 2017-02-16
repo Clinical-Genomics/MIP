@@ -273,79 +273,6 @@ pmadeline:
   program_name_path:
    - madeline2
   type: program
-## Mosaik
-pmosaik_build:
-  associated_program:
-   - mip
-  chain: MAIN
-  data_type: SCALAR
-  default: 0
-  file_tag: nofile_tag
-  program_name_path:
-   - MosaikBuild
-  file_endings:
-   - .dat
-  remove_redundant_file: yes
-  remove_redundant_file_setting: single
-  type: program
-mosaik_build_median_frag_length:
-  associated_program:
-   - pmosaik_build
-  data_type: SCALAR
-  default: 375
-  type: program_argument
-pmosaik_aligner:
-  associated_program:
-   - mip
-  chain: MAIN
-  data_type: SCALAR
-  default: 0
-  file_tag: _sorted
-  outdir_name: mosaik
-  program_name_path:
-   - MosaikAligner
-  program_type: aligners
-  file_endings:
-   - .stat
-   - .bam
-  remove_redundant_file: yes
-  remove_redundant_file_setting: single
-  type: program
-mosaik_align_reference:
-  associated_program:
-   - pmosaik_aligner
-  build_file: yes_auto_build
-  data_type: SCALAR
-  default: not_set_yet
-  exists_check: file
-  type: program_argument
-mosaik_align_neural_network_pe_file:
-  associated_program:
-   - pmosaik_aligner
-  build_file: yes_auto_build
-  data_type: SCALAR
-  default: 2.1.78.pe.ann
-  exists_check: file
-  reference: reference_dir
-  type: path
-mosaik_align_neural_network_se_file:
-  associated_program:
-   - pmosaik_aligner
-  build_file: yes_auto_build
-  data_type: SCALAR
-  default: 2.1.78.se.ann
-  exists_check: file
-  reference: reference_dir
-  type: path
-mosaik_jump_db_stub:
-  associated_program:
-   - pmosaik_aligner
-  build_file: yes_auto_build
-  data_type: SCALAR
-  default: not_set_yet
-  exists_check: file
-  reference: reference_dir
-  type: path
 ## BWA
 pbwa_mem:
   associated_program:
@@ -1168,7 +1095,6 @@ gatk_haplotypecaller_pcr_indel_model:
   type: program_argument
 picardtools_path:
   associated_program:
-   - pmosaik_aligner
    - pbwa_mem
    - ppicardtools_mergesamfiles
    - ppicardtools_markduplicates
@@ -1524,7 +1450,6 @@ gatk_disable_auto_index_and_file_lock:
 ## GATK FTP Bundle Download version. Needed for all programs that download the human genome reference
 gatk_bundle_download_version:
   associated_program:
-   - pmosaik_aligner
    - pbwa_mem
    - pbwa_aln
    - pbwa_sampe
