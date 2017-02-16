@@ -19826,7 +19826,7 @@ sub program_prerequisites {
 	process_time => { default => 1,
 			  allow => qr/^\d+$/,
 			  strict_type => 1, store => \$process_time},
-	slurm_quality_of_service => { default => "normal",
+	slurm_quality_of_service => { default => $arg_href->{active_parameter_href}{slurm_quality_of_service},
 				      allow => ["low", "high", "normal"],
 				      strict_type => 1, store => \$slurm_quality_of_service},
 	pipefail => { default => 1,
