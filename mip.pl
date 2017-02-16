@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-###Master script for analysing paired end reads from the Illumina plattform in fastq(.gz) format to annotated ranked disease causing variants. The program performs QC, aligns reads using Mosaik or BWA, performs variant discovery and annotation as well as ranking the found variants according to disease potential.
+###Master script for analysing paired end reads from the Illumina plattform in fastq(.gz) format to annotated ranked disease causing variants. The program performs QC, aligns reads using BWA, performs variant discovery and annotation as well as ranking the found variants according to disease potential.
 
 ###Copyright 2011 Henrik Stranneheim
 
@@ -106,15 +106,6 @@ BEGIN {
                -pgz/--pgzip_fastq Gzip fastq files (defaults to "1" (=yes))
                -pfqc/--pfastqc Sequence quality analysis using FastQC (defaults to "1" (=yes))
                -pmad/--pmadeline Pedigree drawing engine (defaults to "0" (=no))
-
-               ##Mosaik
-               -pmob/--pmosaik_build  Convert reads to Mosaik format using MosaikBuild (defaults to "1" (=yes))
-                -mobmfl/--mosaik_build_median_frag_length Flag for setting the mean fragment length, mfl, (defaults to (=375) bp)
-               -pmoa/--pmosaik_aligner Align reads using MosaikAligner (defaults to "1" (=yes))
-                 -moaref/--mosaik_align_reference MosaikAligner reference (defaults to "{human_genome_reference}")
-                 -moaape/--mosaik_align_neural_network_pe_file MosaikAligner Neural Network PE File (defaults to "2.1.78.pe.ann")
-                 -moaase/--mosaik_align_neural_network_se_file MosaikAligner Neural Network SE File (defaults to "2.1.78.se.ann")
-                 -mojdb/--mosaik_jump_db_stub MosaikJump stub (defaults to "{human_genome_reference}")
 
                ##BWA
                -pmem/--pbwa_mem Align reads using Bwa Mem (defaults to "0" (=no))
@@ -365,11 +356,8 @@ my (%infile, %indir_path, %infile_lane_no_ending, %lane, %infile_both_strands_no
 
 ####Staging/Sanity Check Area
 
-my %file_info = (mosaik_align_reference => ".dat",
-		 mosaik_jump_db_stub => "_jdb_15",
-		 bwa_build_reference => "",
+my %file_info = (bwa_build_reference => "",
 		 exome_target_bed => [".infile_list", ".pad100.infile_list", ".pad100.interval_list"],
-		 mosaik_jump_db_stub_file_endings => ["_keys.jmp", "_meta.jmp", "_positions.jmp"],  #MosaikJumpDatabase file endings
 		 bwa_build_reference_file_endings => [".amb", ".ann", ".bwt", ".pac", ".sa"],  #BWA human genome reference file endings
 		 human_genome_reference_file_endings => [".dict", ".fai"],  #Meta files
     );
@@ -461,13 +449,6 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'pgz|pgzip_fastq=n' => \$parameter{pgzip_fastq}{value},
 	   'pfqc|pfastqc=n' => \$parameter{pfastqc}{value},
 	   'pmad|pmadeline=n' => \$parameter{pmadeline}{value},
-	   'pmob|pmosaik_build=n' => \$parameter{pmosaik_build}{value},
-	   'mobmfl|mosaik_build_median_frag_length=n' => \$parameter{mosaik_build_median_frag_length}{value},  #For fragment length estimation and local search
-	   'pmoa|pmosaik_aligner=n' => \$parameter{pmosaik_aligner}{value},
-	   'moaref|mosaik_align_reference:s' => \$parameter{mosaik_align_reference}{value},  #MosaikAlign reference file assumes existance of jump database files in same dir
-	   'moaape|mosaik_align_neural_network_pe_file:s' => \$parameter{mosaik_align_neural_network_pe_file}{value},
-	   'moaase|mosaik_align_neural_network_se_file:s' => \$parameter{mosaik_align_neural_network_se_file}{value},
-	   'mojdb|mosaik_jump_db_stub:s' => \$parameter{mosaik_jump_db_stub}{value},  #Stub for MosaikJump database
 	   'pmem|pbwa_mem=n' => \$parameter{pbwa_mem}{value},
 	   'memhla|bwa_mem_hla=n' => \$parameter{bwa_mem_hla}{value},
 	   'memrdb|bwa_mem_rapid_db:s' => \$parameter{bwa_mem_rapid_db}{value},
@@ -1113,50 +1094,6 @@ if ($active_parameter{pmadeline} > 0) {  #Run madeline
 	      job_id_href => \%job_id,
 	      program_name => "madeline",
 	     });
-}
-
-if ($active_parameter{pmosaik_build} > 0) {  #Run MosaikBuild
-
-    $log->info("[MosaikBuild]\n");
-
-    foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
-
-	mosaik_build({parameter_href => \%parameter,
-		      active_parameter_href => \%active_parameter,
-		      sample_info_href => \%sample_info,
-		      infile_href => \%infile,
-		      indir_path_href => \%indir_path,
-		      infile_lane_no_ending_href => \%infile_lane_no_ending,
-		      lane_href => \%lane,
-		      job_id_href => \%job_id,
-		      sample_id_ref => \$sample_id,
-		      outaligner_dir => \$active_parameter{outaligner_dir},
-		      program_name => "mosaik_build",
-		     });
-    }
-}
-
-if ($active_parameter{pmosaik_aligner} > 0) {  #Run mosaik_aligner
-
-    $log->info("[MosaikAlign]\n");
-
-    if ($active_parameter{dry_run_all} != 1) {
-
-	if ( ($parameter{human_genome_reference}{build_file} eq 1) || ($parameter{mosaik_align_reference}{build_file} eq 1) || ($parameter{mosaik_jump_db_stub}{build_file} eq 1) ) {
-
-	    build_mosaikaligner_prerequisites(\%parameter, \%active_parameter, \%sample_info, \%file_info, \%infile_lane_no_ending, \%job_id, \@{ $file_info{mosaik_jump_db_stub_file_endings} }, \$file_info{human_genome_reference_source}, \$file_info{human_genome_reference_version}, $active_parameter{family_id}, $active_parameter{outaligner_dir}, "mosaik_aligner");
-
-	}
-	if ( ($parameter{mosaik_align_neural_network_pe_file}{build_file} eq 1) || ($parameter{mosaik_align_neural_network_se_file}{build_file} eq 1) ){
-
-	    ## Locate MOSAIK path and move neural network files in place if lacking
-	    move_mosaik_nn(\%active_parameter);
-	}
-    }
-    foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
-
-	mosaik_aligner(\%parameter, \%active_parameter, \%sample_info, \%file_info, \%infile, \%indir_path, \%infile_lane_no_ending, \%job_id, $sample_id, $active_parameter{outaligner_dir}, "mosaik_aligner");
-    }
 }
 
 
@@ -14806,387 +14743,6 @@ sub bwa_mem {
 }
 
 
-sub mosaik_aligner {
-
-##mosaik_aligner
-
-##Function : Performs alignment.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_href, $indir_path_href, $infile_lane_no_ending_href, $sample_id, $outaligner_dir, $program_name
-##         : $parameter_href              => The parameter hash {REF}
-##         : $active_parameter_href       => The active parameters for this analysis hash {REF}
-##         : $sample_info_href            => Info on samples and family hash {REF}
-##         : $file_info_href              => The file info hash {REF}
-##         : $infile_href                 => The infiles hash {REF}
-##         : $indir_path_href             => The indirectories path(s) hash {REF}
-##         : $infile_lane_no_ending_href  => The infile(s) without the ".ending" {REF}
-##         : $sample_id                   => The sample_id
-##         : $outaligner_dir              => The outaligner_dir used in the analysis
-##         : $program_name                => The program name
-
-    my $parameter_href = $_[0];
-    my $active_parameter_href = $_[1];
-    my $sample_info_href = $_[2];
-    my $file_info_href = $_[3];
-    my $infile_href = $_[4];
-    my $indir_path_href = $_[5];
-    my $infile_lane_no_ending_href = $_[6];
-    my $job_id_href = $_[7];
-    my $sample_id = $_[8];
-    my $outaligner_dir = $_[9];
-    my $program_name = $_[10];
-
-    my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
-    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $sbatch_script_tracker=0;
-    my $time=0;
-    my $infile_size;
-
-    for (my $infile_counter=0;$infile_counter<scalar( @{ $infile_lane_no_ending_href->{$sample_id} });$infile_counter++) {  #For all infiles per lane
-
-	if ($consensus_analysis_type eq "wgs") {
-
-	    $time = 80;
-	}
-	else {
-
-	    $time = 40;
-	}
-
-	my $infile = $infile_lane_no_ending_href->{$sample_id}[$infile_counter];
-
-	## Set parameters depending on sequence length
-	my $seq_length = $sample_info_href->{sample}{$sample_id}{file}{$infile}{sequence_length};
-	my $act_parameter = 35;  #The alignment candidate threshold (length)
-	my $bw_parameter = 35;  #Specifies the Smith-Waterman bandwidth.
-
-	if ($seq_length <= 36) {
-
-	    $act_parameter = 20;
-	    $bw_parameter = 13;
-	}
-	if ($seq_length > 36 && $seq_length <= 51) {
-
-	    $act_parameter = 25;
-	    $bw_parameter = 21;
-	}
-	if ($seq_length > 51 && $seq_length <= 76) {
-
-	    $bw_parameter = 29;
-	}
-
-	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
-								     job_id_href => $job_id_href,
-								     FILEHANDLE => $FILEHANDLE,
-								     directory_id => $sample_id,
-								     program_name => $program_name,
-								     program_directory => lc($outaligner_dir),
-								     core_number => $active_parameter_href->{core_processor_number},
-								     process_time => $time,
-								     temp_directory => $active_parameter_href->{temp_directory}
-								    });
-	my ($volume, $directory, $stdout_file) = File::Spec->splitpath($program_info_path."stdout.txt");  #Split to enable submission to &sample_info_qc later
-
-	## Assign directories
-	my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id, $outaligner_dir);
-	my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id, $outaligner_dir);
-	$parameter_href->{"p".$program_name}{$sample_id}{indirectory} = $outsample_directory;  #Used downstream
-	my $outfile_tag = $file_info_href->{$sample_id}{"p".$program_name}{file_tag};
-
-	## Copies file to temporary directory.
-	say $FILEHANDLE "## Copy file to node";
-	migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			      path => catfile($insample_directory, $infile.".dat"),
-			      temp_directory => $active_parameter_href->{temp_directory}
-			     });
-	say $FILEHANDLE "wait", "\n";
-
-	## mosaik_aligner
-	say $FILEHANDLE "## Create node temporary MOSAIK directory";
-	say $FILEHANDLE "mkdir -p ".catfile($active_parameter_href->{temp_directory}, "mosaik_tmp");
-	say $FILEHANDLE "export MOSAIK_TMP=".catfile($active_parameter_href->{temp_directory}, "mosaik_tmp"), "\n";
-
-	say $FILEHANDLE "## Generating .bam file from .dat files";
-	print $FILEHANDLE "MosaikAligner ";
-	print $FILEHANDLE "-ia ".catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{mosaik_align_reference})." ";  #Mosaik Reference
-	print $FILEHANDLE "-annse ".catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{mosaik_align_neural_network_se_file})." ";  #NerualNetworkSE
-
-	if ($sample_info_href->{sample}{$sample_id}{file}{ $infile_lane_no_ending_href->{$sample_id}[$infile_counter] }{sequence_run_type} eq "paired_end") {  #Second read direction if present
-
-	    print $FILEHANDLE "-annpe ".catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{mosaik_align_neural_network_pe_file})." ";  #NerualNetwork
-	    print $FILEHANDLE "-ls 100 "; #Enable local alignment search for PE reads
-	}
-
-	print $FILEHANDLE "-p ".$active_parameter_href->{core_processor_number}." ";  #Nr of cores
-	print $FILEHANDLE "-hs 15 ";  #Hash size
-	print $FILEHANDLE "-mm 4 ";  #The # of mismatches allowed
-	print $FILEHANDLE "-mhp 100 "; #The maximum of positions stored per seed
-	print $FILEHANDLE "-act ".$act_parameter." ";  #The alignment candidate threshold (length)
-	print $FILEHANDLE "-bw ".$bw_parameter." ";  #Specifies the Smith-Waterman bandwidth.
-	print $FILEHANDLE "-j ".catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{mosaik_jump_db_stub})." ";  #JumpDatabase
-	print $FILEHANDLE "-in ".catfile($active_parameter_href->{temp_directory}, $infile.".dat")." ";  #Infile
-	say $FILEHANDLE "-out ".catfile($active_parameter_href->{temp_directory}, $infile)." ";  #OutFile (mosaik_aligner appends .bam to infile name)
-
-	## BAM to SAM conversion and sorting/indexing. Make sure that the BAM file BIN field is correct (Mosaik v.2.2.3 does according to Picard not set the bin field correctly)
-	say $FILEHANDLE "## BAM to SAM";
-	java_core({FILEHANDLE => $FILEHANDLE,
-		   memory_allocation => "Xmx2g",
-		   java_use_large_pages_ref => \$active_parameter_href->{java_use_large_pages},
-		   java_temporary_directory => $active_parameter_href->{temp_directory},
-		   java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
-		  });
-
-	print $FILEHANDLE "SamFormatConverter ";
-	print $FILEHANDLE "VALIDATION_STRINGENCY=SILENT ";  #Disable errors print
-	print $FILEHANDLE "INPUT=".catfile($active_parameter_href->{temp_directory}, $infile.".bam")." ";  #InFile
-	say $FILEHANDLE "OUTPUT=".catfile($active_parameter_href->{temp_directory}, $infile.".sam")." "; #OutFile
-
-	## SAM to BAM conversion
-	say $FILEHANDLE "## SAM to BAM";
-	java_core({FILEHANDLE => $FILEHANDLE,
-		   memory_allocation => "Xmx2g",
-		   java_use_large_pages_ref => \$active_parameter_href->{java_use_large_pages},
-		   java_temporary_directory => $active_parameter_href->{temp_directory},
-		   java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
-		  });
-
-	print $FILEHANDLE "SamFormatConverter ";
-	print $FILEHANDLE "INPUT=".catfile($active_parameter_href->{temp_directory}, $infile.".sam")." ";  #InFile
-	say $FILEHANDLE "OUTPUT=".catfile($active_parameter_href->{temp_directory}, $infile.".bam")." ";  #OutFile
-
-	## Sort BAM
-	say $FILEHANDLE "## Sort BAM";
-	java_core({FILEHANDLE => $FILEHANDLE,
-		   memory_allocation => "Xmx4g",
-		   java_use_large_pages_ref => \$active_parameter_href->{java_use_large_pages},
-		   java_temporary_directory => $active_parameter_href->{temp_directory},
-		   java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
-		  });
-
-	print $FILEHANDLE "SortSam ";
-	print $FILEHANDLE "SORT_ORDER=coordinate ";  #Sort per contig and coordinate
-	print $FILEHANDLE "CREATE_INDEX=TRUE ";  #create a BAM index when writing a coordinate-sorted BAM file.
-	print $FILEHANDLE "INPUT=".catfile($active_parameter_href->{temp_directory}, $infile.".bam")." ";  #InFile
-	say $FILEHANDLE "OUTPUT=".catfile($active_parameter_href->{temp_directory}, $infile.$outfile_tag.".bam");  #Outfile
-
-	if ($active_parameter_href->{genomic_set} ne "nouser_info") {
-
-	    ## Create Bedtools genome file
-	    say $FILEHANDLE "## Create Bedtools genome file";
-	    print $FILEHANDLE "cut -f1-2 ".catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{human_genome_reference}.".fai")." ";  #Contig name and length
-	    say $FILEHANDLE "> ".catfile($active_parameter_href->{temp_directory}, "bedtools_genome_file.txt")." ";  #Bedtool genome file
-
-	    ## Select alignment mapping to genetic regions
-	    say $FILEHANDLE "## Select alignment mapping to genetic regions";
-	    print $FILEHANDLE "bedtools intersect ";
-	    print $FILEHANDLE "-abam ".catfile($active_parameter_href->{temp_directory}, $infile.$outfile_tag.".bam")." ";
-	    print $FILEHANDLE "-b ".catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{genomic_set})." ";
-	    print $FILEHANDLE "-wa ";
-	    print $FILEHANDLE "-sorted ";
-	    print $FILEHANDLE "-g ".catfile($active_parameter_href->{temp_directory}, "bedtools_genome_file.txt")." ";  #Bedtool genome file
-	    say $FILEHANDLE "> ".catfile($active_parameter_href->{temp_directory}, $infile.$outfile_tag."_genetic_regions.bam")." ";  #TempFile
-
-	    ## Move to final file name
-	    say $FILEHANDLE "## Move to final file name";
-	    print $FILEHANDLE "mv ";
-	    print $FILEHANDLE catfile($active_parameter_href->{temp_directory}, $infile.$outfile_tag."_genetic_regions.bam")." ";  #TempFile
-	    say $FILEHANDLE catfile($active_parameter_href->{temp_directory}, $infile.$outfile_tag.".bam")." ";  #OutFile
-
-	    ## Writes java core commands to filehandle.
-	    java_core({FILEHANDLE => $FILEHANDLE,
-		       memory_allocation => "Xmx2g",
-		       java_use_large_pages_ref => \$active_parameter_href->{java_use_large_pages},
-		       java_temporary_directory => $active_parameter_href->{temp_directory},
-		       java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
-		      });
-
-	    print $FILEHANDLE "BuildBamIndex ";
-	    say $FILEHANDLE "INPUT=".catfile($active_parameter_href->{temp_directory}, $infile.$outfile_tag.".bam")." ";  #OutFile
-
-	    if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
-
-		## Collect QC metadata info for later use
-		$sample_info_href->{sample}{$sample_id}{most_complete_bam}{path} = catfile($outsample_directory, $infile.$outfile_tag.".bam");
-	    }
-	}
-
-	## Copies file from temporary directory.
-	say $FILEHANDLE "## Copy file from temporary directory";
-	my @outfiles = ($infile.$outfile_tag.".b*", $infile.".stat");
-	foreach my $outfile (@outfiles) {
-
-	    migrate_file_from_temp({temp_path => catfile($active_parameter_href->{temp_directory}, $outfile),
-				    file_path => $outsample_directory,
-				    FILEHANDLE => $FILEHANDLE,
-				   });
-	}
-	say $FILEHANDLE "wait", "\n";
-
-	close($FILEHANDLE);
-
-	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
-
-	    ## Collect QC metadata info for later use
-	    sample_info_qc({sample_info_href => $sample_info_href,
-			    sample_id => $sample_id,
-			    program_name => "mosaik_aligner",
-			    infile => $infile,
-			    outdirectory => $directory,
-			    outfile_ending => $stdout_file,
-			    outdata_type => "info_directory"
-			   });
-
-	    submit_job({active_parameter_href => $active_parameter_href,
-			sample_info_href => $sample_info_href,
-			job_id_href => $job_id_href,
-			infile_lane_no_ending_href => $infile_lane_no_ending_href,
-			sample_id => $sample_id,
-			dependencies => "sample_id_dependency_step_in_parallel",
-			path => $parameter_href->{"p".$program_name}{chain},
-			sbatch_file_name => $file_name,
-			sbatch_script_tracker => $sbatch_script_tracker
-		       });
-	}
-	$sbatch_script_tracker++;  #Tracks nr of sbatch scripts
-    }
-}
-
-
-sub mosaik_build {
-
-##mosaik_build
-
-##Function : Generates Mosaik hash format on reads using MosaikBuild
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_href, $indir_path_href, $infile_lane_no_ending_href, $lane_href, $job_id_href, $sample_id_ref, $outaligner_dir, $program_name
-##         : $parameter_href             => The parameter hash {REF}
-##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $infile_href                => The infiles hash {REF}
-##         : $indir_path_href            => The indirectories path(s) hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
-##         : $lane_href                  => The lane info hash {REF}
-##         : $job_id_href                => The job_id hash {REF}
-##         : $sample_id_ref              => The sample_id {REF}
-##         : $outaligner_dir             => The outaligner_dir used
-##         : $program_name               => The program name
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href = $arg_href->{parameter_href};
-    my $active_parameter_href = $arg_href->{active_parameter_href};
-    my $sample_info_href = $arg_href->{sample_info_href};
-    my $infile_href = $arg_href->{infile_href};
-    my $indir_path_href = $arg_href->{indir_path_href};
-    my $infile_lane_no_ending_href = $arg_href->{infile_lane_no_ending_href};
-    my $lane_href = $arg_href->{lane_href};
-    my $job_id_href = $arg_href->{job_id_href};
-    my $sample_id_ref = $arg_href->{sample_id_ref};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir};
-    my $program_name = $arg_href->{program_name};
-
-    my $temp_directory_ref = \$active_parameter_href->{temp_directory};
-
-    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 10;
-
-    ## Set the number of cores to allocate per sbatch job.
-    my $core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
-					      core_number => scalar( @{ $lane_href->{$$sample_id_ref} } ),
-					     });  #Detect the number of cores to use from lanes
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
-					     job_id_href => $job_id_href,
-					     FILEHANDLE => $FILEHANDLE,
-					     directory_id => $$sample_id_ref,
-					     program_name => $program_name,
-					     program_directory => lc($$outaligner_dir_ref),
-					     core_number => $core_number,
-					     process_time => $time,
-					     temp_directory => $$temp_directory_ref
-					    });
-
-    ## Assign directories
-    my $insample_directory = $indir_path_href->{$$sample_id_ref};
-    my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
-    $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory;  ##Used downstream
-
-    my $core_counter = 1;
-    my $paired_end_tracker = 0;
-    my $st_parameter = $active_parameter_href->{platform};
-
-    ## Copies files from source to temporary folder. Loop over files specified by $files_ref and collects files from $extract_files_ref.
-    migrate_files_to_temp({active_parameter_href => $active_parameter_href,
-			   sample_info_href => $sample_info_href,
-			   files_ref => \@{ $infile_lane_no_ending_href->{$$sample_id_ref} },
-			   extract_files_ref => \@{ $infile_href->{$$sample_id_ref} },
-			   FILEHANDLE => $FILEHANDLE,
-			   insample_directory => $insample_directory,
-			   core_number => $core_number,
-			   sample_id => $$sample_id_ref
-			  });
-
-    ## MosaikBuild
-    say $FILEHANDLE "## Generating .dat file from fastq files";
-    for (my $infile_counter=0;$infile_counter<scalar( @{ $infile_lane_no_ending_href->{$$sample_id_ref} });$infile_counter++) {  #For all files
-
-	my $sequence_run_mode = $sample_info_href->{sample}{$$sample_id_ref}{file}{ $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter] }{sequence_run_type};  #Collect paired-end or single-end sequence run mode
-	my $core_tracker=0;  #Required to portion out cores and files before wait and to track the outfiles to correct lane
-
-	print_wait({counter_ref => \$infile_counter,
-		    core_number_ref => \$core_number,
-		    core_counter_ref => \$core_counter,
-		    FILEHANDLE => $FILEHANDLE,
-		   });
-
-	print $FILEHANDLE "MosaikBuild ";
-	print $FILEHANDLE "-id ".$infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter]." ";  #Read group ID for BAM Header
-	print $FILEHANDLE "-sam ".$$sample_id_ref." ";  #Sample name for BAM Header
-	print $FILEHANDLE "-st ".$st_parameter." ";  #Sequencing technology for BAM Header
-	print $FILEHANDLE "-mfl ".$active_parameter_href->{mosaik_build_median_frag_length}." ";  #Median Fragment Length
-	print $FILEHANDLE "-q ".catfile($$temp_directory_ref, $infile_href->{$$sample_id_ref}[$paired_end_tracker])." ";  #Read 1
-
-	if ( $sequence_run_mode eq "paired_end") {
-
-	    $paired_end_tracker = $paired_end_tracker+1;  #Increment to collect correct read 2 from %infile
-	    print $FILEHANDLE "-q2 ".catfile($$temp_directory_ref, $infile_href->{$$sample_id_ref}[$paired_end_tracker])." ";  #Read 2
-	}
-
-	$paired_end_tracker++;  #Increment to correctly track both single-end runs and paired-end runs
-	say $FILEHANDLE "-out ".catfile($$temp_directory_ref, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter].".dat")." &\n";  #OutFile
-    }
-    say $FILEHANDLE "wait", "\n";
-
-    ## Copies files from temporary folder to source. Loop over files specified by $files_ref and collects files from $extract_files_ref.
-    migrate_files_from_temp({files_ref => \@{ $infile_lane_no_ending_href->{$$sample_id_ref} },
-			     extract_files_ref => \@{ $infile_lane_no_ending_href->{$$sample_id_ref} },
-			     outsample_directory => $outsample_directory,
-			     temp_directory => $$temp_directory_ref,
-			     core_number => $core_number,
-			     file_ending => ".dat",
-			     FILEHANDLE => $FILEHANDLE,
-			    });
-
-    close($FILEHANDLE);
-
-    if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
-
-	submit_job({active_parameter_href => $active_parameter_href,
-		    sample_info_href => $sample_info_href,
-		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    sample_id => $$sample_id_ref,
-		    dependencies => "case_dependency",
-		    path => $parameter_href->{"p".$program_name}{chain},
-		    sbatch_file_name => $file_name
-		   });
-    }
-}
-
-
 sub variantannotationblock {
 
 ##variantannotationblock
@@ -16063,7 +15619,7 @@ sub gzip_fastq {
 	    print $FILEHANDLE "gzip ";
 	    say $FILEHANDLE catfile($insample_directory, $infile)." &\n";  #InFile
 	    $uncompressed_file_counter++;
-	    $infile .= ".gz";  #Add ".gz" to original fastq ending, since this will execute before fastQC screen and mosaikBuild.
+	    $infile .= ".gz";  #Add ".gz" to original fastq ending, since this will execute before fastQC and bwa.
 	}
     }
     say $FILEHANDLE "wait", "\n";
@@ -16771,134 +16327,6 @@ sub build_bwa_prerequisites {
 					    });
 	}
 	$parameter_href->{bwa_build_reference}{build_file} = 0;  #Ensure that this subrutine is only executed once
-    }
-    close($FILEHANDLE);
-
-    if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
-
-	submit_job({active_parameter_href => $active_parameter_href,
-		    sample_info_href => $sample_info_href,
-		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => "no_dependency_add_to_case",
-		    path => $parameter_href->{"p".$program_name}{chain},
-		    sbatch_file_name => $file_name
-		   });
-    }
-}
-
-
-sub build_mosaikaligner_prerequisites {
-
-##build_mosaikaligner_prerequisites
-
-##Function : Creates the mosaikAlign prerequisites using active_parameters{'human_genome_reference'} as reference.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $mosaik_jump_db_stub_file_endings_ref, $human_genome_reference_source_ref, $human_genome_reference_version_ref, $family_id, $outaligner_dir, $program_name
-##         : $parameter_href                       => The parameter hash {REF}
-##         : $active_parameter_href                => The active parameters for this analysis hash {REF}
-##         : $sample_info_href                     => Info on samples and family hash {REF}
-##         : $file_info_href                       => The file_info hash {REF}
-##         : $infile_lane_no_ending_href           => The infile(s) without the ".ending" {REF}
-##         : $job_id_href                          => The job_id hash {REF}
-##         : $mosaik_jump_db_stub_file_endings_ref => The mosaikJump database file endings
-##         : $human_genome_reference_source_ref    => The human genome source {REF}
-##         : $human_genome_reference_version_ref   => The human genome build version {REF}
-##         : $family_id                            => Family ID
-##         : $outaligner_dir                       => AlignerOutDir used in the analysis
-##         : $program_name                         => Program name
-
-    my $parameter_href = $_[0];
-    my $active_parameter_href = $_[1];
-    my $sample_info_href = $_[2];
-    my $file_info_href = $_[3];
-    my $infile_lane_no_ending_href = $_[4];
-    my $job_id_href = $_[5];
-    my $mosaik_jump_db_stub_file_endings_ref = $_[6];
-    my $human_genome_reference_source_ref = $_[7];
-    my $human_genome_reference_version_ref = $_[8];
-    my $family_id = $_[9];
-    my $outaligner_dir = $_[10];
-    my $program_name = $_[11];
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
-
-    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $random_integer = int(rand(10000));  #Generate a random integer between 0-10,000.
-    
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header.
-    my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
-					     job_id_href => $job_id_href,
-					     FILEHANDLE => $FILEHANDLE,
-					     directory_id => $family_id,
-					     program_name => $program_name,
-					     program_directory => lc($outaligner_dir),
-					     core_number => 4,
-					     process_time => 2,
-					    });
-
-    ## Creates the humanGenomePreRequisites using active_parameters{human_genome_reference} as reference.
-    build_human_genome_prerequisites({parameter_href => $parameter_href,
-				      active_parameter_href => $active_parameter_href,
-				      sample_info_href => $sample_info_href,
-				      file_info_href => $file_info_href,
-				      infile_lane_no_ending_href => $infile_lane_no_ending_href,
-				      job_id_href => $job_id_href,
-				      family_id_ref => \$family_id,
-				      outaligner_dir_ref => \$outaligner_dir,
-				      program => $program_name,
-				      FILEHANDLE => $FILEHANDLE,
-				      random_integer => $random_integer,
-				     });
-
-    if ($parameter_href->{mosaik_align_reference}{build_file} eq 1) {  ##Begin auto_build of MosaikAlignReference
-
-	$log->warn("Will try to create required ".$active_parameter_href->{mosaik_align_reference}." before executing ".$program_name."\n");
-
-	say $FILEHANDLE "#Building MosaikAligner Reference";
-	print $FILEHANDLE "MosaikBuild ";
-	print $FILEHANDLE "-fr ".catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{human_genome_reference})." ";  #The FASTA reference sequences file
-	print $FILEHANDLE "-sn homo_sapiens ";  #Species name
-	print $FILEHANDLE "-ga ".$$human_genome_reference_source_ref.$$human_genome_reference_version_ref." ";  #The genome assembly ID
-	say $FILEHANDLE "-oa ".catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{mosaik_align_reference}."_".$random_integer), "\n";  #Temporary outfile
-
-	my $intended_file_path = catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{mosaik_align_reference});
-	my $temporary_file_path = catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{mosaik_align_reference}."_".$random_integer);
-
-	## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-	print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
-					 intended_file_path_ref => \$intended_file_path,
-					 temporary_file_path_ref => \$temporary_file_path,
-					});
-    }
-    if ($parameter_href->{mosaik_jump_db_stub}{build_file} eq 1) {  ##Begin auto_build of MosaikJump Database
-
-	$log->warn("Will try to create required ".$active_parameter_href->{mosaik_jump_db_stub}." before executing ".$program_name."\n");
-
-	say $FILEHANDLE "#Building MosaikAligner JumpDatabase";
-	say $FILEHANDLE "mkdir -p ".catfile("scratch", "mosaik_tmp");
-	say $FILEHANDLE "export MOSAIK_TMP=".catfile("scratch", "mosaik_tmp"), "\n";
-
-	print $FILEHANDLE "MosaikJump ";
-	print $FILEHANDLE "-ia ".catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{mosaik_align_reference})." ";  #The input reference file
-	print $FILEHANDLE "-hs 15 ";  #The hash size
-	print $FILEHANDLE "-mem 24 ";  #The amount memory used when sorting hashes
-	say $FILEHANDLE "-out ".catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{mosaik_jump_db_stub}."_".$random_integer), "\n";  #Mosaik JumpDbStub for the output filenames
-
-	for (my $file_endings_counter=0;$file_endings_counter<scalar(@$mosaik_jump_db_stub_file_endings_ref);$file_endings_counter++) {  #All MosaikJumpDb assocaiated files
-
-	    my $intended_file_path = catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{mosaik_jump_db_stub}.$mosaik_jump_db_stub_file_endings_ref->[$file_endings_counter]);
-	    my $temporary_file_path = catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{mosaik_jump_db_stub}."_".$random_integer.$mosaik_jump_db_stub_file_endings_ref->[$file_endings_counter]);
-
-	    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-	    print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
-					     intended_file_path_ref => \$intended_file_path,
-					     temporary_file_path_ref => \$temporary_file_path,
-					    });
-	}
-
-	say $FILEHANDLE "rm -rf ".catfile("scratch", "mosaik_tmp"), "\n";  #Cleaning up temp directory
     }
     close($FILEHANDLE);
 
@@ -19102,17 +18530,7 @@ sub check_parameter_files {
 	
 		    my $path = catfile($active_parameter_href->{$parameter_name});
 		    
-		    if ($parameter_name eq "mosaik_jump_db_stub") {
-
-			## Checks files to be built by combining filename stub with fileendings
-			check_file_endings_to_build({parameter_href => $parameter_href,
-						     active_parameter_href => $active_parameter_href,
-						     file_endings_ref => \@{ $file_info_href->{mosaik_jump_db_stub_file_endings} },
-						     parameter_name => "mosaik_jump_db_stub",
-						     file_name => $active_parameter_href->{mosaik_jump_db_stub},
-						    });
-		    }
-		    elsif ($parameter_name eq "bwa_build_reference") {
+		    if ($parameter_name eq "bwa_build_reference") {
 
 			## Checks files to be built by combining filename stub with fileendings
 			check_file_endings_to_build({parameter_href => $parameter_href,
@@ -20543,38 +19961,6 @@ sub check_existance {
 
 		$parameter_href->{$$parameter_name_ref}{build_file} =  0;  #File exist in this check
 	    }
-	}
-    }
-}
-
-
-sub move_mosaik_nn {
-
-##move_mosaik_nn
-
-##Function : Locate MOSAIK path and move neural network files in place if lacking
-##Returns  : ""
-##Arguments: $active_parameter_href
-##         : $active_parameter_href => The active parameters for this analysis hash {REF}
-
-    my $active_parameter_href = $_[0];
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
-
-    my @paths = split(/:/,$ENV{PATH});  #Find Mosaik installation path
-
-    for (my $paths_counter=0;$paths_counter<scalar(@paths);$paths_counter++) {
-
-	if ($paths[$paths_counter] =~/MOSAIK/) {  #Select MOSAIK path
-
-	    $paths[$paths_counter] =~ s/bin\//src\/networkFile/g;  #Location of NN files
-
-	    $log->warn("Could not find Mosaik Network Files in ".$active_parameter_href->{reference_dir},"\n");
-	    $log->info("Copying Mosaik Network Files ".$active_parameter_href->{mosaik_align_neural_network_se_file}." and ".$active_parameter_href->{mosaik_align_neural_network_pe_file}." to ".$active_parameter_href->{reference_dir}." from ".$paths[$paths_counter], "\n");
-	    copy(catfile($paths[$paths_counter], $active_parameter_href->{mosaik_align_neural_network_se_file}), $active_parameter_href->{reference_dir});
-	    copy(catfile($paths[$paths_counter], $active_parameter_href->{mosaikAlignNeuralNetworkPeFile}), $active_parameter_href->{reference_dir});
-	    last;
 	}
     }
 }
@@ -26101,7 +25487,7 @@ sub print_program {
 
 	if ( ( any {$_ eq $order_parameter_element} @{ $parameter_href->{dynamic_parameter}{program} } ) ) { #Only process programs
 
-	    unless ($order_parameter_element=~/pmadeline|pmosaik|pbwa_sampe|pbwa_aln|ppicardtools_mergerapidreads|pbamcalibrationblock|pvariantannotationblock|pannovar/) {
+	    unless ($order_parameter_element=~/pmadeline|pbwa_sampe|pbwa_aln|ppicardtools_mergerapidreads|pbamcalibrationblock|pvariantannotationblock|pannovar/) {
 
 		print STDOUT "--".$order_parameter_element." ".$print_program_mode." ";
 	    }
