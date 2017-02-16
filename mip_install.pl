@@ -94,7 +94,6 @@ $parameter{bioconda}{snpeff} = "4.2";
 $parameter{bioconda_snpeff_patch} = "-0";  #For correct softlinking in share and bin in conda env
 $parameter{bioconda}{picard} = "2.5.0";
 $parameter{bioconda_picard_patch} = "-1";  #For correct softlinking in share and bin in conda env
-$parameter{bioconda}{mosaik} = "2.2.26";
 $parameter{bioconda}{htslib} = "1.3.1";
 $parameter{bioconda}{bedtools} = "2.26.0";
 $parameter{bioconda}{vt} = "2015.11.10";
