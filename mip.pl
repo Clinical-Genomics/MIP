@@ -336,7 +336,7 @@ my @broadcasts;  #Holds all set parameters info after add_to_active_parameter
 my $date_time = localtime;
 my $date_time_stamp = $date_time->datetime;
 my $date = $date_time->ymd;
-my $script = (`basename $0`);  #Catches script name
+my $script = fileparse(basename($0, ".pl"));  #Catches script name and removes ending
 chomp($date_time_stamp, $date, $script);  #Remove \n;
 
 ####Set program parameters
@@ -409,7 +409,7 @@ my @annovar_supported_table_names = ("refGene", "knownGene", "ensGene", "mce46wa
 my %annovar_table;  #Holds annovar tables and features
 
 
-## Enables cmd "mip.pl" to print usage help
+## Enables cmd "mip" to print usage help
 if(!@ARGV) {
 
     help({USAGE => $USAGE,
@@ -1005,10 +1005,10 @@ create_fam_file({parameter_href => \%parameter,
 
 
 ## Add to SampleInfo
-add_to_sampleInfo({active_parameter_href => \%active_parameter,
-		   sample_info_href => \%sample_info,
-		   file_info_href => \%file_info,
-		  });
+add_to_sample_info({active_parameter_href => \%active_parameter,
+		    sample_info_href => \%sample_info,
+		    file_info_href => \%file_info,
+		   });
 
 
 ############
@@ -2329,7 +2329,7 @@ sub sacct {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
+    my $family_id_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -2346,7 +2346,8 @@ sub sacct {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -2405,7 +2406,7 @@ sub analysisrunstatus {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
+    my $family_id_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -2422,7 +2423,8 @@ sub analysisrunstatus {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -2611,8 +2613,8 @@ sub removeredundantfiles {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $outaligner_dir_ref;
     my $call_type;
 
     ## Flatten argument(s)
@@ -2634,8 +2636,10 @@ sub removeredundantfiles {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	lane_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$lane_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
     };
 
@@ -2709,7 +2713,7 @@ sub multiqc {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
+    my $family_id_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -2726,7 +2730,8 @@ sub multiqc {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -2792,7 +2797,7 @@ sub qccollect {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
+    my $family_id_ref;
     my $call_type;
 
     ## Flatten argument(s)
@@ -2810,7 +2815,8 @@ sub qccollect {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
     };
 
@@ -2893,10 +2899,10 @@ sub evaluation {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $reference_dir_ref;
+    my $outaligner_dir_ref;
     my $call_type;
 
     ## Flatten argument(s)
@@ -2918,10 +2924,14 @@ sub evaluation {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	reference_dir_ref => { default => \$arg_href->{active_parameter_href}{reference_dir},
+			       strict_type => 1, store => \$reference_dir_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
     };
 
@@ -3197,10 +3207,10 @@ sub endvariantannotationblock {
 
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $reference_dir_ref;
+    my $outaligner_dir_ref;
     my $call_type;
     my $xargs_file_counter;
 
@@ -3227,10 +3237,14 @@ sub endvariantannotationblock {
 	program_info_path => { strict_type => 1, store => \$program_info_path},
 	file_name => { strict_type => 1, store => \$file_name},
 	FILEHANDLE => { store => \$FILEHANDLE},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	reference_dir_ref => { default => \$arg_href->{active_parameter_href}{reference_dir},
+			       strict_type => 1, store => \$reference_dir_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
@@ -3455,9 +3469,9 @@ sub rankvariant {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $call_type;
     my $xargs_file_counter;
 
@@ -3484,9 +3498,12 @@ sub rankvariant {
 	program_info_path => { strict_type => 1, store => \$program_info_path},
 	file_name => { strict_type => 1, store => \$file_name},
 	FILEHANDLE => { store => \$FILEHANDLE},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
@@ -3823,9 +3840,9 @@ sub gatk_variantevalexome {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $call_type;
 
     ## Flatten argument(s)
@@ -3847,9 +3864,12 @@ sub gatk_variantevalexome {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
     };
 
@@ -4051,9 +4071,9 @@ sub gatk_variantevalall {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $call_type;
 
     ## Flatten argument(s)
@@ -4075,9 +4095,12 @@ sub gatk_variantevalall {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
     };
 
@@ -4217,9 +4240,9 @@ sub snpeff {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $call_type;
     my $xargs_file_counter;
 
@@ -4246,9 +4269,12 @@ sub snpeff {
 	program_info_path => { strict_type => 1, store => \$program_info_path},
 	file_name => {  strict_type => 1, store => \$file_name},
 	FILEHANDLE => { store => \$FILEHANDLE},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
@@ -4550,9 +4576,9 @@ sub annovar {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $call_type;
     my $xargs_file_counter;
 
@@ -4581,9 +4607,12 @@ sub annovar {
 	program_info_path => { strict_type => 1, store => \$program_info_path},
 	file_name => { strict_type => 1, store => \$file_name},
 	FILEHANDLE => { store => \$FILEHANDLE},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
@@ -4807,9 +4836,9 @@ sub vcfparser {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $call_type;
     my $xargs_file_counter;
 
@@ -4836,9 +4865,12 @@ sub vcfparser {
 	program_info_path => { strict_type => 1, store => \$program_info_path},
 	file_name => {  strict_type => 1, store => \$file_name},
 	FILEHANDLE => { store => \$FILEHANDLE},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
@@ -5093,9 +5125,9 @@ sub varianteffectpredictor {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $call_type;
     my $xargs_file_counter;
 
@@ -5124,9 +5156,12 @@ sub varianteffectpredictor {
 	file_name => { strict_type => 1, store => \$file_name},
 	stderr_path => { strict_type => 1, store => \$stderr_path},
 	FILEHANDLE => { store => \$FILEHANDLE},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
@@ -5649,9 +5684,9 @@ sub samplecheck {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $call_type;
 
     ## Flatten argument(s)
@@ -5671,9 +5706,12 @@ sub samplecheck {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
     };
 
@@ -6047,9 +6085,9 @@ sub vt {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $call_type;
     my $xargs_file_counter;
 
@@ -6078,9 +6116,12 @@ sub vt {
 	file_name => { strict_type => 1, store => \$file_name},
 	stderr_path => { strict_type => 1, store => \$stderr_path},
 	FILEHANDLE => { store => \$FILEHANDLE},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
@@ -6306,9 +6347,9 @@ sub rhocall {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $call_type;
     my $xargs_file_counter;
 
@@ -6337,9 +6378,12 @@ sub rhocall {
 	file_name => { strict_type => 1, store => \$file_name},
 	stderr_path => { strict_type => 1, store => \$stderr_path},
 	FILEHANDLE => { store => \$FILEHANDLE},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
@@ -6506,9 +6550,9 @@ sub prepareforvariantannotationblock {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $call_type;
     my $xargs_file_counter;
 
@@ -6537,9 +6581,12 @@ sub prepareforvariantannotationblock {
 	file_name => { strict_type => 1, store => \$file_name},
 	stderr_path => { strict_type => 1, store => \$stderr_path},
 	FILEHANDLE => { store => \$FILEHANDLE},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
@@ -6699,9 +6746,9 @@ sub gatk_combinevariantcallsets {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $call_type;
 
     ## Flatten argument(s)
@@ -6721,9 +6768,12 @@ sub gatk_combinevariantcallsets {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
     };
 
@@ -6884,9 +6934,9 @@ sub gatk_variantrecalibration {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $call_type;
 
     ## Flatten argument(s)
@@ -6906,9 +6956,12 @@ sub gatk_variantrecalibration {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
     };
 
@@ -7300,9 +7353,9 @@ sub gatk_concatenate_genotypegvcfs {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $call_type;
 
     ## Flatten argument(s)
@@ -7322,9 +7375,12 @@ sub gatk_concatenate_genotypegvcfs {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
     };
 
@@ -7479,9 +7535,9 @@ sub gatk_genotypegvcfs {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $call_type;
 
     ## Flatten argument(s)
@@ -7501,9 +7557,12 @@ sub gatk_genotypegvcfs {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
     };
 
@@ -7751,9 +7810,9 @@ sub genomecoveragebed {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -7774,9 +7833,12 @@ sub genomecoveragebed {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -7871,9 +7933,9 @@ sub picardtools_calculatehsmetrics {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -7894,9 +7956,12 @@ sub picardtools_calculatehsmetrics {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -8026,9 +8091,9 @@ sub picardtools_collectmultiplemetrics {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -8049,9 +8114,12 @@ sub picardtools_collectmultiplemetrics {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -8182,9 +8250,9 @@ sub chanjo_sexcheck {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -8205,9 +8273,12 @@ sub chanjo_sexcheck {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -8312,9 +8383,9 @@ sub sambamba_depth {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -8335,9 +8406,12 @@ sub sambamba_depth {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -8468,10 +8542,10 @@ sub sv_reformat {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $reference_dir_ref;
+    my $outaligner_dir_ref;
     my $call_type;
     my $xargs_file_counter;
 
@@ -8492,10 +8566,14 @@ sub sv_reformat {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	reference_dir_ref => { default => \$arg_href->{active_parameter_href}{reference_dir},
+			       strict_type => 1, store => \$reference_dir_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "SV", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
@@ -8770,10 +8848,10 @@ sub sv_rankvariant {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $reference_dir_ref;
+    my $outaligner_dir_ref;
     my $call_type;
     my $xargs_file_counter;
 
@@ -8794,10 +8872,14 @@ sub sv_rankvariant {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	reference_dir_ref => { default => \$arg_href->{active_parameter_href}{reference_dir},
+			       strict_type => 1, store => \$reference_dir_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "SV", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
@@ -9203,9 +9285,9 @@ sub sv_vcfparser {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $call_type;
     my $xargs_file_counter;
 
@@ -9226,9 +9308,12 @@ sub sv_vcfparser {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "SV", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
@@ -9546,9 +9631,9 @@ sub sv_varianteffectpredictor {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $call_type;
     my $xargs_file_counter;
 
@@ -9570,9 +9655,12 @@ sub sv_varianteffectpredictor {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "SV", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
@@ -9837,10 +9925,10 @@ sub sv_combinevariantcallsets {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $reference_dir_ref;
+    my $outaligner_dir_ref;
     my $call_type;
 
     ## Flatten argument(s)
@@ -9860,10 +9948,14 @@ sub sv_combinevariantcallsets {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	reference_dir_ref => { default => \$arg_href->{active_parameter_href}{reference_dir},
+			       strict_type => 1, store => \$reference_dir_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "SV", strict_type => 1, store => \$call_type},
     };
 
@@ -10204,10 +10296,10 @@ sub cnvnator {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $reference_dir_ref;
+    my $outaligner_dir_ref;
     my $xargs_file_counter;
 
     ## Flatten argument(s)
@@ -10230,10 +10322,14 @@ sub cnvnator {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	reference_dir_ref => { default => \$arg_href->{active_parameter_href}{reference_dir},
+			       strict_type => 1, store => \$reference_dir_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
 				strict_type => 1, store => \$xargs_file_counter},
@@ -10454,10 +10550,10 @@ sub delly_reformat {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $reference_dir_ref;
+    my $outaligner_dir_ref;
     my $xargs_file_counter;
     my $call_type;
 
@@ -10479,10 +10575,14 @@ sub delly_reformat {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	reference_dir_ref => { default => \$arg_href->{active_parameter_href}{reference_dir},
+			       strict_type => 1, store => \$reference_dir_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
 				strict_type => 1, store => \$xargs_file_counter},
@@ -10957,10 +11057,10 @@ sub delly_call {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $reference_dir_ref;
+    my $outaligner_dir_ref;
     my $xargs_file_counter;
 
     ## Flatten argument(s)
@@ -10983,10 +11083,14 @@ sub delly_call {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	reference_dir_ref => { default => \$arg_href->{active_parameter_href}{reference_dir},
+			       strict_type => 1, store => \$reference_dir_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
 				strict_type => 1, store => \$xargs_file_counter},
@@ -11151,9 +11255,9 @@ sub manta {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $call_type;
 
     ## Flatten argument(s)
@@ -11173,9 +11277,12 @@ sub manta {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "SV", strict_type => 1, store => \$call_type},
     };
 
@@ -11321,10 +11428,10 @@ sub tiddit {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $reference_dir_ref;
+    my $outaligner_dir_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -11345,10 +11452,14 @@ sub tiddit {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	reference_dir_ref => { default => \$arg_href->{active_parameter_href}{reference_dir},
+			       strict_type => 1, store => \$reference_dir_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -11490,9 +11601,9 @@ sub samtools_mpileup {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $call_type;
     my $xargs_file_counter;
 
@@ -11514,9 +11625,12 @@ sub samtools_mpileup {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
@@ -11737,9 +11851,9 @@ sub freebayes {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $call_type;
     my $xargs_file_counter;
 
@@ -11761,9 +11875,12 @@ sub freebayes {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
@@ -11955,9 +12072,9 @@ sub gatk_haplotypecaller {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $xargs_file_counter;
 
     ## Flatten argument(s)
@@ -11979,9 +12096,12 @@ sub gatk_haplotypecaller {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
 				strict_type => 1, store => \$xargs_file_counter},
@@ -12193,10 +12313,10 @@ sub gatk_baserecalibration {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $reference_dir_ref;
+    my $outaligner_dir_ref;
     my $xargs_file_counter;
 
     ## Flatten argument(s)
@@ -12224,10 +12344,14 @@ sub gatk_baserecalibration {
 	program_info_path => { strict_type => 1, store => \$program_info_path},
 	file_name => { strict_type => 1, store => \$file_name},
 	FILEHANDLE => { store => \$FILEHANDLE},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	reference_dir_ref => { default => \$arg_href->{active_parameter_href}{reference_dir},
+			       strict_type => 1, store => \$reference_dir_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
 				strict_type => 1, store => \$xargs_file_counter},
@@ -12533,10 +12657,10 @@ sub gatk_realigner {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $reference_dir_ref;
+    my $outaligner_dir_ref;
     my $xargs_file_counter;
 
     ## Flatten argument(s)
@@ -12564,10 +12688,14 @@ sub gatk_realigner {
 	program_info_path => { strict_type => 1, store => \$program_info_path},
 	file_name => { strict_type => 1, store => \$file_name},
 	FILEHANDLE => { store => \$FILEHANDLE},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	reference_dir_ref => { default => \$arg_href->{active_parameter_href}{reference_dir},
+			       strict_type => 1, store => \$reference_dir_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
 				strict_type => 1, store => \$xargs_file_counter},
@@ -12836,9 +12964,9 @@ sub picardtools_markduplicates {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $xargs_file_counter;
 
     ## Flatten argument(s)
@@ -12868,9 +12996,12 @@ sub picardtools_markduplicates {
 	program_info_path => { strict_type => 1, store => \$program_info_path},
 	file_name => { strict_type => 1, store => \$file_name},
 	FILEHANDLE => { store => \$FILEHANDLE},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
 				strict_type => 1, store => \$xargs_file_counter},
@@ -13088,9 +13219,9 @@ sub sambamba_markduplicates {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $xargs_file_counter;
 
     ## Flatten argument(s)
@@ -13120,9 +13251,12 @@ sub sambamba_markduplicates {
 	program_info_path => { strict_type => 1, store => \$program_info_path},
 	file_name => { strict_type => 1, store => \$file_name},
 	FILEHANDLE => { store => \$FILEHANDLE},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
 				strict_type => 1, store => \$xargs_file_counter},
@@ -13339,9 +13473,9 @@ sub picardtools_mergesamfiles {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $xargs_file_counter;
 
     ## Flatten argument(s)
@@ -13371,9 +13505,12 @@ sub picardtools_mergesamfiles {
 	program_info_path => { strict_type => 1, store => \$program_info_path},
 	file_name => { strict_type => 1, store => \$file_name},
 	FILEHANDLE => { store => \$FILEHANDLE},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
 				strict_type => 1, store => \$xargs_file_counter},
@@ -14087,8 +14224,8 @@ sub picardtools_mergerapidreads {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -14109,8 +14246,10 @@ sub picardtools_mergerapidreads {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -14237,9 +14376,9 @@ sub bwa_mem {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
+    my $family_id_ref;
+    my $outaligner_dir_ref;
+    my $temp_directory_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -14264,9 +14403,12 @@ sub bwa_mem {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -15068,8 +15210,8 @@ sub variantannotationblock {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $outaligner_dir_ref;
     my $call_type;
     my $xargs_file_counter;
 
@@ -15092,8 +15234,10 @@ sub variantannotationblock {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	annovar_table_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$annovar_table_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
@@ -15363,9 +15507,9 @@ sub bamcalibrationblock {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -15386,9 +15530,12 @@ sub bamcalibrationblock {
 	lane_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$lane_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -15562,8 +15709,8 @@ sub madeline {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
+    my $family_id_ref;
+    my $temp_directory_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -15580,8 +15727,10 @@ sub madeline {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -15661,8 +15810,8 @@ sub fastqc {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
+    my $family_id_ref;
+    my $temp_directory_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -15685,8 +15834,10 @@ sub fastqc {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -15830,8 +15981,8 @@ sub gzip_fastq {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
+    my $family_id_ref;
+    my $temp_directory_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -15854,8 +16005,10 @@ sub gzip_fastq {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id => { required => 1, defined => 1, strict_type => 1, store => \$sample_id},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -15951,8 +16104,8 @@ sub split_fastq_file {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
+    my $family_id_ref;
+    my $temp_directory_ref;
     my $sequence_read_batch;
 
     ## Flatten argument(s)
@@ -15976,8 +16129,10 @@ sub split_fastq_file {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
 	sequence_read_batch => { default => 2500000,
 				 allow => qr/^\d+$/,
 				 strict_type => 1, store => \$sequence_read_batch},
@@ -16127,9 +16282,9 @@ sub build_annovar_prerequisites {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -16148,9 +16303,12 @@ sub build_annovar_prerequisites {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	annovar_table_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$annovar_table_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -16327,9 +16485,9 @@ sub build_ptchs_metric_prerequisites {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
+    my $family_id_ref;
+    my $outaligner_dir_ref;
+    my $temp_directory_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -16350,9 +16508,12 @@ sub build_ptchs_metric_prerequisites {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	FILEHANDLE => { store => \$FILEHANDLE},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -16525,9 +16686,9 @@ sub build_bwa_prerequisites {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
     my $human_genome_reference_ref;
 
     ## Flatten argument(s)
@@ -16549,9 +16710,12 @@ sub build_bwa_prerequisites {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	bwa_build_reference_file_endings_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$bwa_build_reference_file_endings_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	human_genome_reference_ref => { default => \$arg_href->{active_parameter_href}{human_genome_reference},
 					strict_type => 1, store => \$human_genome_reference_ref},
     };
@@ -16834,7 +16998,7 @@ sub check_build_ptchs_metric_prerequisites {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
+    my $family_id_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -16855,7 +17019,8 @@ sub check_build_ptchs_metric_prerequisites {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	FILEHANDLE => { store => \$FILEHANDLE},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -16901,9 +17066,9 @@ sub build_human_genome_prerequisites {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $reference_dir_ref;
+    my $outaligner_dir_ref;
     my $human_genome_reference_ref;
 
     ## Flatten argument(s)
@@ -16927,9 +17092,12 @@ sub build_human_genome_prerequisites {
 	program => { required => 1, defined => 1, strict_type => 1, store => \$program},
 	FILEHANDLE => { store => \$FILEHANDLE},
 	random_integer => { strict_type => 1, store => \$random_integer},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	reference_dir_ref => { default => \$arg_href->{active_parameter_href}{reference_dir},
+			       strict_type => 1, store => \$reference_dir_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	human_genome_reference_ref => { default => \$arg_href->{active_parameter_href}{human_genome_reference},
 					strict_type => 1, store => \$human_genome_reference_ref},
     };
@@ -17083,7 +17251,7 @@ sub read_plink_pedigree_file {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
+    my $family_id_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -17100,7 +17268,8 @@ sub read_plink_pedigree_file {
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
 	supported_capture_kit_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supported_capture_kit_href},
 	file_path => { required => 1, defined => 1, strict_type => 1, store => \$file_path},
-	family_id_ref => { default => \$$, strict_type => 1},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -17309,7 +17478,7 @@ sub read_yaml_pedigree_file {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
+    my $family_id_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -17328,7 +17497,8 @@ sub read_yaml_pedigree_file {
 	supported_capture_kit_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supported_capture_kit_href},
 	pedigree_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$pedigree_href},
 	file_path => { required => 1, defined => 1, strict_type => 1, store => \$file_path},
-	family_id_ref => { default => \$$, strict_type => 1},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -17581,7 +17751,7 @@ sub push_to_job_id {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
+    my $family_id_ref;
 
     ## Flatten argument(s)
     my $active_parameter_href;
@@ -17608,7 +17778,8 @@ sub push_to_job_id {
 	chain_key_type => { required => 1, defined => 1,
 			    allow => ["parallel", "merged", "family_merged"],
 			    strict_type => 1, store => \$chain_key_type},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -17714,8 +17885,8 @@ sub submit_job {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $job_dependency_type = $arg_href->{job_dependency_type} //= "afterok";
+    my $family_id_ref;
+    my $job_dependency_type;
 
     ## Flatten argument(s)
     my $active_parameter_href;
@@ -17752,8 +17923,10 @@ sub submit_job {
 	sbatch_file_name => { required => 1, defined => 1, strict_type => 1, store => \$sbatch_file_name},
 	sbatch_script_tracker => { allow => qr/^\d+$/,
 				   strict_type => 1, store => \$sbatch_script_tracker},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	job_dependency_type => { allow => ["afterany", "afterok"],
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	job_dependency_type => { default => "afterok",
+				 allow => ["afterany", "afterok"],
 				 strict_type => 1, store => \$job_dependency_type},
     };
 
@@ -18368,7 +18541,7 @@ sub infiles_reformat {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $outaligner_dir_ref;
 
     ## Flatten argument(s)
     my $active_parameter_href;
@@ -18393,7 +18566,8 @@ sub infiles_reformat {
 	lane_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$lane_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	outaligner_dir_ref => { default => \$$, strict_type => 1},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -18621,7 +18795,7 @@ sub add_infile_info {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
+    my $family_id_ref;
 
     ## Flatten argument(s)
     my $active_parameter_href;
@@ -18668,7 +18842,8 @@ sub add_infile_info {
 	compressed_switch => { required => 1, defined => 1,
 			       allow => [0, 1],
 			       strict_type => 1, store => \$compressed_switch},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -18860,7 +19035,7 @@ sub add_to_active_parameter {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
+    my $family_id_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -18881,7 +19056,8 @@ sub add_to_active_parameter {
 	broadcasts_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$broadcasts_ref},
 	associated_programs_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$associated_programs_ref},
 	parameter_name => { required => 1, defined => 1, store => \$parameter_name},
-	family_id_ref => {default => \$$, strict_type => 1},
+	family_id_ref => {default => \$arg_href->{active_parameter_href}{family_id},
+			  strict_type => 1, store => \$family_id_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -19120,7 +19296,7 @@ sub check_parameter_files {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
+    my $family_id_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -19147,7 +19323,8 @@ sub check_parameter_files {
 	associated_programs_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$associated_programs_ref},
 	parameter_name => { required => 1, defined => 1, strict_type => 1, store => \$parameter_name},
 	parameter_exists_check => { required => 1, defined => 1, strict_type => 1, store => \$parameter_exists_check},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -19409,7 +19586,7 @@ sub create_file_endings {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
+    my $family_id_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -19424,7 +19601,8 @@ sub create_file_endings {
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	order_parameters_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$order_parameters_ref},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -19596,12 +19774,12 @@ sub program_prerequisites {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $outdata_dir = $arg_href->{outdata_dir} //= $arg_href->{active_parameter_href}{outdata_dir};
-    my $outscript_dir = $arg_href->{outscript_dir} //= $arg_href->{active_parameter_href}{outscript_dir};
-    my $temp_directory = $arg_href->{temp_directory} //= $arg_href->{active_parameter_href}{temp_directory};
-    my $email_type = $arg_href->{email_type} //= $arg_href->{active_parameter_href}{email_type};
-    my $source_environment_commands_ref = $arg_href->{source_environment_commands_ref} //= $arg_href->{active_parameter_href}{source_environment_commands};
-    my $slurm_quality_of_service = $arg_href->{slurm_quality_of_service} //= $arg_href->{active_parameter_href}{slurm_quality_of_service};
+    my $outdata_dir;
+    my $outscript_dir;
+    my $temp_directory;
+    my $email_type;
+    my $source_environment_commands_ref;
+    my $slurm_quality_of_service;
     my $core_number;
     my $process_time;
     my $pipefail;
@@ -19632,11 +19810,16 @@ sub program_prerequisites {
 	program_directory => { required => 1, defined => 1, strict_type => 1, store => \$program_directory},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	call_type => { strict_type => 1, store => \$call_type},
-	outdata_dir => { strict_type => 1 },
-	outscript_dir => { strict_type => 1 },
-	temp_directory => { strict_type => 1 },
-	email_type => { strict_type => 1 },
-	source_environment_commands_ref => { default => [], strict_type => 1 },
+	outdata_dir => { default => $arg_href->{active_parameter_href}{outdata_dir},
+			 strict_type => 1, store => \$outdata_dir},
+	outscript_dir => { default => $arg_href->{active_parameter_href}{outscript_dir},
+			   strict_type => 1, store => \$outscript_dir},
+	temp_directory => { default => $arg_href->{active_parameter_href}{temp_directory},
+			    strict_type => 1, store => \$temp_directory},
+	email_type => {default => $arg_href->{active_parameter_href}{email_type},
+		       strict_type => 1, store => \$email_type},
+	source_environment_commands_ref => { default => $arg_href->{active_parameter_href}{source_environment_commands},
+					     strict_type => 1, store => \$source_environment_commands_ref},
 	core_number => { default => 1,
 			 allow => qr/^\d+$/,
 			 strict_type => 1, store => \$core_number},
@@ -19751,7 +19934,7 @@ sub program_prerequisites {
     if (@$source_environment_commands_ref) {
 
 	say $FILEHANDLE "##Activate environment";
-	say $FILEHANDLE join(' ', @$source_environment_commands_ref), "\n";
+	say $FILEHANDLE join(' ', $source_environment_commands_ref), "\n";
     }
     if (defined($temp_directory)) {  #Not all programs need a temporary directory
 
@@ -20304,7 +20487,7 @@ sub check_unique_ids {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
+    my $family_id_ref;
 
     ## Flatten argument(s)
     my $active_parameter_href;
@@ -20313,7 +20496,8 @@ sub check_unique_ids {
     my $tmpl = {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_ids_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$sample_ids_ref},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -20373,7 +20557,8 @@ sub update_config_file {
     my $tmpl = {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	parameter_name_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$parameter_name_ref},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -20557,8 +20742,7 @@ sub check_existance {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
+    my $temp_directory_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -20573,8 +20757,8 @@ sub check_existance {
 	item_name_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$item_name_ref},
 	parameter_name_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$parameter_name_ref},
 	item_type_to_check => { required => 1, defined => 1, strict_type => 1, store => \$item_type_to_check},
-	temp_directory_ref => { default => \$$, strict_type => 1},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -21693,7 +21877,7 @@ sub concatenate_variants {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $human_genome_reference_ref = $arg_href->{human_genome_reference_ref} //= \$arg_href->{active_parameter_href}{human_genome_reference};
+    my $human_genome_reference_ref;
 
     ## Flatten argument(s)
     my $active_parameter_href;
@@ -21710,7 +21894,8 @@ sub concatenate_variants {
 	infile_prefix => { required => 1, defined => 1, strict_type => 1, store => \$infile_prefix},
 	infile_postfix => { strict_type => 1, store => \$infile_postfix},
 	outfile => { strict_type => 1, store => \$outfile},
-	human_genome_reference_ref => { default => \$$, strict_type => 1, store => \$human_genome_reference_ref},
+	human_genome_reference_ref => { default => \$arg_href->{active_parameter_href}{human_genome_reference},
+					strict_type => 1, store => \$human_genome_reference_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -21949,8 +22134,8 @@ sub deafult_log4perl_file {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $outdata_dir_ref = $arg_href->{outdata_dir_ref} //= \$arg_href->{active_parameter_href}{outdata_dir};
+    my $family_id_ref;
+    my $outdata_dir_ref;
 
     ## Flatten argument(s)
     my $active_parameter_href;
@@ -21965,8 +22150,10 @@ sub deafult_log4perl_file {
 	script_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$script_ref},
 	date_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$date_ref},
 	date_time_stamp_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$date_time_stamp_ref},
-	family_id_ref => { default => \$$, strict_type => 1},
-	outdata_dir_ref => { default => \$$, strict_type => 1, store => \$outdata_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	outdata_dir_ref => { default => \$arg_href->{active_parameter_href}{outdata_dir},
+			     strict_type => 1, store => \$outdata_dir_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -21997,8 +22184,8 @@ sub check_human_genome_file_endings {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
-    my $human_genome_reference_name_no_ending_ref = $arg_href->{human_genome_reference_name_no_ending_ref} //= \$arg_href->{file_info_href}{human_genome_reference_name_no_ending};
+    my $reference_dir_ref;
+    my $human_genome_reference_name_no_ending_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -22011,8 +22198,10 @@ sub check_human_genome_file_endings {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
 	parameter_name_ref => { default => \$$, strict_type => 1, store => \$parameter_name_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1},
-	human_genome_reference_name_no_ending_ref => { default => \$$, strict_type => 1},
+	reference_dir_ref => { default => \$arg_href->{active_parameter_href}{reference_dir},
+			       strict_type => 1},
+	human_genome_reference_name_no_ending_ref => { default => \$arg_href->{file_info_href}{human_genome_reference_name_no_ending},
+						       strict_type => 1, store => \$human_genome_reference_name_no_ending_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -22122,8 +22311,8 @@ sub create_fam_file {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $pedigree_file = $arg_href->{pedigree_file} //= $arg_href->{active_parameter_href}{pedigree_file};
+    my $family_id_ref;
+    my $pedigree_file;
     my $execution_mode;
     my $include_header;
 
@@ -22140,14 +22329,16 @@ sub create_fam_file {
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	fam_file_path => { required => 1, defined => 1, strict_type => 1, store => \$fam_file_path},
 	FILEHANDLE => { store => \$FILEHANDLE},
-	pedigree_file => { strict_type => 1, store => \$pedigree_file},
+	pedigree_file => { default => $arg_href->{active_parameter_href}{pedigree_file}, 
+			   strict_type => 1, store => \$pedigree_file},
 	execution_mode => { default => "sbatch",
 			    allow => ["sbatch", "system"],
 			    strict_type => 1, store => \$execution_mode},
 	include_header => { default => 1,
 			    allow => [0, 1],
 			    strict_type => 1, store => \$include_header},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -22480,8 +22671,8 @@ sub migrate_files_to_temp {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
+    my $family_id_ref;
+    my $temp_directory_ref;
 
     ## Flatten argument(s)
     my $active_parameter_href;
@@ -22504,8 +22695,10 @@ sub migrate_files_to_temp {
 	core_number => { required => 1, defined => 1, strict_type => 1, store => \$core_number},
 	file_ending => { defined => 1, strict_type => 1, store => \$file_ending},
 	sample_id => { defined => 1, strict_type => 1, store => \$sample_id},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -22573,8 +22766,8 @@ sub remove_files_at_temp {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
+    my $family_id_ref;
+    my $temp_directory_ref;
 
     ## Flatten argument(s)
     my $active_parameter_href;
@@ -22601,8 +22794,10 @@ sub remove_files_at_temp {
 	infile_tag => { required => 1, defined => 1, strict_type => 1, store => \$infile_tag},
 	file_ending => { required => 1, defined => 1, strict_type => 1, store => \$file_ending},
 	sample_id => { strict_type => 1, store => \$sample_id},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -23184,8 +23379,8 @@ sub gather_bam_files {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $create_index = $arg_href->{create_index} //= "TRUE";
+    my $temp_directory_ref;
+    my $create_index;
 
     ## Flatten argument(s)
     my $active_parameter_href;
@@ -23198,8 +23393,10 @@ sub gather_bam_files {
 	elements_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$elements_ref},
 	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
 	infile => { required => 1, defined => 1, strict_type => 1, store => \$infile},
-	create_index => { default => "TRUE", strict_type => 1, store => \$create_index},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
+	create_index => { default => "TRUE",
+			  strict_type => 1, store => \$create_index},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -23450,7 +23647,7 @@ sub split_bam {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
+    my $temp_directory_ref;
     my $first_command;
     my $xargs_file_counter;
 
@@ -23473,7 +23670,8 @@ sub split_bam {
 	program_info_path => { required => 1, defined => 1, strict_type => 1, store => \$program_info_path},
 	core_number => { required => 1, defined => 1, strict_type => 1, store => \$core_number},
 	infile => { required => 1, defined => 1, strict_type => 1, store => \$infile},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
 				strict_type => 1, store => \$xargs_file_counter},
@@ -23546,7 +23744,7 @@ sub split_bam_sambamba {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
+    my $temp_directory_ref;
     my $first_command;
     my $xargs_file_counter;
 
@@ -23569,7 +23767,8 @@ sub split_bam_sambamba {
 	program_info_path => { required => 1, defined => 1, strict_type => 1, store => \$program_info_path},
 	core_number => { required => 1, defined => 1, strict_type => 1, store => \$core_number},
 	infile => { required => 1, defined => 1, strict_type => 1, store => \$infile},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
 				strict_type => 1, store => \$xargs_file_counter},
@@ -23799,7 +23998,7 @@ sub add_most_complete_vcf {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
+    my $family_id_ref;
     my $vcfparser_outfile_counter;
     my $vcf_file_key;
 
@@ -23814,7 +24013,8 @@ sub add_most_complete_vcf {
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	path => { required => 1, defined => 1, strict_type => 1, store => \$path},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
 	vcfparser_outfile_counter => { default => 0, strict_type => 1, store => \$vcfparser_outfile_counter},
 	vcf_file_key => { default => "vcf_file",
 			  allow => ["vcf_file", "sv_vcf_file"],
@@ -24065,9 +24265,9 @@ sub order_parameter_names {
     close($DFY);
 }
 
-sub add_to_sampleInfo {
+sub add_to_sample_info {
 
-##add_to_sampleInfo
+##add_to_sample_info
 
 ##Function : Adds parameter info to sample_info
 ##Returns  : ""
@@ -24080,9 +24280,9 @@ sub add_to_sampleInfo {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $human_genome_reference_ref = $arg_href->{human_genome_reference_ref} //= \$arg_href->{active_parameter_href}{human_genome_reference};
-    my $outdata_dir = $arg_href->{outdata_dir} //= $arg_href->{active_parameter_href}{outdata_dir};
+    my $family_id_ref;
+    my $human_genome_reference_ref;
+    my $outdata_dir;
 
     ## Flatten argument(s)
     my $active_parameter_href;
@@ -24093,9 +24293,12 @@ sub add_to_sampleInfo {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	human_genome_reference_ref => { default => \$$, strict_type => 1},
-	outdata_dir => { strict_type => 1},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	human_genome_reference_ref => { default => \$arg_href->{active_parameter_href}{human_genome_reference},
+					strict_type => 1, store => \$human_genome_reference_ref},
+	outdata_dir => { default => $arg_href->{active_parameter_href}{outdata_dir},
+			 strict_type => 1, store => \$outdata_dir},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -24536,9 +24739,9 @@ sub vt_core {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $human_genome_reference_ref = $arg_href->{human_genome_reference_ref} //= \$arg_href->{active_parameter_href}{human_genome_reference};
-    my $outfile_path = $arg_href->{outfile_path} //= $arg_href->{infile_path};
+    my $family_id_ref;
+    my $human_genome_reference_ref;
+    my $outfile_path;
     my $core_number;
     my $decompose;
     my $normalize;
@@ -24573,9 +24776,12 @@ sub vt_core {
 	FILEHANDLE => { store => \$FILEHANDLE},
 	xargs_file_name => { strict_type => 1, store => \$xargs_file_name},
 	contig_ref => { default => \$$, strict_type => 1, store => \$contig_ref},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	human_genome_reference_ref => { default => \$$, strict_type => 1},
-	outfile_path => { strict_type => 1},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	human_genome_reference_ref => { default => \$arg_href->{active_parameter_href}{human_genome_reference},
+					strict_type => 1, store => \$human_genome_reference_ref},
+	outfile_path => { default => $arg_href->{infile_path}, #Use same path as infile path unless parameter is supplied
+			  strict_type => 1, store => \$outfile_path},
 	core_number => { default => 1,
 			 allow => qr/^\d+$/,
 			 strict_type => 1, store => \$core_number},
@@ -25105,8 +25311,8 @@ sub remove_files {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $family_id_ref;
+    my $outaligner_dir_ref;
     my $call_type;
 
     ## Flatten argument(s)
@@ -25134,8 +25340,10 @@ sub remove_files {
 	sample_id => { strict_type => 1, store => \$sample_id},
 	insample_directory => { strict_type => 1, store => \$insample_directory},
 	FILEHANDLE => { store => \$FILEHANDLE},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
 	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
     };
 
@@ -25187,7 +25395,6 @@ sub remove_files {
 				    $most_complete_ref = detect_most_complete_file({sample_info_href => $sample_info_href,
 										    file_ending_ref => \$file_ending,
 										    sample_id_ref => \$sample_id,
-										    family_id_ref => $family_id_ref,
 										   });
 				}
 				## Checks if the file is recorded as the "most_complete_bam|vcf". If false writes removal of file(s) to supplied filehandle
@@ -25219,7 +25426,6 @@ sub remove_files {
 				    my $most_complete_ref = detect_most_complete_file({sample_info_href => $sample_info_href,
 										       file_ending_ref => \$file_ending,
 										       sample_id_ref => \$sample_id,
-										       family_id_ref => \$active_parameter_href->{family_id},
 										      });
 
 				    ## Checks if the file is recorded as the "most_complete_bam|vcf". If false writes removal of file(s) to supplied filehandle
@@ -25249,7 +25455,6 @@ sub remove_files {
 			    ## Detect which most_complete_path to use depending on file_ending
 			    my $most_complete_ref = detect_most_complete_file({sample_info_href => $sample_info_href,
 									       file_ending_ref => \$file_ending,
-									       family_id_ref => \$active_parameter_href->{family_id},
 									      });
 
 			    ## Checks if the file is recorded as the "most_complete_bam|vcf". If false writes removal of file(s) to supplied filehandle
@@ -25273,7 +25478,6 @@ sub remove_files {
 				## Detect which most_complete_path to use depending on file_ending
 				my $most_complete_ref = detect_most_complete_file({sample_info_href => $sample_info_href,
 										   file_ending_ref => \$file_ending,
-										   family_id_ref => \$active_parameter_href->{family_id},
 										  });
 
 				## Checks if the file is recorded as the "most_complete_bam|vcf". If false writes removal of file(s) to supplied filehandle
@@ -25300,14 +25504,10 @@ sub detect_most_complete_file {
 ##Returns  : ""
 ##Arguments: $active_parameter_href, $file_ending_ref, $sample_id_ref
 ##         : $active_parameter_href => The active parameters for this analysis hash {REF}
-##         : $file_ending_ref       => FileEnding (.file_ending){REF}
+##         : $file_ending_ref       => File ending (.file_ending){REF}
 ##         : $sample_id_ref         => Sample ID {REF}
-##         : $family_id_ref         => Family ID {REF}
 
     my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
 
     ## Flatten argument(s)
     my $sample_info_href;
@@ -25318,7 +25518,6 @@ sub detect_most_complete_file {
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_ending_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$file_ending_ref},
 	sample_id_ref => { store => \$sample_id_ref},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -25697,7 +25896,7 @@ sub check_aligner {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
+    my $outaligner_dir_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -25708,7 +25907,8 @@ sub check_aligner {
 	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	broadcasts_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$broadcasts_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -26127,14 +26327,15 @@ sub print_program {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $print_program_mode = $arg_href->{print_program_mode} //= 2;
+    my $print_program_mode;
 
     ## Flatten argument(s)
     my $parameter_href;
 
     my $tmpl = {
 	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
-	print_program_mode => { allow => [0, 1, 2],
+	print_program_mode => { default => $arg_href->{print_program_mode} //= 2,
+				allow => [undef, 0, 1, 2],
 				strict_type => 1, store => \$print_program_mode},
     };
 
@@ -26547,8 +26748,8 @@ sub generate_contig_specific_target_bed_file {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-    my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
+    my $temp_directory_ref;
+    my $reference_dir_ref;
 
     ## Flatten argument(s)
     my $active_parameter_href;
@@ -26563,8 +26764,10 @@ sub generate_contig_specific_target_bed_file {
 	FILEHANDLE => { store => \$FILEHANDLE},
 	exome_target_bed_file_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$exome_target_bed_file_ref},
 	file_ending => { strict_type => 1, store => \$file_ending},
-	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	reference_dir_ref => { default => \$arg_href->{active_parameter_href}{reference_dir},
+			       strict_type => 1, store => \$reference_dir_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -27368,7 +27571,7 @@ sub MergeTargetListFlag {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
+    my $temp_directory_ref;
 
     ## Flatten argument(s)
     my $active_parameter_href = $arg_href->{active_parameter_href};
