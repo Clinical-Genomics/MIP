@@ -215,7 +215,7 @@ human_genome_reference:
    - pannovar
    - ppicardtools_calculatehsmetrics
    - ppicardtools_collectmultiplemetrics
-  build_file: yes_auto_downLoad
+  build_file: yes_auto_build
   data_type: SCALAR
   default: Homo_sapiens.GRCh37.d5.fasta
   exists_check: file
@@ -651,7 +651,6 @@ sambamba_depth_cutoffs:
 sambamba_depth_bed:
   associated_program:
    - psambamba_depth
-  build_file: yes_auto_downLoad
   data_type: SCALAR
   default: CCDS.current.bed
   exists_check: file
@@ -1150,7 +1149,6 @@ gatk_haplotypecaller_annotation:
 gatk_haplotypecaller_snp_known_set:
   associated_program:
    - pgatk_haplotypecaller
-  build_file: yes_auto_downLoad
   data_type: SCALAR
   default: GRCh37_dbsnp_-138-.vcf
   exists_check: file
@@ -1232,7 +1230,6 @@ pgatk_variantrecalibration:
 gatk_variantrecalibration_training_set_hapmap:
   associated_program:
    - pgatk_variantrecalibration
-  build_file: yes_auto_downLoad
   data_type: SCALAR
   default: GRCh37_hapmap_-3.3-.vcf
   exists_check: file
@@ -1241,7 +1238,6 @@ gatk_variantrecalibration_training_set_hapmap:
 gatk_variantrecalibration_training_set_dbsnp:
   associated_program:
    - pgatk_variantrecalibration
-  build_file: yes_auto_downLoad
   data_type: SCALAR
   default: GRCh37_dbsnp_-138-.vcf
   exists_check: file
@@ -1250,7 +1246,6 @@ gatk_variantrecalibration_training_set_dbsnp:
 gatk_variantrecalibration_training_set_1000gsnp:
   associated_program:
    - pgatk_variantrecalibration
-  build_file: yes_auto_downLoad
   data_type: SCALAR
   default: GRCh37_1000g_snps_high_confidence_-phase1-.vcf
   exists_check: file
@@ -1259,7 +1254,6 @@ gatk_variantrecalibration_training_set_1000gsnp:
 gatk_variantrecalibration_training_set_1000g_omni:
   associated_program:
    - pgatk_variantrecalibration
-  build_file: yes_auto_downLoad
   data_type: SCALAR
   default: GRCh37_1000g_omni_-2.5-.vcf
   exists_check: file
@@ -1268,7 +1262,6 @@ gatk_variantrecalibration_training_set_1000g_omni:
 gatk_variantrecalibration_training_set_mills:
   associated_program:
    - pgatk_variantrecalibration
-  build_file: yes_auto_downLoad
   data_type: SCALAR
   default: GRCh37_mills_and_1000g_indels_-gold_standard-.vcf
   exists_check: file
@@ -1499,7 +1492,6 @@ gatk_varianteval_dbsnp:
   associated_program:
    - pgatk_variantevalall
    - pgatk_variantevalexome
-  build_file: yes_auto_downLoad
   data_type: SCALAR
   default: GRCh37_dbsnp_-138_esa_129-.vcf
   exists_check: file
@@ -1509,7 +1501,6 @@ gatk_varianteval_gold:
   associated_program:
    - pgatk_variantevalall
    - pgatk_variantevalexome
-  build_file: yes_auto_downLoad
   data_type: SCALAR
   default: GRCh37_mills_and_1000g_indels_-gold_standard-.vcf
   exists_check: file

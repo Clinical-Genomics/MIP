@@ -386,7 +386,6 @@ my %supported_capture_kit = ('nimblegen_seqcapezexome.v2' => "genome_reference_s
 			     'latest' => "genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed",
     );
 
-my %supported_cosmid_reference;  #References supported as downloads from Cosmid. Hash is populated after user options are processed
 
 ## Reference that should be decomposed and normalized using vt
 my @vt_references = ("gatk_realigner_indel_known_sites",
@@ -903,135 +902,17 @@ check_aligner({parameter_href => \%parameter,
 	      });
 
 
+## Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
+check_prioritize_variant_callers({parameter_href => \%parameter,
+				  active_parameter_href => \%active_parameter,
+				 });
+
 ## Broadcast set parameters info
 foreach my $parameter_info (@broadcasts) {
 
     $log->info($parameter_info, "\n");
 }
 
-
-### Cosmid references
-## Defines the Cosmid manager hash keys and populates it from arguments
-define_supported_cosmid_references({supported_cosmid_reference_href => \%supported_cosmid_reference,
-				    parameter_name => "human_genome_reference",
-				    cosmid_resource_name => "decoy",
-				    cosmid_resource_version => "5",
-				    human_genome_reference_version_ref => \$file_info{human_genome_reference_version},
-				    compressed_switch => "compressed",
-				   });
-define_supported_cosmid_references({supported_cosmid_reference_href => \%supported_cosmid_reference,
-				    parameter_name => "sambamba_depth_bed",
-				    cosmid_resource_name => "ccds",
-				    cosmid_resource_version => "latest",
-				    human_genome_reference_version_ref => \$file_info{human_genome_reference_version},
-				   });
-## Has changed to array parameter fix in future bioconda download
-#define_supported_cosmid_references({supported_cosmid_reference_href => \%supported_cosmid_reference,
-#				  parameter_name => "GATKReAlignerINDELKnownSet1",
-#				  cosmid_resource_name => "indels",
-#				  cosmid_resource_version => $active_parameter{gatk_bundle_download_version}."/b".$file_info{human_genome_reference_version},
-#				  human_genome_reference_version_ref => \$file_info{human_genome_reference_version},
-#				 });
-## Has changed to array parameter fix in future bioconda download
-#define_supported_cosmid_references({supported_cosmid_reference_href => \%supported_cosmid_reference,
-#				  parameter_name => "GATKReAlignerINDELKnownSet2",
-#				  cosmid_resource_name => "mills",
-#				  cosmid_resource_version => $active_parameter{gatk_bundle_download_version}."/b".$file_info{human_genome_reference_version},
-#				  human_genome_reference_version_ref => \$file_info{human_genome_reference_version},
-#				 });
-## Has changed to array parameter fix in future bioconda download
-#define_supported_cosmid_references({supported_cosmid_reference_href => \%supported_cosmid_reference,
-#				  parameter_name => "gatk_baserecalibration_known_sites",
-#				  cosmid_resource_name => "dbsnp",
-#				  cosmid_resource_version => $active_parameter{gatk_bundle_download_version}."/b".$file_info{human_genome_reference_version},
-#				  human_genome_reference_version_ref => \$file_info{human_genome_reference_version},
-#				 });
-define_supported_cosmid_references({supported_cosmid_reference_href => \%supported_cosmid_reference,
-				    parameter_name => "gatk_haplotypecaller_snp_known_set",
-				    cosmid_resource_name => "dbsnp",
-				    cosmid_resource_version => $active_parameter{gatk_bundle_download_version}."/b".$file_info{human_genome_reference_version},
-				    human_genome_reference_version_ref => \$file_info{human_genome_reference_version},
-				   });
-define_supported_cosmid_references({supported_cosmid_reference_href => \%supported_cosmid_reference,
-				    parameter_name => "gatk_variantrecalibration_training_set_hapmap",
-				    cosmid_resource_name => "hapmap",
-				    cosmid_resource_version => $active_parameter{gatk_bundle_download_version}."/b".$file_info{human_genome_reference_version},
-				    human_genome_reference_version_ref => \$file_info{human_genome_reference_version},
-				   });
-define_supported_cosmid_references({supported_cosmid_reference_href => \%supported_cosmid_reference,
-				    parameter_name => "gatk_variantrecalibration_training_set_mills",
-				    cosmid_resource_name => "mills",
-				    cosmid_resource_version => $active_parameter{gatk_bundle_download_version}."/b".$file_info{human_genome_reference_version},
-				    human_genome_reference_version_ref => \$file_info{human_genome_reference_version},
-				   });
-define_supported_cosmid_references({supported_cosmid_reference_href => \%supported_cosmid_reference,
-				    parameter_name => "gatk_variantrecalibration_training_set_1000g_omni",
-				    cosmid_resource_name => "1000g_omni",
-				    cosmid_resource_version => $active_parameter{gatk_bundle_download_version}."/b".$file_info{human_genome_reference_version},
-				    human_genome_reference_version_ref => \$file_info{human_genome_reference_version},
-				   });
-define_supported_cosmid_references({supported_cosmid_reference_href => \%supported_cosmid_reference,
-				    parameter_name => "gatk_variantrecalibration_training_set_1000gsnp",
-				    cosmid_resource_name => "1000g_snps",
-				    cosmid_resource_version => $active_parameter{gatk_bundle_download_version}."/b".$file_info{human_genome_reference_version},
-				    human_genome_reference_version_ref => \$file_info{human_genome_reference_version},
-				   });
-define_supported_cosmid_references({supported_cosmid_reference_href => \%supported_cosmid_reference,
-				    parameter_name => "gatk_variantrecalibration_training_set_dbsnp",
-				    cosmid_resource_name => "dbsnp",
-				    cosmid_resource_version => $active_parameter{gatk_bundle_download_version}."/b".$file_info{human_genome_reference_version},
-				    human_genome_reference_version_ref => \$file_info{human_genome_reference_version},
-				   });
-define_supported_cosmid_references({supported_cosmid_reference_href => \%supported_cosmid_reference,
-				    parameter_name => "gatk_varianteval_gold",
-				    cosmid_resource_name => "mills",
-				    cosmid_resource_version => $active_parameter{gatk_bundle_download_version}."/b".$file_info{human_genome_reference_version},
-				    human_genome_reference_version_ref => \$file_info{human_genome_reference_version},
-				   });
-define_supported_cosmid_references({supported_cosmid_reference_href => \%supported_cosmid_reference,
-				    parameter_name => "gatk_varianteval_dbsnp",
-				    cosmid_resource_name => "dbsnpex",
-				    cosmid_resource_version => $active_parameter{gatk_bundle_download_version}."/b".$file_info{human_genome_reference_version},
-				    human_genome_reference_version_ref => \$file_info{human_genome_reference_version},
-				   });
-
-##Flag -> array parameters to enable multiple download via Cosmid using the same flag
-define_supported_cosmid_references({supported_cosmid_reference_href => \%supported_cosmid_reference,
-				    parameter_name => "dbsnp_138.b37.vcf",
-				    cosmid_resource_name => "dbsnp",
-				    cosmid_resource_version => $active_parameter{gatk_bundle_download_version}."/b".$file_info{human_genome_reference_version},
-				    human_genome_reference_version_ref => \$file_info{human_genome_reference_version},
-				   });
-define_supported_cosmid_references({supported_cosmid_reference_href => \%supported_cosmid_reference,
-				    parameter_name => "dbsnp_138.b37.excluding_sites_after_129.vcf",
-				    cosmid_resource_name => "dbsnpex",
-				    cosmid_resource_version => $active_parameter{gatk_bundle_download_version}."/b".$file_info{human_genome_reference_version},
-				    human_genome_reference_version_ref => \$file_info{human_genome_reference_version},
-				   });
-define_supported_cosmid_references({supported_cosmid_reference_href => \%supported_cosmid_reference,
-				    parameter_name => "1000G_phase1.indels.b37.vcf",
-				    cosmid_resource_name => "1000g_omni",
-				    cosmid_resource_version => $active_parameter{gatk_bundle_download_version}."/b".$file_info{human_genome_reference_version},
-				    human_genome_reference_version_ref => \$file_info{human_genome_reference_version},
-				   });
-define_supported_cosmid_references({supported_cosmid_reference_href => \%supported_cosmid_reference,
-				    parameter_name => "1000G_phase1.snps.high_confidence.b37.vcf",
-				    cosmid_resource_name => "1000g_snps",
-				    cosmid_resource_version => $active_parameter{gatk_bundle_download_version}."/b".$file_info{human_genome_reference_version},
-				    human_genome_reference_version_ref => \$file_info{human_genome_reference_version},
-				   });
-
-
-## Check that a Cosmid installation exists
-check_cosmid_installation({parameter_href => \%parameter,
-			   active_parameter_href => \%active_parameter,
-			   supported_cosmid_reference_href => \%supported_cosmid_reference
-			  });
-
-## Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
-check_prioritize_variant_callers({parameter_href => \%parameter,
-				  active_parameter_href => \%active_parameter,
-				 });
 
 if ($active_parameter{config_file_analysis} ne 0) {  #Write config file for family
 
@@ -1263,7 +1144,7 @@ if ($active_parameter{pmosaik_aligner} > 0) {  #Run mosaik_aligner
 
 	if ( ($parameter{human_genome_reference}{build_file} eq 1) || ($parameter{mosaik_align_reference}{build_file} eq 1) || ($parameter{mosaik_jump_db_stub}{build_file} eq 1) ) {
 
-	    build_mosaikaligner_prerequisites(\%parameter, \%active_parameter, \%sample_info, \%file_info, \%infile_lane_no_ending, \%job_id, \%supported_cosmid_reference, \@{ $file_info{mosaik_jump_db_stub_file_endings} }, \$file_info{human_genome_reference_source}, \$file_info{human_genome_reference_version}, $active_parameter{family_id}, $active_parameter{outaligner_dir}, "mosaik_aligner");
+	    build_mosaikaligner_prerequisites(\%parameter, \%active_parameter, \%sample_info, \%file_info, \%infile_lane_no_ending, \%job_id, \@{ $file_info{mosaik_jump_db_stub_file_endings} }, \$file_info{human_genome_reference_source}, \$file_info{human_genome_reference_version}, $active_parameter{family_id}, $active_parameter{outaligner_dir}, "mosaik_aligner");
 
 	}
 	if ( ($parameter{mosaik_align_neural_network_pe_file}{build_file} eq 1) || ($parameter{mosaik_align_neural_network_se_file}{build_file} eq 1) ){
@@ -1293,7 +1174,6 @@ if ($active_parameter{pbwa_mem} > 0) {  #Run BWA Mem
 				     file_info_href => \%file_info,
 				     infile_lane_no_ending_href => \%infile_lane_no_ending,
 				     job_id_href => \%job_id,
-				     supported_cosmid_reference_href => \%supported_cosmid_reference,
 				     bwa_build_reference_file_endings_ref => \@{ $file_info{bwa_build_reference_file_endings} },
 				     program_name => "bwa_mem",
 				    });
@@ -1350,7 +1230,6 @@ if ($active_parameter{pbwa_aln} > 0) {  #Run BWA Aln
 				     file_info_href => \%file_info,
 				     infile_lane_no_ending_href => \%infile_lane_no_ending,
 				     job_id_href => \%job_id,
-				     supported_cosmid_reference_href => \%supported_cosmid_reference,
 				     bwa_build_reference_file_endings_ref => \@{ $file_info{bwa_build_reference_file_endings} },
 				     program_name => "bwa_aln",
 				    });
@@ -1376,7 +1255,6 @@ if ($active_parameter{pbwa_sampe} > 0) {  #Run BWA Sampe
 				     file_info_href => \%file_info,
 				     infile_lane_no_ending_href => \%infile_lane_no_ending,
 				     job_id_href => \%job_id,
-				     supported_cosmid_reference_href => \%supported_cosmid_reference,
 				     bwa_build_reference_file_endings_ref => \@{ $file_info{bwa_build_reference_file_endings} },
 				     program_name => "bwa_sampe",
 				    });
@@ -1400,7 +1278,6 @@ if ($active_parameter{reduce_io}) {  #Run consecutive models
 			 infile_lane_no_ending_href => \%infile_lane_no_ending,
 			 lane_href => \%lane,
 			 job_id_href => \%job_id,
-			 supported_cosmid_reference_href => \%supported_cosmid_reference,
 			 outaligner_dir_ref => \$active_parameter{outaligner_dir},
 			 program_name => "bamcalibrationblock",
 			});
@@ -1474,18 +1351,8 @@ else {
 						file_info_href => \%file_info,
 						infile_lane_no_ending_href => \%infile_lane_no_ending,
 						job_id_href => \%job_id,
-						supported_cosmid_reference_href => \%supported_cosmid_reference,
 						program_name => "gatk_realigner",
 					       });
-
-	check_build_download_prerequisites({parameter_href => \%parameter,
-					    active_parameter_href => \%active_parameter,
-					    sample_info_href => \%sample_info,
-					    infile_lane_no_ending_href => \%infile_lane_no_ending,
-					    job_id_href => \%job_id,
-					    supported_cosmid_reference_href => \%supported_cosmid_reference,
-					    program_name => "gatk_realigner",
-					   });
 
 	if ($active_parameter{dry_run_all} != 1) {
 
@@ -1522,18 +1389,8 @@ else {
 						file_info_href => \%file_info,
 						infile_lane_no_ending_href => \%infile_lane_no_ending,
 						job_id_href => \%job_id,
-						supported_cosmid_reference_href => \%supported_cosmid_reference,
 						program_name => "gatk_baserecalibration",
 					       });
-
-	check_build_download_prerequisites({parameter_href => \%parameter,
-					    active_parameter_href => \%active_parameter,
-					    sample_info_href => \%sample_info,
-					    infile_lane_no_ending_href => \%infile_lane_no_ending,
-					    job_id_href => \%job_id,
-					    supported_cosmid_reference_href => \%supported_cosmid_reference,
-					    program_name => "gatk_baserecalibration",
-					   });
 
 	if ($active_parameter{dry_run_all} != 1) {
 
@@ -1627,7 +1484,6 @@ if ($active_parameter{ppicardtools_collectmultiplemetrics} > 0) {  #Run picardto
 					    file_info_href => \%file_info,
 					    infile_lane_no_ending_href => \%infile_lane_no_ending,
 					    job_id_href => \%job_id,
-					    supported_cosmid_reference_href => \%supported_cosmid_reference,
 					    program_name => "picardtools_collectmultiplemetrics",
 					   });
 
@@ -1655,7 +1511,6 @@ if ($active_parameter{ppicardtools_calculatehsmetrics} > 0) {  #Run Picardtools_
 					    file_info_href => \%file_info,
 					    infile_lane_no_ending_href => \%infile_lane_no_ending,
 					    job_id_href => \%job_id,
-					    supported_cosmid_reference_href => \%supported_cosmid_reference,
 					    program_name => "picardtools_calculatehsmetrics",
 					   });
 
@@ -1705,17 +1560,9 @@ if ($active_parameter{pcnvnator} > 0) {  #Run CNVnator
 					    file_info_href => \%file_info,
 					    infile_lane_no_ending_href => \%infile_lane_no_ending,
 					    job_id_href => \%job_id,
-					    supported_cosmid_reference_href => \%supported_cosmid_reference,
 					    program_name => "cnvnator",
 					   });
-    check_build_download_prerequisites({parameter_href => \%parameter,
-					active_parameter_href => \%active_parameter,
-					sample_info_href => \%sample_info,
-					infile_lane_no_ending_href => \%infile_lane_no_ending,
-					job_id_href => \%job_id,
-					supported_cosmid_reference_href => \%supported_cosmid_reference,
-					program_name => "cnvnator",
-				       });
+    
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
 	cnvnator({parameter_href => \%parameter,
@@ -1741,17 +1588,8 @@ if ($active_parameter{pdelly_call} > 0) {  #Run delly_call
 					    file_info_href => \%file_info,
 					    infile_lane_no_ending_href => \%infile_lane_no_ending,
 					    job_id_href => \%job_id,
-					    supported_cosmid_reference_href => \%supported_cosmid_reference,
 					    program_name => "delly_call",
 					   });
-    check_build_download_prerequisites({parameter_href => \%parameter,
-					active_parameter_href => \%active_parameter,
-					sample_info_href => \%sample_info,
-					infile_lane_no_ending_href => \%infile_lane_no_ending,
-					job_id_href => \%job_id,
-					supported_cosmid_reference_href => \%supported_cosmid_reference,
-					program_name => "delly_call",
-				       });
 
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
@@ -1778,17 +1616,8 @@ if ($active_parameter{pdelly_reformat} > 0) {  #Run Delly merge, regenotype, bcf
 					    file_info_href => \%file_info,
 					    infile_lane_no_ending_href => \%infile_lane_no_ending,
 					    job_id_href => \%job_id,
-					    supported_cosmid_reference_href => \%supported_cosmid_reference,
 					    program_name => "delly_reformat",
 					   });
-    check_build_download_prerequisites({parameter_href => \%parameter,
-					active_parameter_href => \%active_parameter,
-					sample_info_href => \%sample_info,
-					infile_lane_no_ending_href => \%infile_lane_no_ending,
-					job_id_href => \%job_id,
-					supported_cosmid_reference_href => \%supported_cosmid_reference,
-					program_name => "delly_reformat",
-				       });
 
     delly_reformat({parameter_href => \%parameter,
 		    active_parameter_href => \%active_parameter,
@@ -1810,17 +1639,9 @@ if ($active_parameter{pmanta} > 0) {  #Run Manta
 					    file_info_href => \%file_info,
 					    infile_lane_no_ending_href => \%infile_lane_no_ending,
 					    job_id_href => \%job_id,
-					    supported_cosmid_reference_href => \%supported_cosmid_reference,
 					    program_name => "manta",
 					   });
-    check_build_download_prerequisites({parameter_href => \%parameter,
-					active_parameter_href => \%active_parameter,
-					sample_info_href => \%sample_info,
-					infile_lane_no_ending_href => \%infile_lane_no_ending,
-					job_id_href => \%job_id,
-					supported_cosmid_reference_href => \%supported_cosmid_reference,
-					program_name => "manta",
-				       });
+    
     manta({parameter_href => \%parameter,
 	   active_parameter_href => \%active_parameter,
 	   sample_info_href => \%sample_info,
@@ -1933,17 +1754,8 @@ if ($active_parameter{psamtools_mpileup} > 0) {  #Run samtools mpileup
 					    file_info_href => \%file_info,
 					    infile_lane_no_ending_href => \%infile_lane_no_ending,
 					    job_id_href => \%job_id,
-					    supported_cosmid_reference_href => \%supported_cosmid_reference,
 					    program_name => "samtools_mpileup",
 					   });
-    check_build_download_prerequisites({parameter_href => \%parameter,
-					active_parameter_href => \%active_parameter,
-					sample_info_href => \%sample_info,
-					infile_lane_no_ending_href => \%infile_lane_no_ending,
-					job_id_href => \%job_id,
-					supported_cosmid_reference_href => \%supported_cosmid_reference,
-					program_name => "samtools_mpileup",
-				       });
 
     samtools_mpileup({parameter_href => \%parameter,
 		      active_parameter_href => \%active_parameter,
@@ -1965,17 +1777,9 @@ if ($active_parameter{pfreebayes} > 0) {  #Run Freebayes
 					    file_info_href => \%file_info,
 					    infile_lane_no_ending_href => \%infile_lane_no_ending,
 					    job_id_href => \%job_id,
-					    supported_cosmid_reference_href => \%supported_cosmid_reference,
 					    program_name => "freebayes",
 					   });
-    check_build_download_prerequisites({parameter_href => \%parameter,
-					active_parameter_href => \%active_parameter,
-					sample_info_href => \%sample_info,
-					infile_lane_no_ending_href => \%infile_lane_no_ending,
-					job_id_href => \%job_id,
-					supported_cosmid_reference_href => \%supported_cosmid_reference,
-					program_name => "freebayes",
-				       });
+    
 
     freebayes({parameter_href => \%parameter,
 	       active_parameter_href => \%active_parameter,
@@ -1998,18 +1802,8 @@ if ($active_parameter{pgatk_haplotypecaller} > 0) {  #Run GATK haplotypecaller
 					    file_info_href => \%file_info,
 					    infile_lane_no_ending_href => \%infile_lane_no_ending,
 					    job_id_href => \%job_id,
-					    supported_cosmid_reference_href => \%supported_cosmid_reference,
 					    program_name => "gatk_haplotypecaller",
 					   });
-
-    check_build_download_prerequisites({parameter_href => \%parameter,
-					active_parameter_href => \%active_parameter,
-					sample_info_href => \%sample_info,
-					infile_lane_no_ending_href => \%infile_lane_no_ending,
-					job_id_href => \%job_id,
-					supported_cosmid_reference_href => \%supported_cosmid_reference,
-					program_name => "gatk_haplotypecaller",
-				       });
 
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
@@ -2047,7 +1841,6 @@ if ($active_parameter{pgatk_genotypegvcfs} > 0) {  #Run GATK genotypegvcfs. Done
 					    file_info_href => \%file_info,
 					    infile_lane_no_ending_href => \%infile_lane_no_ending,
 					    job_id_href => \%job_id,
-					    supported_cosmid_reference_href => \%supported_cosmid_reference,
 					    program_name => "gatk_genotypegvcfs",
 					   });
 
@@ -2080,17 +1873,8 @@ if ($active_parameter{pgatk_variantrecalibration} > 0) {  #Run GATK VariantRecal
 					    file_info_href => \%file_info,
 					    infile_lane_no_ending_href => \%infile_lane_no_ending,
 					    job_id_href => \%job_id,
-					    supported_cosmid_reference_href => \%supported_cosmid_reference,
 					    program_name => "gatk_variantrecalibration",
 					   });
-    check_build_download_prerequisites({parameter_href => \%parameter,
-					active_parameter_href => \%active_parameter,
-					sample_info_href => \%sample_info,
-					infile_lane_no_ending_href => \%infile_lane_no_ending,
-					job_id_href => \%job_id,
-					supported_cosmid_reference_href => \%supported_cosmid_reference,
-					program_name => "gatk_variantrecalibration",
-				       });
 
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
@@ -2180,7 +1964,6 @@ if ($active_parameter{pgatk_phasebytransmission} > 0) {  #Run GATK phasebytransm
 					    file_info_href => \%file_info,
 					    infile_lane_no_ending_href => \%infile_lane_no_ending,
 					    job_id_href => \%job_id,
-					    supported_cosmid_reference_href => \%supported_cosmid_reference,
 					    program_name => "gatk_phasebytransmission",
 					   });
     gatk_phasebytransmission(\%parameter, \%active_parameter, \%sample_info, \%file_info, \%infile_lane_no_ending, \%job_id, $active_parameter{family_id}, $active_parameter{outaligner_dir}, "BOTH", "gatk_phasebytransmission");
@@ -2196,7 +1979,6 @@ if ($active_parameter{pgatk_readbackedphasing} > 0) {  #Run GATK ReadBackedPhasi
 					    file_info_href => \%file_info,
 					    infile_lane_no_ending_href => \%infile_lane_no_ending,
 					    job_id_href => \%job_id,
-					    supported_cosmid_reference_href => \%supported_cosmid_reference,
 					    program_name => "gatk_readbackedphasing",
 					   });
     gatk_readbackedphasing(\%parameter, \%active_parameter, \%sample_info, \%file_info, \%lane, \%infile_lane_no_ending, \%job_id, $active_parameter{family_id}, $active_parameter{outaligner_dir}, "BOTH", "gatk_readbackedphasing");
@@ -2212,18 +1994,8 @@ if ($active_parameter{pgatk_variantevalall} > 0) {  #Run GATK varianteval for al
 					    file_info_href => \%file_info,
 					    infile_lane_no_ending_href => \%infile_lane_no_ending,
 					    job_id_href => \%job_id,
-					    supported_cosmid_reference_href => \%supported_cosmid_reference,
 					    program_name => "gatk_variantevalall",
 					   });
-
-    check_build_download_prerequisites({parameter_href => \%parameter,
-					active_parameter_href => \%active_parameter,
-					sample_info_href => \%sample_info,
-					infile_lane_no_ending_href => \%infile_lane_no_ending,
-					job_id_href => \%job_id,
-					supported_cosmid_reference_href => \%supported_cosmid_reference,
-					program_name => "gatk_variantevalall",
-				       });
 
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
@@ -2263,7 +2035,6 @@ if ($active_parameter{reduce_io}) {  #Run consecutive models
 			    infile_lane_no_ending_href => \%infile_lane_no_ending,
 			    job_id_href => \%job_id,
 			    annovar_table_href => \%annovar_table,
-			    supported_cosmid_reference_href => \%supported_cosmid_reference,
 			    outaligner_dir_ref => \$active_parameter{outaligner_dir},
 			    call_type => "BOTH",
 			    program_name => "variantannotationblock",
@@ -2350,7 +2121,6 @@ else {
 						file_info_href => \%file_info,
 						infile_lane_no_ending_href => \%infile_lane_no_ending,
 						job_id_href => \%job_id,
-						supported_cosmid_reference_href => \%supported_cosmid_reference,
 						program_name => "annovar",
 					       });
 
@@ -2384,15 +2154,6 @@ else {
     if ($active_parameter{psnpeff} > 0) {  #Run snpEff. Done per family
 
 	$log->info("[Snpeff]\n");
-
-	check_build_download_prerequisites({parameter_href => \%parameter,
-					    active_parameter_href => \%active_parameter,
-					    sample_info_href => \%sample_info,
-					    infile_lane_no_ending_href => \%infile_lane_no_ending,
-					    job_id_href => \%job_id,
-					    supported_cosmid_reference_href => \%supported_cosmid_reference,
-					    program_name => "snpeff",
-					   });
 
 	snpeff({parameter_href => \%parameter,
 		active_parameter_href => \%active_parameter,
@@ -2444,17 +2205,8 @@ if ($active_parameter{pgatk_variantevalexome} > 0) {  #Run GATK varianteval for 
 					    file_info_href => \%file_info,
 					    infile_lane_no_ending_href => \%infile_lane_no_ending,
 					    job_id_href => \%job_id,
-					    supported_cosmid_reference_href => \%supported_cosmid_reference,
 					    program_name => "gatk_variantevalexome",
 					   });
-    check_build_download_prerequisites({parameter_href => \%parameter,
-					active_parameter_href => \%active_parameter,
-					sample_info_href => \%sample_info,
-					infile_lane_no_ending_href => \%infile_lane_no_ending,
-					job_id_href => \%job_id,
-					supported_cosmid_reference_href => \%supported_cosmid_reference,
-					program_name => "gatk_variantevalexome",
-				       });
 
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
@@ -15329,7 +15081,6 @@ sub variantannotationblock {
     my $infile_lane_no_ending_href;
     my $job_id_href;
     my $annovar_table_href;
-    my $supported_cosmid_reference_href;
     my $program_name;
 
     my $tmpl = {
@@ -15340,7 +15091,6 @@ sub variantannotationblock {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	annovar_table_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$annovar_table_href},
-	supported_cosmid_reference_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supported_cosmid_reference_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
@@ -15378,7 +15128,6 @@ sub variantannotationblock {
 						file_info_href => $file_info_href,
 						infile_lane_no_ending_href => $infile_lane_no_ending_href,
 						job_id_href => $job_id_href,
-						supported_cosmid_reference_href => $supported_cosmid_reference_href,
 						program_name => "vt",
 					       });
     }
@@ -15400,7 +15149,6 @@ sub variantannotationblock {
 						file_info_href => $file_info_href,
 						infile_lane_no_ending_href => $infile_lane_no_ending_href,
 						job_id_href => $job_id_href,
-						supported_cosmid_reference_href => $supported_cosmid_reference_href,
 						program_name => "annovar",
 					       });
 
@@ -15423,15 +15171,6 @@ sub variantannotationblock {
     if ($active_parameter_href->{psnpeff} > 0) {  #Run snpEff. Done per family
 
 	$log->info("\t[Snpeff]\n");
-
-	check_build_download_prerequisites({parameter_href => $parameter_href,
-					    active_parameter_href => $active_parameter_href,
-					    sample_info_href => $sample_info_href,
-					    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-					    job_id_href => $job_id_href,
-					    supported_cosmid_reference_href => $supported_cosmid_reference_href,
-					    program_name => "snpeff",
-					   });
     }
     if ($active_parameter_href->{prankvariant} > 0) { #Run rankvariant. Done per family
 
@@ -15610,7 +15349,7 @@ sub bamcalibrationblock {
 
 ##Function : Run consecutive module
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $lane_href, $job_id_href, $supported_cosmid_reference_href, $outaligner_dir, $program_name
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $lane_href, $job_id_href, $outaligner_dir, $program_name
 ##         : $parameter_href                  => The parameter hash {REF}
 ##         : $active_parameter_href           => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href                => Info on samples and family hash {REF}
@@ -15618,7 +15357,6 @@ sub bamcalibrationblock {
 ##         : $infile_lane_no_ending_href      => The infile(s) without the ".ending" {REF}
 ##         : $lane_href                       => The lane info hash {REF}
 ##         : $job_id_href                     => The job_id hash {REF}
-##         : $supported_cosmid_reference_href => The supported cosmid references hash {REF}
 ##         : $outaligner_dir                  => The outaligner_dir used
 ##         : $program_name                    => The program name
 
@@ -15637,7 +15375,6 @@ sub bamcalibrationblock {
     my $infile_lane_no_ending_href;
     my $lane_href;
     my $job_id_href;
-    my $supported_cosmid_reference_href;
     my $program_name;
 
     my $tmpl = {
@@ -15648,7 +15385,6 @@ sub bamcalibrationblock {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	lane_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$lane_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
-	supported_cosmid_reference_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supported_cosmid_reference_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
@@ -15688,17 +15424,8 @@ sub bamcalibrationblock {
 						file_info_href => $file_info_href,
 						infile_lane_no_ending_href => $infile_lane_no_ending_href,
 						job_id_href => $job_id_href,
-						supported_cosmid_reference_href => $supported_cosmid_reference_href,
 						program_name => "gatk_realigner",
 					       });
-	check_build_download_prerequisites({parameter_href => $parameter_href,
-					    active_parameter_href => $active_parameter_href,
-					    sample_info_href => $sample_info_href,
-					    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-					    job_id_href => $job_id_href,
-					    supported_cosmid_reference_href => $supported_cosmid_reference_href,
-					    program_name => "gatk_realigner",
-					   });
     }
     if ($active_parameter{pgatk_baserecalibration} > 0) {  #Run GATK baserecalibrator/printreads
 
@@ -15710,18 +15437,8 @@ sub bamcalibrationblock {
 						file_info_href => $file_info_href,
 						infile_lane_no_ending_href => $infile_lane_no_ending_href,
 						job_id_href => $job_id_href,
-						supported_cosmid_reference_href => $supported_cosmid_reference_href,
 						program_name => "gatk_baserecalibration",
 					       });
-
-	check_build_download_prerequisites({parameter_href => $parameter_href,
-					    active_parameter_href => $active_parameter_href,
-					    sample_info_href => $sample_info_href,
-					    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-					    job_id_href => $job_id_href,
-					    supported_cosmid_reference_href => $supported_cosmid_reference_href,
-					    program_name => "gatk_baserecalibration",
-					   });
     }
 
     foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
@@ -16587,110 +16304,6 @@ sub build_annovar_prerequisites {
 }
 
 
-sub build_downloadable_prerequisites {
-
-##build_downloadable_prerequisites
-
-##Function : Creates the downloadable resources.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_no_ending_href, $job_id_href, supported_cosmid_reference_href, $program_name, $family_id_ref, $outaligner_dir_ref
-##         : $parameter_href                  => The parameter hash {REF}
-##         : $active_parameter_href           => The active parameters for this analysis hash {REF}
-##         : $sample_info_href                => Info on samples and family hash {REF}
-##         : $infile_lane_no_ending_href      => The infile(s) without the ".ending" {REF}
-##         : $job_id_href                     => The job_id hash {REF}
-##         : $supported_cosmid_reference_href => The supported cosmid references hash {REF}
-##         : $program_name                    => The program name
-##         : $family_id_ref                   => Family ID {REF}
-##         : $outaligner_dir_ref              => The outaligner_dir used in the analysis
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-    my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $infile_lane_no_ending_href;
-    my $job_id_href;
-    my $supported_cosmid_reference_href;
-    my $program_name;
-
-    my $tmpl = {
-	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
-	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
-	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
-	supported_cosmid_reference_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supported_cosmid_reference_href},
-	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
-					     job_id_href => $job_id_href,
-					     FILEHANDLE => $FILEHANDLE,
-					     directory_id => $$family_id_ref,
-					     program_name => $program_name,
-					     program_directory => lc($$outaligner_dir_ref),
-					     process_time => 4,
-					    });
-
-    say $FILEHANDLE "cd $active_parameter_href->{reference_dir}", "\n";  #Move to reference directory
-
-    ## Locates and sets the cosmid directory to download to
-    my $cosmid_resource_directory = check_cosmid_yaml({active_parameter_href => $active_parameter_href,
-						      });
-
-    for my $parameter_name (keys %$supported_cosmid_reference_href) {
-
-	if (! check_entry_hash_of_array({hash_ref => $parameter_href->{$parameter_name},
-					 key => "associated_program",
-					 element => "p".$program_name,
-					})
-	    ) {  #If the cosmid supported parameter is associated with the MIP program
-
-	    if ($parameter_href->{$parameter_name}{build_file} eq 1) {
-
-		download_reference({parameter_href => $parameter_href,
-				    active_parameter_href => $active_parameter_href,
-				    sample_info_href => $sample_info_href,
-				    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-				    job_id_href => $job_id_href,
-				    supported_cosmid_reference_href => $supported_cosmid_reference_href,
-				    cosmid_resource_directory_ref => \$cosmid_resource_directory,
-				    program_ref => \$program_name,
-				    FILEHANDLE => $FILEHANDLE,
-				    parameter_name => $parameter_name,
-				   });
-	    }
-	}
-    }
-
-    close($FILEHANDLE);
-
-    if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
-
-	submit_job({active_parameter_href => $active_parameter_href,
-		    sample_info_href => $sample_info_href,
-		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => "no_dependency_add_to_case",
-		    path => $parameter_href->{"p".$program_name}{chain},
-		    sbatch_file_name => $file_name
-		   });
-    }
-}
-
 
 sub build_ptchs_metric_prerequisites {
 
@@ -16893,14 +16506,13 @@ sub build_bwa_prerequisites {
 
 ##Function : Creates the BwaPreRequisites using active_parameters{'human_genome_reference'} as reference.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $supported_cosmid_reference_href, $bwa_build_reference_file_endings_ref, $program_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $human_genome_reference_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $bwa_build_reference_file_endings_ref, $program_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $human_genome_reference_ref
 ##         : $parameter_href                       => The parameter hash {REF}
 ##         : $active_parameter_href                => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href                     => Info on samples and family hash {REF}
 ##         : $file_info_href                       => The file_info hash {REF}
 ##         : $infile_lane_no_ending_href           => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                          => The job_id hash {REF}
-##         : $supported_cosmid_reference_href      => The supported cosmid references hash {REF}
 ##         : $bwa_build_reference_file_endings_ref => The bwa reference associated file endings {REF}
 ##         : $family_id_ref                        => Family ID {REF}
 ##         : $outaligner_dir_ref                   => The outaligner_dir used in the analysis
@@ -16916,7 +16528,7 @@ sub build_bwa_prerequisites {
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
-    my $human_genome_reference_ref = $arg_href->{'human_genome_reference_ref'} //= \$arg_href->{'active_parameter_href'}{'human_genome_reference'},
+    my $human_genome_reference_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -16925,7 +16537,6 @@ sub build_bwa_prerequisites {
     my $file_info_href;
     my $infile_lane_no_ending_href;
     my $job_id_href;
-    my $supported_cosmid_reference_href;
     my $bwa_build_reference_file_endings_ref;
     my $program_name;
 
@@ -16936,13 +16547,13 @@ sub build_bwa_prerequisites {
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
-	supported_cosmid_reference_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supported_cosmid_reference_href},
 	bwa_build_reference_file_endings_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$bwa_build_reference_file_endings_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	temp_directory_ref => { default => \$$, strict_type => 1, store => \$temp_directory_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
-	human_genome_reference_ref => { default => \$$, strict_type => 1, store => \$human_genome_reference_ref},
+	human_genome_reference_ref => { default => \$arg_href->{active_parameter_href}{human_genome_reference},
+					strict_type => 1, store => \$human_genome_reference_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -16969,7 +16580,6 @@ sub build_bwa_prerequisites {
 				      file_info_href => $file_info_href,
 				      infile_lane_no_ending_href => $infile_lane_no_ending_href,
 				      job_id_href => $job_id_href,
-				      supported_cosmid_reference_href => $supported_cosmid_reference_href,
 				      program => $program_name,
 				      FILEHANDLE => $FILEHANDLE,
 				      random_integer => $random_integer,
@@ -17020,14 +16630,13 @@ sub build_mosaikaligner_prerequisites {
 
 ##Function : Creates the mosaikAlign prerequisites using active_parameters{'human_genome_reference'} as reference.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $supported_cosmid_reference_href, $mosaik_jump_db_stub_file_endings_ref, $human_genome_reference_source_ref, $human_genome_reference_version_ref, $family_id, $outaligner_dir, $program_name
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $mosaik_jump_db_stub_file_endings_ref, $human_genome_reference_source_ref, $human_genome_reference_version_ref, $family_id, $outaligner_dir, $program_name
 ##         : $parameter_href                       => The parameter hash {REF}
 ##         : $active_parameter_href                => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href                     => Info on samples and family hash {REF}
 ##         : $file_info_href                       => The file_info hash {REF}
 ##         : $infile_lane_no_ending_href           => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                          => The job_id hash {REF}
-##         : $supported_cosmid_reference_href      => The supported cosmid references hash {REF}
 ##         : $mosaik_jump_db_stub_file_endings_ref => The mosaikJump database file endings
 ##         : $human_genome_reference_source_ref    => The human genome source {REF}
 ##         : $human_genome_reference_version_ref   => The human genome build version {REF}
@@ -17041,13 +16650,12 @@ sub build_mosaikaligner_prerequisites {
     my $file_info_href = $_[3];
     my $infile_lane_no_ending_href = $_[4];
     my $job_id_href = $_[5];
-    my $supported_cosmid_reference_href = $_[6];
-    my $mosaik_jump_db_stub_file_endings_ref = $_[7];
-    my $human_genome_reference_source_ref = $_[8];
-    my $human_genome_reference_version_ref = $_[9];
-    my $family_id = $_[10];
-    my $outaligner_dir = $_[11];
-    my $program_name = $_[12];
+    my $mosaik_jump_db_stub_file_endings_ref = $_[6];
+    my $human_genome_reference_source_ref = $_[7];
+    my $human_genome_reference_version_ref = $_[8];
+    my $family_id = $_[9];
+    my $outaligner_dir = $_[10];
+    my $program_name = $_[11];
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger("MIP");
@@ -17073,7 +16681,6 @@ sub build_mosaikaligner_prerequisites {
 				      file_info_href => $file_info_href,
 				      infile_lane_no_ending_href => $infile_lane_no_ending_href,
 				      job_id_href => $job_id_href,
-				      supported_cosmid_reference_href => $supported_cosmid_reference_href,
 				      family_id_ref => \$family_id,
 				      outaligner_dir_ref => \$outaligner_dir,
 				      program => $program_name,
@@ -17151,14 +16758,13 @@ sub check_build_human_genome_prerequisites {
 
 ##Function : Checks if the HumanGenomePreRequisites needs to be built
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $supported_cosmid_reference_href, $program_name
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name
 ##         : $parameter_href                  => The parameter hash {REF}
 ##         : $active_parameter_href           => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href                => Info on samples and family hash {REF}
 ##         : $file_info_href                  => The file_info hash {REF}
 ##         : $infile_lane_no_ending_href      => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                     => The job_id hash {REF}
-##         : $supported_cosmid_reference_href => The supported cosmid references hash {REF}
 ##         : $program_name                    => Program name
 
     my ($arg_href) = @_;
@@ -17170,7 +16776,6 @@ sub check_build_human_genome_prerequisites {
     my $file_info_href;
     my $infile_lane_no_ending_href;
     my $job_id_href;
-    my $supported_cosmid_reference_href;
     my $program_name;
 
     my $tmpl = {
@@ -17180,7 +16785,6 @@ sub check_build_human_genome_prerequisites {
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
-	supported_cosmid_reference_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supported_cosmid_reference_href},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
     };
 
@@ -17199,7 +16803,6 @@ sub check_build_human_genome_prerequisites {
 						  file_info_href => $file_info_href,
 						  infile_lane_no_ending_href => $infile_lane_no_ending_href,
 						  job_id_href => $job_id_href,
-						  supported_cosmid_reference_href => $supported_cosmid_reference_href,
 						  family_id_ref => \$active_parameter_href->{family_id},
 						  outaligner_dir_ref => \$active_parameter_href->{outaligner_dir},
 						  program => $program_name,
@@ -17274,158 +16877,19 @@ sub check_build_ptchs_metric_prerequisites {
 }
 
 
-sub download_reference {
-
-##download_reference
-
-##Function : Downloads reference(s) using the database download manager Cosmid.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $infile_lane_no_ending_href, $job_id_href, $supported_cosmid_reference_href, $cosmid_resource_directory_ref, $program_ref, $FILEHANDLE, $parameter_name, $cosmid_resource_directory_ref
-##         : $parameter_href                  => The parameter hash {REF}
-##         : $active_parameter_href           => The active parameters for this analysis hash {REF}
-##         : $sample_info_href                => Info on samples and family hash {REF}
-##         : $infile_lane_no_ending_href      => The infile(s) without the ".ending" {REF}
-##         : $job_id_href                     => The job_id hash {REF}
-##         : $supported_cosmid_reference_href => The supported cosmid references hash {REF}
-##         : $cosmid_resource_directory_ref   => Cosmid directory {REF}
-##         : $program_ref                     => Program under evaluation {REF}
-##         : $FILEHANDLE                      => Filehandle to write to
-##         : $parameter_name                  => Parameter to use for download
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $infile_lane_no_ending_href;
-    my $job_id_href;
-    my $supported_cosmid_reference_href;
-    my $cosmid_resource_directory_ref;
-    my $program_ref;
-    my $FILEHANDLE;
-    my $parameter_name;
-
-    my $tmpl = {
-	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
-	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
-	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
-	supported_cosmid_reference_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supported_cosmid_reference_href},
- 	cosmid_resource_directory_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$cosmid_resource_directory_ref},
-	program_ref => { required => 1, defined => 1,  default => \$$, strict_type => 1, store => \$program_ref},
-	FILEHANDLE => { required => 1, store => \$FILEHANDLE},
-	parameter_name => { required => 1, defined => 1, strict_type => 1, store => \$parameter_name},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
-
-    my @vt_references = ("indels", "mills", "dbsnp", "hapmap", "dbsnpex", "1000g_snps");  #Should be decomposed and normalzed using vt out of downloadable references using Cosmid
-
-    if ($parameter_href->{$parameter_name}{build_file} eq 1) {  #Reference need to be built a.k.a downloaded
-
-	## Use $parameter instead of $active_parameter to cater for annotation files that are arrays and not supplied as flag => value
-	if (defined($active_parameter_href->{$parameter_name})) {
-
-	    $log->warn("Will try to download ".$active_parameter_href->{$parameter_name}." before executing ".$$program_ref."\n");
-	}
-	else {
-
-	    $log->warn("Will try to download ".$parameter_name." before executing ".$$program_ref."\n");
-	}
-
-	print $FILEHANDLE "cosmid ";  #Database download manager
-	print $FILEHANDLE "clone ";  #Clone resource
-	print $FILEHANDLE $supported_cosmid_reference_href->{$parameter_name}{cosmid_name};  #The actual reference
-
-	unless ($supported_cosmid_reference_href->{$parameter_name}{version} eq "latest") {  #Version to download
-
-	    print $FILEHANDLE "#".$supported_cosmid_reference_href->{$parameter_name}{version},
-	}
-	say $FILEHANDLE "\n";
-
-	## Check if reference comes decompressed or not
-	if ($supported_cosmid_reference_href->{$parameter_name}{compressed_switch} eq "compressed") {
-
-	    print $FILEHANDLE "gzip ";
-	    print $FILEHANDLE "-d ";  #Decompress
-	    say $FILEHANDLE catfile($$cosmid_resource_directory_ref, $supported_cosmid_reference_href->{$parameter_name}{cosmid_name}, "*.gz"), "\n";
-	}
-
-	my $temporary_file_path = catfile($$cosmid_resource_directory_ref, $supported_cosmid_reference_href->{$parameter_name}{cosmid_name}, "*");
-
-	if ( ( any {$_ eq $supported_cosmid_reference_href->{$parameter_name}{cosmid_name}} @vt_references ) ) {  #If element is part of array
-
-	    ## Split multi allelic records into single records and normalize
-	    vt_core({active_parameter_href => $active_parameter_href,
-		     sample_info_href => $sample_info_href,
-		     infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		     job_id_href => $job_id_href,
-		     FILEHANDLE => $FILEHANDLE,
-		     infile_path => catfile($$cosmid_resource_directory_ref, $supported_cosmid_reference_href->{$parameter_name}{cosmid_name}, "*"),
-		     outfile_path => catfile($$cosmid_resource_directory_ref, $supported_cosmid_reference_href->{$parameter_name}{cosmid_name}, $active_parameter_href->{$parameter_name}),
-		     decompose => $active_parameter_href->{vt_decompose},
-		     normalize => $active_parameter_href->{vt_normalize},
-		    });
-	    $temporary_file_path = catfile($$cosmid_resource_directory_ref, $supported_cosmid_reference_href->{$parameter_name}{cosmid_name}, $active_parameter_href->{$parameter_name});
-	}
-
-	my $intended_file_path;
-	## Use $parameter instead of $active_parameter to cater for annotation files that are arrays and not supplied as flag => value
-	if (defined($active_parameter_href->{$parameter_name})) {
-
-	    $intended_file_path = catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{$parameter_name});
-	}
-	else {
-
-	    $intended_file_path = catfile($active_parameter_href->{reference_dir}, $parameter_name);
-	}
-
-	## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-	print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
-					 intended_file_path_ref => \$intended_file_path,
-					 temporary_file_path_ref => \$temporary_file_path,
-					});
-
-	## Remove temporary Cosmid resources directory
-	print $FILEHANDLE "rm -rf ";
-	say $FILEHANDLE catfile($$cosmid_resource_directory_ref, $supported_cosmid_reference_href->{$parameter_name}{cosmid_name}, ";"), "\n";
-
-	## Remove temporary Cosmid ".cosmid.yaml" file
-	remove_file({file_ref => \catfile($$cosmid_resource_directory_ref, ".cosmid.yaml"),
-		     FILEHANDLE => $FILEHANDLE,
-		    });
-	say $FILEHANDLE "\n";
-
-	for my $supported_parameter_name (keys %$supported_cosmid_reference_href) {
-
-	    if ($supported_cosmid_reference_href->{$supported_parameter_name}{cosmid_name} eq $supported_cosmid_reference_href->{$parameter_name}{cosmid_name}) {  #Reset to 0 for all supported_cosmid_reference that are shared between modules
-
-		$parameter_href->{$supported_parameter_name}{build_file} = 0;  #Only need to download once per analysis call
-	    }
-	}
-    }
-}
-
-
 sub build_human_genome_prerequisites {
 
 ##build_human_genome_prerequisites
 
 ##Function : Creates the human genome prerequisites using active_parameters{human_genome_reference} as reference.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $supported_cosmid_reference_href, $program, $FILEHANDLE, $random_integer, $family_id_ref, $reference_dir_ref, $outaligner_dir_ref, $human_genome_reference_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program, $FILEHANDLE, $random_integer, $family_id_ref, $reference_dir_ref, $outaligner_dir_ref, $human_genome_reference_ref
 ##         : $parameter_href                  => The parameter hash {REF}
 ##         : $active_parameter_href           => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href                => Info on samples and family hash {REF}
 ##         : $file_info_href                  => The file_info hash {REF}
 ##         : $infile_lane_no_ending_href      => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                     => The job_id hash {REF}
-##         : $supported_cosmid_reference_href => The supported cosmid references hash {REF}
 ##         : $program                         => The program under evaluation
 ##         : $FILEHANDLE                      => Filehandle to write to. A new sbatch script will be generated if $FILEHANDLE is lacking, else write to exising $FILEHANDLE {Optional}
 ##         : $random_integer                  => The random integer to create temporary file name
@@ -17440,7 +16904,7 @@ sub build_human_genome_prerequisites {
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $reference_dir_ref = $arg_href->{reference_dir_ref} //= \$arg_href->{active_parameter_href}{reference_dir};
     my $outaligner_dir_ref = $arg_href->{outaligner_dir_ref} //= \$arg_href->{active_parameter_href}{outaligner_dir};
-    my $human_genome_reference_ref = $arg_href->{'human_genome_reference_ref'} //= \$arg_href->{'active_parameter_href'}{'human_genome_reference'},
+    my $human_genome_reference_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -17449,7 +16913,6 @@ sub build_human_genome_prerequisites {
     my $file_info_href;
     my $infile_lane_no_ending_href;
     my $job_id_href;
-    my $supported_cosmid_reference_href;
     my $program;
     my $FILEHANDLE;
     my $random_integer;
@@ -17461,14 +16924,14 @@ sub build_human_genome_prerequisites {
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
-	supported_cosmid_reference_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supported_cosmid_reference_href},
 	program => { required => 1, defined => 1, strict_type => 1, store => \$program},
 	FILEHANDLE => { store => \$FILEHANDLE},
 	random_integer => { strict_type => 1, store => \$random_integer},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
 	reference_dir_ref => { default => \$$, strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$$, strict_type => 1, store => \$outaligner_dir_ref},
-	human_genome_reference_ref => { default => \$$, strict_type => 1, store => \$human_genome_reference_ref},
+	human_genome_reference_ref => { default => \$arg_href->{active_parameter_href}{human_genome_reference},
+					strict_type => 1, store => \$human_genome_reference_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -17494,22 +16957,6 @@ sub build_human_genome_prerequisites {
     }
 
     say $FILEHANDLE "cd $$reference_dir_ref", "\n";  #Move to reference directory
-
-    ## Locates and sets the cosmid directory to download to
-    my $cosmid_resource_directory = check_cosmid_yaml({active_parameter_href => $active_parameter_href,
-						      });
-
-    download_reference({parameter_href => $parameter_href,
-			active_parameter_href => $active_parameter_href,
-			sample_info_href => $sample_info_href,
-			infile_lane_no_ending_href => $infile_lane_no_ending_href,
-			job_id_href => $job_id_href,
-			supported_cosmid_reference_href => $supported_cosmid_reference_href,
-			cosmid_resource_directory_ref => \$cosmid_resource_directory,
-			program_ref => \$program,
-			FILEHANDLE => $FILEHANDLE,
-			parameter_name => "human_genome_reference",
-		       });
 
     ## Check for compressed files
     if ($file_info_href->{human_genome_compressed} eq "compressed") {
@@ -17612,60 +17059,6 @@ sub build_human_genome_prerequisites {
 			path => "MIP",
 			sbatch_file_name => $file_name
 		       });
-	}
-    }
-}
-
-
-sub check_cosmid_installation {
-
-##check_cosmid_installation
-
-##Function : Check that a Cosmid installation exists
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $parameter_name_ref
-##         : $parameter_href                  => The parameter hash {REF}
-##         : $active_parameter_href           => The active parameters for this analysis hash {REF}
-##         : $supported_cosmid_reference_href => Suported Cosmid references {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $supported_cosmid_reference_href;
-
-    my $tmpl = {
-	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
-	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	supported_cosmid_reference_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supported_cosmid_reference_href},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
-
-    my $ret;
-
-    for my $parameter_name (keys %$supported_cosmid_reference_href) {
-
-	if ($parameter_href->{$parameter_name}{build_file} eq 1) {
-
-	    $log->info("Checking your Cosmid installation in preparation for download of ".$active_parameter_href->{$parameter_name}."\n");
-
-	    $ret = `which cosmid;`;
-
-	    if ($ret eq "") {
-
-		$log->fatal("MIP uses cosmid to download ".$active_parameter_href->{$parameter_name}." and MIP could not find a cosmid installation in your environment ","\n");
-		exit 1;
-	    }
-	    else {  #Test ok
-
-		$log->info("Found installation in ".$ret);
-	    }
-	    last;  #Only need to check once per analysis run
 	}
     }
 }
@@ -19988,11 +19381,6 @@ sub check_parameter_files {
 					     item_type_to_check => $parameter_exists_check,
 					    });
 			}
-			if ($parameter_name eq "snpsift_annotation_files"){
-
-			    my %snpeff_file = define_snpeff_files({parameter_href => $parameter_href,
-								  });
-			}
 		    }
 		}
 	    }
@@ -20371,24 +19759,24 @@ sub program_prerequisites {
 	say $FILEHANDLE q?temp_directory="?.$temp_directory.q?"?;  #Assign batch variable
 	say $FILEHANDLE q?mkdir -p ?.$temp_directory, "\n";
 
-	File::Parse::Parse::create_housekeeping_function({job_id_href => $job_id_href,
-							  log_file_ref => \$active_parameter_href->{log_file},
-							  FILEHANDLE => $FILEHANDLE,
-							  directory_remove => $temp_directory,
-							  trap_signals_ref => ["EXIT", "TERM", "INT"],
-							  trap_function => "finish",
-							 });
+	File::Format::Shell::create_housekeeping_function({job_id_href => $job_id_href,
+							   log_file_ref => \$active_parameter_href->{log_file},
+							   FILEHANDLE => $FILEHANDLE,
+							   directory_remove => $temp_directory,
+							   trap_signals_ref => ["EXIT", "TERM", "INT"],
+							   trap_function => "finish",
+							  });
     }
 
     if ($error_trap) {
 
 	## Create error handling function and trap
-	File::Parse::Parse::create_trap_function({job_id_href => $job_id_href,
-						  log_file_ref => \$active_parameter_href->{log_file},
-						  FILEHANDLE => $FILEHANDLE,
-						  trap_signals_ref => ["ERR"],
-						  trap_function => "error",
-						 });
+	File::Format::Shell::create_trap_function({job_id_href => $job_id_href,
+						   log_file_ref => \$active_parameter_href->{log_file},
+						   FILEHANDLE => $FILEHANDLE,
+						   trap_signals_ref => ["ERR"],
+						   trap_function => "error",
+						  });
     }
     return ($file_name, $file_info_path.$file_name_tracker);  #Return filen name, file path for stdout/stderr for QC check later
 }
@@ -21027,10 +20415,7 @@ sub check_auto_build {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-
-    ## Optional
-    my $sample_id_ref = $arg_href->{sample_id_ref};
+    my $family_id_ref;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -21041,61 +20426,23 @@ sub check_auto_build {
 	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	parameter_name_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$parameter_name_ref},
-	sample_id_ref => { default => \$$, strict_type => 1},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
-
-    if ( (defined($$sample_id_ref)) && ($$sample_id_ref) ) {
-
-	if ($parameter_href->{$$family_id_ref}{$$sample_id_ref}{$$parameter_name_ref}{build_file} eq "yes_auto_build") {
-
-	    return "1";  #Flag that autobuild is needed
-	}
-	if ($parameter_href->{$$family_id_ref}{$$sample_id_ref}{$$parameter_name_ref}{build_file} eq "yes_auto_downLoad") {
-
-	    return "1";  #Flag that autobuild is needed
-	}
-	if ($parameter_href->{$$family_id_ref}{$$sample_id_ref}{$$parameter_name_ref}{build_file} eq 1) {
-
-	    return "1";  #Flag that autobuild is needed
-	}
-	else {
-
-	    return "0";  #No autobuild is needed
-	}
+    if ($parameter_href->{$$parameter_name_ref}{build_file} eq "yes_auto_build") {
+	
+	return "1";  #Flag that autobuild is needed
+    }
+    elsif ($parameter_href->{$$parameter_name_ref}{build_file} eq 1) {  #1 for arrays
+	
+	return "1";  #Flag that autobuild is needed
     }
     else {
-
-	if ($parameter_href->{$$parameter_name_ref}{build_file} eq "yes_auto_build") {
-
-	    return "1";  #Flag that autobuild is needed
-	}
-	if ($parameter_href->{$$parameter_name_ref}{build_file} eq 1) {  #1 for arrays
-
-	    return "1";  #Flag that autobuild is needed
-	}
-	elsif ( ($parameter_href->{$$parameter_name_ref}{build_file} eq "yes_auto_downLoad") || ($parameter_href->{$$parameter_name_ref}{build_file} eq 1) ) {
-
-	    if ($parameter_href->{$$parameter_name_ref}{default} eq $active_parameter_href->{$$parameter_name_ref}) {
-
-		return "1";  #Flag that autobuild is needed
-	    }
-	    else {
-
-		$log->fatal("Could not find file ".$active_parameter_href->{$$parameter_name_ref}, "\n");
-		$log->fatal("Make sure that file exists or use the default for this parameter to enable automatic download via Cosmid", "\n");
-		exit 1;
-	    }
-	}
-	else {
-
-	    return "0";  #No autobuild is needed
-	}
+	
+	return "0";  #No autobuild is needed
     }
 }
 
@@ -21199,10 +20546,9 @@ sub check_existance {
 
 ##Function : Checks if a file/directory exists and if auto_build is on or not. If file/directory does not extis and there is no autobuild, croaks and exists.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_id_ref, $item_name_ref, $parameter_name_ref, $item_type_to_check, $temp_directory_ref
+##Arguments: $parameter_href, $active_parameter_href, $item_name_ref, $parameter_name_ref, $item_type_to_check, $temp_directory_ref
 ##         : $parameter_href        => The parameters hash
 ##         : $active_parameter_href => The active parameter for this analysis hash
-##         : $sample_id_ref         => Name of sample {REF}
 ##         : $item_name_ref         => Item to check for existance {REF}
 ##         : $parameter_name_ref    => MIP parameter name {REF}
 ##         : $item_type_to_check    => The type of item to check
@@ -21213,9 +20559,6 @@ sub check_existance {
     ## Default(s)
     my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
     my $temp_directory_ref = $arg_href->{temp_directory_ref} //= \$arg_href->{active_parameter_href}{temp_directory};
-
-    ## Optional
-    my $sample_id_ref = $arg_href->{sample_id_ref};
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -21230,7 +20573,6 @@ sub check_existance {
 	item_name_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$item_name_ref},
 	parameter_name_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$parameter_name_ref},
 	item_type_to_check => { required => 1, defined => 1, strict_type => 1, store => \$item_type_to_check},
-	sample_id_ref => { default => \$$, strict_type => 1},
 	temp_directory_ref => { default => \$$, strict_type => 1},
 	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
     };
@@ -21251,52 +20593,26 @@ sub check_existance {
     }
     elsif ($item_type_to_check eq "file") {
 
-	unless (-f $$item_name_ref) {  #Check existence of supplied file in supplied reference dir
+	unless (-f $$item_name_ref) {  #Check existence of supplied file
 
-	    if ( (defined($$sample_id_ref)) && ($$sample_id_ref) ) {  #Individual files per sample_id
+	    ## Check auto_build or not and return value
+	    $parameter_href->{$$parameter_name_ref}{build_file} = check_auto_build({parameter_href => $parameter_href,
+										    active_parameter_href => $active_parameter_href,
+										    parameter_name_ref => $parameter_name_ref,
+										   });
 
-		## Check auto_build or not and return value
-		$parameter_href->{$$family_id_ref}{$$sample_id_ref}{$$parameter_name_ref}{build_file} = check_auto_build({parameter_href => $parameter_href,
-															  active_parameter_href => $active_parameter_href,
-															  parameter_name_ref => $parameter_name_ref,
-															  sample_id_ref => $sample_id_ref
-															 });
+	    if ($parameter_href->{$$parameter_name_ref}{build_file} == 0) {  #No autobuild
 
-		if ($parameter_href->{$$family_id_ref}{$$sample_id_ref}{$$parameter_name_ref}{build_file} == 0) {  #No autobuild
-
-		    $log->fatal($USAGE, "\n");
-		    $log->fatal("Could not find intended ".$$parameter_name_ref." file: ".$$item_name_ref, "\n");
-		    exit 1;
-		}
-	    }
-	    else {
-
-		## Check auto_build or not and return value
-		$parameter_href->{$$parameter_name_ref}{build_file} = check_auto_build({parameter_href => $parameter_href,
-											active_parameter_href => $active_parameter_href,
-											parameter_name_ref => $parameter_name_ref,
-										       });
-
-		if ($parameter_href->{$$parameter_name_ref}{build_file} == 0) {  #No autobuild
-
-		    $log->fatal($USAGE, "\n");
-		    $log->fatal("Could not find intended ".$$parameter_name_ref." file: ".$$item_name_ref, "\n");
-		    exit 1;
-		}
+		$log->fatal($USAGE, "\n");
+		$log->fatal("Could not find intended ".$$parameter_name_ref." file: ".$$item_name_ref, "\n");
+		exit 1;
 	    }
 	}
 	else {
 
-	    if (defined($$sample_id_ref)) {
+	    if ( (defined($parameter_href->{$$parameter_name_ref}{build_file})) && ($parameter_href->{$$parameter_name_ref}{build_file} ne 1) ) { #If any of associated files do not exist make sure to build them
 
-		$parameter_href->{$$family_id_ref}{$$sample_id_ref}{$$parameter_name_ref}{build_file} = 0;  #File exist in this check
-	    }
-	    else {
-
-		if ( (defined($parameter_href->{$$parameter_name_ref}{build_file})) && ($parameter_href->{$$parameter_name_ref}{build_file} ne 1) ) { #If any of associated files do not exist make sure to build them
-
-		    $parameter_href->{$$parameter_name_ref}{build_file} =  0;  #File exist in this check
-		}
+		$parameter_href->{$$parameter_name_ref}{build_file} =  0;  #File exist in this check
 	    }
 	}
     }
@@ -21543,43 +20859,6 @@ sub print_check_exist_and_move_file {
     say $FILEHANDLE "mv ".$$temporary_file_path_ref." ".$$intended_file_path_ref,"\n";  #Move file in place
 }
 
-
-sub define_snpeff_files {
-
-##define_snpeff_files
-
-##Function : Defines and adds snpEff/snpsift files and features to hash
-##Returns  : ""
-##Arguments: $parameter_href
-##         : $parameter_href => The parameter hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-
-    my $tmpl = {
-	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-    
-    my %snpeff_file;
-    my @snpsift_downloadable_files = ("dbsnp_138.b37.excluding_sites_after_129.vcf",
-				      "dbsnp_138.b37.vcf", "1000G_phase1.indels.b37.vcf",
-				      "1000G_phase1.snps.high_confidence.b37.vcf",
-	);
-
-    foreach my $file (@snpsift_downloadable_files) {
-
-	$snpeff_file{snpsift}{$file} = ({downloadable => "yes",  #Files that are downloadable via Cosmid
-					});
-	push(@{ $parameter_href->{$file}{associated_program} }, "psnpeff");
-	$parameter_href->{$file}{data_type} = "SCALAR";
-	$parameter_href->{$file}{build_file} = "yes_auto_build";  #Allow autoDownLoad, but yes_auto_build is set since the file is its own default, so no extra check is required (compared with yes_auto_downLoad)
-    }
-    return %snpeff_file;
-}
 
 sub define_annovar_tables {
 
@@ -21972,94 +21251,6 @@ sub replace_config_parameters_with_cmd_info {
 }
 
 
-sub define_supported_cosmid_references {
-
-##define_supported_cosmid_references
-
-##Function : Defines the Cosmid manager hash keys and populates it from arguments
-##Returns  : ""
-##Arguments: $supported_cosmid_reference_href, $parameter_name, $cosmid_resource_name, $cosmid_resource_version, $human_genome_reference_version_ref, $compressed_switch
-##         : $supported_cosmid_reference_href    => The supported cosmid references hash {REF}
-##         : $parameter_name                     => MIP parameter name
-##         : $cosmid_resource_name               => Cosmid Resource name
-##         : $cosmid_resource_version            => Version of the cosmid Resource to download
-##         : $human_genome_reference_version_ref => The human genome build used in the analysis
-##         : $compressed_switch                  => If files after download are compressed or not
-
-    my ($arg_href) = @_;
-
-    my $compressed_switch = $arg_href->{'compressed_switch'} //= 0;
-
-    ## Flatten argument(s)
-    my $supported_cosmid_reference_href;
-    my $parameter_name;
-    my $cosmid_resource_name;
-    my $cosmid_resource_version;
-    my $human_genome_reference_version_ref;
-
-    my $tmpl = {
-	supported_cosmid_reference_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supported_cosmid_reference_href},
-	parameter_name => { required => 1, defined => 1, strict_type => 1, store => \$parameter_name},
-	cosmid_resource_name => { required => 1, defined => 1, strict_type => 1, store => \$cosmid_resource_name},
-	cosmid_resource_version => { required => 1, defined => 1, strict_type => 1, store => \$cosmid_resource_version},
-	human_genome_reference_version_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$human_genome_reference_version_ref},
-	compressed_switch => { strict_type => 1, store => \$compressed_switch},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    $supported_cosmid_reference_href->{$parameter_name} = {
-
-	cosmid_name => $cosmid_resource_name,
-	version => $cosmid_resource_version,
-	human_genome_reference_version => $$human_genome_reference_version_ref,
-	compressed_switch => $compressed_switch,
-    };
-}
-
-
-sub check_cosmid_yaml {
-
-##check_cosmid_yaml
-
-##Function : Locates and sets the cosmid directory to download to
-##Returns  : Path to Cosmid Resource directory for current analysis
-##Arguments: $active_parameter_href
-##         : $active_parameter_href => The active parameters for this analysis hash {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-
-    my $tmpl = {
-	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    my %cosmid_resources;  #Hash to load cosmid info to
-
-    if (-f $active_parameter_href->{reference_dir}."/cosmid.yaml") {  #Cosmid.yaml file exists in reference directory
-
-	## Loads a YAML file into an arbitrary hash and returns it.
-	%cosmid_resources = File::Format::Yaml::load_yaml({yaml_file => catfile($active_parameter_href->{reference_dir}, "cosmid.yaml"),
-							  });
-	$log->info("Loaded: ".catfile($active_parameter_href->{reference_dir}, "cosmid.yaml") , "\n");
-	
-	unless (defined($cosmid_resources{directory})) {  #Set Directory entry if not defined
-
-	    $cosmid_resources{directory} = catfile($active_parameter_href->{reference_dir}, "resources");  #Set the Cosmid default directory
-	}
-    }
-    else {  #No cosmid.yaml exist in reference directory
-
-	$cosmid_resources{directory} = catfile($active_parameter_href->{reference_dir}, "resources");  #Set the Cosmid default directory
-    }
-    return $cosmid_resources{directory};
-}
-
-
 sub adjust_core_number_to_seq_mode {
 
 ##adjust_core_number_to_seq_mode
@@ -22127,80 +21318,6 @@ sub print_wait {
 
 	say $FILEHANDLE "wait", "\n";
 	$$core_counter_ref=$$core_counter_ref+1;  #Increase the maximum number of cores allowed to be used since "wait" was just printed
-    }
-}
-
-
-sub check_build_download_prerequisites {
-
-##check_build_download_prerequisites
-
-##Function : Checks if some of the active prerequisites needs to be downloaded and calls subroutine to download them if required
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $infile_lane_no_ending_href, $job_id_href, $supported_cosmid_reference_href, $program_name, $family_id_ref
-##         : $parameter_href                  => The parameter hash {REF}
-##         : $active_parameter_href           => The active parameters for this analysis hash {REF}
-##         : $sample_info_href                => Info on samples and family hash {REF}
-##         : $infile_lane_no_ending_href      => The infile(s) without the ".ending" {REF}
-##         : $job_id_href                     => The job_id hash {REF}
-##         : $supported_cosmid_reference_href => The supported cosmid references hash {REF}
-##         : $program_name                    => Active program
-##         : $family_id_ref                   => The family_id_ref {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref = $arg_href->{family_id_ref} //= \$arg_href->{active_parameter_href}{family_id};
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $infile_lane_no_ending_href;
-    my $job_id_href;
-    my $supported_cosmid_reference_href;
-    my $program_name;
-
-    my $tmpl = {
-	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
-	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
-	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
-	supported_cosmid_reference_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supported_cosmid_reference_href},
-	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$$, strict_type => 1, store => \$family_id_ref},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    for my $parameter_name (keys %$supported_cosmid_reference_href) {  #Supported cosmid references for MIP parameters
-
-	if (defined($parameter_href->{$parameter_name}{associated_program})) {
-
-	    if (! check_entry_hash_of_array({hash_ref => $parameter_href->{$parameter_name},
-					     key => "associated_program",
-					     element => "p".$program_name,
-					    })
-		) {  #If the cosmid supported parameter is associated with the MIP program
-
-		if ( ($active_parameter_href->{"p".$program_name} == 1) && ($active_parameter_href->{dry_run_all} != 1) ) {  #Only enable autoDownload for active programs
-
-		    if ($parameter_href->{$parameter_name}{build_file} eq 1) {  #Enable auto_build
-
-			build_downloadable_prerequisites({parameter_href => $parameter_href,
-							  active_parameter_href => $active_parameter_href,
-							  sample_info_href => $sample_info_href,
-							  infile_lane_no_ending_href => $infile_lane_no_ending_href,
-							  job_id_href => $job_id_href,
-							  supported_cosmid_reference_href => $supported_cosmid_reference_href,
-							  program_name => $program_name,
-							 });
-			last;  #Perform once
-		    }
-		}
-	    }
-	}
     }
 }
 
@@ -25091,7 +24208,7 @@ sub eval_parameter_hash {
 
     my %non_mandatory_key;
     $non_mandatory_key{build_file}{key_data_type} = "SCALAR";
-    $non_mandatory_key{build_file}{values} = ["no_auto_build", "yes_auto_build", "yes_auto_downLoad"];
+    $non_mandatory_key{build_file}{values} = ["no_auto_build", "yes_auto_build"];
     $non_mandatory_key{mandatory}{key_data_type} = "SCALAR";
     $non_mandatory_key{mandatory}{values} = ["no"];
     $non_mandatory_key{exists_check}{key_data_type} = "SCALAR";
