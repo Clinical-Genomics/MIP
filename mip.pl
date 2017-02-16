@@ -36,11 +36,11 @@ use List::Util qw(any all);
 
 ##MIPs lib/
 use lib catdir($Bin, "lib");  #Add MIPs internal lib
+use Check::Check_modules qw(check_modules);
 use File::Format::Shell qw(create_housekeeping_function create_trap_function);
 use File::Format::Yaml qw(load_yaml write_yaml);
 use File::Parse::Parse qw(find_absolute_path);
 use MIP_log::Log4perl qw(initiate_logger);
-use Check::Check_modules qw(check_modules);
 use Script::Utils qw(help);
 
 our $USAGE;
@@ -52,7 +52,12 @@ BEGIN {
 		   "List::Util",
 		   "File::Format::Yaml",
 		   "Log::Log4perl",
+		   "Check::Check_modules",
+		   "File::Format::Shell",
+		   "File::Format::Yaml",
+		   "File::Parse::Parse",
 		   "MIP_log::Log4perl",
+		   "Script::Utils",
 	);
 
     ## Evaluate that all modules required are installed
