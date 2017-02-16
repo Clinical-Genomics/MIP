@@ -77,6 +77,8 @@ BEGIN {
                -odd/--outdata_dir The data output directory (mandatory)
                -osd/--outscript_dir The script files (.sh) output directory (mandatory)
                -f/--family_id Group id of samples to be compared (defaults to "", (Ex: 1 for IDN 1-1-1A))
+               -mot/--module_time Set the time allocation for each module (Format: module "program name"=time(Hours))
+               -mcn/--module_core_number Set the number of cores for each module (Format: module "program_name"=X(cores))
                -sck/--supported_capture_kit Set the capture kit acronym shortcut in pedigree file
                -dnr/--decompose_normalize_references Set the references to be decomposed and normalized (defaults: "gatk_realigner_indel_known_sites", "gatk_baserecalibration_known_sites","gatk_haplotypecaller_snp_known_set", "gatk_variantrecalibration_training_set_hapmap", "gatk_variantrecalibration_training_set_mills", "gatk_variantrecalibration_training_set_1000g_omni", "gatk_variantrecalibration_training_set_1000gsnp", "gatk_variantrecalibration_training_set_dbsnp", "vt_genmod_filter_1000g", "sv_vcfanno_config_file", "gatk_varianteval_gold", "gatk_varianteval_dbsnp","snpsift_annotation_files")
                -ped/--pedigree_file Meta data on samples (defaults to "")
@@ -394,6 +396,8 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'odd|outdata_dir:s' => \$parameter{outdata_dir}{value},  #One dir above sample id, must supply whole path i.e. /proj/...
 	   'osd|outscript_dir:s' => \$parameter{outscript_dir}{value},   #One dir above sample id, must supply whole path i.e. /proj/...
 	   'f|family_id:s' => \$parameter{family_id}{value},  #Family group ID (Merged to same vcf file after GATK Base Recalibration)
+	   'mcn|module_core_number:s' => \%{ $parameter{module_core_number}{value} },
+	   'mot|module_time:s' => \%{ $parameter{module_time}{value} },
 	   'sck|supported_capture_kit:s' => \%{ $parameter{supported_capture_kit}{value} },
 	   'dnr|decompose_normalize_references:s' => \@{ $parameter{decompose_normalize_references}{value} }, #Reference that should be decomposed and normalized
 	   'ped|pedigree_file:s' => \$parameter{pedigree_file}{value},  #Pedigree file
@@ -633,16 +637,16 @@ if (defined($parameter{config_file}{value})) {  #Input from cmd
     %active_parameter = File::Format::Yaml::load_yaml({yaml_file => $parameter{config_file}{value},
 						      });
 
-    ##Special case:Enable/activate MIP. Cannot be changed from cmd or config
+    ## Special case:Enable/activate MIP. Cannot be changed from cmd or config
     $active_parameter{mip} = $parameter{mip}{default};
 
-    ##Special case:Required when turning of vcfParser to know how many files should be analysed (.select.vcf or just .vcf)
+    ## Special case:Required when turning of vcfParser to know how many files should be analysed (.select.vcf or just .vcf)
     $active_parameter{vcfparser_outfile_count} = $parameter{vcfparser_outfile_count}{default};
 
-    ## Compare keys in two hashes
-    compare_hash_keys({reference_href => \%active_parameter,
-		       comparison_href => \%parameter,
-		      });
+    ## Compare keys from config and definitions file
+    check_config_vs_definition_file({reference_href => \%active_parameter,
+				     comparison_href => \%parameter,
+				    });
 
     my @config_dynamic_parameters = ("cluster_constant_path", "analysis_constant_path", "outaligner_dir");
 
@@ -777,6 +781,30 @@ if (exists($active_parameter{email})) {  #Allow no malformed email adress
 
     check_email_address({email_ref => \$active_parameter{email},
 			});
+}
+
+
+## Parameters that have keys as MIP program names
+my @parameter_keys_to_check = ("module_time", "module_core_number");
+foreach my $parameter_name (@parameter_keys_to_check) {
+
+    ## Test if key from query hash exists truth hash
+    check_key_exists_in_hash({truth_href => \%parameter,
+			      query_href => \%{ $active_parameter{$parameter_name} },
+			      parameter_name => $parameter_name,
+			     });
+}
+
+
+## Parameters that have elements as MIP program names
+my @parameter_elements_to_check = ("decompose_normalize_references");
+foreach my $parameter_name (@parameter_elements_to_check) {
+
+    ## Test if element from query array exists truth hash
+    check_element_exists_in_hash({truth_href => \%parameter,
+				  queryies => \@{ $active_parameter{$parameter_name} },
+				  parameter_name => $parameter_name,
+				 });
 }
 
 
@@ -15667,8 +15695,8 @@ sub split_fastq_file {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 10;
-    my $core_number = 4;
+    my $time = $active_parameter_href->{module_time}{"p".$program_name};
+    my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
 
     foreach my $fastq_file (@{ $infile_href->{$$sample_id_ref} }) {
 
@@ -15687,6 +15715,10 @@ sub split_fastq_file {
 	## Assign directories
 	my $insample_directory = $indir_path_href->{$$sample_id_ref};
 	my $outsample_directory = $indir_path_href->{$$sample_id_ref};
+
+	## Assign file_tags
+	my $infile_path = catfile($insample_directory, $fastq_file);
+	my $file_path = catfile($$temp_directory_ref, $fastq_file);
 
 	say $FILEHANDLE "## ".$program_name;
 
@@ -15709,7 +15741,7 @@ sub split_fastq_file {
 
 	## Copies file to temporary directory.
 	migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			      path => catfile($insample_directory, $fastq_file),
+			      path => $infile_path,
 			      temp_directory => $$temp_directory_ref,
 			     });
 	say $FILEHANDLE "wait ";
@@ -15718,7 +15750,7 @@ sub split_fastq_file {
 	print $FILEHANDLE "unpigz ";
 	print $FILEHANDLE "-p ".$core_number." ";  #nr of threads
 	print $FILEHANDLE "-c ";  #Write all processed output to stdout
-	print $FILEHANDLE catfile($$temp_directory_ref, $fastq_file)." ";  #Infile
+	print $FILEHANDLE $file_path." ";  #Infile
 	print $FILEHANDLE "| ";  #Pipe
 	print $FILEHANDLE "split ";
 	print $FILEHANDLE "-l ".($sequence_read_batch * 4)." ";  #put NUMBER lines per output file
@@ -15728,7 +15760,7 @@ sub split_fastq_file {
 	say $FILEHANDLE catfile($$temp_directory_ref, $file_prefix), "\n";
 
 	## Remove original files
-	remove_file({file_ref => \catfile($$temp_directory_ref, $fastq_file),
+	remove_file({file_ref => \$file_path,
 		     FILEHANDLE => $FILEHANDLE,
 		    });
 	say $FILEHANDLE "\n";
@@ -15755,6 +15787,7 @@ sub split_fastq_file {
 
 	## Compress file again
 	my $splittedFile = catfile($indir_path{$$sample_id_ref}, $file_prefix."*");
+
 	print $FILEHANDLE "pigz ";
 	say $FILEHANDLE catfile($$temp_directory_ref, "*.fastq"), "\n";
 
@@ -15767,7 +15800,7 @@ sub split_fastq_file {
 	say $FILEHANDLE "mkdir -p ".catfile($insample_directory, "original_fastq_files"), "\n";
 
 	print $FILEHANDLE "mv ";
-	print $FILEHANDLE catfile($insample_directory, $fastq_file)." ";
+	print $FILEHANDLE $infile_path." ";
 	say $FILEHANDLE catfile($insample_directory, "original_fastq_files", $fastq_file), "\n";
 
 	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
@@ -23711,11 +23744,11 @@ sub check_data_type {
 }
 
 
-sub compare_hash_keys {
+sub check_config_vs_definition_file {
 
-##compare_hash_keys
+##check_config_vs_definition_file
 
-##Function : Compare keys in two hashes
+##Function : Compare keys from config and definitions file
 ##Returns  : ""
 ##Arguments: $reference_href, $comparison_href
 ##         : $reference_href  => Reference hash {REF}
@@ -24085,15 +24118,6 @@ sub check_vt_for_references {
     my $log = Log::Log4perl->get_logger("MIP");
 
     my %seen;  #Avoid checking the same reference multiple times
-
-    foreach my $parameter_name (@$vt_references_ref) {
-
-	if (! exists($parameter_href->{$parameter_name})) {
-
-	    $log->fatal("Reference parameter flag: ".$parameter_name." for decompose_normalize_references does not exist as a parameter");
-	    exit 1;
-	}
-    }
 
     if ( ($vt_decompose) || ($vt_normalize) ) {
 
@@ -26528,6 +26552,86 @@ sub grep_remove {
     print $FILEHANDLE "-f ".$filter_file." ";
     print $FILEHANDLE $infile." ";
     say $FILEHANDLE "> ".$outfile, "\n";
+}
+
+
+sub check_key_exists_in_hash {
+
+##check_key_exists_in_hash
+
+##Function : Test if key from query hash exists truth hash
+##Returns  : ""
+##Arguments: $truth_href, $query_href, $parameter_name
+##         : $truth_href     => Truth hash
+##         : $query_href     => Query hash
+##         : $parameter_name => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $truth_href;
+    my $query_href;
+    my $parameter_name;
+
+    my $tmpl = { 
+	truth_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$truth_href},
+	query_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$query_href},
+	parameter_name => { required => 1, defined => 1, store => \$parameter_name},
+    };
+     
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
+    foreach my $key (keys %$query_href) {
+	
+	if (! exists($truth_href->{$key}) ) {
+	    
+	    $log->fatal($parameter_name." key '".$key."' - Does not exist as module program parameter in MIP");
+	    exit 1;
+	}
+    }
+}
+
+
+sub check_element_exists_in_hash {
+
+##check_element_exists_in_hash
+
+##Function : Test if element from query array exists truth hash
+##Returns  : ""
+##Arguments: $truth_href, $queryies, $parameter_name
+##         : $truth_href     => Truth hash
+##         : $queryies       => Query array
+##         : $parameter_name => Parameter name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $truth_href;
+    my $queryies;
+    my $parameter_name;
+
+    my $tmpl = { 
+	truth_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$truth_href},
+	queryies => { required => 1, defined => 1, default => [], strict_type => 1, store => \$queryies},
+	parameter_name => { required => 1, defined => 1, store => \$parameter_name},
+    };
+     
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
+    foreach my $element (@$queryies) {
+	    
+	if (! exists($truth_href->{$element}) ) {
+		
+	    $log->fatal($parameter_name." element '".$element."' - Does not exist as module program parameter in MIP");
+	    exit 1;
+	}
+    }
 }
 
 

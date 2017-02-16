@@ -87,6 +87,20 @@ config_file_analysis:
   default: 0
   type: path
   update_path: absolute_path
+module_time:
+  associated_program:
+   - mip
+  data_type: HASH
+  default:
+    psplit_fastq_file: 10
+  type: mip
+module_core_number:
+  associated_program:
+   - mip
+  data_type: HASH
+  default:
+    psplit_fastq_file: 4
+  type: mip
 supported_capture_kit:
   associated_program:
    - mip
