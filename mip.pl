@@ -77,6 +77,7 @@ BEGIN {
                -odd/--outdata_dir The data output directory (mandatory)
                -osd/--outscript_dir The script files (.sh) output directory (mandatory)
                -f/--family_id Group id of samples to be compared (defaults to "", (Ex: 1 for IDN 1-1-1A))
+               -sck/--supported_capture_kit Set the capture kit acronym shortcut in pedigree file
                -ped/--pedigree_file Meta data on samples (defaults to "")
                -hgr/--human_genome_reference Fasta file for the human genome reference (defaults to "GRCh37_homo_sapiens_-d5-.fasta;1000G decoy version 5")
                -ald/--outaligner_dir Setting which aligner out directory was used for alignment in previous analysis (defaults to "{outdata_dir}{outaligner_dir}")
@@ -367,18 +368,6 @@ my %file_info = (bwa_build_reference => "",
 		 human_genome_reference_file_endings => [".dict", ".fai"],  #Meta files
     );
 
-## Capture kit aliases supported from pedigree file.
-my %supported_capture_kit = ('nimblegen_seqcapezexome.v2' => "genome_reference_source_version_nimblegen_seqcapezexome_targets_-v2-.bed",
-			     'nimblegen_seqcapezexome.v3' => "genome_reference_source_version_nimblegen_seqcapezexome_targets_-v3-.bed",
-			     'agilent_sureselect.v2' => "genome_reference_source_version_agilent_sureselect_targets_-v2-.bed",
-			     'agilent_sureselect.v3' => "genome_reference_source_version_agilent_sureselect_targets_-v3-.bed",
-			     'agilent_sureselect.v4' => "genome_reference_source_version_agilent_sureselect_targets_-v4-.bed",
-			     'agilent_sureselect.v5' => "genome_reference_source_version_agilent_sureselect_targets_-v5-.bed",
-			     'agilent_sureselect_cre.v1' => "genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed",
-			     'agilent_sureselect_focusedexome.v1' => "genome_reference_source_version_agilent_sureselect_targets_focusedexome_-v1-.bed",
-			     'latest' => "genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed",
-    );
-
 
 ## Reference that should be decomposed and normalized using vt
 my @vt_references = ("gatk_realigner_indel_known_sites",
@@ -420,6 +409,7 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'odd|outdata_dir:s' => \$parameter{outdata_dir}{value},  #One dir above sample id, must supply whole path i.e. /proj/...
 	   'osd|outscript_dir:s' => \$parameter{outscript_dir}{value},   #One dir above sample id, must supply whole path i.e. /proj/...
 	   'f|family_id:s' => \$parameter{family_id}{value},  #Family group ID (Merged to same vcf file after GATK Base Recalibration)
+	   'sck|supported_capture_kit:s' => \%{ $parameter{supported_capture_kit}{value} },
 	   'ped|pedigree_file:s' => \$parameter{pedigree_file}{value},  #Pedigree file
 	   'hgr|human_genome_reference:s' => \$parameter{human_genome_reference}{value},  #Human genome reference
 	   'al|outaligner_dir:s' => \$parameter{outaligner_dir}{value},  #determining which aligner out data directory was used previously (if not specified)
@@ -703,7 +693,6 @@ foreach my $order_parameter_element (@order_parameters) {
 			     active_parameter_href => \%active_parameter,
 			     sample_info_href => \%sample_info,
 			     file_info_href => \%file_info,
-			     supported_capture_kit_href => \%supported_capture_kit,
 			     broadcasts_ref => \@broadcasts,
 			     associated_programs_ref => \@{ $parameter{$order_parameter_element}{associated_program} },
 			     parameter_name => $order_parameter_element,
@@ -764,7 +753,6 @@ foreach my $order_parameter_element (@order_parameters) {
 ## Retrieve logger object now that log_file has been set
 my $log = Log::Log4perl->get_logger("MIP");
 
-
 ###Checks
 
 ## Check Existance of files and directories
@@ -776,7 +764,6 @@ foreach my $parameter_name (keys %parameter) {
 			       active_parameter_href => \%active_parameter,
 			       sample_info_href => \%sample_info,
 			       file_info_href => \%file_info,
-			       supported_capture_kit_href => \%supported_capture_kit,
 			       annovar_table_href => \%annovar_table,
 			       broadcasts_ref => \@broadcasts,
 			       annovar_supported_table_names_ref => \@annovar_supported_table_names,
@@ -16671,12 +16658,11 @@ sub read_yaml_pedigree_file {
 
 ##Function : Reads family_id_pedigree file in YAML format. Checks for pedigree data for allowed entries and correct format. Add data to sample_info depending on user info.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $supported_capture_kit_href, $pedigree_href, $file_path, $family_id_ref
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $pedigree_href, $file_path, $family_id_ref
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The associated reference file endings {REF}
-##         : $supported_capture_kit_href => The supported capture kits hash {REF}
 ##         : $pedigree_href              => Pedigree hash {REF}
 ##         : $file_path                  => Pedigree file path
 ##         : $family_id_ref              => Family_id {RF}
@@ -16691,7 +16677,6 @@ sub read_yaml_pedigree_file {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $supported_capture_kit_href;
     my $pedigree_href;
     my $file_path;
 
@@ -16700,7 +16685,6 @@ sub read_yaml_pedigree_file {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	supported_capture_kit_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supported_capture_kit_href},
 	pedigree_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$pedigree_href},
 	file_path => { required => 1, defined => 1, strict_type => 1, store => \$file_path},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
@@ -16804,7 +16788,6 @@ sub read_yaml_pedigree_file {
 				      active_parameter_href => $active_parameter_href,
 				      sample_info_href => $sample_info_href,
 				      file_info_href => $file_info_href,
-				      supported_capture_kit_href => $supported_capture_kit_href,
 				      exom_target_bed_test_file_tracker_href => \%exom_target_bed_test_file_tracker,
 				      pedigree_sample_href => $pedigree_sample_href,
 				      user_supply_switch_href => \%user_supply_switch,
@@ -16822,7 +16805,6 @@ sub read_yaml_pedigree_file {
 					  active_parameter_href => $active_parameter_href,
 					  sample_info_href => $sample_info_href,
 					  file_info_href => $file_info_href,
-					  supported_capture_kit_href => $supported_capture_kit_href,
 					  exom_target_bed_test_file_tracker_href => \%exom_target_bed_test_file_tracker,
 					  pedigree_sample_href => $pedigree_sample_href,
 					  user_supply_switch_href => \%user_supply_switch,
@@ -18210,12 +18192,11 @@ sub add_to_active_parameter {
 
 ##Function : Checks and sets user input or default values to active_parameters.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $supported_capture_kit_href, $broadcasts_ref, $parameter_name, $associated_programs
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $broadcasts_ref, $parameter_name, $associated_programs
 ##         : $parameter_href             => Holds all parameters
 ##         : $active_parameter_href      => Holds all set parameter for analysis
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
-##         : $supported_capture_kit_href => The supported capture kits hash {REF}
 ##         : $broadcasts_ref             => Holds the parameters info for broadcasting later {REF}
 ##         : $parameter_name             => Parameter name
 ##         : $associated_programs        => The parameters program(s) {array, REF}
@@ -18230,7 +18211,6 @@ sub add_to_active_parameter {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $supported_capture_kit_href;
     my $broadcasts_ref;
     my $associated_programs_ref;
     my $parameter_name;
@@ -18240,7 +18220,6 @@ sub add_to_active_parameter {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	supported_capture_kit_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supported_capture_kit_href},
 	broadcasts_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$broadcasts_ref},
 	associated_programs_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$associated_programs_ref},
 	parameter_name => { required => 1, defined => 1, store => \$parameter_name},
@@ -18350,7 +18329,7 @@ sub add_to_active_parameter {
 
 			    ## Return a default capture kit as user supplied no info
 			    my $capture_kit = add_capture_kit({file_info_href => $file_info_href,
-							       supported_capture_kit_href => $supported_capture_kit_href,
+							       supported_capture_kit_href => $active_parameter_href->{supported_capture_kit},
 							       capture_kit => "latest",
 							      });
 			    $active_parameter_href->{$parameter_name}{$capture_kit} = join(",", @{ $active_parameter_href->{sample_ids} });
@@ -18421,7 +18400,6 @@ sub add_to_active_parameter {
 				     active_parameter_href => $active_parameter_href,
 				     sample_info_href => $sample_info_href,
 				     file_info_href => $file_info_href,
-				     supported_capture_kit_href => $supported_capture_kit_href,
 				     file_path => $active_parameter_href->{pedigree_file},
 				     pedigree_href => \%pedigree,
 				    });
@@ -18457,12 +18435,11 @@ sub check_parameter_files {
 
 ##Function : Checks that files/directories exists and if file_endings need to be built also updates SampleInfoHash information with information from pedigree
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $supported_capture_kit_href, $annovar_table_href, $broadcasts_ref, $annovar_supported_table_names_ref, $associated_programs_ref, $family_id_ref, $parameter_name $parameter_exists_check
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $annovar_table_href, $broadcasts_ref, $annovar_supported_table_names_ref, $associated_programs_ref, $family_id_ref, $parameter_name $parameter_exists_check
 ##         : $parameter_href                    => Holds all parameters
 ##         : $active_parameter_href             => Holds all set parameter for analysis
 ##         : $sample_info_href                  => Info on samples and family hash {REF}
 ##         : $file_info_href                    => The file_info hash {REF}
-##         : $supported_capture_kit_href        => The supported capture kits hash {REF}
 ##         : $annovar_table_href                => annovar_table_href {REF}
 ##         : $broadcasts_ref                    => Holds the parameters info for broadcasting later {REF}
 ##         : $annovar_supported_table_names_ref => The supported annovar reference names array {REF}
@@ -18481,7 +18458,6 @@ sub check_parameter_files {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $supported_capture_kit_href;
     my $broadcasts_ref;
     my $annovar_table_href;
     my $annovar_supported_table_names_ref;
@@ -18494,7 +18470,6 @@ sub check_parameter_files {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	supported_capture_kit_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supported_capture_kit_href},
 	broadcasts_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$broadcasts_ref},
 	annovar_table_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$annovar_table_href},
 	annovar_supported_table_names_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$annovar_supported_table_names_ref},
@@ -26180,12 +26155,11 @@ sub get_pedigree_sample_info {
 
 ##Function : Reformat pedigree keys to plink format and collect sample info to various hashes
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $supported_capture_kit_href, $exom_target_bed_test_file_tracker_href, $pedigree_sample_href, $reformatHashRef, $user_supply_switch_href, $sample_id
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $exom_target_bed_test_file_tracker_href, $pedigree_sample_href, $reformatHashRef, $user_supply_switch_href, $sample_id
 ##         : $parameter_href                         => The parameter hash {REF}
 ##         : $active_parameter_href                  => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href                       => Info on samples and family hash {REF}
 ##         : $file_info_href                         => The associated reference file endings {REF}
-##         : $supported_capture_kit_href             => The supported capture kits hash {REF}
 ##         : $exom_target_bed_test_file_tracker_href => Collect which sample_ids have used a certain capture_kit
 ##         : $pedigree_sample_href                   => YAML sample info hash {REF}
 ##         : $user_supply_switch_href                => The user supplied info switch {REF}
@@ -26198,7 +26172,6 @@ sub get_pedigree_sample_info {
     my $active_parameter_href;
     my $sample_info_href;
     my $file_info_href;
-    my $supported_capture_kit_href;
     my $exom_target_bed_test_file_tracker_href;
     my $pedigree_sample_href;
     my $user_supply_switch_href;
@@ -26209,7 +26182,6 @@ sub get_pedigree_sample_info {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	supported_capture_kit_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$supported_capture_kit_href},
 	exom_target_bed_test_file_tracker_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$exom_target_bed_test_file_tracker_href},
 	pedigree_sample_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$pedigree_sample_href},
 	user_supply_switch_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$user_supply_switch_href},
@@ -26291,10 +26263,11 @@ sub get_pedigree_sample_info {
 
 	## Return a capture kit depending on user info
 	my $exome_target_bed_file = add_capture_kit({file_info_href => $file_info_href,
-						     supported_capture_kit_href => $supported_capture_kit_href,
+						     supported_capture_kit_href => $active_parameter_href->{supported_capture_kit},
 						     capture_kit => $capture_kit,
 						     user_supplied_parameter_switch => $user_supply_switch_href->{exome_target_bed},
 						    });
+	
 	if($exome_target_bed_file) {
 
 	    push(@{ $exom_target_bed_test_file_tracker_href->{$exome_target_bed_file} }, $sample_id);
