@@ -19088,7 +19088,7 @@ sub program_prerequisites {
     if (@$source_environment_commands_ref) {
 
 	say $FILEHANDLE "##Activate environment";
-	say $FILEHANDLE join(' ', $source_environment_commands_ref), "\n";
+	say $FILEHANDLE join(' ', @{ $source_environment_commands_ref }), "\n";
     }
     if (defined($temp_directory)) {  #Not all programs need a temporary directory
 
