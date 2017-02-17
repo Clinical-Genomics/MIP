@@ -15568,9 +15568,10 @@ sub gzip_fastq {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = ceil(1.5*scalar( @{ $infile_href->{$sample_id} }));  #One full lane on Hiseq takes approx. 1.5 h for gzip to process, round up to nearest full hour.
 
-    my $core_number = 0;
+    ## Adjust according to number of infiles to process
+    my $time = $active_parameter_href->{module_time}{"p".$program_name} * scalar( @{ $infile_href->{$sample_id} });  #One full lane on Hiseq takes approx. 2 h for gzip to process
+    my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
 
     foreach my $infile (@{ $infile_lane_no_ending_href->{$sample_id} }) {
 
@@ -15602,6 +15603,8 @@ sub gzip_fastq {
     my $core_counter = 1;
     my $uncompressed_file_counter = 0;  #Used to print wait at the right times since infiles cannot be used (can be a mixture of .gz and .fast files)
 
+    ## Gzip
+    say $FILEHANDLE "## ".$program_name;
     say $FILEHANDLE "cd ".$indir_path_href->{$sample_id}, "\n";
 
     foreach my $infile (@{ $infile_href->{$sample_id} }) {
@@ -15611,7 +15614,7 @@ sub gzip_fastq {
 	    if ($uncompressed_file_counter == $core_counter * $active_parameter_href->{core_processor_number}) {  #Using only $active_parameter{core_processor_number} cores
 
 		say $FILEHANDLE "wait", "\n";
-		$core_counter=$core_counter+1;
+		$core_counter=$core_counter + 1;
 	    }
 
 	    print $FILEHANDLE "gzip ";
@@ -15695,7 +15698,6 @@ sub split_fastq_file {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = $active_parameter_href->{module_time}{"p".$program_name};
     my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
 
     foreach my $fastq_file (@{ $infile_href->{$$sample_id_ref} }) {
@@ -15708,7 +15710,7 @@ sub split_fastq_file {
 						 program_name => $program_name,
 						 program_directory => lc($program_name),
 						 core_number => $core_number,
-						 process_time => $time,
+						 process_time => $active_parameter_href->{module_time}{"p".$program_name},
 						 temp_directory => $$temp_directory_ref,
 						});
 
@@ -15748,15 +15750,15 @@ sub split_fastq_file {
 
 	## Decompress file and split
 	print $FILEHANDLE "unpigz ";
-	print $FILEHANDLE "-p ".$core_number." ";  #nr of threads
+	print $FILEHANDLE "-p ".$core_number." ";  #Nr of threads
 	print $FILEHANDLE "-c ";  #Write all processed output to stdout
 	print $FILEHANDLE $file_path." ";  #Infile
 	print $FILEHANDLE "| ";  #Pipe
 	print $FILEHANDLE "split ";
-	print $FILEHANDLE "-l ".($sequence_read_batch * 4)." ";  #put NUMBER lines per output file
+	print $FILEHANDLE "-l ".($sequence_read_batch * 4)." ";  #Put NUMBER lines per output file
 	print $FILEHANDLE "- ";  #STDIN
-	print $FILEHANDLE "-d ";  #use numeric suffixes instead of alphabetic
-	print $FILEHANDLE "-a 4 ";  #use suffixes of length N
+	print $FILEHANDLE "-d ";  #Use numeric suffixes instead of alphabetic
+	print $FILEHANDLE "-a 4 ";  #Use suffixes of length N
 	say $FILEHANDLE catfile($$temp_directory_ref, $file_prefix), "\n";
 
 	## Remove original files

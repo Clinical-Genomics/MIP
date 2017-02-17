@@ -93,6 +93,7 @@ module_time:
   data_type: HASH
   default:
     psplit_fastq_file: 10
+    pgzip_fastq: 2
   type: mip
 module_core_number:
   associated_program:
@@ -100,6 +101,7 @@ module_core_number:
   data_type: HASH
   default:
     psplit_fastq_file: 4
+    pgzip_fastq: 0
   type: mip
 supported_capture_kit:
   associated_program:
