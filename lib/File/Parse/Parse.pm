@@ -1,18 +1,32 @@
 package File::Parse::Parse;
 
+use strict;
+use warnings;
 use warnings qw( FATAL utf8 );
 use utf8;  #Allow unicode characters in this script
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
 
+BEGIN {
+    require Exporter;
+
+    # Set the version for version checking
+    our $VERSION = 1.00;
+
+    # Inherit from Exporter to export functions and variables
+    our @ISA = qw(Exporter);
+
+    # Functions and variables which are exported by default
+    our @EXPORT = qw();
+
+    # Functions and variables which can be optionally exported
+    our @EXPORT_OK = qw(find_absolute_path);
+
+}
+
 use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 use Cwd qw(abs_path);  #Import absolute path function
-
-use Exporter qw(import);
- 
-our @EXPORT_OK = ("find_absolute_path",
-    );
 
 
 sub find_absolute_path {
@@ -60,3 +74,6 @@ sub find_absolute_path {
     }
     return $path;
 }
+
+
+1;

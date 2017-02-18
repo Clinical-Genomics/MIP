@@ -1,4 +1,4 @@
-package Program::Wget;
+package Program::Gzip;
 
 use strict;
 use warnings;
@@ -20,7 +20,7 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(wget);
+    our @EXPORT_OK = qw(gzip);
 
 }
 
@@ -28,17 +28,19 @@ use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 
 
-sub wget {
+sub gzip {
 
-##wget
+##gzip
 
-##Function : Perl wrapper for writing wget recipe to $FILEHANDLE. Based on GNU Wget 1.12, a non-interactive network retriever.
+##Function : Perl wrapper for writing gzip recipe to $FILEHANDLE. Based on gzip 1.3.12.
 ##Returns  : ""
-##Arguments: $FILEHANDLE, $outfile_path, $url, $quiet, $verbose
+##Arguments: $FILEHANDLE, $stdout, $decompress, $infile_path, $outfile_path, $quiet, $verbose
 ##         : $FILEHANDLE   => Filehandle to write to
+##         : $stdout       => Write on standard output, keep original files unchanged
+##         : $decompress   => Decompress
+##         : $infile_path  => Infile path
 ##         : $outfile_path => Outfile path. Write documents to FILE 
-##         : $url          => Url to use for download
-##         : $quiet        => Quiet (no output)
+##         : $quiet        => Suppress all warnings
 ##         : $verbose      => Verbosity
 
     my ($arg_href) = @_;
@@ -49,24 +51,29 @@ sub wget {
 
     ## Flatten argument(s)
     my $FILEHANDLE;
+    my $stdout;
+    my $decompress;
+    my $infile_path;
     my $outfile_path;
-    my $url;
 
     my $tmpl = {
 	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	stdout => { strict_type => 1, store => \$stdout},
+	decompress => { strict_type => 1, store => \$decompress},
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
 	outfile_path => { strict_type => 1, store => \$outfile_path},
-	url => { required => 1, defined => 1, strict_type => 1, store => \$url},
 	quiet => { default => 0,
 		   strict_type => 1, store => \$quiet},
-	verbose => { default => 1,
+	verbose => { default => 0,
 		     strict_type => 1, store => \$verbose},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    ## Wget
-    print $FILEHANDLE "wget ";
+    ## Gzip
+    print $FILEHANDLE "gzip ";
 
+    ## Options
     if ($quiet) {
 
 	print $FILEHANDLE "--quiet ";
@@ -75,19 +82,22 @@ sub wget {
 
 	print $FILEHANDLE "--verbose ";
     }
-    else {
+    if ($decompress) {
 
-	print $FILEHANDLE "--no-verbose ";
+	print $FILEHANDLE "--decompress ";
     }
-    print $FILEHANDLE $url." ";
+    if ($stdout) {  #Write to stdout stream
 
+	print $FILEHANDLE "--stdout ";
+    }
+
+    ## FILE
+    print $FILEHANDLE $infile_path." ";
+
+    ## Outfile
     if ($outfile_path) {
 
-	print $FILEHANDLE "-O ".$outfile_path;  #Outfile
-    }
-    if ($outfile_path ne "-") { #Write to stdout stream
-
-	print $FILEHANDLE "\n\n";
+	print $FILEHANDLE "> ".$outfile_path;  #Outfile
     }
 }
 

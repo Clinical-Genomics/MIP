@@ -8,13 +8,25 @@ use utf8;  #Allow unicode characters in this script
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
 
+BEGIN {
+    require Exporter;
+
+    # Set the version for version checking
+    our $VERSION = 1.00;
+
+    # Inherit from Exporter to export functions and variables
+    our @ISA = qw(Exporter);
+
+    # Functions and variables which are exported by default
+    our @EXPORT = qw();
+
+    # Functions and variables which can be optionally exported
+    our @EXPORT_OK = qw(load_yaml write_yaml);
+    
+}
+
 use Params::Check qw[check allow last_error];
  
-use Exporter qw(import);
- 
-our @EXPORT_OK = ("load_yaml",
-		  "write_yaml",
-    );
 
 ## Third party module(s)
 use YAML;
@@ -81,4 +93,4 @@ sub write_yaml {
 }
 
 
-return 1;
+1;

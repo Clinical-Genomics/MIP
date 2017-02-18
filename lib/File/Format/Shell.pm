@@ -8,21 +8,34 @@ use utf8;  #Allow unicode characters in this script
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
 
+BEGIN {
+    require Exporter;
+
+    # Set the version for version checking
+    our $VERSION = 1.00;
+
+    # Inherit from Exporter to export functions and variables
+    our @ISA = qw(Exporter);
+
+    # Functions and variables which are exported by default
+    our @EXPORT = qw();
+
+    # Functions and variables which can be optionally exported
+    our @EXPORT_OK = ("create_bash_file",
+		      "create_housekeeping_function",
+		      "create_trap_function",
+		      "enable_trap",
+		      "clear_trap",
+		      "track_progress",
+	);
+}
+
 use Cwd;
 use File::Basename qw(dirname basename);
 use File::Spec::Functions qw(catfile catdir devnull);
 use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 
-use Exporter qw(import);
- 
-our @EXPORT_OK = ("create_bash_file",
-		  "create_housekeeping_function",
-		  "create_trap_function",
-		  "enable_trap",
-		  "clear_trap",
-		  "track_progress",
-    );
 
 sub create_bash_file {
 
@@ -330,4 +343,4 @@ sub track_progress {
 }
 
 
-return 1;
+1;

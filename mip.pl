@@ -41,6 +41,7 @@ use File::Format::Shell qw(create_housekeeping_function create_trap_function);
 use File::Format::Yaml qw(load_yaml write_yaml);
 use File::Parse::Parse qw(find_absolute_path);
 use MIP_log::Log4perl qw(initiate_logger);
+use Program::Gzip qw(gzip);
 use Script::Utils qw(help);
 
 our $USAGE;
@@ -3264,7 +3265,7 @@ sub endvariantannotationblock {
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
 	    $xargs_file_counter = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 							      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-							      files_ref => $contigs_size_ordered_ref,
+							      contigs_ref => $contigs_size_ordered_ref,
 							      file_name => $file_name,
 							      program_info_path => $program_info_path,
 							      core_number => $core_number,
@@ -3696,7 +3697,7 @@ sub rankvariant {
 	    say $FILEHANDLE "## Copy file from temporary directory";
 	    ($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
 										  XARGSFILEHANDLE => $XARGSFILEHANDLE,
-										  files_ref => \@contigs_size_ordered,
+										  contigs_ref => \@contigs_size_ordered,
 										  file_name =>$file_name,
 										  program_info_path => $program_info_path,
 										  core_number => $active_parameter_href->{core_processor_number},
@@ -11310,11 +11311,14 @@ sub manta {
     print $FILEHANDLE catfile($$temp_directory_ref, "runWorkflow.py")." ";
     say $FILEHANDLE "--mode local ", "\n";
 
-    print $FILEHANDLE "gzip ";
-    print $FILEHANDLE "-d ";
-    print $FILEHANDLE "-c ";
-    print $FILEHANDLE catfile($$temp_directory_ref, "results", "variants", "diploidSV.vcf.gz")." ";
-    say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag."_".$call_type.".vcf"), "\n";
+    ## Perl wrapper for writing gzip recipe to $FILEHANDLE
+    Program::Gzip::gzip({decompress => 1,
+			 stdout => 1,
+			 infile_path => catfile($$temp_directory_ref, "results", "variants", "diploidSV.vcf.gz"),
+			 outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag."_".$call_type.".vcf"),
+			 FILEHANDLE => $FILEHANDLE,
+			});
+    say $FILEHANDLE "\n";
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
@@ -11428,6 +11432,9 @@ sub tiddit {
 								 temp_directory => $$temp_directory_ref
 								});
 
+    ## Add merged infile name after merging all BAM files per sample_id
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
+
     ## Assign directories
     my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref, $program_outdirectory_name);
@@ -11436,17 +11443,8 @@ sub tiddit {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
-
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
-
-    my @tiddit_types = ("intra", "inter");
-    my $perl_add_contigs = q?perl -nae '{print "##contig=<ID=".$F[0].",length=".$F[1].">", "\n"}'?;
-
-    ## Add contigs to vcfheader
-    print $FILEHANDLE $perl_add_contigs." ";
-    print $FILEHANDLE $active_parameter_href->{human_genome_reference}.".fai "; #Reference fai file
-    say $FILEHANDLE "> ".catfile($$temp_directory_ref, "contig_header.txt")." ";
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile.$infile_tag);
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $infile.$outfile_tag);
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -11460,43 +11458,18 @@ sub tiddit {
     say $FILEHANDLE "## Tiddit";
     print $FILEHANDLE "TIDDIT ";
     print $FILEHANDLE "--sv ";
-    print $FILEHANDLE "-b ".catfile($$temp_directory_ref, $infile.$infile_tag.".bam")." ";  #Infile
+    print $FILEHANDLE "-b ".$file_path_no_ending.".bam ";  #Infile
     print $FILEHANDLE "-p ".$active_parameter_href->{tiddit_minimum_supporting_pairs}." ";
-    say $FILEHANDLE "-o ".catfile($$temp_directory_ref, $infile.$outfile_tag)." ";
-
-    foreach my $sv_type (@tiddit_types) {
-
-	##Add contigs to header
-	print $FILEHANDLE "bcftools annotate ";
-	print $FILEHANDLE "-h ".catfile($$temp_directory_ref, "contig_header.txt")." ";
-	print $FILEHANDLE catfile($$temp_directory_ref, $infile.$outfile_tag."_".$sv_type."_chr_events.vcf")." ";
-	say $FILEHANDLE "> ".catfile($$temp_directory_ref, $infile.$outfile_tag."_".$sv_type."_contig_header.vcf"), "\n";
-    }
-
-    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
-    concatenate_variants({active_parameter_href => $active_parameter_href,
-			  FILEHANDLE => $FILEHANDLE,
-			  elements_ref => \@tiddit_types,
-			  infile_prefix => catfile($$temp_directory_ref, $infile.$outfile_tag."_"),
-			  infile_postfix => "_contig_header.vcf",
-			  outfile => catfile($$temp_directory_ref, $infile.$outfile_tag."_contig_header_concat.vcf"),
-			 });
-
-    ## Writes sbatch code to supplied filehandle to sort variants in vcf format
-    sort_vcf({active_parameter_href => $active_parameter_href,
-	      FILEHANDLE => $FILEHANDLE,
-	      sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict"),
-	      infile => catfile($$temp_directory_ref, $infile.$outfile_tag."_contig_header_concat.vcf"),
-	      outfile => catfile($$temp_directory_ref, $infile.$outfile_tag.".vcf")." ",
-	     });
+    say $FILEHANDLE "-o ".$outfile_path_no_ending, "\n";
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile.$outfile_tag.".vcf*"),
+    migrate_file_from_temp({temp_path => $outfile_path_no_ending.".vcf*",
 			    file_path => $outsample_directory,
 			    FILEHANDLE => $FILEHANDLE,
 			   });
     say $FILEHANDLE "wait", "\n";
+
     close($FILEHANDLE);
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
@@ -15617,8 +15590,11 @@ sub gzip_fastq {
 		$core_counter=$core_counter + 1;
 	    }
 
-	    print $FILEHANDLE "gzip ";
-	    say $FILEHANDLE catfile($insample_directory, $infile)." &\n";  #InFile
+	    ## Perl wrapper for writing gzip recipe to $FILEHANDLE
+	    Program::Gzip::gzip({infile_path => catfile($insample_directory, $infile),
+				 FILEHANDLE => $FILEHANDLE,
+				});
+	    say $FILEHANDLE "&";
 	    $uncompressed_file_counter++;
 	    $infile .= ".gz";  #Add ".gz" to original fastq ending, since this will execute before fastQC and bwa.
 	}
@@ -16564,9 +16540,12 @@ sub build_human_genome_prerequisites {
 
 	$log->warn("Will try to decompres ".$$human_genome_reference_ref." before executing ".$program."\n");
 
-	print $FILEHANDLE "gzip ";
-	print $FILEHANDLE "-d ";  #Decompress
-	say $FILEHANDLE $$human_genome_reference_ref, "\n";
+	## Perl wrapper for writing gzip recipe to $FILEHANDLE
+	Program::Gzip::gzip({decompress => 1,
+			     infile_path => $$human_genome_reference_ref,
+			     FILEHANDLE => $FILEHANDLE,
+			    });
+	say $FILEHANDLE "\n";
 
 	$$human_genome_reference_ref =~ s/.fasta.gz/.fasta/g;  #Replace the .fasta.gz ending with .fasta since this will execute before the analysis, hence changing the original file name ending from ".fastq" to ".fastq.gz".
 	$log->info("Set human_genome_reference to: ".$$human_genome_reference_ref, "\n");

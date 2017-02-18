@@ -8,13 +8,25 @@ use utf8;  #Allow unicode characters in this script
 use open qw( :encoding(UTF-8) :std );
 use charnames qw( :full :short );
 
+BEGIN {
+    require Exporter;
+
+    # Set the version for version checking
+    our $VERSION = 1.00;
+
+    # Inherit from Exporter to export functions and variables
+    our @ISA = qw(Exporter);
+
+    # Functions and variables which are exported by default
+    our @EXPORT = qw();
+
+    # Functions and variables which can be optionally exported
+    our @EXPORT_OK = qw(initiate_logger create_log4perl_congfig);
+
+}
+
 use Params::Check qw[check allow last_error];
- 
-use Exporter qw(import);
- 
-our @EXPORT_OK = ("initiate_logger",
-		  "create_log4perl_congfig",
-    );
+$Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 
 ## Third party module(s)
 use Log::Log4perl;
@@ -103,3 +115,5 @@ sub create_log4perl_congfig {
     return $config;
 }
 
+
+1;
