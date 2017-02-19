@@ -25,7 +25,7 @@ use File::Format::Shell qw(create_bash_file);
 use File::Format::Yaml qw(load_yaml);
 use File::Parse::Parse qw(find_absolute_path);
 use MIP_log::Log4perl qw(initiate_logger);
-use Program::Wget qw(wget);
+use Program::Download qw(wget);
 use Script::Utils qw(help set_default_array_parameters);
 
 our $USAGE;
@@ -37,7 +37,9 @@ BEGIN {
 		   "YAML",
 		   "File::Format::Yaml",
 		   "Log::Log4perl",
+		   "Program::Download",
 		   "MIP_log::Log4perl",
+		   "Script::Utils",
 	);
 
     ## Evaluate that all modules required are installed
@@ -307,12 +309,12 @@ sub download {
 
     if($program eq "wget") {
 
-	Program::Wget::wget({url => $url,
-			     FILEHANDLE => $FILEHANDLE,
-			     quiet => $quiet,
-			     verbose => $verbose,
-			     outfile_path => $outfile_path,
-			    });
+	Program::Download::wget({url => $url,
+				 FILEHANDLE => $FILEHANDLE,
+				 quiet => $quiet,
+				 verbose => $verbose,
+				 outfile_path => $outfile_path,
+				});
     }
 }
 

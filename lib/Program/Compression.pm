@@ -1,4 +1,4 @@
-package Program::Gzip;
+package Program::Compression;
 
 use strict;
 use warnings;

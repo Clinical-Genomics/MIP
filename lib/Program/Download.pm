@@ -1,4 +1,4 @@
-package Program::Wget;
+package Program::Download;
 
 use strict;
 use warnings;

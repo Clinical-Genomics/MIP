@@ -20,7 +20,7 @@ use File::Spec::Functions qw(catfile catdir devnull);
 ##MIPs lib/
 use lib catdir($Bin, "lib");  #Add MIPs internal lib
 use File::Format::Shell qw(create_bash_file);
-use Program::Wget qw(wget);
+use Program::Download qw(wget);
 use Script::Utils qw(help set_default_array_parameters);
 
 our $USAGE;
@@ -882,12 +882,12 @@ sub install_perl_cpnam {
 
     ## Download
     print $FILEHANDLE "## Download perl\n";
-    Program::Wget::wget({url => "http://www.cpan.org/src/5.0/perl-".$parameter_href->{perl_version}.".tar.gz",
-			 FILEHANDLE => $FILEHANDLE,
-			 quiet => $parameter_href->{quiet},
-			 verbose => $parameter_href->{verbose},
-			 outfile_path => "perl-".$parameter_href->{perl_version}.".tar.gz",
-			});
+    Program::Download::wget({url => "http://www.cpan.org/src/5.0/perl-".$parameter_href->{perl_version}.".tar.gz",
+			     FILEHANDLE => $FILEHANDLE,
+			     quiet => $parameter_href->{quiet},
+			     verbose => $parameter_href->{verbose},
+			     outfile_path => "perl-".$parameter_href->{perl_version}.".tar.gz",
+			    });
 
     ## Extract
     print $FILEHANDLE "## Extract\n";
@@ -937,12 +937,12 @@ sub install_perl_cpnam {
 
     ## Install perl modules via cpanm
     print $FILEHANDLE "## Install cpanm\n";
-    Program::Wget::wget({url => "http://cpanmin.us",
+    Program::Download::wget({url => "http://cpanmin.us",
 			 FILEHANDLE => $FILEHANDLE,
-			 quiet => $parameter_href->{quiet},
-			 verbose => $parameter_href->{verbose},
-			 outfile_path => "-",
-			});
+			     quiet => $parameter_href->{quiet},
+			     verbose => $parameter_href->{verbose},
+			     outfile_path => "-",
+			    });
     print $FILEHANDLE q? | perl - -l $HOME/perl-?.$parameter_href->{perl_version}.q?/bin App::cpanminus --local-lib=~/perl-?.$parameter_href->{perl_version}.q?/ local::lib ?;
     print $FILEHANDLE "\n\n";
 
@@ -1089,12 +1089,12 @@ sub picardtools {
 
     ## Download
     print $FILEHANDLE "## Download Picard\n";
-    Program::Wget::wget({url => "https://github.com/broadinstitute/picard/releases/download/".$parameter_href->{picardtools}."/picard-tools-".$parameter_href->{picardtools}.".zip",
-			 FILEHANDLE => $FILEHANDLE,
-			 quiet => $parameter_href->{quiet},
-			 verbose => $parameter_href->{verbose},
-			 outfile_path => "picard-tools-".$parameter_href->{picardtools}.".zip",
-			});
+    Program::Download::wget({url => "https://github.com/broadinstitute/picard/releases/download/".$parameter_href->{picardtools}."/picard-tools-".$parameter_href->{picardtools}.".zip",
+			     FILEHANDLE => $FILEHANDLE,
+			     quiet => $parameter_href->{quiet},
+			     verbose => $parameter_href->{verbose},
+			     outfile_path => "picard-tools-".$parameter_href->{picardtools}.".zip",
+			    });
 
     ## Extract
     print $FILEHANDLE "## Extract\n";
@@ -1168,12 +1168,12 @@ sub sambamba {
 
     ## Download
     print $FILEHANDLE "## Download sambamba release\n";
-    Program::Wget::wget({url => "https://github.com/lomereiter/sambamba/releases/download/v?.$parameter_href->{sambamba}.q?/sambamba_v?.$parameter_href->{sambamba}.q?_linux.tar.bz2",
-			 FILEHANDLE => $FILEHANDLE,
-			 quiet => $parameter_href->{quiet},
-			 verbose => $parameter_href->{verbose},
-			 outfile_path => "sambamba_v".$parameter_href->{sambamba}."_linux.tar.bz2",
-			});
+    Program::Download::wget({url => "https://github.com/lomereiter/sambamba/releases/download/v?.$parameter_href->{sambamba}.q?/sambamba_v?.$parameter_href->{sambamba}.q?_linux.tar.bz2",
+			     FILEHANDLE => $FILEHANDLE,
+			     quiet => $parameter_href->{quiet},
+			     verbose => $parameter_href->{verbose},
+			     outfile_path => "sambamba_v".$parameter_href->{sambamba}."_linux.tar.bz2",
+			    });
 
     ## Decompress
     print $FILEHANDLE "## Decompress sambamba file\n";
@@ -1256,12 +1256,12 @@ sub vcftools {
 
     ## Download
     print $FILEHANDLE "## Download vcftools\n";
-    Program::Wget::wget({url => "https://github.com/vcftools/vcftools/releases/download/v".$parameter_href->{vcftools}."/vcftools-".$parameter_href->{vcftools}.".tar.gz",
-			 FILEHANDLE => $FILEHANDLE,
-			 quiet => $parameter_href->{quiet},
-			 verbose => $parameter_href->{verbose},
-			 outfile_path => "vcftools-".$parameter_href->{vcftools}.".tar.gz",
-			});
+    Program::Download::wget({url => "https://github.com/vcftools/vcftools/releases/download/v".$parameter_href->{vcftools}."/vcftools-".$parameter_href->{vcftools}.".tar.gz",
+			     FILEHANDLE => $FILEHANDLE,
+			     quiet => $parameter_href->{quiet},
+			     verbose => $parameter_href->{verbose},
+			     outfile_path => "vcftools-".$parameter_href->{vcftools}.".tar.gz",
+			    });
 
     ## Extract
     print $FILEHANDLE "## Extract\n";
@@ -1347,12 +1347,12 @@ sub bedtools {
 
     ## Download
     print $FILEHANDLE "## Download bedtools\n";
-    Program::Wget::wget({url => "https://github.com/arq5x/bedtools".$bedtools_main_version."/releases/download/v".$parameter_href->{bedtools}."/bedtools-".$parameter_href->{bedtools}.".tar.gz",
-			 FILEHANDLE => $FILEHANDLE,
-			 quiet => $parameter_href->{quiet},
-			 verbose => $parameter_href->{verbose},
-			 outfile_path => "bedtools-".$parameter_href->{bedtools}.".tar.gz",
-			});
+    Program::Download::wget({url => "https://github.com/arq5x/bedtools".$bedtools_main_version."/releases/download/v".$parameter_href->{bedtools}."/bedtools-".$parameter_href->{bedtools}.".tar.gz",
+			     FILEHANDLE => $FILEHANDLE,
+			     quiet => $parameter_href->{quiet},
+			     verbose => $parameter_href->{verbose},
+			     outfile_path => "bedtools-".$parameter_href->{bedtools}.".tar.gz",
+			    });
 
     ## Extract
     print $FILEHANDLE "## Extract\n";
@@ -1492,13 +1492,13 @@ sub plink2 {
 
     ## Download
     print $FILEHANDLE "## Download Plink\n";
-    Program::Wget::wget({url => "https://www.cog-genomics.org/static/bin/plink".$parameter_href->{plink2}."/plink_linux_x86_64.zip",
-			 FILEHANDLE => $FILEHANDLE,
-			 quiet => $parameter_href->{quiet},
-			 verbose => $parameter_href->{verbose},
-			 outfile_path => "plink-".$parameter_href->{plink2}."-x86_64.zip",
-			});
-
+    Program::Download::wget({url => "https://www.cog-genomics.org/static/bin/plink".$parameter_href->{plink2}."/plink_linux_x86_64.zip",
+			     FILEHANDLE => $FILEHANDLE,
+			     quiet => $parameter_href->{quiet},
+			     verbose => $parameter_href->{verbose},
+			     outfile_path => "plink-".$parameter_href->{plink2}."-x86_64.zip",
+			    });
+    
     ## Extract
     print $FILEHANDLE "## Extract\n";
     print $FILEHANDLE "unzip plink-".$parameter_href->{plink2}."-x86_64.zip";
@@ -1559,13 +1559,13 @@ sub snpeff {
 
     ## Download
     print $FILEHANDLE "## Download snpeff\n";
-    Program::Wget::wget({url => "http://sourceforge.net/projects/snpeff/files/snpEff_".$parameter_href->{snpeff}."_core.zip/download",
-			 FILEHANDLE => $FILEHANDLE,
-			 quiet => $parameter_href->{quiet},
-			 verbose => $parameter_href->{verbose},
-			 outfile_path => "snpEff_".$parameter_href->{snpeff}."_core.zip",
+    Program::Download::wget({url => "http://sourceforge.net/projects/snpeff/files/snpEff_".$parameter_href->{snpeff}."_core.zip/download",
+			     FILEHANDLE => $FILEHANDLE,
+			     quiet => $parameter_href->{quiet},
+			     verbose => $parameter_href->{verbose},
+			     outfile_path => "snpEff_".$parameter_href->{snpeff}."_core.zip",
 			});
-
+    
     ## Extract
     print $FILEHANDLE "## Extract\n";
     print $FILEHANDLE "unzip snpEff_".$parameter_href->{snpeff}."_core.zip";
@@ -1699,12 +1699,12 @@ sub varianteffectpredictor {
 
     ## Download
     print $FILEHANDLE "## Download VEP\n";
-    Program::Wget::wget({url => "https://github.com/Ensembl/ensembl-tools/archive/release/".$parameter_href->{varianteffectpredictor}.".zip",
-			 FILEHANDLE => $FILEHANDLE,
-			 quiet => $parameter_href->{quiet},
-			 verbose => $parameter_href->{verbose},
-			 outfile_path => "VariantEffectPredictor-".$parameter_href->{varianteffectpredictor}.".zip",
-			});
+    Program::Download::wget({url => "https://github.com/Ensembl/ensembl-tools/archive/release/".$parameter_href->{varianteffectpredictor}.".zip",
+			     FILEHANDLE => $FILEHANDLE,
+			     quiet => $parameter_href->{quiet},
+			     verbose => $parameter_href->{verbose},
+			     outfile_path => "VariantEffectPredictor-".$parameter_href->{varianteffectpredictor}.".zip",
+			    });
 
     ## Extract
     print $FILEHANDLE "## Extract\n";
@@ -1758,45 +1758,45 @@ sub varianteffectpredictor {
 
 	##Add LofTool required text file
 	print $FILEHANDLE "##Add LofTool required text file\n";
-	Program::Wget::wget({url => "https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.txt",
-			     FILEHANDLE => $FILEHANDLE,
-			     quiet => $parameter_href->{quiet},
-			     verbose => $parameter_href->{verbose},
-			     outfile_path => q?$HOME/.vep/Plugins/LoFtool_scores.txt?,
-			    });
+	Program::Download::wget({url => "https://raw.githubusercontent.com/Ensembl/VEP_plugins/master/LoFtool_scores.txt",
+				 FILEHANDLE => $FILEHANDLE,
+				 quiet => $parameter_href->{quiet},
+				 verbose => $parameter_href->{verbose},
+				 outfile_path => q?$HOME/.vep/Plugins/LoFtool_scores.txt?,
+				});
     }
 
     if ( defined($parameter{vep_plugin}) && ($parameter{vep_plugin}=~/Lof/) ) {
 
 	## Add Lof required perl splice script
 	print $FILEHANDLE "##Add Lof required perl splice script\n";
-	Program::Wget::wget({url => "https://raw.githubusercontent.com/konradjk/loftee/master/splice_module.pl",
-			     FILEHANDLE => $FILEHANDLE,
+	Program::Download::wget({url => "https://raw.githubusercontent.com/konradjk/loftee/master/splice_module.pl",
+				 FILEHANDLE => $FILEHANDLE,
 			     quiet => $parameter_href->{quiet},
-			     verbose => $parameter_href->{verbose},
-			     outfile_path => q?$HOME/.vep/Plugins/splice_module.pl?,
-			    });
-
+				 verbose => $parameter_href->{verbose},
+				 outfile_path => q?$HOME/.vep/Plugins/splice_module.pl?,
+				});
+	
 	## Add Lof optional human_ancestor_fa
 	print $FILEHANDLE "##Add Lof optional human_ancestor_fa\n";
-	Program::Wget::wget({url => "https://s3.amazonaws.com/bcbio_nextgen/human_ancestor.fa.gz",
-			     FILEHANDLE => $FILEHANDLE,
-			     quiet => $parameter_href->{quiet},
-			     verbose => $parameter_href->{verbose},
-			     outfile_path => catfile($parameter_href->{vep_cache_dir}, "human_ancestor.fa.gz"),
-			    });
+	Program::Download::wget({url => "https://s3.amazonaws.com/bcbio_nextgen/human_ancestor.fa.gz",
+				 FILEHANDLE => $FILEHANDLE,
+				 quiet => $parameter_href->{quiet},
+				 verbose => $parameter_href->{verbose},
+				 outfile_path => catfile($parameter_href->{vep_cache_dir}, "human_ancestor.fa.gz"),
+				});
 
 	## Uncompress
 	print $FILEHANDLE "bgzip -d ".catfile($parameter_href->{vep_cache_dir}, "human_ancestor.fa.gz")." ";
 	print $FILEHANDLE "\n\n";
 
 	## Add Lof optional human_ancestor_fa
-	Program::Wget::wget({url => "https://s3.amazonaws.com/bcbio_nextgen/human_ancestor.fa.gz.fai",
-			     FILEHANDLE => $FILEHANDLE,
-			     quiet => $parameter_href->{quiet},
-			     verbose => $parameter_href->{verbose},
-			     outfile_path => catfile($parameter_href->{vep_cache_dir}, "human_ancestor.fa.fai"),
-			    });
+	Program::Download::wget({url => "https://s3.amazonaws.com/bcbio_nextgen/human_ancestor.fa.gz.fai",
+				 FILEHANDLE => $FILEHANDLE,
+				 quiet => $parameter_href->{quiet},
+				 verbose => $parameter_href->{verbose},
+				 outfile_path => catfile($parameter_href->{vep_cache_dir}, "human_ancestor.fa.fai"),
+				});
     }
 
     ## Clean up
@@ -1884,12 +1884,12 @@ sub cnvnator {
 
     ## Download
     print $FILEHANDLE "## Download Root\n";
-    Program::Wget::wget({url => "https://root.cern.ch/download/".$parameter{cnvnator_root_binary}, #root_v5.34.34.Linux-slc6-x86_64-gcc4.4.tar.gz", #Currently hardcoded
-			 FILEHANDLE => $FILEHANDLE,
-			 quiet => $parameter_href->{quiet},
-			 verbose => $parameter_href->{verbose},
-			 outfile_path => $parameter{cnvnator_root_binary},
-			});
+    Program::Download::wget({url => "https://root.cern.ch/download/".$parameter{cnvnator_root_binary}, #root_v5.34.34.Linux-slc6-x86_64-gcc4.4.tar.gz", #Currently hardcoded
+			     FILEHANDLE => $FILEHANDLE,
+			     quiet => $parameter_href->{quiet},
+			     verbose => $parameter_href->{verbose},
+			     outfile_path => $parameter{cnvnator_root_binary},
+			    });
 
     ## Extract
     print $FILEHANDLE "## Extract\n";
@@ -1927,12 +1927,12 @@ sub cnvnator {
 
     ## Download
     print $FILEHANDLE "## Download CNVNator\n";
-    Program::Wget::wget({url => "https://github.com/abyzovlab/CNVnator/releases/download/v".$parameter_href->{cnvnator}."/CNVnator_v".$parameter_href->{cnvnator}.".zip",
-			 FILEHANDLE => $FILEHANDLE,
-			 quiet => $parameter_href->{quiet},
-			 verbose => $parameter_href->{verbose},
-			 outfile_path => "CNVnator_v".$parameter_href->{cnvnator}.".zip",
-			});
+    Program::Download::wget({url => "https://github.com/abyzovlab/CNVnator/releases/download/v".$parameter_href->{cnvnator}."/CNVnator_v".$parameter_href->{cnvnator}.".zip",
+			     FILEHANDLE => $FILEHANDLE,
+			     quiet => $parameter_href->{quiet},
+			     verbose => $parameter_href->{verbose},
+			     outfile_path => "CNVnator_v".$parameter_href->{cnvnator}.".zip",
+			    });
 
     ## Extract
     print $FILEHANDLE "## Extract\n";
@@ -2033,12 +2033,12 @@ sub tiddit {
 
     ## Download
     print $FILEHANDLE "## Download Tiddit\n";
-    Program::Wget::wget({url => "https://github.com/SciLifeLab/TIDDIT/archive/".$parameter_href->{tiddit}.".zip",
-			 FILEHANDLE => $FILEHANDLE,
-			 quiet => $parameter_href->{quiet},
-			 verbose => $parameter_href->{verbose},
-			 outfile_path => "TIDDIT-".$parameter_href->{tiddit}.".zip",
-			});
+    Program::Download::wget({url => "https://github.com/SciLifeLab/TIDDIT/archive/".$parameter_href->{tiddit}.".zip",
+			     FILEHANDLE => $FILEHANDLE,
+			     quiet => $parameter_href->{quiet},
+			     verbose => $parameter_href->{verbose},
+			     outfile_path => "TIDDIT-".$parameter_href->{tiddit}.".zip",
+			    });
 
     ## Extract
     print $FILEHANDLE "## Extract\n";
@@ -2235,12 +2235,12 @@ sub rhocall {
 
     ## Downloads files
     print $FILEHANDLE "## Download rhocall\n";
-    Program::Wget::wget({url => "https://github.com/dnil/rhocall/archive/".$parameter_href->{rhocall}.".zip",
-			 FILEHANDLE => $FILEHANDLE,
-			 quiet => $parameter_href->{quiet},
-			 verbose => $parameter_href->{verbose},
-			 outfile_path => "rhocall-".$parameter_href->{rhocall}.".zip",
-			});
+    Program::Download::wget({url => "https://github.com/dnil/rhocall/archive/".$parameter_href->{rhocall}.".zip",
+			     FILEHANDLE => $FILEHANDLE,
+			     quiet => $parameter_href->{quiet},
+			     verbose => $parameter_href->{verbose},
+			     outfile_path => "rhocall-".$parameter_href->{rhocall}.".zip",
+			    });
 
     ## Extract
     print $FILEHANDLE "## Extract\n";

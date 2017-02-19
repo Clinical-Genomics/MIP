@@ -41,7 +41,7 @@ use File::Format::Shell qw(create_housekeeping_function create_trap_function);
 use File::Format::Yaml qw(load_yaml write_yaml);
 use File::Parse::Parse qw(find_absolute_path);
 use MIP_log::Log4perl qw(initiate_logger);
-use Program::Gzip qw(gzip);
+use Program::Compression qw(gzip);
 use Script::Utils qw(help);
 
 our $USAGE;
@@ -11312,12 +11312,12 @@ sub manta {
     say $FILEHANDLE "--mode local ", "\n";
 
     ## Perl wrapper for writing gzip recipe to $FILEHANDLE
-    Program::Gzip::gzip({decompress => 1,
-			 stdout => 1,
-			 infile_path => catfile($$temp_directory_ref, "results", "variants", "diploidSV.vcf.gz"),
-			 outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag."_".$call_type.".vcf"),
-			 FILEHANDLE => $FILEHANDLE,
-			});
+    Program::Compression::gzip({decompress => 1,
+				stdout => 1,
+				infile_path => catfile($$temp_directory_ref, "results", "variants", "diploidSV.vcf.gz"),
+				outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag."_".$call_type.".vcf"),
+				FILEHANDLE => $FILEHANDLE,
+			       });
     say $FILEHANDLE "\n";
 
     ## Copies file from temporary directory.
@@ -15591,9 +15591,9 @@ sub gzip_fastq {
 	    }
 
 	    ## Perl wrapper for writing gzip recipe to $FILEHANDLE
-	    Program::Gzip::gzip({infile_path => catfile($insample_directory, $infile),
-				 FILEHANDLE => $FILEHANDLE,
-				});
+	    Program::Compression::gzip({infile_path => catfile($insample_directory, $infile),
+					FILEHANDLE => $FILEHANDLE,
+				       });
 	    say $FILEHANDLE "&";
 	    $uncompressed_file_counter++;
 	    $infile .= ".gz";  #Add ".gz" to original fastq ending, since this will execute before fastQC and bwa.
@@ -16191,7 +16191,7 @@ sub build_ptchs_metric_prerequisites {
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
 			dependencies => "no_dependency_add_to_case",
-			path => "MIP",
+			path => "MAIN",
 			sbatch_file_name => $file_name
 		       });
 	}
@@ -16380,7 +16380,7 @@ sub check_build_human_genome_prerequisites {
 						  outaligner_dir_ref => \$active_parameter_href->{outaligner_dir},
 						  program => $program_name,
 						 });
-		last;#Will handle all metafiles build within sbatch script
+		last; #Will handle all metafiles build within sbatch script
 	    }
 	}
     }
@@ -16499,7 +16499,7 @@ sub build_human_genome_prerequisites {
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	program => { required => 1, defined => 1, strict_type => 1, store => \$program},
-	FILEHANDLE => { store => \$FILEHANDLE},
+	FILEHANDLE => { strict_type => 1, store => \$FILEHANDLE},
 	random_integer => { strict_type => 1, store => \$random_integer},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
 			   strict_type => 1, store => \$family_id_ref},
@@ -16517,9 +16517,11 @@ sub build_human_genome_prerequisites {
     my $log = Log::Log4perl->get_logger("MIP");
 
     my $file_name;
+    my $submit_switch;
 
     unless(defined($FILEHANDLE)) {  #No supplied FILEHANDLE i.e. create new sbatch script
 
+	$submit_switch = 1;
 	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 	$random_integer = int(rand(10000));  #Generate a random integer between 0-10,000.
 
@@ -16541,10 +16543,10 @@ sub build_human_genome_prerequisites {
 	$log->warn("Will try to decompres ".$$human_genome_reference_ref." before executing ".$program."\n");
 
 	## Perl wrapper for writing gzip recipe to $FILEHANDLE
-	Program::Gzip::gzip({decompress => 1,
-			     infile_path => $$human_genome_reference_ref,
-			     FILEHANDLE => $FILEHANDLE,
-			    });
+	Program::Compression::gzip({decompress => 1,
+				    infile_path => $$human_genome_reference_ref,
+				    FILEHANDLE => $FILEHANDLE,
+				   });
 	say $FILEHANDLE "\n";
 
 	$$human_genome_reference_ref =~ s/.fasta.gz/.fasta/g;  #Replace the .fasta.gz ending with .fasta since this will execute before the analysis, hence changing the original file name ending from ".fastq" to ".fastq.gz".
@@ -16625,7 +16627,7 @@ sub build_human_genome_prerequisites {
 	    $parameter_href->{"human_genome_reference".$file_ending}{build_file} = 0;  #Only create once
 	}
     }
-    unless(defined($FILEHANDLE)) { #Unless FILEHANDLE was supplied close it and submit
+    if($submit_switch) { #Unless FILEHANDLE was supplied close it and submit
 
 	close($FILEHANDLE);
 
@@ -16636,7 +16638,7 @@ sub build_human_genome_prerequisites {
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
 			dependencies => "no_dependency_add_to_case",
-			path => "MIP",
+			path => "MAIN",
 			sbatch_file_name => $file_name
 		       });
 	}
@@ -21302,7 +21304,7 @@ sub check_human_genome_file_endings {
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
 	parameter_name_ref => { default => \$$, strict_type => 1, store => \$parameter_name_ref},
 	reference_dir_ref => { default => \$arg_href->{active_parameter_href}{reference_dir},
-			       strict_type => 1},
+			       strict_type => 1, store => \$reference_dir_ref},
 	human_genome_reference_name_no_ending_ref => { default => \$arg_href->{file_info_href}{human_genome_reference_name_no_ending},
 						       strict_type => 1, store => \$human_genome_reference_name_no_ending_ref},
     };
