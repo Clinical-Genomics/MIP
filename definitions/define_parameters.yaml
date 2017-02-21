@@ -281,6 +281,8 @@ psplit_fastq_file:
   data_type: SCALAR
   default: 0
   file_tag: nofile_tag
+  infile_suffix: ".fastq"
+  outfile_suffix: ".fastq.gz"
   program_name_path:
    - pigz
    - unpigz

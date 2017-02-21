@@ -2028,7 +2028,7 @@ else {
     }
     if ($active_parameter{pvarianteffectpredictor} > 0) {  #Run varianteffectpredictor. Done per family
 
-	$log->info("[vVarianteffectpredictor]\n");
+	$log->info("[Varianteffectpredictor]\n");
 
 	varianteffectpredictor({parameter_href => \%parameter,
 				active_parameter_href => \%active_parameter,
@@ -6107,6 +6107,8 @@ sub vt {
     }
     my ($volume, $directory, $stderr_file) = File::Spec->splitpath($stderr_path); #Split to enable submission to &sample_info_qc later
 
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
     ## Assign directories
     my $infamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref);
     my $outfamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref);
@@ -6115,6 +6117,13 @@ sub vt {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{prhocall}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
+
+    ## Assign suffix
+    ## Return the current infile vcf compression suffix for this jobid chain
+    my $infile_suffix = get_vcf_suffix({parameter_href => $parameter_href,
+					jobid_chain => $jobid_chain,
+				       });
+    my $outfile_suffix = $parameter_href->{vcf_suffix}{$jobid_chain} = ".vcf";
 
     if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
 
@@ -6148,7 +6157,7 @@ sub vt {
     ## Split vcf into contigs
     while ( my ($contig_index, $contig) = each(@{ $file_info_href->{contigs_size_ordered} }) ) {
 
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf.gz")." ";  #Infile
+	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$infile_suffix)." ";  #Infile
 
 	## vt - Split multi allelic records into single records and normalize
 	vt_core({active_parameter_href => $active_parameter_href,
@@ -6156,8 +6165,8 @@ sub vt {
 		 infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		 job_id_href => $job_id_href,
 		 FILEHANDLE => $XARGSFILEHANDLE,
-		 infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf"),
-		 outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf"),
+		 infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.$outfile_suffix),
+		 outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$outfile_suffix),
 		 decompose => $active_parameter_href->{vt_decompose},
 		 normalize => $active_parameter_href->{vt_normalize},
 		 sed => 1,
@@ -6189,8 +6198,8 @@ sub vt {
 	if ($active_parameter_href->{vt_missing_alt_allele}) {
 
 	    $alt_file_ending = "_nostar";
-	    print $XARGSFILEHANDLE catfile($remove_star_regexp.$$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf")." ";
-	    print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.".vcf")." ";
+	    print $XARGSFILEHANDLE catfile($remove_star_regexp.$$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$outfile_suffix)." ";
+	    print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.$outfile_suffix)." ";
 	    print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    print $XARGSFILEHANDLE "; ";
 	}
@@ -6209,7 +6218,7 @@ sub vt {
 		print $XARGSFILEHANDLE "--max-af ";  #If the MAX AF should be annotated
 	    }
 	    print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutStream
-	    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.".vcf")." ";
+	    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.$outfile_suffix)." ";
 	    print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    print $XARGSFILEHANDLE "| ";
 
@@ -6220,21 +6229,21 @@ sub vt {
 	    print $XARGSFILEHANDLE "filter ";  #Command
 	    print $XARGSFILEHANDLE "-t ".$active_parameter_href->{vt_genmod_filter_threshold}." ";  #Threshold for filtering variants
 	    print $XARGSFILEHANDLE "- ";  #InStream
-	    print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.".vcf")." ";  #OutFile
+	    print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.$outfile_suffix)." ";  #OutFile
 	    print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    print $XARGSFILEHANDLE "; ";
 	}
 
 	print $XARGSFILEHANDLE "mv ";
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.".vcf")." ";
-	say $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf")." ";
+	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.$outfile_suffix)." ";
+	say $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$outfile_suffix)." ";
     }
 
     if ( ! $$reduce_io_ref) { #Run as individual sbatch script
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_*.vcf*"),
+	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_*".$outfile_suffix."*"),
 				file_path => $outfamily_directory,
 				FILEHANDLE => $FILEHANDLE,
 			       });
@@ -6369,6 +6378,8 @@ sub rhocall {
     }
     my ($volume, $directory, $stderr_file) = File::Spec->splitpath($stderr_path); #Split to enable submission to &sample_info_qc later
 
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
     ## Assign directories
     my $infamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref);
     my $outfamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref);
@@ -6378,6 +6389,13 @@ sub rhocall {
     my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
 
+    ## Assign suffix
+    ## Return the current infile vcf compression suffix for this jobid chain
+    my $infile_suffix = get_vcf_suffix({parameter_href => $parameter_href,
+					jobid_chain => $jobid_chain,
+				       });  
+    my $outfile_suffix = $parameter_href->{vcf_suffix}{$jobid_chain} = ".vcf";
+    
     if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
 
 	## Copy file(s) to temporary directory
@@ -6420,7 +6438,7 @@ sub rhocall {
 
 	    print $XARGSFILEHANDLE "--sample ".$active_parameter_href->{sample_ids}[0]." ";  #No affected - pick any sample_id
 	}
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf.gz")." ";  #Infile
+	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$infile_suffix)." ";  #Infile
 	print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".roh"), "; ";
 
 	print $XARGSFILEHANDLE "rhocall aggregate ";
@@ -6429,15 +6447,15 @@ sub rhocall {
 
 	print $XARGSFILEHANDLE "rhocall annotate ";
 	print $XARGSFILEHANDLE "-b ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".roh.bed")." ";
-	print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf")." ";
-	say $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf.gz");
+	print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$outfile_suffix)." ";
+	say $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$infile_suffix);  #Infile
     }
 
     if ( ! $$reduce_io_ref) { #Run as individual sbatch script
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_*.vcf*"),
+	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_*".$outfile_suffix."*"),
 				file_path => $outfamily_directory,
 				FILEHANDLE => $FILEHANDLE,
 			       });
@@ -6572,34 +6590,40 @@ sub prepareforvariantannotationblock {
     }
     my ($volume, $directory, $stderr_file) = File::Spec->splitpath($stderr_path); #Split to enable submission to &sample_info_qc later
 
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
     ## Assign directories
     my $infamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref);
     my $outfamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref);
-    $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
+    $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream in removal of files
 
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
-    my $file_name_noending = $$family_id_ref.$infile_tag.$call_type;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $file_name_noending);
+    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+
+    ## Assign suffix
+    my $infile_suffix = ".vcf";
+    my $outfile_suffix = $parameter_href->{vcf_suffix}{$jobid_chain} = ".vcf.gz";  #Used downstream to determine compression and format
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			  path => catfile($infamily_directory, $file_name_noending.".vcf*"),
+			  path => catfile($infamily_directory, $infile_no_ending.$infile_suffix."*"),
 			  temp_directory => $$temp_directory_ref
 			 });
     say $FILEHANDLE "wait", "\n";
 
     ## Compress or decompress original file or stream to outfile (if supplied)
     bgzip({FILEHANDLE => $FILEHANDLE,
-	   infile_path => $file_path_no_ending.".vcf",
-	   outfile_path => $file_path_no_ending.".vcf.gz",
+	   infile_path => $file_path_no_ending.$infile_suffix,
+	   outfile_path => $file_path_no_ending.$outfile_suffix,
 	  });
     say $FILEHANDLE "\n";
 
     ## Index file using tabix
     tabix({FILEHANDLE => $FILEHANDLE,
-	   infile_path => $file_path_no_ending.".vcf.gz",
+	   infile_path => $file_path_no_ending.$outfile_suffix,
 	  });
     say $FILEHANDLE "\n";
 
@@ -6616,20 +6640,20 @@ sub prepareforvariantannotationblock {
     foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
 	print $XARGSFILEHANDLE "-h ";  #Include header
-	print $XARGSFILEHANDLE $file_path_no_ending.".vcf.gz"." ";
+	print $XARGSFILEHANDLE $file_path_no_ending.$outfile_suffix." ";
 	print $XARGSFILEHANDLE $contig." ";
 	print $XARGSFILEHANDLE "| ";
 
 	## Compress or decompress original file or stream to outfile (if supplied)
 	bgzip({FILEHANDLE => $XARGSFILEHANDLE,
 	       infile_path => "-",
-	       outfile_path => $file_path_no_ending."_".$contig.".vcf.gz",
+	       outfile_path => $file_path_no_ending."_".$contig.$outfile_suffix,
 	      });
 	print $XARGSFILEHANDLE "; ";
 
 	## Index file using tabix
 	tabix({FILEHANDLE => $XARGSFILEHANDLE,
-	       infile_path => $file_path_no_ending."_".$contig.".vcf.gz",
+	       infile_path => $file_path_no_ending."_".$contig.$outfile_suffix,
 	      });
 	print $XARGSFILEHANDLE "\n";
     }
@@ -6638,7 +6662,7 @@ sub prepareforvariantannotationblock {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => $file_path_no_ending."_*.vcf*",
+	migrate_file_from_temp({temp_path => $file_path_no_ending."_*".$infile_suffix."*",
 				file_path => $outfamily_directory,
 				FILEHANDLE => $FILEHANDLE,
 			       });
@@ -14871,7 +14895,7 @@ sub variantannotationblock {
 										infile_lane_no_ending_href => $infile_lane_no_ending_href,
 										job_id_href => $job_id_href,
 										call_type => $call_type,
-										program_name => "vt",
+										program_name => "prepareforvariantannotationblock",
 										file_name => $file_name,
 										program_info_path => $program_info_path,
 										FILEHANDLE => $FILEHANDLE,
@@ -15698,12 +15722,16 @@ sub split_fastq_file {
 	my $infile_path = catfile($insample_directory, $fastq_file);
 	my $file_path = catfile($$temp_directory_ref, $fastq_file);
 
+	## Assign suffix
+	my $infile_suffix = $parameter_href->{"p".$program_name}{infile_suffix};
+	my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
+
 	say $FILEHANDLE "## ".$program_name;
 
 	my %fastq_file_info;
 
 	## Detect fastq file info for later rebuild of filename
-	if ($fastq_file =~/(\d+)_(\d+)_([^_]+)_([^_]+)_([^_]+)_(\d).fastq/) {
+	if ($fastq_file =~/(\d+)_(\d+)_([^_]+)_([^_]+)_([^_]+)_(\d)$infile_suffix/) {
 
 	    %fastq_file_info = (lane => $1,
 				date => $2,
@@ -15715,7 +15743,7 @@ sub split_fastq_file {
 	}
 	## Removes ".file_ending" in filename.FILENDING(.gz)
 	my $file_prefix = fileparse($fastq_file,
-				    qr/\.fastq|\.fastq\.gz/)."_splitted_";
+				    qr/$infile_suffix|$infile_suffix\.gz/)."_splitted_";
 
 	## Copies file to temporary directory.
 	migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
@@ -15749,7 +15777,7 @@ sub split_fastq_file {
 	## Iterate through array using a counter
 	say $FILEHANDLE q?for ((file_counter=0; file_counter<${#splitted_files[@]}; file_counter++)); do ?;
 
-	## Rename each element of array to include splitted suffix in FlowCellID
+	## Rename each element of array to include splitted suffix in flowcell id
 	print $FILEHANDLE "\t".q?mv ${splitted_files[$file_counter]} ?;
 	print $FILEHANDLE catfile($$temp_directory_ref, "");
 	print $FILEHANDLE $fastq_file_info{lane}."_";
@@ -15757,7 +15785,7 @@ sub split_fastq_file {
 	print $FILEHANDLE $fastq_file_info{flowcell}.q?"-SP"$file_counter"?;
 	print $FILEHANDLE "_".$fastq_file_info{sample_id}."_";
 	print $FILEHANDLE $fastq_file_info{index}."_";
-	print $FILEHANDLE $fastq_file_info{direction}.".fastq";
+	print $FILEHANDLE $fastq_file_info{direction}.$infile_suffix;
 	say $FILEHANDLE q?"?, "\n";
 
 	say $FILEHANDLE "\t".q?echo "${splitted_files[$file_counter]}" ?;
@@ -15767,11 +15795,11 @@ sub split_fastq_file {
 	my $splittedFile = catfile($indir_path{$$sample_id_ref}, $file_prefix."*");
 
 	print $FILEHANDLE "pigz ";
-	say $FILEHANDLE catfile($$temp_directory_ref, "*.fastq"), "\n";
+	say $FILEHANDLE catfile($$temp_directory_ref, "*".$infile_suffix), "\n";
 
 	## Copies files from temporary folder to source
 	print $FILEHANDLE "cp ";
-	print $FILEHANDLE catfile($$temp_directory_ref, "*-SP*.fastq.gz")." ";
+	print $FILEHANDLE catfile($$temp_directory_ref, "*-SP*".$outfile_suffix)." ";
 	say $FILEHANDLE $outsample_directory,"\n";
 
 	## Move original file to not be included in subsequent analysis
@@ -23523,6 +23551,8 @@ sub eval_parameter_hash {
     $non_mandatory_key{exists_check}{values} = ["file", "directory"];
     $non_mandatory_key{chain}{key_data_type} = "SCALAR";
     $non_mandatory_key{file_tag}{key_data_type} = "SCALAR";
+    $non_mandatory_key{infile_suffix}{key_data_type} = "SCALAR";
+    $non_mandatory_key{outfile_suffix}{key_data_type} = "SCALAR";
     $non_mandatory_key{program_name_path}{key_data_type} = "ARRAY";
     $non_mandatory_key{element_separator}{key_data_type} = "SCALAR";
     $non_mandatory_key{reduce_io}{key_data_type} = "SCALAR";
@@ -26614,6 +26644,38 @@ sub check_element_exists_in_hash {
 	    $log->fatal($parameter_name." element '".$element."' - Does not exist as module program parameter in MIP");
 	    exit 1;
 	}
+    }
+}
+
+
+sub get_vcf_suffix {
+
+##get_vcf_suffix
+
+##Function : Return the current infile vcf compression suffix for this jobid chain
+##Returns  : "$vcf_suffix"
+##Arguments: $parameter_href, $jobid_chain
+##         : $parameter_href => Holds all parameters
+##         : $jobid_chain    => Job id chain for program
+ 
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $jobid_chain;
+
+    my $tmpl = { 
+	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	jobid_chain => { required => 1, defined => 1, strict_type => 1, store => \$jobid_chain},
+    };
+     
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    my $vcf_suffix = $parameter_href->{vcf_suffix}{$jobid_chain};
+
+    if ( (defined($vcf_suffix)) && ($vcf_suffix) ) {
+
+	return $vcf_suffix;  #Used downstream to determine compression and format
     }
 }
 
