@@ -462,7 +462,7 @@ sub read_infile_vcf {
 	tree_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$tree_href},
 	range_feature_annotation_columns_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$range_feature_annotation_columns_ref},
 	select_feature_annotation_columns_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$select_feature_annotation_columns_ref},
-	select_outfile_path => { required => 1, defined => 1, strict_type => 1, store => \$select_outfile_path},
+	select_outfile_path => { strict_type => 1, store => \$select_outfile_path},
 	vcfparser_version => { required => 1, defined => 1, strict_type => 1, store => \$vcfparser_version},
 	select_feature_file => { default => 0,
 				 strict_type => 1, store => \$select_feature_file},

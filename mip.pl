@@ -13452,7 +13452,7 @@ sub picardtools_mergesamfiles {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $core_number = $active_parameter_href->{core_processor_number};
+    my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
     my $lanes = join("",@{ $lane_href->{$$sample_id_ref} });  #Extract lanes
@@ -13473,7 +13473,7 @@ sub picardtools_mergesamfiles {
 								  program_name => $program_name,
 								  program_directory => lc($$outaligner_dir_ref),
 								  core_number => $core_number,
-								  process_time => 20,
+								  process_time => $active_parameter_href->{module_time}{"p".$program_name},
 								  temp_directory => $$temp_directory_ref
 								 });
     }
@@ -13514,18 +13514,18 @@ sub picardtools_mergesamfiles {
 
 	## Split BAMs using Samtools
 	say $FILEHANDLE "## Split alignment files per contig";
-	($xargs_file_counter, $xargs_file_name) = split_aligment_file_sambamba({active_parameter_href => $active_parameter_href,
-										contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-										FILEHANDLE => $FILEHANDLE,
-										XARGSFILEHANDLE => $XARGSFILEHANDLE,
-										file_name => $file_name,
-										program_info_path => $program_info_path,
-										core_number => $core_number,
-										xargs_file_counter => $xargs_file_counter,
-										temp_directory_ref => $temp_directory_ref,
-										infile => $infile.$infile_tag,
-										output_format => substr($infile_suffix, 1),  #Remove "." in suffix
-									       });
+	($xargs_file_counter, $xargs_file_name) = split_and_index_aligment_file({active_parameter_href => $active_parameter_href,
+										 contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
+										 FILEHANDLE => $FILEHANDLE,
+										 XARGSFILEHANDLE => $XARGSFILEHANDLE,
+										 file_name => $file_name,
+										 program_info_path => $program_info_path,
+										 core_number => $core_number,
+										 xargs_file_counter => $xargs_file_counter,
+										 temp_directory_ref => $temp_directory_ref,
+										 infile => $infile.$infile_tag,
+										 output_format => substr($infile_suffix, 1),  #Remove "." in suffix
+										});
     }
 
     if (scalar( @{ $infile_lane_no_ending_href->{$$sample_id_ref} }) > 1) {
@@ -13636,18 +13636,18 @@ sub picardtools_mergesamfiles {
 
 		    ## Split BAMs using Samtools
 		    say $FILEHANDLE "## Split alignment files per contig";
-		    ($xargs_file_counter, $xargs_file_name) = split_aligment_file_sambamba({active_parameter_href => $active_parameter_href,
-											    contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-											    FILEHANDLE => $FILEHANDLE,
-											    XARGSFILEHANDLE => $XARGSFILEHANDLE,
-											    file_name => $file_name,
-											    program_info_path => $program_info_path,
-											    core_number => $core_number,
-											    xargs_file_counter => $xargs_file_counter,
-											    temp_directory_ref => $temp_directory_ref,
-											    infile => $picardtools_mergesamfiles_previous_bams_file_no_ending,
-											    output_format => substr($infile_suffix, 1),  #Remove "." in suffix
-											   });
+		    ($xargs_file_counter, $xargs_file_name) = split_and_index_aligment_file({active_parameter_href => $active_parameter_href,
+											     contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
+											     FILEHANDLE => $FILEHANDLE,
+											     XARGSFILEHANDLE => $XARGSFILEHANDLE,
+											     file_name => $file_name,
+											     program_info_path => $program_info_path,
+											     core_number => $core_number,
+											     xargs_file_counter => $xargs_file_counter,
+											     temp_directory_ref => $temp_directory_ref,
+											     infile => $picardtools_mergesamfiles_previous_bams_file_no_ending,
+											     output_format => substr($infile_suffix, 1),  #Remove "." in suffix
+											    });
 
 		    ## picardtools_mergesamfiles
 		    say $FILEHANDLE "## Merging alignment files";
@@ -13745,18 +13745,18 @@ sub picardtools_mergesamfiles {
 
 		## Split BAMs using Samtools
 		say $FILEHANDLE "## Split alignment files per contig";
-		($xargs_file_counter, $xargs_file_name) = split_aligment_file_sambamba({active_parameter_href => $active_parameter_href,
-											contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-											FILEHANDLE => $FILEHANDLE,
-											XARGSFILEHANDLE => $XARGSFILEHANDLE,
-											file_name => $file_name,
-											program_info_path => $program_info_path,
-											core_number => $core_number,
-											xargs_file_counter => $xargs_file_counter,
-											temp_directory_ref => $temp_directory_ref,
-											infile => $picardtools_mergesamfiles_previous_bams_file_no_ending,
-											output_format => substr($infile_suffix, 1),  #Remove "." in suffix
-										       });
+		($xargs_file_counter, $xargs_file_name) = split_and_index_aligment_file({active_parameter_href => $active_parameter_href,
+											 contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
+											 FILEHANDLE => $FILEHANDLE,
+											 XARGSFILEHANDLE => $XARGSFILEHANDLE,
+											 file_name => $file_name,
+											 program_info_path => $program_info_path,
+											 core_number => $core_number,
+											 xargs_file_counter => $xargs_file_counter,
+											 temp_directory_ref => $temp_directory_ref,
+											 infile => $picardtools_mergesamfiles_previous_bams_file_no_ending,
+											 output_format => substr($infile_suffix, 1),  #Remove "." in suffix
+											});
 
 		## Create file commands for xargs
 		($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
@@ -22725,7 +22725,7 @@ sub xargs_command {
 	XARGSFILEHANDLE => { required => 1, defined => 1, store => \$XARGSFILEHANDLE},
 	file_name => { required => 1, defined => 1, strict_type => 1, store => \$file_name},
 	core_number => { required => 1, defined => 1, strict_type => 1, store => \$core_number},
-	first_command => { required => 1, defined => 1, strict_type => 1, store => \$first_command},
+	first_command => { strict_type => 1, store => \$first_command},
 	program_info_path => { strict_type => 1, store => \$program_info_path},
 	memory_allocation => { strict_type => 1, store => \$memory_allocation},
 	java_use_large_pages_ref => { default => \$$, strict_type => 1, store => \$java_use_large_pages_ref},
@@ -22758,7 +22758,7 @@ sub xargs_command {
     print $FILEHANDLE q?-P?.$core_number.q? ?;  #Run up to max-procs processes at a time
     print $FILEHANDLE q?sh -c "?;  #The string following this command will be interpreted as a shell command
 
-    if ( $first_command eq "java") {
+    if ( (defined($first_command)) && ($first_command eq "java") ) {
 
 	## Writes java core commands to filehandle.
 	java_core({FILEHANDLE => $FILEHANDLE,
@@ -22768,7 +22768,7 @@ sub xargs_command {
 		   java_jar => $java_jar,
 		  });
     }
-    else {
+    if ($first_command) {
 
 	print $FILEHANDLE $first_command." ";
     }
@@ -22875,9 +22875,9 @@ sub split_bam {
 }
 
 
-sub split_aligment_file_sambamba {
+sub split_and_index_aligment_file {
 
-##split_aligment_file_sambamba
+##split_and_index_aligment_file
 
 ##Function : Split alignemnt file per contig and index new file. Creates the command line for xargs. Writes to sbatch FILEHANDLE and opens xargs FILEHANDLE
 ##Returns  : ""
@@ -22935,10 +22935,13 @@ sub split_aligment_file_sambamba {
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    use Program::Sambamba qw(view index);
     
     my $xargs_file_name;
 
     my $file_suffix = ".".$output_format;
+
 
     ## Create file commands for xargs
     ($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
@@ -22946,29 +22949,29 @@ sub split_aligment_file_sambamba {
 							     file_name => $file_name,
 							     program_info_path => $program_info_path,
 							     core_number => $core_number,
-							     first_command => $first_command,
 							     xargs_file_counter => $xargs_file_counter,
 							    });
 
     ## Split by contig
     foreach my $contig (@$contigs_ref) {
 
-	print $XARGSFILEHANDLE "view ";  #Command
-	print $XARGSFILEHANDLE "-h ";  #Include header
-	print $XARGSFILEHANDLE "--format ".$output_format." ";  #Output format
-	print $XARGSFILEHANDLE "--show-progress ";  #Show progress bar in STDERR
-	print $XARGSFILEHANDLE "--output-filename=".catfile($$temp_directory_ref, $infile."_".$contig.$file_suffix)." ";  #Write to file
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $infile.$file_suffix)." ";  #InFile
-	print $XARGSFILEHANDLE $contig." ";
-	print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-	print $XARGSFILEHANDLE "; ";  #Wait
+	Program::Sambamba::view({infile_path => catfile($$temp_directory_ref, $infile.$file_suffix),
+				 outfile_path => catfile($$temp_directory_ref, $infile."_".$contig.$file_suffix),
+				 stderrfile_path => $xargs_file_name."_view_".$contig.".stderr.txt",
+				 output_format => $output_format,
+				 FILEHANDLE => $XARGSFILEHANDLE,
+				 regions_ref => [$contig],
+				 with_header => 1,
+				 show_progress => 1,
+				});
+	print $XARGSFILEHANDLE "; ";  #Seperate commands
 
-	## Index
-	print $XARGSFILEHANDLE $first_command." ";  #Program
-	print $XARGSFILEHANDLE "index ";  #Command
-	print $XARGSFILEHANDLE "--show-progress ";  #Show progress bar in STDERR
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $infile."_".$contig.$file_suffix)." ";  #InFile
-	say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	Program::Sambamba::index({infile_path => catfile($$temp_directory_ref, $infile.$file_suffix),
+				  stderrfile_path => $xargs_file_name."_index_".$contig.".stderr.txt",
+				  FILEHANDLE => $XARGSFILEHANDLE,
+				  show_progress => 1,
+				 });
+	print $XARGSFILEHANDLE "\n";
     }
     return $xargs_file_counter;
 }

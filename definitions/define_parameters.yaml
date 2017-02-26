@@ -97,6 +97,7 @@ module_time:
     pfastqc: 10
     pmadeline: 1
     pbwa_mem: 30
+    ppicardtools_mergesamfiles: 20
   type: mip
 module_core_number:
   associated_program:
@@ -108,6 +109,7 @@ module_core_number:
     pfastqc: 0
     pmadeline: 1
     pbwa_mem: 16
+    ppicardtools_mergesamfiles: 16
   type: mip
 supported_capture_kit:
   associated_program:
