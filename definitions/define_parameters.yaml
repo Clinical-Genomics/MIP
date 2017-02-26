@@ -94,6 +94,9 @@ module_time:
   default:
     psplit_fastq_file: 10
     pgzip_fastq: 2
+    pfastqc: 10
+    pmadeline: 1
+    pbwa_mem: 30
   type: mip
 module_core_number:
   associated_program:
@@ -102,6 +105,9 @@ module_core_number:
   default:
     psplit_fastq_file: 4
     pgzip_fastq: 0
+    pfastqc: 0
+    pmadeline: 1
+    pbwa_mem: 16
   type: mip
 supported_capture_kit:
   associated_program:
@@ -301,6 +307,7 @@ pgzip_fastq:
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
+  infile_suffix: ".fastq"
   program_name_path:
    - gzip
   type: program
@@ -312,6 +319,7 @@ pfastqc:
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
+  infile_suffix: ".fastq"
   program_name_path:
    - fastqc
   type: program
@@ -334,6 +342,7 @@ pbwa_mem:
   data_type: SCALAR
   default: 1
   file_tag: _sorted
+  outfile_suffix: ".bam"
   outdir_name: bwa
   program_name_path:
    - bwa
