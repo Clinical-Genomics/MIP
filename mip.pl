@@ -21240,36 +21240,6 @@ sub remove_pedigree_elements {
 }
 
 
-sub write_use_large_pages {
-
-##write_use_large_pages
-
-##Function : Write useLargePages java flag to sbatch script if enabled
-##Returns  : ""
-##Arguments: $FILEHANDLE, $use_large_pages_ref
-##         : $FILEHANDLE          => SBATCH script FILEHANDLE to print to
-##         : $use_large_pages_ref => UseLargePages for requiring large memory pages (cross-platform flag) {REF}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $FILEHANDLE;
-    my $use_large_pages_ref;
-
-    my $tmpl = {
-	FILEHANDLE => { required => 1, store => \$FILEHANDLE},
-	use_large_pages_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$use_large_pages_ref},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    if ($$use_large_pages_ref) {
-
-	print $FILEHANDLE "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
-    }
-}
-
-
 sub deafult_log4perl_file {
 
 ##deafult_log4perl_file
@@ -22375,7 +22345,7 @@ sub java_core {
     my $java_jar;
 
     my $tmpl = {
-	FILEHANDLE => { required => 1, store => \$FILEHANDLE},
+	FILEHANDLE => { store => \$FILEHANDLE},
 	memory_allocation => { required => 1, defined => 1, strict_type => 1, store => \$memory_allocation},
 	java_use_large_pages_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$java_use_large_pages_ref},
 	java_temporary_directory => { strict_type => 1, store => \$java_temporary_directory},
@@ -22384,21 +22354,26 @@ sub java_core {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    print $FILEHANDLE "java ";
-    print $FILEHANDLE "-".$memory_allocation." ";
+    my $cmd_line = "java ";
+    $cmd_line .= "-".$memory_allocation." ";
 
-    write_use_large_pages({FILEHANDLE => $FILEHANDLE,
-			   use_large_pages_ref => $java_use_large_pages_ref,
-			  });
+    if ($$java_use_large_pages_ref) {
 
+	$cmd_line .= "-XX:-UseLargePages ";  #UseLargePages for requiring large memory pages (cross-platform flag)
+    }
     if (defined($java_temporary_directory)) {
 
-	print $FILEHANDLE "-Djava.io.tmpdir=".$java_temporary_directory." ";  #Temporary Directory
+	$cmd_line .= "-Djava.io.tmpdir=".$java_temporary_directory." ";  #Temporary Directory
     }
     if (defined($java_jar)) {
 
-	print $FILEHANDLE "-jar ".$java_jar." ";
+	$cmd_line .= "-jar ".$java_jar." ";
     }
+    if($FILEHANDLE) {
+
+	print $FILEHANDLE $cmd_line;
+    }
+    return $cmd_line;
 }
 
 
@@ -22738,6 +22713,8 @@ sub xargs_command {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Command::Xargs qw(xargs);
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger("MIP");
 
@@ -22751,28 +22728,28 @@ sub xargs_command {
 
     print $FILEHANDLE "cat ".$file_name.".".$xargs_file_counter.".xargs ";  #Read xargs command file
     print $FILEHANDLE "| ";  #Pipe
-    print $FILEHANDLE "xargs ";
-    print $FILEHANDLE "-i ";  #replace-str; Enables us to tell xargs where to put the command file lines
-    print $FILEHANDLE "--verbose ";  #Print the command line on the standard error output before executing it
-    print $FILEHANDLE "-n1 ";  #Use at most max-args arguments per command line
-    print $FILEHANDLE q?-P?.$core_number.q? ?;  #Run up to max-procs processes at a time
-    print $FILEHANDLE q?sh -c "?;  #The string following this command will be interpreted as a shell command
 
+    my $cmd_line;
     if ( (defined($first_command)) && ($first_command eq "java") ) {
 
 	## Writes java core commands to filehandle.
-	java_core({FILEHANDLE => $FILEHANDLE,
-		   memory_allocation => $memory_allocation,
-		   java_use_large_pages_ref => $java_use_large_pages_ref,
-		   java_temporary_directory => $java_temporary_directory,
-		   java_jar => $java_jar,
-		  });
+	$cmd_line = java_core({memory_allocation => $memory_allocation,
+			       java_use_large_pages_ref => $java_use_large_pages_ref,
+			       java_temporary_directory => $java_temporary_directory,
+			       java_jar => $java_jar,
+			      });
     }
-    if ($first_command) {
+    elsif ($first_command) {
 
-	print $FILEHANDLE $first_command." ";
+	$cmd_line = $first_command." ";
     }
-    say $FILEHANDLE q? {} "?, "\n";  #Set placeholder
+
+    $cmd_line = xargs({replace_str => 1,
+		       verbose => 1,
+		       max_procs => $core_number,
+		       shell_command => $cmd_line,
+		      });
+    say $FILEHANDLE $cmd_line, "\n";
     open ($XARGSFILEHANDLE, ">",$file_name.".".$xargs_file_counter.".xargs") or $log->logdie("Can't write to '".$file_name.".".$xargs_file_counter.".xargs"."' :".$!."\n\n");  #Open XARGSFILEHANDLE
     return ( ($xargs_file_counter + 1), $xargs_file_name);  #Increment to not overwrite xargs file with next call (if used) and xargs_file_name stub
 }
@@ -22936,7 +22913,7 @@ sub split_and_index_aligment_file {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use Program::Sambamba qw(view index);
+    use Program::Alignment::Sambamba qw(view index);
     
     my $xargs_file_name;
 
@@ -22955,22 +22932,22 @@ sub split_and_index_aligment_file {
     ## Split by contig
     foreach my $contig (@$contigs_ref) {
 
-	Program::Sambamba::view({infile_path => catfile($$temp_directory_ref, $infile.$file_suffix),
-				 outfile_path => catfile($$temp_directory_ref, $infile."_".$contig.$file_suffix),
-				 stderrfile_path => $xargs_file_name."_view_".$contig.".stderr.txt",
-				 output_format => $output_format,
-				 FILEHANDLE => $XARGSFILEHANDLE,
-				 regions_ref => [$contig],
-				 with_header => 1,
-				 show_progress => 1,
-				});
+	Program::Alignment::Sambamba::view({infile_path => catfile($$temp_directory_ref, $infile.$file_suffix),
+					    outfile_path => catfile($$temp_directory_ref, $infile."_".$contig.$file_suffix),
+					    stderrfile_path => $xargs_file_name."_view_".$contig.".stderr.txt",
+					    output_format => $output_format,
+					    FILEHANDLE => $XARGSFILEHANDLE,
+					    regions_ref => [$contig],
+					    with_header => 1,
+					    show_progress => 1,
+					   });
 	print $XARGSFILEHANDLE "; ";  #Seperate commands
 
-	Program::Sambamba::index({infile_path => catfile($$temp_directory_ref, $infile.$file_suffix),
-				  stderrfile_path => $xargs_file_name."_index_".$contig.".stderr.txt",
-				  FILEHANDLE => $XARGSFILEHANDLE,
-				  show_progress => 1,
-				 });
+	Program::Alignment::Sambamba::index({infile_path => catfile($$temp_directory_ref, $infile.$file_suffix),
+					     stderrfile_path => $xargs_file_name."_index_".$contig.".stderr.txt",
+					     FILEHANDLE => $XARGSFILEHANDLE,
+					     show_progress => 1,
+					    });
 	print $XARGSFILEHANDLE "\n";
     }
     return $xargs_file_counter;
