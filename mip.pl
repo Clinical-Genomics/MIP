@@ -37,11 +37,9 @@ use List::Util qw(any all);
 ##MIPs lib/
 use lib catdir($Bin, "lib");  #Add MIPs internal lib
 use Check::Check_modules qw(check_modules);
-use File::Format::Shell qw(create_housekeeping_function create_trap_function);
 use File::Format::Yaml qw(load_yaml write_yaml);
 use File::Parse::Parse qw(find_absolute_path);
 use MIP_log::Log4perl qw(initiate_logger);
-use Program::Compression qw(gzip);
 use Script::Utils qw(help);
 
 our $USAGE;
@@ -11258,6 +11256,8 @@ sub manta {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Compression::Gzip qw(gzip);
+
     my $core_number = $active_parameter_href->{core_processor_number};
     my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
     my $program_outdirectory_name = $parameter_href->{"p".$program_name}{outdir_name};
@@ -11338,12 +11338,12 @@ sub manta {
     say $FILEHANDLE "--mode local ", "\n";
 
     ## Perl wrapper for writing gzip recipe to $FILEHANDLE
-    Program::Compression::gzip({decompress => 1,
-				stdout => 1,
-				infile_path => catfile($$temp_directory_ref, "results", "variants", "diploidSV.vcf.gz"),
-				outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag."_".$call_type.".vcf"),
-				FILEHANDLE => $FILEHANDLE,
-			       });
+    gzip({decompress => 1,
+	  stdout => 1,
+	  infile_path => catfile($$temp_directory_ref, "results", "variants", "diploidSV.vcf.gz"),
+	  outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag."_".$call_type.".vcf"),
+	  FILEHANDLE => $FILEHANDLE,
+	 });
     say $FILEHANDLE "\n";
 
     ## Copies file from temporary directory.
@@ -15577,6 +15577,8 @@ sub gzip_fastq {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Compression::Gzip qw(gzip);
+
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Adjust according to number of infiles to process
@@ -15631,9 +15633,9 @@ sub gzip_fastq {
 	    }
 
 	    ## Perl wrapper for writing gzip recipe to $FILEHANDLE
-	    Program::Compression::gzip({infile_path => catfile($insample_directory, $infile),
-					FILEHANDLE => $FILEHANDLE,
-				       });
+	    gzip({infile_path => catfile($insample_directory, $infile),
+		  FILEHANDLE => $FILEHANDLE,
+		 });
 	    say $FILEHANDLE "&";
 	    $uncompressed_file_counter++;
 	    $infile .= ".gz";  #Add ".gz" to original fastq ending, since this will execute before fastQC and bwa.
@@ -16561,6 +16563,8 @@ sub build_human_genome_prerequisites {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Compression::Gzip qw(gzip);
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger("MIP");
 
@@ -16591,10 +16595,10 @@ sub build_human_genome_prerequisites {
 	$log->warn("Will try to decompres ".$$human_genome_reference_ref." before executing ".$program."\n");
 
 	## Perl wrapper for writing gzip recipe to $FILEHANDLE
-	Program::Compression::gzip({decompress => 1,
-				    infile_path => $$human_genome_reference_ref,
-				    FILEHANDLE => $FILEHANDLE,
-				   });
+	gzip({decompress => 1,
+	      infile_path => $$human_genome_reference_ref,
+	      FILEHANDLE => $FILEHANDLE,
+	     });
 	say $FILEHANDLE "\n";
 
 	$$human_genome_reference_ref =~ s/.fasta.gz/.fasta/g;  #Replace the .fasta.gz ending with .fasta since this will execute before the analysis, hence changing the original file name ending from ".fastq" to ".fastq.gz".
@@ -19027,6 +19031,8 @@ sub program_prerequisites {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use File::Format::Shell qw(create_housekeeping_function create_trap_function);
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger("MIP");
 
@@ -19127,24 +19133,24 @@ sub program_prerequisites {
 	say $FILEHANDLE q?temp_directory="?.$temp_directory.q?"?;  #Assign batch variable
 	say $FILEHANDLE q?mkdir -p ?.$temp_directory, "\n";
 
-	File::Format::Shell::create_housekeeping_function({job_id_href => $job_id_href,
-							   log_file_ref => \$active_parameter_href->{log_file},
-							   FILEHANDLE => $FILEHANDLE,
-							   directory_remove => $temp_directory,
-							   trap_signals_ref => ["EXIT", "TERM", "INT"],
-							   trap_function => "finish",
-							  });
+	create_housekeeping_function({job_id_href => $job_id_href,
+				      log_file_ref => \$active_parameter_href->{log_file},
+				      FILEHANDLE => $FILEHANDLE,
+				      directory_remove => $temp_directory,
+				      trap_signals_ref => ["EXIT", "TERM", "INT"],
+				      trap_function => "finish",
+				     });
     }
 
     if ($error_trap) {
 
 	## Create error handling function and trap
-	File::Format::Shell::create_trap_function({job_id_href => $job_id_href,
-						   log_file_ref => \$active_parameter_href->{log_file},
-						   FILEHANDLE => $FILEHANDLE,
-						   trap_signals_ref => ["ERR"],
-						   trap_function => "error",
-						  });
+	create_trap_function({job_id_href => $job_id_href,
+			      log_file_ref => \$active_parameter_href->{log_file},
+			      FILEHANDLE => $FILEHANDLE,
+			      trap_signals_ref => ["ERR"],
+			      trap_function => "error",
+			     });
     }
     return ($file_name, $file_info_path.$file_name_tracker);  #Return filen name, file path for stdout/stderr for QC check later
 }
@@ -21785,9 +21791,12 @@ sub migrate_files {
 ##         : $FILEHANDLE   => Filehandle to write to
 ##         : $indirectory  => The directory for the files to be copied
 ##         : $core_number  => The number of cores that can be used
-##         : $file_ending  => File ending. Set to "" to not add any file ending or omit from call {Optional}
+##         : $file_ending  => File ending for infiles. {Optional}
 
     my ($arg_href) = @_;
+
+    ## Default(s)
+    my $file_ending;
 
     ## Flatten argument(s)
     my $infiles_ref;
@@ -21795,7 +21804,6 @@ sub migrate_files {
     my $FILEHANDLE;
     my $indirectory;
     my $core_number;
-    my $file_ending;
 
     my $tmpl = {
 	infiles_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$infiles_ref},
@@ -21803,7 +21811,8 @@ sub migrate_files {
 	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
 	indirectory => { required => 1, defined => 1, strict_type => 1, store => \$indirectory},
 	core_number => { required => 1, defined => 1, strict_type => 1, store => \$core_number},
-	file_ending => { defined => 1, strict_type => 1, store => \$file_ending},
+	file_ending => { default => "",
+			 strict_type => 1, store => \$file_ending},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -21821,9 +21830,8 @@ sub migrate_files {
 	
 	## Copies file to destination
 	migrate_file({FILEHANDLE => $FILEHANDLE,
-		      infile_path => catfile($indirectory, $file),
+		      infile_path => catfile($indirectory, $file.$file_ending),
 		      outfile_path => $outfile_path,
-		      file_ending => $file_ending,
 		     });
     }
     say $FILEHANDLE "wait", "\n";
@@ -21835,15 +21843,13 @@ sub migrate_file {
 ##migrate_file
 
 ##Function : Copy file to from source ($infile_path) to destination ($outfile_path).
-##Returns  : "$file_name"
-##Arguments: $FILEHANDLE, $infile_path, $outfile_path, $file_ending, $xargs, $xargs_file_name, $file_index,
+##Returns  : "$infile_path_file_name"
+##Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $xargs
 ##         : $FILEHANDLE      => Filehandle to write to
 ##         : $infile_path     => Infile path
 ##         : $outfile_path    => Outfile path
-##         : $file_ending     => File ending {Optional}
+##         : $stderrfile_path => Stderrfile path
 ##         : $xargs           => Use xargs if defined {Optional}
-##         : $xargs_file_name => xargs file name {Optional, but required with xargs}
-##         : $file_index      => Index of file elements that have been processed {Optional, but required with xargs}
 
     my ($arg_href) = @_;
 
@@ -21851,63 +21857,32 @@ sub migrate_file {
     my $FILEHANDLE;
     my $infile_path;
     my $outfile_path;
-    my $file_ending;
+    my $stderrfile_path;
     my $xargs;
-    my $xargs_file_name;
-    my $file_index;
 
     my $tmpl = {
 	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
 	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
 	outfile_path => { required => 1, defined => 1, strict_type => 1, store => \$outfile_path},
-	file_ending => { strict_type => 1, store => \$file_ending},
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path},
 	xargs => { strict_type => 1, store => \$xargs},
-	xargs_file_name => { strict_type => 1, store => \$xargs_file_name},
-	file_index => {strict_type => 1, store => \$file_index},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Program::Command::Cp qw(cp);
 
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
-
     ## Split relative infile_path to file(s)
     my ($infile_path_volume, $infile_path_directory, $infile_path_file_name) = File::Spec->splitpath($infile_path);
 
-    if (defined($file_ending)) {
+    cp({FILEHANDLE => $FILEHANDLE,
+	preserve => 1,
+	infile_path => $infile_path,
+	outfile_path => $outfile_path,
+	stderrfile_path => $stderrfile_path,
+       });
 
-	$infile_path .= $file_ending;  #Add file_ending if supplied
-    }
-
-    if (! defined($xargs)) {
-
-	cp({FILEHANDLE => $FILEHANDLE,
-	    preserve => 1,
-	    infile_path => $infile_path,
-	    outfile_path => $outfile_path,
-	   });
-    }
-
-    if (defined($xargs)) {
-
-	if ( (defined($xargs_file_name)) && (defined($file_index))) {
-
-	    cp({FILEHANDLE => $FILEHANDLE,
-		preserve => 1,
-		infile_path => $infile_path,
-		outfile_path => $outfile_path,
-		stderrfile_path => $xargs_file_name.".".$file_index.".stderr.txt",
-	       });
-	}
-	else {
-
-	    $log->fatal("Lacking xargs_file_name or file_index in supplied arguments. Please supply arguments xargs_file_name and file_index if xargs is supplied");
-	    exit 1;
-	}
-    }
-    else {
+    if (! defined($xargs)) {  #For print wait statement
 
 	say $FILEHANDLE "& ";
     }
@@ -22485,8 +22460,7 @@ sub xargs_migrate_contig_files {
 			  infile_path => catfile($indirectory, $infile."_".$contig.$file_ending),
 			  outfile_path => $temp_directory,
 			  xargs => "xargs",
-			  xargs_file_name => $xargs_file_name,
-			  file_index => $contig,
+			  stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 			 });
 	}
 	if ( (defined($outfile)) && (defined($outdirectory)) ) {
@@ -22496,8 +22470,7 @@ sub xargs_migrate_contig_files {
 			  outfile_path => $outdirectory,
 			  FILEHANDLE => $XARGSFILEHANDLE,
 			  xargs => "xargs",
-			  xargs_file_name => $xargs_file_name,
-			  file_index => $contig,
+			  stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 			 });
 	}
     }

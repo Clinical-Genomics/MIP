@@ -33,7 +33,7 @@ sub cp {
 
 ##Function : Perl wrapper for writing cp recipe to already open $FILEHANDLE or return commands array. Based on cp 8.4
 ##Returns  : "@commands"
-##Arguments: $preserve_attributes_ref, $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $preserve, $$recursive, $verbose
+##Arguments: $preserve_attributes_ref, $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $preserve, $$recursive, $force, $verbose
 ##         : $preserve_attributes_ref => Preserve the specified attributes (default:mode,ownership,timestamps), if possible additional attributes: context, links, xattr, all
 ##         : $FILEHANDLE              => Filehandle to write to
 ##         : $infile_path             => Infile path
@@ -41,6 +41,7 @@ sub cp {
 ##         : $stderrfile_path         => Stderrfile path
 ##         : $preserve                => Same as --preserve=mode,ownership,timestamps
 ##         : $recursive               => Copy directories recursively
+##         : $force                   => If an existing destination file cannot be opened, remove it and try again
 ##         : $verbose                 => Verbosity
 
     my ($arg_href) = @_;
@@ -48,6 +49,7 @@ sub cp {
     ## Default(s)
     my $preserve;
     my $recursive;
+    my $force;
     my $verbose;
 
     ## Flatten argument(s)
@@ -65,6 +67,8 @@ sub cp {
 	stderrfile_path => { strict_type => 1, store => \$stderrfile_path},
 	recursive => { default => 0,
 		       strict_type => 1, store => \$recursive},
+	force => { default => 0,
+		   strict_type => 1, store => \$force},
 	preserve => { default => 0,
 		      strict_type => 1, store => \$preserve},
 	verbose => { default => 0,
@@ -73,6 +77,7 @@ sub cp {
     
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## cp
     my @commands = qw(cp);  #Stores commands depending on input parameters
 
     if(@$preserve_attributes_ref) {
@@ -86,6 +91,10 @@ sub cp {
     if ($recursive) {
 
 	push(@commands, "--recursive");
+    }
+    if ($force) {
+
+	push(@commands, "--force");
     }
     if ($verbose) {
 
