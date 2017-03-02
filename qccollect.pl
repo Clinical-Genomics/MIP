@@ -552,8 +552,6 @@ sub define_evaluate_metric {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    $evaluate_metric{$sample_id}{mosaik_aligner}{total_aligned}{lt} = 95;
-    $evaluate_metric{$sample_id}{mosaik_aligner}{uniquely_aligned_mates}{lt} = 90;
     $evaluate_metric{$sample_id}{bamstats}{percentage_mapped_reads}{lt} = 95;
     $evaluate_metric{$sample_id}{calculatehsmetrics}{PCT_TARGET_BASES_10X}{lt} = 0.95;
     $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_PF_READS_ALIGNED}{lt} = 0.95;
