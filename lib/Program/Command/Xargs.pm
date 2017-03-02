@@ -31,7 +31,7 @@ sub xargs {
 
 ##xargs
 
-##Function : Perl wrapper for writing xargs view recipe to already open $FILEHANDLE or return command line string. Based on xargs 4.4.2
+##Function : Perl wrapper for writing xargs recipe to already open $FILEHANDLE or return command line string. Based on xargs 4.4.2
 ##Returns  : "$cmd_line"
 ##Arguments: $FILEHANDLE, $replace_str, $verbose, $max_args, $max_procs, $shell_command, $placeholder_symbol
 ##         : $FILEHANDLE         => Filehandle to write to

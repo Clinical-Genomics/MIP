@@ -15409,6 +15409,8 @@ sub fastqc {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Command::Cp qw(cp);
+
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
 
@@ -15505,10 +15507,11 @@ sub fastqc {
 	my $file_at_lane_level = fileparse($infile,
 					   qr/$infile_suffix|$infile_suffix\.gz/);
 
-	## Copies files from temporary folder to source
-	print $FILEHANDLE "cp -r ";
-	print $FILEHANDLE catfile($$temp_directory_ref, $file_at_lane_level."_fastqc")." ";
-	print $FILEHANDLE $outsample_directory." ";
+	cp({FILEHANDLE => $FILEHANDLE,
+	    recursive => 1,
+	    infile_path => catfile($$temp_directory_ref, $file_at_lane_level."_fastqc"),
+	    outfile_path => $outsample_directory,
+	   });
 	say $FILEHANDLE "&", "\n";
     }
     say $FILEHANDLE "wait", "\n";
@@ -15718,6 +15721,8 @@ sub split_fastq_file {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Command::Cp qw(cp);
+
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
 
@@ -15819,9 +15824,11 @@ sub split_fastq_file {
 	say $FILEHANDLE catfile($$temp_directory_ref, "*".$infile_suffix), "\n";
 
 	## Copies files from temporary folder to source
-	print $FILEHANDLE "cp ";
-	print $FILEHANDLE catfile($$temp_directory_ref, "*-SP*".$outfile_suffix)." ";
-	say $FILEHANDLE $outsample_directory,"\n";
+	cp({FILEHANDLE => $FILEHANDLE,
+	    infile_path => catfile($$temp_directory_ref, "*-SP*".$outfile_suffix),
+	    outfile_path => $outsample_directory,
+	   });
+	say $FILEHANDLE "\n";
 
 	## Move original file to not be included in subsequent analysis
 	say $FILEHANDLE "mkdir -p ".catfile($insample_directory, "original_fastq_files"), "\n";
@@ -22085,6 +22092,8 @@ sub migrate_file_to_temp {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Command::Cp qw(cp);
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger("MIP");
 
@@ -22096,20 +22105,25 @@ sub migrate_file_to_temp {
 	$path .= $file_ending;  #Add file_ending if supplied
     }
 
-    unless (defined($xargs)) {
+    if (! defined($xargs)) {
 
-	print $FILEHANDLE "cp ";  #Copy
-	print $FILEHANDLE "-p ";  #Preserve=mode,ownership,timestamps
+	cp({FILEHANDLE => $FILEHANDLE,
+	    preserve => 1,
+	    infile_path => $path,
+	    outfile_path => $temp_directory,
+	   });
     }
-
-    print $FILEHANDLE $path." ";  #Infile
-    print $FILEHANDLE $temp_directory." ";  #Temp file
 
     if (defined($xargs)) {
 
 	if ( (defined($xargs_file_name)) && (defined($file_index))) {
 
-	    print $FILEHANDLE "2> ".$xargs_file_name.".".$file_index.".stderr.txt ";
+	    cp({FILEHANDLE => $FILEHANDLE,
+		preserve => 1,
+		infile_path => $path,
+		outfile_path => $temp_directory,
+		stderrfile_path => $xargs_file_name.".".$file_index.".stderr.txt",
+	       });
 	}
 	else {
 
@@ -22119,7 +22133,7 @@ sub migrate_file_to_temp {
     }
     else {
 
-	say $FILEHANDLE " & ";
+	say $FILEHANDLE "& ";
     }
     print $FILEHANDLE "\n";
 
