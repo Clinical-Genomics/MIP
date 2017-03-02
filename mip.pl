@@ -15405,6 +15405,7 @@ sub fastqc {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Program::Command::Cp qw(cp);
+    use Program::Qc::Fastqc qw (fastqc);
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
@@ -15464,10 +15465,11 @@ sub fastqc {
 	my $file_at_lane_level = fileparse($infile,
 					   qr/$infile_suffix|$infile_suffix\.gz/);
 
-	print $FILEHANDLE "fastqc ";
-	print $FILEHANDLE catfile($$temp_directory_ref, $infile)." ";  #Infile
-	print $FILEHANDLE "--extract ";  #the zipped output file will be uncompressed in the same directory after it has been created.
-	print $FILEHANDLE "-o ".$$temp_directory_ref." ";  #OutFile
+	Program::Qc::Fastqc::fastqc({infile_path => catfile($$temp_directory_ref, $infile),
+				     outdirectory_path => $$temp_directory_ref,
+				     extract => 1,
+				     FILEHANDLE => $FILEHANDLE,
+				    });
 	say $FILEHANDLE "&", "\n";
 
 	## Collect QC metadata info for active program for later use

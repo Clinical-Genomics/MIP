@@ -33,7 +33,7 @@ sub view {
 ##view
 
 ##Function : Perl wrapper for writing sambamba view recipe to $FILEHANDLE. Based on sambamba 0.6.5
-##Returns  : ""
+##Returns  : "@commands"
 ##Arguments: $regions_ref, $FILEHANDLE, $infile_path, $outfile_path, stderrfile_path, $with_header, $show_progress, $output_format
 ##         : $regions_ref     => The regions to process {REF}
 ##         : $FILEHANDLE      => Sbatch filehandle to write to
@@ -77,34 +77,42 @@ sub view {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    print $FILEHANDLE "sambamba view ";  #Command
+    ## Sambamba
+    my @commands = qw(sambamba view);  #Stores commands depending on input parameters
 
     if ($with_header) {  #Include header
 
-	print $FILEHANDLE "--with-header ";
+	push(@commands, "--with-header");
     }
     if ($output_format) {
 
-	print $FILEHANDLE "--format ".$output_format." ";  #Output format
+	push(@commands, "--format ".$output_format);  #Output format
     }
     if ($show_progress) {
 
-	print $FILEHANDLE "--show-progress ";  #Show progressbar in STDERR (works only for BAM files with no regions specified)
+	push(@commands, "--show-progress");  #Show progressbar in STDERR (works only for BAM files with no regions specified)
     }
     if ($outfile_path) {
 	
-	print $FILEHANDLE "--output-filename=".$outfile_path." ";  #Specify output filename
+	push(@commands, "--output-filename=".$outfile_path);  #Specify output filename
     }
-    print $FILEHANDLE $infile_path." ";  #InFile
+
+    ## InFile
+    push(@commands, $infile_path);
 
     if(@$regions_ref) {  #Limit output to regions
 
-	print $FILEHANDLE join(" ", @{ $regions_ref })." ";
+	push(@commands, join(" ", @{ $regions_ref }));
     }
     if ($stderrfile_path) {
 
-	print $FILEHANDLE "2> ".$stderrfile_path;  #Redirect stderr output to program specific stderr file
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
     }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
 }
 
 
@@ -113,7 +121,7 @@ sub index {
 ##index
 
 ##Function : Perl wrapper for writing sambamba index recipe to $FILEHANDLE. Based on sambamba 0.6.5
-##Returns  : ""
+##Returns  : "@commands"
 ##Arguments: $FILEHANDLE, $infile_path, stderrfile_path, $show_progress
 ##         : $FILEHANDLE      => Sbatch filehandle to write to
 ##         : $infile_path     => Infile path
@@ -141,18 +149,26 @@ sub index {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    print $FILEHANDLE "sambamba index ";  #Command
+    ## Sambamba
+    my @commands = qw(sambamba index);  #Stores commands depending on input parameters
 
     if ($show_progress) {
 
-	print $FILEHANDLE "--show-progress ";  #Show progressbar in STDERR (works only for BAM files with no regions specified)
+	push(@commands, "--show-progress");  #Show progressbar in STDERR (works only for BAM files with no regions specified)
     }
-    print $FILEHANDLE $infile_path." ";  #InFile
+
+    ##InFile
+    push(@commands, $infile_path);
 
     if ($stderrfile_path) {
 
-	print $FILEHANDLE "2> ".$stderrfile_path;  #Redirect stderr output to program specific stderr file
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
     }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
 }
 
 
