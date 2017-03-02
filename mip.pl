@@ -64,7 +64,7 @@ BEGIN {
     ## Evaluate that all modules required are installed
     Check::Check_modules::check_modules({modules_ref => \@modules,
 					 program_name => $0,
-					}); 
+					});
 
     $USAGE =
 	basename($0).qq{ -ifd [infile_dirs=sample_id] -rd [reference_dir] -p [project_id] -s [sample_ids,.,.,.,n] -em [email] -osd [outscript_dir] -odd [outdata_dir] -f [family_id] -p[program] -at [sample_id=analysis_type]
@@ -472,7 +472,7 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'pdelc|pdelly_call=n' => \$parameter{pdelly_call}{value},
 	   'pdel|pdelly_reformat=n' => \$parameter{pdelly_reformat}{value},
 	   'deltyp|delly_types:s' => \@{ $parameter{delly_types}{value} },
-	   'delexc|delly_exclude_file:s' => \$parameter{delly_exclude_file}{value}, 
+	   'delexc|delly_exclude_file:s' => \$parameter{delly_exclude_file}{value},
 	   'pmna|pmanta=n' => \$parameter{pmanta}{value},
 	   'ptid|ptiddit=n' => \$parameter{ptiddit}{value},
 	   'tidmsp|tiddit_minimum_supporting_pairs=n' => \$parameter{tiddit_minimum_supporting_pairs}{value},
@@ -708,8 +708,8 @@ foreach my $order_parameter_element (@order_parameters) {
 
 	## Creates log object
 	my $log = initiate_logger({file_path_ref => \$active_parameter{log_file},
-				      log_name => "MIP",
-				     });
+				   log_name => "MIP",
+				  });
     }
     if ($order_parameter_element eq "pedigree_file") {  #Write QC for only pedigree data used in analysis
 
@@ -1508,7 +1508,7 @@ if ($active_parameter{pcnvnator} > 0) {  #Run CNVnator
 					    job_id_href => \%job_id,
 					    program_name => "cnvnator",
 					   });
-    
+
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
 	cnvnator({parameter_href => \%parameter,
@@ -1547,7 +1547,7 @@ if ($active_parameter{pdelly_call} > 0) {  #Run delly_call
 		    job_id_href => \%job_id,
 		    sample_id_ref => \$sample_id,
 		    program_name => "delly_call",
-	      });
+		   });
     }
 }
 
@@ -1587,7 +1587,7 @@ if ($active_parameter{pmanta} > 0) {  #Run Manta
 					    job_id_href => \%job_id,
 					    program_name => "manta",
 					   });
-    
+
     manta({parameter_href => \%parameter,
 	   active_parameter_href => \%active_parameter,
 	   sample_info_href => \%sample_info,
@@ -1725,7 +1725,7 @@ if ($active_parameter{pfreebayes} > 0) {  #Run Freebayes
 					    job_id_href => \%job_id,
 					    program_name => "freebayes",
 					   });
-    
+
 
     freebayes({parameter_href => \%parameter,
 	       active_parameter_href => \%active_parameter,
@@ -1895,7 +1895,7 @@ if ($active_parameter{pevaluation} > 0) {  #Run evaluation. Done per family
 		       });
 	}
 
-	
+
     }
 }
 
@@ -2128,7 +2128,7 @@ else {
     if ($active_parameter{pendvariantannotationblock} > 0) {  #Run endvariantannotationblock. Done per family
 
 	$log->info("[Endvariantannotationblock]\n");
-	
+
 	endvariantannotationblock({parameter_href => \%parameter,
 				   active_parameter_href => \%active_parameter,
 				   sample_info_href => \%sample_info,
@@ -2906,10 +2906,10 @@ sub evaluation {
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			  path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf*"),
-			  temp_directory => $$temp_directory_ref
-			 });
+    migrate_file({FILEHANDLE => $FILEHANDLE,
+		  infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf*"),
+		  outfile_path => $$temp_directory_ref
+		 });
     say $FILEHANDLE "wait", "\n";
 
     ## Rename vcf samples. The samples array will replace the sample names in the same order as supplied.
@@ -3102,10 +3102,10 @@ sub evaluation {
     my @outfiles = ("compMIP.Vs.NIST_ADM1059A3_genome*", "*vcf.stats");
     foreach my $outfile (@outfiles) {
 
-	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $outfile),
-			    file_path => $outfamily_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+	migrate_file({infile_path => catfile($$temp_directory_ref, $outfile),
+		      outfile_path => $outfamily_directory,
+		      FILEHANDLE => $FILEHANDLE,
+		     });
     }
     say $FILEHANDLE "wait", "\n";
 
@@ -3255,9 +3255,9 @@ sub endvariantannotationblock {
 
 		## Removes an element from array and return new array while leaving orginal elements_ref untouched
 		@contigs = remove_element({elements_ref => \@{ $file_info_href->{select_file_contigs} },
-							    remove_contigs_ref => ["MT", "M"],
-							    contig_switch => 1,
-							   });
+					   remove_contigs_ref => ["MT", "M"],
+					   contig_switch => 1,
+					  });
 	    }
 	}
 
@@ -3278,7 +3278,7 @@ sub endvariantannotationblock {
 							      temp_directory => $active_parameter_href->{temp_directory},
 							     });
 	}
-	
+
 	## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
 	concatenate_variants({active_parameter_href => $active_parameter_href,
 			      FILEHANDLE => $FILEHANDLE,
@@ -3309,10 +3309,10 @@ sub endvariantannotationblock {
 
 	    ## Copies file from temporary directory.
 	    say $FILEHANDLE "## Copy file from temporary directory";
-	    migrate_file_from_temp({temp_path => $outfile_path_no_ending.$vcfparser_analysis_type."_filtered.vcf",
-				    file_path => $outfamily_directory,
-				    FILEHANDLE => $FILEHANDLE,
-				   });
+	    migrate_file({infile_path => $outfile_path_no_ending.$vcfparser_analysis_type."_filtered.vcf",
+			  outfile_path => $outfamily_directory,
+			  FILEHANDLE => $FILEHANDLE,
+			 });
 	    say $FILEHANDLE "wait", "\n";
 	}
 
@@ -3332,10 +3332,10 @@ sub endvariantannotationblock {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf*",
-				file_path => $outfamily_directory,
-				FILEHANDLE => $FILEHANDLE,
-			       });
+	migrate_file({infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf*",
+		      outfile_path => $outfamily_directory,
+		      FILEHANDLE => $FILEHANDLE,
+		     });
 	say $FILEHANDLE "wait", "\n";
 
 	## Adds the most complete vcf file to sample_info
@@ -3507,7 +3507,7 @@ sub rankvariant {
     my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };  #Set default for size ordered contigs
     my @contigs = @{ $file_info_href->{contigs} };  #Set default for contigs
     my $family_file = catfile($outfamily_file_directory, $$family_id_ref.".fam");
-    
+
     ## Create .fam file to be used in variant calling analyses
     create_fam_file({parameter_href => $parameter_href,
 		     active_parameter_href => $active_parameter_href,
@@ -3596,7 +3596,7 @@ sub rankvariant {
 	    print $XARGSFILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
 
 	    if ($active_parameter_href->{genmod_annotate_regions}) {
-		
+
 		print $XARGSFILEHANDLE "--regions ";  #Use predefined annotation file distributed with genmod
 	    }
 	    foreach my $cadd_file (@{ $active_parameter_href->{genmod_annotate_cadd_files} }) {
@@ -3615,7 +3615,7 @@ sub rankvariant {
 		say $XARGSFILEHANDLE $genmod_indata;  #Infile
 	    }
 	    else {
-		
+
 		## Write to outputstream
 		print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
 		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
@@ -3640,7 +3640,7 @@ sub rankvariant {
 		print $XARGSFILEHANDLE "--processes 4 ";  #Define how many processes that should be use for annotation
 
 		if ( ($active_parameter_href->{pvarianteffectpredictor} > 0)
-		    && (! $active_parameter_href->{genmod_annotate_regions}) ) {  #Use VEP annotations in compound models
+		     && (! $active_parameter_href->{genmod_annotate_regions}) ) {  #Use VEP annotations in compound models
 
 		    print $XARGSFILEHANDLE "--vep ";
 		}
@@ -3682,7 +3682,7 @@ sub rankvariant {
 		print $XARGSFILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
 
 		if ( ($active_parameter_href->{pvarianteffectpredictor} > 0)
-		    && (! $active_parameter_href->{genmod_annotate_regions}) ) {  #Use VEP annotations in compound models
+		     && (! $active_parameter_href->{genmod_annotate_regions}) ) {  #Use VEP annotations in compound models
 
 		    print $XARGSFILEHANDLE "--vep ";
 		}
@@ -3711,12 +3711,12 @@ sub rankvariant {
 										 });
 	}
 	else {
-	    
+
 	    ## QC Data File(s)
-	    migrate_file_from_temp({temp_path => $outfile_path_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.".vcf",
-				    file_path => $outfamily_directory,
-				    FILEHANDLE => $FILEHANDLE,
-				   });
+	    migrate_file({infile_path => $outfile_path_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.".vcf",
+			  outfile_path => $outfamily_directory,
+			  FILEHANDLE => $FILEHANDLE,
+			 });
 	    say $FILEHANDLE "wait", "\n";
 	}
 
@@ -3730,9 +3730,9 @@ sub rankvariant {
 			   });
 
 	    if (defined($active_parameter_href->{rank_model_file})) {  #Add to SampleInfo
-		
+
 		if ($active_parameter_href->{rank_model_file}=~/v(\d+\.\d+.\d+|\d+\.\d+)/) {
-		    
+
 		    $sample_info_href->{program}{rankvariant}{rank_model}{version} = $1;
 		}
 		$sample_info_href->{program}{rankvariant}{rank_model}{file} = basename($active_parameter_href->{rank_model_file});
@@ -3741,11 +3741,11 @@ sub rankvariant {
 	}
     }
     if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
-	    
+
 	close($FILEHANDLE);
-    
+
 	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
-	    
+
 	    submit_job({active_parameter_href => $active_parameter_href,
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
@@ -3757,7 +3757,7 @@ sub rankvariant {
 	}
     }
     if ($$reduce_io_ref) {
-	
+
 	return $xargs_file_counter;  #Track the number of created xargs scripts per module for Block algorithm
     }
 }
@@ -3850,10 +3850,10 @@ sub gatk_variantevalexome {
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			  path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf*"),
-			  temp_directory => $$temp_directory_ref
-			 });
+    migrate_file({FILEHANDLE => $FILEHANDLE,
+		  infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf*"),
+		  outfile_path => $$temp_directory_ref
+		 });
 
     say $FILEHANDLE "wait", "\n";
 
@@ -3881,10 +3881,10 @@ sub gatk_variantevalexome {
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			  path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf*"),
-			  temp_directory => $$temp_directory_ref
-			 });
+    migrate_file({FILEHANDLE => $FILEHANDLE,
+		  infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf*"),
+		  outfile_path => $$temp_directory_ref
+		 });
     say $FILEHANDLE "wait", "\n";
 
     ## Extract exonic variants
@@ -3900,10 +3900,10 @@ sub gatk_variantevalexome {
 
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
-	migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			      path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.$vcfparser_analysis_type.".vcf*"),
-			      temp_directory => $$temp_directory_ref
-			     });
+	migrate_file({FILEHANDLE => $FILEHANDLE,
+		      infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.$vcfparser_analysis_type.".vcf*"),
+		      outfile_path => $$temp_directory_ref
+		     });
 	say $FILEHANDLE "wait", "\n";
 
 	## Extract exonic variants
@@ -3964,10 +3964,10 @@ sub gatk_variantevalexome {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type."_exome.vcf.varianteval"),
-			    file_path => $outsample_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type."_exome.vcf.varianteval"),
+		  outfile_path => $outsample_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
@@ -4080,10 +4080,10 @@ sub gatk_variantevalall {
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			  path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf*"),
-			  temp_directory => $$temp_directory_ref
-			 });
+    migrate_file({FILEHANDLE => $FILEHANDLE,
+		  infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf*"),
+		  outfile_path => $$temp_directory_ref
+		 });
     say $FILEHANDLE "wait", "\n";
 
     ## Select Sample_id from family_id vcf file
@@ -4127,10 +4127,10 @@ sub gatk_variantevalall {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type.".vcf.varianteval"),
-			    file_path => $outsample_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type.".vcf.varianteval"),
+		  outfile_path => $outsample_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
@@ -4453,10 +4453,10 @@ sub snpeff {
 	else {
 
 	    ## QC Data File(s)
-	    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.".vcf"),
-				    file_path => $outfamily_directory,
-				    FILEHANDLE => $FILEHANDLE,
-				   });
+	    migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.".vcf"),
+			  outfile_path => $outfamily_directory,
+			  FILEHANDLE => $FILEHANDLE,
+			 });
 	    say $FILEHANDLE "wait", "\n";
 	}
     }
@@ -4904,8 +4904,8 @@ sub vcfparser {
 	    print $XARGSFILEHANDLE "-rf ".$active_parameter_href->{vcfparser_range_feature_file}." ";  #List of genes to analyse separately
 
 	    if ( ($active_parameter_href->{vcfparser_range_feature_annotation_columns})
-		  && (@{ $active_parameter_href->{vcfparser_range_feature_annotation_columns} }) ) {
-		
+		 && (@{ $active_parameter_href->{vcfparser_range_feature_annotation_columns} }) ) {
+
 		print $XARGSFILEHANDLE "-rf_ac ";  #Range annotation columns
 		print $XARGSFILEHANDLE join(',', @{ $active_parameter_href->{vcfparser_range_feature_annotation_columns} })." ";
 	    }
@@ -4935,10 +4935,10 @@ sub vcfparser {
     }
 
     ## QC Data File(s)
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$file_info_href->{contigs_size_ordered}[0].".vcf"),
-			    file_path => $outfamily_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$file_info_href->{contigs_size_ordered}[0].".vcf"),
+		  outfile_path => $outfamily_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
@@ -5278,10 +5278,10 @@ sub varianteffectpredictor {
     }
 
     ## QC Data File(s)
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_*.vcf_s*"),
-			    file_path => $outfamily_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_*.vcf_s*"),
+		  outfile_path => $outfamily_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     close($XARGSFILEHANDLE);
@@ -5290,10 +5290,10 @@ sub varianteffectpredictor {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_*.vcf*"),
-				file_path => $outfamily_directory,
-				FILEHANDLE => $FILEHANDLE,
-			       });
+	migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_*.vcf*"),
+		      outfile_path => $outfamily_directory,
+		      FILEHANDLE => $FILEHANDLE,
+		     });
 	say $FILEHANDLE "wait", "\n";
 
 	close($FILEHANDLE);
@@ -5302,10 +5302,10 @@ sub varianteffectpredictor {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$file_info_href->{contigs_size_ordered}[0].".vcf"),
-				file_path => $outfamily_directory,
-				FILEHANDLE => $FILEHANDLE,
-			       });
+	migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$file_info_href->{contigs_size_ordered}[0].".vcf"),
+		      outfile_path => $outfamily_directory,
+		      FILEHANDLE => $FILEHANDLE,
+		     });
 	say $FILEHANDLE "wait", "\n";
     }
 
@@ -5410,10 +5410,10 @@ sub gatk_readbackedphasing {
 
     ## Copy VCF file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			  path => catfile($infamily_directory, $family_id.$infile_tag.$call_type.".vcf*"),
-			  temp_directory => $active_parameter_href->{temp_directory}
-			 });
+    migrate_file({FILEHANDLE => $FILEHANDLE,
+		  infile_path => catfile($infamily_directory, $family_id.$infile_tag.$call_type.".vcf*"),
+		  outfile_path => $active_parameter_href->{temp_directory}
+		 });
     say $FILEHANDLE "wait", "\n";
 
     ## Copy BAM file(s) to temporary directory
@@ -5427,10 +5427,10 @@ sub gatk_readbackedphasing {
 
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
-	migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			      path => catfile($insample_directory, $infile.$infile_tag.".b*"),
-			      temp_directory => $active_parameter_href->{temp_directory}
-			     });
+	migrate_file({FILEHANDLE => $FILEHANDLE,
+		      infile_path => catfile($insample_directory, $infile.$infile_tag.".b*"),
+		      outfile_path => $active_parameter_href->{temp_directory}
+		     });
 	say $FILEHANDLE "wait", "\n";
     }
 
@@ -5470,10 +5470,10 @@ sub gatk_readbackedphasing {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => catfile($active_parameter_href->{temp_directory}, $family_id.$outfile_tag.$call_type.".vcf*"),
-			    file_path => $outfamily_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => catfile($active_parameter_href->{temp_directory}, $family_id.$outfile_tag.$call_type.".vcf*"),
+		  outfile_path => $outfamily_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
@@ -5553,10 +5553,10 @@ sub gatk_phasebytransmission {
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			  path => catfile($infamily_directory, $family_id.$infile_tag.$call_type.".vcf*"),
-			  temp_directory => $active_parameter_href->{temp_directory}
-			 });
+    migrate_file({FILEHANDLE => $FILEHANDLE,
+		  infile_path => catfile($infamily_directory, $family_id.$infile_tag.$call_type.".vcf*"),
+		  outfile_path => $active_parameter_href->{temp_directory}
+		 });
     say $FILEHANDLE "wait", "\n";
 
     ## GATK PhaseByTransmission
@@ -5586,10 +5586,10 @@ sub gatk_phasebytransmission {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => catfile($active_parameter_href->{temp_directory}, $family_id.$outfile_tag.$call_type.".vcf*"),
-			    file_path => $outfamily_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => catfile($active_parameter_href->{temp_directory}, $family_id.$outfile_tag.$call_type.".vcf*"),
+		  outfile_path => $outfamily_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
@@ -5709,10 +5709,10 @@ sub samplecheck {
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			  path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf*"),
-			  temp_directory => $$temp_directory_ref
-			 });
+    migrate_file({FILEHANDLE => $FILEHANDLE,
+		  infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf*"),
+		  outfile_path => $$temp_directory_ref
+		 });
     say $FILEHANDLE "wait", "\n";
 
     my $founderCount = detect_founders({active_parameter_href => $active_parameter_href,
@@ -6182,9 +6182,9 @@ sub vt {
 	     && ($active_parameter_href->{"p".$program_name} == 1)
 	     && (! $active_parameter_href->{dry_run_all})
 	    ) {
-	    
+
 	    my ($volume, $directory, $stderr_file) = File::Spec->splitpath($xargs_file_name);  #Split to enable submission to &SampleInfoQC later
-	    
+
 	    ## Collect QC metadata info for later use
 	    sample_info_qc({sample_info_href => $sample_info_href,
 			    program_name => "vt",
@@ -6245,10 +6245,10 @@ sub vt {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_*".$outfile_suffix."*"),
-				file_path => $outfamily_directory,
-				FILEHANDLE => $FILEHANDLE,
-			       });
+	migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_*".$outfile_suffix."*"),
+		      outfile_path => $outfamily_directory,
+		      FILEHANDLE => $FILEHANDLE,
+		     });
 	say $FILEHANDLE "wait", "\n";
 
 	close($FILEHANDLE);
@@ -6395,9 +6395,9 @@ sub rhocall {
     ## Return the current infile vcf compression suffix for this jobid chain
     my $infile_suffix = get_vcf_suffix({parameter_href => $parameter_href,
 					jobid_chain => $jobid_chain,
-				       });  
+				       });
     my $outfile_suffix = $parameter_href->{vcf_suffix}{$jobid_chain} = ".vcf";
-    
+
     if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
 
 	## Copy file(s) to temporary directory
@@ -6457,10 +6457,10 @@ sub rhocall {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_*".$outfile_suffix."*"),
-				file_path => $outfamily_directory,
-				FILEHANDLE => $FILEHANDLE,
-			       });
+	migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_*".$outfile_suffix."*"),
+		      outfile_path => $outfamily_directory,
+		      FILEHANDLE => $FILEHANDLE,
+		     });
 	say $FILEHANDLE "wait", "\n";
 
 	close($FILEHANDLE);
@@ -6610,10 +6610,10 @@ sub prepareforvariantannotationblock {
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			  path => catfile($infamily_directory, $infile_no_ending.$infile_suffix."*"),
-			  temp_directory => $$temp_directory_ref
-			 });
+    migrate_file({FILEHANDLE => $FILEHANDLE,
+		  infile_path => catfile($infamily_directory, $infile_no_ending.$infile_suffix."*"),
+		  outfile_path => $$temp_directory_ref
+		 });
     say $FILEHANDLE "wait", "\n";
 
     ## Compress or decompress original file or stream to outfile (if supplied)
@@ -6664,10 +6664,10 @@ sub prepareforvariantannotationblock {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => $file_path_no_ending."_*".$infile_suffix."*",
-				file_path => $outfamily_directory,
-				FILEHANDLE => $FILEHANDLE,
-			       });
+	migrate_file({infile_path => $file_path_no_ending."_*".$infile_suffix."*",
+		      outfile_path => $outfamily_directory,
+		      FILEHANDLE => $FILEHANDLE,
+		     });
 	say $FILEHANDLE "wait", "\n";
 
 	close($FILEHANDLE);
@@ -6789,10 +6789,10 @@ sub gatk_combinevariantcallsets {
 
 	    ## Copy file(s) to temporary directory
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
-	    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-				  path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf*"),
-				  temp_directory => $$temp_directory_ref
-				 });
+	    migrate_file({FILEHANDLE => $FILEHANDLE,
+			  infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf*"),
+			  outfile_path => $$temp_directory_ref
+			 });
 	}
     }
     say $FILEHANDLE "wait", "\n";
@@ -6844,18 +6844,18 @@ sub gatk_combinevariantcallsets {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".bcf*"),
-				file_path => $outfamily_directory,
-				FILEHANDLE => $FILEHANDLE,
-			       });
+	migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".bcf*"),
+		      outfile_path => $outfamily_directory,
+		      FILEHANDLE => $FILEHANDLE,
+		     });
     }
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf"),
-			    file_path => $outfamily_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf"),
+		  outfile_path => $outfamily_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
@@ -6971,7 +6971,7 @@ sub gatk_variantrecalibration {
     my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
     my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
- 
+
 
     ## Create .fam file to be used in variant calling analyses
     create_fam_file({parameter_href => $parameter_href,
@@ -6983,10 +6983,10 @@ sub gatk_variantrecalibration {
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			  path => catfile($infamily_directory, $infile_no_ending.".vcf*"),
-			  temp_directory => $$temp_directory_ref
-			 });
+    migrate_file({FILEHANDLE => $FILEHANDLE,
+		  infile_path => catfile($infamily_directory, $infile_no_ending.".vcf*"),
+		  outfile_path => $$temp_directory_ref
+		 });
     say $FILEHANDLE "wait", "\n";
 
     ## GATK VariantRecalibrator
@@ -7188,10 +7188,10 @@ sub gatk_variantrecalibration {
 
 	    ## Copies file from temporary directory.
 	    say $FILEHANDLE "## Copy file from temporary directory";
-	    migrate_file_from_temp({temp_path => $outfile_path_no_ending."_incnonvariantloci.vcf*",
-				    file_path => $outfamily_directory,
-				    FILEHANDLE => $FILEHANDLE,
-				   });
+	    migrate_file({infile_path => $outfile_path_no_ending."_incnonvariantloci.vcf*",
+			  outfile_path => $outfamily_directory,
+			  FILEHANDLE => $FILEHANDLE,
+			 });
 	}
 	say $FILEHANDLE "\n\nwait\n";
     }
@@ -7256,10 +7256,10 @@ sub gatk_variantrecalibration {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => $outfile_path_no_ending.".bcf*",
-				file_path => $outfamily_directory,
-				FILEHANDLE => $FILEHANDLE,
-			       });
+	migrate_file({infile_path => $outfile_path_no_ending.".bcf*",
+		      outfile_path => $outfamily_directory,
+		      FILEHANDLE => $FILEHANDLE,
+		     });
 	say $FILEHANDLE "wait", "\n";
     }
 
@@ -7268,10 +7268,10 @@ sub gatk_variantrecalibration {
     my @outfiles = ($outfile_path_no_ending.".vcf*", $intermediary_file_path_no_ending.".intervals.tranches.pdf");
     foreach my $outfile (@outfiles) {
 
-	migrate_file_from_temp({temp_path => $outfile,
-				file_path => $outfamily_directory,
-				FILEHANDLE => $FILEHANDLE,
-			       });
+	migrate_file({infile_path => $outfile,
+		      outfile_path => $outfamily_directory,
+		      FILEHANDLE => $FILEHANDLE,
+		     });
     }
     say $FILEHANDLE "wait", "\n";
 
@@ -7391,10 +7391,10 @@ sub gatk_concatenate_genotypegvcfs {
 		   });
 
 	## Copy file(s) to temporary directory
-	migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			      path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf*"),
-			      temp_directory => $$temp_directory_ref
-			     });
+	migrate_file({FILEHANDLE => $FILEHANDLE,
+		      infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf*"),
+		      outfile_path => $$temp_directory_ref
+		     });
     }
     say $FILEHANDLE "wait", "\n";
 
@@ -7448,19 +7448,19 @@ sub gatk_concatenate_genotypegvcfs {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".bcf*"),
-				file_path => $outfamily_directory,
-				FILEHANDLE => $FILEHANDLE,
-			       });
+	migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".bcf*"),
+		      outfile_path => $outfamily_directory,
+		      FILEHANDLE => $FILEHANDLE,
+		     });
 	say $FILEHANDLE "wait", "\n";
     }
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf*"),
-			    file_path => $outfamily_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf*"),
+		  outfile_path => $outfamily_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
@@ -7596,10 +7596,10 @@ sub gatk_genotypegvcfs {
 
 	    ## Copy file(s) to temporary directory
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
-	    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-				  path => catfile($insample_directory, $infile.$infile_tag."_".$contig.".vcf*"),
-				  temp_directory => $$temp_directory_ref
-				 });
+	    migrate_file({FILEHANDLE => $FILEHANDLE,
+			  infile_path => catfile($insample_directory, $infile.$infile_tag."_".$contig.".vcf*"),
+			  outfile_path => $$temp_directory_ref
+			 });
 	    say $FILEHANDLE "wait", "\n";
 	}
 
@@ -7650,10 +7650,10 @@ sub gatk_genotypegvcfs {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf*"),
-				file_path => $outfamily_directory,
-				FILEHANDLE => $FILEHANDLE,
-			       });
+	migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf*"),
+		      outfile_path => $outfamily_directory,
+		      FILEHANDLE => $FILEHANDLE,
+		     });
 	say $FILEHANDLE "wait", "\n";
 
 	close($FILEHANDLE);
@@ -7843,10 +7843,10 @@ sub genomecoveragebed {
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			  path => catfile($insample_directory, $infile.$infile_tag.".b*"),
-			  temp_directory => $$temp_directory_ref,
-			 });
+    migrate_file({FILEHANDLE => $FILEHANDLE,
+		  infile_path => catfile($insample_directory, $infile.$infile_tag.".b*"),
+		  outfile_path => $$temp_directory_ref,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     ## GenomeCoverageBed
@@ -7858,10 +7858,10 @@ sub genomecoveragebed {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile.$outfile_tag),
-			    file_path => $outsample_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag),
+		  outfile_path => $outsample_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
     close($FILEHANDLE);
 
@@ -7971,10 +7971,10 @@ sub picardtools_calculatehsmetrics {
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			  path => catfile($insample_directory, $infile.$infile_tag.".b*"),
-			  temp_directory => $$temp_directory_ref,
-			 });
+    migrate_file({FILEHANDLE => $FILEHANDLE,
+		  infile_path => catfile($insample_directory, $infile.$infile_tag.".b*"),
+		  outfile_path => $$temp_directory_ref,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     ## CalculateHsMetrics
@@ -8004,10 +8004,10 @@ sub picardtools_calculatehsmetrics {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile.$outfile_tag),
-			    file_path => $outsample_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag),
+		  outfile_path => $outsample_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
@@ -8124,10 +8124,10 @@ sub picardtools_collectmultiplemetrics {
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			  path => catfile($insample_directory, $infile.$infile_tag.".b*"),
-			  temp_directory => $$temp_directory_ref,
-			 });
+    migrate_file({FILEHANDLE => $FILEHANDLE,
+		  infile_path => catfile($insample_directory, $infile.$infile_tag.".b*"),
+		  outfile_path => $$temp_directory_ref,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     ## CollectMultipleMetrics
@@ -8154,10 +8154,10 @@ sub picardtools_collectmultiplemetrics {
 	);
     foreach my $outfile (@outfiles) {
 
-	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $outfile),
-				file_path => $outsample_directory,
-				FILEHANDLE => $FILEHANDLE,
-			       });
+	migrate_file({infile_path => catfile($$temp_directory_ref, $outfile),
+		      outfile_path => $outsample_directory,
+		      FILEHANDLE => $FILEHANDLE,
+		     });
     }
     say $FILEHANDLE "wait", "\n";
 
@@ -8418,10 +8418,10 @@ sub sambamba_depth {
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			  path => catfile($insample_directory, $infile.$infile_tag.".b*"),
-			  temp_directory => $$temp_directory_ref
-			 });
+    migrate_file({FILEHANDLE => $FILEHANDLE,
+		  infile_path => catfile($insample_directory, $infile.$infile_tag.".b*"),
+		  outfile_path => $$temp_directory_ref
+		 });
     say $FILEHANDLE "wait", "\n";
 
     ## sambamba_depth
@@ -8456,10 +8456,10 @@ sub sambamba_depth {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile.$outfile_tag.".bed"),
-			    file_path => $outsample_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag.".bed"),
+		  outfile_path => $outsample_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
@@ -8599,12 +8599,12 @@ sub sv_reformat {
 					       remove_contigs_ref => ["MT", "M"],
 					       contig_switch => 1,
 					      });
-    
+
     ### If no males or other remove contig Y from all downstream analysis
     my @contig_arrays = (\@contigs_size_ordered, \@contigs);
-    
+
     foreach my $array_ref (@contig_arrays) {
-	
+
 	## Removes contig_names from contigs array if no male or other found
 	remove_contigs({active_parameter_href => $active_parameter_href,
 			contigs_ref => $array_ref,
@@ -8661,18 +8661,18 @@ sub sv_reformat {
 
 	    ## Copy file(s) to temporary directory
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
-	    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-				  path => catfile($infamily_directory, $infile_no_ending.$vcfparser_analysis_type.".vcf"),
-				  temp_directory => $$temp_directory_ref
-				 });
+	    migrate_file({FILEHANDLE => $FILEHANDLE,
+			  infile_path => catfile($infamily_directory, $infile_no_ending.$vcfparser_analysis_type.".vcf"),
+			  outfile_path => $$temp_directory_ref
+			 });
 	    say $FILEHANDLE "wait", "\n";
 	}
 
 	my $concatenate_ending = "";
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {
-	    
+
 	    $concatenate_ending = "_cat";
-	    
+
 	    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
 	    concatenate_variants({active_parameter_href => $active_parameter_href,
 				  FILEHANDLE => $FILEHANDLE,
@@ -8714,10 +8714,10 @@ sub sv_reformat {
 
 	    ## Copies file from temporary directory.
 	    say $FILEHANDLE "## Copy file from temporary directory";
-	    migrate_file_from_temp({temp_path => $outfile_path_no_ending.$vcfparser_analysis_type."_filtered.vcf",
-				    file_path => $outfamily_directory,
-				    FILEHANDLE => $FILEHANDLE,
-				   });
+	    migrate_file({infile_path => $outfile_path_no_ending.$vcfparser_analysis_type."_filtered.vcf",
+			  outfile_path => $outfamily_directory,
+			  FILEHANDLE => $FILEHANDLE,
+			 });
 	    say $FILEHANDLE "wait", "\n";
 	}
 
@@ -8737,10 +8737,10 @@ sub sv_reformat {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf*",
-				file_path => $outfamily_directory,
-				FILEHANDLE => $FILEHANDLE,
-			       });
+	migrate_file({infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf*",
+		      outfile_path => $outfamily_directory,
+		      FILEHANDLE => $FILEHANDLE,
+		     });
 	say $FILEHANDLE "wait", "\n";
 
 	## Adds the most complete vcf file to sample_info
@@ -8913,7 +8913,7 @@ sub sv_rankvariant {
 
     ### If no males or other remove contig Y from all downstream analysis
     my @contig_arrays = (\@contigs_size_ordered, \@contigs);
-    
+
     foreach my $array_ref (@contig_arrays) {
 
 	## Removes contig_names from contigs array if no male or other found
@@ -8939,7 +8939,7 @@ sub sv_rankvariant {
 
 	    $vcfparser_analysis_type = ".selected";  #SelectFile variants
 
-	    ### Always skip MT and Y in select files  
+	    ### Always skip MT and Y in select files
 	    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
 	    @contigs = remove_element({elements_ref => \@{ $file_info_href->{select_file_contigs} },
 				       remove_contigs_ref => ["MT", "M"],
@@ -8950,7 +8950,7 @@ sub sv_rankvariant {
 	    remove_array_element({contigs_ref => \@contigs,
 				  remove_contigs_ref => ["Y"],
 				 });
-	    
+
 	    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
 	    @contigs_size_ordered = remove_element({elements_ref => \@{ $file_info_href->{sorted_select_file_contigs} },
 						    remove_contigs_ref => ["MT", "M"],
@@ -8984,10 +8984,10 @@ sub sv_rankvariant {
 
 	    ## Copy file(s) to temporary directory
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
-	    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-				  path => catfile($infamily_directory, $infile_no_ending.$vcfparser_analysis_type.".vcf"),
-				  temp_directory => $$temp_directory_ref
-				 });
+	    migrate_file({FILEHANDLE => $FILEHANDLE,
+			  infile_path => catfile($infamily_directory, $infile_no_ending.$vcfparser_analysis_type.".vcf"),
+			  outfile_path => $$temp_directory_ref
+			 });
 	    say $FILEHANDLE "wait", "\n";
 	}
 
@@ -9004,7 +9004,7 @@ sub sv_rankvariant {
 
 	## Genmod
 	say $FILEHANDLE "## Genmod";
-	
+
 	## Create file commands for xargs
 	($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
 								 XARGSFILEHANDLE => $XARGSFILEHANDLE,
@@ -9014,7 +9014,7 @@ sub sv_rankvariant {
 								 xargs_file_counter => $xargs_file_counter,
 								 first_command => "genmod",
 								});
-	
+
 	## Process per contig
 	foreach my $contig (@contigs_size_ordered) {
 
@@ -9022,29 +9022,29 @@ sub sv_rankvariant {
 	    my $genmod_outfile_path_no_ending = $outfile_path_no_ending;
 	    my $genmod_xargs_file_name = $xargs_file_name;
 	    my $genmod_indata = catfile($$temp_directory_ref, $genmod_file_ending_stub.$vcfparser_analysis_type.".vcf")." ";  #InFile
-	    
+
 	    if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Update endings with contig info
-		
+
 		$genmod_file_ending_stub = $infile_no_ending."_".$contig;
 		$genmod_outfile_path_no_ending = $outfile_path_no_ending."_".$contig;
 		$genmod_xargs_file_name = $xargs_file_name.".".$contig;
 		$genmod_indata = catfile($$temp_directory_ref, $genmod_file_ending_stub.$vcfparser_analysis_type.".vcf")." ";  #InFile
 	    }
 	    $genmod_module = "";  #Restart for next contig
-	    
+
 	    ## Genmod Annotate
 	    $genmod_module = "_annotate";
-	    
+
 	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 	    print $XARGSFILEHANDLE "annotate ";  #Annotate vcf variants
 	    print $XARGSFILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
-	    
+
 	    if ($active_parameter_href->{sv_genmod_annotate_regions}) {
-		
+
 		print $XARGSFILEHANDLE "--regions ";  #Use predefined annotation file distributed with genmod
-		}
+	    }
 	    if ( (defined($parameter_href->{dynamic_parameter}{unaffected})) && (@{ $parameter_href->{dynamic_parameter}{unaffected} } eq @{ $active_parameter_href->{sample_ids} }) ) {  #Only unaffected
-		
+
 		## Write to outputFile - last genmod module
 		print $XARGSFILEHANDLE "-o ".$genmod_outfile_path_no_ending.$vcfparser_analysis_type.".vcf ";  #OutFile
 		print $XARGSFILEHANDLE "2> ".$genmod_xargs_file_name.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
@@ -9057,9 +9057,9 @@ sub sv_rankvariant {
 		print $XARGSFILEHANDLE "2> ".$genmod_xargs_file_name.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		print $XARGSFILEHANDLE $genmod_indata;  #InStream or Infile
 		print $XARGSFILEHANDLE "| ";  #Pipe
-		    
+
 		$genmod_indata = "- ";  #Preparation for next module
-		
+
 		## Genmod Models
 		$genmod_module .= "_models";
 		print $XARGSFILEHANDLE "genmod ";
@@ -9068,39 +9068,39 @@ sub sv_rankvariant {
 		print $XARGSFILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
 		print $XARGSFILEHANDLE "--family_file ".$family_file." ";  #Pedigree file
 		print $XARGSFILEHANDLE "--family_type ".$active_parameter_href->{sv_genmod_models_family_type}." ";  #Family type
-		
+
 		if (defined($active_parameter_href->{sv_genmod_models_reduced_penetrance_file})) {
-			
+
 		    print $XARGSFILEHANDLE "--reduced_penetrance ".$active_parameter_href->{sv_genmod_models_reduced_penetrance_file}." ";  #Use list of genes that have been shown to display reduced penetrance
 		}
 		print $XARGSFILEHANDLE "--processes 4 ";  #Define how many processes that should be use for annotation
-		
+
 		if ( ($active_parameter_href->{psv_varianteffectpredictor} > 0)
-		    && (! $active_parameter_href->{sv_genmod_annotate_regions}) ) {  #Use VEP annotations in compound models
-			
-			print $XARGSFILEHANDLE "--vep ";
+		     && (! $active_parameter_href->{sv_genmod_annotate_regions}) ) {  #Use VEP annotations in compound models
+
+		    print $XARGSFILEHANDLE "--vep ";
 		}
 		if ($active_parameter_href->{sv_genmod_models_whole_gene}) {
-		    
+
 		    print $XARGSFILEHANDLE "--whole_gene ";
 		}
-		
+
 		print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutFile
 		print $XARGSFILEHANDLE $genmod_indata;  #InFile
 		print $XARGSFILEHANDLE "2> ".$genmod_xargs_file_name.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 		print $XARGSFILEHANDLE "| ";  #Pipe
 		$genmod_indata = "- ";  #Preparation for next module
-		    
+
 		## Genmod Score
 		$genmod_module .= "_score";
-		    
+
 		print $XARGSFILEHANDLE "genmod ";
 		print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 		print $XARGSFILEHANDLE "score ";  #Score variants in a vcf file using Weighted sums
 		print $XARGSFILEHANDLE "--family_file ".$family_file." ";  #Pedigree file
 		print $XARGSFILEHANDLE "--family_type ".$active_parameter_href->{sv_genmod_models_family_type}." ";  #Family type
 		print $XARGSFILEHANDLE "--rank_results ";  #Add a info field that shows how the different categories contribute to the rank score
-		    
+
 		if (defined($active_parameter_href->{rank_model_file})) {
 
 		    print $XARGSFILEHANDLE "--score_config ".$active_parameter_href->{sv_rank_model_file}." ";  #Rank model config.ini file
@@ -9114,27 +9114,27 @@ sub sv_rankvariant {
 
 		##Genmod Compound
 		$genmod_module .= "_compound";
-		
+
 		print $XARGSFILEHANDLE "genmod ";
 		print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
 		print $XARGSFILEHANDLE "compound ";  #Adjust score for compound variants in a vcf file
 		print $XARGSFILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
-		
+
 		if ( ($active_parameter_href->{psv_varianteffectpredictor} > 0)
 		     && (! $active_parameter_href->{sv_genmod_annotate_regions}) ) {  #Use VEP annotations in compound models
-		    
+
 		    print $XARGSFILEHANDLE "--vep ";
 		}
 
 
 		print $XARGSFILEHANDLE "-o ".$genmod_outfile_path_no_ending.$vcfparser_analysis_type.".vcf ";  #OutFile
 		print $XARGSFILEHANDLE "2> ".$genmod_xargs_file_name.$genmod_module.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-		
+
 		say $XARGSFILEHANDLE $genmod_indata;  #InStream or Infile
 	    }
 
 	    if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid") ) {  #Update endings with contig info
-		
+
 		last;  #Only perform once for exome samples to avoid risking contigs lacking variants throwing errors
 	    }
 	}
@@ -9160,10 +9160,10 @@ sub sv_rankvariant {
 
 	    ## Copies file from temporary directory.
 	    say $FILEHANDLE "## Copy file from temporary directory";
-	    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $outfile_no_ending.$vcfparser_analysis_type.".vcf*"),
-				    file_path => $outfamily_directory,
-				    FILEHANDLE => $FILEHANDLE,
-				   });
+	    migrate_file({infile_path => catfile($$temp_directory_ref, $outfile_no_ending.$vcfparser_analysis_type.".vcf*"),
+			  outfile_path => $outfamily_directory,
+			  FILEHANDLE => $FILEHANDLE,
+			 });
 	    say $FILEHANDLE "wait", "\n";
 
 	    ## Adds the most complete vcf file to sample_info
@@ -9176,7 +9176,7 @@ sub sv_rankvariant {
 				  });
 	}
 
-	
+
 	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
 	    if ($vcfparser_outfile_counter == 1) {
@@ -9354,10 +9354,10 @@ sub sv_vcfparser {
 
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
-	migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			      path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf"),
-			      temp_directory => $$temp_directory_ref
-			     });
+	migrate_file({FILEHANDLE => $FILEHANDLE,
+		      infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf"),
+		      outfile_path => $$temp_directory_ref
+		     });
 	say $FILEHANDLE "wait", "\n";
     }
 
@@ -9393,7 +9393,7 @@ sub sv_vcfparser {
 	    print $XARGSFILEHANDLE "--parse_vep ".$active_parameter_href->{sv_vcfparser_vep_transcripts}." ";  #Parse VEP transcript specific entries
 	}
 	if ($active_parameter_href->{sv_vcfparser_per_gene}) {
-	    
+
 	    print $XARGSFILEHANDLE "--per_gene ".$active_parameter_href->{sv_vcfparser_per_gene}." ";  #Keep only most severe consequence per gene
 	}
 	if ($contig =~ /MT|M/) {
@@ -9405,7 +9405,7 @@ sub sv_vcfparser {
 	    print $XARGSFILEHANDLE "-rf ".$active_parameter_href->{sv_vcfparser_range_feature_file}." ";  #List of genes to analyse separately
 
 	    if ( ($active_parameter_href->{sv_vcfparser_range_feature_annotation_columns})
-		  && (@{ $active_parameter_href->{sv_vcfparser_range_feature_annotation_columns} }) ) {
+		 && (@{ $active_parameter_href->{sv_vcfparser_range_feature_annotation_columns} }) ) {
 
 		print $XARGSFILEHANDLE "-rf_ac ";  #Range annotation columns
 		print $XARGSFILEHANDLE join(',', @{ $active_parameter_href->{sv_vcfparser_range_feature_annotation_columns} })." ";
@@ -9447,10 +9447,10 @@ sub sv_vcfparser {
 	$outfile_ending .= "_".$contigs[0];
 
 	## QC Data File(s)
-	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $outfile_ending.".vcf"),
-				file_path => $outfamily_directory,
-				FILEHANDLE => $FILEHANDLE,
-			       });
+	migrate_file({infile_path => catfile($$temp_directory_ref, $outfile_ending.".vcf"),
+		      outfile_path => $outfamily_directory,
+		      FILEHANDLE => $FILEHANDLE,
+		     });
 	say $FILEHANDLE "wait", "\n";
     }
 
@@ -9542,12 +9542,12 @@ sub sv_vcfparser {
 
 	    ## Copies file from temporary directory.
 	    say $FILEHANDLE "## Copy file from temporary directory";
-	    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $outfile_ending_stub.$vcfparser_analysis_type.".vcf*"),
-				    file_path => $outfamily_directory,
-				    FILEHANDLE => $FILEHANDLE,
-				   });
+	    migrate_file({infile_path => catfile($$temp_directory_ref, $outfile_ending_stub.$vcfparser_analysis_type.".vcf*"),
+			  outfile_path => $outfamily_directory,
+			  FILEHANDLE => $FILEHANDLE,
+			 });
 	    say $FILEHANDLE "wait", "\n";
-	    
+
 	    ## Adds the most complete vcf file to sample_info
 	    add_most_complete_vcf({active_parameter_href => $active_parameter_href,
 				   sample_info_href => $sample_info_href,
@@ -9693,10 +9693,10 @@ sub sv_varianteffectpredictor {
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			  path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf*"),
-			  temp_directory => $$temp_directory_ref
-			 });
+    migrate_file({FILEHANDLE => $FILEHANDLE,
+		  infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf*"),
+		  outfile_path => $$temp_directory_ref
+		 });
     say $FILEHANDLE "wait", "\n";
 
     ## Fix SV with no length as these will fail in the annotation with VEP
@@ -9839,20 +9839,20 @@ sub sv_varianteffectpredictor {
     }
 
     ## QC Data File(s)
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $outfile_ending_stub."*.vcf_s*"),
-			    file_path => $outfamily_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => catfile($$temp_directory_ref, $outfile_ending_stub."*.vcf_s*"),
+		  outfile_path => $outfamily_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     close($XARGSFILEHANDLE);
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $outfile_ending_stub."*.vcf*"),
-			    file_path => $outfamily_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => catfile($$temp_directory_ref, $outfile_ending_stub."*.vcf*"),
+		  outfile_path => $outfamily_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
@@ -9976,10 +9976,10 @@ sub sv_combinevariantcallsets {
 
 		## Copy file(s) to temporary directory
 		say $FILEHANDLE "## Copy file(s) to temporary directory";
-		migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-				      path => catfile($insample_directory, $infile.$infile_tag.".vcf*"),
-				      temp_directory => $$temp_directory_ref
-				     });
+		migrate_file({FILEHANDLE => $FILEHANDLE,
+			      infile_path => catfile($insample_directory, $infile.$infile_tag.".vcf*"),
+			      outfile_path => $$temp_directory_ref
+			     });
 
 		say $FILEHANDLE "wait", "\n";
 
@@ -10052,10 +10052,10 @@ sub sv_combinevariantcallsets {
 
 	    ## Copy file(s) to temporary directory
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
-	    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-				  path => catfile($infamily_directory, $$family_id_ref.$infile_tag."_".$call_type.".vcf*"),
-				  temp_directory => $$temp_directory_ref
-				 });
+	    migrate_file({FILEHANDLE => $FILEHANDLE,
+			  infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag."_".$call_type.".vcf*"),
+			  outfile_path => $$temp_directory_ref
+			 });
 
 	    say $FILEHANDLE "wait", "\n";
 
@@ -10205,18 +10205,18 @@ sub sv_combinevariantcallsets {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".bcf*"),
-				file_path => $outfamily_directory,
-				FILEHANDLE => $FILEHANDLE,
-			       });
+	migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".bcf*"),
+		      outfile_path => $outfamily_directory,
+		      FILEHANDLE => $FILEHANDLE,
+		     });
     }
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf"),
-			    file_path => $outfamily_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf"),
+		  outfile_path => $outfamily_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
@@ -10467,10 +10467,10 @@ sub cnvnator {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile.$outfile_tag.".vcf*"),
-			    file_path => $outsample_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag.".vcf*"),
+		  outfile_path => $outsample_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
@@ -10558,18 +10558,18 @@ sub delly_reformat {
 				strict_type => 1, store => \$xargs_file_counter},
 	call_type => { default => "SV", strict_type => 1, store => \$call_type},
     };
-    
+
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     my $core_number = $active_parameter_href->{core_processor_number};
     my $program_outdirectory_name = $parameter_href->{"p".$program_name}{outdir_name};
-    
+
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 30;
     my $xargs_file_name;
-    
+
     $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    
+
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
 								 job_id_href => $job_id_href,
@@ -10585,13 +10585,13 @@ sub delly_reformat {
     ## Assign directories
     my $outfamily_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref, lc($$outaligner_dir_ref), lc($program_outdirectory_name));
     $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
-	
+
     ## Assign file_tags
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
     my $outfile_no_ending = $$family_id_ref.$outfile_tag."_".$call_type;
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
- 
-    
+
+
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
     my @contigs = remove_element({elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
 				  remove_contigs_ref => ["MT", "M"],
@@ -10603,7 +10603,7 @@ sub delly_reformat {
 			  remove_contigs_ref => ["Y"],  #Skip contig Y throughout since sometimes there are no variants particularly for INS
 			 });
 
-    ## Collect infiles for all sample_ids to enable migration to temporary directory        
+    ## Collect infiles for all sample_ids to enable migration to temporary directory
     my @infile_tag_keys = ("pgatk_baserecalibration", "pdelly_call");
     while ( my ($sample_id_index, $sample_id) = each (@{ $active_parameter_href->{sample_ids} }) ) {
 
@@ -10612,22 +10612,22 @@ sub delly_reformat {
 	my $insample_directory_bcf = catdir($active_parameter_href->{outdata_dir}, $sample_id, $$outaligner_dir_ref, $parameter_href->{pdelly_call}{outdir_name});
 
 	foreach my $infile_tag_key (@infile_tag_keys) {
-	
+
 	    ## Assign file_tags
 	    my $infile_tag = $file_info_href->{$sample_id}{$infile_tag_key}{file_tag};
 
 	    ## Add merged infile name after merging all BAM files per sample_id
 	    my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
-	    
+
 	    if ($infile_tag_key eq "pdelly_call") {  #BCFs
-		
+
 	      SV_TYPE:
-		foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) { 
-		    
+		foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {
+
 		    my $file_ending = "_".$sv_type.".b*";
-		    
+
 		    if ($sv_type ne "TRA") {
-			
+
 			## Copy file(s) to temporary directory
 			say $FILEHANDLE "## Copy file(s) to temporary directory";
 			($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
@@ -10644,25 +10644,25 @@ sub delly_reformat {
 											     });
 		    }
 		    else {
-			
+
 			say $FILEHANDLE "## Copy file(s) to temporary directory";
-			migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-					      path => catfile($insample_directory_bcf, $infile.$infile_tag.$file_ending),
-					      temp_directory => $active_parameter_href->{temp_directory}
-					     });
+			migrate_file({FILEHANDLE => $FILEHANDLE,
+				      infile_path => catfile($insample_directory_bcf, $infile.$infile_tag.$file_ending),
+				      outfile_path => $active_parameter_href->{temp_directory}
+				     });
 		    }
 		}
 	    }
 	    else {  #BAMs
-		
+
 		my $file_ending = ".b*";
 
 		## Copy file(s) to temporary directory
 		say $FILEHANDLE "## Copy file(s) to temporary directory";
-		migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-				      path => catfile($insample_directory_bam, $infile.$infile_tag.$file_ending),
-				      temp_directory => $active_parameter_href->{temp_directory}
-				     });
+		migrate_file({FILEHANDLE => $FILEHANDLE,
+			      infile_path => catfile($insample_directory_bam, $infile.$infile_tag.$file_ending),
+			      outfile_path => $active_parameter_href->{temp_directory}
+			     });
 
 		## Copy file(s) to temporary directory
 		say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -10689,7 +10689,7 @@ sub delly_reformat {
 
     say $FILEHANDLE "## Fix locale bug using old centosOS and Boost library";
     say $FILEHANDLE q?LC_ALL="C"; export LC_ALL ?, "\n\n";
-    
+
     ## Create file commands for xargs
     ($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
 							     XARGSFILEHANDLE => $XARGSFILEHANDLE,
@@ -10700,15 +10700,15 @@ sub delly_reformat {
 							     first_command => "delly merge",
 							    });
   SV_TYPE:
-    foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {  
+    foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {
 
-	
-	
+
+
 	if ($sv_type ne "TRA") {
-	    
+
 	  CONTIG:
 	    foreach my $contig (@contigs) {
-		
+
 		print $XARGSFILEHANDLE "-t ".$sv_type." ";  #The SV to call
 		print $XARGSFILEHANDLE "-m 0 ";  #Min. SV size
 		print $XARGSFILEHANDLE "-n 100000000 "; #Max. SV size
@@ -10716,10 +10716,10 @@ sub delly_reformat {
 
 	      SAMPLE_ID:
 		foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
-		    
+
 		    ## Assign file_tags
 		    my $infile_tag = $file_info_href->{$sample_id}{pdelly_call}{file_tag};
-		    
+
 		    ## Add merged infile name after merging all BAM files per sample_id
 		    my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
 
@@ -10730,7 +10730,7 @@ sub delly_reformat {
 	    }
 	}
 	else {
-	    
+
 	    print $XARGSFILEHANDLE "-t ".$sv_type." ";  #The SV to call
 	    print $XARGSFILEHANDLE "-m 0 ";  #min. SV size
 	    print $XARGSFILEHANDLE "-n 100000000 "; #Max. SV size
@@ -10741,7 +10741,7 @@ sub delly_reformat {
 
 		## Assign file_tags
 		my $infile_tag = $file_info_href->{$sample_id}{pdelly_call}{file_tag};
-		
+
 		## Add merged infile name after merging all BAM files per sample_id
 		my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
 
@@ -10767,7 +10767,7 @@ sub delly_reformat {
 
 	my $bam_sample_file_path_no_ending = catfile($$temp_directory_ref, $infile.$infile_tag);
 	my $bcf_sample_file_path_no_ending = catfile($$temp_directory_ref, $infile.$outfile_tag);
-	
+
 	## Create file commands for xargs
 	($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
 								 XARGSFILEHANDLE => $XARGSFILEHANDLE,
@@ -10778,7 +10778,7 @@ sub delly_reformat {
 								 first_command => "delly call",
 								});
       SV_TYPE:
-	foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {  
+	foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {
 
 	    if ($sv_type ne "TRA") {
 
@@ -10796,7 +10796,7 @@ sub delly_reformat {
 		}
 	    }
 	    else {
-		
+
 		print $XARGSFILEHANDLE "-t ".$sv_type." ";  #The SV to call
 		print $XARGSFILEHANDLE "-g ".$active_parameter_href->{human_genome_reference}." "; #Reference file
 		print $XARGSFILEHANDLE "-v ".$outfile_path_no_ending."_".$sv_type.".bcf ";
@@ -10812,7 +10812,7 @@ sub delly_reformat {
 
     ### Merge calls
     say $FILEHANDLE "## bcftools merge";
-      
+
     ## Create file commands for xargs
     ($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
 							     XARGSFILEHANDLE => $XARGSFILEHANDLE,
@@ -10823,22 +10823,22 @@ sub delly_reformat {
 							     first_command => "bcftools merge",
 							    });
   SV_TYPE:
-    foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {  
-	
+    foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {
+
 	if ($sv_type ne "TRA") {
-	    
+
 	  CONTIG:
 	    foreach my $contig (@contigs) {
-		
+
 		print $XARGSFILEHANDLE "-O b ";
 		print $XARGSFILEHANDLE "-o ".$outfile_path_no_ending."_".$contig."_".$sv_type."_geno_merged.bcf ";
-		
+
 	      SAMPLE_ID:
 		foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
-		    
+
 		    ## Add merged infile name after merging all BAM files per sample_id
 		    my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
-		    
+
 		    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig."_".$sv_type."_geno.bcf")." ";  #Infile
 		}
 		print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$contig.".".$sv_type.".stdout.txt ";  #Redirect xargs output to program specific stdout file
@@ -10846,13 +10846,13 @@ sub delly_reformat {
 	    }
 	}
 	else {
-	    
+
 	    print $XARGSFILEHANDLE "-O b ";
 	    print $XARGSFILEHANDLE "-o ".$outfile_path_no_ending."_".$sv_type."_geno_merged.bcf ";
-	    
+
 	  SAMPLE_ID:
 	    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
-		
+
 		## Add merged infile name after merging all BAM files per sample_id
 		my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
 
@@ -10865,7 +10865,7 @@ sub delly_reformat {
 
     ### Merge calls
     say $FILEHANDLE "## Index bcf";
-      
+
     ## Create file commands for xargs
     ($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
 							     XARGSFILEHANDLE => $XARGSFILEHANDLE,
@@ -10876,10 +10876,10 @@ sub delly_reformat {
 							     first_command => "bcftools index",
 							    });
   SV_TYPE:
-    foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {  
-	
+    foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {
+
 	if ($sv_type ne "TRA") {
-	    
+
 	  CONTIG:
 	    foreach my $contig (@contigs) {
 
@@ -10889,7 +10889,7 @@ sub delly_reformat {
 	    }
 	}
 	else {
-	    
+
 	    print $XARGSFILEHANDLE $outfile_path_no_ending."_".$sv_type."_geno_merged.bcf ";
 	    print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$sv_type.".stdout.txt ";  #Redirect xargs output to program specific stdout file
 	    say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$sv_type.".stderr.txt ";  #Redirect xargs output to program specific stderr file
@@ -10899,7 +10899,7 @@ sub delly_reformat {
 
     ### Filter calls
     say $FILEHANDLE "## Delly filter";
-      
+
     ## Create file commands for xargs
     ($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
 							     XARGSFILEHANDLE => $XARGSFILEHANDLE,
@@ -10910,13 +10910,13 @@ sub delly_reformat {
 							     first_command => "delly filter",
 							    });
   SV_TYPE:
-    foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {  
-	
+    foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {
+
 	if ($sv_type ne "TRA") {
-	    
+
 	  CONTIG:
 	    foreach my $contig (@contigs) {
-		
+
 		print $XARGSFILEHANDLE "-t ".$sv_type." ";  #The SV to call
 		print $XARGSFILEHANDLE "-f germline ";  #Filter mode
 		print $XARGSFILEHANDLE "-o ".$outfile_path_no_ending."_".$contig."_".$sv_type."_geno_merged_filtered.bcf ";
@@ -10926,7 +10926,7 @@ sub delly_reformat {
 	    }
 	}
 	else {
-	    
+
 	    print $XARGSFILEHANDLE "-t ".$sv_type." ";  #The SV to call
 	    print $XARGSFILEHANDLE "-f germline ";  #Filter mode
 	    print $XARGSFILEHANDLE "-o ".$outfile_path_no_ending."_".$sv_type."_geno_merged_filtered.bcf ";
@@ -10943,17 +10943,17 @@ sub delly_reformat {
     print $FILEHANDLE "--allow-overlaps "; #First coordinate of the next file can precede last record of the current file
     print $FILEHANDLE "-O v ";  #uncompressed VCF
     print $FILEHANDLE "-o ".$outfile_path_no_ending."_concat.vcf ";
-    
+
   SV_TYPE:
     foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {
-	
+
 	if($sv_type ne "TRA") {
-	    
+
 	  CONTIG:
 	    foreach my $contig (@contigs) {
-		
-		print $FILEHANDLE $outfile_path_no_ending."_".$contig."_".$sv_type."_geno_merged_filtered.bcf "; 
-	    }   
+
+		print $FILEHANDLE $outfile_path_no_ending."_".$contig."_".$sv_type."_geno_merged_filtered.bcf ";
+	    }
 	}
 	else {
 
@@ -10972,10 +10972,10 @@ sub delly_reformat {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "\n## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => $outfile_path_no_ending.".vcf",
-			    file_path => $outfamily_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => $outfile_path_no_ending.".vcf",
+		  outfile_path => $outfamily_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
@@ -11100,7 +11100,7 @@ sub delly_call {
 
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
     my @contigs = remove_element({elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
-				  remove_contigs_ref => ["MT", "M"],  
+				  remove_contigs_ref => ["MT", "M"],
 				  contig_switch => 1,
 				 });
 
@@ -11115,10 +11115,10 @@ sub delly_call {
     ## Required for processing complete file (INS, TRA)
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			  path => catfile($insample_directory, $infile.$infile_tag.".b*"),
-			  temp_directory => $active_parameter_href->{temp_directory}
-			 });
+    migrate_file({FILEHANDLE => $FILEHANDLE,
+		  infile_path => catfile($insample_directory, $infile.$infile_tag.".b*"),
+		  outfile_path => $active_parameter_href->{temp_directory}
+		 });
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -11155,7 +11155,7 @@ sub delly_call {
 
 	    ## Process per contig
 	    foreach my $contig (@contigs) {
-		
+
 		print $XARGSFILEHANDLE "-t ".$sv_type." ";  #The SV to call
 		print $XARGSFILEHANDLE "-x ".$active_parameter_href->{delly_exclude_file}." ";  #to exclude telomere and centromere regions
 		print $XARGSFILEHANDLE "-g ".$active_parameter_href->{human_genome_reference}." "; #Reference file
@@ -11180,10 +11180,10 @@ sub delly_call {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile.$outfile_tag."*.bcf*"),
-			    file_path => $outsample_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."*.bcf*"),
+		  outfile_path => $outsample_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
@@ -11304,10 +11304,10 @@ sub manta {
 
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
-	migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			      path => catfile($insample_directory, $infile.$infile_tag.".b*"),
-			      temp_directory => $$temp_directory_ref,
-			     });
+	migrate_file({FILEHANDLE => $FILEHANDLE,
+		      infile_path => catfile($insample_directory, $infile.$infile_tag.".b*"),
+		      outfile_path => $$temp_directory_ref,
+		     });
     }
     say $FILEHANDLE "wait", "\n";
 
@@ -11348,10 +11348,10 @@ sub manta {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag."_".$call_type.".vcf*"),
-			    file_path => $outfamily_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag."_".$call_type.".vcf*"),
+		  outfile_path => $outfamily_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
@@ -11474,10 +11474,10 @@ sub tiddit {
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			  path => catfile($insample_directory, $infile.$infile_tag.".b*"),
-			  temp_directory => $active_parameter_href->{temp_directory}
-			 });
+    migrate_file({FILEHANDLE => $FILEHANDLE,
+		  infile_path => catfile($insample_directory, $infile.$infile_tag.".b*"),
+		  outfile_path => $active_parameter_href->{temp_directory}
+		 });
     say $FILEHANDLE "wait", "\n";
 
     ## Tiddit
@@ -11490,10 +11490,10 @@ sub tiddit {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => $outfile_path_no_ending.".vcf*",
-			    file_path => $outsample_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => $outfile_path_no_ending.".vcf*",
+		  outfile_path => $outsample_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
@@ -11732,10 +11732,10 @@ sub samtools_mpileup {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf*"),
-			    file_path => $outfamily_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf*"),
+		  outfile_path => $outfamily_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
@@ -11956,10 +11956,10 @@ sub freebayes {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf*"),
-			    file_path => $outfamily_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf*"),
+		  outfile_path => $outfamily_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     close($FILEHANDLE);
@@ -12533,17 +12533,17 @@ sub gatk_baserecalibration {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile.$outfile_tag.".b*"),
-			    file_path => $outsample_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag.".b*"),
+		  outfile_path => $outsample_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     ## Remove Concatenated BAM file at temporary Directory
     remove_file({file_ref => \catfile($$temp_directory_ref, $infile.$outfile_tag.".b*"),
 		 FILEHANDLE => $FILEHANDLE,
 		});
-    
+
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
 	$sample_info_href->{sample}{$$sample_id_ref}{most_complete_bam}{path} = catfile($outsample_directory, $infile.$outfile_tag.".bam");
@@ -13046,10 +13046,10 @@ sub picardtools_markduplicates {
     say $FILEHANDLE "> ".catfile($$temp_directory_ref, $infile.$outfile_tag."_metric")." ", "\n";  #Sum of all original metric files
 
 
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_metric"),
-			    file_path => $outsample_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_metric"),
+		  outfile_path => $outsample_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
@@ -13300,10 +13300,10 @@ sub sambamba_markduplicates {
     say $FILEHANDLE "> ".catfile($$temp_directory_ref, $infile.$outfile_tag."_metric")." ", "\n";  #Sum of all original metric files
 
 
-    migrate_file_from_temp({temp_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_metric"),
-			    file_path => $outsample_directory,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
+    migrate_file({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_metric"),
+		  outfile_path => $outsample_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
     say $FILEHANDLE "wait", "\n";
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
@@ -13500,15 +13500,14 @@ sub picardtools_mergesamfiles {
     my $infile_suffix = $parameter_href->{alignment_suffix}{$jobid_chain};
     my $outfile_suffix = $parameter_href->{alignment_suffix}{$jobid_chain};
 
-    ## Copies files from source to temporary folder. Loop over files specified by $files_ref and collects files from $extract_files_ref.
-    migrate_files_to_temp({active_parameter_href => $active_parameter_href,
-			   files_ref => \@{ $infile_lane_no_ending_href->{$$sample_id_ref} },
-			   extract_files_ref => \@{ $infile_lane_no_ending_href->{$$sample_id_ref} },
-			   FILEHANDLE => $FILEHANDLE,
-			   insample_directory => $insample_directory,
-			   core_number => $core_number,
-			   file_ending => $infile_tag.$infile_suffix."*"
-			  });
+    ## Copies files from source to destination
+    migrate_files({infiles_ref => \@{ $infile_lane_no_ending_href->{$$sample_id_ref} },
+		   outfile_path => $$temp_directory_ref,
+		   FILEHANDLE => $FILEHANDLE,
+		   indirectory => $insample_directory,
+		   core_number => $core_number,
+		   file_ending => $infile_tag.$infile_suffix."*",
+		  });
 
     foreach my $infile ( @{ $infile_lane_no_ending_href->{$$sample_id_ref} } ) {
 
@@ -13617,13 +13616,13 @@ sub picardtools_mergesamfiles {
 	foreach my $merge_file (@{ $active_parameter_href->{picardtools_mergesamfiles_previous_bams} }) {
 
 	    if ($merge_file =~ /$$sample_id_ref/) {  #Look for sample_id in previously generated file to be merged with current run to be able to merge correct files within sample_id
-		
+
 		## Copy file(s) to temporary directory
 		say $FILEHANDLE "## Copy file(s) to temporary directory";
-		my $picardtools_mergesamfiles_previous_bams_file = migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-											 path => $merge_file,
-											 temp_directory => $$temp_directory_ref
-											});
+		my $picardtools_mergesamfiles_previous_bams_file = migrate_file({FILEHANDLE => $FILEHANDLE,
+										 infile_path => $merge_file,
+										 outfile_path => $$temp_directory_ref
+										});
 		say $FILEHANDLE "wait", "\n";
 
 		if ($merge_file =~ /lane(\d+)|s_(\d+)/) {  #Look for lanes_ or lane\d in previously generated file to be merged with current run to be able to extract previous lanes
@@ -13632,7 +13631,7 @@ sub picardtools_mergesamfiles {
 
 		    ## Removes ".file_ending" in filename.FILENDING
 		    my $picardtools_mergesamfiles_previous_bams_file_no_ending = fileparse($picardtools_mergesamfiles_previous_bams_file,
-											  qr/$infile_suffix/);
+											   qr/$infile_suffix/);
 
 		    ## Split BAMs using Samtools
 		    say $FILEHANDLE "## Split alignment files per contig";
@@ -13720,10 +13719,10 @@ sub picardtools_mergesamfiles {
 
 	    ## Copy file(s) to temporary directory
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
-	    my $picardtools_mergesamfiles_previous_bams_file = migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-										     path => $merge_file,
-										     temp_directory => $$temp_directory_ref
-										    });
+	    my $picardtools_mergesamfiles_previous_bams_file = migrate_file({FILEHANDLE => $FILEHANDLE,
+									     infile_path => $merge_file,
+									     outfile_path => $$temp_directory_ref
+									    });
 	    say $FILEHANDLE "wait", "\n";
 
 	    if ($merge_file =~ /lane(\d+)|s_(\d+)/) {  #Look for lanes_ or lane\d in previously generated file to be merged with current run to be able to extract previous lanes
@@ -13741,7 +13740,7 @@ sub picardtools_mergesamfiles {
 
 		## Removes ".file_ending" in filename.FILENDING(.gz)
 		my $picardtools_mergesamfiles_previous_bams_file_no_ending = fileparse($picardtools_mergesamfiles_previous_bams_file,
-											  qr/$infile_suffix/);
+										       qr/$infile_suffix/);
 
 		## Split BAMs using Samtools
 		say $FILEHANDLE "## Split alignment files per contig";
@@ -13935,7 +13934,7 @@ sub bwa_sampe {
 						 program_directory => lc($outaligner_dir),
 						 core_number => $core_number,
 						 process_time => $time,
-						 temp_directory => $active_parameter_href->{temp_directory}
+						 temp_directory => $active_parameter_href->{temp_directory},
 						});
 
 	## Assign directories
@@ -13946,22 +13945,20 @@ sub bwa_sampe {
 
 	my $infile = $infile{$sample_id}[$paired_end_tracker]; #For required .fastq file
 
-	## Copies files from source to temporary folder. Loop over files specified by $files_ref and collects files from $extract_files_ref.
-	migrate_files_to_temp({active_parameter_href => $active_parameter_href,
-			       files_ref => \@{ $infile_href->{$sample_id} },
-			       extract_files_ref => \@{ $infile_href->{$sample_id} },
-			       FILEHANDLE => $FILEHANDLE,
-			       insample_directory => $fastq_insample_directory,
-			       core_number => $core_number
-			      });  #Fastq files
-	migrate_files_to_temp({active_parameter_href => $active_parameter_href,
-			       files_ref => \@{ $infile_both_strands_no_ending_href->{$sample_id} },
-			       extract_files_ref => \@{ $infile_both_strands_no_ending_href->{$sample_id} },
-			       FILEHANDLE => $FILEHANDLE,
-			       insample_directory => $insample_directory,
-			       core_number => $core_number,
-			       file_ending => ".sai*",
-			      });
+	## Copies files from source to destination
+	migrate_files({infiles_ref => \@{ $infile_href->{$sample_id} },
+		       outfile_path => $active_parameter_href->{temp_directory},
+		       FILEHANDLE => $FILEHANDLE,
+		       indirectory => $fastq_insample_directory,
+		       core_number => $core_number,
+		      });  #Fastq files
+	migrate_files({infiles_ref => \@{ $infile_both_strands_no_ending_href->{$sample_id} },
+		       outfile_path => $active_parameter_href->{temp_directory},
+		       FILEHANDLE => $FILEHANDLE,
+		       indirectory => $insample_directory,
+		       core_number => $core_number,
+		       file_ending => ".sai*",
+		      });
 
 	## BWA Sampe
 	say $FILEHANDLE "## Aligning reads";
@@ -13995,10 +13992,10 @@ sub bwa_sampe {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file_from_temp({temp_path => catfile($active_parameter_href->{temp_directory}, $infile_no_ending.".bam"),
-				file_path => $outsample_directory,
-				FILEHANDLE => $FILEHANDLE,
-			       });
+	migrate_file({infile_path => catfile($active_parameter_href->{temp_directory}, $infile_no_ending.".bam"),
+		      outfile_path => $outsample_directory,
+		      FILEHANDLE => $FILEHANDLE,
+		     });
 	say $FILEHANDLE "wait", "\n";
 
 	close($FILEHANDLE);
@@ -14080,7 +14077,7 @@ sub bwa_aln {
 					     program_directory => lc($outaligner_dir),
 					     core_number => $core_number,
 					     process_time => $time,
-					     temp_directory => $active_parameter_href->{temp_directory}
+					     temp_directory => $active_parameter_href->{temp_directory},
 					    });
 
     ## Assign directories
@@ -14088,14 +14085,13 @@ sub bwa_aln {
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id, lc($outaligner_dir));
     $parameter_href->{"p".$program_name}{$sample_id}{indirectory} = $outsample_directory;  #Used downstream
 
-    ## Copies files from source to temporary folder. Loop over files specified by $files_ref and collects files from $extract_files_ref
-    migrate_files_to_temp({active_parameter_href => $active_parameter_href,
-			   files_ref => \@{ $infile_href->{$sample_id} },
-			   extract_files_ref => \@{ $infile_href->{$sample_id} },
-			   FILEHANDLE => $FILEHANDLE,
-			   insample_directory => $insample_directory,
-			   core_number => $core_number,
-			  });
+    ## Copies files from source to destination
+    migrate_files({infiles_ref => \@{ $infile_href->{$sample_id} },
+		   outfile_path => $active_parameter_href->{temp_directory},
+		   FILEHANDLE => $FILEHANDLE,
+		   indirectory => $insample_directory,
+		   core_number => $core_number,
+		  });
 
     ## BWA Aln
     say $FILEHANDLE "## Creating .sai index";
@@ -14119,15 +14115,14 @@ sub bwa_aln {
     }
     say $FILEHANDLE "wait", "\n";
 
-    ## Copies files from temporary folder to source. Loop over files specified by $files_ref and collects files from $extract_files_ref.
-    migrate_files_from_temp({files_ref => \@{ $infile_both_strands_no_ending_href->{$sample_id} },
-			     extract_files_ref => \@{ $infile_both_strands_no_ending_href->{$sample_id} },
-			     outsample_directory => $outsample_directory,
-			     temp_directory => $active_parameter_href->{temp_directory},
-			     core_number => $core_number,
-			     file_ending => ".sai",
-			     FILEHANDLE => $FILEHANDLE,
-			    });
+    ## Copies files from source to destination
+    migrate_files({infiles_ref => \@{ $infile_both_strands_no_ending_href->{$sample_id} },
+		   outfile_path => $outsample_directory,
+		   FILEHANDLE => $FILEHANDLE,
+		   indirectory => $active_parameter_href->{temp_directory},
+		   core_number => $core_number,
+		   file_ending => ".sai",
+		  });
 
     close($FILEHANDLE);
 
@@ -14276,9 +14271,9 @@ sub picardtools_mergerapidreads {
     remove_directory({directory_ref => \$active_parameter_href->{temp_directory},
 		      FILEHANDLE => $FILEHANDLE,
 		     });
-    
+
     close($FILEHANDLE);
-    
+
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
 	submit_job({active_parameter_href => $active_parameter_href,
@@ -14333,7 +14328,7 @@ sub bwa_mem {
     my $job_id_href;
     my $sample_id_ref;
     my $program_name;
-    
+
     my $tmpl = {
 	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
@@ -14368,7 +14363,7 @@ sub bwa_mem {
     my $insample_directory = $indir_path_href->{$$sample_id_ref};
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
     $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory;  #Used downstream
- 
+
     ## Assign file tags
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
@@ -14543,17 +14538,17 @@ sub bwa_mem {
 
 	    ## Copies file to temporary directory.
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
-	    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-				  path => catfile($insample_directory, $infile_href->{$$sample_id_ref}[$paired_end_tracker]),
-				  temp_directory => $$temp_directory_ref,
-				 });  #Read 1
+	    migrate_file({FILEHANDLE => $FILEHANDLE,
+			  infile_path => catfile($insample_directory, $infile_href->{$$sample_id_ref}[$paired_end_tracker]),
+			  outfile_path => $$temp_directory_ref,
+			 });  #Read 1
 
 	    if ($sequence_run_mode eq "paired_end") {  #Second read direction if present
 
-		migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-				      path => catfile($insample_directory, $infile_href->{$$sample_id_ref}[$paired_end_tracker + 1]),
-				      temp_directory => $$temp_directory_ref,
-				     });  #Read 2
+		migrate_file({FILEHANDLE => $FILEHANDLE,
+			      infile_path => catfile($insample_directory, $infile_href->{$$sample_id_ref}[$paired_end_tracker + 1]),
+			      outfile_path => $$temp_directory_ref,
+			     });  #Read 2
 	    }
 	    say $FILEHANDLE "wait", "\n";
 
@@ -14631,10 +14626,10 @@ sub bwa_mem {
 		say $FILEHANDLE catfile(dirname(devnull()),"stdin"),"\n";
 
 		## BAMS, bwa_mem logs etc.
-		migrate_file_from_temp({temp_path => $outfile_path_no_ending.".*",
-					file_path => $outsample_directory,
-					FILEHANDLE => $FILEHANDLE,
-				       });
+		migrate_file({infile_path => $outfile_path_no_ending.".*",
+			      outfile_path => $outsample_directory,
+			      FILEHANDLE => $FILEHANDLE,
+			     });
 		say $FILEHANDLE "wait", "\n";
 	    }
 	    else {  #Sort directly from run-bwakit
@@ -14649,10 +14644,10 @@ sub bwa_mem {
 		    );
 		foreach my $outfile (@outfiles) {
 
-		    migrate_file_from_temp({temp_path => $outfile,
-					    file_path => $outsample_directory,
-					    FILEHANDLE => $FILEHANDLE,
-					   });
+		    migrate_file({infile_path => $outfile,
+				  outfile_path => $outsample_directory,
+				  FILEHANDLE => $FILEHANDLE,
+				 });
 		}
 		say $FILEHANDLE "wait", "\n";
 	    }
@@ -14667,10 +14662,10 @@ sub bwa_mem {
 
 		## Copies file from temporary directory.
 		say $FILEHANDLE "## Copy file from temporary directory";
-		migrate_file_from_temp({temp_path => $outfile_path_no_ending.".stats",
-					file_path => $outsample_directory,
-					FILEHANDLE => $FILEHANDLE,
-				       });
+		migrate_file({infile_path => $outfile_path_no_ending.".stats",
+			      outfile_path => $outsample_directory,
+			      FILEHANDLE => $FILEHANDLE,
+			     });
 		say $FILEHANDLE "wait", "\n";
 	    }
 
@@ -14687,10 +14682,10 @@ sub bwa_mem {
 
 		## Copies file from temporary directory.
 		say $FILEHANDLE "## Copy file from temporary directory";
-		migrate_file_from_temp({temp_path => $outfile_path_no_ending.".cram",
-					file_path => $outsample_directory,
-					FILEHANDLE => $FILEHANDLE,
-				       });
+		migrate_file({infile_path => $outfile_path_no_ending.".cram",
+			      outfile_path => $outsample_directory,
+			      FILEHANDLE => $FILEHANDLE,
+			     });
 		say $FILEHANDLE "wait", "\n";
 	    }
 
@@ -15446,16 +15441,13 @@ sub fastqc {
     ## Assign suffix
     my $infile_suffix = $parameter_href->{"p".$program_name}{infile_suffix};
 
-    ## Copies files from source to temporary folder. Loop over files specified by $files_ref and collects files from $extract_files_ref.
-    migrate_files_to_temp({active_parameter_href => $active_parameter_href,
-			   sample_info_href => $sample_info_href,
-			   files_ref => \@{ $infile_lane_no_ending_href->{$$sample_id_ref} },
-			   extract_files_ref => \@{ $infile_href->{$$sample_id_ref} },
-			   FILEHANDLE => $FILEHANDLE,
-			   insample_directory => $insample_directory,
-			   core_number => $core_number,
-			   sample_id => $$sample_id_ref
-			  });
+    ## Copies files from source to destination
+    migrate_files({infiles_ref => \@{ $infile_href->{$$sample_id_ref} },
+		   outfile_path => $$temp_directory_ref,
+		   FILEHANDLE => $FILEHANDLE,
+		   indirectory => $insample_directory,
+		   core_number => $core_number,
+		  });
 
     say $FILEHANDLE "## ".$program_name;
 
@@ -15772,10 +15764,10 @@ sub split_fastq_file {
 				    qr/$infile_suffix|$infile_suffix\.gz/)."_splitted_";
 
 	## Copies file to temporary directory.
-	migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			      path => $infile_path,
-			      temp_directory => $$temp_directory_ref,
-			     });
+	migrate_file({FILEHANDLE => $FILEHANDLE,
+		      infile_path => $infile_path,
+		      outfile_path => $$temp_directory_ref,
+		     });
 	say $FILEHANDLE "wait ";
 
 	## Decompress file and split
@@ -16229,7 +16221,7 @@ sub build_ptchs_metric_prerequisites {
 			  $exome_target_bed_file_random.".dict",
 	    );
 	foreach my $file (@temp_files) {
-	    
+
 	    remove_file({file_ref => \$file,
 			 FILEHANDLE => $FILEHANDLE,
 			});
@@ -16649,7 +16641,7 @@ sub build_human_genome_prerequisites {
 		print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
 						 intended_file_path_ref => \$intended_file_path,
 						 temporary_file_path_ref => \$temporary_file_path,
-						});		
+						});
 	    }
 	    if ($file_ending eq ".fai") {
 
@@ -16883,7 +16875,7 @@ sub read_yaml_pedigree_file {
 		exit 1;
 	    }
 	}
-	
+
     }
     if(%exom_target_bed_test_file_tracker) {  #We have read capture kits from pedigree and need to transfer to active_parameters
 
@@ -17050,7 +17042,7 @@ sub push_to_job_id {
 	$chain_key = $family_id_chain_key."_".$sample_id_chain_key;  #Set key
 
 	if ($job_id_href->{$family_id_chain_key}{$chain_key}) {  #Job exists
-	    
+
 	  JOB_IDS:
 	    while (my ($job_index) = each($job_id_href->{$family_id_chain_key}{$chain_key}) ) {  #All previous jobs i.e. jobs in this case equals to infiles in number
 
@@ -17189,10 +17181,10 @@ sub submit_job {
 					});
 
 	foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
-	    
+
 	    my $sample_id_chain_key =  $sample_id."_".$path;
 	    push ( @{ $job_id_href->{$family_id_chain_key}{$sample_id_chain_key} }, $job_id);  #Add job_id to hash
-	    
+
 	    ## Saves job_id to the correct hash array depending on chaintype
 	    push_to_job_id({active_parameter_href => $active_parameter_href,
 			    sample_info_href => $sample_info_href,
@@ -17589,13 +17581,13 @@ sub submit_jobs_to_sbatch {
     my $job_dependency_type;
     my $job_ids;
 
-    my $tmpl = { 
+    my $tmpl = {
 	sbatch_file_name => { required => 1, defined => 1, strict_type => 1, store => \$sbatch_file_name},
 	job_dependency_type => { strict_type => 1, store => \$job_dependency_type},
 	job_ids => { strict_type => 1, store => \$job_ids},
     };
-    
-   
+
+
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
@@ -17608,7 +17600,7 @@ sub submit_jobs_to_sbatch {
 
 	$job_ids_return = `sbatch --dependency=$job_dependency_type$job_ids $sbatch_file_name`;  #Supply with dependency of previous jobs that this one is dependent on
 	($job_id) = ($job_ids_return =~ /Submitted batch job (\d+)/);  #Just submitted job_id
-	
+
     }
     else {  #No dependencies
 
@@ -17616,7 +17608,7 @@ sub submit_jobs_to_sbatch {
 	($job_id) = ($job_ids_return =~ /Submitted batch job (\d+)/);  #Just submitted job_id
     }
     if ($job_ids_return !~/\d+/) {  #Catch errors since, propper sbatch submission should only return numbers
-	
+
 	$log->fatal($job_ids_return."\n");
 	$log->fatal("MIP: Aborting run.\n");
 	exit 1;
@@ -18422,7 +18414,7 @@ sub add_to_active_parameter {
 				   active_parameter_href => $active_parameter_href,
 				   parameter_name => "human_genome_reference",  #Special case to make sure that complete path is supplied
 				  });
-	
+
 	## Detect version and source of the human_genome_reference: Source (hg19 or GRCh).
 	parse_human_genome_reference({file_info_href => $file_info_href,
 				      human_genome_reference_ref => \basename($active_parameter_href->{human_genome_reference}),
@@ -18546,7 +18538,7 @@ sub check_parameter_files {
 	    $parameter_set_switch = 1;
 
 	    if (exists($parameter_href->{$parameter_name}{reference})) {  #Expect file to be in reference directory
-		
+
 		## Update path for supplied reference(s) associated with parameter that should reside in the mip reference directory to full path
 		update_mip_reference_path({parameter_href => $parameter_href,
 					   active_parameter_href => $active_parameter_href,
@@ -18555,11 +18547,11 @@ sub check_parameter_files {
 	    }
 
 	    if (defined($active_parameter_href->{$parameter_name}) ) {  #Check parameter existence
-    
+
 		if ($parameter_href->{$parameter_name}{data_type} eq "SCALAR") {
-	
+
 		    my $path = catfile($active_parameter_href->{$parameter_name});
-		    
+
 		    if ($parameter_name eq "bwa_build_reference") {
 
 			## Checks files to be built by combining filename stub with fileendings
@@ -19811,15 +19803,15 @@ sub check_auto_build {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     if ($parameter_href->{$$parameter_name_ref}{build_file} eq "yes_auto_build") {
-	
+
 	return "1";  #Flag that autobuild is needed
     }
     elsif ($parameter_href->{$$parameter_name_ref}{build_file} eq 1) {  #1 for arrays
-	
+
 	return "1";  #Flag that autobuild is needed
     }
     else {
-	
+
 	return "0";  #No autobuild is needed
     }
 }
@@ -19866,7 +19858,7 @@ sub parse_human_genome_reference {
 	$log->warn("MIP cannot detect what kind of human_genome_reference you have supplied. If you want to automatically set the capture kits used please supply the reference on this format: [source]_[species]_[version].", "\n");
     }
 
-    ## Removes ".file_ending" in filename.FILENDING(.gz)    
+    ## Removes ".file_ending" in filename.FILENDING(.gz)
     $file_info_href->{human_genome_reference_name_no_ending} = fileparse($$human_genome_reference_ref,
 									 qr/\.fasta|\.fasta\.gz/);
 
@@ -20903,15 +20895,15 @@ sub concatenate_vcfs {
     print $FILEHANDLE "split -j ";  #Joinf VCFs together
 
     foreach my $element (@$arrays_ref) {
-	
+
 	print $FILEHANDLE $infile_prefix.$element.$infile_postfix." ";  #files to combined
     }
     if ( (defined($_[6])) && $reorder_swith eq "reorder_header") {
-	
+
 	print $FILEHANDLE "| ";  #Pipe
 	print $FILEHANDLE "vcfparser ";  #Parses the vcf output
     }
-    
+
     print $FILEHANDLE "> ".$outfile;  #OutFile
 }
 
@@ -21225,10 +21217,10 @@ sub remove_pedigree_elements {
 
   FAMILY_INFO:
     for my $key (keys %$hash_ref) {
-	
+
 	if (! any {$_ eq $key} @allowed_entries) {  #If element is not part of array
 
-		delete($hash_ref->{$key});
+	    delete($hash_ref->{$key});
 	}
     }
 
@@ -21460,7 +21452,7 @@ sub create_fam_file {
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	fam_file_path => { required => 1, defined => 1, strict_type => 1, store => \$fam_file_path},
 	FILEHANDLE => { store => \$FILEHANDLE},
-	pedigree_file => { default => $arg_href->{active_parameter_href}{pedigree_file}, 
+	pedigree_file => { default => $arg_href->{active_parameter_href}{pedigree_file},
 			   strict_type => 1, store => \$pedigree_file},
 	execution_mode => { default => "sbatch",
 			    allow => ["sbatch", "system"],
@@ -21781,97 +21773,149 @@ sub collect_outfile {
 }
 
 
-sub migrate_files_to_temp {
+sub migrate_files {
 
-##migrate_files_to_temp
+##migrate_files
 
-##Function : Copies files from source to temporary folder. Loop over files specified by $files_ref and collects files from $extract_files_ref.
+##Function : Copies files from source to destination.
 ##Returns  : ""
-##Arguments: $active_parameter_href, $sample_info_href, $files_ref, $extract_files_ref, $FILEHANDLE, $insample_directory, $core_number, $file_ending, $sample_id, $family_id_ref
-##         : $active_parameter_href => The active parameters for this analysis hash {REF},my $active_parameter_href = shift;
-##         : $sample_info_href      => Info on samples and family hash {REF}
-##         : $files_ref             => The array of files to copy
-##         : $extract_files_ref     => The array to extract files from
-##         : $FILEHANDLE            => Filehandle to write to
-##         : $insample_directory    => The directory for the file to be copied
-##         : $core_number           => The number of cores that can be used
-##         : $file_ending           => File ending. Set to "" to not add any file ending or omit from call {Optional}
-##         : $sample_id             => the sample_id {Optional}
-##         : $family_id_ref         => The family_id_ref {REF}
+##Arguments: $infiles_ref, $outfile_path, $FILEHANDLE, $indirectory, $core_number, $file_ending
+##         : $infiles_ref  => The array of files to copy
+##         : $outfile_path => Outfile path
+##         : $FILEHANDLE   => Filehandle to write to
+##         : $indirectory  => The directory for the files to be copied
+##         : $core_number  => The number of cores that can be used
+##         : $file_ending  => File ending. Set to "" to not add any file ending or omit from call {Optional}
 
     my ($arg_href) = @_;
 
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-
     ## Flatten argument(s)
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $files_ref;
-    my $extract_files_ref;
+    my $infiles_ref;
+    my $outfile_path;
     my $FILEHANDLE;
-    my $insample_directory;
+    my $indirectory;
     my $core_number;
     my $file_ending;
-    my $sample_id;
 
     my $tmpl = {
-	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	sample_info_href => { defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	files_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$files_ref},
-	extract_files_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$extract_files_ref},
+	infiles_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$infiles_ref},
+	outfile_path => { required => 1, defined => 1, strict_type => 1, store => \$outfile_path},
 	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	insample_directory => { required => 1, defined => 1, strict_type => 1, store => \$insample_directory},
+	indirectory => { required => 1, defined => 1, strict_type => 1, store => \$indirectory},
 	core_number => { required => 1, defined => 1, strict_type => 1, store => \$core_number},
 	file_ending => { defined => 1, strict_type => 1, store => \$file_ending},
-	sample_id => { defined => 1, strict_type => 1, store => \$sample_id},
-	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
-			   strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
-				strict_type => 1, store => \$temp_directory_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $paired_end_tracker = 0;
     my $core_counter = 1;
 
-    say $FILEHANDLE "## Copying file(s) to temporary directory";
-    foreach my $file (@$files_ref) {
-
-	my $sequence_run_mode;
-
-	if ( (defined($sample_info_href)) && (defined($sample_id)) ) {
-
-	    $sequence_run_mode = $sample_info_href->{sample}{$sample_id}{file}{$file}{sequence_run_type}; #Collect paired-end or single-end sequence run mode
-	}
-	print_wait({counter_ref => \$paired_end_tracker,
+    say $FILEHANDLE "## Copying file(s) to destination directory";
+    while (my ($file_index, $file) = each($infiles_ref) ) {  #For all files
+	
+	print_wait({counter_ref => \$file_index,
 		    core_number_ref => \$core_number,
 		    core_counter_ref => \$core_counter,
 		    FILEHANDLE => $FILEHANDLE,
 		   });
-
-	## Copies file to temporary directory.
-	migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			      path => catfile($insample_directory, $extract_files_ref->[$paired_end_tracker]),
-			      temp_directory => $$temp_directory_ref,
-			      file_ending => $file_ending,
-			     });
-	if ( (defined($sequence_run_mode)) && ($sequence_run_mode eq "paired_end") ) {
-
-	    $paired_end_tracker = $paired_end_tracker+1; #Increment to collect correct read 2 from %infile
-
-	    migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-				  path => catfile($insample_directory, $extract_files_ref->[$paired_end_tracker]),
-				  temp_directory => $$temp_directory_ref,
-				  file_ending => $file_ending,
-				 });
-	}
-	$paired_end_tracker++; #Increment to correctly track both single-end runs and paired-end runs
+	
+	## Copies file to destination
+	migrate_file({FILEHANDLE => $FILEHANDLE,
+		      infile_path => catfile($indirectory, $file),
+		      outfile_path => $outfile_path,
+		      file_ending => $file_ending,
+		     });
     }
     say $FILEHANDLE "wait", "\n";
 }
+
+
+sub migrate_file {
+
+##migrate_file
+
+##Function : Copy file to from source ($infile_path) to destination ($outfile_path).
+##Returns  : "$file_name"
+##Arguments: $FILEHANDLE, $infile_path, $outfile_path, $file_ending, $xargs, $xargs_file_name, $file_index,
+##         : $FILEHANDLE      => Filehandle to write to
+##         : $infile_path     => Infile path
+##         : $outfile_path    => Outfile path
+##         : $file_ending     => File ending {Optional}
+##         : $xargs           => Use xargs if defined {Optional}
+##         : $xargs_file_name => xargs file name {Optional, but required with xargs}
+##         : $file_index      => Index of file elements that have been processed {Optional, but required with xargs}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $infile_path;
+    my $outfile_path;
+    my $file_ending;
+    my $xargs;
+    my $xargs_file_name;
+    my $file_index;
+
+    my $tmpl = {
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
+	outfile_path => { required => 1, defined => 1, strict_type => 1, store => \$outfile_path},
+	file_ending => { strict_type => 1, store => \$file_ending},
+	xargs => { strict_type => 1, store => \$xargs},
+	xargs_file_name => { strict_type => 1, store => \$xargs_file_name},
+	file_index => {strict_type => 1, store => \$file_index},
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    use Program::Command::Cp qw(cp);
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
+    ## Split relative infile_path to file(s)
+    my ($infile_path_volume, $infile_path_directory, $infile_path_file_name) = File::Spec->splitpath($infile_path);
+
+    if (defined($file_ending)) {
+
+	$infile_path .= $file_ending;  #Add file_ending if supplied
+    }
+
+    if (! defined($xargs)) {
+
+	cp({FILEHANDLE => $FILEHANDLE,
+	    preserve => 1,
+	    infile_path => $infile_path,
+	    outfile_path => $outfile_path,
+	   });
+    }
+
+    if (defined($xargs)) {
+
+	if ( (defined($xargs_file_name)) && (defined($file_index))) {
+
+	    cp({FILEHANDLE => $FILEHANDLE,
+		preserve => 1,
+		infile_path => $infile_path,
+		outfile_path => $outfile_path,
+		stderrfile_path => $xargs_file_name.".".$file_index.".stderr.txt",
+	       });
+	}
+	else {
+
+	    $log->fatal("Lacking xargs_file_name or file_index in supplied arguments. Please supply arguments xargs_file_name and file_index if xargs is supplied");
+	    exit 1;
+	}
+    }
+    else {
+
+	say $FILEHANDLE "& ";
+    }
+    print $FILEHANDLE "\n";
+
+    return $infile_path_file_name;
+}
+
 
 sub remove_files_at_temp {
 
@@ -21996,218 +22040,6 @@ sub remove_files_at_temp {
 }
 
 
-sub migrate_files_from_temp {
-
-##migrate_files_from_temp
-
-##Function : Copies files from temporary folder to source. Loop over files specified by $files_ref and collects files from $extract_files_ref.
-##Returns  : ""
-##Arguments: $files_ref, $extract_files_ref, $outsample_directory, $temp_directory, $core_number, $active_parameter_href, $sample_info_href, $sample_id, $FILEHANDLE
-##         : $files_ref           => The array of files to copy
-##         : $extract_files_ref   => The array to extract files from
-##         : $outsample_directory => The directory for the file to be copied
-##         : $temp_directory      => The node directory to copy to
-##         : $file_ending         => The fileending to use for the outfile
-##         : $core_number         => The number of cores that can be used
-##         : $FILEHANDLE          => Filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $files_ref;
-    my $extract_files_ref;
-    my $FILEHANDLE;
-    my $outsample_directory;
-    my $temp_directory;
-    my $core_number;
-    my $file_ending;
-
-    my $tmpl = {
-	files_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$files_ref},
-	extract_files_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$extract_files_ref},
-	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	outsample_directory => { required => 1, defined => 1, strict_type => 1, store => \$outsample_directory},
-	temp_directory => { required => 1, defined => 1, strict_type => 1, store => \$temp_directory},
-	core_number => { required => 1, defined => 1, strict_type => 1, store => \$core_number},
-	file_ending => { required => 1, defined => 1, strict_type => 1, store => \$file_ending},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    my $core_counter = 1;
-
-    say $FILEHANDLE "## Copying file(s) from temporary folder";
-    while (my ($file_index) = each($files_ref) ) {  #For all files
-
-	print_wait({counter_ref => \$file_index,
-		    core_number_ref => \$core_number,
-		    core_counter_ref => \$core_counter,
-		    FILEHANDLE => $FILEHANDLE,
-		   });
-
-	## Copies file from temporary directory.
-	migrate_file_from_temp({temp_path => catfile($temp_directory, $extract_files_ref->[$file_index].$file_ending),
-				file_path => $outsample_directory,
-				FILEHANDLE => $FILEHANDLE,
-			       });
-    }
-    say $FILEHANDLE "wait", "\n";
-}
-
-sub migrate_file_to_temp {
-
-##migrate_file_to_temp
-
-##Function : Copy file to temporary directory.
-##Returns  : "$file_name"
-##Arguments: $FILEHANDLE, $path, $temp_directory, $file_ending, $xargs, $xargs_file_name, $file_index,
-##         : $FILEHANDLE      => Filehandle to write to
-##         : $path            => The infile path
-##         : $temp_directory  => The node directory to copy to
-##         : $file_ending     => File ending {Optional}
-##         : $xargs           => Use xargs if defined {Optional}
-##         : $xargs_file_name => xargs file name {Optional, but required with xargs}
-##         : $file_index      => Index of file elements that have been processed {Optional, but required with xargs}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $FILEHANDLE;
-    my $path;
-    my $temp_directory;
-    my $file_ending;
-    my $xargs;
-    my $xargs_file_name;
-    my $file_index;
-
-    my $tmpl = {
-	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	path => { required => 1, defined => 1, strict_type => 1, store => \$path},
-	temp_directory => { required => 1, defined => 1, strict_type => 1, store => \$temp_directory},
-	file_ending => { strict_type => 1, store => \$file_ending},
-	xargs => { strict_type => 1, store => \$xargs},
-	xargs_file_name => { strict_type => 1, store => \$xargs_file_name},
-	file_index => {strict_type => 1, store => \$file_index},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    use Program::Command::Cp qw(cp);
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
-
-    ## Split relative path to file(s)
-    my ($path_volume, $path_directory, $path_file_name) = File::Spec->splitpath($path);
-
-    if (defined($file_ending)) {
-
-	$path .= $file_ending;  #Add file_ending if supplied
-    }
-
-    if (! defined($xargs)) {
-
-	cp({FILEHANDLE => $FILEHANDLE,
-	    preserve => 1,
-	    infile_path => $path,
-	    outfile_path => $temp_directory,
-	   });
-    }
-
-    if (defined($xargs)) {
-
-	if ( (defined($xargs_file_name)) && (defined($file_index))) {
-
-	    cp({FILEHANDLE => $FILEHANDLE,
-		preserve => 1,
-		infile_path => $path,
-		outfile_path => $temp_directory,
-		stderrfile_path => $xargs_file_name.".".$file_index.".stderr.txt",
-	       });
-	}
-	else {
-
-	    $log->fatal("Lacking xargs_file_name or file_index in supplied arguments. Please supply arguments xargs_file_name and file_index if xargs is supplied");
-	    exit 1;
-	}
-    }
-    else {
-
-	say $FILEHANDLE "& ";
-    }
-    print $FILEHANDLE "\n";
-
-    return $path_file_name;
-}
-
-
-sub migrate_file_from_temp {
-
-##migrate_file_from_temp
-
-##Function : Copy file from temporary directory.
-##Returns  : ""
-##Arguments: $temp_path, $file_path, $FILEHANDLE, $xargs, $xargs_file_name, file_index
-##         : $temp_path       => The node temp file path
-##         : $file_path       => The node directory to copy to
-##         : $FILEHANDLE      => Filehandle to write to
-##         : $xargs           => Use xargs if defined {Optional}
-##         : $xargs_file_name => xargs file name {Optional, but required with xargs}
-##         : $file_index      => Index of file elements that have been processed {Optional, but required with xargs}
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $temp_path;
-    my $file_path;
-    my $FILEHANDLE;
-    my $xargs;
-    my $xargs_file_name;
-    my $file_index;
-
-    my $tmpl = {
-	temp_path => { required => 1, defined => 1, strict_type => 1, store => \$temp_path},
-	file_path => { required => 1, defined => 1, strict_type => 1, store => \$file_path},
-	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	xargs => { strict_type => 1, store => \$xargs},
-	xargs_file_name => { strict_type => 1, store => \$xargs_file_name},
-	file_index => {strict_type => 1, store => \$file_index},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
-
-    unless (defined($xargs)) {
-
-	print $FILEHANDLE "cp ";  #Copy
-	print $FILEHANDLE "-p ";  #Preserve=mode,ownership,timestamps
-    }
-
-    print $FILEHANDLE $temp_path." ";  #Infile
-    print $FILEHANDLE $file_path." ";  #Local temp file
-
-    if (defined($xargs)) {
-
-	if ( (defined($xargs_file_name)) && (defined($file_index))) {
-
-	    print $FILEHANDLE "2> ".$xargs_file_name.".".$file_index.".stderr.txt ";
-	}
-	else {
-
-	    $log->fatal("Lacking xargs_file_name or file_index in supplied arguments. Please supply arguments xargs_file_name and file_index if xargs is supplied");
-	    exit 1;
-	}
-    }
-    else {
-
-	say $FILEHANDLE "& ";
-    }
-    print $FILEHANDLE "\n";
-}
-
-
 sub remove_directory {
 
 ##remove_directory
@@ -22228,14 +22060,14 @@ sub remove_directory {
     my $directory_ref;
     my $FILEHANDLE;
 
-    my $tmpl = { 
+    my $tmpl = {
 	directory_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$directory_ref},
 	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
 	options_ref => { default => ["r", "f"],
 			 allow => ["d", "f", "i", "P", "R", "r", "v", "W"],
 			 strict_type => 1, store => \$options_ref},
     };
-     
+
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     print $FILEHANDLE "rm ";  #Remove
@@ -22263,14 +22095,14 @@ sub remove_file {
     my $file_ref;
     my $FILEHANDLE;
 
-    my $tmpl = { 
+    my $tmpl = {
 	file_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$file_ref},
 	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
 	options_ref => { default => ["f"],
 			 allow => ["d", "f", "i", "P", "R", "r", "v", "W"],
 			 strict_type => 1, store => \$options_ref},
     };
-     
+
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     print $FILEHANDLE "rm ";  #Remove
@@ -22649,24 +22481,24 @@ sub xargs_migrate_contig_files {
 	if (defined($infile)) {
 
 	    ## Copy file(s) to temporary directory.
-	    migrate_file_to_temp({FILEHANDLE => $XARGSFILEHANDLE,
-				  path => catfile($indirectory, $infile."_".$contig.$file_ending),
-				  temp_directory => $temp_directory,
-				  xargs => "xargs",
-				  xargs_file_name => $xargs_file_name,
-				  file_index => $contig,
-				 });
+	    migrate_file({FILEHANDLE => $XARGSFILEHANDLE,
+			  infile_path => catfile($indirectory, $infile."_".$contig.$file_ending),
+			  outfile_path => $temp_directory,
+			  xargs => "xargs",
+			  xargs_file_name => $xargs_file_name,
+			  file_index => $contig,
+			 });
 	}
 	if ( (defined($outfile)) && (defined($outdirectory)) ) {
 
 	    ## Copy file(s) from temporary directory.
-	    migrate_file_from_temp({temp_path => catfile($temp_directory, $outfile."_".$contig.$file_ending),
-				    file_path => $outdirectory,
-				    FILEHANDLE => $XARGSFILEHANDLE,
-				    xargs => "xargs",
-				    xargs_file_name => $xargs_file_name,
-				    file_index => $contig,
-				   });
+	    migrate_file({infile_path => catfile($temp_directory, $outfile."_".$contig.$file_ending),
+			  outfile_path => $outdirectory,
+			  FILEHANDLE => $XARGSFILEHANDLE,
+			  xargs => "xargs",
+			  xargs_file_name => $xargs_file_name,
+			  file_index => $contig,
+			 });
 	}
     }
     return $xargs_file_counter;
@@ -22928,7 +22760,7 @@ sub split_and_index_aligment_file {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Program::Alignment::Sambamba qw(view index);
-    
+
     my $xargs_file_name;
 
     my $file_suffix = ".".$output_format;
@@ -23103,11 +22935,11 @@ sub collect_gene_panels {
       ELEMENT:
 	foreach my $feature_element (@features) {
 
-	    KEY_VALUE:
+	  KEY_VALUE:
 	    foreach my $gene_panel_header_element (keys %header) {  #Parse the features using defined header keys
 
 		if ($feature_element=~/$gene_panel_header_element=/) {
-		    
+
 		    my @temps = split("=", $feature_element);
 		    $gene_panel{ $header{$gene_panel_header_element} } = $temps[1];  #Value
 		    last;
@@ -23116,7 +22948,7 @@ sub collect_gene_panels {
 	}
 
 	if (defined($gene_panel{gene_panel})) {
-	    
+
 	    my $gene_panel_name = $gene_panel{gene_panel};  #Create unique gene panel ID
 
 	    ## Add new entries
@@ -23363,9 +23195,9 @@ sub update_to_absolute_path {
 	elsif ($parameter_type eq "SCALAR") {  #Scalar - not a reference
 
 	    my $parameter_value = $parameter_href->{$parameter_name}{value};  #Alias
-	    	    
+
 	    if ( (defined($parameter_value)) && ($parameter_value ne "nocmd_input") ) {  #Scalar
-		
+
 		$parameter_value = File::Parse::Parse::find_absolute_path({path => $parameter_value,
 									   parameter_name => $parameter_name,
 									  });
@@ -26315,7 +26147,7 @@ sub get_pedigree_sample_info {
 						     capture_kit => $capture_kit,
 						     user_supplied_parameter_switch => $user_supply_switch_href->{exome_target_bed},
 						    });
-	
+
 	if($exome_target_bed_file) {
 
 	    push(@{ $exom_target_bed_test_file_tracker_href->{$exome_target_bed_file} }, $sample_id);
@@ -26340,34 +26172,34 @@ sub check_founder_id {
     ## Flatten argument(s)
     my $pedigree_href;
     my $pedigree_sample_ids_ref;
-    
-    my $tmpl = { 
+
+    my $tmpl = {
 	pedigree_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$pedigree_href},
 	pedigree_sample_ids_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$pedigree_sample_ids_ref},
     };
-    
-   
+
+
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-    
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger("MIP");
-    
+
   SAMPLE:
     foreach my $pedigree_sample_href (@{ $pedigree_href->{samples} }) {
-	
+
 	my @founders = ($pedigree_sample_href->{father}, $pedigree_sample_href->{mother});
 
       FOUNDER:
 	foreach my $founder (@founders) {
 
 	    if ($founder) {
-		
+
 		if (! ( any {$_ eq $founder} @$pedigree_sample_ids_ref ) ) {  #If element is not part of array
-		    
+
 		    $log->fatal("Could not find founder sample_id: ".$founder." in pedigree file\n");
 		    exit 1;
 		}
-	    }	
+	    }
 	}
     }
 }
@@ -26391,17 +26223,17 @@ sub remove_contigs {
     my $contigs_ref;
     my $contig_names_ref;
 
-    my $tmpl = { 
+    my $tmpl = {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	contigs_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$contigs_ref},
 	contig_names_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$contig_names_ref},
     };
-    
+
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     ## Removes contigY|chrY from contigs if no males or 'other' found in analysis
     if (! $active_parameter_href->{male_found}) {
-	
+
 	## Removes contigs from supplied contigs_ref
 	remove_array_element({contigs_ref => $contigs_ref,
 			      remove_contigs_ref => $contig_names_ref,
@@ -26411,52 +26243,52 @@ sub remove_contigs {
 
 
 sub update_mip_reference_path {
-    
+
 ##update_mip_reference_path
-    
+
 ##Function : Update path for supplied reference(s) associated with parameter that should reside in the mip reference directory to full path.
 ##Returns  : ""
 ##Arguments: $parameter_href, $active_parameter_href, $parameter_name
 ##         : $parameter_href        => The parameter hash {REF}
 ##         : $active_parameter_href => The active parameters for this analysis hash {REF}
 ##         : $parameter_name        => Parameter to update
-    
+
     my ($arg_href) = @_;
-    
+
     ## Flatten argument(s)
     my $parameter_href;
     my $active_parameter_href;
     my $parameter_name;
-    
-    my $tmpl = { 
+
+    my $tmpl = {
 	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
 	parameter_name => { required => 1, defined => 1, strict_type => 1, store => \$parameter_name},
     };
-    
+
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-    
+
     my $reference_dir_ref = \$active_parameter_href->{reference_dir};
-    
+
     if ($parameter_href->{$parameter_name}{data_type} eq "SCALAR"
 	&& defined($active_parameter_href->{$parameter_name}) ) {
-	
+
 	my ($volume, $directory, $file_name) = File::Spec->splitpath($active_parameter_href->{$parameter_name});  #Split to restate
 	$active_parameter_href->{$parameter_name} = $file_name;  #Restate to allow for changing mip reference directory between runs
 	$active_parameter_href->{$parameter_name} = catfile($$reference_dir_ref, $active_parameter_href->{$parameter_name});  #Update original value
     }
     elsif ($parameter_href->{$parameter_name}{data_type} eq "ARRAY") {
-	
+
 	foreach my $file (@{ $active_parameter_href->{$parameter_name} }) {
-	    
+
 	    my ($volume, $directory, $file_name) = File::Spec->splitpath($file);  #Split to restate
 	    $file = catfile($$reference_dir_ref, $file_name);  #Update original element
 	}
     }
     elsif ($parameter_href->{$parameter_name}{data_type} eq "HASH") {
-	
+
 	foreach my $file (keys $active_parameter_href->{$parameter_name}) {
-	    
+
 	    my ($volume, $directory, $file_name) = File::Spec->splitpath($file);  #Split to restate
 	    $active_parameter_href->{$parameter_name}{ catfile($$reference_dir_ref, $file_name) } = delete($active_parameter_href->{$parameter_name}{$file});  #Update original value
 	}
@@ -26480,13 +26312,13 @@ sub check_vcfanno_toml {
     my $vcfanno_file_toml;
     my $vcfanno_file_freq;
 
-    my $tmpl = { 
+    my $tmpl = {
 	vcfanno_file_toml => { required => 1, defined => 1, strict_type => 1, store => \$vcfanno_file_toml},
 	vcfanno_file_freq => { required => 1, defined => 1, strict_type => 1, store => \$vcfanno_file_freq},
     };
-     
+
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-    
+
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Retrieve logger object
@@ -26497,7 +26329,7 @@ sub check_vcfanno_toml {
     while (<$FILEHANDLE>) {
 
 	chomp $_; #Remove newline
-	
+
 	if($_=~/^file="(\S+)"/) {
 
 	    my $file_path_freq = $1;
@@ -26518,11 +26350,11 @@ sub check_snpsift_keys {
 
 ##check_snpsift_keys
 
-##Function : Check that the supplied 
+##Function : Check that the supplied
 ##Returns  : ""
 ##Arguments: $snpsift_annotation_files_href, $snpsift_annotation_outinfo_key_href
 ##         : $snpsift_annotation_files_href       => Snpsift annotation files {REF}
-##         : $snpsift_annotation_outinfo_key_href => File and outinfo key to add to vcf {REF} 
+##         : $snpsift_annotation_outinfo_key_href => File and outinfo key to add to vcf {REF}
 
     my ($arg_href) = @_;
 
@@ -26530,20 +26362,20 @@ sub check_snpsift_keys {
     my $snpsift_annotation_files_href;
     my $snpsift_annotation_outinfo_key_href;
 
-    my $tmpl = { 
+    my $tmpl = {
 	snpsift_annotation_files_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$snpsift_annotation_files_href},
 	snpsift_annotation_outinfo_key_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$snpsift_annotation_outinfo_key_href},
     };
-     
+
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-    
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger("MIP");
 
     foreach my $file (keys %$snpsift_annotation_outinfo_key_href) {
 
 	unless (exists($snpsift_annotation_files_href->{$file})) {
-	    
+
 	    $log->fatal("The supplied snpsift_annotation_outinfo_key file: ".$file." does not match any file in '--snpsift_annotation_files'");
 	    $log->fatal("Supplied snpsift_annotation_files files:\n".join("\n", keys %$snpsift_annotation_files_href));
 	    exit 1;
@@ -26565,20 +26397,20 @@ sub grep_remove {
 ##         : $FILEHANDLE  => Filehandle to write to
 
     my ($arg_href) = @_;
-    
+
     ## Flatten argument(s)
     my $filter_file;
     my $infile;
     my $outfile;
     my $FILEHANDLE;
-    
-    my $tmpl = { 
+
+    my $tmpl = {
 	filter_file => { required => 1, defined => 1, strict_type => 1, store => \$filter_file},
 	infile => { required => 1, defined => 1, strict_type => 1, store => \$infile},
 	outfile => { required => 1, defined => 1, strict_type => 1, store => \$outfile},
 	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
     };
-     
+
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     print $FILEHANDLE "grep ";
@@ -26607,21 +26439,21 @@ sub check_key_exists_in_hash {
     my $query_href;
     my $parameter_name;
 
-    my $tmpl = { 
+    my $tmpl = {
 	truth_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$truth_href},
 	query_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$query_href},
 	parameter_name => { required => 1, defined => 1, store => \$parameter_name},
     };
-     
+
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger("MIP");
 
     foreach my $key (keys %$query_href) {
-	
+
 	if (! exists($truth_href->{$key}) ) {
-	    
+
 	    $log->fatal($parameter_name." key '".$key."' - Does not exist as module program parameter in MIP");
 	    exit 1;
 	}
@@ -26647,21 +26479,21 @@ sub check_element_exists_in_hash {
     my $queryies;
     my $parameter_name;
 
-    my $tmpl = { 
+    my $tmpl = {
 	truth_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$truth_href},
 	queryies => { required => 1, defined => 1, default => [], strict_type => 1, store => \$queryies},
 	parameter_name => { required => 1, defined => 1, store => \$parameter_name},
     };
-     
+
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger("MIP");
 
     foreach my $element (@$queryies) {
-	    
+
 	if (! exists($truth_href->{$element}) ) {
-		
+
 	    $log->fatal($parameter_name." element '".$element."' - Does not exist as module program parameter in MIP");
 	    exit 1;
 	}
@@ -26678,18 +26510,18 @@ sub get_vcf_suffix {
 ##Arguments: $parameter_href, $jobid_chain
 ##         : $parameter_href => Holds all parameters
 ##         : $jobid_chain    => Job id chain for program
- 
+
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $parameter_href;
     my $jobid_chain;
 
-    my $tmpl = { 
+    my $tmpl = {
 	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
 	jobid_chain => { required => 1, defined => 1, strict_type => 1, store => \$jobid_chain},
     };
-     
+
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     my $vcf_suffix = $parameter_href->{vcf_suffix}{$jobid_chain};
@@ -26758,10 +26590,10 @@ sub prepare_gatk_target_intervals {
 	my $target_interval_path = catfile($$temp_directory_ref, $$target_interval_file_list_ref);
 
 	## Copies file to temporary directory.
-	migrate_file_to_temp({FILEHANDLE => $FILEHANDLE,
-			      path => catfile($$reference_dir_ref, $$target_interval_file_list_ref),
-			      temp_directory => $$temp_directory_ref,
-			     });
+	migrate_file({FILEHANDLE => $FILEHANDLE,
+		      infile_path => catfile($$reference_dir_ref, $$target_interval_file_list_ref),
+		      outfile_path => $$temp_directory_ref,
+		     });
 	say $FILEHANDLE "wait ";
 
 	if ($add_ending) {
