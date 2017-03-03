@@ -1,4 +1,4 @@
-package Program::Compression::Gzip;
+package Program::Compression::Pigz;
 
 use strict;
 use warnings;
@@ -20,7 +20,7 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(gzip);
+    our @EXPORT_OK = qw(pigz);
 
 }
 
@@ -28,18 +28,19 @@ use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 
 
-sub gzip {
+sub pigz {
 
-##gzip
+##pigz
 
-##Function : Perl wrapper for writing gzip recipe to $FILEHANDLE or return commands array. Based on gzip 1.3.12.
+##Function : Perl wrapper for writing pigz recipe to $FILEHANDLE or return commands array. Based on pigz 2.3.1.
 ##Returns  : "@commands"
-##Arguments: $FILEHANDLE, $stdout, $decompress, $infile_path, $outfile_path, $quiet, $verbose
+##Arguments: $FILEHANDLE, $stdout, $decompress, $infile_path, $outfile_path, $processes, $quiet, $verbose
 ##         : $FILEHANDLE   => Filehandle to write to
 ##         : $stdout       => Write on standard output, keep original files unchanged
 ##         : $decompress   => Decompress
 ##         : $infile_path  => Infile path
-##         : $outfile_path => Outfile path. Write documents to FILE 
+##         : $outfile_path => Outfile path
+##         : $processes    => Allow up to n compression threads
 ##         : $quiet        => Suppress all warnings
 ##         : $verbose      => Verbosity
 
@@ -55,6 +56,7 @@ sub gzip {
     my $decompress;
     my $infile_path;
     my $outfile_path;
+    my $processes;
 
     my $tmpl = {
 	FILEHANDLE => { store => \$FILEHANDLE},
@@ -62,6 +64,8 @@ sub gzip {
 	decompress => { strict_type => 1, store => \$decompress},
 	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
 	outfile_path => { strict_type => 1, store => \$outfile_path},
+	processes => { allow => qr/^\d+$/,
+		       strict_type => 1, store => \$processes},
 	quiet => { default => 0,
 		   allow => [0, 1],
 		   strict_type => 1, store => \$quiet},
@@ -72,10 +76,14 @@ sub gzip {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    ## gzip
-    my @commands = qw(gzip);  #Stores commands depending on input parameters
+    ## pigz
+    my @commands = qw(pigz);  #Stores commands depending on input parameters
 
     ## Options
+    if($processes) {
+
+	push(@commands, "--processes ".$processes);
+    }
     if ($quiet) {
 
 	push(@commands, "--quiet");

@@ -293,7 +293,6 @@ psplit_fastq_file:
   outfile_suffix: ".fastq.gz"
   program_name_path:
    - pigz
-   - unpigz
    - split
   type: program
 split_fastq_file_read_batch:

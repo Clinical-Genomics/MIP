@@ -1077,16 +1077,16 @@ if ($active_parameter{pfastqc} > 0) {  #Run FastQC
 
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
-	fastqc({parameter_href => \%parameter,
-		active_parameter_href => \%active_parameter,
-		sample_info_href => \%sample_info,
-		infile_href => \%infile,
-		indir_path_href => \%indir_path,
-		infile_lane_no_ending_href => \%infile_lane_no_ending,
-		job_id_href => \%job_id,
-		sample_id_ref => \$sample_id,
-		program_name => "fastqc",
-	       });
+	pfastqc({parameter_href => \%parameter,
+		 active_parameter_href => \%active_parameter,
+		 sample_info_href => \%sample_info,
+		 infile_href => \%infile,
+		 indir_path_href => \%indir_path,
+		 infile_lane_no_ending_href => \%infile_lane_no_ending,
+		 job_id_href => \%job_id,
+		 sample_id_ref => \$sample_id,
+		 program_name => "fastqc",
+		});
     }
 }
 
@@ -15352,9 +15352,9 @@ sub madeline {
 }
 
 
-sub fastqc {
+sub pfastqc {
 
-##fastqc
+##pfastqc
 
 ##Function : Raw sequence quality analysis using FASTQC.
 ##Returns  : ""
@@ -15718,6 +15718,8 @@ sub split_fastq_file {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Program::Command::Cp qw(cp);
+    use Program::Command::Split qw(split);
+    use Program::Compression::Pigz qw(pigz);
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
@@ -15775,17 +15777,22 @@ sub split_fastq_file {
 	say $FILEHANDLE "wait ";
 
 	## Decompress file and split
-	print $FILEHANDLE "unpigz ";
-	print $FILEHANDLE "-p ".$core_number." ";  #Nr of threads
-	print $FILEHANDLE "-c ";  #Write all processed output to stdout
-	print $FILEHANDLE $file_path." ";  #Infile
+	pigz({infile_path => $file_path,
+	      decompress => 1,
+	      processes => $core_number,
+	      stdout => 1,
+	      FILEHANDLE => $FILEHANDLE,
+	     });
 	print $FILEHANDLE "| ";  #Pipe
-	print $FILEHANDLE "split ";
-	print $FILEHANDLE "-l ".($sequence_read_batch * 4)." ";  #Put NUMBER lines per output file
-	print $FILEHANDLE "- ";  #STDIN
-	print $FILEHANDLE "-d ";  #Use numeric suffixes instead of alphabetic
-	print $FILEHANDLE "-a 4 ";  #Use suffixes of length N
-	say $FILEHANDLE catfile($$temp_directory_ref, $file_prefix), "\n";
+
+	Program::Command::Split::split({infile_path => "-",
+					lines => ($sequence_read_batch * 4),
+					numeric_suffixes => 1,
+					suffix_length => 4,
+					FILEHANDLE => $FILEHANDLE,
+					prefix => catfile($$temp_directory_ref, $file_prefix),
+				       });
+	say $FILEHANDLE "\n";
 
 	## Remove original files
 	remove_file({file_ref => \$file_path,
@@ -15814,10 +15821,10 @@ sub split_fastq_file {
 	say $FILEHANDLE "done";
 
 	## Compress file again
-	my $splittedFile = catfile($indir_path{$$sample_id_ref}, $file_prefix."*");
-
-	print $FILEHANDLE "pigz ";
-	say $FILEHANDLE catfile($$temp_directory_ref, "*".$infile_suffix), "\n";
+	pigz({infile_path => catfile($$temp_directory_ref, "*".$infile_suffix),
+	      FILEHANDLE => $FILEHANDLE,
+	     });
+	say $FILEHANDLE "\n";
 
 	## Copies files from temporary folder to source
 	cp({FILEHANDLE => $FILEHANDLE,
