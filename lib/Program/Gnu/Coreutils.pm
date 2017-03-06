@@ -20,7 +20,7 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(cp rm mv split);
+    our @EXPORT_OK = qw(cp rm mv mkdir split);
 
 }
 
@@ -188,13 +188,12 @@ sub rm {
 ##Function : Perl wrapper for writing rm recipe to already open $FILEHANDLE or return commands array. Based on rm 8.4
 ##Returns  : "@commands"
 ##Arguments: $FILEHANDLE, $infile_path, $stderrfile_path, $recursive, $force, $verbose
-##         : $preserve_attributes_ref => Preserve the specified attributes (default:mode,ownership,timestamps), if possible additional attributes: context, links, xattr, all
-##         : $FILEHANDLE              => Filehandle to write to
-##         : $infile_path             => Infile path
-##         : $stderrfile_path         => Stderrfile path
-##         : $recursive               => Copy directories recursively
-##         : $force                   => If an existing destination file cannot be opened, remove it and try again
-##         : $verbose                 => Verbosity
+##         : $FILEHANDLE      => Filehandle to write to
+##         : $infile_path     => Infile path
+##         : $stderrfile_path => Stderrfile path
+##         : $recursive       => Copy directories recursively
+##         : $force           => If an existing destination file cannot be opened, remove it and try again
+##         : $verbose         => Verbosity
 
     my ($arg_href) = @_;
 
@@ -240,6 +239,69 @@ sub rm {
 
     ## Infile
     push(@commands, $infile_path);
+
+    if ($stderrfile_path) {
+
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
+sub mkdir {
+
+##mkdir
+
+##Function : Perl wrapper for writing mkdir recipe to already open $FILEHANDLE or return commands array. Based on mkdir 8.4
+##Returns  : "@commands"
+##Arguments: $FILEHANDLE, $indirectory_path, $stderrfile_path, $parents, $verbose
+##         : $FILEHANDLE       => Filehandle to write to
+##         : $indirectory_path => Infile path
+##         : $stderrfile_path  => Stderrfile path
+##         : $parents          => No error if existing, make parent directories as needed
+##         : $verbose          => Verbosity
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $verbose;
+    my $parents;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $indirectory_path;
+    my $stderrfile_path;
+
+    my $tmpl = { 
+	FILEHANDLE => { store => \$FILEHANDLE},
+	indirectory_path => { required => 1, defined => 1, strict_type => 1, store => \$indirectory_path},
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path},
+	parents => { default => 0,
+		     strict_type => 1, store => \$parents},
+	verbose => { default => 0,
+		     strict_type => 1, store => \$verbose},
+    };
+    
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## mkdir
+    my @commands = qw(mkdir);  #Stores commands depending on input parameters
+
+    if ($parents) {
+
+	push(@commands, "--parents");  #Make parent directories as needed
+    }
+    if ($verbose) {
+
+	push(@commands, "--verbose");  #Explain what is being done
+    }
+
+    ## Indirectory
+    push(@commands, $indirectory_path);
 
     if ($stderrfile_path) {
 

@@ -21,7 +21,7 @@ use File::Spec::Functions qw(catfile catdir devnull);
 use lib catdir($Bin, "lib");  #Add MIPs internal lib
 use File::Format::Shell qw(create_bash_file);
 use Program::Download::Wget qw(wget);
-use Program::Gnu::Coreutils qw(cp rm mv);
+use Program::Gnu::Coreutils qw(cp rm mv mkdir);
 use Script::Utils qw(help set_default_array_parameters);
 
 our $USAGE;
@@ -1620,7 +1620,10 @@ sub snpeff {
     }
 
     print $FILEHANDLE "## Make available from conda environment\n";
-    print $FILEHANDLE "mkdir -p ".$parameter{conda_path}.q?/envs/?.$parameter_href->{conda_environment}.q?/share/snpEff.?.$parameter_href->{snpeff};
+    mkdir({indirectory_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "share", "snpEff.".$parameter_href->{snpeff}),
+	   parents => 1,
+	   FILEHANDLE => $FILEHANDLE,
+	  });
     print $FILEHANDLE "\n\n";
 
     mv({infile_path => catfile("snpEff", "*.jar"),
@@ -1739,7 +1742,10 @@ sub varianteffectpredictor {
 			       });
 
     ##Make sure that the cache directory exists
-    print $FILEHANDLE "mkdir -p ".$parameter_href->{vep_cache_dir}." ";  #Cache directory
+    mkdir({indirectory_path => $parameter_href->{vep_cache_dir},
+	   parents => 1,
+	   FILEHANDLE => $FILEHANDLE,
+	  });
     print $FILEHANDLE "\n\n";
 
     ## Move to miniconda environment
@@ -2122,7 +2128,11 @@ sub tiddit {
     ## Move to Tiddit directory
     print $FILEHANDLE "## Move to Tiddit directory\n";
     print $FILEHANDLE "cd TIDDIT-".$parameter_href->{tiddit}, "\n\n";
-    print $FILEHANDLE "mkdir -p build", "\n\n";
+    mkdir({indirectory_path => "build",
+	   parents => 1,
+	   FILEHANDLE => $FILEHANDLE,
+	  });
+    print $FILEHANDLE "\n\n";
     print $FILEHANDLE "cd build", "\n\n";
 
     ## Configure
@@ -2225,8 +2235,10 @@ sub mip_scripts {
     print $FILEHANDLE "## Create directories\n";
     foreach my $directory (keys %mip_sub_scripts) {
 
-	print $FILEHANDLE "mkdir -p ";
-	print $FILEHANDLE catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", $directory);
+	mkdir({indirectory_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", $directory),
+	       parents => 1,
+	       FILEHANDLE => $FILEHANDLE,
+	      });
 	print $FILEHANDLE "\n\n";
     }
     ## Copy directory to conda env
@@ -2489,7 +2501,12 @@ sub create_install_dir {
 
     ## Create temp install directory
     print $FILEHANDLE "## Create temp install directory\n";
-    print $FILEHANDLE "mkdir -p ".$install_directory, "\n";
+    mkdir({indirectory_path => $install_directory,
+	   parents => 1,
+	   FILEHANDLE => $FILEHANDLE,
+	  });
+    print $FILEHANDLE "\n\n";
+
     print $FILEHANDLE "cd ".$install_directory;
     print $FILEHANDLE "\n\n";
 }

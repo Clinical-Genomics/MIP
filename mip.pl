@@ -12341,7 +12341,11 @@ sub gatk_baserecalibration {
 
 	## Create GATK intermediary directory
 	say $FILEHANDLE "## Create GATK intermediary directory";
-	say $FILEHANDLE "mkdir -p ".$gatk_temporary_directory;
+	Program::Gnu::Coreutils::mkdir({indirectory_path => $gatk_temporary_directory,
+					parents => 1,
+					FILEHANDLE => $FILEHANDLE,
+				       });
+	say $FILEHANDLE "\n";
     }
 
     ## Assign directories
@@ -12682,7 +12686,11 @@ sub gatk_realigner {
 
 	## Create GATK intermediary directory
 	say $FILEHANDLE "## Create GATK intermediary directory";
-	say $FILEHANDLE "mkdir -p ".$gatk_temporary_directory;
+	Program::Gnu::Coreutils::mkdir({indirectory_path => $gatk_temporary_directory,
+					parents => 1,
+					FILEHANDLE => $FILEHANDLE,
+				       });
+	say $FILEHANDLE "\n";
     }
 
     ## Assign directories
@@ -15849,7 +15857,11 @@ sub split_fastq_file {
 	say $FILEHANDLE "\n";
 
 	## Move original file to not be included in subsequent analysis
-	say $FILEHANDLE "mkdir -p ".catfile($insample_directory, "original_fastq_files"), "\n";
+	Program::Gnu::Coreutils::mkdir({indirectory_path => $infile_path,
+					parents => 1,
+					FILEHANDLE => $FILEHANDLE,
+				       });
+	say $FILEHANDLE "\n";
 	
 	mv({infile_path => $infile_path,
 	    outfile_path => catfile($insample_directory, "original_fastq_files", $fastq_file),
@@ -15947,7 +15959,11 @@ sub build_annovar_prerequisites {
     $log->warn("Will try to create required annovar database files before executing ".$program_name."\n");
 
     say $FILEHANDLE "## Make temporary download directory\n";
-    say $FILEHANDLE "mkdir -p ".$annovar_temporary_directory."; ", "\n";
+    Program::Gnu::Coreutils::mkdir({indirectory_path => $annovar_temporary_directory,
+				    parents => 1,
+				    FILEHANDLE => $FILEHANDLE,
+				   });
+    say $FILEHANDLE "\n";
 
     say $FILEHANDLE "## Downloading annovar Db files", "\n";
 
@@ -19162,7 +19178,11 @@ sub program_prerequisites {
 
 	say $FILEHANDLE "## Create temporary directory";
 	say $FILEHANDLE q?temp_directory="?.$temp_directory.q?"?;  #Assign batch variable
-	say $FILEHANDLE q?mkdir -p ?.$temp_directory, "\n";
+	Program::Gnu::Coreutils::mkdir({indirectory_path => $temp_directory,
+					parents => 1,
+					FILEHANDLE => $FILEHANDLE,
+				       });
+	say $FILEHANDLE "\n";
 
 	create_housekeeping_function({job_id_href => $job_id_href,
 				      log_file_ref => \$active_parameter_href->{log_file},
