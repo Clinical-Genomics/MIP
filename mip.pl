@@ -2608,33 +2608,31 @@ sub removeredundantfiles {
 
 	## Sample files
 	##Removes intermediate files from the MIP analysis depending on set MIP parameters
-	remove_files({parameter_href => $parameter_href,
-		      active_parameter_href => $active_parameter_href,
-		      infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		      sample_info_href => $sample_info_href,
-		      file_info_href => $file_info_href,
-		      lane_href => $lane_href,
-		      FILEHANDLE => $FILEHANDLE,
-		      sample_id => $sample_id,
-		      reduce_io_ref => $reduce_io_ref,
-		      outaligner_dir_ref => $outaligner_dir_ref,
-		      program_name => "remove_files",
-		     });
+	remove_redundant_files({parameter_href => $parameter_href,
+				active_parameter_href => $active_parameter_href,
+				infile_lane_no_ending_href => $infile_lane_no_ending_href,
+				sample_info_href => $sample_info_href,
+				file_info_href => $file_info_href,
+				lane_href => $lane_href,
+				FILEHANDLE => $FILEHANDLE,
+				sample_id => $sample_id,
+				reduce_io_ref => $reduce_io_ref,
+				outaligner_dir_ref => $outaligner_dir_ref,
+			       });
     }
 
     ## Family files
     ##Removes intermediate files from the MIP analysis depending on set MIP parameters
-    remove_files({parameter_href => $parameter_href,
-		  active_parameter_href => $active_parameter_href,
-		  infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		  sample_info_href => $sample_info_href,
-		  file_info_href => $file_info_href,
-		  lane_href => $lane_href,
-		  FILEHANDLE => $FILEHANDLE,
-		  reduce_io_ref => $reduce_io_ref,
-		  outaligner_dir_ref => $outaligner_dir_ref,
-		  program_name => "remove_files",
-		 });
+    remove_redundant_files({parameter_href => $parameter_href,
+			    active_parameter_href => $active_parameter_href,
+			    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			    sample_info_href => $sample_info_href,
+			    file_info_href => $file_info_href,
+			    lane_href => $lane_href,
+			    FILEHANDLE => $FILEHANDLE,
+			    reduce_io_ref => $reduce_io_ref,
+			    outaligner_dir_ref => $outaligner_dir_ref,
+			   });
     close($FILEHANDLE);
 }
 
@@ -12297,6 +12295,8 @@ sub gatk_baserecalibration {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Command::Gnu qw(rm);
+
     my $core_number = $active_parameter_href->{core_processor_number};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $analysis_type_ref = \$active_parameter_href->{analysis_type}{$$sample_id_ref};
@@ -12510,13 +12510,13 @@ sub gatk_baserecalibration {
     if ($$reduce_io_ref) {  #Run as block sbatch script
 
 	## Remove file at temporary Directory
-	remove_contig_file_at_temp_directory({files_ref => \@{ $file_info_href->{contigs_size_ordered} },
-					      FILEHANDLE => $FILEHANDLE,
-					      core_number => $core_number,
-					      file_name => $infile.$infile_tag,
-					      file_ending => ".b*",
-					      temp_directory => $$temp_directory_ref,
-					     });
+	remove_contig_files({file_elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
+			     FILEHANDLE => $FILEHANDLE,
+			     core_number => $core_number,
+			     file_name => $infile.$infile_tag,
+			     file_ending => ".b*",
+			     indirectory => $$temp_directory_ref,
+			    });
     }
 
     ## Concatenates BAMs
@@ -12539,10 +12539,11 @@ sub gatk_baserecalibration {
 		 });
     say $FILEHANDLE "wait", "\n";
 
-    ## Remove Concatenated BAM file at temporary Directory
-    remove_file({file_ref => \catfile($$temp_directory_ref, $infile.$outfile_tag.".b*"),
-		 FILEHANDLE => $FILEHANDLE,
-		});
+    ## Remove concatenated BAM file at temporary directory
+    rm({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag.".b*"),
+	force => 1,
+	FILEHANDLE => $FILEHANDLE,
+       });
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
@@ -12836,13 +12837,13 @@ sub gatk_realigner {
     else {
 
 	## Remove file at temporary Directory
-	remove_contig_file_at_temp_directory({files_ref => \@{ $file_info_href->{contigs_size_ordered} },
-					      FILEHANDLE => $FILEHANDLE,
-					      core_number => $core_number,
-					      file_name => $infile.$infile_tag,
-					      file_ending => ".b*",
-					      temp_directory => $$temp_directory_ref,
-					     });
+	remove_contig_files({file_elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
+			     FILEHANDLE => $FILEHANDLE,
+			     core_number => $core_number,
+			     file_name => $infile.$infile_tag,
+			     file_ending => ".b*",
+			     indirectory => $$temp_directory_ref,
+			    });
     }
 
     close($XARGSFILEHANDLE);
@@ -13091,13 +13092,13 @@ sub picardtools_markduplicates {
     else {
 
 	## Remove file at temporary Directory
-	remove_contig_file_at_temp_directory({files_ref => \@{ $file_info_href->{contigs_size_ordered} },
-					      FILEHANDLE => $FILEHANDLE,
-					      core_number => $core_number,
-					      file_name => $infile.$infile_tag,
-					      file_ending => ".b*",
-					      temp_directory => $$temp_directory_ref,
-					     });
+	remove_contig_files({file_elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
+			     FILEHANDLE => $FILEHANDLE,
+			     core_number => $core_number,
+			     file_name => $infile.$infile_tag,
+			     file_ending => ".b*",
+			     indirectory => $$temp_directory_ref,
+			    });
     }
 
     close($XARGSFILEHANDLE);
@@ -13345,13 +13346,13 @@ sub sambamba_markduplicates {
     else {
 
 	## Remove file at temporary Directory
-	remove_contig_file_at_temp_directory({files_ref => \@{ $file_info_href->{contigs_size_ordered} },
-					      FILEHANDLE => $FILEHANDLE,
-					      core_number => $core_number,
-					      file_name => $infile.$infile_tag,
-					      file_ending => ".b*",
-					      temp_directory => $$temp_directory_ref,
-					     });
+	remove_contig_files({file_elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
+			     FILEHANDLE => $FILEHANDLE,
+			     core_number => $core_number,
+			     file_name => $infile.$infile_tag,
+			     file_ending => ".b*",
+			     indirectory => $$temp_directory_ref,
+			    });
     }
 
     close($XARGSFILEHANDLE);
@@ -13860,15 +13861,12 @@ sub picardtools_mergesamfiles {
     }
     else {
 
-	remove_files_at_temp({active_parameter_href => $active_parameter_href,
-			      files_ref => \@{ $infile_lane_no_ending_href->{$$sample_id_ref} },
-			      extract_files_ref => \@{ $infile_lane_no_ending_href->{$$sample_id_ref} },
-			      FILEHANDLE => $FILEHANDLE,
-			      insample_directory => $insample_directory,
-			      core_number => $core_number,
-			      infile_tag => $infile_tag,
-			      file_ending => "*",
-			     });
+	remove_files({infiles_ref => \@{ $infile_lane_no_ending_href->{$$sample_id_ref} },
+		      FILEHANDLE => $FILEHANDLE,
+		      indirectory => $insample_directory,
+		      core_number => $core_number,
+		      file_ending => $infile_tag."*",
+		     });
 	return $xargs_file_counter;  #Track the number of created xargs scripts per module
     }
 }
@@ -14267,10 +14265,12 @@ sub picardtools_mergerapidreads {
     }
     say $FILEHANDLE "wait", "\n";
 
-    ## Remove Temp Directory
-    remove_directory({directory_ref => \$active_parameter_href->{temp_directory},
-		      FILEHANDLE => $FILEHANDLE,
-		     });
+    ## Remove temp directory
+    rm({infile_path => $active_parameter_href->{temp_directory},
+	force => 1,
+	recursive => 1,
+	FILEHANDLE => $FILEHANDLE,
+       });
 
     close($FILEHANDLE);
 
@@ -15404,7 +15404,7 @@ sub pfastqc {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use Program::Command::Cp qw(cp);
+    use Program::Command::Gnu qw(cp);
     use Program::Qc::Fastqc qw (fastqc);
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -15717,8 +15717,7 @@ sub split_fastq_file {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use Program::Command::Cp qw(cp);
-    use Program::Command::Split qw(split);
+    use Program::Command::Gnu qw(cp rm split);
     use Program::Compression::Pigz qw(pigz);
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -15785,19 +15784,20 @@ sub split_fastq_file {
 	     });
 	print $FILEHANDLE "| ";  #Pipe
 
-	Program::Command::Split::split({infile_path => "-",
-					lines => ($sequence_read_batch * 4),
-					numeric_suffixes => 1,
-					suffix_length => 4,
-					FILEHANDLE => $FILEHANDLE,
-					prefix => catfile($$temp_directory_ref, $file_prefix),
-				       });
+	Program::Command::Gnu::split({infile_path => "-",
+				      lines => ($sequence_read_batch * 4),
+				      numeric_suffixes => 1,
+				      suffix_length => 4,
+				      FILEHANDLE => $FILEHANDLE,
+				      prefix => catfile($$temp_directory_ref, $file_prefix),
+				     });
 	say $FILEHANDLE "\n";
 
 	## Remove original files
-	remove_file({file_ref => \$file_path,
-		     FILEHANDLE => $FILEHANDLE,
-		    });
+	rm({infile_path => $file_path,
+	    force => 1,
+	    FILEHANDLE => $FILEHANDLE,
+	   });
 	say $FILEHANDLE "\n";
 
 	## Find all splitted files
@@ -16114,6 +16114,8 @@ sub build_ptchs_metric_prerequisites {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Command::Gnu qw(rm);
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger("MIP");
 
@@ -16233,9 +16235,10 @@ sub build_ptchs_metric_prerequisites {
 	    );
 	foreach my $file (@temp_files) {
 
-	    remove_file({file_ref => \$file,
-			 FILEHANDLE => $FILEHANDLE,
-			});
+	    rm({infile_path => $file,
+		force => 1,
+		FILEHANDLE => $FILEHANDLE,
+	       });
 	    say $FILEHANDLE "\n";
 	}
     }
@@ -16572,6 +16575,7 @@ sub build_human_genome_prerequisites {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Command::Gnu qw(rm);
     use Program::Compression::Gzip qw(gzip);
 
     ## Retrieve logger object
@@ -16680,9 +16684,10 @@ sub build_human_genome_prerequisites {
 						});
 
 		## Remove softLink
-		remove_file({file_ref => \$human_genome_reference_temp_file,
-			     FILEHANDLE => $FILEHANDLE,
-			    });
+		rm({infile_path => $human_genome_reference_temp_file,
+		    force => 1,
+		    FILEHANDLE => $FILEHANDLE,
+		   });
 		say $FILEHANDLE "\n";  #Softlink to reference genome
 	    }
 	    $parameter_href->{"human_genome_reference".$file_ending}{build_file} = 0;  #Only create once
@@ -20786,6 +20791,8 @@ sub check_most_complete_and_remove_file {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Command::Gnu qw(rm);
+
     if ( (defined($$most_complete_ref)) && (defined($$file_path_ref)) ) {  #Not to disturb first dry_run of analysis
 
 	unless ($$most_complete_ref eq $$file_path_ref) {  #Do not remove mostCompleteBAM|VCF
@@ -20796,9 +20803,10 @@ sub check_most_complete_and_remove_file {
 					       });
 
 	    ##Print removal of file to sbatch script
-	    remove_file({file_ref => \$file_name,
-			 FILEHANDLE => $FILEHANDLE,
-			});
+	    rm({infile_path => $file_name,
+		force => 1,
+		FILEHANDLE => $FILEHANDLE,
+	       });
 	    say $FILEHANDLE "\n";  #Remove file(s)
 	}
     }
@@ -20810,9 +20818,10 @@ sub check_most_complete_and_remove_file {
 					   });
 
 	##Print removal of file to sbatch script
-	remove_file({file_ref => \$file_name,
-		     FILEHANDLE => $FILEHANDLE,
-		    });
+	rm({infile_path => $file_name,
+	    force => 1,
+	    FILEHANDLE => $FILEHANDLE,
+	   });
 	say $FILEHANDLE "\n";  #Remove file(s)
     }
 }
@@ -21879,7 +21888,7 @@ sub migrate_file {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use Program::Command::Cp qw(cp);
+    use Program::Command::Gnu qw(cp);
 
     ## Split relative infile_path to file(s)
     my ($infile_path_volume, $infile_path_directory, $infile_path_file_name) = File::Spec->splitpath($infile_path);
@@ -21901,251 +21910,117 @@ sub migrate_file {
 }
 
 
-sub remove_files_at_temp {
+sub remove_files {
 
-##remove_files_at_temp
+##remove_files
 
-##Function : Removes files from at temporary folder. Loop over files specified by $files_ref and collects files from $extract_files_ref.
+##Function : Remove files.
 ##Returns  : ""
-##Arguments: $active_parameter_href, $sample_info_href, $file_info_href, $files_ref, $extract_files_ref, $FILEHANDLE, $insample_directory, $core_number, $infile_tag, $file_ending, $sample_id, $family_id_ref, $temp_directory_ref
-##         : $active_parameter_href => The active parameters for this analysis hash {REF}
-##         : $sample_info_href      => Info on samples and family hash {Optional, REF}
-##         : $file_info_href        => The file_info hash {Optional, REF}
-##         : $files_ref             => The array of files to copy
-##         : $extract_files_ref     => The array to extract files from
-##         : $FILEHANDLE            => Filehandle to write t
-##         : $insample_directory    => The directory for the file to be removed
-##         : $core_number           => The number of cores that can be used
-##         : $infile_tag            => The infile ending
-##         : $file_ending           => File ending. Set to "" to not add any file ending or omit from call
-##         : $sample_id             => the sample_id {Optional}
-##         : $family_id_ref         => The family_id {REF}
-##         : $temp_directory_ref    => The temporary directory {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $files_ref;
-    my $extract_files_ref;
-    my $FILEHANDLE;
-    my $insample_directory;
-    my $core_number;
-    my $infile_tag;
-    my $file_ending;
-    my $sample_id;
-
-    my $tmpl = {
-	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	sample_info_href => { store => \$sample_info_href},
-	file_info_href => { store => \$file_info_href},
-	files_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$files_ref},
-	extract_files_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$extract_files_ref},
-	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	insample_directory => { required => 1, defined => 1, strict_type => 1, store => \$insample_directory},
-	core_number => { required => 1, defined => 1, strict_type => 1, store => \$core_number},
-	infile_tag => { required => 1, defined => 1, strict_type => 1, store => \$infile_tag},
-	file_ending => { required => 1, defined => 1, strict_type => 1, store => \$file_ending},
-	sample_id => { strict_type => 1, store => \$sample_id},
-	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
-			   strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
-				strict_type => 1, store => \$temp_directory_ref},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    my $paired_end_tracker = 0;
-    my $core_counter = 1;
-
-    say $FILEHANDLE "## Removing file(s) at temporary directory";
-
-    while (my ($file_index, $file) = each(@$files_ref) ) {  #For all files
-
-	my $sequence_run_mode;
-
-	if ( (defined($sample_info_href)) && (defined($sample_id)) ) {
-
-	    $sequence_run_mode = $sample_info_href->{sample}{$sample_id}{file}{$file}{sequence_run_type};  #Collect paired-end or single-end sequence run mode
-	}
-
-	## Remove file(s) at temporary directory.
-	if ($file_info_href) {  #Contigs
-
-	    my $core_counter = 1;
-	    while (my ($contig_index, $contig) = each(@{ $file_info_href->{contigs_size_ordered} }) ) {
-
-		print_wait({counter_ref => \$contig_index,
-			    core_number_ref => \$core_number,
-			    core_counter_ref => \$core_counter,
-			    FILEHANDLE => $FILEHANDLE,
-			   });
-
-		remove_file({file_ref => \catfile($$temp_directory_ref, $extract_files_ref->[$paired_end_tracker].$infile_tag."_".$contig.$file_ending),
-			     FILEHANDLE => $FILEHANDLE,
-			    });
-		say $FILEHANDLE "& ";
-	    }
-	}
-	else {
-
-	    print_wait({counter_ref => \$file_index,
-			core_number_ref => \$core_number,
-			core_counter_ref => \$core_counter,
-			FILEHANDLE => $FILEHANDLE,
-		       });
-
-	    ## Remove file(s) at temporary directory.
-	    remove_file({file_ref => \catfile($$temp_directory_ref, $extract_files_ref->[$paired_end_tracker].$infile_tag.$file_ending),
-			 FILEHANDLE => $FILEHANDLE,
-			});
-	    say $FILEHANDLE "& ";
-
-	    if ( (defined($sequence_run_mode)) && ($sequence_run_mode eq "paired_end") ) {
-
-		$paired_end_tracker = $paired_end_tracker+1;  #Increment to collect correct read 2
-
-		## Remove file(s) at temporary directory.
-		remove_file({file_ref => \catfile($$temp_directory_ref, $extract_files_ref->[$paired_end_tracker].$infile_tag.$file_ending),
-			     FILEHANDLE => $FILEHANDLE,
-			    });
-		say $FILEHANDLE "& ";
-	    }
-	    $paired_end_tracker++;  #Increment to correctly track both single-end runs and paired-end runs
-	}
-    }
-    say $FILEHANDLE "wait", "\n";
-}
-
-
-sub remove_directory {
-
-##remove_directory
-
-##Function : Writes command to removes directory to filehandle.
-##Returns  : ""
-##Arguments: $directory_ref, $FILEHANDLE
-##         : $directory_ref => the directory to remove
-##         : $FILEHANDLE    => Filehandle to write to
-##         : $options_ref   => Option to rm {Optional}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $options_ref;
-
-    ## Flatten argument(s)
-    my $directory_ref;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-	directory_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$directory_ref},
-	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	options_ref => { default => ["r", "f"],
-			 allow => ["d", "f", "i", "P", "R", "r", "v", "W"],
-			 strict_type => 1, store => \$options_ref},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    print $FILEHANDLE "rm ";  #Remove
-    print $FILEHANDLE "-".join(" -", @$options_ref)." ";  #Options
-    print $FILEHANDLE $$directory_ref." ";  #Directory to remove
-}
-
-sub remove_file {
-
-##remove_file
-
-##Function : Writes command to removes file to filehandle.
-##Returns  : ""
-##Arguments: $file_ref, $FILEHANDLE
-##         : $file_ref    => the directory to remove
+##Arguments: $infiles_ref, $FILEHANDLE, $indirectory, $core_number, $file_ending
+##         : $infiles_ref => The array of files to copy
 ##         : $FILEHANDLE  => Filehandle to write to
-##         : $options_ref => Option to rm {Optional}
+##         : $indirectory => The directory for the files to be copied
+##         : $core_number => The number of cores that can be used
+##         : $file_ending => File ending for infiles. {Optional}
 
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $options_ref;
-
-    ## Flatten argument(s)
-    my $file_ref;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-	file_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$file_ref},
-	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	options_ref => { default => ["f"],
-			 allow => ["d", "f", "i", "P", "R", "r", "v", "W"],
-			 strict_type => 1, store => \$options_ref},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    print $FILEHANDLE "rm ";  #Remove
-    print $FILEHANDLE "-".join(" -", @$options_ref)." ";  #Options
-    print $FILEHANDLE $$file_ref." ";  #File to remove
-}
-
-
-sub remove_contig_file_at_temp_directory {
-
-##remove_contig_file_at_temp_directory
-
-##Function : Removes files at temporary directory dictated by supplied array.
-##Returns  : ""
-##Arguments: $files_ref, $FILEHANDLE, $core_number, $file_name, $file_ending, $temp_directory
-##         : $files_ref      => Array to use for file iteration {REF}
-##         : $FILEHANDLE     => Sbatch filehandle to write to
-##         : $core_number    => The number of cores to use
-##         : $file_name      => File name without ending attached
-##         : $file_ending    => File ending
-##         : $temp_directory => The temporary directory
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $files_ref;
-    my $FILEHANDLE;
-    my $core_number;
-    my $file_name;
     my $file_ending;
-    my $temp_directory;
+
+    ## Flatten argument(s)
+    my $infiles_ref;
+    my $FILEHANDLE;
+    my $indirectory;
+    my $core_number;
 
     my $tmpl = {
-	files_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$files_ref},
+	infiles_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$infiles_ref},
 	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	indirectory => { required => 1, defined => 1, strict_type => 1, store => \$indirectory},
 	core_number => { required => 1, defined => 1, strict_type => 1, store => \$core_number},
-	file_name => { required => 1, defined => 1, strict_type => 1, store => \$file_name},
-	file_ending => { required => 1, defined => 1, strict_type => 1, store => \$file_ending},
-	temp_directory => { required => 1, defined => 1, strict_type => 1, store => \$temp_directory},
+	file_ending => { default => "",
+			 strict_type => 1, store => \$file_ending},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     my $core_counter = 1;
 
-    ## Remove infile at temporary Directory
-    say $FILEHANDLE "## Remove file at temporary Directory";
-
-    while (my ($file_index, $file) = each (@$files_ref) ) {
-
+    say $FILEHANDLE "## Remove file(s)";
+    while (my ($file_index, $file) = each($infiles_ref) ) {  #For all files
+	
 	print_wait({counter_ref => \$file_index,
 		    core_number_ref => \$core_number,
 		    core_counter_ref => \$core_counter,
 		    FILEHANDLE => $FILEHANDLE,
 		   });
+	
+	## Remove file
+	rm({infile_path => catfile($indirectory, $file.$file_ending),
+	    FILEHANDLE => $FILEHANDLE,
+	    force => 1,
+	   });
+	print $FILEHANDLE "&", "\n";
+    }
+    say $FILEHANDLE "wait", "\n";
+}
 
-	remove_file({file_ref => \catfile($temp_directory, $file_name."_".$file.$file_ending),
-		     FILEHANDLE => $FILEHANDLE,
-		    });
+
+sub remove_contig_files {
+
+##remove_contig_files
+
+##Function : Removes files dictated by supplied array index and element.
+##Returns  : ""
+##Arguments: $file_elements_ref, $FILEHANDLE, $core_number, $file_name, $file_ending, $indirectory
+##         : $file_elements_ref => Array to use for file iteration {REF}
+##         : $FILEHANDLE        => Sbatch filehandle to write to
+##         : $core_number       => The number of cores to use
+##         : $file_name         => File name without ending attached
+##         : $file_ending       => File ending
+##         : $indirectory       => The temporary directory
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $file_elements_ref;
+    my $FILEHANDLE;
+    my $core_number;
+    my $file_name;
+    my $file_ending;
+    my $indirectory;
+
+    my $tmpl = {
+	file_elements_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$file_elements_ref},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	core_number => { required => 1, defined => 1, strict_type => 1, store => \$core_number},
+	file_name => { required => 1, defined => 1, strict_type => 1, store => \$file_name},
+	file_ending => { required => 1, defined => 1, strict_type => 1, store => \$file_ending},
+	indirectory => { required => 1, defined => 1, strict_type => 1, store => \$indirectory},
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    use Program::Command::Gnu qw(rm);
+
+    my $core_counter = 1;
+
+    ## Remove infile at indirectory
+    say $FILEHANDLE "## Remove file at indirectory";
+
+    while (my ($index, $element) = each (@$file_elements_ref) ) {
+
+	print_wait({counter_ref => \$index,
+		    core_number_ref => \$core_number,
+		    core_counter_ref => \$core_counter,
+		    FILEHANDLE => $FILEHANDLE,
+		   });
+
+	rm({infile_path => catfile($indirectory, $file_name."_".$element.$file_ending),
+	    force => 1,
+	    FILEHANDLE => $FILEHANDLE,
+	   });
 	say $FILEHANDLE "& ";
     }
     say $FILEHANDLE "wait", "\n";
@@ -22406,7 +22281,6 @@ sub xargs_migrate_contig_files {
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $first_command;
     my $file_ending;
     my $xargs_file_counter;
     my $core_number;
@@ -22422,6 +22296,7 @@ sub xargs_migrate_contig_files {
     my $indirectory;
     my $outfile;
     my $outdirectory;
+    my $first_command;
 
     my $tmpl = {
 	contigs_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$contigs_ref},
@@ -22440,8 +22315,7 @@ sub xargs_migrate_contig_files {
 	core_number => { default => 1,
 			 allow => qr/^\d+$/,
 			 strict_type => 1, store => \$core_number},
-	first_command => { default => "cp -p",
-			   strict_type => 1, store => \$first_command},
+	first_command => { strict_type => 1, store => \$first_command},
 	file_ending => { default => ".vcf*",
 			 strict_type => 1, store => \$file_ending},
     };
@@ -22541,7 +22415,7 @@ sub xargs_command {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use Program::Command::Xargs qw(xargs);
+    use Program::Command::Gnu qw(xargs);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger("MIP");
@@ -24259,20 +24133,19 @@ sub tabix {
 }
 
 
-sub remove_files {
+sub remove_redundant_files {
 
-##remove_files
+##remove_redundant_files
 
 ##Function : Removes intermediate files from the MIP analysis depending on set MIP parameters
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $lane_href, $infile_lane_no_ending_href, $program_name, $reduce_io_ref, $sample_id, $insample_directory, $FILEHANDLE, family_id_ref, $outaligner_dir_ref, $call_type
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $lane_href, $infile_lane_no_ending_href, $reduce_io_ref, $sample_id, $insample_directory, $FILEHANDLE, family_id_ref, $outaligner_dir_ref, $call_type
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
 ##         : $lane_href                  => The lane info hash {REF}
 ##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
-##         : $program_name               => The program name
 ##         : $reduce_io_ref              => Reduce IO - modulates processBlocks {REF}
 ##         : $sample_id                  => The sample_id
 ##         : $insample_directory         => The directory for in sample files to be removed
@@ -24295,7 +24168,6 @@ sub remove_files {
     my $file_info_href;
     my $lane_href;
     my $infile_lane_no_ending_href;
-    my $program_name;
     my $reduce_io_ref;
     my $sample_id;
     my $insample_directory;
@@ -24308,7 +24180,6 @@ sub remove_files {
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
 	lane_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$lane_href},
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
-	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	reduce_io_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$reduce_io_ref},
 	sample_id => { strict_type => 1, store => \$sample_id},
 	insample_directory => { strict_type => 1, store => \$insample_directory},

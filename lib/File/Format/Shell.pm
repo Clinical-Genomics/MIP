@@ -31,11 +31,14 @@ BEGIN {
 }
 
 use Cwd;
+use FindBin qw($Bin); #Find directory of script
 use File::Basename qw(dirname basename);
 use File::Spec::Functions qw(catfile catdir devnull);
 use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 
+##MIPs lib/
+use lib catdir($Bin, "lib");  #Add MIPs internal lib
 
 sub create_bash_file {
 
@@ -149,13 +152,21 @@ sub create_housekeeping_function {
     
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Command::Gnu qw(rm);
+
     ## Create housekeeping function and trap
     say $FILEHANDLE q?finish() {?, "\n";
 
     if ( (defined($directory_remove)) && ($directory_remove) ) {
 	
 	say $FILEHANDLE "\t".q?## Perform exit housekeeping?;
-	say $FILEHANDLE "\t".q?rm -rf ?.$directory_remove;
+	print $FILEHANDLE "\t";
+	rm({infile_path => $directory_remove,
+	    force => 1,
+	    recursive => 1,
+	    FILEHANDLE => $FILEHANDLE,
+	   });
+	print $FILEHANDLE "\n";
     }
     if ( (defined($job_id_href)) && (keys %$job_id_href)
 	&& (defined($$log_file_ref)) && ($$log_file_ref) ) {

@@ -21,7 +21,7 @@ use File::Spec::Functions qw(catfile catdir devnull);
 use lib catdir($Bin, "lib");  #Add MIPs internal lib
 use File::Format::Shell qw(create_bash_file);
 use Program::Download::Wget qw(wget);
-use Program::Command::Cp qw(cp);
+use Program::Command::Gnu qw(cp rm);
 use Script::Utils qw(help set_default_array_parameters);
 
 our $USAGE;
@@ -698,12 +698,12 @@ sub install_bioconda_modules {
 				});
 	    }
 
-	    Program::Command::Cp::cp({FILEHANDLE => $BASHFILEHANDLE,
-				      recursive => 1,
-				      force => 1,
-				      infile_path => catdir($parameter{conda_path}, "envs", $parameter{conda_environment}, "share", "bwakit-".$parameter_href->{bioconda}{bwakit}.$parameter_href->{bioconda_bwakit_patch}, "resource-human-HLA"),
-				      outfile_path => catdir($parameter{conda_path}, "envs", $parameter{conda_environment}, "bin"),
-				     });
+	    cp({FILEHANDLE => $BASHFILEHANDLE,
+		recursive => 1,
+		force => 1,
+		infile_path => catdir($parameter{conda_path}, "envs", $parameter{conda_environment}, "share", "bwakit-".$parameter_href->{bioconda}{bwakit}.$parameter_href->{bioconda_bwakit_patch}, "resource-human-HLA"),
+		outfile_path => catdir($parameter{conda_path}, "envs", $parameter{conda_environment}, "bin"),
+	       });
 	    print $BASHFILEHANDLE "\n\n";
 	}
 	if ($program eq "picard") {
@@ -814,7 +814,11 @@ sub perl {
 
 		## Removing specific Perl version
 		print $FILEHANDLE "### Removing specific perl version\n";
-		print $FILEHANDLE q?rm -rf $HOME/perl-?.$parameter_href->{perl_version};
+		rm({infile_path => q?$HOME/perl-?.$parameter_href->{perl_version},
+		    force => 1,
+		    recursive => 1,
+		    FILEHANDLE => $FILEHANDLE,
+		   });
 		print $FILEHANDLE "\n\n";
 
 		install_perl_cpnam({parameter_href => $parameter_href,
@@ -929,7 +933,10 @@ sub install_perl_cpnam {
 
     ## Remove tar file
     print $FILEHANDLE "## Remove tar file\n";
-    print $FILEHANDLE "cd && rm perl-".$parameter_href->{perl_version}.".tar.gz";
+    print $FILEHANDLE "cd && ";
+    rm({infile_path => "perl-".$parameter_href->{perl_version}.".tar.gz",
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     ## Move to back
@@ -1112,7 +1119,11 @@ sub picardtools {
     ## Make available from conda environment
     if (-d catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "share", "picard-tools-".$parameter_href->{picardtools})) {
 
-	print $FILEHANDLE "rm -rf ".catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "share", "picard-tools-".$parameter_href->{picardtools});
+	rm({infile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "share", "picard-tools-".$parameter_href->{picardtools}),
+	    force => 1,
+	    recursive => 1,
+	    FILEHANDLE => $FILEHANDLE,
+	   });
 	print $FILEHANDLE "\n\n";
     }
 
@@ -1299,10 +1310,10 @@ sub vcftools {
 
     ## Move perl Module
     print $FILEHANDLE "## Copy perl module\n";
-    Program::Command::Cp::cp({FILEHANDLE => $FILEHANDLE,
-			      infile_path => catdir("src", "perl", "Vcf.pm"),
-			      outfile_path => catdir(q?$HOME?, q?perl-?.$parameter_href->{perl_version}, "lib", "perl5"),
-			     });
+    cp({FILEHANDLE => $FILEHANDLE,
+	infile_path => catdir("src", "perl", "Vcf.pm"),
+	outfile_path => catdir(q?$HOME?, q?perl-?.$parameter_href->{perl_version}, "lib", "perl5"),
+       });
     print $FILEHANDLE "\n\n";
 
     ## Remove the temporary install directory
@@ -1590,7 +1601,11 @@ sub snpeff {
     ## Make available from conda environment
     if (-d $parameter{conda_path}.q?/envs/?.$parameter_href->{conda_environment}.q?/share/snpEff.?.$parameter_href->{snpeff}) {
 
-	print $FILEHANDLE "rm -rf ".$parameter{conda_path}.q?/envs/?.$parameter_href->{conda_environment}.q?/share/snpEff.?.$parameter_href->{snpeff};
+	rm({infile_path => $parameter{conda_path}.q?/envs/?.$parameter_href->{conda_environment}.q?/share/snpEff.?.$parameter_href->{snpeff},
+	    force => 1,
+	    recursive => 1,
+	    FILEHANDLE => $FILEHANDLE,
+	   });
 	print $FILEHANDLE "\n\n";
     }
 
@@ -1688,7 +1703,11 @@ sub varianteffectpredictor {
 
 	    ## Removing varianteffectpredictor
 	    print $FILEHANDLE "### Removing varianteffectpredictor\n";
-	    print $FILEHANDLE q?rm -rf ?.$miniconda_bin_dir;
+	    rm({infile_path => $miniconda_bin_dir,
+		force => 1,
+		recursive => 1,
+		FILEHANDLE => $FILEHANDLE,
+	       });
 	    print $FILEHANDLE "\n\n";
 	}
     }
@@ -1825,7 +1844,10 @@ sub varianteffectpredictor {
     print $FILEHANDLE q?cd ?.catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment});
     print $FILEHANDLE "\n\n";
 
-    print $FILEHANDLE "rm -rf VariantEffectPredictor-".$parameter_href->{varianteffectpredictor}.".zip";;
+    rm({infile_path => "VariantEffectPredictor-".$parameter_href->{varianteffectpredictor}.".zip",
+	force => 1,
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     ## Moving up
@@ -1887,7 +1909,11 @@ sub cnvnator {
 
 	    ## Removing Root
 	    print $FILEHANDLE "### Removing Root\n";
-	    print $FILEHANDLE q?rm -rf ?.$miniconda_bin_dir;
+	    rm({infile_path => $miniconda_bin_dir,
+		force => 1,
+		recursive => 1,
+		FILEHANDLE => $FILEHANDLE,
+	       });
 	    print $FILEHANDLE "\n\n";
 	}
     }
@@ -2067,7 +2093,12 @@ sub tiddit {
 
     ## Extract
     print $FILEHANDLE "## Extract\n";
-    print $FILEHANDLE "rm -rf TIDDIT-".$parameter_href->{tiddit}, "\n\n";
+    rm({infile_path => "TIDDIT-".$parameter_href->{tiddit},
+	force => 1,
+	recursive => 1,
+	FILEHANDLE => $FILEHANDLE,
+       });
+    print $FILEHANDLE "\n\n";
     print $FILEHANDLE "unzip TIDDIT-".$parameter_href->{tiddit}.".zip", "\n\n";
 
     ## Move to Tiddit directory
@@ -2094,7 +2125,12 @@ sub tiddit {
 
     ## Clean-up
     print $FILEHANDLE "cd ".catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}), "\n\n";
-    print $FILEHANDLE "rm -rf Tiddit-".$parameter_href->{tiddit}.".zip", "\n\n";
+    rm({infile_path => "Tiddit-".$parameter_href->{tiddit}.".zip",
+	force => 1,
+	recursive => 1,
+	FILEHANDLE => $FILEHANDLE,
+       });
+    print $FILEHANDLE "\n\n";
 
     ## Moving up
     print $FILEHANDLE "## Moving back to original working directory\n";
@@ -2179,12 +2215,12 @@ sub mip_scripts {
     print $FILEHANDLE "## Copy directory to conda env\n\n";
     foreach my $directory (@mip_directories) {
 
-	Program::Command::Cp::cp({FILEHANDLE => $FILEHANDLE,
-				  recursive => 1,
-				  force => 1,
-				  infile_path => catdir($Bin, $directory),
-				  outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"),
-				 });
+	cp({FILEHANDLE => $FILEHANDLE,
+	    recursive => 1,
+	    force => 1,
+	    infile_path => catdir($Bin, $directory),
+	    outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"),
+	   });
 	print $FILEHANDLE "\n\n";
     }
 
@@ -2194,10 +2230,10 @@ sub mip_scripts {
 
 	my $script_no_ending = fileparse($script, qr/\.[^.]*/);
 
-	Program::Command::Cp::cp({FILEHANDLE => $FILEHANDLE,
-				  infile_path => catfile($Bin, $script),
-				  outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", $script_no_ending),
-				 });
+	cp({FILEHANDLE => $FILEHANDLE,
+	    infile_path => catfile($Bin, $script),
+	    outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", $script_no_ending),
+	   });
 	print $FILEHANDLE "\n";
 
 	print $FILEHANDLE "chmod a+x ".catfile($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", $script_no_ending);
@@ -2208,10 +2244,10 @@ sub mip_scripts {
 
 	foreach my $script (@{$mip_sub_scripts{$directory}}) {
 
-	    Program::Command::Cp::cp({FILEHANDLE => $FILEHANDLE,
-				      infile_path => catfile($Bin, $directory, $script),
-				      outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", $directory),
-				     });
+	    cp({FILEHANDLE => $FILEHANDLE,
+		infile_path => catfile($Bin, $directory, $script),
+		outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", $directory),
+	       });
 	    print $FILEHANDLE "\n";
 
 	    print $FILEHANDLE "chmod a+x ".catfile($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", $directory, $script);
@@ -2399,7 +2435,11 @@ sub remove_install_dir {
 
     ## Clean up
     print $FILEHANDLE "## Clean up\n";
-    print $FILEHANDLE "rm -rf ".$install_directory;
+    rm({infile_path => $install_directory,
+	force => 1,
+	recursive => 1,
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 }
 
@@ -2746,7 +2786,10 @@ sub references {
     print $FILEHANDLE "bash download_reference.sh", "\n\n";
 
     ##Cleanup
-    print $FILEHANDLE "rm download_reference.sh", "\n\n";
+    rm({infile_path => "download_reference.sh",
+	FILEHANDLE => $FILEHANDLE,
+       });
+    print $FILEHANDLE "\n\n";
 
     ## Deactivate conda environment
     deactivate_conda_environment({FILEHANDLE => $FILEHANDLE,
