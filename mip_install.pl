@@ -21,7 +21,7 @@ use File::Spec::Functions qw(catfile catdir devnull);
 use lib catdir($Bin, "lib");  #Add MIPs internal lib
 use File::Format::Shell qw(create_bash_file);
 use Program::Download::Wget qw(wget);
-use Program::Command::Gnu qw(cp rm);
+use Program::Gnu::Coreutils qw(cp rm mv);
 use Script::Utils qw(help set_default_array_parameters);
 
 our $USAGE;
@@ -1128,8 +1128,10 @@ sub picardtools {
     }
 
     print $FILEHANDLE "## Make available from conda environment\n";
-    print $FILEHANDLE "mv ";
-    print $FILEHANDLE q?picard-tools-?.$parameter_href->{picardtools}.q? ?.catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "share");
+    mv({infile_path => "picard-tools-".$parameter_href->{picardtools},
+	outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "share"),
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     create_softlink({parameter_href => $parameter_href,
@@ -1216,8 +1218,10 @@ sub sambamba {
 
     ## Make available from conda environment
     print $FILEHANDLE "## Make available from conda environment\n";
-    print $FILEHANDLE "mv ";
-    print $FILEHANDLE q?sambamba_v?.$parameter_href->{sambamba}.q? ?.$parameter{conda_path}.q?/envs/?.$parameter_href->{conda_environment}.q?/bin/?;
+    mv({infile_path => "sambamba_v".$parameter_href->{sambamba},
+	outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"),
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     create_softlink({parameter_href => $parameter_href,
@@ -1394,8 +1398,10 @@ sub bedtools {
 
     ## Make available from conda environment
     print $FILEHANDLE "## Make available from conda environment\n";
-    print $FILEHANDLE "mv ";
-    print $FILEHANDLE q?./bin/* ?.$parameter{conda_path}.q?/envs/?.$parameter_href->{conda_environment}.q?/bin/?;
+    mv({infile_path => catfile(".", "bin", "*"),
+	outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"),
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     ## Remove the temporary install directory
@@ -1464,8 +1470,10 @@ sub vt {
 
     ## Make available from conda environment
     print $FILEHANDLE "## Make available from conda environment\n";
-    print $FILEHANDLE "mv ";
-    print $FILEHANDLE q?vt ?.$parameter{conda_path}.q?/envs/?.$parameter_href->{conda_environment}.q?/bin/?;
+    mv({infile_path => "vt",
+	outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"),
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     ## Remove the temporary install directory
@@ -1532,8 +1540,10 @@ sub plink2 {
 
     ## Make available from conda environment
     print $FILEHANDLE "## Make available from conda environment\n";
-    print $FILEHANDLE "mv ";
-    print $FILEHANDLE q?plink ?.$parameter{conda_path}.q?/envs/?.$parameter_href->{conda_environment}.q?/bin/plink2?;
+    mv({infile_path => "plink",
+	outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin", "plink2"),
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     ## Remove the temporary install directory
@@ -1613,12 +1623,16 @@ sub snpeff {
     print $FILEHANDLE "mkdir -p ".$parameter{conda_path}.q?/envs/?.$parameter_href->{conda_environment}.q?/share/snpEff.?.$parameter_href->{snpeff};
     print $FILEHANDLE "\n\n";
 
-    print $FILEHANDLE "mv ";
-    print $FILEHANDLE q?snpEff/*.jar ?.$parameter{conda_path}.q?/envs/?.$parameter_href->{conda_environment}.q?/share/snpEff.?.$parameter_href->{snpeff}.q?/?;
+    mv({infile_path => catfile("snpEff", "*.jar"),
+	outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "share", "snpEff.".$parameter_href->{snpeff}),
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
-    print $FILEHANDLE "mv ";
-    print $FILEHANDLE q?snpEff/snpEff.config ?.$parameter{conda_path}.q?/envs/?.$parameter_href->{conda_environment}.q?/share/snpEff.?.$parameter_href->{snpeff}.q?/?;
+    mv({infile_path => catfile("snpEff", "snpEff.config"),
+	outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "share", "snpEff.".$parameter_href->{snpeff}),
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     ## Define binaries
@@ -2008,16 +2022,20 @@ sub cnvnator {
 
     ## Make available from conda environment
     print $FILEHANDLE "## Make available from conda environment\n";
-    print $FILEHANDLE "mv ";
-    print $FILEHANDLE q?cnvnator ?.catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin");
+    mv({infile_path => "cnvnator",
+	outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"),
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     ## Make available from conda environment
     print $FILEHANDLE "## Make available from conda environment\n";
     print $FILEHANDLE "cd ..";
     print $FILEHANDLE "\n";
-    print $FILEHANDLE "mv ";
-    print $FILEHANDLE q?cnvnator2VCF.pl ?.catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin");
+    mv({infile_path => "cnvnator2VCF.pl",
+	outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"),
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     print $FILEHANDLE "## Make executable from conda environment\n";
@@ -2685,9 +2703,12 @@ sub check_mt_codon_table {
 
 	print $FILEHANDLE q?## Adding ?.$$genome_version_ref.q?.MT.codonTable : Vertebrate_Mitochondrial to ?.$share_dir.$config_file, "\n";
 
-	    ## Add MT.codon Table to config
-	    print $FILEHANDLE $add_regexp." ".catfile($share_dir, $config_file)." > ".catfile($share_dir, $config_file.".tmp"), "\n";
-	print $FILEHANDLE "mv ".catfile($share_dir, $config_file.".tmp")." ".catfile($share_dir, $config_file);
+	## Add MT.codon Table to config
+	print $FILEHANDLE $add_regexp." ".catfile($share_dir, $config_file)." > ".catfile($share_dir, $config_file.".tmp"), "\n";
+	mv({infile_path => catfile($share_dir, $config_file.".tmp"),
+	    outfile_path => catfile($share_dir, $config_file),
+	    FILEHANDLE => $FILEHANDLE,
+	   });
 	print $FILEHANDLE "\n\n";
 
     }

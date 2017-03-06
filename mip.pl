@@ -52,7 +52,6 @@ BEGIN {
 		   "File::Format::Yaml",
 		   "Log::Log4perl",
 		   "Check::Check_modules",
-		   "File::Format::Shell",
 		   "File::Format::Yaml",
 		   "File::Parse::Parse",
 		   "MIP_log::Log4perl",
@@ -2395,15 +2394,15 @@ sub analysisrunstatus {
 			 });
 
     print $FILEHANDLE q?files=(?;  #Create bash array
-    foreach my $path (@paths_ref) {
+			       foreach my $path (@paths_ref) {
 
-	if (defined($path)) {  #First analysis and dry run will otherwise cause try to print uninitialized values
+				   if (defined($path)) {  #First analysis and dry run will otherwise cause try to print uninitialized values
 
-	    print $FILEHANDLE q?"?.$path.q?" ?;  #Add to array
-	}
-    }
-    say $FILEHANDLE ")";  #Close bash array
-    say $FILEHANDLE q?for file in ${files[@]}?;  #loop over files
+				       print $FILEHANDLE q?"?.$path.q?" ?;  #Add to array
+				   }
+			       }
+			       say $FILEHANDLE ")";  #Close bash array
+			       say $FILEHANDLE q?for file in ${files[@]}?;  #loop over files
     say $FILEHANDLE "do ";  #for each element in array do
     say $FILEHANDLE "\t".q?if [ -s $file ]; then?;  #file exists and is larger than zero
     say $FILEHANDLE "\t\t".q?echo "Found file $file"?;  #Echo
@@ -4563,6 +4562,8 @@ sub annovar {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Gnu::Coreutils qw(mv);
+
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 20;
@@ -4699,8 +4700,11 @@ sub annovar {
 	    }
 	    print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    print $XARGSFILEHANDLE "; ";
-	    print $XARGSFILEHANDLE "mv ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf.".$active_parameter_href->{annovar_genome_build_version}."_multianno.vcf")." ";
-	    say $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf");
+	    mv({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf.".$active_parameter_href->{annovar_genome_build_version}."_multianno.vcf"),
+		outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf"),
+		FILEHANDLE => $XARGSFILEHANDLE,
+	       });
+	    say $XARGSFILEHANDLE "\n";
 	}
 	if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
 
@@ -5860,7 +5864,7 @@ sub samplecheck {
 	print $FILEHANDLE "--vcf-require-gt ";  #Skip variants where the GT field is absent
 	print $FILEHANDLE "--vcf-half-call haploid ";  #Treat half-calls as haploid/homozygous
 	print $FILEHANDLE q?--set-missing-var-ids @:#[?.$file_info_href->{human_genome_reference_version}.q?]\$1,\$2 ?;  #Assign chromosome-and-position-based IDs
-	say $FILEHANDLE "--indep 50 5 2 ", "\n";  #Produce a pruned subset of markers that are in approximate linkage equilibrium with each other
+	    say $FILEHANDLE "--indep 50 5 2 ", "\n";  #Produce a pruned subset of markers that are in approximate linkage equilibrium with each other
 
 	print $FILEHANDLE "plink2 ";
 	print $FILEHANDLE "--noweb ";  #No web check
@@ -5868,7 +5872,7 @@ sub samplecheck {
 	print $FILEHANDLE "--vcf-require-gt ";  #Skip variants where the GT field is absent
 	print $FILEHANDLE "--vcf-half-call haploid ";  #Treat half-calls as haploid/homozygous
 	print $FILEHANDLE q?--set-missing-var-ids @:#[?.$file_info_href->{human_genome_reference_version}.q?]\$1,\$2 ?;  #Assign chromosome-and-position-based IDs
-	print $FILEHANDLE "--het small-sample ";  #Inlcude n/(n-1) multiplier in Nei's expected homozygosity formula
+	    print $FILEHANDLE "--het small-sample ";  #Inlcude n/(n-1) multiplier in Nei's expected homozygosity formula
 	print $FILEHANDLE "--ibc ";  #calculates three inbreeding coefficients for each sample
 	print $FILEHANDLE "--extract plink.prune.in ";  #Only LD-based pruning snps
 	say $FILEHANDLE "--out ".catfile($outfamily_directory, $$family_id_ref), "\n";  #Outfile
@@ -6072,6 +6076,8 @@ sub vt {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Gnu::Coreutils qw(mv);
+
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargs_file_name;
@@ -6152,122 +6158,125 @@ sub vt {
 
     my $remove_star_regexp = q?perl -nae \'unless\($F\[4\] eq \"\*\") \{print $_\}\' ?;  #VEP does not annotate '*' since the alt allele does not exist, this is captured in the upsream indel and SNV record associated with '*'
 
-    ## Split vcf into contigs
-    while ( my ($contig_index, $contig) = each(@{ $file_info_href->{contigs_size_ordered} }) ) {
+## Split vcf into contigs
+while ( my ($contig_index, $contig) = each(@{ $file_info_href->{contigs_size_ordered} }) ) {
 
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$infile_suffix)." ";  #Infile
+    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$infile_suffix)." ";  #Infile
 
-	## vt - Split multi allelic records into single records and normalize
-	vt_core({active_parameter_href => $active_parameter_href,
-		 sample_info_href => $sample_info_href,
-		 infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		 job_id_href => $job_id_href,
-		 FILEHANDLE => $XARGSFILEHANDLE,
-		 infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.$outfile_suffix),
-		 outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$outfile_suffix),
-		 decompose => $active_parameter_href->{vt_decompose},
-		 normalize => $active_parameter_href->{vt_normalize},
-		 sed => 1,
-		 instream => 1,
-		 cmd_break => ";",
-		 xargs_file_name => $xargs_file_name,
-		 contig_ref => \$contig,
-		});
+    ## vt - Split multi allelic records into single records and normalize
+    vt_core({active_parameter_href => $active_parameter_href,
+	     sample_info_href => $sample_info_href,
+	     infile_lane_no_ending_href => $infile_lane_no_ending_href,
+	     job_id_href => $job_id_href,
+	     FILEHANDLE => $XARGSFILEHANDLE,
+	     infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.$outfile_suffix),
+	     outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$outfile_suffix),
+	     decompose => $active_parameter_href->{vt_decompose},
+	     normalize => $active_parameter_href->{vt_normalize},
+	     sed => 1,
+	     instream => 1,
+	     cmd_break => ";",
+	     xargs_file_name => $xargs_file_name,
+	     contig_ref => \$contig,
+	    });
 
-	if ( ($contig_index == 0)
-	     && ($active_parameter_href->{"p".$program_name} == 1)
-	     && (! $active_parameter_href->{dry_run_all})
-	    ) {
+    if ( ($contig_index == 0)
+	 && ($active_parameter_href->{"p".$program_name} == 1)
+	 && (! $active_parameter_href->{dry_run_all})
+	) {
 
-	    my ($volume, $directory, $stderr_file) = File::Spec->splitpath($xargs_file_name);  #Split to enable submission to &SampleInfoQC later
+	my ($volume, $directory, $stderr_file) = File::Spec->splitpath($xargs_file_name);  #Split to enable submission to &SampleInfoQC later
 
-	    ## Collect QC metadata info for later use
-	    sample_info_qc({sample_info_href => $sample_info_href,
-			    program_name => "vt",
-			    outdirectory => $directory,
-			    outfile_ending => $stderr_file.".".$contig.".stderr.txt",
-			    outdata_type => "info_directory"
-			   });
-	}
-
-	my $alt_file_ending = "";
-
-	## Remove decomposed '*' entries
-	if ($active_parameter_href->{vt_missing_alt_allele}) {
-
-	    $alt_file_ending = "_nostar";
-	    print $XARGSFILEHANDLE catfile($remove_star_regexp.$$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$outfile_suffix)." ";
-	    print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.$outfile_suffix)." ";
-	    print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-	    print $XARGSFILEHANDLE "; ";
-	}
-
-	## Remove common variants
-	if ($active_parameter_href->{vt_genmod_filter}) {
-
-	    print $XARGSFILEHANDLE "genmod ";  #Program
-	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
-	    print $XARGSFILEHANDLE "annotate ";  #Command
-	    print $XARGSFILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
-	    print $XARGSFILEHANDLE "--thousand-g ".$active_parameter_href->{vt_genmod_filter_1000g}." ";  #1000G reference
-
-	    if ($active_parameter_href->{vt_genmod_filter_max_af}) {
-
-		print $XARGSFILEHANDLE "--max-af ";  #If the MAX AF should be annotated
-	    }
-	    print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutStream
-	    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.$outfile_suffix)." ";
-	    print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-	    print $XARGSFILEHANDLE "| ";
-
-	    $alt_file_ending .= "_genmod_filter";  #Update ending
-
-	    print $XARGSFILEHANDLE "genmod ";  #Program
-	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
-	    print $XARGSFILEHANDLE "filter ";  #Command
-	    print $XARGSFILEHANDLE "-t ".$active_parameter_href->{vt_genmod_filter_threshold}." ";  #Threshold for filtering variants
-	    print $XARGSFILEHANDLE "- ";  #InStream
-	    print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.$outfile_suffix)." ";  #OutFile
-	    print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-	    print $XARGSFILEHANDLE "; ";
-	}
-
-	print $XARGSFILEHANDLE "mv ";
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.$outfile_suffix)." ";
-	say $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$outfile_suffix)." ";
+	## Collect QC metadata info for later use
+	sample_info_qc({sample_info_href => $sample_info_href,
+			program_name => "vt",
+			outdirectory => $directory,
+			outfile_ending => $stderr_file.".".$contig.".stderr.txt",
+			outdata_type => "info_directory"
+		       });
     }
+
+    my $alt_file_ending = "";
+
+    ## Remove decomposed '*' entries
+    if ($active_parameter_href->{vt_missing_alt_allele}) {
+
+	$alt_file_ending = "_nostar";
+	print $XARGSFILEHANDLE catfile($remove_star_regexp.$$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$outfile_suffix)." ";
+	print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.$outfile_suffix)." ";
+	print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE "; ";
+    }
+
+    ## Remove common variants
+    if ($active_parameter_href->{vt_genmod_filter}) {
+
+	print $XARGSFILEHANDLE "genmod ";  #Program
+	print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
+	print $XARGSFILEHANDLE "annotate ";  #Command
+	print $XARGSFILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
+	print $XARGSFILEHANDLE "--thousand-g ".$active_parameter_href->{vt_genmod_filter_1000g}." ";  #1000G reference
+
+	if ($active_parameter_href->{vt_genmod_filter_max_af}) {
+
+	    print $XARGSFILEHANDLE "--max-af ";  #If the MAX AF should be annotated
+	}
+	print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutStream
+	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.$outfile_suffix)." ";
+	print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE "| ";
+
+	$alt_file_ending .= "_genmod_filter";  #Update ending
+
+	print $XARGSFILEHANDLE "genmod ";  #Program
+	print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
+	print $XARGSFILEHANDLE "filter ";  #Command
+	print $XARGSFILEHANDLE "-t ".$active_parameter_href->{vt_genmod_filter_threshold}." ";  #Threshold for filtering variants
+	print $XARGSFILEHANDLE "- ";  #InStream
+	print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.$outfile_suffix)." ";  #OutFile
+	print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	print $XARGSFILEHANDLE "; ";
+    }
+
+
+    mv({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.$outfile_suffix),
+	outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$outfile_suffix),
+	FILEHANDLE => $XARGSFILEHANDLE,
+       });
+    say $XARGSFILEHANDLE "\n";
+}
+
+if ( ! $$reduce_io_ref) { #Run as individual sbatch script
+
+    ## Copies file from temporary directory.
+    say $FILEHANDLE "## Copy file from temporary directory";
+    migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_*".$outfile_suffix."*"),
+		  outfile_path => $outfamily_directory,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
+    say $FILEHANDLE "wait", "\n";
+
+    close($FILEHANDLE);
+}
+if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
     if ( ! $$reduce_io_ref) { #Run as individual sbatch script
 
-	## Copies file from temporary directory.
-	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_*".$outfile_suffix."*"),
-		      outfile_path => $outfamily_directory,
-		      FILEHANDLE => $FILEHANDLE,
-		     });
-	say $FILEHANDLE "wait", "\n";
-
-	close($FILEHANDLE);
+	## Submitt job
+	submit_job({active_parameter_href => $active_parameter_href,
+		    sample_info_href => $sample_info_href,
+		    job_id_href => $job_id_href,
+		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    dependencies => "case_dependency",
+		    path => $parameter_href->{"p".$program_name}{chain},
+		    sbatch_file_name => $file_name
+		   });
     }
-    if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
+}
+if ($$reduce_io_ref) {
 
-	if ( ! $$reduce_io_ref) { #Run as individual sbatch script
-
-	    ## Submitt job
-	    submit_job({active_parameter_href => $active_parameter_href,
-			sample_info_href => $sample_info_href,
-			job_id_href => $job_id_href,
-			infile_lane_no_ending_href => $infile_lane_no_ending_href,
-			dependencies => "case_dependency",
-			path => $parameter_href->{"p".$program_name}{chain},
-			sbatch_file_name => $file_name
-		       });
-	}
-    }
-    if ($$reduce_io_ref) {
-
-	return $xargs_file_counter;  #Track the number of created xargs scripts per module for Block algorithm
-    }
+    return $xargs_file_counter;  #Track the number of created xargs scripts per module for Block algorithm
+}
 }
 
 
@@ -6933,6 +6942,8 @@ sub gatk_variantrecalibration {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Gnu::Coreutils qw(mv);
+
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $core_number = 4;  #gatk VQSR do not benefit from paralellization ref gatk blog, but we need some java heap allocation
     my $program_outdirectory_name = $parameter_href->{"p".$program_name}{outdir_name};
@@ -7222,9 +7233,10 @@ sub gatk_variantrecalibration {
 	say $FILEHANDLE "\n";
 
 	## Change name of file to accomodate downstream
-	print $FILEHANDLE "mv ";
-	print $FILEHANDLE $outfile_path_no_ending."_refined.vcf"." ";
-	print $FILEHANDLE $outfile_path_no_ending.".vcf";
+	mv({infile_path => $outfile_path_no_ending."_refined.vcf",
+	    outfile_path => $outfile_path_no_ending.".vcf",
+	    FILEHANDLE => $FILEHANDLE,
+	   });
 	say $FILEHANDLE "\n";
     }
 
@@ -7238,9 +7250,10 @@ sub gatk_variantrecalibration {
 
     ## Change name of file to accomodate downstream
     say $FILEHANDLE "\n";
-    print $FILEHANDLE "mv ";
-    print $FILEHANDLE $outfile_path_no_ending."_normalized.vcf"." ";
-    print $FILEHANDLE $outfile_path_no_ending.".vcf";
+    mv({infile_path => $outfile_path_no_ending."_normalized.vcf",
+	outfile_path => $outfile_path_no_ending.".vcf",
+	FILEHANDLE => $FILEHANDLE,
+       });
     say $FILEHANDLE "\n";
 
     ## Produce a bcf compressed and index from vcf
@@ -7433,9 +7446,11 @@ sub gatk_concatenate_genotypegvcfs {
 	    say $FILEHANDLE "\n";
 
 	    ## Move to original filename
-	    print $FILEHANDLE "mv ";
-	    print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_incnonvariantloci.vcf")." ";
-	    say $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf"), "\n";
+	    mv({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_incnonvariantloci.vcf"),
+		outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf"),
+		FILEHANDLE => $FILEHANDLE,
+	       });
+	    say $FILEHANDLE "\n";
 	}
 
 	vcf_to_bcf({infile => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type),
@@ -12295,7 +12310,7 @@ sub gatk_baserecalibration {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use Program::Command::Gnu qw(rm);
+    use Program::Gnu::Coreutils qw(rm);
 
     my $core_number = $active_parameter_href->{core_processor_number};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
@@ -15404,7 +15419,7 @@ sub pfastqc {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use Program::Command::Gnu qw(cp);
+    use Program::Gnu::Coreutils qw(cp);
     use Program::Qc::Fastqc qw (fastqc);
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -15717,7 +15732,7 @@ sub split_fastq_file {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use Program::Command::Gnu qw(cp rm split);
+    use Program::Gnu::Coreutils qw(cp rm mv split);
     use Program::Compression::Pigz qw(pigz);
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -15784,13 +15799,13 @@ sub split_fastq_file {
 	     });
 	print $FILEHANDLE "| ";  #Pipe
 
-	Program::Command::Gnu::split({infile_path => "-",
-				      lines => ($sequence_read_batch * 4),
-				      numeric_suffixes => 1,
-				      suffix_length => 4,
-				      FILEHANDLE => $FILEHANDLE,
-				      prefix => catfile($$temp_directory_ref, $file_prefix),
-				     });
+	Program::Gnu::Coreutils::split({infile_path => "-",
+					lines => ($sequence_read_batch * 4),
+					numeric_suffixes => 1,
+					suffix_length => 4,
+					FILEHANDLE => $FILEHANDLE,
+					prefix => catfile($$temp_directory_ref, $file_prefix),
+				       });
 	say $FILEHANDLE "\n";
 
 	## Remove original files
@@ -15835,10 +15850,12 @@ sub split_fastq_file {
 
 	## Move original file to not be included in subsequent analysis
 	say $FILEHANDLE "mkdir -p ".catfile($insample_directory, "original_fastq_files"), "\n";
-
-	print $FILEHANDLE "mv ";
-	print $FILEHANDLE $infile_path." ";
-	say $FILEHANDLE catfile($insample_directory, "original_fastq_files", $fastq_file), "\n";
+	
+	mv({infile_path => $infile_path,
+	    outfile_path => catfile($insample_directory, "original_fastq_files", $fastq_file),
+	    FILEHANDLE => $FILEHANDLE,
+	   });
+	say $FILEHANDLE "\n";
 
 	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
@@ -15973,10 +15990,10 @@ sub build_annovar_prerequisites {
 		    $temporary_file_path = catfile($annovar_temporary_directory, $annovar_table_href->{ $active_parameter_href->{annovar_table_names}[$table_names_counter] }{file}[$files_counter]);
 
 		    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-		    print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
-						     intended_file_path_ref => \$intended_file_path,
-						     temporary_file_path_ref => \$temporary_file_path,
-						    });
+		    check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
+					       intended_file_path_ref => \$intended_file_path,
+					       temporary_file_path_ref => \$temporary_file_path,
+					      });
 
 		    if (defined($annovar_table_href->{ $active_parameter_href->{annovar_table_names}[$table_names_counter] }{index_file})) {
 
@@ -15984,10 +16001,10 @@ sub build_annovar_prerequisites {
 			$temporary_file_path = catfile($annovar_temporary_directory, $annovar_table_href->{ $active_parameter_href->{annovar_table_names}[$table_names_counter] }{file}[$files_counter].".idx");
 
 			## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-			print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
-							 intended_file_path_ref => \$intended_file_path,
-							 temporary_file_path_ref => \$temporary_file_path,
-							});
+			check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
+						   intended_file_path_ref => \$intended_file_path,
+						   temporary_file_path_ref => \$temporary_file_path,
+						  });
 		    }
 		}
 	    }
@@ -15997,10 +16014,10 @@ sub build_annovar_prerequisites {
 		$temporary_file_path = catfile($annovar_temporary_directory, $active_parameter_href->{annovar_genome_build_version}."_".$annovar_table_href->{ $active_parameter_href->{annovar_table_names}[$table_names_counter] }{ucsc_alias}.".txt");
 
 		## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-		print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
-						 intended_file_path_ref => \$intended_file_path,
-						 temporary_file_path_ref => \$temporary_file_path,
-						});
+		check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
+					   intended_file_path_ref => \$intended_file_path,
+					   temporary_file_path_ref => \$temporary_file_path,
+					  });
 
 		if (defined($annovar_table_href->{ $active_parameter_href->{annovar_table_names}[$table_names_counter] }{index_file})) {
 
@@ -16008,10 +16025,10 @@ sub build_annovar_prerequisites {
 		    $temporary_file_path = catfile($annovar_temporary_directory, $active_parameter_href->{annovar_genome_build_version}."_".$annovar_table_href->{ $active_parameter_href->{annovar_table_names}[$table_names_counter] }{ucsc_alias}.".txt.idx");
 
 		    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-		    print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
-						     intended_file_path_ref => \$intended_file_path,
-						     temporary_file_path_ref => \$temporary_file_path,
-						    });
+		    check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
+					       intended_file_path_ref => \$intended_file_path,
+					       temporary_file_path_ref => \$temporary_file_path,
+					      });
 		}
 	    }
 	    else {
@@ -16020,10 +16037,10 @@ sub build_annovar_prerequisites {
 		$temporary_file_path = catfile($annovar_temporary_directory, $active_parameter_href->{annovar_genome_build_version}."_".$active_parameter_href->{annovar_table_names}[$table_names_counter].".txt");
 
 		## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-		print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
-						 intended_file_path_ref => \$intended_file_path,
-						 temporary_file_path_ref => \$temporary_file_path,
-						});
+		check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
+					   intended_file_path_ref => \$intended_file_path,
+					   temporary_file_path_ref => \$temporary_file_path,
+					  });
 
 		if (defined($annovar_table_href->{ $active_parameter_href->{annovar_table_names}[$table_names_counter] }{index_file})) {
 
@@ -16031,10 +16048,10 @@ sub build_annovar_prerequisites {
 		    $temporary_file_path = catfile($annovar_temporary_directory, $active_parameter_href->{annovar_genome_build_version}."_".$active_parameter_href->{annovar_table_names}[$table_names_counter].".txt.idx");
 
 		    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-		    print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
-						     intended_file_path_ref => \$intended_file_path,
-						     temporary_file_path_ref => \$temporary_file_path,
-						    });
+		    check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
+					       intended_file_path_ref => \$intended_file_path,
+					       temporary_file_path_ref => \$temporary_file_path,
+					      });
 		}
 	    }
 	}
@@ -16114,7 +16131,7 @@ sub build_ptchs_metric_prerequisites {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use Program::Command::Gnu qw(rm);
+    use Program::Gnu::Coreutils qw(rm);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger("MIP");
@@ -16190,10 +16207,10 @@ sub build_ptchs_metric_prerequisites {
 	my $temporary_file_path = $exome_target_bed_file_random.".dict_body_col_5_".$$infile_list_ending_ref;
 
 	## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-	print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
-					 intended_file_path_ref => \$intended_file_path,
-					 temporary_file_path_ref => \$temporary_file_path,
-					});
+	check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
+				   intended_file_path_ref => \$intended_file_path,
+				   temporary_file_path_ref => \$temporary_file_path,
+				  });
 
 	say $FILEHANDLE "#Create".$$padded_infile_list_ending_ref;
 	java_core({FILEHANDLE => $FILEHANDLE,
@@ -16212,10 +16229,10 @@ sub build_ptchs_metric_prerequisites {
 	$temporary_file_path = $exome_target_bed_file_random.".dict_body_col_5".$$padded_infile_list_ending_ref;
 
 	## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-	print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
-					 intended_file_path_ref => \$intended_file_path,
-					 temporary_file_path_ref => \$temporary_file_path,
-					});
+	check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
+				   intended_file_path_ref => \$intended_file_path,
+				   temporary_file_path_ref => \$temporary_file_path,
+				  });
 
 	say $FILEHANDLE "#Create ".$$padded_interval_list_ending_ref." by softlinking";
 
@@ -16364,10 +16381,10 @@ sub build_bwa_prerequisites {
 	    my $temporary_file_path = $$human_genome_reference_ref."_".$random_integer.$file;
 
 	    ## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-	    print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
-					     intended_file_path_ref => \$intended_file_path,
-					     temporary_file_path_ref => \$temporary_file_path,
-					    });
+	    check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
+				       intended_file_path_ref => \$intended_file_path,
+				       temporary_file_path_ref => \$temporary_file_path,
+				      });
 	}
 	$parameter_href->{bwa_build_reference}{build_file} = 0;  #Ensure that this subrutine is only executed once
     }
@@ -16575,7 +16592,7 @@ sub build_human_genome_prerequisites {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use Program::Command::Gnu qw(rm);
+    use Program::Gnu::Coreutils qw(rm);
     use Program::Compression::Gzip qw(gzip);
 
     ## Retrieve logger object
@@ -16655,10 +16672,10 @@ sub build_human_genome_prerequisites {
 		my $temporary_file_path = $filename_no_ending."_".$random_integer.$file_ending;
 
 		## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-		print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
-						 intended_file_path_ref => \$intended_file_path,
-						 temporary_file_path_ref => \$temporary_file_path,
-						});
+		check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
+					   intended_file_path_ref => \$intended_file_path,
+					   temporary_file_path_ref => \$temporary_file_path,
+					  });
 	    }
 	    if ($file_ending eq ".fai") {
 
@@ -16678,10 +16695,10 @@ sub build_human_genome_prerequisites {
 		my $temporary_file_path = $human_genome_reference_temp_file.$file_ending;
 
 		## Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
-		print_check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
-						 intended_file_path_ref => \$intended_file_path,
-						 temporary_file_path_ref => \$temporary_file_path,
-						});
+		check_exist_and_move_file({FILEHANDLE => $FILEHANDLE,
+					   intended_file_path_ref => \$intended_file_path,
+					   temporary_file_path_ref => \$temporary_file_path,
+					  });
 
 		## Remove softLink
 		rm({infile_path => $human_genome_reference_temp_file,
@@ -20184,9 +20201,9 @@ sub compare_array_elements {
 }
 
 
-sub print_check_exist_and_move_file {
+sub check_exist_and_move_file {
 
-##print_check_exist_and_move_file
+##check_exist_and_move_file
 
 ##Function : Checks if a file exists and moves the file in place if file is lacking or has a size of 0 bytes.
 ##Returns  : ""
@@ -20210,10 +20227,21 @@ sub print_check_exist_and_move_file {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Gnu::Coreutils qw(rm mv);
+
     print $FILEHANDLE "[ -s ".$$intended_file_path_ref." ] ";  #Check file exists and is larger than 0
-    print $FILEHANDLE "&& rm ".$$temporary_file_path_ref." ";  #If other processes already has created file, remove temp file
+    print $FILEHANDLE "&& ";
+
+    ## If other processes already has created file, remove temp file
+    rm({infile_path => $$temporary_file_path_ref,
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "|| ";  #File has not been created by other processes
-    say $FILEHANDLE "mv ".$$temporary_file_path_ref." ".$$intended_file_path_ref,"\n";  #Move file in place
+    mv({infile_path => $$temporary_file_path_ref,
+	outfile_path => $$intended_file_path_ref,
+	FILEHANDLE => $FILEHANDLE,
+       });
+    say $FILEHANDLE "\n";
 }
 
 
@@ -20791,7 +20819,7 @@ sub check_most_complete_and_remove_file {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use Program::Command::Gnu qw(rm);
+    use Program::Gnu::Coreutils qw(rm);
 
     if ( (defined($$most_complete_ref)) && (defined($$file_path_ref)) ) {  #Not to disturb first dry_run of analysis
 
@@ -21888,7 +21916,7 @@ sub migrate_file {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use Program::Command::Gnu qw(cp);
+    use Program::Gnu::Coreutils qw(cp);
 
     ## Split relative infile_path to file(s)
     my ($infile_path_volume, $infile_path_directory, $infile_path_file_name) = File::Spec->splitpath($infile_path);
@@ -22002,7 +22030,7 @@ sub remove_contig_files {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use Program::Command::Gnu qw(rm);
+    use Program::Gnu::Coreutils qw(rm);
 
     my $core_counter = 1;
 
@@ -22415,7 +22443,7 @@ sub xargs_command {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use Program::Command::Gnu qw(xargs);
+    use Program::Gnu::Findutils qw(xargs);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger("MIP");
@@ -23660,6 +23688,8 @@ sub vt_core {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Gnu::Coreutils qw(mv);
+
     my $file_name;
     my $program_info_path;
     my $random_integer = int(rand(10000));  #Generate a random integer between 0-10,000.
@@ -23759,16 +23789,18 @@ sub vt_core {
 	    print $FILEHANDLE $cmd_break;
 
 	    ## Move index in place
-	    print $FILEHANDLE "mv ";
-	    print $FILEHANDLE $outfile_path."_splitted_".$random_integer.".tbi ";
-	    print $FILEHANDLE $outfile_path.".tbi ";
+	    mv({infile_path => $outfile_path."_splitted_".$random_integer.".tbi",
+		outfile_path => $outfile_path.".tbi",
+		FILEHANDLE => $FILEHANDLE,
+	       });
 	    print $FILEHANDLE $cmd_break;
 	}
 
 	## Move processed reference to original place
-	print $FILEHANDLE "mv ";
-	print $FILEHANDLE $outfile_path."_splitted_".$random_integer." ";
-	print $FILEHANDLE $outfile_path." ";
+	mv({infile_path => $outfile_path."_splitted_".$random_integer,
+	    outfile_path => $outfile_path,
+	    FILEHANDLE => $FILEHANDLE,
+	   });
 	print $FILEHANDLE $cmd_break;
     }
 
@@ -26438,6 +26470,8 @@ sub prepare_gatk_target_intervals {
     my $target_interval_file_list_ref = $arg_href->{target_interval_file_list_ref};
     my $temp_directory_ref = $arg_href->{temp_directory_ref};
 
+    use Program::Gnu::Coreutils qw(mv);
+
     if ( ($$analysis_type_ref eq "wes") || ($$analysis_type_ref eq "rapid") ) { #Exome/rapid analysis
 
 	my $target_interval_path = catfile($$temp_directory_ref, $$target_interval_file_list_ref);
@@ -26454,9 +26488,11 @@ sub prepare_gatk_target_intervals {
 	    $target_interval_path .= ".intervals";
 
 	    ## Add the by GATK required ".interval" ending
-	    print $FILEHANDLE "mv ";
-	    print $FILEHANDLE catfile($$temp_directory_ref, $$target_interval_file_list_ref)." ";
-	    say $FILEHANDLE catfile($$temp_directory_ref, $$target_interval_file_list_ref.".intervals")." ";
+	    mv({infile_path => catfile($$temp_directory_ref, $$target_interval_file_list_ref),
+		outfile_path => catfile($$temp_directory_ref, $$target_interval_file_list_ref.".intervals"),
+		FILEHANDLE => $FILEHANDLE,
+	       });
+	    say $FILEHANDLE "\n";
 	}
 	return $target_interval_path;
     }

@@ -152,7 +152,7 @@ sub create_housekeeping_function {
     
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use Program::Command::Gnu qw(rm);
+    use Program::Gnu::Coreutils qw(rm);
 
     ## Create housekeeping function and trap
     say $FILEHANDLE q?finish() {?, "\n";
