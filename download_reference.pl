@@ -23,9 +23,7 @@ use lib catdir($Bin, "lib");
 use Check::Check_modules qw(check_modules);
 use File::Format::Shell qw(create_bash_file);
 use File::Format::Yaml qw(load_yaml);
-use File::Parse::Parse qw(find_absolute_path);
 use MIP_log::Log4perl qw(initiate_logger);
-use Program::Download qw(wget);
 use Script::Utils qw(help set_default_array_parameters);
 
 our $USAGE;
@@ -37,7 +35,6 @@ BEGIN {
 		   "YAML",
 		   "File::Format::Yaml",
 		   "Log::Log4perl",
-		   "Program::Download",
 		   "MIP_log::Log4perl",
 		   "Script::Utils",
 	);
@@ -149,16 +146,25 @@ sub references {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Gnu::Bash qw(cd);
+
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger("Download_reference");
 
     my $pwd = cwd();
 
     print $FILEHANDLE "## Create reference directory\n";
-    print $FILEHANDLE "mkdir -p ".$parameter_href->{reference_dir}, "\n\n";
+    Program::Gnu::Coreutils::mkdir({indirectory_path => $parameter_href->{reference_dir},
+				    parents => 1,
+				    FILEHANDLE => $FILEHANDLE,
+				   });
+    print $FILEHANDLE "\n\n";
 
     ## Since all commands should assume working directory to be the reference directory
-    print $FILEHANDLE "cd ".$parameter_href->{reference_dir}, "\n\n";
+    cd({directory_path => $parameter_href->{reference_dir},
+	FILEHANDLE => $FILEHANDLE,
+       });
+    print $FILEHANDLE "\n\n";
 
   REFERENCE:
     while (my ($reference_id, $versions_ref) = each(%{ $parameter_href->{reference} }) ) {
@@ -252,7 +258,10 @@ sub references {
     }
 
     ## Move back to original
-    print $FILEHANDLE "cd ".$pwd, "\n\n";
+    cd({directory_path => $pwd,
+	FILEHANDLE => $FILEHANDLE,
+       });
+    print $FILEHANDLE "\n\n";
 }
 
 
@@ -308,13 +317,15 @@ sub download {
     print $FILEHANDLE "## Download ".$file_id, "\n";
 
     if($program eq "wget") {
+	
+	use Program::Download::Wget qw(wget);
 
-	Program::Download::wget({url => $url,
-				 FILEHANDLE => $FILEHANDLE,
-				 quiet => $quiet,
-				 verbose => $verbose,
-				 outfile_path => $outfile_path,
-				});
+	wget({url => $url,
+	      FILEHANDLE => $FILEHANDLE,
+	      quiet => $quiet,
+	      verbose => $verbose,
+	      outfile_path => $outfile_path,
+	     });
     }
 }
 
@@ -438,6 +449,8 @@ sub check_file {
      
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Gnu::Coreutils qw(rm);
+
     if( (defined($check_method)) && ($check_method eq "md5sum") ) {
 
 	## Removes ".file_ending" in filename.FILENDING(.gz)
@@ -452,8 +465,11 @@ sub check_file {
 	    print $FILEHANDLE "-c md5sum_check.txt", "\n\n";
 
 	    ## Clean-up
-	    print $FILEHANDLE "rm ";
-	    print $FILEHANDLE "md5sum_check.txt", "\n\n";
+	    rm({infile_path => "md5sum_check.txt",
+		force => 1,
+		FILEHANDLE => $FILEHANDLE,
+	       });
+	    print $FILEHANDLE "\n\n";
 	}
     }
 }
@@ -478,7 +494,9 @@ sub update_to_absolute_path {
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-    
+
+    use File::Parse::Parse qw(find_absolute_path);
+
     ## Retrieve logger object now that log_file has been set
     my $log = Log::Log4perl->get_logger("Download_reference");
     
@@ -491,10 +509,10 @@ sub update_to_absolute_path {
 		foreach my $parameter_value (@{ $parameter_href->{$parameter_name} }) {
 		
 		    ## Replace original input with abolute path for supplied path or croaks and exists if path does not exists
-		    $parameter_value = File::Parse::Parse::find_absolute_path({path => $parameter_value,
-									       parameter_name => $parameter_name,
-									       log => $log,
-									      });
+		    $parameter_value = find_absolute_path({path => $parameter_value,
+							   parameter_name => $parameter_name,
+							   log => $log,
+							  });
 		}
 	    }
 	    elsif (ref($parameter_href->{$parameter_name}) eq "HASH") {  #Hash reference
@@ -502,20 +520,20 @@ sub update_to_absolute_path {
 		foreach my $key (keys %{ $parameter_href->{$parameter_name} }) {  #Cannot use each since we are updating key
 
 		    ## Find aboslute path for supplied path or croaks and exists if path does not exists
-		    my $updated_key = File::Parse::Parse::find_absolute_path({path => $key,
-									      parameter_name => $parameter_name,
-									      log => $log,
-									     });
+		    my $updated_key = find_absolute_path({path => $key,
+							  parameter_name => $parameter_name,
+							  log => $log,
+							 });
 		    $parameter_href->{$parameter_name}{$updated_key} = delete($parameter_href->{$parameter_name}{$key});
 		}
 	    }
 	    else {  #Scalar - not a reference
 		
 		## Find aboslute path for supplied path or croaks and exists if path does not exists
-		$parameter_href->{$parameter_name} = File::Parse::Parse::find_absolute_path({path => $parameter_href->{$parameter_name},
-											     parameter_name => $parameter_name,
-											     log => $log,
-											    });
+		$parameter_href->{$parameter_name} = find_absolute_path({path => $parameter_href->{$parameter_name},
+									 parameter_name => $parameter_name,
+									 log => $log,
+									});
 	    }
 	}
     }

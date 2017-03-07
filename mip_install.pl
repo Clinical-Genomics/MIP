@@ -21,6 +21,7 @@ use File::Spec::Functions qw(catfile catdir devnull);
 use lib catdir($Bin, "lib");  #Add MIPs internal lib
 use File::Format::Shell qw(create_bash_file);
 use Program::Download::Wget qw(wget);
+use Program::Gnu::Bash qw(cd);
 use Program::Gnu::Coreutils qw(cp rm mv mkdir);
 use Script::Utils qw(help set_default_array_parameters);
 
@@ -886,8 +887,10 @@ sub install_perl_cpnam {
     print $FILEHANDLE "### Install specific perl version\n";
 
     ## Move to Home
-    print $FILEHANDLE "## Move HOME\n";
-    print $FILEHANDLE q?cd $HOME?;
+    print $FILEHANDLE '## Move to $HOME', "\n";
+    cd({directory_path => q?$HOME?,
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     ## Download
@@ -907,7 +910,9 @@ sub install_perl_cpnam {
 
     ## Move to perl directory
     print $FILEHANDLE "## Move to perl directory\n";
-    print $FILEHANDLE "cd perl-".$parameter_href->{perl_version};
+    cd({directory_path => "perl-".$parameter_href->{perl_version},
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     ## Configure
@@ -933,7 +938,11 @@ sub install_perl_cpnam {
 
     ## Remove tar file
     print $FILEHANDLE "## Remove tar file\n";
-    print $FILEHANDLE "cd && ";
+    cd({FILEHANDLE => $FILEHANDLE,
+       });
+
+    print $FILEHANDLE "&& ";
+
     rm({infile_path => "perl-".$parameter_href->{perl_version}.".tar.gz",
 	FILEHANDLE => $FILEHANDLE,
        });
@@ -941,7 +950,9 @@ sub install_perl_cpnam {
 
     ## Move to back
     print $FILEHANDLE "## Move to original working directory\n";
-    print $FILEHANDLE "cd ".$pwd;
+    cd({directory_path => $pwd,
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     print $FILEHANDLE q?echo 'eval `perl -I ~/perl-?.$parameter_href->{perl_version}.q?/lib/perl5/ -Mlocal::lib=~/perl-?.$parameter_href->{perl_version}.q?/`' >> ~/.bash_profile ?;  #Add at start-up
@@ -1300,7 +1311,9 @@ sub vcftools {
 
     ## Move to vcftools directory
     print $FILEHANDLE "## Move to vcftools directory\n";
-    print $FILEHANDLE "cd vcftools-".$parameter_href->{vcftools};
+    cd({directory_path => "vcftools-".$parameter_href->{vcftools},
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     ## Configure
@@ -1390,7 +1403,9 @@ sub bedtools {
 
     ## Move to bedtools directory
     print $FILEHANDLE "## Move to bedtools directory\n";
-    print $FILEHANDLE "cd bedtools".$bedtools_main_version;
+    cd({directory_path => "bedtools".$bedtools_main_version,
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     print $FILEHANDLE "make";
@@ -1459,7 +1474,9 @@ sub vt {
 
     ## Move to vt directory
     print $FILEHANDLE "## Move to vt directory\n";
-    print $FILEHANDLE "cd vt ";
+    cd({directory_path => "vt",
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     ## Configure
@@ -1749,7 +1766,9 @@ sub varianteffectpredictor {
     print $FILEHANDLE "\n\n";
 
     ## Move to miniconda environment
-    print $FILEHANDLE q?cd ?.catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment});
+    cd({directory_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}),
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     ## Download
@@ -1769,7 +1788,9 @@ sub varianteffectpredictor {
 
     ## Move to VariantEffectPredictor directory
     print $FILEHANDLE "## Move to VariantEffectPredictor directory\n";
-    print $FILEHANDLE "cd ".catdir("ensembl-tools-release-".$parameter_href->{varianteffectpredictor}, "scripts", "variant_effect_predictor");
+    cd({directory_path => catdir("ensembl-tools-release-".$parameter_href->{varianteffectpredictor}, "scripts", "variant_effect_predictor"),
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     ## Install VEP
@@ -1861,18 +1882,17 @@ sub varianteffectpredictor {
 
     ## Clean up
     print $FILEHANDLE "## Clean up\n";
-    print $FILEHANDLE q?cd ?.catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment});
-    print $FILEHANDLE "\n\n";
-
-    rm({infile_path => "VariantEffectPredictor-".$parameter_href->{varianteffectpredictor}.".zip",
+    rm({infile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "VariantEffectPredictor-".$parameter_href->{varianteffectpredictor}.".zip"),
 	force => 1,
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n\n";
 
-    ## Moving up
+    ## Go back to subroutine origin
     print $FILEHANDLE "## Moving back to original working directory\n";
-    print $FILEHANDLE "cd ".$pwd;  #Go back to subroutine origin
+    cd({directory_path => $pwd,
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     ## Deactivate conda environment
@@ -1946,7 +1966,9 @@ sub cnvnator {
     print $FILEHANDLE "### Install cnvnator/Root\n";
 
     ## Move to miniconda environment
-    print $FILEHANDLE q?cd ?.catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment});
+    cd({directory_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}),
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     ## Download
@@ -1976,9 +1998,11 @@ sub cnvnator {
 	print $FILEHANDLE "\n\n";
     }
 
-    ## Moving up
+    ## Go back to subroutine origin
     print $FILEHANDLE "## Moving back to original working directory\n";
-    print $FILEHANDLE "cd ".$pwd;  #Go back to subroutine origin
+    cd({directory_path => $pwd,
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     ## Install CNVNator
@@ -2010,7 +2034,9 @@ sub cnvnator {
 
     ## Move to CNVnator directory
     print $FILEHANDLE "## Move to CNVnator directory\n";
-    print $FILEHANDLE "cd ".catdir("CNVnator_v".$parameter_href->{cnvnator}, "src", "samtools");
+    cd({directory_path => catdir("CNVnator_v".$parameter_href->{cnvnator}, "src", "samtools"),
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     ## Configure
@@ -2020,7 +2046,9 @@ sub cnvnator {
     print $FILEHANDLE "\n\n";
 
     print $FILEHANDLE "## Move to CNVnator directory\n";
-    print $FILEHANDLE "cd ..";
+    cd({directory_path => "..",
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n";
 
     print $FILEHANDLE "make OMP=no";
@@ -2036,7 +2064,9 @@ sub cnvnator {
 
     ## Make available from conda environment
     print $FILEHANDLE "## Make available from conda environment\n";
-    print $FILEHANDLE "cd ..";
+    cd({directory_path => "..",
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n";
     mv({infile_path => "cnvnator2VCF.pl",
 	outfile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"),
@@ -2101,7 +2131,9 @@ sub tiddit {
 			       });
 
     ## Move to miniconda environment
-    print $FILEHANDLE "cd ".catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment});
+    cd({directory_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}),
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     ## Download
@@ -2127,13 +2159,21 @@ sub tiddit {
 
     ## Move to Tiddit directory
     print $FILEHANDLE "## Move to Tiddit directory\n";
-    print $FILEHANDLE "cd TIDDIT-".$parameter_href->{tiddit}, "\n\n";
+    cd({directory_path => "TIDDIT-".$parameter_href->{tiddit},
+	FILEHANDLE => $FILEHANDLE,
+       });
+    print $FILEHANDLE "\n\n";
+
     mkdir({indirectory_path => "build",
 	   parents => 1,
 	   FILEHANDLE => $FILEHANDLE,
 	  });
     print $FILEHANDLE "\n\n";
-    print $FILEHANDLE "cd build", "\n\n";
+
+    cd({directory_path => "build",
+	FILEHANDLE => $FILEHANDLE,
+       });
+    print $FILEHANDLE "\n\n";
 
     ## Configure
     print $FILEHANDLE "## Configure\n";
@@ -2141,7 +2181,10 @@ sub tiddit {
 
     print $FILEHANDLE "make", "\n\n";
 
-    print $FILEHANDLE "cd ../bin", "\n\n";
+    cd({directory_path => catdir("..", "bin"),
+	FILEHANDLE => $FILEHANDLE,
+       });
+    print $FILEHANDLE "\n\n";
     print $FILEHANDLE "chmod a+x TIDDIT", "\n\n";
 
     ## Make available from conda environment
@@ -2152,17 +2195,18 @@ sub tiddit {
     print $FILEHANDLE catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"), "\n\n";
 
     ## Clean-up
-    print $FILEHANDLE "cd ".catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}), "\n\n";
-    rm({infile_path => "Tiddit-".$parameter_href->{tiddit}.".zip",
+    rm({infile_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "Tiddit-".$parameter_href->{tiddit}.".zip"),
 	force => 1,
-	recursive => 1,
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n\n";
 
-    ## Moving up
+    ## Go back to subroutine origin
     print $FILEHANDLE "## Moving back to original working directory\n";
-    print $FILEHANDLE "cd ".$pwd, "\n\n";  #Go back to subroutine origin
+    cd({directory_path => $pwd,
+	FILEHANDLE => $FILEHANDLE,
+       });
+    print $FILEHANDLE "\n\n";
 
     ## Deactivate conda environment
     deactivate_conda_environment({FILEHANDLE => $FILEHANDLE,
@@ -2350,7 +2394,9 @@ sub rhocall {
 
     ## Move to rhocall directory
     print $FILEHANDLE "## Move to rhocall directory\n";
-    print $FILEHANDLE "cd rhocall-".$parameter_href->{rhocall};
+    cd({directory_path => "rhocall-".$parameter_href->{rhocall},
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     ## Configure
@@ -2360,9 +2406,11 @@ sub rhocall {
     print $FILEHANDLE "pip install -e .";
     print $FILEHANDLE "\n\n";
 
-    ## Moving up
+    ## Go back to subroutine origin
     print $FILEHANDLE "## Moving back to original working directory\n";
-    print $FILEHANDLE "cd ".$pwd;  #Go back to subroutine origin
+    cd({directory_path => $pwd,
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     ## Deactivate conda environment
@@ -2458,9 +2506,11 @@ sub remove_install_dir {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    ## Moving up
+    ## Go back to subroutine origin
     print $FILEHANDLE "## Moving back to original working directory\n";
-    print $FILEHANDLE "cd ".$pwd;  #Go back to subroutine origin
+    cd({directory_path => $pwd,
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 
     ## Clean up
@@ -2507,7 +2557,9 @@ sub create_install_dir {
 	  });
     print $FILEHANDLE "\n\n";
 
-    print $FILEHANDLE "cd ".$install_directory;
+    cd({directory_path => $install_directory,
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 }
 
@@ -2619,15 +2671,20 @@ sub create_softlink {
 
     ## Add softlink
     print $FILEHANDLE "## Move to directory and create softlink\n";
-    print $FILEHANDLE "cd ".catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"), "\n";
+    cd({directory_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"),
+	FILEHANDLE => $FILEHANDLE,
+       });
+    print $FILEHANDLE "\n";
 
     print $FILEHANDLE "ln -f -s ";
-    print $FILEHANDLE $binary.q? ?.$softlink;
+    print $FILEHANDLE $binary." ".$softlink;
     print $FILEHANDLE "\n\n";
 
     ## Move to back
     print $FILEHANDLE "## Move to original working directory\n";
-    print $FILEHANDLE "cd ".$pwd;
+    cd({directory_path => $pwd,
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 }
 
@@ -2662,7 +2719,10 @@ sub enable_executable {
 
     ## Enable executable
     print $FILEHANDLE "## Enable executable\n";
-    print $FILEHANDLE "cd ".catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"), "\n";
+    cd({directory_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}, "bin"),
+	FILEHANDLE => $FILEHANDLE,
+       });
+    print $FILEHANDLE "\n";
 
     print $FILEHANDLE "chmod a+x ";
     print $FILEHANDLE $binary.q? ?;
@@ -2670,7 +2730,9 @@ sub enable_executable {
 
     ## Move to back
     print $FILEHANDLE "## Move to original working directory\n";
-    print $FILEHANDLE "cd ".$pwd;
+    cd({directory_path => $pwd,
+	FILEHANDLE => $FILEHANDLE,
+       });
     print $FILEHANDLE "\n\n";
 }
 

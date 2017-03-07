@@ -15603,6 +15603,7 @@ sub gzip_fastq {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Program::Compression::Gzip qw(gzip);
+    use Program::Gnu::Bash qw(cd);
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
@@ -15645,7 +15646,6 @@ sub gzip_fastq {
 
     ## Gzip
     say $FILEHANDLE "## ".$program_name;
-    say $FILEHANDLE "cd ".$insample_directory, "\n";
 
     foreach my $infile (@{ $infile_href->{$sample_id} }) {
 
@@ -16608,6 +16608,7 @@ sub build_human_genome_prerequisites {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Gnu::Bash qw(cd);
     use Program::Gnu::Coreutils qw(rm);
     use Program::Compression::Gzip qw(gzip);
 
@@ -16633,7 +16634,11 @@ sub build_human_genome_prerequisites {
 					     });
     }
 
-    say $FILEHANDLE "cd $$reference_dir_ref", "\n";  #Move to reference directory
+    ## Move to reference directory
+    cd({directory_path => $$reference_dir_ref,
+	FILEHANDLE => $FILEHANDLE,
+       });
+    say $FILEHANDLE "\n";
 
     ## Check for compressed files
     if ($file_info_href->{human_genome_compressed} eq "compressed") {
