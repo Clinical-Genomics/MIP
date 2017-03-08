@@ -139,7 +139,7 @@ $parameter{rhocall_path} = catdir($ENV{HOME}, "rhocall");
 
 $parameter{cnvnator} = "0.3.3";
 $parameter{cnvnator_root_binary} = "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz";
-$parameter{tiddit} = "1.0.1";
+$parameter{tiddit} = "1.0.2";
 
 ## Define default parameters
 my %array_parameter;

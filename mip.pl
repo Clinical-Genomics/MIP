@@ -12974,6 +12974,8 @@ sub picardtools_markduplicates {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Alignment::Sambamba qw(flagstat);
+
     my $core_number = $active_parameter_href->{core_processor_number};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $lanes = join("",@{ $lane_href->{$$sample_id_ref} });  #Extract lanes
@@ -13059,11 +13061,12 @@ sub picardtools_markduplicates {
 	print $XARGSFILEHANDLE "; ";
 
 	## Process BAM with sambamba flagstat to produce metric file for downstream analysis
-	sambamba_flagstat({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.".bam"),
-			   outfile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig."_metric"),
-			   stderr_file_path => $xargs_file_name.".".$contig.".stderr.txt",
-			   FILEHANDLE => $XARGSFILEHANDLE,
-			  });
+	flagstat({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.".bam"),
+		  outfile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig."_metric"),
+		  stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
+		  FILEHANDLE => $XARGSFILEHANDLE,
+		 });
+	say $XARGSFILEHANDLE "\n";
     }
 
     ## Concatenate all metric files
@@ -13229,6 +13232,8 @@ sub sambamba_markduplicates {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Alignment::Sambamba qw(flagstat);
+
     my $core_number = $active_parameter_href->{core_processor_number};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $lanes = join("",@{ $lane_href->{$$sample_id_ref} });  #Extract lanes
@@ -13313,11 +13318,12 @@ sub sambamba_markduplicates {
 	print $XARGSFILEHANDLE "; ";
 
 	## Process BAM with sambamba flagstat to produce metric file for downstream analysis
-	sambamba_flagstat({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.".bam"),
-			   outfile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig."_metric"),
-			   stderr_file_path => $xargs_file_name.".".$contig.".stderr.txt",
-			   FILEHANDLE => $XARGSFILEHANDLE,
-			  });
+	flagstat({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.".bam"),
+		  outfile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig."_metric"),
+		  stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
+		  FILEHANDLE => $XARGSFILEHANDLE,
+		 });
+	say $XARGSFILEHANDLE "\n";
     }
 
     ## Concatenate all metric files
@@ -14380,6 +14386,8 @@ sub bwa_mem {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Alignment::Sambamba qw(sort);
+
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $time = $active_parameter_href->{module_time}{"p".$program_name};
@@ -14626,6 +14634,8 @@ sub bwa_mem {
 	    }
 	    $paired_end_tracker++;
 
+	    my $sambamba_sort_infile;  #Can be either infile or instream
+
 	    if ($bwa_binary eq "bwa mem") {  #Prior to ALTs in refrence genome
 
 		print $FILEHANDLE "| ";  #Pipe SAM to BAM conversion of aligned reads
@@ -14636,24 +14646,30 @@ sub bwa_mem {
 		print $FILEHANDLE "-@ ".$active_parameter_href->{module_core_number}{"p".$program_name}." ";  #Number of threads
 		print $FILEHANDLE "- ";  #/dev/stdin
 		print $FILEHANDLE "| ";
+
+		## Set sambamba sort input; Pipe from samtools view
+		$sambamba_sort_infile = catfile(dirname(devnull()), "stdin");
 	    }
 	    else {
 
 		print $FILEHANDLE "| ";
 		print $FILEHANDLE "sh ";
 		say $FILEHANDLE "\n";
+
+		## Set sambamba sort input; Sort directly from run-bwakit
+		$sambamba_sort_infile = $file_path_no_ending.".aln.bam";
 	    }
 
-	    print $FILEHANDLE "sambamba ";  #Program
-	    print $FILEHANDLE "sort ";  #Command
-	    print $FILEHANDLE "-m ".$active_parameter_href->{bwa_sambamba_sort_memory_limit}." ";  #Memory limit
-	    print $FILEHANDLE "--tmpdir=".$$temp_directory_ref." ";  #Directory for storing intermediate files
-	    print $FILEHANDLE "--show-progress ";  #Show progressbar in STDERR
-	    print $FILEHANDLE "--out=".$outfile_path_no_ending.$outfile_suffix." ";  #Outfile
+	    Program::Alignment::Sambamba::sort({infile_path => $sambamba_sort_infile,
+						outfile_path => $outfile_path_no_ending.$outfile_suffix,
+						FILEHANDLE => $FILEHANDLE,
+						show_progress => 1,
+						memory_limit => $active_parameter_href->{bwa_sambamba_sort_memory_limit},
+						temp_directory => $$temp_directory_ref,
+					       });
+	    say $FILEHANDLE "\n";
 
-	    if ($bwa_binary eq "bwa mem") {  #Pipe from samtools view
-
-		say $FILEHANDLE catfile(dirname(devnull()),"stdin"),"\n";
+	    if ($bwa_binary eq "bwa mem") {
 
 		## BAMS, bwa_mem logs etc.
 		migrate_file({infile_path => $outfile_path_no_ending.".*",
@@ -14662,9 +14678,7 @@ sub bwa_mem {
 			     });
 		say $FILEHANDLE "wait", "\n";
 	    }
-	    else {  #Sort directly from run-bwakit
-
-		say $FILEHANDLE $file_path_no_ending.".aln.bam", "\n";
+	    else {  
 
 		## Copies file from temporary directory.
 		say $FILEHANDLE "## Copy file from temporary directory";
@@ -15495,11 +15509,11 @@ sub pfastqc {
 	my $file_at_lane_level = fileparse($infile,
 					   qr/$infile_suffix|$infile_suffix\.gz/);
 
-	Program::Qc::Fastqc::fastqc({infile_path => catfile($$temp_directory_ref, $infile),
-				     outdirectory_path => $$temp_directory_ref,
-				     extract => 1,
-				     FILEHANDLE => $FILEHANDLE,
-				    });
+	fastqc({infile_path => catfile($$temp_directory_ref, $infile),
+		outdirectory_path => $$temp_directory_ref,
+		extract => 1,
+		FILEHANDLE => $FILEHANDLE,
+	       });
 	say $FILEHANDLE "&", "\n";
 
 	## Collect QC metadata info for active program for later use
@@ -22694,22 +22708,22 @@ sub split_and_index_aligment_file {
     ## Split by contig
     foreach my $contig (@$contigs_ref) {
 
-	Program::Alignment::Sambamba::view({infile_path => catfile($$temp_directory_ref, $infile.$file_suffix),
-					    outfile_path => catfile($$temp_directory_ref, $infile."_".$contig.$file_suffix),
-					    stderrfile_path => $xargs_file_name."_view_".$contig.".stderr.txt",
-					    output_format => $output_format,
-					    FILEHANDLE => $XARGSFILEHANDLE,
-					    regions_ref => [$contig],
-					    with_header => 1,
-					    show_progress => 1,
-					   });
+	view({infile_path => catfile($$temp_directory_ref, $infile.$file_suffix),
+	      outfile_path => catfile($$temp_directory_ref, $infile."_".$contig.$file_suffix),
+	      stderrfile_path => $xargs_file_name."_view_".$contig.".stderr.txt",
+	      output_format => $output_format,
+	      FILEHANDLE => $XARGSFILEHANDLE,
+	      regions_ref => [$contig],
+	      with_header => 1,
+	      show_progress => 1,
+	     });
 	print $XARGSFILEHANDLE "; ";  #Seperate commands
 
-	Program::Alignment::Sambamba::index({infile_path => catfile($$temp_directory_ref, $infile.$file_suffix),
-					     stderrfile_path => $xargs_file_name."_index_".$contig.".stderr.txt",
-					     FILEHANDLE => $XARGSFILEHANDLE,
-					     show_progress => 1,
-					    });
+	index({infile_path => catfile($$temp_directory_ref, $infile.$file_suffix),
+	       stderrfile_path => $xargs_file_name."_index_".$contig.".stderr.txt",
+	       FILEHANDLE => $XARGSFILEHANDLE,
+	       show_progress => 1,
+	      });
 	print $XARGSFILEHANDLE "\n";
     }
     return $xargs_file_counter;
@@ -25567,43 +25581,6 @@ sub get_exom_target_bed_file {
 	$log->fatal("Could not detect ".$sample_id_ref." in '-exome_target_bed' associated files in sub routine get_exom_target_bed_file", "\n");
 	exit 1;
     }
-}
-
-
-sub sambamba_flagstat {
-
-##sambamba_flagstat
-
-##Function : Process BAM with sambamba flagstat to produce metric file for downstream analysis
-##Returns  : ""
-##Arguments: $infile_path, $outfile_path, $stderr_file_path, $FILEHANDLE
-##         : $infile_path      => Infile path
-##         : $outfile_path     => outfile path
-##         : $stderr_file_path => Stderr file path to write to
-##         : $FILEHANDLE       => Sbatch filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $infile_path;
-    my $outfile_path;
-    my $stderr_file_path;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
-	outfile_path => { required => 1, defined => 1, strict_type => 1, store => \$outfile_path},
-	stderr_file_path => { required => 1, defined => 1, strict_type => 1, store => \$stderr_file_path},
-	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    print $FILEHANDLE "sambamba ";  #Program
-    print $FILEHANDLE "flagstat ";
-    print $FILEHANDLE catfile($infile_path)." ";  #OutFile
-    print $FILEHANDLE "> ".catfile($outfile_path)." ";  #Metric file
-    say $FILEHANDLE "2>> ".$stderr_file_path, "\n";  #Redirect xargs output to program specific stderr file
 }
 
 
