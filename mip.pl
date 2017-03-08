@@ -342,8 +342,8 @@ chomp($date_time_stamp, $date, $script);  #Remove \n;
 ###Project specific
 
 ## Loads a YAML file into an arbitrary hash and returns it.
-%parameter = File::Format::Yaml::load_yaml({yaml_file => catfile($Bin, "definitions", "define_parameters.yaml"),
-					   });
+%parameter = load_yaml({yaml_file => catfile($Bin, "definitions", "define_parameters.yaml"),
+		       });
 
 ## Adds the order of first level keys from yaml file to array
 order_parameter_names({order_parameters_ref => \@order_parameters,
@@ -357,7 +357,7 @@ eval_parameter_hash({parameter_href => \%parameter,
 
 my $mip_version = "v4.0.19";	#Set MIP version
 
-## Directories, files, sample_info and job_ids
+## Directories, files, job_ids and sample_info
 my (%infile, %indir_path, %infile_lane_no_ending, %lane, %infile_both_strands_no_ending, %job_id, %sample_info);
 
 
@@ -616,9 +616,9 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'prem|premoveredundantfiles=n' => \$parameter{premoveredundantfiles}{value},
 	   'pars|panalysisrunstatus=n' => \$parameter{panalysisrunstatus}{value},  #analysisrunstatus change flag in sample_info file if allowed to execute
 	   'psac|psacct=n' => \$parameter{psacct}{value},
-    ) or Script::Utils::help({USAGE => $USAGE,
-			      exit_code => 1,
-			     });
+    ) or help({USAGE => $USAGE,
+	       exit_code => 1,
+	      });
 
 
 ## Change relative path to absolute path for certain parameters
@@ -632,9 +632,9 @@ $active_parameter{mip} = $parameter{mip}{default};
 if (defined($parameter{config_file}{value})) {  #Input from cmd
 
     ## Loads a YAML file into an arbitrary hash and returns it.
-    %active_parameter = File::Format::Yaml::load_yaml({yaml_file => $parameter{config_file}{value},
-						      });
-
+    %active_parameter = load_yaml({yaml_file => $parameter{config_file}{value},
+				  });
+    
     ## Special case:Enable/activate MIP. Cannot be changed from cmd or config
     $active_parameter{mip} = $parameter{mip}{default};
 
@@ -719,9 +719,9 @@ foreach my $order_parameter_element (@order_parameters) {
 	    my $yaml_file = catfile($active_parameter{outdata_dir}, $active_parameter{family_id}, "qc_pedigree.yaml");
 
 	    ## Writes a YAML hash to file
-	    File::Format::Yaml::write_yaml({yaml_href => \%sample_info,
-					    yaml_file_path_ref => \$yaml_file,
-					   });
+	    write_yaml({yaml_href => \%sample_info,
+			yaml_file_path_ref => \$yaml_file,
+		       });
 	    $log->info("Wrote: ".$yaml_file, "\n");
 
 	    ## Removes all elements at hash third level except keys in allowed_entries
@@ -892,11 +892,18 @@ check_prioritize_variant_callers({parameter_href => \%parameter,
 				  active_parameter_href => \%active_parameter,
 				 });
 
+
 ## Broadcast set parameters info
 foreach my $parameter_info (@broadcasts) {
 
     $log->info($parameter_info, "\n");
 }
+
+## Update program mode depending on analysis run value as some programs are not applicable for e.g. wes
+update_program_mode({active_parameter_href => \%active_parameter,,
+		     programs_ref => ["cnvnator", "delly_call", "delly_reformat", "tiddit"],
+		     consensus_analysis_type_ref => \$parameter{dynamic_parameter}{consensus_analysis_type},
+		    });
 
 
 if ($active_parameter{config_file_analysis} ne 0) {  #Write config file for family
@@ -904,9 +911,9 @@ if ($active_parameter{config_file_analysis} ne 0) {  #Write config file for fami
     make_path(dirname($active_parameter{config_file_analysis}));  #Create directory unless it already exists
 
     ## Writes a YAML hash to file
-    File::Format::Yaml::write_yaml({yaml_href => \%active_parameter,
-				    yaml_file_path_ref => \$active_parameter{config_file_analysis},
-				   });
+    write_yaml({yaml_href => \%active_parameter,
+		yaml_file_path_ref => \$active_parameter{config_file_analysis},
+	       });
     $log->info("Wrote: ".$active_parameter{config_file_analysis}, "\n");
 
     ## Add to qc_sample_info
@@ -1551,7 +1558,7 @@ if ($active_parameter{pdelly_call} > 0) {  #Run delly_call
 
 if ($active_parameter{pdelly_reformat} > 0) {  #Run Delly merge, regenotype, bcftools merge
 
-    $log->info("[delly_reformat]\n");
+    $log->info("[Delly_reformat]\n");
 
     check_build_human_genome_prerequisites({parameter_href => \%parameter,
 					    active_parameter_href => \%active_parameter,
@@ -2243,9 +2250,9 @@ if ( ($active_parameter{psacct} > 0) && ($active_parameter{dry_run_all} == 0) ) 
 if ($active_parameter{sample_info_file} ne 0) {#Write SampleInfo to yaml file
 
     ## Writes a YAML hash to file
-    File::Format::Yaml::write_yaml({yaml_href => \%sample_info,
-				    yaml_file_path_ref =>  \$active_parameter{sample_info_file},
-				   });
+    write_yaml({yaml_href => \%sample_info,
+		yaml_file_path_ref =>  \$active_parameter{sample_info_file},
+	       });
     $log->info("Wrote: ".$active_parameter{sample_info_file}, "\n");
 }
 
@@ -3197,7 +3204,7 @@ sub endvariantannotationblock {
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 20;
-    my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
 
     ## Set the number of cores
     my $core_number = 1;
@@ -3459,7 +3466,7 @@ sub rankvariant {
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 20;
-    my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
 
     ## Set the number of cores
     my $core_number = $active_parameter_href->{core_processor_number};
@@ -6947,7 +6954,7 @@ sub gatk_variantrecalibration {
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $core_number = 4;  #gatk VQSR do not benefit from paralellization ref gatk blog, but we need some java heap allocation
     my $program_outdirectory_name = $parameter_href->{"p".$program_name}{outdir_name};
-    my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -7389,7 +7396,7 @@ sub gatk_concatenate_genotypegvcfs {
     my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_genotypegvcfs}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{pgatk_genotypegvcfs}{file_tag};
 
-    my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $core_counter = 1;
     while ( my ($contig_index, $contig) = each(@{ $file_info_href->{contigs} }) ) {
 
@@ -7552,7 +7559,7 @@ sub gatk_genotypegvcfs {
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $sbatch_script_tracker=0;
     my $core_number = 4;  #gatk genotype is most safely processed in single thread mode, , but we need some java heap allocation
-    my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
 
     my $process_time = 10;
 
@@ -8566,7 +8573,7 @@ sub sv_reformat {
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargs_file_name;
-    my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $time = 20;
 
     ## Set the number of cores
@@ -8875,7 +8882,7 @@ sub sv_rankvariant {
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargs_file_name;
-    my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $time = 20;
 
     ## Set the number of cores
@@ -9308,7 +9315,7 @@ sub sv_vcfparser {
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargs_file_name;
-    my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -9654,7 +9661,7 @@ sub sv_varianteffectpredictor {
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargs_file_name;
-    my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $fork_number = 4;  #varianteffectpredictor forks
 
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
@@ -11272,7 +11279,7 @@ sub manta {
     use Program::Compression::Gzip qw(gzip);
 
     my $core_number = $active_parameter_href->{core_processor_number};
-    my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $program_outdirectory_name = $parameter_href->{"p".$program_name}{outdir_name};
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time = 30;
@@ -13478,7 +13485,7 @@ sub picardtools_mergesamfiles {
 
     my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $lanes = join("",@{ $lane_href->{$$sample_id_ref} });  #Extract lanes
 
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -13926,7 +13933,7 @@ sub bwa_sampe {
     my $outaligner_dir = $_[9];
     my $program_name = $_[10];
 
-    my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $time=0;
     my $infile_size;
@@ -14374,7 +14381,7 @@ sub bwa_mem {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $time = $active_parameter_href->{module_time}{"p".$program_name};
 
     my $infile_size;
@@ -18291,13 +18298,13 @@ sub add_to_active_parameter {
 ##Function : Checks and sets user input or default values to active_parameters.
 ##Returns  : ""
 ##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $broadcasts_ref, $parameter_name, $associated_programs
-##         : $parameter_href             => Holds all parameters
-##         : $active_parameter_href      => Holds all set parameter for analysis
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
-##         : $broadcasts_ref             => Holds the parameters info for broadcasting later {REF}
-##         : $parameter_name             => Parameter name
-##         : $associated_programs        => The parameters program(s) {array, REF}
+##         : $parameter_href        => Holds all parameters
+##         : $active_parameter_href => Holds all set parameter for analysis
+##         : $sample_info_href      => Info on samples and family hash {REF}
+##         : $file_info_href        => The file_info hash {REF}
+##         : $broadcasts_ref        => Holds the parameters info for broadcasting later {REF}
+##         : $parameter_name        => Parameter name
+##         : $associated_programs   => The parameters program(s) {array, REF}
 
     my ($arg_href) = @_;
 
@@ -18331,7 +18338,7 @@ sub add_to_active_parameter {
     my $log = Log::Log4perl->get_logger("MIP");
 
     my $element_separator_ref = \$parameter_href->{$parameter_name}{element_separator};
-    my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
 
     foreach my $associated_program (@$associated_programs_ref) {  #Check all programs that use parameter
 
@@ -18490,8 +18497,8 @@ sub add_to_active_parameter {
 	if ($active_parameter_href->{pedigree_file} =~/\.yaml$/) {  #Meta data in YAML format
 
 	    ##Loads a YAML file into an arbitrary hash and returns it. Load parameters from previous run from sample_info_file
-	    my %pedigree = File::Format::Yaml::load_yaml({yaml_file => $active_parameter_href->{pedigree_file},
-							 });
+	    my %pedigree = load_yaml({yaml_file => $active_parameter_href->{pedigree_file},
+				     });
 	    $log->info("Loaded: ".$active_parameter_href->{pedigree_file}, "\n");
 
 	    read_yaml_pedigree_file({parameter_href => $parameter_href,
@@ -18583,7 +18590,7 @@ sub check_parameter_files {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger("MIP");
 
-    my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
 
     foreach my $associated_program (@$associated_programs_ref) {  #Check all programs that use parameter
 
@@ -18630,8 +18637,8 @@ sub check_parameter_files {
 				}
 
 				##Loads a YAML file into an arbitrary hash and returns it. Load parameters from previous run from sample_info_file
-				my %temp = File::Format::Yaml::load_yaml({yaml_file => $active_parameter_href->{sample_info_file},
-									 });
+				my %temp = load_yaml({yaml_file => $active_parameter_href->{sample_info_file},
+						     });
 
 				## Update sample_info with information from pedigree
 				update_sample_info_hash({sample_info_href => $sample_info_href,
@@ -18848,7 +18855,7 @@ sub create_file_endings {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $consensus_analysis_type = $parameter{dynamic_parameter}{consensus_analysis_type};
+    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my %temp_file_ending;  #Used to enable seqential build-up of file_tags between modules
 
     foreach my $order_parameter_element (@$order_parameters_ref) {
@@ -26439,6 +26446,46 @@ sub get_vcf_suffix {
     if ( (defined($vcf_suffix)) && ($vcf_suffix) ) {
 
 	return $vcf_suffix;  #Used downstream to determine compression and format
+    }
+}
+
+
+sub update_program_mode {
+
+##update_program_mode
+
+##Function : Update program mode depending on analysis run value as some programs are not applicable for e.g. wes
+##Returns  : ""
+##Arguments: $active_parameter_href, $programs_ref, $consensus_analysis_type_ref
+##         : $active_parameter_href       => The active parameters for this analysis hash {REF} 
+##         : $programs_ref                => Programs to update {REF}
+##         : $consensus_analysis_type_ref => Consensus analysis_type {REF}
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $programs_ref;
+    my $consensus_analysis_type_ref;
+
+    my $tmpl = {
+	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	programs_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$programs_ref},
+	consensus_analysis_type_ref => { default => \$$, strict_type => 1, store => \$consensus_analysis_type_ref},
+    };
+     
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
+    if ($$consensus_analysis_type_ref ne "wgs") {
+	
+	foreach my $program (@$programs_ref) {
+	    
+	    $active_parameter_href->{"p".$program} = 0;
+	    $log->warn("Turned off: ".$program." as it is not applicable for ".$$consensus_analysis_type_ref." analysis\n");
+	}
     }
 }
 
