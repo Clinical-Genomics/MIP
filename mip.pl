@@ -162,7 +162,7 @@ BEGIN {
                  -deltyp/--delly_types Type of SV to call (defaults to "DEL,DUP,INV,TRA"; comma sep)
                  -delexc/--delly_exclude_file Exclude centomere and telemore regions in delly calling (defaults to "hg19_human_excl_-0.7.6-.tsv")
                -pmna/--pmanta Structural variant calling using Manta (defaults to "1" (=yes))
-               -ptid/--ptiddit Structural variant calling using Tiddit (defaults to "0" (=no))
+               -ptid/--ptiddit Structural variant calling using Tiddit (defaults to "1" (=yes))
                  -tidmsp/--tiddit_minimum_number_supporting_pairs The minimum number of supporting reads (defaults to "6")
                -psvc/--psv_combinevariantcallsets Combine variant call sets (defaults to "1" (=yes))
                  -svsvdbmp/--sv_svdb_merge_prioritize The prioritization order of structural variant callers.(defaults to ""; comma sep; Options: manta|delly|cnvnator|tiddit)

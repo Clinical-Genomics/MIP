@@ -799,7 +799,7 @@ ptiddit:
    - mip
   chain: SVTIDDIT
   data_type: SCALAR
-  default: 0
+  default: 1
   file_tag: _tiddit
   program_name_path:
    - TIDDIT
