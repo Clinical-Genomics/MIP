@@ -822,7 +822,14 @@ psv_combinevariantcallsets:
   program_name_path:
    - vt
    - bcftools
+   - svdb
   type: program
+sv_svdb_merge_prioritize:
+  associated_program:
+   - psv_combinevariantcallsets
+  data_type: SCALAR
+  mandatory: no
+  type: program_argument
 sv_vt_decompose:
   associated_program:
    - psv_combinevariantcallsets

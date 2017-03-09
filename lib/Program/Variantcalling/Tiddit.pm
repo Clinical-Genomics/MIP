@@ -34,24 +34,24 @@ sub sv {
 
 ##Function : Perl wrapper for writing tiddit sv recipe to $FILEHANDLE or return commands array. Based on tiddit 1.0.2.
 ##Returns  : "@commands"
-##Arguments: $FILEHANDLE, $infile_path, $outfile_path_prefix, $minimum_number_supporting_pairs
-##         : $FILEHANDLE                      => Filehandle to write to
+##Arguments: $infile_path, $outfile_path_prefix, $FILEHANDLE, $minimum_number_supporting_pairs
 ##         : $infile_path                     => Infile path
 ##         : $outfile_path_prefix             => Outfile path. Write documents to FILE
+##         : $FILEHANDLE                      => Filehandle to write to
 ##         : $minimum_number_supporting_pairs => Minimum number of supporting pairs in order to call a variation event
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
     my $infile_path;
     my $outfile_path_prefix;
+    my $FILEHANDLE;
     my $minimum_number_supporting_pairs;
 
     my $tmpl = {
-	FILEHANDLE => { store => \$FILEHANDLE },
 	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path },
 	outfile_path_prefix => { strict_type => 1, store => \$outfile_path_prefix },
+	FILEHANDLE => { store => \$FILEHANDLE },
 	minimum_number_supporting_pairs => { allow => qr/^\d+$/,
 					 strict_type => 1, store => \$minimum_number_supporting_pairs },
     };
