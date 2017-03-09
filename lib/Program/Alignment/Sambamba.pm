@@ -59,20 +59,20 @@ sub view {
     my $stderrfile_path;
     
     my $tmpl = {
-	regions_ref => { default => [], strict_type => 1, store => \$regions_ref},
-	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
-	outfile_path => { strict_type => 1, store => \$outfile_path},
-	stderrfile_path => { strict_type => 1, store => \$stderrfile_path},
+	regions_ref => { default => [], strict_type => 1, store => \$regions_ref },
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path },
+	outfile_path => { strict_type => 1, store => \$outfile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
 	with_header => { default => 0,
 			 allow => [0, 1],
-			 strict_type => 1, store => \$with_header},
+			 strict_type => 1, store => \$with_header },
 	show_progress => { default => 0,
 			   allow => [0, 1],
-			   strict_type => 1, store => \$show_progress},
+			   strict_type => 1, store => \$show_progress },
 	output_format => { default => "bam",
 			   allow => ["sam", "bam", "cram", "json"],
-			   strict_type => 1, store => \$output_format},
+			   strict_type => 1, store => \$output_format },
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -139,12 +139,12 @@ sub index {
     my $stderrfile_path;
     
     my $tmpl = {
-	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
-	stderrfile_path => { strict_type => 1, store => \$stderrfile_path},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
 	show_progress => { default => 0,
 			   allow => [0, 1],
-			   strict_type => 1, store => \$show_progress},
+			   strict_type => 1, store => \$show_progress },
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -201,16 +201,16 @@ sub sort {
     my $temp_directory;
     
     my $tmpl = {
-	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
-	outfile_path => { strict_type => 1, store => \$outfile_path},
-	stderrfile_path => { strict_type => 1, store => \$stderrfile_path},
-	memory_limit => { allow => qr/^\d+G/,
-			  strict_type => 1, store => \$memory_limit},
-	temp_directory => { strict_type => 1, store => \$temp_directory},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path },
+	outfile_path => { strict_type => 1, store => \$outfile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	memory_limit => { allow => qr/^\d+G$/,
+			  strict_type => 1, store => \$memory_limit },
+	temp_directory => { strict_type => 1, store => \$temp_directory },
 	show_progress => { default => 0,
 			   allow => [0, 1],
-			   strict_type => 1, store => \$show_progress},
+			   strict_type => 1, store => \$show_progress },
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -275,10 +275,10 @@ sub flagstat {
     my $FILEHANDLE;
 
     my $tmpl = {
-	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
-	outfile_path => { strict_type => 1, store => \$outfile_path},
-	stderrfile_path => { strict_type => 1, store => \$stderrfile_path},
-	FILEHANDLE => { store => \$FILEHANDLE},
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path },
+	outfile_path => { strict_type => 1, store => \$outfile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];

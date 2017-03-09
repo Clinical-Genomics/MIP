@@ -163,7 +163,7 @@ BEGIN {
                  -delexc/--delly_exclude_file Exclude centomere and telemore regions in delly calling (defaults to "hg19_human_excl_-0.7.6-.tsv")
                -pmna/--pmanta Structural variant calling using Manta (defaults to "1" (=yes))
                -ptid/--ptiddit Structural variant calling using Tiddit (defaults to "0" (=no))
-                 -tidmsp/--tiddit_minimum_supporting_pairs The minimum number of supporting reads (defaults to "6")
+                 -tidmsp/--tiddit_minimum_number_supporting_pairs The minimum number of supporting reads (defaults to "6")
                -psvc/--psv_combinevariantcallsets Combine variant call sets (defaults to "1" (=yes))
                  -svcvtd/--sv_vt_decompose Split multi allelic records into single records (defaults to "1" (=yes))
                  -svcbtv/--sv_bcftools_view_filter Include structural variants with PASS in FILTER column (defaults to "1" (=yes))
@@ -472,7 +472,7 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'delexc|delly_exclude_file:s' => \$parameter{delly_exclude_file}{value},
 	   'pmna|pmanta=n' => \$parameter{pmanta}{value},
 	   'ptid|ptiddit=n' => \$parameter{ptiddit}{value},
-	   'tidmsp|tiddit_minimum_supporting_pairs=n' => \$parameter{tiddit_minimum_supporting_pairs}{value},
+	   'tidmsp|tiddit_minimum_number_supporting_pairs=n' => \$parameter{tiddit_minimum_number_supporting_pairs}{value},
 	   'psvc|psv_combinevariantcallsets=n' => \$parameter{psv_combinevariantcallsets}{value},  #Combine structural variant call sets
 	   'svcvtd|sv_vt_decompose=n' => \$parameter{sv_vt_decompose}{value},  #VT decompose (split multiallelic variants)
 	   'svcbtv|sv_bcftools_view_filter=n' => \$parameter{sv_bcftools_view_filter}{value},  #Include structural variants with PASS in FILTER column
@@ -11457,13 +11457,9 @@ sub tiddit {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $core_number = 1;
+    use Program::Variantcalling::Tiddit qw(sv);
+
     my $program_outdirectory_name = $parameter_href->{"p".$program_name}{outdir_name};
-
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 30;
-    my $xargs_file_name;
-
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -11473,8 +11469,8 @@ sub tiddit {
 								 directory_id => $$sample_id_ref,
 								 program_name => $program_name,
 								 program_directory => catfile(lc($$outaligner_dir_ref), lc($program_outdirectory_name)),
-								 core_number => $core_number,
-								 process_time => $time,
+								 core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+								 process_time => $active_parameter_href->{module_time}{"p".$program_name},
 								 temp_directory => $$temp_directory_ref
 								});
 
@@ -11501,12 +11497,12 @@ sub tiddit {
     say $FILEHANDLE "wait", "\n";
 
     ## Tiddit
-    say $FILEHANDLE "## Tiddit";
-    print $FILEHANDLE "TIDDIT ";
-    print $FILEHANDLE "--sv ";
-    print $FILEHANDLE "-b ".$file_path_no_ending.".bam ";  #Infile
-    print $FILEHANDLE "-p ".$active_parameter_href->{tiddit_minimum_supporting_pairs}." ";
-    say $FILEHANDLE "-o ".$outfile_path_no_ending, "\n";
+    sv({FILEHANDLE => $FILEHANDLE,
+	infile_path => $file_path_no_ending.".bam ",
+	outfile_path_prefix => $outfile_path_no_ending,
+	minimum_number_supporting_pairs => $active_parameter_href->{tiddit_minimum_number_supporting_pairs},
+       });
+    say $FILEHANDLE "\n";
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
@@ -14386,6 +14382,8 @@ sub bwa_mem {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Alignment::Bwa qw(mem run_bwamem);
+    use Program::Alignment::Samtools qw(view);
     use Program::Alignment::Sambamba qw(sort);
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -14598,60 +14596,69 @@ sub bwa_mem {
 						  });
 
 	    say $FILEHANDLE "## Aligning reads with ".$program_name." and sorting via Sambamba";
+	    ### Get parameters
 
-	    print $FILEHANDLE $bwa_binary." ";
+	    ## Infile(s)
+	    my $fastq_file_path = catfile($$temp_directory_ref, $infile_href->{$$sample_id_ref}[$paired_end_tracker]);
+	    my $second_fastq_file_path;
+	    if ($sequence_run_mode eq "paired_end") {  #Second read direction if present
+		
+		$paired_end_tracker = $paired_end_tracker+1;  #Increment to collect correct read 2 from %infile
+		$second_fastq_file_path = catfile($$temp_directory_ref, $infile_href->{$$sample_id_ref}[$paired_end_tracker]);
+	    }
+
+	    ## Read group header line
+	    my @read_group_headers = (q?"@RG\t?,
+				      q?ID:?.$infile_no_ending.q?\t?,
+				      q?SM:?.$$sample_id_ref.q?\t?,
+				      q?PL:?.$active_parameter_href->{platform}.q?"?,
+		);
+
+	    ## Prepare for downstream processing
+	    my $sambamba_sort_infile;  #Can be either infile or instream
 
 	    if ($bwa_binary eq "bwa mem") {  #Prior to ALTs in reference genome
 
-		print $FILEHANDLE "-M ";  #Mark shorter split hits as secondary (for Picard compatibility).
-	    }
-	    else {
+		my $uncompressed_bam_output;
+		if ($outfile_suffix eq ".bam") {
 
-		if ($active_parameter_href->{bwa_mem_hla}) {
-
-		    print $FILEHANDLE "-H ";  #Apply HLA typing
+		    $uncompressed_bam_output = 1;
 		}
-		print $FILEHANDLE "-o ".$file_path_no_ending." ";  #Prefix for output files
-	    }
-	    print $FILEHANDLE "-t ".$active_parameter_href->{module_core_number}{"p".$program_name}." ";  #Number of threads
 
-	    if ($interleaved_fastq_file) {
-
-		print $FILEHANDLE "-p ";  #interleaved fastq mode
-	    }
-
-	    print $FILEHANDLE q?-R "@RG\t?;
-	    print $FILEHANDLE q?ID:?.$infile_no_ending.q?\t?;
-	    print $FILEHANDLE q?SM:?.$$sample_id_ref.q?\t?;
-	    print $FILEHANDLE q?PL:?.$active_parameter_href->{platform}.q?" ?;  #Read group header line
-	    print $FILEHANDLE $active_parameter_href->{human_genome_reference}." ";  #Reference
-	    print $FILEHANDLE catfile($$temp_directory_ref, $infile_href->{$$sample_id_ref}[$paired_end_tracker])." ";  #Read 1
-
-	    if ($sequence_run_mode eq "paired_end") {  #Second read direction if present
-
-		$paired_end_tracker = $paired_end_tracker+1;  #Increment to collect correct read 2 from %infile
-		print $FILEHANDLE catfile($$temp_directory_ref, $infile_href->{$$sample_id_ref}[$paired_end_tracker])." ";  #Read 2
-	    }
-	    $paired_end_tracker++;
-
-	    my $sambamba_sort_infile;  #Can be either infile or instream
-
-	    if ($bwa_binary eq "bwa mem") {  #Prior to ALTs in refrence genome
-
+		mem({infile_path => $fastq_file_path,
+		     second_infile_path => $second_fastq_file_path,
+		     idxbase => $active_parameter_href->{human_genome_reference},
+		     FILEHANDLE => $FILEHANDLE,
+		     thread_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+		     read_group_header => join("", @read_group_headers),
+		     interleaved_fastq_file => $interleaved_fastq_file,
+		     mark_split_as_secondary => 1,
+		    });
 		print $FILEHANDLE "| ";  #Pipe SAM to BAM conversion of aligned reads
-		print $FILEHANDLE "samtools view ";
-		print $FILEHANDLE "-S ";  #Input is SAM
-		print $FILEHANDLE "-h ";  #Print header for the SAM output
-		print $FILEHANDLE "-u ";  #Uncompressed BAM output
-		print $FILEHANDLE "-@ ".$active_parameter_href->{module_core_number}{"p".$program_name}." ";  #Number of threads
-		print $FILEHANDLE "- ";  #/dev/stdin
+		
+		Program::Alignment::Samtools::view({infile_path => "-",
+						    FILEHANDLE => $FILEHANDLE,
+						    thread_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+						    auto_detect_input_format => 1,
+						    with_header => 1,
+						    uncompressed_bam_output => $uncompressed_bam_output,
+						   });
 		print $FILEHANDLE "| ";
 
 		## Set sambamba sort input; Pipe from samtools view
 		$sambamba_sort_infile = catfile(dirname(devnull()), "stdin");
 	    }
-	    else {
+	    if ($bwa_binary eq "run-bwamem") { #Post to ALTs in reference genome
 
+		run_bwamem({infile_path => $fastq_file_path,
+			    second_infile_path => $second_fastq_file_path,
+			    idxbase => $active_parameter_href->{human_genome_reference},
+			    outfiles_prefix_path => $file_path_no_ending,
+			    FILEHANDLE => $FILEHANDLE,
+			    thread_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+			    read_group_header => join("", @read_group_headers),
+			    hla_typing => $active_parameter_href->{bwa_mem_hla},
+			   });
 		print $FILEHANDLE "| ";
 		print $FILEHANDLE "sh ";
 		say $FILEHANDLE "\n";
@@ -14659,7 +14666,9 @@ sub bwa_mem {
 		## Set sambamba sort input; Sort directly from run-bwakit
 		$sambamba_sort_infile = $file_path_no_ending.".aln.bam";
 	    }
+	    $paired_end_tracker++;
 
+	    ## Sort the output from bwa mem|run-bwamem
 	    Program::Alignment::Sambamba::sort({infile_path => $sambamba_sort_infile,
 						outfile_path => $outfile_path_no_ending.$outfile_suffix,
 						FILEHANDLE => $FILEHANDLE,
@@ -14678,7 +14687,7 @@ sub bwa_mem {
 			     });
 		say $FILEHANDLE "wait", "\n";
 	    }
-	    else {  
+	    if ($bwa_binary eq "run-bwamem") { 
 
 		## Copies file from temporary directory.
 		say $FILEHANDLE "## Copy file from temporary directory";
@@ -14695,7 +14704,7 @@ sub bwa_mem {
 		}
 		say $FILEHANDLE "wait", "\n";
 	    }
-
+	    
 	    if ($active_parameter_href->{bwa_mem_bamstats}) {
 
 		print $FILEHANDLE "samtools stats ";
@@ -14768,7 +14777,7 @@ sub bwa_mem {
 				    outdata_type => "info_directory"
 				   });
 		}
-		else {
+		if ($bwa_binary eq "run-bwamem") {
 
 		    sample_info_qc({sample_info_href => $sample_info_href,
 				    sample_id => $$sample_id_ref,

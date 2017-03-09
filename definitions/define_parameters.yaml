@@ -98,6 +98,7 @@ module_time:
     pmadeline: 1
     pbwa_mem: 30
     ppicardtools_mergesamfiles: 20
+    ptiddit: 20
   type: mip
 module_core_number:
   associated_program:
@@ -110,6 +111,7 @@ module_core_number:
     pmadeline: 1
     pbwa_mem: 16
     ppicardtools_mergesamfiles: 16
+    ptiddit: 1
   type: mip
 supported_capture_kit:
   associated_program:
@@ -804,7 +806,7 @@ ptiddit:
   outdir_name: tiddit
   program_type: structural_variant_callers
   type: program
-tiddit_minimum_supporting_pairs:
+tiddit_minimum_number_supporting_pairs:
   associated_program:
    - ptiddit
   data_type: SCALAR
