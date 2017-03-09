@@ -890,9 +890,17 @@ check_aligner({parameter_href => \%parameter,
 
 
 ## Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
-check_prioritize_variant_callers({parameter_href => \%parameter,
-				  active_parameter_href => \%active_parameter,
-				 });
+my %priority_call_parameter = (variant_callers => "gatk_combinevariants_prioritize_caller",
+			       structural_variant_callers => "sv_svdb_merge_prioritize",
+    );
+while ( my ($variant_caller_type, $prioritize_parameter_name) = each (%priority_call_parameter) ) {
+
+    check_prioritize_variant_callers({parameter_href => \%parameter,
+				      active_parameter_href => \%active_parameter,
+				      variant_callers_ref => \@{ $parameter{dynamic_parameter}{$variant_caller_type} },
+				      parameter_names_ref => \$prioritize_parameter_name,
+				     });
+}
 
 
 ## Broadcast set parameters info
@@ -1620,21 +1628,6 @@ if ($active_parameter{ptiddit} > 0) {  #Run Tiddit
 		program_name => "tiddit",
 	       });
     }
-}
-
-
-if ($active_parameter{psv_combinevariantcallsets} > 0) {  #Run combinevariantcallsets. For all Sample_ids and StructuralVariantCallers
-
-    $log->info("[SV combinevariantcallsets]\n");
-
-    sv_combinevariantcallsets2({parameter_href => \%parameter,
-				active_parameter_href => \%active_parameter,
-				sample_info_href => \%sample_info,
-				file_info_href => \%file_info,
-				infile_lane_no_ending_href => \%infile_lane_no_ending,
-				job_id_href => \%job_id,
-				program_name => "sv_combinevariantcallsets",
-			       });
 }
 
 
@@ -9967,377 +9960,6 @@ sub sv_combinevariantcallsets {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my @structural_variant_callers;  #Stores callers that have been executed
-    my @parallel_chains;  #Stores the parallel chains that jobIds should be inherited from
-
-    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
-								 job_id_href => $job_id_href,
-								 FILEHANDLE => $FILEHANDLE,
-								 directory_id => $$family_id_ref,
-								 program_name => $program_name,
-								 program_directory => catfile(lc($$outaligner_dir_ref)),
-								 call_type => $call_type,
-								 process_time => 2,
-								 temp_directory => $$temp_directory_ref,
-								});
-    my ($volume, $directory, $stderr_file) = File::Spec->splitpath($program_info_path.".stderr.txt");  #Split to enable submission to &sample_info_qc later
-
-    ## Assign directories
-    my $outfamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref);
-    $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
-
-    ## Assign file_tags
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-
-    ## Collect infiles for all sample_ids to enable migration to temporary directory
-    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
-
-	## Add merged infile name after merging all BAM files per sample_id
-	my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
-
-	foreach my $structural_variant_caller (@{ $parameter_href->{dynamic_parameter}{structural_variant_callers} }) {
-
-	    if ( ($active_parameter_href->{$structural_variant_caller} > 0) && ($structural_variant_caller !~/pmanta|pdelly_reformat/) ) {  #Expect vcf. Special case: manta and delly are processed by joint calling and per family
-
-		my $program_outdirectory_name = $parameter_href->{$structural_variant_caller}{outdir_name};
-		my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id, $$outaligner_dir_ref, $program_outdirectory_name);
-		my $infile_tag = $file_info_href->{$sample_id}{$structural_variant_caller}{file_tag};
-
-		if (! ( any {$_ eq $parameter_href->{$structural_variant_caller}{chain}} @parallel_chains ) ) { #If element is not part of array
-
-		    push(@parallel_chains, $parameter_href->{$structural_variant_caller}{chain});
-		}
-
-		## Copy file(s) to temporary directory
-		say $FILEHANDLE "## Copy file(s) to temporary directory";
-		migrate_file({FILEHANDLE => $FILEHANDLE,
-			      infile_path => catfile($insample_directory, $infile.$infile_tag.".vcf*"),
-			      outfile_path => $$temp_directory_ref
-			     });
-
-		say $FILEHANDLE "wait", "\n";
-
-		## Compress or decompress original file or stream to outfile (if supplied)
-		bgzip({FILEHANDLE => $FILEHANDLE,
-		       infile_path => catfile($$temp_directory_ref, $infile.$infile_tag.".vcf"),
-		       outfile_path => catfile($$temp_directory_ref, $infile.$infile_tag.".vcf.gz"),
-		      });
-		print $FILEHANDLE "\n";
-
-		## Index file using tabix
-		tabix({FILEHANDLE => $FILEHANDLE,
-		       infile_path => catfile($$temp_directory_ref, $infile.$infile_tag.".vcf.gz"),
-		      });
-		say $FILEHANDLE "\n";
-	    }
-	}
-    }
-
-    ## Merge all structural variant caller's vcf files per sample_id
-    say $FILEHANDLE "## Merge all structural variant caller's vcf files per sample_id";
-    foreach my $structural_variant_caller (@{ $parameter_href->{dynamic_parameter}{structural_variant_callers} }) {
-
-	if ($active_parameter_href->{$structural_variant_caller} > 0 && ($structural_variant_caller !~/pmanta|pdelly_reformat/) ) {  #Expect vcf. Special case: manta is processed by joint calling and per family
-
-	    print $FILEHANDLE "bcftools merge ";
-
-	    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {  #Collapse all structural variant calls to one vcf file per variant caller and sample_id
-
-		## Add merged infile name after merging all BAM files per sample_id
-		my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
-
-		my $program_outdirectory_name = $parameter_href->{$structural_variant_caller}{outdir_name};
-		my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id, $$outaligner_dir_ref, $program_outdirectory_name);
-		my $infile_tag = $file_info_href->{$sample_id}{$structural_variant_caller}{file_tag};
-
-		print $FILEHANDLE catfile($$temp_directory_ref, $infile.$infile_tag.".vcf.gz")." ";  #InFile
-	    }
-
-	    say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf"), "\n";  #OutFile
-
-	    ## Compress or decompress original file or stream to outfile (if supplied)
-	    bgzip({FILEHANDLE => $FILEHANDLE,
-		   infile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf"),
-		   outfile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf.gz"),
-		  });
-	    say $FILEHANDLE "\n";
-
-	    ## Index file using tabix
-	    tabix({FILEHANDLE => $FILEHANDLE,
-		   infile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf.gz"),
-		  });
-	    say $FILEHANDLE "\n";
-	}
-    }
-
-    ## Add joint calling per family callers like Manta and Delly
-    foreach my $structural_variant_caller (@{ $parameter_href->{dynamic_parameter}{structural_variant_callers} }) {
-
-	if ($active_parameter_href->{$structural_variant_caller} > 0  && ($structural_variant_caller =~/pmanta|pdelly_reformat/) ) {  #Expect vcf. Special case: manta and delly are processed by joint calling and per family
-
-	    my $program_outdirectory_name = $parameter_href->{$structural_variant_caller}{outdir_name};
-	    my $infamily_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref, $program_outdirectory_name);
-	    my $infile_tag = $file_info_href->{$$family_id_ref}{$structural_variant_caller}{file_tag};
-
-	    if (! ( any {$_ eq $parameter_href->{$structural_variant_caller}{chain}} @parallel_chains ) ) { #If element is not part of array
-
-		push(@parallel_chains, $parameter_href->{$structural_variant_caller}{chain});
-	    }
-
-	    ## Copy file(s) to temporary directory
-	    say $FILEHANDLE "## Copy file(s) to temporary directory";
-	    migrate_file({FILEHANDLE => $FILEHANDLE,
-			  infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag."_".$call_type.".vcf*"),
-			  outfile_path => $$temp_directory_ref
-			 });
-
-	    say $FILEHANDLE "wait", "\n";
-
-	    ## Compress or decompress original file or stream to outfile (if supplied)
-	    bgzip({FILEHANDLE => $FILEHANDLE,
-		   infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag."_".$call_type.".vcf"),
-		   outfile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf.gz"),
-		  });
-	    print $FILEHANDLE "\n";
-
-	    ## Index file using tabix
-	    tabix({FILEHANDLE => $FILEHANDLE,
-		   infile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf.gz"),
-		  });
-	    say $FILEHANDLE "\n";
-	}
-    }
-
-    ## Concatenate structural variant caller's family vcf files
-    say $FILEHANDLE "## Concatenate structural variant caller's family vcf files";
-    print $FILEHANDLE "bcftools concat ";
-    print $FILEHANDLE "-a ";  #First coordinate of the next file can precede last record of the current file
-
-    foreach my $structural_variant_caller (@{ $parameter_href->{dynamic_parameter}{structural_variant_callers} }) {
-
-	if ($active_parameter_href->{$structural_variant_caller} > 0) {  #Expect vcf
-
-	    print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf.gz")." ";
-	}
-    }
-    say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref."_".$call_type.".vcf"), "\n";
-
-    ## Writes sbatch code to supplied filehandle to sort variants in vcf format
-    sort_vcf({active_parameter_href => $active_parameter_href,
-	      FILEHANDLE => $FILEHANDLE,
-	      sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict"),
-	      infile => catfile($$temp_directory_ref, $$family_id_ref."_".$call_type.".vcf")." ",
-	      outfile => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_sorted.vcf")." ",
-	     });
-
-    print $FILEHANDLE "\n";
-
-    my $alt_file_ending = "";  #Alternative ending
-    if ($active_parameter_href->{sv_vt_decompose} > 0) {
-
-	$alt_file_ending .= "_vt";
-
-	## Split multiallelic variants
-	say $FILEHANDLE "## Split multiallelic variants";
-	print $FILEHANDLE "vt decompose ";
-	print $FILEHANDLE "-s ";
-	print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_sorted.vcf")." ";
-	say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf"), "\n";
-    }
-
-    ## Remove FILTER ne PASS
-    if ($active_parameter_href->{sv_bcftools_view_filter} > 0) {
-
-	say $FILEHANDLE "## Remove FILTER ne PASS";
-	print $FILEHANDLE "bcftools view ";
-	print $FILEHANDLE "-f PASS ";
-	print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf")." ";
-
-	$alt_file_ending .= "_filt";
-
-	say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf"), "\n";
-    }
-
-    ## Remove common variants
-    if ($active_parameter_href->{sv_genmod_filter} > 0) {
-
-	say $FILEHANDLE "## Remove common variants";
-	print $FILEHANDLE "genmod ";  #Program
-	print $FILEHANDLE "-v ";  #Increase output verbosity
-	print $FILEHANDLE "annotate ";  #Command
-	print $FILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
-	print $FILEHANDLE "--thousand-g ".$active_parameter_href->{sv_genmod_filter_1000g}." ";  #1000G reference
-	print $FILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutStream
-	print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf")." ";
-	print $FILEHANDLE "| ";
-
-	$alt_file_ending .= "_genmod_filter";  #Update ending
-
-	print $FILEHANDLE "genmod ";  #Program
-	print $FILEHANDLE "-v ";  #Increase output verbosity
-	print $FILEHANDLE "filter ";  #Command
-	print $FILEHANDLE "-t ".$active_parameter_href->{sv_genmod_filter_threshold}." ";  #Threshold for filtering variants
-	print $FILEHANDLE "- ";  #InStream
-	say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf"), "\n";  #OutFile
-    }
-
-    ## Annotate 1000G structural variants
-    if ($active_parameter_href->{sv_vcfanno} > 0) {
-
-	say $FILEHANDLE "## Annotate 1000G structural variants";
-	print $FILEHANDLE "vcfanno ";  #Program
-	print $FILEHANDLE "-lua ".$active_parameter_href->{sv_vcfanno_lua}." ";  #Increase output verbosity
-	print $FILEHANDLE "-ends ";  #Annotate the start and end as well as the interval itself
-	print $FILEHANDLE $active_parameter_href->{sv_vcfanno_config}." ";  #Config
-	print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf")." ";
-	print $FILEHANDLE "| ";
-	print $FILEHANDLE q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", @F), "\n"}' ?;  #Remove "[" and "]" from INFO as it breaks vcf format
-
-	$alt_file_ending .= "_vcfanno";  #Update ending
-
-	say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf"), "\n";
-
-	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
-
-	    sample_info_qc({sample_info_href => $sample_info_href,
-			    program_name => "sv_combinevariantcallsets",
-			    outdirectory => $directory,
-			    outfile_ending => $stderr_file,
-			    outdata_type => "info_directory"
-			   });
-	}
-
-	say $FILEHANDLE "## Add header for 1000G annotation of structural variants";
-	print $FILEHANDLE "bcftools annotate ";
-	print $FILEHANDLE "--header-lines ".$active_parameter_href->{sv_vcfannotation_header_lines_file}." ";
-	print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf")." ";
-
-	$alt_file_ending .= "_bcftools_annotate";  #Update ending
-
-	say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf"), "\n";
-
-    }
-
-    if ($alt_file_ending ne "") {  #Then we have something to rename
-
-	## Writes sbatch code to supplied filehandle to sort variants in vcf format
-	sort_vcf({active_parameter_href => $active_parameter_href,
-		  FILEHANDLE => $FILEHANDLE,
-		  sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict"),
-		  infile => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf"),
-		  outfile => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf"),
-		 });
-
-	print $FILEHANDLE "\n";
-    }
-
-    if ($active_parameter_href->{sv_combinevariantcallsets_bcf_file}) {
-
-	vcf_to_bcf({infile => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type),
-		    FILEHANDLE => $FILEHANDLE,
-		   });
-
-	## Copies file from temporary directory.
-	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".bcf*"),
-		      outfile_path => $outfamily_directory,
-		      FILEHANDLE => $FILEHANDLE,
-		     });
-    }
-
-    ## Copies file from temporary directory.
-    say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf"),
-		  outfile_path => $outfamily_directory,
-		  FILEHANDLE => $FILEHANDLE,
-		 });
-    say $FILEHANDLE "wait", "\n";
-
-    close($FILEHANDLE);
-
-    if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
-
-	$sample_info_href->{sv_vcf_file}{ready_vcf}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.".vcf");
-
-	if ($active_parameter_href->{sv_combinevariantcallsets_bcf_file}) {
-
-	    $sample_info_href->{sv_bcf_file}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.".bcf");
-	}
-
-	submit_job({active_parameter_href => $active_parameter_href,
-		    sample_info_href => $sample_info_href,
-		    job_id_href => $job_id_href,
-		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    dependencies => "chain_and_parallel_dependency",
-		    path => $parameter_href->{"p".$program_name}{chain},
-		    sbatch_file_name => $file_name,
-		    parallel_chains_ref => \@parallel_chains,
-		   });
-    }
-}
-
-
-sub sv_combinevariantcallsets2 {
-
-##sv_combinevariantcallsets
-
-##Function : CombineVariants to combine all structural variants call from different callers.
-##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type
-##         : $parameter_href             => The parameter hash {REF}
-##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
-##         : $job_id_href                => The job_id hash {REF}
-##         : $program_name               => The program name
-##         : $family_id_ref              => The family_id {REF}
-##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $reference_dir_ref          => MIP reference directory {REF}
-##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
-##         : $call_type                  => The variant call type
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $reference_dir_ref;
-    my $outaligner_dir_ref;
-    my $call_type;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_no_ending_href;
-    my $job_id_href;
-    my $program_name;
-
-    my $tmpl = {
-	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
-	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
-	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
-	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
-			   strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
-				strict_type => 1, store => \$temp_directory_ref},
-	reference_dir_ref => { default => \$arg_href->{active_parameter_href}{reference_dir},
-			       strict_type => 1, store => \$reference_dir_ref},
-	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
-				strict_type => 1, store => \$outaligner_dir_ref},
-	call_type => { default => "SV", strict_type => 1, store => \$call_type},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
     use Program::Variantcalling::Svdb qw(merge);
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -10475,12 +10097,8 @@ sub sv_combinevariantcallsets2 {
 
 	if ($active_parameter_href->{$structural_variant_caller} > 0) {  #Expect vcf
 
-	    my $svc_tag = substr($structural_variant_caller, 1);
-	    if ($svc_tag eq "delly_reformat") {
-
-		$svc_tag = "delly";
-	    }
-	    push(@infile_paths, catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf:".$svc_tag));
+	    my $variant_caller_alias = $parameter_href->{$structural_variant_caller}{outdir_name};
+	    push(@infile_paths, catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf:".$variant_caller_alias));
 	}
     }
 
@@ -25073,19 +24691,25 @@ sub check_prioritize_variant_callers {
 
 ##Function : Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href
+##Arguments: $parameter_href, $active_parameter_href, $variant_callers_ref, $parameter_names_ref
 ##         : $parameter_href        => The parameter hash {REF}
 ##         : $active_parameter_href => The active parameters for this analysis hash {REF}
+##         : $variant_callers_ref   => Variant callers to check {REF}
+##         : $parameter_names_ref   => Parameter name list {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $parameter_href;
     my $active_parameter_href;
+    my $variant_callers_ref;
+    my $parameter_names_ref;
 
     my $tmpl = {
 	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	parameter_names_ref => { required => 1, defined => 1, default => [], store => \$parameter_names_ref},
+	variant_callers_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$variant_callers_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -25093,28 +24717,28 @@ sub check_prioritize_variant_callers {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger("MIP");
 
-    my @priority_calls = split(",", $active_parameter_href->{gatk_combinevariants_prioritize_caller});
+    my @priority_calls = split(",", $active_parameter_href->{$$parameter_names_ref});
     my @variant_caller_aliases;  #No matching variant caller
 
     ## Check that all active variant callers have a priority order
-    foreach my $variant_caller (@{ $parameter_href->{dynamic_parameter}{variant_callers} }) {
+    foreach my $variant_caller (@{ $variant_callers_ref }) {
 
-	my $program_outdirectory_name_ref = \$parameter_href->{$variant_caller}{outdir_name};
-	push(@variant_caller_aliases, $$program_outdirectory_name_ref);
+	my $variant_caller_alias = $parameter_href->{$variant_caller}{outdir_name};
+	push(@variant_caller_aliases, $variant_caller_alias);
 
 	if ($active_parameter_href->{$variant_caller} > 0) { #Only active programs
 
-	    if (! ( any {$_ eq $$program_outdirectory_name_ref} @priority_calls ) ) {  #If element is not part of string
+	    if (! ( any {$_ eq $variant_caller_alias} @priority_calls ) ) {  #If element is not part of string
 
-		$log->fatal("gatk_combinevariants_prioritize_caller does not contain active variant caller: '".$$program_outdirectory_name_ref."'");
+		$log->fatal($$parameter_names_ref." does not contain active variant caller: '".$variant_caller_alias."'");
 		exit 1;
 	    }
 	}
 	if ($active_parameter_href->{$variant_caller} == 0) { #Only NOT active programs
 
-	    if ( ( any {$_ eq $$program_outdirectory_name_ref} @priority_calls ) ) {  #If element IS part of string
+	    if ( ( any {$_ eq $variant_caller_alias} @priority_calls ) ) {  #If element IS part of string
 
-		$log->fatal("gatk_combinevariants_prioritize_caller contains deactivated variant caller: '".$$program_outdirectory_name_ref."'");
+		$log->fatal($$parameter_names_ref." contains deactivated variant caller: '".$variant_caller_alias."'");
 		exit 1;
 	    }
 	}
@@ -25125,7 +24749,7 @@ sub check_prioritize_variant_callers {
 
 	if (! ( any {$_ eq $prioritize_call} @variant_caller_aliases ) ) {  #If element is not part of string
 
-	    $log->fatal("gatk_combinevariants_prioritize_caller: '".$prioritize_call."' does not match any supported variant caller: '".join(",", @variant_caller_aliases)."'");
+	    $log->fatal($$parameter_names_ref.": '".$prioritize_call."' does not match any supported variant caller: '".join(",", @variant_caller_aliases)."'");
 	    exit 1;
 	}
     }
