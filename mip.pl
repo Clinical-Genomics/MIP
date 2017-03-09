@@ -165,6 +165,7 @@ BEGIN {
                -ptid/--ptiddit Structural variant calling using Tiddit (defaults to "0" (=no))
                  -tidmsp/--tiddit_minimum_number_supporting_pairs The minimum number of supporting reads (defaults to "6")
                -psvc/--psv_combinevariantcallsets Combine variant call sets (defaults to "1" (=yes))
+                 -svsvdbmp/--sv_svdb_merge_prioritize The prioritization order of structural variant callers.(defaults to ""; comma sep; Options: manta|delly|cnvnator|tiddit)
                  -svcvtd/--sv_vt_decompose Split multi allelic records into single records (defaults to "1" (=yes))
                  -svcbtv/--sv_bcftools_view_filter Include structural variants with PASS in FILTER column (defaults to "1" (=yes))
                  -svcvan/--sv_vcfanno Annotate structural variants (defaults to "1" (=yes)
@@ -474,6 +475,7 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'ptid|ptiddit=n' => \$parameter{ptiddit}{value},
 	   'tidmsp|tiddit_minimum_number_supporting_pairs=n' => \$parameter{tiddit_minimum_number_supporting_pairs}{value},
 	   'psvc|psv_combinevariantcallsets=n' => \$parameter{psv_combinevariantcallsets}{value},  #Combine structural variant call sets
+	   'svsvdbmp|sv_svdb_merge_prioritize:s' => \$parameter{sv_svdb_merge_prioritize}{value},  #Prioritize structural variant calls
 	   'svcvtd|sv_vt_decompose=n' => \$parameter{sv_vt_decompose}{value},  #VT decompose (split multiallelic variants)
 	   'svcbtv|sv_bcftools_view_filter=n' => \$parameter{sv_bcftools_view_filter}{value},  #Include structural variants with PASS in FILTER column
 	   'svcvan|sv_vcfanno=n' => \$parameter{sv_vcfanno}{value},
@@ -888,9 +890,17 @@ check_aligner({parameter_href => \%parameter,
 
 
 ## Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
-check_prioritize_variant_callers({parameter_href => \%parameter,
-				  active_parameter_href => \%active_parameter,
-				 });
+my %priority_call_parameter = (variant_callers => "gatk_combinevariants_prioritize_caller",
+			       structural_variant_callers => "sv_svdb_merge_prioritize",
+    );
+while ( my ($variant_caller_type, $prioritize_parameter_name) = each (%priority_call_parameter) ) {
+
+    check_prioritize_variant_callers({parameter_href => \%parameter,
+				      active_parameter_href => \%active_parameter,
+				      variant_callers_ref => \@{ $parameter{dynamic_parameter}{$variant_caller_type} },
+				      parameter_names_ref => \$prioritize_parameter_name,
+				     });
+}
 
 
 ## Broadcast set parameters info
@@ -1634,6 +1644,7 @@ if ($active_parameter{psv_combinevariantcallsets} > 0) {  #Run combinevariantcal
 			       program_name => "sv_combinevariantcallsets",
 			      });
 }
+
 
 if ($active_parameter{psv_varianteffectpredictor} > 0) {  #Run sv_varianteffectpredictor. Done per family
 
@@ -9949,6 +9960,8 @@ sub sv_combinevariantcallsets {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Variantcalling::Svdb qw(merge);
+
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my @structural_variant_callers;  #Stores callers that have been executed
     my @parallel_chains;  #Stores the parallel chains that jobIds should be inherited from
@@ -10038,19 +10051,6 @@ sub sv_combinevariantcallsets {
 	    }
 
 	    say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf"), "\n";  #OutFile
-
-	    ## Compress or decompress original file or stream to outfile (if supplied)
-	    bgzip({FILEHANDLE => $FILEHANDLE,
-		   infile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf"),
-		   outfile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf.gz"),
-		  });
-	    say $FILEHANDLE "\n";
-
-	    ## Index file using tabix
-	    tabix({FILEHANDLE => $FILEHANDLE,
-		   infile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf.gz"),
-		  });
-	    say $FILEHANDLE "\n";
 	}
     }
 
@@ -10074,60 +10074,52 @@ sub sv_combinevariantcallsets {
 			  infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag."_".$call_type.".vcf*"),
 			  outfile_path => $$temp_directory_ref
 			 });
-
 	    say $FILEHANDLE "wait", "\n";
 
-	    ## Compress or decompress original file or stream to outfile (if supplied)
-	    bgzip({FILEHANDLE => $FILEHANDLE,
-		   infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag."_".$call_type.".vcf"),
-		   outfile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf.gz"),
-		  });
-	    print $FILEHANDLE "\n";
+	    if ($active_parameter_href->{sv_vt_decompose} > 0) {
 
-	    ## Index file using tabix
-	    tabix({FILEHANDLE => $FILEHANDLE,
-		   infile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf.gz"),
-		  });
-	    say $FILEHANDLE "\n";
+		## Split multiallelic variants
+		say $FILEHANDLE "## Split multiallelic variants";
+		print $FILEHANDLE "vt decompose ";
+		print $FILEHANDLE "-s ";
+		print $FILEHANDLE catfile($infamily_directory, $$family_id_ref.$infile_tag."_".$call_type.".vcf")." ";
+		say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf"), "\n";
+	    }
 	}
     }
 
-    ## Concatenate structural variant caller's family vcf files
-    say $FILEHANDLE "## Concatenate structural variant caller's family vcf files";
-    print $FILEHANDLE "bcftools concat ";
-    print $FILEHANDLE "-a ";  #First coordinate of the next file can precede last record of the current file
+    ## Merge structural variant caller's family vcf files
+    say $FILEHANDLE "## Merge structural variant caller's family vcf files";
 
+    ## Get parameters
+    my @infile_paths;
     foreach my $structural_variant_caller (@{ $parameter_href->{dynamic_parameter}{structural_variant_callers} }) {
 
 	if ($active_parameter_href->{$structural_variant_caller} > 0) {  #Expect vcf
 
-	    print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf.gz")." ";
+	    my $variant_caller_alias = $parameter_href->{$structural_variant_caller}{outdir_name};
+	    push(@infile_paths, catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf:".$variant_caller_alias));
 	}
     }
-    say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref."_".$call_type.".vcf"), "\n";
+
+    merge({infile_paths_ref => \@infile_paths,
+	   outfile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$call_type.".vcf"),
+	   priority => $active_parameter_href->{sv_svdb_merge_prioritize},
+	   FILEHANDLE => $FILEHANDLE,
+	  });
+    say $FILEHANDLE "\n";
+
+    my $alt_file_ending = "_sorted";  #Alternative ending
 
     ## Writes sbatch code to supplied filehandle to sort variants in vcf format
     sort_vcf({active_parameter_href => $active_parameter_href,
 	      FILEHANDLE => $FILEHANDLE,
 	      sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict"),
 	      infile => catfile($$temp_directory_ref, $$family_id_ref."_".$call_type.".vcf")." ",
-	      outfile => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_sorted.vcf")." ",
+	      outfile => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf")." ",
 	     });
 
     print $FILEHANDLE "\n";
-
-    my $alt_file_ending = "";  #Alternative ending
-    if ($active_parameter_href->{sv_vt_decompose} > 0) {
-
-	$alt_file_ending .= "_vt";
-
-	## Split multiallelic variants
-	say $FILEHANDLE "## Split multiallelic variants";
-	print $FILEHANDLE "vt decompose ";
-	print $FILEHANDLE "-s ";
-	print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_sorted.vcf")." ";
-	say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf"), "\n";
-    }
 
     ## Remove FILTER ne PASS
     if ($active_parameter_href->{sv_bcftools_view_filter} > 0) {
@@ -10259,6 +10251,7 @@ sub sv_combinevariantcallsets {
 		   });
     }
 }
+
 
 sub cnvnator {
 
@@ -24698,19 +24691,25 @@ sub check_prioritize_variant_callers {
 
 ##Function : Check that all active variant callers have a prioritization order and that the prioritization elements match a supported variant caller.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href
+##Arguments: $parameter_href, $active_parameter_href, $variant_callers_ref, $parameter_names_ref
 ##         : $parameter_href        => The parameter hash {REF}
 ##         : $active_parameter_href => The active parameters for this analysis hash {REF}
+##         : $variant_callers_ref   => Variant callers to check {REF}
+##         : $parameter_names_ref   => Parameter name list {REF}
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $parameter_href;
     my $active_parameter_href;
+    my $variant_callers_ref;
+    my $parameter_names_ref;
 
     my $tmpl = {
 	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	parameter_names_ref => { required => 1, defined => 1, default => [], store => \$parameter_names_ref},
+	variant_callers_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$variant_callers_ref},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -24718,28 +24717,28 @@ sub check_prioritize_variant_callers {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger("MIP");
 
-    my @priority_calls = split(",", $active_parameter_href->{gatk_combinevariants_prioritize_caller});
+    my @priority_calls = split(",", $active_parameter_href->{$$parameter_names_ref});
     my @variant_caller_aliases;  #No matching variant caller
 
     ## Check that all active variant callers have a priority order
-    foreach my $variant_caller (@{ $parameter_href->{dynamic_parameter}{variant_callers} }) {
+    foreach my $variant_caller (@{ $variant_callers_ref }) {
 
-	my $program_outdirectory_name_ref = \$parameter_href->{$variant_caller}{outdir_name};
-	push(@variant_caller_aliases, $$program_outdirectory_name_ref);
+	my $variant_caller_alias = $parameter_href->{$variant_caller}{outdir_name};
+	push(@variant_caller_aliases, $variant_caller_alias);
 
 	if ($active_parameter_href->{$variant_caller} > 0) { #Only active programs
 
-	    if (! ( any {$_ eq $$program_outdirectory_name_ref} @priority_calls ) ) {  #If element is not part of string
+	    if (! ( any {$_ eq $variant_caller_alias} @priority_calls ) ) {  #If element is not part of string
 
-		$log->fatal("gatk_combinevariants_prioritize_caller does not contain active variant caller: '".$$program_outdirectory_name_ref."'");
+		$log->fatal($$parameter_names_ref." does not contain active variant caller: '".$variant_caller_alias."'");
 		exit 1;
 	    }
 	}
 	if ($active_parameter_href->{$variant_caller} == 0) { #Only NOT active programs
 
-	    if ( ( any {$_ eq $$program_outdirectory_name_ref} @priority_calls ) ) {  #If element IS part of string
+	    if ( ( any {$_ eq $variant_caller_alias} @priority_calls ) ) {  #If element IS part of string
 
-		$log->fatal("gatk_combinevariants_prioritize_caller contains deactivated variant caller: '".$$program_outdirectory_name_ref."'");
+		$log->fatal($$parameter_names_ref." contains deactivated variant caller: '".$variant_caller_alias."'");
 		exit 1;
 	    }
 	}
@@ -24750,7 +24749,7 @@ sub check_prioritize_variant_callers {
 
 	if (! ( any {$_ eq $prioritize_call} @variant_caller_aliases ) ) {  #If element is not part of string
 
-	    $log->fatal("gatk_combinevariants_prioritize_caller: '".$prioritize_call."' does not match any supported variant caller: '".join(",", @variant_caller_aliases)."'");
+	    $log->fatal($$parameter_names_ref.": '".$prioritize_call."' does not match any supported variant caller: '".join(",", @variant_caller_aliases)."'");
 	    exit 1;
 	}
     }

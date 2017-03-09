@@ -60,6 +60,7 @@ BEGIN {
            -cnvn/--cnvnator Set the cnvnator version (Default: 0.3.3)
            -cnvnr/--cnvnator_root_binary Set the cnvnator root binary (Default: "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz")
            -tid/--tiddit Set the tiddit version (Default: "1.0.1")
+           -svdb/--svdb Set the svdb version (Default: "0.1.2")
 
            ## Utility
            -psh/--prefer_shell Shell will be used for overlapping shell and biconda installations (Supply flag to enable)
@@ -140,6 +141,7 @@ $parameter{rhocall_path} = catdir($ENV{HOME}, "rhocall");
 $parameter{cnvnator} = "0.3.3";
 $parameter{cnvnator_root_binary} = "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz";
 $parameter{tiddit} = "1.0.2";
+$parameter{svdb} = "0.1.2"; 
 
 ## Define default parameters
 my %array_parameter;
@@ -203,6 +205,7 @@ GetOptions('env|conda_environment:s'  => \$parameter{conda_environment},
 	   'cnv|cnvnator:s' => \$parameter{cnvnator},
 	   'cnvnr|cnvnator_root_binary:s' => \$parameter{cnvnator_root_binary},
 	   'tid|tiddit:s' => \$parameter{tiddit},
+	   'svdb|svdb:s' => \$parameter{svdb},
 	   'psh|prefer_shell' => \$parameter{prefer_shell},  # Shell will be used for overlapping shell and biconda installations
 	   'ppd|print_parameters_default' => sub { print_parameters({parameter_href => \%parameter,
 								     array_parameter_href => \%array_parameter,
@@ -396,6 +399,12 @@ if (@{ $parameter{select_programs} }) {
 		FILEHANDLE => $BASHFILEHANDLE,
 	       });
     }
+    if ( ( grep {$_ eq "svdb"} @{ $parameter{select_programs} } ) ) { #If element is part of array
+
+	svdb({parameter_href => \%parameter,
+	      FILEHANDLE => $BASHFILEHANDLE,
+	     });
+    }
 }
 else {
 
@@ -421,9 +430,13 @@ else {
     tiddit({parameter_href => \%parameter,
 	    FILEHANDLE => $BASHFILEHANDLE,
 	   });
+
+    svdb({parameter_href => \%parameter,
+	  FILEHANDLE => $BASHFILEHANDLE,
+	 });
 }
 
-if(defined($parameter{reference_dir})) {
+if (defined($parameter{reference_dir})) {
     
     references({parameter_href => \%parameter,
 		FILEHANDLE => $BASHFILEHANDLE,
@@ -2199,6 +2212,102 @@ sub tiddit {
 	force => 1,
 	FILEHANDLE => $FILEHANDLE,
        });
+    print $FILEHANDLE "\n\n";
+
+    ## Go back to subroutine origin
+    print $FILEHANDLE "## Moving back to original working directory\n";
+    cd({directory_path => $pwd,
+	FILEHANDLE => $FILEHANDLE,
+       });
+    print $FILEHANDLE "\n\n";
+
+    ## Deactivate conda environment
+    deactivate_conda_environment({FILEHANDLE => $FILEHANDLE,
+				 });
+}
+
+
+sub svdb {
+
+##svdb
+
+##Function : Install svdb
+##Returns  : ""
+##Arguments: $parameter_href, $FILEHANDLE, $quiet, $verbose
+##         : $parameter_href => Holds all parameters
+##         : $FILEHANDLE     => Filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    my $pwd = cwd();
+
+    ## Check if the binary of the program being installed already exists
+    if (check_conda_bin_file_exists({parameter_href => $parameter_href,
+				     program_name => "svdb",
+				    })) {
+
+	return
+    }
+
+    ## Install svdb
+    print $FILEHANDLE "### Install svdb\n";
+
+    ## Activate conda environment
+    activate_conda_environment({parameter_href => $parameter_href,
+				FILEHANDLE => $FILEHANDLE,
+			       });
+
+    ## Move to miniconda environment
+    cd({directory_path => catdir($parameter{conda_path}, "envs", $parameter_href->{conda_environment}),
+	FILEHANDLE => $FILEHANDLE,
+       });
+    print $FILEHANDLE "\n\n";
+
+    ## Download
+    print $FILEHANDLE "## Download Svdb\n";
+    Program::Download::Wget::wget({url => "https://github.com/J35P312/SVDB/archive/".$parameter_href->{svdb}.".zip",
+				   FILEHANDLE => $FILEHANDLE,
+				   quiet => $parameter_href->{quiet},
+				   verbose => $parameter_href->{verbose},
+				   outfile_path => "SVDB-".$parameter_href->{svdb}.".zip",
+				  });
+
+    print $FILEHANDLE "\n\n";
+
+    ## Clean-up
+    print $FILEHANDLE "## Clean-up\n";
+    rm({infile_path => "SVDB-".$parameter_href->{svdb},
+	force => 1,
+	recursive => 1,
+	FILEHANDLE => $FILEHANDLE,
+       });
+    print $FILEHANDLE "\n\n";
+
+    ## Extract
+    print $FILEHANDLE "## Extract\n";
+    print $FILEHANDLE "unzip SVDB-".$parameter_href->{svdb}.".zip", "\n\n";
+
+    ## Move to Svdb directory
+    print $FILEHANDLE "## Move to Svdb directory\n";
+    cd({directory_path => "SVDB-".$parameter_href->{svdb},
+	FILEHANDLE => $FILEHANDLE,
+       });
+    print $FILEHANDLE "\n\n";
+
+    ## Install
+    print $FILEHANDLE "## Install\n";
+    print $FILEHANDLE "python setup.py install";
     print $FILEHANDLE "\n\n";
 
     ## Go back to subroutine origin
