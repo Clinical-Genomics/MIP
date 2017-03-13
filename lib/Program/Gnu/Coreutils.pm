@@ -20,7 +20,7 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(cp rm mv mkdir split);
+    our @EXPORT_OK = qw(cp rm mv mkdir cat split);
 
 }
 
@@ -34,12 +34,12 @@ sub cp {
 
 ##Function : Perl wrapper for writing cp recipe to already open $FILEHANDLE or return commands array. Based on cp 8.4
 ##Returns  : "@commands"
-##Arguments: $preserve_attributes_ref, $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $preserve, $recursive, $force, $verbose
+##Arguments: $preserve_attributes_ref, $infile_path, $outfile_path, $stderrfile_path, $FILEHANDLE, $preserve, $recursive, $force, $verbose
 ##         : $preserve_attributes_ref => Preserve the specified attributes (default:mode,ownership,timestamps), if possible additional attributes: context, links, xattr, all
-##         : $FILEHANDLE              => Filehandle to write to
 ##         : $infile_path             => Infile path
 ##         : $outfile_path            => Outfile path
 ##         : $stderrfile_path         => Stderrfile path
+##         : $FILEHANDLE              => Filehandle to write to
 ##         : $preserve                => Same as --preserve=mode,ownership,timestamps
 ##         : $recursive               => Copy directories recursively
 ##         : $force                   => If an existing destination file cannot be opened, remove it and try again
@@ -55,25 +55,25 @@ sub cp {
 
     ## Flatten argument(s)
     my $preserve_attributes_ref;
-    my $FILEHANDLE;
     my $infile_path;
     my $outfile_path;
     my $stderrfile_path;
+    my $FILEHANDLE;
 
     my $tmpl = { 
-	preserve_attributes_ref => { default => [], strict_type => 1, store => \$preserve_attributes_ref},
-	FILEHANDLE => { store => \$FILEHANDLE},
-	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
-	outfile_path => { required => 1, defined => 1, strict_type => 1, store => \$outfile_path},
-	stderrfile_path => { strict_type => 1, store => \$stderrfile_path},
+	preserve_attributes_ref => { default => [], strict_type => 1, store => \$preserve_attributes_ref },
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path },
+	outfile_path => { required => 1, defined => 1, strict_type => 1, store => \$outfile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
 	recursive => { default => 0,
-		       strict_type => 1, store => \$recursive},
+		       strict_type => 1, store => \$recursive },
 	force => { default => 0,
-		   strict_type => 1, store => \$force},
+		   strict_type => 1, store => \$force },
 	preserve => { default => 0,
-		      strict_type => 1, store => \$preserve},
+		      strict_type => 1, store => \$preserve },
 	verbose => { default => 0,
-		     strict_type => 1, store => \$verbose},
+		     strict_type => 1, store => \$verbose },
     };
     
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -122,11 +122,11 @@ sub mv {
 
 ##Function : Perl wrapper for writing mv recipe to already open $FILEHANDLE or return commands array. Based on mv 8.4
 ##Returns  : "@commands"
-##Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $force, $verbose
-##         : $FILEHANDLE              => Filehandle to write to
+##Arguments: $infile_path, $outfile_path, $stderrfile_path, $FILEHANDLE, $force, $verbose
 ##         : $infile_path             => Infile path
 ##         : $outfile_path            => Outfile path
 ##         : $stderrfile_path         => Stderrfile path
+##         : $FILEHANDLE              => Filehandle to write to
 ##         : $force                   => If an existing destination file cannot be opened, remove it and try again
 ##         : $verbose                 => Verbosity
 
@@ -137,20 +137,20 @@ sub mv {
     my $verbose;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
     my $infile_path;
     my $outfile_path;
     my $stderrfile_path;
+    my $FILEHANDLE;
 
     my $tmpl = { 
-	FILEHANDLE => { store => \$FILEHANDLE},
-	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
-	outfile_path => { required => 1, defined => 1, strict_type => 1, store => \$outfile_path},
-	stderrfile_path => { strict_type => 1, store => \$stderrfile_path},
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path },
+	outfile_path => { required => 1, defined => 1, strict_type => 1, store => \$outfile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
 	force => { default => 0,
-		   strict_type => 1, store => \$force},
+		   strict_type => 1, store => \$force },
 	verbose => { default => 0,
-		     strict_type => 1, store => \$verbose},
+		     strict_type => 1, store => \$verbose },
     };
     
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -187,10 +187,10 @@ sub rm {
 
 ##Function : Perl wrapper for writing rm recipe to already open $FILEHANDLE or return commands array. Based on rm 8.4
 ##Returns  : "@commands"
-##Arguments: $FILEHANDLE, $infile_path, $stderrfile_path, $recursive, $force, $verbose
-##         : $FILEHANDLE      => Filehandle to write to
+##Arguments: $infile_path, $stderrfile_path, $FILEHANDLE, $recursive, $force, $verbose
 ##         : $infile_path     => Infile path
 ##         : $stderrfile_path => Stderrfile path
+##         : $FILEHANDLE      => Filehandle to write to
 ##         : $recursive       => Copy directories recursively
 ##         : $force           => If an existing destination file cannot be opened, remove it and try again
 ##         : $verbose         => Verbosity
@@ -203,20 +203,20 @@ sub rm {
     my $verbose;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
     my $infile_path;
     my $stderrfile_path;
+    my $FILEHANDLE;
 
     my $tmpl = { 
-	FILEHANDLE => { store => \$FILEHANDLE},
-	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
-	stderrfile_path => { strict_type => 1, store => \$stderrfile_path},
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
 	recursive => { default => 0,
-		       strict_type => 1, store => \$recursive},
+		       strict_type => 1, store => \$recursive },
 	force => { default => 0,
-		   strict_type => 1, store => \$force},
+		   strict_type => 1, store => \$force },
 	verbose => { default => 0,
-		     strict_type => 1, store => \$verbose},
+		     strict_type => 1, store => \$verbose },
     };
     
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -258,10 +258,10 @@ sub mkdir {
 
 ##Function : Perl wrapper for writing mkdir recipe to already open $FILEHANDLE or return commands array. Based on mkdir 8.4
 ##Returns  : "@commands"
-##Arguments: $FILEHANDLE, $indirectory_path, $stderrfile_path, $parents, $verbose
-##         : $FILEHANDLE       => Filehandle to write to
+##Arguments: $indirectory_path, $stderrfile_path, $FILEHANDLE, $parents, $verbose
 ##         : $indirectory_path => Infile path
 ##         : $stderrfile_path  => Stderrfile path
+##         : $FILEHANDLE       => Filehandle to write to
 ##         : $parents          => No error if existing, make parent directories as needed
 ##         : $verbose          => Verbosity
 
@@ -272,18 +272,18 @@ sub mkdir {
     my $parents;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
     my $indirectory_path;
     my $stderrfile_path;
+    my $FILEHANDLE;
 
     my $tmpl = { 
-	FILEHANDLE => { store => \$FILEHANDLE},
-	indirectory_path => { required => 1, defined => 1, strict_type => 1, store => \$indirectory_path},
-	stderrfile_path => { strict_type => 1, store => \$stderrfile_path},
+	indirectory_path => { required => 1, defined => 1, strict_type => 1, store => \$indirectory_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
 	parents => { default => 0,
-		     strict_type => 1, store => \$parents},
+		     strict_type => 1, store => \$parents },
 	verbose => { default => 0,
-		     strict_type => 1, store => \$verbose},
+		     strict_type => 1, store => \$verbose },
     };
     
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -315,15 +315,67 @@ sub mkdir {
 }
 
 
+sub cat {
+
+##cat
+
+##Function : Perl wrapper for writing cat recipe to already open $FILEHANDLE or return commands array. Based on cat 8.4
+##Returns  : "@commands"
+##Arguments: $infile_paths_ref, $outfile_path, $stderrfile_path, $FILEHANDLE
+##         : $infile_paths_ref => Infile paths {REF}
+##         : $outfile_path     => Outfile path
+##         : $stderrfile_path  => Stderrfile path
+##         : $FILEHANDLE       => Filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile_paths_ref;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $FILEHANDLE;
+
+    my $tmpl = { 
+	infile_paths_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$infile_paths_ref },
+	outfile_path => { strict_type => 1, store => \$outfile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
+    };
+    
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## cat
+    my @commands = qw(cat);  #Stores commands depending on input parameters
+
+    ## Infiles
+    push(@commands, join(" ", @$infile_paths_ref));
+
+    ## Outfile
+    if ($outfile_path) {
+
+	push(@commands, "> ".$outfile_path);
+    }
+    if ($stderrfile_path) {
+
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
 sub split {
 
 ##split
 
 ##Function : Perl wrapper for writing split recipe to $FILEHANDLE or return commands array. Based on split 8.4.
 ##Returns  : "@commands"
-##Arguments: $FILEHANDLE, $infile_path, $prefix, $lines, $suffix_length, $numeric_suffixes, $quiet, $verbose
-##         : $FILEHANDLE       => Filehandle to write to
+##Arguments: $infile_path, $FILEHANDLE, $prefix, $lines, $suffix_length, $numeric_suffixes, $quiet, $verbose
 ##         : $infile_path      => Infile path
+##         : $FILEHANDLE       => Filehandle to write to
 ##         : $prefix           => Prefix of output files
 ##         : $lines            => Put number lines per output file
 ##         : $suffix_length    => Use suffixes of length N
@@ -338,30 +390,30 @@ sub split {
     my $verbose;
 
     ## Flatten argument(s)
-    my $FILEHANDLE;
     my $infile_path;
+    my $FILEHANDLE;
     my $prefix;
     my $lines;
     my $suffix_length;
     my $numeric_suffixes;
 
     my $tmpl = {
-	FILEHANDLE => { store => \$FILEHANDLE},
-	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
-	prefix => { strict_type => 1, store => \$prefix},
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
+	prefix => { strict_type => 1, store => \$prefix },
 	lines => { allow => qr/^\d+$/,
-		   strict_type => 1, store => \$lines},
+		   strict_type => 1, store => \$lines },
 	suffix_length => { allow => qr/^\d+$/,
-			   strict_type => 1, store => \$suffix_length},
+			   strict_type => 1, store => \$suffix_length },
 	numeric_suffixes => { default => 0,
 			      allow => [0, 1],
-			      strict_type => 1, store => \$numeric_suffixes},
+			      strict_type => 1, store => \$numeric_suffixes },
 	quiet => { default => 0,
 		   allow => [0, 1],
-		   strict_type => 1, store => \$quiet},
+		   strict_type => 1, store => \$quiet },
 	verbose => { default => 0,
 		     allow => [0, 1],
-		     strict_type => 1, store => \$verbose},
+		     strict_type => 1, store => \$verbose },
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -391,7 +443,7 @@ sub split {
 	push(@commands, "--verbose");
     }
 
-    ## FILE
+    ## Infile
     push(@commands, $infile_path);
 
     if ($prefix) {

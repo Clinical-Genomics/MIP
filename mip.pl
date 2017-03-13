@@ -132,11 +132,12 @@ BEGIN {
                -pptmr/--ppicardtools_mergerapidreads Merge Read batch processed (BAM file(s)) using Picardtools mergesamfiles (Only relevant in rapid mode;defaults to "0" (=no))
 
                ##Markduplicates
-               -ppmd/--ppicardtools_markduplicates Markduplicates using Picardtools markduplicates (defaults to "1" (=yes))
-               -psmd/--psambamba_markduplicates Markduplicates using Sambamba markduplicates (defaults to "0" (=no))
-                 -smdhts/--sambamba_markdup_hash_table_size Sambamba size of hash table for finding read pairs (defaults to "500000")
-                 -smdols/--sambamba_markdup_overflow_list_size Sambamba size of the overflow list (defaults to "500000")
-                 -smdibs/--sambamba_markdup_io_buffer_size Sambamba size of the io buffer for reading and writing BAM during the second pass (defaults to "2048")
+               -pmd/--pmarkduplicates Markduplicates using either Picardtools markduplicates or sambamba markdup (defaults to "1" (=yes))
+               -mdpmd/--markduplicates_picardtools_markduplicates Markduplicates using Picardtools markduplicates (defaults to "1" (=yes))
+               -mdsmd/--markduplicates_sambamba_markdup Markduplicates using Sambamba markduplicates (defaults to "0" (=no))
+                 -mdshts/--markduplicates_sambamba_markdup_hash_table_size Sambamba size of hash table for finding read pairs (defaults to "262144")
+                 -mdsols/--markduplicates_sambamba_markdup_overflow_list_size Sambamba size of the overflow list (defaults to "200000")
+                 -mdsibs/--markduplicates_sambamba_markdup_io_buffer_size Sambamba size of the io buffer for reading and writing BAM during the second pass (defaults to "2048")
 
                ###Coverage calculations
                -pchs/--pchanjo_sexcheck Predicts gender from sex chromosome coverage (defaults to "1")
@@ -442,15 +443,16 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'paln|pbwa_aln=n' => \$parameter{pbwa_aln}{value},
 	   'alnq|bwa_aln_quality_trimming=n' => \$parameter{bwa_aln_quality_trimming}{value},  #BWA aln quality threshold for read trimming down to 35bp
 	   'psap|pbwa_sampe=n' => \$parameter{pbwa_sampe}{value},
+	   'ptp|picardtools_path:s' => \$parameter{picardtools_path}{value},  #Path to picardtools
 	   'pptm|ppicardtools_mergesamfiles=n' => \$parameter{ppicardtools_mergesamfiles}{value},  #Picardtools mergeSamFiles
 	   'ptmp|picardtools_mergesamfiles_previous_bams:s' => \@{ $parameter{picardtools_mergesamfiles_previous_bams}{value} },  #Comma separated list
 	   'pptmr|ppicardtools_mergerapidreads=n' => \$parameter{ppicardtools_mergerapidreads}{value},  #Picardtools mergeSamFiles - rapid mode
-	   'ptp|picardtools_path:s' => \$parameter{picardtools_path}{value},  #Path to picardtools
-	   'ppmd|ppicardtools_markduplicates=n' => \$parameter{ppicardtools_markduplicates}{value},  #Picardtools markduplicates
-	   'psmd|psambamba_markduplicates=n' => \$parameter{psambamba_markduplicates}{value},  #Sambamba markduplicates
-	   'smdhts|sambamba_markdup_hash_table_size=n' => \$parameter{sambamba_markdup_hash_table_size}{value},
-	   'smdols|sambamba_markdup_overflow_list_size=n' => \$parameter{sambamba_markdup_overflow_list_size}{value},
-	   'smdibs|sambamba_markdup_io_buffer_size=n' => \$parameter{sambamba_markdup_io_buffer_size}{value},
+	   'pmd|pmarkduplicates=n' => \$parameter{pmarkduplicates}{value},  #Markduplicates
+	   'mdpmd|markduplicates_picardtools_markduplicates=n' => \$parameter{markduplicates_picardtools_markduplicates}{value},  #Picardtools markduplicates
+	   'mdsmd|markduplicates_sambamba_markdup=n' => \$parameter{markduplicates_sambamba_markdup}{value},  #Sambamba markduplicates
+	   'mdshts|markduplicates_sambamba_markdup_hash_table_size=n' => \$parameter{markduplicates_sambamba_markdup_hash_table_size}{value},
+	   'mdsols|markduplicates_sambamba_markdup_overflow_list_size=n' => \$parameter{markduplicates_sambamba_markdup_overflow_list_size}{value},
+	   'mdsibs|markduplicates_sambamba_markdup_io_buffer_size=n' => \$parameter{markduplicates_sambamba_markdup_io_buffer_size}{value},
 	   'pchs|pchanjo_sexcheck=n' => \$parameter{pchanjo_sexcheck}{value},   #Chanjo coverage analysis on sex chromosomes
 	   'psdt|psambamba_depth=n' => \$parameter{psambamba_depth}{value},   #Chanjo coverage analysis
 	   'sdtcut|sambamba_depth_cutoffs:s' => \@{ $parameter{sambamba_depth_cutoffs}{value} },   # Cutoff used for completeness
@@ -1263,41 +1265,22 @@ else {
 				  });
     }
 
-    if ($active_parameter{ppicardtools_markduplicates} > 0) {  #Picardtools markduplicates
+    if ($active_parameter{pmarkduplicates} > 0) {  #Markduplicates
 
-	$log->info("[Picardtools markduplicates]\n");
-
-	foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
-
-	    picardtools_markduplicates({parameter_href => \%parameter,
-					active_parameter_href => \%active_parameter,
-					sample_info_href => \%sample_info,
-					file_info_href => \%file_info,
-					infile_lane_no_ending_href => \%infile_lane_no_ending,
-					lane_href => \%lane,
-					job_id_href => \%job_id,
-					sample_id_ref => \$sample_id,
-					program_name => "picardtools_markduplicates",
-				       });
-	}
-    }
-
-    if ($active_parameter{psambamba_markduplicates} > 0) {  #Sambamba markduplicates
-
-	$log->info("[Sambamba markduplicates]\n");
+	$log->info("[Markduplicates]\n");
 
 	foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
-	    sambamba_markduplicates({parameter_href => \%parameter,
-				     active_parameter_href => \%active_parameter,
-				     sample_info_href => \%sample_info,
-				     file_info_href => \%file_info,
-				     infile_lane_no_ending_href => \%infile_lane_no_ending,
-				     lane_href => \%lane,
-				     job_id_href => \%job_id,
-				     sample_id_ref => \$sample_id,
-				     program_name => "sambamba_markduplicates",
-				    });
+	    pmarkduplicates({parameter_href => \%parameter,
+			     active_parameter_href => \%active_parameter,
+			     sample_info_href => \%sample_info,
+			     file_info_href => \%file_info,
+			     infile_lane_no_ending_href => \%infile_lane_no_ending,
+			     lane_href => \%lane,
+			     job_id_href => \%job_id,
+			     sample_id_ref => \$sample_id,
+			     program_name => "markduplicates",
+			    });
 	}
     }
 
@@ -2896,6 +2879,8 @@ sub evaluation {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Gnu::Coreutils qw(cat);
+
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -2974,10 +2959,11 @@ sub evaluation {
     print $FILEHANDLE "> ".catfile($$temp_directory_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict")." ";
     say $FILEHANDLE "\n";
 
-    print $FILEHANDLE "cat ";
-    print $FILEHANDLE catfile($$temp_directory_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict")." ";
-    print $FILEHANDLE $active_parameter_href->{nist_high_confidence_call_set_bed}." ";
-    print $FILEHANDLE "> ".catfile($$temp_directory_ref, "NIST.bed.dict_body")." ";
+    cat({infile_paths_ref => [catfile($$temp_directory_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict"),
+			      $active_parameter_href->{nist_high_confidence_call_set_bed}],
+	 outfile_path => catfile($$temp_directory_ref, "NIST.bed.dict_body"),
+	 FILEHANDLE => $FILEHANDLE,
+	});
     say $FILEHANDLE "\n";
 
     say $FILEHANDLE "## Remove target annotations, 'track', 'browse' and keep only 5 columns";
@@ -3336,11 +3322,13 @@ sub endvariantannotationblock {
 		   infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf",
 		   outfile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf.gz",
 		  });
+	    say $FILEHANDLE "\n";
 
 	    ## Index file using tabix
 	    tabix({FILEHANDLE => $FILEHANDLE,
 		   infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf.gz",
 		  });
+	    say $FILEHANDLE "\n";
 	}
 
 	## Copies file from temporary directory.
@@ -3927,10 +3915,12 @@ sub gatk_variantevalexome {
 
 	## Merge orphans and selectfiles
 	say $FILEHANDLE "## Merge orphans and selectfile(s)";
-	print $FILEHANDLE "cat ";
-	print $FILEHANDLE catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants.vcf")." ";  #Orphan file
-	print $FILEHANDLE catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants".$vcfparser_analysis_type.".vcf")." ";  #SelectFile variants
-	say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants_combined.vcf"), "\n";  #OutFile
+	cat({infile_paths_ref => [catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants.vcf"),
+				  catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants".$vcfparser_analysis_type.".vcf")],
+		 outfile_path => catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants_combined.vcf"),
+		 FILEHANDLE => $FILEHANDLE,
+	    });
+	say $FILEHANDLE "\n";
 
 	## Sort combined file
 	say $FILEHANDLE "## Sort combined file";
@@ -3943,10 +3933,12 @@ sub gatk_variantevalexome {
     print $FILEHANDLE q?perl -ne ' if ($_=~/^#/) {print $_;}' ?;
     print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf")." ";  #InFile
     print $FILEHANDLE "| ";  #Pipe
-    print $FILEHANDLE "cat ";
-    print $FILEHANDLE "- ";
-    print $FILEHANDLE catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants.vcf")." ";  #infile
-    say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants_head.vcf"), "\n";  #OutFile
+    cat({infile_paths_ref => ["-",
+			      catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants.vcf")],
+	 outfile_path => catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants_head.vcf"),
+	 FILEHANDLE => $FILEHANDLE,
+	});
+    say $FILEHANDLE "\n";
 
     ## Intersect exonic variants from created sample_id vcf file (required for gatk_varianteval for exonic variants)
     say $FILEHANDLE "## Intersect exonic variants from created sample_id vcf file";
@@ -5681,6 +5673,8 @@ sub samplecheck {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Gnu::Coreutils qw(cat);
+
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargs_file_name;
@@ -5832,11 +5826,10 @@ sub samplecheck {
     }
 
     ## Concatenate files for qc downsteam
-    print $FILEHANDLE "cat ";
-    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
-
-	print $FILEHANDLE catfile($outfamily_directory, $sample_id."_vcf_data.sexcheck")." ";
-    }
+    my @infile_paths = map { catfile($outfamily_directory, $_."_vcf_data.sexcheck") } @{ $active_parameter_href->{sample_ids} };
+    cat({infile_paths_ref => \@infile_paths,
+	 FILEHANDLE => $FILEHANDLE,
+	});
     print $FILEHANDLE "| ";  #Pipe
     print $FILEHANDLE q?perl -nae 'if ($.==1) {chomp($_);  print $_; if ($F[5] eq "F") {print "/YCOUNT\n"} else {print "/F\n"} } elsif ($_!~/FID/) {print $_}' ?;  #Print first header and sampleId lines
     print $FILEHANDLE "> ".catfile($outfamily_directory, $$family_id_ref.".sexcheck")." ";
@@ -12696,7 +12689,7 @@ sub gatk_realigner {
     $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory;  #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$sample_id_ref}{psambamba_markduplicates}{file_tag};
+    my $infile_tag = $file_info_href->{$$sample_id_ref}{pmarkduplicates}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
     ## Get exome_target_bed file for specfic sample_id and add file_ending from file_infoHash if supplied
@@ -12891,269 +12884,11 @@ sub gatk_realigner {
 }
 
 
-sub picardtools_markduplicates {
+sub pmarkduplicates {
+    
+##pmarkduplicates
 
-##picardtools_markduplicates
-
-##Function : Mark duplicated reads using Picardtools markduplicates in files generated from alignment (sorted, merged).
-##Returns  : "$xargs_file_counter"
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $lane_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, $file_name, $FILEHANDLE, $family_id_ref, temp_directory_ref, outaligner_dir_ref, $xargs_file_counter
-##         : $parameter_href             => The parameter hash {REF}
-##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
-##         : $sample_info_href           => Info on samples and family hash {REF}
-##         : $file_info_href             => The file_info hash {REF}
-##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
-##         : $lane_href                  => The lane info hash {REF}
-##         : $job_id_href                => The job_id hash {REF}
-##         : $sample_id_ref              => The sample_id {REF}
-##         : $program_name               => The program name
-##         : $program_info_path          => The program info path
-##         : $file_name                  => File name
-##         : $FILEHANDLE                 => Filehandle to write to
-##         : $family_id_ref              => The family_id {REF}
-##         : $temp_directory_ref         => The temporary directory {REF}
-##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
-##         : $xargs_file_counter         => The xargs file counter
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $family_id_ref;
-    my $temp_directory_ref;
-    my $outaligner_dir_ref;
-    my $xargs_file_counter;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $active_parameter_href;
-    my $sample_info_href;
-    my $file_info_href;
-    my $infile_lane_no_ending_href;
-    my $lane_href;
-    my $job_id_href;
-    my $sample_id_ref;
-    my $program_name;
-    my $program_info_path;
-    my $file_name;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
-	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
-	lane_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$lane_href},
-	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
-	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
-	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
-	program_info_path => { strict_type => 1, store => \$program_info_path},
-	file_name => { strict_type => 1, store => \$file_name},
-	FILEHANDLE => { store => \$FILEHANDLE},
-	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
-			   strict_type => 1, store => \$family_id_ref},
-	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
-				strict_type => 1, store => \$temp_directory_ref},
-	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
-				strict_type => 1, store => \$outaligner_dir_ref},
-	xargs_file_counter => { default => 0,
-				allow => qr/^\d+$/,
-				strict_type => 1, store => \$xargs_file_counter},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    use Program::Alignment::Sambamba qw(flagstat);
-
-    my $core_number = $active_parameter_href->{core_processor_number};
-    my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $lanes = join("",@{ $lane_href->{$$sample_id_ref} });  #Extract lanes
-
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 20;
-    my $xargs_file_name;
-
-    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
-
-	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    }
-
-    ## Assign directories
-    my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
-    my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
-    $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory;  #Used downstream
-
-    ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$sample_id_ref}{ppicardtools_mergesamfiles}{file_tag};
-    my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
-
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
-
-    ## Sums all mapped and duplicate reads and takes fraction of before finishing
-    my $regexp = q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$feature{dup} = $feature{dup} + $1} if($_=~/\d+\smapped/ && $_=~/^(\d+)/) {$feature{map} = $feature{map} + $1} } print "Read Mapped: ".$feature{map}."\nDuplicates: ".$feature{dup}."\n"."Fraction Duplicates: ".$feature{dup}/$feature{map}, "\n"; last;'?;
-
-    if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
-
-	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
-								  job_id_href => $job_id_href,
-								  FILEHANDLE => $FILEHANDLE,
-								  directory_id => $$sample_id_ref,
-								  program_name => $program_name,
-								  program_directory => lc($$outaligner_dir_ref),
-								  core_number => $core_number,
-								  process_time => $time,
-								  temp_directory => $$temp_directory_ref
-								 });
-
-	## Copy file(s) to temporary directory
-	say $FILEHANDLE "## Copy file(s) to temporary directory";
-	($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
-									      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									      contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-									      file_name =>$file_name,
-									      program_info_path => $program_info_path,
-									      core_number => $core_number,
-									      xargs_file_counter => $xargs_file_counter,
-									      infile => $infile.$infile_tag,
-									      indirectory => $insample_directory,
-									      file_ending => ".b*",
-									      temp_directory => $$temp_directory_ref,
-									     });
-    }
-
-    ## Marking Duplicates
-    say $FILEHANDLE "## Marking duplicates";
-
-    ## Create file commands for xargs
-    ($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
-							     XARGSFILEHANDLE => $XARGSFILEHANDLE,
-							     file_name => $file_name,
-							     program_info_path => $program_info_path,
-							     core_number => $core_number,
-							     xargs_file_counter => $xargs_file_counter,
-							     first_command => "java",
-							     memory_allocation => "Xmx4g",
-							     java_use_large_pages_ref => \$active_parameter_href->{java_use_large_pages},
-							     java_temporary_directory => $$temp_directory_ref,
-							     java_jar =>  $active_parameter_href->{picardtools_path}."/picard.jar",
-							    });
-    foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
-
-	print $XARGSFILEHANDLE "MarkDuplicates ";
-	print $XARGSFILEHANDLE "METRICS_FILE=".catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.".metric")." ";  #MetricFile
-	print $XARGSFILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
-	print $XARGSFILEHANDLE "INPUT=".catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.".bam")." ";;  #InFile
-	print $XARGSFILEHANDLE "OUTPUT=".catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.".bam")." ";  #OutFile
-	print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-	print $XARGSFILEHANDLE "; ";
-
-	## Process BAM with sambamba flagstat to produce metric file for downstream analysis
-	flagstat({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.".bam"),
-		  outfile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig."_metric"),
-		  stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
-		  FILEHANDLE => $XARGSFILEHANDLE,
-		 });
-	say $XARGSFILEHANDLE "\n";
-    }
-
-    ## Concatenate all metric files
-    print $FILEHANDLE "cat ";
-    print $FILEHANDLE catfile($$temp_directory_ref, $infile.$outfile_tag."_*_metric")." ";
-    say $FILEHANDLE "> ".catfile($$temp_directory_ref, $infile.$outfile_tag."_metric_all")." ", "\n";  #Metric file for all files
-
-    ## Sum metric over concatenated file
-    print $FILEHANDLE $regexp." ";
-    print $FILEHANDLE catfile($$temp_directory_ref, $infile.$outfile_tag."_metric_all")." ";
-    say $FILEHANDLE "> ".catfile($$temp_directory_ref, $infile.$outfile_tag."_metric")." ", "\n";  #Sum of all original metric files
-
-
-    migrate_file({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_metric"),
-		  outfile_path => $outsample_directory,
-		  FILEHANDLE => $FILEHANDLE,
-		 });
-    say $FILEHANDLE "wait", "\n";
-
-    if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
-
-	## Collect QC metadata info for later use
-	sample_info_qc({sample_info_href => $sample_info_href,
-			sample_id => $$sample_id_ref,
-			program_name => "markduplicates",
-			infile => $infile,
-			outdirectory => $outsample_directory,
-			outfile_ending => $outfile_tag."_metric",
-			outdata_type => "infile_dependent"
-		       });
-	$sample_info_href->{sample}{$$sample_id_ref}{program}{markduplicates}{$infile}{processed_by} = $program_name;  #markduplicates can be processed by either picardtools_markduplicates or Sambamba markduplicates
-
-	if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
-
-	    $sample_info_href->{sample}{$$sample_id_ref}{most_complete_bam}{path} = catfile($outsample_directory, $infile.$outfile_tag."_".$file_info_href->{contigs_size_ordered}[0].".bam");
-	}
-    }
-
-    if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
-
-	## Copies file from temporary directory. Per contig
-	say $FILEHANDLE "## Copy file from temporary directory";
-	($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
-									      XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									      contigs_ref => \@{ $file_info_href->{contigs_size_ordered} },
-									      file_name =>$file_name,
-									      program_info_path => $program_info_path,
-									      core_number => $core_number,
-									      xargs_file_counter => $xargs_file_counter,
-									      outfile => $infile.$outfile_tag,
-									      outdirectory => $outsample_directory,
-									      temp_directory => $$temp_directory_ref,
-									      file_ending => ".b*",
-									     });
-    }
-    else {
-
-	## Remove file at temporary Directory
-	remove_contig_files({file_elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
-			     FILEHANDLE => $FILEHANDLE,
-			     core_number => $core_number,
-			     file_name => $infile.$infile_tag,
-			     file_ending => ".b*",
-			     indirectory => $$temp_directory_ref,
-			    });
-    }
-
-    close($XARGSFILEHANDLE);
-
-    if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
-
-	close($FILEHANDLE);
-
-	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
-
-	    submit_job({active_parameter_href => $active_parameter_href,
-			sample_info_href => $sample_info_href,
-			job_id_href => $job_id_href,
-			infile_lane_no_ending_href => $infile_lane_no_ending_href,
-			sample_id => $$sample_id_ref,
-			dependencies => "case_dependency",
-			path => $parameter_href->{"p".$program_name}{chain},
-			sbatch_file_name => $file_name
-		       });
-	}
-    }
-    else {
-
-	return $xargs_file_counter;  #Track the number of created xargs scripts per module for Block algorithm
-    }
-}
-
-
-sub sambamba_markduplicates {
-
-##sambamba_markduplicates
-
-##Function : Mark duplicated reads using Sambamba markduplicates in files generated from alignment (sorted, merged).
+##Function : Mark duplicated reads using Picardtools markduplicates or Sambamba markduplicates in files generated from alignment (sorted, merged).
 ##Returns  : "|$xargs_file_counter"
 ##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $lane_href, $job_id_href, $sample_id_ref, $program_name, $program_info_path, $file_name,, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
@@ -13222,14 +12957,15 @@ sub sambamba_markduplicates {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Program::Alignment::Sambamba qw(flagstat);
+    use Program::Gnu::Coreutils qw(cat);
 
     my $core_number = $active_parameter_href->{core_processor_number};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $lanes = join("",@{ $lane_href->{$$sample_id_ref} });  #Extract lanes
 
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 20;
     my $xargs_file_name;
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
 
     unless (defined($FILEHANDLE)){ #Run as individual sbatch script
 
@@ -13245,11 +12981,17 @@ sub sambamba_markduplicates {
     my $infile_tag = $file_info_href->{$$sample_id_ref}{ppicardtools_mergesamfiles}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
+    ## Assign suffix
+    my $infile_suffix = $parameter_href->{alignment_suffix}{$jobid_chain};
+    my $outfile_suffix = $parameter_href->{alignment_suffix}{$jobid_chain};
+
     ## Add merged infile name after merging all BAM files per sample_id
     my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
     ## Sums all mapped and duplicate reads and takes fraction of before finishing
     my $regexp = q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$feature{dup} = $feature{dup} + $1} if($_=~/\d+\smapped/ && $_=~/^(\d+)/) {$feature{map} = $feature{map} + $1} } print "Read Mapped: ".$feature{map}."\nDuplicates: ".$feature{dup}."\n"."Fraction Duplicates: ".$feature{dup}/$feature{map}, "\n"; last;'?;
+
+    my $markduplicates_program;  #Store which program performed the markduplication
 
     if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
 
@@ -13261,7 +13003,7 @@ sub sambamba_markduplicates {
 								  program_name => $program_name,
 								  program_directory => lc($$outaligner_dir_ref),
 								  core_number => $core_number,
-								  process_time => $time,
+								  process_time => $active_parameter_href->{module_time}{"p".$program_name},
 								  temp_directory => $$temp_directory_ref
 								 });
 
@@ -13276,7 +13018,7 @@ sub sambamba_markduplicates {
 									      xargs_file_counter => $xargs_file_counter,
 									      infile => $infile.$infile_tag,
 									      indirectory => $insample_directory,
-									      file_ending => ".b*",
+									      file_ending => substr($infile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
 									      temp_directory => $$temp_directory_ref,
 									     });
     }
@@ -13284,41 +13026,93 @@ sub sambamba_markduplicates {
     ## Marking Duplicates
     say $FILEHANDLE "## Marking Duplicates";
 
-    ($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
-							     XARGSFILEHANDLE => $XARGSFILEHANDLE,
-							     file_name => $file_name,
-							     program_info_path => $program_info_path,
-							     core_number => $core_number,
-							     xargs_file_counter => $xargs_file_counter,
-							     first_command => "sambamba ",  #Program
-							    });
+    ##Picardtools
+    if ($active_parameter_href->{markduplicates_picardtools_markduplicates}) {
 
-    foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
+	$markduplicates_program = "picardtools_markduplicates";
 
-	print $XARGSFILEHANDLE "markdup ";
-	print $XARGSFILEHANDLE "--tmpdir=".$active_parameter_href->{temp_directory}." ";  #Directory for storing intermediate files
-	print $XARGSFILEHANDLE "--show-progress ";  #Show progressbar in STDERR
-	print $XARGSFILEHANDLE "--hash-table-size=".$active_parameter_href->{sambamba_markdup_hash_table_size}." ";  #Size of hash table for finding read pairs
-	print $XARGSFILEHANDLE "--overflow-list-size=".$active_parameter_href->{sambamba_markdup_overflow_list_size}." ";  #Size of the overflow list
-	print $XARGSFILEHANDLE "--io-buffer-size=".$active_parameter_href->{sambamba_markdup_io_buffer_size}." "; #Two buffers of BUFFER_SIZE *megabytes* each are used for reading and writing BAM during the second pass
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.".bam")." ";;  #InFile
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.".bam")." ";  #OutFile
-	print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-	print $XARGSFILEHANDLE "; ";
+	use Program::Alignment::Picardtools qw(markduplicates);
 
-	## Process BAM with sambamba flagstat to produce metric file for downstream analysis
-	flagstat({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.".bam"),
-		  outfile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig."_metric"),
-		  stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
-		  FILEHANDLE => $XARGSFILEHANDLE,
-		 });
-	say $XARGSFILEHANDLE "\n";
+	## Create file commands for xargs
+	($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
+								 XARGSFILEHANDLE => $XARGSFILEHANDLE,
+								 file_name => $file_name,
+								 program_info_path => $program_info_path,
+								 core_number => $core_number,
+								 xargs_file_counter => $xargs_file_counter,
+								 first_command => "java",
+								 memory_allocation => "Xmx4g",
+								 java_use_large_pages_ref => \$active_parameter_href->{java_use_large_pages},
+								 java_temporary_directory => $$temp_directory_ref,
+								 java_jar =>  $active_parameter_href->{picardtools_path}."/picard.jar",
+								});
+	
+	foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
+	    
+	    markduplicates({infile_paths_ref => [catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.$infile_suffix)],
+			    outfile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.$outfile_suffix),
+			    stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
+			    metrics_file => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.".metric"),
+			    FILEHANDLE => $XARGSFILEHANDLE,
+			    create_index => "true",
+			   });
+	    print $XARGSFILEHANDLE "; ";
+    
+	    ## Process BAM with sambamba flagstat to produce metric file for downstream analysis
+	    flagstat({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.$outfile_suffix),
+		      outfile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig."_metric"),
+		      stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
+		      FILEHANDLE => $XARGSFILEHANDLE,
+		     });
+	    say $XARGSFILEHANDLE "\n";
+	}
+    }
+
+    ## Sambamba
+    if ($active_parameter_href->{markduplicates_sambamba_markdup}) {
+
+	$markduplicates_program = "sambamba_markdup";
+
+	use Program::Alignment::Sambamba qw(markdup);
+
+	($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
+								 XARGSFILEHANDLE => $XARGSFILEHANDLE,
+								 file_name => $file_name,
+								 program_info_path => $program_info_path,
+								 core_number => $core_number,
+								 xargs_file_counter => $xargs_file_counter,
+								});
+
+	foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
+
+	    markdup({infile_path => catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.$infile_suffix),
+		     outfile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.$outfile_suffix),
+		     stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
+		     FILEHANDLE => $XARGSFILEHANDLE,
+		     temp_directory => $$temp_directory_ref,
+		     hash_table_size => $active_parameter_href->{markduplicates_sambamba_markdup_hash_table_size},
+		     overflow_list_size => $active_parameter_href->{markduplicates_sambamba_markdup_overflow_list_size},
+		     io_buffer_size => $active_parameter_href->{markduplicates_sambamba_markdup_io_buffer_size},
+		     show_progress => 1,
+		    });
+	    print $XARGSFILEHANDLE "; ";
+    
+	    ## Process BAM with sambamba flagstat to produce metric file for downstream analysis
+	    flagstat({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.$outfile_suffix),
+		      outfile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig."_metric"),
+		      stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
+		      FILEHANDLE => $XARGSFILEHANDLE,
+		     });
+	    say $XARGSFILEHANDLE "\n";
+	}
     }
 
     ## Concatenate all metric files
-    print $FILEHANDLE "cat ";
-    print $FILEHANDLE catfile($$temp_directory_ref, $infile.$outfile_tag."_*_metric")." ";
-    say $FILEHANDLE "> ".catfile($$temp_directory_ref, $infile.$outfile_tag."_metric_all")." ", "\n";  #Metric file for all files
+    cat({infile_paths_ref => [catfile($$temp_directory_ref, $infile.$outfile_tag."_*_metric")],
+	 outfile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_metric_all"),
+	 FILEHANDLE => $FILEHANDLE,
+	});
+    say $FILEHANDLE "\n";
 
     ## Sum metric over concatenated file
     print $FILEHANDLE $regexp." ";
@@ -13343,11 +13137,12 @@ sub sambamba_markduplicates {
 			outfile_ending => $outfile_tag."_metric",
 			outdata_type => "infile_dependent"
 		       });
-	$sample_info_href->{sample}{$$sample_id_ref}{program}{markduplicates}{$infile}{processed_by} = $program_name;  #markduplicates can be processed by either picardtools markduplicates or sambamba markduplicates
+	$sample_info_href->{sample}{$$sample_id_ref}{program}{markduplicates}{$infile}{processed_by} = $markduplicates_program;  #markduplicates can be processed by either picardtools markduplicates or sambamba markdup
 
 	if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
 
-	    $sample_info_href->{sample}{$$sample_id_ref}{most_complete_bam}{path} = catfile($outsample_directory, $infile.$outfile_tag."_".$file_info_href->{contigs_size_ordered}[0].".bam");
+	    my $most_complete_format_key = "most_complete_".substr($outfile_suffix, 1);
+	    $sample_info_href->{sample}{$$sample_id_ref}{$most_complete_format_key}{path} = catfile($outsample_directory, $infile.$outfile_tag."_".$file_info_href->{contigs_size_ordered}[0].$outfile_suffix);
 	}
     }
 
@@ -13365,7 +13160,7 @@ sub sambamba_markduplicates {
 									      outfile => $infile.$outfile_tag,
 									      outdirectory => $outsample_directory,
 									      temp_directory => $$temp_directory_ref,
-									      file_ending => ".b*",
+									      file_ending => substr($infile_suffix, 0, 2)."*",
 									     });
     }
     else {
@@ -13375,7 +13170,7 @@ sub sambamba_markduplicates {
 			     FILEHANDLE => $FILEHANDLE,
 			     core_number => $core_number,
 			     file_name => $infile.$infile_tag,
-			     file_ending => ".b*",
+			     file_ending => substr($infile_suffix, 0, 2)."*",
 			     indirectory => $$temp_directory_ref,
 			    });
     }
@@ -13394,7 +13189,7 @@ sub sambamba_markduplicates {
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
 			sample_id => $$sample_id_ref,
 			dependencies => "case_dependency",
-			path => $parameter_href->{"p".$program_name}{chain},
+			path => $jobid_chain,
 			sbatch_file_name => $file_name
 		       });
 	}
@@ -13477,6 +13272,10 @@ sub picardtools_mergesamfiles {
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    use Program::Alignment::Picardtools qw(mergesamfiles);
+    use Program::Gnu::Coreutils qw(mv);
+    use Program::Alignment::Samtools qw(index);
 
     my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
@@ -13577,25 +13376,24 @@ sub picardtools_mergesamfiles {
 								 java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
 								});
 
-	## Split per contig
+      CONTIG:
 	foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
 	  INFILES:
-	    while (my ($index, $infile) = each( @{ $infile_lane_no_ending_href->{$$sample_id_ref} } ) ) {
-
-		if(! $index) { #First round of loop
-
-		    print $XARGSFILEHANDLE "MergeSamFiles ";
-		    print $XARGSFILEHANDLE "USE_THREADING=TRUE "; #Create a background thread to encode, compress and write to disk the output file
-		    print $XARGSFILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
-		    print $XARGSFILEHANDLE "OUTPUT=".catfile($$temp_directory_ref, $$sample_id_ref."_lanes_".$lanes.$outfile_tag."_".$contig.$outfile_suffix)." ";  #OutFile
-		}
-		print $XARGSFILEHANDLE "INPUT=".catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.$infile_suffix)." ";  #InFile
-	    }
-	    say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    ## Assemble infile paths by adding directory and file ending
+	    my @infile_paths = map {catfile($$temp_directory_ref, $_).$infile_tag."_".$contig.$infile_suffix} @{ $infile_lane_no_ending_href->{$$sample_id_ref} };
+	    
+	    mergesamfiles({infile_paths_ref => \@infile_paths,
+			   outfile_path => catfile($$temp_directory_ref, $$sample_id_ref."_lanes_".$lanes.$outfile_tag."_".$contig.$outfile_suffix),
+			   stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
+			   threading => "true",
+			   create_index => "true",
+			   FILEHANDLE => $XARGSFILEHANDLE,
+			  });
+	    print $XARGSFILEHANDLE "\n";
 	}
     }
-    else {  #only 1 infile - rename sample instead of merge to streamline handling of filenames downstream
+    else {  #only 1 infile - rename sample and index instead of merge to streamline handling of filenames downstream
 
 	## Rename samples
 	say $FILEHANDLE "## Renaming sample instead of merge to streamline handling of filenames downstream";
@@ -13606,7 +13404,6 @@ sub picardtools_mergesamfiles {
 								 file_name => $file_name,
 								 program_info_path => $program_info_path,
 								 core_number => $core_number,
-								 first_command => "mv",
 								 xargs_file_counter => $xargs_file_counter,
 								});
 
@@ -13616,11 +13413,18 @@ sub picardtools_mergesamfiles {
 	  INFILES:
 	    foreach my $infile (@{ $infile_lane_no_ending_href->{$$sample_id_ref} }) {
 
-		print $XARGSFILEHANDLE catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.$infile_suffix)." ";  #InFile
-		print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$sample_id_ref."_lanes_".$lanes.$outfile_tag."_".$contig.$outfile_suffix)." ";  #OutFile
+		## Rename
+		mv({infile_path => catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.$infile_suffix),
+		    outfile_path => catfile($$temp_directory_ref, $$sample_id_ref."_lanes_".$lanes.$outfile_tag."_".$contig.$outfile_suffix),
+		    FILEHANDLE => $XARGSFILEHANDLE,
+		   });
 		print $XARGSFILEHANDLE "; ";
-		print $XARGSFILEHANDLE "samtools index ";
-		print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$sample_id_ref."_lanes_".$lanes.$outfile_tag."_".$contig.$outfile_suffix)." ";
+
+		## Index
+		Program::Alignment::Samtools::index({infile_path => catfile($$temp_directory_ref, $$sample_id_ref."_lanes_".$lanes.$outfile_tag."_".$contig.$outfile_suffix),
+						     bai_format => 1,
+						     FILEHANDLE => $XARGSFILEHANDLE,
+						    });
 	    }
 	    print $XARGSFILEHANDLE "\n";
 	}
@@ -13699,13 +13503,19 @@ sub picardtools_mergesamfiles {
 		    ## Split per contig
 		    foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
-			print $XARGSFILEHANDLE "MergeSamFiles ";
-			print $XARGSFILEHANDLE "USE_THREADING=TRUE "; #Create a background thread to encode, compress and write to disk the output file
-			print $XARGSFILEHANDLE "CREATE_INDEX=TRUE ";  #Create a BAM index when writing a coordinate-sorted BAM file.
-			print $XARGSFILEHANDLE "OUTPUT=".catfile($$temp_directory_ref, $$sample_id_ref."_lanes_".$merge_lanes.$lanes.$outfile_tag."_".$contig.$outfile_suffix)." ";  #OutFile
-			print $XARGSFILEHANDLE "INPUT=".catfile($$temp_directory_ref, $$sample_id_ref."_lanes_".$lanes.$outfile_tag."_".$contig.$outfile_suffix)." ";  #InFile from previous merge
-			print $XARGSFILEHANDLE "INPUT=".catfile($$temp_directory_ref, $picardtools_mergesamfiles_previous_bams_file_no_ending."_".$contig.$outfile_suffix)." ";  #$merge_lanes contains lane info on previous merge, $infile_lane_no_ending{$$sample_id_ref}[0] uses @RG for very first .bam file to include read group for subsequent merges. Complete path.
-			say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+			## Assemble infile paths by adding directory and file ending
+			my @infile_paths = (catfile($$temp_directory_ref, $$sample_id_ref."_lanes_".$lanes.$outfile_tag."_".$contig.$outfile_suffix),
+					    catfile($$temp_directory_ref, $picardtools_mergesamfiles_previous_bams_file_no_ending."_".$contig.$outfile_suffix)
+			    );
+			
+			mergesamfiles({infile_paths_ref => \@infile_paths,
+				       outfile_path => catfile($$temp_directory_ref, $$sample_id_ref."_lanes_".$merge_lanes.$lanes.$outfile_tag."_".$contig.$outfile_suffix),
+				       stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
+				       threading => "true",
+				       create_index => "true",
+				       FILEHANDLE => $XARGSFILEHANDLE,
+				      });
+			print $XARGSFILEHANDLE "\n";
 		    }
 
 		    if ( ! $$reduce_io_ref) {
@@ -13800,13 +13610,19 @@ sub picardtools_mergesamfiles {
 		## Split per contig
 		foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
-		    print $XARGSFILEHANDLE "MergeSamFiles ";
-		    print $XARGSFILEHANDLE "USE_THREADING=TRUE "; #Create a background thread to encode, compress and write to disk the output file
-		    print $XARGSFILEHANDLE "CREATE_INDEX=TRUE ";  #create a BAM index when writing a coordinate-sorted BAM file.
-		    print $XARGSFILEHANDLE "OUTPUT=".catfile($$temp_directory_ref, $$sample_id_ref."_lanes_".$merge_lanes.$lanes.$outfile_tag."_".$contig.$outfile_suffix)." ";  #OutFile
-		    print $XARGSFILEHANDLE "INPUT=".catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.$infile_suffix)." ";  #InFile
-		    print $XARGSFILEHANDLE "INPUT=".catfile($$temp_directory_ref, $picardtools_mergesamfiles_previous_bams_file_no_ending."_".$contig.$infile_suffix)." ";  #$merge_lanes contains lane info on previous merge, $infile_lane_no_ending{$$sample_id_ref}[0] uses @RG for very first .bam file to include read group for subsequent merges. Complete path.
-		    say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		    ## Assemble infile paths by adding directory and file ending
+			my @infile_paths = (catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.$infile_suffix),
+					    catfile($$temp_directory_ref, $picardtools_mergesamfiles_previous_bams_file_no_ending."_".$contig.$infile_suffix)
+			    );
+			
+			mergesamfiles({infile_paths_ref => \@infile_paths,
+				       outfile_path => catfile($$temp_directory_ref, $$sample_id_ref."_lanes_".$merge_lanes.$lanes.$outfile_tag."_".$contig.$outfile_suffix),
+				       stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
+				       threading => "true",
+				       create_index => "true",
+				       FILEHANDLE => $XARGSFILEHANDLE,
+				      });
+			print $XARGSFILEHANDLE "\n";
 		}
 
 		if ( ! $$reduce_io_ref) {
@@ -13879,7 +13695,7 @@ sub picardtools_mergesamfiles {
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
 			sample_id => $$sample_id_ref,
 			dependencies => "case_dependency",
-			path => $parameter_href->{"p".$program_name}{chain},
+			path => $jobid_chain,
 			sbatch_file_name => $file_name
 		       });
 	}
@@ -13933,6 +13749,8 @@ sub bwa_sampe {
     my $time=0;
     my $infile_size;
     my $paired_end_tracker = 0;
+
+    use Program::Alignment::Samtools qw(view);
 
     while ( my ($infile_no_ending_index, $infile_no_ending) = each (@{ $infile_lane_no_ending_href->{$sample_id} }) ) {  #For all files from BWA aln but process in the same command i.e. both reads per align call
 
@@ -14010,8 +13828,14 @@ sub bwa_sampe {
 
 	## Convert SAM to BAM using samtools view
 	say $FILEHANDLE "## Convert SAM to BAM";
-	print $FILEHANDLE "samtools view -bS ".catfile($active_parameter_href->{temp_directory}, $infile_no_ending.".sam")." ";  #Infile (SAM)
-	say $FILEHANDLE "> ".catfile($active_parameter_href->{temp_directory}, $infile_no_ending.".bam"), "\n";  #Outfile (BAM)
+	view({infile_path => catfile($active_parameter_href->{temp_directory}, $infile_no_ending.".sam"),
+	      outfile_path => catfile($active_parameter_href->{temp_directory}, $infile_no_ending.".bam"),
+	      FILEHANDLE => $FILEHANDLE,
+	      auto_detect_input_format => 1,
+	      with_header => 1,
+	      uncompressed_bam_output => 1,
+	     });
+	say $FILEHANDLE "\n";
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
@@ -14376,7 +14200,7 @@ sub bwa_mem {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Program::Alignment::Bwa qw(mem run_bwamem);
-    use Program::Alignment::Samtools qw(view);
+    use Program::Alignment::Samtools qw(view stats);
     use Program::Alignment::Sambamba qw(sort);
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -14399,6 +14223,12 @@ sub bwa_mem {
     ## Assign suffix
     my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
     $parameter_href->{alignment_suffix}{$jobid_chain} = $outfile_suffix;  #Set alignment file suffix for next module
+
+    my $uncompressed_bam_output;
+    if ($outfile_suffix eq ".bam") {
+	
+	$uncompressed_bam_output = 1;  #Used downstream in samtools view
+    }
 
     ## Collect fastq file(s) size and interleaved info
     while ( my ($infile_index, $infile_no_ending) = each(@{ $infile_lane_no_ending_href->{$$sample_id_ref} }) ) {
@@ -14509,11 +14339,13 @@ sub bwa_mem {
 		}
 
 		print $FILEHANDLE "| ";  #Pipe SAM to BAM conversion of aligned reads
-		print $FILEHANDLE "samtools view ";
-		print $FILEHANDLE "-S ";  #Input is SAM
-		print $FILEHANDLE "-h ";  #Print header for the SAM output
-		print $FILEHANDLE "-u ";  #Uncompressed BAM output
-		print $FILEHANDLE "- ";  #/dev/stdin
+		Program::Alignment::Samtools::view({infile_path => "-",
+						    FILEHANDLE => $FILEHANDLE,
+						    thread_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+						    auto_detect_input_format => 1,
+						    with_header => 1,
+						    uncompressed_bam_output => $uncompressed_bam_output,
+						   });
 		print $FILEHANDLE "| ";  #Pipe
 		print $FILEHANDLE "intersectBed ";  #Limit output to only clinically interesting genes
 		print $FILEHANDLE "-abam stdin ";  #The A input file is in BAM format.  Output will be BAM as well.
@@ -14612,12 +14444,6 @@ sub bwa_mem {
 
 	    if ($bwa_binary eq "bwa mem") {  #Prior to ALTs in reference genome
 
-		my $uncompressed_bam_output;
-		if ($outfile_suffix eq ".bam") {
-
-		    $uncompressed_bam_output = 1;
-		}
-
 		mem({infile_path => $fastq_file_path,
 		     second_infile_path => $second_fastq_file_path,
 		     idxbase => $active_parameter_href->{human_genome_reference},
@@ -14657,7 +14483,7 @@ sub bwa_mem {
 		say $FILEHANDLE "\n";
 
 		## Set sambamba sort input; Sort directly from run-bwakit
-		$sambamba_sort_infile = $file_path_no_ending.".aln.bam";
+		$sambamba_sort_infile = $file_path_no_ending.".aln".$outfile_suffix;
 	    }
 	    $paired_end_tracker++;
 
@@ -14700,9 +14526,13 @@ sub bwa_mem {
 	    
 	    if ($active_parameter_href->{bwa_mem_bamstats}) {
 
-		print $FILEHANDLE "samtools stats ";
-		print $FILEHANDLE $outfile_path_no_ending.$outfile_suffix." ";
+		stats({infile_path => $outfile_path_no_ending.$outfile_suffix,
+		       FILEHANDLE => $FILEHANDLE,
+		       auto_detect_input_format => 1,
+		      });
 		print $FILEHANDLE "| ";
+
+		## Add percentage mapped reads to samtools stats output
 		print $FILEHANDLE q?perl -ne '$raw; $map; chomp($_); print $_, "\n"; if($_=~/raw total sequences:\s+(\d+)/) {$raw = $1;} elsif($_=~/reads mapped:\s+(\d+)/) {$map = $1; $p = ($map / $raw ) * 100; print "percentage mapped reads:\t".$p."\n"}' ?;
 		say $FILEHANDLE "> ".$outfile_path_no_ending.".stats"." ", "\n";
 
@@ -14718,13 +14548,14 @@ sub bwa_mem {
 	    if ( ($active_parameter_href->{bwa_mem_cram}) && ($outfile_suffix ne ".cram") ) {
 
 		say $FILEHANDLE "## Create CRAM file from SAM|BAM";
-		print $FILEHANDLE "sambamba ";  #Program
-		print $FILEHANDLE "view ";  #Commmand
-		print $FILEHANDLE "-f cram "; #Write output to CRAM-format
-		print $FILEHANDLE "-h ";  #print header before reads
-		print $FILEHANDLE "-T ".$active_parameter_href->{human_genome_reference}." ";  #Reference
-		print $FILEHANDLE "--output-filename ".$outfile_path_no_ending.".cram"." ";
-		say $FILEHANDLE $outfile_path_no_ending.$outfile_suffix, "\n";
+		view({infile_path => $outfile_path_no_ending.$outfile_suffix,
+		      outfile_path => $outfile_path_no_ending.".cram",
+		      referencefile_path => $active_parameter_href->{human_genome_reference},
+		      output_format => "cram",
+		      FILEHANDLE => $FILEHANDLE,
+		      with_header => 1,
+		     });
+		say $FILEHANDLE "\n";
 
 		## Copies file from temporary directory.
 		say $FILEHANDLE "## Copy file from temporary directory";
@@ -15163,13 +14994,9 @@ sub bamcalibrationblock {
     ##Will also split alignment per contig and copy to temporary directory for '-rio 1' block to enable selective removal of block submodules.
     $log->info("\t[Picardtools mergesamfiles]\n");
 
-    if ($active_parameter{ppicardtools_markduplicates} > 0) {  #Picardtools markduplicates
+    if ($active_parameter{pmarkduplicates} > 0) {  #Markduplicates
 
-	$log->info("\t[Picardtools markduplicates]\n");
-    }
-    if ($active_parameter{psambamba_markduplicates} > 0) {  #Sambamba markduplicates
-
-	$log->info("\t[Sambamba markduplicates]\n");
+	$log->info("\t[Markduplicates]\n");
     }
     if ($active_parameter{pgatk_realigner} > 0) {  #Run GATK realignertargetcreator/indelrealigner
 
@@ -15231,39 +15058,22 @@ sub bamcalibrationblock {
 									     FILEHANDLE => $FILEHANDLE,
 									    });
 
-	if ($active_parameter{ppicardtools_markduplicates} > 0) {  #Picardtools markduplicates
+	if ($active_parameter{pmarkduplicates} > 0) {  #Markduplicates
 
-	    ($xargs_file_counter, $xargs_file_name) = picardtools_markduplicates({parameter_href => $parameter_href,
-										  active_parameter_href => $active_parameter_href,
-										  sample_info_href => $sample_info_href,
-										  file_info_href => $file_info_href,
-										  infile_lane_no_ending_href => $infile_lane_no_ending_href,
-										  lane_href => $lane_href,
-										  job_id_href => $job_id_href,
-										  sample_id_ref => \$sample_id,
-										  program_name => "picardtools_markduplicates",
-										  file_name => $file_name,
-										  program_info_path => $program_info_path,
-										  FILEHANDLE => $FILEHANDLE,
-										  xargs_file_counter => $xargs_file_counter,
-										 });
-	}
-	if ($active_parameter{psambamba_markduplicates} > 0) {  #Sambamba markduplicates
-
-	    ($xargs_file_counter, $xargs_file_name) = sambamba_markduplicates({parameter_href => $parameter_href,
-									       active_parameter_href => $active_parameter_href,
-									       sample_info_href => $sample_info_href,
-									       file_info_href => $file_info_href,
-									       infile_lane_no_ending_href => $infile_lane_no_ending_href,
-									       lane_href => $lane_href,
-									       job_id_href => $job_id_href,
-									       sample_id_ref => \$sample_id,
-									       program_name => "sambamba_markduplicates",
-									       file_name => $file_name,
-									       program_info_path => $program_info_path,
-									       FILEHANDLE => $FILEHANDLE,
-									       xargs_file_counter => $xargs_file_counter,
-									      });
+	    ($xargs_file_counter, $xargs_file_name) = pmarkduplicates({parameter_href => $parameter_href,
+								       active_parameter_href => $active_parameter_href,
+								       sample_info_href => $sample_info_href,
+								       file_info_href => $file_info_href,
+								       infile_lane_no_ending_href => $infile_lane_no_ending_href,
+								       lane_href => $lane_href,
+								       job_id_href => $job_id_href,
+								       sample_id_ref => \$sample_id,
+								       program_name => "markduplicates",
+								       file_name => $file_name,
+								       program_info_path => $program_info_path,
+								       FILEHANDLE => $FILEHANDLE,
+								       xargs_file_counter => $xargs_file_counter,
+								      });
 	}
 	if ($active_parameter{pgatk_realigner} > 0) {  #Run GATK realignertargetcreator/indelrealigner
 
@@ -16170,7 +15980,7 @@ sub build_ptchs_metric_prerequisites {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Coreutils qw(rm);
+    use Program::Gnu::Coreutils qw(rm cat);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger("MIP");
@@ -16217,12 +16027,13 @@ sub build_ptchs_metric_prerequisites {
 	print $FILEHANDLE "R=".$active_parameter_href->{human_genome_reference}." ";  #Reference genome
 	say $FILEHANDLE "OUTPUT=".$exome_target_bed_file_random.".dict", "\n";  #Output sequence dictionnary
 
-	say $FILEHANDLE "## Add target file to headers from sequenceDictionary";
-	print $FILEHANDLE "cat ";  #Concatenate
-	print $FILEHANDLE $exome_target_bed_file_random.".dict"." ";  #Sequence dictionnary
-	print $FILEHANDLE $exome_target_bed_file." ";  #Bed file
-	print $FILEHANDLE "> ";  #Write to
-	say $FILEHANDLE $exome_target_bed_file_random.".dict_body", "\n";  #Add bed body to dictionnary
+	say $FILEHANDLE "## Add target file to headers from sequence dictionary";
+	cat({infile_paths_ref => [$exome_target_bed_file_random.".dict",
+				  $exome_target_bed_file],
+	     outfile_path => $exome_target_bed_file_random.".dict_body",
+	     FILEHANDLE => $FILEHANDLE,
+	    });
+	say $FILEHANDLE "\n";
 
 	say $FILEHANDLE "#Remove target annotations, 'track', 'browse' and keep only 5 columns";
 	print $FILEHANDLE q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^browser/) {} else {print @F[0], "\t", (@F[1] + 1), "\t", @F[2], "\t", "+", "\t", "-", "\n";}' ?;
@@ -22491,6 +22302,7 @@ sub xargs_command {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Gnu::Coreutils qw(cat);
     use Program::Gnu::Findutils qw(xargs);
 
     ## Retrieve logger object
@@ -22504,7 +22316,10 @@ sub xargs_command {
 	$xargs_file_name = $program_info_path.".".$xargs_file_counter;
     }
 
-    print $FILEHANDLE "cat ".$file_name.".".$xargs_file_counter.".xargs ";  #Read xargs command file
+    ## Read xargs command file
+    cat({infile_paths_ref => [$file_name.".".$xargs_file_counter.".xargs"],
+	 FILEHANDLE => $FILEHANDLE,
+	});
     print $FILEHANDLE "| ";  #Pipe
 
     my $cmd_line;
@@ -22539,7 +22354,7 @@ sub split_bam {
 
 ##Function : Split BAM file per contig and index new BAM. Creates the command line for xargs. Writes to sbatch FILEHANDLE and opens xargs FILEHANDLE
 ##Returns  : ""
-##Arguments: $FILEHANDLE, $XARGSFILEHANDLE, $contigs_ref, $xargs_file_counter, $file_name, $program_info_path, $core_number, $first_command, $infile, $temp_directory_ref
+##Arguments: $FILEHANDLE, $XARGSFILEHANDLE, $contigs_ref, $xargs_file_counter, $file_name, $program_info_path, $core_number, $infile, $temp_directory_ref
 ##         : $active_parameter_href => The active parameters for this analysis hash {REF}
 ##         : $FILEHANDLE            => Sbatch filehandle to write to
 ##         : $XARGSFILEHANDLE       => XARGS filehandle to write to
@@ -22549,7 +22364,6 @@ sub split_bam {
 ##         : $file_name             => File name - ususally sbatch
 ##         : $program_info_path     => The program info path
 ##         : $core_number           => The number of cores to use
-##         : $first_command         => The inital command
 ##         : $infile                => The infile
 ##         : $temp_directory_ref    => The temporary directory
 
@@ -22584,11 +22398,11 @@ sub split_bam {
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
 				strict_type => 1, store => \$xargs_file_counter},
-	first_command => { default => "samtools ",
-			   strict_type => 1, store => \$first_command},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    use Program::Alignment::Samtools qw(view);
 
     my $xargs_file_name;
 
@@ -22598,20 +22412,21 @@ sub split_bam {
 							     file_name => $file_name,
 							     program_info_path => $program_info_path,
 							     core_number => $core_number,
-							     first_command => $first_command,
 							     xargs_file_counter => $xargs_file_counter,
 							    });
 
     ## Split by contig
     foreach my $contig (@$contigs_ref) {
-
-	print $XARGSFILEHANDLE "view ";
-	print $XARGSFILEHANDLE "-h "; #Include header
-	print $XARGSFILEHANDLE "-b ";  #BAM output
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $infile.".bam")." ";  #InFile
-	print $XARGSFILEHANDLE $contig." ";
-	print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $infile."_".$contig.".bam")." ";  #Write to file
-	print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	
+	view({infile_path => catfile($$temp_directory_ref, $infile.".bam"),
+	      outfile_path => catfile($$temp_directory_ref, $infile."_".$contig.".bam"),
+	      stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
+	      regions_ref => $contig,
+	      FILEHANDLE => $XARGSFILEHANDLE,
+	      auto_detect_input_format => 1,
+	      with_header => 1,
+	      uncompressed_bam_output => 1,
+	     });
 	print $XARGSFILEHANDLE "; ";  #Wait
 
 	## Writes java core commands to filehandle.
@@ -22636,7 +22451,7 @@ sub split_and_index_aligment_file {
 
 ##Function : Split alignemnt file per contig and index new file. Creates the command line for xargs. Writes to sbatch FILEHANDLE and opens xargs FILEHANDLE
 ##Returns  : ""
-##Arguments: $active_parameter_href, $contigs_ref, $FILEHANDLE, $XARGSFILEHANDLE, $memory_allocation, $file_name, $program_info_path, $core_number, $infile, $temp_directory_ref, $xargs_file_counter, $first_command, $output_format
+##Arguments: $active_parameter_href, $contigs_ref, $FILEHANDLE, $XARGSFILEHANDLE, $memory_allocation, $file_name, $program_info_path, $core_number, $infile, $temp_directory_ref, $xargs_file_counter, $output_format
 ##         : $active_parameter_href => The active parameters for this analysis hash {REF}
 ##         : $contigs_ref           => The contigs to process
 ##         : $FILEHANDLE            => Sbatch filehandle to write to
@@ -22648,14 +22463,12 @@ sub split_and_index_aligment_file {
 ##         : $infile                => The infile
 ##         : $temp_directory_ref    => The temporary directory
 ##         : $xargs_file_counter    => The xargs file counter
-##         : $first_command         => The inital command
 ##         : $output_format         => Output format
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $temp_directory_ref;
-    my $first_command;
     my $xargs_file_counter;
     my $output_format;
 
@@ -22683,8 +22496,6 @@ sub split_and_index_aligment_file {
 	xargs_file_counter => { default => 0,
 				allow => qr/^\d+$/,
 				strict_type => 1, store => \$xargs_file_counter},
-	first_command => { default => "sambamba",
-			   strict_type => 1, store => \$first_command},
 	output_format => { default => "bam",
 			   strict_type => 1, store => \$output_format},
     };
@@ -23257,7 +23068,7 @@ sub add_to_sample_info {
 	    $sample_info_href->{program}{picardtools}{version} = $ret;
 	}
     }
-    if ( ($active_parameter_href->{pbwa_mem} == 1) || ($active_parameter_href->{psambamba_depth} == 1) || ($active_parameter_href->{psambamba_markduplicates} == 1)) {  #To enable addition of version to sample_info as Sambamba does nit generate version tag in output
+    if ( ($active_parameter_href->{pbwa_mem} == 1) || ($active_parameter_href->{psambamba_depth} == 1) || ($active_parameter_href->{markduplicates_sambamba_markdup} == 1)) {  #To enable addition of version to sample_info as Sambamba does not generate version tag in output
 
 	if (! $active_parameter_href->{dry_run_all}) {
 

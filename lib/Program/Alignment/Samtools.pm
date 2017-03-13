@@ -20,7 +20,7 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(view);
+    our @EXPORT_OK = qw(view index stats);
 
 }
 
@@ -86,9 +86,10 @@ sub view {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    ## Samtools
+    ## Samtools view
     my @commands = qw(samtools view);  #Stores commands depending on input parameters
 
+    ## Options
     if ($thread_number) {
 
 	push(@commands, "--threads ".$thread_number);  #Number of threads
@@ -112,6 +113,131 @@ sub view {
     if ($uncompressed_bam_output) {
 
 	push(@commands, "-u");
+    }
+
+    ## Infile
+    push(@commands, $infile_path);
+
+    if(@$regions_ref) {  #Limit output to regions
+
+	push(@commands, join(" ", @{ $regions_ref }));
+    }
+    if ($stderrfile_path) {
+
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
+sub index {
+
+##index
+
+##Function : Perl wrapper for writing samtools index recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
+##Returns  : "@commands"
+##Arguments: $infile_path, $stderrfile_path, $FILEHANDLE, $bai_format
+##         : $infile_path     => Infile path
+##         : $stderrfile_path => Stderrfile path
+##         : $FILEHANDLE      => Sbatch filehandle to write to
+##         : $bai_format      => Generate BAI-format index for BAM files
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile_path;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $FILEHANDLE;
+    my $bai_format;
+    
+    my $tmpl = {
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path },
+	outfile_path => { strict_type => 1, store => \$outfile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
+	bai_format => { strict_type => 1, store => \$bai_format },
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## Samtools index
+    my @commands = qw(samtools index);  #Stores commands depending on input parameters
+
+    ## Options
+    if ($bai_format) {
+
+	push(@commands, "-b");  #Generate BAI-format index for BAM files
+    }
+
+    ## Infile
+    push(@commands, $infile_path);
+
+    if ($stderrfile_path) {
+
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
+sub stats {
+
+##stats
+
+##Function : Perl wrapper for writing samtools stats recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
+##Returns  : "@commands"
+##Arguments: $regions_ref, $infile_path, $outfile_path, $stderrfile_path, $FILEHANDLE, $auto_detect_input_format
+##         : $regions_ref              => The regions to process {REF}
+##         : $infile_path              => Infile path
+##         : $outfile_path             => Outfile path
+##         : $stderrfile_path          => Stderrfile path
+##         : $FILEHANDLE               => Sbatch filehandle to write to
+##         : $auto_detect_input_format => Ignored (input format is auto-detected)
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $auto_detect_input_format;
+
+    ## Flatten argument(s)
+    my $regions_ref;
+    my $infile_path;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $FILEHANDLE;
+    
+    my $tmpl = {
+	regions_ref => { default => [], strict_type => 1, store => \$regions_ref },
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path },
+	outfile_path => { strict_type => 1, store => \$outfile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
+	auto_detect_input_format => { default => 0,
+				      allow => [0, 1],
+				      strict_type => 1, store => \$auto_detect_input_format },
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## Samtools stats
+    my @commands = qw(samtools stats);  #Stores commands depending on input parameters
+
+    if ($auto_detect_input_format) {
+
+	push(@commands, "-s");
+    }
+    if ($outfile_path) {
+	
+	push(@commands, "> ".$outfile_path);  #Specify output filename
     }
 
     ## Infile

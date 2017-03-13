@@ -98,6 +98,7 @@ module_time:
     pmadeline: 1
     pbwa_mem: 30
     ppicardtools_mergesamfiles: 20
+    pmarkduplicates: 20
     ptiddit: 20
   type: mip
 module_core_number:
@@ -111,6 +112,7 @@ module_core_number:
     pmadeline: 1
     pbwa_mem: 16
     ppicardtools_mergesamfiles: 16
+    pmarkduplicates: 16
     ptiddit: 1
   type: mip
 supported_capture_kit:
@@ -482,7 +484,7 @@ picardtools_mergesamfiles_previous_bams:
   data_type: ARRAY
   mandatory: no
   type: path
-ppicardtools_markduplicates:
+pmarkduplicates:
   associated_program:
    - mip
   chain: MAIN
@@ -496,35 +498,33 @@ ppicardtools_markduplicates:
   remove_redundant_file: yes
   remove_redundant_file_setting: merged
   type: program
-psambamba_markduplicates:
+markduplicates_picardtools_markduplicates:
   associated_program:
-   - mip
-  chain: MAIN
+   - pmarkduplicates
+  data_type: SCALAR
+  default: 1
+  type: program_argument
+markduplicates_sambamba_markdup:
+  associated_program:
+   - pmarkduplicates
   data_type: SCALAR
   default: 0
-  file_tag: _md
-  program_name_path:
-   - sambamba
-  file_endings:
-   - .bam
-  remove_redundant_file: yes
-  remove_redundant_file_setting: merged
-  type: program
-sambamba_markdup_hash_table_size:
-  associated_program:
-   - psambamba_markduplicates
-  data_type: SCALAR
-  default: 500000
   type: program_argument
-sambamba_markdup_overflow_list_size:
+markduplicates_sambamba_markdup_hash_table_size:
   associated_program:
-   - psambamba_markduplicates
+   - pmarkduplicates
   data_type: SCALAR
-  default: 500000
+  default: 262144
   type: program_argument
-sambamba_markdup_io_buffer_size:
+markduplicates_sambamba_markdup_overflow_list_size:
   associated_program:
-   - psambamba_markduplicates
+   - pmarkduplicates
+  data_type: SCALAR
+  default: 200000
+  type: program_argument
+markduplicates_sambamba_markdup_io_buffer_size:
+  associated_program:
+   - pmarkduplicates
   data_type: SCALAR
   default: 2048
   type: program_argument
