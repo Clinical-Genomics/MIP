@@ -60,7 +60,7 @@ BEGIN {
            -cnvn/--cnvnator Set the cnvnator version (Default: 0.3.3)
            -cnvnr/--cnvnator_root_binary Set the cnvnator root binary (Default: "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz")
            -tid/--tiddit Set the tiddit version (Default: "1.0.1")
-           -svdb/--svdb Set the svdb version (Default: "0.1.2")
+           -svdb/--svdb Set the svdb version (Default: "1.0.1")
 
            ## Utility
            -psh/--prefer_shell Shell will be used for overlapping shell and biconda installations (Supply flag to enable)
@@ -141,7 +141,7 @@ $parameter{rhocall_path} = catdir($ENV{HOME}, "rhocall");
 $parameter{cnvnator} = "0.3.3";
 $parameter{cnvnator_root_binary} = "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz";
 $parameter{tiddit} = "1.0.2";
-$parameter{svdb} = "0.1.2"; 
+$parameter{svdb} = "1.0.1"; 
 
 ## Define default parameters
 my %array_parameter;
@@ -2307,7 +2307,12 @@ sub svdb {
 
     ## Install
     print $FILEHANDLE "## Install\n";
-    print $FILEHANDLE "python setup.py install";
+    print $FILEHANDLE "python setup.py ";
+    if ($parameter_href->{quiet}) {
+	
+	print $FILEHANDLE "-q ";
+    }
+    print $FILEHANDLE "install";
     print $FILEHANDLE "\n\n";
 
     ## Go back to subroutine origin

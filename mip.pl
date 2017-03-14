@@ -12646,14 +12646,15 @@ sub gatk_realigner {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $core_number = $active_parameter_href->{core_processor_number};
+    use Program::Alignment::Gatk qw(realignertargetcreator indelrealigner);
+
+    my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $analysis_type_ref = \$active_parameter_href->{analysis_type}{$$sample_id_ref};
-    my $gatk_temporary_directory = catfile($$temp_directory_ref, "gatk", "intermediary");
 
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 20;
     my $xargs_file_name;
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
 
     unless (defined($FILEHANDLE)){ #Run as individual sbatch script
 
@@ -12667,30 +12668,30 @@ sub gatk_realigner {
 								  program_name => $program_name,
 								  program_directory => catfile(lc($$outaligner_dir_ref)),
 								  core_number => $core_number,
-								  process_time => 40,
-								  temp_directory => $gatk_temporary_directory
+								  process_time => $active_parameter_href->{module_time}{"p".$program_name},
+								  temp_directory => $$temp_directory_ref,
 								 });
-    }
-    else {
-
-	## Create GATK intermediary directory
-	say $FILEHANDLE "## Create GATK intermediary directory";
-	Program::Gnu::Coreutils::mkdir({indirectory_path => $gatk_temporary_directory,
-					parents => 1,
-					FILEHANDLE => $FILEHANDLE,
-				       });
-	say $FILEHANDLE "\n";
     }
 
     ## Assign directories
     my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
-    my $intermediary_sample_directory = $gatk_temporary_directory;
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
     $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory;  #Used downstream
+
+    ## Add merged infile name after merging all BAM files per sample_id
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$sample_id_ref}{pmarkduplicates}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_no_ending = $infile.$infile_tag;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $outfile_no_ending = $infile.$outfile_tag;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+
+    ## Assign suffix
+    my $infile_suffix = $parameter_href->{alignment_suffix}{$jobid_chain};
+    my $outfile_suffix = $parameter_href->{alignment_suffix}{$jobid_chain};
 
     ## Get exome_target_bed file for specfic sample_id and add file_ending from file_infoHash if supplied
     my $exome_target_bed_file = get_exom_target_bed_file({active_parameter_href => $active_parameter_href,
@@ -12709,9 +12710,6 @@ sub gatk_realigner {
 	$exome_target_bed_file = basename($exome_target_bed_file);  #Reroute to only filename
     }
 
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
-
     if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
 
 	## Copy file(s) to temporary directory
@@ -12723,9 +12721,9 @@ sub gatk_realigner {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      infile => $infile.$infile_tag,
+									      infile => $infile_no_ending,
 									      indirectory => $insample_directory,
-									      file_ending => ".b*",
+									      file_ending => substr($infile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
 									      temp_directory => $$temp_directory_ref,
 									     });
     }
@@ -12755,27 +12753,29 @@ sub gatk_realigner {
     ## Process per contig
     foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
-	print $XARGSFILEHANDLE "-T RealignerTargetCreator ";  #Type of analysis to run
-	print $XARGSFILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	print $XARGSFILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-	print $XARGSFILEHANDLE "-known ".join(" -known ", (@{ $active_parameter_href->{gatk_realigner_indel_known_sites} }) )." ";  #Input VCF file(s) with known indels
-	print $XARGSFILEHANDLE "-dcov ".$active_parameter_href->{gatk_downsample_to_coverage}." ";  #Coverage to downsample to at any given locus
-
-	if ($active_parameter_href->{gatk_disable_auto_index_and_file_lock}) {
-
-	    print $XARGSFILEHANDLE "--disable_auto_index_creation_and_locking_when_reading_rods ";  #Disables index auto-creation and related file locking when reading vcfs
-	}
+	## Get parameters
+	my @intervals;
 	if ( ($$analysis_type_ref eq "wes") || ($$analysis_type_ref eq "rapid") ) { #Exome/rapid analysis
 
-	    print $XARGSFILEHANDLE "-L ".catfile($$temp_directory_ref, $contig."_".$exome_target_bed_file)." "; #Limit to targets kit target file
+	    @intervals = (catfile($$temp_directory_ref, $contig."_".$exome_target_bed_file));
 	}
 	else {  #wgs
 
-	    print $XARGSFILEHANDLE "-L ".$contig." ";  #Per contig
+	    @intervals = ($contig);  #Per contig
 	}
-	print $XARGSFILEHANDLE "-I ".catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.".bam")." ";  #InFile
-	print $XARGSFILEHANDLE "-o ".catfile($intermediary_sample_directory, $infile.$outfile_tag."_".$contig.".intervals")." ";  #Interval outfile
-	say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+
+	realignertargetcreator({known_alleles_ref => \@{ $active_parameter_href->{gatk_realigner_indel_known_sites} },
+				intervals_ref => \@intervals,
+				infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
+				outfile_path => $outfile_path_no_ending."_".$contig.".intervals",
+				stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
+				referencefile_path => $active_parameter_href->{human_genome_reference},
+				logging_level => "INFO",
+				downsample_to_coverage => $active_parameter_href->{gatk_downsample_to_coverage},
+				gatk_disable_auto_index_and_file_lock => $active_parameter_href->{gatk_disable_auto_index_and_file_lock},
+				FILEHANDLE => $XARGSFILEHANDLE,
+			       });
+	say $XARGSFILEHANDLE "\n";
     }
 
     ## GATK IndelRealigner
@@ -12798,30 +12798,30 @@ sub gatk_realigner {
     ## Process per contig
     foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
-	print $XARGSFILEHANDLE "-T IndelRealigner ";
-	print $XARGSFILEHANDLE "-l INFO ";
-	print $XARGSFILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-	print $XARGSFILEHANDLE "-known ".join(" -known ", (@{ $active_parameter_href->{gatk_realigner_indel_known_sites} }) )." ";  #Input VCF file(s) with known indels
-	print $XARGSFILEHANDLE "-dcov ".$active_parameter_href->{gatk_downsample_to_coverage}." ";  #Coverage to downsample to at any given locus
-	print $XARGSFILEHANDLE "--consensusDeterminationModel USE_READS ";  #Additionally uses indels already present in the original alignments of the reads
-	print $XARGSFILEHANDLE "-targetIntervals ".catfile($intermediary_sample_directory, $infile.$outfile_tag."_".$contig.".intervals")." ";
-
-	if ($active_parameter_href->{gatk_disable_auto_index_and_file_lock}) {
-
-	    print $XARGSFILEHANDLE "--disable_auto_index_creation_and_locking_when_reading_rods ";  #Disables index auto-creation and related file locking when reading vcfs
-	}
+	## Get parameters
+	my @intervals;
 	if ( ($$analysis_type_ref eq "wes") || ($$analysis_type_ref eq "rapid") ) { #Exome/rapid analysis
 
-	    print $XARGSFILEHANDLE "-L ".catfile($$temp_directory_ref, $contig."_".$exome_target_bed_file)." "; #Limit to targets kit target file
+	    @intervals = (catfile($$temp_directory_ref, $contig."_".$exome_target_bed_file));
 	}
 	else {  #wgs
 
-	    print $XARGSFILEHANDLE "-L ".$contig." ";  #Per contig
+	    @intervals = ($contig);  #Per contig
 	}
 
-	print $XARGSFILEHANDLE "-I ".catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.".bam")." ";  #InFile per contig
-	print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.".bam")." ";  #OutFile
-	say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	indelrealigner({known_alleles_ref => \@{ $active_parameter_href->{gatk_realigner_indel_known_sites} },
+			intervals_ref => \@intervals,
+			infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
+			outfile_path => $outfile_path_no_ending ."_".$contig.$outfile_suffix,
+			target_intervals_file => $outfile_path_no_ending."_".$contig.".intervals",
+			stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
+			referencefile_path => $active_parameter_href->{human_genome_reference},
+			logging_level => "INFO",
+			downsample_to_coverage => $active_parameter_href->{gatk_downsample_to_coverage},
+			gatk_disable_auto_index_and_file_lock => $active_parameter_href->{gatk_disable_auto_index_and_file_lock},
+			FILEHANDLE => $XARGSFILEHANDLE,
+		       });
+	say $XARGSFILEHANDLE "\n";
     }
 
     if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
@@ -12835,15 +12835,16 @@ sub gatk_realigner {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      outfile => $infile.$outfile_tag,
+									      outfile => $outfile_no_ending,
 									      outdirectory => $outsample_directory,
 									      temp_directory => $$temp_directory_ref,
-									      file_ending => ".b*",
+									      file_ending => substr($infile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
 									     });
 
 	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
-	    $sample_info_href->{sample}{$$sample_id_ref}{most_complete_bam}{path} = catfile($outsample_directory, $infile.$outfile_tag.".bam");
+	    my $most_complete_format_key = "most_complete_".substr($outfile_suffix, 1);
+	    $sample_info_href->{sample}{$$sample_id_ref}{$most_complete_format_key}{path} = catfile($outsample_directory, $outfile_no_ending.$outfile_suffix);
 	}
     }
     else {
@@ -12852,8 +12853,8 @@ sub gatk_realigner {
 	remove_contig_files({file_elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
 			     FILEHANDLE => $FILEHANDLE,
 			     core_number => $core_number,
-			     file_name => $infile.$infile_tag,
-			     file_ending => ".b*",
+			     file_name => $infile_no_ending,
+			     file_ending => substr($infile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
 			     indirectory => $$temp_directory_ref,
 			    });
     }
@@ -12959,7 +12960,7 @@ sub pmarkduplicates {
     use Program::Alignment::Sambamba qw(flagstat);
     use Program::Gnu::Coreutils qw(cat);
 
-    my $core_number = $active_parameter_href->{core_processor_number};
+    my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $lanes = join("",@{ $lane_href->{$$sample_id_ref} });  #Extract lanes
 
@@ -12977,16 +12978,20 @@ sub pmarkduplicates {
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
     $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory;  #Used downstream
 
+    ## Add merged infile name after merging all BAM files per sample_id
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
+
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$sample_id_ref}{ppicardtools_mergesamfiles}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_no_ending = $infile.$infile_tag;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $outfile_no_ending = $infile.$outfile_tag;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
     ## Assign suffix
     my $infile_suffix = $parameter_href->{alignment_suffix}{$jobid_chain};
     my $outfile_suffix = $parameter_href->{alignment_suffix}{$jobid_chain};
-
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
     ## Sums all mapped and duplicate reads and takes fraction of before finishing
     my $regexp = q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$feature{dup} = $feature{dup} + $1} if($_=~/\d+\smapped/ && $_=~/^(\d+)/) {$feature{map} = $feature{map} + $1} } print "Read Mapped: ".$feature{map}."\nDuplicates: ".$feature{dup}."\n"."Fraction Duplicates: ".$feature{dup}/$feature{map}, "\n"; last;'?;
@@ -13016,7 +13021,7 @@ sub pmarkduplicates {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      infile => $infile.$infile_tag,
+									      infile => $infile_no_ending,
 									      indirectory => $insample_directory,
 									      file_ending => substr($infile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
 									      temp_directory => $$temp_directory_ref,
@@ -13049,18 +13054,18 @@ sub pmarkduplicates {
 	
 	foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 	    
-	    markduplicates({infile_paths_ref => [catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.$infile_suffix)],
-			    outfile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.$outfile_suffix),
+	    markduplicates({infile_paths_ref => [$file_path_no_ending."_".$contig.$infile_suffix],
+			    outfile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
 			    stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
-			    metrics_file => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.".metric"),
+			    metrics_file => $outfile_path_no_ending."_".$contig.".metric",
 			    FILEHANDLE => $XARGSFILEHANDLE,
 			    create_index => "true",
 			   });
 	    print $XARGSFILEHANDLE "; ";
     
 	    ## Process BAM with sambamba flagstat to produce metric file for downstream analysis
-	    flagstat({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.$outfile_suffix),
-		      outfile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig."_metric"),
+	    flagstat({infile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
+		      outfile_path => $outfile_path_no_ending."_".$contig."_metric",
 		      stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 		      FILEHANDLE => $XARGSFILEHANDLE,
 		     });
@@ -13085,8 +13090,8 @@ sub pmarkduplicates {
 
 	foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
-	    markdup({infile_path => catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.$infile_suffix),
-		     outfile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.$outfile_suffix),
+	    markdup({infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
+		     outfile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
 		     stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 		     FILEHANDLE => $XARGSFILEHANDLE,
 		     temp_directory => $$temp_directory_ref,
@@ -13098,8 +13103,8 @@ sub pmarkduplicates {
 	    print $XARGSFILEHANDLE "; ";
     
 	    ## Process BAM with sambamba flagstat to produce metric file for downstream analysis
-	    flagstat({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.$outfile_suffix),
-		      outfile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig."_metric"),
+	    flagstat({infile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
+		      outfile_path => $outfile_path_no_ending."_".$contig."_metric",
 		      stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 		      FILEHANDLE => $XARGSFILEHANDLE,
 		     });
@@ -13108,19 +13113,19 @@ sub pmarkduplicates {
     }
 
     ## Concatenate all metric files
-    cat({infile_paths_ref => [catfile($$temp_directory_ref, $infile.$outfile_tag."_*_metric")],
-	 outfile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_metric_all"),
+    cat({infile_paths_ref => [$outfile_path_no_ending."_*_metric"],
+	 outfile_path => $outfile_path_no_ending."_metric_all",
 	 FILEHANDLE => $FILEHANDLE,
 	});
     say $FILEHANDLE "\n";
 
     ## Sum metric over concatenated file
     print $FILEHANDLE $regexp." ";
-    print $FILEHANDLE catfile($$temp_directory_ref, $infile.$outfile_tag."_metric_all")." ";
-    say $FILEHANDLE "> ".catfile($$temp_directory_ref, $infile.$outfile_tag."_metric")." ", "\n";  #Sum of all original metric files
+    print $FILEHANDLE $outfile_path_no_ending."_metric_all"." ";
+    say $FILEHANDLE "> ".$outfile_path_no_ending."_metric"." ", "\n";  #Sum of all original metric files
 
 
-    migrate_file({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."_metric"),
+    migrate_file({infile_path => $outfile_path_no_ending."_metric",
 		  outfile_path => $outsample_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -13142,7 +13147,7 @@ sub pmarkduplicates {
 	if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
 
 	    my $most_complete_format_key = "most_complete_".substr($outfile_suffix, 1);
-	    $sample_info_href->{sample}{$$sample_id_ref}{$most_complete_format_key}{path} = catfile($outsample_directory, $infile.$outfile_tag."_".$file_info_href->{contigs_size_ordered}[0].$outfile_suffix);
+	    $sample_info_href->{sample}{$$sample_id_ref}{$most_complete_format_key}{path} = catfile($outsample_directory, $outfile_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$outfile_suffix);
 	}
     }
 
@@ -13157,7 +13162,7 @@ sub pmarkduplicates {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      outfile => $infile.$outfile_tag,
+									      outfile => $outfile_no_ending,
 									      outdirectory => $outsample_directory,
 									      temp_directory => $$temp_directory_ref,
 									      file_ending => substr($infile_suffix, 0, 2)."*",
@@ -13169,7 +13174,7 @@ sub pmarkduplicates {
 	remove_contig_files({file_elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
 			     FILEHANDLE => $FILEHANDLE,
 			     core_number => $core_number,
-			     file_name => $infile.$infile_tag,
+			     file_name => $infile_no_ending,
 			     file_ending => substr($infile_suffix, 0, 2)."*",
 			     indirectory => $$temp_directory_ref,
 			    });

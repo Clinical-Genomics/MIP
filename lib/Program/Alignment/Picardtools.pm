@@ -60,7 +60,7 @@ sub mergesamfiles {
 	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
 	FILEHANDLE => { store => \$FILEHANDLE },
 	create_index => { allow => ["true", "false"],
-			   strict_type => 1, store => \$threading },
+			   strict_type => 1, store => \$create_index },
 	threading => { allow => ["true", "false"],
 		       strict_type => 1, store => \$threading },
 	regionsfile_path => { strict_type => 1, store => \$regionsfile_path },
@@ -125,8 +125,6 @@ sub markduplicates {
     my $stderrfile_path;
     my $create_index;
     my $FILEHANDLE;
-    my $threading;
-    my $regionsfile_path;
     
     my $tmpl = {
 	infile_paths_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$infile_paths_ref},
@@ -134,11 +132,8 @@ sub markduplicates {
 	metrics_file => { required => 1, defined => 1, strict_type => 1, store => \$metrics_file },
 	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
 	create_index => { allow => ["true", "false"],
-			   strict_type => 1, store => \$threading },
+			   strict_type => 1, store => \$create_index },
 	FILEHANDLE => { store => \$FILEHANDLE },
-	threading => { allow => ["true", "false"],
-		       strict_type => 1, store => \$threading },
-	regionsfile_path => { strict_type => 1, store => \$regionsfile_path },
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];

@@ -63,11 +63,11 @@ sub merge {
     ## Options
     if ($priority) {
 
-	push(@commands, "-priority ".$priority);  #Priority order of structural variant calls
+	push(@commands, "--priority ".$priority);  #Priority order of structural variant calls
     }
 
     ## Infile
-    push(@commands, "-vcf ".join(" ", @{ $infile_paths_ref }));
+    push(@commands, "--vcf ".join(" ", @{ $infile_paths_ref }));
 
     if ($outfile_path) {
 

@@ -99,6 +99,7 @@ module_time:
     pbwa_mem: 30
     ppicardtools_mergesamfiles: 20
     pmarkduplicates: 20
+    pgatk_realigner: 20
     ptiddit: 20
   type: mip
 module_core_number:
@@ -113,6 +114,7 @@ module_core_number:
     pbwa_mem: 16
     ppicardtools_mergesamfiles: 16
     pmarkduplicates: 16
+    pgatk_realigner: 16
     ptiddit: 1
   type: mip
 supported_capture_kit:
