@@ -100,6 +100,7 @@ module_time:
     ppicardtools_mergesamfiles: 20
     pmarkduplicates: 20
     pgatk_realigner: 20
+    pgatk_baserecalibration: 20
     ptiddit: 20
   type: mip
 module_core_number:
@@ -115,6 +116,7 @@ module_core_number:
     ppicardtools_mergesamfiles: 16
     pmarkduplicates: 16
     pgatk_realigner: 16
+    pgatk_baserecalibration: 16
     ptiddit: 1
   type: mip
 supported_capture_kit:
@@ -589,11 +591,13 @@ gatk_baserecalibration_known_sites:
   exists_check: file
   reference: reference_dir
   type: path
-gatk_baserecalibration_over_clipped_read:
+gatk_baserecalibration_read_filters:
   associated_program:
    - pgatk_baserecalibration
-  data_type: SCALAR
-  default: 1
+  element_separator: ,
+  data_type: ARRAY
+  default:
+   - OverclippedRead
   type: program_argument
 gatk_baserecalibration_disable_indel_qual:
   associated_program:

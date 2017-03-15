@@ -215,7 +215,7 @@ BEGIN {
                -pgbr/--pgatk_baserecalibration Recalibration of bases using GATK BaseReCalibrator/PrintReads (defaults to "1" (=yes))
                  -gbrcov/--gatk_baserecalibration_covariates GATK BaseReCalibration covariates (defaults to "ReadGroupCovariate", "ContextCovariate", "CycleCovariate", "QualityScoreCovariate")
                  -gbrkst/--gatk_baserecalibration_known_sites GATK BaseReCalibration known SNV and INDEL sites (defaults to "GRCh37_dbsnp_-138-.vcf", "GRCh37_1000g_indels_-phase1-.vcf", "GRCh37_mills_and_1000g_indels_-gold_standard-.vcf")
-                 -gbrocr/--gatk_baserecalibration_over_clipped_read Filter out reads that are over-soft-clipped (defaults to "1" (=yes))
+                 -gbrrf/--gatk_baserecalibration_read_filters Filter out reads according to set filter (defaults to "1" (=yes))
                  -gbrdiq/--gatk_baserecalibration_disable_indel_qual Disable indel quality scores (defaults to "1" (=yes))
                  -gbrsqq/--gatk_baserecalibration_static_quantized_quals Static binning of base quality scores (defaults to "10,20,30,40"; comma sep)
                -pghc/--pgatk_haplotypecaller Variant discovery using GATK HaplotypeCaller (defaults to "1" (=yes))
@@ -520,7 +520,7 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'pgbr|pgatk_baserecalibration=n' => \$parameter{pgatk_baserecalibration}{value},  #GATK baserecalibrator/printreads
 	   'gbrcov|gatk_baserecalibration_covariates:s' => \@{ $parameter{gatk_baserecalibration_covariates}{value} },  #Comma separated list
 	   'gbrkst|gatk_baserecalibration_known_sites:s' => \@{ $parameter{gatk_baserecalibration_known_sites}{value} },  #Comma separated list
-	   'gbrocr|gatk_baserecalibration_over_clipped_read=n' => \$parameter{gatk_baserecalibration_over_clipped_read}{value},  #Filter out reads that are over-soft-clipped
+	   'gbrrf|gatk_baserecalibration_read_filters=s' => \@{ $parameter{gatk_baserecalibration_read_filters}{value} },  #Filter out reads
 	   'gbrdiq|gatk_baserecalibration_disable_indel_qual=n' => \$parameter{gatk_baserecalibration_disable_indel_qual}{value},  #Disable indel quality scores
 	   'gbrsqq|gatk_baserecalibration_static_quantized_quals:s' => \@{ $parameter{gatk_baserecalibration_static_quantized_quals}{value} },  #Comma separated list
 	   'pghc|pgatk_haplotypecaller=n' => \$parameter{pgatk_haplotypecaller}{value},  #GATK Haplotypecaller
@@ -12299,16 +12299,17 @@ sub gatk_baserecalibration {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Alignment::Gatk qw(baserecalibrator printreads);
+    use Program::Alignment::Picardtools qw(gatherbamfiles);
     use Program::Gnu::Coreutils qw(rm);
 
-    my $core_number = $active_parameter_href->{core_processor_number};
+    my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $analysis_type_ref = \$active_parameter_href->{analysis_type}{$$sample_id_ref};
-    my $gatk_temporary_directory = catfile($$temp_directory_ref, "gatk", "intermediary");
 
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 20;
     my $xargs_file_name;
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
 
     unless (defined($FILEHANDLE)){ #Run as individual sbatch script
 
@@ -12322,30 +12323,30 @@ sub gatk_baserecalibration {
 								  program_name => $program_name,
 								  program_directory => catfile(lc($$outaligner_dir_ref)),
 								  core_number => $core_number,
-								  process_time => 50,
-								  temp_directory => $gatk_temporary_directory,
+								  process_time => $active_parameter_href->{module_time}{"p".$program_name},
+								  temp_directory => $$temp_directory_ref,
 								 });
-    }
-    else {
-
-	## Create GATK intermediary directory
-	say $FILEHANDLE "## Create GATK intermediary directory";
-	Program::Gnu::Coreutils::mkdir({indirectory_path => $gatk_temporary_directory,
-					parents => 1,
-					FILEHANDLE => $FILEHANDLE,
-				       });
-	say $FILEHANDLE "\n";
     }
 
     ## Assign directories
     my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
-    my $intermediary_sample_directory = $gatk_temporary_directory;
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
     $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory;  #Used downstream
+
+    ## Add merged infile name after merging all BAM files per sample_id
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_realigner}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_no_ending = $infile.$infile_tag;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $outfile_no_ending = $infile.$outfile_tag;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+
+    ## Assign suffix
+    my $infile_suffix = $parameter_href->{alignment_suffix}{$jobid_chain};
+    my $outfile_suffix = $parameter_href->{alignment_suffix}{$jobid_chain};
 
     ## Alias exome_target_bed endings
     my $infile_list_ending_ref = \$file_info_href->{exome_target_bed}[0];
@@ -12368,9 +12369,6 @@ sub gatk_baserecalibration {
 	$exome_target_bed_file = basename($exome_target_bed_file).".intervals";  #Add required GATK ending and reroute to only filename
     }
 
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
-
     if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
 
 	## Copy file(s) to temporary directory
@@ -12382,9 +12380,9 @@ sub gatk_baserecalibration {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      infile => $infile.$infile_tag,
+									      infile => $infile_no_ending,
 									      indirectory => $insample_directory,
-									      file_ending => ".b*",
+									      file_ending => substr($infile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
 									      temp_directory => $$temp_directory_ref,
 									     });
     }
@@ -12414,30 +12412,31 @@ sub gatk_baserecalibration {
     ## Process per contig
     foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
-	print $XARGSFILEHANDLE "-T BaseRecalibrator ";  #Type of analysis to run
-	print $XARGSFILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	print $XARGSFILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-	print $XARGSFILEHANDLE "-cov ".join(" -cov ", (@{ $active_parameter_href->{gatk_baserecalibration_covariates} }) )." ";  #Covariates to be used in the recalibration
-	print $XARGSFILEHANDLE "-knownSites ".join(" -knownSites ", (@{ $active_parameter_href->{gatk_baserecalibration_known_sites} }) )." ";
-	print $XARGSFILEHANDLE "-nct ".$active_parameter_href->{core_processor_number}." ";  #How many CPU threads should be allocated per data thread to running this analysis
-	print $XARGSFILEHANDLE "-dcov ".$active_parameter_href->{gatk_downsample_to_coverage}." ";  #Coverage to downsample to at any given locus
-
-	if ($active_parameter_href->{gatk_disable_auto_index_and_file_lock}) {
-
-	    print $XARGSFILEHANDLE "--disable_auto_index_creation_and_locking_when_reading_rods ";  #Disables index auto-creation and related file locking when reading vcfs
-	}
+	## Get parameters
+	my @intervals;
 	if ( ($$analysis_type_ref eq "wes") || ($$analysis_type_ref eq "rapid") ) { #Exome/rapid analysis
 
-	    print $XARGSFILEHANDLE "-L ".catfile($$temp_directory_ref, $contig."_".$exome_target_bed_file)." "; #Limit to targets kit target file
+	    @intervals = (catfile($$temp_directory_ref, $contig."_".$exome_target_bed_file));  #Limit to targets kit target file
 	}
 	else {  #wgs
 
-	    print $XARGSFILEHANDLE "-L ".$contig." ";  #Per contig
+	    @intervals = ($contig);  #Per contig
 	}
 
-	print $XARGSFILEHANDLE "-I ".catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.".bam")." ";  #InFile
-	print $XARGSFILEHANDLE "-o ".catfile($intermediary_sample_directory, $infile.$infile_tag."_".$contig.".grp")." ";  #Recalibration table file
-	say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	baserecalibrator({known_alleles_ref => \@{ $active_parameter_href->{gatk_baserecalibration_known_sites} },
+			  intervals_ref => \@intervals,
+			  covariates_ref => \@{ $active_parameter_href->{gatk_baserecalibration_covariates} },
+			  infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
+			  outfile_path => $file_path_no_ending."_".$contig.".grp",
+			  stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
+			  referencefile_path => $active_parameter_href->{human_genome_reference},
+			  logging_level => "INFO",
+			  downsample_to_coverage => $active_parameter_href->{gatk_downsample_to_coverage},
+			  gatk_disable_auto_index_and_file_lock => $active_parameter_href->{gatk_disable_auto_index_and_file_lock},
+			  num_cpu_threads_per_data_thread => $active_parameter_href->{core_processor_number},
+			  FILEHANDLE => $XARGSFILEHANDLE,
+			 });
+	say $XARGSFILEHANDLE "\n";
     }
 
     ## GATK PrintReads
@@ -12460,44 +12459,33 @@ sub gatk_baserecalibration {
     ## Process per contig
     foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
-	print $XARGSFILEHANDLE "-T PrintReads ";  #Type of analysis to run
-	print $XARGSFILEHANDLE "-l INFO ";  #Set the minimum level of logging"
-	print $XARGSFILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-	print $XARGSFILEHANDLE "-nct ".$active_parameter_href->{core_processor_number}." ";  #How many CPU threads should be allocated per data thread to running this analysis
-	print $XARGSFILEHANDLE "-dcov ".$active_parameter_href->{gatk_downsample_to_coverage}." ";  #Coverage to downsample to at any given locus
-
-	if ($active_parameter_href->{gatk_disable_auto_index_and_file_lock}) {
-
-	    print $XARGSFILEHANDLE "--disable_auto_index_creation_and_locking_when_reading_rods ";  #Disables index auto-creation and related file locking when reading vcfs
-	}
-
-	print $XARGSFILEHANDLE "-BQSR ".catfile($intermediary_sample_directory, $infile.$infile_tag."_".$contig.".grp")." ";  #Recalibration table file
-
-	##Extra read filters
-	if ($active_parameter_href->{gatk_baserecalibration_over_clipped_read}) {
-
-	    print $XARGSFILEHANDLE "-rf OverclippedRead ";  #Filter out reads that are over-soft-clipped
-	}
-	foreach my $level (@{ $active_parameter_href->{gatk_baserecalibration_static_quantized_quals} }) {
-
-	    print $XARGSFILEHANDLE "--static_quantized_quals ".$level." ";  #Use discrete levels of quality base recalibration
-	}
-	if ($active_parameter_href->{gatk_baserecalibration_disable_indel_qual}) {
-
-	    print $XARGSFILEHANDLE "--disable_indel_quals  ";  #Do not recalibrate indel base quality (should be done for Pacbio reads)
-	}
+	## Get parameters
+	my @intervals;
 	if ( ($$analysis_type_ref eq "wes") || ($$analysis_type_ref eq "rapid") ) { #Exome/rapid analysis
 
-	    print $XARGSFILEHANDLE "-L ".catfile($$temp_directory_ref, $contig."_".$exome_target_bed_file)." "; #Limit to targets kit target file
+	    @intervals = (catfile($$temp_directory_ref, $contig."_".$exome_target_bed_file));  #Limit to targets kit target file
 	}
 	else {  #wgs
 
-	    print $XARGSFILEHANDLE "-L ".$contig." ";  #Per contig
+	    @intervals = ($contig);  #Per contig
 	}
 
-	print $XARGSFILEHANDLE "-I ".catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.".bam")." ";  #InFile per contig
-	print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.".bam")." ";  #OutFile
-	say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	printreads({intervals_ref => \@intervals,
+		    read_filters_ref => \@{ $active_parameter_href->{gatk_baserecalibration_read_filters} },
+		    base_quality_score_recalibration_file => $file_path_no_ending."_".$contig.".grp",
+		    static_quantized_quals_ref => \@{ $active_parameter_href->{gatk_baserecalibration_static_quantized_quals} },
+		    disable_indel_qual => $active_parameter_href->{gatk_baserecalibration_disable_indel_qual},
+		    infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
+		    outfile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
+		    stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
+		    referencefile_path => $active_parameter_href->{human_genome_reference},
+		    logging_level => "INFO",
+		    downsample_to_coverage => $active_parameter_href->{gatk_downsample_to_coverage},
+		    gatk_disable_auto_index_and_file_lock => $active_parameter_href->{gatk_disable_auto_index_and_file_lock},
+		    num_cpu_threads_per_data_thread => $active_parameter_href->{core_processor_number},
+		    FILEHANDLE => $XARGSFILEHANDLE,
+		   });
+	say $XARGSFILEHANDLE "\n";
     }
 
     ## Copies file from temporary directory. Per contig for variant callers.
@@ -12509,10 +12497,10 @@ sub gatk_baserecalibration {
 									  program_info_path => $program_info_path,
 									  core_number => $core_number,
 									  xargs_file_counter => $xargs_file_counter,
-									  outfile => $infile.$outfile_tag,
+									  outfile => $outfile_no_ending,
 									  outdirectory => $outsample_directory,
 									  temp_directory => $$temp_directory_ref,
-									  file_ending => ".b*",
+									  file_ending => substr($infile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
 									 });
 
     if ($$reduce_io_ref) {  #Run as block sbatch script
@@ -12521,41 +12509,58 @@ sub gatk_baserecalibration {
 	remove_contig_files({file_elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
 			     FILEHANDLE => $FILEHANDLE,
 			     core_number => $core_number,
-			     file_name => $infile.$infile_tag,
-			     file_ending => ".b*",
+			     file_name => $infile_no_ending,
+			     file_ending => substr($infile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
 			     indirectory => $$temp_directory_ref,
 			    });
     }
 
-    ## Concatenates BAMs
-    gather_bam_files({active_parameter_href => $active_parameter_href,
-		      elements_ref => \@{ $file_info_href->{contigs} },
-		      FILEHANDLE => $FILEHANDLE,
-		      infile => $infile.$outfile_tag,
-		      create_index => "FALSE",
-		     });
+    ## Gather BAM files
+    say $FILEHANDLE "## Gather BAM files";
+
+    ## Assemble infile paths by adding directory and file ending
+    my @infile_paths = map { catfile($$temp_directory_ref, $outfile_no_ending."_".$_.$outfile_suffix) } @{ $file_info_href->{contigs } };
+
+    ## Writes java core commands to filehandle.
+    java_core({FILEHANDLE => $FILEHANDLE,
+	       memory_allocation => "Xmx4g",
+	       java_use_large_pages_ref => \$active_parameter_href->{java_use_large_pages},
+	       java_temporary_directory => $$temp_directory_ref,
+	       java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
+	      });
+
+    gatherbamfiles({infile_paths_ref => \@infile_paths,
+		    outfile_path => catfile($$temp_directory_ref, $outfile_no_ending.$outfile_suffix),
+		    create_index => "false",
+		    FILEHANDLE => $FILEHANDLE,
+		   });
+    say $FILEHANDLE "\n";
 
     ## Create BAM index (temporary fix to accomodate Pilup.Js bug)
-    print $FILEHANDLE "\nsamtools index ";
-    say $FILEHANDLE catfile($$temp_directory_ref, $infile.$outfile_tag.".bam")."\n";
+    Program::Alignment::Samtools::index({infile_path => $outfile_path_no_ending.$outfile_suffix,
+					 bai_format => 1,
+					 FILEHANDLE => $FILEHANDLE,
+					});
+    say $FILEHANDLE "\n";
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag.".b*"),
+    migrate_file({infile_path => $outfile_path_no_ending.substr($infile_suffix, 0, 2)."*",
 		  outfile_path => $outsample_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
     say $FILEHANDLE "wait", "\n";
 
     ## Remove concatenated BAM file at temporary directory
-    rm({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag.".b*"),
+    rm({infile_path => $outfile_path_no_ending.substr($infile_suffix, 0, 2)."*",
 	force => 1,
 	FILEHANDLE => $FILEHANDLE,
        });
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
-	$sample_info_href->{sample}{$$sample_id_ref}{most_complete_bam}{path} = catfile($outsample_directory, $infile.$outfile_tag.".bam");
+	my $most_complete_format_key = "most_complete_".substr($outfile_suffix, 1);
+	$sample_info_href->{sample}{$$sample_id_ref}{$most_complete_format_key}{path} = catfile($outsample_directory, $outfile_no_ending.$outfile_suffix);
     }
 
     close($XARGSFILEHANDLE);
@@ -12570,7 +12575,7 @@ sub gatk_baserecalibration {
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
 		   });
     }
@@ -12757,7 +12762,7 @@ sub gatk_realigner {
 	my @intervals;
 	if ( ($$analysis_type_ref eq "wes") || ($$analysis_type_ref eq "rapid") ) { #Exome/rapid analysis
 
-	    @intervals = (catfile($$temp_directory_ref, $contig."_".$exome_target_bed_file));
+	    @intervals = (catfile($$temp_directory_ref, $contig."_".$exome_target_bed_file));  #Limit to targets kit target file
 	}
 	else {  #wgs
 
@@ -12802,7 +12807,7 @@ sub gatk_realigner {
 	my @intervals;
 	if ( ($$analysis_type_ref eq "wes") || ($$analysis_type_ref eq "rapid") ) { #Exome/rapid analysis
 
-	    @intervals = (catfile($$temp_directory_ref, $contig."_".$exome_target_bed_file));
+	    @intervals = (catfile($$temp_directory_ref, $contig."_".$exome_target_bed_file));  #Limit to targets kit target file
 	}
 	else {  #wgs
 
@@ -13386,7 +13391,7 @@ sub picardtools_mergesamfiles {
 
 	  INFILES:
 	    ## Assemble infile paths by adding directory and file ending
-	    my @infile_paths = map {catfile($$temp_directory_ref, $_).$infile_tag."_".$contig.$infile_suffix} @{ $infile_lane_no_ending_href->{$$sample_id_ref} };
+	    my @infile_paths = map { catfile($$temp_directory_ref, $_).$infile_tag."_".$contig.$infile_suffix } @{ $infile_lane_no_ending_href->{$$sample_id_ref} };
 	    
 	    mergesamfiles({infile_paths_ref => \@infile_paths,
 			   outfile_path => catfile($$temp_directory_ref, $$sample_id_ref."_lanes_".$lanes.$outfile_tag."_".$contig.$outfile_suffix),
@@ -14515,7 +14520,7 @@ sub bwa_mem {
 
 		## Copies file from temporary directory.
 		say $FILEHANDLE "## Copy file from temporary directory";
-		my @outfiles = ($outfile_path_no_ending.".b*",
+		my @outfiles = ($outfile_path_no_ending.substr($outfile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
 				$file_path_no_ending.".log*",
 				$file_path_no_ending.".hla*",
 		    );
@@ -22086,65 +22091,6 @@ sub add_capture_kit {
 	    return $capture_kit;
 	}
     }
-}
-
-sub gather_bam_files {
-
-##gather_bam_files
-
-##Function : Concatenates BAMs. Writes to sbatch FILEHANDLE
-##Returns  : ""
-##Arguments: $active_parameter_href, $elements_ref, $FILEHANDLE, $infile, $create_index, $temp_directory_ref
-##         : $active_parameter_href => Holds all set parameter for analysis
-##         : $elements_ref          => The array of splits to gather
-##         : $FILEHANDLE            => Filehandle to write to
-##         : $infile                => The infile
-##         : $create_index          => Create index
-##         : $temp_directory_ref    => The temporary directory {REF}
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $temp_directory_ref;
-    my $create_index;
-
-    ## Flatten argument(s)
-    my $active_parameter_href;
-    my $elements_ref;
-    my $FILEHANDLE;
-    my $infile;
-
-    my $tmpl = {
-	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	elements_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$elements_ref},
-	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	infile => { required => 1, defined => 1, strict_type => 1, store => \$infile},
-	create_index => { default => "TRUE",
-			  strict_type => 1, store => \$create_index},
-	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
-				strict_type => 1, store => \$temp_directory_ref},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    say $FILEHANDLE "## gather_bam_files";
-
-    ## Writes java core commands to filehandle.
-    java_core({FILEHANDLE => $FILEHANDLE,
-	       memory_allocation => "Xmx4g",
-	       java_use_large_pages_ref => \$active_parameter_href->{java_use_large_pages},
-	       java_temporary_directory => $$temp_directory_ref,
-	       java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
-	      });
-
-    print $FILEHANDLE "GatherBamFiles ";
-    print $FILEHANDLE "CREATE_INDEX=".$create_index." ";  #Create a BAM index when writing a coordinate-sorted BAM file.
-
-    for (my $elementsCounter=0;$elementsCounter<scalar(@$elements_ref);$elementsCounter++) {
-
-	print $FILEHANDLE "INPUT=".catfile($$temp_directory_ref, $infile."_".$elements_ref->[$elementsCounter].".bam")." ";
-    }
-    say $FILEHANDLE "OUTPUT=".catfile($$temp_directory_ref, $infile.".bam")." ";
 }
 
 

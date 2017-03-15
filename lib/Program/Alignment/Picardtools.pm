@@ -20,7 +20,7 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(mergesamfiles markduplicates);
+    our @EXPORT_OK = qw(mergesamfiles markduplicates gatherbamfiles);
 
 }
 
@@ -60,7 +60,7 @@ sub mergesamfiles {
 	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
 	FILEHANDLE => { store => \$FILEHANDLE },
 	create_index => { allow => ["true", "false"],
-			   strict_type => 1, store => \$create_index },
+			  strict_type => 1, store => \$create_index },
 	threading => { allow => ["true", "false"],
 		       strict_type => 1, store => \$threading },
 	regionsfile_path => { strict_type => 1, store => \$regionsfile_path },
@@ -132,7 +132,7 @@ sub markduplicates {
 	metrics_file => { required => 1, defined => 1, strict_type => 1, store => \$metrics_file },
 	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
 	create_index => { allow => ["true", "false"],
-			   strict_type => 1, store => \$create_index },
+			  strict_type => 1, store => \$create_index },
 	FILEHANDLE => { store => \$FILEHANDLE },
     };
 
@@ -145,6 +145,65 @@ sub markduplicates {
 
 	push(@commands, "METRICS_FILE=".$metrics_file);  #File to write duplication metrics to
     }
+    if ($create_index) {
+
+	push(@commands, "CREATE_INDEX=".$create_index);
+    }
+
+    ## Infile
+    push(@commands, "INPUT=".join(" INPUT=", @$infile_paths_ref));
+
+    ## Output
+    push(@commands, "OUTPUT=".$outfile_path);  #Specify output filename
+
+    if ($stderrfile_path) {
+
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
+sub gatherbamfiles {
+
+##gatherbamfiles
+
+##Function : Perl wrapper for writing picardtools gatherbamfiles recipe to $FILEHANDLE. Based on picardtools 2.5.0.
+##Returns  : "@commands"
+##Arguments: $infile_paths_ref, $outfile_path, $stderrfile_path, $FILEHANDLE, $create_index
+##         : $infile_paths_ref => Infile paths {REF}
+##         : $outfile_path     => Outfile path
+##         : $stderrfile_path  => Stderrfile path
+##         : $FILEHANDLE       => Sbatch filehandle to write to
+##         : $create_index     => Create index
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile_paths_ref;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $FILEHANDLE;
+    my $create_index;
+    
+    my $tmpl = {
+	infile_paths_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$infile_paths_ref},
+	outfile_path => { required => 1, defined => 1, strict_type => 1, store => \$outfile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
+	create_index => { allow => ["true", "false"],
+			  strict_type => 1, store => \$create_index },
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## Picardtools gatherbamfiles
+    my @commands = qw(GatherBamFiles);  #Stores commands depending on input parameters
+
     if ($create_index) {
 
 	push(@commands, "CREATE_INDEX=".$create_index);
