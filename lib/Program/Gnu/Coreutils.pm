@@ -20,7 +20,7 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(cp rm mv mkdir cat split);
+    our @EXPORT_OK = qw(cp rm mv mkdir cat echo split);
 
 }
 
@@ -67,12 +67,16 @@ sub cp {
 	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
 	FILEHANDLE => { store => \$FILEHANDLE },
 	recursive => { default => 0,
+		       allow => [0, 1],
 		       strict_type => 1, store => \$recursive },
 	force => { default => 0,
+		   allow => [0, 1],
 		   strict_type => 1, store => \$force },
 	preserve => { default => 0,
+		      allow => [0, 1],
 		      strict_type => 1, store => \$preserve },
 	verbose => { default => 0,
+		     allow => [0, 1],
 		     strict_type => 1, store => \$verbose },
     };
     
@@ -148,8 +152,10 @@ sub mv {
 	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
 	FILEHANDLE => { store => \$FILEHANDLE },
 	force => { default => 0,
+		   allow => [0, 1],
 		   strict_type => 1, store => \$force },
 	verbose => { default => 0,
+		     allow => [0, 1],
 		     strict_type => 1, store => \$verbose },
     };
     
@@ -212,10 +218,13 @@ sub rm {
 	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
 	FILEHANDLE => { store => \$FILEHANDLE },
 	recursive => { default => 0,
+		       allow => [0, 1],
 		       strict_type => 1, store => \$recursive },
 	force => { default => 0,
+		   allow => [0, 1],
 		   strict_type => 1, store => \$force },
 	verbose => { default => 0,
+		     allow => [0, 1],
 		     strict_type => 1, store => \$verbose },
     };
     
@@ -281,8 +290,10 @@ sub mkdir {
 	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
 	FILEHANDLE => { store => \$FILEHANDLE },
 	parents => { default => 0,
+		     allow => [0, 1],
 		     strict_type => 1, store => \$parents },
 	verbose => { default => 0,
+		     allow => [0, 1],
 		     strict_type => 1, store => \$verbose },
     };
     
@@ -349,6 +360,78 @@ sub cat {
 
     ## Infiles
     push(@commands, join(" ", @$infile_paths_ref));
+
+    ## Outfile
+    if ($outfile_path) {
+
+	push(@commands, "> ".$outfile_path);
+    }
+    if ($stderrfile_path) {
+
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
+sub echo {
+
+##echo
+
+##Function : Perl wrapper for writing echo recipe to already open $FILEHANDLE or return commands array. Based on echo 8.4
+##Returns  : "@commands"
+##Arguments: $strings_ref, $outfile_path, $stderrfile_path, $FILEHANDLE, $enable_interpretation, $no_trailing_newline
+##         : $strings_ref           => Strings to echo {REF}
+##         : $outfile_path          => Outfile path
+##         : $stderrfile_path       => Stderrfile path
+##         : $FILEHANDLE            => Filehandle to write to
+##         : $enable_interpretation => Enable interpretation of backslash escapes
+##         : $no_trailing_newline   => Do not output the trailing newline
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $strings_ref;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $FILEHANDLE;
+    my $enable_interpretation;
+    my $no_trailing_newline;
+
+    my $tmpl = { 
+	strings_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$strings_ref },
+	outfile_path => { strict_type => 1, store => \$outfile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
+	enable_interpretation => { default => 0,
+				   allow => [0, 1],
+				   strict_type => 1, store => \$enable_interpretation },
+	no_trailing_newline => { default => 0,
+				   allow => [0, 1],
+				   strict_type => 1, store => \$no_trailing_newline },
+    };
+    
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## Echo
+    my @commands = qw(echo);  #Stores commands depending on input parameters
+
+    ##Options
+    if ($enable_interpretation) {
+
+	push(@commands, "-e");
+    }
+    if ($no_trailing_newline) {
+
+	push(@commands, "-n");
+    }
+
+    ## Strings
+    push(@commands, q?" ?.join(" ", @$strings_ref).q? "?);
 
     ## Outfile
     if ($outfile_path) {

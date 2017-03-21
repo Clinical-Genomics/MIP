@@ -38,7 +38,6 @@ use List::Util qw(any all);
 use lib catdir($Bin, "lib");  #Add MIPs internal lib
 use Check::Check_modules qw(check_modules);
 use File::Format::Yaml qw(load_yaml write_yaml);
-use File::Parse::Parse qw(find_absolute_path);
 use MIP_log::Log4perl qw(initiate_logger);
 use Script::Utils qw(help);
 
@@ -221,7 +220,7 @@ BEGIN {
                -pghc/--pgatk_haplotypecaller Variant discovery using GATK HaplotypeCaller (defaults to "1" (=yes))
                  -ghcann/--gatk_haplotypecaller_annotation GATK HaploTypeCaller annotations (defaults to "BaseQualityRankSumTest", "ChromosomeCounts", "Coverage", "DepthPerAlleleBySample", "FisherStrand", "MappingQualityRankSumTest", "QualByDepth", "RMSMappingQuality", "ReadPosRankSumTest", "StrandOddsRatio")
                  -ghckse/--gatk_haplotypecaller_snp_known_set GATK HaplotypeCaller dbSNP set for annotating ID columns (defaults to "GRCh37_dbsnp_-138-.vcf")
-                 -ghcscb/--gatk_haplotypecaller_soft_clipped_bases Do not include soft clipped bases in the variant calling (defaults to "1" (=yes))
+                 -ghcscb/--gatk_haplotypecaller_no_soft_clipped_bases Do not include soft clipped bases in the variant calling (defaults to "1" (=yes))
                  -ghcpim/--gatk_haplotypecaller_pcr_indel_model The PCR indel model to use (defaults to "None"; Set to "0" to disable)
                -pggt/--pgatk_genotypegvcfs Merge gVCF records using GATK GenotypeGVCFs (defaults to "1" (=yes))
                  -ggtgrl/--gatk_genotypegvcfs_ref_gvcf GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping (defaults to "")
@@ -526,7 +525,7 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'pghc|pgatk_haplotypecaller=n' => \$parameter{pgatk_haplotypecaller}{value},  #GATK Haplotypecaller
 	   'ghcann|gatk_haplotypecaller_annotation:s' => \@{ $parameter{gatk_haplotypecaller_annotation}{value} },  #Comma separated list
 	   'ghckse|gatk_haplotypecaller_snp_known_set:s' => \$parameter{gatk_haplotypecaller_snp_known_set}{value},  #Known SNP set to be used in GATK HaplotypeCaller
-	   'ghcscb|gatk_haplotypecaller_soft_clipped_bases=n' => \$parameter{gatk_haplotypecaller_soft_clipped_bases}{value},  #Do not include soft clipped bases in the variant calling
+	   'ghcscb|gatk_haplotypecaller_no_soft_clipped_bases=n' => \$parameter{gatk_haplotypecaller_no_soft_clipped_bases}{value},  #Do not include soft clipped bases in the variant calling
 	   'ghcpim|gatk_haplotypecaller_pcr_indel_model:s' => \$parameter{gatk_haplotypecaller_pcr_indel_model}{value},  #The PCR indel model to use
 	   'pggt|pgatk_genotypegvcfs=n' => \$parameter{pgatk_genotypegvcfs}{value},  #Merge gVCF records using GATK GenotypeGVCFs
 	   'ggtgrl|gatk_genotypegvcfs_ref_gvcf:s' => \$parameter{gatk_genotypegvcfs_ref_gvcf}{value},  #GATK GenoTypeGVCFs gVCF reference infile list for joint genotyping
@@ -5595,11 +5594,10 @@ sub gatk_phasebytransmission {
     print $FILEHANDLE "-V: ".catfile($active_parameter_href->{temp_directory}, $family_id.$infile_tag.$call_type.".vcf")." ";  #InFile (family vcf)
 
     ## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-    gatk_pedigree_flag({active_parameter_href => $active_parameter_href,
-			FILEHANDLE => $FILEHANDLE,
-			outfamily_file_directory => $outfamily_file_directory,
-			program_name => $program_name,
-		       });
+    my %commands = gatk_pedigree_flag({active_parameter_href => $active_parameter_href,
+				       fam_file_path => catfile($outfamily_file_directory, $family_id.".fam"),
+				       program_name => $program_name,
+				      });
 
     say $FILEHANDLE "-o ".catfile($active_parameter_href->{temp_directory}, $family_id.$outfile_tag.$call_type.".vcf"), "\n";  #OutFile
 
@@ -6966,6 +6964,7 @@ sub gatk_variantrecalibration {
 
     use Program::Gnu::Coreutils qw(mv);
     use Language::Java qw(core);
+    use Program::Variantcalling::Bcftools qw(norm);
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $core_number = 4;  #gatk VQSR do not benefit from paralellization ref gatk blog, but we need some java heap allocation
@@ -7096,11 +7095,10 @@ sub gatk_variantrecalibration {
 	print $FILEHANDLE "--mode ".$mode." ";  #Recalibration mode to employ (SNP|INDEL|BOTH)
 
 	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-	gatk_pedigree_flag({active_parameter_href => $active_parameter_href,
-			    FILEHANDLE => $FILEHANDLE,
-			    outfamily_file_directory => $outfamily_file_directory,
-			    program_name => $program_name,
-			   });
+	my %commands = gatk_pedigree_flag({active_parameter_href => $active_parameter_href,
+					   fam_file_path => catfile($outfamily_file_directory, $$family_id_ref.".fam"),
+					   program_name => $program_name,
+					  });
 
 	## GATK ApplyRecalibration
 	say $FILEHANDLE "\n\n## GATK ApplyRecalibration";
@@ -7141,11 +7139,10 @@ sub gatk_variantrecalibration {
 	}
 
 	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-	gatk_pedigree_flag({active_parameter_href => $active_parameter_href,
-			    FILEHANDLE => $FILEHANDLE,
-			    outfamily_file_directory => $outfamily_file_directory,
-			    program_name => $program_name,
-			   });
+	%commands = gatk_pedigree_flag({active_parameter_href => $active_parameter_href,
+					fam_file_path => catfile($outfamily_file_directory, $$family_id_ref.".fam"),
+					program_name => $program_name,
+				       });
 
 	print $FILEHANDLE "--mode ".$mode." ";  #Recalibration mode to employ (SNP|INDEL|BOTH)
 	say $FILEHANDLE "\n";
@@ -7153,13 +7150,14 @@ sub gatk_variantrecalibration {
 
     if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid")) {
 	## BcfTools norm, Left-align and normalize indels, split multiallelics
-	bcftools_norm({FILEHANDLE => $FILEHANDLE,
-		       reference_path_ref => \$active_parameter_href->{human_genome_reference},
-		       infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_filtered.vcf"),
-		       outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_filtered_normalized.vcf"),
-		       multiallelic => "-",
-		       stderr_file_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_filtered_normalized.stderr"),
-		      });
+	norm({FILEHANDLE => $FILEHANDLE,
+	      reference_path => $active_parameter_href->{human_genome_reference},
+	      infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_filtered.vcf"),
+	      output_type => "v",
+	      outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_filtered_normalized.vcf"),
+	      multiallelic => "-",
+	      stderrfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_filtered_normalized.stderr"),
+	     });
 	print $FILEHANDLE "\n";
     }
 
@@ -7244,11 +7242,10 @@ sub gatk_variantrecalibration {
 	print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
 
 	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-	gatk_pedigree_flag({active_parameter_href => $active_parameter_href,
-			    FILEHANDLE => $FILEHANDLE,
-			    outfamily_file_directory => $outfamily_file_directory,
-			    program_name => $program_name,
-			   });
+	my %commands = gatk_pedigree_flag({active_parameter_href => $active_parameter_href,
+					   fam_file_path => catfile($outfamily_file_directory, $$family_id_ref.".fam"),
+					   program_name => $program_name,
+					  });
 
 	print $FILEHANDLE "--supporting ".$active_parameter_href->{gatk_calculategenotypeposteriors_support_set}." ";  #Supporting data set
 	print $FILEHANDLE "-V ".$outfile_path_no_ending.".vcf"." ";  #Infile
@@ -7264,12 +7261,13 @@ sub gatk_variantrecalibration {
     }
 
     ## BcfTools norm, Left-align and normalize indels, split multiallelics
-    bcftools_norm({FILEHANDLE => $FILEHANDLE,
-		   reference_path_ref => \$active_parameter_href->{human_genome_reference},
-		   infile_path => $outfile_path_no_ending.".vcf",
-		   outfile_path => $outfile_path_no_ending."_normalized.vcf",
-		   multiallelic => "-",
-		  });
+    norm({FILEHANDLE => $FILEHANDLE,
+	  reference_path => $active_parameter_href->{human_genome_reference},
+	  infile_path => $outfile_path_no_ending.".vcf",
+	  output_type => "v",
+	  outfile_path => $outfile_path_no_ending."_normalized.vcf",
+	  multiallelic => "-",
+	 });
 
     ## Change name of file to accomodate downstream
     say $FILEHANDLE "\n";
@@ -7658,11 +7656,10 @@ sub gatk_genotypegvcfs {
 	print $FILEHANDLE "-D ".$active_parameter_href->{gatk_haplotypecaller_snp_known_set}." ";  #Known SNPs to use for annotation SNPs
 
 	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-	gatk_pedigree_flag({active_parameter_href => $active_parameter_href,
-			    FILEHANDLE => $FILEHANDLE,
-			    outfamily_file_directory => $outfamily_file_directory,
-			    program_name => $program_name,
-			   });
+	my %commands = gatk_pedigree_flag({active_parameter_href => $active_parameter_href,
+					   fam_file_path => catfile($outfamily_file_directory, $$family_id_ref.".fam"),
+					   program_name => $program_name,
+					  });
 
 	if ($active_parameter_href->{gatk_genotypegvcfs_all_sites} eq 1) {
 
@@ -11603,6 +11600,8 @@ sub samtools_mpileup {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Variantcalling::Bcftools qw(norm);
+
     my $core_number = $active_parameter_href->{core_processor_number};
     my $program_outdirectory_name = $parameter_href->{"p".$program_name}{outdir_name};
     my $time = 30;
@@ -11735,12 +11734,13 @@ sub samtools_mpileup {
 	print $XARGSFILEHANDLE "| ";  #Pipe
 
 	## BcfTools norm, Left-align and normalize indels, split multiallelics
-	bcftools_norm({FILEHANDLE => $XARGSFILEHANDLE,
-		       reference_path_ref => \$active_parameter_href->{human_genome_reference},
-		       outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf"),
-		       multiallelic => "-",
-		       stderr_file_path => catfile($xargs_file_name.".".$contig.".stderr.txt"),
-		      });
+	norm({FILEHANDLE => $XARGSFILEHANDLE,
+	      reference_path => $active_parameter_href->{human_genome_reference},
+	      output_type => "v",
+	      outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf"),
+	      multiallelic => "-",
+	      stderrfile_path => catfile($xargs_file_name.".".$contig.".stderr.txt"),
+	     });
     }
 
     ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
@@ -11853,12 +11853,16 @@ sub freebayes {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $core_number = $active_parameter_href->{core_processor_number};
+    use Program::Variantcalling::Freebayes qw(calling);
+    use Program::Variantcalling::Bcftools qw(filter norm);
+
+    my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
     my $program_outdirectory_name = $parameter_href->{"p".$program_name}{outdir_name};
-    my $time = 30;
+
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargs_file_name;
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -11868,14 +11872,9 @@ sub freebayes {
 								 program_name => $program_name,
 								 program_directory => catfile(lc($$outaligner_dir_ref), $program_outdirectory_name),
 								 core_number => $core_number,
-								 process_time => $time,
+								 process_time => $active_parameter_href->{module_time}{"p".$program_name},
 								 temp_directory => $$temp_directory_ref
 								});
-
-    $core_number = floor($active_parameter_href->{node_ram_memory} / 4);  #Division by X according to the java heap
-    $core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
-					   core_number => $core_number,
-					  });  #To not exceed maximum
 
     ## Assign directories
     my $outfamily_file_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref, $program_outdirectory_name);  #For ".fam" file
@@ -11884,14 +11883,30 @@ sub freebayes {
 
     ## Assign file_tags
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
+    ## Assign suffix
+    my $infile_suffix = $parameter_href->{alignment_suffix}{ $parameter_href->{pgatk_baserecalibration}{chain} };  #Inherit from input chain
+    my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
+    $parameter_href->{variant_calling_suffix}{$jobid_chain} = $outfile_suffix;  #Set variant calling file suffix for next module
+
+    my %file_path_no_ending;
+
+  SAMPLE:
     foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
+	## Assign directories
 	my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id, $$outaligner_dir_ref);
-	my $infile_tag = $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
 
 	## Add merged infile name after merging all BAM files per sample_id
 	my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
+
+	## Assign file_tags
+	my $infile_tag = $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
+	my $infile_no_ending = $infile.$infile_tag;
+
+	$file_path_no_ending{$sample_id} = catfile($$temp_directory_ref, $infile_no_ending);
 
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -11902,9 +11917,9 @@ sub freebayes {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      infile => $infile.$infile_tag,
+									      infile => $infile_no_ending,
 									      indirectory => $insample_directory,
-									      file_ending => ".b*",
+									      file_ending => substr($infile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
 									      temp_directory => $$temp_directory_ref,
 									     });
     }
@@ -11919,66 +11934,63 @@ sub freebayes {
 							     program_info_path => $program_info_path,
 							     core_number => $core_number,
 							     xargs_file_counter => $xargs_file_counter,
-							     first_command => "freebayes",
 							    });
 
     ## Split per contig
     foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
-	print $XARGSFILEHANDLE "--standard-filters "; #Equivalent to -m 30 -q 20 -R 0 -S 0
-	print $XARGSFILEHANDLE "--genotype-qualities ";  #Calculate the marginal probability of genotypes and report as GQ
-	print $XARGSFILEHANDLE "--fasta-reference ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
+	## Assemble file paths by adding file ending
+	my @file_paths = map { $file_path_no_ending{$_}."_".$contig.$infile_suffix } @{ $active_parameter_href->{sample_ids} };
 
-	foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
-
-	    my $infile_tag = $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
-
-	    ## Add merged infile name after merging all BAM files per sample_id
-	    my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
-
-	    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.".bam")." ";  #InFile
-	}
-
-	print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	calling({infile_paths_ref => \@file_paths,
+		 referencefile_path => $active_parameter_href->{human_genome_reference},
+		 stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
+		 apply_standard_filter => 1,
+		 calculate_genotype_quality => 1,
+		 FILEHANDLE => $XARGSFILEHANDLE,
+		});
 	print $XARGSFILEHANDLE "| ";  #Pipe
-	print $XARGSFILEHANDLE "bcftools ";
-	print $XARGSFILEHANDLE "filter ";  #SNP/indel variant calling filtering.
-	print $XARGSFILEHANDLE "-sLowQual ";  #Filter on lowQual
-	print $XARGSFILEHANDLE "-g3 ";  #Filter SNPs within <int> base pairs of an indel
-	print $XARGSFILEHANDLE "-G10 ";  #Filter clusters of indels separated by <int> or fewer base pairs allowing only one to pass
-	print $XARGSFILEHANDLE q?-e \'%QUAL<10 || (AC<2 && %QUAL<15)\' ?;  #exclude sites for which the expression is true
-	print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+
+	filter({stderrfile_path => $xargs_file_name.".".$contig."_filter.stderr.txt",
+		soft_filter => "LowQual",
+		snp_gap => 3,
+		indel_gap => 10,
+		exclude => q?\'%QUAL<10 || (AC<2 && %QUAL<15)\'?,
+		FILEHANDLE => $XARGSFILEHANDLE,
+	       });
 
 	if ($active_parameter_href->{replace_iupac}) {
 
 	    ## Replace the IUPAC code in alternative allels with N for input stream and writes to stream
-	    replace_iupac({stderr_path => $xargs_file_name.".".$contig.".stderr.txt",
+	    replace_iupac({stderr_path => $xargs_file_name.".".$contig."_filter.stderr.txt",
 			   FILEHANDLE => $XARGSFILEHANDLE
 			  });
 	}
 	print $XARGSFILEHANDLE "| ";  #Pipe
 
 	## BcfTools norm, Left-align and normalize indels, split multiallelics
-	bcftools_norm({FILEHANDLE => $XARGSFILEHANDLE,
-		       reference_path_ref => \$active_parameter_href->{human_genome_reference},
-		       outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf"),
-		       multiallelic => "-",
-		       stderr_file_path => catfile($xargs_file_name.".".$contig.".stderr.txt"),
-		      });
+	norm({FILEHANDLE => $XARGSFILEHANDLE,
+	      reference_path => $active_parameter_href->{human_genome_reference},
+	      output_type => "v",
+	      outfile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
+	      multiallelic => "-",
+	      stderrfile_path => catfile($xargs_file_name.".".$contig."_norm.stderr.txt"),
+	     });
+	say $XARGSFILEHANDLE "\n";
     }
 
     ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
     concatenate_variants({active_parameter_href => $active_parameter_href,
 			  FILEHANDLE => $FILEHANDLE,
 			  elements_ref => \@{ $file_info_href->{contigs} },
-			  infile_prefix => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_"),
-			  infile_postfix => ".vcf",
-			  outfile => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf"),
+			  infile_prefix => $outfile_path_no_ending."_",
+			  infile_postfix => $outfile_suffix,
+			  outfile => $outfile_path_no_ending.$outfile_suffix,
 			 });
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf*"),
+    migrate_file({infile_path => $outfile_path_no_ending.$outfile_suffix."*",
 		  outfile_path => $outfamily_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -11991,13 +12003,13 @@ sub freebayes {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => "freebayes",
 			outdirectory => $outfamily_directory,
-			outfile_ending => $$family_id_ref.$outfile_tag.$call_type.".vcf",
+			outfile_ending => $outfile_no_ending.$outfile_suffix,
 			outdata_type => "static"
 		       });
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => "bcftools",
 			outdirectory => $outfamily_directory,
-			outfile_ending => $$family_id_ref.$outfile_tag.$call_type.".vcf",
+			outfile_ending => $outfile_no_ending.$outfile_suffix,
 			outdata_type => "static"
 		       });
 
@@ -12006,7 +12018,7 @@ sub freebayes {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    dependencies => "case_dependency",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name,
 		   });
     }
@@ -12073,13 +12085,16 @@ sub gatk_haplotypecaller {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $core_number = $active_parameter_href->{core_processor_number};
+    use Program::Alignment::Gatk qw(haplotypecaller);
+
+    my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $analysis_type_ref = \$active_parameter_href->{analysis_type}{$$sample_id_ref};
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+ 
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 30;
     my $xargs_file_name;
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -12089,7 +12104,7 @@ sub gatk_haplotypecaller {
 								 program_name => $program_name,
 								 program_directory => catfile(lc($$outaligner_dir_ref), "gatk"),
 								 core_number => $core_number,
-								 process_time => $time,
+								 process_time => $active_parameter_href->{module_time}{"p".$program_name},
 								 temp_directory => $$temp_directory_ref
 								});
 
@@ -12104,9 +12119,21 @@ sub gatk_haplotypecaller {
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref, "gatk");
     $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory;  #Used downstream
 
+    ## Add merged infile name after merging all BAM files per sample_id
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
+
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_no_ending = $infile.$infile_tag;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $outfile_no_ending = $infile.$outfile_tag;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+
+    ## Assign suffix
+    my $infile_suffix = $parameter_href->{alignment_suffix}{$jobid_chain};
+    my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
+    $parameter_href->{variant_calling_suffix}{$jobid_chain} = $outfile_suffix;  #Set variant calling file suffix for next module
 
     ## Create .fam file to be used in variant calling analyses
     create_fam_file({parameter_href => $parameter_href,
@@ -12133,9 +12160,6 @@ sub gatk_haplotypecaller {
 	$exome_target_bed_file = basename($exome_target_bed_file);  #Reroute to only filename
     }
 
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
-
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     ($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
@@ -12145,9 +12169,9 @@ sub gatk_haplotypecaller {
 									  program_info_path => $program_info_path,
 									  core_number => $core_number,
 									  xargs_file_counter => $xargs_file_counter,
-									  infile => $infile.$infile_tag,
+									  infile => $infile_no_ending,
 									  indirectory => $insample_directory,
-									  file_ending => ".b*",
+									  file_ending => substr($infile_suffix, 0, 2)."*", #".bam" -> ".b*" for getting index as well
 									  temp_directory => $$temp_directory_ref,
 									 });
 
@@ -12171,52 +12195,45 @@ sub gatk_haplotypecaller {
     ## Split per contig
     foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
-	print $XARGSFILEHANDLE "-T HaplotypeCaller ";  #Type of analysis to run
-	print $XARGSFILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	print $XARGSFILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-	print $XARGSFILEHANDLE "-D ".$active_parameter_href->{gatk_haplotypecaller_snp_known_set}." ";  #Known SNPs to use for annotation SNPs
-	print $XARGSFILEHANDLE "-stand_call_conf 10.0 ";  #The minimum phred-scaled confidence threshold at which variants should be called
+	## Get parameters
+	my @intervals;
+	my $pcr_indel_model;
+	if ( ($$analysis_type_ref eq "wes") || ($$analysis_type_ref eq "rapid") ) { #Exome/rapid analysis
 
-	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-	gatk_pedigree_flag({active_parameter_href => $active_parameter_href,
-			    FILEHANDLE => $XARGSFILEHANDLE,
-			    outfamily_file_directory => $outfamily_file_directory,
-			    program_name => $program_name,
-			   });
-
-	## Filter
-	if ($active_parameter_href->{gatk_haplotypecaller_soft_clipped_bases}) { #Do not analyze soft clipped bases in the reads
-
-	    print $XARGSFILEHANDLE "--dontUseSoftClippedBases ";  #Do not analyze soft clipped bases in the reads
-	}
-	if ( ($$analysis_type_ref eq "wgs") && ($active_parameter_href->{gatk_haplotypecaller_pcr_indel_model} ne 0) ) {
-
-	    print $XARGSFILEHANDLE "--pcr_indel_model ".$active_parameter_href->{gatk_haplotypecaller_pcr_indel_model}." ";  #Assume that we run pcr-free sequencing (true for Rapid WGS and X-ten)
-	}
-
-	## Annotations to apply to variant calls
-	print $XARGSFILEHANDLE "--annotation ".join(" --annotation ", (@{ $active_parameter_href->{gatk_haplotypecaller_annotation} }) )." ";
-
-	if (scalar(@{ $active_parameter{sample_ids} }) >= 10) {
-
-	    print $XARGSFILEHANDLE "--annotation InbreedingCoeff ";  #Likelihood-based test for the inbreeding among samples (Only meningful with at least 10 founder samples)
-	}
-	print $XARGSFILEHANDLE "--emitRefConfidence GVCF ";  #Mode for emitting experimental reference confidence scores. GVCF generates block summarized version of the BP_RESOLUTION data
-	print $XARGSFILEHANDLE "--variant_index_type LINEAR ";
-	print $XARGSFILEHANDLE "--variant_index_parameter 128000 ";
-
-	if ( ($$analysis_type_ref eq "wes") || ( $$analysis_type_ref eq "rapid") ) { #Exome/rapid analysis
-
-	    print $XARGSFILEHANDLE "-L ".catfile($$temp_directory_ref, $contig."_".$exome_target_bed_file)." "; #Limit to targets kit target file
+	    @intervals = (catfile($$temp_directory_ref, $contig."_".$exome_target_bed_file));  #Limit to targets kit target file
 	}
 	else {  #wgs
 
-	    print $XARGSFILEHANDLE "-L ".$contig." ";  #Per contig
-	}
+	    @intervals = ($contig);  #Per contig
 
-	print $XARGSFILEHANDLE "-I ".catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.".bam")." ";  #InFile
-	print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.".vcf")." ";  #OutFile
-	say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    if ($active_parameter_href->{gatk_haplotypecaller_pcr_indel_model}) {
+
+		$pcr_indel_model = $active_parameter_href->{gatk_haplotypecaller_pcr_indel_model};  #Assume that we run pcr-free sequencing (true for Rapid WGS and X-ten)
+	    }
+	}
+	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
+	my %commands = gatk_pedigree_flag({active_parameter_href => $active_parameter_href,
+					   fam_file_path => catfile($outfamily_file_directory, $$family_id_ref.".fam"),
+					   program_name => $program_name,
+					  });
+
+	haplotypecaller({intervals_ref => \@intervals,
+			 annotations_ref => \@{ $active_parameter_href->{gatk_haplotypecaller_annotation} },
+			 dbsnp => $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
+			 standard_min_confidence_threshold_for_calling => 10,
+			 dont_use_soft_clipped_bases => $active_parameter_href->{gatk_haplotypecaller_no_soft_clipped_bases},
+			 pcr_indel_model => $pcr_indel_model,
+			 variant_index_parameter => "128000",
+			 infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
+			 outfile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
+			 stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
+			 referencefile_path => $active_parameter_href->{human_genome_reference},
+			 logging_level => "INFO",
+			 pedigree_validation_type => $commands{pedigree_validation_type},
+			 pedigree => $commands{pedigree},
+			 FILEHANDLE => $XARGSFILEHANDLE,
+			});
+	say $XARGSFILEHANDLE "\n";
     }
 
     ## Copies file from temporary directory. Per contig
@@ -12228,10 +12245,10 @@ sub gatk_haplotypecaller {
 									  program_info_path => $program_info_path,
 									  core_number => $core_number,
 									  xargs_file_counter => $xargs_file_counter,
-									  outfile => $infile.$outfile_tag,
+									  outfile => $outfile_no_ending,
 									  outdirectory => $outsample_directory,
 									  temp_directory => $$temp_directory_ref,
-									  file_ending => ".vcf*",
+									  file_ending => $outfile_suffix."*",
 									 });
     close($FILEHANDLE);
 
@@ -12243,7 +12260,7 @@ sub gatk_haplotypecaller {
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
 		   });
     }
@@ -19274,13 +19291,12 @@ sub gatk_pedigree_flag {
 ##gatk_pedigree_flag
 
 ##Function : Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-##Returns  : ""
-##Arguments: $active_parameter_href, $FILEHANDLE, $outfamily_file_directory, $pedigree_validation_type, $program_name
+##Returns  : "%command"
+##Arguments: $active_parameter_href, $fam_file_path, $program_name, $pedigree_validation_type
 ##         : $active_parameter_href    => The active parameters for this analysis hash {REF}
-##         : $FILEHANDLE               => FILEHANDLE to write to
-##         : $outfamily_file_directory => The family data analysis directory
-##         : $pedigree_validation_type => The pedigree validation strictness level
+##         : $fam_file_path            => The family file path
 ##         : $program_name             => The program to use the pedigree file
+##         : $pedigree_validation_type => The pedigree validation strictness level
 
     my ($arg_href) = @_;
 
@@ -19289,46 +19305,47 @@ sub gatk_pedigree_flag {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $FILEHANDLE;
-    my $outfamily_file_directory;
+    my $fam_file_path;
     my $program_name;
 
     my $tmpl = {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	outfamily_file_directory => { required => 1, defined => 1, strict_type => 1, store => \$outfamily_file_directory},
-	pedigree_validation_type => { default => "SILENT", strict_type => 1, store => \$pedigree_validation_type},
+	fam_file_path => { required => 1, defined => 1, strict_type => 1, store => \$fam_file_path},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
+	pedigree_validation_type => { default => "SILENT",
+				      allow => ["SILENT", "STRICT"],
+				      strict_type => 1, store => \$pedigree_validation_type},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $fam_file = catfile($outfamily_file_directory, $active_parameter_href->{family_id}.".fam");
     my $parent_counter;
     my $pq_parent_counter = q?perl -ne 'my $parent_counter=0; while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] eq 0) || ($line[3] eq 0) ) { $parent_counter++} } } print $parent_counter; last;'?;
     my $child_counter;
     my $pq_child_counter = q?perl -ne 'my $child_counter=0; while (<>) { my @line = split(/\t/, $_); unless ($_=~/^#/) { if ( ($line[2] ne 0) || ($line[3] ne 0) ) { $child_counter++} } } print $child_counter; last;'?;
+    my %command;
 
-    $parent_counter = `$pq_parent_counter $fam_file`;  #Count the number of parents
-    $child_counter = `$pq_child_counter $fam_file`;  #Count the number of children
+    $parent_counter = `$pq_parent_counter $fam_file_path`;  #Count the number of parents
+    $child_counter = `$pq_child_counter $fam_file_path`;  #Count the number of children
 
     if ($program_name ne "gatk_phasebytransmission") {
 
 	if ($parent_counter > 0) {  #Parents present
 
-	    print $FILEHANDLE "--pedigreeValidationType ".$pedigree_validation_type." --pedigree ".catfile($outfamily_file_directory, $active_parameter_href->{family_id}.".fam")." ";  #Pedigree files for samples
+	    $command{pedigree_validation_type} = $pedigree_validation_type;
+	    $command{pedigree} = $fam_file_path;  #Pedigree files for samples
 	}
     }
     else {
 
-	check_pedigree_members({active_parameter_href => $active_parameter_href,
-				FILEHANDLE => $FILEHANDLE,
-				outfamily_file_directoryRef => \$outfamily_file_directory,
-				pedigree_validation_type_ref => \$pedigree_validation_type,
-				parent_counter_ref => \$parent_counter,
-				child_counter_ref => \$child_counter
-			       });  #Special case - GATK PhaseByTransmission needs parent/child or trio
+	%command = check_pedigree_members({active_parameter_href => $active_parameter_href,
+					   fam_file_path_ref => \$$fam_file_path,
+					   pedigree_validation_type_ref => \$pedigree_validation_type,
+					   parent_counter_ref => \$parent_counter,
+					   child_counter_ref => \$child_counter
+					  });  #Special case - GATK PhaseByTransmission needs parent/child or trio
     }
+    return %command;
 }
 
 
@@ -19337,11 +19354,10 @@ sub check_pedigree_members {
 ##check_pedigree_members
 
 ##Function : Detect if the pedigree file contains a valid parent/child or trio
-##Returns  : ""
-##Arguments: $active_parameter_href, $FILEHANDLE, $outfamily_file_directoryRef, $pedigree_validation_type_ref, $parent_counter_ref, $child_counter_ref
+##Returns  : "%command"
+##Arguments: $active_parameter_href, $fam_file_path_ref, $pedigree_validation_type_ref, $parent_counter_ref, $child_counter_ref
 ##         : $active_parameter_href        => The active parameters for this analysis hash {REF}
-##         : $FILEHANDLE                   => FILEHANDLE to write to
-##         : $outfamily_file_directoryRef  => The family data analysis directory {REF}
+##         : $fam_file_path_ref            => The family file path {REF}
 ##         : $pedigree_validation_type_ref => The pedigree validation strictness level {REF}
 ##         : $parent_counter_ref           => The number of parent(s) {REF}
 ##         : $child_counter_ref            => The number of children(s) {REF}
@@ -19350,16 +19366,14 @@ sub check_pedigree_members {
 
     ## Flatten argument(s)
     my $active_parameter_href;
-    my $FILEHANDLE;
-    my $outfamily_file_directoryRef;
+    my $fam_file_path_ref;
     my $pedigree_validation_type_ref;
     my $parent_counter_ref;
     my $child_counter_ref;
 
     my $tmpl = {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	outfamily_file_directoryRef => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$outfamily_file_directoryRef},
+	fam_file_path_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$fam_file_path_ref},
 	pedigree_validation_type_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$pedigree_validation_type_ref},
 	parent_counter_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$parent_counter_ref},
 	child_counter_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$child_counter_ref},
@@ -19371,11 +19385,14 @@ sub check_pedigree_members {
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger("MIP");
 
+    my %command;
+
     if (scalar(@{ $active_parameter_href->{sample_ids} }) < 4) {  #i.e.1-3 individuals in pedigree
 
 	if ( ($$child_counter_ref == 1) && ($$parent_counter_ref > 0) ) {  #Parent/child or trio
 
-	    print $FILEHANDLE "--pedigreeValidationType ".$$pedigree_validation_type_ref." --pedigree ".catfile($$outfamily_file_directoryRef, $active_parameter_href->{family_id}.".fam")." ";  #Pedigree files for samples
+	    $command{pedigree_validation_type} = $$pedigree_validation_type_ref;
+	    $command{pedigree} = $$fam_file_path_ref;  #Pedigree files for samples
 	}
 	else {
 
@@ -19398,6 +19415,7 @@ sub check_pedigree_members {
 	    $log->info("MIP will still try to run GATK ReadBackedPhasing, but with the '-respectPhaseInInput' flag set to false\n");
 	}
     }
+    return %command;
 }
 
 
@@ -20999,6 +21017,7 @@ sub concatenate_variants {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Language::Java qw(core);
+    use Program::Variantcalling::Gatk qw(catvariants);
 
     unless (defined($infile_postfix)) {
 
@@ -21018,16 +21037,17 @@ sub concatenate_variants {
 	  temp_directory => $active_parameter_href->{temp_directory}
 	 });
 
-    print $FILEHANDLE "-cp ".catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar")." org.broadinstitute.gatk.tools.CatVariants ";  #Type of analysis to run
-    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".$$human_genome_reference_ref." ";  #Reference file
-    print $FILEHANDLE "-assumeSorted ";  #assumeSorted should be true if the input files are already sorted
+    ## Assemble infile paths
+    my @infile_paths = map { $infile_prefix.$_.$infile_postfix } @$elements_ref;
 
-    foreach my $file_element (@$elements_ref) {
-
-	print $FILEHANDLE "-V: ".$infile_prefix.$file_element.$infile_postfix." ";  #files to combined
-    }
-    say $FILEHANDLE "-out ".$outfile, "\n";  #OutFile
+    catvariants({gatk_path => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar")." org.broadinstitute.gatk.tools.CatVariants",
+		 infile_paths_ref => \@infile_paths,
+		 outfile_path => $outfile,
+		 referencefile_path => $$human_genome_reference_ref,
+		 logging_level => "INFO",
+		 FILEHANDLE => $FILEHANDLE,
+		});
+    say $FILEHANDLE "\n";
 }
 
 
@@ -21465,15 +21485,18 @@ sub create_fam_file {
 		my $FILEHANDLE = $FILEHANDLE;
 
 		say $FILEHANDLE "#Generating '.fam' file for use with GATK ","\n";
-		print $FILEHANDLE "echo ";
-		print $FILEHANDLE "-e ";  #Enable interpretation of i.e. \n
-		print $FILEHANDLE q?-n "?;  #Do not output the trailing newline
 
-		foreach my $line (@pedigree_lines) {
+		use Program::Gnu::Coreutils qw(echo);
 
-		    print $FILEHANDLE $line.q?\n?;
-		}
-		say $FILEHANDLE q?" ?." > ".$fam_file_path,"\n";
+		## Get parameters
+		my @strings = map { $_.q?\n? } @pedigree_lines;
+
+		echo({strings_ref => \@strings,
+		      outfile_path => $fam_file_path,
+		      enable_interpretation => 1,
+		      no_trailing_newline => 1,
+		     });
+		say $FILEHANDLE "\n";
 	    }
 	    else {
 
@@ -22873,6 +22896,8 @@ sub update_to_absolute_path {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use File::Parse::Parse qw(find_absolute_path);
+
     ## Adds dynamic aggregate information from definitions to parameter hash
     add_to_parameter({parameter_href => \%parameter,
 		      aggregates_ref => ["update_path:absolute_path"],  #Collect all path that should be made absolute
@@ -22895,9 +22920,9 @@ sub update_to_absolute_path {
 		    foreach my $element (@seperate_elements) {
 
 			## Find aboslute path for supplied path or croaks and exists if path does not exists
-			push(@absolute_path_elements, File::Parse::Parse::find_absolute_path({path => $element,
-											      parameter_name => $parameter_name,
-											     })
+			push(@absolute_path_elements, find_absolute_path({path => $element,
+									  parameter_name => $parameter_name,
+									 })
 			    );
 		    }
 		    $parameter_value = join(",", @absolute_path_elements);  #Replace original input with abolute path entries
@@ -22913,9 +22938,9 @@ sub update_to_absolute_path {
 		if ( (defined($parameter_value_ref)) && ($parameter_value_ref->{$key} ne "nocmd_input") ) {
 
 		    ## Find aboslute path for supplied path or croaks and exists if path does not exists
-		    my $updated_key = File::Parse::Parse::find_absolute_path({path => $key,
-									      parameter_name => $parameter_name,
-									     });
+		    my $updated_key = find_absolute_path({path => $key,
+							  parameter_name => $parameter_name,
+							 });
 		    $parameter_value_ref->{$updated_key} = delete($parameter_value_ref->{$key});
 		}
 	    }
@@ -22926,9 +22951,9 @@ sub update_to_absolute_path {
 
 	    if ( (defined($parameter_value)) && ($parameter_value ne "nocmd_input") ) {  #Scalar
 
-		$parameter_value = File::Parse::Parse::find_absolute_path({path => $parameter_value,
-									   parameter_name => $parameter_name,
-									  });
+		$parameter_value = find_absolute_path({path => $parameter_value,
+						       parameter_name => $parameter_name,
+						      });
 		$parameter_href->{$parameter_name}{value} = $parameter_value;
 	    }
 	}
@@ -25487,7 +25512,7 @@ sub order_parameter_names {
     }
 
 
-    sub replace_iupac {
+sub replace_iupac {
 
 ##replace_iupac
 

@@ -101,6 +101,8 @@ module_time:
     pmarkduplicates: 20
     pgatk_realigner: 20
     pgatk_baserecalibration: 20
+    pgatk_haplotypecaller: 30
+    pfreebayes: 20
     ptiddit: 20
   type: mip
 module_core_number:
@@ -117,6 +119,8 @@ module_core_number:
     pmarkduplicates: 16
     pgatk_realigner: 16
     pgatk_baserecalibration: 16
+    pgatk_haplotypecaller: 16
+    pfreebayes: 16
     ptiddit: 1
   type: mip
 supported_capture_kit:
@@ -1110,6 +1114,7 @@ pfreebayes:
   program_type: variant_callers
   file_endings:
    - .vcf
+  outfile_suffix: ".vcf"
   remove_redundant_file: yes
   remove_redundant_file_setting: family
   type: program
@@ -1123,6 +1128,7 @@ pgatk_haplotypecaller:
   file_tag: _gvcf
   file_endings:
    - .vcf
+  outfile_suffix: ".vcf"
   remove_redundant_file: yes
   remove_redundant_file_setting: merged
   type: program
@@ -1161,7 +1167,7 @@ gatk_haplotypecaller_snp_known_set:
   exists_check: file
   reference: reference_dir
   type: path
-gatk_haplotypecaller_soft_clipped_bases:
+gatk_haplotypecaller_no_soft_clipped_bases:
   associated_program:
    - pgatk_haplotypecaller
   data_type: SCALAR
