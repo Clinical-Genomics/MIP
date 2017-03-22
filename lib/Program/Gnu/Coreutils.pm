@@ -431,7 +431,7 @@ sub echo {
     }
 
     ## Strings
-    push(@commands, q?" ?.join(" ", @$strings_ref).q? "?);
+    push(@commands, q?"?.join("", @$strings_ref).q?"?);
 
     ## Outfile
     if ($outfile_path) {

@@ -20,7 +20,7 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(merge);
+    our @EXPORT_OK = qw(merge query);
 
 }
 
@@ -35,7 +35,7 @@ sub merge {
 ##Function : Perl wrapper for writing svdb merge recipe to $FILEHANDLE or return commands array. Based on svdb 0.1.2.
 ##Returns  : "@commands"
 ##Arguments: $infile_paths_ref, $outfile_path, $FILEHANDLE, $priority
-##         : $infile_paths_ref => Infile path
+##         : $infile_paths_ref => Infile path {REF}
 ##         : $outfile_path     => Outfile path
 ##         : $FILEHANDLE       => Filehandle to write to
 ##         : $priority         => Priority order of structural variant calls
@@ -68,6 +68,79 @@ sub merge {
 
     ## Infile
     push(@commands, "--vcf ".join(" ", @{ $infile_paths_ref }));
+
+    if ($outfile_path) {
+
+	push(@commands, "> ".$outfile_path);  #Outfile prefix
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
+sub query {
+
+##query
+
+##Function : Perl wrapper for writing svdb query recipe to $FILEHANDLE or return commands array. Based on svdb 0.1.2.
+##Returns  : "@commands"
+##Arguments: $infile_path, $dbfile_path, $outfile_path, $FILEHANDLE, $hit_tag, $bnd_distance, $overlap
+##         : $infile_path  => Infile path
+##         : $outfile_path => Outfile path
+##         : $FILEHANDLE   => Filehandle to write to
+##         : $hit_tag      => The tag used to describe the number of hits within the info field of the output vcf
+##         : $bnd_distance => The maximum distance between two similar precise breakpoints
+##         : $overlap      => The overlap required to merge two events
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile_path;
+    my $dbfile_path;
+    my $outfile_path;
+    my $FILEHANDLE;
+    my $hit_tag;
+    my $bnd_distance;
+    my $overlap;
+
+    my $tmpl = {
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
+	dbfile_path => { required => 1, defined => 1, strict_type => 1, store => \$dbfile_path},
+	outfile_path => { strict_type => 1, store => \$outfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
+	hit_tag => { strict_type => 1, store => \$hit_tag },
+	bnd_distance => { allow => qr/^\d+$/,
+			  strict_type => 1, store => \$bnd_distance },
+	overlap => { allow => qr/^\d+|d+.d+$/,
+		     strict_type => 1, store => \$overlap },
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## svdb
+    my @commands = qw(svdb --query);  #Stores commands depending on input parameters
+
+    ## Options
+    if ($bnd_distance) {
+
+	push(@commands, "--bnd_distance ".$bnd_distance);
+    }
+    if ($overlap) {
+
+	push(@commands, "--overlap ".$overlap);
+    }
+    if ($hit_tag) {
+
+	push(@commands, "--hit_tag ".$hit_tag);
+    }
+
+    push(@commands, "--db ".$dbfile_path);
+
+    ## Infile
+    push(@commands, "--query_vcf ".$infile_path);
 
     if ($outfile_path) {
 

@@ -20,12 +20,118 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(filter norm);
+    our @EXPORT_OK = qw(call filter norm);
 
 }
 
 use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
+
+
+sub call {
+
+##call
+
+##Function : Perl wrapper for writing bcftools call recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
+##Returns  : "@commands"
+##Arguments: $form_fields_ref, $outfile_path, $infile_path, $stderrfile_path, $FILEHANDLE, $samples_file, $multiallelic_caller, $output_type, $variants_only
+##         : $form_fields_ref     => Output format fields {REF}
+##         : $outfile_path        => Outfile path to write to
+##         : $infile_path         => Infile path to read from
+##         : $stderrfile_path     => Stderr file path to write to {OPTIONAL}
+##         : $FILEHANDLE          => Filehandle to write to
+##         : $samples_file        => PED file or a file with an optional column with sex
+##         : $constrain           => One of: alleles, trio
+##         : $multiallelic_caller => Alternative model for multiallelic and rare-variant calling
+##         : $output_type         => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
+##         : $variants_only       => Output variant sites only
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $multiallelic_caller;
+    my $output_type;
+    my $variants_only;
+
+    ## Flatten argument(s)
+    my $form_fields_ref;
+    my $outfile_path;
+    my $infile_path;
+    my $stderrfile_path;
+    my $FILEHANDLE;
+    my $samples_file;
+    my $constrain;
+
+    my $tmpl = {
+	form_fields_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$form_fields_ref },
+	outfile_path => { strict_type => 1, store => \$outfile_path },
+	infile_path => { strict_type => 1, store => \$infile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
+	samples_file => { strict_type => 1, store => \$samples_file },
+	constrain => { allow => ["alleles", "trio"],
+		       strict_type => 1, store => \$constrain },
+	multiallelic_caller => { default => 1,
+				 allow => [undef, 0, 1],
+				 strict_type => 1, store => \$multiallelic_caller },
+	output_type => { default => "v",
+			 allow => ["b", "u", "z", "v"],
+			 strict_type => 1, store => \$output_type },
+	variants_only => { default => 1,
+			   allow => [undef, 0, 1],
+			   strict_type => 1, store => \$variants_only },
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## bcftools
+    my @commands = qw(bcftools call);  #Stores commands depending on input parameters
+
+    ## Options
+    if ($multiallelic_caller) {
+
+	push(@commands, "--multiallelic-caller");  
+    }
+    if (@$form_fields_ref) {
+
+	push(@commands, "--format-fields ".join(",", @$form_fields_ref));
+    }
+    if ($variants_only) {
+
+	push(@commands, "--variants-only");  
+    }
+    if ($samples_file) {
+
+	push(@commands, "--samples-file ".$samples_file);
+    }
+    if ($constrain) {
+
+	push(@commands, "--constrain ".$constrain);
+    }
+    if ($output_type) {
+
+	push(@commands, "--output-type ".$output_type);  #Specify output type
+    }
+    if ($outfile_path) {
+
+	push(@commands, "--output ".$outfile_path);  #Specify output filename
+    }
+
+    ## Infile
+    if ($infile_path) {
+
+	push(@commands, $infile_path);
+    }
+    if ($stderrfile_path) {
+
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
 
 
 sub filter {

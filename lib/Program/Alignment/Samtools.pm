@@ -20,7 +20,7 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(view index stats);
+    our @EXPORT_OK = qw(view index stats mpileup);
 
 }
 
@@ -235,10 +235,6 @@ sub stats {
 
 	push(@commands, "-s");
     }
-    if ($outfile_path) {
-	
-	push(@commands, "> ".$outfile_path);  #Specify output filename
-    }
 
     ## Infile
     push(@commands, $infile_path);
@@ -247,6 +243,109 @@ sub stats {
 
 	push(@commands, join(" ", @{ $regions_ref }));
     }
+    if ($outfile_path) {
+	
+	push(@commands, "> ".$outfile_path);  #Specify output filename
+    }
+    if ($stderrfile_path) {
+
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
+sub mpileup {
+
+##mpileup
+
+##Function : Perl wrapper for writing samtools mpileup recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
+##Returns  : "@commands"
+##Arguments: $infile_paths_ref, $output_tags_ref, $outfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE, $output_bcf, $adjust_mq
+##         : $infile_paths_ref                 => Infile paths {REF}
+##         : $output_tags_ref                  => Optional tags to output {REF}
+##         : $outfile_path                     => Outfile path
+##         : $referencefile_path               => Reference sequence file
+##         : $stderrfile_path                  => Stderrfile path
+##         : $FILEHANDLE                       => Sbatch filehandle to write to
+##         : $region                           => The regions to process {REF}
+##         : $output_bcf                       => Generate genotype likelihoods in BCF format
+##         : $per_sample_increased_sensitivity => Apply -m and -F per-sample for increased sensitivity
+##         : $adjust_mq                        => Adjust mapping quality
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $per_sample_increased_sensitivity;
+    my $adjust_mq;
+
+    ## Flatten argument(s)
+    my $infile_paths_ref;
+    my $output_tags_ref;
+    my $outfile_path;
+    my $referencefile_path;
+    my $stderrfile_path;
+    my $FILEHANDLE;
+    my $region;
+    my $output_bcf;
+    
+    my $tmpl = {
+	infile_paths_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$infile_paths_ref},
+	output_tags_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$output_tags_ref},
+	outfile_path => { strict_type => 1, store => \$outfile_path },
+	referencefile_path => { required => 1, defined => 1, strict_type => 1, store => \$referencefile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
+	region => { strict_type => 1, store => \$region },
+	output_bcf => { strict_type => 1, store => \$output_bcf },
+	per_sample_increased_sensitivity => { default => 0,
+					      allow => [undef, 0, 1],
+					      strict_type => 1, store => \$per_sample_increased_sensitivity },
+	adjust_mq => { default => 50,
+		       allow => qr/^\d+$/,
+		       strict_type => 1, store => \$adjust_mq },
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## Samtools mpileup
+    my @commands = qw(samtools mpileup);  #Stores commands depending on input parameters
+
+    ## Options
+    push(@commands, "--adjust-MQ ".$adjust_mq);
+
+    if($per_sample_increased_sensitivity) {
+	
+	push(@commands, "--per-sample-mF");
+    }
+    if(@$output_tags_ref) {
+	
+	push(@commands, "--output-tags ".join(",", @$output_tags_ref));
+    }
+    if($region) {  #Limit output to region
+	
+	push(@commands, "--region ".$region);
+    }
+    if ($referencefile_path) {
+
+	push(@commands, "--fasta-ref ".$referencefile_path);  #Reference sequence file
+    }
+    if($output_bcf) {
+	
+	push(@commands, "--BCF");
+    }
+    if ($outfile_path) {
+	
+	push(@commands, "--output ".$outfile_path);  #Specify output filename
+    }
+
+    ## Infile
+    push(@commands, join(" ", @$infile_paths_ref));
+
     if ($stderrfile_path) {
 
 	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file

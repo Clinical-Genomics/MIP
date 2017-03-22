@@ -103,7 +103,9 @@ module_time:
     pgatk_baserecalibration: 20
     pgatk_haplotypecaller: 30
     pfreebayes: 20
-    ptiddit: 20
+    psamtools_mpileup: 20
+    ptiddit: 10
+    pmanta: 10
   type: mip
 module_core_number:
   associated_program:
@@ -121,7 +123,9 @@ module_core_number:
     pgatk_baserecalibration: 16
     pgatk_haplotypecaller: 16
     pfreebayes: 16
+    psamtools_mpileup: 16
     ptiddit: 1
+    pmanta: 16
   type: mip
 supported_capture_kit:
   associated_program:
@@ -802,6 +806,7 @@ pmanta:
   program_name_path:
    - configManta.py
   outdir_name: manta
+  outfile_suffix: ".vcf"
   program_type: structural_variant_callers
   type: program
 ptiddit:
@@ -814,6 +819,7 @@ ptiddit:
   program_name_path:
    - TIDDIT
   outdir_name: tiddit
+  outfile_suffix: ".vcf"
   program_type: structural_variant_callers
   type: program
 tiddit_minimum_number_supporting_pairs:
@@ -834,23 +840,42 @@ psv_combinevariantcallsets:
    - bcftools
    - svdb
   type: program
-sv_svdb_merge_prioritize:
-  associated_program:
-   - psv_combinevariantcallsets
-  data_type: SCALAR
-  mandatory: no
-  type: program_argument
 sv_vt_decompose:
   associated_program:
    - psv_combinevariantcallsets
   data_type: SCALAR
   default: 1
   type: program_argument
+sv_svdb_merge_prioritize:
+  associated_program:
+   - psv_combinevariantcallsets
+  data_type: SCALAR
+  mandatory: no
+  type: program_argument
 sv_bcftools_view_filter:
   associated_program:
    - psv_combinevariantcallsets
   data_type: SCALAR
   default: 1
+  type: program_argument
+sv_svdb_query:
+  associated_program:
+   - psv_combinevariantcallsets
+  data_type: SCALAR
+  default: 1
+  type: program_argument
+sv_svdb_query_db_file:
+  associated_program:
+   - psv_combinevariantcallsets
+  build_file: no_auto_build
+  data_type: SCALAR
+  exists_check: file
+  reference: reference_dir
+  type: path
+sv_svdb_query_key:
+  associated_program:
+   - psv_combinevariantcallsets
+  data_type: SCALAR
   type: program_argument
 sv_vcfanno:
   associated_program:
@@ -1096,6 +1121,7 @@ psamtools_mpileup:
   program_type: variant_callers
   file_endings:
    - .vcf
+  outfile_suffix: ".vcf"
   remove_redundant_file: yes
   remove_redundant_file_setting: family
   type: program
@@ -1177,7 +1203,7 @@ gatk_haplotypecaller_pcr_indel_model:
   associated_program:
    - pgatk_haplotypecaller
   data_type: SCALAR
-  default: None
+  default: NONE
   type: program_argument
 picardtools_path:
   associated_program:
