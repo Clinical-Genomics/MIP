@@ -11089,7 +11089,6 @@ sub delly_call {
     my $job_id_href;
     my $sample_id_ref;
     my $program_name;
-    my $FILEHANDLE;
 
     my $tmpl = {
 	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
@@ -11115,14 +11114,16 @@ sub delly_call {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $core_number = $active_parameter_href->{core_processor_number};
+    use Program::Variantcalling::Delly qw(call);
+
+    my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
     my $program_outdirectory_name = $parameter_href->{"p".$program_name}{outdir_name};
-
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 30;
     my $xargs_file_name;
-
-    $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+    
+    ## Filehandles
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -11132,7 +11133,7 @@ sub delly_call {
 								 program_name => $program_name,
 								 program_directory => catfile(lc($$outaligner_dir_ref), lc($program_outdirectory_name)),
 								 core_number => $core_number,
-								 process_time => $time,
+								 process_time => $active_parameter_href->{module_time}{"p".$program_name},
 								 temp_directory => $$temp_directory_ref
 								});
 
@@ -11141,10 +11142,23 @@ sub delly_call {
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref, $program_outdirectory_name);
     $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory; #Used downstream
 
+    ## Add merged infile name after merging all BAM files per sample_id
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
+
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_no_ending = $infile.$infile_tag;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $outfile_no_ending = $infile.$outfile_tag;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
+    ## Assign suffix
+    my $infile_suffix = $parameter_href->{alignment_suffix}{ $parameter_href->{pgatk_baserecalibration}{chain} };  #Inherit from input chain
+    my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
+    $parameter_href->{variant_calling_suffix}{$jobid_chain} = $outfile_suffix;  #Set variant calling file suffix for next module
+
+    ### Update contigs
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
     my @contigs = remove_element({elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
 				  remove_contigs_ref => ["MT", "M"],
@@ -11156,32 +11170,34 @@ sub delly_call {
 			  remove_contigs_ref => ["Y"],  #Skip contig Y throughout since sometimes there are no variants particularly for INS
 			 });
 
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
+    if ( ( any {$_ eq "TRA"} @{ $active_parameter_href->{delly_types} } ) ) { #If element is part of array
 
-    ## Required for processing complete file (INS, TRA)
-    ## Copy file(s) to temporary directory
-    say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($insample_directory, $infile.$infile_tag.".b*"),
-		  outfile_path => $active_parameter_href->{temp_directory}
-		 });
+	## Required for processing complete file (TRA)
+	## Copy file(s) to temporary directory
+	say $FILEHANDLE "## Copy file(s) to temporary directory";
+	migrate_file({FILEHANDLE => $FILEHANDLE,
+		      infile_path => catfile($insample_directory, $infile_no_ending.substr($infile_suffix, 0, 2)."*"),
+		      outfile_path => $active_parameter_href->{temp_directory}
+		     });
+    }
+    if ( ( any {$_ =~/DEL|DUP|INS|INV/} @{ $active_parameter_href->{delly_types} } ) ) { #If element is part of array
 
-    ## Copy file(s) to temporary directory
-    say $FILEHANDLE "## Copy file(s) to temporary directory";
-    ($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
-									  XARGSFILEHANDLE => $XARGSFILEHANDLE,
-									  contigs_ref => \@contigs,
-									  file_name =>$file_name,
-									  program_info_path => $program_info_path,
-									  core_number => ($core_number - 1),  #Compensate for cp of entire BAM (INS, TRA), see above
-									  xargs_file_counter => $xargs_file_counter,
-									  infile => $infile.$infile_tag,
-									  indirectory => $insample_directory,
-									  file_ending => ".b*",
-									  temp_directory => $$temp_directory_ref,
-									 });
-    say $FILEHANDLE "wait", "\n";
+	## Copy file(s) to temporary directory
+	say $FILEHANDLE "## Copy file(s) to temporary directory";
+	($xargs_file_counter, $xargs_file_name) = xargs_migrate_contig_files({FILEHANDLE => $FILEHANDLE,
+									      XARGSFILEHANDLE => $XARGSFILEHANDLE,
+									      contigs_ref => \@contigs,
+									      file_name =>$file_name,
+									      program_info_path => $program_info_path,
+									      core_number => ($core_number - 1),  #Compensate for cp of entire BAM (INS, TRA), see above
+									      xargs_file_counter => $xargs_file_counter,
+									      infile => $infile_no_ending,
+									      indirectory => $insample_directory,
+									      file_ending => substr($infile_suffix, 0, 2)."*",
+									      temp_directory => $$temp_directory_ref,
+									     });
+	say $FILEHANDLE "wait", "\n";
+    }
 
     ## delly
     say $FILEHANDLE "## delly";
@@ -11193,7 +11209,6 @@ sub delly_call {
 							     program_info_path => $program_info_path,
 							     core_number => $core_number,
 							     xargs_file_counter => $xargs_file_counter,
-							     first_command => "delly call",
 							    });
 
     foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {
@@ -11203,31 +11218,37 @@ sub delly_call {
 	    ## Process per contig
 	    foreach my $contig (@contigs) {
 
-		print $XARGSFILEHANDLE "-t ".$sv_type." ";  #The SV to call
-		print $XARGSFILEHANDLE "-x ".$active_parameter_href->{delly_exclude_file}." ";  #to exclude telomere and centromere regions
-		print $XARGSFILEHANDLE "-g ".$active_parameter_href->{human_genome_reference}." "; #Reference file
-		print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig."_".$sv_type.".bcf")." ";
-		print $XARGSFILEHANDLE catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.".bam")." ";  #InFile
-		print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$contig.".".$sv_type.".stdout.txt ";  #Redirect xargs output to program specific stdout file
-		say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".".$sv_type.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		Program::Variantcalling::Delly::call ({infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
+						       outfile_path => $outfile_path_no_ending."_".$contig."_".$sv_type.$outfile_suffix,
+						       stdoutfile_path => $xargs_file_name.".".$contig.".".$sv_type.".stdout.txt",
+						       stderrfile_path => $xargs_file_name.".".$contig.".".$sv_type.".stderr.txt",
+						       sv_type => $sv_type,
+						       exclude_file_path => $active_parameter_href->{delly_exclude_file},
+						       referencefile_path => $active_parameter_href->{human_genome_reference},
+						       FILEHANDLE => $XARGSFILEHANDLE,
+						      });
+		say $XARGSFILEHANDLE "\n";
 	    }
 	}
 	else {
 
-	    print $XARGSFILEHANDLE "-t ".$sv_type." ";  #The SV to call
-	    print $XARGSFILEHANDLE "-g ".$active_parameter_href->{human_genome_reference}." "; #Reference file
-	    print $XARGSFILEHANDLE "-x ".$active_parameter_href->{delly_exclude_file}." ";  #to exclude telomere and centromere regions
-	    print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $infile.$outfile_tag."_".$sv_type.".bcf")." ";
-	    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $infile.$infile_tag.".bam")." ";  #InFile
-	    print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$sv_type.".stdout.txt ";  #Redirect xargs output to program specific stdout file
-	    say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$sv_type.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    Program::Variantcalling::Delly::call ({infile_path => $file_path_no_ending.$infile_suffix,
+						   outfile_path => $outfile_path_no_ending."_".$sv_type.$outfile_suffix,
+						   stdoutfile_path => $xargs_file_name.".".$sv_type.".stdout.txt",
+						   stderrfile_path => $xargs_file_name.".".$sv_type.".stderr.txt",
+						   sv_type => $sv_type,
+						   exclude_file_path => $active_parameter_href->{delly_exclude_file},
+						   referencefile_path => $active_parameter_href->{human_genome_reference},
+						   FILEHANDLE => $XARGSFILEHANDLE,
+						  });
+	    say $XARGSFILEHANDLE "\n";
 	}
     }
 
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag."*.bcf*"),
+    migrate_file({infile_path => $outfile_path_no_ending."*".$outfile_suffix."*",
 		  outfile_path => $outsample_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -11243,7 +11264,7 @@ sub delly_call {
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name,
 		   });
     }
@@ -11311,8 +11332,10 @@ sub manta {
     my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
     my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $program_outdirectory_name = $parameter_href->{"p".$program_name}{outdir_name};
-    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -11381,6 +11404,7 @@ sub manta {
 
 	$exome_analysis = 1;
     }
+
     ## Assemble file paths by adding file ending
     my @file_paths = map { $file_path_no_ending{$_}.$infile_suffix } @{ $active_parameter_href->{sample_ids} };
 
@@ -11502,8 +11526,11 @@ sub tiddit {
     use Program::Variantcalling::Tiddit qw(sv);
 
     my $program_outdirectory_name = $parameter_href->{"p".$program_name}{outdir_name};
-    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -11517,13 +11544,13 @@ sub tiddit {
 								 temp_directory => $$temp_directory_ref
 								});
 
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
-
     ## Assign directories
     my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref, $program_outdirectory_name);
     $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory; #Used downstream
+
+    ## Add merged infile name after merging all BAM files per sample_id
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
@@ -11651,11 +11678,12 @@ sub samtools_mpileup {
 
     my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
     my $program_outdirectory_name = $parameter_href->{"p".$program_name}{outdir_name};
-
-    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargs_file_name;
     my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -11916,11 +11944,12 @@ sub freebayes {
 
     my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
     my $program_outdirectory_name = $parameter_href->{"p".$program_name}{outdir_name};
-
-    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargs_file_name;
     my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -12148,11 +12177,12 @@ sub gatk_haplotypecaller {
     my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $analysis_type_ref = \$active_parameter_href->{analysis_type}{$$sample_id_ref};
-    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
- 
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargs_file_name;
     my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -12402,13 +12432,15 @@ sub gatk_baserecalibration {
     my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $analysis_type_ref = \$active_parameter_href->{analysis_type}{$$sample_id_ref};
-
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargs_file_name;
     my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
 
+    ## Filehandles
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+
     unless (defined($FILEHANDLE)){ #Run as individual sbatch script
 
+	## Filehandles
 	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -12745,13 +12777,15 @@ sub gatk_realigner {
     my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $analysis_type_ref = \$active_parameter_href->{analysis_type}{$$sample_id_ref};
-
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargs_file_name;
     my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
 
+    ## Filehandles
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+
     unless (defined($FILEHANDLE)){ #Run as individual sbatch script
 
+	## Filehandles
 	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -13057,13 +13091,14 @@ sub pmarkduplicates {
     my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $lanes = join("",@{ $lane_href->{$$sample_id_ref} });  #Extract lanes
-
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargs_file_name;
     my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
 
-    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
+    ## Filehandles
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
+    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
+	
 	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     }
 
@@ -13380,10 +13415,11 @@ sub picardtools_mergesamfiles {
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $lanes = join("",@{ $lane_href->{$$sample_id_ref} });  #Extract lanes
-
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargs_file_name;
     my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     unless (defined($FILEHANDLE)){ #Run as individual sbatch script
 
@@ -14139,6 +14175,7 @@ sub picardtools_mergerapidreads {
 
     use Language::Java qw(core);
 
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -14304,14 +14341,15 @@ sub bwa_mem {
     use Program::Alignment::Samtools qw(view stats);
     use Program::Alignment::Sambamba qw(sort);
 
-    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $time = $active_parameter_href->{module_time}{"p".$program_name};
-
     my $infile_size;
     my $total_sbatch_counter = 0;
     my $paired_end_tracker = 0;  #Too avoid adjusting infile_index in submitting to jobs
     my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Assign directories
     my $insample_directory = $indir_path_href->{$$sample_id_ref};
@@ -14788,15 +14826,15 @@ sub variantannotationblock {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    my $core_number = $active_parameter_href->{core_processor_number};
+    my $xargs_file_name;
+    my $time = 80;
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger("MIP");
 
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 80;
-
-    ## Set the number of cores to allocate per sbatch job.
-    my $core_number = $active_parameter_href->{core_processor_number};
-    my $xargs_file_name;
 
     $log->info("\t[Prepareforvariantannotationblock]\n");
 
@@ -15082,14 +15120,14 @@ sub bamcalibrationblock {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    my $core_number = $active_parameter_href->{core_processor_number};
+    my $time = 80;
+
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger("MIP");
 
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 80;
-
-    ## Set the number of cores to allocate per sbatch job.
-    my $core_number = $active_parameter_href->{core_processor_number};
 
     ##Always run even for single samples to rename them correctly for standardised downstream processing.
     ##Will also split alignment per contig and copy to temporary directory for '-rio 1' block to enable selective removal of block submodules.
@@ -15256,6 +15294,7 @@ sub madeline {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -15364,8 +15403,10 @@ sub pfastqc {
     use Program::Gnu::Coreutils qw(cp);
     use Program::Qc::Fastqc qw (fastqc);
 
-    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
+
+    ## Filehandles
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     foreach my $infile (@{ $infile_lane_no_ending_href->{$$sample_id_ref} }) {
 
@@ -15539,6 +15580,7 @@ sub gzip_fastq {
     use Program::Compression::Gzip qw(gzip);
     use Program::Gnu::Bash qw(cd);
 
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Adjust according to number of infiles to process
@@ -15677,8 +15719,10 @@ sub split_fastq_file {
     use Program::Gnu::Coreutils qw(cp rm mv split);
     use Program::Compression::Pigz qw(pigz);
 
-    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
+
+    ## Filehandles
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     foreach my $fastq_file (@{ $infile_href->{$$sample_id_ref} }) {
 

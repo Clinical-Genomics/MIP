@@ -106,6 +106,7 @@ module_time:
     psamtools_mpileup: 20
     ptiddit: 10
     pmanta: 10
+    pdelly_call: 10
   type: mip
 module_core_number:
   associated_program:
@@ -126,6 +127,7 @@ module_core_number:
     psamtools_mpileup: 16
     ptiddit: 1
     pmanta: 16
+    pdelly_call: 16
   type: mip
 supported_capture_kit:
   associated_program:
@@ -760,6 +762,7 @@ pdelly_call:
   program_name_path:
    - delly
   outdir_name: delly
+  outfile_suffix: ".bcf"
   type: program
 pdelly_reformat:
   associated_program:
