@@ -69,7 +69,7 @@ sub call {
 	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
 	FILEHANDLE => { store => \$FILEHANDLE },
 	samples_file => { strict_type => 1, store => \$samples_file },
-	constrain => { allow => ["alleles", "trio"],
+	constrain => { allow => [undef, "alleles", "trio"],
 		       strict_type => 1, store => \$constrain },
 	multiallelic_caller => { default => 1,
 				 allow => [undef, 0, 1],
