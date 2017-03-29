@@ -10912,9 +10912,11 @@ sub delly_reformat {
 		say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$sv_type.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    }
 	}
+    }
+    else {
 
-	### Merge calls
-	say $FILEHANDLE "## Index bcf";
+	### Rename calls
+	say $FILEHANDLE "## Rename to standardise";
 
 	## Create file commands for xargs
 	($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
@@ -10923,16 +10925,80 @@ sub delly_reformat {
 								 program_info_path => $program_info_path,
 								 core_number => $core_number,
 								 xargs_file_counter => $xargs_file_counter,
-								 first_command => "bcftools index",
 								});
       SV_TYPE:
 	foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {
-
+	    
 	    if ($sv_type ne "TRA") {
 
 	      CONTIG:
 		foreach my $contig (@contigs) {
 
+		    my $infile_path;
+
+		  SAMPLE_ID:
+		    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {  #Can be only one
+
+			## Add merged infile name after merging all BAM files per sample_id
+			my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
+
+			$infile_path = catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig."_".$sv_type."_geno.bcf")." ";  #Infile
+		    }
+
+		    ## Rename
+		    mv({infile_path => $infile_path, 
+			outfile_path => $outfile_path_no_ending."_".$contig."_".$sv_type."_geno".$alt_file_ending.".bcf",
+			FILEHANDLE => $XARGSFILEHANDLE,
+		       });
+		    print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$contig.".".$sv_type.".stdout.txt ";  #Redirect xargs output to program specific stdout file
+		    say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".".$sv_type.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		}
+	    }
+	    else {
+
+		print $XARGSFILEHANDLE "-O b ";
+		print $XARGSFILEHANDLE "-o ".$outfile_path_no_ending."_".$sv_type."_geno".$alt_file_ending.".bcf ";
+
+		my $infile_path;
+	      SAMPLE_ID:
+		foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
+
+		    ## Add merged infile name after merging all BAM files per sample_id
+		    my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
+
+		    $infile_path = catfile($$temp_directory_ref, $infile.$outfile_tag."_".$sv_type."_geno.bcf")." ";  #Infile
+		}
+
+		## Rename
+		mv({infile_path => $infile_path,
+		    outfile_path => $outfile_path_no_ending."_".$sv_type."_geno".$alt_file_ending.".bcf",
+		    FILEHANDLE => $XARGSFILEHANDLE,
+		   });
+		print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$sv_type.".stdout.txt ";  #Redirect xargs output to program specific stdout file
+		say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$sv_type.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    }
+	}
+    }
+    ### Merge calls
+    say $FILEHANDLE "## Index bcf";
+
+    ## Create file commands for xargs
+    ($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
+							     XARGSFILEHANDLE => $XARGSFILEHANDLE,
+							     file_name => $file_name,
+							     program_info_path => $program_info_path,
+							     core_number => $core_number,
+							     xargs_file_counter => $xargs_file_counter,
+							     first_command => "bcftools index",
+							    });
+  SV_TYPE:
+    foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {
+	
+	    if ($sv_type ne "TRA") {
+		
+	      CONTIG:
+		foreach my $contig (@contigs) {
+		    
 		    print $XARGSFILEHANDLE $outfile_path_no_ending."_".$contig."_".$sv_type."_geno".$alt_file_ending.".bcf ";
 		    print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$contig.".".$sv_type.".stdout.txt ";  #Redirect xargs output to program specific stdout file
 		    say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".".$sv_type.".stderr.txt ";  #Redirect xargs output to program specific stderr file
@@ -10944,9 +11010,7 @@ sub delly_reformat {
 		print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$sv_type.".stdout.txt ";  #Redirect xargs output to program specific stdout file
 		say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$sv_type.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    }
-	}
     }
-
 
     ### Filter calls
     say $FILEHANDLE "## Delly filter";
