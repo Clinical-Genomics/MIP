@@ -20,7 +20,7 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(call filter norm);
+    our @EXPORT_OK = qw(call index filter norm merge concat);
 
 }
 
@@ -115,6 +115,65 @@ sub call {
     if ($outfile_path) {
 
 	push(@commands, "--output ".$outfile_path);  #Specify output filename
+    }
+
+    ## Infile
+    if ($infile_path) {
+
+	push(@commands, $infile_path);
+    }
+    if ($stderrfile_path) {
+
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
+sub index {
+
+##index
+
+##Function : Perl wrapper for writing bcftools index recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
+##Returns  : "@commands"
+##Arguments: $infile_path, $stderrfile_path, $FILEHANDLE, $output_type
+##         : $infile_path       => Infile path to read from
+##         : $stderrfile_path   => Stderr file path to write to {OPTIONAL}
+##         : $FILEHANDLE        => Filehandle to write to
+##         : $output_type       => 'csi' generate CSI-format index, 'tbi' generate TBI-format index
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $output_type;
+
+    ## Flatten argument(s)
+    my $infile_path;
+    my $stderrfile_path;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	output_type => { default => "csi",
+			 allow => ["csi", "tbi"],
+			 strict_type => 1, store => \$output_type},
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## bcftools
+    my @commands = qw(bcftools index);  #Stores commands depending on input parameters
+
+    ## Options
+    if ($output_type) {
+
+	push(@commands, "--".$output_type);  #Specify output type
     }
 
     ## Infile
@@ -292,6 +351,161 @@ sub norm {
     if ($infile_path) {
 
 	push(@commands, $infile_path);
+    }
+    if ($stderrfile_path) {
+
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
+sub merge {
+
+##merge
+
+##Function : Perl wrapper for writing bcftools merge recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
+##Returns  : "@commands"
+##Arguments: $infile_paths_ref, $outfile_path, $stderrfile_path, $stdoutfile_path, $FILEHANDLE, $output_type
+##         : $infile_paths_ref => Infile path to read from
+##         : $outfile_path     => Outfile path to write to
+##         : $stderrfile_path  => Stderr file path to write to
+##         : $stdoutfile_path  => Stdoutfile file path to write to
+##         : $FILEHANDLE       => Filehandle to write to
+##         : $output_type      => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $output_type;
+
+    ## Flatten argument(s)
+    my $infile_paths_ref;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $stdoutfile_path;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+	infile_paths_ref => { default => [], strict_type => 1, store => \$infile_paths_ref },
+	outfile_path => { strict_type => 1, store => \$outfile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
+	output_type => { default => "v",
+			 allow => ["b", "u", "z", "v"],
+			 strict_type => 1, store => \$output_type },
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## bcftools
+    my @commands = qw(bcftools merge);  #Stores commands depending on input parameters
+
+    ## Options
+    if ($output_type) {
+
+	push(@commands, "--output-type ".$output_type);  #Specify output type
+    }
+    if ($outfile_path) {
+
+	push(@commands, "--output ".$outfile_path);  #Specify output filename
+    }
+
+    ## Infile
+    if (@$infile_paths_ref) {
+
+	push(@commands, join(" ", @$infile_paths_ref));
+    }
+    if ($stdoutfile_path) {
+
+	push(@commands, "1> ".$stdoutfile_path);  #Redirect stdout to program specific stderr file
+    }
+    if ($stderrfile_path) {
+
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
+sub concat {
+
+##concat
+
+##Function : Perl wrapper for writing bcftools concat recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
+##Returns  : "@commands"
+##Arguments: $infile_paths_ref, $outfile_path, $stderrfile_path, $stdoutfile_path, $FILEHANDLE, $allow_overlaps, $output_type
+##         : $infile_paths_ref => Infile path to read from
+##         : $outfile_path     => Outfile path to write to
+##         : $stderrfile_path  => Stderr file path to write to
+##         : $stdoutfile_path  => Stdoutfile file path to write to
+##         : $FILEHANDLE       => Filehandle to write to
+##         : $allow_overlaps   => First coordinate of the next file can precede last record of the current file
+##         : $output_type      => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $output_type;
+
+    ## Flatten argument(s)
+    my $infile_paths_ref;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $stdoutfile_path;
+    my $FILEHANDLE;
+    my $allow_overlaps;
+
+    my $tmpl = {
+	infile_paths_ref => { default => [], strict_type => 1, store => \$infile_paths_ref },
+	outfile_path => { strict_type => 1, store => \$outfile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
+	allow_overlaps => { default => 0,
+			    allow => [0, 1],
+			    strict_type => 1, store => \$allow_overlaps },
+	output_type => { default => "v",
+			 allow => ["b", "u", "z", "v"],
+			 strict_type => 1, store => \$output_type },
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## bcftools
+    my @commands = qw(bcftools concat);  #Stores commands depending on input parameters
+
+    ## Options
+    if ($allow_overlaps) {
+
+	push(@commands, "--allow-overlaps");
+    }
+    if ($output_type) {
+
+	push(@commands, "--output-type ".$output_type);  #Specify output type
+    }
+    if ($outfile_path) {
+
+	push(@commands, "--output ".$outfile_path);  #Specify output filename
+    }
+
+    ## Infile
+    if (@$infile_paths_ref) {
+
+	push(@commands, join(" ", @$infile_paths_ref));
+    }
+    if ($stdoutfile_path) {
+
+	push(@commands, "1> ".$stdoutfile_path);  #Redirect stdout to program specific stderr file
     }
     if ($stderrfile_path) {
 

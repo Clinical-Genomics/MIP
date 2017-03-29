@@ -8732,7 +8732,7 @@ sub sv_reformat {
 	sort_vcf({active_parameter_href => $active_parameter_href,
 		  FILEHANDLE => $FILEHANDLE,
 		  sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict"),
-		  infile => $file_path_no_ending.$vcfparser_analysis_type.$concatenate_ending.".vcf",
+		  infile_paths_ref => [$file_path_no_ending.$vcfparser_analysis_type.$concatenate_ending.".vcf"],
 		  outfile => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf",
 		 });
 
@@ -10120,11 +10120,11 @@ sub sv_combinevariantcallsets {
 	}
     }
 
-    merge({infile_paths_ref => \@infile_paths,
-	   outfile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$call_type.".vcf"),
-	   priority => $active_parameter_href->{sv_svdb_merge_prioritize},
-	   FILEHANDLE => $FILEHANDLE,
-	  });
+    Program::Variantcalling::Svdb::merge({infile_paths_ref => \@infile_paths,
+					  outfile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$call_type.".vcf"),
+					  priority => $active_parameter_href->{sv_svdb_merge_prioritize},
+					  FILEHANDLE => $FILEHANDLE,
+					 });
     say $FILEHANDLE "\n";
 
     my $alt_file_ending = "";  #Alternative ending
@@ -10150,7 +10150,7 @@ sub sv_combinevariantcallsets {
     sort_vcf({active_parameter_href => $active_parameter_href,
 	      FILEHANDLE => $FILEHANDLE,
 	      sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict"),
-	      infile => catfile($$temp_directory_ref, $$family_id_ref."_".$call_type.$alt_file_ending.".vcf")." ",
+	      infile_paths_ref => [catfile($$temp_directory_ref, $$family_id_ref."_".$call_type.$alt_file_ending.".vcf")],
 	      outfile => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$outfile_alt_file_ending.".vcf")." ",
 	     });
     print $FILEHANDLE "\n";
@@ -10236,7 +10236,7 @@ sub sv_combinevariantcallsets {
 	sort_vcf({active_parameter_href => $active_parameter_href,
 		  FILEHANDLE => $FILEHANDLE,
 		  sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict"),
-		  infile => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf"),
+		  infile_paths_ref => [catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf")],
 		  outfile => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf"),
 		 });
 
@@ -10608,14 +10608,18 @@ sub delly_reformat {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $core_number = $active_parameter_href->{core_processor_number};
+    use Program::Gnu::Coreutils qw(mv);
+    use Program::Variantcalling::Delly qw(call merge filter);
+    use Program::Variantcalling::Bcftools qw(merge index);
+
+    my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
     my $program_outdirectory_name = $parameter_href->{"p".$program_name}{outdir_name};
-
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 30;
     my $xargs_file_name;
-
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+    
+    ## Filehandles
     $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -10625,7 +10629,7 @@ sub delly_reformat {
 								 program_name => $program_name,
 								 program_directory => catfile(lc($$outaligner_dir_ref), lc($program_outdirectory_name)),
 								 core_number => $core_number,
-								 process_time => $time,
+								 process_time => $active_parameter_href->{module_time}{"p".$program_name},
 								 temp_directory => $$temp_directory_ref
 								});
 
@@ -10638,6 +10642,9 @@ sub delly_reformat {
     my $outfile_no_ending = $$family_id_ref.$outfile_tag."_".$call_type;
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
+    ## Assign suffix
+    my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
+    $parameter_href->{variant_calling_suffix}{$jobid_chain} = $outfile_suffix;  #Set variant calling file suffix for next module
 
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
     my @contigs = remove_element({elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
@@ -10650,9 +10657,12 @@ sub delly_reformat {
 			  remove_contigs_ref => ["Y"],  #Skip contig Y throughout since sometimes there are no variants particularly for INS
 			 });
 
-    ## Collect infiles for all sample_ids to enable migration to temporary directory
+    ## Collect files and suffix for all sample_ids
+    my %infile_path_no_ending;
+    my %file_path_no_ending;
+    my %suffix;
     my @infile_tag_keys = ("pgatk_baserecalibration", "pdelly_call");
-    while ( my ($sample_id_index, $sample_id) = each (@{ $active_parameter_href->{sample_ids} }) ) {
+    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
 	## Assign directories
 	my $insample_directory_bam = catdir($active_parameter_href->{outdata_dir}, $sample_id, $$outaligner_dir_ref);
@@ -10660,18 +10670,25 @@ sub delly_reformat {
 
 	foreach my $infile_tag_key (@infile_tag_keys) {
 
-	    ## Assign file_tags
-	    my $infile_tag = $file_info_href->{$sample_id}{$infile_tag_key}{file_tag};
-
 	    ## Add merged infile name after merging all BAM files per sample_id
 	    my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
 
+	    ## Assign file_tags
+	    my $infile_tag = $file_info_href->{$sample_id}{$infile_tag_key}{file_tag};
+	    my $infile_no_ending = $infile.$infile_tag;
+	    
+	    $infile_path_no_ending{$sample_id}{$infile_tag_key} = catfile($$temp_directory_ref, $infile_no_ending);
+	    $file_path_no_ending{$sample_id} = catfile($$temp_directory_ref, $infile.$outfile_tag);  #Used downstream
+
 	    if ($infile_tag_key eq "pdelly_call") {  #BCFs
+		
+		## Assign suffix
+		$suffix{$infile_tag_key} = $parameter_href->{$infile_tag_key}{ $parameter_href->{$infile_tag_key}{chain} };
 
 	      SV_TYPE:
 		foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {
 
-		    my $file_ending = "_".$sv_type.".b*";
+		    my $file_ending = "_".$sv_type.substr($suffix{$infile_tag_key}, 0, 2)."*";
 
 		    if ($sv_type ne "TRA") {
 
@@ -10682,7 +10699,7 @@ sub delly_reformat {
 											      contigs_ref => \@contigs,
 											      file_name =>$file_name,
 											      program_info_path => $program_info_path,
-											      core_number => ($core_number - 1),  #Compensate for cp of entire BAM (INS, TRA), see above
+											      core_number => $core_number,
 											      xargs_file_counter => $xargs_file_counter,
 											      infile => $infile.$infile_tag,
 											      indirectory => $insample_directory_bcf,
@@ -10702,7 +10719,10 @@ sub delly_reformat {
 	    }
 	    else {  #BAMs
 
-		my $file_ending = ".b*";
+		## Assign suffix
+		$suffix{$infile_tag_key} = $parameter_href->{alignment_suffix}{ $parameter_href->{$infile_tag_key}{chain} };
+
+		my $file_ending = substr($suffix{$infile_tag_key}, 0, 2)."*";
 
 		## Copy file(s) to temporary directory
 		say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -10744,7 +10764,6 @@ sub delly_reformat {
 							     program_info_path => $program_info_path,
 							     core_number => $core_number,
 							     xargs_file_counter => $xargs_file_counter,
-							     first_command => "delly merge",
 							    });
   SV_TYPE:
     foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {
@@ -10754,46 +10773,36 @@ sub delly_reformat {
 	  CONTIG:
 	    foreach my $contig (@contigs) {
 
-		print $XARGSFILEHANDLE "-t ".$sv_type." ";  #The SV to call
-		print $XARGSFILEHANDLE "-m 0 ";  #Min. SV size
-		print $XARGSFILEHANDLE "-n 100000000 "; #Max. SV size
-		print $XARGSFILEHANDLE "-o ".$outfile_path_no_ending."_".$contig."_".$sv_type.".bcf ";
+		## Assemble file paths by adding file ending
+		my @file_paths = map { $infile_path_no_ending{$_}{pdelly_call}."_".$contig."_".$sv_type.$suffix{pdelly_call} } @{ $active_parameter_href->{sample_ids} };
 
-	      SAMPLE_ID:
-		foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
-
-		    ## Assign file_tags
-		    my $infile_tag = $file_info_href->{$sample_id}{pdelly_call}{file_tag};
-
-		    ## Add merged infile name after merging all BAM files per sample_id
-		    my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
-
-		    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig."_".$sv_type.".bcf")." ";
-		}
-		print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$contig.".".$sv_type.".stdout.txt ";  #Redirect xargs output to program specific stdout file
-		say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".".$sv_type.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		Program::Variantcalling::Delly::merge({infile_paths_ref => \@file_paths,
+						       outfile_path => $outfile_path_no_ending."_".$contig."_".$sv_type.".bcf",
+						       stdoutfile_path => $xargs_file_name.".".$contig.".".$sv_type.".stdout.txt",
+						       stderrfile_path => $xargs_file_name.".".$contig.".".$sv_type.".stderr.txt",
+						       sv_type => $sv_type,
+						       min_size => 0,
+						       max_size => 100000000,
+						       FILEHANDLE => $XARGSFILEHANDLE,
+						      });
+		say $XARGSFILEHANDLE "\n";
 	    }
 	}
 	else {
 
-	    print $XARGSFILEHANDLE "-t ".$sv_type." ";  #The SV to call
-	    print $XARGSFILEHANDLE "-m 0 ";  #min. SV size
-	    print $XARGSFILEHANDLE "-n 100000000 "; #Max. SV size
-	    print $XARGSFILEHANDLE "-o ".$outfile_path_no_ending."_".$sv_type.".bcf ";
+	    ## Assemble file paths by adding file ending
+	    my @file_paths = map { $infile_path_no_ending{$_}{pdelly_call}."_".$sv_type.$suffix{pdelly_call} } @{ $active_parameter_href->{sample_ids} };
 
-	  SAMPLE_ID:
-	    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
-
-		## Assign file_tags
-		my $infile_tag = $file_info_href->{$sample_id}{pdelly_call}{file_tag};
-
-		## Add merged infile name after merging all BAM files per sample_id
-		my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
-
-		print $XARGSFILEHANDLE  catfile($$temp_directory_ref, $infile.$infile_tag."_".$sv_type.".bcf")." ";
-	    }
-	    print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$sv_type.".stdout.txt ";  #Redirect xargs output to program specific stdout file
-	    say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$sv_type.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    Program::Variantcalling::Delly::merge({infile_paths_ref => \@file_paths,
+						   outfile_path => $outfile_path_no_ending."_".$sv_type.".bcf",
+						   stdoutfile_path => $xargs_file_name.".".$sv_type.".stdout.txt",
+						   stderrfile_path => $xargs_file_name.".".$sv_type.".stderr.txt",
+						   sv_type => $sv_type,
+						   min_size => 0,
+						   max_size => 100000000,
+						   FILEHANDLE => $XARGSFILEHANDLE,
+						  });
+	    say $XARGSFILEHANDLE "\n";
 	}
     }
 
@@ -10804,15 +10813,6 @@ sub delly_reformat {
   SAMPLE_ID:
     foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
-	## Assign file_tags
-	my $infile_tag = $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
-
-	## Add merged infile name after merging all BAM files per sample_id
-	my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
-
-	my $bam_sample_file_path_no_ending = catfile($$temp_directory_ref, $infile.$infile_tag);
-	my $bcf_sample_file_path_no_ending = catfile($$temp_directory_ref, $infile.$outfile_tag);
-
 	## Create file commands for xargs
 	($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
 								 XARGSFILEHANDLE => $XARGSFILEHANDLE,
@@ -10820,7 +10820,6 @@ sub delly_reformat {
 								 program_info_path => $program_info_path,
 								 core_number => $core_number,
 								 xargs_file_counter => $xargs_file_counter,
-								 first_command => "delly call",
 								});
       SV_TYPE:
 	foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {
@@ -10830,26 +10829,38 @@ sub delly_reformat {
 	      CONTIG:
 		foreach my $contig (@contigs) {
 
-		    print $XARGSFILEHANDLE "-t ".$sv_type." ";  #The SV to call
-		    print $XARGSFILEHANDLE "-g ".$active_parameter_href->{human_genome_reference}." "; #Reference file
-		    print $XARGSFILEHANDLE "-v ".$outfile_path_no_ending."_".$contig."_".$sv_type.".bcf ";
-		    print $XARGSFILEHANDLE "-x ".$active_parameter_href->{delly_exclude_file}." ";  #to exclude telomere and centromere regions
-		    print $XARGSFILEHANDLE "-o ".$bcf_sample_file_path_no_ending."_".$contig."_".$sv_type."_geno.bcf ";
-		    print $XARGSFILEHANDLE $bam_sample_file_path_no_ending."_".$contig.".bam ";  #InFile
-		    print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$contig.".".$sv_type.".stdout.txt ";  #Redirect xargs output to program specific stdout file
-		    say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".".$sv_type.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		    ## Assemble file path
+		    my $alignment_sample_file_path = $infile_path_no_ending{$sample_id}{pgatk_baserecalibration}."_".$contig.$suffix{pgatk_baserecalibration};
+
+		    Program::Variantcalling::Delly::call ({infile_path => $alignment_sample_file_path,
+							   genotypefile_path => $outfile_path_no_ending."_".$contig."_".$sv_type.$suffix{pdelly_call},
+							   outfile_path => $file_path_no_ending{$sample_id}."_".$contig."_".$sv_type."_geno".$suffix{pdelly_call},
+							   stdoutfile_path => $xargs_file_name.".".$contig.".".$sv_type.".stdout.txt",
+							   stderrfile_path => $xargs_file_name.".".$contig.".".$sv_type.".stderr.txt",
+							   sv_type => $sv_type,
+							   exclude_file_path => $active_parameter_href->{delly_exclude_file},
+							   referencefile_path => $active_parameter_href->{human_genome_reference},
+							   FILEHANDLE => $XARGSFILEHANDLE,
+							  });
+		    say $XARGSFILEHANDLE "\n";
 		}
 	    }
 	    else {
 
-		print $XARGSFILEHANDLE "-t ".$sv_type." ";  #The SV to call
-		print $XARGSFILEHANDLE "-g ".$active_parameter_href->{human_genome_reference}." "; #Reference file
-		print $XARGSFILEHANDLE "-v ".$outfile_path_no_ending."_".$sv_type.".bcf ";
-		print $XARGSFILEHANDLE "-x ".$active_parameter_href->{delly_exclude_file}." ";  #to exclude telomere and centromere regions
-		print $XARGSFILEHANDLE "-o ".$bcf_sample_file_path_no_ending."_".$sv_type."_geno.bcf ";
-		print $XARGSFILEHANDLE $bam_sample_file_path_no_ending.".bam ";  #InFile
-		print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$sv_type.".stdout.txt ";  #Redirect xargs output to program specific stdout file
-		say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$sv_type.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		## Assemble file path
+		my $alignment_sample_file_path = $infile_path_no_ending{$sample_id}{pgatk_baserecalibration}.$suffix{pgatk_baserecalibration};
+
+		Program::Variantcalling::Delly::call ({infile_path => $alignment_sample_file_path,
+						       genotypefile_path => $outfile_path_no_ending."_".$sv_type.$suffix{pdelly_call},
+						       outfile_path => $file_path_no_ending{$sample_id}."_".$sv_type."_geno".$suffix{pdelly_call},
+						       stdoutfile_path => $xargs_file_name.".".$sv_type.".stdout.txt",
+						       stderrfile_path => $xargs_file_name.".".$sv_type.".stderr.txt",
+						       sv_type => $sv_type,
+						       exclude_file_path => $active_parameter_href->{delly_exclude_file},
+						       referencefile_path => $active_parameter_href->{human_genome_reference},
+						       FILEHANDLE => $XARGSFILEHANDLE,
+						      });
+		say $XARGSFILEHANDLE "\n";
 	    }
 	}
     }
@@ -10870,7 +10881,6 @@ sub delly_reformat {
 								 program_info_path => $program_info_path,
 								 core_number => $core_number,
 								 xargs_file_counter => $xargs_file_counter,
-								 first_command => "bcftools merge",
 								});
       SV_TYPE:
 	foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {
@@ -10880,36 +10890,32 @@ sub delly_reformat {
 	      CONTIG:
 		foreach my $contig (@contigs) {
 
-		    print $XARGSFILEHANDLE "-O b ";
-		    print $XARGSFILEHANDLE "-o ".$outfile_path_no_ending."_".$contig."_".$sv_type."_geno".$alt_file_ending.".bcf ";
+		    ## Assemble file paths by adding file ending
+		    my @file_paths = map { $file_path_no_ending{$_}."_".$contig."_".$sv_type."_geno".$suffix{pdelly_call} } @{ $active_parameter_href->{sample_ids} };
 
-		  SAMPLE_ID:
-		    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
-
-			## Add merged infile name after merging all BAM files per sample_id
-			my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
-
-			print $XARGSFILEHANDLE catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig."_".$sv_type."_geno.bcf")." ";  #Infile
-		    }
-		    print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$contig.".".$sv_type.".stdout.txt ";  #Redirect xargs output to program specific stdout file
-		    say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".".$sv_type.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		    Program::Variantcalling::Bcftools::merge({infile_paths_ref => \@file_paths,
+							      outfile_path => $outfile_path_no_ending."_".$contig."_".$sv_type."_geno".$alt_file_ending.$suffix{pdelly_call},
+							      output_type => "b",
+							      stdoutfile_path => $xargs_file_name.".".$contig.".".$sv_type.".stdout.txt",
+							      stderrfile_path => $xargs_file_name.".".$contig.".".$sv_type.".stderr.txt",
+							      FILEHANDLE => $XARGSFILEHANDLE,
+							     });
+		    say $XARGSFILEHANDLE "\n";
 		}
 	    }
 	    else {
 
-		print $XARGSFILEHANDLE "-O b ";
-		print $XARGSFILEHANDLE "-o ".$outfile_path_no_ending."_".$sv_type."_geno".$alt_file_ending.".bcf ";
-
-	      SAMPLE_ID:
-		foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
-
-		    ## Add merged infile name after merging all BAM files per sample_id
-		    my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
-
-		    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $infile.$outfile_tag."_".$sv_type."_geno.bcf")." ";  #Infile
-		}
-		print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$sv_type.".stdout.txt ";  #Redirect xargs output to program specific stdout file
-		say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$sv_type.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		## Assemble file paths by adding file ending
+		my @file_paths = map { $file_path_no_ending{$_}."_".$sv_type."_geno".$suffix{pdelly_call} } @{ $active_parameter_href->{sample_ids} };
+		
+		Program::Variantcalling::Bcftools::merge({infile_paths_ref => \@file_paths,
+							  outfile_path => $outfile_path_no_ending."_".$sv_type."_geno".$alt_file_ending.$suffix{pdelly_call},
+							  output_type => "b",
+							  stdoutfile_path => $xargs_file_name.".".$sv_type.".stdout.txt",
+							  stderrfile_path => $xargs_file_name.".".$sv_type.".stderr.txt",
+							  FILEHANDLE => $XARGSFILEHANDLE,
+							 });
+		say $XARGSFILEHANDLE "\n";
 	    }
 	}
     }
@@ -10934,52 +10940,35 @@ sub delly_reformat {
 	      CONTIG:
 		foreach my $contig (@contigs) {
 
-		    my $infile_path;
-
-		  SAMPLE_ID:
-		    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {  #Can be only one
-
-			## Add merged infile name after merging all BAM files per sample_id
-			my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
-
-			$infile_path = catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig."_".$sv_type."_geno.bcf")." ";  #Infile
-		    }
+		    ## Assemble file paths by adding file ending
+		    my $file_path = $file_path_no_ending{ $active_parameter_href->{sample_ids}[0] }."_".$contig."_".$sv_type."_geno".$suffix{pdelly_call};  #Can only be one sample in array
 
 		    ## Rename
-		    mv({infile_path => $infile_path, 
-			outfile_path => $outfile_path_no_ending."_".$contig."_".$sv_type."_geno".$alt_file_ending.".bcf",
+		    mv({infile_path => $file_path,
+			outfile_path => $outfile_path_no_ending."_".$contig."_".$sv_type."_geno".$alt_file_ending.$suffix{pdelly_call},
+			stderrfile_path => $xargs_file_name.".".$contig.".".$sv_type.".stderr.txt",
 			FILEHANDLE => $XARGSFILEHANDLE,
 		       });
-		    print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$contig.".".$sv_type.".stdout.txt ";  #Redirect xargs output to program specific stdout file
-		    say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".".$sv_type.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		    say $XARGSFILEHANDLE "\n";
 		}
 	    }
 	    else {
 
-		print $XARGSFILEHANDLE "-O b ";
-		print $XARGSFILEHANDLE "-o ".$outfile_path_no_ending."_".$sv_type."_geno".$alt_file_ending.".bcf ";
-
-		my $infile_path;
-	      SAMPLE_ID:
-		foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
-
-		    ## Add merged infile name after merging all BAM files per sample_id
-		    my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
-
-		    $infile_path = catfile($$temp_directory_ref, $infile.$outfile_tag."_".$sv_type."_geno.bcf")." ";  #Infile
-		}
+		## Assemble file paths by adding file ending
+		my $file_path = $file_path_no_ending{ $active_parameter_href->{sample_ids}[0] }."_".$sv_type."_geno".$suffix{pdelly_call};  #Can only be one sample in array
 
 		## Rename
-		mv({infile_path => $infile_path,
-		    outfile_path => $outfile_path_no_ending."_".$sv_type."_geno".$alt_file_ending.".bcf",
+		mv({infile_path => $file_path,
+		    outfile_path => $outfile_path_no_ending."_".$sv_type."_geno".$alt_file_ending.$suffix{pdelly_call},
+		    stderrfile_path => $xargs_file_name.".".$sv_type.".stderr.txt",
 		    FILEHANDLE => $XARGSFILEHANDLE,
 		   });
-		print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$sv_type.".stdout.txt ";  #Redirect xargs output to program specific stdout file
-		say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$sv_type.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		say $XARGSFILEHANDLE "\n";
 	    }
 	}
     }
-    ### Merge calls
+
+    ### Index calls
     say $FILEHANDLE "## Index bcf";
 
     ## Create file commands for xargs
@@ -10999,16 +10988,22 @@ sub delly_reformat {
 	      CONTIG:
 		foreach my $contig (@contigs) {
 		    
-		    print $XARGSFILEHANDLE $outfile_path_no_ending."_".$contig."_".$sv_type."_geno".$alt_file_ending.".bcf ";
-		    print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$contig.".".$sv_type.".stdout.txt ";  #Redirect xargs output to program specific stdout file
-		    say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".".$sv_type.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		    Program::Variantcalling::Bcftools::index({infile_path => $outfile_path_no_ending."_".$contig."_".$sv_type."_geno".$alt_file_ending.$suffix{pdelly_call},
+							      stderrfile_path => $xargs_file_name.".".$contig.".".$sv_type.".stderr.txt",
+							      output_type => "csi",
+							      FILEHANDLE => $XARGSFILEHANDLE,
+							     });
+		    say $XARGSFILEHANDLE "\n";
 		}
 	    }
 	    else {
 
-		print $XARGSFILEHANDLE $outfile_path_no_ending."_".$sv_type."_geno".$alt_file_ending.".bcf ";
-		print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$sv_type.".stdout.txt ";  #Redirect xargs output to program specific stdout file
-		say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$sv_type.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		Program::Variantcalling::Bcftools::index({infile_path => $outfile_path_no_ending."_".$sv_type."_geno".$alt_file_ending.$suffix{pdelly_call},
+							  stderrfile_path => $xargs_file_name.".".$sv_type.".stderr.txt",
+							  output_type => "csi",
+							  FILEHANDLE => $XARGSFILEHANDLE,
+							 });
+		say $XARGSFILEHANDLE "\n";
 	    }
     }
 
@@ -11032,62 +11027,70 @@ sub delly_reformat {
 	  CONTIG:
 	    foreach my $contig (@contigs) {
 
-		print $XARGSFILEHANDLE "-t ".$sv_type." ";  #The SV to call
-		print $XARGSFILEHANDLE "-f germline ";  #Filter mode
-		print $XARGSFILEHANDLE "-o ".$outfile_path_no_ending."_".$contig."_".$sv_type."_geno".$alt_file_ending."_filtered.bcf ";
-		print $XARGSFILEHANDLE $outfile_path_no_ending."_".$contig."_".$sv_type."_geno".$alt_file_ending.".bcf ";
-		print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$contig.".".$sv_type.".stdout.txt ";  #Redirect xargs output to program specific stdout file
-		say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".".$sv_type.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+		Program::Variantcalling::Delly::filter({infile_path => $outfile_path_no_ending."_".$contig."_".$sv_type."_geno".$alt_file_ending.$suffix{pdelly_call},
+							outfile_path => $outfile_path_no_ending."_".$contig."_".$sv_type."_geno".$alt_file_ending."_filtered".$suffix{pdelly_call},
+							stdoutfile_path => $xargs_file_name.".".$contig.".".$sv_type.".stdout.txt",
+							stderrfile_path => $xargs_file_name.".".$contig.".".$sv_type.".stderr.txt",
+							sv_type => $sv_type,
+							filter_mode => "germline",
+							FILEHANDLE => $XARGSFILEHANDLE,
+						       });
+		say $XARGSFILEHANDLE "\n";
 	    }
 	}
 	else {
 
-	    print $XARGSFILEHANDLE "-t ".$sv_type." ";  #The SV to call
-	    print $XARGSFILEHANDLE "-f germline ";  #Filter mode
-	    print $XARGSFILEHANDLE "-o ".$outfile_path_no_ending."_".$sv_type."_geno".$alt_file_ending."_filtered.bcf ";
-	    print $XARGSFILEHANDLE $outfile_path_no_ending."_".$sv_type."_geno".$alt_file_ending.".bcf ";
-	    print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$sv_type.".stdout.txt ";  #Redirect xargs output to program specific stdout file
-	    say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$sv_type.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    Program::Variantcalling::Delly::filter({infile_path => $outfile_path_no_ending."_".$sv_type."_geno".$alt_file_ending.$suffix{pdelly_call},
+						    outfile_path => $outfile_path_no_ending."_".$sv_type."_geno".$alt_file_ending."_filtered".$suffix{pdelly_call},
+						    stdoutfile_path => $xargs_file_name.".".$sv_type.".stdout.txt",
+						    stderrfile_path => $xargs_file_name.".".$sv_type.".stderr.txt",
+						    sv_type => $sv_type,
+						    filter_mode => "germline",
+						    FILEHANDLE => $XARGSFILEHANDLE,
+						   });
+	    say $XARGSFILEHANDLE "\n";
 	}
     }
 
     ### Concatenate SV types
     say $FILEHANDLE "## bcftools concat - merge all SV types and contigs";
 
-    print $FILEHANDLE "bcftools concat ";
-    print $FILEHANDLE "--allow-overlaps "; #First coordinate of the next file can precede last record of the current file
-    print $FILEHANDLE "-O v ";  #uncompressed VCF
-    print $FILEHANDLE "-o ".$outfile_path_no_ending."_concat.vcf ";
+    ## Assemble file paths by adding file ending
+    my @file_paths;
 
   SV_TYPE:
     foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {
 
 	if($sv_type ne "TRA") {
 
-	  CONTIG:
-	    foreach my $contig (@contigs) {
-
-		print $FILEHANDLE $outfile_path_no_ending."_".$contig."_".$sv_type."_geno".$alt_file_ending."_filtered.bcf ";
-	    }
+	    push(@file_paths, map { $outfile_path_no_ending."_".$_."_".$sv_type."_geno".$alt_file_ending."_filtered".$suffix{pdelly_call} } @contigs);
 	}
 	else {
 
-	    print $FILEHANDLE $outfile_path_no_ending."_".$sv_type."_geno".$alt_file_ending.".bcf ";
+	    push(@file_paths, $outfile_path_no_ending."_".$sv_type."_geno".$alt_file_ending.$suffix{pdelly_call});
 	}
     }
+
+    Program::Variantcalling::Bcftools::concat({infile_paths_ref => \@file_paths,
+					       outfile_path => $outfile_path_no_ending."_concat".$outfile_suffix,
+					       output_type => "v",
+					       stderrfile_path => $program_info_path."_concat.stderr.txt",
+					       allow_overlaps => 1,
+					       FILEHANDLE => $FILEHANDLE,
+					      });
     say $FILEHANDLE "\n";
 
     ## Writes sbatch code to supplied filehandle to sort variants in vcf format
     sort_vcf({active_parameter_href => $active_parameter_href,
 	      FILEHANDLE => $FILEHANDLE,
 	      sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict"),
-	      infile => $outfile_path_no_ending."_concat.vcf",
-	      outfile => $outfile_path_no_ending.".vcf",
+	      infile_paths_ref => [$outfile_path_no_ending."_concat".$outfile_suffix],
+	      outfile => $outfile_path_no_ending.$outfile_suffix,
 	     });
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "\n## Copy file from temporary directory";
-    migrate_file({infile_path => $outfile_path_no_ending.".vcf",
+    migrate_file({infile_path => $outfile_path_no_ending.$outfile_suffix,
 		  outfile_path => $outfamily_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -11098,7 +11101,7 @@ sub delly_reformat {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => "delly",
 			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_no_ending.".vcf",
+			outfile_ending => $outfile_no_ending.$outfile_suffix,
 			outdata_type => "static"
 		       });
     }
@@ -11111,7 +11114,7 @@ sub delly_reformat {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    dependencies => "case_dependency",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name,
 		   });
     }
@@ -11224,7 +11227,7 @@ sub delly_call {
     ## Assign suffix
     my $infile_suffix = $parameter_href->{alignment_suffix}{ $parameter_href->{pgatk_baserecalibration}{chain} };  #Inherit from input chain
     my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
-    $parameter_href->{variant_calling_suffix}{$jobid_chain} = $outfile_suffix;  #Set variant calling file suffix for next module
+    $parameter_href->{"p".$program_name}{$jobid_chain} = $outfile_suffix;  #Set file suffix for next module
 
     ### Update contigs
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
@@ -21232,33 +21235,34 @@ sub sort_vcf {
 
 ##Function : Writes sbatch code to supplied filehandle to sort variants in vcf format.
 ##Returns  : ""
-##Arguments: $active_parameter_href, $FILEHANDLE, $sequence_dict_file, $infile, $outfile
+##Arguments: $active_parameter_href, $infile_paths_ref, $FILEHANDLE, $sequence_dict_file, $outfile
 ##         : $active_parameter_href => The active parameters for this analysis hash {REF}
+##         : $infile_paths_ref      => Infiles to sort {REF}
 ##         : $FILEHANDLE            => SBATCH script FILEHANDLE to print to
 ##         : $sequence_dict_file    => Human reference sequence dict file
-##         : $infile                => File to sort
 ##         : $outfile               => The sorted outfile
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $active_parameter_href;
+    my $infile_paths_ref;
     my $FILEHANDLE;
     my $sequence_dict_file;
-    my $infile;
     my $outfile;
 
     my $tmpl = {
 	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	infile_paths_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$infile_paths_ref},
 	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
 	sequence_dict_file => { required => 1, defined => 1, strict_type => 1, store => \$sequence_dict_file},
-	infile => { required => 1, defined => 1, strict_type => 1, store => \$infile},
 	outfile => { required => 1, defined => 1, strict_type => 1, store => \$outfile},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Language::Java qw(core);
+    use Program::Variantcalling::Picardtools qw(sortvcf);
 
     say $FILEHANDLE "## Picard SortVcf";
 
@@ -21270,11 +21274,12 @@ sub sort_vcf {
 	  java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
 	 });
 
-    print $FILEHANDLE "SortVcf ";
-
-    print $FILEHANDLE "INPUT=".$infile." ";  #File to sort
-    print $FILEHANDLE "OUTPUT=".$outfile." ";  #OutFile
-    say $FILEHANDLE "SEQUENCE_DICTIONARY=".$sequence_dict_file, "\n";
+    sortvcf({infile_paths_ref => \@$infile_paths_ref,
+	     outfile_path => $outfile,
+	     sequence_dictionary => $sequence_dict_file,
+	     FILEHANDLE => $FILEHANDLE,
+	    });
+    say $FILEHANDLE "\n";
 }
 
 

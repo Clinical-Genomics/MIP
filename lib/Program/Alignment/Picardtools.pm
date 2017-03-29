@@ -113,8 +113,8 @@ sub markduplicates {
 ##         : $outfile_path     => Outfile path
 ##         : $metrics_file     => File to write duplication metrics to
 ##         : $stderrfile_path  => Stderrfile path
-##         : $create_index     => Create index
 ##         : $FILEHANDLE       => Sbatch filehandle to write to
+##         : $create_index     => Create index
 
     my ($arg_href) = @_;
 
@@ -123,17 +123,17 @@ sub markduplicates {
     my $outfile_path;
     my $metrics_file;
     my $stderrfile_path;
-    my $create_index;
     my $FILEHANDLE;
+    my $create_index;
     
     my $tmpl = {
 	infile_paths_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$infile_paths_ref},
 	outfile_path => { required => 1, defined => 1, strict_type => 1, store => \$outfile_path },
 	metrics_file => { required => 1, defined => 1, strict_type => 1, store => \$metrics_file },
 	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
 	create_index => { allow => ["true", "false"],
 			  strict_type => 1, store => \$create_index },
-	FILEHANDLE => { store => \$FILEHANDLE },
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];

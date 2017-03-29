@@ -107,6 +107,7 @@ module_time:
     ptiddit: 10
     pmanta: 10
     pdelly_call: 10
+    pdelly_reformat: 5
   type: mip
 module_core_number:
   associated_program:
@@ -128,6 +129,7 @@ module_core_number:
     ptiddit: 1
     pmanta: 16
     pdelly_call: 16
+    pdelly_reformat: 16
   type: mip
 supported_capture_kit:
   associated_program:
@@ -775,6 +777,7 @@ pdelly_reformat:
    - delly
    - bcftools
   outdir_name: delly
+  outfile_suffix: ".vcf"
   program_type: structural_variant_callers
   type: program
 delly_types:
