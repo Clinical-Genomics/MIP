@@ -10978,7 +10978,6 @@ sub delly_reformat {
 							     program_info_path => $program_info_path,
 							     core_number => $core_number,
 							     xargs_file_counter => $xargs_file_counter,
-							     first_command => "bcftools index",
 							    });
   SV_TYPE:
     foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {
@@ -11017,7 +11016,6 @@ sub delly_reformat {
 							     program_info_path => $program_info_path,
 							     core_number => $core_number,
 							     xargs_file_counter => $xargs_file_counter,
-							     first_command => "delly filter",
 							    });
   SV_TYPE:
     foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {
