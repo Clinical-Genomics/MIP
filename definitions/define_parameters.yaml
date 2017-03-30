@@ -108,6 +108,7 @@ module_time:
     pmanta: 10
     pdelly_call: 10
     pdelly_reformat: 5
+    pcnvnator: 5
   type: mip
 module_core_number:
   associated_program:
@@ -130,6 +131,7 @@ module_core_number:
     pmanta: 16
     pdelly_call: 16
     pdelly_reformat: 16
+    pcnvnator: 16
   type: mip
 supported_capture_kit:
   associated_program:
@@ -746,6 +748,7 @@ pcnvnator:
    - bcftools
    - samtools
   outdir_name: cnvnator
+  outfile_suffix: ".vcf"
   program_type: structural_variant_callers
   type: program
 cnv_bin_size:

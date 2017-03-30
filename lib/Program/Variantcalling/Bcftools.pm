@@ -20,7 +20,7 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(call index filter norm merge concat);
+    our @EXPORT_OK = qw(call index filter norm merge concat annotate);
 
 }
 
@@ -506,6 +506,86 @@ sub concat {
     if ($stdoutfile_path) {
 
 	push(@commands, "1> ".$stdoutfile_path);  #Redirect stdout to program specific stderr file
+    }
+    if ($stderrfile_path) {
+
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
+sub annotate {
+
+##annotate
+
+##Function : Perl wrapper for writing bcftools annotate recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
+##Returns  : "@commands"
+##Arguments: $infile_path, $outfile_path, $stderrfile_path, $FILEHANDLE, $samples_file, $headerfile_path, $output_type
+##         : $infile_path     => Infile path to read from
+##         : $outfile_path    => Outfile path to write to
+##         : $stderrfile_path => Stderr file path to write to {OPTIONAL}
+##         : $FILEHANDLE      => Filehandle to write to
+##         : $samples_file    => File of samples to annotate
+##         : $headerfile_path => File with lines which should be appended to the VCF header
+##         : $output_type     => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $output_type;
+
+    ## Flatten argument(s)
+    my $infile_path;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $FILEHANDLE;
+    my $samples_file;
+    my $headerfile_path;
+
+    my $tmpl = {
+	infile_path => { strict_type => 1, store => \$infile_path },
+	outfile_path => { strict_type => 1, store => \$outfile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
+	samples_file => { strict_type => 1, store => \$samples_file },
+	headerfile_path => { strict_type => 1, store => \$headerfile_path },
+	output_type => { default => "v",
+			 allow => ["b", "u", "z", "v"],
+			 strict_type => 1, store => \$output_type },
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## bcftools
+    my @commands = qw(bcftools annotate);  #Stores commands depending on input parameters
+
+    ## Options
+    if ($samples_file) {
+
+	push(@commands, "--samples-file ".$samples_file);
+    }
+    if ($headerfile_path) {
+
+	push(@commands, "--header-lines ".$headerfile_path);
+    }
+    if ($output_type) {
+
+	push(@commands, "--output-type ".$output_type);  #Specify output type
+    }
+
+    ## Infile
+    if ($infile_path) {
+
+	push(@commands, $infile_path);
+    }
+    if ($outfile_path) {
+
+	push(@commands, "> ".$outfile_path);  #Specify output filename
     }
     if ($stderrfile_path) {
 

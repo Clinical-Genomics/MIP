@@ -3284,7 +3284,7 @@ sub endvariantannotationblock {
 							     });
 	}
 
-	## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
+	## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
 	concatenate_variants({active_parameter_href => $active_parameter_href,
 			      FILEHANDLE => $FILEHANDLE,
 			      elements_ref => \@contigs,
@@ -7436,7 +7436,7 @@ sub gatk_concatenate_genotypegvcfs {
     }
     say $FILEHANDLE "wait", "\n";
 
-    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
+    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
     concatenate_variants({active_parameter_href => $active_parameter_href,
 			  FILEHANDLE => $FILEHANDLE,
 			  elements_ref => \@{ $file_info_href->{contigs} },
@@ -8718,7 +8718,7 @@ sub sv_reformat {
 
 	    $concatenate_ending = "_cat";
 
-	    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
+	    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
 	    concatenate_variants({active_parameter_href => $active_parameter_href,
 				  FILEHANDLE => $FILEHANDLE,
 				  elements_ref => \@contigs,
@@ -10354,14 +10354,18 @@ sub cnvnator {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $core_number = $active_parameter_href->{core_processor_number};
+    use Program::Alignment::Samtools qw(faidx);
+    use Program::Variantcalling::Cnvnator qw(read_extraction histogram statistics partition calling convert_to_vcf);
+    use Program::Variantcalling::Bcftools qw(annotate);
+
+    my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
     my $program_outdirectory_name = $parameter_href->{"p".$program_name}{outdir_name};
-
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 30;
-    my $xargs_file_name;
-
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+    
+    ## Filehandles
     $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+    my $xargs_file_name;
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -10371,7 +10375,7 @@ sub cnvnator {
 								 program_name => $program_name,
 								 program_directory => catfile(lc($$outaligner_dir_ref), lc($program_outdirectory_name)),
 								 core_number => $core_number,
-								 process_time => $time,
+								 process_time => $active_parameter_href->{module_time}{"p".$program_name},
 								 temp_directory => $$temp_directory_ref
 								});
 
@@ -10380,12 +10384,21 @@ sub cnvnator {
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref, $program_outdirectory_name);
     $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory; #Used downstream
 
+    ## Add merged infile name after merging all BAM files per sample_id
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
+
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_no_ending = $infile.$infile_tag;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $outfile_no_ending = $infile.$outfile_tag;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
+    ## Assign suffix
+    my $infile_suffix = $parameter_href->{alignment_suffix}{ $parameter_href->{pgatk_baserecalibration}{chain} };  #Inherit from input chain
+    my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
+    $parameter_href->{variant_calling_suffix}{$jobid_chain} = $outfile_suffix;  #Set variant calling file suffix for next module
 
     my $root_file;
     my $phenotype_info = $sample_info_href->{sample}{$$sample_id_ref}{phenotype}; #Alias
@@ -10397,7 +10410,7 @@ sub cnvnator {
     ## Add contigs to vcfheader
     print $FILEHANDLE $perl_add_contigs." ";
     print $FILEHANDLE $active_parameter_href->{human_genome_reference}.".fai "; #Reference fai file
-    say $FILEHANDLE "> ".catfile($$temp_directory_ref, "contig_header.txt")." ";
+    say $FILEHANDLE "> ".catfile($$temp_directory_ref, "contig_header.txt"), "\n";
 
     my $core_counter = 1;
     ## Create by cnvnator required "chr.fa" files
@@ -10410,10 +10423,12 @@ sub cnvnator {
 		    FILEHANDLE => $FILEHANDLE,
 		   });
 
-	print $FILEHANDLE "samtools faidx ";
-	print $FILEHANDLE $active_parameter_href->{human_genome_reference}." ";
-	print $FILEHANDLE $contig." ";
-	say $FILEHANDLE "> ".catfile($$temp_directory_ref, $contig.".fa")." &";
+	faidx({regions_ref => [$contig],
+	       infile_path => $active_parameter_href->{human_genome_reference},
+	       outfile_path => catfile($$temp_directory_ref, $contig.".fa"),
+	       FILEHANDLE => $FILEHANDLE,
+	      });
+	say $FILEHANDLE " &";
     }
     say $FILEHANDLE "wait", "\n";
 
@@ -10426,9 +10441,9 @@ sub cnvnator {
 									  program_info_path => $program_info_path,
 									  core_number => $core_number,
 									  xargs_file_counter => $xargs_file_counter,
-									  infile => $infile.$infile_tag,
+									  infile => $infile_no_ending,
 									  indirectory => $insample_directory,
-									  file_ending => ".b*",
+									  file_ending => substr($infile_suffix, 0, 2)."*",
 									  temp_directory => $$temp_directory_ref,
 									 });
 
@@ -10442,79 +10457,96 @@ sub cnvnator {
 							     program_info_path => $program_info_path,
 							     core_number => $core_number,
 							     xargs_file_counter => $xargs_file_counter,
-							     first_command => "cnvnator",
 							    });
 
     ## Process per contig
     foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
-	print $XARGSFILEHANDLE "-chrom ".$contig." ";  #chromosome name
-	print $XARGSFILEHANDLE "-unique ";  #To have correct q0 field for CNV calls
+	## Assemble parameter
+	$root_file = $file_path_no_ending."_".$contig.".root";  #Output ROOT file
 
-	$root_file = catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.".root");  #Output ROOT file
-
-	print $XARGSFILEHANDLE "-root ".$root_file." ";
-	print $XARGSFILEHANDLE "-tree ".catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.".bam")." ";  #InFile
-	print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$contig.".stdout.txt ";  #Redirect xargs output to program specific stdout file
-	print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	read_extraction({infile_paths_ref => [$file_path_no_ending."_".$contig.".bam"],
+			 outfile_path => $root_file,
+			 regions_ref => [$contig],
+			 unique => 1,
+			 stdoutfile_path => $xargs_file_name.".".$contig.".stdout.txt",
+			 stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
+			 FILEHANDLE => $XARGSFILEHANDLE,
+			});
 	print $XARGSFILEHANDLE "; ";
 
-	cnvnator_his({root_file => $root_file,
-		      contig_ref => \$contig,
-		      cnv_bin_size_ref => \$active_parameter_href->{cnv_bin_size},
-		      chromosome_reference => $$temp_directory_ref,
-		      FILEHANDLE => $XARGSFILEHANDLE,
-		      stdout_file => $xargs_file_name.".".$contig.".stdout.txt",
-		      stderr_file => $xargs_file_name.".".$contig.".stderr.txt",
-		     });
-	cnvnator_stat({root_file => $root_file,
-		       contig_ref => \$contig,
-		       cnv_bin_size_ref => \$active_parameter_href->{cnv_bin_size},
-		       FILEHANDLE => $XARGSFILEHANDLE,
-		       stdout_file => $xargs_file_name.".".$contig.".stdout.txt",
-		       stderr_file => $xargs_file_name.".".$contig.".stderr.txt",
-		      });
-	cnvnator_partition({root_file => $root_file,
-			    contig_ref => \$contig,
-			    cnv_bin_size_ref => \$active_parameter_href->{cnv_bin_size},
-			    FILEHANDLE => $XARGSFILEHANDLE,
-			    stdout_file => $xargs_file_name.".".$contig.".stdout.txt",
-			    stderr_file => $xargs_file_name.".".$contig.".stderr.txt",
-			   });
-	cnvnator_calling({root_file => $root_file,
-			  contig_ref => \$contig,
-			  cnv_bin_size_ref => \$active_parameter_href->{cnv_bin_size},
-			  chromosome_reference => $$temp_directory_ref,
-			  FILEHANDLE => $XARGSFILEHANDLE,
-			  stderr_file => $xargs_file_name.".".$contig.".stderr.txt",
-			  outfile => catfile($$temp_directory_ref, $infile.$outfile_tag."_".$contig.".vcf"), #OutFile
-			 });
+	histogram({infile_path => $root_file,
+		   regions_ref => [$contig],
+		   cnv_bin_size => $active_parameter_href->{cnv_bin_size},
+		   referencedirectory_path => $$temp_directory_ref,
+		   FILEHANDLE => $XARGSFILEHANDLE,
+		   stdoutfile_path => $xargs_file_name.".".$contig."_histogram.stdout.txt",
+		   stderrfile_path => $xargs_file_name.".".$contig."_histogram.stderr.txt",
+		  });
+	print $XARGSFILEHANDLE "; ";
+	
+	statistics({infile_path => $root_file,
+		    regions_ref => [$contig],
+		    cnv_bin_size => $active_parameter_href->{cnv_bin_size},
+		    FILEHANDLE => $XARGSFILEHANDLE,
+		    stdoutfile_path => $xargs_file_name.".".$contig."_statistics.stdout.txt",
+		    stderrfile_path => $xargs_file_name.".".$contig."_statistics.stderr.txt",
+		   });
+	print $XARGSFILEHANDLE "; ";
+
+	partition({infile_path => $root_file,
+		   regions_ref => [$contig],
+		   cnv_bin_size => $active_parameter_href->{cnv_bin_size},
+		   FILEHANDLE => $XARGSFILEHANDLE,
+		   stdoutfile_path => $xargs_file_name.".".$contig."_partition.stdout.txt",
+		   stderrfile_path => $xargs_file_name.".".$contig."_partition.stderr.txt",
+		  });
+	print $XARGSFILEHANDLE "; ";
+	
+	Program::Variantcalling::Cnvnator::calling({infile_path => $root_file,
+						    outfile_path => $outfile_path_no_ending."_".$contig.".cnvnator",
+						    regions_ref => [$contig],
+						    cnv_bin_size => $active_parameter_href->{cnv_bin_size},
+						    FILEHANDLE => $XARGSFILEHANDLE,
+						    stderrfile_path => $xargs_file_name.".".$contig."_calling.stderr.txt",
+						   });
+	print $XARGSFILEHANDLE "; ";
+
+	convert_to_vcf({infile_path => $outfile_path_no_ending."_".$contig.".cnvnator",
+			outfile_path => $outfile_path_no_ending."_".$contig.$infile_suffix,
+			stderrfile_path => $xargs_file_name.".".$contig."_convert_to_vcf.stderr.txt",
+			referencedirectory_path => $$temp_directory_ref,
+			FILEHANDLE => $XARGSFILEHANDLE,
+		       });
 	print $XARGSFILEHANDLE "\n";
     }
 
-    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
+    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
     concatenate_variants({active_parameter_href => $active_parameter_href,
 			  FILEHANDLE => $FILEHANDLE,
 			  elements_ref => \@{ $file_info_href->{contigs} },
-			  infile_prefix => catfile($$temp_directory_ref, $infile.$outfile_tag."_"),
-			  infile_postfix => ".vcf",
-			  outfile => catfile($$temp_directory_ref, $infile.$outfile_tag."_concat.vcf"),
+			  infile_prefix => $outfile_path_no_ending."_",
+			  infile_postfix => $infile_suffix,
+			  outfile => $outfile_path_no_ending."_concat".$infile_suffix,
 			 });
 
     ## Fix GT FORMAT in header and Sample_id and GT and Genotype call
     print $FILEHANDLE $perl_vcf_fix." ";
-    print $FILEHANDLE catfile($$temp_directory_ref, $infile.$outfile_tag."_concat.vcf")." ";
-    say $FILEHANDLE "> ".catfile($$temp_directory_ref, $infile.$outfile_tag."_concat_fix.vcf")." ";
+    print $FILEHANDLE $outfile_path_no_ending."_concat".$infile_suffix." ";
+    say $FILEHANDLE "> ".$outfile_path_no_ending."_concat_fix".$infile_suffix, "\n";
 
     ##Add contigs to header
-    print $FILEHANDLE "bcftools annotate ";
-    print $FILEHANDLE "-h ".catfile($$temp_directory_ref, "contig_header.txt")." ";
-    print $FILEHANDLE catfile($$temp_directory_ref, $infile.$outfile_tag."_concat_fix.vcf")." ";
-    say $FILEHANDLE "> ".catfile($$temp_directory_ref, $infile.$outfile_tag.".vcf")." ";
+    annotate({infile_path => $outfile_path_no_ending."_concat_fix".$infile_suffix,
+	      outfile_path => $outfile_path_no_ending.$infile_suffix,
+	      output_type => "v",
+	      headerfile_path => catfile($$temp_directory_ref, "contig_header.txt"),
+	      FILEHANDLE => $FILEHANDLE,
+	     });
+    say $FILEHANDLE "\n";
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag.".vcf*"),
+    migrate_file({infile_path => $outfile_path_no_ending.$infile_suffix."*",
 		  outfile_path => $outsample_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -10527,7 +10559,7 @@ sub cnvnator {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => "cnvnator",
 			outdirectory => $outsample_directory,
-			outfile_ending => $infile.$outfile_tag.".vcf",
+			outfile_ending => $outfile_no_ending.$infile_suffix,
 			outdata_type => "static"
 		       });
 	submit_job({active_parameter_href => $active_parameter_href,
@@ -10536,7 +10568,7 @@ sub cnvnator {
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name,
 		   });
     }
@@ -10982,28 +11014,28 @@ sub delly_reformat {
   SV_TYPE:
     foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {
 	
-	    if ($sv_type ne "TRA") {
+	if ($sv_type ne "TRA") {
+	    
+	  CONTIG:
+	    foreach my $contig (@contigs) {
 		
-	      CONTIG:
-		foreach my $contig (@contigs) {
-		    
-		    Program::Variantcalling::Bcftools::index({infile_path => $outfile_path_no_ending."_".$contig."_".$sv_type."_geno".$alt_file_ending.$suffix{pdelly_call},
-							      stderrfile_path => $xargs_file_name.".".$contig.".".$sv_type.".stderr.txt",
-							      output_type => "csi",
-							      FILEHANDLE => $XARGSFILEHANDLE,
-							     });
-		    say $XARGSFILEHANDLE "\n";
-		}
-	    }
-	    else {
-
-		Program::Variantcalling::Bcftools::index({infile_path => $outfile_path_no_ending."_".$sv_type."_geno".$alt_file_ending.$suffix{pdelly_call},
-							  stderrfile_path => $xargs_file_name.".".$sv_type.".stderr.txt",
+		Program::Variantcalling::Bcftools::index({infile_path => $outfile_path_no_ending."_".$contig."_".$sv_type."_geno".$alt_file_ending.$suffix{pdelly_call},
+							  stderrfile_path => $xargs_file_name.".".$contig.".".$sv_type.".stderr.txt",
 							  output_type => "csi",
 							  FILEHANDLE => $XARGSFILEHANDLE,
 							 });
 		say $XARGSFILEHANDLE "\n";
 	    }
+	}
+	else {
+
+	    Program::Variantcalling::Bcftools::index({infile_path => $outfile_path_no_ending."_".$sv_type."_geno".$alt_file_ending.$suffix{pdelly_call},
+						      stderrfile_path => $xargs_file_name.".".$sv_type.".stderr.txt",
+						      output_type => "csi",
+						      FILEHANDLE => $XARGSFILEHANDLE,
+						     });
+	    say $XARGSFILEHANDLE "\n";
+	}
     }
 
     ### Filter calls
@@ -11898,7 +11930,7 @@ sub samtools_mpileup {
 	say $XARGSFILEHANDLE "\n";
     }
 
-    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
+    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
     concatenate_variants({active_parameter_href => $active_parameter_href,
 			  FILEHANDLE => $FILEHANDLE,
 			  elements_ref => \@{ $file_info_href->{contigs} },
@@ -12135,7 +12167,7 @@ sub freebayes {
 	say $XARGSFILEHANDLE "\n";
     }
 
-    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
+    ## Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
     concatenate_variants({active_parameter_href => $active_parameter_href,
 			  FILEHANDLE => $FILEHANDLE,
 			  elements_ref => \@{ $file_info_href->{contigs} },
@@ -21047,7 +21079,7 @@ sub combinevariants {
 
 ##combinevariants
 
-##Function : Writes sbatch code to supplied filehandle to combine variants in vcf format. Each array element is combined with the infilePre and Postfix.
+##Function : Writes sbatch code to supplied filehandle to combine variants in vcf format. Each array element is combined with the infile prefix and postfix.
 ##Returns  : ""
 ##Arguments: $active_parameter_href, $FILEHANDLE, $arrays_ref, $infile_prefix, $infile_postfix, $outfile
 ##         : $active_parameter_href => The active parameters for this analysis hash {REF}
@@ -21102,7 +21134,7 @@ sub combinegvcfs {
 
 ##combinegvcfs
 
-##Function : Writes sbatch code to supplied filehandle to combine variants in gvcf format. Each array element is combined with the infilePre and Postfix.
+##Function : Writes sbatch code to supplied filehandle to combine variants in gvcf format. Each array element is combined with the infile prefix and postfix.
 ##Returns  : ""
 ##Arguments: $active_parameter_href, $FILEHANDLE, $arrays_ref, $infile_prefix, $infile_postfix, $outfile
 ##         : $active_parameter_href => The active parameters for this analysis hash {REF}
@@ -21155,7 +21187,7 @@ sub concatenate_variants {
 
 ##concatenate_variants
 
-##Function : Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infilePre and Postfix.
+##Function : Writes sbatch code to supplied filehandle to concatenate variants in vcf format. Each array element is combined with the infile prefix and postfix.
 ##Returns  : ""
 ##Arguments: $active_parameter_href, $FILEHANDLE, $elements_ref, $infile_prefix, $infile_postfix, $outfile, $human_genome_reference_ref
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
@@ -23173,15 +23205,15 @@ sub order_parameter_names {
 	}
 	if ( ($_!~/^#/) && ($_=~/^(\w+):/) ) { # First level key
 
-	      my $parameter_name = $1;
-	      push(@$order_parameters_ref, $parameter_name); #Add to enable later evaluation of parameters in proper order & write to MIP log file
-	      next;
-	     }
-	    }
-	close($DFY);
+	    my $parameter_name = $1;
+	    push(@$order_parameters_ref, $parameter_name); #Add to enable later evaluation of parameters in proper order & write to MIP log file
+	    next;
+	}
     }
+    close($DFY);
+}
 
-    sub add_to_sample_info {
+sub add_to_sample_info {
 
 ##add_to_sample_info
 
@@ -23193,109 +23225,109 @@ sub order_parameter_names {
 ##         : $file_info_href        => The file_info hash {REF}
 ##         : $family_id_ref         => The family_id_ref {REF}
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Default(s)
-	my $family_id_ref;
-	my $human_genome_reference_ref;
-	my $outdata_dir;
+    ## Default(s)
+    my $family_id_ref;
+    my $human_genome_reference_ref;
+    my $outdata_dir;
 
-	## Flatten argument(s)
-	my $active_parameter_href;
-	my $sample_info_href;
-	my $file_info_href;
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $file_info_href;
 
-	my $tmpl = {
-	    active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	    sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	    file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	    family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
-			       strict_type => 1, store => \$family_id_ref},
-	    human_genome_reference_ref => { default => \$arg_href->{active_parameter_href}{human_genome_reference},
-					    strict_type => 1, store => \$human_genome_reference_ref},
-	    outdata_dir => { default => $arg_href->{active_parameter_href}{outdata_dir},
-			     strict_type => 1, store => \$outdata_dir},
-	};
+    my $tmpl = {
+	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
+	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	human_genome_reference_ref => { default => \$arg_href->{active_parameter_href}{human_genome_reference},
+					strict_type => 1, store => \$human_genome_reference_ref},
+	outdata_dir => { default => $arg_href->{active_parameter_href}{outdata_dir},
+			 strict_type => 1, store => \$outdata_dir},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	if (defined($active_parameter_href->{analysis_type})) {
+    if (defined($active_parameter_href->{analysis_type})) {
 
-	    $sample_info_href->{analysis_type} = $active_parameter_href->{analysis_type};
+	$sample_info_href->{analysis_type} = $active_parameter_href->{analysis_type};
+    }
+    if (defined($active_parameter_href->{expected_coverage})) {
+
+	$sample_info_href->{expected_coverage} = $active_parameter_href->{expected_coverage};
+    }
+    if (defined($active_parameter_href->{gatk_path})) {
+
+	if ($active_parameter_href->{gatk_path}=~/GenomeAnalysisTK-([^,]+)/) {
+
+	    $sample_info_href->{program}{gatk}{version} = $1;
 	}
-	if (defined($active_parameter_href->{expected_coverage})) {
+	else {  #Fall back on actually calling program
 
-	    $sample_info_href->{expected_coverage} = $active_parameter_href->{expected_coverage};
-	}
-	if (defined($active_parameter_href->{gatk_path})) {
-
-	    if ($active_parameter_href->{gatk_path}=~/GenomeAnalysisTK-([^,]+)/) {
-
-		$sample_info_href->{program}{gatk}{version} = $1;
-	    }
-	    else {  #Fall back on actually calling program
-
-		my $jar_path = catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar");
-		my $ret = (`java -jar $jar_path --version 2>&1`);
-		chomp($ret);
-		$sample_info_href->{program}{gatk}{version} = $ret;
-	    }
-	}
-	if (defined($active_parameter_href->{picardtools_path})) {  #To enable addition of version to sample_info
-
-	    if ($active_parameter_href->{picardtools_path}=~/picard-tools-([^,]+)/) {
-
-		$sample_info_href->{program}{picardtools}{version} = $1;
-	    }
-	    else {  #Fall back on actually calling program
-
-		my $jar_path = catfile($active_parameter_href->{picardtools_path}, "picard.jar");
-		my $ret = (`java -jar $jar_path CreateSequenceDictionary --version 2>&1`);
-		chomp($ret);
-		$sample_info_href->{program}{picardtools}{version} = $ret;
-	    }
-	}
-	if ( ($active_parameter_href->{pbwa_mem} == 1) || ($active_parameter_href->{psambamba_depth} == 1) || ($active_parameter_href->{markduplicates_sambamba_markdup} == 1)) {  #To enable addition of version to sample_info as Sambamba does not generate version tag in output
-
-	    if (! $active_parameter_href->{dry_run_all}) {
-
-		my $regexp = q?perl -nae 'if($_=~/sambamba\s(\S+)/) {print $1;last;}'?;
-		my $ret = (`sambamba 2>&1 | $regexp`);
-		chomp($ret);
-		$sample_info_href->{program}{sambamba}{version} = $ret;
-	    }
-	}
-	if (defined($active_parameter_href->{pcnvnator})) {  #To enable addition of version to sample_info
-
-	    if ( ($active_parameter_href->{pcnvnator} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
-
-		my $regexp = q?perl -nae 'if($_=~/CNVnator\s+(\S+)/) {print $1;last;}'?;
-		my $ret = (`cnvnator 2>&1 | $regexp`);
-		chomp($ret);
-		$sample_info_href->{program}{cnvnator}{version} = $ret;
-	    }
-	}
-	if (defined($$human_genome_reference_ref)) {  #To enable addition of version to sample_info
-
-	    $sample_info_href->{human_genome_build}{path} = $$human_genome_reference_ref;
-	    $sample_info_href->{human_genome_build}{source} = $file_info_href->{human_genome_reference_source};
-	    $sample_info_href->{human_genome_build}{version} = $file_info_href->{human_genome_reference_version};
-	}
-	if (defined($active_parameter_href->{pedigree_file}) ) {
-
-	    $sample_info_href->{pedigree_file}{path} = $active_parameter_href->{pedigree_file};  #Add pedigree_file to sample_info
-	    $sample_info_href->{pedigree_file_analysis}{path} = catfile($outdata_dir, $$family_id_ref, "qc_pedigree.yaml");  #Add pedigree_file info used in this analysis to SampleInfoFile
-	}
-	if (defined($active_parameter_href->{log_file})) {
-
-	    my $path = dirname(dirname($active_parameter_href->{log_file}));
-	    $sample_info_href->{log_file_dir} = $path;  #Add log_file_dir to SampleInfoFile
-	    $sample_info_href->{last_log_file_path} = $active_parameter_href->{log_file};
+	    my $jar_path = catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar");
+	    my $ret = (`java -jar $jar_path --version 2>&1`);
+	    chomp($ret);
+	    $sample_info_href->{program}{gatk}{version} = $ret;
 	}
     }
+    if (defined($active_parameter_href->{picardtools_path})) {  #To enable addition of version to sample_info
+
+	if ($active_parameter_href->{picardtools_path}=~/picard-tools-([^,]+)/) {
+
+	    $sample_info_href->{program}{picardtools}{version} = $1;
+	}
+	else {  #Fall back on actually calling program
+
+	    my $jar_path = catfile($active_parameter_href->{picardtools_path}, "picard.jar");
+	    my $ret = (`java -jar $jar_path CreateSequenceDictionary --version 2>&1`);
+	    chomp($ret);
+	    $sample_info_href->{program}{picardtools}{version} = $ret;
+	}
+    }
+    if ( ($active_parameter_href->{pbwa_mem} == 1) || ($active_parameter_href->{psambamba_depth} == 1) || ($active_parameter_href->{markduplicates_sambamba_markdup} == 1)) {  #To enable addition of version to sample_info as Sambamba does not generate version tag in output
+
+	if (! $active_parameter_href->{dry_run_all}) {
+
+	    my $regexp = q?perl -nae 'if($_=~/sambamba\s(\S+)/) {print $1;last;}'?;
+	    my $ret = (`sambamba 2>&1 | $regexp`);
+	    chomp($ret);
+	    $sample_info_href->{program}{sambamba}{version} = $ret;
+	}
+    }
+    if (defined($active_parameter_href->{pcnvnator})) {  #To enable addition of version to sample_info
+
+	if ( ($active_parameter_href->{pcnvnator} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
+
+	    my $regexp = q?perl -nae 'if($_=~/CNVnator\s+(\S+)/) {print $1;last;}'?;
+	    my $ret = (`cnvnator 2>&1 | $regexp`);
+	    chomp($ret);
+	    $sample_info_href->{program}{cnvnator}{version} = $ret;
+	}
+    }
+    if (defined($$human_genome_reference_ref)) {  #To enable addition of version to sample_info
+
+	$sample_info_href->{human_genome_build}{path} = $$human_genome_reference_ref;
+	$sample_info_href->{human_genome_build}{source} = $file_info_href->{human_genome_reference_source};
+	$sample_info_href->{human_genome_build}{version} = $file_info_href->{human_genome_reference_version};
+    }
+    if (defined($active_parameter_href->{pedigree_file}) ) {
+
+	$sample_info_href->{pedigree_file}{path} = $active_parameter_href->{pedigree_file};  #Add pedigree_file to sample_info
+	$sample_info_href->{pedigree_file_analysis}{path} = catfile($outdata_dir, $$family_id_ref, "qc_pedigree.yaml");  #Add pedigree_file info used in this analysis to SampleInfoFile
+    }
+    if (defined($active_parameter_href->{log_file})) {
+
+	my $path = dirname(dirname($active_parameter_href->{log_file}));
+	$sample_info_href->{log_file_dir} = $path;  #Add log_file_dir to SampleInfoFile
+	$sample_info_href->{last_log_file_path} = $active_parameter_href->{log_file};
+    }
+}
 
 
-    sub eval_parameter_hash {
+sub eval_parameter_hash {
 
 ##eval_parameter_hash
 
@@ -23305,61 +23337,61 @@ sub order_parameter_names {
 ##         : $parameter_href => Hash with paremters from yaml file {REF}
 ##         : $file_path      => Path to yaml file
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	##Flatten argument(s)
-	my $parameter_href;
-	my $file_path;
+    ##Flatten argument(s)
+    my $parameter_href;
+    my $file_path;
 
-	my $tmpl = {
-	    parameter_href => { required => 1, default => {}, strict_type => 1, store => \$parameter_href},
-	    file_path => { required => 1, defined => 1, strict_type => 1, store => \$file_path},
-	};
+    my $tmpl = {
+	parameter_href => { required => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	file_path => { required => 1, defined => 1, strict_type => 1, store => \$file_path},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	my %mandatory_key;
-	$mandatory_key{associated_program}{key_data_type} = "ARRAY";
-	$mandatory_key{data_type}{key_data_type} = "SCALAR";
-	$mandatory_key{data_type}{values} = ["SCALAR", "ARRAY", "HASH"];
-	$mandatory_key{type}{key_data_type} = "SCALAR";
-	$mandatory_key{type}{values} = ["mip", "path", "program", "program_argument"];
+    my %mandatory_key;
+    $mandatory_key{associated_program}{key_data_type} = "ARRAY";
+    $mandatory_key{data_type}{key_data_type} = "SCALAR";
+    $mandatory_key{data_type}{values} = ["SCALAR", "ARRAY", "HASH"];
+    $mandatory_key{type}{key_data_type} = "SCALAR";
+    $mandatory_key{type}{values} = ["mip", "path", "program", "program_argument"];
 
-	my %non_mandatory_key;
-	$non_mandatory_key{build_file}{key_data_type} = "SCALAR";
-	$non_mandatory_key{build_file}{values} = ["no_auto_build", "yes_auto_build"];
-	$non_mandatory_key{mandatory}{key_data_type} = "SCALAR";
-	$non_mandatory_key{mandatory}{values} = ["no"];
-	$non_mandatory_key{exists_check}{key_data_type} = "SCALAR";
-	$non_mandatory_key{exists_check}{values} = ["file", "directory"];
-	$non_mandatory_key{chain}{key_data_type} = "SCALAR";
-	$non_mandatory_key{file_tag}{key_data_type} = "SCALAR";
-	$non_mandatory_key{infile_suffix}{key_data_type} = "SCALAR";
-	$non_mandatory_key{outfile_suffix}{key_data_type} = "SCALAR";
-	$non_mandatory_key{program_name_path}{key_data_type} = "ARRAY";
-	$non_mandatory_key{element_separator}{key_data_type} = "SCALAR";
-	$non_mandatory_key{reduce_io}{key_data_type} = "SCALAR";
-	$non_mandatory_key{reduce_io}{values} = [1];
-	$non_mandatory_key{program_type}{key_data_type} = "SCALAR";
-	$non_mandatory_key{program_type}{values} = ["aligners", "variant_callers", "structural_variant_callers"];
-	$non_mandatory_key{outdir_name}{key_data_type} = "SCALAR";
-	$non_mandatory_key{file_endings}{key_data_type} = "ARRAY";
-	$non_mandatory_key{remove_redundant_file}{key_data_type} = "SCALAR";
-	$non_mandatory_key{remove_redundant_file}{values} = ["yes"];
-	$non_mandatory_key{remove_redundant_file_setting}{key_data_type} = "SCALAR";
-	$non_mandatory_key{remove_redundant_file_setting}{values} = ["single", "merged", "family", "variant_annotation"];
-	$non_mandatory_key{reference}{key_data_type} = "SCALAR";
-	$non_mandatory_key{reference}{values} = ["reference_dir"];
+    my %non_mandatory_key;
+    $non_mandatory_key{build_file}{key_data_type} = "SCALAR";
+    $non_mandatory_key{build_file}{values} = ["no_auto_build", "yes_auto_build"];
+    $non_mandatory_key{mandatory}{key_data_type} = "SCALAR";
+    $non_mandatory_key{mandatory}{values} = ["no"];
+    $non_mandatory_key{exists_check}{key_data_type} = "SCALAR";
+    $non_mandatory_key{exists_check}{values} = ["file", "directory"];
+    $non_mandatory_key{chain}{key_data_type} = "SCALAR";
+    $non_mandatory_key{file_tag}{key_data_type} = "SCALAR";
+    $non_mandatory_key{infile_suffix}{key_data_type} = "SCALAR";
+    $non_mandatory_key{outfile_suffix}{key_data_type} = "SCALAR";
+    $non_mandatory_key{program_name_path}{key_data_type} = "ARRAY";
+    $non_mandatory_key{element_separator}{key_data_type} = "SCALAR";
+    $non_mandatory_key{reduce_io}{key_data_type} = "SCALAR";
+    $non_mandatory_key{reduce_io}{values} = [1];
+    $non_mandatory_key{program_type}{key_data_type} = "SCALAR";
+    $non_mandatory_key{program_type}{values} = ["aligners", "variant_callers", "structural_variant_callers"];
+    $non_mandatory_key{outdir_name}{key_data_type} = "SCALAR";
+    $non_mandatory_key{file_endings}{key_data_type} = "ARRAY";
+    $non_mandatory_key{remove_redundant_file}{key_data_type} = "SCALAR";
+    $non_mandatory_key{remove_redundant_file}{values} = ["yes"];
+    $non_mandatory_key{remove_redundant_file_setting}{key_data_type} = "SCALAR";
+    $non_mandatory_key{remove_redundant_file_setting}{values} = ["single", "merged", "family", "variant_annotation"];
+    $non_mandatory_key{reference}{key_data_type} = "SCALAR";
+    $non_mandatory_key{reference}{values} = ["reference_dir"];
 
-	check_keys({parameter_href => $parameter_href,
-		    mandatory_key_href => \%mandatory_key,
-		    non_mandatory_key_href => \%non_mandatory_key,
-		    file_path_ref => \$file_path,
-		   });
-    }
+    check_keys({parameter_href => $parameter_href,
+		mandatory_key_href => \%mandatory_key,
+		non_mandatory_key_href => \%non_mandatory_key,
+		file_path_ref => \$file_path,
+	       });
+}
 
 
-    sub check_keys {
+sub check_keys {
 
 ##check_keys
 
@@ -23371,78 +23403,78 @@ sub order_parameter_names {
 ##         : $non_mandatory_key_href => Hash with non mandatory key {REF}
 ##         : $file_path_ref          => Path to yaml file {REF}
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	##Flatten argument(s)
-	my $parameter_href;
-	my $mandatory_key_href;
-	my $non_mandatory_key_href;
-	my $file_path_ref;
+    ##Flatten argument(s)
+    my $parameter_href;
+    my $mandatory_key_href;
+    my $non_mandatory_key_href;
+    my $file_path_ref;
 
-	my $tmpl = {
-	    parameter_href => { required => 1, default => {}, strict_type => 1, store => \$parameter_href},
-	    mandatory_key_href => { required => 1, default => {}, strict_type => 1, store => \$mandatory_key_href},
-	    non_mandatory_key_href => { required => 1, default => {}, strict_type => 1, store => \$non_mandatory_key_href},
-	    file_path_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$file_path_ref},
-	};
+    my $tmpl = {
+	parameter_href => { required => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	mandatory_key_href => { required => 1, default => {}, strict_type => 1, store => \$mandatory_key_href},
+	non_mandatory_key_href => { required => 1, default => {}, strict_type => 1, store => \$non_mandatory_key_href},
+	file_path_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$file_path_ref},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	foreach my $parameter (keys %$parameter_href) {
+    foreach my $parameter (keys %$parameter_href) {
 
-	    foreach my $mandatory_key (keys %$mandatory_key_href) {
+	foreach my $mandatory_key (keys %$mandatory_key_href) {
 
-		## Mandatory key exists
-		if (exists($parameter_href->{$parameter}{$mandatory_key})) {
+	    ## Mandatory key exists
+	    if (exists($parameter_href->{$parameter}{$mandatory_key})) {
 
-		    ## Check key data type
-		    check_data_type({parameter_href => $parameter_href,
-				     key_href => $mandatory_key_href,
-				     parameter => $parameter,
-				     key => $mandatory_key,
-				     file_path_ref => $file_path_ref,
-				    });
-		    ## Evaluate key values
-		    check_values({parameter_href => $parameter_href,
-				  key_href => $mandatory_key_href,
-				  parameter => $parameter,
-				  key => $mandatory_key,
-				  file_path_ref => $file_path_ref,
-				 });
-		}
-		else {
-
-		    warn("Missing mandatory key: '".$mandatory_key."' for parameter: '".$parameter."' in file: '".$$file_path_ref."'\n");
-		    exit 1;
-		}
+		## Check key data type
+		check_data_type({parameter_href => $parameter_href,
+				 key_href => $mandatory_key_href,
+				 parameter => $parameter,
+				 key => $mandatory_key,
+				 file_path_ref => $file_path_ref,
+				});
+		## Evaluate key values
+		check_values({parameter_href => $parameter_href,
+			      key_href => $mandatory_key_href,
+			      parameter => $parameter,
+			      key => $mandatory_key,
+			      file_path_ref => $file_path_ref,
+			     });
 	    }
-	    foreach my $non_mandatory_key (keys %$non_mandatory_key_href) {
+	    else {
 
-		## Non_mandatory key exists
-		if (exists($parameter_href->{$parameter}{$non_mandatory_key})) {
+		warn("Missing mandatory key: '".$mandatory_key."' for parameter: '".$parameter."' in file: '".$$file_path_ref."'\n");
+		exit 1;
+	    }
+	}
+	foreach my $non_mandatory_key (keys %$non_mandatory_key_href) {
 
-		    ## Check key data type
-		    check_data_type({parameter_href => $parameter_href,
-				     key_href => $non_mandatory_key_href,
-				     parameter => $parameter,
-				     key => $non_mandatory_key,
-				     file_path_ref => $file_path_ref,
-				    });
+	    ## Non_mandatory key exists
+	    if (exists($parameter_href->{$parameter}{$non_mandatory_key})) {
 
-		    ## Evaluate key values
-		    check_values({parameter_href => $parameter_href,
-				  key_href => $non_mandatory_key_href,
-				  parameter => $parameter,
-				  key => $non_mandatory_key,
-				  file_path_ref => $file_path_ref,
-				 });
-		}
+		## Check key data type
+		check_data_type({parameter_href => $parameter_href,
+				 key_href => $non_mandatory_key_href,
+				 parameter => $parameter,
+				 key => $non_mandatory_key,
+				 file_path_ref => $file_path_ref,
+				});
+
+		## Evaluate key values
+		check_values({parameter_href => $parameter_href,
+			      key_href => $non_mandatory_key_href,
+			      parameter => $parameter,
+			      key => $non_mandatory_key,
+			      file_path_ref => $file_path_ref,
+			     });
 	    }
 	}
     }
+}
 
 
-    sub check_values {
+sub check_values {
 
 ##check_values
 
@@ -23454,41 +23486,41 @@ sub order_parameter_names {
 ##         : $key            => Hash with non  key
 ##         : $file_path_ref  => Path to yaml file {REF}
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Flatten argument(s)
-	my $parameter_href;
-	my $key_href;
-	my $parameter;
-	my $key;
-	my $file_path_ref;
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $key_href;
+    my $parameter;
+    my $key;
+    my $file_path_ref;
 
-	my $tmpl = {
-	    parameter_href => { required => 1, default => {}, strict_type => 1, store => \$parameter_href},
-	    key_href => { required => 1, default => {}, strict_type => 1, store => \$key_href},
-	    parameter => { required => 1, defined => 1, strict_type => 1, store => \$parameter},
-	    key => { required => 1, defined => 1, strict_type => 1, store => \$key},
-	    file_path_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$file_path_ref},
-	};
+    my $tmpl = {
+	parameter_href => { required => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	key_href => { required => 1, default => {}, strict_type => 1, store => \$key_href},
+	parameter => { required => 1, defined => 1, strict_type => 1, store => \$parameter},
+	key => { required => 1, defined => 1, strict_type => 1, store => \$key},
+	file_path_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$file_path_ref},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	## Check value(s)
-	if ($key_href->{$key}{values}) {
+    ## Check value(s)
+    if ($key_href->{$key}{values}) {
 
-	    my $value_ref = \$parameter_href->{$parameter}{$key};
+	my $value_ref = \$parameter_href->{$parameter}{$key};
 
-	    if ( ! (any {$_ eq $$value_ref} @{ $key_href->{$key}{values} }) ) {
+	if ( ! (any {$_ eq $$value_ref} @{ $key_href->{$key}{values} }) ) {
 
-		warn("Found illegal value '".$$value_ref."' for parameter: '".$parameter."' in key: '".$key."' in file: '".$$file_path_ref."'\n");
-		warn("Allowed entries: '".join("', '", @{ $key_href->{$key}{values} })."'\n");
-		exit 1;
-	    }
+	    warn("Found illegal value '".$$value_ref."' for parameter: '".$parameter."' in key: '".$key."' in file: '".$$file_path_ref."'\n");
+	    warn("Allowed entries: '".join("', '", @{ $key_href->{$key}{values} })."'\n");
+	    exit 1;
 	}
     }
+}
 
 
-    sub check_data_type {
+sub check_data_type {
 
 ##check_data_type
 
@@ -23500,47 +23532,47 @@ sub order_parameter_names {
 ##         : $key            => Hash with non  key
 ##         : $file_path_ref  => Path to yaml file {REF}
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Flatten argument(s)
-	my $parameter_href;
-	my $key_href;
-	my $parameter;
-	my $key;
-	my $file_path_ref;
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $key_href;
+    my $parameter;
+    my $key;
+    my $file_path_ref;
 
-	my $tmpl = {
-	    parameter_href => { required => 1, default => {}, strict_type => 1, store => \$parameter_href},
-	    key_href => { required => 1, default => {}, strict_type => 1, store => \$key_href},
-	    parameter => { required => 1, defined => 1, strict_type => 1, store => \$parameter},
-	    key => { required => 1, defined => 1, strict_type => 1, store => \$key},
-	    file_path_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$file_path_ref},
-	};
+    my $tmpl = {
+	parameter_href => { required => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	key_href => { required => 1, default => {}, strict_type => 1, store => \$key_href},
+	parameter => { required => 1, defined => 1, strict_type => 1, store => \$parameter},
+	key => { required => 1, defined => 1, strict_type => 1, store => \$key},
+	file_path_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$file_path_ref},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	## Check data_type
-	my $data_type = ref($parameter_href->{$parameter}{$key});
+    ## Check data_type
+    my $data_type = ref($parameter_href->{$parameter}{$key});
 
-	if ($data_type) {  #Array or hash
+    if ($data_type) {  #Array or hash
 
-	    ## Wrong data_type
-	    unless ($data_type eq $key_href->{$key}{key_data_type}) {
+	## Wrong data_type
+	unless ($data_type eq $key_href->{$key}{key_data_type}) {
 
-		warn("Found '".$data_type."' but expected datatype '".$key_href->{$key}{key_data_type}."' for parameter: '".$parameter."' in key: '".$key."' in file: '".$$file_path_ref."'\n");
-		exit 1;
-	    }
-	}
-	elsif ($key_href->{$key}{key_data_type} ne "SCALAR") {
-
-	    ## Wrong data_type
-	    warn("Found 'SCALAR' but expected datatype '".$key_href->{$key}{key_data_type}."' for parameter: '".$parameter."' in key: '".$key."' in file: '".$$file_path_ref."'\n");
+	    warn("Found '".$data_type."' but expected datatype '".$key_href->{$key}{key_data_type}."' for parameter: '".$parameter."' in key: '".$key."' in file: '".$$file_path_ref."'\n");
 	    exit 1;
 	}
     }
+    elsif ($key_href->{$key}{key_data_type} ne "SCALAR") {
+
+	## Wrong data_type
+	warn("Found 'SCALAR' but expected datatype '".$key_href->{$key}{key_data_type}."' for parameter: '".$parameter."' in key: '".$key."' in file: '".$$file_path_ref."'\n");
+	exit 1;
+    }
+}
 
 
-    sub check_config_vs_definition_file {
+sub check_config_vs_definition_file {
 
 ##check_config_vs_definition_file
 
@@ -23550,40 +23582,40 @@ sub order_parameter_names {
 ##         : $reference_href  => Reference hash {REF}
 ##         : $comparison_href => Hash to be compared to reference {REF}
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Flatten argument(s)
-	my $reference_href;
-	my $comparison_href;
+    ## Flatten argument(s)
+    my $reference_href;
+    my $comparison_href;
 
-	my $tmpl = {
-	    reference_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$reference_href},
-	    comparison_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$comparison_href},
-	};
+    my $tmpl = {
+	reference_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$reference_href},
+	comparison_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$comparison_href},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	my @allowed_unique_keys = ("vcfparser_outfile_count", $reference_href->{family_id});
-	my @unique;
+    my @allowed_unique_keys = ("vcfparser_outfile_count", $reference_href->{family_id});
+    my @unique;
 
-	foreach my $key (keys %$reference_href) {
+    foreach my $key (keys %$reference_href) {
 
-	    unless (exists($comparison_href->{$key})) {
+	unless (exists($comparison_href->{$key})) {
 
-		push(@unique, $key);
-	    }
-	}
-	foreach my $element (@unique) {
-
-	    if ( ! (any {$_ eq $element} @allowed_unique_keys) ) { #Do not print if allowed_unique_keys that have been created dynamically from previous runs
-
-		warn("Found illegal key: ".$element." in config file that is not defined in definitions.yaml\n");
-		exit 1;
-	    }
+	    push(@unique, $key);
 	}
     }
+    foreach my $element (@unique) {
 
-    sub check_vep_directories {
+	if ( ! (any {$_ eq $element} @allowed_unique_keys) ) { #Do not print if allowed_unique_keys that have been created dynamically from previous runs
+
+	    warn("Found illegal key: ".$element." in config file that is not defined in definitions.yaml\n");
+	    exit 1;
+	}
+    }
+}
+
+sub check_vep_directories {
 
 ##check_vep_directories
 
@@ -23593,37 +23625,37 @@ sub order_parameter_names {
 ##         : $vep_directory_path_ref  => VEP directory path {REF}
 ##         : $vep_directory_cache_ref => VEP cache directory path {REF}
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Flatten argument(s)
-	my $vep_directory_path_ref;
-	my $vep_directory_cache_ref;
+    ## Flatten argument(s)
+    my $vep_directory_path_ref;
+    my $vep_directory_cache_ref;
 
-	my $tmpl = {
-	    vep_directory_path_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$vep_directory_path_ref},
-	    vep_directory_cache_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$vep_directory_cache_ref},
-	};
+    my $tmpl = {
+	vep_directory_path_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$vep_directory_path_ref},
+	vep_directory_cache_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$vep_directory_cache_ref},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	## Retrieve logger object
-	my $log = Log::Log4perl->get_logger("MIP");
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
 
-	if ($$vep_directory_path_ref=~/ensembl-tools-release-(\d+)/) {
+    if ($$vep_directory_path_ref=~/ensembl-tools-release-(\d+)/) {
 
-	    my $vep_directory_path_version = $1;
+	my $vep_directory_path_version = $1;
 
-	    unless ($$vep_directory_cache_ref=~/ensembl-tools-release-$vep_directory_path_version/) {
+	unless ($$vep_directory_cache_ref=~/ensembl-tools-release-$vep_directory_path_version/) {
 
-		print $log->fatal("Differing versions between '-vep_directory_path': ".$$vep_directory_path_ref." and '-vep_directory_cache': ".$$vep_directory_cache_ref, "\n");
-		exit 1;
-	    }
+	    print $log->fatal("Differing versions between '-vep_directory_path': ".$$vep_directory_path_ref." and '-vep_directory_cache': ".$$vep_directory_cache_ref, "\n");
+	    exit 1;
 	}
-
     }
 
+}
 
-    sub vt_core {
+
+sub vt_core {
 
 ##vt_core
 
@@ -23654,222 +23686,222 @@ sub order_parameter_names {
 ##         : $xargs_file_name            => The xargs sbatch script file name {OPTIONAL}
 ##         : $contig_ref                 => The contig to extract {OPTIONAL, REF}
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Default(s)
-	my $family_id_ref;
-	my $human_genome_reference_ref;
-	my $outfile_path;
-	my $core_number;
-	my $decompose;
-	my $normalize;
-	my $max_af;
-	my $calculate_af;
-	my $sed;
-	my $program;
-	my $program_directory;
-	my $bgzip;
-	my $tabix;
-	my $instream;
-	my $cmd_break;
+    ## Default(s)
+    my $family_id_ref;
+    my $human_genome_reference_ref;
+    my $outfile_path;
+    my $core_number;
+    my $decompose;
+    my $normalize;
+    my $max_af;
+    my $calculate_af;
+    my $sed;
+    my $program;
+    my $program_directory;
+    my $bgzip;
+    my $tabix;
+    my $instream;
+    my $cmd_break;
 
-	## Flatten argument(s)
-	my $parameter_href;
-	my $active_parameter_href;
-	my $sample_info_href;
-	my $infile_lane_no_ending_href;
-	my $job_id_href;
-	my $infile_path;
-	my $FILEHANDLE;
-	my $contig_ref;
-	my $xargs_file_name;
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $infile_lane_no_ending_href;
+    my $job_id_href;
+    my $infile_path;
+    my $FILEHANDLE;
+    my $contig_ref;
+    my $xargs_file_name;
 
-	my $tmpl = {
-	    parameter_href => { default => {}, strict_type => 1, store => \$parameter_href},
-	    active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	    sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	    infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
-	    job_id_href => { default => {}, strict_type => 1, store => \$job_id_href},
-	    infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
-	    FILEHANDLE => { store => \$FILEHANDLE},
-	    xargs_file_name => { strict_type => 1, store => \$xargs_file_name},
-	    contig_ref => { default => \$$, strict_type => 1, store => \$contig_ref},
-	    family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
-			       strict_type => 1, store => \$family_id_ref},
-	    human_genome_reference_ref => { default => \$arg_href->{active_parameter_href}{human_genome_reference},
-					    strict_type => 1, store => \$human_genome_reference_ref},
-	    outfile_path => { default => $arg_href->{infile_path}, #Use same path as infile path unless parameter is supplied
-			      strict_type => 1, store => \$outfile_path},
-	    core_number => { default => 1,
-			     allow => qr/^\d+$/,
-			     strict_type => 1, store => \$core_number},
-	    decompose => { default => 0,
-			   allow => [0, 1],
-			   strict_type => 1, store => \$decompose},
-	    normalize => { default => 0,
-			   allow => [0, 1],
-			   strict_type => 1, store => \$normalize},
-	    max_af => { default => 0,
-			allow => [0, 1],
-			strict_type => 1, store => \$max_af},
-	    calculate_af => { default => 0,
-			      allow => [0, 1],
-			      strict_type => 1, store => \$calculate_af},
-	    sed  => { default => 0,
-		      allow => [0, 1],
-		      strict_type => 1, store => \$sed},
-	    program => { default => "vt", strict_type => 1, store => \$program},
-	    program_directory => { default => "vt", strict_type => 1, store => \$program_directory},
-	    bgzip => { default => 0,
+    my $tmpl = {
+	parameter_href => { default => {}, strict_type => 1, store => \$parameter_href},
+	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
+	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	job_id_href => { default => {}, strict_type => 1, store => \$job_id_href},
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	xargs_file_name => { strict_type => 1, store => \$xargs_file_name},
+	contig_ref => { default => \$$, strict_type => 1, store => \$contig_ref},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	human_genome_reference_ref => { default => \$arg_href->{active_parameter_href}{human_genome_reference},
+					strict_type => 1, store => \$human_genome_reference_ref},
+	outfile_path => { default => $arg_href->{infile_path}, #Use same path as infile path unless parameter is supplied
+			  strict_type => 1, store => \$outfile_path},
+	core_number => { default => 1,
+			 allow => qr/^\d+$/,
+			 strict_type => 1, store => \$core_number},
+	decompose => { default => 0,
 		       allow => [0, 1],
-		       strict_type => 1, store => \$bgzip},
-	    tabix => { default => 0,
+		       strict_type => 1, store => \$decompose},
+	normalize => { default => 0,
 		       allow => [0, 1],
-		       strict_type => 1, store => \$tabix},
-	    instream => { default => 0,
+		       strict_type => 1, store => \$normalize},
+	max_af => { default => 0,
+		    allow => [0, 1],
+		    strict_type => 1, store => \$max_af},
+	calculate_af => { default => 0,
 			  allow => [0, 1],
-			  strict_type => 1, store => \$instream},
-	    cmd_break => { default => "\n\n", strict_type => 1, store => \$cmd_break},
-	};
+			  strict_type => 1, store => \$calculate_af},
+	sed  => { default => 0,
+		  allow => [0, 1],
+		  strict_type => 1, store => \$sed},
+	program => { default => "vt", strict_type => 1, store => \$program},
+	program_directory => { default => "vt", strict_type => 1, store => \$program_directory},
+	bgzip => { default => 0,
+		   allow => [0, 1],
+		   strict_type => 1, store => \$bgzip},
+	tabix => { default => 0,
+		   allow => [0, 1],
+		   strict_type => 1, store => \$tabix},
+	instream => { default => 0,
+		      allow => [0, 1],
+		      strict_type => 1, store => \$instream},
+	cmd_break => { default => "\n\n", strict_type => 1, store => \$cmd_break},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	use Program::Gnu::Coreutils qw(mv);
+    use Program::Gnu::Coreutils qw(mv);
 
-	my $file_name;
-	my $program_info_path;
-	my $random_integer = int(rand(10000));  #Generate a random integer between 0-10,000.
+    my $file_name;
+    my $program_info_path;
+    my $random_integer = int(rand(10000));  #Generate a random integer between 0-10,000.
 
-	unless (defined($FILEHANDLE)){ #Run as individual sbatch script
+    unless (defined($FILEHANDLE)){ #Run as individual sbatch script
 
-	    $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
-	    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-	    ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
-								      job_id_href => $job_id_href,
-								      FILEHANDLE => $FILEHANDLE,
-								      directory_id => $$family_id_ref,
-								      program_name => $program,
-								      program_directory => lc($program_directory),
-								      core_number => $core_number,
-								      process_time => 20,
-								     });
+	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+	($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
+								  job_id_href => $job_id_href,
+								  FILEHANDLE => $FILEHANDLE,
+								  directory_id => $$family_id_ref,
+								  program_name => $program,
+								  program_directory => lc($program_directory),
+								  core_number => $core_number,
+								  process_time => 20,
+								 });
+    }
+
+    ## Split multi allelic records into single records and normalize
+    if ( ($active_parameter_href->{vt_decompose} > 0) || ($active_parameter_href->{vt_normalize} > 0) || (defined($active_parameter_href->{vt_genmod_filter_1000g})) || ($active_parameter_href->{psnpeff} > 0) ) {
+
+	if ( ! $instream) {  #Use less to initate processing
+
+	    say $FILEHANDLE "## vt - Decompose (split multi allelic records into single records) and/or normalize variants and/or add MAX_AF";
+	    print $FILEHANDLE "less ";
+	    print $FILEHANDLE $infile_path." ";  #Infile
 	}
+	if ($sed) {  #Replace #FORMAT field prior to smart decomposition (variant vcfs)
 
-	## Split multi allelic records into single records and normalize
-	if ( ($active_parameter_href->{vt_decompose} > 0) || ($active_parameter_href->{vt_normalize} > 0) || (defined($active_parameter_href->{vt_genmod_filter_1000g})) || ($active_parameter_href->{psnpeff} > 0) ) {
+	    print $FILEHANDLE "| ";  #Pipe
+	    print $FILEHANDLE q?sed 's/ID=AD,Number=./ID=AD,Number=R/' ?;
+	}
+	if ( ($active_parameter_href->{vt_decompose} > 0) && ($decompose) ) {
 
-	    if ( ! $instream) {  #Use less to initate processing
+	    print $FILEHANDLE "| ";  #Pipe
+	    print $FILEHANDLE "vt decompose ";  #Decomposes multiallelic variants into biallelic in a VCF file
+	    print $FILEHANDLE "-s ";  #Smart decomposition
+	    print $FILEHANDLE "- ";  #InStream
 
-		say $FILEHANDLE "## vt - Decompose (split multi allelic records into single records) and/or normalize variants and/or add MAX_AF";
-		print $FILEHANDLE "less ";
-		print $FILEHANDLE $infile_path." ";  #Infile
+	    if ( (defined($xargs_file_name)) && (defined($$contig_ref)) ) {  #Write stderr for xargs process
+
+		print $FILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    }
-	    if ($sed) {  #Replace #FORMAT field prior to smart decomposition (variant vcfs)
+	}
+	if ( ($active_parameter_href->{vt_normalize} > 0) && ($normalize) ) {  #Write stderr for xargs process
 
-		print $FILEHANDLE "| ";  #Pipe
-		print $FILEHANDLE q?sed 's/ID=AD,Number=./ID=AD,Number=R/' ?;
+	    print $FILEHANDLE "| ";  #Pipe
+	    print $FILEHANDLE "vt normalize ";  #Normalize variants in a VCF.The normalized variants are reordered and output in an ordered fashion
+	    print $FILEHANDLE "-n ";  #Do not fail when REF is inconsistent with reference sequence for non SNPs
+	    print $FILEHANDLE "-r ".$$human_genome_reference_ref." ";  #Reference file
+	    print $FILEHANDLE "- ";  #InStream
+
+	    if ( (defined($xargs_file_name)) && (defined($$contig_ref)) ) {  #Write stderr for xargs process
+
+		print $FILEHANDLE "2>> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    }
-	    if ( ($active_parameter_href->{vt_decompose} > 0) && ($decompose) ) {
+	}
+	if ( ($active_parameter_href->{psnpeff} > 0) && ($calculate_af) ) {  #$calculate_af should not be set to 1 if reference was not part of snpeff parameter
 
-		print $FILEHANDLE "| ";  #Pipe
-		print $FILEHANDLE "vt decompose ";  #Decomposes multiallelic variants into biallelic in a VCF file
-		print $FILEHANDLE "-s ";  #Smart decomposition
-		print $FILEHANDLE "- ";  #InStream
+	    print $FILEHANDLE "| ";  #Pipe
+	    print $FILEHANDLE "perl ".catfile($Bin, "calculate_af.pl")." ";  #Add AF_
+	    print $FILEHANDLE "- ";  #InStream
 
-		if ( (defined($xargs_file_name)) && (defined($$contig_ref)) ) {  #Write stderr for xargs process
+	    if ( (defined($xargs_file_name)) && (defined($$contig_ref)) ) {  #Write stderr for xargs process
 
-		    print $FILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-		}
+		print $FILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    }
-	    if ( ($active_parameter_href->{vt_normalize} > 0) && ($normalize) ) {  #Write stderr for xargs process
+	}
+	if ( (exists($active_parameter_href->{vt_genmod_filter_1000g})) && ($max_af) ) {
 
-		print $FILEHANDLE "| ";  #Pipe
-		print $FILEHANDLE "vt normalize ";  #Normalize variants in a VCF.The normalized variants are reordered and output in an ordered fashion
-		print $FILEHANDLE "-n ";  #Do not fail when REF is inconsistent with reference sequence for non SNPs
-		print $FILEHANDLE "-r ".$$human_genome_reference_ref." ";  #Reference file
-		print $FILEHANDLE "- ";  #InStream
+	    print $FILEHANDLE "| ";  #Pipe
+	    print $FILEHANDLE "perl ".catfile($Bin, "max_af.pl")." ";  #Add MAX_AF
+	    print $FILEHANDLE "- ";  #InStream
 
-		if ( (defined($xargs_file_name)) && (defined($$contig_ref)) ) {  #Write stderr for xargs process
+	    if ( (defined($xargs_file_name)) && (defined($$contig_ref)) ) {  #Write stderr for xargs process
 
-		    print $FILEHANDLE "2>> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-		}
+		print $FILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    }
-	    if ( ($active_parameter_href->{psnpeff} > 0) && ($calculate_af) ) {  #$calculate_af should not be set to 1 if reference was not part of snpeff parameter
+	}
+	if ( (-e $infile_path.".tbi") || ($bgzip) ) {  #tabix has been/will be used on file, compress again
 
-		print $FILEHANDLE "| ";  #Pipe
-		print $FILEHANDLE "perl ".catfile($Bin, "calculate_af.pl")." ";  #Add AF_
-		print $FILEHANDLE "- ";  #InStream
+	    print $FILEHANDLE "| ";  #Pipe
+	    print $FILEHANDLE "bgzip ";  #Compression algorithm
+	    print $FILEHANDLE "-c ";  #Write on standard output, keep original files unchanged
+	}
+	print $FILEHANDLE "> ".$outfile_path."_splitted_".$random_integer." ";  #Temporary outfile
+	print $FILEHANDLE $cmd_break;
 
-		if ( (defined($xargs_file_name)) && (defined($$contig_ref)) ) {  #Write stderr for xargs process
+	if ( (-e $infile_path.".tbi") || ($tabix) ) {  #tabix index
 
-		    print $FILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-		}
-	    }
-	    if ( (exists($active_parameter_href->{vt_genmod_filter_1000g})) && ($max_af) ) {
-
-		print $FILEHANDLE "| ";  #Pipe
-		print $FILEHANDLE "perl ".catfile($Bin, "max_af.pl")." ";  #Add MAX_AF
-		print $FILEHANDLE "- ";  #InStream
-
-		if ( (defined($xargs_file_name)) && (defined($$contig_ref)) ) {  #Write stderr for xargs process
-
-		    print $FILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-		}
-	    }
-	    if ( (-e $infile_path.".tbi") || ($bgzip) ) {  #tabix has been/will be used on file, compress again
-
-		print $FILEHANDLE "| ";  #Pipe
-		print $FILEHANDLE "bgzip ";  #Compression algorithm
-		print $FILEHANDLE "-c ";  #Write on standard output, keep original files unchanged
-	    }
-	    print $FILEHANDLE "> ".$outfile_path."_splitted_".$random_integer." ";  #Temporary outfile
+	    print $FILEHANDLE "tabix ";
+	    print $FILEHANDLE "-p vcf ";  #Preset
+	    print $FILEHANDLE "-f ";  #Force to overwrite the index
+	    print $FILEHANDLE $outfile_path."_splitted_".$random_integer." ";  #Temporary outfile
 	    print $FILEHANDLE $cmd_break;
 
-	    if ( (-e $infile_path.".tbi") || ($tabix) ) {  #tabix index
-
-		print $FILEHANDLE "tabix ";
-		print $FILEHANDLE "-p vcf ";  #Preset
-		print $FILEHANDLE "-f ";  #Force to overwrite the index
-		print $FILEHANDLE $outfile_path."_splitted_".$random_integer." ";  #Temporary outfile
-		print $FILEHANDLE $cmd_break;
-
-		## Move index in place
-		mv({infile_path => $outfile_path."_splitted_".$random_integer.".tbi",
-		    outfile_path => $outfile_path.".tbi",
-		    FILEHANDLE => $FILEHANDLE,
-		   });
-		print $FILEHANDLE $cmd_break;
-	    }
-
-	    ## Move processed reference to original place
-	    mv({infile_path => $outfile_path."_splitted_".$random_integer,
-		outfile_path => $outfile_path,
+	    ## Move index in place
+	    mv({infile_path => $outfile_path."_splitted_".$random_integer.".tbi",
+		outfile_path => $outfile_path.".tbi",
 		FILEHANDLE => $FILEHANDLE,
 	       });
 	    print $FILEHANDLE $cmd_break;
 	}
 
-	unless($arg_href->{FILEHANDLE}) {  #Unless FILEHANDLE was supplied close it and submit
-
-	    close($FILEHANDLE);
-
-	    if ( ($active_parameter_href->{"p".$program} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
-
-		submit_job({active_parameter_href => $active_parameter_href,
-			    sample_info_href => $sample_info_href,
-			    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-			    job_id_href => $job_id_href,
-			    dependencies => "no_dependency_add_to_case",
-			    path => $parameter_href->{"p".$program}{chain},
-			    sbatch_file_name => $file_name
-			   });
-	    }
-	}
+	## Move processed reference to original place
+	mv({infile_path => $outfile_path."_splitted_".$random_integer,
+	    outfile_path => $outfile_path,
+	    FILEHANDLE => $FILEHANDLE,
+	   });
+	print $FILEHANDLE $cmd_break;
     }
 
+    unless($arg_href->{FILEHANDLE}) {  #Unless FILEHANDLE was supplied close it and submit
 
-    sub check_vt_for_references {
+	close($FILEHANDLE);
+
+	if ( ($active_parameter_href->{"p".$program} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
+
+	    submit_job({active_parameter_href => $active_parameter_href,
+			sample_info_href => $sample_info_href,
+			infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			job_id_href => $job_id_href,
+			dependencies => "no_dependency_add_to_case",
+			path => $parameter_href->{"p".$program}{chain},
+			sbatch_file_name => $file_name
+		       });
+	}
+    }
+}
+
+
+sub check_vt_for_references {
 
 ##check_vt_for_references
 
@@ -23883,49 +23915,67 @@ sub order_parameter_names {
 ##         : $job_id_href                => The job_id hash {REF}
 ##         : $vt_references_ref          => The references to check with vt {REF}
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Default(s)
-	my $vt_decompose;
-	my $vt_normalize;
+    ## Default(s)
+    my $vt_decompose;
+    my $vt_normalize;
 
-	## Flatten argument(s)
-	my $parameter_href;
-	my $active_parameter_href;
-	my $sample_info_href;
-	my $infile_lane_no_ending_href;
-	my $job_id_href;
-	my $vt_references_ref;
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $infile_lane_no_ending_href;
+    my $job_id_href;
+    my $vt_references_ref;
 
-	my $tmpl = {
-	    parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
-	    active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	    sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	    infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
-	    job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
-	    vt_references_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$vt_references_ref},
-	    vt_decompose => { default => 0,
-			      allow => [0, 1],
-			      strict_type => 1, store => \$vt_decompose},
-	    vt_normalize => { default => 0,
-			      allow => [0, 1],
-			      strict_type => 1, store => \$vt_normalize},
-	};
+    my $tmpl = {
+	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
+	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
+	vt_references_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$vt_references_ref},
+	vt_decompose => { default => 0,
+			  allow => [0, 1],
+			  strict_type => 1, store => \$vt_decompose},
+	vt_normalize => { default => 0,
+			  allow => [0, 1],
+			  strict_type => 1, store => \$vt_normalize},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	## Retrieve logger object
-	my $log = Log::Log4perl->get_logger("MIP");
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
 
-	my %seen;  #Avoid checking the same reference multiple times
+    my %seen;  #Avoid checking the same reference multiple times
 
-	if ( ($vt_decompose) || ($vt_normalize) ) {
+    if ( ($vt_decompose) || ($vt_normalize) ) {
 
-	    foreach my $parameter_name (@$vt_references_ref) {
+	foreach my $parameter_name (@$vt_references_ref) {
 
-		if ($parameter_href->{$parameter_name}{data_type} eq "SCALAR") {
+	    if ($parameter_href->{$parameter_name}{data_type} eq "SCALAR") {
 
-		    my $annotation_file = catfile($active_parameter{$parameter_name});
+		my $annotation_file = catfile($active_parameter{$parameter_name});
+
+		unless (exists($seen{$annotation_file})) {
+
+		    ## Check if vt has processed references using regexp
+		    check_vt({parameter_href => $parameter_href,
+			      active_parameter_href =>$active_parameter_href,
+			      sample_info_href => $sample_info_href,
+			      infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			      job_id_href => $job_id_href,
+			      reference_file_path => $annotation_file,
+			      parameter_name => $parameter_name,
+			     });
+		}
+		$seen{$annotation_file} = undef;
+	    }
+	    elsif ($parameter_href->{$parameter_name}{data_type} eq "ARRAY") {  #ARRAY reference
+
+		foreach my $annotation_file (@{ $active_parameter_href->{$parameter_name} }) {
 
 		    unless (exists($seen{$annotation_file})) {
 
@@ -23941,50 +23991,32 @@ sub order_parameter_names {
 		    }
 		    $seen{$annotation_file} = undef;
 		}
-		elsif ($parameter_href->{$parameter_name}{data_type} eq "ARRAY") {  #ARRAY reference
+	    }
+	    elsif ($parameter_href->{$parameter_name}{data_type} eq "HASH") {  #Hash reference
 
-		    foreach my $annotation_file (@{ $active_parameter_href->{$parameter_name} }) {
+		for my $annotation_file (keys $active_parameter_href->{$parameter_name}) {
 
-			unless (exists($seen{$annotation_file})) {
+		    unless (exists($seen{$annotation_file})) {
 
-			    ## Check if vt has processed references using regexp
-			    check_vt({parameter_href => $parameter_href,
-				      active_parameter_href =>$active_parameter_href,
-				      sample_info_href => $sample_info_href,
-				      infile_lane_no_ending_href => $infile_lane_no_ending_href,
-				      job_id_href => $job_id_href,
-				      reference_file_path => $annotation_file,
-				      parameter_name => $parameter_name,
-				     });
-			}
-			$seen{$annotation_file} = undef;
+			## Check if vt has processed references using regexp
+			check_vt({parameter_href => $parameter_href,
+				  active_parameter_href =>$active_parameter_href,
+				  sample_info_href => $sample_info_href,
+				  infile_lane_no_ending_href => $infile_lane_no_ending_href,
+				  job_id_href => $job_id_href,
+				  reference_file_path => $annotation_file,
+				  parameter_name => $parameter_name,
+				 });
 		    }
-		}
-		elsif ($parameter_href->{$parameter_name}{data_type} eq "HASH") {  #Hash reference
-
-		    for my $annotation_file (keys $active_parameter_href->{$parameter_name}) {
-
-			unless (exists($seen{$annotation_file})) {
-
-			    ## Check if vt has processed references using regexp
-			    check_vt({parameter_href => $parameter_href,
-				      active_parameter_href =>$active_parameter_href,
-				      sample_info_href => $sample_info_href,
-				      infile_lane_no_ending_href => $infile_lane_no_ending_href,
-				      job_id_href => $job_id_href,
-				      reference_file_path => $annotation_file,
-				      parameter_name => $parameter_name,
-				     });
-			}
-			$seen{$annotation_file} = undef;
-		    }
+		    $seen{$annotation_file} = undef;
 		}
 	    }
 	}
     }
+}
 
 
-    sub check_vt {
+sub check_vt {
 
 ##check_vt
 
@@ -23999,121 +24031,121 @@ sub order_parameter_names {
 ##         : $reference_file_path        => The reference file path
 ##         : $parameter_name             => The MIP parameter_name
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Flatten argument(s)
-	my $parameter_href;
-	my $active_parameter_href;
-	my $sample_info_href;
-	my $infile_lane_no_ending_href;
-	my $job_id_href;
-	my $reference_file_path;
-	my $parameter_name;
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $infile_lane_no_ending_href;
+    my $job_id_href;
+    my $reference_file_path;
+    my $parameter_name;
 
-	my $tmpl = {
-	    parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
-	    active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	    sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	    infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
-	    job_id_href => { default => {}, strict_type => 1, store => \$job_id_href},
-	    reference_file_path => { required => 1, defined => 1, strict_type => 1, store => \$reference_file_path},
-	    parameter_name => { required => 1, defined => 1, strict_type => 1, store => \$parameter_name},
-	};
+    my $tmpl = {
+	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
+	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	job_id_href => { default => {}, strict_type => 1, store => \$job_id_href},
+	reference_file_path => { required => 1, defined => 1, strict_type => 1, store => \$reference_file_path},
+	parameter_name => { required => 1, defined => 1, strict_type => 1, store => \$parameter_name},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	## Retrieve logger object
-	my $log = Log::Log4perl->get_logger("MIP");
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
 
-	my %vt_regexp;
+    my %vt_regexp;
 
-	$vt_regexp{decompose}{vt_decompose}{vcf_key} = "OLD_MULTIALLELIC";
-	$vt_regexp{normalize}{vt_normalize}{vcf_key} = "OLD_VARIANT";
-	$vt_regexp{max_af}{vt_genmod_filter}{vcf_key} = "MAX_AF";
-	$vt_regexp{calulate_af}{vt_genmod_filter}{vcf_key} = "calculateAF";
+    $vt_regexp{decompose}{vt_decompose}{vcf_key} = "OLD_MULTIALLELIC";
+    $vt_regexp{normalize}{vt_normalize}{vcf_key} = "OLD_VARIANT";
+    $vt_regexp{max_af}{vt_genmod_filter}{vcf_key} = "MAX_AF";
+    $vt_regexp{calulate_af}{vt_genmod_filter}{vcf_key} = "calculateAF";
 
-	$vt_regexp{decompose}{vt_decompose}{switch} = 0;
-	$vt_regexp{normalize}{vt_normalize}{switch} = 0;
-	$vt_regexp{max_af}{vt_genmod_filter}{switch} = 0;
-	$vt_regexp{calulate_af}{vt_genmod_filter}{switch} = 0;
+    $vt_regexp{decompose}{vt_decompose}{switch} = 0;
+    $vt_regexp{normalize}{vt_normalize}{switch} = 0;
+    $vt_regexp{max_af}{vt_genmod_filter}{switch} = 0;
+    $vt_regexp{calulate_af}{vt_genmod_filter}{switch} = 0;
 
-	my @max_af_references = (q?ALL.wgs.phase\d+.\S+.vcf?, q?ExAC.r\d+.\d+.sites.vep.vcf?);
-	my @calulate_af_references = (q?ExAC.r\d+.\d+.sites.vep.vcf?);
+    my @max_af_references = (q?ALL.wgs.phase\d+.\S+.vcf?, q?ExAC.r\d+.\d+.sites.vep.vcf?);
+    my @calulate_af_references = (q?ExAC.r\d+.\d+.sites.vep.vcf?);
 
-	if (-e $reference_file_path) {  #Downloaded and vt later (for downloadable references otherwise file existens error is thrown downstream)
+    if (-e $reference_file_path) {  #Downloaded and vt later (for downloadable references otherwise file existens error is thrown downstream)
 
-	    foreach my $vt_program (keys %vt_regexp) {
+	foreach my $vt_program (keys %vt_regexp) {
 
-		foreach my $associated_program (@{ $parameter_href->{$parameter_name}{associated_program} }) {
+	    foreach my $associated_program (@{ $parameter_href->{$parameter_name}{associated_program} }) {
 
-		    if ($active_parameter_href->{$associated_program} > 0) {  #Active or dry run for associated program
+		if ($active_parameter_href->{$associated_program} > 0) {  #Active or dry run for associated program
 
-			foreach my $vt_parameter_name (keys $vt_regexp{$vt_program}) {  #MIP flags
+		    foreach my $vt_parameter_name (keys $vt_regexp{$vt_program}) {  #MIP flags
 
-			    my $regexp = q?perl -nae 'if($_=~/ID\=?.$vt_regexp{$vt_program}{$vt_parameter_name}{vcf_key}.q?/) {print $_} if($_=~/#CHROM/) {last}'?;
-			    my $ret = `less $reference_file_path | $regexp`; #Detect if vt program has processed reference
+			my $regexp = q?perl -nae 'if($_=~/ID\=?.$vt_regexp{$vt_program}{$vt_parameter_name}{vcf_key}.q?/) {print $_} if($_=~/#CHROM/) {last}'?;
+			my $ret = `less $reference_file_path | $regexp`; #Detect if vt program has processed reference
 
-			    unless ($ret) {  #No tracks of vt processing found
+			unless ($ret) {  #No tracks of vt processing found
 
-				if ( ($vt_program eq "decompose") || ($vt_program eq "normalize") ){
+			    if ( ($vt_program eq "decompose") || ($vt_program eq "normalize") ){
 
-				    $vt_regexp{$vt_program}{$vt_parameter_name}{switch} = 1;
-				    $log->warn("Cannot detect that ".$vt_program." has processed reference: ".$reference_file_path."\n");
-				}
-				if ( ($vt_program eq "maxAF") && (any {$reference_file_path=~/$_/} @max_af_references) ) {
-
-				    $vt_regexp{$vt_program}{$vt_parameter_name}{switch} = 1;
-				    $log->warn("Cannot detect that ".$vt_program." has processed reference: ".$reference_file_path."\n");
-				}
-				if ( ($vt_program eq "calulate_af") && (any {$reference_file_path=~/$_/} @calulate_af_references) ) {
-
-				    $vt_regexp{$vt_program}{$vt_parameter_name}{switch} = 1;
-				    $log->warn("Cannot detect that ".$vt_program." has processed reference: ".$reference_file_path."\n");
-				}
+				$vt_regexp{$vt_program}{$vt_parameter_name}{switch} = 1;
+				$log->warn("Cannot detect that ".$vt_program." has processed reference: ".$reference_file_path."\n");
 			    }
-			    else {  #Found vt processing track
+			    if ( ($vt_program eq "maxAF") && (any {$reference_file_path=~/$_/} @max_af_references) ) {
 
-				$log->info("Reference check: ".$reference_file_path." vt:".$vt_program." - PASS\n");
+				$vt_regexp{$vt_program}{$vt_parameter_name}{switch} = 1;
+				$log->warn("Cannot detect that ".$vt_program." has processed reference: ".$reference_file_path."\n");
+			    }
+			    if ( ($vt_program eq "calulate_af") && (any {$reference_file_path=~/$_/} @calulate_af_references) ) {
+
+				$vt_regexp{$vt_program}{$vt_parameter_name}{switch} = 1;
+				$log->warn("Cannot detect that ".$vt_program." has processed reference: ".$reference_file_path."\n");
 			    }
 			}
-			last;  #No need to test the same reference over and over
+			else {  #Found vt processing track
+
+			    $log->info("Reference check: ".$reference_file_path." vt:".$vt_program." - PASS\n");
+			}
 		    }
+		    last;  #No need to test the same reference over and over
 		}
 	    }
-	    foreach my $vt_program (keys %vt_regexp) {
+	}
+	foreach my $vt_program (keys %vt_regexp) {
 
-		foreach my $vt_parameter_name (keys $vt_regexp{$vt_program}) {  #MIP flags
+	    foreach my $vt_parameter_name (keys $vt_regexp{$vt_program}) {  #MIP flags
 
-		    if ($vt_regexp{$vt_program}{$vt_parameter_name}{switch}) {
+		if ($vt_regexp{$vt_program}{$vt_parameter_name}{switch}) {
 
-			## Split multi allelic records into single records and normalize
-			vt_core({parameter_href => $parameter_href,
-				 active_parameter_href => $active_parameter_href,
-				 sample_info_href => $sample_info_href,
-				 infile_lane_no_ending_href => $infile_lane_no_ending_href,
-				 job_id_href => $job_id_href,
-				 infile_path => $reference_file_path,
-				 program_directory => "vt",
-				 decompose => $vt_regexp{decompose}{vt_decompose}{switch},
-				 normalize => $vt_regexp{normalize}{vt_normalize}{switch},
-				 max_af => $vt_regexp{max_af}{vt_genmod_filter}{switch},
-				 calculate_af => $vt_regexp{calulate_af}{vt_genmod_filter}{switch},
-				});
+		    ## Split multi allelic records into single records and normalize
+		    vt_core({parameter_href => $parameter_href,
+			     active_parameter_href => $active_parameter_href,
+			     sample_info_href => $sample_info_href,
+			     infile_lane_no_ending_href => $infile_lane_no_ending_href,
+			     job_id_href => $job_id_href,
+			     infile_path => $reference_file_path,
+			     program_directory => "vt",
+			     decompose => $vt_regexp{decompose}{vt_decompose}{switch},
+			     normalize => $vt_regexp{normalize}{vt_normalize}{switch},
+			     max_af => $vt_regexp{max_af}{vt_genmod_filter}{switch},
+			     calculate_af => $vt_regexp{calulate_af}{vt_genmod_filter}{switch},
+			    });
 
-			if ( ($vt_program eq "decompose") || ($vt_program eq "normalize") ){
+		    if ( ($vt_program eq "decompose") || ($vt_program eq "normalize") ){
 
-			    ## Update switch to avoid modifying same reference twice
-			    $vt_regexp{decompose}{vt_decompose}{switch} = 0;
-			    $vt_regexp{normalize}{vt_normalize}{switch} = 0;
-			}
+			## Update switch to avoid modifying same reference twice
+			$vt_regexp{decompose}{vt_decompose}{switch} = 0;
+			$vt_regexp{normalize}{vt_normalize}{switch} = 0;
 		    }
 		}
 	    }
 	}
     }
+}
 
 
-    sub bgzip {
+sub bgzip {
 
 ##bgzip
 
@@ -24125,58 +24157,58 @@ sub order_parameter_names {
 ##         : $compress     => Compress file
 ##         : $FILEHANDLE   => Filehandle to write to
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Default(s)
-	my $compress;
+    ## Default(s)
+    my $compress;
 
-	## Flatten argument(s)
-	my $infile_path;
-	my $outfile_path;
-	my $FILEHANDLE;
+    ## Flatten argument(s)
+    my $infile_path;
+    my $outfile_path;
+    my $FILEHANDLE;
 
-	my $tmpl = {
-	    infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
-	    FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	    outfile_path => { strict_type => 1, store => \$outfile_path},
-	    compress => { default => 1,
-			  allow => [0, 1],
-			  strict_type => 1, store => \$compress},
-	};
+    my $tmpl = {
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	outfile_path => { strict_type => 1, store => \$outfile_path},
+	compress => { default => 1,
+		      allow => [0, 1],
+		      strict_type => 1, store => \$compress},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	print $FILEHANDLE "bgzip ";
+    print $FILEHANDLE "bgzip ";
 
-	if ( ($compress) && defined($outfile_path) ) {  #Compress and stream
+    if ( ($compress) && defined($outfile_path) ) {  #Compress and stream
 
-	    print $FILEHANDLE "-c ";
+	print $FILEHANDLE "-c ";
 
-	    if ($infile_path ne "-") {  #Bgzip will assume stream
-
-		print $FILEHANDLE $infile_path." ";
-	    }
-	    print $FILEHANDLE "> ".$outfile_path." ";
-	}
-	elsif ($compress) {  #Compress original file
+	if ($infile_path ne "-") {  #Bgzip will assume stream
 
 	    print $FILEHANDLE $infile_path." ";
 	}
-	elsif ( (! $compress) && defined($outfile_path) ){  #Decompress and stream
-
-	    print $FILEHANDLE "-d ";
-	    print $FILEHANDLE "-c ";
-	    print $FILEHANDLE $infile_path." ";
-	    print $FILEHANDLE "> ".$outfile_path." ";
-	}
-	else {  #Decompress original file
-
-	    print $FILEHANDLE "-d ";
-	    print $FILEHANDLE $infile_path." ";
-	}
+	print $FILEHANDLE "> ".$outfile_path." ";
     }
+    elsif ($compress) {  #Compress original file
 
-    sub tabix {
+	print $FILEHANDLE $infile_path." ";
+    }
+    elsif ( (! $compress) && defined($outfile_path) ){  #Decompress and stream
+
+	print $FILEHANDLE "-d ";
+	print $FILEHANDLE "-c ";
+	print $FILEHANDLE $infile_path." ";
+	print $FILEHANDLE "> ".$outfile_path." ";
+    }
+    else {  #Decompress original file
+
+	print $FILEHANDLE "-d ";
+	print $FILEHANDLE $infile_path." ";
+    }
+}
+
+sub tabix {
 
 ##tabix
 
@@ -24187,31 +24219,31 @@ sub order_parameter_names {
 ##         : $preset      => Preset, file format
 ##         : $FILEHANDLE  => Filehandle to write to
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Default(s)
-	my $preset;
+    ## Default(s)
+    my $preset;
 
-	## Flatten argument(s)
-	my $infile_path;
-	my $FILEHANDLE;
+    ## Flatten argument(s)
+    my $infile_path;
+    my $FILEHANDLE;
 
-	my $tmpl = {
-	    infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
-	    FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	    preset => { default => "vcf", strict_type => 1, store => \$preset},
-	};
+    my $tmpl = {
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	preset => { default => "vcf", strict_type => 1, store => \$preset},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	print $FILEHANDLE "tabix ";
-	print $FILEHANDLE "-p ".$preset." ";  #Preset
-	print $FILEHANDLE "-f ";  #Force to overwrite the index
-	print $FILEHANDLE $infile_path." ";  #Temporary outfile
-    }
+    print $FILEHANDLE "tabix ";
+    print $FILEHANDLE "-p ".$preset." ";  #Preset
+    print $FILEHANDLE "-f ";  #Force to overwrite the index
+    print $FILEHANDLE $infile_path." ";  #Temporary outfile
+}
 
 
-    sub remove_redundant_files {
+sub remove_redundant_files {
 
 ##remove_redundant_files
 
@@ -24232,93 +24264,124 @@ sub order_parameter_names {
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 ##         : $call_type                  => The variant call type
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Default(s)
-	my $family_id_ref;
-	my $outaligner_dir_ref;
-	my $call_type;
+    ## Default(s)
+    my $family_id_ref;
+    my $outaligner_dir_ref;
+    my $call_type;
 
-	## Flatten argument(s)
-	my $parameter_href;
-	my $active_parameter_href;
-	my $sample_info_href;
-	my $file_info_href;
-	my $lane_href;
-	my $infile_lane_no_ending_href;
-	my $reduce_io_ref;
-	my $sample_id;
-	my $insample_directory;
-	my $FILEHANDLE;
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $file_info_href;
+    my $lane_href;
+    my $infile_lane_no_ending_href;
+    my $reduce_io_ref;
+    my $sample_id;
+    my $insample_directory;
+    my $FILEHANDLE;
 
-	my $tmpl = {
-	    parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
-	    active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	    sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	    file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	    lane_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$lane_href},
-	    infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
-	    reduce_io_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$reduce_io_ref},
-	    sample_id => { strict_type => 1, store => \$sample_id},
-	    insample_directory => { strict_type => 1, store => \$insample_directory},
-	    FILEHANDLE => { store => \$FILEHANDLE},
-	    family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
-			       strict_type => 1, store => \$family_id_ref},
-	    outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
-				    strict_type => 1, store => \$outaligner_dir_ref},
-	    call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
-	};
+    my $tmpl = {
+	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
+	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
+	lane_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$lane_href},
+	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	reduce_io_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$reduce_io_ref},
+	sample_id => { strict_type => 1, store => \$sample_id},
+	insample_directory => { strict_type => 1, store => \$insample_directory},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
+	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	my $vcfparser_contigs_ref = \@{ $file_info_href->{contigs_size_ordered} };  #Set default
+    my $vcfparser_contigs_ref = \@{ $file_info_href->{contigs_size_ordered} };  #Set default
 
-	## Last modules in each processing block that should have the output data deleted
-	my $last_module_bamcalibrationblock = "pgatk_haplotypecaller";
-	my $last_module_variantannotationblock = "psnpeff";
+    ## Last modules in each processing block that should have the output data deleted
+    my $last_module_bamcalibrationblock = "pgatk_haplotypecaller";
+    my $last_module_variantannotationblock = "psnpeff";
 
-	foreach my $program (@{ $parameter_href->{dynamic_parameter}{program} }) {
+    foreach my $program (@{ $parameter_href->{dynamic_parameter}{program} }) {
 
-	    if ($active_parameter_href->{$program} > 0) {
+	if ($active_parameter_href->{$program} > 0) {
 
-		if ( (defined($parameter_href->{$program}{remove_redundant_file}))
-		     && ($parameter_href->{$program}{remove_redundant_file} eq "yes")) {
+	    if ( (defined($parameter_href->{$program}{remove_redundant_file}))
+		 && ($parameter_href->{$program}{remove_redundant_file} eq "yes")) {
 
-		    if (defined($sample_id)) {
+		if (defined($sample_id)) {
 
-			my $indirectory =  $parameter_href->{$program}{$sample_id}{indirectory};
-			my $outfile_tag = $file_info_href->{$sample_id}{$program}{file_tag};
+		    my $indirectory =  $parameter_href->{$program}{$sample_id}{indirectory};
+		    my $outfile_tag = $file_info_href->{$sample_id}{$program}{file_tag};
 
-			## Single files
-			if ($parameter_href->{$program}{remove_redundant_file_setting} eq "single") {  #Infiles for prior to potential merge
+		    ## Single files
+		    if ($parameter_href->{$program}{remove_redundant_file_setting} eq "single") {  #Infiles for prior to potential merge
 
-			  INFILE:
-			    foreach my $infile (@{ $infile_lane_no_ending_href->{$sample_id} }) {
+		      INFILE:
+			foreach my $infile (@{ $infile_lane_no_ending_href->{$sample_id} }) {
 
-			      FILE_ENDINGS:
-				foreach my $file_ending (@{ $parameter_href->{$program}{file_endings} }) {
+			  FILE_ENDINGS:
+			    foreach my $file_ending (@{ $parameter_href->{$program}{file_endings} }) {
 
-				    my $file_path;
+				my $file_path;
 
-				    if (defined($outfile_tag)) {
+				if (defined($outfile_tag)) {
 
-					$file_path = catfile($indirectory, $infile.$outfile_tag.$file_ending);
-				    }
-				    else {
+				    $file_path = catfile($indirectory, $infile.$outfile_tag.$file_ending);
+				}
+				else {
 
-					$file_path = catfile($indirectory, $infile.$file_ending);
-				    }
+				    $file_path = catfile($indirectory, $infile.$file_ending);
+				}
 
-				    my $most_complete_ref;
+				my $most_complete_ref;
 
-				    if ($file_ending=~/vcf|bam/) {
+				if ($file_ending=~/vcf|bam/) {
 
-					## Detect which most_complete_path to use depending on file_ending
-					$most_complete_ref = detect_most_complete_file({sample_info_href => $sample_info_href,
-											file_ending_ref => \$file_ending,
-											sample_id_ref => \$sample_id,
-										       });
-				    }
+				    ## Detect which most_complete_path to use depending on file_ending
+				    $most_complete_ref = detect_most_complete_file({sample_info_href => $sample_info_href,
+										    file_ending_ref => \$file_ending,
+										    sample_id_ref => \$sample_id,
+										   });
+				}
+				## Checks if the file is recorded as the "most_complete_bam|vcf". If false writes removal of file(s) to supplied filehandle
+				check_most_complete_and_remove_file({FILEHANDLE => $FILEHANDLE,
+								     most_complete_ref => $most_complete_ref,
+								     file_path_ref => \$file_path,
+								     file_ending => $file_ending,
+								    });
+			    }
+			}
+		    }
+		    ## Merged files
+		    if ($parameter_href->{$program}{remove_redundant_file_setting} eq "merged") {  #Merge infiles
+
+			## Add merged infile name after merging all BAM files per sample_id
+			my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
+
+			if ( ( ! $$reduce_io_ref) || ($program eq $last_module_bamcalibrationblock) ) {  #Delete intermediate files or last module in processBlock
+
+			  FILE_ENDINGS:
+			    foreach my $file_ending (@{ $parameter_href->{$program}{file_endings} }) {
+
+			      CONTIGS:
+				foreach my $contig (@$vcfparser_contigs_ref) {
+
+				    my $file_path = catfile($indirectory, $infile.$outfile_tag."_".$contig.$file_ending);
+
+				    ## Detect which most_complete_path to use depending on file_ending
+				    my $most_complete_ref = detect_most_complete_file({sample_info_href => $sample_info_href,
+										       file_ending_ref => \$file_ending,
+										       sample_id_ref => \$sample_id,
+										      });
+
 				    ## Checks if the file is recorded as the "most_complete_bam|vcf". If false writes removal of file(s) to supplied filehandle
 				    check_most_complete_and_remove_file({FILEHANDLE => $FILEHANDLE,
 									 most_complete_ref => $most_complete_ref,
@@ -24328,48 +24391,40 @@ sub order_parameter_names {
 				}
 			    }
 			}
-			## Merged files
-			if ($parameter_href->{$program}{remove_redundant_file_setting} eq "merged") {  #Merge infiles
+		    }
+		}
+		else {  #Otherwise these files would be removed for every sample_id
 
-			    ## Add merged infile name after merging all BAM files per sample_id
-			    my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
+		    my $indirectory =  $parameter_href->{$program}{indirectory};
+		    my $outfile_tag = $file_info_href->{$$family_id_ref}{$program}{file_tag};
 
-			    if ( ( ! $$reduce_io_ref) || ($program eq $last_module_bamcalibrationblock) ) {  #Delete intermediate files or last module in processBlock
+		    ## Family files
+		    if ($parameter_href->{$program}{remove_redundant_file_setting} eq "family") {
 
-			      FILE_ENDINGS:
-				foreach my $file_ending (@{ $parameter_href->{$program}{file_endings} }) {
+		      FILE_ENDINGS:
+			foreach my $file_ending (@{ $parameter_href->{$program}{file_endings} }) {
 
-				  CONTIGS:
-				    foreach my $contig (@$vcfparser_contigs_ref) {
+			    my $file_path = catfile($indirectory, $$family_id_ref.$outfile_tag.$call_type."*".$file_ending);
 
-					my $file_path = catfile($indirectory, $infile.$outfile_tag."_".$contig.$file_ending);
+			    ## Detect which most_complete_path to use depending on file_ending
+			    my $most_complete_ref = detect_most_complete_file({sample_info_href => $sample_info_href,
+									       file_ending_ref => \$file_ending,
+									      });
 
-					## Detect which most_complete_path to use depending on file_ending
-					my $most_complete_ref = detect_most_complete_file({sample_info_href => $sample_info_href,
-											   file_ending_ref => \$file_ending,
-											   sample_id_ref => \$sample_id,
-											  });
-
-					## Checks if the file is recorded as the "most_complete_bam|vcf". If false writes removal of file(s) to supplied filehandle
-					check_most_complete_and_remove_file({FILEHANDLE => $FILEHANDLE,
-									     most_complete_ref => $most_complete_ref,
-									     file_path_ref => \$file_path,
-									     file_ending => $file_ending,
-									    });
-				    }
-				}
-			    }
+			    ## Checks if the file is recorded as the "most_complete_bam|vcf". If false writes removal of file(s) to supplied filehandle
+			    check_most_complete_and_remove_file({FILEHANDLE => $FILEHANDLE,
+								 most_complete_ref => $most_complete_ref,
+								 file_path_ref => \$file_path,
+								 file_ending => $file_ending,
+								});
 			}
 		    }
-		    else {  #Otherwise these files would be removed for every sample_id
+		    elsif ($parameter_href->{$program}{remove_redundant_file_setting} eq "variant_annotation") {
 
-			my $indirectory =  $parameter_href->{$program}{indirectory};
-			my $outfile_tag = $file_info_href->{$$family_id_ref}{$program}{file_tag};
+			if ( ( ! $$reduce_io_ref) || ($program eq $last_module_variantannotationblock) ) {  #Delete intermediate files or last module in processBlock
 
-			## Family files
-			if ($parameter_href->{$program}{remove_redundant_file_setting} eq "family") {
+			    $outfile_tag = $file_info_href->{$$family_id_ref}{$program}{file_tag};
 
-			  FILE_ENDINGS:
 			    foreach my $file_ending (@{ $parameter_href->{$program}{file_endings} }) {
 
 				my $file_path = catfile($indirectory, $$family_id_ref.$outfile_tag.$call_type."*".$file_ending);
@@ -24387,38 +24442,15 @@ sub order_parameter_names {
 								    });
 			    }
 			}
-			elsif ($parameter_href->{$program}{remove_redundant_file_setting} eq "variant_annotation") {
-
-			    if ( ( ! $$reduce_io_ref) || ($program eq $last_module_variantannotationblock) ) {  #Delete intermediate files or last module in processBlock
-
-				$outfile_tag = $file_info_href->{$$family_id_ref}{$program}{file_tag};
-
-				foreach my $file_ending (@{ $parameter_href->{$program}{file_endings} }) {
-
-				    my $file_path = catfile($indirectory, $$family_id_ref.$outfile_tag.$call_type."*".$file_ending);
-
-				    ## Detect which most_complete_path to use depending on file_ending
-				    my $most_complete_ref = detect_most_complete_file({sample_info_href => $sample_info_href,
-										       file_ending_ref => \$file_ending,
-										      });
-
-				    ## Checks if the file is recorded as the "most_complete_bam|vcf". If false writes removal of file(s) to supplied filehandle
-				    check_most_complete_and_remove_file({FILEHANDLE => $FILEHANDLE,
-									 most_complete_ref => $most_complete_ref,
-									 file_path_ref => \$file_path,
-									 file_ending => $file_ending,
-									});
-				}
-			    }
-			}
 		    }
 		}
 	    }
 	}
     }
+}
 
 
-    sub detect_most_complete_file {
+sub detect_most_complete_file {
 
 ##detect_most_complete_file
 
@@ -24429,43 +24461,43 @@ sub order_parameter_names {
 ##         : $file_ending_ref       => File ending (.file_ending){REF}
 ##         : $sample_id_ref         => Sample ID {REF}
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Flatten argument(s)
-	my $sample_info_href;
-	my $file_ending_ref;
-	my $sample_id_ref;
+    ## Flatten argument(s)
+    my $sample_info_href;
+    my $file_ending_ref;
+    my $sample_id_ref;
 
-	my $tmpl = {
-	    sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	    file_ending_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$file_ending_ref},
-	    sample_id_ref => { store => \$sample_id_ref},
-	};
+    my $tmpl = {
+	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
+	file_ending_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$file_ending_ref},
+	sample_id_ref => { store => \$sample_id_ref},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	## Set mostcompletePaths
-	my $most_complete_bam_ref;
-	my $most_complete_vcf_ref =  \$sample_info_href->{vcf_file}{ready_vcf}{path};
+    ## Set mostcompletePaths
+    my $most_complete_bam_ref;
+    my $most_complete_vcf_ref =  \$sample_info_href->{vcf_file}{ready_vcf}{path};
 
-	if (defined($$sample_id_ref)) {
+    if (defined($$sample_id_ref)) {
 
-	    $most_complete_bam_ref = \$sample_info_href->{sample}{$$sample_id_ref}{most_complete_bam}{path};
-	}
-
-	## Decide which mostcompletePaths to use
-	if ($$file_ending_ref eq ".bam") {
-
-	    return $most_complete_bam_ref;
-	}
-	if ($$file_ending_ref eq ".vcf") {
-
-	    return $most_complete_vcf_ref;
-	}
+	$most_complete_bam_ref = \$sample_info_href->{sample}{$$sample_id_ref}{most_complete_bam}{path};
     }
 
+    ## Decide which mostcompletePaths to use
+    if ($$file_ending_ref eq ".bam") {
 
-    sub remove_array_element {
+	return $most_complete_bam_ref;
+    }
+    if ($$file_ending_ref eq ".vcf") {
+
+	return $most_complete_vcf_ref;
+    }
+}
+
+
+sub remove_array_element {
 
 ##remove_array_element
 
@@ -24475,33 +24507,33 @@ sub order_parameter_names {
 ##         : $contigs_ref        => The select file contigs {REF}
 ##         : $remove_contigs_ref => Remove this contig
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Flatten argument(s)
-	my $contigs_ref;
-	my $remove_contigs_ref;
+    ## Flatten argument(s)
+    my $contigs_ref;
+    my $remove_contigs_ref;
 
-	my $tmpl = {
-	    contigs_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$contigs_ref},
-	    remove_contigs_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$remove_contigs_ref},
-	};
+    my $tmpl = {
+	contigs_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$contigs_ref},
+	remove_contigs_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$remove_contigs_ref},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	for (my $index=0;$index<scalar(@$contigs_ref);$index++) {
+    for (my $index=0;$index<scalar(@$contigs_ref);$index++) {
 
-	    foreach my $remove_contig (@$remove_contigs_ref) {
+	foreach my $remove_contig (@$remove_contigs_ref) {
 
-		if( ($contigs_ref->[$index] eq $remove_contig) || ($contigs_ref->[$index] eq "chr".$remove_contig) ) {
+	    if( ($contigs_ref->[$index] eq $remove_contig) || ($contigs_ref->[$index] eq "chr".$remove_contig) ) {
 
-		    splice(@$contigs_ref, $index, 1);  #Remove $element from array
-		}
+		splice(@$contigs_ref, $index, 1);  #Remove $element from array
 	    }
 	}
     }
+}
 
 
-    sub detect_founders {
+sub detect_founders {
 
 ##detect_founders
 
@@ -24511,46 +24543,46 @@ sub order_parameter_names {
 ##         : $active_parameter_href => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href      => Info on samples and family hash {REF}
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Flatten argument(s)
-	my $active_parameter_href;
-	my $sample_info_href;
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $sample_info_href;
 
-	my $tmpl = {
-	    active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	    sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	};
+    my $tmpl = {
+	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	my @founders;
+    my @founders;
 
-	foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
+    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
-	    my $father_info = $sample_info_href->{sample}{$sample_id}{father};  #Alias
-	    my $mother_info = $sample_info_href->{sample}{$sample_id}{mother};  #Alias
+	my $father_info = $sample_info_href->{sample}{$sample_id}{father};  #Alias
+	my $mother_info = $sample_info_href->{sample}{$sample_id}{mother};  #Alias
 
-	    if ( (defined($father_info)) && ($father_info ne 0) ) {  #Child
+	if ( (defined($father_info)) && ($father_info ne 0) ) {  #Child
 
-		if (any {$_ eq $father_info} @{ $active_parameter_href->{sample_ids} }) {  #If element is part of array
+	    if (any {$_ eq $father_info} @{ $active_parameter_href->{sample_ids} }) {  #If element is part of array
 
-		    push(@founders, $father_info);
-		}
-	    }
-	    if ( (defined($mother_info)) && ($mother_info ne 0) ) {  #Child
-
-		if (any {$_ eq $mother_info} @{ $active_parameter_href->{sample_ids} } ) {  #If element is part of array
-
-		    push(@founders, $mother_info);
-		}
+		push(@founders, $father_info);
 	    }
 	}
-	return scalar(@founders);
+	if ( (defined($mother_info)) && ($mother_info ne 0) ) {  #Child
+
+	    if (any {$_ eq $mother_info} @{ $active_parameter_href->{sample_ids} } ) {  #If element is part of array
+
+		push(@founders, $mother_info);
+	    }
+	}
     }
+    return scalar(@founders);
+}
 
 
-    sub detect_trio {
+sub detect_trio {
 
 ##detect_trio
 
@@ -24560,60 +24592,60 @@ sub order_parameter_names {
 ##         : $active_parameter_href => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href      => Info on samples and family hash {REF}
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Flatten argument(s)
-	my $active_parameter_href;
-	my $sample_info_href;
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $sample_info_href;
 
-	my $tmpl = {
-	    active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	    sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
-	};
+    my $tmpl = {
+	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	## Retrieve logger object
-	my $log = Log::Log4perl->get_logger("MIP");
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
 
-	my %trio;
+    my %trio;
 
-	if (scalar(@{ $active_parameter_href->{sample_ids} }) eq 1) {
+    if (scalar(@{ $active_parameter_href->{sample_ids} }) eq 1) {
 
-	    $log->info("Found single sample: ".$active_parameter_href->{sample_ids}[0], "\n");
-	    return
-	}
-	elsif (scalar(@{ $active_parameter_href->{sample_ids} }) eq 3) {
+	$log->info("Found single sample: ".$active_parameter_href->{sample_ids}[0], "\n");
+	return
+    }
+    elsif (scalar(@{ $active_parameter_href->{sample_ids} }) eq 3) {
 
-	    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
+	foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
-		my $father_info = $sample_info_href->{sample}{$sample_id}{father};  #Alias
-		my $mother_info = $sample_info_href->{sample}{$sample_id}{mother};  #Alias
+	    my $father_info = $sample_info_href->{sample}{$sample_id}{father};  #Alias
+	    my $mother_info = $sample_info_href->{sample}{$sample_id}{mother};  #Alias
 
-		if ( ($father_info ne 0) && ($mother_info ne 0) ) {  #Child
+	    if ( ($father_info ne 0) && ($mother_info ne 0) ) {  #Child
 
-		    $trio{child} = $sample_id;
+		$trio{child} = $sample_id;
 
-		    if (any {$_ eq $father_info} @{ $active_parameter_href->{sample_ids} }) {  #If element is part of array
+		if (any {$_ eq $father_info} @{ $active_parameter_href->{sample_ids} }) {  #If element is part of array
 
-			$trio{father} = $father_info;
-		    }
-		    if (any {$_ eq $mother_info} @{ $active_parameter_href->{sample_ids} } ) {  #If element is part of array
+		    $trio{father} = $father_info;
+		}
+		if (any {$_ eq $mother_info} @{ $active_parameter_href->{sample_ids} } ) {  #If element is part of array
 
-			$trio{mother} = $mother_info;
-		    }
+		    $trio{mother} = $mother_info;
 		}
 	    }
-	    if (scalar(keys %trio) == 3) {
+	}
+	if (scalar(keys %trio) == 3) {
 
-		$log->info("Found trio: Child = ".$trio{child}.", Father = ".$trio{father}.", Mother = ".$trio{mother}, "\n");
-		return 1
-	    }
+	    $log->info("Found trio: Child = ".$trio{child}.", Father = ".$trio{father}.", Mother = ".$trio{mother}, "\n");
+	    return 1
 	}
     }
+}
 
 
-    sub check_string {
+sub check_string {
 
 ##check_string
 
@@ -24623,27 +24655,27 @@ sub order_parameter_names {
 ##         : $string => String to be searched
 ##         : $regexp => regexp to use on string
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Flatten argument(s)
-	my $string;
-	my $regexp;
+    ## Flatten argument(s)
+    my $string;
+    my $regexp;
 
-	my $tmpl = {
-	    string => { required => 1, defined => 1, strict_type => 1, store => \$string},
-	    regexp => { required => 1, defined => 1, strict_type => 1, store => \$regexp},
-	};
+    my $tmpl = {
+	string => { required => 1, defined => 1, strict_type => 1, store => \$string},
+	regexp => { required => 1, defined => 1, strict_type => 1, store => \$regexp},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	if ($string=~/$regexp/) {
+    if ($string=~/$regexp/) {
 
-	    return 1
-	}
+	return 1
     }
+}
 
 
-    sub add_to_parameter {
+sub add_to_parameter {
 
 ##add_to_parameter
 
@@ -24653,37 +24685,37 @@ sub order_parameter_names {
 ##         : $parameter_href => The parameter hash {REF}
 ##         : $aggregates_ref => The data to aggregate and add to parameter hash{REF}
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Flatten argument(s)
-	my $parameter_href;
-	my $aggregates_ref;
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $aggregates_ref;
 
-	my $tmpl = {
-	    parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
-	    aggregates_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$aggregates_ref},
-	};
+    my $tmpl = {
+	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	aggregates_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$aggregates_ref},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	foreach my $key (keys %$parameter_href) {
+    foreach my $key (keys %$parameter_href) {
 
-	    foreach my $aggregate_element (@$aggregates_ref) {
+	foreach my $aggregate_element (@$aggregates_ref) {
 
-		my @tmps = split(":", $aggregate_element);
-		my $second_key = $tmps[0];
-		my $string_to_match = $tmps[1];
+	    my @tmps = split(":", $aggregate_element);
+	    my $second_key = $tmps[0];
+	    my $string_to_match = $tmps[1];
 
-		if ( (defined($parameter_href->{$key}{$second_key})) && ($parameter_href->{$key}{$second_key} eq $string_to_match) ) {
+	    if ( (defined($parameter_href->{$key}{$second_key})) && ($parameter_href->{$key}{$second_key} eq $string_to_match) ) {
 
-		    push(@{ $parameter_href->{dynamic_parameter}{$string_to_match} }, $key);
-		}
+		push(@{ $parameter_href->{dynamic_parameter}{$string_to_match} }, $key);
 	    }
 	}
     }
+}
 
 
-    sub check_prioritize_variant_callers {
+sub check_prioritize_variant_callers {
 
 ##check_prioritize_variant_callers
 
@@ -24695,65 +24727,65 @@ sub order_parameter_names {
 ##         : $variant_callers_ref   => Variant callers to check {REF}
 ##         : $parameter_names_ref   => Parameter name list {REF}
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Flatten argument(s)
-	my $parameter_href;
-	my $active_parameter_href;
-	my $variant_callers_ref;
-	my $parameter_names_ref;
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $variant_callers_ref;
+    my $parameter_names_ref;
 
-	my $tmpl = {
-	    parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
-	    active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	    parameter_names_ref => { required => 1, defined => 1, default => [], store => \$parameter_names_ref},
-	    variant_callers_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$variant_callers_ref},
-	};
+    my $tmpl = {
+	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	parameter_names_ref => { required => 1, defined => 1, default => [], store => \$parameter_names_ref},
+	variant_callers_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$variant_callers_ref},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	## Retrieve logger object
-	my $log = Log::Log4perl->get_logger("MIP");
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
 
-	my @priority_calls = split(",", $active_parameter_href->{$$parameter_names_ref});
-	my @variant_caller_aliases;  #No matching variant caller
+    my @priority_calls = split(",", $active_parameter_href->{$$parameter_names_ref});
+    my @variant_caller_aliases;  #No matching variant caller
 
-	## Check that all active variant callers have a priority order
-	foreach my $variant_caller (@{ $variant_callers_ref }) {
+    ## Check that all active variant callers have a priority order
+    foreach my $variant_caller (@{ $variant_callers_ref }) {
 
-	    my $variant_caller_alias = $parameter_href->{$variant_caller}{outdir_name};
-	    push(@variant_caller_aliases, $variant_caller_alias);
+	my $variant_caller_alias = $parameter_href->{$variant_caller}{outdir_name};
+	push(@variant_caller_aliases, $variant_caller_alias);
 
-	    if ($active_parameter_href->{$variant_caller} > 0) { #Only active programs
+	if ($active_parameter_href->{$variant_caller} > 0) { #Only active programs
 
-		if (! ( any {$_ eq $variant_caller_alias} @priority_calls ) ) {  #If element is not part of string
+	    if (! ( any {$_ eq $variant_caller_alias} @priority_calls ) ) {  #If element is not part of string
 
-		    $log->fatal($$parameter_names_ref." does not contain active variant caller: '".$variant_caller_alias."'");
-		    exit 1;
-		}
-	    }
-	    if ($active_parameter_href->{$variant_caller} == 0) { #Only NOT active programs
-
-		if ( ( any {$_ eq $variant_caller_alias} @priority_calls ) ) {  #If element IS part of string
-
-		    $log->fatal($$parameter_names_ref." contains deactivated variant caller: '".$variant_caller_alias."'");
-		    exit 1;
-		}
+		$log->fatal($$parameter_names_ref." does not contain active variant caller: '".$variant_caller_alias."'");
+		exit 1;
 	    }
 	}
+	if ($active_parameter_href->{$variant_caller} == 0) { #Only NOT active programs
 
-	## Check that prioritize string contains valid variant call names
-	foreach my $prioritize_call (@priority_calls) {
+	    if ( ( any {$_ eq $variant_caller_alias} @priority_calls ) ) {  #If element IS part of string
 
-	    if (! ( any {$_ eq $prioritize_call} @variant_caller_aliases ) ) {  #If element is not part of string
-
-		$log->fatal($$parameter_names_ref.": '".$prioritize_call."' does not match any supported variant caller: '".join(",", @variant_caller_aliases)."'");
+		$log->fatal($$parameter_names_ref." contains deactivated variant caller: '".$variant_caller_alias."'");
 		exit 1;
 	    }
 	}
     }
 
-    sub vcf_to_bcf {
+    ## Check that prioritize string contains valid variant call names
+    foreach my $prioritize_call (@priority_calls) {
+
+	if (! ( any {$_ eq $prioritize_call} @variant_caller_aliases ) ) {  #If element is not part of string
+
+	    $log->fatal($$parameter_names_ref.": '".$prioritize_call."' does not match any supported variant caller: '".join(",", @variant_caller_aliases)."'");
+	    exit 1;
+	}
+    }
+}
+
+sub vcf_to_bcf {
 
 ##vcf_to_bcf
 
@@ -24764,52 +24796,52 @@ sub order_parameter_names {
 ##         : $FILEHANDLE => SBATCH script FILEHANDLE to print to
 ##         : $outfile    => Out file (no file_ending) {Optional}
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Flatten argument(s)
-	my $infile;
-	my $FILEHANDLE;
-	my $outfile;
+    ## Flatten argument(s)
+    my $infile;
+    my $FILEHANDLE;
+    my $outfile;
 
-	my $tmpl = {
-	    infile => { required => 1, defined => 1, strict_type => 1, store => \$infile},
-	    FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	    outfile => { strict_type => 1, store => \$outfile},
-	};
+    my $tmpl = {
+	infile => { required => 1, defined => 1, strict_type => 1, store => \$infile},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	outfile => { strict_type => 1, store => \$outfile},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	say $FILEHANDLE "## Compress vcf to bcf";
-	print $FILEHANDLE "bcftools ";
-	print $FILEHANDLE "view ";  #VCF/BCF conversion
-	print $FILEHANDLE "-O b ";  #Output type - b: compressed BCF
-	print $FILEHANDLE $infile.".vcf ";  #Infile
+    say $FILEHANDLE "## Compress vcf to bcf";
+    print $FILEHANDLE "bcftools ";
+    print $FILEHANDLE "view ";  #VCF/BCF conversion
+    print $FILEHANDLE "-O b ";  #Output type - b: compressed BCF
+    print $FILEHANDLE $infile.".vcf ";  #Infile
 
-	if (defined($outfile)) {
+    if (defined($outfile)) {
 
-	    say $FILEHANDLE "> ".$outfile.".bcf", "\n";  #Outfile
-	}
-	else {
+	say $FILEHANDLE "> ".$outfile.".bcf", "\n";  #Outfile
+    }
+    else {
 
-	    say $FILEHANDLE "> ".$infile.".bcf", "\n";  #Outfile
-	}
-
-	say $FILEHANDLE "## Index bcf";
-	print $FILEHANDLE "bcftools ";
-	print $FILEHANDLE "index ";  #VCF/BCF index
-
-	if (defined($outfile)) {
-
-	    say $FILEHANDLE $outfile.".bcf", "\n";  #Bcf file to index
-	}
-	else {
-
-	    say $FILEHANDLE $infile.".bcf", "\n";  #Bcf file to index
-	}
+	say $FILEHANDLE "> ".$infile.".bcf", "\n";  #Outfile
     }
 
+    say $FILEHANDLE "## Index bcf";
+    print $FILEHANDLE "bcftools ";
+    print $FILEHANDLE "index ";  #VCF/BCF index
 
-    sub check_aligner {
+    if (defined($outfile)) {
+
+	say $FILEHANDLE $outfile.".bcf", "\n";  #Bcf file to index
+    }
+    else {
+
+	say $FILEHANDLE $infile.".bcf", "\n";  #Bcf file to index
+    }
+}
+
+
+sub check_aligner {
 
 ##check_aligner
 
@@ -24821,273 +24853,58 @@ sub order_parameter_names {
 ##         : $broadcasts_ref        => Holds the parameters info for broadcasting later {REF}
 ##         : $outaligner_dir_ref    => The outaligner_dir used in the analysis {REF}
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Default(s)
-	my $outaligner_dir_ref;
+    ## Default(s)
+    my $outaligner_dir_ref;
 
-	## Flatten argument(s)
-	my $parameter_href;
-	my $active_parameter_href;
-	my $broadcasts_ref;
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $broadcasts_ref;
 
-	my $tmpl = {
-	    parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
-	    active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	    broadcasts_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$broadcasts_ref},
-	    outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
-				    strict_type => 1, store => \$outaligner_dir_ref},
-	};
+    my $tmpl = {
+	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	broadcasts_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$broadcasts_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	## Retrieve logger object
-	my $log = Log::Log4perl->get_logger("MIP");
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
 
-	my %aligner;
+    my %aligner;
 
-	foreach my $aligner (@{ $parameter_href->{dynamic_parameter}{aligners} }) {
+    foreach my $aligner (@{ $parameter_href->{dynamic_parameter}{aligners} }) {
 
-	    if ($active_parameter_href->{$aligner} > 0) {  #Active aligner
+	if ($active_parameter_href->{$aligner} > 0) {  #Active aligner
 
-		$aligner{total_active_aligner_count}++;
-		push(@{ $aligner{active_aligners} }, $aligner);
-		$parameter_href->{active_aligner} = $aligner;  #Save the active aligner for downstream use
+	    $aligner{total_active_aligner_count}++;
+	    push(@{ $aligner{active_aligners} }, $aligner);
+	    $parameter_href->{active_aligner} = $aligner;  #Save the active aligner for downstream use
 
-		if ($$outaligner_dir_ref eq "not_set_yet") {
+	    if ($$outaligner_dir_ref eq "not_set_yet") {
 
-		    $$outaligner_dir_ref = $parameter_href->{$aligner}{outdir_name};  #Set outaligner_dir parameter depending on active aligner
+		$$outaligner_dir_ref = $parameter_href->{$aligner}{outdir_name};  #Set outaligner_dir parameter depending on active aligner
 
-		    my $info = "Set outaligner_dir to: ".$$outaligner_dir_ref;
-		    push(@$broadcasts_ref, $info);  #Add info to broadcasts
-		}
+		my $info = "Set outaligner_dir to: ".$$outaligner_dir_ref;
+		push(@$broadcasts_ref, $info);  #Add info to broadcasts
 	    }
 	}
-	if ($aligner{total_active_aligner_count} > 1) {
-
-	    $log->fatal($USAGE, "\n");
-	    $log->fatal("You have activate more than 1 aligner: ".join(", ", @{ $aligner{active_aligners} }).". MIP currently only supports 1 aligner per analysis.", "\n");
-	    exit 1;
-	}
     }
+    if ($aligner{total_active_aligner_count} > 1) {
 
-
-    sub cnvnator_his {
-
-##cnvnator_his
-
-##Function : Generates a histogram
-##Returns  : ""
-##Arguments: $root_file, $contig_ref, $cnv_bin_size_ref, $chromosome_reference, $FILEHANDLE, $stdout_file , $stderr_file
-##         : $root_file            => The root file
-##         : $contig_ref           => Contig to analyze {REF}
-##         : $cnv_bin_size_ref     => The cnvnator bin size {REF}
-##         : $chromosome_reference => The chrmosome reference X.fa file
-##         : $FILEHANDLE           => Filehandle to write to
-##         : $stdout_file          => The stdout output file {Optional}
-##         : $stderr_file          => The stderr output file {Optional}
-
-	my ($arg_href) = @_;
-
-	## Flatten argument(s)
-	my $root_file;
-	my $contig_ref;
-	my $cnv_bin_size_ref;
-	my $chromosome_reference;
-	my $FILEHANDLE;
-	my $stdout_file;
-	my $stderr_file;
-
-	my $tmpl = {
-	    root_file => { required => 1, defined => 1, strict_type => 1, store => \$root_file},
-	    contig_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$contig_ref},
-	    cnv_bin_size_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$cnv_bin_size_ref},
-	    chromosome_reference => { required => 1, defined => 1, strict_type => 1, store => \$chromosome_reference},
-	    FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	    stdout_file => { strict_type => 1, store => \$stdout_file},
-	    stderr_file => { strict_type => 1, store => \$stderr_file},
-	};
-
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-	print $FILEHANDLE "cnvnator ";
-	print $FILEHANDLE "-root ".$root_file." ";  #ROOT file
-	print $FILEHANDLE "-chrom ".$$contig_ref." ";  #chromosome name
-	print $FILEHANDLE "-his ".$$cnv_bin_size_ref." ";
-	print $FILEHANDLE "-d ".$chromosome_reference." ";
-
-	if (defined($stdout_file)) {
-
-	    print $FILEHANDLE "1>> ".$stdout_file." ";
-	}
-	if (defined($stderr_file)) {
-
-	    print $FILEHANDLE "2>> ".$stderr_file." ";
-	}
-	print $FILEHANDLE "; ";
+	$log->fatal($USAGE, "\n");
+	$log->fatal("You have activate more than 1 aligner: ".join(", ", @{ $aligner{active_aligners} }).". MIP currently only supports 1 aligner per analysis.", "\n");
+	exit 1;
     }
-
-    sub cnvnator_stat {
-
-##cnvnator_stat
-
-##Function : Calculates statistics
-##Returns  : ""
-##Arguments: $root_file, $contig_ref, $cnv_bin_size_ref, $chromosome_reference, $FILEHANDLE, $stdout_file, $stderr_file
-##         : $root_file        => The root file
-##         : $contig_ref       => Contig to analyze {REF}
-##         : $cnv_bin_size_ref => The cnvnator bin size {REF}
-##         : $FILEHANDLE       => Filehandle to write to
-##         : $stdout_file      => The stdout output file {Optional}
-##         : $stderr_file      => The stderr output file {Optional}
-
-	my ($arg_href) = @_;
-
-	## Flatten argument(s)
-	my $root_file;
-	my $contig_ref;
-	my $cnv_bin_size_ref;
-	my $FILEHANDLE;
-	my $stdout_file;
-	my $stderr_file;
-
-	my $tmpl = {
-	    root_file => { required => 1, defined => 1, strict_type => 1, store => \$root_file},
-	    contig_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$contig_ref},
-	    cnv_bin_size_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$cnv_bin_size_ref},
-	    FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	    stdout_file => { strict_type => 1, store => \$stdout_file},
-	    stderr_file => { strict_type => 1, store => \$stderr_file},
-	};
-
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-	print $FILEHANDLE "cnvnator ";
-	print $FILEHANDLE "-root ".$root_file." ";  #ROOT file
-	print $FILEHANDLE "-chrom ".$$contig_ref." ";  #chromosome name
-	print $FILEHANDLE "-stat ".$$cnv_bin_size_ref." ";
-
-	if (defined($stdout_file)) {
-
-	    print $FILEHANDLE "1>> ".$stdout_file." ";
-	}
-	if (defined($stderr_file)) {
-
-	    print $FILEHANDLE "2>> ".$stderr_file." ";
-	}
-	print $FILEHANDLE "; ";
-    }
-
-    sub cnvnator_partition {
-
-##cnvnator_partition
-
-##Function : Read depth signal partioning
-##Returns  : ""
-##Arguments: $root_file, $contig_ref, $cnv_bin_size_ref, $chromosome_reference, $FILEHANDLE, $stdout_file, $stderr_file
-##         : $root_file        => The root file
-##         : $contig_ref       => Contig to analyze {REF}
-##         : $cnv_bin_size_ref => The cnvnator bin size {REF}
-##         : $FILEHANDLE       => Filehandle to write to
-##         : $stdout_file      => The stdout output file {Optional}
-##         : $stderr_file      => The stderr output file {Optional}
-
-	my ($arg_href) = @_;
-
-	## Flatten argument(s)
-	my $root_file;
-	my $contig_ref;
-	my $cnv_bin_size_ref;
-	my $FILEHANDLE;
-	my $stdout_file;
-	my $stderr_file;
-
-	my $tmpl = {
-	    root_file => { required => 1, defined => 1, strict_type => 1, store => \$root_file},
-	    contig_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$contig_ref},
-	    cnv_bin_size_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$cnv_bin_size_ref},
-	    FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	    stdout_file => { strict_type => 1, store => \$stdout_file},
-	    stderr_file => { strict_type => 1, store => \$stderr_file},
-	};
-
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-	print $FILEHANDLE "cnvnator ";
-	print $FILEHANDLE "-root ".$root_file." ";  #ROOT file
-	print $FILEHANDLE "-chrom ".$$contig_ref." ";  #chromosome name
-	print $FILEHANDLE "-partition ".$$cnv_bin_size_ref." ";
-
-	if (defined($stdout_file)) {
-
-	    print $FILEHANDLE "1>> ".$stdout_file." ";
-	}
-	if (defined($stderr_file)) {
-
-	    print $FILEHANDLE "2>> ".$stderr_file." ";
-	}
-	print $FILEHANDLE "; ";
-    }
-
-    sub cnvnator_calling {
-
-##cnvnator_calling
-
-##Function : CNV Calling
-##Returns  : ""
-##Arguments: $root_file, $contig_ref, $cnv_bin_size_ref, $chromosome_reference, $FILEHANDLE, $outfile, $stderr_file
-##         : $root_file            => The root file
-##         : $contig_ref           => Contig to analyze {REF}
-##         : $cnv_bin_size_ref     => The cnvnator bin size {REF}
-##         : $chromosome_reference => The chrmosome reference X.fa file
-##         : $FILEHANDLE           => Filehandle to write to
-##         : $outfile              => The outfile
-##         : $stderr_file          => The stderr output file {Optional}
-
-	my ($arg_href) = @_;
-
-	## Flatten argument(s)
-	my $root_file;
-	my $contig_ref;
-	my $cnv_bin_size_ref;
-	my $chromosome_reference;
-	my $FILEHANDLE;
-	my $stderr_file;
-	my $outfile;
-
-	my $tmpl = {
-	    root_file => { required => 1, defined => 1, strict_type => 1, store => \$root_file},
-	    contig_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$contig_ref},
-	    cnv_bin_size_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$cnv_bin_size_ref},
-	    chromosome_reference => { required => 1, defined => 1, strict_type => 1, store => \$chromosome_reference},
-	    FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	    outfile => { required => 1, defined => 1, strict_type => 1, store => \$outfile},
-	    stderr_file => { strict_type => 1, store => \$stderr_file},
-	};
-
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-	print $FILEHANDLE "cnvnator ";
-	print $FILEHANDLE "-root ".$root_file." ";  #ROOT file
-	print $FILEHANDLE "-chrom ".$$contig_ref." ";  #chromosome name
-	print $FILEHANDLE "-call ".$$cnv_bin_size_ref." ";
-
-	if (defined($stderr_file)) {
-
-	    print $FILEHANDLE "2>> ".$stderr_file." ";
-	}
-	print $FILEHANDLE "> ".$outfile.".tmp ";
-	print $FILEHANDLE "; ";
-
-	## Convert to vcf
-	print $FILEHANDLE "cnvnator2VCF.pl ";
-	print $FILEHANDLE $outfile.".tmp ";  #Infile
-	print $FILEHANDLE $chromosome_reference." ";
-	print $FILEHANDLE "> ".$outfile;
-    }
+}
 
 
-    sub rename_vcf_samples {
+sub rename_vcf_samples {
 
 ##rename_vcf_samples
 
@@ -25101,61 +24918,61 @@ sub order_parameter_names {
 ##         : $FILEHANDLE         => Filehandle to write to
 ##         : $output_type        => Output type
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Default(s)
-	my $output_type;
+    ## Default(s)
+    my $output_type;
 
-	## Flatten argument(s)
-	my $sample_ids_ref;
-	my $temp_directory_ref;
-	my $infile;
-	my $outfile;
-	my $FILEHANDLE;
+    ## Flatten argument(s)
+    my $sample_ids_ref;
+    my $temp_directory_ref;
+    my $infile;
+    my $outfile;
+    my $FILEHANDLE;
 
-	my $tmpl = {
-	    sample_ids_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$sample_ids_ref},
-	    temp_directory_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$temp_directory_ref},
-	    infile => { required => 1, defined => 1, strict_type => 1, store => \$infile},
-	    outfile => { required => 1, defined => 1, strict_type => 1, store => \$outfile},
-	    FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	    output_type => { default => "v",
-			     allow => ["b", "u", "z", "v"],
-			     strict_type => 1, store => \$output_type},
-	};
+    my $tmpl = {
+	sample_ids_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$sample_ids_ref},
+	temp_directory_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$temp_directory_ref},
+	infile => { required => 1, defined => 1, strict_type => 1, store => \$infile},
+	outfile => { required => 1, defined => 1, strict_type => 1, store => \$outfile},
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
+	output_type => { default => "v",
+			 allow => ["b", "u", "z", "v"],
+			 strict_type => 1, store => \$output_type},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	## Create new sample names file
-	say $FILEHANDLE "## Create new sample(s) names file";
-	print $FILEHANDLE q?printf "?;
+    ## Create new sample names file
+    say $FILEHANDLE "## Create new sample(s) names file";
+    print $FILEHANDLE q?printf "?;
 
     foreach my $sample_id (@$sample_ids_ref) {
 
 	print $FILEHANDLE $sample_id.q?\n?;
     }
     print $FILEHANDLE q?" ?;
-	say $FILEHANDLE "> ".catfile($$temp_directory_ref, "sample_name.txt")." ";
-	say $FILEHANDLE "\n";
+    say $FILEHANDLE "> ".catfile($$temp_directory_ref, "sample_name.txt")." ";
+    say $FILEHANDLE "\n";
 
-	## Rename samples in VCF
-	say $FILEHANDLE "## Rename sample(s) names ion VCF file";
-	print $FILEHANDLE "bcftools ";
-	print $FILEHANDLE "reheader ";  #Modify header of VCF/BCF files, change sample names.
-	print $FILEHANDLE "-s ";  #New sample names
-	print $FILEHANDLE catfile($$temp_directory_ref, "sample_name.txt")." ";
-	print $FILEHANDLE " ".$infile." ";  #Infile
+    ## Rename samples in VCF
+    say $FILEHANDLE "## Rename sample(s) names ion VCF file";
+    print $FILEHANDLE "bcftools ";
+    print $FILEHANDLE "reheader ";  #Modify header of VCF/BCF files, change sample names.
+    print $FILEHANDLE "-s ";  #New sample names
+    print $FILEHANDLE catfile($$temp_directory_ref, "sample_name.txt")." ";
+    print $FILEHANDLE " ".$infile." ";  #Infile
 
-	print $FILEHANDLE "| ";  #Pipe
-	print $FILEHANDLE "bcftools ";
-	print $FILEHANDLE "view ";
-	print $FILEHANDLE "--output-type v ";  #Generate uncompressed vcf
-	print $FILEHANDLE "> ".$outfile." ";
-	say $FILEHANDLE "\n";
-    }
+    print $FILEHANDLE "| ";  #Pipe
+    print $FILEHANDLE "bcftools ";
+    print $FILEHANDLE "view ";
+    print $FILEHANDLE "--output-type v ";  #Generate uncompressed vcf
+    print $FILEHANDLE "> ".$outfile." ";
+    say $FILEHANDLE "\n";
+}
 
 
-    sub remove_element {
+sub remove_element {
 
 ##remove_element
 
@@ -25167,46 +24984,46 @@ sub order_parameter_names {
 ##         : $remove_contigs_ref => Remove this contig
 ##         : $contig_switch      => Expect contigs in elements_ref
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Flatten argument(s)
-	my $elements_ref;
-	my $remove_contigs_ref;
-	my $contig_switch;
+    ## Flatten argument(s)
+    my $elements_ref;
+    my $remove_contigs_ref;
+    my $contig_switch;
 
-	my $tmpl = {
-	    elements_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$elements_ref},
-	    remove_contigs_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$remove_contigs_ref},
-	    contig_switch => { allow => [0, 1],
-			       strict_type => 1, store => \$contig_switch},
-	};
+    my $tmpl = {
+	elements_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$elements_ref},
+	remove_contigs_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$remove_contigs_ref},
+	contig_switch => { allow => [0, 1],
+			   strict_type => 1, store => \$contig_switch},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	my @array = @$elements_ref;  #Make local copy
+    my @array = @$elements_ref;  #Make local copy
 
-	for (my $index=0;$index<scalar(@array);$index++) {
+    for (my $index=0;$index<scalar(@array);$index++) {
 
-	    foreach my $remove_contig (@$remove_contigs_ref) {
+	foreach my $remove_contig (@$remove_contigs_ref) {
 
-		if($contig_switch) {  #Make sure that contig is removed independent of genome source
+	    if($contig_switch) {  #Make sure that contig is removed independent of genome source
 
-		    if( ($elements_ref->[$index] eq $remove_contig) || ($elements_ref->[$index] eq "chr".$remove_contig) ) {
-
-			splice(@array, $index, 1);  #Remove $element from array
-		    }
-		}
-		elsif( ($elements_ref->[$index] eq $remove_contig) ) {  #Arbitrary element from array
+		if( ($elements_ref->[$index] eq $remove_contig) || ($elements_ref->[$index] eq "chr".$remove_contig) ) {
 
 		    splice(@array, $index, 1);  #Remove $element from array
 		}
 	    }
+	    elsif( ($elements_ref->[$index] eq $remove_contig) ) {  #Arbitrary element from array
+
+		splice(@array, $index, 1);  #Remove $element from array
+	    }
 	}
-	return @array
     }
+    return @array
+}
 
 
-    sub collect_read_length {
+sub collect_read_length {
 
 ##collect_read_length
 
@@ -25217,32 +25034,32 @@ sub order_parameter_names {
 ##         : $read_file => Command used to read file
 ##         : $file      => File to parse
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Flatten argument(s)
-	my $directory;
-	my $read_file_command;
-	my $file;
+    ## Flatten argument(s)
+    my $directory;
+    my $read_file_command;
+    my $file;
 
-	my $tmpl = {
-	    directory => { required => 1, defined => 1, strict_type => 1, store => \$directory},
-	    read_file_command => { required => 1, defined => 1, strict_type => 1, store => \$read_file_command},
-	    file => { required => 1, defined => 1, strict_type => 1, store => \$file},
-	};
+    my $tmpl = {
+	directory => { required => 1, defined => 1, strict_type => 1, store => \$directory},
+	read_file_command => { required => 1, defined => 1, strict_type => 1, store => \$read_file_command},
+	file => { required => 1, defined => 1, strict_type => 1, store => \$file},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	my $seq_length_regexp = q?perl -ne 'if ($_!~/@/) {chomp($_);my $seq_length = length($_);print $seq_length;last;}' ?;  #Prints sequence length and exits
+    my $seq_length_regexp = q?perl -ne 'if ($_!~/@/) {chomp($_);my $seq_length = length($_);print $seq_length;last;}' ?;  #Prints sequence length and exits
 
-	my $pwd = cwd();  #Save current direcory
-	chdir($directory);  #Move to sample_id infile directory
+    my $pwd = cwd();  #Save current direcory
+    chdir($directory);  #Move to sample_id infile directory
 
-	my $ret = `$read_file_command $file | $seq_length_regexp;`;  #Collect sequence length
-	return $ret;
-    }
+    my $ret = `$read_file_command $file | $seq_length_regexp;`;  #Collect sequence length
+    return $ret;
+}
 
 
-    sub print_program {
+sub print_program {
 
 ##print_program
 
@@ -25252,49 +25069,49 @@ sub order_parameter_names {
 ##         : $parameter_href     => The parameter hash {REF}
 ##         : $print_program_mode => Mode to run modules in
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Default(s)
-	my $print_program_mode;
+    ## Default(s)
+    my $print_program_mode;
 
-	## Flatten argument(s)
-	my $parameter_href;
+    ## Flatten argument(s)
+    my $parameter_href;
 
-	my $tmpl = {
-	    parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
-	    print_program_mode => { default => $arg_href->{print_program_mode} //= 2,
-				    allow => [undef, 0, 1, 2],
-				    strict_type => 1, store => \$print_program_mode},
-	};
+    my $tmpl = {
+	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	print_program_mode => { default => $arg_href->{print_program_mode} //= 2,
+				allow => [undef, 0, 1, 2],
+				strict_type => 1, store => \$print_program_mode},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	add_to_parameter({parameter_href => $parameter_href,
-			  aggregates_ref => ["type:program"],
-			 });
+    add_to_parameter({parameter_href => $parameter_href,
+		      aggregates_ref => ["type:program"],
+		     });
 
-	my @order_parameters;
+    my @order_parameters;
 
-	## Adds the order of first level keys from yaml file to array
-	order_parameter_names({order_parameters_ref => \@order_parameters,
-			       file_path => catfile($Bin, "definitions", "define_parameters.yaml"),
-			      });
+    ## Adds the order of first level keys from yaml file to array
+    order_parameter_names({order_parameters_ref => \@order_parameters,
+			   file_path => catfile($Bin, "definitions", "define_parameters.yaml"),
+			  });
 
-	foreach my $order_parameter_element (@order_parameters) {
+    foreach my $order_parameter_element (@order_parameters) {
 
-	    if ( ( any {$_ eq $order_parameter_element} @{ $parameter_href->{dynamic_parameter}{program} } ) ) { #Only process programs
+	if ( ( any {$_ eq $order_parameter_element} @{ $parameter_href->{dynamic_parameter}{program} } ) ) { #Only process programs
 
-		unless ($order_parameter_element=~/pmadeline|pbwa_sampe|pbwa_aln|ppicardtools_mergerapidreads|pbamcalibrationblock|pvariantannotationblock|pannovar/) {
+	    unless ($order_parameter_element=~/pmadeline|pbwa_sampe|pbwa_aln|ppicardtools_mergerapidreads|pbamcalibrationblock|pvariantannotationblock|pannovar/) {
 
-		    print STDOUT "--".$order_parameter_element." ".$print_program_mode." ";
-		}
+		print STDOUT "--".$order_parameter_element." ".$print_program_mode." ";
 	    }
 	}
-	print STDOUT "\n";
     }
+    print STDOUT "\n";
+}
 
 
-    sub check_program_mode {
+sub check_program_mode {
 
 ##check_program_mode
 
@@ -25304,36 +25121,36 @@ sub order_parameter_names {
 ##         : $parameter_href        => The parameter hash {REF}
 ##         : $active_parameter_href => The active parameters for this analysis hash {REF}
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Flatten argument(s)
-	my $parameter_href;
-	my $active_parameter_href;
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
 
-	my $tmpl = {
-	    parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
-	    active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	};
+    my $tmpl = {
+	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	## Retrieve logger object
-	my $log = Log::Log4perl->get_logger("MIP");
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
 
-	my @allowed_values = (0, 1, 2);
+    my @allowed_values = (0, 1, 2);
 
-	foreach my $program (@{ $parameter_href->{dynamic_parameter}{program} }) {
+    foreach my $program (@{ $parameter_href->{dynamic_parameter}{program} }) {
 
-	    if (! ( any {$_ eq $active_parameter_href->{$program}} @allowed_values ) ) { #If element is not part of array
+	if (! ( any {$_ eq $active_parameter_href->{$program}} @allowed_values ) ) { #If element is not part of array
 
-		$log->fatal("'".$active_parameter_href->{$program}."' Is not an allowed mode for program '--".$program."'. Set to: ".join("|", @allowed_values));
-		exit 1;
-	    }
+	    $log->fatal("'".$active_parameter_href->{$program}."' Is not an allowed mode for program '--".$program."'. Set to: ".join("|", @allowed_values));
+	    exit 1;
 	}
     }
+}
 
 
-    sub select_bwamem_binary {
+sub select_bwamem_binary {
 
 ##select_bwamem_binary
 
@@ -25343,45 +25160,45 @@ sub order_parameter_names {
 ##         : $human_genome_reference_source  => Human genome reference source {REF}
 ##         : $human_genome_reference_version => Human genome reference version {REF}
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Flatten argument(s)
-	my $human_genome_reference_source_ref;
-	my $human_genome_reference_version_ref;
+    ## Flatten argument(s)
+    my $human_genome_reference_source_ref;
+    my $human_genome_reference_version_ref;
 
-	my $tmpl = {
-	    human_genome_reference_source_ref => {required => 1, defined => 1, default => \$$, strict_type => 1, store => \$human_genome_reference_source_ref},
-	    human_genome_reference_version_ref => {required => 1, defined => 1, default => \$$, strict_type => 1, store => \$human_genome_reference_version_ref},
-	};
+    my $tmpl = {
+	human_genome_reference_source_ref => {required => 1, defined => 1, default => \$$, strict_type => 1, store => \$human_genome_reference_source_ref},
+	human_genome_reference_version_ref => {required => 1, defined => 1, default => \$$, strict_type => 1, store => \$human_genome_reference_version_ref},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	if($$human_genome_reference_source_ref eq "GRCh") {
+    if($$human_genome_reference_source_ref eq "GRCh") {
 
-	    if ($$human_genome_reference_version_ref > 37) {
+	if ($$human_genome_reference_version_ref > 37) {
 
-		return "run-bwamem";
-	    }
-	    else {  #HumanGenome version less than GrCh37
-
-		return "bwa mem";
-	    }
+	    return "run-bwamem";
 	}
-	else {  #hgXX build
+	else {  #HumanGenome version less than GrCh37
 
-	    if ($$human_genome_reference_version_ref > 19) {
-
-		return "run-bwamem";
-	    }
-	    else {  #HumanGenome version less than hg19
-
-		return "bwa mem";
-	    }
+	    return "bwa mem";
 	}
     }
+    else {  #hgXX build
+
+	if ($$human_genome_reference_version_ref > 19) {
+
+	    return "run-bwamem";
+	}
+	else {  #HumanGenome version less than hg19
+
+	    return "bwa mem";
+	}
+    }
+}
 
 
-    sub update_exome_target_bed {
+sub update_exome_target_bed {
 
 ##update_exome_target_bed
 
@@ -25392,35 +25209,35 @@ sub order_parameter_names {
 ##         : human_genome_reference_source_ref  => The human genome reference source {REF}
 ##         : human_genome_reference_version_ref => The human genome reference version {REF}
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Flatten argument(s)
-	my $exome_target_bed_file_href;
-	my $human_genome_reference_source_ref;
-	my $human_genome_reference_version_ref;
+    ## Flatten argument(s)
+    my $exome_target_bed_file_href;
+    my $human_genome_reference_source_ref;
+    my $human_genome_reference_version_ref;
 
-	my $tmpl = {
-	    exome_target_bed_file_href => { required => 1, store => \$exome_target_bed_file_href},
-	    human_genome_reference_source_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$human_genome_reference_source_ref},
-	    human_genome_reference_version_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$human_genome_reference_version_ref},
-	};
+    my $tmpl = {
+	exome_target_bed_file_href => { required => 1, store => \$exome_target_bed_file_href},
+	human_genome_reference_source_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$human_genome_reference_source_ref},
+	human_genome_reference_version_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$human_genome_reference_version_ref},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	foreach my $exome_target_bed_file (keys %$exome_target_bed_file_href) {
+    foreach my $exome_target_bed_file (keys %$exome_target_bed_file_href) {
 
-	    my $original_file_name = $exome_target_bed_file;
+	my $original_file_name = $exome_target_bed_file;
 
-	    if ( ($exome_target_bed_file =~ s/genome_reference_source/$$human_genome_reference_source_ref/) && ($exome_target_bed_file =~ s/_version/$$human_genome_reference_version_ref/) ){  #Replace with actual version
+	if ( ($exome_target_bed_file =~ s/genome_reference_source/$$human_genome_reference_source_ref/) && ($exome_target_bed_file =~ s/_version/$$human_genome_reference_version_ref/) ){  #Replace with actual version
 
-		$exome_target_bed_file_href->{$exome_target_bed_file} = delete($exome_target_bed_file_href->{$original_file_name});  #The delete operator returns the value being deleted i.e. updating hash key while preserving original info
-	    }
+	    $exome_target_bed_file_href->{$exome_target_bed_file} = delete($exome_target_bed_file_href->{$original_file_name});  #The delete operator returns the value being deleted i.e. updating hash key while preserving original info
 	}
     }
+}
 
 
 
-    sub check_sample_id_in_parameter_path {
+sub check_sample_id_in_parameter_path {
 
 ##check_sample_id_in_parameter_path
 
@@ -25432,55 +25249,55 @@ sub order_parameter_names {
 ##         : $sample_ids_ref        => Array to loop in for parameter {REF}
 ##         : $parameter_names_ref   => Parameter name list {REF}
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Flatten argument(s)
-	my $active_parameter_href;
-	my $sample_ids_ref;
-	my $parameter_names_ref;
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $sample_ids_ref;
+    my $parameter_names_ref;
 
-	my $tmpl = {
-	    active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	    sample_ids_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$sample_ids_ref},
-	    parameter_names_ref => { required => 1, defined => 1, default => [], store => \$parameter_names_ref},
-	};
+    my $tmpl = {
+	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	sample_ids_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$sample_ids_ref},
+	parameter_names_ref => { required => 1, defined => 1, default => [], store => \$parameter_names_ref},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	## Retrieve logger object
-	my $log = Log::Log4perl->get_logger("MIP");
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
 
-	foreach my $parameter_name (@$parameter_names_ref) {  #Lopp through all hash parameters supplied
+    foreach my $parameter_name (@$parameter_names_ref) {  #Lopp through all hash parameters supplied
 
-	    my %seen;  #Hash to test duplicate sample_ids later
+	my %seen;  #Hash to test duplicate sample_ids later
 
-	    foreach my $key (keys $active_parameter_href->{$parameter_name} ) {
+	foreach my $key (keys $active_parameter_href->{$parameter_name} ) {
 
-		my @parameter_samples = split(",", $active_parameter_href->{$parameter_name}{$key});
+	    my @parameter_samples = split(",", $active_parameter_href->{$parameter_name}{$key});
 
-		foreach my $sample_id (@parameter_samples) {
+	    foreach my $sample_id (@parameter_samples) {
 
-		    $seen{$sample_id}++;  #Increment instance to check duplicates later
+		$seen{$sample_id}++;  #Increment instance to check duplicates later
 
-		    if ($seen{$sample_id} > 1) {  #Check sample_id are unique
+		if ($seen{$sample_id} > 1) {  #Check sample_id are unique
 
-			$log->fatal("Sample_id: ".$sample_id." is not uniqe in '-".$parameter_name." '".$key."=".join(",", @parameter_samples),"\n");
-			exit 1;
-		    }
-		}
-	    }
-	    foreach my $sample_id (@$sample_ids_ref) {
-
-		if ( ! (any {$_ eq $sample_id} (keys %seen)) ) {  #If sample_id is not present in parameter_name hash
-
-		    $log->fatal("Could not detect ".$sample_id." for '--".$parameter_name."'. Provided sample_ids are: ".join(", ", (keys %seen)), "\n");
+		    $log->fatal("Sample_id: ".$sample_id." is not uniqe in '-".$parameter_name." '".$key."=".join(",", @parameter_samples),"\n");
 		    exit 1;
 		}
 	    }
 	}
-    }
+	foreach my $sample_id (@$sample_ids_ref) {
 
-    sub check_sample_id_in_parameter {
+	    if ( ! (any {$_ eq $sample_id} (keys %seen)) ) {  #If sample_id is not present in parameter_name hash
+
+		$log->fatal("Could not detect ".$sample_id." for '--".$parameter_name."'. Provided sample_ids are: ".join(", ", (keys %seen)), "\n");
+		exit 1;
+	    }
+	}
+    }
+}
+
+sub check_sample_id_in_parameter {
 
 ##check_sample_id_in_parameter
 
@@ -25492,50 +25309,50 @@ sub order_parameter_names {
 ##         : $sample_ids_ref        => Array to loop in for parameter {REF}
 ##         : $parameter_names_ref   => Parameter name list {REF}
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Flatten argument(s)
-	my $active_parameter_href;
-	my $sample_ids_ref;
-	my $parameter_names_ref;
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $sample_ids_ref;
+    my $parameter_names_ref;
 
-	my $tmpl = {
-	    active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	    sample_ids_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$sample_ids_ref},
-	    parameter_names_ref => { required => 1, defined => 1, default => [], store => \$parameter_names_ref},
-	};
+    my $tmpl = {
+	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	sample_ids_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$sample_ids_ref},
+	parameter_names_ref => { required => 1, defined => 1, default => [], store => \$parameter_names_ref},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	## Retrieve logger object
-	my $log = Log::Log4perl->get_logger("MIP");
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
 
-	foreach my $parameter_name (@$parameter_names_ref) {  #Lopp through all hash parameters supplied
+    foreach my $parameter_name (@$parameter_names_ref) {  #Lopp through all hash parameters supplied
 
-	    if (defined($active_parameter_href->{$parameter_name})) {
+	if (defined($active_parameter_href->{$parameter_name})) {
 
-		foreach my $sample_id (@$sample_ids_ref) {
+	    foreach my $sample_id (@$sample_ids_ref) {
 
-		    ## Check that a value exists
-		    if (! defined($active_parameter_href->{$parameter_name}{$sample_id})) {
+		## Check that a value exists
+		if (! defined($active_parameter_href->{$parameter_name}{$sample_id})) {
 
-			$log->fatal("Could not find value for ".$sample_id." for parameter '--".$parameter_name."'", "\n");
-			exit 1;
-		    }
+		    $log->fatal("Could not find value for ".$sample_id." for parameter '--".$parameter_name."'", "\n");
+		    exit 1;
+		}
 
-		    ## If sample_id is not present in parameter_name hash
-		    if ( ! (any {$_ eq $sample_id} (keys $active_parameter_href->{$parameter_name})) ) {
+		## If sample_id is not present in parameter_name hash
+		if ( ! (any {$_ eq $sample_id} (keys $active_parameter_href->{$parameter_name})) ) {
 
-			$log->fatal("Could not detect ".$sample_id." for parameter '--".$parameter_name."'. Provided sample_ids for parameter are: ".join(", ", (keys $active_parameter_href->{$parameter_name})), "\n");
-			exit 1;
-		    }
+		    $log->fatal("Could not detect ".$sample_id." for parameter '--".$parameter_name."'. Provided sample_ids for parameter are: ".join(", ", (keys $active_parameter_href->{$parameter_name})), "\n");
+		    exit 1;
 		}
 	    }
 	}
     }
+}
 
 
-    sub get_exom_target_bed_file {
+sub get_exom_target_bed_file {
 
 ##get_exom_target_bed_file
 
@@ -25547,50 +25364,50 @@ sub order_parameter_names {
 ##         : $sample_id_ref         => The sample_id {REF}
 ##         : $file_ending_ref       => File ending to add to file {REF}
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Flatten argument(s)
-	my $active_parameter_href;
-	my $sample_id_ref;
-	my $file_ending_ref;
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $sample_id_ref;
+    my $file_ending_ref;
 
-	my $tmpl = {
-	    active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	    sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
-	    file_ending_ref => { store => \$file_ending_ref},
-	};
+    my $tmpl = {
+	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
+	file_ending_ref => { store => \$file_ending_ref},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	## Retrieve logger object
-	my $log = Log::Log4perl->get_logger("MIP");
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
 
-	my %seen;
+    my %seen;
 
-	foreach my $exome_target_bed_file (keys $active_parameter_href->{exome_target_bed}) {
+    foreach my $exome_target_bed_file (keys $active_parameter_href->{exome_target_bed}) {
 
-	    my @capture_kit_samples = split(",", $active_parameter_href->{exome_target_bed}{$exome_target_bed_file});
+	my @capture_kit_samples = split(",", $active_parameter_href->{exome_target_bed}{$exome_target_bed_file});
 
-	    map { $seen{$_}++ } (@capture_kit_samples);  #Count number of times sample_id has been seen
+	map { $seen{$_}++ } (@capture_kit_samples);  #Count number of times sample_id has been seen
 
-	    if (any {$_ eq $$sample_id_ref} @capture_kit_samples) {  #If capture_kit sample_id is associated with exome_target_bedFile
+	if (any {$_ eq $$sample_id_ref} @capture_kit_samples) {  #If capture_kit sample_id is associated with exome_target_bedFile
 
-		if (defined($$file_ending_ref)) {
+	    if (defined($$file_ending_ref)) {
 
-		    $exome_target_bed_file .= $$file_ending_ref;
-		}
-		return $exome_target_bed_file;
+		$exome_target_bed_file .= $$file_ending_ref;
 	    }
-	}
-	if ( ! defined($seen{$$sample_id_ref})) {
-
-	    $log->fatal("Could not detect ".$sample_id_ref." in '-exome_target_bed' associated files in sub routine get_exom_target_bed_file", "\n");
-	    exit 1;
+	    return $exome_target_bed_file;
 	}
     }
+    if ( ! defined($seen{$$sample_id_ref})) {
+
+	$log->fatal("Could not detect ".$sample_id_ref." in '-exome_target_bed' associated files in sub routine get_exom_target_bed_file", "\n");
+	exit 1;
+    }
+}
 
 
-    sub alias_assembly_version {
+sub alias_assembly_version {
 
 ##alias_assembly_version
 
@@ -25599,29 +25416,29 @@ sub order_parameter_names {
 ##Arguments: $assembly_version_ref
 ##         : $assembly_version_ref => The genome source and version to be checked
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Flatten argument(s)
-	my $assembly_version_ref;
+    ## Flatten argument(s)
+    my $assembly_version_ref;
 
-	my $tmpl = {
-	    assembly_version_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$assembly_version_ref},
-	};
+    my $tmpl = {
+	assembly_version_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$assembly_version_ref},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	if ($$assembly_version_ref=~/hg(\d+)/) {
+    if ($$assembly_version_ref=~/hg(\d+)/) {
 
-	    my $version_number = $1;
-	    if ($version_number > 20) {
+	my $version_number = $1;
+	if ($version_number > 20) {
 
-		$$assembly_version_ref = "GRCh".$version_number;
-	    }
+	    $$assembly_version_ref = "GRCh".$version_number;
 	}
     }
+}
 
 
-    sub generate_contig_specific_target_bed_file {
+sub generate_contig_specific_target_bed_file {
 
 ##generate_contig_specific_target_bed_file
 
@@ -25636,57 +25453,57 @@ sub order_parameter_names {
 ##         : $reference_dir_ref     => MIP reference directory {REF}
 ##         : $file_ending           => File ending to add {Optional}
 
-	my ($arg_href) = @_;
+    my ($arg_href) = @_;
 
-	## Default(s)
-	my $temp_directory_ref;
-	my $reference_dir_ref;
+    ## Default(s)
+    my $temp_directory_ref;
+    my $reference_dir_ref;
 
-	## Flatten argument(s)
-	my $active_parameter_href;
-	my $file_info_href;
-	my $FILEHANDLE;
-	my $exome_target_bed_file_ref;
-	my $file_ending;
+    ## Flatten argument(s)
+    my $active_parameter_href;
+    my $file_info_href;
+    my $FILEHANDLE;
+    my $exome_target_bed_file_ref;
+    my $file_ending;
 
-	my $tmpl = {
-	    active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
-	    file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
-	    FILEHANDLE => { store => \$FILEHANDLE},
-	    exome_target_bed_file_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$exome_target_bed_file_ref},
-	    file_ending => { strict_type => 1, store => \$file_ending},
-	    temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
-				    strict_type => 1, store => \$temp_directory_ref},
-	    reference_dir_ref => { default => \$arg_href->{active_parameter_href}{reference_dir},
-				   strict_type => 1, store => \$reference_dir_ref},
-	};
+    my $tmpl = {
+	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
+	FILEHANDLE => { store => \$FILEHANDLE},
+	exome_target_bed_file_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$exome_target_bed_file_ref},
+	file_ending => { strict_type => 1, store => \$file_ending},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	reference_dir_ref => { default => \$arg_href->{active_parameter_href}{reference_dir},
+			       strict_type => 1, store => \$reference_dir_ref},
+    };
 
-	check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-	my $core_number = $active_parameter_href->{core_processor_number};
-	my $core_counter = 1;
+    my $core_number = $active_parameter_href->{core_processor_number};
+    my $core_counter = 1;
 
-	say $FILEHANDLE "## Generate contig specific interval_list\n";
+    say $FILEHANDLE "## Generate contig specific interval_list\n";
 
-	while (my ($contig_index, $contig) = each(@{ $file_info_href->{contigs_size_ordered} }) ) {
+    while (my ($contig_index, $contig) = each(@{ $file_info_href->{contigs_size_ordered} }) ) {
 
-	    print_wait({counter_ref => \$contig_index,
-			core_number_ref => \$core_number,
-			core_counter_ref => \$core_counter,
-			FILEHANDLE => $FILEHANDLE,
-		       });
+	print_wait({counter_ref => \$contig_index,
+		    core_number_ref => \$core_number,
+		    core_counter_ref => \$core_counter,
+		    FILEHANDLE => $FILEHANDLE,
+		   });
 
-	    ## Splits a target file into new contig specific target file
-	    split_target_file({FILEHANDLE => $FILEHANDLE,
-			       indirectory_ref => $reference_dir_ref,
-			       outdirectory_ref => $temp_directory_ref,
-			       infile_ref => \basename($$exome_target_bed_file_ref),
-			       contig_ref => \$contig,
-			       file_ending => $file_ending,
-			      });
-	}
-	say $FILEHANDLE "wait", "\n";
+	## Splits a target file into new contig specific target file
+	split_target_file({FILEHANDLE => $FILEHANDLE,
+			   indirectory_ref => $reference_dir_ref,
+			   outdirectory_ref => $temp_directory_ref,
+			   infile_ref => \basename($$exome_target_bed_file_ref),
+			   contig_ref => \$contig,
+			   file_ending => $file_ending,
+			  });
     }
+    say $FILEHANDLE "wait", "\n";
+}
 
 
 sub replace_iupac {
@@ -26456,7 +26273,7 @@ sub update_program_mode {
 	programs_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$programs_ref},
 	consensus_analysis_type_ref => { default => \$$, strict_type => 1, store => \$consensus_analysis_type_ref},
     };
-     
+    
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     ## Retrieve logger object
@@ -26582,11 +26399,11 @@ sub MergeTargetListFlag {
 	say $FILEHANDLE "\n## Generate merged interval_list\n";
 
 	core({FILEHANDLE => $FILEHANDLE,
-		   memory_allocation => "Xmx2g",
-		   java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-		   temp_directory => $$temp_directory_ref,
-		   java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
-		  });
+	      memory_allocation => "Xmx2g",
+	      java_use_large_pages => $active_parameter_href->{java_use_large_pages},
+	      temp_directory => $$temp_directory_ref,
+	      java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
+	     });
 
 	print $FILEHANDLE "IntervalListTools ";
 	print $FILEHANDLE "UNIQUE=TRUE ";  #Merge overlapping and adjacent intervals to create a list of unique intervals

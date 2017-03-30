@@ -20,7 +20,7 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(view index stats mpileup);
+    our @EXPORT_OK = qw(view index stats mpileup faidx);
 
 }
 
@@ -346,6 +346,64 @@ sub mpileup {
     ## Infile
     push(@commands, join(" ", @$infile_paths_ref));
 
+    if ($stderrfile_path) {
+
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
+sub faidx {
+
+##faidx
+
+##Function : Perl wrapper for writing samtools faidx recipe to $FILEHANDLE. Based on samtools 1.3.1 (using htslib 1.3.1).
+##Returns  : "@commands"
+##Arguments: $regions_ref, $infile_path, $outfile_path, $stderrfile_path, $FILEHANDLE
+##         : $regions_ref     => The regions to process {REF}
+##         : $infile_path     => Infile path
+##         : $outfile_path    => Outfile path
+##         : $stderrfile_path => Stderrfile path
+##         : $FILEHANDLE      => Sbatch filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $regions_ref;
+    my $infile_path;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $FILEHANDLE;
+    
+    my $tmpl = {
+	regions_ref => { default => [], strict_type => 1, store => \$regions_ref },
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path },
+	outfile_path => { strict_type => 1, store => \$outfile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## Samtools faidx
+    my @commands = qw(samtools faidx);  #Stores commands depending on input parameters
+
+    ## Infile
+    push(@commands, $infile_path);
+
+    if(@$regions_ref) {  #Limit output to regions
+
+	push(@commands, join(" ", @{ $regions_ref }));
+    }
+    if ($outfile_path) {
+	
+	push(@commands, "> ".$outfile_path);  #Specify output filename
+    }
     if ($stderrfile_path) {
 
 	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
