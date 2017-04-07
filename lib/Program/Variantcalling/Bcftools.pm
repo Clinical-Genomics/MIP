@@ -20,7 +20,7 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(call index filter norm merge concat annotate);
+    our @EXPORT_OK = qw(call index view filter norm merge concat annotate);
 
 }
 
@@ -141,10 +141,10 @@ sub index {
 ##Function : Perl wrapper for writing bcftools index recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
 ##Returns  : "@commands"
 ##Arguments: $infile_path, $stderrfile_path, $FILEHANDLE, $output_type
-##         : $infile_path       => Infile path to read from
-##         : $stderrfile_path   => Stderr file path to write to {OPTIONAL}
-##         : $FILEHANDLE        => Filehandle to write to
-##         : $output_type       => 'csi' generate CSI-format index, 'tbi' generate TBI-format index
+##         : $infile_path     => Infile path to read from
+##         : $stderrfile_path => Stderr file path to write to {OPTIONAL}
+##         : $FILEHANDLE      => Filehandle to write to
+##         : $output_type     => 'csi' generate CSI-format index, 'tbi' generate TBI-format index
 
     my ($arg_href) = @_;
 
@@ -193,6 +193,86 @@ sub index {
 }
 
 
+sub view {
+
+##view
+
+##Function : Perl wrapper for writing bcftools view recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
+##Returns  : "@commands"
+##Arguments: $apply_filters_ref, $infile_path, $outfile_path, $stderrfile_path, $stdoutfile_path, $FILEHANDLE, $output_type
+##         : $apply_filters_ref => Require at least one of the listed FILTER strings
+##         : $infile_path       => Infile path to read from
+##         : $outfile_path      => Outfile path to write to
+##         : $stderrfile_path   => Stderr file path to write to
+##         : $stdoutfile_path   => Stdoutfile file path to write to
+##         : $FILEHANDLE        => Filehandle to write to
+##         : $output_type       => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $output_type;
+
+    ## Flatten argument(s)
+    my $apply_filters_ref;
+    my $infile_path;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $stdoutfile_path;
+    my $FILEHANDLE;
+
+    my $tmpl = {
+	apply_filters_ref  => { default => [], strict_type => 1, store => \$apply_filters_ref },
+	infile_path => { strict_type => 1, store => \$infile_path },
+	outfile_path => { strict_type => 1, store => \$outfile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
+	output_type => { default => "v",
+			 allow => ["b", "u", "z", "v"],
+			 strict_type => 1, store => \$output_type },
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## bcftools
+    my @commands = qw(bcftools view);  #Stores commands depending on input parameters
+
+    ## Options
+    if (@$apply_filters_ref) {
+
+	push(@commands, "--apply-filters ".join(",", @$apply_filters_ref));
+    }
+    if ($output_type) {
+
+	push(@commands, "--output-type ".$output_type);  #Specify output type
+    }
+    if ($outfile_path) {
+
+	push(@commands, "--output-file ".$outfile_path);  #Specify output filename
+    }
+
+    ## Infile
+    if ($infile_path) {
+
+	push(@commands, $infile_path);
+    }
+    if ($stdoutfile_path) {
+
+	push(@commands, "1> ".$stdoutfile_path);  #Redirect stdout to program specific stderr file
+    }
+    if ($stderrfile_path) {
+
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
 sub filter {
 
 ##filter
@@ -200,14 +280,14 @@ sub filter {
 ##Function : Perl wrapper for writing bcftools filter recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
 ##Returns  : "@commands"
 ##Arguments: $infile_path, $outfile_path, $stderrfile_path, $FILEHANDLE, $exclude, $soft_filter, $snp_gap, $indel_gap
-##         : $infile_path      => Infile paths
-##         : $outfile_path     => Outfile path
-##         : $stderrfile_path  => Stderrfile path
-##         : $FILEHANDLE       => Filehandle to write to
-##         : $exclude          => Exclude sites for which the expression is true
-##         : $soft_filter      => Annotate FILTER column with <string> or unique filter name
-##         : $snp_gap          => Filter SNPs within <int> base pairs of an indel
-##         : $indel_gap        => Filter clusters of indels separated by <int> or fewer base pairs allowing only one to pass
+##         : $infile_path     => Infile paths
+##         : $outfile_path    => Outfile path
+##         : $stderrfile_path => Stderrfile path
+##         : $FILEHANDLE      => Filehandle to write to
+##         : $exclude         => Exclude sites for which the expression is true
+##         : $soft_filter     => Annotate FILTER column with <string> or unique filter name
+##         : $snp_gap         => Filter SNPs within <int> base pairs of an indel
+##         : $indel_gap       => Filter clusters of indels separated by <int> or fewer base pairs allowing only one to pass
 
     my ($arg_href) = @_;
 

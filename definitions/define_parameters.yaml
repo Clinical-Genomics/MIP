@@ -109,6 +109,7 @@ module_time:
     pdelly_call: 10
     pdelly_reformat: 5
     pcnvnator: 5
+    psv_combinevariantcallsets: 2
   type: mip
 module_core_number:
   associated_program:
@@ -132,6 +133,7 @@ module_core_number:
     pdelly_call: 16
     pdelly_reformat: 16
     pcnvnator: 16
+    psv_combinevariantcallsets: 1
   type: mip
 supported_capture_kit:
   associated_program:
