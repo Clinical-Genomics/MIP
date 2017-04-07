@@ -1,4 +1,4 @@
-package Program::Variantcalling::Htslib;
+package Program::Variantcalling::Vt;
 
 use strict;
 use warnings;
@@ -20,7 +20,7 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(bgzip);
+    our @EXPORT_OK = qw(decompose);
 
 }
 
@@ -28,25 +28,23 @@ use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 
 
-sub bgzip {
+sub decompose {
 
-##bgzip
+##decompose
 
-##Function : Perl wrapper for writing bgzip recipe to $FILEHANDLE or return commands array. Based on htslib 1.3.1.
+##Function : Perl wrapper for writing Vt decompose recipe to $FILEHANDLE or return commands array. Based on Vt v0.5.
 ##Returns  : "@commands"
-##Arguments: $infile_path, $stderrfile_path, $FILEHANDLE, $output_type, $decompress, $write_to_stdout
-##         : $infile_path     => Infile path to read from
-##         : $outfile_path    => Outfile path to write to
-##         : $stderrfile_path => Stderr file path to write to {OPTIONAL}
-##         : $FILEHANDLE      => Filehandle to write to
-##         : $decompress      => Decompress file
-##         : $write_to_stdout => Write on standard output, keep original files unchanged
+##Arguments: $infile_path, $stderrfile_path, $FILEHANDLE, $output_type, $smart_decomposition
+##         : $infile_path         => Infile path to read from
+##         : $outfile_path        => Outfile path to write to
+##         : $stderrfile_path     => Stderr file path to write to {OPTIONAL}
+##         : $FILEHANDLE          => Filehandle to write to
+##         : $smart_decomposition => Smart decomposition
 
     my ($arg_href) = @_;
 
     ## Default(s)
-    my $decompress;
-    my $write_to_stdout;
+    my $smart_decomposition;
 
     ## Flatten argument(s)
     my $infile_path;
@@ -59,37 +57,30 @@ sub bgzip {
 	outfile_path => { strict_type => 1, store => \$outfile_path },
 	stderrfile_path => { strict_type => 1, store => \$stderrfile_path},
 	FILEHANDLE => { store => \$FILEHANDLE},
-	decompress => { default => 0,
+	smart_decomposition => { default => 0,
 		     allow => [0, 1],
-		     strict_type => 1, store => \$decompress},
-	write_to_stdout => { default => 0,
-			     allow => [0, 1],
-			     strict_type => 1, store => \$write_to_stdout},
+		     strict_type => 1, store => \$smart_decomposition},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    ## bgzip
-    my @commands = qw(bgzip);  #Stores commands depending on input parameters
+    ## Vt decompose
+    my @commands = qw(vt decompose);  #Stores commands depending on input parameters
 
     ## Options
-    if ($decompress) {
+    if ($smart_decomposition) {
 
-	push(@commands, "--decompress");
+	push(@commands, "-s");
     }
-    if ($write_to_stdout) {
+    if ($outfile_path) {
 
-	push(@commands, "--stdout");
+	push(@commands, "-o ".$outfile_path);  #Specify output filename
     }
 
     ## Infile
     if ($infile_path) {
 
 	push(@commands, $infile_path);
-    }
-    if ($outfile_path) {
-
-	push(@commands, "> ".$outfile_path);  #Specify output filename
     }
     if ($stderrfile_path) {
 

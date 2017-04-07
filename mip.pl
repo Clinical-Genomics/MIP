@@ -3204,7 +3204,7 @@ sub endvariantannotationblock {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use Program::Variantcalling::Htslib qw(bgzip);
+    use Program::Htslib qw(bgzip tabix);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -3336,6 +3336,8 @@ sub endvariantannotationblock {
 	    ## Index file using tabix
 	    tabix({FILEHANDLE => $FILEHANDLE,
 		   infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf.gz",
+		   force => 1,
+		   preset => "vcf",
 		  });
 	    say $FILEHANDLE "\n";
 	}
@@ -6591,7 +6593,7 @@ sub prepareforvariantannotationblock {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use Program::Variantcalling::Htslib qw(bgzip);
+    use Program::Htslib qw(bgzip tabix);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -6661,6 +6663,8 @@ sub prepareforvariantannotationblock {
     ## Index file using tabix
     tabix({FILEHANDLE => $FILEHANDLE,
 	   infile_path => $file_path_no_ending.$outfile_suffix,
+	   force => 1,
+	   preset => "vcf",
 	  });
     say $FILEHANDLE "\n";
 
@@ -6670,15 +6674,16 @@ sub prepareforvariantannotationblock {
 							     file_name => $file_name,
 							     core_number => $core_number,
 							     xargs_file_counter => $xargs_file_counter,
-							     first_command => "tabix",
 							    });
 
     ## Split vcf into contigs
     foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
-	print $XARGSFILEHANDLE "-h ";  #Include header
-	print $XARGSFILEHANDLE $file_path_no_ending.$outfile_suffix." ";
-	print $XARGSFILEHANDLE $contig." ";
+	tabix({regions_ref => [$contig],
+	       infile_path => $file_path_no_ending.$outfile_suffix,
+	       with_header => 1,
+	       FILEHANDLE => $XARGSFILEHANDLE,
+	      });
 	print $XARGSFILEHANDLE "| ";
 
 	## Compress or decompress original file or stream to outfile (if supplied)
@@ -6691,6 +6696,8 @@ sub prepareforvariantannotationblock {
 	## Index file using tabix
 	tabix({FILEHANDLE => $XARGSFILEHANDLE,
 	       infile_path => $file_path_no_ending."_".$contig.$outfile_suffix,
+	       force => 1,
+	       preset => "vcf",
 	      });
 	print $XARGSFILEHANDLE "\n";
     }
@@ -8603,7 +8610,7 @@ sub sv_reformat {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use Program::Variantcalling::Htslib qw(bgzip);
+    use Program::Htslib qw(bgzip tabix);
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -8787,6 +8794,8 @@ sub sv_reformat {
 	    ## Index file using tabix
 	    tabix({FILEHANDLE => $FILEHANDLE,
 		   infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf.gz",
+		   force => 1,
+		   preset => "vcf",
 		  });
 	    say $FILEHANDLE "\n";
 	}
@@ -9988,8 +9997,10 @@ sub sv_combinevariantcallsets {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Program::Variantcalling::Svdb qw(merge query);
-    use Program::Variantcalling::Bcftools qw (merge view);
-    use Program::Variantcalling::Htslib qw(bgzip);
+    use Program::Variantcalling::Bcftools qw (merge view annotate);
+    use Program::Htslib qw(bgzip tabix);
+    use Program::Variantcalling::Vt qw(decompose);
+    use Program::Variantcalling::Genmod qw(annotate);
 
     my @structural_variant_callers;  #Stores callers that have been executed
     my @parallel_chains;  #Stores the parallel chains that jobIds should be inherited from
@@ -10062,6 +10073,8 @@ sub sv_combinevariantcallsets {
 		## Index file using tabix
 		tabix({FILEHANDLE => $FILEHANDLE,
 		       infile_path => $file_path_no_ending{$sample_id}{$structural_variant_caller}.".vcf.gz",
+		       force => 1,
+		       preset => "vcf",
 		      });
 		say $FILEHANDLE "\n";
 	    }
@@ -10130,10 +10143,12 @@ sub sv_combinevariantcallsets {
 
 		## Split multiallelic variants
 		say $FILEHANDLE "## Split multiallelic variants";
-		print $FILEHANDLE "vt decompose ";
-		print $FILEHANDLE "-s ";
-		print $FILEHANDLE catfile($infamily_directory, $$family_id_ref.$infile_tag."_".$call_type.".vcf")." ";
-		say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf"), "\n";
+		decompose({infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag."_".$call_type.".vcf"),
+			   outfile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.".vcf"),
+			   FILEHANDLE => $FILEHANDLE,
+			   smart_decomposition => 1,
+			  });
+		say $FILEHANDLE "\n";
 	    }
 	}
     }
@@ -10207,23 +10222,24 @@ sub sv_combinevariantcallsets {
     if ($active_parameter_href->{sv_genmod_filter} > 0) {
 
 	say $FILEHANDLE "## Remove common variants";
-	print $FILEHANDLE "genmod ";  #Program
-	print $FILEHANDLE "-v ";  #Increase output verbosity
-	print $FILEHANDLE "annotate ";  #Command
-	print $FILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
-	print $FILEHANDLE "--thousand-g ".$active_parameter_href->{sv_genmod_filter_1000g}." ";  #1000G reference
-	print $FILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutStream
-	print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf")." ";
+	Program::Variantcalling::Genmod::annotate({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf"),
+						   outfile_path => catfile(dirname(devnull()), "stdout"),
+						   verbosity => "v",
+						   temp_directory_path => $$temp_directory_ref,
+						   thousand_g_file_path => $active_parameter_href->{sv_genmod_filter_1000g},
+						   FILEHANDLE => $FILEHANDLE,
+						  });
 	print $FILEHANDLE "| ";
 
 	$alt_file_ending .= "_genmod_filter";  #Update ending
 
-	print $FILEHANDLE "genmod ";  #Program
-	print $FILEHANDLE "-v ";  #Increase output verbosity
-	print $FILEHANDLE "filter ";  #Command
-	print $FILEHANDLE "-t ".$active_parameter_href->{sv_genmod_filter_threshold}." ";  #Threshold for filtering variants
-	print $FILEHANDLE "- ";  #InStream
-	say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf"), "\n";  #OutFile
+	Program::Variantcalling::Genmod::filter({infile_path => "-",
+						 outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf"),
+						 verbosity => "v",
+						 threshold => $active_parameter_href->{sv_genmod_filter_threshold},
+						 FILEHANDLE => $FILEHANDLE,
+						});
+	say $FILEHANDLE "\n";
     }
 
     ## Annotate 1000G structural variants
@@ -10253,14 +10269,14 @@ sub sv_combinevariantcallsets {
 	}
 
 	say $FILEHANDLE "## Add header for 1000G annotation of structural variants";
-	print $FILEHANDLE "bcftools annotate ";
-	print $FILEHANDLE "--header-lines ".$active_parameter_href->{sv_vcfannotation_header_lines_file}." ";
-	print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf")." ";
-
+	Program::Variantcalling::Bcftools::annotate({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf"),
+						     outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending."_bcftools_annotate.vcf"),
+						     output_type => "v",
+						     headerfile_path => $active_parameter_href->{sv_vcfannotation_header_lines_file},
+						     FILEHANDLE => $FILEHANDLE,
+						    });
+	say $FILEHANDLE "\n";
 	$alt_file_ending .= "_bcftools_annotate";  #Update ending
-
-	say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.$alt_file_ending.".vcf"), "\n";
-
     }
 
     if ($alt_file_ending ne "") {  #Then we have something to rename
@@ -23769,6 +23785,7 @@ sub vt_core {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Program::Gnu::Coreutils qw(mv);
+    use Program::Htslib qw(bgzip tabix);
 
     my $file_name;
     my $program_info_path;
@@ -23863,10 +23880,11 @@ sub vt_core {
 
 	if ( (-e $infile_path.".tbi") || ($tabix) ) {  #tabix index
 
-	    print $FILEHANDLE "tabix ";
-	    print $FILEHANDLE "-p vcf ";  #Preset
-	    print $FILEHANDLE "-f ";  #Force to overwrite the index
-	    print $FILEHANDLE $outfile_path."_splitted_".$random_integer." ";  #Temporary outfile
+	    tabix({FILEHANDLE => $FILEHANDLE,
+		   infile_path => $outfile_path."_splitted_".$random_integer,
+		   force => 1,
+		   preset => "vcf",
+		  });
 	    print $FILEHANDLE $cmd_break;
 
 	    ## Move index in place
@@ -24145,41 +24163,6 @@ sub check_vt {
 	    }
 	}
     }
-}
-
-
-sub tabix {
-
-##tabix
-
-##Function : Index file using tabix
-##Returns  : ""
-##Arguments: $infile_path, $preset, $FILEHANDLE
-##         : $infile_path => Infile path
-##         : $preset      => Preset, file format
-##         : $FILEHANDLE  => Filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Default(s)
-    my $preset;
-
-    ## Flatten argument(s)
-    my $infile_path;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
-	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-	preset => { default => "vcf", strict_type => 1, store => \$preset},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    print $FILEHANDLE "tabix ";
-    print $FILEHANDLE "-p ".$preset." ";  #Preset
-    print $FILEHANDLE "-f ";  #Force to overwrite the index
-    print $FILEHANDLE $infile_path." ";  #Temporary outfile
 }
 
 
