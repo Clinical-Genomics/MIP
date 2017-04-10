@@ -104,7 +104,7 @@ sub call {
 
     if ($stdoutfile_path) {
 
-	push(@commands, "1> ".$stdoutfile_path);  #Redirect stdout to program specific stderr file
+	push(@commands, "1> ".$stdoutfile_path);  #Redirect stdout to program specific stdout file
     }
     if ($stderrfile_path) {
 
@@ -189,7 +189,7 @@ sub merge {
 
     if ($stdoutfile_path) {
 
-	push(@commands, "1> ".$stdoutfile_path);  #Redirect stdout to program specific stderr file
+	push(@commands, "1> ".$stdoutfile_path);  #Redirect stdout to program specific stdout file
     }
     if ($stderrfile_path) {
 
@@ -283,7 +283,7 @@ sub filter {
 
     if ($stdoutfile_path) {
 
-	push(@commands, "1> ".$stdoutfile_path);  #Redirect stdout to program specific stderr file
+	push(@commands, "1> ".$stdoutfile_path);  #Redirect stdout to program specific stdout file
     }
     if ($stderrfile_path) {
 

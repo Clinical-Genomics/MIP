@@ -34,7 +34,7 @@ sub annotate {
 
 ##Function : Perl wrapper for writing Genmod annotate recipe to $FILEHANDLE or return commands array. Based on genmod 3.7.0.
 ##Returns  : "@commands"
-##Arguments: $infile_path, $stderrfile_path, $FILEHANDLE, $output_type, $verbosity, $temp_directory_path, $thousand_g_file_path
+##Arguments: $infile_path, $outfile_path, $stderrfile_path, $FILEHANDLE, $verbosity, $temp_directory_path, $thousand_g_file_path
 ##         : $infile_path          => Infile path to read from
 ##         : $outfile_path         => Outfile path to write to
 ##         : $stderrfile_path      => Stderr file path to write to {OPTIONAL}
@@ -116,7 +116,7 @@ sub filter {
 
 ##Function : Perl wrapper for writing Genmod filter recipe to $FILEHANDLE or return commands array. Based on genmod 3.7.0.
 ##Returns  : "@commands"
-##Arguments: $infile_path, $stderrfile_path, $FILEHANDLE, $output_type, $verbosity, $threshold
+##Arguments: $infile_path, $outfile_path, $stderrfile_path, $FILEHANDLE, $verbosity, $threshold
 ##         : $infile_path     => Infile path to read from
 ##         : $outfile_path    => Outfile path to write to
 ##         : $stderrfile_path => Stderr file path to write to {OPTIONAL}

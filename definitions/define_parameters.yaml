@@ -110,6 +110,7 @@ module_time:
     pdelly_reformat: 5
     pcnvnator: 5
     psv_combinevariantcallsets: 2
+    psv_varianteffectpredictor: 10
   type: mip
 module_core_number:
   associated_program:
@@ -134,6 +135,7 @@ module_core_number:
     pdelly_reformat: 16
     pcnvnator: 16
     psv_combinevariantcallsets: 1
+    psv_varianteffectpredictor: 16
   type: mip
 supported_capture_kit:
   associated_program:
@@ -846,6 +848,7 @@ psv_combinevariantcallsets:
   data_type: SCALAR
   default: 1
   file_tag: _comb_
+  outfile_suffix: ".vcf"
   program_name_path:
    - vt
    - bcftools
@@ -971,8 +974,8 @@ sv_vep_features:
    - hgvs
    - symbol
    - numbers
-   - sift
-   - polyphen
+   - "sift p"
+   - "polyphen p"
    - humdiv
    - domains
    - protein
@@ -984,6 +987,10 @@ sv_vep_features:
    - canonical
    - per_gene
    - appris
+   - cache
+   - force_overwrite
+   - no_progress
+   - offline
   type: program_argument
 sv_vep_plugins:
   associated_program:
@@ -1636,8 +1643,8 @@ vep_features:
    - hgvs
    - symbol
    - numbers
-   - sift
-   - polyphen
+   - "sift p"
+   - "polyphen p"
    - humdiv
    - domains
    - protein
