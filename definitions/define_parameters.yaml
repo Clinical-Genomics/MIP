@@ -111,6 +111,7 @@ module_time:
     pcnvnator: 5
     psv_combinevariantcallsets: 2
     psv_varianteffectpredictor: 10
+    psv_vcfparser: 2
   type: mip
 module_core_number:
   associated_program:
@@ -136,6 +137,7 @@ module_core_number:
     pcnvnator: 16
     psv_combinevariantcallsets: 1
     psv_varianteffectpredictor: 16
+    psv_vcfparser: 16
   type: mip
 supported_capture_kit:
   associated_program:
@@ -878,19 +880,14 @@ sv_svdb_query:
   data_type: SCALAR
   default: 1
   type: program_argument
-sv_svdb_query_db_file:
+sv_svdb_query_db_files:
   associated_program:
    - psv_combinevariantcallsets
   build_file: no_auto_build
-  data_type: SCALAR
+  data_type: HASH
   exists_check: file
   reference: reference_dir
   type: path
-sv_svdb_query_key:
-  associated_program:
-   - psv_combinevariantcallsets
-  data_type: SCALAR
-  type: program_argument
 sv_vcfanno:
   associated_program:
    - psv_combinevariantcallsets

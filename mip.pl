@@ -169,8 +169,7 @@ BEGIN {
                  -svsvdbmp/--sv_svdb_merge_prioritize The prioritization order of structural variant callers.(defaults to ""; comma sep; Options: manta|delly|cnvnator|tiddit)
                  -svcbtv/--sv_bcftools_view_filter Include structural variants with PASS in FILTER column (defaults to "1" (=yes))
                  -svcdbq/--sv_svdb_query Annotate structural variants using svdb query (defaults to "1" (=yes))
-                 -svcdbqd/--sv_svdb_query_db_file Database file for annotation (defaults to "")
-                 -svcdbqk/--sv_svdb_query_key Output vcf key for annotation (defaults to "")
+                 -svcdbqd/--sv_svdb_query_db_files Database file(s) for annotation (defaults to "")
                  -svcvan/--sv_vcfanno Annotate structural variants (defaults to "1" (=yes)
                  -svcval/--sv_vcfanno_lua vcfAnno lua postscripting file (defaults to "")
                  -svcvac/--sv_vcfanno_config vcfAnno toml config (defaults to "")
@@ -483,8 +482,7 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'svsvdbmp|sv_svdb_merge_prioritize:s' => \$parameter{sv_svdb_merge_prioritize}{value},  #Prioritize structural variant calls
 	   'svcbtv|sv_bcftools_view_filter=n' => \$parameter{sv_bcftools_view_filter}{value},  #Include structural variants with PASS in FILTER column
 	   'svcdbq|sv_svdb_query=n' => \$parameter{sv_svdb_query}{value},
-	   'svcdbqd|sv_svdb_query_db_file:s' => \$parameter{sv_svdb_query_db_file}{value},
-	   'svcdbqk|sv_svdb_query_key:s' => \$parameter{sv_svdb_query_key}{value},  
+	   'svcdbqd|sv_svdb_query_db_files:s' => \%{ $parameter{sv_svdb_query_db_files}{value} },
 	   'svcvan|sv_vcfanno=n' => \$parameter{sv_vcfanno}{value},
 	   'svcval|sv_vcfanno_lua:s' => \$parameter{sv_vcfanno_lua}{value},  #Lua file postscripting
 	   'svcvac|sv_vcfanno_config:s' => \$parameter{sv_vcfanno_config}{value},  #Toml config of what to annotate
@@ -2049,15 +2047,15 @@ else {
 
 	$log->info("[Vcfparser]\n");
 
-	vcfparser({parameter_href => \%parameter,
-		   active_parameter_href => \%active_parameter,
-		   sample_info_href => \%sample_info,
-		   file_info_href => \%file_info,
-		   infile_lane_no_ending_href => \%infile_lane_no_ending,
-		   job_id_href => \%job_id,
-		   call_type => "BOTH",
-		   program_name => "vcfparser",
-		  });
+	pvcfparser({parameter_href => \%parameter,
+		    active_parameter_href => \%active_parameter,
+		    sample_info_href => \%sample_info,
+		    file_info_href => \%file_info,
+		    infile_lane_no_ending_href => \%infile_lane_no_ending,
+		    job_id_href => \%job_id,
+		    call_type => "BOTH",
+		    program_name => "vcfparser",
+		   });
     }
 
     if ($active_parameter{pannovar} > 0) {  #Run annovar. Done per family
@@ -4781,11 +4779,11 @@ sub annovar {
 }
 
 
-sub vcfparser {
+sub pvcfparser {
 
-##vcfparser
+##pvcfparser
 
-##Function : vcfparser performs parsing of varianteffectpredictor annotated variants
+##Function : Vcfparser performs parsing of varianteffectpredictor annotated variants
 ##Returns  : "|$xargs_file_counter"
 ##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, $program_info_path, $file_name, $FILEHANDLE, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type, $xargs_file_counter
 ##         : $parameter_href             => The parameter hash {REF}
@@ -4850,6 +4848,8 @@ sub vcfparser {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Variantcalling::Mip qw(vcfparser);
+
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $core_number = $active_parameter_href->{core_processor_number};
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -4909,32 +4909,21 @@ sub vcfparser {
 							     program_info_path => $program_info_path,
 							     core_number => $core_number,
 							     xargs_file_counter => $xargs_file_counter,
-							     first_command => "vcfparser",
 							    });
 
     foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf")." ";  #Infile
-
-	if ($active_parameter_href->{pvarianteffectpredictor} > 0) {
-
-	    print $XARGSFILEHANDLE "--parse_vep ".$active_parameter_href->{vcfparser_vep_transcripts}." ";  #Parse VEP transcript specific entries
-	}
+	## Get parameters
+	my $padding;
 	if ($contig =~ /MT|M/) {
 
-	    print $XARGSFILEHANDLE "--padding 10 ";  #Special case for mitochondrial contig annotation
+	    $padding = 10;  #Special case for mitochondrial contig annotation
 	}
-	if ($active_parameter_href->{vcfparser_range_feature_file}) {
 
-	    print $XARGSFILEHANDLE "-rf ".$active_parameter_href->{vcfparser_range_feature_file}." ";  #List of genes to analyse separately
-
-	    if ( ($active_parameter_href->{vcfparser_range_feature_annotation_columns})
-		 && (@{ $active_parameter_href->{vcfparser_range_feature_annotation_columns} }) ) {
-
-		print $XARGSFILEHANDLE "-rf_ac ";  #Range annotation columns
-		print $XARGSFILEHANDLE join(',', @{ $active_parameter_href->{vcfparser_range_feature_annotation_columns} })." ";
-	    }
-	}
+	my @select_feature_annotation_columns;
+	my $select_file;
+	my $select_file_matching_column;
+	my $select_outfile;
 	if ($active_parameter_href->{vcfparser_select_file}) {
 
 	    if (! check_entry_hash_of_array({hash_ref => $file_info_href,
@@ -4943,20 +4932,32 @@ sub vcfparser {
 					    })
 		) {
 
-		print $XARGSFILEHANDLE "-sf ".catfile($active_parameter_href->{vcfparser_select_file})." ";  #List of genes to analyse separately
-		print $XARGSFILEHANDLE "-sf_mc ".$active_parameter_href->{vcfparser_select_file_matching_column}." ";  #Column of HGNC Symbol in SelectFile (-sf)
+		$select_file = catfile($active_parameter_href->{vcfparser_select_file});  #List of genes to analyse separately
+		$select_file_matching_column = $active_parameter_href->{vcfparser_select_file_matching_column};  #Column of HGNC Symbol in SelectFile (-sf)
 
-		if ( ($active_parameter_href->{sv_vcfparser_select_feature_annotation_columns})
-		     && (@{ $active_parameter_href->{vcfparser_select_feature_annotation_columns} }) ) {
+		if ( ($active_parameter_href->{vcfparser_select_feature_annotation_columns})
+		     && (@{ $active_parameter_href->{vcfparser_select_feature_annotation_columns} })) {
 
-		    print $XARGSFILEHANDLE "-sf_ac ";  #Select annotation columns
-		    print $XARGSFILEHANDLE join(',', @{ $active_parameter_href->{vcfparser_select_feature_annotation_columns} })." ";
+		    @select_feature_annotation_columns = @{ $active_parameter_href->{vcfparser_select_feature_annotation_columns} };
 		}
-		print $XARGSFILEHANDLE "-sof ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".selected.vcf")." ";
+		$select_outfile = catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".selected.vcf");
 	    }
 	}
-	print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf")." ";  #outfile
-	say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+
+	vcfparser({range_feature_annotation_columns_ref => \@{ $active_parameter_href->{vcfparser_range_feature_annotation_columns} },
+		   select_feature_annotation_columns_ref => \@select_feature_annotation_columns,
+		   infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf"),
+		   outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf"),
+		   stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt ",
+		   range_feature_file_path => $active_parameter_href->{vcfparser_range_feature_file},
+		   select_feature_file_path => $select_file,
+		   select_feature_matching_column => $select_file_matching_column,
+		   select_outfile => $select_outfile,
+		   parse_vep => $active_parameter_href->{pvarianteffectpredictor},
+		   padding => $padding,
+		   FILEHANDLE => $XARGSFILEHANDLE,
+		  });
+	say $XARGSFILEHANDLE "\n";
     }
 
     ## QC Data File(s)
@@ -4973,37 +4974,19 @@ sub vcfparser {
 
 	    delete($sample_info_href->{$program_name});
 	}
-	if ($active_parameter_href->{vcfparser_range_feature_file}) {
 
-	    ## Collect databases(s) from a potentially merged select_file and adds them to sample_info
+	my %gene_panels = (range_file => "vcfparser_range_feature_file",
+			   select_file => "vcfparser_select_file",
+	    );
+	while ( my ($gene_panel_key, $gene_panel_file) = each (%gene_panels) ) {
+
+	    ## Collect databases(s) from a potentially merged gene panel file and adds them to sample_info
 	    collect_gene_panels({sample_info_href => $sample_info_href,
 				 family_id_ref => $family_id_ref,
 				 program_name_ref => \$program_name,
-				 aggregate_gene_panel_file => $active_parameter_href->{vcfparser_range_feature_file},
-				 aggregate_gene_panels_key => "range_file",
+				 aggregate_gene_panel_file => $active_parameter_href->{$gene_panel_file},
+				 aggregate_gene_panels_key => $gene_panel_key,
 				});
-
-	    if ($active_parameter_href->{vcfparser_range_feature_file}=~/v(\d+\.\d+.\d+|\d+\.\d+)/) {
-
-		$sample_info_href->{$program_name}{range_file}{version} = $1;
-	    }
-	    $sample_info_href->{$program_name}{range_file}{path} = $active_parameter_href->{vcfparser_range_feature_file};
-	}
-	if ($active_parameter_href->{vcfparser_select_file}) {
-
-	    ## Collect databases(s) from a potentially merged select_file and adds them to sample_info
-	    collect_gene_panels({sample_info_href => $sample_info_href,
-				 family_id_ref => $family_id_ref,
-				 program_name_ref => \$program_name,
-				 aggregate_gene_panel_file => catfile($active_parameter_href->{vcfparser_select_file}),
-				 aggregate_gene_panels_key => "select_file",
-				});
-
-	    if ($active_parameter_href->{vcfparser_select_file}=~/v(\d+\.\d+.\d+|\d+\.\d+)/) {
-
-		$sample_info_href->{$program_name}{select_file}{version} = $1;
-	    }
-	    $sample_info_href->{$program_name}{select_file}{path} = catfile($active_parameter_href->{vcfparser_select_file});
 	}
 
 	## Collect QC metadata info for later use
@@ -9422,12 +9405,16 @@ sub sv_vcfparser {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $core_number = $active_parameter_href->{core_processor_number};
-    my $time = 20;
+    use Program::Variantcalling::Mip qw(vcfparser);
+
+    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
+    my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
+    my $xargs_file_name;
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $xargs_file_name;
-    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -9437,6 +9424,8 @@ sub sv_vcfparser {
 								 program_name => $program_name,
 								 program_directory => catfile(lc($$outaligner_dir_ref)),
 								 call_type => $call_type,
+								 core_number => $core_number,
+								 process_time => $active_parameter_href->{module_time}{"p".$program_name},
 								 temp_directory => $$temp_directory_ref,
 								});
 
@@ -9447,9 +9436,13 @@ sub sv_vcfparser {
 
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{psv_varianteffectpredictor}{file_tag};
-    my $infile_ending_stub = $$family_id_ref.$infile_tag.$call_type;
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-    my $outfile_ending_stub = $$family_id_ref.$outfile_tag.$call_type;
+    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+
+    ## Assign suffix
+    my $file_suffix = $parameter_href->{variant_calling_suffix}{$jobid_chain};
 
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
     my @contigs = remove_element({elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
@@ -9475,7 +9468,7 @@ sub sv_vcfparser {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      infile => $infile_ending_stub,
+									      infile => $infile_no_ending,
 									      indirectory => $infamily_directory,
 									      temp_directory => $$temp_directory_ref,
 									     });
@@ -9485,7 +9478,7 @@ sub sv_vcfparser {
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
 	migrate_file({FILEHANDLE => $FILEHANDLE,
-		      infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf"),
+		      infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.$file_suffix),
 		      outfile_path => $$temp_directory_ref
 		     });
 	say $FILEHANDLE "wait", "\n";
@@ -9501,46 +9494,32 @@ sub sv_vcfparser {
 							     program_info_path => $program_info_path,
 							     core_number => $core_number,
 							     xargs_file_counter => $xargs_file_counter,
-							     first_command => "vcfparser",
 							    });
 
     foreach my $contig (@contigs) {
 
-	my $vcfparser_infile_ending_stub = $infile_ending_stub;
-	my $vcfparser_outfile_ending_stub = $outfile_ending_stub;
+	## Get parameters
+	my $vcfparser_infile_no_ending = $infile_no_ending;
+	my $vcfparser_outfile_no_ending = $outfile_no_ending;
 	my $vcfparser_xargs_file_name = $xargs_file_name;
 
 	if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Update endings with contig info
 
-	    $vcfparser_infile_ending_stub = $infile_ending_stub."_".$contig;
-	    $vcfparser_outfile_ending_stub = $outfile_ending_stub."_".$contig;
+	    $vcfparser_infile_no_ending = $infile_no_ending."_".$contig;
+	    $vcfparser_outfile_no_ending = $outfile_no_ending."_".$contig;
 	    $vcfparser_xargs_file_name = $xargs_file_name.".".$contig;
 	}
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $vcfparser_infile_ending_stub.".vcf")." ";  #Infile
 
-	if ($active_parameter_href->{psv_varianteffectpredictor} > 0) {
-
-	    print $XARGSFILEHANDLE "--parse_vep ".$active_parameter_href->{sv_vcfparser_vep_transcripts}." ";  #Parse VEP transcript specific entries
-	}
-	if ($active_parameter_href->{sv_vcfparser_per_gene}) {
-
-	    print $XARGSFILEHANDLE "--per_gene ".$active_parameter_href->{sv_vcfparser_per_gene}." ";  #Keep only most severe consequence per gene
-	}
+	my $padding;
 	if ($contig =~ /MT|M/) {
 
-	    print $XARGSFILEHANDLE "--padding 10 ";  #Special case for mitochondrial contig annotation
+	    $padding = 10;  #Special case for mitochondrial contig annotation
 	}
-	if ($active_parameter_href->{sv_vcfparser_range_feature_file}) {
 
-	    print $XARGSFILEHANDLE "-rf ".$active_parameter_href->{sv_vcfparser_range_feature_file}." ";  #List of genes to analyse separately
-
-	    if ( ($active_parameter_href->{sv_vcfparser_range_feature_annotation_columns})
-		 && (@{ $active_parameter_href->{sv_vcfparser_range_feature_annotation_columns} }) ) {
-
-		print $XARGSFILEHANDLE "-rf_ac ";  #Range annotation columns
-		print $XARGSFILEHANDLE join(',', @{ $active_parameter_href->{sv_vcfparser_range_feature_annotation_columns} })." ";
-	    }
-	}
+	my @select_feature_annotation_columns;
+	my $select_file;
+	my $select_file_matching_column;
+	my $select_outfile;
 	if ($active_parameter_href->{sv_vcfparser_select_file}) {
 
 	    if (! check_entry_hash_of_array({hash_ref => $file_info_href,
@@ -9549,20 +9528,33 @@ sub sv_vcfparser {
 					    })
 		) {
 
-		print $XARGSFILEHANDLE "-sf ".catfile($active_parameter_href->{sv_vcfparser_select_file})." ";  #List of genes to analyse separately
-		print $XARGSFILEHANDLE "-sf_mc ".$active_parameter_href->{sv_vcfparser_select_file_matching_column}." ";  #Column of HGNC Symbol in SelectFile (-sf)
+		$select_file = catfile($active_parameter_href->{sv_vcfparser_select_file});  #List of genes to analyse separately
+		$select_file_matching_column = $active_parameter_href->{sv_vcfparser_select_file_matching_column};  #Column of HGNC Symbol in SelectFile (-sf)
 
 		if ( ($active_parameter_href->{sv_vcfparser_select_feature_annotation_columns})
 		     && (@{ $active_parameter_href->{sv_vcfparser_select_feature_annotation_columns} })) {
 
-		    print $XARGSFILEHANDLE "-sf_ac ";  #Select annotation columns
-		    print $XARGSFILEHANDLE join(',', @{ $active_parameter_href->{sv_vcfparser_select_feature_annotation_columns} })." ";
+		    @select_feature_annotation_columns = @{ $active_parameter_href->{sv_vcfparser_select_feature_annotation_columns} };
 		}
-		print $XARGSFILEHANDLE "-sof ".catfile($$temp_directory_ref, $vcfparser_outfile_ending_stub.".selected.vcf")." ";
+		$select_outfile = catfile($$temp_directory_ref, $vcfparser_outfile_no_ending.".selected".$file_suffix);
 	    }
 	}
-	print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $vcfparser_outfile_ending_stub.".vcf")." ";  #outfile
-	say $XARGSFILEHANDLE "2> ".$vcfparser_xargs_file_name.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+
+	vcfparser({range_feature_annotation_columns_ref => \@{ $active_parameter_href->{sv_vcfparser_range_feature_annotation_columns} },
+		   select_feature_annotation_columns_ref => \@select_feature_annotation_columns,
+		   infile_path => catfile($$temp_directory_ref, $vcfparser_infile_no_ending.$file_suffix),
+		   outfile_path => catfile($$temp_directory_ref, $vcfparser_outfile_no_ending.$file_suffix),
+		   stderrfile_path => $vcfparser_xargs_file_name.".stderr.txt",
+		   range_feature_file_path => $active_parameter_href->{sv_vcfparser_range_feature_file},
+		   select_feature_file_path => $select_file,
+		   select_feature_matching_column => $select_file_matching_column,
+		   select_outfile => $select_outfile,
+		   parse_vep => $active_parameter_href->{psv_varianteffectpredictor},
+		   per_gene => $active_parameter_href->{sv_vcfparser_per_gene},
+		   padding => $padding,
+		   FILEHANDLE => $XARGSFILEHANDLE,
+		  });
+	say $XARGSFILEHANDLE "\n";
 
 	if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid") ) {  #Update endings with contig info
 
@@ -9570,14 +9562,14 @@ sub sv_vcfparser {
 	}
     }
 
-    my $outfile_ending = $outfile_ending_stub;
+    my $outfile_prefix = $outfile_no_ending;
 
     if ( ($consensus_analysis_type eq "wgs") || ($consensus_analysis_type eq "mixed") ) {  #Update endings with contig info
 
-	$outfile_ending .= "_".$contigs[0];
+	$outfile_prefix .= "_".$contigs[0];
 
 	## QC Data File(s)
-	migrate_file({infile_path => catfile($$temp_directory_ref, $outfile_ending.".vcf"),
+	migrate_file({infile_path => catfile($$temp_directory_ref, $outfile_prefix.$file_suffix),
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -9596,41 +9588,22 @@ sub sv_vcfparser {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => $program_name,
 			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_ending.".vcf",
+			outfile_ending => $outfile_prefix.$file_suffix,
 			outdata_type => "static"
 		       });
 
-	if ($active_parameter_href->{sv_vcfparser_range_feature_file}) {
+	my %gene_panels = (range_file => "sv_vcfparser_range_feature_file",
+			   select_file => "sv_vcfparser_select_file",
+	    );
+	while ( my ($gene_panel_key, $gene_panel_file) = each (%gene_panels) ) {
 
-	    ## Collect databases(s) from a potentially merged select_file and adds them to sample_info
+	    ## Collect databases(s) from a potentially merged gene panel file and adds them to sample_info
 	    collect_gene_panels({sample_info_href => $sample_info_href,
 				 family_id_ref => $family_id_ref,
 				 program_name_ref => \$program_name,
-				 aggregate_gene_panel_file => $active_parameter_href->{sv_vcfparser_range_feature_file},
-				 aggregate_gene_panels_key => "range_file",
+				 aggregate_gene_panel_file => $active_parameter_href->{$gene_panel_file},
+				 aggregate_gene_panels_key => $gene_panel_key,
 				});
-
-	    if ($active_parameter_href->{sv_vcfparser_range_feature_file}=~/v(\d+\.\d+.\d+|\d+\.\d+)/) {
-
-		$sample_info_href->{$program_name}{range_file}{version} = $1;
-	    }
-	    $sample_info_href->{$program_name}{range_file}{path} = $active_parameter_href->{sv_vcfparser_range_feature_file};
-	}
-	if ($active_parameter_href->{sv_vcfparser_select_file}) {
-
-	    ## Collect databases(s) from a potentially merged select_file and adds them to sample_info
-	    collect_gene_panels({sample_info_href => $sample_info_href,
-				 family_id_ref => $family_id_ref,
-				 program_name_ref => \$program_name,
-				 aggregate_gene_panel_file => catfile($active_parameter_href->{sv_vcfparser_select_file}),
-				 aggregate_gene_panels_key => "select_file",
-				});
-
-	    if ($active_parameter_href->{sv_vcfparser_select_file}=~/v(\d+\.\d+.\d+|\d+\.\d+)/) {
-
-		$sample_info_href->{$program_name}{select_file}{version} = $1;
-	    }
-	    $sample_info_href->{$program_name}{select_file}{path} = catfile($active_parameter_href->{sv_vcfparser_select_file});
 	}
     }
 
@@ -9642,7 +9615,7 @@ sub sv_vcfparser {
 
 	if ($vcfparser_outfile_counter == 1) {
 
-	    $vcfparser_analysis_type = ".selected";  #SelectFile variants
+	    $vcfparser_analysis_type = ".selected";  #Select file variants
 
 	    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
 	    @contigs = remove_element({elements_ref => \@{ $file_info_href->{sorted_select_file_contigs} },
@@ -9662,8 +9635,8 @@ sub sv_vcfparser {
 										  program_info_path => $program_info_path,
 										  core_number => $core_number,
 										  xargs_file_counter => $xargs_file_counter,
-										  outfile => $outfile_ending_stub,
-										  file_ending => $vcfparser_analysis_type.".vcf*",
+										  outfile => $outfile_no_ending,
+										  file_ending => $vcfparser_analysis_type.$file_suffix."*",
 										  outdirectory => $outfamily_directory,
 										  temp_directory => $$temp_directory_ref,
 										 });
@@ -9672,7 +9645,7 @@ sub sv_vcfparser {
 
 	    ## Copies file from temporary directory.
 	    say $FILEHANDLE "## Copy file from temporary directory";
-	    migrate_file({infile_path => catfile($$temp_directory_ref, $outfile_ending_stub.$vcfparser_analysis_type.".vcf*"),
+	    migrate_file({infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.$file_suffix."*",
 			  outfile_path => $outfamily_directory,
 			  FILEHANDLE => $FILEHANDLE,
 			 });
@@ -9682,9 +9655,9 @@ sub sv_vcfparser {
 	    add_most_complete_vcf({active_parameter_href => $active_parameter_href,
 				   sample_info_href => $sample_info_href,
 				   program_name => $program_name,
-				   path => catfile($outfamily_directory, $outfile_ending_stub.$vcfparser_analysis_type.".vcf"),
+				   path => catfile($outfamily_directory, $outfile_no_ending.$vcfparser_analysis_type.$file_suffix),
 				   vcfparser_outfile_counter => $vcfparser_outfile_counter,
-				   vcf_file_key => "sv_vcf_file",
+				   vcf_file_key => "sv_".substr($file_suffix, 1)."_file",
 				  });
 	}
     }
@@ -9697,7 +9670,7 @@ sub sv_vcfparser {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    dependencies => "case_dependency",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
 		   });
     }
@@ -10257,16 +10230,38 @@ sub sv_combinevariantcallsets {
 
     if ($active_parameter_href->{sv_svdb_query} > 0) {
 	
-	$alt_file_ending = "_svdbq";  #Alternative ending
+	use Program::Gnu::Coreutils qw(mv);
 
-	query({infile_path => $merged_file_path_no_ending.$file_suffix,
-	       outfile_path => $merged_file_path_no_ending.$alt_file_ending.$file_suffix,
-	       dbfile_path => $active_parameter_href->{sv_svdb_query_db_file},
-	       bnd_distance => 25000,
-	       overlap => 0.8,
-	       hit_tag => $active_parameter_href->{sv_svdb_query_key},
-	       FILEHANDLE => $FILEHANDLE,
-	      });
+	$alt_file_ending = "_svdbq";  #Alternative ending
+	my $annotation_file_counter = 0;  #Ensure correct infile
+	my $outfile_tracker = 0;  #Ensure correct outfiles
+
+	while ( my ($query_db_file, $query_db_tag) = each( %{ $active_parameter_href->{sv_svdb_query_db_files} })) {
+	    
+	    my $infile_path = $merged_file_path_no_ending.$file_suffix;
+	    if ($annotation_file_counter) {
+
+		$infile_path = $merged_file_path_no_ending.$alt_file_ending.$file_suffix.".".$outfile_tracker;
+		$outfile_tracker++;  #Increment now that infile has been set
+	    }
+	    query({infile_path => $infile_path,
+		   outfile_path => $merged_file_path_no_ending.$alt_file_ending.$file_suffix.".".$outfile_tracker,
+		   dbfile_path => $query_db_file,
+		   bnd_distance => 25000,
+		   overlap => 0.8,
+		   hit_tag => $query_db_tag,
+		   frequency_tag => $query_db_tag."AF",
+		   FILEHANDLE => $FILEHANDLE,
+		  });
+	    say $FILEHANDLE "\n";
+	    $annotation_file_counter++;
+	}
+
+	## Rename to remove outfile_tracker
+	mv({infile_path => $merged_file_path_no_ending.$alt_file_ending.$file_suffix.".".$outfile_tracker,
+	    outfile_path => $merged_file_path_no_ending.$alt_file_ending.$file_suffix,
+	    FILEHANDLE => $FILEHANDLE,
+	   });
 	say $FILEHANDLE "\n";
     }
 
@@ -15170,19 +15165,19 @@ sub variantannotationblock {
     }
     if ($active_parameter_href->{pvcfparser} > 0) {  #Run vcfparser. Done per family
 
-	($xargs_file_counter, $xargs_file_name) = vcfparser({parameter_href => $parameter_href,
-							     active_parameter_href => $active_parameter_href,
-							     sample_info_href => $sample_info_href,
-							     file_info_href => $file_info_href,
-							     infile_lane_no_ending_href => $infile_lane_no_ending_href,
-							     job_id_href => $job_id_href,
-							     call_type => $call_type,
-							     program_name => "vcfparser",
-							     file_name => $file_name,
-							     program_info_path => $program_info_path,
-							     FILEHANDLE => $FILEHANDLE,
-							     xargs_file_counter => $xargs_file_counter,
-							    });
+	($xargs_file_counter, $xargs_file_name) = pvcfparser({parameter_href => $parameter_href,
+							      active_parameter_href => $active_parameter_href,
+							      sample_info_href => $sample_info_href,
+							      file_info_href => $file_info_href,
+							      infile_lane_no_ending_href => $infile_lane_no_ending_href,
+							      job_id_href => $job_id_href,
+							      call_type => $call_type,
+							      program_name => "vcfparser",
+							      file_name => $file_name,
+							      program_info_path => $program_info_path,
+							      FILEHANDLE => $FILEHANDLE,
+							      xargs_file_counter => $xargs_file_counter,
+							     });
     }
     if ($active_parameter_href->{pannovar} > 0) {  #Run annovar. Done per family
 
@@ -22952,61 +22947,65 @@ sub collect_gene_panels {
 	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
 	family_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$family_id_ref},
 	program_name_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$program_name_ref},
-	aggregate_gene_panel_file => { required => 1, defined => 1, strict_type => 1, store => \$aggregate_gene_panel_file},
 	aggregate_gene_panels_key => { required => 1, defined => 1, strict_type => 1, store => \$aggregate_gene_panels_key},
+	aggregate_gene_panel_file => { strict_type => 1, store => \$aggregate_gene_panel_file},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    ## Retrieve logger object
-    my $log = Log::Log4perl->get_logger("MIP");
+    if (defined($aggregate_gene_panel_file)) {
 
-    my %gene_panel;  #Collect each gene panel features
-    my %header = (gene_panel => "gene_panel",
-		  version => "version",
-		  updated_at => "updated_at",
-		  display_name => "display_name",
-	);
+	## Retrieve logger object
+	my $log = Log::Log4perl->get_logger("MIP");
 
-    my $sub_database_regexp = q?perl -nae 'if ($_=~/^##gene_panel=/) {chomp($_);my @entries=split(/,/, $_); my $entry = join(",", $_); print $entry.":" } if($_=~/^#\w/) {last;}'?;
-    my $ret = `$sub_database_regexp $aggregate_gene_panel_file`;  #Collect header_lines(s) from select_file header
-    my @header_lines = split(/:/, $ret);  #Split each gene panel meta data header line into array element
+	my %gene_panel;  #Collect each gene panel features
+	my %header = (gene_panel => "gene_panel",
+		      version => "version",
+		      updated_at => "updated_at",
+		      display_name => "display_name",
+	    );
 
-  LINE:
-    foreach my $line (@header_lines) {
+	my $sub_database_regexp = q?perl -nae 'if ($_=~/^##gene_panel=/) {chomp($_);my @entries=split(/,/, $_); my $entry = join(",", $_); print $entry.":" } if($_=~/^#\w/) {last;}'?;
+	my $ret = `$sub_database_regexp $aggregate_gene_panel_file`;  #Collect header_lines(s) from select_file header
+	my @header_lines = split(/:/, $ret);  #Split each gene panel meta data header line into array element
 
-	my @features = split(/,/, $line);  #Split each memember database line into features
+      LINE:
+	foreach my $line (@header_lines) {
 
-      ELEMENT:
-	foreach my $feature_element (@features) {
+	    my @features = split(/,/, $line);  #Split each memember database line into features
 
-	  KEY_VALUE:
-	    foreach my $gene_panel_header_element (keys %header) {  #Parse the features using defined header keys
+	  ELEMENT:
+	    foreach my $feature_element (@features) {
 
-		if ($feature_element=~/$gene_panel_header_element=/) {
+	      KEY_VALUE:
+		foreach my $gene_panel_header_element (keys %header) {  #Parse the features using defined header keys
 
-		    my @temps = split("=", $feature_element);
-		    $gene_panel{ $header{$gene_panel_header_element} } = $temps[1];  #Value
-		    last;
+		    if ($feature_element=~/$gene_panel_header_element=/) {
+
+			my @temps = split("=", $feature_element);
+			$gene_panel{ $header{$gene_panel_header_element} } = $temps[1];  #Value
+			last;
+		    }
 		}
 	    }
-	}
 
-	if (defined($gene_panel{gene_panel})) {
+	    if (defined($gene_panel{gene_panel})) {
 
-	    my $gene_panel_name = $gene_panel{gene_panel};  #Create unique gene panel ID
+		my $gene_panel_name = $gene_panel{gene_panel};  #Create unique gene panel ID
 
-	    ## Add new entries
-	    foreach my $feature (keys %gene_panel) {
+		## Add new entries
+		foreach my $feature (keys %gene_panel) {
 
-		$sample_info_href->{$$program_name_ref}{$aggregate_gene_panels_key}{gene_panel}{$gene_panel_name}{$feature} = $gene_panel{$feature};
+		    $sample_info_href->{$$program_name_ref}{$aggregate_gene_panels_key}{gene_panel}{$gene_panel_name}{$feature} = $gene_panel{$feature};
+		}
 	    }
-	}
-	else {
+	    else {
 
-	    $log->warn("Unable to write ".$aggregate_gene_panels_key." aggregate gene panel(s) to qc_sample_info. Lacking ##gene_panel=<ID=[?] or version=[?] in aggregate gene panel(s) header."."\n");
+		$log->warn("Unable to write ".$aggregate_gene_panels_key." aggregate gene panel(s) to qc_sample_info. Lacking ##gene_panel=<ID=[?] or version=[?] in aggregate gene panel(s) header."."\n");
+	    }
+	    %gene_panel = ();  #Reset hash for next line
 	}
-	%gene_panel = ();  #Reset hash for next line
+	$sample_info_href->{$$program_name_ref}{$aggregate_gene_panels_key}{path} = $aggregate_gene_panel_file;
     }
 }
 

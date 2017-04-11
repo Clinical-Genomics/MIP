@@ -34,9 +34,10 @@ sub merge {
 
 ##Function : Perl wrapper for writing svdb merge recipe to $FILEHANDLE or return commands array. Based on svdb 0.1.2.
 ##Returns  : "@commands"
-##Arguments: $infile_paths_ref, $outfile_path, $FILEHANDLE, $priority
+##Arguments: $infile_paths_ref, $outfile_path, $stderrfile_path, $FILEHANDLE, $priority
 ##         : $infile_paths_ref => Infile path {REF}
 ##         : $outfile_path     => Outfile path
+##         : $stderrfile_path  => Stderr file path to write to {OPTIONAL}
 ##         : $FILEHANDLE       => Filehandle to write to
 ##         : $priority         => Priority order of structural variant calls
 
@@ -45,12 +46,14 @@ sub merge {
     ## Flatten argument(s)
     my $infile_paths_ref;
     my $outfile_path;
+    my $stderrfile_path;
     my $FILEHANDLE;
     my $priority;
 
     my $tmpl = {
 	infile_paths_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$infile_paths_ref },
 	outfile_path => { strict_type => 1, store => \$outfile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
 	priority => { strict_type => 1, store => \$priority },
 	FILEHANDLE => { store => \$FILEHANDLE },
     };
@@ -73,6 +76,10 @@ sub merge {
 
 	push(@commands, "> ".$outfile_path);  #Outfile prefix
     }
+    if ($stderrfile_path) {
+
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+    }
     if($FILEHANDLE) {
 	
 	print $FILEHANDLE join(" ", @commands)." ";
@@ -87,13 +94,14 @@ sub query {
 
 ##Function : Perl wrapper for writing svdb query recipe to $FILEHANDLE or return commands array. Based on svdb 0.1.2.
 ##Returns  : "@commands"
-##Arguments: $infile_path, $dbfile_path, $outfile_path, $FILEHANDLE, $hit_tag, $bnd_distance, $overlap
-##         : $infile_path  => Infile path
-##         : $outfile_path => Outfile path
-##         : $FILEHANDLE   => Filehandle to write to
-##         : $hit_tag      => The tag used to describe the number of hits within the info field of the output vcf
-##         : $bnd_distance => The maximum distance between two similar precise breakpoints
-##         : $overlap      => The overlap required to merge two events
+##Arguments: $infile_path, $dbfile_path, $outfile_path, $stderrfile_path, $FILEHANDLE, $hit_tag, $frequency_tag, $bnd_distance, $overlap
+##         : $infile_path     => Infile path
+##         : $outfile_path    => Outfile path
+##         : $stderrfile_path => Stderr file path to write to {OPTIONAL}
+##         : $FILEHANDLE      => Filehandle to write to
+##         : $hit_tag         => The tag used to describe the number of hits within the info field of the output vcf
+##         : $bnd_distance    => The maximum distance between two similar precise breakpoints
+##         : $overlap         => The overlap required to merge two events
 
     my ($arg_href) = @_;
 
@@ -101,8 +109,10 @@ sub query {
     my $infile_path;
     my $dbfile_path;
     my $outfile_path;
+    my $stderrfile_path;
     my $FILEHANDLE;
     my $hit_tag;
+    my $frequency_tag;
     my $bnd_distance;
     my $overlap;
 
@@ -110,8 +120,10 @@ sub query {
 	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
 	dbfile_path => { required => 1, defined => 1, strict_type => 1, store => \$dbfile_path},
 	outfile_path => { strict_type => 1, store => \$outfile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
 	FILEHANDLE => { store => \$FILEHANDLE },
 	hit_tag => { strict_type => 1, store => \$hit_tag },
+	frequency_tag => { strict_type => 1, store => \$frequency_tag },
 	bnd_distance => { allow => qr/^\d+$/,
 			  strict_type => 1, store => \$bnd_distance },
 	overlap => { allow => qr/^\d+|d+.d+$/,
@@ -136,6 +148,10 @@ sub query {
 
 	push(@commands, "--hit_tag ".$hit_tag);
     }
+    if ($frequency_tag) {
+
+	push(@commands, "--frequency_tag ".$frequency_tag);
+    }
 
     push(@commands, "--db ".$dbfile_path);
 
@@ -145,6 +161,10 @@ sub query {
     if ($outfile_path) {
 
 	push(@commands, "> ".$outfile_path);  #Outfile prefix
+    }
+    if ($stderrfile_path) {
+
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
     }
     if($FILEHANDLE) {
 	

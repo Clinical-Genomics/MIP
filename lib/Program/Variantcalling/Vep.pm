@@ -74,9 +74,9 @@ sub variant_effect_predictor {
     my $buffer_size;
 
     my $tmpl = {
-	plugins_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$plugins_ref },
+	plugins_ref => { default => [], strict_type => 1, store => \$plugins_ref },
 	regions_ref => { default => [], strict_type => 1, store => \$regions_ref },
-	vep_features_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$vep_features_ref },
+	vep_features_ref => { default => [], strict_type => 1, store => \$vep_features_ref },
 	outfile_path => { strict_type => 1, store => \$outfile_path },
 	infile_path => { strict_type => 1, store => \$infile_path },
 	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
