@@ -43,7 +43,7 @@ BEGIN {
 					});
 
     $USAGE =
-	basename($0).qq{ infile.vcf > outfile.vcf
+	basename($0).qq{ infile.vcf [OPTIONS] > outfile.vcf
            -pvep/--parse_vep Parse VEP transcript specific entries (Default: 0 (=no))
            -rf/--range_feature_file (tsv)
            -rf_ac/--range_feature_annotation_columns
@@ -68,7 +68,7 @@ my ($parse_vep, $write_software_tag, $padding, $per_gene, $log_file) = (0, 1, 50
 my (@range_feature_annotation_columns, @select_feature_annotation_columns);
 my (%consequence_severity, %range_data, %select_data, %snpeff_cmd, %tree, %meta_data);
 
-my $vcfparser_version = "1.2.8";
+my $vcfparser_version = "1.2.9";
 
 ## Enables cmd "vcfparser.pl" to print usage help
 if(!@ARGV) {
@@ -84,9 +84,9 @@ elsif ( (defined($ARGV)) && ($ARGV[0]!~/^-/) ) { #Collect potential infile - oth
 
 ###User Options
 GetOptions('pvep|parse_vep:s' => \$parse_vep,
-	   'rf|rangeFeatures:s' => \$range_feature_file,
+	   'rf|range_feature_file:s' => \$range_feature_file,
 	   'rf_ac|range_feature_annotation_columns:s'  => \@range_feature_annotation_columns, #Comma separated list
-	   'sf|selectFeatures:s' => \$select_feature_file,
+	   'sf|select_feature_file:s' => \$select_feature_file,
 	   'sf_mc|select_feature_matching_column:n' => \$select_feature_matching_column,
 	   'sf_ac|select_feature_annotation_columns:s'  => \@select_feature_annotation_columns, #Comma separated list
 	   'sof|select_outfile:s' => \$select_outfile,

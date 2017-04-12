@@ -32,7 +32,7 @@ sub vcfparser {
 
 ##vcfparser
 
-##Function : Perl wrapper for writing MIP vcfparser recipe to $FILEHANDLE or return commands array. Based on vcfparser 1.2.8.
+##Function : Perl wrapper for writing MIP vcfparser recipe to $FILEHANDLE or return commands array. Based on vcfparser 1.2.9.
 ##Returns  : "@commands"
 ##Arguments: $range_feature_annotation_columns_ref, $select_feature_annotation_columns_ref $infile_path, $outfile_path, $stderrfile_path, $range_feature_file_path, $select_feature_file_path, $select_feature_matching_column, $select_outfile, $FILEHANDLE, $parse_vep, $per_gene, $padding
 ##         : $range_feature_annotation_columns_ref  => Range file annotation columns
