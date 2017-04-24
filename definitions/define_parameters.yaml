@@ -113,6 +113,7 @@ module_time:
     psv_varianteffectpredictor: 10
     psv_vcfparser: 2
     psv_rankvariant: 2
+    psv_reformat: 1
   type: mip
 module_core_number:
   associated_program:
@@ -140,6 +141,7 @@ module_core_number:
     psv_varianteffectpredictor: 16
     psv_vcfparser: 16
     psv_rankvariant: 16
+    psv_reformat: 1
   type: mip
 supported_capture_kit:
   associated_program:

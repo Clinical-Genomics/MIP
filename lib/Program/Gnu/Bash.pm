@@ -36,7 +36,7 @@ sub cd {
 ##Returns  : "@commands"
 ##Arguments: $FILEHANDLE, $directory_path, $stderrfile_path
 ##         : $FILEHANDLE      => Filehandle to write to
-##         : $directory_path  => Infile path
+##         : $directory_path  => Directory path
 ##         : $stderrfile_path => Stderrfile path
 
     my ($arg_href) = @_;

@@ -2387,7 +2387,7 @@ sub analysisrunstatus {
 					     program_directory => lc($program_name),
 					    });
 
-    say $FILEHANDLE q?status="0"?;  #Set status flagg so that perl notFinished remains in sample_info_file
+    say $FILEHANDLE q?STATUS="0"?;  #Set status flagg so that perl notFinished remains in sample_info_file
 
     ###Test all file that are supposed to exists as they are present in the sample_info file
     my @paths_ref;
@@ -2397,7 +2397,7 @@ sub analysisrunstatus {
 			  paths_ref => \@paths_ref,
 			 });
 
-    print $FILEHANDLE q?files=(?;  #Create bash array
+    print $FILEHANDLE q?readonly FILES=(?;  #Create bash array
     foreach my $path (@paths_ref) {
 
 	if (defined($path)) {  #First analysis and dry run will otherwise cause try to print uninitialized values
@@ -2406,13 +2406,13 @@ sub analysisrunstatus {
 	}
     }
     say $FILEHANDLE ")";  #Close bash array
-    say $FILEHANDLE q?for file in ${files[@]}?;  #loop over files
+    say $FILEHANDLE q?for file in "${FILES[@]}"?;  #loop over files
     say $FILEHANDLE "do ";  #for each element in array do
-    say $FILEHANDLE "\t".q?if [ -s $file ]; then?;  #file exists and is larger than zero
+    say $FILEHANDLE "\t".q?if [ -s "$file" ]; then?;  #file exists and is larger than zero
     say $FILEHANDLE "\t\t".q?echo "Found file $file"?;  #Echo
     say $FILEHANDLE "\t".q?else?;
     say $FILEHANDLE "\t\t".q?echo "Could not find $file" >&2?;  #Redirect to STDERR
-    say $FILEHANDLE "\t\t".q?status="1"?;  #Set status flagg so that perl notFinished remains in sample_info_file
+    say $FILEHANDLE "\t\t".q?STATUS="1"?;  #Set status flagg so that perl notFinished remains in sample_info_file
     say $FILEHANDLE "\t".q?fi?;
     say $FILEHANDLE q?done ?, "\n";
 
@@ -2423,7 +2423,7 @@ sub analysisrunstatus {
 
 	print $FILEHANDLE q?if grep -q "WARNING Unable to fork" ?;  #not output the matched text only return the exit status code
 	say $FILEHANDLE $variant_effect_predictor_file.q?; then?;  #Infile
-	say $FILEHANDLE "\t".q?status="1"?;  #Found pattern
+	say $FILEHANDLE "\t".q?STATUS="1"?;  #Found pattern
 	say $FILEHANDLE "\t".q?echo "VariantEffectorPredictor fork status=FAILED for file: ?.$variant_effect_predictor_file.q?" >&2?;  #Echo
 	say $FILEHANDLE q?else?;  #Infile is clean
 	say $FILEHANDLE "\t".q?echo "VariantEffectorPredictor fork status=PASSED for file: ?.$variant_effect_predictor_file.q?" >&2?;  #Echo
@@ -2439,7 +2439,7 @@ sub analysisrunstatus {
 
 	    print $FILEHANDLE q?if grep -q "FAIL" ?;  #not output the matched text only return the exit status code
 	    say $FILEHANDLE $qccollect_file.q?; then?;  #Infile
-	    say $FILEHANDLE "\t".q?status="1"?;  #Found pattern
+	    say $FILEHANDLE "\t".q?STATUS="1"?;  #Found pattern
 	    say $FILEHANDLE "\t".q?echo "qccollect status=FAILED for file: ?.$qccollect_file.q?" >&2?;  #Echo
 	    say $FILEHANDLE q?else?;  #Infile is clean
 	    say $FILEHANDLE "\t".q?echo "qccollect status=PASSED for file: ?.$qccollect_file.q?" >&2?;  #Echo
@@ -2515,7 +2515,7 @@ sub analysisrunstatus {
 	say $FILEHANDLE "\n";
     }
 
-    say $FILEHANDLE q?if [ $status -ne 1 ]; then?;  #eval status flag
+    say $FILEHANDLE q?if [ $STATUS -ne 1 ]; then?;  #eval status flag
     say $FILEHANDLE "\t".q?perl -i -p -e 'if($_=~/analysisrunstatus\:/) { s/not_finished/finished/g }' ?.$active_parameter_href->{sample_info_file}.q? ?;
     say $FILEHANDLE q?else?;  #Found discrepancies - exit
     say $FILEHANDLE "\t".q?exit 1?;
@@ -3203,6 +3203,7 @@ sub endvariantannotationblock {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Program::Htslib qw(bgzip tabix);
+    use Program::Gnu::Grep qw(grep);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -3297,11 +3298,13 @@ sub endvariantannotationblock {
 	if ($active_parameter_href->{endvariantannotationblock_remove_genes_file}) {
 
 	    ## Removes contig_names from contigs array if no male or other found
-	    grep_remove({filter_file => catfile($$reference_dir_ref, $active_parameter_href->{sv_reformat_remove_genes_file}),
-			 infile => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf",
-			 outfile => $outfile_path_no_ending.$vcfparser_analysis_type."_filtered.vcf",
-			 FILEHANDLE => $FILEHANDLE,
-			});
+	    Program::Gnu::Grep::grep({filter_file_path => catfile($$reference_dir_ref, $active_parameter_href->{sv_reformat_remove_genes_file}),
+				      infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf",
+				      outfile_path => $outfile_path_no_ending.$vcfparser_analysis_type."_filtered.vcf",
+				      invert_match => 1,
+				      FILEHANDLE => $FILEHANDLE,
+				     });
+	    say $FILEHANDLE "\n";
 
 	    if ($vcfparser_outfile_counter == 1) {
 
@@ -8650,14 +8653,16 @@ sub sv_reformat {
 
     use Program::Htslib qw(bgzip tabix);
 
+    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
+    my $xargs_file_name;
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $xargs_file_name;
-    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
-    my $time = 20;
 
     ## Set the number of cores
-    my $core_number = 1;
+    my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -8667,7 +8672,7 @@ sub sv_reformat {
 								 program_name => $program_name,
 								 program_directory => catfile(lc($$outaligner_dir_ref)),
 								 core_number => $core_number,
-								 process_time => 10,
+								 process_time => $active_parameter_href->{module_time}{"p".$program_name},
 								 temp_directory => $$temp_directory_ref
 								});
 
@@ -8684,6 +8689,9 @@ sub sv_reformat {
     my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type);
     my $final_path_no_ending = catfile($outfamily_directory, $outfile_no_ending);
+
+    ## Assign suffix
+    my $file_suffix = $parameter_href->{variant_calling_suffix}{$jobid_chain};
 
     my $vcfparser_analysis_type = "";
 
@@ -8750,7 +8758,7 @@ sub sv_reformat {
 							      core_number => $core_number,
 							      xargs_file_counter => $xargs_file_counter,
 							      infile => $infile_no_ending,
-							      file_ending => $vcfparser_analysis_type.".vcf*",
+							      file_ending => $vcfparser_analysis_type.$file_suffix."*",
 							      indirectory => $infamily_directory,
 							      temp_directory => $active_parameter_href->{temp_directory},
 							     });
@@ -8760,7 +8768,7 @@ sub sv_reformat {
 	    ## Copy file(s) to temporary directory
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
 	    migrate_file({FILEHANDLE => $FILEHANDLE,
-			  infile_path => catfile($infamily_directory, $infile_no_ending.$vcfparser_analysis_type.".vcf"),
+			  infile_path => catfile($infamily_directory, $infile_no_ending.$vcfparser_analysis_type.$file_suffix),
 			  outfile_path => $$temp_directory_ref
 			 });
 	    say $FILEHANDLE "wait", "\n";
@@ -8776,8 +8784,8 @@ sub sv_reformat {
 				  FILEHANDLE => $FILEHANDLE,
 				  elements_ref => \@contigs,
 				  infile_prefix => $file_path_no_ending."_",
-				  infile_postfix => $vcfparser_analysis_type.".vcf",
-				  outfile => $file_path_no_ending.$vcfparser_analysis_type.$concatenate_ending.".vcf",
+				  infile_postfix => $vcfparser_analysis_type.$file_suffix,
+				  outfile => $file_path_no_ending.$vcfparser_analysis_type.$concatenate_ending.$file_suffix,
 				 });
 	}
 
@@ -8785,8 +8793,8 @@ sub sv_reformat {
 	sort_vcf({active_parameter_href => $active_parameter_href,
 		  FILEHANDLE => $FILEHANDLE,
 		  sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict"),
-		  infile_paths_ref => [$file_path_no_ending.$vcfparser_analysis_type.$concatenate_ending.".vcf"],
-		  outfile => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf",
+		  infile_paths_ref => [$file_path_no_ending.$vcfparser_analysis_type.$concatenate_ending.$file_suffix],
+		  outfile => $outfile_path_no_ending.$vcfparser_analysis_type.$file_suffix,
 		 });
 
 	print $FILEHANDLE "\n";
@@ -8795,24 +8803,26 @@ sub sv_reformat {
 	if ($active_parameter_href->{sv_reformat_remove_genes_file}) {
 
 	    ## Removes contig_names from contigs array if no male or other found
-	    grep_remove({filter_file => catfile($$reference_dir_ref, $active_parameter_href->{sv_reformat_remove_genes_file}),
-			 infile => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf",
-			 outfile => $outfile_path_no_ending.$vcfparser_analysis_type."_filtered.vcf",
-			 FILEHANDLE => $FILEHANDLE,
-			});
-
+	    Program::Gnu::Grep::grep({filter_file_path => catfile($$reference_dir_ref, $active_parameter_href->{sv_reformat_remove_genes_file}),
+				      infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.$file_suffix,
+				      outfile_path => $outfile_path_no_ending.$vcfparser_analysis_type."_filtered".$file_suffix,
+				      invert_match => 1,
+				      FILEHANDLE => $FILEHANDLE,
+				     });
+	    say $FILEHANDLE "\n";
+	    
 	    if ($vcfparser_outfile_counter == 1) {
 
-		$sample_info_href->{program}{$program_name}{sv_reformat_remove_genes_file}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type."_filtered.vcf";   #Save filtered file
+		$sample_info_href->{program}{$program_name}{sv_reformat_remove_genes_file}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type."_filtered".$file_suffix;   #Save filtered file
 	    }
 	    else {
 
-		$sample_info_href->{program}{$program_name}{sv_reformat_remove_genes_file}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type."_filtered.vcf";   #Save filtered file
+		$sample_info_href->{program}{$program_name}{sv_reformat_remove_genes_file}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type."_filtered".$file_suffix;   #Save filtered file
 	    }
 
 	    ## Copies file from temporary directory.
 	    say $FILEHANDLE "## Copy file from temporary directory";
-	    migrate_file({infile_path => $outfile_path_no_ending.$vcfparser_analysis_type."_filtered.vcf",
+	    migrate_file({infile_path => $outfile_path_no_ending.$vcfparser_analysis_type."_filtered".$file_suffix,
 			  outfile_path => $outfamily_directory,
 			  FILEHANDLE => $FILEHANDLE,
 			 });
@@ -8823,24 +8833,24 @@ sub sv_reformat {
 
 	    ## Compress or decompress original file or stream to outfile (if supplied)
 	    bgzip({FILEHANDLE => $FILEHANDLE,
-		   infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf",
-		   outfile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf.gz",
+		   infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.$file_suffix,
+		   outfile_path => $outfile_path_no_ending.$vcfparser_analysis_type.$file_suffix.".gz",
 		   write_to_stdout => 1,
 		  });
 	    say $FILEHANDLE "\n";
 
 	    ## Index file using tabix
 	    tabix({FILEHANDLE => $FILEHANDLE,
-		   infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf.gz",
+		   infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.$file_suffix.".gz",
 		   force => 1,
-		   preset => "vcf",
+		   preset => substr($file_suffix, 1),
 		  });
 	    say $FILEHANDLE "\n";
 	}
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf*",
+	migrate_file({infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.$file_suffix."*",
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -8850,29 +8860,29 @@ sub sv_reformat {
 	add_most_complete_vcf({active_parameter_href => $active_parameter_href,
 			       sample_info_href => $sample_info_href,
 			       program_name => $program_name,
-			       path => $final_path_no_ending.$vcfparser_analysis_type.".vcf",
+			       path => $final_path_no_ending.$vcfparser_analysis_type.$file_suffix,
 			       vcfparser_outfile_counter => $vcfparser_outfile_counter,
-			       vcf_file_key => "sv_vcf_file",
+			       vcf_file_key => "sv_".substr($file_suffix, 1)."_file",
 			      });
 
 	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
 	    if ($vcfparser_outfile_counter == 1) {
 
-		$sample_info_href->{program}{$program_name}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type.".vcf";   #Save clinical candidate list path
+		$sample_info_href->{program}{$program_name}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type.$file_suffix;   #Save clinical candidate list path
 
 		if ($active_parameter_href->{sv_rankvariant_binary_file}) {
 
-		    $sample_info_href->{sv_vcf_binary_file}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type.".vcf.gz";
+		    $sample_info_href->{sv_vcf_binary_file}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type.$file_suffix.".gz";
 		}
 	    }
 	    else {
 
-		$sample_info_href->{program}{$program_name}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type.".vcf";   #Save research candidate list path
+		$sample_info_href->{program}{$program_name}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type.$file_suffix;   #Save research candidate list path
 
 		if ($active_parameter_href->{sv_rankvariant_binary_file}) {
 
-		    $sample_info_href->{sv_vcf_binary_file}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type.".vcf.gz";
+		    $sample_info_href->{sv_vcf_binary_file}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type.$file_suffix.".gz";
 		}
 	    }
 	}
@@ -8886,7 +8896,7 @@ sub sv_reformat {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    dependencies => "case_dependency",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
 		   });
     }
@@ -10187,17 +10197,31 @@ sub sv_combinevariantcallsets {
 
     my $alt_file_ending = "";  #Alternative ending
 
+    if ($active_parameter_href->{sv_vt_decompose} > 0) {
+
+	$alt_file_ending = "_vt";  #Alternative ending
+
+	## Split multiallelic variants
+	say $FILEHANDLE "## Split multiallelic variants";
+	decompose({infile_path => $merged_file_path_no_ending.$file_suffix,
+		   outfile_path => $merged_file_path_no_ending.$alt_file_ending.$file_suffix,
+		   FILEHANDLE => $FILEHANDLE,
+		   smart_decomposition => 1,
+		  });
+	say $FILEHANDLE "\n";
+    }
     if ($active_parameter_href->{sv_svdb_query} > 0) {
 	
 	use Program::Gnu::Coreutils qw(mv);
 
-	$alt_file_ending = "_svdbq";  #Alternative ending
+	my $infile_path = $merged_file_path_no_ending.$alt_file_ending.$file_suffix;
+	$alt_file_ending .= "_svdbq";  #Update alternative ending
+
 	my $annotation_file_counter = 0;  #Ensure correct infile
 	my $outfile_tracker = 0;  #Ensure correct outfiles
 
 	while ( my ($query_db_file, $query_db_tag) = each( %{ $active_parameter_href->{sv_svdb_query_db_files} })) {
 	    
-	    my $infile_path = $merged_file_path_no_ending.$file_suffix;
 	    if ($annotation_file_counter) {
 
 		$infile_path = $merged_file_path_no_ending.$alt_file_ending.$file_suffix.".".$outfile_tracker;
@@ -19204,7 +19228,7 @@ sub program_prerequisites {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use File::Format::Shell qw(create_housekeeping_function create_trap_function);
+    use File::Format::Shell qw(create_housekeeping_function create_error_trap_function enable_trap);
     use Program::Gnu::Coreutils qw(echo);
 
     ## Retrieve logger object
@@ -19212,6 +19236,7 @@ sub program_prerequisites {
 
     ### Sbatch script names and directory creation
 
+    my @commands;  #For holding commands to write with proper indention in bash
     my $file_name_end = ".sh";
     my $file_name;  #The sbatch script - to be created filename
     my $file_name_tracker;
@@ -19259,6 +19284,7 @@ sub program_prerequisites {
     open ($FILEHANDLE, ">",$file_name) or $log->logdie("Can't write to '".$file_name."' :".$!."\n");
 
     say $FILEHANDLE "#! /bin/bash -l";
+    say $FILEHANDLE "set -eu";  #Halt script if command has non-zero exit code (e) or if variable is uninitialised (u)
 
     if ($pipefail) {
 
@@ -19289,12 +19315,12 @@ sub program_prerequisites {
 	say $FILEHANDLE "#SBATCH --mail-user=".$active_parameter_href->{email}, "\n";
     }
 
+    say $FILEHANDLE q?readonly PROGNAME=$(basename "$0")?,"\n";
+
     echo({strings_ref => [q?Running on: $(hostname)?],
 	  FILEHANDLE => $FILEHANDLE,
 	 });
     say $FILEHANDLE "\n";
-
-    say $FILEHANDLE q?PROGNAME=$(basename $0)?,"\n";
 
     if ($sleep) {  #Let the process sleep for a random couple of seconds (0-60) to avoid race conditions in mainly conda sourcing activate
 
@@ -19308,7 +19334,9 @@ sub program_prerequisites {
     if (defined($temp_directory)) {  #Not all programs need a temporary directory
 
 	say $FILEHANDLE "## Create temporary directory";
-	say $FILEHANDLE q?temp_directory="?.$temp_directory.q?"?;  #Assign batch variable
+	$temp_directory =~ s/(\$\w+)/"$1"/g;  #Quote any bash variables in path
+	say $FILEHANDLE q?readonly TEMP_DIRECTORY=?.$temp_directory;  #Assign batch variable
+	$temp_directory = q?"$TEMP_DIRECTORY"?;  #Update perl scalar to bash variable
 	Program::Gnu::Coreutils::mkdir({indirectory_path => $temp_directory,
 					parents => 1,
 					FILEHANDLE => $FILEHANDLE,
@@ -19320,19 +19348,26 @@ sub program_prerequisites {
 				      FILEHANDLE => $FILEHANDLE,
 				      directory_remove => $temp_directory,
 				      trap_signals_ref => ["EXIT", "TERM", "INT"],
-				      trap_function => "finish",
+				      trap_function => q?$(finish ?.$temp_directory.q?)?,
 				     });
     }
 
     if ($error_trap) {
 
+	## Create debug trap
+	enable_trap({FILEHANDLE => $FILEHANDLE,
+		     trap_signals_ref => ["DEBUG"],
+		     trap_function => q?previous_command="$BASH_COMMAND"?,
+		    });
+	
 	## Create error handling function and trap
-	create_trap_function({job_id_href => $job_id_href,
-			      log_file_ref => \$active_parameter_href->{log_file},
-			      FILEHANDLE => $FILEHANDLE,
-			      trap_signals_ref => ["ERR"],
-			      trap_function => "error",
-			     });
+	create_error_trap_function({job_id_href => $job_id_href,
+				    log_file_ref => \$active_parameter_href->{log_file},
+				    FILEHANDLE => $FILEHANDLE,
+				    trap_signals_ref => ["ERR"],
+				    trap_function_name => "error",
+				    trap_function_call => q{$(error "$previous_command" "$?")},
+				   });
     }
     return ($file_name, $file_info_path.$file_name_tracker);  #Return filen name, file path for stdout/stderr for QC check later
 }
@@ -26063,43 +26098,6 @@ sub check_snpsift_keys {
 	    exit 1;
 	}
     }
-}
-
-
-sub grep_remove {
-
-##grep_remove
-
-##Function : Removes line according to string in file.
-##Returns  : ""
-##Arguments: $filter_file, $infile, $outfile, $FILEHANDLE
-##         : $filter_file => Filter file containing strings to filter
-##         : $infile      => Infile to filter
-##         : $outfile     => Outfile
-##         : $FILEHANDLE  => Filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $filter_file;
-    my $infile;
-    my $outfile;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-	filter_file => { required => 1, defined => 1, strict_type => 1, store => \$filter_file},
-	infile => { required => 1, defined => 1, strict_type => 1, store => \$infile},
-	outfile => { required => 1, defined => 1, strict_type => 1, store => \$outfile},
-	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    print $FILEHANDLE "grep ";
-    print $FILEHANDLE "-v ";
-    print $FILEHANDLE "-f ".$filter_file." ";
-    print $FILEHANDLE $infile." ";
-    say $FILEHANDLE "> ".$outfile, "\n";
 }
 
 

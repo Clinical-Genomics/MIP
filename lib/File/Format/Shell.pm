@@ -23,7 +23,7 @@ BEGIN {
     # Functions and variables which can be optionally exported
     our @EXPORT_OK = ("create_bash_file",
 		      "create_housekeeping_function",
-		      "create_trap_function",
+		      "create_error_trap_function",
 		      "enable_trap",
 		      "clear_trap",
 		      "track_progress",
@@ -97,9 +97,15 @@ sub create_bash_file {
 				  FILEHANDLE => $FILEHANDLE,
 				 });
 
+    ## Create debug trap
+    enable_trap({FILEHANDLE => $FILEHANDLE,
+		 trap_signals_ref => ["DEBUG"],
+		 trap_function => q?previous_command="$BASH_COMMAND"?,
+		});
+
     ## Create error handling function and trap
-    create_trap_function({FILEHANDLE => $FILEHANDLE,
-			 });
+    create_error_trap_function({FILEHANDLE => $FILEHANDLE,
+			       });
 
     if ( (defined($log)) && ($log) ) {
 
@@ -158,10 +164,11 @@ sub create_housekeeping_function {
     say $FILEHANDLE q?finish() {?, "\n";
 
     if ( (defined($directory_remove)) && ($directory_remove) ) {
-	
+
+	say $FILEHANDLE "\t".q?local directory="$1"?;
 	say $FILEHANDLE "\t".q?## Perform exit housekeeping?;
 	print $FILEHANDLE "\t";
-	rm({infile_path => $directory_remove,
+	rm({infile_path => q?"$directory"?,
 	    force => 1,
 	    recursive => 1,
 	    FILEHANDLE => $FILEHANDLE,
@@ -187,47 +194,52 @@ sub create_housekeeping_function {
 }
 
 
-sub create_trap_function {
+sub create_error_trap_function {
 
-##create_trap_function
+##create_error_trap_function
 
 ##Function : Create error handling function and trap
 ##Returns  : ""
-##Arguments: $job_id_href, $log_file_ref, $FILEHANDLE, $trap_signals_ref, $trap_function
-##         : $job_id_href      => Job_id hash {REF}
-##         : $log_file_ref     => Log file to write job_id progress to {REF}
-##         : $FILEHANDLE       => Filehandle to write to
-##         : $trap_signals_ref => Array with signals to enable trap for {REF}
-##         : $trap_function    => The trap function argument
+##Arguments: $job_id_href, $log_file_ref, $FILEHANDLE, $trap_function_call, $trap_signals_ref, $trap_function_name
+##         : $job_id_href        => Job_id hash {REF}
+##         : $log_file_ref       => Log file to write job_id progress to {REF}
+##         : $FILEHANDLE         => Filehandle to write to
+##         : $trap_function_call => Trap function call
+##         : $trap_signals_ref   => Array with signals to enable trap for {REF}
+##         : $trap_function_name => The trap function argument
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $trap_signals_ref;
-    my $trap_function;
+    my $trap_function_name;
 
     ## Flatten argument(s)
     my $job_id_href;
     my $log_file_ref;
     my $FILEHANDLE;
+    my $trap_function_call;
 
     my $tmpl = {
 	job_id_href => { default => {}, strict_type => 1, store => \$job_id_href},
 	log_file_ref => { default => \$$, strict_type => 1, store => \$log_file_ref},
 	FILEHANDLE => { required => 1, store => \$FILEHANDLE},
+	trap_function_call => { default => q{$(error "$previous_command" "$?")},
+				strict_type => 1, store => \$trap_function_call},
 	trap_signals_ref => { default => ["ERR"],
 			      strict_type => 1, store => \$trap_signals_ref},
-	trap_function => { default => "error",
-			   strict_type => 1, store => \$trap_function},
+	trap_function_name => { default => "error",
+				strict_type => 1, store => \$trap_function_name},
     };
     
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     ## Create error handling function and trap
-    say $FILEHANDLE $trap_function.q?() {?, "\n";
+    say $FILEHANDLE $trap_function_name.q?() {?, "\n";
+    say $FILEHANDLE "\t".q?local program="$1"?;
+    say $FILEHANDLE "\t".q?local return_code="$2"?;
     say $FILEHANDLE "\t".q?## Display error message and exit?;
-    say $FILEHANDLE "\t".q{ret="$?"};
-    say $FILEHANDLE "\t".q?echo "${PROGNAME}: ${1:-"Unknown Error - ExitCode="$ret}" 1>&2?, "\n";
+    say $FILEHANDLE "\t".q?echo "${program}: ${return_code}: Unknown Error - ExitCode=$return_code" 1>&2?;
     say $FILEHANDLE "\t".q?exit 1?;
 
     if ( (defined($job_id_href)) && (keys %$job_id_href)
@@ -244,7 +256,7 @@ sub create_trap_function {
     ## Enable trap function with trap signal(s)
     enable_trap({FILEHANDLE => $FILEHANDLE,
 		 trap_signals_ref => \@{ $trap_signals_ref },
-		 trap_function => $trap_function,
+		 trap_function => $trap_function_call,
 		});
 }
 
@@ -312,8 +324,8 @@ sub enable_trap {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    say $FILEHANDLE "\n## Enable cleared trap for signal(s) ".join(" ", @$trap_signals_ref)." ";
-    say $FILEHANDLE "trap ".$trap_function." ".join(" ", @$trap_signals_ref), "\n";
+    say $FILEHANDLE "\n## Enable trap for signal(s) ".join(" ", @$trap_signals_ref)." ";
+    say $FILEHANDLE "trap '".$trap_function."' ".join(" ", @$trap_signals_ref), "\n";
 }
 
 
