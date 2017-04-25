@@ -20,7 +20,7 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(mergesamfiles markduplicates gatherbamfiles collectmultiplemetrics);
+    our @EXPORT_OK = qw(mergesamfiles markduplicates gatherbamfiles collectmultiplemetrics collecthsmetrics);
 
 }
 
@@ -265,6 +265,152 @@ sub collectmultiplemetrics {
     if ($referencefile_path) {
 
 	push(@commands, "REFERENCE_SEQUENCE=".$referencefile_path);
+    }
+
+    ## Infile
+    push(@commands, "INPUT=".$infile_path);
+
+    ## Output
+    push(@commands, "OUTPUT=".$outfile_path);  #Specify output filename
+
+    if ($stderrfile_path) {
+
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
+sub calculatehsmetrics {
+
+##calculatehsmetrics
+
+##Function : Perl wrapper for writing picardtools calculatehsmetrics recipe to $FILEHANDLE. Based on picardtools 2.5.0.
+##Returns  : "@commands"
+##Arguments: $bait_interval_file_paths_ref, $target_interval_file_paths_ref, $infile_path, $outfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE
+##         : $bait_interval_file_paths_ref   => Interval list file(s) that contains the locations of the baits used {REF}
+##         : $target_interval_file_paths_ref => Interval list file(s) that contains the locations of the targets
+##         : $infile_path                    => Infile paths
+##         : $outfile_path                   => Outfile path
+##         : $referencefile_path             => Genome reference file
+##         : $stderrfile_path                => Stderrfile path
+##         : $FILEHANDLE                     => Sbatch filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $bait_interval_file_paths_ref;
+    my $target_interval_file_paths_ref;
+    my $infile_path;
+    my $outfile_path;
+    my $referencefile_path;
+    my $stderrfile_path;
+    my $FILEHANDLE;
+    
+    my $tmpl = {
+	bait_interval_file_paths_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$bait_interval_file_paths_ref},
+	target_interval_file_paths_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$target_interval_file_paths_ref},
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
+	outfile_path => { required => 1, defined => 1, strict_type => 1, store => \$outfile_path },
+	referencefile_path => { required => 1, defined => 1, strict_type => 1, store => \$referencefile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## Picardtools calculatehsmetrics
+    my @commands = qw(CalculateHsMetrics);  #Stores commands depending on input parameters
+
+    if ($referencefile_path) {
+
+	push(@commands, "REFERENCE_SEQUENCE=".$referencefile_path);
+    }
+
+    if(@$bait_interval_file_paths_ref) {
+
+	push(@commands, "BAIT_INTERVALS=".join(" BAIT_INTERVALS=", @$bait_interval_file_paths_ref));
+    }
+    if(@$target_interval_file_paths_ref) {
+
+	push(@commands, "TARGET_INTERVALS=".join(" TARGET_INTERVALS=", @$target_interval_file_paths_ref));
+    }
+
+    ## Infile
+    push(@commands, "INPUT=".$infile_path);
+
+    ## Output
+    push(@commands, "OUTPUT=".$outfile_path);  #Specify output filename
+
+    if ($stderrfile_path) {
+
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
+sub collecthsmetrics {
+
+##collecthsmetrics
+
+##Function : Perl wrapper for writing picardtools collecthsmetrics recipe to $FILEHANDLE. Based on picardtools 2.5.0.
+##Returns  : "@commands"
+##Arguments: $bait_interval_file_paths_ref, $target_interval_file_paths_ref, $infile_path, $outfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE
+##         : $bait_interval_file_paths_ref   => Interval list file(s) that contains the locations of the baits used {REF}
+##         : $target_interval_file_paths_ref => Interval list file(s) that contains the locations of the targets
+##         : $infile_path                    => Infile paths
+##         : $outfile_path                   => Outfile path
+##         : $referencefile_path             => Genome reference file
+##         : $stderrfile_path                => Stderrfile path
+##         : $FILEHANDLE                     => Sbatch filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $bait_interval_file_paths_ref;
+    my $target_interval_file_paths_ref;
+    my $infile_path;
+    my $outfile_path;
+    my $referencefile_path;
+    my $stderrfile_path;
+    my $FILEHANDLE;
+    
+    my $tmpl = {
+	bait_interval_file_paths_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$bait_interval_file_paths_ref},
+	target_interval_file_paths_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$target_interval_file_paths_ref},
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
+	outfile_path => { required => 1, defined => 1, strict_type => 1, store => \$outfile_path },
+	referencefile_path => { required => 1, defined => 1, strict_type => 1, store => \$referencefile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## Picardtools collecthsmetrics
+    my @commands = qw(CollectHsMetrics);  #Stores commands depending on input parameters
+
+    if ($referencefile_path) {
+
+	push(@commands, "REFERENCE_SEQUENCE=".$referencefile_path);
+    }
+
+    if(@$bait_interval_file_paths_ref) {
+
+	push(@commands, "BAIT_INTERVALS=".join(" BAIT_INTERVALS=", @$bait_interval_file_paths_ref));
+    }
+    if(@$target_interval_file_paths_ref) {
+
+	push(@commands, "TARGET_INTERVALS=".join(" TARGET_INTERVALS=", @$target_interval_file_paths_ref));
     }
 
     ## Infile

@@ -149,10 +149,10 @@ BEGIN {
                  -stdmaq/--sambamba_depth_mapping_quality  Do not count reads with lower mapping quality (defaults to "10")
                  -stdndu/--sambamba_depth_noduplicates Do not include duplicates in coverage calculation (defaults to "1" (=yes))
                  -stdfqc/--sambamba_depth_quality_control Do not include reads with failed quality control (defaults to "1" (=yes))
-               -pgcb/--pgenomecoveragebed Genome coverage calculation using genomeCoverageBED (defaults to "0" (=no))
-                -gcbcov/--genomecoveragebed_max_coverage Max coverage depth when using '-pgenomecoveragebed' (defaults to "30")
+               -pbgc/--pbedtools_genomecov Genome coverage calculation using bedtools genomecov (defaults to "0" (=no))
+                -bgcmc/--bedtools_genomecov_max_coverage Max coverage depth when using '-pbedtools_genomecov' (defaults to "30")
                -pptcmm/--ppicardtools_collectmultiplemetrics Metrics calculation using Picardtools CollectMultipleMetrics (defaults to "1" (=yes))
-               -pptchs/--ppicardtools_calculatehsmetrics Capture calculation using Picardtools CalculateHSmetrics (defaults to "1" (=yes))
+               -pptchs/--ppicardtools_collecthsmetrics Capture calculation using Picardtools Collecthsmetrics (defaults to "1" (=yes))
                  -extb/--exome_target_bed Exome target bed file per sample_id (defaults to "latest_supported_capturekit.bed"; -extb file.bed=Sample_idX,Sample_idY -extb file.bed=Sample_idZ)
                -prcp/--prcovplots Plots of genome coverage using rcovplots (defaults to "0" (=no))
 
@@ -466,10 +466,10 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'sdtmaq|sambamba_depth_mapping_quality=n' => \$parameter{sambamba_depth_mapping_quality}{value},
 	   'sdtndu|sambamba_depth_noduplicates=n' => \$parameter{sambamba_depth_noduplicates}{value},
 	   'sdtfqc|sambamba_depth_quality_control=n' => \$parameter{sambamba_depth_quality_control}{value},
-	   'pgcb|pgenomecoveragebed=n' => \$parameter{pgenomecoveragebed}{value},
-	   'xcov|genomecoveragebed_max_coverage=n' => \$parameter{genomecoveragebed_max_coverage}{value},  #Sets max depth to calculate coverage
+	   'pbgc|pbedtools_genomecov=n' => \$parameter{pbedtools_genomecov}{value},
+	   'bgcmc|bedtools_genomecov_max_coverage=n' => \$parameter{bedtools_genomecov_max_coverage}{value},  #Sets max depth to calculate coverage
 	   'pptcmm|ppicardtools_collectmultiplemetrics=n' => \$parameter{ppicardtools_collectmultiplemetrics}{value},
-	   'pptchs|ppicardtools_calculatehsmetrics=n' => \$parameter{ppicardtools_calculatehsmetrics}{value},
+	   'pptchs|ppicardtools_collecthsmetrics=n' => \$parameter{ppicardtools_collecthsmetrics}{value},
 	   'extb|exome_target_bed=s' => \%{ $parameter{exome_target_bed}{value} },  #Hash value file.bed=sample_id
 	   'prcp|prcovplots=n' => \$parameter{prcovplots}{value},
 	   'pcnv|pcnvnator=n' => \$parameter{pcnvnator}{value},
@@ -1406,20 +1406,20 @@ if ($active_parameter{psambamba_depth} > 0) {
 }
 
 
-if ($active_parameter{pgenomecoveragebed} > 0) {  #Run genomecoveragebed
+if ($active_parameter{pbedtools_genomecov} > 0) {  #Run bedtools genomecov
 
-    $log->info("[Genomecoveragebed]\n");
+    $log->info("[Bedtools genomecov]\n");
 
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
-	genomecoveragebed({parameter_href => \%parameter,
-			   active_parameter_href => \%active_parameter,
-			   sample_info_href => \%sample_info,
-			   file_info_href => \%file_info,
-			   infile_lane_no_ending_href => \%infile_lane_no_ending,
-			   job_id_href => \%job_id,
-			   sample_id_ref => \$sample_id,
-			   program_name => "genomecoveragebed",
+	bedtools_genomecov({parameter_href => \%parameter,
+			    active_parameter_href => \%active_parameter,
+			    sample_info_href => \%sample_info,
+			    file_info_href => \%file_info,
+			    infile_lane_no_ending_href => \%infile_lane_no_ending,
+			    job_id_href => \%job_id,
+			    sample_id_ref => \$sample_id,
+			    program_name => "bedtools_genomecov",
 			  });
     }
 }
@@ -1451,9 +1451,9 @@ if ($active_parameter{ppicardtools_collectmultiplemetrics} > 0) {  #Run picardto
     }
 }
 
-if ($active_parameter{ppicardtools_calculatehsmetrics} > 0) {  #Run Picardtools_calculatehsmetrics
+if ($active_parameter{ppicardtools_collecthsmetrics} > 0) {  #Run Picardtools_collecthsmetrics
 
-    $log->info("[Picardtools calculatehsmetrics]\n");
+    $log->info("[Picardtools collecthsmetrics]\n");
 
     check_build_human_genome_prerequisites({parameter_href => \%parameter,
 					    active_parameter_href => \%active_parameter,
@@ -1461,7 +1461,7 @@ if ($active_parameter{ppicardtools_calculatehsmetrics} > 0) {  #Run Picardtools_
 					    file_info_href => \%file_info,
 					    infile_lane_no_ending_href => \%infile_lane_no_ending,
 					    job_id_href => \%job_id,
-					    program_name => "picardtools_calculatehsmetrics",
+					    program_name => "picardtools_collecthsmetrics",
 					   });
 
     if ($active_parameter{dry_run_all} != 1) {
@@ -1472,19 +1472,19 @@ if ($active_parameter{ppicardtools_calculatehsmetrics} > 0) {  #Run Picardtools_
 						file_info_href => \%file_info,
 						infile_lane_no_ending_href => \%infile_lane_no_ending,
 						job_id_href => \%job_id,
-						program_name => "picardtools_calculatehsmetrics",
+						program_name => "picardtools_collecthsmetrics",
 					       });
     }
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
-	picardtools_calculatehsmetrics({parameter_href => \%parameter,
+	picardtools_collecthsmetrics({parameter_href => \%parameter,
 					active_parameter_href => \%active_parameter,
 					sample_info_href => \%sample_info,
 					file_info_href => \%file_info,
 					infile_lane_no_ending_href => \%infile_lane_no_ending,
 					job_id_href => \%job_id,
 					sample_id_ref => \$sample_id,
-					program_name => "picardtools_calculatehsmetrics",
+					program_name => "picardtools_collecthsmetrics",
 				       });
     }
 }
@@ -7719,7 +7719,7 @@ sub rcoverageplots {
 
 ##rcoverageplots
 
-##Function : Generates sbatch scripts for R scripts: 1. covplots_genome.R 2. covplots_exome.R; on files generated from calculateCoverage genomecoveragebed.
+##Function : Generates sbatch scripts for R scripts: 1. covplots_genome.R 2. covplots_exome.R; on files generated from calculateCoverage bedtools genomecov.
 ##Returns  : ""
 ##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $lane_href, $infile_lane_no_ending_href, $job_id_href, $sample_id, $outaligner_dir, $program_name
 ##         : $parameter_href             => The parameter hash {REF}
@@ -7761,18 +7761,18 @@ sub rcoverageplots {
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id, $outaligner_dir, "coveragereport");
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$sample_id}{pgenomecoveragebed}{file_tag};
+    my $infile_tag = $file_info_href->{$sample_id}{pbedtools_genomecov}{file_tag};
     my $outfile_tag = $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
 
     ## Add merged infile name after merging all BAM files per sample_id
     my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
 
-    if ( defined($active_parameter_href->{pgenomecoveragebed}) && ($active_parameter_href->{pgenomecoveragebed} > 0) ) {
+    if ( defined($active_parameter_href->{pbedtools_genomecov}) && ($active_parameter_href->{pbedtools_genomecov} > 0) ) {
 
 	print $FILEHANDLE "covplots_genome ";
 	print $FILEHANDLE catfile($insample_directory, $infile.$infile_tag)." ";  #InFile
 	print $FILEHANDLE $infile." ";  #Sample name
-	print $FILEHANDLE $active_parameter_href->{genomecoveragebed_max_coverage}." ";  #X-axis max scale
+	print $FILEHANDLE $active_parameter_href->{bedtools_genomecov_max_coverage}." ";  #X-axis max scale
 	say $FILEHANDLE $outsample_directory, " &", "\n";  #OutFile
     }
     say $FILEHANDLE "wait", "\n";
@@ -7794,9 +7794,9 @@ sub rcoverageplots {
 }
 
 
-sub genomecoveragebed {
+sub bedtools_genomecov {
 
-##genomecoveragebed
+##bedtools_genomecov
 
 ##Function : Calculates coverage on BAM files.
 ##Returns  : ""
@@ -7850,52 +7850,64 @@ sub genomecoveragebed {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Alignment::Bedtools qw(genomecov);
+
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $file_name;
 
     ## Assign directories
     my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref, "coveragereport");
 
-    ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
-
     ## Add merged infile name after merging all BAM files per sample_id
     my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
-    my $core_number=1;
+    ## Assign file_tags
+    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+    my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_no_ending = $infile.$infile_tag;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $outfile_no_ending = $infile.$outfile_tag;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+
+    ## Assign suffix
+    my $infile_suffix = $parameter_href->{alignment_suffix}{ $parameter_href->{pgatk_baserecalibration}{chain} };  #Get infile_suffix from baserecalibration chain
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
-					  job_id_href => $job_id_href,
-					  FILEHANDLE => $FILEHANDLE,
-					  directory_id => $$sample_id_ref,
-					  program_name => $program_name,
-					  program_directory => catfile(lc($$outaligner_dir_ref), "coveragereport"),
-					  core_number => $core_number,
-					  process_time => 16,
-					  temp_directory => $$temp_directory_ref,
-					 });
+    my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
+					     job_id_href => $job_id_href,
+					     FILEHANDLE => $FILEHANDLE,
+					     directory_id => $$sample_id_ref,
+					     program_name => $program_name,
+					     program_directory => catfile(lc($$outaligner_dir_ref), "coveragereport"),
+					     core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					     process_time => $active_parameter_href->{module_time}{"p".$program_name},
+					     temp_directory => $$temp_directory_ref,
+					    });
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($insample_directory, $infile.$infile_tag.".b*"),
+		  infile_path => catfile($insample_directory, $infile_no_ending.substr($infile_suffix, 0, 2)."*"),
 		  outfile_path => $$temp_directory_ref,
 		 });
     say $FILEHANDLE "wait", "\n";
 
-    ## GenomeCoverageBed
+    ## Bedtools Genomecov
     say $FILEHANDLE "## Calculate coverage metrics on alignment";
-    print $FILEHANDLE "genomeCoverageBed ";
-    print $FILEHANDLE "-max ".$active_parameter_href->{genomecoveragebed_max_coverage}." ";  #Combine all positions with a depth >= max into a single bin in the histogram.
-    print $FILEHANDLE "-ibam ".catfile($$temp_directory_ref, $infile.$infile_tag.".bam")." ";  #InFile
-    say $FILEHANDLE "> ".catfile($$temp_directory_ref, $infile.$outfile_tag)." ", "\n";  #OutFile
+    genomecov({infile_path => $file_path_no_ending.$infile_suffix,
+	       outfile_path => $outfile_path_no_ending,
+	       referencefile_path => $active_parameter_href->{human_genome_reference},
+	       max_coverage => $active_parameter_href->{bedtools_genomecov_max_coverage},
+	       FILEHANDLE => $FILEHANDLE,
+	      });
+    say $FILEHANDLE "\n";
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag),
+    migrate_file({infile_path => $outfile_path_no_ending,
 		  outfile_path => $outsample_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -7910,7 +7922,7 @@ sub genomecoveragebed {
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
 		   });
     }
@@ -7918,9 +7930,9 @@ sub genomecoveragebed {
 }
 
 
-sub picardtools_calculatehsmetrics {
+sub picardtools_collecthsmetrics {
 
-##picardtools_calculatehsmetrics
+##picardtools_collecthsmetrics
 
 ##Function : Calculates coverage on exonic part of BAM files.
 ##Returns  : ""
@@ -7974,50 +7986,62 @@ sub picardtools_calculatehsmetrics {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Language::Java qw(core);
+    use Program::Alignment::Picardtools qw(collecthsmetrics);
 
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $file_name;
 
     ## Assign directories
     my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref, "coveragereport");
 
+    ## Add merged infile name after merging all BAM files per sample_id
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
+
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_no_ending = $infile.$infile_tag;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $outfile_no_ending = $infile.$outfile_tag;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
+    ## Assign suffix
+    my $infile_suffix = $parameter_href->{alignment_suffix}{ $parameter_href->{pgatk_baserecalibration}{chain} };  #Get infile_suffix from baserecalibration chain
 
     ## Alias exome_target_bed endings
     my $infile_list_ending_ref = \$file_info_href->{exome_target_bed}[0];
     my $padded_infile_list_ending_ref = \$file_info_href->{exome_target_bed}[1];
-    my $padded_interval_list_ending_ref = \$file_info_href->{exome_target_bed}[2];
-
-    my $core_number=2;
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
-					  job_id_href => $job_id_href,
-					  FILEHANDLE => $FILEHANDLE,
-					  directory_id => $$sample_id_ref,
-					  program_name => $program_name,
-					  program_directory => catfile(lc($$outaligner_dir_ref), "coveragereport"),
-					  core_number => $core_number,
-					  process_time => 16,
-					  temp_directory => $$temp_directory_ref,
-					 });
+    my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
+					     job_id_href => $job_id_href,
+					     FILEHANDLE => $FILEHANDLE,
+					     directory_id => $$sample_id_ref,
+					     program_name => $program_name,
+					     program_directory => catfile(lc($$outaligner_dir_ref), "coveragereport"),
+					     core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					     process_time => $active_parameter_href->{module_time}{"p".$program_name},
+					     temp_directory => $$temp_directory_ref,
+					    });
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($insample_directory, $infile.$infile_tag.".b*"),
+		  infile_path => catfile($insample_directory, $infile_no_ending.substr($infile_suffix, 0, 2)."*"),
 		  outfile_path => $$temp_directory_ref,
 		 });
     say $FILEHANDLE "wait", "\n";
 
-    ## CalculateHsMetrics
+    ## Collecthsmetrics
     say $FILEHANDLE "## Calculate capture metrics on alignment";
+
+    ## Get exome_target_bed file for specfic sample_id and add file_ending from file_infoHash if supplied
+    my $exome_target_bed_file = get_exom_target_bed_file({active_parameter_href => $active_parameter_href,
+							  sample_id_ref => $sample_id_ref,
+							 });
 
     ## Writes java core commands to filehandle.
     core({FILEHANDLE => $FILEHANDLE,
@@ -8027,23 +8051,18 @@ sub picardtools_calculatehsmetrics {
 	  java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
 	 });
 
-    print $FILEHANDLE "CalculateHsMetrics ";
-    print $FILEHANDLE "INPUT=".catfile($$temp_directory_ref, $infile.$infile_tag.".bam")." ";  #InFile
-    print $FILEHANDLE "OUTPUT=".catfile($$temp_directory_ref, $infile.$outfile_tag)." ";  #OutFile
-    print $FILEHANDLE "REFERENCE_SEQUENCE=".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-
-    ## Get exome_target_bed file for specfic sample_id and add file_ending from file_infoHash if supplied
-    my $exome_target_bed_file = get_exom_target_bed_file({active_parameter_href => $active_parameter_href,
-							  sample_id_ref => $sample_id_ref,
-							 });
-
-
-    print $FILEHANDLE "BAIT_INTERVALS=".$exome_target_bed_file.$$padded_infile_list_ending_ref." ";  #Capture kit padded target infile_list file
-    say $FILEHANDLE "TARGET_INTERVALS=".$exome_target_bed_file.$$infile_list_ending_ref, "\n";  #Capture kit target infile_list file
+    collecthsmetrics({bait_interval_file_paths_ref => [$exome_target_bed_file.$$padded_infile_list_ending_ref],
+		      target_interval_file_paths_ref => [$exome_target_bed_file.$$infile_list_ending_ref],
+		      infile_path => $file_path_no_ending.$infile_suffix,
+		      outfile_path => $outfile_path_no_ending,
+		      referencefile_path => $active_parameter_href->{human_genome_reference},
+		      FILEHANDLE => $FILEHANDLE,
+		     });
+    say $FILEHANDLE "\n";
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag),
+    migrate_file({infile_path => $outfile_path_no_ending,
 		  outfile_path => $outsample_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -8054,7 +8073,7 @@ sub picardtools_calculatehsmetrics {
 	## Collect QC metadata info for later use
 	sample_info_qc({sample_info_href => $sample_info_href,
 			sample_id => $$sample_id_ref,
-			program_name => "calculatehsmetrics",
+			program_name => "collecthsmetrics",
 			infile => $infile,
 			outdirectory => $outsample_directory,
 			outfile_ending => $outfile_tag,
@@ -8071,7 +8090,7 @@ sub picardtools_calculatehsmetrics {
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
 		   });
     }

@@ -104,6 +104,8 @@ module_time:
     psambamba_depth: 10
     pchanjo_sexcheck: 2
     ppicardtools_collectmultiplemetrics: 10
+    ppicardtools_collecthsmetrics: 10
+    pbedtools_genomecov: 15
     pgatk_haplotypecaller: 30
     pfreebayes: 20
     psamtools_mpileup: 20
@@ -135,6 +137,8 @@ module_core_number:
     psambamba_depth: 2
     pchanjo_sexcheck: 1
     ppicardtools_collectmultiplemetrics: 2
+    ppicardtools_collecthsmetrics: 2
+    pbedtools_genomecov: 1
     pgatk_haplotypecaller: 16
     pfreebayes: 16
     psamtools_mpileup: 16
@@ -310,7 +314,7 @@ human_genome_reference:
    - pgatk_variantevalall
    - pgatk_variantevalexome
    - pannovar
-   - ppicardtools_calculatehsmetrics
+   - ppicardtools_collecthsmetrics
    - ppicardtools_collectmultiplemetrics
   build_file: yes_auto_build
   data_type: SCALAR
@@ -726,19 +730,19 @@ sambamba_depth_quality_control:
   data_type: SCALAR
   default: 1
   type: program_argument
-pgenomecoveragebed:
+pbedtools_genomecov:
   associated_program:
    - mip
   chain: CoverageQCGCovBed
   data_type: SCALAR
   default: 0
-  file_tag: _genomeCoverageBed
+  file_tag: _genomecov
   program_name_path:
    - bedtools
   type: program
-genomecoveragebed_max_coverage:
+bedtools_genomecov_max_coverage:
   associated_program:
-   - pgenomecoveragebed
+   - pbedtools_genomecov
   data_type: SCALAR
   default: 30
   type: program_argument
@@ -750,13 +754,13 @@ ppicardtools_collectmultiplemetrics:
   default: 1
   file_tag: nofile_tag
   type: program
-ppicardtools_calculatehsmetrics:
+ppicardtools_collecthsmetrics:
   associated_program:
    - mip
   chain: CoverageQCPTCHSM
   data_type: SCALAR
   default: 1
-  file_tag: _CalculateHsMetrics
+  file_tag: _collecthsmetrics
   type: program
 prcovplots:
   associated_program:
@@ -1251,7 +1255,7 @@ picardtools_path:
    - pbwa_mem
    - ppicardtools_mergesamfiles
    - ppicardtools_markduplicates
-   - ppicardtools_calculatehsmetrics
+   - ppicardtools_collecthsmetrics
    - ppicardtools_collectmultiplemetrics
   data_type: SCALAR
   exists_check: directory
@@ -1619,7 +1623,7 @@ gatk_bundle_download_version:
    - pgatk_variantevalall
    - pgatk_variantevalexome
    - pannovar
-   - ppicardtools_calculatehsmetrics
+   - ppicardtools_collecthsmetrics
    - ppicardtools_collectmultiplemetrics
   data_type: SCALAR
   default: 2.8
@@ -2129,7 +2133,7 @@ psacct:
   type: program
 exome_target_bed:
   associated_program:
-   - ppicardtools_calculatehsmetrics
+   - ppicardtools_collecthsmetrics
    - pgatk_realigner
    - pgatk_baserecalibration
    - pgatk_haplotypecaller
