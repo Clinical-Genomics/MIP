@@ -140,7 +140,9 @@ BEGIN {
 
                ###Coverage calculations
                -pchs/--pchanjo_sexcheck Predicts gender from sex chromosome coverage (defaults to "1")
+                 -chslle/--chanjo_sexcheck_log_level Set chanjo sex log level (defaults to "DEBUG")
                -psdt/--psambamba_depth Sambamba depth coverage analysis (defaults to "1" (=yes))
+                 -sdtmod/--sambamba_depth_mode Mode unit to print the statistics on (defaults to "region")
                  -sdtcut/--sambamba_depth_cutoffs Read depth cutoff (comma sep; defaults to "10", "20", "30", "50", "100")
                  -sdtbed/--sambamba_depth_bed Reference database (defaults to "CCDS.current.bed")
                  -sdtbaq/--sambamba_depth_base_quality Do not count bases with lower base quality (defaults to "10")
@@ -455,7 +457,9 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'mdsols|markduplicates_sambamba_markdup_overflow_list_size=n' => \$parameter{markduplicates_sambamba_markdup_overflow_list_size}{value},
 	   'mdsibs|markduplicates_sambamba_markdup_io_buffer_size=n' => \$parameter{markduplicates_sambamba_markdup_io_buffer_size}{value},
 	   'pchs|pchanjo_sexcheck=n' => \$parameter{pchanjo_sexcheck}{value},   #Chanjo coverage analysis on sex chromosomes
-	   'psdt|psambamba_depth=n' => \$parameter{psambamba_depth}{value},   #Chanjo coverage analysis
+	   'chslle|chanjo_sexcheck_log_level:s' => \$parameter{chanjo_sexcheck_log_level}{value},
+	   'psdt|psambamba_depth=n' => \$parameter{psambamba_depth}{value},   #Sambamba coverage analysis
+	   'sdtmod|sambamba_depth_mode:s' => \$parameter{sambamba_depth_mode}{value},
 	   'sdtcut|sambamba_depth_cutoffs:s' => \@{ $parameter{sambamba_depth_cutoffs}{value} },   # Cutoff used for completeness
 	   'sdtbed|sambamba_depth_bed:s' => \$parameter{sambamba_depth_bed}{value},
 	   'sdtbaq|sambamba_depth_base_quality=n' => \$parameter{sambamba_depth_base_quality}{value},
@@ -3589,7 +3593,6 @@ sub rankvariant {
 								 program_info_path => $program_info_path,
 								 core_number => $genmod_core_number,
 								 xargs_file_counter => $xargs_file_counter,
-								 first_command => "genmod",
 								});
 
 	my $genmod_module = "";  #Track which genmod modules has been processed
@@ -5202,8 +5205,6 @@ sub varianteffectpredictor {
     foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
 	## Get parameters
-	my @regions;
-
 	## VEP plugins
 	my @plugins;
 	foreach my $plugin (@{ $active_parameter_href->{vep_plugins} }) {
@@ -5237,7 +5238,7 @@ sub varianteffectpredictor {
 	    }
 	}
 
-	variant_effect_predictor({regions_ref => \@regions,
+	variant_effect_predictor({regions_ref => [$contig],
 				  plugins_ref => \@plugins,
 				  vep_features_ref => \@vep_features_ref,
 				  script_path => catfile($active_parameter_href->{vep_directory_path}, "variant_effect_predictor.pl"),
@@ -5255,65 +5256,6 @@ sub varianteffectpredictor {
 				  FILEHANDLE => $XARGSFILEHANDLE,
 				 });
 	print $XARGSFILEHANDLE "\n";
-
-	print $XARGSFILEHANDLE catfile($active_parameter_href->{vep_directory_path}, "variant_effect_predictor.pl")." ";  #VEP script
-	print $XARGSFILEHANDLE "--assembly ".$assembly_version." ";
-	print $XARGSFILEHANDLE "--dir_cache ".$active_parameter_href->{vep_directory_cache}." ";  #Specify the cache directory to use
-	print $XARGSFILEHANDLE "--cache ";  #Enables use of the cache.
-
-	if ($active_parameter_href->{vep_reference}) {  #Use reference file for analysis with vep
-
-	    print $XARGSFILEHANDLE "--fasta ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-	}
-
-	print $XARGSFILEHANDLE "--force_overwrite ";  #force the overwrite of the existing file
-	print $XARGSFILEHANDLE "--format vcf ";  #Input is in the VCF format
-	print $XARGSFILEHANDLE "--vcf ";  #Writes output in VCF format.
-	print $XARGSFILEHANDLE "--no_progress ";  #Do not show progress in stderr
-	print $XARGSFILEHANDLE "--fork ".$fork_number." ";  #Enable forking, using the specified number of forks.
-	print $XARGSFILEHANDLE "--buffer_size 20000 ";  #Sets the internal buffer size, corresponding to the number of variations that are read in to memory simultaneously
-	print $XARGSFILEHANDLE "--offline ";  #Use installed assembly
-	print $XARGSFILEHANDLE "--chr ".$contig." ";
-
-	##VEPPlugins
-	foreach my $plugin (@{ $active_parameter_href->{vep_plugins} }) {
-
-	    if ($plugin eq "LoF") {
-
-		print $XARGSFILEHANDLE "--plugin ".$plugin.",human_ancestor_fa:".catfile($active_parameter_href->{vep_directory_cache}, "human_ancestor.fa,filter_position:0.05")." ";
-	    }
-	    elsif ($plugin eq "UpDownDistance") {  #Special case for mitochondrial contig annotation
-
-		if ($contig =~ /MT|M/) {
-
-		    print $XARGSFILEHANDLE "--plugin UpDownDistance,10,10 ";
-		}
-	    }
-	    else {
-
-		print $XARGSFILEHANDLE "--plugin ".$plugin." ";
-	    }
-	}
-
-	##VEPFeatures
-	foreach my $vep_feature (@{ $active_parameter_href->{vep_features} }) {
-
-	    print $XARGSFILEHANDLE "--".$vep_feature." ";  #Add VEP features to the output.
-
-	    if ( ($contig =~ /MT|M/) && ($vep_feature eq "refseq") ) {  #Special case for mitochondrial contig annotation
-
-		print $XARGSFILEHANDLE "--all_refseq ";
-	    }
-	    if ( ($vep_feature eq "sift") || ($vep_feature eq "polyphen") )  {  #Protein predictions
-
-		print $XARGSFILEHANDLE "p ";  #Add prediction term
-	    }
-	}
-
-	print $XARGSFILEHANDLE "-i ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf")." ";  #InFile (family vcf)
-	print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf")." ";  #OutFile
-	print $XARGSFILEHANDLE "1> ".$xargs_file_name.".".$contig.".stdout.txt ";  #Redirect xargs output to program specific stdout file
-	say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
     }
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
@@ -5343,7 +5285,7 @@ sub varianteffectpredictor {
 
     close($XARGSFILEHANDLE);
 
-    if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
+    if (! $$reduce_io_ref) {  #Run as individual sbatch script
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
@@ -8192,39 +8134,47 @@ sub picardtools_collectmultiplemetrics {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Language::Java qw(core);
+    use Program::Alignment::Picardtools qw(collectmultiplemetrics);
 
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $file_name;
 
     ## Assign directories
     my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref, "coveragereport");
 
-    ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-
     ## Add merged infile name after merging all BAM files per sample_id
     my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
-    my $core_number = 1;
+    ## Assign file_tags
+    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+    my $outfile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+    my $infile_no_ending = $infile.$infile_tag;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $outfile_no_ending = $infile.$outfile_tag;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+
+    ## Assign suffix
+    my $infile_suffix = $parameter_href->{alignment_suffix}{ $parameter_href->{pgatk_baserecalibration}{chain} };  #Get infile_suffix from baserecalibration chain
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
-					  job_id_href => $job_id_href,
-					  FILEHANDLE => $FILEHANDLE,
-					  directory_id => $$sample_id_ref,
-					  program_name => $program_name,
-					  program_directory => catfile(lc($$outaligner_dir_ref), "coveragereport"),
-					  core_number => $core_number,
-					  process_time => 16,
-					  temp_directory => $$temp_directory_ref,
-					 });
+    my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
+					     job_id_href => $job_id_href,
+					     FILEHANDLE => $FILEHANDLE,
+					     directory_id => $$sample_id_ref,
+					     program_name => $program_name,
+					     program_directory => catfile(lc($$outaligner_dir_ref), "coveragereport"),
+					     core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					     process_time => $active_parameter_href->{module_time}{"p".$program_name},
+					     temp_directory => $$temp_directory_ref,
+					    });
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($insample_directory, $infile.$infile_tag.".b*"),
+		  infile_path => catfile($insample_directory, $infile_no_ending.substr($infile_suffix, 0, 2)."*"),
 		  outfile_path => $$temp_directory_ref,
 		 });
     say $FILEHANDLE "wait", "\n";
@@ -8240,16 +8190,18 @@ sub picardtools_collectmultiplemetrics {
 	  java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
 	 });
 
-    print $FILEHANDLE "CollectMultipleMetrics ";
-    print $FILEHANDLE "INPUT=".catfile($$temp_directory_ref, $infile.$infile_tag.".bam")." ";  #InFile
-    print $FILEHANDLE "OUTPUT=".catfile($$temp_directory_ref, $infile.$outfile_tag)." ";  #OutFile
-    say $FILEHANDLE "R=".$active_parameter_href->{human_genome_reference}, "\n";  #Reference file
+    collectmultiplemetrics({infile_path => $file_path_no_ending.$infile_suffix,
+			    outfile_path => $outfile_path_no_ending,
+			    referencefile_path => $active_parameter_href->{human_genome_reference},
+			    FILEHANDLE => $FILEHANDLE,
+			   });
+    say $FILEHANDLE "\n";
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    my @outfiles = ($infile.$outfile_tag.".alignment_summary_metrics",
-		    $infile.$outfile_tag.".quality*",
-		    $infile.$outfile_tag.".insert*",
+    my @outfiles = ($outfile_no_ending.".alignment_summary_metrics",
+		    $outfile_no_ending.".quality*",
+		    $outfile_no_ending.".insert*",
 	);
     foreach my $outfile (@outfiles) {
 
@@ -8290,7 +8242,7 @@ sub picardtools_collectmultiplemetrics {
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
 		   });
     }
@@ -8352,45 +8304,59 @@ sub chanjo_sexcheck {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Alignment::Chanjo qw(sex);
+
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $file_name;
 
     ## Assign directories
-    my $outfamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref);
     my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref, "coveragereport");
-
-    ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
     ## Add merged infile name after merging all BAM files per sample_id
     my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
+    ## Assign file_tags
+    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+    my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_no_ending = $infile.$infile_tag;
+    my $outfile_no_ending = $infile.$outfile_tag;
+
+    ## Assign suffix
+    my $infile_suffix = $parameter_href->{alignment_suffix}{ $parameter_href->{pgatk_baserecalibration}{chain} };  #Get infile_suffix from baserecalibration chain
+    my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
+
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
-					  job_id_href => $job_id_href,
-					  FILEHANDLE => $FILEHANDLE,
-					  directory_id => $$sample_id_ref,
-					  program_name => $program_name,
-					  program_directory => catfile(lc($$outaligner_dir_ref), "coveragereport"),
-					  process_time => 2,
-					 });
+    my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
+					     job_id_href => $job_id_href,
+					     FILEHANDLE => $FILEHANDLE,
+					     directory_id => $$sample_id_ref,
+					     program_name => $program_name,
+					     program_directory => catfile(lc($$outaligner_dir_ref), "coveragereport"),
+					     core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					     process_time => $active_parameter_href->{module_time}{"p".$program_name},
+					    });
 
     ## chanjo_sexcheck
     say $FILEHANDLE "## Predicting sex from alignment";
-    print $FILEHANDLE "chanjo ";  #Program
-    print $FILEHANDLE "--log-level DEBUG ";
-    print $FILEHANDLE "--log-file ".catfile($outsample_directory, $infile.$infile_tag."_chanjo_sexcheck.log")." ";
-    print $FILEHANDLE "sex ";  #Sub command
 
-    ## Set chromosome prefix if required
+    ## Get parameters
+
+    my $chr_prefix;
     if (any {$_ eq "chrX"} @{ $file_info_href->{contigs_size_ordered} }) {  #If element is part of array
 
-	print $FILEHANDLE "--prefix chr ";
+	 $chr_prefix = "chr";
     }
-    print $FILEHANDLE catfile($insample_directory, $infile.$infile_tag.".bam")." ";  #InFile
-    say $FILEHANDLE "> ".catfile($outsample_directory, $infile.$outfile_tag), "\n";  #OutFile
+    sex({infile_path => catfile($insample_directory, $infile_no_ending.$infile_suffix),
+	 outfile_path => catfile($outsample_directory, $outfile_no_ending.$outfile_suffix),
+	 log_level => $active_parameter_href->{chanjo_sexcheck_log_level},
+	 log_file_path => catfile($outsample_directory, $infile_no_ending."_chanjo_sexcheck.log"),
+	 chr_prefix => $chr_prefix,
+	 FILEHANDLE => $FILEHANDLE,
+	});
+    say $FILEHANDLE "\n";
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
@@ -8400,7 +8366,7 @@ sub chanjo_sexcheck {
 			program_name => "chanjo_sexcheck",
 			infile => $infile,
 			outdirectory => $outsample_directory,
-			outfile_ending => $outfile_tag,
+			outfile_ending => $outfile_no_ending.$outfile_suffix,
 			outdata_type => "infile_dependent"
 		       });
 	sample_info_qc({sample_info_href => $sample_info_href,
@@ -8422,7 +8388,7 @@ sub chanjo_sexcheck {
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
 		   });
     }
@@ -8485,77 +8451,82 @@ sub sambamba_depth {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Alignment::Sambamba qw(depth);
+
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $file_name;
-    my $core_number = 2;
 
     ## Assign directories
-    my $outfamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref);
     my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref, "coveragereport");
-
-    ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
     ## Add merged infile name after merging all BAM files per sample_id
     my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
-    my $core_counter=1;
+    ## Assign file_tags
+    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
+    my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
+    my $infile_no_ending = $infile.$infile_tag;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $outfile_no_ending = $infile.$outfile_tag;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+
+    ## Assign suffix
+    my $infile_suffix = $parameter_href->{alignment_suffix}{ $parameter_href->{pgatk_baserecalibration}{chain} };  #Get infile_suffix from baserecalibration chain
+    my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
-    ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
-					  job_id_href => $job_id_href,
-					  FILEHANDLE => $FILEHANDLE,
-					  directory_id => $$sample_id_ref,
-					  program_name => $program_name,
-					  program_directory => catfile(lc($$outaligner_dir_ref), "coveragereport"),
-					  core_number => $core_number,
-					  process_time => 10,
-					  temp_directory => $$temp_directory_ref,
-					 });
+    my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
+					     job_id_href => $job_id_href,
+					     FILEHANDLE => $FILEHANDLE,
+					     directory_id => $$sample_id_ref,
+					     program_name => $program_name,
+					     program_directory => catfile(lc($$outaligner_dir_ref), "coveragereport"),
+					     core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					     process_time => $active_parameter_href->{module_time}{"p".$program_name},
+					     temp_directory => $$temp_directory_ref,
+					    });
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($insample_directory, $infile.$infile_tag.".b*"),
+		  infile_path => catfile($insample_directory, $infile_no_ending.substr($infile_suffix, 0, 2)."*"), #".bam" -> ".b*" for getting index as well),
 		  outfile_path => $$temp_directory_ref
 		 });
     say $FILEHANDLE "wait", "\n";
 
     ## sambamba_depth
     say $FILEHANDLE "## Annotating bed from alignment";
-    print $FILEHANDLE "sambamba ";  #Program
-    print $FILEHANDLE "depth ";  #Sub command
-    print $FILEHANDLE "region "; #Mode
-    print $FILEHANDLE "--regions ".$active_parameter_href->{sambamba_depth_bed}." ";  #Region to calculate coverage on
-    print $FILEHANDLE "--fix-mate-overlaps ";
-    print $FILEHANDLE "--min-base-quality ".$active_parameter_href->{sambamba_depth_base_quality}." ";  #The minimum base quality to include in analysis
-    print $FILEHANDLE q?--filter '?;
-    print $FILEHANDLE "mapping_quality >= ".$active_parameter_href->{sambamba_depth_mapping_quality}." ";  #The minimum mapping quality to include in analysis
 
+    ## Get parameters
+    my $sambamba_filter = q?'mapping_quality >= ?.$active_parameter_href->{sambamba_depth_mapping_quality}.q? ?;
     if ($active_parameter_href->{sambamba_depth_noduplicates}) {  #Do not include duplicates in coverage calculation
 
-	print $FILEHANDLE "and not duplicate ";
+        $sambamba_filter .= "and not duplicate ";
     }
     if ($active_parameter_href->{sambamba_depth_quality_control}) {  #Do not include failed quality control reads in coverage calculation
 
-	print $FILEHANDLE "and not failed_quality_control";
+	$sambamba_filter .= "and not failed_quality_control";
     }
+    $sambamba_filter .= q?'?;
 
-    print $FILEHANDLE q?' ?;
-
-    foreach my $cutoff (@{ $active_parameter_href->{sambamba_depth_cutoffs} }) {
-
-	print $FILEHANDLE "--cov-threshold ".$cutoff." ";  #The “cutoff” is used for the completeness calculation
-    }
-
-    print $FILEHANDLE catfile($$temp_directory_ref, $infile.$infile_tag.".bam")." ";  #InFile
-    say $FILEHANDLE "> ".catfile($$temp_directory_ref, $infile.$outfile_tag.".bed"). "\n";  #OutFile
+    depth({depth_cutoffs_ref => \@{ $active_parameter_href->{sambamba_depth_cutoffs} },
+	   infile_path => $file_path_no_ending.$infile_suffix,
+	   outfile_path => $outfile_path_no_ending.$outfile_suffix,
+	   mode => $active_parameter_href->{sambamba_depth_mode},
+	   fix_mate_overlap => 1,
+	   min_base_quality => $active_parameter_href->{sambamba_depth_base_quality},
+	   filter => $sambamba_filter,
+	   region => $active_parameter_href->{sambamba_depth_bed},
+	   FILEHANDLE => $FILEHANDLE,
+	  });
+    say $FILEHANDLE "\n";
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag.".bed"),
+    migrate_file({infile_path => $outfile_path_no_ending.$outfile_suffix,
 		  outfile_path => $outsample_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -8563,7 +8534,7 @@ sub sambamba_depth {
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
-	$sample_info_href->{sample}{$$sample_id_ref}{program}{$program_name}{$infile}{bed}{path} = catfile($outsample_directory, $infile.$outfile_tag.".bed");
+	$sample_info_href->{sample}{$$sample_id_ref}{program}{$program_name}{$infile}{substr($outfile_suffix, 1)}{path} = catfile($outsample_directory, $outfile_no_ending.$outfile_suffix);
     }
 
     close($FILEHANDLE);
@@ -8576,7 +8547,7 @@ sub sambamba_depth {
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency_add_to_case",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
 		   });
     }
@@ -8685,7 +8656,7 @@ sub sv_reformat {
     my $infile_tag = $file_info_href->{$$family_id_ref}{psv_rankvariant}{file_tag};
     my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
     my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{psv_rankvariant}{file_tag};
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
     my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type);
     my $final_path_no_ending = catfile($outfamily_directory, $outfile_no_ending);

@@ -20,7 +20,7 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(view index sort markdup flagstat);
+    our @EXPORT_OK = qw(view index sort markdup flagstat depth);
 
 }
 
@@ -401,6 +401,108 @@ sub flagstat {
     if ($stderrfile_path) {
 
 	push(@commands, "2>> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
+sub depth {
+
+##depth
+
+##Function : Perl wrapper for writing sambamba depth recipe to $FILEHANDLE. Based on sambamba 0.6.5
+##Returns  : "@commands"
+##Arguments: $depth_cutoffs_ref, $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $region, $filter, $min_base_quality, $mode, $fix_mate_overlap
+##         : $depth_cutoffs_ref => Multiple thresholds can be provided, for each one an extra column will be added, the percentage of bases in the region where coverage is more than this value {REF}
+##         : $FILEHANDLE        => Sbatch filehandle to write to
+##         : $infile_path       => Infile path
+##         : $outfile_path      => Outfile path
+##         : $stderrfile_path   => Stderrfile path
+##         : $region            => List or regions of interest or a single region in form chr:beg-end
+##         : $filter            => Set custom filter for alignments
+##         : $fix_mate_overlap  => Detect overlaps of mate reads and handle them on per-base basis
+##         : $min_base_quality  => don't count bases with lower base quality
+##         : $mode              => Mode unit to print the statistics on
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $min_base_quality;
+    my $mode;
+    my $fix_mate_overlap;
+
+    ## Flatten argument(s)
+    my $depth_cutoffs_ref;
+    my $FILEHANDLE;
+    my $infile_path;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $region;
+    my $filter;
+    
+    my $tmpl = {
+	depth_cutoffs_ref => { default => [], strict_type => 1, store => \$depth_cutoffs_ref },
+	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE },
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path },
+	outfile_path => { strict_type => 1, store => \$outfile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	region => { strict_type => 1, store => \$region },
+	filter => { strict_type => 1, store => \$filter },
+	fix_mate_overlap => { default => 0,
+			      allow => [0, 1],
+			      strict_type => 1, store => \$fix_mate_overlap },
+	min_base_quality => { default => 0,
+			      allow => qr/^\d+$/,,
+			      strict_type => 1, store => \$min_base_quality },
+	mode => { default => "region",
+			   allow => ["base", "region", "window"],
+			   strict_type => 1, store => \$mode },
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## Sambamba
+    my @commands = qw(sambamba depth);  #Stores commands depending on input parameters
+
+    if ($mode) {
+
+	push(@commands, $mode);
+    }
+    if($region) {  #Limit output to regions
+
+	push(@commands, "--regions ".$region);
+    }
+    if(@$depth_cutoffs_ref) {
+
+	push(@commands, "--cov-threshold ".join(" --cov-threshold ", @{ $depth_cutoffs_ref }));
+    }
+    if ($min_base_quality) {
+
+	push(@commands, "--min-base-quality ".$min_base_quality);
+    }
+    if ($fix_mate_overlap) {
+
+	push(@commands, "--fix-mate-overlaps");
+    }
+    if ($filter) {
+
+	push(@commands, "--filter ".$filter);
+    }
+    if ($outfile_path) {
+	
+	push(@commands, "--output-filename=".$outfile_path);  #Specify output filename
+    }
+
+    ## Infile
+    push(@commands, $infile_path);
+
+    if ($stderrfile_path) {
+
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
     }
     if($FILEHANDLE) {
 	

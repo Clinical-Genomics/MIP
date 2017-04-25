@@ -20,7 +20,7 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(mergesamfiles markduplicates gatherbamfiles);
+    our @EXPORT_OK = qw(mergesamfiles markduplicates gatherbamfiles collectmultiplemetrics);
 
 }
 
@@ -211,6 +211,64 @@ sub gatherbamfiles {
 
     ## Infile
     push(@commands, "INPUT=".join(" INPUT=", @$infile_paths_ref));
+
+    ## Output
+    push(@commands, "OUTPUT=".$outfile_path);  #Specify output filename
+
+    if ($stderrfile_path) {
+
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
+sub collectmultiplemetrics {
+
+##collectmultiplemetrics
+
+##Function : Perl wrapper for writing picardtools collectmultiplemetrics recipe to $FILEHANDLE. Based on picardtools 2.5.0.
+##Returns  : "@commands"
+##Arguments: $infile_path, $outfile_path, $referencefile_path, $stderrfile_path, $FILEHANDLE
+##         : $infile_path        => Infile paths
+##         : $outfile_path       => Outfile path
+##         : $referencefile_path => Genome reference file
+##         : $stderrfile_path    => Stderrfile path
+##         : $FILEHANDLE         => Sbatch filehandle to write to
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $infile_path;
+    my $outfile_path;
+    my $referencefile_path;
+    my $stderrfile_path;
+    my $FILEHANDLE;
+    
+    my $tmpl = {
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
+	outfile_path => { required => 1, defined => 1, strict_type => 1, store => \$outfile_path },
+	referencefile_path => { required => 1, defined => 1, strict_type => 1, store => \$referencefile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## Picardtools collectmultiplemetrics
+    my @commands = qw(CollectMultipleMetrics);  #Stores commands depending on input parameters
+
+    if ($referencefile_path) {
+
+	push(@commands, "REFERENCE_SEQUENCE=".$referencefile_path);
+    }
+
+    ## Infile
+    push(@commands, "INPUT=".$infile_path);
 
     ## Output
     push(@commands, "OUTPUT=".$outfile_path);  #Specify output filename

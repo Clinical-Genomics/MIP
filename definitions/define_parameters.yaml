@@ -101,6 +101,9 @@ module_time:
     pmarkduplicates: 20
     pgatk_realigner: 20
     pgatk_baserecalibration: 20
+    psambamba_depth: 10
+    pchanjo_sexcheck: 2
+    ppicardtools_collectmultiplemetrics: 10
     pgatk_haplotypecaller: 30
     pfreebayes: 20
     psamtools_mpileup: 20
@@ -129,6 +132,9 @@ module_core_number:
     pmarkduplicates: 16
     pgatk_realigner: 16
     pgatk_baserecalibration: 16
+    psambamba_depth: 2
+    pchanjo_sexcheck: 1
+    ppicardtools_collectmultiplemetrics: 2
     pgatk_haplotypecaller: 16
     pfreebayes: 16
     psamtools_mpileup: 16
@@ -645,21 +651,37 @@ gatk_baserecalibration_static_quantized_quals:
 pchanjo_sexcheck:
   associated_program:
    - mip
-  chain: CoverageReportGender
+  chain: coverage_report_gender
   data_type: SCALAR
   default: 1
-  file_tag: .sexcheck
+  file_tag: _sex
+  outfile_suffix: ".tsv"
+  program_name_path:
+   - chanjo
   type: program
+chanjo_sexcheck_log_level:
+  associated_program:
+   - pchanjo_sexcheck
+  data_type: SCALAR
+  default: DEBUG
+  type: program_argument
 psambamba_depth:
   associated_program:
    - mip
-  chain: CoverageReport
+  chain: coverage_report
   data_type: SCALAR
   default: 1
   file_tag: _coverage
+  outfile_suffix: ".bed"
   program_name_path:
    - sambamba
   type: program
+sambamba_depth_mode:
+  associated_program:
+   - psambamba_depth
+  data_type: SCALAR
+  default: region
+  type: program_argument
 sambamba_depth_cutoffs:
   associated_program:
    - psambamba_depth
@@ -1106,7 +1128,7 @@ psv_reformat:
   chain: SV
   data_type: SCALAR
   default: 1
-  file_tag: nofile_tag
+  file_tag: ""
   program_name_path:
    - grep
   type: program
@@ -1656,6 +1678,10 @@ vep_features:
    - tsl
    - canonical
    - appris
+   - cache
+   - force_overwrite
+   - no_progress
+   - offline
   type: program_argument
 vep_plugins:
   associated_program:
