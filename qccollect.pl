@@ -553,14 +553,14 @@ sub define_evaluate_metric {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     $evaluate_metric{$sample_id}{bamstats}{percentage_mapped_reads}{lt} = 95;
-    $evaluate_metric{$sample_id}{calculatehsmetrics}{PCT_TARGET_BASES_10X}{lt} = 0.95;
+    $evaluate_metric{$sample_id}{collecthsmetrics}{PCT_TARGET_BASES_10X}{lt} = 0.95;
     $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_PF_READS_ALIGNED}{lt} = 0.95;
     $evaluate_metric{$sample_id}{collectmultiplemetrics}{PCT_ADAPTER}{gt} = 0.0005;
     $evaluate_metric{$sample_id}{markduplicates}{fraction_duplicates}{gt} = 0.2;
 
     if (exists($sample_info_href->{sample}{$sample_id}{expected_coverage})) {
 
-	$evaluate_metric{$sample_id}{calculatehsmetrics}{MEAN_TARGET_COVERAGE}{lt} = $sample_info_href->{sample}{$sample_id}{expected_coverage};
+	$evaluate_metric{$sample_id}{collecthsmetrics}{MEAN_TARGET_COVERAGE}{lt} = $sample_info_href->{sample}{$sample_id}{expected_coverage};
     }
 
     $evaluate_metric{variant_integrity_mendel}{fraction_of_errors}{gt} = 0.06;
@@ -568,7 +568,7 @@ sub define_evaluate_metric {
 
     if ($sample_info{analysis_type}{$sample_id} eq "wes") {
 
-	$evaluate_metric{$sample_id}{calculatehsmetrics}{PCT_TARGET_BASES_30X}{lt} = 0.90;
+	$evaluate_metric{$sample_id}{collecthsmetrics}{PCT_TARGET_BASES_30X}{lt} = 0.90;
     }
 }
 
@@ -1056,9 +1056,9 @@ sub regexp_to_yaml {
 
     $regexp{markduplicates}{fraction_duplicates} = q?perl -nae 'if($_=~/Fraction Duplicates\: (\S+)/) {print $1;}' ?; #Collect fraction duplicates
 
-    $regexp{calculatehsmetrics}{header_info}{header} = q?perl -nae' if ($_ =~/^BAIT_SET/ ) {print $_;last;}' ?; #Note return whole line (header)
+    $regexp{collecthsmetrics}{header_info}{header} = q?perl -nae' if ($_ =~/^BAIT_SET/ ) {print $_;last;}' ?; #Note return whole line (header)
 
-    $regexp{calculatehsmetrics}{header_info}{data} = q?perl -nae' if ( ($. ==8) && ($_ =~/(\S+)/) ) {print $_;last;}' ?; #Note return whole line and only look at line 8, where the data action is
+    $regexp{collecthsmetrics}{header_info}{data} = q?perl -nae' if ( ($. ==8) && ($_ =~/(\S+)/) ) {print $_;last;}' ?; #Note return whole line and only look at line 8, where the data action is
 
     $regexp{collectmultiplemetrics}{header_info}{header} = q?perl -nae' if ($_ =~/^CATEGORY/ ) {print $_;last;}' ?; #Note return whole line (header)
 

@@ -488,7 +488,7 @@ sub haplotypecaller {
 
 ##Function : Perl wrapper for writing GATK haplotypecaller recipe to $FILEHANDLE. Based on GATK 3.7.0.
 ##Returns  : "@commands"
-##Arguments: $intervals_ref, $read_filters_ref, $static_quantized_quals_ref, $annotations_ref, $infile_path, $outfile_path, $referencefile_path, $base_quality_score_recalibration_file, $stderrfile_path, $FILEHANDLE, $pedigree, $dbsnp, $standard_min_confidence_threshold_for_calling, $num_cpu_threads_per_data_thread, $downsample_to_coverage, $pcr_indel_model, $gatk_disable_auto_index_and_file_lock, $disable_indel_qual, $logging_level, $pedigree_validation_type, $dont_use_soft_clipped_bases, $emit_ref_confidence, $variant_index_type
+##Arguments: $intervals_ref, $read_filters_ref, $static_quantized_quals_ref, $annotations_ref, $infile_path, $outfile_path, $referencefile_path, $base_quality_score_recalibration_file, $stderrfile_path, $FILEHANDLE, $pedigree, $dbsnp, $standard_min_confidence_threshold_for_calling, $num_cpu_threads_per_data_thread, $downsample_to_coverage, $pcr_indel_model, $variant_index_parameter, $gatk_disable_auto_index_and_file_lock, $disable_indel_qual, $logging_level, $pedigree_validation_type, $dont_use_soft_clipped_bases, $emit_ref_confidence, $variant_index_type
 ##         : $intervals_ref                                 => One or more genomic intervals over which to operate {REF}
 ##         : $read_filters_ref                              => Filters to apply to reads before analysis {REF}
 ##         : $static_quantized_quals_ref                    => Use static quantized quality scores to a given number of levels (with -BQSR) {REF}

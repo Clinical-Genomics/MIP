@@ -32,7 +32,7 @@ use Time::Piece;
 
 ## Third party module(s)
 use Path::Iterator::Rule;
-use List::Util qw(any all);
+use List::Util qw(any all uniq);
 
 ##MIPs lib/
 use lib catdir($Bin, "lib");  #Add MIPs internal lib
@@ -77,7 +77,7 @@ BEGIN {
                -mot/--module_time Set the time allocation for each module (Format: module "program name"=time(Hours))
                -mcn/--module_core_number Set the number of cores for each module (Format: module "program_name"=X(cores))
                -sck/--supported_capture_kit Set the capture kit acronym shortcut in pedigree file
-               -dnr/--decompose_normalize_references Set the references to be decomposed and normalized (defaults: "gatk_realigner_indel_known_sites", "gatk_baserecalibration_known_sites","gatk_haplotypecaller_snp_known_set", "gatk_variantrecalibration_training_set_hapmap", "gatk_variantrecalibration_training_set_mills", "gatk_variantrecalibration_training_set_1000g_omni", "gatk_variantrecalibration_training_set_1000gsnp", "gatk_variantrecalibration_training_set_dbsnp", "vt_genmod_filter_1000g", "sv_vcfanno_config_file", "gatk_varianteval_gold", "gatk_varianteval_dbsnp","snpsift_annotation_files")
+               -dnr/--decompose_normalize_references Set the references to be decomposed and normalized (defaults: "gatk_realigner_indel_known_sites", "gatk_baserecalibration_known_sites","gatk_haplotypecaller_snp_known_set", "gatk_variantrecalibration_resource_snv", "gatk_variantrecalibration_resource_indel", "vt_genmod_filter_1000g", "sv_vcfanno_config_file", "gatk_varianteval_gold", "gatk_varianteval_dbsnp","snpsift_annotation_files")
                -ped/--pedigree_file Meta data on samples (defaults to "")
                -hgr/--human_genome_reference Fasta file for the human genome reference (defaults to "GRCh37_homo_sapiens_-d5-.fasta;1000G decoy version 5")
                -ald/--outaligner_dir Setting which aligner out directory was used for alignment in previous analysis (defaults to "{outdata_dir}{outaligner_dir}")
@@ -210,6 +210,7 @@ BEGIN {
 
                ##GATK
                -gtp/--gatk_path  Path to GATK. Mandatory for use of GATK (defaults to "")
+               -gll/--gatk_logging_level Set the GATK log level (defaults to "INFO")
                -gbdv/--gatk_bundle_download_version  GATK FTP bundle download version.(defaults to "2.8")
                -gdco/--gatk_downsample_to_coverage Coverage to downsample to at any given locus (defaults to "1000")
                -gdai/--gatk_disable_auto_index_and_file_lock Disable auto index creation and locking when reading rods (defaults to "0" (=no))
@@ -231,11 +232,9 @@ BEGIN {
                  -ggtals/--gatk_genotypegvcfs_all_sites Emit non-variant sites to the output vcf file (defaults to "0" (=no))
                  -ggbcf/gatk_concatenate_genotypegvcfs_bcf_file Produce a bcf from the GATK ConcatenateGenoTypeGVCFs vcf (defaults to "1" (=yes))
                -pgvr/--pgatk_variantrecalibration Variant recalibration using GATK VariantRecalibrator/ApplyRecalibration (defaults to "1" (=yes))
-                 -gvrtsh/--gatk_variantrecalibration_training_set_hapmap GATK VariantRecalibrator HapMap training set (defaults to "GRCh37_hapmap_-3.3-.vcf")
-                 -gvrtss/--gatk_variantrecalibration_training_set_dbsnp GATK VariantRecalibrator dbSNP training set (defaults to "GRCh37_dbsnp_-138-.vcf")
-                 -gvrtsg/--gatk_variantrecalibration_training_set_1000gsnp GATK VariantRecalibrator 1000G high confidence SNP training set (defaults to "GRCh37_1000g_snps_high_confidence_-phase1-.vcf")
-                 -gvrtso/--gatk_variantrecalibration_training_set_1000g_omni GATK VariantRecalibrator 1000G_omni training set (defaults to "GRCh37_1000g_omni_-2.5-.vcf")
-                 -gvrtsm/--gatk_variantrecalibration_training_set_mills GATK VariantRecalibrator Mills training set (defaults to "GRCh37_mills_and_1000g_indels_-gold_standard-.vcf")
+                 -gvrann/--gatk_variantrecalibration_annotations Annotations to use with GATK VariantRecalibrator (defaults to "QD", "MQRankSum", "ReadPosRankSum", "FS", "SOR", "DP")
+                 -gvrres/gatk_variantrecalibration_resource_snv Resource to use with GATK VariantRecalibrator in SNV|BOTH mode (defaults to "GRCh37_dbsnp_-138-.vcf: dbsnp,known=true,training=false,truth=false,prior=2.0, GRCh37_hapmap_-3.3-.vcf: hapmap,VCF,known=false,training=true,truth=true,prior=15.0, GRCh37_1000g_omni_-2.5-.vcf: omni,VCF,known=false,training=true,truth=false,prior=12.0, GRCh37_1000g_snps_high_confidence_-phase1-.vcf: 1000G,known=false,training=true,truth=false,prior=10.0")
+                 -gvrrei/gatk_variantrecalibration_resource_indel Resource to use with GATK VariantRecalibrator in INDEL|BOTH (defaults to "GRCh37_dbsnp_-138-.vcf: dbsnp,known=true,training=false,truth=false,prior=2.0, GRCh37_mills_and_1000g_indels_-gold_standard-.vcf: mills,VCF,known=true,training=true,truth=true,prior=12.0")
                  -gvrstf/--gatk_variantrecalibration_snv_tsfilter_level The truth sensitivity level for snvs at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
                  -gvritf/--gatk_variantrecalibration_indel_tsfilter_level The truth sensitivity level for indels at which to start filtering used in GATK VariantRecalibrator (defaults to "99.9")
                  -gvrdpa/--gatk_variantrecalibration_dp_annotation Use the DP annotation in variant recalibration. (defaults to "1" (=yes))
@@ -246,6 +245,7 @@ BEGIN {
                  -gcgpss/--gatk_calculategenotypeposteriors_support_set GATK CalculateGenotypePosteriors support set (defaults to "1000g_sites_GRCh37_phase3_v4_20130502.vcf")
                -pgcv/--pgatk_combinevariantcallsets Combine variant call sets (defaults to "1" (=yes))
                  -gcvbcf/--gatk_combinevariantcallsets_bcf_file Produce a bcf from the GATK CombineVariantCallSet vcf (defaults to "1" (=yes))
+                 -gcvgmo/--gatk_combinevariants_genotype_merge_option Type of merge to perform (defaults to "PRIORITIZE")
                  -gcvpc/gatk_combinevariants_prioritize_caller The prioritization order of variant callers.(defaults to ""; comma sep; Options: gatk|samtools|freebayes)
                -pgpt/--pgatk_phasebytransmission Computes the most likely genotype and phases calls were unamibigous using GATK PhaseByTransmission (defaults to "0" (=no))
                -pgrp/--pgatk_readbackedphasing Performs physical phasing of SNP calls, based on sequencing reads using GATK ReadBackedPhasing (defaults to "0" (=no))
@@ -518,7 +518,8 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'svrergf|sv_reformat_remove_genes_file:s' => \$parameter{sv_reformat_remove_genes_file}{value},
 	   'psmp|psamtools_mpileup=n' => \$parameter{psamtools_mpileup}{value},
 	   'pfrb|pfreebayes=n' => \$parameter{pfreebayes}{value},
-	   'gtp|gatk_path:s' => \$parameter{gatk_path}{value},  #GATK whole path
+	   'gtp|gatk_path:s' => \$parameter{gatk_path}{value},  #GATK path
+	   'gll|gatk_logging_level:s' => \$parameter{gatk_logging_level}{value},
 	   'gbdv|gatk_bundle_download_version:s' => \$parameter{gatk_bundle_download_version}{value},  #Sets the GATK FTP Bundle Download version
 	   'gdco|gatk_downsample_to_coverage=n' => \$parameter{gatk_downsample_to_coverage}{value},  #GATK downsample to coverage
 	   'gdai|gatk_disable_auto_index_and_file_lock=n' => \$parameter{gatk_disable_auto_index_and_file_lock}{value},
@@ -540,11 +541,9 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'ggtals|gatk_genotypegvcfs_all_sites=n' => \$parameter{gatk_genotypegvcfs_all_sites}{value},  #Emit non-variant sites to the output VCF
 	   'ggbcf|gatk_concatenate_genotypegvcfs_bcf_file=n' => \$parameter{gatk_concatenate_genotypegvcfs_bcf_file}{value},  #Produce compressed vcf
 	   'pgvr|pgatk_variantrecalibration=n' => \$parameter{pgatk_variantrecalibration}{value},  #GATK VariantRecalibrator/ApplyRecalibration
-	   'gvrtsh|gatk_variantrecalibration_training_set_hapmap:s' => \$parameter{gatk_variantrecalibration_training_set_hapmap}{value},  #GATK VariantRecalibrator resource
-	   'gvrtss|gatk_variantrecalibration_training_set_dbsnp:s' => \$parameter{gatk_variantrecalibration_training_set_dbsnp}{value},  #GATK VariantRecalibrator resource
-	   'gvrtsg|gatk_variantrecalibration_training_set_1000gsnp:s' => \$parameter{gatk_variantrecalibration_training_set_1000gsnp}{value},  #GATK VariantRecalibrator resource
-	   'gvrtso|gatk_variantrecalibration_training_set_1000g_omni:s' => \$parameter{gatk_variantrecalibration_training_set_1000g_omni}{value},  #GATK VariantRecalibrator resource
-	   'gvrtsm|gatk_variantrecalibration_training_set_mills:s' => \$parameter{gatk_variantrecalibration_training_set_mills}{value},  #GATK VariantRecalibrator resource
+	   'gvrann|gatk_variantrecalibration_annotations:s' => \@{ $parameter{gatk_variantrecalibration_annotations}{value} },
+	   'gvrres|gatk_variantrecalibration_resource_snv=s' => \%{ $parameter{gatk_variantrecalibration_resource_snv}{value} },
+	   'gvrrei|gatk_variantrecalibration_resource_indel=s' => \%{ $parameter{gatk_variantrecalibration_resource_indel}{value} },
 	   'gvrstf|gatk_variantrecalibration_snv_tsfilter_level:s' => \$parameter{gatk_variantrecalibration_snv_tsfilter_level}{value},  #Snv truth sensativity level
 	   'gvritf|gatk_variantrecalibration_indel_tsfilter_level:s' => \$parameter{gatk_variantrecalibration_indel_tsfilter_level}{value},  #Indel truth sensativity level
 	   'gvrdpa|gatk_variantrecalibration_dp_annotation=n' => \$parameter{gatk_variantrecalibration_dp_annotation}{value},
@@ -554,6 +553,7 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'gvrbcf|gatk_variantrecalibration_bcf_file=n' => \$parameter{gatk_variantrecalibration_bcf_file}{value},  #Produce compressed vcf
 	   'gcgpss|gatk_calculategenotypeposteriors_support_set:s' => \$parameter{gatk_calculategenotypeposteriors_support_set}{value},  #GATK CalculateGenotypePosteriors support set
 	   'pgcv|pgatk_combinevariantcallsets=n' => \$parameter{pgatk_combinevariantcallsets}{value},  #Combine variant call sets
+	   'gcvgmo|gatk_combinevariants_genotype_merge_option:s' => \$parameter{gatk_combinevariants_genotype_merge_option}{value},
 	   'gcvpc|gatk_combinevariants_prioritize_caller:s' => \$parameter{gatk_combinevariants_prioritize_caller}{value},  #Prioritize variant calls
 	   'gcvbcf|gatk_combinevariantcallsets_bcf_file=n' => \$parameter{gatk_combinevariantcallsets_bcf_file}{value},  #Produce compressed vcf
 	   'pgpt|pgatk_phasebytransmission=n' => \$parameter{pgatk_phasebytransmission}{value},  #GATK phasebytransmission to produce phased genotype calls
@@ -562,7 +562,7 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'pgvea|pgatk_variantevalall=n' => \$parameter{pgatk_variantevalall}{value},  #GATK varianteval all variants
 	   'pgvee|pgatk_variantevalexome=n' => \$parameter{pgatk_variantevalexome}{value},  #GATK varianteval only exonic variants
 	   'gveedbs|gatk_varianteval_dbsnp:s' => \$parameter{gatk_varianteval_dbsnp}{value},
-	   'gveedbg|gatk_varianteval_gold:s' => \$parameter{gatk_variantrecalibration_training_set_mills}{value},
+	   'gveedbg|gatk_varianteval_gold:s' => \$parameter{gatk_varianteval_gold}{value},
 	   'ppvab|pprepareforvariantannotationblock=n' => \$parameter{pprepareforvariantannotationblock}{value},
 	   'prhc|prhocall=n' => \$parameter{prhocall}{value},  #rhocall program
 	   'rhcf|rhocall_frequency_file:s' => \$parameter{rhocall_frequency_file}{value},
@@ -806,7 +806,7 @@ foreach my $parameter_name (@parameter_keys_to_check) {
 
 
 ## Parameters that have elements as MIP program names
-my @parameter_elements_to_check = ("decompose_normalize_references");
+my @parameter_elements_to_check = ("associated_program", "decompose_normalize_references");
 foreach my $parameter_name (@parameter_elements_to_check) {
 
     ## Test if element from query array exists truth hash
@@ -814,6 +814,25 @@ foreach my $parameter_name (@parameter_elements_to_check) {
 				  queryies => \@{ $active_parameter{$parameter_name} },
 				  parameter_name => $parameter_name,
 				 });
+}
+
+## Parameters with key(s) that have elements as MIP program names
+my @parameter_key_to_check = ("associated_program");
+PARAMETER:
+    foreach my $parameter (keys %parameter) {
+
+      KEY:
+	foreach my $parameter_name (@parameter_key_to_check) {
+	    
+	    if (exists($parameter{$parameter}{$parameter_name})) {
+		
+		## Test if element from query array exists truth hash
+		check_element_exists_in_hash({truth_href => \%parameter,
+					      queryies => \@{ $parameter{$parameter}{$parameter_name} },
+					      parameter_name => $parameter_name,
+					     });
+	    }
+	}
 }
 
 
@@ -1491,11 +1510,23 @@ if ($active_parameter{ppicardtools_collecthsmetrics} > 0) {  #Run Picardtools_co
 
 if ($active_parameter{prcovplots} > 0) {  #Run Rcovplot scripts
 
-    $log->info("[Rcovplots]\n");
+    if ( defined($active_parameter{pbedtools_genomecov}) && ($active_parameter{pbedtools_genomecov} > 0) ) {
 
-    foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
+	$log->info("[Rcovplots]\n");
 
-	rcoverageplots(\%parameter, \%active_parameter, \%sample_info, \%file_info, \%lane, \%infile_lane_no_ending, \%job_id, $sample_id, $active_parameter{outaligner_dir}, "rcovplots");
+	foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
+
+	    rcoverageplots({parameter_href => \%parameter,
+			    active_parameter_href => \%active_parameter,
+			    sample_info_href => \%sample_info,
+			    file_info_href => \%file_info,
+			    lane_href => \%lane,
+			    infile_lane_no_ending_href => \%infile_lane_no_ending,
+			    job_id_href => \%job_id,
+			    sample_id_ref => \$sample_id,
+			    program_name => "rcovplots",
+			   });
+	}
     }
 }
 
@@ -2888,6 +2919,7 @@ sub evaluation {
 
     use Program::Gnu::Coreutils qw(cat);
     use Language::Java qw(core);
+    use Program::Variantcalling::Gatk qw(selectvariants);
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
@@ -2951,12 +2983,13 @@ sub evaluation {
 	  java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
 	 });
 
-    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
-    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-    print $FILEHANDLE "-V: ".catfile($$temp_directory_ref, "NIST.vcf")." ";
-    print $FILEHANDLE "-o ".catfile($$temp_directory_ref, "NISTXXX.vcf")." ";
-    print $FILEHANDLE "-sn ".$$sample_id_ref."XXX ";  #Include genotypes from this sample
+    selectvariants({sample_names_ref => [$$sample_id_ref."XXX "],
+		    logging_level => $active_parameter_href->{gatk_logging_level},
+		    referencefile_path => $active_parameter_href->{human_genome_reference},
+		    infile_path => catfile($$temp_directory_ref, "NIST.vcf"),
+		    outfile_path => catfile($$temp_directory_ref, "NISTXXX.vcf"),
+		    FILEHANDLE => $FILEHANDLE,
+		   });
     say $FILEHANDLE "\n";
 
     ## Create .interval_list file from NIST union bed
@@ -3005,13 +3038,14 @@ sub evaluation {
 	  java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
 	 });
 
-    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
-    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-    print $FILEHANDLE "-V: ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf")." ";  #Family_id infile
-    print $FILEHANDLE "-o ".catfile($$temp_directory_ref, "MIP.vcf")." ";  #Sample_id exome outfile
-    print $FILEHANDLE "-sn ".$$sample_id_ref." ";  #Include genotypes from this sample
-    print $FILEHANDLE "-env ";
+    selectvariants({sample_names_ref => [$$sample_id_ref],
+		    logging_level => $active_parameter_href->{gatk_logging_level},
+		    referencefile_path => $active_parameter_href->{human_genome_reference},
+		    infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf"),
+		    outfile_path => catfile($$temp_directory_ref, "MIP.vcf"),
+		    exclude_nonvariants => 1,
+		    FILEHANDLE => $FILEHANDLE,
+		   });
     say $FILEHANDLE "\n";
 
     ## Left align, trim and split allels
@@ -3058,14 +3092,14 @@ sub evaluation {
 	  java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
 	 });
 
-    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
-    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-    print $FILEHANDLE "-V: ".catfile($$temp_directory_ref, "MIP_lts_refrm.vcf")." ";
-    print $FILEHANDLE "-o ".catfile($$temp_directory_ref, "MIPXXX.vcf")." ";
-    print $FILEHANDLE "-sn ".$$sample_id_ref."XXX ";  #Include genotypes from this sample
+    selectvariants({sample_names_ref => [$$sample_id_ref."XXX "],
+		    logging_level => $active_parameter_href->{gatk_logging_level},
+		    referencefile_path => $active_parameter_href->{human_genome_reference},
+		    infile_path => catfile($$temp_directory_ref, "MIP_lts_refrm.vcf"),
+		    outfile_path => catfile($$temp_directory_ref, "MIPXXX.vcf"),
+		    FILEHANDLE => $FILEHANDLE,
+		   });
     say $FILEHANDLE "\n";
-
 
     say $FILEHANDLE "## Picard GenotypeConcordance - Genome restricted by union - good quality ";
     core({FILEHANDLE => $FILEHANDLE,
@@ -3526,7 +3560,10 @@ sub rankvariant {
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
     ## Assign suffix
-    my $file_suffix = $parameter_href->{variant_calling_suffix}{$jobid_chain};
+    my $file_suffix = get_file_suffix({parameter_href => $parameter_href,
+				       suffix_key => "variant_file_suffix",
+				       jobid_chain => $jobid_chain,
+				      });
 
     my $vcfparser_analysis_type = "";
     my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };  #Set default for size ordered contigs
@@ -3878,12 +3915,14 @@ sub gatk_variantevalexome {
 	  java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
 	 });
 
-    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
-    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-    print $FILEHANDLE "-V: ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf")." ";  #Family_id infile
-    print $FILEHANDLE "-o ".catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type."_temp.vcf")." ";  #Sample_id exome outfile
-    say $FILEHANDLE "-sn ".$$sample_id_ref, "\n";  #Include genotypes from this sample
+    selectvariants({sample_names_ref => [$$sample_id_ref],
+		    logging_level => $active_parameter_href->{gatk_logging_level},
+		    referencefile_path => $active_parameter_href->{human_genome_reference},
+		    infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf"),
+		    outfile_path => catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type."_temp.vcf"),
+		    FILEHANDLE => $FILEHANDLE,
+		   });
+    say $FILEHANDLE "\n";
 
     $infile_tag = $file_info_href->{$$family_id_ref}{prankvariant}{file_tag};
 
@@ -4113,12 +4152,14 @@ sub gatk_variantevalall {
 	  java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
 	 });
 
-    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
-    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-    print $FILEHANDLE "-V: ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf")." ";  #Family_id infile
-    print $FILEHANDLE "-o ".catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type.".vcf")." ";  #Sample_id outfile
-    say $FILEHANDLE "-sn ".$$sample_id_ref, "\n";  #Include genotypes from this sample
+    selectvariants({sample_names_ref => [$$sample_id_ref],
+		    logging_level => $active_parameter_href->{gatk_logging_level},
+		    referencefile_path => $active_parameter_href->{human_genome_reference},
+		    infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf"),
+		    outfile_path => catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type.".vcf"),
+		    FILEHANDLE => $FILEHANDLE,
+		   });
+    say $FILEHANDLE "\n";
 
     ## GATK varianteval
     say $FILEHANDLE "## GATK varianteval";
@@ -5666,6 +5707,7 @@ sub samplecheck {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Program::Gnu::Coreutils qw(cat);
+    use Program::Variantcalling::Gatk qw(selectvariants);
 
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
@@ -5742,14 +5784,15 @@ sub samplecheck {
 
     foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
-	print $XARGSFILEHANDLE "-T SelectVariants ";  #Type of analysis to run
-	print $XARGSFILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	print $XARGSFILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-	print $XARGSFILEHANDLE "-V: ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf")." ";  #Family_id infile
-	print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $sample_id.".vcf")." ";  #Sample_id outfile
-	print $XARGSFILEHANDLE "-sn ".$sample_id." ";  #Include genotypes from this sample
-	print $XARGSFILEHANDLE "-env ";
-	print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$sample_id."_SelectVariants.stderr.txt ";  #Redirect xargs output to program specific stderr file
+	selectvariants({sample_names_ref => [$sample_id],
+			logging_level => $active_parameter_href->{gatk_logging_level},
+			referencefile_path => $active_parameter_href->{human_genome_reference},
+			infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf"),
+			outfile_path => catfile($$temp_directory_ref, $sample_id.".vcf"),
+			stderrfile_path => $xargs_file_name.".".$sample_id."_selectvariants.stderr.txt",
+			exclude_nonvariants => 1,
+			FILEHANDLE => $XARGSFILEHANDLE,
+		       });
 	print $XARGSFILEHANDLE "; ";
 
 	## Generate Plink bed and bim (as well as fam) files
@@ -6127,10 +6170,11 @@ sub vt {
 
     ## Assign suffix
     ## Return the current infile vcf compression suffix for this jobid chain
-    my $infile_suffix = get_vcf_suffix({parameter_href => $parameter_href,
-					jobid_chain => $jobid_chain,
-				       });
-    my $outfile_suffix = $parameter_href->{vcf_suffix}{$jobid_chain} = ".vcf";
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "variant_file_suffix",
+					 jobid_chain => $jobid_chain,
+					});
+    my $outfile_suffix = $parameter_href->{variant_file_suffix}{$jobid_chain} = ".vcf";
 
     if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
 
@@ -6355,10 +6399,15 @@ sub rhocall {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Variantcalling::Bcftools qw(roh);
+    use Program::Variantcalling::Rhocall qw(aggregate annotate);
+
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargs_file_name;
-    my $time = 5;
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     unless (defined($FILEHANDLE)){ #Run as individual sbatch script
 
@@ -6366,9 +6415,20 @@ sub rhocall {
     }
 
     ## Set the number of cores to allocate per sbatch job.
-    my $core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
-					      core_number => scalar(@{ $file_info_href->{contigs} })
-					     });  #Detect the number of cores to use
+    my $core_number;
+    if ( (defined($active_parameter_href->{module_core_number}{"p".$program_name}))
+	 && ($active_parameter_href->{module_core_number}{"p".$program_name})) {
+
+	$core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
+    }
+    else {
+
+	$core_number = scalar(@{ $file_info_href->{contigs} });
+    }
+
+    $core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
+					   core_number => $core_number,
+					  });  #Detect the number of cores to use
 
     if ( ! $$reduce_io_ref) { #Run as individual sbatch script
 
@@ -6381,14 +6441,12 @@ sub rhocall {
 								  program_directory => catfile(lc($$outaligner_dir_ref)),
 								  call_type => $call_type,
 								  core_number => $core_number,
-								  process_time => $time,
+								  process_time => $active_parameter_href->{module_time}{"p".$program_name},
 								  temp_directory => $$temp_directory_ref,
 								 });
 	$stderr_path = $program_info_path.".stderr.txt";
     }
     my ($volume, $directory, $stderr_file) = File::Spec->splitpath($stderr_path); #Split to enable submission to &sample_info_qc later
-
-    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
 
     ## Assign directories
     my $infamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref);
@@ -6398,13 +6456,22 @@ sub rhocall {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
-    ## Assign suffix
+    ### Assign suffix
     ## Return the current infile vcf compression suffix for this jobid chain
-    my $infile_suffix = get_vcf_suffix({parameter_href => $parameter_href,
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "variant_file_suffix",
 					jobid_chain => $jobid_chain,
 				       });
-    my $outfile_suffix = $parameter_href->{vcf_suffix}{$jobid_chain} = ".vcf";
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
 
     if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
 
@@ -6417,7 +6484,7 @@ sub rhocall {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      infile => $$family_id_ref.$infile_tag.$call_type,
+									      infile => $infile_no_ending,
 									      indirectory => $infamily_directory,
 									      temp_directory => $$temp_directory_ref,
 									     });
@@ -6431,41 +6498,50 @@ sub rhocall {
 							     program_info_path => $program_info_path,
 							     core_number => $core_number,
 							     xargs_file_counter => $xargs_file_counter,
-							     first_command => "bcftools roh",
 							    });
 
     foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
-	print $XARGSFILEHANDLE "--AF-file ".$active_parameter_href->{rhocall_frequency_file}." ";
-	print $XARGSFILEHANDLE "--skip-indels ";  #Skip indels as their genotypes are enriched for errors
-
+	## Get parameters
+	my $sample_id;
 	if ( (defined($parameter_href->{dynamic_parameter}{affected}))
 	     && (@{ $parameter_href->{dynamic_parameter}{affected} }) ) {
 
-	    print $XARGSFILEHANDLE "--sample ".$parameter_href->{dynamic_parameter}{affected}[0]." ";
+	    $sample_id = $parameter_href->{dynamic_parameter}{affected}[0];
 	}
 	else {
 
-	    print $XARGSFILEHANDLE "--sample ".$active_parameter_href->{sample_ids}[0]." ";  #No affected - pick any sample_id
+	    $sample_id = $active_parameter_href->{sample_ids}[0];  #No affected - pick any sample_id
 	}
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$infile_suffix)." ";  #Infile
-	print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".roh"), "; ";
 
-	print $XARGSFILEHANDLE "rhocall aggregate ";
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".roh")." ";
-	print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".roh.bed")."; ";
+	roh({infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
+	     outfile_path => $file_path_no_ending."_".$contig.".roh",
+	     af_file_path => $active_parameter_href->{rhocall_frequency_file},
+	     sample_id => $sample_id,
+	     skip_indels => 1,  #Skip indels as their genotypes are enriched for errors
+	     FILEHANDLE => $XARGSFILEHANDLE,
+	    });
+	print $XARGSFILEHANDLE "; ";
 
-	print $XARGSFILEHANDLE "rhocall annotate ";
-	print $XARGSFILEHANDLE "-b ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".roh.bed")." ";
-	print $XARGSFILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$outfile_suffix)." ";
-	say $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$infile_suffix);  #Infile
+	Program::Variantcalling::Rhocall::aggregate({infile_path => $file_path_no_ending."_".$contig.".roh",
+						     outfile_path => $file_path_no_ending."_".$contig.".roh.bed",
+						     FILEHANDLE => $XARGSFILEHANDLE,
+						    });
+	print $XARGSFILEHANDLE "; ";
+
+	Program::Variantcalling::Rhocall::annotate({infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
+						    outfile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
+						    bedfile_path => $file_path_no_ending."_".$contig.".roh.bed",
+						    FILEHANDLE => $XARGSFILEHANDLE,
+						   });
+	say $XARGSFILEHANDLE "\n";
     }
 
     if ( ! $$reduce_io_ref) { #Run as individual sbatch script
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_*".$outfile_suffix."*"),
+	migrate_file({infile_path => $outfile_path_no_ending."_*".$outfile_suffix."*",
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -6483,7 +6559,7 @@ sub rhocall {
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
 			dependencies => "case_dependency",
-			path => $parameter_href->{"p".$program_name}{chain},
+			path => $jobid_chain,
 			sbatch_file_name => $file_name
 		       });
 	}
@@ -6570,19 +6646,32 @@ sub prepareforvariantannotationblock {
     use Program::Htslib qw(bgzip tabix);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargs_file_name;
-    my $time = 10;
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     unless (defined($FILEHANDLE)){ #Run as individual sbatch script
 
 	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     }
 
+    my $core_number;
+    if ( (defined($active_parameter_href->{module_core_number}{"p".$program_name}))
+	 && ($active_parameter_href->{module_core_number}{"p".$program_name})) {
+
+	$core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
+    }
+    else {
+
+	$core_number = scalar(@{ $file_info_href->{contigs} });
+    }
+
     ## Set the number of cores to allocate per sbatch job.
-    my $core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
-					      core_number => scalar(@{ $file_info_href->{contigs} })
-					     });
+    $core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
+					   core_number => $core_number,
+					  });
 
     if ( ! $$reduce_io_ref) { #Run as individual sbatch script
 
@@ -6595,14 +6684,12 @@ sub prepareforvariantannotationblock {
 								  program_directory => catfile(lc($$outaligner_dir_ref)),
 								  call_type => $call_type,
 								  core_number => $core_number,
-								  process_time => $time,
+								  process_time => $active_parameter_href->{module_time}{"p".$program_name},
 								  temp_directory => $$temp_directory_ref,
 								 });
 	$stderr_path = $program_info_path.".stderr.txt";
     }
     my ($volume, $directory, $stderr_file) = File::Spec->splitpath($stderr_path); #Split to enable submission to &sample_info_qc later
-
-    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
 
     ## Assign directories
     my $infamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref);
@@ -6615,8 +6702,15 @@ sub prepareforvariantannotationblock {
     my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
 
     ## Assign suffix
-    my $infile_suffix = ".vcf";
-    my $outfile_suffix = $parameter_href->{vcf_suffix}{$jobid_chain} = ".vcf.gz";  #Used downstream to determine compression and format
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "variant_file_suffix",
+					 jobid_chain => $jobid_chain,
+					});
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -6698,7 +6792,7 @@ sub prepareforvariantannotationblock {
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
 			dependencies => "case_dependency",
-			path => $parameter_href->{"p".$program_name}{chain},
+			path => $jobid_chain,
 			sbatch_file_name => $file_name
 		       });
 	}
@@ -6766,10 +6860,14 @@ sub gatk_combinevariantcallsets {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Language::Java qw(core);
+    use Program::Variantcalling::Gatk qw(combinevariants);
 
-    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my @variant_callers;  #Stores callers that have been executed
     my @parallel_chains;  #Stores the parallel chains that jobIds should be inherited from
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -6779,7 +6877,8 @@ sub gatk_combinevariantcallsets {
 					     program_name => $program_name,
 					     program_directory => catfile(lc($$outaligner_dir_ref)),
 					     call_type => $call_type,
-					     process_time => 2,
+					     core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					     process_time => $active_parameter_href->{module_time}{"p".$program_name},
 					     temp_directory => $$temp_directory_ref,
 					    });
 
@@ -6789,14 +6888,38 @@ sub gatk_combinevariantcallsets {
 
     ## Assign file_tags
     my $outfile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
+    my @file_tags_and_paths;
+    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
+    ### Assign suffix
+    ## Set file suffix for next module within jobid chain
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
+
+    ## Collect file info and migrate files
     foreach my $variant_caller (@{ $parameter_href->{dynamic_parameter}{variant_callers} }) {
 
 	if ($active_parameter_href->{$variant_caller} > 0) {  #Expect vcf
 
+	    ## Assign directories
 	    my $program_outdirectory_name = $parameter_href->{$variant_caller}{outdir_name};
 	    my $infamily_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref, $program_outdirectory_name);
+
+	    ## Assign file_tags
 	    my $infile_tag = $file_info_href->{$$family_id_ref}{$variant_caller}{file_tag};
+	    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+
+	    ## Assign suffix
+	    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+						 suffix_key => "outfile_suffix",
+						 program_name => $variant_caller,
+						});
+
+	    push(@file_tags_and_paths, $program_outdirectory_name." ".catfile($$temp_directory_ref, $infile_no_ending.$infile_suffix));  #Collect both tag and path in the same string
 
 	    unshift(@variant_callers, $program_outdirectory_name);  #To prioritize downstream - 1. gatk 2. samtools determined by order_parameters order
 
@@ -6808,7 +6931,7 @@ sub gatk_combinevariantcallsets {
 	    ## Copy file(s) to temporary directory
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
 	    migrate_file({FILEHANDLE => $FILEHANDLE,
-			  infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf*"),
+			  infile_path => catfile($infamily_directory, $infile_no_ending.$infile_suffix."*"),
 			  outfile_path => $$temp_directory_ref
 			 });
 	}
@@ -6826,46 +6949,29 @@ sub gatk_combinevariantcallsets {
 	  java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
 	 });
 
-    print $FILEHANDLE "-T CombineVariants ";  #Type of analysis to run
-    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-    print $FILEHANDLE "-env ";  #Do not include loci found to be non-variant after the subsetting procedure.
-
-    foreach my $variant_caller (@{ $parameter_href->{dynamic_parameter}{variant_callers} }) {
-
-	if ($active_parameter_href->{$variant_caller} > 0) {  #Expect vcf
-
-	    my $program_outdirectory_name = $parameter_href->{$variant_caller}{outdir_name};
-	    my $infile_tag = $file_info_href->{$$family_id_ref}{$variant_caller}{file_tag};
-	    print $FILEHANDLE "-V:".$program_outdirectory_name." ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf")." ";  #Family_id infile
-	}
-    }
-
-    print $FILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf")." ";  #Union of variant call sets outfile
-    print $FILEHANDLE "-genotypeMergeOptions PRIORITIZE ";
-
-    if (defined($active_parameter_href->{gatk_combinevariants_prioritize_caller})) {
-
-	print $FILEHANDLE "-priority ".$active_parameter_href->{gatk_combinevariants_prioritize_caller};
-    }
-    else {
-
-	print $FILEHANDLE "-priority ".join(",", @variant_callers);
-    }
+    Program::Variantcalling::Gatk::combinevariants({infile_paths_ref => \@file_tags_and_paths,
+						    outfile_path => $outfile_path_no_ending.$outfile_suffix,
+						    logging_level => $active_parameter_href->{gatk_logging_level},
+						    referencefile_path => $active_parameter_href->{human_genome_reference},
+						    genotype_merge_option => $active_parameter_href->{gatk_combinevariants_genotype_merge_option},
+						    prioritize_caller => $active_parameter_href->{gatk_combinevariants_prioritize_caller},
+						    exclude_nonvariants => 1,
+						    FILEHANDLE => $FILEHANDLE
+						   });
     say $FILEHANDLE "\n";
 
     if ($active_parameter_href->{gatk_combinevariantcallsets_bcf_file}) {
 
 	## Reformat variant calling file and index
-	view_vcf({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf"),
-		  outfile_path_no_ending => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type),
+	view_vcf({infile_path => $outfile_path_no_ending.$outfile_suffix,
+		  outfile_path_no_ending => $outfile_path_no_ending,
 		  output_type => "b",
 		  FILEHANDLE => $FILEHANDLE,
 		 });
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".bcf*"),
+	migrate_file({infile_path => $outfile_path_no_ending.".bcf*",
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -6873,7 +6979,7 @@ sub gatk_combinevariantcallsets {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf"),
+    migrate_file({infile_path => $outfile_path_no_ending.$outfile_suffix,
 		  outfile_path => $outfamily_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -6883,11 +6989,11 @@ sub gatk_combinevariantcallsets {
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
-	$sample_info_href->{vcf_file}{ready_vcf}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.".vcf");
+	$sample_info_href->{vcf_file}{ready_vcf}{path} = catfile($outfamily_directory, $outfile_no_ending.$outfile_suffix);
 
 	if ($active_parameter_href->{gatk_combinevariantcallsets_bcf_file}) {
 
-	    $sample_info_href->{bcf_file}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.".bcf");
+	    $sample_info_href->{bcf_file}{path} = catfile($outfamily_directory, $outfile_no_ending.".bcf");
 	}
 
 	submit_job({active_parameter_href => $active_parameter_href,
@@ -6895,7 +7001,7 @@ sub gatk_combinevariantcallsets {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    dependencies => "chain_and_parallel_dependency",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name,
 		    parallel_chains_ref => \@parallel_chains,
 		   });
@@ -6961,11 +7067,41 @@ sub gatk_variantrecalibration {
     use Program::Gnu::Coreutils qw(mv);
     use Language::Java qw(core);
     use Program::Variantcalling::Bcftools qw(norm);
+    use Program::Variantcalling::Gatk qw(variantrecalibrator applyrecalibration selectvariants calculategenotypeposteriors);
 
-    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $core_number = 4;  #gatk VQSR do not benefit from paralellization ref gatk blog, but we need some java heap allocation
-    my $program_outdirectory_name = $parameter_href->{"p".$program_name}{outdir_name};
     my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+
+    ## Assign directories
+    my $program_outdirectory_name = $parameter_href->{"p".$program_name}{outdir_name};
+    my $outfamily_file_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref);  #For ".fam" file
+    my $infamily_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref, $program_outdirectory_name);
+    my $outfamily_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref, $program_outdirectory_name);
+    $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
+
+    ## Assign file_tags
+    my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_genotypegvcfs}{file_tag};
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+
+    ### Assign suffix
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "outfile_suffix",
+					 program_name => "pgatk_genotypegvcf",
+					});
+
+    ## Set file suffix for next module within jobid chain
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -6975,28 +7111,11 @@ sub gatk_variantrecalibration {
 								 program_name => $program_name,
 								 program_directory => catfile(lc($$outaligner_dir_ref), lc($program_outdirectory_name)),
 								 call_type => $call_type,
-								 core_number => $core_number,
-								 process_time => 10,
-								 temp_directory => catfile($$temp_directory_ref, "gatk", "intermediary"),
+								 core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+								 process_time => $active_parameter_href->{module_time}{"p".$program_name},
+								 temp_directory => catfile($$temp_directory_ref),
 								});
     my ($volume, $directory, $stderr_file) = File::Spec->splitpath($program_info_path.".stderr.txt");  #Split to enable submission to &sample_info_qc later
-
-    ## Assign directories
-    my $outfamily_file_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref);  #For ".fam" file
-    my $infamily_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref, $program_outdirectory_name);
-    my $intermediary_sample_directory = catfile($$temp_directory_ref, "gatk", "intermediary");
-    my $outfamily_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref, $program_outdirectory_name);
-    $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
-
-    ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_genotypegvcfs}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
-    my $intermediary_file_path_no_ending = catfile($intermediary_sample_directory, $infile_no_ending);
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
-
 
     ## Create .fam file to be used in variant calling analyses
     create_fam_file({parameter_href => $parameter_href,
@@ -7006,15 +7125,22 @@ sub gatk_variantrecalibration {
 		     fam_file_path => catfile($outfamily_file_directory, $$family_id_ref.".fam"),
 		    });
 
+    ## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
+    my %commands = gatk_pedigree_flag({active_parameter_href => $active_parameter_href,
+				       fam_file_path => catfile($outfamily_file_directory, $$family_id_ref.".fam"),
+				       program_name => $program_name,
+				      });
+
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($infamily_directory, $infile_no_ending.".vcf*"),
+		  infile_path => catfile($infamily_directory, $infile_no_ending.$infile_suffix."*"),
 		  outfile_path => $$temp_directory_ref
 		 });
     say $FILEHANDLE "wait", "\n";
 
-    ## GATK VariantRecalibrator
+    ### GATK VariantRecalibrator
+    ## Set mode to be used in variant recalibration
     my @modes = ("SNP","INDEL");
 
     if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid") ) {  #Exome/rapid analysis
@@ -7022,7 +7148,7 @@ sub gatk_variantrecalibration {
 	@modes = ("BOTH");
     }
 
-    foreach my $mode (@modes) {  #SNP and INDEL will be recalibrated successively in the same file because when you specify eg SNP mode, the indels are emitted without modification, and vice-versa. Exome and Rapid will be processed using mode BOTH since there are to few INDELS to use in the recalibration model even though using 30 exome BAMS in Haplotypecaller step.
+    foreach my $mode (@modes) {  #SNP and INDEL will be recalibrated successively in the same file because when you specify eg SNP mode, the indels are emitted without modification, and vice-versa. Exome and rapid will be processed using mode BOTH since there are to few INDELS to use in the recalibration model even though using 30 exome BAMS in Haplotypecaller step.
 
 	say $FILEHANDLE "## GATK VariantRecalibrator";
 
@@ -7034,70 +7160,79 @@ sub gatk_variantrecalibration {
 	      java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
 	     });
 
-	print $FILEHANDLE "-T VariantRecalibrator ";  #Type of analysis to run
-	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-	print $FILEHANDLE "-recalFile ".$intermediary_file_path_no_ending.".intervals"." ";
-	print $FILEHANDLE "-rscriptFile ".$intermediary_file_path_no_ending.".intervals.plots.R"." ";
-	print $FILEHANDLE "-tranchesFile ".$intermediary_file_path_no_ending.".intervals.tranches"." ";
-
+	##Get parameters
+	my @infiles;
+	my $max_gaussian_level;
 	if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid") ) {  #Exome/rapid analysis use combined reference for more power
 
-	    print $FILEHANDLE "-input ".$file_path_no_ending.".vcf"." ";  #Infile HaplotypeCaller combined vcf which used reference gVCFs to create combined vcf (30> samples gCVFs)
+	    push(@infiles, $file_path_no_ending.$infile_suffix);  #Infile HaplotypeCaller combined vcf which used reference gVCFs to create combined vcf (30> samples gCVFs)
 	}
 	else {  #WGS
 
 	    if ($mode eq "SNP") {
 
-		print $FILEHANDLE "-input ".$file_path_no_ending.".vcf"." ";
+		push(@infiles, $file_path_no_ending.$infile_suffix);
 
 		if ($active_parameter_href->{gatk_variantrecalibration_snv_max_gaussians} ne 0) {
 
-		    print $FILEHANDLE "--maxGaussians 4 ";  #Use hard filtering
+		    $max_gaussian_level = 4;  #Use hard filtering
 		}
 	    }
 	    if ($mode eq "INDEL") {#Use created recalibrated snp vcf as input
 
-		print $FILEHANDLE "-input ".$outfile_path_no_ending.".SNV.vcf"." ";
-	    }
-	    if ($active_parameter_href->{gatk_variantrecalibration_dp_annotation}) {  #Special case: Not to be used with hybrid capture. NOTE: Disable when analysing wes + wgs in the same run
-
-		print $FILEHANDLE "-an DP ";  #The names of the annotations which should used for calculations.
+		push(@infiles, $outfile_path_no_ending.".SNV".$infile_suffix);
 	    }
 	}
+
+	my @annotations = @{ $active_parameter_href->{gatk_variantrecalibration_annotations} };
+	if ($consensus_analysis_type ne "wgs") {
+
+	    ### Special case: Not to be used with hybrid capture. NOTE: Disable when analysing wes + wgs in the same run
+	    ## Removes an element from array and return new array while leaving orginal elements_ref untouched
+	    @annotations = remove_element({elements_ref => \@annotations,
+					   remove_contigs_ref => ["DP"],
+					  });
+	}
+
+	my @resources;
 	if ( ($mode eq "SNP") || ($mode eq "BOTH") ) {
 
-	    print $FILEHANDLE "-resource:hapmap,VCF,known=false,training=true,truth=true,prior=15.0 ".$active_parameter_href->{gatk_variantrecalibration_training_set_hapmap}." ";  #A list of sites for which to apply a prior probability of being correct but which are not used by the algorithm
-	    print $FILEHANDLE "-resource:omni,VCF,known=false,training=true,truth=false,prior=12.0 ".$active_parameter_href->{gatk_variantrecalibration_training_set_1000g_omni}." ";  #A list of sites for which to apply a prior probability of being correct but which are not used by the algorithm
-	    print $FILEHANDLE "-resource:1000G,known=false,training=true,truth=false,prior=10.0 ".$active_parameter_href->{gatk_variantrecalibration_training_set_1000gsnp}." ";  #A list of sites for which to apply a prior probability of being correct but which are not used by the algorithm
-	    print $FILEHANDLE "-an MQ ";  #The names of the annotations which should used for calculations.
+	    while ( my ($resource_file, $resource_string) = each(%{ $active_parameter_href->{gatk_variantrecalibration_resource_snv} }) ) {
+	
+		push(@resources, $resource_string." ".$resource_file)
+	    }
 	}
 	if ( ($mode eq "INDEL") || ($mode eq "BOTH") ) {
 
-	    print $FILEHANDLE "-resource:mills,VCF,known=true,training=true,truth=true,prior=12.0 ".$active_parameter_href->{gatk_variantrecalibration_training_set_mills}." ";  #A list of sites for which to apply a prior probability of being correct but which are not used by the algorithm
-
+	    while ( my ($resource_file, $resource_string) = each(%{ $active_parameter_href->{gatk_variantrecalibration_resource_indel} }) ) {
+	
+		push(@resources, $resource_string." ".$resource_file)
+	    }
 	    if ($active_parameter_href->{gatk_variantrecalibration_indel_max_gaussians} ne 0) {
 
-		print $FILEHANDLE "--maxGaussians 4 ";  #Use hard filtering
+		$max_gaussian_level = 4;  #Use hard filtering
 	    }
 	}
-	print $FILEHANDLE "-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 ".$active_parameter_href->{gatk_variantrecalibration_training_set_dbsnp}." ";  #A list of sites for which to apply a prior probability of being correct but which are not used by the algorithm
+	@resources = uniq(@resources);  #Create distinct set i.e. no duplicates.
 
-	print $FILEHANDLE "-an QD ";  #The names of the annotations which should used for calculations
-	print $FILEHANDLE "-an MQRankSum ";  #The names of the annotations which should used for calculations
-	print $FILEHANDLE "-an ReadPosRankSum ";  #The names of the annotations which should used for calculations
-	print $FILEHANDLE "-an FS ";  #The names of the annotations which should used for calculations
-	print $FILEHANDLE "-an SOR ";  #The names of the annotations which should used for calculations
-	print $FILEHANDLE "--mode ".$mode." ";  #Recalibration mode to employ (SNP|INDEL|BOTH)
-
-	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-	my %commands = gatk_pedigree_flag({active_parameter_href => $active_parameter_href,
-					   fam_file_path => catfile($outfamily_file_directory, $$family_id_ref.".fam"),
-					   program_name => $program_name,
-					  });
+	variantrecalibrator({infile_paths_ref => \@infiles,
+			     annotations_ref => \@annotations,
+			     resources_ref => \@resources,
+			     logging_level => $active_parameter_href->{gatk_logging_level},
+			     referencefile_path => $active_parameter_href->{human_genome_reference},
+			     recal_file_path => $file_path_no_ending.".intervals",
+			     rscript_file_path => $file_path_no_ending.".intervals.plots.R",
+			     tranches_file_path => $file_path_no_ending.".intervals.tranches",
+			     max_gaussian_level => $max_gaussian_level,
+			     mode => $mode,
+			     pedigree_validation_type => $commands{pedigree_validation_type},
+			     pedigree => $commands{pedigree},
+			     FILEHANDLE => $FILEHANDLE,
+			    });
+	say $FILEHANDLE "\n";
 
 	## GATK ApplyRecalibration
-	say $FILEHANDLE "\n\n## GATK ApplyRecalibration";
+	say $FILEHANDLE "## GATK ApplyRecalibration";
 
 	## Writes java core commands to filehandle.
 	core({FILEHANDLE => $FILEHANDLE,
@@ -7107,57 +7242,62 @@ sub gatk_variantrecalibration {
 	      java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
 	     });
 
-	print $FILEHANDLE "-T ApplyRecalibration ";
-	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-	print $FILEHANDLE "-recalFile ".$intermediary_file_path_no_ending.".intervals"." ";
-	print $FILEHANDLE "-tranchesFile ".$intermediary_file_path_no_ending.".intervals.tranches"." ";
-
+	## Get parameters
+	my $infile_path;
+	my $outfile_path;
+	my $ts_filter_level;
 	if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid")) {  #Exome/rapid analysis use combined reference for more power
 
-	    print $FILEHANDLE "-input ".$file_path_no_ending.".vcf"." ";  #Infile HaplotypeCaller combined vcf which used reference gVCFs to create combined vcf file
-	    print $FILEHANDLE "-o ".$outfile_path_no_ending."_filtered.vcf"." ";
+	    $infile_path = $file_path_no_ending.$infile_suffix;  #Infile genotypegvcfs combined vcf which used reference gVCFs to create combined vcf file
+	    $outfile_path = $outfile_path_no_ending."_filtered".$outfile_suffix;
+	    $ts_filter_level = $active_parameter_href->{gatk_variantrecalibration_snv_tsfilter_level};
 	}
 	else  {  #WGS
 
 	    if ($mode eq "SNP") {
 
-		print $FILEHANDLE "-input ".$file_path_no_ending.".vcf"." ";
-		print $FILEHANDLE "-o ".$outfile_path_no_ending.".SNV.vcf"." ";
-		print $FILEHANDLE "--ts_filter_level ".$active_parameter_href->{gatk_variantrecalibration_snv_tsfilter_level}." ";
+		$infile_path = $file_path_no_ending.$infile_suffix;
+		$outfile_path = $outfile_path_no_ending.".SNV".$outfile_suffix;
+		$ts_filter_level = $active_parameter_href->{gatk_variantrecalibration_snv_tsfilter_level};
 	    }
 	    if ($mode eq "INDEL") {#Use created recalibrated snp vcf as input
 
-		print $FILEHANDLE "-input ".$outfile_path_no_ending.".SNV.vcf"." ";
-		print $FILEHANDLE "-o ".$outfile_path_no_ending.".vcf"." ";
-		print $FILEHANDLE "--ts_filter_level ".$active_parameter_href->{gatk_variantrecalibration_indel_tsfilter_level}." ";
+		$infile_path = $outfile_path_no_ending.".SNV".$outfile_suffix;
+		$outfile_path = $outfile_path_no_ending.$outfile_suffix;
+		$ts_filter_level = $active_parameter_href->{gatk_variantrecalibration_indel_tsfilter_level};
 	    }
 	}
 
-	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-	%commands = gatk_pedigree_flag({active_parameter_href => $active_parameter_href,
-					fam_file_path => catfile($outfamily_file_directory, $$family_id_ref.".fam"),
-					program_name => $program_name,
-				       });
-
-	print $FILEHANDLE "--mode ".$mode." ";  #Recalibration mode to employ (SNP|INDEL|BOTH)
+	applyrecalibration({infile_path => $infile_path,
+			    outfile_path => $outfile_path,
+			    logging_level => $active_parameter_href->{gatk_logging_level},
+			    referencefile_path => $active_parameter_href->{human_genome_reference},
+			    recal_file_path => $file_path_no_ending.".intervals",
+			    tranches_file_path => $file_path_no_ending.".intervals.tranches",
+			    ts_filter_level => $ts_filter_level,
+			    mode => $mode,
+			    pedigree_validation_type => $commands{pedigree_validation_type},
+			    pedigree => $commands{pedigree},
+			    FILEHANDLE => $FILEHANDLE,
+			   });
 	say $FILEHANDLE "\n";
     }
 
     if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid")) {
+
 	## BcfTools norm, Left-align and normalize indels, split multiallelics
 	norm({FILEHANDLE => $FILEHANDLE,
 	      reference_path => $active_parameter_href->{human_genome_reference},
-	      infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_filtered.vcf"),
+	      infile_path => $outfile_path_no_ending."_filtered".$outfile_suffix,
 	      output_type => "v",
-	      outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_filtered_normalized.vcf"),
+	      outfile_path => $outfile_path_no_ending."_filtered_normalized".$outfile_suffix,
 	      multiallelic => "-",
-	      stderrfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_filtered_normalized.stderr"),
+	      stderrfile_path => $outfile_path_no_ending."_filtered_normalized.stderr",
 	     });
-	print $FILEHANDLE "\n";
+	say $FILEHANDLE "\n";
     }
 
-    ## GATK SelectVariants
+    ### GATK SelectVariants
 
     ## Removes all genotype information for exome ref and recalulates meta-data info for remaining samples in new file.
     if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid") ) {  #Exome/rapid analysis
@@ -7172,17 +7312,14 @@ sub gatk_variantrecalibration {
 	      java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
 	     });
 
-	print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
-	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-	print $FILEHANDLE "-env ";  #Do not include loci found to be non-variant after the subsetting procedure.
-	print $FILEHANDLE "-V: ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_filtered_normalized.vcf")." ";  #InFile
-
-	foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {  #For all sample_ids
-
-	    print $FILEHANDLE "-sn ".$sample_id." ";  #Include genotypes from this sample
-	}
-	print $FILEHANDLE "-o ".$outfile_path_no_ending.".vcf"." ";  #OutFile
+	selectvariants({sample_names_ref => \@{ $active_parameter_href->{sample_ids} },
+			logging_level => $active_parameter_href->{gatk_logging_level},
+			referencefile_path => $active_parameter_href->{human_genome_reference},
+			infile_path => $outfile_path_no_ending."_filtered_normalized".$outfile_suffix,
+			outfile_path => $outfile_path_no_ending.$outfile_suffix,
+			exclude_nonvariants => 1,
+			FILEHANDLE => $FILEHANDLE,
+		       });
 	print $FILEHANDLE " &";
 
 	## Produces another vcf file containing non-variant loci (useful for example in MAF comparisons), but is not used downstream in MIP
@@ -7198,21 +7335,18 @@ sub gatk_variantrecalibration {
 		  java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
 		 });
 
-	    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
-	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-	    print $FILEHANDLE "-V: ".$outfile_path_no_ending."_filtered.vcf"." ";  #InFile
-	    print $FILEHANDLE "-o ".$outfile_path_no_ending."_incnonvariantloci.vcf"." ";  #OutFile
-
-	    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {  #For all sample_ids
-
-		print $FILEHANDLE "-sn ".$sample_id." ";  #Include genotypes from this sample
-	    }
+	    selectvariants({sample_names_ref => \@{ $active_parameter_href->{sample_ids} },
+			    logging_level => $active_parameter_href->{gatk_logging_level},
+			    referencefile_path => $active_parameter_href->{human_genome_reference},
+			    infile_path => $outfile_path_no_ending."_filtered".$outfile_suffix,
+			    outfile_path => $outfile_path_no_ending."_incnonvariantloci".$outfile_suffix,
+			    FILEHANDLE => $FILEHANDLE,
+			   });
 	    say $FILEHANDLE "\n\nwait\n";
 
 	    ## Copies file from temporary directory.
 	    say $FILEHANDLE "## Copy file from temporary directory";
-	    migrate_file({infile_path => $outfile_path_no_ending."_incnonvariantloci.vcf*",
+	    migrate_file({infile_path => $outfile_path_no_ending."_incnonvariantloci".$outfile_suffix."*",
 			  outfile_path => $outfamily_directory,
 			  FILEHANDLE => $FILEHANDLE,
 			 });
@@ -7233,24 +7367,20 @@ sub gatk_variantrecalibration {
 	      java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
 	     });
 
-	print $FILEHANDLE "-T CalculateGenotypePosteriors ";  #Type of analysis to run
-	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-
-	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-	my %commands = gatk_pedigree_flag({active_parameter_href => $active_parameter_href,
-					   fam_file_path => catfile($outfamily_file_directory, $$family_id_ref.".fam"),
-					   program_name => $program_name,
-					  });
-
-	print $FILEHANDLE "--supporting ".$active_parameter_href->{gatk_calculategenotypeposteriors_support_set}." ";  #Supporting data set
-	print $FILEHANDLE "-V ".$outfile_path_no_ending.".vcf"." ";  #Infile
-	print $FILEHANDLE "-o ".$outfile_path_no_ending."_refined.vcf"." ";  #Outfile
+	calculategenotypeposteriors({logging_level => $active_parameter_href->{gatk_logging_level},
+				     referencefile_path => $active_parameter_href->{human_genome_reference},
+				     infile_path => $outfile_path_no_ending.$outfile_suffix,
+				     outfile_path => $outfile_path_no_ending."_refined".$outfile_suffix,
+				     supporting_callset_file_path => $active_parameter_href->{gatk_calculategenotypeposteriors_support_set},
+				     pedigree_validation_type => $commands{pedigree_validation_type},
+				     pedigree => $commands{pedigree},
+				     FILEHANDLE => $FILEHANDLE,
+				    });
 	say $FILEHANDLE "\n";
 
 	## Change name of file to accomodate downstream
-	mv({infile_path => $outfile_path_no_ending."_refined.vcf",
-	    outfile_path => $outfile_path_no_ending.".vcf",
+	mv({infile_path => $outfile_path_no_ending."_refined".$outfile_suffix,
+	    outfile_path => $outfile_path_no_ending.$outfile_suffix,
 	    FILEHANDLE => $FILEHANDLE,
 	   });
 	say $FILEHANDLE "\n";
@@ -7259,16 +7389,16 @@ sub gatk_variantrecalibration {
     ## BcfTools norm, Left-align and normalize indels, split multiallelics
     norm({FILEHANDLE => $FILEHANDLE,
 	  reference_path => $active_parameter_href->{human_genome_reference},
-	  infile_path => $outfile_path_no_ending.".vcf",
+	  infile_path => $outfile_path_no_ending.$outfile_suffix,
 	  output_type => "v",
-	  outfile_path => $outfile_path_no_ending."_normalized.vcf",
+	  outfile_path => $outfile_path_no_ending."_normalized".$outfile_suffix,
 	  multiallelic => "-",
 	 });
     say $FILEHANDLE "\n";
 
     ## Change name of file to accomodate downstream
-    mv({infile_path => $outfile_path_no_ending."_normalized.vcf",
-	outfile_path => $outfile_path_no_ending.".vcf",
+    mv({infile_path => $outfile_path_no_ending."_normalized".$outfile_suffix,
+	outfile_path => $outfile_path_no_ending.$outfile_suffix,
 	FILEHANDLE => $FILEHANDLE,
        });
     say $FILEHANDLE "\n";
@@ -7277,7 +7407,7 @@ sub gatk_variantrecalibration {
     if ($active_parameter_href->{gatk_variantrecalibration_bcf_file}) {
 
 	## Reformat variant calling file and index
-	view_vcf({infile_path => $outfile_path_no_ending.".vcf",
+	view_vcf({infile_path => $outfile_path_no_ending.$outfile_suffix,
 		  outfile_path_no_ending => $outfile_path_no_ending,
 		  output_type => "b",
 		  FILEHANDLE => $FILEHANDLE,
@@ -7294,7 +7424,7 @@ sub gatk_variantrecalibration {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    my @outfiles = ($outfile_path_no_ending.".vcf*", $intermediary_file_path_no_ending.".intervals.tranches.pdf");
+    my @outfiles = ($outfile_path_no_ending.$outfile_suffix."*", $file_path_no_ending.".intervals.tranches.pdf");
     foreach my $outfile (@outfiles) {
 
 	migrate_file({infile_path => $outfile,
@@ -7312,10 +7442,10 @@ sub gatk_variantrecalibration {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => "pedigree_check",  #Disabled pedigreeCheck to not include relationship test is qccollect
 			outdirectory => $outfamily_directory,
-			outfile_ending => $outfile_no_ending.".vcf",
+			outfile_ending => $outfile_no_ending.$outfile_suffix,
 			outdata_type => "infile_dependent"
 		       });
-	$sample_info_href->{vcf_file}{ready_vcf}{path} = catfile($outfamily_directory, $outfile_no_ending.".vcf");
+	$sample_info_href->{vcf_file}{ready_vcf}{path} = catfile($outfamily_directory, $outfile_no_ending.$outfile_suffix);
 
 	if ($active_parameter_href->{gatk_variantrecalibration_bcf_file} eq 1) {
 
@@ -7327,7 +7457,7 @@ sub gatk_variantrecalibration {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    dependencies => "case_dependency",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
 		   });
     }
@@ -7386,9 +7516,39 @@ sub gatk_concatenate_genotypegvcfs {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Language::Java qw(core);
+    use Program::Variantcalling::Gatk qw(selectvariants);
 
+    my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
+    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $core_number = $active_parameter_href->{core_processor_number};
+
+    ## Assign directories
+    my $infamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref, "gatk");
+    my $outfamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref, "gatk");
+
+    ## Assign file_tags
+    my $infile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+
+    ### Assign suffix
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "outfile_suffix",
+					 program_name => "p".$program_name,
+					});
+
+    ## Set file suffix for next module within jobid chain
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -7399,19 +7559,12 @@ sub gatk_concatenate_genotypegvcfs {
 					     program_directory => catfile(lc($$outaligner_dir_ref), "gatk"),
 					     call_type => $call_type,
 					     core_number => $core_number,
-					     process_time => 10,
+					     process_time => $active_parameter_href->{module_time}{"p".$program_name},
 					     temp_directory => $$temp_directory_ref
 					    });
 
-    ## Assign directories
-    my $infamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref, "gatk");
-    my $outfamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref, "gatk");
+    
 
-    ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_genotypegvcfs}{file_tag};
-    my $outfile_tag = $file_info_href->{$$family_id_ref}{pgatk_genotypegvcfs}{file_tag};
-
-    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $core_counter = 1;
     while ( my ($contig_index, $contig) = each(@{ $file_info_href->{contigs} }) ) {
 
@@ -7423,7 +7576,7 @@ sub gatk_concatenate_genotypegvcfs {
 
 	## Copy file(s) to temporary directory
 	migrate_file({FILEHANDLE => $FILEHANDLE,
-		      infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf*"),
+		      infile_path => catfile($infamily_directory, $infile_no_ending."_".$contig.$infile_suffix."*"),
 		      outfile_path => $$temp_directory_ref
 		     });
     }
@@ -7433,9 +7586,9 @@ sub gatk_concatenate_genotypegvcfs {
     concatenate_variants({active_parameter_href => $active_parameter_href,
 			  FILEHANDLE => $FILEHANDLE,
 			  elements_ref => \@{ $file_info_href->{contigs} },
-			  infile_prefix => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_"),
-			  infile_postfix => ".vcf",
-			  outfile => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf"),
+			  infile_prefix => $file_path_no_ending."_",
+			  infile_postfix => $infile_suffix,
+			  outfile => $outfile_path_no_ending.$outfile_suffix,
 			 });
 
     ## Produce a bcf compressed and index from vcf
@@ -7455,36 +7608,33 @@ sub gatk_concatenate_genotypegvcfs {
 		  java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
 		 });
 
-	    print $FILEHANDLE "-T SelectVariants ";  #Type of analysis to run
-	    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-	    print $FILEHANDLE "-V: ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf")." ";  #InFile
-	    print $FILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_incnonvariantloci.vcf")." ";  #OutFile
-
-	    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
-
-		print $FILEHANDLE "-sn ".$sample_id." ";  #Include genotypes from this sample
-	    }
+	    selectvariants({sample_names_ref => \@{ $active_parameter_href->{sample_ids} },
+			    logging_level => $active_parameter_href->{gatk_logging_level},
+			    referencefile_path => $active_parameter_href->{human_genome_reference},
+			    infile_path => $outfile_path_no_ending.$outfile_suffix,
+			    outfile_path => $outfile_path_no_ending."_incnonvariantloci".$outfile_suffix,
+			    FILEHANDLE => $FILEHANDLE,
+			   });
 	    say $FILEHANDLE "\n";
 
 	    ## Move to original filename
-	    mv({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_incnonvariantloci.vcf"),
-		outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf"),
+	    mv({infile_path => $outfile_path_no_ending."_incnonvariantloci".$outfile_suffix,
+		outfile_path => $outfile_path_no_ending.$outfile_suffix,
 		FILEHANDLE => $FILEHANDLE,
 	       });
 	    say $FILEHANDLE "\n";
 	}
 
 	## Reformat variant calling file and index
-	view_vcf({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf"),
-		  outfile_path_no_ending => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type),
+	view_vcf({infile_path => $outfile_path_no_ending.$outfile_suffix,
+		  outfile_path_no_ending => $outfile_path_no_ending,
 		  output_type => "b",
 		  FILEHANDLE => $FILEHANDLE,
 		 });
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".bcf*"),
+	migrate_file({infile_path => $outfile_path_no_ending.".bcf*",
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -7493,7 +7643,7 @@ sub gatk_concatenate_genotypegvcfs {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type.".vcf*"),
+    migrate_file({infile_path => $outfile_path_no_ending.$outfile_suffix."*",
 		  outfile_path => $outfamily_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -7505,15 +7655,18 @@ sub gatk_concatenate_genotypegvcfs {
 
 	if ($active_parameter_href->{gatk_concatenate_genotypegvcfs_bcf_file} eq 1) {
 
-	    $sample_info_href->{gbcf_file}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.".bcf");
+	    $sample_info_href->{gbcf_file}{path} = catfile($outfamily_directory, $outfile_no_ending.".bcf");
 	}
+
+	## Collect QC metadata info for later use
+	$sample_info_href->{vcf_file}{ready_vcf}{path} = catfile($outfamily_directory, $outfile_no_ending.$outfile_suffix);
 
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    dependencies => "case_dependency",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
 		   });
     }
@@ -7575,21 +7728,42 @@ sub gatk_genotypegvcfs {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Language::Java qw(core);
+    use Program::Variantcalling::Gatk qw(genotypegvcfs);
 
-    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $sbatch_script_tracker=0;
-    my $core_number = 4;  #gatk genotype is most safely processed in single thread mode, , but we need some java heap allocation
     my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
+    my $sbatch_script_tracker = 0;
+    my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};  #gatk genotype is most safely processed in single thread mode, , but we need some java heap allocation
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
 
-    my $process_time = 10;
-
+    my $process_time = $active_parameter_href->{module_time}{"p".$program_name};
     if ($active_parameter_href->{gatk_genotypegvcfs_all_sites} eq 1) {
 
 	$process_time = 50;  #Including all sites requires longer processing time
     }
 
+    ## Filehandles
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+
     ## Assign directories
     my $outfamily_file_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref);  #For ".fam" file
+    my $outfamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref, "gatk");
+    $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
+
+    ## Assign file_tags
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
+
+    ### Assign suffix
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "outfile_suffix",
+					 program_name => "pgatk_haplotypecaller",  #Attach to haplotypecaller suffix
+					});
+
+    ## Set file suffix for next module within jobid chain
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
 
     ## Create .fam file to be used in variant calling analyses
     create_fam_file({parameter_href => $parameter_href,
@@ -7602,6 +7776,10 @@ sub gatk_genotypegvcfs {
     ## Split per contig
     foreach my $contig (@{ $file_info_href->{contigs} }) {
 
+	## Assign file_tags
+	my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type."_".$contig;
+	my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+	
 	## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
 	my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
 						 job_id_href => $job_id_href,
@@ -7616,26 +7794,27 @@ sub gatk_genotypegvcfs {
 						 sleep => 1,  #Let process sleep randomly for 0-60 seconds to avoid race condition
 						});
 
-	## Assign directories
-	my $outfamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref, "gatk");
-	$parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
-
-	## Assign file_tags
-	my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
-
 	## Collect infiles for all sample_ids to enable migration to temporary directory
+	my @file_paths;
 	foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
 	    ## Add merged infile name after merging all BAM files per sample_id
 	    my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
 
+	    ## Assign directories
 	    my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id, $$outaligner_dir_ref, "gatk");
+
+	    ## Assign file_tags
 	    my $infile_tag = $file_info_href->{$sample_id}{pgatk_haplotypecaller}{file_tag};
+	    my $infile_no_ending = $infile.$infile_tag."_".$contig;
+
+	    ## Collect for downstream use
+	    push(@file_paths, catfile($$temp_directory_ref, $infile_no_ending.$infile_suffix));
 
 	    ## Copy file(s) to temporary directory
 	    say $FILEHANDLE "## Copy file(s) to temporary directory";
 	    migrate_file({FILEHANDLE => $FILEHANDLE,
-			  infile_path => catfile($insample_directory, $infile.$infile_tag."_".$contig.".vcf*"),
+			  infile_path => catfile($insample_directory, $infile_no_ending.$infile_suffix."*"),
 			  outfile_path => $$temp_directory_ref
 			 });
 	    say $FILEHANDLE "wait", "\n";
@@ -7643,6 +7822,18 @@ sub gatk_genotypegvcfs {
 
 	## GATK GenoTypeGVCFs
 	say $FILEHANDLE "## GATK GenoTypeGVCFs";
+
+	## Get parameters
+	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
+	my %commands = gatk_pedigree_flag({active_parameter_href => $active_parameter_href,
+					   fam_file_path => catfile($outfamily_file_directory, $$family_id_ref.".fam"),
+					   program_name => $program_name,
+					  });
+	## Files for genotypegvcfs
+	if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid") ) {
+
+	    push(@file_paths, $active_parameter_href->{gatk_genotypegvcfs_ref_gvcf});
+	}
 
 	## Writes java core commands to filehandle.
 	core({FILEHANDLE => $FILEHANDLE,
@@ -7652,42 +7843,22 @@ sub gatk_genotypegvcfs {
 	      java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
 	     });
 
-	print $FILEHANDLE "-T GenotypeGVCFs ";  #Type of analysis to run
-	print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-	print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-	print $FILEHANDLE "-D ".$active_parameter_href->{gatk_haplotypecaller_snp_known_set}." ";  #Known SNPs to use for annotation SNPs
-
-	## Check if "--pedigree" and "--pedigreeValidationType" should be included in analysis
-	my %commands = gatk_pedigree_flag({active_parameter_href => $active_parameter_href,
-					   fam_file_path => catfile($outfamily_file_directory, $$family_id_ref.".fam"),
-					   program_name => $program_name,
-					  });
-
-	if ($active_parameter_href->{gatk_genotypegvcfs_all_sites} eq 1) {
-
-	    print $FILEHANDLE "-allSites ";  #Include loci found to be non-variant after genotyping
-	}
-
-	print $FILEHANDLE "-L ".$contig." ";  #Per contig
-
-	if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid") ) {
-
-	    print $FILEHANDLE "-V ".$active_parameter_href->{gatk_genotypegvcfs_ref_gvcf}." ";
-	}
-
-	foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
-
-	    ## Add merged infile name after merging all BAM files per sample_id
-	    my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
-	    my $infile_tag = $file_info_href->{$sample_id}{pgatk_haplotypecaller}{file_tag};
-
-	    print $FILEHANDLE "-V ".catfile($$temp_directory_ref, $infile.$infile_tag."_".$contig.".vcf")." ";  #InFile
-	}
-	say $FILEHANDLE "-o ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf"), "\n";  #OutFile
+	genotypegvcfs({intervals_ref => [$contig],
+		       infile_paths_ref => \@file_paths,
+		       outfile_path => $outfile_path_no_ending.$outfile_suffix,
+		       logging_level => $active_parameter_href->{gatk_logging_level},
+		       referencefile_path => $active_parameter_href->{human_genome_reference},
+		       dbsnp => $active_parameter_href->{gatk_haplotypecaller_snp_known_set},
+		       pedigree_validation_type => $commands{pedigree_validation_type},
+		       pedigree => $commands{pedigree},
+		       include_nonvariant_sites => $active_parameter_href->{gatk_genotypegvcfs_all_sites},
+		       FILEHANDLE => $FILEHANDLE,
+		      });
+	say $FILEHANDLE "\n";
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf*"),
+	migrate_file({infile_path => $outfile_path_no_ending.$outfile_suffix."*",
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -7697,15 +7868,12 @@ sub gatk_genotypegvcfs {
 
 	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
-	    ## Collect QC metadata info for later use
-	    $sample_info_href->{vcf_file}{ready_vcf}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.".vcf");
-
 	    submit_job({active_parameter_href => $active_parameter_href,
 			sample_info_href => $sample_info_href,
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
 			dependencies => "sample_id_dependency_step_in_parallel",
-			path => $parameter_href->{"p".$program_name}{chain},
+			path => $jobid_chain,
 			sbatch_file_name => $file_name,
 			sbatch_script_tracker => $sbatch_script_tracker
 		       });
@@ -7719,9 +7887,9 @@ sub rcoverageplots {
 
 ##rcoverageplots
 
-##Function : Generates sbatch scripts for R scripts: 1. covplots_genome.R 2. covplots_exome.R; on files generated from calculateCoverage bedtools genomecov.
+##Function : Generates sbatch scripts for R scripts: 1. covplots_genome.R 2. covplots_exome.R; on files generated from bedtools genomecov.
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $lane_href, $infile_lane_no_ending_href, $job_id_href, $sample_id, $outaligner_dir, $program_name
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $lane_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, $program_name, $temp_directory_ref, $outaligner_dir_ref,
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
@@ -7729,53 +7897,79 @@ sub rcoverageplots {
 ##         : $lane_href                  => The lane info hash {REF}
 ##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
-##         : $sample_id                  => The sample_id
-##         : $outaligner_dir             => The outaligner_dir used in the analysis
+##         : $sample_id_ref              => The sample_id {REF}
 ##         : $program_name               => The program name
+##         : $temp_directory_ref         => The temporary directory {REF}
+##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
 
-    my $parameter_href = $_[0];
-    my $active_parameter_href = $_[1];
-    my $sample_info_href = $_[2];
-    my $file_info_href = $_[3];
-    my $lane_href = $_[4];
-    my $infile_lane_no_ending_href = $_[5];
-    my $job_id_href = $_[6];
-    my $sample_id = $_[7];
-    my $outaligner_dir = $_[8];
-    my $program_name = $_[9];
+    my ($arg_href) = @_;
 
+    ## Default(s)
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $file_info_href;
+    my $lane_href;
+    my $infile_lane_no_ending_href;
+    my $job_id_href;
+    my $sample_id_ref;
+    my $program_name;
+
+    my $tmpl = {
+	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
+	lane_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$lane_href},
+	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
+	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
+	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
+	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+
+    ## Assign directories
+    my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref, "coveragereport");
+    my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref, "coveragereport");
+
+    ## Add merged infile name after merging all BAM files per sample_id
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
+
+    ## Assign file_tags
+    my $infile_tag = $file_info_href->{$$sample_id_ref}{pbedtools_genomecov}{file_tag};
+    my $outfile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
 					     job_id_href => $job_id_href,
 					     FILEHANDLE => $FILEHANDLE,
-					     directory_id => $sample_id,
+					     directory_id => $$sample_id_ref,
 					     program_name => $program_name,
-					     program_directory => catfile(lc($outaligner_dir), "coveragereport"),
-					     temp_directory => $active_parameter_href->{temp_directory}
+					     program_directory => catfile(lc($$outaligner_dir_ref), "coveragereport"),
+					     temp_directory => $$temp_directory_ref,
 					    });
 
-    ## Assign directories
-    my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id, $outaligner_dir, "coveragereport");
-    my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id, $outaligner_dir, "coveragereport");
-
-    ## Assign file_tags
-    my $infile_tag = $file_info_href->{$sample_id}{pbedtools_genomecov}{file_tag};
-    my $outfile_tag = $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
-
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
-
-    if ( defined($active_parameter_href->{pbedtools_genomecov}) && ($active_parameter_href->{pbedtools_genomecov} > 0) ) {
-
-	print $FILEHANDLE "covplots_genome ";
-	print $FILEHANDLE catfile($insample_directory, $infile.$infile_tag)." ";  #InFile
-	print $FILEHANDLE $infile." ";  #Sample name
-	print $FILEHANDLE $active_parameter_href->{bedtools_genomecov_max_coverage}." ";  #X-axis max scale
-	say $FILEHANDLE $outsample_directory, " &", "\n";  #OutFile
-    }
+    print $FILEHANDLE "covplots_genome ";
+    print $FILEHANDLE catfile($insample_directory, $infile.$infile_tag)." ";  #InFile
+    print $FILEHANDLE $infile." ";  #Sample name
+    print $FILEHANDLE $active_parameter_href->{bedtools_genomecov_max_coverage}." ";  #X-axis max scale
+    say $FILEHANDLE $outsample_directory, " &", "\n";  #OutFile
     say $FILEHANDLE "wait", "\n";
+
     close($FILEHANDLE);
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
@@ -7784,9 +7978,9 @@ sub rcoverageplots {
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    sample_id => $sample_id,
+		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency_dead_end",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
 		   });
     }
@@ -7812,7 +8006,6 @@ sub bedtools_genomecov {
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
-
 
     my ($arg_href) = @_;
 
@@ -7873,7 +8066,10 @@ sub bedtools_genomecov {
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
     ## Assign suffix
-    my $infile_suffix = $parameter_href->{alignment_suffix}{ $parameter_href->{pgatk_baserecalibration}{chain} };  #Get infile_suffix from baserecalibration chain
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "alignment_file_suffix",
+					 jobid_chain => $parameter_href->{pgatk_baserecalibration}{chain},  #Get infile_suffix from baserecalibration jobid chain
+					});
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -7912,6 +8108,7 @@ sub bedtools_genomecov {
 		  FILEHANDLE => $FILEHANDLE,
 		 });
     say $FILEHANDLE "wait", "\n";
+
     close($FILEHANDLE);
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
@@ -8009,7 +8206,10 @@ sub picardtools_collecthsmetrics {
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
     ## Assign suffix
-    my $infile_suffix = $parameter_href->{alignment_suffix}{ $parameter_href->{pgatk_baserecalibration}{chain} };  #Get infile_suffix from baserecalibration chain
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "alignment_file_suffix",
+					 jobid_chain => $parameter_href->{pgatk_baserecalibration}{chain},  #Get infile_suffix from baserecalibration jobid chain
+					});
 
     ## Alias exome_target_bed endings
     my $infile_list_ending_ref = \$file_info_href->{exome_target_bed}[0];
@@ -8176,7 +8376,10 @@ sub picardtools_collectmultiplemetrics {
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
     ## Assign suffix
-    my $infile_suffix = $parameter_href->{alignment_suffix}{ $parameter_href->{pgatk_baserecalibration}{chain} };  #Get infile_suffix from baserecalibration chain
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "alignment_file_suffix",
+					 jobid_chain => $parameter_href->{pgatk_baserecalibration}{chain},  #Get infile_suffix from baserecalibration jobid chain
+					});
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -8344,8 +8547,14 @@ sub chanjo_sexcheck {
     my $outfile_no_ending = $infile.$outfile_tag;
 
     ## Assign suffix
-    my $infile_suffix = $parameter_href->{alignment_suffix}{ $parameter_href->{pgatk_baserecalibration}{chain} };  #Get infile_suffix from baserecalibration chain
-    my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "alignment_file_suffix",
+					 jobid_chain => $parameter_href->{pgatk_baserecalibration}{chain},  #Get infile_suffix from baserecalibration jobid chain
+					});
+    my $outfile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "outfile_suffix",
+					  program_name => "p".$program_name,
+					 });
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -8493,8 +8702,14 @@ sub sambamba_depth {
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
     ## Assign suffix
-    my $infile_suffix = $parameter_href->{alignment_suffix}{ $parameter_href->{pgatk_baserecalibration}{chain} };  #Get infile_suffix from baserecalibration chain
-    my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "alignment_file_suffix",
+					 jobid_chain => $parameter_href->{pgatk_baserecalibration}{chain},  #Get infile_suffix from baserecalibration jobid chain
+					});
+    my $outfile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "outfile_suffix",
+					  program_name => "p".$program_name,
+					 });
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -8681,7 +8896,10 @@ sub sv_reformat {
     my $final_path_no_ending = catfile($outfamily_directory, $outfile_no_ending);
 
     ## Assign suffix
-    my $file_suffix = $parameter_href->{variant_calling_suffix}{$jobid_chain};
+    my $file_suffix = get_file_suffix({parameter_href => $parameter_href,
+				       suffix_key => "variant_file_suffix",
+				       jobid_chain => $jobid_chain,
+				      });
 
     my $vcfparser_analysis_type = "";
 
@@ -9005,7 +9223,10 @@ sub sv_rankvariant {
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
     ## Assign suffix
-    my $file_suffix = $parameter_href->{variant_calling_suffix}{$jobid_chain};
+    my $file_suffix = get_file_suffix({parameter_href => $parameter_href,
+				       suffix_key => "variant_file_suffix",
+				       jobid_chain => $jobid_chain,
+				      });
 
     my $vcfparser_analysis_type = "";
 
@@ -9401,7 +9622,10 @@ sub sv_vcfparser {
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
     ## Assign suffix
-    my $file_suffix = $parameter_href->{variant_calling_suffix}{$jobid_chain};
+    my $file_suffix = get_file_suffix({parameter_href => $parameter_href,
+				       suffix_key => "variant_file_suffix",
+				       jobid_chain => $jobid_chain,
+				      });
 
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
     my @contigs = remove_element({elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
@@ -9761,7 +9985,10 @@ sub sv_varianteffectpredictor {
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
     ## Assign suffix
-    my $file_suffix = $parameter_href->{variant_calling_suffix}{$jobid_chain};
+    my $file_suffix = get_file_suffix({parameter_href => $parameter_href,
+				       suffix_key => "variant_file_suffix",
+				       jobid_chain => $jobid_chain,
+				      });
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -10033,10 +10260,15 @@ sub sv_combinevariantcallsets {
     my %file_path_no_ending;
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type);
 
-    ## Assign suffix
-    my $file_suffix = ".vcf";
-    my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
-    $parameter_href->{variant_calling_suffix}{$jobid_chain} = $outfile_suffix;  #Set variant calling file suffix for next module
+    ### Assign suffix
+    my %suffix;
+
+    ## Set file suffix for next module within jobid chain
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
 
     ## Collect infiles for all sample_ids for programs that do not do joint calling to enable migration to temporary directory
     foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
@@ -10058,7 +10290,10 @@ sub sv_combinevariantcallsets {
 		$file_path_no_ending{$sample_id}{$structural_variant_caller} = catfile($$temp_directory_ref, $infile_no_ending);
 
 		## Assign suffix
-		my $infile_suffix = $parameter_href->{$structural_variant_caller}{outfile_suffix};
+		$suffix{$structural_variant_caller} = get_file_suffix({parameter_href => $parameter_href,
+								       suffix_key => "outfile_suffix",
+								       program_name => $structural_variant_caller,
+								      });
 
 		if (! ( any {$_ eq $parameter_href->{$structural_variant_caller}{chain}} @parallel_chains ) ) { #If element is not part of array
 
@@ -10068,14 +10303,14 @@ sub sv_combinevariantcallsets {
 		## Copy file(s) to temporary directory
 		say $FILEHANDLE "## Copy file(s) to temporary directory";
 		migrate_file({FILEHANDLE => $FILEHANDLE,
-			      infile_path => catfile($insample_directory, $infile_no_ending.$infile_suffix."*"),
+			      infile_path => catfile($insample_directory, $infile_no_ending.$suffix{$structural_variant_caller}."*"),
 			      outfile_path => $$temp_directory_ref
 			     });
 
 		say $FILEHANDLE "wait", "\n";
 
 		## Reformat variant calling file and index
-		view_vcf({infile_path => $file_path_no_ending{$sample_id}{$structural_variant_caller}.$infile_suffix,
+		view_vcf({infile_path => $file_path_no_ending{$sample_id}{$structural_variant_caller}.$suffix{$structural_variant_caller},
 			  outfile_path_no_ending => $file_path_no_ending{$sample_id}{$structural_variant_caller},
 			  output_type => "z",
 			  FILEHANDLE => $FILEHANDLE,
@@ -10090,7 +10325,7 @@ sub sv_combinevariantcallsets {
 	if ($active_parameter_href->{$structural_variant_caller} > 0 && ($structural_variant_caller !~/pmanta|pdelly_reformat/) ) {  #Expect vcf. Special case: manta is processed by joint calling and per family
 	    
 	    ## Assemble file paths by adding file ending
-	    my @file_paths = map { $file_path_no_ending{$_}{$structural_variant_caller}.$file_suffix.".gz" } @{ $active_parameter_href->{sample_ids} };
+	    my @file_paths = map { $file_path_no_ending{$_}{$structural_variant_caller}.$suffix{$structural_variant_caller}.".gz" } @{ $active_parameter_href->{sample_ids} };
 
 	    if (scalar(@{ $active_parameter_href->{sample_ids} }) > 1) {
 
@@ -10098,7 +10333,7 @@ sub sv_combinevariantcallsets {
 		say $FILEHANDLE "## Merge all structural variant caller's vcf files per sample_id";
 
 		Program::Variantcalling::Bcftools::merge({infile_paths_ref => \@file_paths,
-							  outfile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.$file_suffix),
+							  outfile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.$outfile_suffix),
 							  output_type => "v",
 							  stderrfile_path => $program_info_path."_".$structural_variant_caller."_merge.stderr.txt",
 							  FILEHANDLE => $FILEHANDLE,
@@ -10111,7 +10346,7 @@ sub sv_combinevariantcallsets {
 		say $FILEHANDLE "## Reformat all structural variant caller's vcf files per sample_id";
 
 		Program::Variantcalling::Bcftools::view({infile_path => $file_paths[0],  #Can be only one
-							 outfile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.$file_suffix),
+							 outfile_path => catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.$outfile_suffix),
 							 output_type => "v",
 							 stderrfile_path => $program_info_path."_".$structural_variant_caller."_merge.stderr.txt",
 							 FILEHANDLE => $FILEHANDLE,
@@ -10135,7 +10370,10 @@ sub sv_combinevariantcallsets {
 	    my $infile_no_ending = $$family_id_ref.$infile_tag."_".$call_type;
 
 	    ## Assign suffix
-	    my $infile_suffix = $parameter_href->{$structural_variant_caller}{outfile_suffix};
+	    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+						 suffix_key => "outfile_suffix",
+						 program_name => $structural_variant_caller,
+						});
 
 	    if (! ( any {$_ eq $parameter_href->{$structural_variant_caller}{chain}} @parallel_chains ) ) { #If element is not part of array
 
@@ -10174,12 +10412,12 @@ sub sv_combinevariantcallsets {
 	if ($active_parameter_href->{$structural_variant_caller} > 0) {  #Expect vcf
 
 	    my $variant_caller_alias = $parameter_href->{$structural_variant_caller}{outdir_name};
-	    push(@infile_paths, catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.$file_suffix.":".$variant_caller_alias));
+	    push(@infile_paths, catfile($$temp_directory_ref, $$family_id_ref."_".$structural_variant_caller.$outfile_suffix.":".$variant_caller_alias));
 	}
     }
 
     Program::Variantcalling::Svdb::merge({infile_paths_ref => \@infile_paths,
-					  outfile_path => $merged_file_path_no_ending.$file_suffix,
+					  outfile_path => $merged_file_path_no_ending.$outfile_suffix,
 					  priority => $active_parameter_href->{sv_svdb_merge_prioritize},
 					  FILEHANDLE => $FILEHANDLE,
 					 });
@@ -10193,8 +10431,8 @@ sub sv_combinevariantcallsets {
 
 	## Split multiallelic variants
 	say $FILEHANDLE "## Split multiallelic variants";
-	decompose({infile_path => $merged_file_path_no_ending.$file_suffix,
-		   outfile_path => $merged_file_path_no_ending.$alt_file_ending.$file_suffix,
+	decompose({infile_path => $merged_file_path_no_ending.$outfile_suffix,
+		   outfile_path => $merged_file_path_no_ending.$alt_file_ending.$outfile_suffix,
 		   FILEHANDLE => $FILEHANDLE,
 		   smart_decomposition => 1,
 		  });
@@ -10204,7 +10442,7 @@ sub sv_combinevariantcallsets {
 	
 	use Program::Gnu::Coreutils qw(mv);
 
-	my $infile_path = $merged_file_path_no_ending.$alt_file_ending.$file_suffix;
+	my $infile_path = $merged_file_path_no_ending.$alt_file_ending.$outfile_suffix;
 	$alt_file_ending .= "_svdbq";  #Update alternative ending
 
 	my $annotation_file_counter = 0;  #Ensure correct infile
@@ -10214,11 +10452,11 @@ sub sv_combinevariantcallsets {
 	    
 	    if ($annotation_file_counter) {
 
-		$infile_path = $merged_file_path_no_ending.$alt_file_ending.$file_suffix.".".$outfile_tracker;
+		$infile_path = $merged_file_path_no_ending.$alt_file_ending.$outfile_suffix.".".$outfile_tracker;
 		$outfile_tracker++;  #Increment now that infile has been set
 	    }
 	    query({infile_path => $infile_path,
-		   outfile_path => $merged_file_path_no_ending.$alt_file_ending.$file_suffix.".".$outfile_tracker,
+		   outfile_path => $merged_file_path_no_ending.$alt_file_ending.$outfile_suffix.".".$outfile_tracker,
 		   dbfile_path => $query_db_file,
 		   bnd_distance => 25000,
 		   overlap => 0.8,
@@ -10231,8 +10469,8 @@ sub sv_combinevariantcallsets {
 	}
 
 	## Rename to remove outfile_tracker
-	mv({infile_path => $merged_file_path_no_ending.$alt_file_ending.$file_suffix.".".$outfile_tracker,
-	    outfile_path => $merged_file_path_no_ending.$alt_file_ending.$file_suffix,
+	mv({infile_path => $merged_file_path_no_ending.$alt_file_ending.$outfile_suffix.".".$outfile_tracker,
+	    outfile_path => $merged_file_path_no_ending.$alt_file_ending.$outfile_suffix,
 	    FILEHANDLE => $FILEHANDLE,
 	   });
 	say $FILEHANDLE "\n";
@@ -10244,8 +10482,8 @@ sub sv_combinevariantcallsets {
     sort_vcf({active_parameter_href => $active_parameter_href,
 	      FILEHANDLE => $FILEHANDLE,
 	      sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict"),
-	      infile_paths_ref => [$merged_file_path_no_ending.$alt_file_ending.$file_suffix],
-	      outfile => $outfile_path_no_ending.$outfile_alt_file_ending.$file_suffix,
+	      infile_paths_ref => [$merged_file_path_no_ending.$alt_file_ending.$outfile_suffix],
+	      outfile => $outfile_path_no_ending.$outfile_alt_file_ending.$outfile_suffix,
 	     });
     print $FILEHANDLE "\n";
 
@@ -10256,8 +10494,8 @@ sub sv_combinevariantcallsets {
 
 	say $FILEHANDLE "## Remove FILTER ne PASS";
 	Program::Variantcalling::Bcftools::view({apply_filters_ref => ["PASS"],
-						 infile_path => $outfile_path_no_ending.$alt_file_ending.$file_suffix,
-						 outfile_path => $outfile_path_no_ending.$alt_file_ending."_filt".$file_suffix,
+						 infile_path => $outfile_path_no_ending.$alt_file_ending.$outfile_suffix,
+						 outfile_path => $outfile_path_no_ending.$alt_file_ending."_filt".$outfile_suffix,
 						 FILEHANDLE => $FILEHANDLE,
 						});
 	say $FILEHANDLE "\n";
@@ -10269,7 +10507,7 @@ sub sv_combinevariantcallsets {
     if ($active_parameter_href->{sv_genmod_filter} > 0) {
 
 	say $FILEHANDLE "## Remove common variants";
-	Program::Variantcalling::Genmod::annotate({infile_path => $outfile_path_no_ending.$alt_file_ending.$file_suffix,
+	Program::Variantcalling::Genmod::annotate({infile_path => $outfile_path_no_ending.$alt_file_ending.$outfile_suffix,
 						   outfile_path => catfile(dirname(devnull()), "stdout"),
 						   verbosity => "v",
 						   temp_directory_path => $$temp_directory_ref,
@@ -10281,7 +10519,7 @@ sub sv_combinevariantcallsets {
 	$alt_file_ending .= "_genmod_filter";  #Update ending
 
 	Program::Variantcalling::Genmod::filter({infile_path => "-",
-						 outfile_path => $outfile_path_no_ending.$alt_file_ending.$file_suffix,
+						 outfile_path => $outfile_path_no_ending.$alt_file_ending.$outfile_suffix,
 						 verbosity => "v",
 						 threshold => $active_parameter_href->{sv_genmod_filter_threshold},
 						 FILEHANDLE => $FILEHANDLE,
@@ -10293,7 +10531,7 @@ sub sv_combinevariantcallsets {
     if ($active_parameter_href->{sv_vcfanno} > 0) {
 
 	say $FILEHANDLE "## Annotate 1000G structural variants";
-	vcfanno({infile_path => $outfile_path_no_ending.$alt_file_ending.$file_suffix,
+	vcfanno({infile_path => $outfile_path_no_ending.$alt_file_ending.$outfile_suffix,
 		 toml_configfile_path => $active_parameter_href->{sv_vcfanno_config},
 		 lua => $active_parameter_href->{sv_vcfanno_lua},
 		 ends => 1,
@@ -10304,7 +10542,7 @@ sub sv_combinevariantcallsets {
 
 	$alt_file_ending .= "_vcfanno";  #Update ending
 
-	say $FILEHANDLE "> ".$outfile_path_no_ending.$alt_file_ending.$file_suffix, "\n";
+	say $FILEHANDLE "> ".$outfile_path_no_ending.$alt_file_ending.$outfile_suffix, "\n";
 
 	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
@@ -10317,8 +10555,8 @@ sub sv_combinevariantcallsets {
 	}
 
 	say $FILEHANDLE "## Add header for 1000G annotation of structural variants";
-	Program::Variantcalling::Bcftools::annotate({infile_path => $outfile_path_no_ending.$alt_file_ending.$file_suffix,
-						     outfile_path => $outfile_path_no_ending.$alt_file_ending."_bcftools_annotate.vcf",
+	Program::Variantcalling::Bcftools::annotate({infile_path => $outfile_path_no_ending.$alt_file_ending.$outfile_suffix,
+						     outfile_path => $outfile_path_no_ending.$alt_file_ending."_bcftools_annotate".$outfile_suffix,
 						     output_type => "v",
 						     headerfile_path => $active_parameter_href->{sv_vcfannotation_header_lines_file},
 						     FILEHANDLE => $FILEHANDLE,
@@ -10333,8 +10571,8 @@ sub sv_combinevariantcallsets {
 	sort_vcf({active_parameter_href => $active_parameter_href,
 		  FILEHANDLE => $FILEHANDLE,
 		  sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict"),
-		  infile_paths_ref => [$outfile_path_no_ending.$alt_file_ending.$file_suffix],
-		  outfile => $outfile_path_no_ending.$file_suffix,
+		  infile_paths_ref => [$outfile_path_no_ending.$alt_file_ending.$outfile_suffix],
+		  outfile => $outfile_path_no_ending.$outfile_suffix,
 		 });
 
 	print $FILEHANDLE "\n";
@@ -10343,7 +10581,7 @@ sub sv_combinevariantcallsets {
     if ($active_parameter_href->{sv_combinevariantcallsets_bcf_file}) {
 
 	## Reformat variant calling file and index
-	view_vcf({infile_path => $outfile_path_no_ending.$file_suffix,
+	view_vcf({infile_path => $outfile_path_no_ending.$outfile_suffix,
 		  outfile_path_no_ending => $outfile_path_no_ending,
 		  output_type => "b",
 		  FILEHANDLE => $FILEHANDLE,
@@ -10359,7 +10597,7 @@ sub sv_combinevariantcallsets {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => $outfile_path_no_ending.$file_suffix,
+    migrate_file({infile_path => $outfile_path_no_ending.$outfile_suffix,
 		  outfile_path => $outfamily_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -10369,7 +10607,7 @@ sub sv_combinevariantcallsets {
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
-	$sample_info_href->{sv_vcf_file}{ready_vcf}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.$file_suffix);
+	$sample_info_href->{sv_vcf_file}{ready_vcf}{path} = catfile($outfamily_directory, $$family_id_ref.$outfile_tag.$call_type.$outfile_suffix);
 
 	if ($active_parameter_href->{sv_combinevariantcallsets_bcf_file}) {
 
@@ -10495,10 +10733,18 @@ sub cnvnator {
     my $outfile_no_ending = $infile.$outfile_tag;
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
-    ## Assign suffix
-    my $infile_suffix = $parameter_href->{alignment_suffix}{ $parameter_href->{pgatk_baserecalibration}{chain} };  #Inherit from input chain
-    my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
-    $parameter_href->{variant_calling_suffix}{$jobid_chain} = $outfile_suffix;  #Set variant calling file suffix for next module
+    ### Assign suffix
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "alignment_file_suffix",
+					 jobid_chain => $parameter_href->{pgatk_baserecalibration}{chain},  #Get infile_suffix from baserecalibration jobid chain
+					});
+
+    ## Set file suffix for next module within jobid chain
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
 
     my $root_file;
     my $phenotype_info = $sample_info_href->{sample}{$$sample_id_ref}{phenotype}; #Alias
@@ -10774,9 +11020,13 @@ sub delly_reformat {
     my $outfile_no_ending = $$family_id_ref.$outfile_tag."_".$call_type;
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
-    ## Assign suffix
-    my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
-    $parameter_href->{variant_calling_suffix}{$jobid_chain} = $outfile_suffix;  #Set variant calling file suffix for next module
+    ### Assign suffix
+    ## Set file suffix for next module within jobid chain
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
 
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
     my @contigs = remove_element({elements_ref => \@{ $file_info_href->{contigs_size_ordered} },
@@ -10793,14 +11043,14 @@ sub delly_reformat {
     my %infile_path_no_ending;
     my %file_path_no_ending;
     my %suffix;
-    my @infile_tag_keys = ("pgatk_baserecalibration", "pdelly_call");
+    my @program_tag_keys = ("pgatk_baserecalibration", "pdelly_call");
     foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
 	## Assign directories
 	my $insample_directory_bam = catdir($active_parameter_href->{outdata_dir}, $sample_id, $$outaligner_dir_ref);
 	my $insample_directory_bcf = catdir($active_parameter_href->{outdata_dir}, $sample_id, $$outaligner_dir_ref, $parameter_href->{pdelly_call}{outdir_name});
 
-	foreach my $infile_tag_key (@infile_tag_keys) {
+	foreach my $infile_tag_key (@program_tag_keys) {
 
 	    ## Add merged infile name after merging all BAM files per sample_id
 	    my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
@@ -10815,7 +11065,10 @@ sub delly_reformat {
 	    if ($infile_tag_key eq "pdelly_call") {  #BCFs
 		
 		## Assign suffix
-		$suffix{$infile_tag_key} = $parameter_href->{$infile_tag_key}{ $parameter_href->{$infile_tag_key}{chain} };
+		$suffix{$infile_tag_key} = get_file_suffix({parameter_href => $parameter_href,
+							    suffix_key => "outfile_suffix",
+							    program_name => $infile_tag_key,
+							   });
 
 	      SV_TYPE:
 		foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {
@@ -10852,7 +11105,10 @@ sub delly_reformat {
 	    else {  #BAMs
 
 		## Assign suffix
-		$suffix{$infile_tag_key} = $parameter_href->{alignment_suffix}{ $parameter_href->{$infile_tag_key}{chain} };
+		$suffix{$infile_tag_key} = get_file_suffix({parameter_href => $parameter_href,
+							    suffix_key => "alignment_file_suffix",
+							    jobid_chain => $parameter_href->{$infile_tag_key}{chain},
+							   });
 
 		my $file_ending = substr($suffix{$infile_tag_key}, 0, 2)."*";
 
@@ -11308,9 +11564,15 @@ sub delly_call {
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
     ## Assign suffix
-    my $infile_suffix = $parameter_href->{alignment_suffix}{ $parameter_href->{pgatk_baserecalibration}{chain} };  #Inherit from input chain
-    my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
-    $parameter_href->{"p".$program_name}{$jobid_chain} = $outfile_suffix;  #Set file suffix for next module
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "alignment_file_suffix",
+					 jobid_chain => $parameter_href->{pgatk_baserecalibration}{chain},  #Get infile_suffix from baserecalibration jobid chain
+					});
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
 
     ### Update contigs
     ## Removes an element from array and return new array while leaving orginal elements_ref untouched
@@ -11513,9 +11775,16 @@ sub manta {
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
     ## Assign suffix
-    my $infile_suffix = $parameter_href->{alignment_suffix}{ $parameter_href->{pgatk_baserecalibration}{chain} };  #Inherit from input chain
-    my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
-    $parameter_href->{variant_calling_suffix}{$jobid_chain} = $outfile_suffix;  #Set variant calling file suffix for next module
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "alignment_file_suffix",
+					 jobid_chain => $parameter_href->{pgatk_baserecalibration}{chain},  #Get infile_suffix from baserecalibration jobid chain
+					});
+    ## Set file suffix for next module within jobid chain
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
 
     my %file_path_no_ending;
     my $core_counter = 1;
@@ -11714,9 +11983,17 @@ sub tiddit {
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $infile.$outfile_tag);
 
     ## Assign suffix
-    my $infile_suffix = $parameter_href->{alignment_suffix}{ $parameter_href->{pgatk_baserecalibration}{chain} };  #Inherit from input chain
-    my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
-    $parameter_href->{variant_calling_suffix}{$jobid_chain} = $outfile_suffix;  #Set variant calling file suffix for next module
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "alignment_file_suffix",
+					 jobid_chain => $parameter_href->{pgatk_baserecalibration}{chain},  #Get infile_suffix from baserecalibration jobid chain
+					});
+
+    ## Set file suffix for next module within jobid chain
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
@@ -11862,9 +12139,17 @@ sub samtools_mpileup {
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
     ## Assign suffix
-    my $infile_suffix = $parameter_href->{alignment_suffix}{ $parameter_href->{pgatk_baserecalibration}{chain} };  #Inherit from input chain
-    my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
-    $parameter_href->{variant_calling_suffix}{$jobid_chain} = $outfile_suffix;  #Set variant calling file suffix for next module
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "alignment_file_suffix",
+					 jobid_chain => $parameter_href->{pgatk_baserecalibration}{chain},  #Get infile_suffix from baserecalibration jobid chain
+					});
+
+    ## Set file suffix for next module within jobid chain
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
 
     ## Create .fam file to be used in variant calling analyses
     create_fam_file({parameter_href => $parameter_href,
@@ -12128,9 +12413,17 @@ sub freebayes {
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
     ## Assign suffix
-    my $infile_suffix = $parameter_href->{alignment_suffix}{ $parameter_href->{pgatk_baserecalibration}{chain} };  #Inherit from input chain
-    my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
-    $parameter_href->{variant_calling_suffix}{$jobid_chain} = $outfile_suffix;  #Set variant calling file suffix for next module
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "alignment_file_suffix",
+					 jobid_chain => $parameter_href->{pgatk_baserecalibration}{chain},  #Get infile_suffix from baserecalibration jobid chain
+					});
+
+    ## Set file suffix for next module within jobid chain
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
 
     my %file_path_no_ending;
 
@@ -12373,9 +12666,17 @@ sub gatk_haplotypecaller {
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
     ## Assign suffix
-    my $infile_suffix = $parameter_href->{alignment_suffix}{$jobid_chain};
-    my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
-    $parameter_href->{variant_calling_suffix}{$jobid_chain} = $outfile_suffix;  #Set variant calling file suffix for next module
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "alignment_file_suffix",
+					 jobid_chain => $jobid_chain,
+					});
+
+    ## Set file suffix for next module within jobid chain
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
 
     ## Create .fam file to be used in variant calling analyses
     create_fam_file({parameter_href => $parameter_href,
@@ -12470,7 +12771,7 @@ sub gatk_haplotypecaller {
 			 outfile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
 			 stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 			 referencefile_path => $active_parameter_href->{human_genome_reference},
-			 logging_level => "INFO",
+			 logging_level => $active_parameter_href->{gatk_logging_level},
 			 pedigree_validation_type => $commands{pedigree_validation_type},
 			 pedigree => $commands{pedigree},
 			 FILEHANDLE => $XARGSFILEHANDLE,
@@ -12627,8 +12928,10 @@ sub gatk_baserecalibration {
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
     ## Assign suffix
-    my $infile_suffix = $parameter_href->{alignment_suffix}{$jobid_chain};
-    my $outfile_suffix = $parameter_href->{alignment_suffix}{$jobid_chain};
+    my $infile_suffix = my $outfile_suffix = get_file_suffix({parameter_href => $parameter_href,
+							      suffix_key => "alignment_file_suffix",
+							      jobid_chain => $jobid_chain,
+							     });
 
     ## Alias exome_target_bed endings
     my $infile_list_ending_ref = \$file_info_href->{exome_target_bed}[0];
@@ -12712,7 +13015,7 @@ sub gatk_baserecalibration {
 			  outfile_path => $file_path_no_ending."_".$contig.".grp",
 			  stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 			  referencefile_path => $active_parameter_href->{human_genome_reference},
-			  logging_level => "INFO",
+			  logging_level => $active_parameter_href->{gatk_logging_level},
 			  downsample_to_coverage => $active_parameter_href->{gatk_downsample_to_coverage},
 			  gatk_disable_auto_index_and_file_lock => $active_parameter_href->{gatk_disable_auto_index_and_file_lock},
 			  num_cpu_threads_per_data_thread => $active_parameter_href->{core_processor_number},
@@ -12761,7 +13064,7 @@ sub gatk_baserecalibration {
 		    outfile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
 		    stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 		    referencefile_path => $active_parameter_href->{human_genome_reference},
-		    logging_level => "INFO",
+		    logging_level => $active_parameter_href->{gatk_logging_level},
 		    downsample_to_coverage => $active_parameter_href->{gatk_downsample_to_coverage},
 		    gatk_disable_auto_index_and_file_lock => $active_parameter_href->{gatk_disable_auto_index_and_file_lock},
 		    num_cpu_threads_per_data_thread => $active_parameter_href->{core_processor_number},
@@ -12972,8 +13275,10 @@ sub gatk_realigner {
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
     ## Assign suffix
-    my $infile_suffix = $parameter_href->{alignment_suffix}{$jobid_chain};
-    my $outfile_suffix = $parameter_href->{alignment_suffix}{$jobid_chain};
+    my $infile_suffix = my $outfile_suffix = get_file_suffix({parameter_href => $parameter_href,
+							      suffix_key => "alignment_file_suffix",
+							      jobid_chain => $jobid_chain,
+							     });
 
     ## Get exome_target_bed file for specfic sample_id and add file_ending from file_infoHash if supplied
     my $exome_target_bed_file = get_exom_target_bed_file({active_parameter_href => $active_parameter_href,
@@ -13052,7 +13357,7 @@ sub gatk_realigner {
 				outfile_path => $outfile_path_no_ending."_".$contig.".intervals",
 				stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 				referencefile_path => $active_parameter_href->{human_genome_reference},
-				logging_level => "INFO",
+				logging_level => $active_parameter_href->{gatk_logging_level},
 				downsample_to_coverage => $active_parameter_href->{gatk_downsample_to_coverage},
 				gatk_disable_auto_index_and_file_lock => $active_parameter_href->{gatk_disable_auto_index_and_file_lock},
 				FILEHANDLE => $XARGSFILEHANDLE,
@@ -13098,7 +13403,7 @@ sub gatk_realigner {
 			target_intervals_file => $outfile_path_no_ending."_".$contig.".intervals",
 			stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 			referencefile_path => $active_parameter_href->{human_genome_reference},
-			logging_level => "INFO",
+			logging_level => $active_parameter_href->{gatk_logging_level},
 			downsample_to_coverage => $active_parameter_href->{gatk_downsample_to_coverage},
 			gatk_disable_auto_index_and_file_lock => $active_parameter_href->{gatk_disable_auto_index_and_file_lock},
 			FILEHANDLE => $XARGSFILEHANDLE,
@@ -13273,8 +13578,10 @@ sub pmarkduplicates {
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
     ## Assign suffix
-    my $infile_suffix = $parameter_href->{alignment_suffix}{$jobid_chain};
-    my $outfile_suffix = $parameter_href->{alignment_suffix}{$jobid_chain};
+    my $infile_suffix = my $outfile_suffix = get_file_suffix({parameter_href => $parameter_href,
+							      suffix_key => "alignment_file_suffix",
+							      jobid_chain => $jobid_chain,
+							     });
 
     ## Sums all mapped and duplicate reads and takes fraction of before finishing
     my $regexp = q?perl -nae'my %feature; while (<>) { if($_=~/duplicates/ && $_=~/^(\d+)/) {$feature{dup} = $feature{dup} + $1} if($_=~/\d+\smapped/ && $_=~/^(\d+)/) {$feature{map} = $feature{map} + $1} } print "Read Mapped: ".$feature{map}."\nDuplicates: ".$feature{dup}."\n"."Fraction Duplicates: ".$feature{dup}/$feature{map}, "\n"; last;'?;
@@ -13611,8 +13918,10 @@ sub picardtools_mergesamfiles {
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{ppicardtools_mergesamfiles}{file_tag};
 
     ## Assign suffix
-    my $infile_suffix = $parameter_href->{alignment_suffix}{$jobid_chain};
-    my $outfile_suffix = $parameter_href->{alignment_suffix}{$jobid_chain};
+    my $infile_suffix = my $outfile_suffix = get_file_suffix({parameter_href => $parameter_href,
+							      suffix_key => "alignment_file_suffix",
+							      jobid_chain => $jobid_chain,
+							     });
 
     ## Copies files from source to destination
     migrate_files({infiles_ref => \@{ $infile_lane_no_ending_href->{$$sample_id_ref} },
@@ -14513,10 +14822,14 @@ sub bwa_mem {
     ## Assign file tags
     my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
 
-    ## Assign suffix
-    my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
-    $parameter_href->{alignment_suffix}{$jobid_chain} = $outfile_suffix;  #Set alignment file suffix for next module
-
+    ### Assign suffix
+    ## Set file suffix for next module within jobid chain
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "alignment_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
+    
     my $uncompressed_bam_output;
     if ($outfile_suffix eq ".bam") {
 	
@@ -15902,7 +16215,10 @@ sub split_fastq_file {
 
 	## Assign suffix
 	my $infile_suffix = $parameter_href->{"p".$program_name}{infile_suffix};
-	my $outfile_suffix = $parameter_href->{"p".$program_name}{outfile_suffix};
+	my $outfile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					      suffix_key => "outfile_suffix",
+					      program_name => "p".$program_name,
+					     });
 
 	say $FILEHANDLE "## ".$program_name;
 
@@ -21139,114 +21455,6 @@ sub concatenate_vcfs {
 }
 
 
-sub combinevariants {
-
-##combinevariants
-
-##Function : Writes sbatch code to supplied filehandle to combine variants in vcf format. Each array element is combined with the infile prefix and postfix.
-##Returns  : ""
-##Arguments: $active_parameter_href, $FILEHANDLE, $arrays_ref, $infile_prefix, $infile_postfix, $outfile
-##         : $active_parameter_href => The active parameters for this analysis hash {REF}
-##         : $FILEHANDLE            => SBATCH script FILEHANDLE to print to
-##         : $arrays_ref            => Holding the number and part of file names to be combined
-##         : $infile_prefix         => Will be combined with the each array element
-##         : $infile_postfix        => Will be combined with the each array element
-##         : $outfile               => The combined outfile
-
-    my $active_parameter_href = $_[0];
-    my $FILEHANDLE = $_[1];
-    my $arrays_ref = $_[2];
-    my $infile_prefix = $_[3];
-    my $infile_postfix = $_[4];
-    my $outfile = $_[5];
-
-    use Language::Java qw(core);
-
-    unless (defined($infile_postfix)) {
-
-	$infile_postfix = "";  #No postfix
-    }
-    unless (defined($outfile)) {
-
-	$outfile = $infile_prefix.".vcf";
-    }
-    say $FILEHANDLE "## GATK CombineVariants";
-
-    ## Writes java core commands to filehandle.
-    core({FILEHANDLE => $FILEHANDLE,
-	  memory_allocation => "Xmx4g",
-	  java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-	  temp_directory => $active_parameter_href->{temp_directory},
-	  java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
-	 });
-
-    print $FILEHANDLE "-T CombineVariants ";  #Type of analysis to run
-    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-
-    foreach my $element (@$arrays_ref) {
-
-	print $FILEHANDLE "-V: ".$infile_prefix.$element.$infile_postfix." ";  #files to combined
-    }
-    print $FILEHANDLE "-genotypeMergeOptions UNSORTED ";  #Take the genotypes in any order. Should be fine since the same order and number of samples exists in all files
-
-    say $FILEHANDLE "-o ".$outfile, "\n";  #OutFile
-}
-
-
-sub combinegvcfs {
-
-##combinegvcfs
-
-##Function : Writes sbatch code to supplied filehandle to combine variants in gvcf format. Each array element is combined with the infile prefix and postfix.
-##Returns  : ""
-##Arguments: $active_parameter_href, $FILEHANDLE, $arrays_ref, $infile_prefix, $infile_postfix, $outfile
-##         : $active_parameter_href => The active parameters for this analysis hash {REF}
-##         : $FILEHANDLE            => SBATCH script FILEHANDLE to print to
-##         : $arrays_ref            => Holding the number and part of file names to be combined
-##         : $infile_prefix         => Will be combined with the each array element
-##         : $infile_postfix        => Will be combined with the each array element
-##         : $outfile               => The combined outfile
-
-    my $active_parameter_href = $_[0];
-    my $FILEHANDLE = $_[1];
-    my $arrays_ref = $_[2];
-    my $infile_prefix = $_[3];
-    my $infile_postfix = $_[4];
-    my $outfile = $_[5];
-
-    use Language::Java qw(core);
-
-    unless (defined($infile_postfix)) {
-
-	$infile_postfix = "";  #No postfix
-    }
-    unless (defined($outfile)) {
-
-	$outfile = $infile_prefix.".vcf";
-    }
-    say $FILEHANDLE "## GATK CombineGVCFs";
-
-    ## Writes java core commands to filehandle.
-    core({FILEHANDLE => $FILEHANDLE,
-	  memory_allocation => "Xmx4g",
-	  java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-	  temp_directory => $active_parameter_href->{temp_directory},
-	  java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
-	 });
-
-    print $FILEHANDLE "-T CombineGVCFs ";  #Type of analysis to run
-    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".catfile($active_parameter_href->{reference_dir}, $active_parameter_href->{human_genome_reference})." ";  #Reference file
-
-    foreach my $element (@$arrays_ref) {
-
-	print $FILEHANDLE "-V: ".$infile_prefix.$element.$infile_postfix." ";  #files to combined
-    }
-    say $FILEHANDLE "-o ".$outfile, "\n";  #OutFile
-}
-
-
 sub concatenate_variants {
 
 ##concatenate_variants
@@ -21316,7 +21524,7 @@ sub concatenate_variants {
 		 infile_paths_ref => \@infile_paths,
 		 outfile_path => $outfile,
 		 referencefile_path => $$human_genome_reference_ref,
-		 logging_level => "INFO",
+		 logging_level => $active_parameter_href->{gatk_logging_level},
 		 FILEHANDLE => $FILEHANDLE,
 		});
     say $FILEHANDLE "\n";
@@ -26171,34 +26379,84 @@ sub check_element_exists_in_hash {
 }
 
 
-sub get_vcf_suffix {
+sub set_file_suffix {
 
-##get_vcf_suffix
+##set_file_suffix
 
-##Function : Return the current infile vcf compression suffix for this jobid chain
-##Returns  : "$vcf_suffix"
-##Arguments: $parameter_href, $jobid_chain
+##Function : Set the current file suffix for this jobid chain
+##Returns  : "$file_suffix"
+##Arguments: $parameter_href, $suffix_key, $jobid_chain, $file_suffix
 ##         : $parameter_href => Holds all parameters
+##         : $suffix_key     => Suffix key
 ##         : $jobid_chain    => Job id chain for program
+##         : $file_suffix    => File suffix
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
     my $parameter_href;
+    my $suffix_key;
     my $jobid_chain;
+    my $file_suffix;
 
     my $tmpl = {
 	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	suffix_key => { required => 1, defined => 1, strict_type => 1, store => \$suffix_key},
 	jobid_chain => { required => 1, defined => 1, strict_type => 1, store => \$jobid_chain},
+	file_suffix => { required => 1, defined => 1, strict_type => 1, store => \$file_suffix},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $vcf_suffix = $parameter_href->{vcf_suffix}{$jobid_chain};
+    $parameter_href->{$suffix_key}{$jobid_chain} = $file_suffix;
 
-    if ( (defined($vcf_suffix)) && ($vcf_suffix) ) {
+    return $file_suffix;
+}
 
-	return $vcf_suffix;  #Used downstream to determine compression and format
+
+sub get_file_suffix {
+
+##get_file_suffix
+
+##Function : Return the current file suffix for this jobid chain or program
+##Returns  : "$file_suffix"
+##Arguments: $parameter_href, $suffix_key, $jobid_chain, $program_name
+##         : $parameter_href => Holds all parameters
+##         : $suffix_key     => Suffix key
+##         : $jobid_chain    => Job id chain for program
+##         : $program_name   => Program name
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $suffix_key;
+    my $jobid_chain;
+    my $program_name;
+
+    my $tmpl = {
+	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	suffix_key => { required => 1, defined => 1, strict_type => 1, store => \$suffix_key},
+	jobid_chain => { strict_type => 1, store => \$jobid_chain},
+	program_name => { strict_type => 1, store => \$program_name},
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    my $file_suffix;
+
+    ## Jobid chain specific suffix
+    if (defined($jobid_chain)) {
+
+	$file_suffix = $parameter_href->{$suffix_key}{$jobid_chain};
+    }
+    elsif (defined($program_name)) {  # Program  specific
+
+	$file_suffix = $parameter_href->{$program_name}{$suffix_key};
+    }
+    if ( (defined($file_suffix)) && ($file_suffix) ) {
+
+	return $file_suffix;
     }
 }
 

@@ -20,7 +20,7 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(call index view filter norm merge concat annotate);
+    our @EXPORT_OK = qw(call index view filter norm merge concat annotate roh);
 
 }
 
@@ -666,6 +666,93 @@ sub annotate {
     if ($outfile_path) {
 
 	push(@commands, "> ".$outfile_path);  #Specify output filename
+    }
+    if ($stderrfile_path) {
+
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
+sub roh {
+
+##roh
+
+##Function : Perl wrapper for writing bcftools roh recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
+##Returns  : "@commands"
+##Arguments: $infile_path, $outfile_path, $stderrfile_path, $stdoutfile_path, $FILEHANDLE, $af_file_path, $skip_indels, $sample_id
+##         : $infile_path     => Infile path to read from
+##         : $outfile_path    => Outfile path to write to
+##         : $stderrfile_path => Stderr file path to write to
+##         : $stdoutfile_path => Stdoutfile file path to write to
+##         : $FILEHANDLE      => Filehandle to write to
+##         : $af_file_path    => Read allele frequencies from file (CHR\tPOS\tREF,ALT\tAF)
+##         : $skip_indels     => Skip indels as their genotypes are enriched for errors
+##         : $sample_id       => Sample to analyze
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $skip_indels;
+
+    ## Flatten argument(s)
+    my $infile_path;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $stdoutfile_path;
+    my $FILEHANDLE;
+    my $af_file_path;
+    my $sample_id;
+
+    my $tmpl = {
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path },
+	outfile_path => { strict_type => 1, store => \$outfile_path },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE },
+	af_file_path => { strict_type => 1, store => \$af_file_path },
+	sample_id => { strict_type => 1, store => \$sample_id },
+	skip_indels => { default => 0,
+			 allow => [0, 1],
+			 strict_type => 1, store => \$skip_indels },
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## bcftools
+    my @commands = qw(bcftools roh);  #Stores commands depending on input parameters
+
+    ## Options
+    if ($af_file_path) {
+
+	push(@commands, "--AF-file ".$af_file_path);
+    }
+    if ($skip_indels) {
+
+	push(@commands, "--skip-indels");
+    }
+    if ($sample_id) {
+
+	push(@commands, "--sample ".$sample_id);
+    }
+
+    ## Infile
+    if ($infile_path) {
+
+	push(@commands, $infile_path);
+    }
+    if ($outfile_path) {
+
+	push(@commands, "> ".$outfile_path);  #Specify output filename
+    }
+    if ($stdoutfile_path) {
+
+	push(@commands, "1> ".$stdoutfile_path);  #Redirect stdout to program specific stderr file
     }
     if ($stderrfile_path) {
 

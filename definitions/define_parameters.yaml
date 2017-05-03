@@ -107,8 +107,13 @@ module_time:
     ppicardtools_collecthsmetrics: 10
     pbedtools_genomecov: 15
     pgatk_haplotypecaller: 30
+    pgatk_genotypegvcfs: 10
+    pgatk_variantrecalibration: 10
     pfreebayes: 20
     psamtools_mpileup: 20
+    pgatk_combinevariantcallsets: 2
+    pprepareforvariantannotationblock: 5
+    prhocall: 5
     ptiddit: 10
     pmanta: 10
     pdelly_call: 10
@@ -140,8 +145,11 @@ module_core_number:
     ppicardtools_collecthsmetrics: 2
     pbedtools_genomecov: 1
     pgatk_haplotypecaller: 16
+    pgatk_genotypegvcfs: 4
+    pgatk_variantrecalibration: 2
     pfreebayes: 16
     psamtools_mpileup: 16
+    pgatk_combinevariantcallsets: 1
     ptiddit: 1
     pmanta: 16
     pdelly_call: 16
@@ -176,11 +184,8 @@ decompose_normalize_references:
    - gatk_realigner_indel_known_sites
    - gatk_baserecalibration_known_sites
    - gatk_haplotypecaller_snp_known_set
-   - gatk_variantrecalibration_training_set_hapmap
-   - gatk_variantrecalibration_training_set_mills
-   - gatk_variantrecalibration_training_set_1000g_omni
-   - gatk_variantrecalibration_training_set_1000gsnp
-   - gatk_variantrecalibration_training_set_dbsnp
+   - gatk_variantrecalibration_resource_snv
+   - gatk_variantrecalibration_resource_indel
    - vt_genmod_filter_1000g
    - sv_vcfanno_config_file
    - gatk_varianteval_gold
@@ -1196,10 +1201,10 @@ pgatk_haplotypecaller:
   chain: MAIN
   data_type: SCALAR
   default: 1
-  file_tag: _gvcf
+  file_tag: _haptc
   file_endings:
    - .vcf
-  outfile_suffix: ".vcf"
+  outfile_suffix: ".g.vcf"
   remove_redundant_file: yes
   remove_redundant_file_setting: merged
   type: program
@@ -1254,9 +1259,10 @@ picardtools_path:
   associated_program:
    - pbwa_mem
    - ppicardtools_mergesamfiles
-   - ppicardtools_markduplicates
+   - pmarkduplicates
    - ppicardtools_collecthsmetrics
    - ppicardtools_collectmultiplemetrics
+   - pdelly_reformat
   data_type: SCALAR
   exists_check: directory
   type: path
@@ -1271,6 +1277,7 @@ pgatk_genotypegvcfs:
   file_tag: _
   file_endings:
    - .vcf
+  outfile_suffix: ".vcf"
   remove_redundant_file: yes
   remove_redundant_file_setting: family
   type: program
@@ -1307,46 +1314,42 @@ pgatk_variantrecalibration:
   program_type: variant_callers
   file_endings:
    - .vcf
+  outfile_suffix: ".vcf"
   remove_redundant_file: yes
   remove_redundant_file_setting: family
   type: program
-gatk_variantrecalibration_training_set_hapmap:
+gatk_variantrecalibration_annotations:
   associated_program:
    - pgatk_variantrecalibration
-  data_type: SCALAR
-  default: GRCh37_hapmap_-3.3-.vcf
+  element_separator: ,
+  data_type: ARRAY
+  default:
+   - QD
+   - MQRankSum
+   - ReadPosRankSum
+   - FS
+   - SOR
+   - DP
+  type: program_argument
+gatk_variantrecalibration_resource_snv:
+  associated_program:
+   - pgatk_variantrecalibration
+  data_type: HASH
+  default:
+     GRCh37_dbsnp_-138-.vcf: "dbsnp,known=true,training=false,truth=false,prior=2.0"
+     GRCh37_hapmap_-3.3-.vcf: "hapmap,VCF,known=false,training=true,truth=true,prior=15.0"
+     GRCh37_1000g_omni_-2.5-.vcf: "omni,VCF,known=false,training=true,truth=false,prior=12.0"
+     GRCh37_1000g_snps_high_confidence_-phase1-.vcf: "1000G,known=false,training=true,truth=false,prior=10.0"
   exists_check: file
   reference: reference_dir
   type: path
-gatk_variantrecalibration_training_set_dbsnp:
+gatk_variantrecalibration_resource_indel:
   associated_program:
    - pgatk_variantrecalibration
-  data_type: SCALAR
-  default: GRCh37_dbsnp_-138-.vcf
-  exists_check: file
-  reference: reference_dir
-  type: path
-gatk_variantrecalibration_training_set_1000gsnp:
-  associated_program:
-   - pgatk_variantrecalibration
-  data_type: SCALAR
-  default: GRCh37_1000g_snps_high_confidence_-phase1-.vcf
-  exists_check: file
-  reference: reference_dir
-  type: path
-gatk_variantrecalibration_training_set_1000g_omni:
-  associated_program:
-   - pgatk_variantrecalibration
-  data_type: SCALAR
-  default: GRCh37_1000g_omni_-2.5-.vcf
-  exists_check: file
-  reference: reference_dir
-  type: path
-gatk_variantrecalibration_training_set_mills:
-  associated_program:
-   - pgatk_variantrecalibration
-  data_type: SCALAR
-  default: GRCh37_mills_and_1000g_indels_-gold_standard-.vcf
+  data_type: HASH
+  default:
+     GRCh37_dbsnp_-138-.vcf: "dbsnp,known=true,training=false,truth=false,prior=2.0"
+     GRCh37_mills_and_1000g_indels_-gold_standard-.vcf: "mills,VCF,known=true,training=true,truth=true,prior=12.0"
   exists_check: file
   reference: reference_dir
   type: path
@@ -1410,9 +1413,17 @@ pgatk_combinevariantcallsets:
   file_tag: comb_
   file_endings:
    - .vcf
+  outfile_suffix: ".vcf"
   remove_redundant_file: yes
   remove_redundant_file_setting: family
   type: program
+gatk_combinevariants_genotype_merge_option:
+  associated_program:
+   - pgatk_combinevariantcallsets
+  data_type: SCALAR
+  default: PRIORITIZE
+  mandatory: no
+  type: program_argument
 gatk_combinevariants_prioritize_caller:
   associated_program:
    - pgatk_combinevariantcallsets
@@ -1442,6 +1453,7 @@ pprepareforvariantannotationblock:
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
+  outfile_suffix: ".vcf.gz"
   type: program
 ##rhocall
 prhocall:
@@ -1456,6 +1468,7 @@ prhocall:
    - bcftools
   file_endings:
    - .vcf
+  outfile_suffix: ".vcf"
   remove_redundant_file: yes
   remove_redundant_file_setting: variant_annotation
   type: program
@@ -1613,7 +1626,6 @@ gatk_bundle_download_version:
    - pgatk_realigner
    - pgatk_baserecalibration
    - pcnvnator
-   - pdelly
    - pgatk_haplotypecaller
    - pgatk_genotypegvcfs
    - psamtools_mpileup
@@ -1924,11 +1936,29 @@ gatk_path:
    - pgatk_variantevalall
    - pgatk_variantevalexome
    - pvarianteffectpredictor
-   - pRankVariants
+   - prankvariant
   data_type: SCALAR
   exists_check: directory
   type: path
   update_path: absolute_path
+gatk_logging_level:
+  associated_program:
+   - pgatk_realigner
+   - pgatk_baserecalibration
+   - pgatk_haplotypecaller
+   - pgatk_genotypegvcfs
+   - psamtools_mpileup
+   - pgatk_variantrecalibration
+   - pgatk_combinevariantcallsets
+   - pgatk_phasebytransmission
+   - pgatk_readbackedphasing
+   - pgatk_variantevalall
+   - pgatk_variantevalexome
+   - pvarianteffectpredictor
+   - prankvariant
+  data_type: SCALAR
+  default: INFO
+  type: program_argument
 ## SampleCheck
 psamplecheck:
   associated_program:

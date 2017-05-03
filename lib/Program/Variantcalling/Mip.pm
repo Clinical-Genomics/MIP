@@ -81,7 +81,7 @@ sub vcfparser {
 	select_outfile => { strict_type => 1, store => \$select_outfile },
 	FILEHANDLE => { store => \$FILEHANDLE },
 	parse_vep => { default => 0,
-		       allow => [0, 1],
+		       allow => [0, 1, 2],
 		       strict_type => 1, store => \$parse_vep},
 	per_gene => { default => 0,
 		      allow => [0, 1],
@@ -100,7 +100,7 @@ sub vcfparser {
     ## Options
     if ($parse_vep) {
 
-	push(@commands, "--parse_vep ".$parse_vep);
+	push(@commands, "--parse_vep 1");
     }
     if ($per_gene) {
 
