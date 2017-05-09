@@ -84,7 +84,7 @@ BEGIN {
                -at/--analysis_type Type of analysis to perform (sample_id=analysis_type, defaults to "wgs";Valid entries: "wgs", "wes", "rapid")
                -pl/--platform Platform/technology used to produce the reads (defaults to "ILLUMINA")
                -ec/--expected_coverage Expected mean target coverage for analysis (sample_id=expected_coverage, defaults to "")
-               -cpn/--core_processor_number The maximum number of processor cores per node used in the analysis (defaults to "16")
+               -mcn/--max_cores_per_node The maximum number of processor cores per node used in the analysis (defaults to "16")
                -c/--config_file YAML config file for analysis parameters (defaults to "")
                -ccp/--cluster_constant_path Set the cluster constant path (defaults to "")
                -acp/--analysis_constant_path Set the analysis constant path (defaults to "analysis")
@@ -311,7 +311,8 @@ BEGIN {
                  -evabrgf/--endvariantannotationblock_remove_genes_file Remove variants in hgnc_ids (defaults to "")
 
                ###Utility
-               -psck/--psamplecheck QC for samples gender and relationship (defaults to "1" (=yes) )
+               -pplink/--pplink QC for samples gender and relationship (defaults to "1" (=yes) )
+               -pvai/--pvariant_integrity QC for samples relationship (defaults to "1" (=yes) )
                -pevl/--pevaluation Compare concordance with NIST data set (defaults to "0" (=no) )
                  -evlnid/--nist_id NIST high-confidence sample_id (defaults to "NA12878")
                  -evlnhc/--nist_high_confidence_call_set NIST high-confidence variant calls (defaults to "GRCh37_nist_hg001_-na12878_v2.19-.vcf")
@@ -409,7 +410,7 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'at|analysis_type:s' => \%{ $parameter{analysis_type}{value} },  #sample_id=analysis_type
 	   'pl|platform:s' => \$parameter{platform}{value},  #Platform/technology used to produce the reads
 	   'ec|expected_coverage:s' => \%{ $parameter{expected_coverage}{value} },  #sample_id=expected_coverage
-	   'cpn|core_processor_number=n' => \$parameter{core_processor_number}{value},  #Per node
+	   'mcn|max_cores_per_node=n' => \$parameter{max_cores_per_node}{value},  #Per node
 	   'c|config_file:s' => \$parameter{config_file}{value},
 	   'ccp|cluster_constant_path:s' => \$parameter{cluster_constant_path}{value},
 	   'acp|analysis_constant_path:s' => \$parameter{analysis_constant_path}{value},
@@ -614,7 +615,8 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'pevab|pendvariantannotationblock=n' => \$parameter{pendvariantannotationblock}{value},
 	   'evabrgf|endvariantannotationblock_remove_genes_file:s' => \$parameter{endvariantannotationblock_remove_genes_file}{value},
 	   'ravbf|rankvariant_binary_file=n' => \$parameter{rankvariant_binary_file}{value},  #Produce compressed vcfs
-	   'psck|psamplecheck=n' => \$parameter{psamplecheck}{value},  #QC for samples gender and relationship
+	   'pplink|pplink=n' => \$parameter{pplink}{value},  #QC for samples gender and relationship
+	   'pvai|pvariant_integrity=n' => \$parameter{pvariant_integrity}{value},  #QC for samples relationship
 	   'pevl|pevaluation=n' => \$parameter{pevaluation}{value},  #Compare concordance with NIST data set
 	   'evlnid|nist_id:s' => \$parameter{nist_id}{value},
 	   'evlnhc|nist_high_confidence_call_set:s' => \$parameter{nist_high_confidence_call_set}{value},
@@ -1121,7 +1123,7 @@ if ($active_parameter{pfastqc} > 0) {  #Run FastQC
 
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
-	pfastqc({parameter_href => \%parameter,
+	mfastqc({parameter_href => \%parameter,
 		 active_parameter_href => \%active_parameter,
 		 sample_info_href => \%sample_info,
 		 infile_href => \%infile,
@@ -1439,7 +1441,7 @@ if ($active_parameter{pbedtools_genomecov} > 0) {  #Run bedtools genomecov
 			    job_id_href => \%job_id,
 			    sample_id_ref => \$sample_id,
 			    program_name => "bedtools_genomecov",
-			  });
+			   });
     }
 }
 
@@ -1497,14 +1499,14 @@ if ($active_parameter{ppicardtools_collecthsmetrics} > 0) {  #Run Picardtools_co
     foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
 
 	picardtools_collecthsmetrics({parameter_href => \%parameter,
-					active_parameter_href => \%active_parameter,
-					sample_info_href => \%sample_info,
-					file_info_href => \%file_info,
-					infile_lane_no_ending_href => \%infile_lane_no_ending,
-					job_id_href => \%job_id,
-					sample_id_ref => \$sample_id,
-					program_name => "picardtools_collecthsmetrics",
-				       });
+				      active_parameter_href => \%active_parameter,
+				      sample_info_href => \%sample_info,
+				      file_info_href => \%file_info,
+				      infile_lane_no_ending_href => \%infile_lane_no_ending,
+				      job_id_href => \%job_id,
+				      sample_id_ref => \$sample_id,
+				      program_name => "picardtools_collecthsmetrics",
+				     });
     }
 }
 
@@ -1897,18 +1899,34 @@ if ($active_parameter{pgatk_combinevariantcallsets} > 0) {  #Run gatk_combinevar
 				});
 }
 
-if ($active_parameter{psamplecheck} > 0) {  #Run samplecheck. Done per family
 
-    $log->info("[Samplecheck]\n");
+if ($active_parameter{pplink} > 0) {  #Run plink. Done per family
 
-    samplecheck({parameter_href => \%parameter,
-		 active_parameter_href => \%active_parameter,
-		 sample_info_href => \%sample_info,
-		 file_info_href => \%file_info,
-		 infile_lane_no_ending_href => \%infile_lane_no_ending,
-		 job_id_href => \%job_id,
-		 program_name => "samplecheck",
-		});
+    $log->info("[Plink]\n");
+
+    mplink({parameter_href => \%parameter,
+	    active_parameter_href => \%active_parameter,
+	    sample_info_href => \%sample_info,
+	    file_info_href => \%file_info,
+	    infile_lane_no_ending_href => \%infile_lane_no_ending,
+	    job_id_href => \%job_id,
+	    program_name => "plink",
+	   });
+}
+
+
+if ($active_parameter{pvariant_integrity} > 0) {  #Run variant_integrity. Done per family
+
+    $log->info("[Variant_integrity]\n");
+
+    variant_integrity({parameter_href => \%parameter,
+		       active_parameter_href => \%active_parameter,
+		       sample_info_href => \%sample_info,
+		       file_info_href => \%file_info,
+		       infile_lane_no_ending_href => \%infile_lane_no_ending,
+		       job_id_href => \%job_id,
+		       program_name => "variant_integrity",
+		      });
 }
 
 if ($active_parameter{pevaluation} > 0) {  #Run evaluation. Done per family
@@ -2082,7 +2100,7 @@ else {
 
 	$log->info("[Vcfparser]\n");
 
-	pvcfparser({parameter_href => \%parameter,
+	mvcfparser({parameter_href => \%parameter,
 		    active_parameter_href => \%active_parameter,
 		    sample_info_href => \%sample_info,
 		    file_info_href => \%file_info,
@@ -2919,8 +2937,14 @@ sub evaluation {
 
     use Program::Gnu::Coreutils qw(cat);
     use Language::Java qw(core);
-    use Program::Variantcalling::Gatk qw(selectvariants);
+    use Program::Variantcalling::Gatk qw(selectvariants leftalignandtrimvariants);
+    use Program::Variantcalling::Bcftools qw(stats);
+    use Program::Interval::Picardtools qw(intervallisttools);
+    use Program::Variantcalling::Picardtools qw(genotypeconcordance);
 
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -2930,6 +2954,8 @@ sub evaluation {
 					     directory_id => $$family_id_ref,
 					     program_name => $program_name,
 					     program_directory => catfile($$outaligner_dir_ref, lc($program_name)),
+					     core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					     process_time => $active_parameter_href->{module_time}{"p".$program_name},
 					     temp_directory => $$temp_directory_ref,
 					     error_trap => 0,  #Special case to allow "vcf.idx" to be created
 					    });
@@ -2967,9 +2993,10 @@ sub evaluation {
 
     ## BcfTools Stats
     say $FILEHANDLE "## bcftools stats";
-    print $FILEHANDLE "bcftools stats ";
-    print $FILEHANDLE catfile($$temp_directory_ref, "NIST.vcf")." ";
-    print $FILEHANDLE "> ".catfile($$temp_directory_ref, "NIST.vcf.stats")." ";
+    Program::Variantcalling::Bcftools::stats({infile_path => catfile($$temp_directory_ref, "NIST.vcf"),
+					      outfile_path => catfile($$temp_directory_ref, "NIST.vcf.stats"),
+					      FILEHANDLE => $FILEHANDLE,
+					     });
     say $FILEHANDLE "\n";
 
     ## Generate ".idx" for downstream Picard by failling this process
@@ -3021,9 +3048,10 @@ sub evaluation {
 	  java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
 	 });
 
-    print $FILEHANDLE "IntervalListTools ";
-    print $FILEHANDLE "INPUT=".catfile($$temp_directory_ref, "NIST.bed.dict_body_col_5.interval_list")." ";
-    print $FILEHANDLE "OUTPUT=".catfile($$temp_directory_ref, "NIST.bed.interval_list")." ";
+    intervallisttools({infile_paths_ref => [catfile($$temp_directory_ref, "NIST.bed.dict_body_col_5.interval_list")],
+		       outfile_path => catfile($$temp_directory_ref, "NIST.bed.interval_list"),
+		       FILEHANDLE => $FILEHANDLE,
+		      });
     say $FILEHANDLE "\n";
 
     ### MIP data
@@ -3059,12 +3087,13 @@ sub evaluation {
 	  java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
 	 });
 
-    print $FILEHANDLE "-T LeftAlignAndTrimVariants ";  #Type of analysis to run
-    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-    print $FILEHANDLE "--splitMultiallelics ";
-    print $FILEHANDLE "--variant ".catfile($$temp_directory_ref, "MIP.vcf")." ";  #Sample_id infile
-    print $FILEHANDLE "-o ".catfile($$temp_directory_ref, "MIP_lts.vcf")." ";  #Outfile
+    leftalignandtrimvariants({infile_path => catfile($$temp_directory_ref, "MIP.vcf"),
+			      logging_level => $active_parameter_href->{gatk_logging_level},
+			      referencefile_path => $active_parameter_href->{human_genome_reference},
+			      split_multiallelics => 1,
+			      outfile_path => catfile($$temp_directory_ref, "MIP_lts.vcf"),
+			      FILEHANDLE => $FILEHANDLE,
+			     });
     say $FILEHANDLE "\n";
 
     ## Modify since different ref genomes
@@ -3076,9 +3105,10 @@ sub evaluation {
 
     ## BcfTools Stats
     say $FILEHANDLE "## bcftools stats";
-    print $FILEHANDLE "bcftools stats ";
-    print $FILEHANDLE catfile($$temp_directory_ref, "MIP_lts_refrm.vcf")." ";
-    print $FILEHANDLE "> ".catfile($$temp_directory_ref, "MIP_lts_refrm.vcf.stats")." ";
+    Program::Variantcalling::Bcftools::stats({infile_path => catfile($$temp_directory_ref, "MIP_lts_refrm.vcf"),
+					      outfile_path => catfile($$temp_directory_ref, "MIP_lts_refrm.vcf.stats"),
+					      FILEHANDLE => $FILEHANDLE,
+					     });
     say $FILEHANDLE "\n";
 
     ## Generate ".idx" for downstream Picard by failling this process
@@ -3109,15 +3139,16 @@ sub evaluation {
 	  java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
 	 });
 
-    print $FILEHANDLE "GenotypeConcordance ";
-    print $FILEHANDLE "TRUTH_VCF=".catfile($$temp_directory_ref, "NIST.vcf")." ";
-    print $FILEHANDLE "CALL_VCF=".catfile($$temp_directory_ref, "MIP_lts_refrm.vcf")." ";
-    print $FILEHANDLE "OUTPUT=".catfile($$temp_directory_ref, "compMIP.Vs.".$active_parameter_href->{nist_id}."-NIST_genome_bed")," ";
-    print $FILEHANDLE "TRUTH_SAMPLE=".$active_parameter_href->{nist_id}."-NIST ";
-    print $FILEHANDLE "CALL_SAMPLE=".$$sample_id_ref." ";
-    print $FILEHANDLE "MIN_GQ=20 ";
-    print $FILEHANDLE "MIN_DP=10 ";
-    print $FILEHANDLE "INTERVALS=".catfile($$temp_directory_ref, "NIST.bed.interval_list")." ";
+    genotypeconcordance({intervals_ref => [catfile($$temp_directory_ref, "NIST.bed.interval_list")],
+			 infile_path => catfile($$temp_directory_ref, "MIP_lts_refrm.vcf"),
+			 truth_file_path => catfile($$temp_directory_ref, "NIST.vcf"),
+			 outfile_prefix_path => catfile($$temp_directory_ref, "compMIP.Vs.".$active_parameter_href->{nist_id}."-NIST_genome_bed"),
+			 truth_sample => $active_parameter_href->{nist_id}."-NIST",
+			 call_sample => $$sample_id_ref,
+			 min_genotype_quality => 20,
+			 min_depth => 10,
+			 FILEHANDLE => $FILEHANDLE,
+			});
     say $FILEHANDLE "\n";
 
     say $FILEHANDLE "## Picard GenotypeConcordance - Genome - good quality ";
@@ -3128,14 +3159,15 @@ sub evaluation {
 	  java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
 	 });
 
-    print $FILEHANDLE "GenotypeConcordance ";
-    print $FILEHANDLE "TRUTH_VCF=".catfile($$temp_directory_ref, "NIST.vcf")." ";
-    print $FILEHANDLE "CALL_VCF=".catfile($$temp_directory_ref, "MIP_lts_refrm.vcf")." ";
-    print $FILEHANDLE "OUTPUT=".catfile($$temp_directory_ref, "compMIP.Vs.".$active_parameter_href->{nist_id}."-NIST_genome")." ";
-    print $FILEHANDLE "TRUTH_SAMPLE=".$active_parameter_href->{nist_id}."-NIST ";
-    print $FILEHANDLE "CALL_SAMPLE=".$$sample_id_ref." ";
-    print $FILEHANDLE "MIN_GQ=20 ";
-    print $FILEHANDLE "MIN_DP=10 ";
+    genotypeconcordance({infile_path => catfile($$temp_directory_ref, "MIP_lts_refrm.vcf"),
+			 truth_file_path => catfile($$temp_directory_ref, "NIST.vcf"),
+			 outfile_prefix_path => catfile($$temp_directory_ref, "compMIP.Vs.".$active_parameter_href->{nist_id}."-NIST_genome"),
+			 truth_sample => $active_parameter_href->{nist_id}."-NIST",
+			 call_sample => $$sample_id_ref,
+			 min_genotype_quality => 20,
+			 min_depth => 10,
+			 FILEHANDLE => $FILEHANDLE,
+			});
     say $FILEHANDLE "\n";
 
     ## Copies file from temporary directory.
@@ -3159,7 +3191,7 @@ sub evaluation {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    dependencies => "case_dependency_dead_end",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
 		   });
     }
@@ -3241,16 +3273,21 @@ sub endvariantannotationblock {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Program::Htslib qw(bgzip tabix);
-    use Program::Gnu::Grep qw(grep);
+    use Program::Gnu::Software::Grep qw(grep);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 20;
     my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
+    my $xargs_file_name;
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+    my $vcfparser_analysis_type = "";
+    my $contigs_size_ordered_ref = \@{ $file_info_href->{contigs_size_ordered} };  #Set default for size ordered contigs
+    my @contigs = @{ $file_info_href->{contigs} };  #Set default for contigs
 
     ## Set the number of cores
-    my $core_number = 1;
-    my $xargs_file_name;
+    my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
+
+    ## Filehandles
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     unless (defined($FILEHANDLE)){ #Run as individual sbatch script
 
@@ -3264,7 +3301,7 @@ sub endvariantannotationblock {
 								  program_name => $program_name,
 								  program_directory => catfile(lc($$outaligner_dir_ref)),
 								  core_number => $core_number,
-								  process_time => 10,
+								  process_time => $active_parameter_href->{module_time}{"p".$program_name},
 								  temp_directory => $$temp_directory_ref
 								 });
     }
@@ -3283,9 +3320,17 @@ sub endvariantannotationblock {
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type);
     my $final_path_no_ending = catfile($outfamily_directory, $outfile_no_ending);
 
-    my $vcfparser_analysis_type = "";
-    my $contigs_size_ordered_ref = \@{ $file_info_href->{contigs_size_ordered} };  #Set default for size ordered contigs
-    my @contigs = @{ $file_info_href->{contigs} };  #Set default for contigs
+    ## Assign suffix
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "variant_file_suffix",
+					 jobid_chain => $jobid_chain,
+					});
+
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
 
     for (my $vcfparser_outfile_counter=0;$vcfparser_outfile_counter<$active_parameter_href->{vcfparser_outfile_count};$vcfparser_outfile_counter++) {
 
@@ -3317,7 +3362,7 @@ sub endvariantannotationblock {
 							      core_number => $core_number,
 							      xargs_file_counter => $xargs_file_counter,
 							      infile => $infile_no_ending,
-							      file_ending => $vcfparser_analysis_type.".vcf*",
+							      file_ending => $vcfparser_analysis_type.$infile_suffix."*",
 							      indirectory => $infamily_directory,
 							      temp_directory => $active_parameter_href->{temp_directory},
 							     });
@@ -3328,34 +3373,34 @@ sub endvariantannotationblock {
 			      FILEHANDLE => $FILEHANDLE,
 			      elements_ref => \@contigs,
 			      infile_prefix => $file_path_no_ending."_",
-			      infile_postfix => $vcfparser_analysis_type.".vcf",
-			      outfile => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf",
+			      infile_postfix => $vcfparser_analysis_type.$infile_suffix,
+			      outfile => $outfile_path_no_ending.$vcfparser_analysis_type.$outfile_suffix,
 			     });
 
 	## Remove variants in hgnc_id list from vcf
 	if ($active_parameter_href->{endvariantannotationblock_remove_genes_file}) {
 
 	    ## Removes contig_names from contigs array if no male or other found
-	    Program::Gnu::Grep::grep({filter_file_path => catfile($$reference_dir_ref, $active_parameter_href->{sv_reformat_remove_genes_file}),
-				      infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf",
-				      outfile_path => $outfile_path_no_ending.$vcfparser_analysis_type."_filtered.vcf",
-				      invert_match => 1,
-				      FILEHANDLE => $FILEHANDLE,
-				     });
+	    Program::Gnu::Grep::Software::grep({filter_file_path => catfile($$reference_dir_ref, $active_parameter_href->{sv_reformat_remove_genes_file}),
+						infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.$outfile_suffix,
+						outfile_path => $outfile_path_no_ending.$vcfparser_analysis_type."_filtered".$outfile_suffix,
+						invert_match => 1,
+						FILEHANDLE => $FILEHANDLE,
+					       });
 	    say $FILEHANDLE "\n";
 
 	    if ($vcfparser_outfile_counter == 1) {
 
-		$sample_info_href->{program}{$program_name}{reformat_remove_genes_file}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type."_filtered.vcf";   #Save filtered file
+		$sample_info_href->{program}{$program_name}{reformat_remove_genes_file}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type."_filtered".$outfile_suffix;   #Save filtered file
 	    }
 	    else {
 
-		$sample_info_href->{program}{$program_name}{reformat_remove_genes_file}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type."_filtered.vcf";   #Save filtered file
+		$sample_info_href->{program}{$program_name}{reformat_remove_genes_file}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type."_filtered".$outfile_suffix;   #Save filtered file
 	    }
 
 	    ## Copies file from temporary directory.
 	    say $FILEHANDLE "## Copy file from temporary directory";
-	    migrate_file({infile_path => $outfile_path_no_ending.$vcfparser_analysis_type."_filtered.vcf",
+	    migrate_file({infile_path => $outfile_path_no_ending.$vcfparser_analysis_type."_filtered".$outfile_suffix,
 			  outfile_path => $outfamily_directory,
 			  FILEHANDLE => $FILEHANDLE,
 			 });
@@ -3366,24 +3411,24 @@ sub endvariantannotationblock {
 
 	    ## Compress or decompress original file or stream to outfile (if supplied)
 	    bgzip({FILEHANDLE => $FILEHANDLE,
-		   infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf",
-		   outfile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf.gz",
+		   infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.$outfile_suffix,
+		   outfile_path => $outfile_path_no_ending.$vcfparser_analysis_type.$outfile_suffix.".gz",
 		   write_to_stdout => 1,
 		  });
 	    say $FILEHANDLE "\n";
 
 	    ## Index file using tabix
 	    tabix({FILEHANDLE => $FILEHANDLE,
-		   infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf.gz",
+		   infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.$outfile_suffix.".gz",
 		   force => 1,
-		   preset => "vcf",
+		   preset => substr($outfile_suffix, 1),
 		  });
 	    say $FILEHANDLE "\n";
 	}
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.".vcf*",
+	migrate_file({infile_path => $outfile_path_no_ending.$vcfparser_analysis_type.$outfile_suffix."*",
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -3393,7 +3438,7 @@ sub endvariantannotationblock {
 	add_most_complete_vcf({active_parameter_href => $active_parameter_href,
 			       sample_info_href => $sample_info_href,
 			       program_name => $program_name,
-			       path => $final_path_no_ending.$vcfparser_analysis_type.".vcf",
+			       path => $final_path_no_ending.$vcfparser_analysis_type.$outfile_suffix,
 			       vcfparser_outfile_counter => $vcfparser_outfile_counter,
 			      });
 
@@ -3401,20 +3446,20 @@ sub endvariantannotationblock {
 
 	    if ($vcfparser_outfile_counter == 1) {
 
-		$sample_info_href->{program}{$program_name}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type.".vcf";   #Save clinical candidate list path
+		$sample_info_href->{program}{$program_name}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type.$outfile_suffix;   #Save clinical candidate list path
 
 		if ($active_parameter_href->{rankvariant_binary_file}) {
 
-		    $sample_info_href->{vcf_binary_file}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type.".vcf.gz";
+		    $sample_info_href->{vcf_binary_file}{clinical}{path} = $final_path_no_ending.$vcfparser_analysis_type.$outfile_suffix.".gz";
 		}
 	    }
 	    else {
 
-		$sample_info_href->{program}{$program_name}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type.".vcf";   #Save research candidate list path
+		$sample_info_href->{program}{$program_name}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type.$outfile_suffix;   #Save research candidate list path
 
 		if ($active_parameter_href->{rankvariant_binary_file}) {
 
-		    $sample_info_href->{vcf_binary_file}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type.".vcf.gz";
+		    $sample_info_href->{vcf_binary_file}{research}{path} = $final_path_no_ending.$vcfparser_analysis_type.$outfile_suffix.".gz";
 		}
 	    }
 	}
@@ -3429,7 +3474,7 @@ sub endvariantannotationblock {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    dependencies => "case_dependency",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
 		   });
     }
@@ -3517,17 +3562,23 @@ sub rankvariant {
     my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
     my $xargs_file_name;
+    my $vcfparser_analysis_type = "";
+    my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };  #Set default for size ordered contigs
+    my @contigs = @{ $file_info_href->{contigs} };  #Set default for contigs
     my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
 
     ## Filehandles
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 20;
 
-    ## Set the number of cores
-    my $core_number = $active_parameter_href->{core_processor_number};
-    my $genmod_core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
-						     core_number => 16,
-						    });  #Detect the number of cores to use per genmod process.
+    ## Adjust core number depending on user supplied input exists or not and max number of cores
+    my $core_number = adjust_core_number({module_core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					  modifier_core_number => scalar(@contigs),
+					  max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+					 });
+
+    my $genmod_core_number = check_max_core_number({max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+						    core_number => 16,
+						   });  #Detect the number of cores to use per genmod process.
 
     unless (defined($FILEHANDLE)){ #Run as individual sbatch script
 
@@ -3541,7 +3592,7 @@ sub rankvariant {
 								  program_name => $program_name,
 								  program_directory => catfile(lc($$outaligner_dir_ref)),
 								  core_number => $core_number,
-								  process_time => 10,
+								  process_time => $active_parameter_href->{module_time}{"p".$program_name},
 								  temp_directory => $$temp_directory_ref
 								 });
     }
@@ -3560,14 +3611,17 @@ sub rankvariant {
     my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
     ## Assign suffix
-    my $file_suffix = get_file_suffix({parameter_href => $parameter_href,
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
 				       suffix_key => "variant_file_suffix",
 				       jobid_chain => $jobid_chain,
 				      });
 
-    my $vcfparser_analysis_type = "";
-    my @contigs_size_ordered = @{ $file_info_href->{contigs_size_ordered} };  #Set default for size ordered contigs
-    my @contigs = @{ $file_info_href->{contigs} };  #Set default for contigs
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
+
     my $family_file = catfile($outfamily_file_directory, $$family_id_ref.".fam");
 
     ## Create .fam file to be used in variant calling analyses
@@ -3614,7 +3668,7 @@ sub rankvariant {
 							      core_number => $core_number,
 							      xargs_file_counter => $xargs_file_counter,
 							      infile => $infile_no_ending,
-							      file_ending => $vcfparser_analysis_type.$file_suffix."*",
+							      file_ending => $vcfparser_analysis_type.$infile_suffix."*",
 							      indirectory => $infamily_directory,
 							      temp_directory => $active_parameter_href->{temp_directory},
 							     });
@@ -3639,7 +3693,7 @@ sub rankvariant {
 
 	    ## Get parameters
 	    $genmod_module = "";  #Restart for next contig
-	    my $genmod_indata = $file_path_no_ending."_".$contig.$vcfparser_analysis_type.$file_suffix;  #InFile
+	    my $genmod_indata = $file_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix;  #InFile
 
 	    my $genmod_outfile_path;
 	    ## Check affected/unaffected status
@@ -3652,7 +3706,7 @@ sub rankvariant {
 		}
 
 		## Output file
-		$genmod_outfile_path = $outfile_path_no_ending."_".$contig.$vcfparser_analysis_type.$file_suffix;
+		$genmod_outfile_path = $outfile_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix;
 
 	    }
 	    else {
@@ -3725,7 +3779,7 @@ sub rankvariant {
 		$genmod_module .= "_compound";
 
 		compound({infile_path => $genmod_indata,
-			  outfile_path => $outfile_path_no_ending."_".$contig.$vcfparser_analysis_type.$file_suffix,
+			  outfile_path => $outfile_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix,
 			  stderrfile_path => $xargs_file_name.".".$contig.$genmod_module.".stderr.txt",
 			  verbosity => "v",
 			  temp_directory_path => $$temp_directory_ref,
@@ -3745,10 +3799,10 @@ sub rankvariant {
 										  contigs_ref => \@contigs_size_ordered,
 										  file_name =>$file_name,
 										  program_info_path => $program_info_path,
-										  core_number => $active_parameter_href->{core_processor_number},
+										  core_number => $active_parameter_href->{max_cores_per_node},
 										  xargs_file_counter => $xargs_file_counter,
 										  outfile => $outfile_no_ending,
-										  file_ending => $vcfparser_analysis_type.$file_suffix."*",
+										  file_ending => $vcfparser_analysis_type.$outfile_suffix."*",
 										  outdirectory => $outfamily_directory,
 										  temp_directory => $$temp_directory_ref,
 										 });
@@ -3756,7 +3810,7 @@ sub rankvariant {
 	else {
 
 	    ## QC Data File(s)
-	    migrate_file({infile_path => $outfile_path_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.$file_suffix,
+	    migrate_file({infile_path => $outfile_path_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.$outfile_suffix,
 			  outfile_path => $outfamily_directory,
 			  FILEHANDLE => $FILEHANDLE,
 			 });
@@ -3768,7 +3822,7 @@ sub rankvariant {
 	    sample_info_qc({sample_info_href => $sample_info_href,
 			    program_name => "genmod",
 			    outdirectory => $outfamily_directory,
-			    outfile_ending => $outfile_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.$file_suffix,
+			    outfile_ending => $outfile_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.$outfile_suffix,
 			    outdata_type => "static"
 			   });
 
@@ -3865,7 +3919,13 @@ sub gatk_variantevalexome {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Language::Java qw(core);
+    use Program::Gnu::Coreutils qw(cat sort);
+    use Program::Variantcalling::Bedtools qw(intersectbed);
+    use Program::Variantcalling::Gatk qw(varianteval);
 
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -3876,7 +3936,8 @@ sub gatk_variantevalexome {
 					     program_name => $program_name,
 					     program_directory => catfile(lc($$outaligner_dir_ref), lc($program_name)),
 					     call_type => $call_type,
-					     process_time => 2,
+					     core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					     process_time => $active_parameter_href->{module_time}{"p".$program_name},
 					     temp_directory => $$temp_directory_ref
 					    });
 
@@ -3884,25 +3945,41 @@ sub gatk_variantevalexome {
     my $outsample_directory = catfile($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref, lc($program_name) );
     my $infamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref);
 
+    ## Add merged infile name after merging all BAM files per sample_id
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
+
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
+    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $outfile_no_ending = $infile.$outfile_tag;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+
+    ### Assign suffix
+    ## Return the current infile vcf compression suffix for this jobid chain
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "variant_file_suffix",
+					 jobid_chain => $parameter_href->{pgatk_combinevariantcallsets}{chain},
+					});
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_eval_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
 
     my $extract_exonic_regexp = q?perl -ne ' if ( ($_=~/exonic/) || ($_=~/splicing/) ) {print $_;}' ?;
-
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf*"),
+		  infile_path => catfile($infamily_directory, $infile_no_ending.$infile_suffix."*"),
 		  outfile_path => $$temp_directory_ref
 		 });
 
     say $FILEHANDLE "wait", "\n";
 
-    ## Select Sample_id from family_id vcf file
+    ## Select sample id from family id vcf file
 
     ## GATK SelectVariants
     say $FILEHANDLE "## GATK SelectVariants";
@@ -3918,18 +3995,21 @@ sub gatk_variantevalexome {
     selectvariants({sample_names_ref => [$$sample_id_ref],
 		    logging_level => $active_parameter_href->{gatk_logging_level},
 		    referencefile_path => $active_parameter_href->{human_genome_reference},
-		    infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf"),
-		    outfile_path => catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type."_temp.vcf"),
+		    infile_path => $file_path_no_ending.$infile_suffix,
+		    outfile_path => $outfile_path_no_ending.$call_type."_temp".$infile_suffix,
 		    FILEHANDLE => $FILEHANDLE,
 		   });
     say $FILEHANDLE "\n";
 
+    ## Update file_tags
     $infile_tag = $file_info_href->{$$family_id_ref}{prankvariant}{file_tag};
+    $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+    $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf*"),
+		  infile_path => catfile($infamily_directory, $infile_no_ending.$infile_suffix."*"),
 		  outfile_path => $$temp_directory_ref
 		 });
     say $FILEHANDLE "wait", "\n";
@@ -3937,10 +4017,10 @@ sub gatk_variantevalexome {
     ## Extract exonic variants
     say $FILEHANDLE "## Extract exonic variants";
     print $FILEHANDLE $extract_exonic_regexp;
-    print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf")." ";  #InFile
-    say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants.vcf"), "\n";  #OutFile
+    print $FILEHANDLE $file_path_no_ending.$infile_suffix." ";  #InFile
+    say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants".$infile_suffix), "\n";  #OutFile
 
-    ## Include potential SelectFile variants
+    ## Include potential select file variants
     if ($active_parameter_href->{vcfparser_outfile_count} == 2) {
 
 	my $vcfparser_analysis_type = ".selected";  #SelectFile variants
@@ -3948,7 +4028,7 @@ sub gatk_variantevalexome {
 	## Copy file(s) to temporary directory
 	say $FILEHANDLE "## Copy file(s) to temporary directory";
 	migrate_file({FILEHANDLE => $FILEHANDLE,
-		      infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.$vcfparser_analysis_type.".vcf*"),
+		      infile_path => catfile($infamily_directory, $infile_no_ending.$vcfparser_analysis_type.$infile_suffix."*"),
 		      outfile_path => $$temp_directory_ref
 		     });
 	say $FILEHANDLE "wait", "\n";
@@ -3956,43 +4036,47 @@ sub gatk_variantevalexome {
 	## Extract exonic variants
 	say $FILEHANDLE "## Extract exonic variants";
 	print $FILEHANDLE $extract_exonic_regexp;
-	print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.$vcfparser_analysis_type.".vcf")." ";  #InFile
-	say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants".$vcfparser_analysis_type.".vcf"), "\n";  #OutFile
+	print $FILEHANDLE $file_path_no_ending.$vcfparser_analysis_type.$infile_suffix." ";  #InFile
+	say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants".$vcfparser_analysis_type.$infile_suffix), "\n";  #OutFile
 
 	## Merge orphans and selectfiles
 	say $FILEHANDLE "## Merge orphans and selectfile(s)";
-	cat({infile_paths_ref => [catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants.vcf"),
-				  catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants".$vcfparser_analysis_type.".vcf")],
-	     outfile_path => catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants_combined.vcf"),
+	cat({infile_paths_ref => [catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants".$infile_suffix),
+				  catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants".$vcfparser_analysis_type.$infile_suffix)],
+	     outfile_path => catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants_combined".$infile_suffix),
 	     FILEHANDLE => $FILEHANDLE,
 	    });
 	say $FILEHANDLE "\n";
 
 	## Sort combined file
 	say $FILEHANDLE "## Sort combined file";
-	print $FILEHANDLE "sort ";
-	print $FILEHANDLE "-k1,1 -k2,2n ";  #Numerically by chromosome and start position
-	print $FILEHANDLE catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants_combined.vcf")." ";
-	say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants.vcf"), "\n";  #OutFile
+	Program::Gnu::Coreutils::sort({keys_ref => ["1,1", "2,2n"],
+				       infile_path => catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants_combined".$infile_suffix),
+				       outfile_path => catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants".$infile_suffix),
+				       FILEHANDLE => $FILEHANDLE,
+				      });
+	say $FILEHANDLE "\n";
     }
 
     print $FILEHANDLE q?perl -ne ' if ($_=~/^#/) {print $_;}' ?;
-    print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf")." ";  #InFile
+    print $FILEHANDLE $file_path_no_ending.$infile_suffix." ";  #InFile
     print $FILEHANDLE "| ";  #Pipe
     cat({infile_paths_ref => ["-",
-			      catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants.vcf")],
-	 outfile_path => catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants_head.vcf"),
+			      catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants".$infile_suffix)],
+	 outfile_path => catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants_head".$infile_suffix),
 	 FILEHANDLE => $FILEHANDLE,
 	});
     say $FILEHANDLE "\n";
 
     ## Intersect exonic variants from created sample_id vcf file (required for gatk_varianteval for exonic variants)
     say $FILEHANDLE "## Intersect exonic variants from created sample_id vcf file";
-    print $FILEHANDLE "intersectBed ";
-    print $FILEHANDLE "-header ";  #Print the header from the A file prior to results.
-    print $FILEHANDLE "-a ".catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type."_temp.vcf")." ";  #Sample_id temp exome vcf infile
-    print $FILEHANDLE "-b ".catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants_head.vcf")." ";  #Sample_id exonic variants
-    say $FILEHANDLE "> ".catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type."_exome.vcf"), "\n";  #OutFile (VCF-format)
+    intersectbed({with_header => 1,
+		  infile_path => $outfile_path_no_ending.$call_type."_temp".$infile_suffix,
+		  intersectfile_path => catfile($$temp_directory_ref, $$sample_id_ref.$infile_tag.$call_type."_exonic_variants_head".$infile_suffix),
+		  outfile_path => $outfile_path_no_ending.$call_type."_exome".$infile_suffix,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
+    say $FILEHANDLE "\n";
 
     ## VariantEval
     say $FILEHANDLE "## GATK varianteval";
@@ -4005,17 +4089,19 @@ sub gatk_variantevalexome {
 	  java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
 	 });
 
-    print $FILEHANDLE "-T VariantEval ";  #Type of analysis to run
-    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-    print $FILEHANDLE "-D ".$active_parameter_href->{gatk_varianteval_dbsnp}." ";  #dbSNP file
-    print $FILEHANDLE "-gold ".$active_parameter_href->{gatk_varianteval_gold}." ";  #Evaluations that count calls at sites of true variation (e.g., indel calls) will use this argument as their gold standard for comparison
-    print $FILEHANDLE "--eval ".catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type."_exome.vcf")." ";  #InFile
-    say $FILEHANDLE "-o ".catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type."_exome.vcf.varianteval"), "\n";  #OutFile
+    varianteval({infile_paths_ref => [$outfile_path_no_ending.$call_type."_exome".$infile_suffix],
+		 outfile_path => $outfile_path_no_ending.$call_type."_exome".$outfile_suffix,
+		 logging_level => $active_parameter_href->{gatk_logging_level},
+		 referencefile_path => $active_parameter_href->{human_genome_reference},
+		 dbsnp_file_path => $active_parameter_href->{gatk_varianteval_dbsnp},
+		 indel_gold_standard_file_path => $active_parameter_href->{gatk_varianteval_gold},
+		 FILEHANDLE => $FILEHANDLE,
+		});
+    say $FILEHANDLE "\n";
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type."_exome.vcf.varianteval"),
+    migrate_file({infile_path => $outfile_path_no_ending.$call_type."_exome".$outfile_suffix,
 		  outfile_path => $outsample_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -4029,7 +4115,7 @@ sub gatk_variantevalexome {
 			program_name => "variantevalexome",
 			infile => $infile,
 			outdirectory => $outsample_directory,
-			outfile_ending => $outfile_tag.$call_type."_exome.vcf.varianteval",
+			outfile_ending => $outfile_tag.$call_type."_exome".$outfile_suffix,
 			outdata_type => "infile_dependent"
 		       });
     }
@@ -4042,7 +4128,7 @@ sub gatk_variantevalexome {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    dependencies => "case_dependency_dead_end",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
 		   });
     }
@@ -4104,7 +4190,11 @@ sub gatk_variantevalall {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Language::Java qw(core);
+    use Program::Variantcalling::Gatk qw(varianteval);
 
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -4115,7 +4205,8 @@ sub gatk_variantevalall {
 					     program_name => $program_name,
 					     program_directory => catfile(lc($$outaligner_dir_ref),  lc($program_name)),
 					     call_type => $call_type,
-					     process_time => 2,
+					     core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					     process_time => $active_parameter_href->{module_time}{"p".$program_name},
 					     temp_directory => $$temp_directory_ref,
 					    });
 
@@ -4124,22 +4215,38 @@ sub gatk_variantevalall {
     my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref, lc($program_name));
     my $infamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref);
 
+    ## Add merged infile name after merging all BAM files per sample_id
+    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
+
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
+    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $outfile_no_ending = $infile.$outfile_tag;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
+    ### Assign suffix
+    ## Return the current infile vcf compression suffix for this jobid chain
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "variant_file_suffix",
+					 jobid_chain => $parameter_href->{pgatk_combinevariantcallsets}{chain},
+					});
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_eval_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf*"),
+		  infile_path => catfile($infamily_directory, $infile_no_ending.$infile_suffix."*"),
 		  outfile_path => $$temp_directory_ref
 		 });
     say $FILEHANDLE "wait", "\n";
 
-    ## Select Sample_id from family_id vcf file
+    ## Select sample id from family id vcf file
 
     ## GATK SelectVariants
     say $FILEHANDLE "## GATK SelectVariants";
@@ -4155,8 +4262,8 @@ sub gatk_variantevalall {
     selectvariants({sample_names_ref => [$$sample_id_ref],
 		    logging_level => $active_parameter_href->{gatk_logging_level},
 		    referencefile_path => $active_parameter_href->{human_genome_reference},
-		    infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf"),
-		    outfile_path => catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type.".vcf"),
+		    infile_path => $file_path_no_ending.$infile_suffix,
+		    outfile_path => $outfile_path_no_ending.$call_type.$infile_suffix,
 		    FILEHANDLE => $FILEHANDLE,
 		   });
     say $FILEHANDLE "\n";
@@ -4172,17 +4279,19 @@ sub gatk_variantevalall {
 	  java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
 	 });
 
-    print $FILEHANDLE "-T VariantEval ";  #Type of analysis to run
-    print $FILEHANDLE "-l INFO ";  #Set the minimum level of logging
-    print $FILEHANDLE "-R ".$active_parameter_href->{human_genome_reference}." ";  #Reference file
-    print $FILEHANDLE "-D ".$active_parameter_href->{gatk_varianteval_dbsnp}." ";  #dbSNP file
-    print $FILEHANDLE "-gold ".$active_parameter_href->{gatk_varianteval_gold}." ";  #Evaluations that count calls at sites of true variation (e.g., indel calls) will use this argument as their gold standard for comparison
-    print $FILEHANDLE "--eval ".catfile($$temp_directory_ref, $infile.$infile_tag.$call_type.".vcf")." ";  #InFile
-    say $FILEHANDLE "-o ".catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type.".vcf.varianteval"), "\n";  #OutFile
+    varianteval({infile_paths_ref => [catfile($$temp_directory_ref, $infile.$infile_tag.$call_type.$infile_suffix)],
+		 outfile_path => $outfile_path_no_ending.$call_type.$outfile_suffix,
+		 logging_level => $active_parameter_href->{gatk_logging_level},
+		 referencefile_path => $active_parameter_href->{human_genome_reference},
+		 dbsnp_file_path => $active_parameter_href->{gatk_varianteval_dbsnp},
+		 indel_gold_standard_file_path => $active_parameter_href->{gatk_varianteval_gold},
+		 FILEHANDLE => $FILEHANDLE,
+		});
+    say $FILEHANDLE "\n";
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    migrate_file({infile_path => catfile($$temp_directory_ref, $infile.$outfile_tag.$call_type.".vcf.varianteval"),
+    migrate_file({infile_path => $outfile_path_no_ending.$call_type.$outfile_suffix,
 		  outfile_path => $outsample_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -4196,7 +4305,7 @@ sub gatk_variantevalall {
 			program_name => "variantevalall",
 			infile => $infile,
 			outdirectory => $outsample_directory,
-			outfile_ending => $outfile_tag.$call_type.".vcf.varianteval",
+			outfile_ending => $outfile_tag.$call_type.$outfile_suffix,
 			outdata_type => "infile_dependent"
 		       });
     }
@@ -4209,7 +4318,7 @@ sub gatk_variantevalall {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    dependencies => "case_dependency_dead_end",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
 		   });
     }
@@ -4284,13 +4393,22 @@ sub snpeff {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 20;
-    my $xargs_file_name;
+    use Program::Variantcalling::Snpeff qw(ann);
+    use Program::Variantcalling::Snpsift qw(annotate dbnsfp);
+    use Program::Variantcalling::Mip qw(vcfparser);
 
-    ## Set the number of cores to allocate per sbatch job.
-    my $core_number = $active_parameter_href->{core_processor_number};
+    my $reduce_io_ref = \$active_parameter_href->{reduce_io};
+    my $xargs_file_name;
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Adjust core number depending on user supplied input exists or not and max number of cores
+    my $core_number = adjust_core_number({module_core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					  modifier_core_number => scalar(@{ $file_info_href->{contigs} }),
+					  max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+					 });
+    
+    ## Filehandles
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     unless (defined($FILEHANDLE)){ #Run as individual sbatch script
 
@@ -4305,7 +4423,7 @@ sub snpeff {
 								  program_directory => catfile(lc($$outaligner_dir_ref)),
 								  call_type => $call_type,
 								  core_number => $core_number,
-								  process_time => 10,
+								  process_time => $active_parameter_href->{module_time}{"p".$program_name},
 								  temp_directory => $$temp_directory_ref
 								 });
     }
@@ -4318,6 +4436,22 @@ sub snpeff {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pannovar}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+
+    ### Assign suffix
+    ## Return the current infile vcf compression suffix for this jobid chain
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "variant_file_suffix",
+					 jobid_chain => $jobid_chain,
+					});
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
 
     my $vcfparser_analysis_type = "";
     my $vcfparser_contigs_ref = \@{ $file_info_href->{contigs_size_ordered} };  #Set default
@@ -4341,8 +4475,8 @@ sub snpeff {
 										  program_info_path => $program_info_path,
 										  core_number => $core_number,
 										  xargs_file_counter => $xargs_file_counter,
-										  infile => $$family_id_ref.$infile_tag.$call_type,
-										  file_ending => $vcfparser_analysis_type.".vcf*",
+										  infile => $infile_no_ending,
+										  file_ending => $vcfparser_analysis_type.$infile_suffix."*",
 										  indirectory => $infamily_directory,
 										  temp_directory => $$temp_directory_ref,
 										 });
@@ -4371,20 +4505,20 @@ sub snpeff {
 
 	    foreach my $contig (@$vcfparser_contigs_ref) {
 
-		print $XARGSFILEHANDLE "ann ";
-		print $XARGSFILEHANDLE "-v ";  #Verbose mode
-		print $XARGSFILEHANDLE $active_parameter_href->{snpeff_genome_build_version}." ";  #Reference genome
-		print $XARGSFILEHANDLE "-c ".catfile($active_parameter_href->{snpeff_path}, "snpEff.config")." ";  #Specify config file
-		print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf")." "; #Infile
-		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-		say $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf.".$xargs_file_counter)." "; #Outfile;
+		Program::Variantcalling::Snpeff::ann({verbosity => "v",
+						      genome_build_version => $active_parameter_href->{snpeff_genome_build_version},
+						      config_file_path => catfile($active_parameter_href->{snpeff_path}, "snpEff.config"),
+						      infile_path => $file_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix,
+						      outfile_path => $file_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix.".".$xargs_file_counter,
+						      stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
+						      FILEHANDLE => $XARGSFILEHANDLE,
+						     });
+		say $XARGSFILEHANDLE "\n";
 	    }
 	    $annotation_file_counter = $xargs_file_counter;
 	}
 
-	for my $annotation_file (keys $active_parameter_href->{snpsift_annotation_files}){
-
-	    my $info_key = $active_parameter_href->{snpsift_annotation_files}{$annotation_file};
+	while ( my ($annotation_file, $annotation_info_key) = each(%{ $active_parameter_href->{snpsift_annotation_files} }) ) {
 
 	    ## Create file commands for xargs
 	    ($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
@@ -4399,34 +4533,43 @@ sub snpeff {
 								     temp_directory => $$temp_directory_ref,
 								     java_jar => catfile($active_parameter_href->{snpeff_path}, "SnpSift.jar"),
 								    });
+	    ## Get parameters
+	    my $name_prefix;
+	    my $info_key;
+	    if (defined($annotation_info_key)) {
+
+		## Apply specific INFO field output key for easier downstream processing
+		if (defined($active_parameter_href->{snpsift_annotation_outinfo_key}{$annotation_file})) {
+
+		    $name_prefix = $active_parameter_href->{snpsift_annotation_outinfo_key}{$annotation_file};
+		}
+		$info_key = $annotation_info_key;  #Database
+	    }
 
 	    foreach my $contig (@$vcfparser_contigs_ref) {
 
-		print $XARGSFILEHANDLE "annotate ";
+		##Get contig specific parameters
+		my $infile_path;
+		if ( ! $annotation_file_counter) {  #First file per contig
 
-		if (defined($active_parameter_href->{snpsift_annotation_files}{$annotation_file})) {
-
-		    ## Apply specific INFO field output key for easier downstream processing
-		    if (defined($active_parameter_href->{snpsift_annotation_outinfo_key}{$annotation_file})) {
-
-			print $XARGSFILEHANDLE "-name ".$active_parameter_href->{snpsift_annotation_outinfo_key}{$annotation_file}." ";
-		    }
-		    print $XARGSFILEHANDLE "-info ".$active_parameter_href->{snpsift_annotation_files}{$annotation_file}." ";  #Database
-		}
-		print $XARGSFILEHANDLE $annotation_file." ";  #Database
-
-		if (! $annotation_file_counter) {  #First file per contig
-
-		    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf")." "; #Infile
+		    $infile_path = $file_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix;
 		}
 		else {
 
 		    my $annotation_infile_number = $xargs_file_counter - 1;
-		    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf.".$annotation_infile_number)." ";  #Infile from previous round
+		    $infile_path = $file_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix.".".$annotation_infile_number;  #Infile from previous round
 		}
-
-		print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-		say $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf.".$xargs_file_counter)." ";  #Outfile
+		Program::Variantcalling::Snpsift::annotate({verbosity => "v",
+							    infile_path => $infile_path,
+							    outfile_path => $file_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix.".".$xargs_file_counter,
+							    database_path => $annotation_file,
+							    name_prefix => $name_prefix,
+							    info => $info_key,
+							    stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
+							    append_stderr_info => 1,
+							    FILEHANDLE => $XARGSFILEHANDLE,
+							   });
+		say $XARGSFILEHANDLE "\n";
 	    }
 	    $annotation_file_counter++;  #Increment counter
 	    close($XARGSFILEHANDLE);
@@ -4455,13 +4598,16 @@ sub snpeff {
 
 	    foreach my $contig (@$vcfparser_contigs_ref) {
 
-		print $XARGSFILEHANDLE "dbnsfp ";
-		print $XARGSFILEHANDLE "-db ".$active_parameter_href->{snpsift_dbnsfp_file}." ";  #DbNSFP file
-		print $XARGSFILEHANDLE "-f ";  #fields to add
-		print $XARGSFILEHANDLE join(',', @{ $active_parameter_href->{snpsift_dbnsfp_annotations} })." ";  #Databases
-		print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf.".$annotation_infile_number)." ";  #Infile
-		print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-		say $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf.".$xargs_file_counter)." ";  #Outfile
+		Program::Variantcalling::Snpsift::dbnsfp({annotate_fields_ref => \@{ $active_parameter_href->{snpsift_dbnsfp_annotations} },
+							  infile_path => $file_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix.".".$annotation_infile_number,
+							  outfile_path => $file_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix.".".$xargs_file_counter,
+							  database_path => $active_parameter_href->{snpsift_dbnsfp_file},
+							  stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
+							  append_stderr_info => 1,
+							  FILEHANDLE => $XARGSFILEHANDLE,
+							  verbosity => "v",
+							 });
+		say $XARGSFILEHANDLE "\n";
 	    }
 	    close($XARGSFILEHANDLE);
 	}
@@ -4476,16 +4622,19 @@ sub snpeff {
 								 program_info_path => $program_info_path,
 								 core_number => $core_number,
 								 xargs_file_counter => $xargs_file_counter,
-								 first_command => "vcfparser",
 								});
 
 	my $annotation_infile_number = $xargs_file_counter - 1;
 
 	foreach my $contig (@$vcfparser_contigs_ref) {
 
-	    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf.".$annotation_infile_number)." ";  #Infile
-	    print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$vcfparser_analysis_type.".vcf")." ";  #Outfile
-	    say $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    vcfparser({infile_path => $file_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix.".".$annotation_infile_number,
+		       outfile_path => $outfile_path_no_ending."_".$contig.$vcfparser_analysis_type.$outfile_suffix,
+		       stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt ",
+		       append_stderr_info => 1,
+		       FILEHANDLE => $XARGSFILEHANDLE,
+		      });
+	    say $XARGSFILEHANDLE "\n";
 	}
 
 	if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
@@ -4497,10 +4646,10 @@ sub snpeff {
 										  contigs_ref => $vcfparser_contigs_ref,
 										  file_name =>$file_name,
 										  program_info_path => $program_info_path,
-										  core_number => $active_parameter_href->{core_processor_number},
+										  core_number => $active_parameter_href->{max_cores_per_node},
 										  xargs_file_counter => $xargs_file_counter,
-										  outfile => $$family_id_ref.$outfile_tag.$call_type,
-										  file_ending => $vcfparser_analysis_type.".vcf*",
+										  outfile => $outfile_no_ending,
+										  file_ending => $vcfparser_analysis_type.$outfile_suffix."*",
 										  outdirectory => $outfamily_directory,
 										  temp_directory => $$temp_directory_ref,
 										 });
@@ -4508,7 +4657,7 @@ sub snpeff {
 	else {
 
 	    ## QC Data File(s)
-	    migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.".vcf"),
+	    migrate_file({infile_path => $outfile_path_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.$outfile_suffix,
 			  outfile_path => $outfamily_directory,
 			  FILEHANDLE => $FILEHANDLE,
 			 });
@@ -4522,7 +4671,7 @@ sub snpeff {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => $program_name,
 			outdirectory => $outfamily_directory,
-			outfile_ending => $$family_id_ref.$outfile_tag.$call_type."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.".vcf",
+			outfile_ending => $outfile_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$vcfparser_analysis_type.$outfile_suffix,
 			outdata_type => "static"
 		       });
     }
@@ -4538,7 +4687,7 @@ sub snpeff {
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
 			dependencies => "case_dependency",
-			path => $parameter_href->{"p".$program_name}{chain},
+			path => $jobid_chain,
 			sbatch_file_name => $file_name
 		       });
 	}
@@ -4630,7 +4779,7 @@ sub annovar {
     my $xargs_file_name;
 
     ## Set the number of cores to allocate per sbatch job.
-    my $core_number = $active_parameter_href->{core_processor_number};
+    my $core_number = $active_parameter_href->{max_cores_per_node};
 
     unless (defined($FILEHANDLE)){ #Run as individual sbatch script
 
@@ -4816,9 +4965,9 @@ sub annovar {
 }
 
 
-sub pvcfparser {
+sub mvcfparser {
 
-##pvcfparser
+##mvcfparser
 
 ##Function : Vcfparser performs parsing of varianteffectpredictor annotated variants
 ##Returns  : "|$xargs_file_counter"
@@ -4888,10 +5037,17 @@ sub pvcfparser {
     use Program::Variantcalling::Mip qw(vcfparser);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $core_number = $active_parameter_href->{core_processor_number};
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 5;
     my $xargs_file_name;
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Adjust core number depending on user supplied input exists or not and max number of cores
+    my $core_number = adjust_core_number({module_core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					  modifier_core_number => scalar(@{ $file_info_href->{contigs} }),
+					  max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+					 });
+
+    ## Filehandles
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     unless (defined($FILEHANDLE)){ #Run as individual sbatch script
 
@@ -4906,7 +5062,8 @@ sub pvcfparser {
 								  program_directory => catfile(lc($$outaligner_dir_ref)),
 								  call_type => $call_type,
 								  temp_directory => $$temp_directory_ref,
-								  process_time => $time,
+								  core_number => $core_number,
+								  process_time => $active_parameter_href->{module_time}{"p".$program_name},
 								 });
     }
 
@@ -4918,6 +5075,22 @@ sub pvcfparser {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pvarianteffectpredictor}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+
+    ### Assign suffix
+    ## Return the current infile vcf compression suffix for this jobid chain
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "variant_file_suffix",
+					 jobid_chain => $jobid_chain,
+					});
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
 
     if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
 
@@ -4930,7 +5103,7 @@ sub pvcfparser {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      infile => $$family_id_ref.$infile_tag.$call_type,
+									      infile => $infile_no_ending,
 									      indirectory => $infamily_directory,
 									      temp_directory => $$temp_directory_ref,
 									     });
@@ -4977,14 +5150,14 @@ sub pvcfparser {
 
 		    @select_feature_annotation_columns = @{ $active_parameter_href->{vcfparser_select_feature_annotation_columns} };
 		}
-		$select_outfile = catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".selected.vcf");
+		$select_outfile = $outfile_path_no_ending."_".$contig.".selected".$infile_suffix;
 	    }
 	}
 
 	vcfparser({range_feature_annotation_columns_ref => \@{ $active_parameter_href->{vcfparser_range_feature_annotation_columns} },
 		   select_feature_annotation_columns_ref => \@select_feature_annotation_columns,
-		   infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf"),
-		   outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf"),
+		   infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
+		   outfile_path => $outfile_path_no_ending."_".$contig.$infile_suffix,
 		   stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt ",
 		   range_feature_file_path => $active_parameter_href->{vcfparser_range_feature_file},
 		   select_feature_file_path => $select_file,
@@ -4998,7 +5171,7 @@ sub pvcfparser {
     }
 
     ## QC Data File(s)
-    migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$file_info_href->{contigs_size_ordered}[0].".vcf"),
+    migrate_file({infile_path => $outfile_path_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$infile_suffix,
 		  outfile_path => $outfamily_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -5030,7 +5203,7 @@ sub pvcfparser {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => $program_name,
 			outdirectory => $outfamily_directory,
-			outfile_ending => $$family_id_ref.$outfile_tag.$call_type."_".$file_info_href->{contigs_size_ordered}[0].".vcf",
+			outfile_ending => $outfile_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$infile_suffix,
 			outdata_type => "static"
 		       });
     }
@@ -5059,8 +5232,8 @@ sub pvcfparser {
 										  program_info_path => $program_info_path,
 										  core_number => $core_number,
 										  xargs_file_counter => $xargs_file_counter,
-										  outfile => $$family_id_ref.$outfile_tag.$call_type,
-										  file_ending => $vcfparser_analysis_type.".vcf*",
+										  outfile => $outfile_no_ending,
+										  file_ending => $vcfparser_analysis_type.$infile_suffix."*",
 										  outdirectory => $outfamily_directory,
 										  temp_directory => $$temp_directory_ref,
 										 });
@@ -5077,7 +5250,7 @@ sub pvcfparser {
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
 			dependencies => "case_dependency",
-			path => $parameter_href->{"p".$program_name}{chain},
+			path => $jobid_chain,
 			sbatch_file_name => $file_name
 		       });
 	}
@@ -5164,21 +5337,24 @@ sub varianteffectpredictor {
     use Program::Variantcalling::Vep qw(variant_effect_predictor);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 20;
     my $xargs_file_name;
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     unless (defined($FILEHANDLE)){ #Run as individual sbatch script
 
 	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     }
 
-    my $fork_number = 4;  #varianteffectpredictor forks
+    ## Adjust core number depending on user supplied input exists or not and max number of cores
+    my $core_number = adjust_core_number({module_core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					  modifier_core_number => scalar(@{ $file_info_href->{contigs} }),
+					  max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+					 });
 
-    ## Set the number of cores to allocate per sbatch job.
-    my $core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
-					      core_number => scalar(@{ $file_info_href->{contigs} }),
-					     });  #Detect the number of cores to use
+    my $fork_number = 4;  #Varianteffectpredictor forks
     $core_number = floor($core_number / $fork_number);  #Adjust for the number of forks
 
     if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
@@ -5191,8 +5367,8 @@ sub varianteffectpredictor {
 								  program_name => $program_name,
 								  program_directory => catfile(lc($$outaligner_dir_ref)),
 								  call_type => $call_type,
-								  core_number => $active_parameter_href->{core_processor_number},
-								  process_time => 10,
+								  core_number => $core_number,
+								  process_time => $active_parameter_href->{module_time}{"p".$program_name},
 								  temp_directory => $$temp_directory_ref
 								 });
 	$stderr_path = $program_info_path.".stderr.txt";
@@ -5207,6 +5383,22 @@ sub varianteffectpredictor {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pvt}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
+
+    ### Assign suffix
+    ## Return the current infile vcf compression suffix for this jobid chain
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "variant_file_suffix",
+					 jobid_chain => $jobid_chain,
+					});
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
 
     if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
 
@@ -5219,14 +5411,14 @@ sub varianteffectpredictor {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      infile => $$family_id_ref.$infile_tag.$call_type,
+									      infile => $infile_no_ending,
 									      indirectory => $infamily_directory,
 									      temp_directory => $$temp_directory_ref,
 									     });
     }
 
     ## varianteffectpredictor
-    say $FILEHANDLE "## varianteffectpredictor";
+    say $FILEHANDLE "## Varianteffectpredictor";
 
     my $assembly_version = $file_info_href->{human_genome_reference_source}.$file_info_href->{human_genome_reference_version};
 
@@ -5286,12 +5478,12 @@ sub varianteffectpredictor {
 				  assembly => $assembly_version,
 				  cache_directory => $active_parameter_href->{vep_directory_cache},
 				  reference_path => $active_parameter_href->{human_genome_reference},
-				  infile_format => "vcf",
-				  outfile_format => "vcf",
+				  infile_format => substr($outfile_suffix, 1),
+				  outfile_format => substr($outfile_suffix, 1),
 				  fork => $fork_number,
 				  buffer_size => 20000,
-				  infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.".vcf"),
-				  outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.".vcf"),
+				  infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
+				  outfile_path => $outfile_path_no_ending."_".$contig.$infile_suffix,
 				  stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 				  stdoutfile_path => $xargs_file_name.".".$contig.".stdout.txt",
 				  FILEHANDLE => $XARGSFILEHANDLE,
@@ -5305,20 +5497,20 @@ sub varianteffectpredictor {
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => $program_name."summary",
 			outdirectory => $outfamily_directory,
-			outfile_ending => $$family_id_ref.$outfile_tag.$call_type."_".$file_info_href->{contigs_size_ordered}[0].".vcf_summary.html",
+			outfile_ending => $outfile_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$infile_suffix."_summary.html",
 			outdata_type => "static"
 		       });
 	## Collect QC metadata info for later use
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => $program_name,
 			outdirectory => $outfamily_directory,
-			outfile_ending => $$family_id_ref.$outfile_tag.$call_type."_".$file_info_href->{contigs_size_ordered}[0].".vcf",
+			outfile_ending => $outfile_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$infile_suffix,
 			outdata_type => "static"
 		       });
     }
 
     ## QC Data File(s)
-    migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_*.vcf_s*"),
+    migrate_file({infile_path => $outfile_path_no_ending."_*".$infile_suffix."_s*",
 		  outfile_path => $outfamily_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
@@ -5330,7 +5522,7 @@ sub varianteffectpredictor {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_*.vcf*"),
+	migrate_file({infile_path => $outfile_path_no_ending."_*".$infile_suffix."*",
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -5342,7 +5534,7 @@ sub varianteffectpredictor {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$file_info_href->{contigs_size_ordered}[0].".vcf"),
+	migrate_file({infile_path => $outfile_path_no_ending."_".$file_info_href->{contigs_size_ordered}[0].$infile_suffix,
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -5359,7 +5551,7 @@ sub varianteffectpredictor {
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
 			dependencies => "case_dependency",
-			path => $parameter_href->{"p".$program_name}{chain},
+			path => $jobid_chain,
 			sbatch_file_name => $file_name
 		       });
 	}
@@ -5651,9 +5843,9 @@ sub gatk_phasebytransmission {
 }
 
 
-sub samplecheck {
+sub mplink {
 
-##samplecheck
+##mplink
 
 ##Function : Tests sample for correct relatives (only performed for samples with relatives defined in pedigree file) performed on sequence data.
 ##Returns  : ""
@@ -5706,18 +5898,15 @@ sub samplecheck {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    use Program::Gnu::Coreutils qw(cat);
-    use Program::Variantcalling::Gatk qw(selectvariants);
+    use Program::Variantcalling::Bcftools qw(view annotate);
+    use Program::Variantcalling::Vt qw(vt_uniq);
+    use Program::Variantcalling::Plink qw(plink);
 
+    my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $xargs_file_name;
-    my $xargs_file_counter = 0;
-
-    ## Set the number of cores to allocate per sbatch job.
-    my $core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
-					      core_number => scalar(@{ $active_parameter_href->{sample_ids} }),
-					     });
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -5725,10 +5914,10 @@ sub samplecheck {
 								 FILEHANDLE => $FILEHANDLE,
 								 directory_id => $$family_id_ref,
 								 program_name => $program_name,
-								 program_directory => catfile(lc($$outaligner_dir_ref), lc($program_name)),
+								 program_directory => catfile(lc($$outaligner_dir_ref), "casecheck", lc($program_name)),
 								 call_type => $call_type,
-								 core_number => $core_number,
-								 process_time => 10,
+								 core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+								 process_time => $active_parameter_href->{module_time}{"p".$program_name},
 								});
 
     my ($volume, $directory, $program_info_file) = File::Spec->splitpath($program_info_path);  #Split to enable submission to &sample_info_qc later
@@ -5737,14 +5926,22 @@ sub samplecheck {
 
     ## Assign Directories
     my $infamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref);
-    my $outfamily_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref, lc($program_name));
+    my $outfamily_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref, "casecheck", lc($program_name));
     my $outfamily_file_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref);
 
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
+    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+
+    ### Assign suffix
+    ## Return the current infile vcf compression suffix for this jobid chain_vcf_data
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "variant_file_suffix",
+					 jobid_chain => $parameter_href->{pgatk_combinevariantcallsets}{chain},
+					});
 
     my $family_file = catfile($outfamily_file_directory, $$family_id_ref.".fam");
-
     ## Create .fam file to be used in variant calling analyses
     create_fam_file({parameter_href => $parameter_href,
 		     active_parameter_href => $active_parameter_href,
@@ -5756,174 +5953,131 @@ sub samplecheck {
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf*"),
+		  infile_path => catfile($infamily_directory, $infile_no_ending.$infile_suffix."*"),
 		  outfile_path => $$temp_directory_ref
 		 });
     say $FILEHANDLE "wait", "\n";
 
-    my $founderCount = detect_founders({active_parameter_href => $active_parameter_href,
-					sample_info_href => $sample_info_href,
-				       });
+    ## Prepare input
+    say $FILEHANDLE "## Remove indels using bcftools ";
+    Program::Variantcalling::Bcftools::view({infile_path => $file_path_no_ending.$infile_suffix,
+					     outfile_path => $file_path_no_ending."_no_indels".$infile_suffix,
+					     output_type => "v",
+					     exclude_types_ref => ["indels"],
+					     FILEHANDLE => $FILEHANDLE,
+					    });
+    say $FILEHANDLE "\n";
 
-    ## GATK SelectVariants and Plink2 bed, bim and .fam file
-    say $FILEHANDLE "## GATK SelectVariants and Plink2 bed, bim and .fam file";
-
-    ## Create file commands for xargs
-    ($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
-							     XARGSFILEHANDLE => $XARGSFILEHANDLE,
-							     file_name => $file_name,
-							     program_info_path => $program_info_path,
-							     core_number => $core_number,
-							     xargs_file_counter => $xargs_file_counter,
-							     first_command => "java",
-							     memory_allocation => "Xmx2g",
-							     java_use_large_pages => $active_parameter_href->{java_use_large_pages},
-							     temp_directory => $$temp_directory_ref,
-							     java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
-							    });
-
-    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
-
-	selectvariants({sample_names_ref => [$sample_id],
-			logging_level => $active_parameter_href->{gatk_logging_level},
-			referencefile_path => $active_parameter_href->{human_genome_reference},
-			infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf"),
-			outfile_path => catfile($$temp_directory_ref, $sample_id.".vcf"),
-			stderrfile_path => $xargs_file_name.".".$sample_id."_selectvariants.stderr.txt",
-			exclude_nonvariants => 1,
-			FILEHANDLE => $XARGSFILEHANDLE,
-		       });
-	print $XARGSFILEHANDLE "; ";
-
-	## Generate Plink bed and bim (as well as fam) files
-	print $XARGSFILEHANDLE "plink2 ";
-	print $XARGSFILEHANDLE "--vcf ".catfile($$temp_directory_ref, $sample_id.".vcf")." ";  #InFile
-	print $XARGSFILEHANDLE "--chr 23-24 ";  #Only analyse sex chromosomes
-	print $XARGSFILEHANDLE "--out ".catfile($$temp_directory_ref, $sample_id."_vcf_data_unsplit")." ";  #OutFile (.ped and .map)
-	say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$sample_id."_plink2.stderr.txt ";  #Redirect xargs output to program specific stderr file
-    }
-
-    ## Add a subsetet and correct .fam file for analysis
-    say $FILEHANDLE "## Add a subsetet and correct .fam file for analysis";
-    while (my ($sample_id_index, $sample_id) = each(@{ $active_parameter_href->{sample_ids} }) ) {  #Collect infiles for all sample_ids
-
-	my $lineCounter = 2 + $sample_id_index;  #Skip header line
-	print $FILEHANDLE q?perl -nae 'if($F[1] eq "?.$sample_id.q?") {print $F[0]."\t".$F[1]."\t0\t0\t".$F[4]."\t".$F[5]}' ?;  #Include 1 line and remove founders
-	print $FILEHANDLE catfile($active_parameter_href->{outdata_dir}, $$family_id_ref, $$family_id_ref.".fam")." ";
-	print $FILEHANDLE "> ";
-	print $FILEHANDLE catfile($$temp_directory_ref, $sample_id."_vcf_data_unsplit.fam")." ";
-	say $FILEHANDLE "2> ".$xargs_file_name.".".$sample_id."_sampleFam.stderr.txt ", "\n";  #Redirect xargs output to program specific stderr file
-    }
-
-    ## Perform sex-check on individual samples and sample_id.fam  using Plink2
-    say $FILEHANDLE "## Perform sex-check on individual samples and sample_id.fam  using Plink2";
-
-    ## Create file commands for xargs
-    ($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
-							     XARGSFILEHANDLE => $XARGSFILEHANDLE,
-							     file_name => $file_name,
-							     program_info_path => $program_info_path,
-							     core_number => $core_number,
-							     xargs_file_counter => $xargs_file_counter,
-							     first_command => "plink2",
-							    });
-
-    foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
-
-	## Split X to remove PAR regions
-	print $XARGSFILEHANDLE "--bfile ".catfile($$temp_directory_ref, $sample_id."_vcf_data_unsplit")." ";
-	print $XARGSFILEHANDLE "--split-x ";
-
-	if($file_info_href->{human_genome_reference_source} eq "GRCh") {
-
-	    print $XARGSFILEHANDLE "b".$file_info_href->{human_genome_reference_version}." ";
-	}
-	else {
-
-	    print $XARGSFILEHANDLE "hg".$file_info_href->{human_genome_reference_version}." ";
-	}
-	print $XARGSFILEHANDLE "no-fail ";  #By default, PLINK errors out when no variants would be affected by --split-x;the 'no-fail' modifier overrides this.
-	print $XARGSFILEHANDLE "--make-bed ";
-	print $XARGSFILEHANDLE "--out ".catfile($$temp_directory_ref, $sample_id."_vcf_data")." ";
-	print $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$sample_id."_plink2_splitX.stderr.txt ";  #Redirect xargs output to program specific stderr file
-	print $XARGSFILEHANDLE "; ";
-
-	print $XARGSFILEHANDLE "plink2 ";
-	print $XARGSFILEHANDLE "--bfile ".catfile($$temp_directory_ref, $sample_id."_vcf_data")." ";
-	print $XARGSFILEHANDLE "--check-sex ";
-
-	unless ($sample_info_href->{sample}{$sample_id}{sex} =~/2|female/) {
-
-	    print $XARGSFILEHANDLE "y-only ";
-	}
-	print $XARGSFILEHANDLE "--out ".catfile($outfamily_directory, $sample_id."_vcf_data")." ";
-	say $XARGSFILEHANDLE "2> ".$xargs_file_name.".".$sample_id."_plink2_check-sex.stderr.txt ";  #Redirect xargs output to program specific stderr file
-    }
-
-    ## Concatenate files for qc downsteam
-    my @infile_paths = map { catfile($outfamily_directory, $_."_vcf_data.sexcheck") } @{ $active_parameter_href->{sample_ids} };
-    cat({infile_paths_ref => \@infile_paths,
-	 FILEHANDLE => $FILEHANDLE,
-	});
+    say $FILEHANDLE "## Create uniq IDs and remove duplicate variants";
+    Program::Variantcalling::Bcftools::annotate({remove_ids_ref => ["ID"],
+						 set_id => q?+'%CHROM:%POS:%REF:%ALT'?,
+						 infile_path => $file_path_no_ending."_no_indels".$infile_suffix,
+						 output_type => "v",
+						 FILEHANDLE => $FILEHANDLE,
+						});
+    
     print $FILEHANDLE "| ";  #Pipe
-    print $FILEHANDLE q?perl -nae 'if ($.==1) {chomp($_);  print $_; if ($F[5] eq "F") {print "/YCOUNT\n"} else {print "/F\n"} } elsif ($_!~/FID/) {print $_}' ?;  #Print first header and sampleId lines
-    print $FILEHANDLE "> ".catfile($outfamily_directory, $$family_id_ref.".sexcheck")." ";
+
+    ## Drops duplicate variants that appear later in the the VCF file
+    Program::Variantcalling::Vt::vt_uniq({infile_path => "-",
+					  outfile_path => $file_path_no_ending."_no_indels_ann_uniq".$infile_suffix,
+					  FILEHANDLE => $FILEHANDLE,
+					 });
+    say $FILEHANDLE "\n";
+
+    ### Plink
+    say $FILEHANDLE "## Create pruning set and uniq IDs";
+    plink({vcffile_path => $file_path_no_ending."_no_indels_ann_uniq".$infile_suffix,
+	   outfile_prefix => catfile($$temp_directory_ref, $$family_id_ref."_data"),
+	   vcf_require_gt => 1,
+	   vcf_half_call => "haploid",
+	   set_missing_var_ids => q?@:#[?.$file_info_href->{human_genome_reference_version}.q?]\$1,\$2?,
+	   const_fid => $$family_id_ref,
+	   make_bed => 1,
+	   indep => 1,
+	   indep_window_size => 50,
+	   indep_step_size => 5,
+	   indep_vif_threshold => 2,
+	   FILEHANDLE => $FILEHANDLE,
+	  });
+    say $FILEHANDLE "\n";
+
+    say $FILEHANDLE "## Update Plink fam. Create ped and map file and frequency report";
+    plink({binary_fileset_prefix => catfile($$temp_directory_ref, $$family_id_ref."_data"),
+	   fam_file_path => $family_file,
+	   make_just_fam => 1,
+	   recode => 1,
+	   freqx => 1,
+	   outfile_prefix => catfile($$temp_directory_ref, $$family_id_ref."_data"),
+	   FILEHANDLE => $FILEHANDLE,
+	  });
+    say $FILEHANDLE "\n";
+
+    if (scalar(@{ $active_parameter_href->{sample_ids} }) > 1) {  #Only perform if more than 1 sample
+
+	say $FILEHANDLE "## Calculate inbreeding coefficients per family";
+	plink({binary_fileset_prefix => catfile($$temp_directory_ref, $$family_id_ref."_data"),
+	       outfile_prefix => catfile($outfamily_directory, $$family_id_ref),
+	       het => 1,
+	       small_sample => 1,
+	       inbreeding_coefficients => 1,
+	       extract_file => catfile($$temp_directory_ref, $$family_id_ref."_data.prune.in"),
+	       FILEHANDLE => $FILEHANDLE,
+	      });
+	say $FILEHANDLE "\n";
+
+	say $FILEHANDLE "## Create Plink .mibs per family";
+	plink({ped_file_path => catfile($$temp_directory_ref, $$family_id_ref."_data.ped"),
+	       map_file_path => catfile($$temp_directory_ref, $$family_id_ref."_data.map"),
+	       cluster => 1,
+	       matrix => 1,
+	       outfile_prefix => catfile($outfamily_directory, $$family_id_ref),
+	       FILEHANDLE => $FILEHANDLE,
+	      });
+	say $FILEHANDLE "\n";
+    }
+
+    ### Plink sex-check
+    ## Get parameters
+    my $genome_build;
+    if($file_info_href->{human_genome_reference_source} eq "GRCh") {
+
+	$genome_build = "b".$file_info_href->{human_genome_reference_version};
+    }
+    else {
+
+	$genome_build = "hg".$file_info_href->{human_genome_reference_version};
+    }
+    plink({regions_ref => [23, 24],
+	   split_x => $genome_build,
+	   no_fail => 1,
+	   make_bed => 1,
+	   binary_fileset_prefix => catfile($$temp_directory_ref, $$family_id_ref."_data"),
+	   outfile_prefix => catfile($$temp_directory_ref, $$family_id_ref."_data_unsplit"),
+	   FILEHANDLE => $FILEHANDLE,
+	  });
+    say $FILEHANDLE "\n";
+    
+    ##Get parameters
+    my $sex_check_min_F;
+    if ( ($consensus_analysis_type eq "wes") || ($consensus_analysis_type eq "rapid") ) {  #Exome/rapid analysis use combined reference for more power
+	
+	$sex_check_min_F = "0.2 0.75";
+    }
+    
+    plink({check_sex => 1,
+	   sex_check_min_F => $sex_check_min_F,
+	   extract_file => catfile($$temp_directory_ref, $$family_id_ref."_data.prune.in"),
+	   read_freqfile_path => catfile($$temp_directory_ref, $$family_id_ref."_data.frqx"),
+	   binary_fileset_prefix => catfile($$temp_directory_ref, $$family_id_ref."_data_unsplit"),
+	   outfile_prefix => catfile($outfamily_directory, $$family_id_ref),
+	   FILEHANDLE => $FILEHANDLE,
+	  });
     say $FILEHANDLE "\n";
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
-	## Collect QC metadata info for later use
-	sample_info_qc({sample_info_href => $sample_info_href,
-			program_name => "plink_sexcheck",
-			outdirectory => $outfamily_directory,
-			outfile_ending => $$family_id_ref.".sexcheck",
-			outdata_type => "infile_dependent"
-		       });
-    }
-
-    if (scalar(@{ $active_parameter_href->{sample_ids} }) > 1) {  #Only perform if more than 1 sample
-
-	say $FILEHANDLE "## Calculate F-score";
-	say $FILEHANDLE "# Remove indels using vcfTools ";
-	print $FILEHANDLE "vcftools ";
-	print $FILEHANDLE "--remove-indels ";  #Exclude sites that contain an indel
-	print $FILEHANDLE "--vcf ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf")." ";  #InFile;
-	print $FILEHANDLE "--recode ";  #Keep INFO fields
-	print $FILEHANDLE "--recode-INFO-all ";  #Recode all INFO-fields
-	say $FILEHANDLE "--out ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_no_indels")."\n";
-
-	say $FILEHANDLE "# Create uniq IDs and remove duplicate variants";
-	print $FILEHANDLE "bcftools annotate ";
-	print $FILEHANDLE "-Ov ";  #Output type: b: compressed BCF, u: uncompressed BCF, z: compressed VCF, v: uncompressed VCF [v]
-	print $FILEHANDLE "-x ID ";  #List of annotations to remove
-	print $FILEHANDLE q?-I +'%CHROM:%POS:%REF:%ALT' ?;  #Set ID column
-	print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_no_indels.recode.vcf")." ";  #InFile
-	print $FILEHANDLE "| ";  #Pipe
-	print $FILEHANDLE "vt uniq ";  #Drops duplicate variants that appear later in the the VCF file
-	print $FILEHANDLE "- ";
-	say $FILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_no_indels_ann_uniq.vcf"), "\n";
-
-	say $FILEHANDLE "# Create pruning set and uniq IDs for plink2";
-	print $FILEHANDLE "plink2 ";
-	print $FILEHANDLE "--noweb ";  #No web check
-	print $FILEHANDLE "--vcf ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_no_indels_ann_uniq.vcf")." ";
-	print $FILEHANDLE "--vcf-require-gt ";  #Skip variants where the GT field is absent
-	print $FILEHANDLE "--vcf-half-call haploid ";  #Treat half-calls as haploid/homozygous
-	print $FILEHANDLE q?--set-missing-var-ids @:#[?.$file_info_href->{human_genome_reference_version}.q?]\$1,\$2 ?;  #Assign chromosome-and-position-based IDs
-	say $FILEHANDLE "--indep 50 5 2 ", "\n";  #Produce a pruned subset of markers that are in approximate linkage equilibrium with each other
-
-	print $FILEHANDLE "plink2 ";
-	print $FILEHANDLE "--noweb ";  #No web check
-	print $FILEHANDLE "--vcf ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_no_indels_ann_uniq.vcf")." ";
-	print $FILEHANDLE "--vcf-require-gt ";  #Skip variants where the GT field is absent
-	print $FILEHANDLE "--vcf-half-call haploid ";  #Treat half-calls as haploid/homozygous
-	print $FILEHANDLE q?--set-missing-var-ids @:#[?.$file_info_href->{human_genome_reference_version}.q?]\$1,\$2 ?;  #Assign chromosome-and-position-based IDs
-	print $FILEHANDLE "--het small-sample ";  #Inlcude n/(n-1) multiplier in Nei's expected homozygosity formula
-	print $FILEHANDLE "--ibc ";  #calculates three inbreeding coefficients for each sample
-	print $FILEHANDLE "--extract plink.prune.in ";  #Only LD-based pruning snps
-	say $FILEHANDLE "--out ".catfile($outfamily_directory, $$family_id_ref), "\n";  #Outfile
-
-	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
+	if (scalar(@{ $active_parameter_href->{sample_ids} }) > 1) {  #Only perform if more than 1 sample
 
 	    ## Collect QC metadata info for later use
 	    sample_info_qc({sample_info_href => $sample_info_href,
@@ -5932,26 +6086,173 @@ sub samplecheck {
 			    outfile_ending => $$family_id_ref.".het",
 			    outdata_type => "infile_dependent"
 			   });
+
+	    ## Collect QC metadata info for later use
+	    sample_info_qc({sample_info_href => $sample_info_href,
+			    program_name => "relation_check",
+			    outdirectory => $outfamily_directory,
+			    outfile_ending => $$family_id_ref.".mibs",
+			    outdata_type => "infile_dependent"
+			   });
 	}
+
+	## Collect QC metadata info for later use
+	sample_info_qc({sample_info_href => $sample_info_href,
+			program_name => "plink_sexcheck",
+			outdirectory => $outfamily_directory,
+			outfile_ending => $$family_id_ref.".sexcheck",
+			outdata_type => "infile_dependent"
+		       });
+
+	## Collect QC metadata info for later use
+	sample_info_qc({sample_info_href => $sample_info_href,
+			program_name => "plink2",
+			outdirectory => $directory,
+			outfile_ending => $stdout_file,
+			outdata_type => "info_directory",
+		       });
     }
 
-    say $FILEHANDLE "## Create Plink .ped and .map file per family using vcfTools";
-    print $FILEHANDLE "vcftools ";
-    print $FILEHANDLE "--vcf ".catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf")." ";  #InFile
-    print $FILEHANDLE "--plink ";  #PLINK format
-    say $FILEHANDLE "--out ".catfile($outfamily_directory, $$family_id_ref), "\n";  #OutFile (.ped and .map)
+    close($FILEHANDLE);
+
+    if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
+
+	submit_job({active_parameter_href => $active_parameter_href,
+		    sample_info_href => $sample_info_href,
+		    job_id_href => $job_id_href,
+		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    dependencies => "case_dependency_dead_end",
+		    path => $jobid_chain,
+		    sbatch_file_name => $file_name
+		   });
+    }
+}
+
+
+sub variant_integrity {
+
+##variant_integrity
+
+##Function : Tests sample for correct relatives (only performed for samples with relatives defined in pedigree file) performed on sequence data.
+##Returns  : ""
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type
+##         : $parameter_href             => The parameter hash {REF}
+##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
+##         : $sample_info_href           => Info on samples and family hash {REF}
+##         : $file_info_href             => The file_info hash {REF}
+##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $job_id_href                => The job_id hash {REF}
+##         : $program_name               => The program name
+##         : $family_id_ref              => The family_id {REF}
+##         : $temp_directory_ref         => The temporary directory {REF}
+##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
+##         : $call_type                  => The variant call type
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
+    my $call_type;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $file_info_href;
+    my $infile_lane_no_ending_href;
+    my $job_id_href;
+    my $program_name;
+
+    my $tmpl = {
+	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
+	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
+	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
+	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
+	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    use Program::Variantcalling::Variant_integrity qw(mendel father);
+
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+
+    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
+								 job_id_href => $job_id_href,
+								 FILEHANDLE => $FILEHANDLE,
+								 directory_id => $$family_id_ref,
+								 program_name => $program_name,
+								 program_directory => catfile(lc($$outaligner_dir_ref), "casecheck", lc($program_name)),
+								 call_type => $call_type,
+								 core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+								 process_time => $active_parameter_href->{module_time}{"p".$program_name},
+								});
+
+    my ($volume, $directory, $program_info_file) = File::Spec->splitpath($program_info_path);  #Split to enable submission to &sample_info_qc later
+    my $stderr_file = $program_info_file.".stderr.txt";  #To enable submission to &sample_info_qc later
+    my $stdout_file = $program_info_file.".stdout.txt";  #To enable submission to &sample_info_qc later
+
+    ## Assign Directories
+    my $infamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref);
+    my $outfamily_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref, "casecheck", lc($program_name));
+    my $outfamily_file_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref);
+
+    ## Assign file_tags
+    my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
+    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+
+    ### Assign suffix
+    ## Return the current infile vcf compression suffix for this jobid chain_vcf_data
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "variant_file_suffix",
+					 jobid_chain => $parameter_href->{pgatk_combinevariantcallsets}{chain},
+					});
+
+    my $family_file = catfile($outfamily_file_directory, $$family_id_ref.".fam");
+    ## Create .fam file to be used in variant calling analyses
+    create_fam_file({parameter_href => $parameter_href,
+		     active_parameter_href => $active_parameter_href,
+		     sample_info_href => $sample_info_href,
+		     FILEHANDLE => $FILEHANDLE,
+		     fam_file_path => $family_file,
+		    });
+
+    ## Copy file(s) to temporary directory
+    say $FILEHANDLE "## Copy file(s) to temporary directory";
+    migrate_file({FILEHANDLE => $FILEHANDLE,
+		  infile_path => catfile($infamily_directory, $infile_no_ending.$infile_suffix."*"),
+		  outfile_path => $$temp_directory_ref
+		 });
+    say $FILEHANDLE "wait", "\n";
 
     ## Variant_integrity
     if (scalar(@{ $active_parameter_href->{sample_ids} }) > 1) {  #Only perform if more than 1 sample
 
 	if ($parameter_href->{dynamic_parameter}{trio}) {
 
-	    print $FILEHANDLE "variant_integrity ";
-	    print $FILEHANDLE "--family_file ".$family_file." ";  #Pedigree file
-	    print $FILEHANDLE "--family_type ".$active_parameter_href->{genmod_models_family_type}." ";  #Family type
-	    print $FILEHANDLE "--outfile ".catfile($outfamily_directory, $$family_id_ref."_mendel.txt")." ";
-	    print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf")." ";  #InFile
-	    say $FILEHANDLE "mendel ", "\n";
+	    mendel({infile_path => $file_path_no_ending.$infile_suffix,
+		    outfile_path => catfile($outfamily_directory, $$family_id_ref."_mendel.txt"),
+		    family_file => $family_file,
+		    family_type => $active_parameter_href->{genmod_models_family_type},
+		    FILEHANDLE => $FILEHANDLE,
+		   });
+	    say $FILEHANDLE "\n";
 
 	    if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
@@ -5971,12 +6272,13 @@ sub samplecheck {
 
 	    if ($father_info ne 0) {  #Father is included in analysis
 
-		print $FILEHANDLE "variant_integrity ";
-		print $FILEHANDLE "--family_file ".$family_file." ";  #Pedigree file
-		print $FILEHANDLE "--family_type ".$active_parameter_href->{genmod_models_family_type}." ";  #Family type
-		print $FILEHANDLE "--outfile ".catfile($outfamily_directory, $$family_id_ref."_father.txt")." ";
-		print $FILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf")." ";  #InFile
-		say $FILEHANDLE "father ", "\n";
+		father({infile_path => $file_path_no_ending.$infile_suffix,
+			outfile_path => catfile($outfamily_directory, $$family_id_ref."_father.txt"),
+			family_file => $family_file,
+			family_type => $active_parameter_href->{genmod_models_family_type},
+			FILEHANDLE => $FILEHANDLE,
+		       });
+		say $FILEHANDLE "\n";
 
 		if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
@@ -5992,48 +6294,6 @@ sub samplecheck {
 	}
     }
 
-    if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
-
-	## Collect QC metadata info for later use
-	sample_info_qc({sample_info_href => $sample_info_href,
-			program_name => "vcftools",
-			outdirectory => $directory,
-			outfile_ending => $stderr_file,
-			outdata_type => "info_directory",
-		       });
-    }
-
-    if (scalar(@{ $active_parameter_href->{sample_ids} }) > 1) {  #Only perform if more than 1 sample
-
-	say $FILEHANDLE "## Create Plink .mibs per family";
-	print $FILEHANDLE "plink2 ";
-	print $FILEHANDLE "--noweb ";  #No web check
-	print $FILEHANDLE "--ped ".catfile($outfamily_directory, $$family_id_ref.".ped")." ";  #InFile
-	print $FILEHANDLE "--map ".catfile($outfamily_directory, $$family_id_ref.".map")." ";  #InFile
-	print $FILEHANDLE "--cluster ";  #Perform IBS clustering
-	print $FILEHANDLE "--matrix ";  #Create a N x N matrix of genome-wide average IBS pairwise identities
-	say $FILEHANDLE "--out ".catfile($outfamily_directory, $$family_id_ref), "\n";  #OutFile
-
-	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
-
-	    ## Collect QC metadata info for later use
-	    sample_info_qc({sample_info_href => $sample_info_href,
-			    program_name => "relation_check",
-			    outdirectory => $outfamily_directory,
-			    outfile_ending => $$family_id_ref.".mibs",
-			    outdata_type => "infile_dependent"
-			   });
-
-	    ## Collect QC metadata info for later use
-	    sample_info_qc({sample_info_href => $sample_info_href,
-			    program_name => "plink2",
-			    outdirectory => $directory,
-			    outfile_ending => $stdout_file,
-			    outdata_type => "info_directory",
-			   });
-	}
-    }
-
     close($FILEHANDLE);
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
@@ -6043,7 +6303,7 @@ sub samplecheck {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    dependencies => "case_dependency_dead_end",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
 		   });
     }
@@ -6123,21 +6383,25 @@ sub vt {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     use Program::Gnu::Coreutils qw(mv);
+    use Program::Variantcalling::Genmod qw(annotate filter);
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $xargs_file_name;
-    my $time = 10;
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles 
+    my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     unless (defined($FILEHANDLE)){ #Run as individual sbatch script
 
 	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     }
 
-    ## Set the number of cores to allocate per sbatch job.
-    my $core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
-					      core_number => scalar(@{ $file_info_href->{contigs} })
-					     });  #Detect the number of cores to use
+    ## Adjust core number depending on user supplied input exists or not and max number of cores
+    my $core_number = adjust_core_number({module_core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					  modifier_core_number => scalar(@{ $file_info_href->{contigs} }),
+					  max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+					 });
 
     if ( ! $$reduce_io_ref) { #Run as individual sbatch script
 
@@ -6150,14 +6414,12 @@ sub vt {
 								  program_directory => catfile(lc($$outaligner_dir_ref)),
 								  call_type => $call_type,
 								  core_number => $core_number,
-								  process_time => $time,
+								  process_time => $active_parameter_href->{module_time}{"p".$program_name},
 								  temp_directory => $$temp_directory_ref,
 								 });
 	$stderr_path = $program_info_path.".stderr.txt";
     }
     my ($volume, $directory, $stderr_file) = File::Spec->splitpath($stderr_path); #Split to enable submission to &sample_info_qc later
-
-    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
 
     ## Assign directories
     my $infamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref);
@@ -6167,14 +6429,22 @@ sub vt {
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{prhocall}{file_tag};
     my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
-    ## Assign suffix
+    ### Assign suffix
     ## Return the current infile vcf compression suffix for this jobid chain
     my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
 					 suffix_key => "variant_file_suffix",
 					 jobid_chain => $jobid_chain,
 					});
-    my $outfile_suffix = $parameter_href->{variant_file_suffix}{$jobid_chain} = ".vcf";
+    my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
+					  suffix_key => "variant_file_suffix",
+					  jobid_chain => $jobid_chain,
+					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
+					 });
 
     if ( ! $$reduce_io_ref) {  #Run as individual sbatch script
 
@@ -6187,11 +6457,13 @@ sub vt {
 									      program_info_path => $program_info_path,
 									      core_number => $core_number,
 									      xargs_file_counter => $xargs_file_counter,
-									      infile => $$family_id_ref.$infile_tag.$call_type,
+									      infile => $infile_no_ending,
 									      indirectory => $infamily_directory,
 									      temp_directory => $$temp_directory_ref,
 									     });
     }
+
+    say $FILEHANDLE "## vt - Decompose (split multi allelic records into single records) and/or normalize variants";
 
     ## Create file commands for xargs
     ($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
@@ -6200,15 +6472,12 @@ sub vt {
 							     program_info_path => $program_info_path,
 							     core_number => $core_number,
 							     xargs_file_counter => $xargs_file_counter,
-							     first_command => "less",
 							    });
 
-    my $remove_star_regexp = q?perl -nae \'unless\($F\[4\] eq \"\*\") \{print $_\}\' ?;  #VEP does not annotate '*' since the alt allele does not exist, this is captured in the upsream indel and SNV record associated with '*'
+    my $remove_star_regexp = q?perl -nae \'unless\($F\[4\] eq \"\*\") \{print $_\}\' ?;  #VEP does not annotate '*' since the alt allele does not exist, this is captured in the upstream indel and SNV record associated with '*'
 
-## Split vcf into contigs
+    ## Split vcf into contigs
     while ( my ($contig_index, $contig) = each(@{ $file_info_href->{contigs_size_ordered} }) ) {
-
-	print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type."_".$contig.$infile_suffix)." ";  #Infile
 
 	## vt - Split multi allelic records into single records and normalize
 	vt_core({active_parameter_href => $active_parameter_href,
@@ -6216,12 +6485,12 @@ sub vt {
 		 infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		 job_id_href => $job_id_href,
 		 FILEHANDLE => $XARGSFILEHANDLE,
-		 infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.$outfile_suffix),
-		 outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$outfile_suffix),
+		 infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
+		 outfile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
 		 decompose => $active_parameter_href->{vt_decompose},
 		 normalize => $active_parameter_href->{vt_normalize},
 		 sed => 1,
-		 instream => 1,
+		 instream => 0,
 		 cmd_break => ";",
 		 xargs_file_name => $xargs_file_name,
 		 contig_ref => \$contig,
@@ -6243,14 +6512,14 @@ sub vt {
 			   });
 	}
 
-	my $alt_file_ending = "";
+	my $alt_file_tag = "";
 
 	## Remove decomposed '*' entries
 	if ($active_parameter_href->{vt_missing_alt_allele}) {
 
-	    $alt_file_ending = "_nostar";
-	    print $XARGSFILEHANDLE catfile($remove_star_regexp.$$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$outfile_suffix)." ";
-	    print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.$outfile_suffix)." ";
+	    $alt_file_tag = "_nostar";
+	    print $XARGSFILEHANDLE catfile($remove_star_regexp.$$temp_directory_ref, $outfile_no_ending."_".$contig.$outfile_suffix)." ";
+	    print $XARGSFILEHANDLE "> ".$outfile_path_no_ending."_".$contig.$alt_file_tag.$outfile_suffix." ";
 	    print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
 	    print $XARGSFILEHANDLE "; ";
 	}
@@ -6258,36 +6527,33 @@ sub vt {
 	## Remove common variants
 	if ($active_parameter_href->{vt_genmod_filter}) {
 
-	    print $XARGSFILEHANDLE "genmod ";  #Program
-	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
-	    print $XARGSFILEHANDLE "annotate ";  #Command
-	    print $XARGSFILEHANDLE "--temp_dir ".$$temp_directory_ref." ";  #Temporary directory
-	    print $XARGSFILEHANDLE "--thousand-g ".$active_parameter_href->{vt_genmod_filter_1000g}." ";  #1000G reference
-
-	    if ($active_parameter_href->{vt_genmod_filter_max_af}) {
-
-		print $XARGSFILEHANDLE "--max-af ";  #If the MAX AF should be annotated
-	    }
-	    print $XARGSFILEHANDLE "-o ".catfile(dirname(devnull()), "stdout")." ";  #OutStream
-	    print $XARGSFILEHANDLE catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.$outfile_suffix)." ";
-	    print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    Program::Variantcalling::Genmod::annotate({infile_path => $outfile_path_no_ending."_".$contig.$alt_file_tag.$outfile_suffix,
+						       outfile_path => catfile(dirname(devnull()), "stdout"),
+						       stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
+						       append_stderr_info => 1,
+						       verbosity => "v",
+						       temp_directory_path => $$temp_directory_ref,
+						       thousand_g_file_path => $active_parameter_href->{vt_genmod_filter_1000g},
+						       max_af => $active_parameter_href->{vt_genmod_filter_max_af},
+						       FILEHANDLE => $XARGSFILEHANDLE,
+						      });
 	    print $XARGSFILEHANDLE "| ";
 
-	    $alt_file_ending .= "_genmod_filter";  #Update ending
+	    $alt_file_tag .= "_genmod_filter";  #Update file tag
 
-	    print $XARGSFILEHANDLE "genmod ";  #Program
-	    print $XARGSFILEHANDLE "-v ";  #Increase output verbosity
-	    print $XARGSFILEHANDLE "filter ";  #Command
-	    print $XARGSFILEHANDLE "-t ".$active_parameter_href->{vt_genmod_filter_threshold}." ";  #Threshold for filtering variants
-	    print $XARGSFILEHANDLE "- ";  #InStream
-	    print $XARGSFILEHANDLE "> ".catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.$outfile_suffix)." ";  #OutFile
-	    print $XARGSFILEHANDLE "2>> ".$xargs_file_name.".".$contig.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    Program::Variantcalling::Genmod::filter({infile_path => "-",
+						     outfile_path => $outfile_path_no_ending."_".$contig.$alt_file_tag.$outfile_suffix,
+						     stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
+						     append_stderr_info => 1,
+						     verbosity => "v",
+						     threshold => $active_parameter_href->{sv_genmod_filter_threshold},
+						     FILEHANDLE => $XARGSFILEHANDLE,
+						    });
 	    print $XARGSFILEHANDLE "; ";
 	}
 
-
-	mv({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$alt_file_ending.$outfile_suffix),
-	    outfile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_".$contig.$outfile_suffix),
+	mv({infile_path => $outfile_path_no_ending."_".$contig.$alt_file_tag.$outfile_suffix,
+	    outfile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
 	    FILEHANDLE => $XARGSFILEHANDLE,
 	   });
 	say $XARGSFILEHANDLE "\n";
@@ -6297,7 +6563,7 @@ sub vt {
 
 	## Copies file from temporary directory.
 	say $FILEHANDLE "## Copy file from temporary directory";
-	migrate_file({infile_path => catfile($$temp_directory_ref, $$family_id_ref.$outfile_tag.$call_type."_*".$outfile_suffix."*"),
+	migrate_file({infile_path => $outfile_path_no_ending."_*".$outfile_suffix."*",
 		      outfile_path => $outfamily_directory,
 		      FILEHANDLE => $FILEHANDLE,
 		     });
@@ -6315,7 +6581,7 @@ sub vt {
 			job_id_href => $job_id_href,
 			infile_lane_no_ending_href => $infile_lane_no_ending_href,
 			dependencies => "case_dependency",
-			path => $parameter_href->{"p".$program_name}{chain},
+			path => $jobid_chain,
 			sbatch_file_name => $file_name
 		       });
 	}
@@ -6414,21 +6680,11 @@ sub rhocall {
 	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     }
 
-    ## Set the number of cores to allocate per sbatch job.
-    my $core_number;
-    if ( (defined($active_parameter_href->{module_core_number}{"p".$program_name}))
-	 && ($active_parameter_href->{module_core_number}{"p".$program_name})) {
-
-	$core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
-    }
-    else {
-
-	$core_number = scalar(@{ $file_info_href->{contigs} });
-    }
-
-    $core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
-					   core_number => $core_number,
-					  });  #Detect the number of cores to use
+    ## Adjust core number depending on user supplied input exists or not and max number of cores
+    my $core_number = adjust_core_number({module_core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					  modifier_core_number => scalar(@{ $file_info_href->{contigs} }),
+					  max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+					 });
 
     if ( ! $$reduce_io_ref) { #Run as individual sbatch script
 
@@ -6465,8 +6721,8 @@ sub rhocall {
     ## Return the current infile vcf compression suffix for this jobid chain
     my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
 					 suffix_key => "variant_file_suffix",
-					jobid_chain => $jobid_chain,
-				       });
+					 jobid_chain => $jobid_chain,
+					});
     my $outfile_suffix = set_file_suffix({parameter_href => $parameter_href,
 					  suffix_key => "variant_file_suffix",
 					  jobid_chain => $jobid_chain,
@@ -6657,21 +6913,11 @@ sub prepareforvariantannotationblock {
 	$FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     }
 
-    my $core_number;
-    if ( (defined($active_parameter_href->{module_core_number}{"p".$program_name}))
-	 && ($active_parameter_href->{module_core_number}{"p".$program_name})) {
-
-	$core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
-    }
-    else {
-
-	$core_number = scalar(@{ $file_info_href->{contigs} });
-    }
-
-    ## Set the number of cores to allocate per sbatch job.
-    $core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
-					   core_number => $core_number,
-					  });
+    ## Adjust core number depending on user supplied input exists or not and max number of cores
+    my $core_number = adjust_core_number({module_core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					  modifier_core_number => scalar(@{ $file_info_href->{contigs} }),
+					  max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+					 });
 
     if ( ! $$reduce_io_ref) { #Run as individual sbatch script
 
@@ -7093,7 +7339,7 @@ sub gatk_variantrecalibration {
     ### Assign suffix
     my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
 					 suffix_key => "outfile_suffix",
-					 program_name => "pgatk_genotypegvcf",
+					 program_name => "pgatk_genotypegvcfs",
 					});
 
     ## Set file suffix for next module within jobid chain
@@ -7198,14 +7444,14 @@ sub gatk_variantrecalibration {
 	if ( ($mode eq "SNP") || ($mode eq "BOTH") ) {
 
 	    while ( my ($resource_file, $resource_string) = each(%{ $active_parameter_href->{gatk_variantrecalibration_resource_snv} }) ) {
-	
+		
 		push(@resources, $resource_string." ".$resource_file)
 	    }
 	}
 	if ( ($mode eq "INDEL") || ($mode eq "BOTH") ) {
 
 	    while ( my ($resource_file, $resource_string) = each(%{ $active_parameter_href->{gatk_variantrecalibration_resource_indel} }) ) {
-	
+		
 		push(@resources, $resource_string." ".$resource_file)
 	    }
 	    if ($active_parameter_href->{gatk_variantrecalibration_indel_max_gaussians} ne 0) {
@@ -8575,7 +8821,7 @@ sub chanjo_sexcheck {
     my $chr_prefix;
     if (any {$_ eq "chrX"} @{ $file_info_href->{contigs_size_ordered} }) {  #If element is part of array
 
-	 $chr_prefix = "chr";
+	$chr_prefix = "chr";
     }
     sex({infile_path => catfile($insample_directory, $infile_no_ending.$infile_suffix),
 	 outfile_path => catfile($outsample_directory, $outfile_no_ending.$outfile_suffix),
@@ -8768,7 +9014,7 @@ sub sambamba_depth {
 
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
-	$sample_info_href->{sample}{$$sample_id_ref}{program}{$program_name}{$infile}{substr($outfile_suffix, 1)}{path} = catfile($outsample_directory, $outfile_no_ending.$outfile_suffix);
+	$sample_info_href->{sample}{$$sample_id_ref}{program}{$program_name}{$infile}{ substr($outfile_suffix, 1) }{path} = catfile($outsample_directory, $outfile_no_ending.$outfile_suffix);
     }
 
     close($FILEHANDLE);
@@ -9194,9 +9440,9 @@ sub sv_rankvariant {
 
     ## Set the number of cores
     my $core_number = $active_parameter_href->{module_core_number}{"p".$program_name};
-    my $genmod_core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
-						     core_number => $core_number,
-						    });
+    my $genmod_core_number = check_max_core_number({max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+						    core_number => $core_number,
+						   });
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -9929,7 +10175,6 @@ sub sv_varianteffectpredictor {
 
     my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
     my $xargs_file_name;
-    my $fork_number = 4;  #varianteffectpredictor forks
     my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
     
     ## Filehandles
@@ -9949,10 +10194,13 @@ sub sv_varianteffectpredictor {
 		    contig_names_ref => ["Y"],
 		   });
 
-    ## Set the number of cores to allocate per sbatch job.
-    my $core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
-					      core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
-					     });
+    ## Adjust core number depending on user supplied input exists or not and max number of cores
+    my $core_number = adjust_core_number({module_core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					  modifier_core_number => scalar(@contigs),
+					  max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+					 });
+
+    my $fork_number = 4;  #Varianteffectpredictor forks
     $core_number = floor($core_number / $fork_number);  #Adjust for the number of forks
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -10423,16 +10671,16 @@ sub sv_combinevariantcallsets {
 					 });
     say $FILEHANDLE "\n";
 
-    my $alt_file_ending = "";  #Alternative ending
+    my $alt_file_tag = "";  #Alternative file tag
 
     if ($active_parameter_href->{sv_vt_decompose} > 0) {
 
-	$alt_file_ending = "_vt";  #Alternative ending
+	$alt_file_tag = "_vt";  #Update file tag
 
 	## Split multiallelic variants
 	say $FILEHANDLE "## Split multiallelic variants";
 	decompose({infile_path => $merged_file_path_no_ending.$outfile_suffix,
-		   outfile_path => $merged_file_path_no_ending.$alt_file_ending.$outfile_suffix,
+		   outfile_path => $merged_file_path_no_ending.$alt_file_tag.$outfile_suffix,
 		   FILEHANDLE => $FILEHANDLE,
 		   smart_decomposition => 1,
 		  });
@@ -10442,8 +10690,8 @@ sub sv_combinevariantcallsets {
 	
 	use Program::Gnu::Coreutils qw(mv);
 
-	my $infile_path = $merged_file_path_no_ending.$alt_file_ending.$outfile_suffix;
-	$alt_file_ending .= "_svdbq";  #Update alternative ending
+	my $infile_path = $merged_file_path_no_ending.$alt_file_tag.$outfile_suffix;
+	$alt_file_tag .= "_svdbq";  #Update alternative ending
 
 	my $annotation_file_counter = 0;  #Ensure correct infile
 	my $outfile_tracker = 0;  #Ensure correct outfiles
@@ -10452,11 +10700,11 @@ sub sv_combinevariantcallsets {
 	    
 	    if ($annotation_file_counter) {
 
-		$infile_path = $merged_file_path_no_ending.$alt_file_ending.$outfile_suffix.".".$outfile_tracker;
+		$infile_path = $merged_file_path_no_ending.$alt_file_tag.$outfile_suffix.".".$outfile_tracker;
 		$outfile_tracker++;  #Increment now that infile has been set
 	    }
 	    query({infile_path => $infile_path,
-		   outfile_path => $merged_file_path_no_ending.$alt_file_ending.$outfile_suffix.".".$outfile_tracker,
+		   outfile_path => $merged_file_path_no_ending.$alt_file_tag.$outfile_suffix.".".$outfile_tracker,
 		   dbfile_path => $query_db_file,
 		   bnd_distance => 25000,
 		   overlap => 0.8,
@@ -10469,45 +10717,45 @@ sub sv_combinevariantcallsets {
 	}
 
 	## Rename to remove outfile_tracker
-	mv({infile_path => $merged_file_path_no_ending.$alt_file_ending.$outfile_suffix.".".$outfile_tracker,
-	    outfile_path => $merged_file_path_no_ending.$alt_file_ending.$outfile_suffix,
+	mv({infile_path => $merged_file_path_no_ending.$alt_file_tag.$outfile_suffix.".".$outfile_tracker,
+	    outfile_path => $merged_file_path_no_ending.$alt_file_tag.$outfile_suffix,
 	    FILEHANDLE => $FILEHANDLE,
 	   });
 	say $FILEHANDLE "\n";
     }
 
-    my $outfile_alt_file_ending .= $alt_file_ending."_sorted";  #Alternative ending
+    my $outfile_alt_file_tag .= $alt_file_tag."_sorted";  #Alternative file tag
 
     ## Writes sbatch code to supplied filehandle to sort variants in vcf format
     sort_vcf({active_parameter_href => $active_parameter_href,
 	      FILEHANDLE => $FILEHANDLE,
 	      sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict"),
-	      infile_paths_ref => [$merged_file_path_no_ending.$alt_file_ending.$outfile_suffix],
-	      outfile => $outfile_path_no_ending.$outfile_alt_file_ending.$outfile_suffix,
+	      infile_paths_ref => [$merged_file_path_no_ending.$alt_file_tag.$outfile_suffix],
+	      outfile => $outfile_path_no_ending.$outfile_alt_file_tag.$outfile_suffix,
 	     });
     print $FILEHANDLE "\n";
 
-    $alt_file_ending = $outfile_alt_file_ending;
+    $alt_file_tag = $outfile_alt_file_tag;
 
     ## Remove FILTER ne PASS
     if ($active_parameter_href->{sv_bcftools_view_filter} > 0) {
 
 	say $FILEHANDLE "## Remove FILTER ne PASS";
 	Program::Variantcalling::Bcftools::view({apply_filters_ref => ["PASS"],
-						 infile_path => $outfile_path_no_ending.$alt_file_ending.$outfile_suffix,
-						 outfile_path => $outfile_path_no_ending.$alt_file_ending."_filt".$outfile_suffix,
+						 infile_path => $outfile_path_no_ending.$alt_file_tag.$outfile_suffix,
+						 outfile_path => $outfile_path_no_ending.$alt_file_tag."_filt".$outfile_suffix,
 						 FILEHANDLE => $FILEHANDLE,
 						});
 	say $FILEHANDLE "\n";
 
-	$alt_file_ending .= "_filt";  #Update ending
+	$alt_file_tag .= "_filt";  #Update file tag
     }
 
     ## Remove common variants
     if ($active_parameter_href->{sv_genmod_filter} > 0) {
 
 	say $FILEHANDLE "## Remove common variants";
-	Program::Variantcalling::Genmod::annotate({infile_path => $outfile_path_no_ending.$alt_file_ending.$outfile_suffix,
+	Program::Variantcalling::Genmod::annotate({infile_path => $outfile_path_no_ending.$alt_file_tag.$outfile_suffix,
 						   outfile_path => catfile(dirname(devnull()), "stdout"),
 						   verbosity => "v",
 						   temp_directory_path => $$temp_directory_ref,
@@ -10516,10 +10764,10 @@ sub sv_combinevariantcallsets {
 						  });
 	print $FILEHANDLE "| ";
 
-	$alt_file_ending .= "_genmod_filter";  #Update ending
+	$alt_file_tag .= "_genmod_filter";  #Update file tag
 
 	Program::Variantcalling::Genmod::filter({infile_path => "-",
-						 outfile_path => $outfile_path_no_ending.$alt_file_ending.$outfile_suffix,
+						 outfile_path => $outfile_path_no_ending.$alt_file_tag.$outfile_suffix,
 						 verbosity => "v",
 						 threshold => $active_parameter_href->{sv_genmod_filter_threshold},
 						 FILEHANDLE => $FILEHANDLE,
@@ -10531,7 +10779,7 @@ sub sv_combinevariantcallsets {
     if ($active_parameter_href->{sv_vcfanno} > 0) {
 
 	say $FILEHANDLE "## Annotate 1000G structural variants";
-	vcfanno({infile_path => $outfile_path_no_ending.$alt_file_ending.$outfile_suffix,
+	vcfanno({infile_path => $outfile_path_no_ending.$alt_file_tag.$outfile_suffix,
 		 toml_configfile_path => $active_parameter_href->{sv_vcfanno_config},
 		 lua => $active_parameter_href->{sv_vcfanno_lua},
 		 ends => 1,
@@ -10540,9 +10788,9 @@ sub sv_combinevariantcallsets {
 	print $FILEHANDLE "| ";
 	print $FILEHANDLE q?perl -nae 'if($_=~/^#/) {print $_} else {$F[7]=~s/\[||\]//g; print join("\t", @F), "\n"}' ?;  #Remove "[" and "]" from INFO as it breaks vcf format
 
-	$alt_file_ending .= "_vcfanno";  #Update ending
+	$alt_file_tag .= "_vcfanno";  #Update file tag
 
-	say $FILEHANDLE "> ".$outfile_path_no_ending.$alt_file_ending.$outfile_suffix, "\n";
+	say $FILEHANDLE "> ".$outfile_path_no_ending.$alt_file_tag.$outfile_suffix, "\n";
 
 	if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
@@ -10555,23 +10803,23 @@ sub sv_combinevariantcallsets {
 	}
 
 	say $FILEHANDLE "## Add header for 1000G annotation of structural variants";
-	Program::Variantcalling::Bcftools::annotate({infile_path => $outfile_path_no_ending.$alt_file_ending.$outfile_suffix,
-						     outfile_path => $outfile_path_no_ending.$alt_file_ending."_bcftools_annotate".$outfile_suffix,
+	Program::Variantcalling::Bcftools::annotate({infile_path => $outfile_path_no_ending.$alt_file_tag.$outfile_suffix,
+						     outfile_path => $outfile_path_no_ending.$alt_file_tag."_bcftools_annotate".$outfile_suffix,
 						     output_type => "v",
 						     headerfile_path => $active_parameter_href->{sv_vcfannotation_header_lines_file},
 						     FILEHANDLE => $FILEHANDLE,
 						    });
 	say $FILEHANDLE "\n";
-	$alt_file_ending .= "_bcftools_annotate";  #Update ending
+	$alt_file_tag .= "_bcftools_annotate";  #Update file tag
     }
 
-    if ($alt_file_ending ne "") {  #Then we have something to rename
+    if ($alt_file_tag ne "") {  #Then we have something to rename
 
 	## Writes sbatch code to supplied filehandle to sort variants in vcf format
 	sort_vcf({active_parameter_href => $active_parameter_href,
 		  FILEHANDLE => $FILEHANDLE,
 		  sequence_dict_file => catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict"),
-		  infile_paths_ref => [$outfile_path_no_ending.$alt_file_ending.$outfile_suffix],
+		  infile_paths_ref => [$outfile_path_no_ending.$alt_file_tag.$outfile_suffix],
 		  outfile => $outfile_path_no_ending.$outfile_suffix,
 		 });
 
@@ -11351,7 +11599,7 @@ sub delly_reformat {
 	foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {
 	    
 	    if ($sv_type ne "TRA") {
-	    
+		
 		Program::Variantcalling::Delly::filter({infile_path => $outfile_path_no_ending."_".$sv_type."_concat".$suffix{pdelly_call},
 							outfile_path => $outfile_path_no_ending."_".$sv_type."_filtered".$suffix{pdelly_call},
 							stdoutfile_path => $xargs_file_name.".".$sv_type.".stdout.txt",
@@ -11363,7 +11611,7 @@ sub delly_reformat {
 		say $XARGSFILEHANDLE "\n";
 	    }
 	    else {
-	    
+		
 		Program::Variantcalling::Delly::filter({infile_path => $outfile_path_no_ending."_".$sv_type.$suffix{pdelly_call},
 							outfile_path => $outfile_path_no_ending."_".$sv_type."_filtered".$suffix{pdelly_call},
 							stdoutfile_path => $xargs_file_name.".".$sv_type.".stdout.txt",
@@ -11392,7 +11640,7 @@ sub delly_reformat {
 	say $FILEHANDLE "## Only one sample - skip merging and regenotyping";
 	say $FILEHANDLE "## bcftools concat - merge all SV types and contigs";
 
-	SV_TYPE:
+      SV_TYPE:
 	foreach my $sv_type (@{ $active_parameter_href->{delly_types} }) {
 
 	    if ($sv_type ne "TRA") {
@@ -12644,9 +12892,9 @@ sub gatk_haplotypecaller {
 								});
 
     $core_number = floor($active_parameter_href->{node_ram_memory} / 4);  #Division by X according to the java heap
-    $core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
-					   core_number => $core_number,
-					  });  #To not exceed maximum
+    $core_number = check_max_core_number({max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+					  core_number => $core_number,
+					 });  #To not exceed maximum
 
     ## Assign directories
     my $outfamily_file_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref);  #For ".fam" file
@@ -12973,9 +13221,9 @@ sub gatk_baserecalibration {
     }
 
     $core_number = floor($active_parameter_href->{node_ram_memory} / 4);  #Division by X according to the java heap
-    $core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
-					   core_number => $core_number
-					  });  #To not exceed maximum
+    $core_number = check_max_core_number({max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+					  core_number => $core_number
+					 });  #To not exceed maximum
 
     ## GATK BaseRecalibrator
     say $FILEHANDLE "## GATK BaseRecalibrator";
@@ -13018,7 +13266,7 @@ sub gatk_baserecalibration {
 			  logging_level => $active_parameter_href->{gatk_logging_level},
 			  downsample_to_coverage => $active_parameter_href->{gatk_downsample_to_coverage},
 			  gatk_disable_auto_index_and_file_lock => $active_parameter_href->{gatk_disable_auto_index_and_file_lock},
-			  num_cpu_threads_per_data_thread => $active_parameter_href->{core_processor_number},
+			  num_cpu_threads_per_data_thread => $active_parameter_href->{max_cores_per_node},
 			  FILEHANDLE => $XARGSFILEHANDLE,
 			 });
 	say $XARGSFILEHANDLE "\n";
@@ -13067,7 +13315,7 @@ sub gatk_baserecalibration {
 		    logging_level => $active_parameter_href->{gatk_logging_level},
 		    downsample_to_coverage => $active_parameter_href->{gatk_downsample_to_coverage},
 		    gatk_disable_auto_index_and_file_lock => $active_parameter_href->{gatk_disable_auto_index_and_file_lock},
-		    num_cpu_threads_per_data_thread => $active_parameter_href->{core_processor_number},
+		    num_cpu_threads_per_data_thread => $active_parameter_href->{max_cores_per_node},
 		    FILEHANDLE => $XARGSFILEHANDLE,
 		   });
 	say $XARGSFILEHANDLE "\n";
@@ -13319,9 +13567,9 @@ sub gatk_realigner {
     say $FILEHANDLE "## GATK ReAlignerTargetCreator";
 
     $core_number = floor($active_parameter_href->{node_ram_memory} / 4);  #Division by 4 since the java heap is 4GB
-    $core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
-					   core_number => $core_number
-					  });  #To not exceed maximum
+    $core_number = check_max_core_number({max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+					  core_number => $core_number
+					 });  #To not exceed maximum
 
     ## Create file commands for xargs
     ($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
@@ -13956,9 +14204,9 @@ sub picardtools_mergesamfiles {
 	say $FILEHANDLE "## Merging alignment files";
 
 	$core_number = floor($active_parameter_href->{node_ram_memory} / 4);  #Division by X according to java Heap size
-	$core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
-					       core_number => $core_number,
-					      });  #To not exceed maximum
+	$core_number = check_max_core_number({max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+					      core_number => $core_number,
+					     });  #To not exceed maximum
 
 	## Create file commands for xargs
 	($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
@@ -14080,9 +14328,9 @@ sub picardtools_mergesamfiles {
 		    say $FILEHANDLE "## Merging alignment files";
 
 		    $core_number = floor($active_parameter_href->{node_ram_memory} / 4);  #Division by X according to java Heap size
-		    $core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
-							   core_number => $core_number,
-							  });  #To not exceed maximum
+		    $core_number = check_max_core_number({max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+							  core_number => $core_number,
+							 });  #To not exceed maximum
 
 		    ## Create file commands for xargs
 		    ($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
@@ -14168,9 +14416,9 @@ sub picardtools_mergesamfiles {
 		say $FILEHANDLE "## Merging alignment files";
 
 		$core_number = floor($active_parameter_href->{node_ram_memory} / 4);  #Division by X according to java Heap size
-		$core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
-						       core_number => $core_number,
-						      });  #To not exceed maximum
+		$core_number = check_max_core_number({max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+						      core_number => $core_number,
+						     });  #To not exceed maximum
 
 		## Removes ".file_ending" in filename.FILENDING(.gz)
 		my $picardtools_mergesamfiles_previous_bams_file_no_ending = fileparse($picardtools_mergesamfiles_previous_bams_file,
@@ -14509,9 +14757,9 @@ sub bwa_aln {
     }
 
     ## Set the number of cores to allocate per sbatch job.
-    $core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
-					   core_number => $core_number,
-					  });  #Make sure that the number of cores does not exceed maximum after incrementing above
+    $core_number = check_max_core_number({max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+					  core_number => $core_number,
+					 });  #Make sure that the number of cores does not exceed maximum after incrementing above
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -14648,7 +14896,7 @@ sub picardtools_mergerapidreads {
 					     directory_id => $$sample_id_ref,
 					     program_name => $program_name,
 					     program_directory => lc($$outaligner_dir_ref),
-					     core_number => $active_parameter_href->{core_processor_number},
+					     core_number => $active_parameter_href->{max_cores_per_node},
 					     process_time => 20,
 					    });
 
@@ -14671,7 +14919,7 @@ sub picardtools_mergerapidreads {
 	if ($nr_read_batch_process > 0) {  #Check that we have read batch processes to merge
 
 	    print_wait({counter_ref => \$core_tracker,
-			core_number_ref => \$active_parameter_href->{core_processor_number},
+			core_number_ref => \$active_parameter_href->{max_cores_per_node},
 			core_counter_ref => \$core_counter,
 			FILEHANDLE => $FILEHANDLE,
 		       });
@@ -14695,7 +14943,7 @@ sub picardtools_mergerapidreads {
 		print $FILEHANDLE "INPUT=".catfile($insample_directory, $infile_lane_no_ending_href->{$$sample_id_ref}[$infile_counter]."_".$read_batch_processes_count.$outfile_tag.".bam")." ";  #InFile(s)
 	    }
 	    say $FILEHANDLE "& ","\n";
-	    $core_tracker++;  #Track nr of merge calls for infiles so that wait can be printed at the correct intervals (dependent on $active_parameter_href->{core_processor_number})
+	    $core_tracker++;  #Track nr of merge calls for infiles so that wait can be printed at the correct intervals (dependent on $active_parameter_href->{max_cores_per_node})
 	}
 	else {  #Still needs to rename file to be included in potential merge of BAM files in next step
 
@@ -14802,6 +15050,7 @@ sub bwa_mem {
 
     use Program::Alignment::Bwa qw(mem run_bwamem);
     use Program::Alignment::Samtools qw(view stats);
+    use Program::Variantcalling::Bedtools qw (intersectbed);
     use Program::Alignment::Sambamba qw(sort);
 
     my $consensus_analysis_type = $parameter_href->{dynamic_parameter}{consensus_analysis_type};
@@ -14890,7 +15139,7 @@ sub bwa_mem {
 									     directory_id => $$sample_id_ref,
 									     program_name => $program_name,
 									     program_directory => lc($$outaligner_dir_ref),
-									     core_number => $active_parameter_href->{core_processor_number},
+									     core_number => $active_parameter_href->{max_cores_per_node},
 									     process_time => $time,
 									     sleep => 1,  #Let process sleep randomly for 0-60 seconds to avoid race condition
 									    });
@@ -14913,7 +15162,7 @@ sub bwa_mem {
 		## BWA Mem for each read batch
 		print $FILEHANDLE "bwa mem ";
 		print $FILEHANDLE "-M ";  #Mark shorter split hits as secondary (for Picard compatibility).
-		print $FILEHANDLE "-t ".$active_parameter_href->{core_processor_number}." ";  #Number of threads
+		print $FILEHANDLE "-t ".$active_parameter_href->{max_cores_per_node}." ";  #Number of threads
 
 		if ($interleaved_fastq_file) {
 
@@ -14953,10 +15202,13 @@ sub bwa_mem {
 						    uncompressed_bam_output => $uncompressed_bam_output,
 						   });
 		print $FILEHANDLE "| ";  #Pipe
-		print $FILEHANDLE "intersectBed ";  #Limit output to only clinically interesting genes
-		print $FILEHANDLE "-abam stdin ";  #The A input file is in BAM format.  Output will be BAM as well.
-		print $FILEHANDLE "-b ".$active_parameter_href->{bwa_mem_rapid_db}." ";  #Db file of clinically relevant variants
-		say $FILEHANDLE "> ".catfile($outsample_directory, $infile_no_ending."_".$sbatch_counter.$outfile_suffix), "\n";  #Outfile
+		intersectbed({with_header => 1,
+			      infile_path => "stdin",
+			      intersectfile_path => $active_parameter_href->{bwa_mem_rapid_db},
+			      outfile_path => catfile($outsample_directory, $infile_no_ending."_".$sbatch_counter.$outfile_suffix),
+			      FILEHANDLE => $FILEHANDLE,
+			     });
+		say $FILEHANDLE "\n";
 
 		print $FILEHANDLE "samtools sort ";
 		print $FILEHANDLE catfile($outsample_directory, $infile_no_ending."_".$sbatch_counter.$outfile_suffix)." ";  #Infile
@@ -15293,7 +15545,7 @@ sub variantannotationblock {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $core_number = $active_parameter_href->{core_processor_number};
+    my $core_number = $active_parameter_href->{max_cores_per_node};
     my $xargs_file_name;
     my $time = 80;
 
@@ -15451,7 +15703,7 @@ sub variantannotationblock {
     }
     if ($active_parameter_href->{pvcfparser} > 0) {  #Run vcfparser. Done per family
 
-	($xargs_file_counter, $xargs_file_name) = pvcfparser({parameter_href => $parameter_href,
+	($xargs_file_counter, $xargs_file_name) = mvcfparser({parameter_href => $parameter_href,
 							      active_parameter_href => $active_parameter_href,
 							      sample_info_href => $sample_info_href,
 							      file_info_href => $file_info_href,
@@ -15587,7 +15839,7 @@ sub bamcalibrationblock {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $core_number = $active_parameter_href->{core_processor_number};
+    my $core_number = $active_parameter_href->{max_cores_per_node};
     my $time = 80;
 
     ## Retrieve logger object
@@ -15815,9 +16067,9 @@ sub madeline {
 }
 
 
-sub pfastqc {
+sub mfastqc {
 
-##pfastqc
+##mfastqc
 
 ##Function : Raw sequence quality analysis using FASTQC.
 ##Returns  : ""
@@ -15884,9 +16136,9 @@ sub pfastqc {
     }
 
     ## Set the number of cores to allocate per sbatch job.
-    $core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
-					   core_number => $core_number,
-					  });  #Make sure that the number of cores does not exceed maximum after incrementing above
+    $core_number = check_max_core_number({max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+					  core_number => $core_number,
+					 });  #Make sure that the number of cores does not exceed maximum after incrementing above
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -16063,9 +16315,9 @@ sub gzip_fastq {
     }
 
     ## Set the number of cores to allocate per sbatch job.
-    $core_number = core_number_per_sbatch({active_parameter_href => $active_parameter_href,
-					   core_number => $core_number,
-					  });  #Make sure that the number of cores does not exceed maximum after incrementing above
+    $core_number = check_max_core_number({max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+					  core_number => $core_number,
+					 });  #Make sure that the number of cores does not exceed maximum after incrementing above
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -16094,7 +16346,7 @@ sub gzip_fastq {
 
 	if ($infile =~/$infile_suffix$/) {  #For files ending with .fastq required since there can be a mixture (also .fastq.gz) within the sample dir
 
-	    if ($uncompressed_file_counter == $core_counter * $active_parameter_href->{core_processor_number}) {  #Using only $active_parameter{core_processor_number} cores
+	    if ($uncompressed_file_counter == $core_counter * $active_parameter_href->{max_cores_per_node}) {  #Using only $active_parameter{max_cores_per_node} cores
 
 		say $FILEHANDLE "wait", "\n";
 		$core_counter = $core_counter + 1;
@@ -16597,6 +16849,7 @@ sub build_ptchs_metric_prerequisites {
 
     use Program::Gnu::Coreutils qw(rm cat);
     use Language::Java qw(core);
+    use Program::Interval::Picardtools qw(intervallisttools);
 
     ## Retrieve logger object
     my $log = Log::Log4perl->get_logger("MIP");
@@ -16665,9 +16918,11 @@ sub build_ptchs_metric_prerequisites {
 	      java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
 	     });
 
-	print $FILEHANDLE "IntervalListTools ";
-	print $FILEHANDLE "INPUT=".$exome_target_bed_file_random.".dict_body_col_5.interval_list"." ";
-	say $FILEHANDLE "OUTPUT=".$exome_target_bed_file_random.".dict_body_col_5_".$$infile_list_ending_ref, "\n";
+	intervallisttools({infile_paths_ref => [$exome_target_bed_file_random.".dict_body_col_5.interval_list"],
+			   outfile_path => $exome_target_bed_file_random.".dict_body_col_5_".$$infile_list_ending_ref,
+			   FILEHANDLE => $FILEHANDLE,
+			  });
+	say $FILEHANDLE "\n";
 
 	my $intended_file_path = $exome_target_bed_file.$$infile_list_ending_ref;
 	my $temporary_file_path = $exome_target_bed_file_random.".dict_body_col_5_".$$infile_list_ending_ref;
@@ -16686,10 +16941,12 @@ sub build_ptchs_metric_prerequisites {
 	      java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
 	     });
 
-	print $FILEHANDLE "IntervalListTools ";
-	print $FILEHANDLE "PADDING=100 ";  #Add 100 nt on both sides of bed entry
-	print $FILEHANDLE "INPUT=".$exome_target_bed_file_random.".dict_body_col_5.interval_list"." ";
-	say $FILEHANDLE "OUTPUT=".$exome_target_bed_file_random.".dict_body_col_5".$$padded_infile_list_ending_ref, "\n";
+	intervallisttools({infile_paths_ref => [$exome_target_bed_file_random.".dict_body_col_5.interval_list"],
+			   outfile_path => $exome_target_bed_file_random.".dict_body_col_5".$$padded_infile_list_ending_ref,
+			   padding => 100,
+			   FILEHANDLE => $FILEHANDLE,
+			  });
+	say $FILEHANDLE "\n";
 
 	$intended_file_path = $exome_target_bed_file.$$padded_infile_list_ending_ref;
 	$temporary_file_path = $exome_target_bed_file_random.".dict_body_col_5".$$padded_infile_list_ending_ref;
@@ -18124,32 +18381,77 @@ sub submit_jobs_to_sbatch {
 }
 
 
-sub core_number_per_sbatch {
+sub adjust_core_number {
 
-##core_number_per_sbatch
+##adjust_core_number
 
-##Function : Set the number of cores to allocate per sbatch job.
+##Function : Adjust core number depending on user supplied input exists or not and max number of cores.
+##Returns  : "Adjusted $core_number"
+##Arguments: $module_core_number, $modifier_core_number, $max_cores_per_node
+##         : $module_core_number    => User input module core numbers to use
+##         : $modifier_core_number  => Modifier core number dependent on mode of operation of command
+##         : $max_cores_per_node => The max number of cores per node
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $module_core_number;
+    my $modifier_core_number;
+    my $max_cores_per_node;
+    
+    my $tmpl = {
+	module_core_number => { strict_type => 1, store => \$module_core_number},
+	modifier_core_number  => { required => 1, defined => 1, strict_type => 1, store => \$modifier_core_number},
+	max_cores_per_node  => { required => 1, defined => 1, strict_type => 1, store => \$max_cores_per_node},
+    };
+    
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+    
+    my $core_number;
+    if ( (defined($module_core_number))
+	 && ($module_core_number)) {
+
+	$core_number = $module_core_number;
+    }
+    else {
+
+	$core_number = $modifier_core_number;
+    }
+
+    ## Limit number of cores to the core processor number to allocate per sbatch job
+    $core_number = check_max_core_number({max_cores_per_node => $max_cores_per_node,
+					  core_number => $core_number,
+					 });  #Detect the number of cores to use
+    return $core_number;
+}
+
+
+sub check_max_core_number {
+
+##check_max_core_number
+
+##Function : Limit number of cores to the core processor number to allocate per sbatch job.
 ##Returns  : "$core_number"
-##Arguments: $active_parameter_href, $core_number
-##         : $active_parameter_href => The active parameters for this analysis hash {REF}
+##Arguments: $max_cores_per_node, $core_number
+##         : $max_cores_per_node => The max number of cores per node 
 ##         : $core_number           => The number of cores to allocate
 
     my ($arg_href) = @_;
 
     ## Flatten argument(s)
-    my $active_parameter_href;
+    my $max_cores_per_node;
     my $core_number;
 
     my $tmpl = {
-	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	max_cores_per_node  => { required => 1, defined => 1, strict_type => 1, store => \$max_cores_per_node},
 	core_number => { required => 1, defined => 1, strict_type => 1, store => \$core_number},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    if ($core_number > $active_parameter_href->{core_processor_number}) {  #Set number of cores depending on how many lanes to process
+    if ($core_number > $max_cores_per_node) {  #Set number of cores depending on how many lanes to process
 
-	$core_number = $active_parameter_href->{core_processor_number};  #Set to max on cluster
+	$core_number = $max_cores_per_node;  #Set to max on cluster
     }
     return $core_number;
 }
@@ -21192,10 +21494,10 @@ sub print_wait {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    if ($$counter_ref == $$core_counter_ref * $$core_number_ref) {  #Using only nr of cores eq to lanes or core_processor_number
+    if ($$counter_ref == $$core_counter_ref * $$core_number_ref) {  #Using only nr of cores eq to lanes or max_cores_per_node
 
 	say $FILEHANDLE "wait", "\n";
-	$$core_counter_ref=$$core_counter_ref+1;  #Increase the maximum number of cores allowed to be used since "wait" was just printed
+	$$core_counter_ref = $$core_counter_ref + 1;  #Increase the maximum number of cores allowed to be used since "wait" was just printed
     }
 }
 
@@ -24042,8 +24344,12 @@ sub vt_core {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Gnu::Software::Less qw(less);
+    use Program::Gnu::Software::Sed qw(sed);
+    use Program::Variantcalling::Mip qw(calculate_af max_af);
     use Program::Gnu::Coreutils qw(mv);
     use Program::Htslib qw(bgzip tabix);
+    use Program::Variantcalling::Vt qw(decompose normalize);
 
     my $file_name;
     my $program_info_path;
@@ -24068,67 +24374,74 @@ sub vt_core {
     ## Split multi allelic records into single records and normalize
     if ( ($active_parameter_href->{vt_decompose} > 0) || ($active_parameter_href->{vt_normalize} > 0) || (defined($active_parameter_href->{vt_genmod_filter_1000g})) || ($active_parameter_href->{psnpeff} > 0) ) {
 
+	## Get parameters
+	my $stderrfile_path;
+	my $append_stderr_info;
+	if ( (defined($xargs_file_name)) && (defined($$contig_ref)) ) {  #Write stderr for xargs process
+	    
+	    $stderrfile_path = $xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
+	    $append_stderr_info = 1;
+	}
 	if ( ! $instream) {  #Use less to initate processing
 
-	    say $FILEHANDLE "## vt - Decompose (split multi allelic records into single records) and/or normalize variants and/or add MAX_AF";
-	    print $FILEHANDLE "less ";
-	    print $FILEHANDLE $infile_path." ";  #Infile
+	    less({infile_path => $infile_path,
+		  FILEHANDLE => $FILEHANDLE,
+		 });
 	}
 	if ($sed) {  #Replace #FORMAT field prior to smart decomposition (variant vcfs)
 
 	    print $FILEHANDLE "| ";  #Pipe
-	    print $FILEHANDLE q?sed 's/ID=AD,Number=./ID=AD,Number=R/' ?;
+
+	    sed({script => q?'s/ID=AD,Number=./ID=AD,Number=R/'?,
+		 FILEHANDLE => $FILEHANDLE,
+		});	    
 	}
 	if ( ($active_parameter_href->{vt_decompose} > 0) && ($decompose) ) {
 
 	    print $FILEHANDLE "| ";  #Pipe
-	    print $FILEHANDLE "vt decompose ";  #Decomposes multiallelic variants into biallelic in a VCF file
-	    print $FILEHANDLE "-s ";  #Smart decomposition
-	    print $FILEHANDLE "- ";  #InStream
 
-	    if ( (defined($xargs_file_name)) && (defined($$contig_ref)) ) {  #Write stderr for xargs process
-
-		print $FILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-	    }
+	    decompose({infile_path => "-",
+		       stderrfile_path => $stderrfile_path,
+		       FILEHANDLE => $FILEHANDLE,
+		       smart_decomposition => 1,
+		      });
 	}
 	if ( ($active_parameter_href->{vt_normalize} > 0) && ($normalize) ) {  #Write stderr for xargs process
 
 	    print $FILEHANDLE "| ";  #Pipe
-	    print $FILEHANDLE "vt normalize ";  #Normalize variants in a VCF.The normalized variants are reordered and output in an ordered fashion
-	    print $FILEHANDLE "-n ";  #Do not fail when REF is inconsistent with reference sequence for non SNPs
-	    print $FILEHANDLE "-r ".$$human_genome_reference_ref." ";  #Reference file
-	    print $FILEHANDLE "- ";  #InStream
-
-	    if ( (defined($xargs_file_name)) && (defined($$contig_ref)) ) {  #Write stderr for xargs process
-
-		print $FILEHANDLE "2>> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-	    }
+	    
+	    normalize({infile_path => "-",
+		       stderrfile_path => $stderrfile_path,
+		       append_stderr_info => $append_stderr_info,
+		       referencefile_path => $$human_genome_reference_ref,
+		       no_fail_inconsistent_reference => 1,
+		       FILEHANDLE => $FILEHANDLE,
+		      });
 	}
 	if ( ($active_parameter_href->{psnpeff} > 0) && ($calculate_af) ) {  #$calculate_af should not be set to 1 if reference was not part of snpeff parameter
 
 	    print $FILEHANDLE "| ";  #Pipe
-	    print $FILEHANDLE "perl ".catfile($Bin, "calculate_af.pl")." ";  #Add AF_
-	    print $FILEHANDLE "- ";  #InStream
 
-	    if ( (defined($xargs_file_name)) && (defined($$contig_ref)) ) {  #Write stderr for xargs process
-
-		print $FILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-	    }
+	    calculate_af({infile_path => "-",
+			  stderrfile_path => $stderrfile_path,
+			  append_stderr_info => $append_stderr_info,
+			  FILEHANDLE => $FILEHANDLE,
+			 });
 	}
 	if ( (exists($active_parameter_href->{vt_genmod_filter_1000g})) && ($max_af) ) {
 
 	    print $FILEHANDLE "| ";  #Pipe
-	    print $FILEHANDLE "perl ".catfile($Bin, "max_af.pl")." ";  #Add MAX_AF
-	    print $FILEHANDLE "- ";  #InStream
 
-	    if ( (defined($xargs_file_name)) && (defined($$contig_ref)) ) {  #Write stderr for xargs process
-
-		print $FILEHANDLE "2> ".$xargs_file_name.".".$$contig_ref.".stderr.txt ";  #Redirect xargs output to program specific stderr file
-	    }
+	    max_af({infile_path => "-",
+		    stderrfile_path => $stderrfile_path,
+		    append_stderr_info => $append_stderr_info,
+		    FILEHANDLE => $FILEHANDLE,
+		   });
 	}
 	if ( (-e $infile_path.".tbi") || ($bgzip) ) {  #tabix has been/will be used on file, compress again
 
 	    print $FILEHANDLE "| ";  #Pipe
+	    
 	    bgzip({FILEHANDLE => $FILEHANDLE,
 		   write_to_stdout => 1,
 		  });
@@ -25141,31 +25454,36 @@ sub rename_vcf_samples {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Gnu::Coreutils qw(printf);
+    use Program::Variantcalling::Bcftools qw(view reheader);
+
     ## Create new sample names file
     say $FILEHANDLE "## Create new sample(s) names file";
-    print $FILEHANDLE q?printf "?;
-
+    ## Get parameters
+    my $format_string = q?"?;
     foreach my $sample_id (@$sample_ids_ref) {
 
-	print $FILEHANDLE $sample_id.q?\n?;
+	$format_string .= $sample_id.q?\n?;
     }
-    print $FILEHANDLE q?" ?;
-    say $FILEHANDLE "> ".catfile($$temp_directory_ref, "sample_name.txt")." ";
+    $format_string .= q?"?;
+    Program::Gnu::Coreutils::printf({format_string => $format_string,
+				     outfile_path => catfile($$temp_directory_ref, "sample_name.txt"),
+				     FILEHANDLE => $FILEHANDLE,
+				    });
     say $FILEHANDLE "\n";
 
     ## Rename samples in VCF
-    say $FILEHANDLE "## Rename sample(s) names ion VCF file";
-    print $FILEHANDLE "bcftools ";
-    print $FILEHANDLE "reheader ";  #Modify header of VCF/BCF files, change sample names.
-    print $FILEHANDLE "-s ";  #New sample names
-    print $FILEHANDLE catfile($$temp_directory_ref, "sample_name.txt")." ";
-    print $FILEHANDLE " ".$infile." ";  #Infile
-
+    say $FILEHANDLE "## Rename sample(s) names in VCF file";
+    reheader({infile_path => $infile,
+	      samples_file_path => catfile($$temp_directory_ref, "sample_name.txt"),
+	      FILEHANDLE => $FILEHANDLE,
+	     });
     print $FILEHANDLE "| ";  #Pipe
-    print $FILEHANDLE "bcftools ";
-    print $FILEHANDLE "view ";
-    print $FILEHANDLE "--output-type v ";  #Generate uncompressed vcf
-    print $FILEHANDLE "> ".$outfile." ";
+
+    Program::Variantcalling::Bcftools::view({outfile_path => $outfile,
+					     output_type => "v",
+					     FILEHANDLE => $FILEHANDLE,
+					    });
     say $FILEHANDLE "\n";
 }
 
@@ -25628,6 +25946,7 @@ sub alias_assembly_version {
     if ($$assembly_version_ref=~/hg(\d+)/) {
 
 	my $version_number = $1;
+
 	if ($version_number > 20) {
 
 	    $$assembly_version_ref = "GRCh".$version_number;
@@ -25678,7 +25997,7 @@ sub generate_contig_specific_target_bed_file {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    my $core_number = $active_parameter_href->{core_processor_number};
+    my $core_number = $active_parameter_href->{max_cores_per_node};
     my $core_counter = 1;
 
     say $FILEHANDLE "## Generate contig specific interval_list\n";
@@ -26443,6 +26762,9 @@ sub get_file_suffix {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    ## Retrieve logger object
+    my $log = Log::Log4perl->get_logger("MIP");
+
     my $file_suffix;
 
     ## Jobid chain specific suffix
@@ -26457,6 +26779,18 @@ sub get_file_suffix {
     if ( (defined($file_suffix)) && ($file_suffix) ) {
 
 	return $file_suffix;
+    }
+    else {
+	
+	if (defined($jobid_chain)) {
+
+	    print $log->fatal("Could not get requested infile_suffix for jobid_chain:".$jobid_chain);
+	}
+	elsif (defined($program_name)) {
+
+	    print $log->fatal("Could not get requested infile_suffix for program:".$program_name);
+	}
+	exit 1;
     }
 }
 

@@ -20,7 +20,7 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(cp rm mv mkdir cat echo split);
+    our @EXPORT_OK = qw(cp rm mv mkdir cat echo split sort printf);
 
 }
 
@@ -534,6 +534,166 @@ sub split {
 	push(@commands, $prefix);
     }
 
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
+sub sort {
+
+##sort
+
+##Function : Perl wrapper for writing sort recipe to already open $FILEHANDLE or return commands array. Based on sort 8.4.
+##Returns  : "@commands"
+##Arguments: $keys_ref, $infile_path, $outfile_path, $stderrfile_path, $stdoutfile_path, $FILEHANDLE, $append_stderr_info
+##         : $keys_ref                => Start a key at POS1 (origin 1), end it at POS2
+##         : $infile_path        => Infile path
+##         : $outfile_path       => Outfile path
+##         : $stderrfile_path    => Stderrfile path
+##         : $stdoutfile_path    => Stdoutfile path
+##         : $FILEHANDLE         => Filehandle to write to
+##         : $append_stderr_info => Append stderr info to file
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $append_stderr_info;
+	
+    ## Flatten argument(s)
+    my $keys_ref;
+    my $infile_path;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $stdoutfile_path;
+    my $FILEHANDLE;
+
+	my $tmpl = { 
+	keys_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$keys_ref },
+	infile_path => { strict_type => 1, store => \$infile_path},
+	outfile_path => { strict_type => 1, store => \$outfile_path},
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path},
+	stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE},
+	append_stderr_info => { default => 0,
+				allow => [0, 1],
+				strict_type => 1, store => \$append_stderr_info},
+    };
+    
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## sort
+    my @commands = qw(sort);  #Stores commands depending on input parameters
+
+    ## Options
+    if (@$keys_ref) {
+
+	push(@commands, "--key ".join(" --key ", @$keys_ref));
+    }
+
+    ## Infile
+    if ($infile_path) {
+
+	push(@commands, $infile_path);
+    }
+    ## Outfile
+    if ($outfile_path) {
+
+	push(@commands, "> ".$outfile_path);
+    }
+    if ($stdoutfile_path) {
+
+	push(@commands, "1> ".$stdoutfile_path);  #Redirect stdout to program specific stdout file
+    }
+    if ($stderrfile_path) {
+
+	if ($append_stderr_info) {
+
+	    push(@commands, "2>> ".$stderrfile_path);  #Redirect and append stderr output to program specific stderr file
+	}
+	else {
+	    
+	    push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+	}
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
+sub printf {
+
+##printf
+
+##Function : Perl wrapper for writing printf recipe to already open $FILEHANDLE or return commands array. Based on printf 8.4.
+##Returns  : "@commands"
+##Arguments: $format_string, $outfile_path, $stderrfile_path, $stdoutfile_path, $FILEHANDLE, $append_stderr_info
+##         : $format_string      => Format string to print
+##         : $outfile_path       => Outfile path
+##         : $stderrfile_path    => Stderrfile path
+##         : $stdoutfile_path    => Stdoutfile path
+##         : $FILEHANDLE         => Filehandle to write to
+##         : $append_stderr_info => Append stderr info to file
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $append_stderr_info;
+	
+    ## Flatten argument(s)
+    my $format_string;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $stdoutfile_path;
+    my $FILEHANDLE;
+
+	my $tmpl = { 
+	format_string => { strict_type => 1, store => \$format_string},
+	outfile_path => { strict_type => 1, store => \$outfile_path},
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path},
+	stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
+	FILEHANDLE => { store => \$FILEHANDLE},
+	append_stderr_info => { default => 0,
+				allow => [0, 1],
+				strict_type => 1, store => \$append_stderr_info},
+    };
+    
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## printf
+    my @commands = qw(printf);  #Stores commands depending on input parameters
+
+    ## Options
+
+    ## Infile
+    if ($format_string) {
+
+	push(@commands, $format_string);
+    }
+    ## Outfile
+    if ($outfile_path) {
+
+	push(@commands, "> ".$outfile_path);
+    }
+    if ($stdoutfile_path) {
+
+	push(@commands, "1> ".$stdoutfile_path);  #Redirect stdout to program specific stdout file
+    }
+    if ($stderrfile_path) {
+
+	if ($append_stderr_info) {
+
+	    push(@commands, "2>> ".$stderrfile_path);  #Redirect and append stderr output to program specific stderr file
+	}
+	else {
+	    
+	    push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+	}
+    }
     if($FILEHANDLE) {
 	
 	print $FILEHANDLE join(" ", @commands)." ";

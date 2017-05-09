@@ -34,23 +34,27 @@ sub annotate {
 
 ##Function : Perl wrapper for writing Genmod annotate recipe to $FILEHANDLE or return commands array. Based on genmod 3.7.0.
 ##Returns  : "@commands"
-##Arguments: $cadd_file_paths_ref, $infile_path, $outfile_path, $stderrfile_path, $FILEHANDLE, $verbosity, $temp_directory_path, $annotate_region, $thousand_g_file_path, $spidex_file_path
-##         : $cadd_file_paths_ref       => Specify the path to a bgzipped cadd file (with index) with variant scores
+##Arguments: $cadd_file_paths_ref, $infile_path, $outfile_path, $stderrfile_path, $FILEHANDLE, $verbosity, $append_stderr_info, $temp_directory_path, $annotate_region, $thousand_g_file_path, $spidex_file_path, $max_af
+##         : $cadd_file_paths_ref  => Specify the path to a bgzipped cadd file (with index) with variant scores
 ##         : $infile_path          => Infile path to read from
 ##         : $outfile_path         => Outfile path to write to
 ##         : $stderrfile_path      => Stderr file path to write to {OPTIONAL}
 ##         : $FILEHANDLE           => Filehandle to write to
 ##         : $verbosity            => Increase output verbosity
+##         : $append_stderr_info   => Append stderr info to file
 ##         : $temp_directory_path  => Directory for storing intermediate files
 ##         : $annotate_region      => Annotate what regions a variant belongs to
 ##         : $thousand_g_file_path => Specify the path to a bgzipped vcf file (with index) with 1000g variants
 ##         : $spidex_file_path     => Specify the path to a bgzipped tsv file (with index) with spidex information
+##         : $max_af               => If the MAX AF should be annotated
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $verbosity;
+    my $append_stderr_info;
     my $annotate_region;
+    my $max_af;
 
     ## Flatten argument(s)
     my $cadd_file_paths_ref;
@@ -73,9 +77,15 @@ sub annotate {
 	spidex_file_path => { strict_type => 1, store => \$spidex_file_path },
 	verbosity => { allow => qr/^\w+$/,
 		       strict_type => 1, store => \$verbosity},
+	append_stderr_info => { default => 0,
+				allow => [0, 1],
+				strict_type => 1, store => \$append_stderr_info},
 	annotate_region => { default => 0,
 			     allow => [0, 1],
 			     strict_type => 1, store => \$annotate_region},
+	max_af => { default => 0,
+		    allow => [0, 1],
+		    strict_type => 1, store => \$max_af},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -110,7 +120,10 @@ sub annotate {
 
 	push(@commands, "--cadd_file ".join(" --cadd_file ", @{ $cadd_file_paths_ref }));
     }
+    if ($max_af) {
 
+	push(@commands, "--max_af");
+    }
     if ($outfile_path) {
 
 	push(@commands, "--outfile ".$outfile_path);  #Specify output filename
@@ -123,7 +136,14 @@ sub annotate {
     }
     if ($stderrfile_path) {
 
-	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+	if ($append_stderr_info) {
+
+	    push(@commands, "2>> ".$stderrfile_path);  #Redirect and append stderr output to program specific stderr file
+	}
+	else {
+
+	    push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+	}
     }
     if($FILEHANDLE) {
 	
@@ -461,18 +481,20 @@ sub filter {
 
 ##Function : Perl wrapper for writing Genmod filter recipe to $FILEHANDLE or return commands array. Based on genmod 3.7.0.
 ##Returns  : "@commands"
-##Arguments: $infile_path, $outfile_path, $stderrfile_path, $FILEHANDLE, $verbosity, $threshold
-##         : $infile_path     => Infile path to read from
-##         : $outfile_path    => Outfile path to write to
-##         : $stderrfile_path => Stderr file path to write to {OPTIONAL}
-##         : $FILEHANDLE      => Filehandle to write to
-##         : $verbosity       => Increase output verbosity
-##         : $threshold       => Directory for storing intermediate files
+##Arguments: $infile_path, $outfile_path, $stderrfile_path, $FILEHANDLE, $verbosity, $threshold, $append_stderr_info
+##         : $infile_path        => Infile path to read from
+##         : $outfile_path       => Outfile path to write to
+##         : $stderrfile_path    => Stderr file path to write to {OPTIONAL}
+##         : $FILEHANDLE         => Filehandle to write to
+##         : $verbosity          => Increase output verbosity
+##         : $threshold          => Directory for storing intermediate files
+##         : $append_stderr_info => Append stderr info to file
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $verbosity;
+    my $append_stderr_info;
 
     ## Flatten argument(s)
     my $infile_path;
@@ -490,6 +512,8 @@ sub filter {
 		       strict_type => 1, store => \$threshold },
 	verbosity => { allow => qr/^\w+$/,
 		       strict_type => 1, store => \$verbosity},
+	append_stderr_info => { default => 0,
+				strict_type => 1, store => \$append_stderr_info},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -520,7 +544,14 @@ sub filter {
     }
     if ($stderrfile_path) {
 
-	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+	if ($append_stderr_info) {
+
+	    push(@commands, "2>> ".$stderrfile_path);  #Redirect and append stderr output to program specific stderr file
+	}
+	else {
+
+	    push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+	}
     }
     if($FILEHANDLE) {
 	

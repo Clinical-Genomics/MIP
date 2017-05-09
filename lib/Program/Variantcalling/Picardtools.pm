@@ -20,7 +20,7 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(sortvcf);
+    our @EXPORT_OK = qw(sortvcf genotypeconcordance);
 
 }
 
@@ -81,6 +81,100 @@ sub sortvcf {
 
     ## Output
     push(@commands, "OUTPUT=".$outfile_path);  #Specify output filename
+
+    if ($stderrfile_path) {
+
+	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
+sub genotypeconcordance {
+
+##genotypeconcordance
+
+##Function : Perl wrapper for writing picardtools genotypeconcordance recipe to $FILEHANDLE. Based on picardtools 2.5.0.
+##Returns  : "@commands"
+##Arguments: $intervals_ref, $infile_path, $truth_file_path, $outfile_prefix_path, $truth_sample, $call_sample, $FILEHANDLE, $stderrfile_path, $min_genotype_quality, $min_depth
+##         : $intervals_ref        => One or more genomic intervals over which to operate {REF}
+##         : $infile_path          => Infile paths
+##         : $truth_file_path      => VCF containing the truth sample
+##         : $outfile_prefix_path  => Outfile path
+##         : $truth_sample         => Name of the truth sample within the truth VCF
+##         : $call_sample          => Name of the call sample within the call VCF
+##         : $FILEHANDLE           => Sbatch filehandle to write to
+##         : $stderrfile_path      => Stderrfile path
+##         : $min_genotype_quality => Genotypes below this genotype quality will have genotypes classified as LowGq
+##         : $min_depth            => Genotypes below this depth will have genotypes classified as LowDp
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $min_genotype_quality;
+    my $min_depth;
+
+    ## Flatten argument(s)
+    my $intervals_ref;
+    my $infile_path;
+    my $truth_file_path;
+    my $outfile_prefix_path;
+    my $truth_sample;
+    my $call_sample;
+    my $FILEHANDLE;
+    my $stderrfile_path;
+    
+    my $tmpl = {
+	intervals_ref => { default => [], strict_type => 1, store => \$intervals_ref},
+	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path},
+	truth_file_path  => { required => 1, defined => 1, strict_type => 1, store => \$truth_file_path},
+	outfile_prefix_path => { required => 1, defined => 1, strict_type => 1, store => \$outfile_prefix_path },
+	truth_sample => { required => 1, defined => 1, strict_type => 1, store => \$truth_sample },
+	call_sample => { required => 1, defined => 1, strict_type => 1, store => \$call_sample },
+	FILEHANDLE => { store => \$FILEHANDLE },
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
+	min_genotype_quality => { default => 0,
+				  allow => qr/^\d+$/,
+				  strict_type => 1, store => \$min_genotype_quality},
+	min_depth  => { default => 0,
+			allow => qr/^\d+$/,
+			strict_type => 1, store => \$min_depth},
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## Picardtools genotypeconcordance
+    my @commands = qw(GenotypeConcordance);  #Stores commands depending on input parameters
+
+    ##Options
+    if ($min_genotype_quality) {
+
+	push(@commands, "MIN_GQ=".$min_genotype_quality);
+    }
+    if ($min_depth) {
+
+	push(@commands, "MIN_DP=".$min_depth);
+    }
+    if (@$intervals_ref) {
+
+	push(@commands, "INTERVALS=".join(" INTERVALS=", @$intervals_ref));
+    }
+
+    ## Infile
+    push(@commands, "CALL_VCF=".$infile_path);
+
+    push(@commands, "TRUTH_VCF=".$truth_file_path);
+
+    ## Output
+    push(@commands, "OUTPUT=".$outfile_prefix_path);
+
+    push(@commands, "TRUTH_SAMPLE=".$truth_sample);
+
+    push(@commands, "CALL_SAMPLE=".$call_sample);
 
     if ($stderrfile_path) {
 

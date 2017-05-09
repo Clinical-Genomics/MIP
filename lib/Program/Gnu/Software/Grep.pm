@@ -1,4 +1,4 @@
-package Program::Gnu::Grep;
+package Program::Gnu::Software::Grep;
 
 use strict;
 use warnings;
@@ -32,12 +32,12 @@ sub grep {
 
 ##grep
 
-##Function : Perl wrapper for writing grep recipe to already open $FILEHANDLE or return commands array. Based on cd 2.6.3
+##Function : Perl wrapper for writing grep recipe to already open $FILEHANDLE or return commands array. Based on grep 2.6.3
 ##Returns  : "@commands"
 ##Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $filter_file_path, $invert_match
 ##         : $FILEHANDLE       => Filehandle to write to
 ##         : $infile_path      => Infile path
-##         : $outfile_path          => Outfile path
+##         : $outfile_path     => Outfile path
 ##         : $stderrfile_path  => Stderrfile path
 ##         : $filter_file_path => Obtain patterns from file, one per line
 ##         : $invert_match     => Invert the sense of matching, to select non-matching lines

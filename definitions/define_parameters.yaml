@@ -55,7 +55,7 @@ email_type:
   data_type: SCALAR
   default: F
   type: mip
-core_processor_number:
+max_cores_per_node:
   associated_program: 
    - mip
   data_type: SCALAR
@@ -114,6 +114,17 @@ module_time:
     pgatk_combinevariantcallsets: 2
     pprepareforvariantannotationblock: 5
     prhocall: 5
+    pvt: 10
+    pvarianteffectpredictor: 10
+    pvcfparser: 5
+    psnpeff: 10
+    prankvariant: 10
+    pendvariantannotationblock: 2
+    pplink: 1
+    pvariant_integrity: 1
+    pevaluation: 1
+    pgatk_variantevalall: 2
+    pgatk_variantevalexome: 2
     ptiddit: 10
     pmanta: 10
     pdelly_call: 10
@@ -150,6 +161,12 @@ module_core_number:
     pfreebayes: 16
     psamtools_mpileup: 16
     pgatk_combinevariantcallsets: 1
+    pendvariantannotationblock: 1
+    pplink: 1
+    pvariant_integrity: 1
+    pevaluation: 1
+    pgatk_variantevalall: 1
+    pgatk_variantevalexome: 1
     ptiddit: 1
     pmanta: 16
     pdelly_call: 16
@@ -1496,6 +1513,7 @@ pvt:
    - tabix
   file_endings:
    - .vcf
+  outfile_suffix: ".vcf"
   remove_redundant_file: yes
   remove_redundant_file_setting: variant_annotation
   type: program
@@ -1573,6 +1591,7 @@ pgatk_variantevalall:
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
+  outfile_suffix: ".varianteval"
   type: program
 pgatk_variantevalexome:
   associated_program:
@@ -1581,6 +1600,7 @@ pgatk_variantevalexome:
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
+  outfile_suffix: ".varianteval"
   program_name_path:
    - bedtools
   type: program
@@ -1650,6 +1670,7 @@ pvarianteffectpredictor:
   file_tag: vep_
   file_endings:
    - .vcf
+  outfile_suffix: ".vcf"
   remove_redundant_file: yes
   remove_redundant_file_setting: variant_annotation
   type: program
@@ -1719,6 +1740,7 @@ pvcfparser:
   file_tag: parsed_
   file_endings:
    - .vcf
+  outfile_suffix: ".vcf"
   remove_redundant_file: yes
   remove_redundant_file_setting: variant_annotation
   type: program
@@ -1833,6 +1855,7 @@ psnpeff:
   file_tag: snpeff_
   file_endings:
    - .vcf
+  outfile_suffix: ".vcf"
   remove_redundant_file: yes
   remove_redundant_file_setting: variant_annotation
   type: program
@@ -1960,16 +1983,25 @@ gatk_logging_level:
   default: INFO
   type: program_argument
 ## SampleCheck
-psamplecheck:
+pplink:
   associated_program:
    - mip
-  chain: IDQC
+  chain: PLINKQC
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
   program_name_path:
-   - vcftools
    - plink2
+  type: program
+pvariant_integrity:
+  associated_program:
+   - mip
+  chain: VIQC
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  program_name_path:
+   - variant_integrity
   type: program
 pevaluation:
   associated_program:
@@ -2014,6 +2046,7 @@ prankvariant:
   data_type: SCALAR
   default: 1
   file_tag: ranked_
+  outfile_suffix: ".vcf"
   type: program
 genmod_annotate_regions:
   associated_program:
@@ -2047,7 +2080,7 @@ genmod_models_whole_gene:
 genmod_models_family_type:
   associated_program:
    - prankvariant
-   - psamplecheck
+   - pvariant_integrity
   data_type: SCALAR
   default: ped
   type: program_argument
@@ -2075,6 +2108,7 @@ pendvariantannotationblock:
   data_type: SCALAR
   default: 1
   file_tag: nofile_tag
+  outfile_suffix: ".vcf"
   program_name_path:
    - grep
   type: program

@@ -20,7 +20,7 @@ BEGIN {
     our @EXPORT = qw();
 
     # Functions and variables which can be optionally exported
-    our @EXPORT_OK = qw(vcfparser);
+    our @EXPORT_OK = qw(vcfparser calculate_af max_af);
 
 }
 
@@ -34,7 +34,7 @@ sub vcfparser {
 
 ##Function : Perl wrapper for writing MIP vcfparser recipe to $FILEHANDLE or return commands array. Based on vcfparser 1.2.9.
 ##Returns  : "@commands"
-##Arguments: $range_feature_annotation_columns_ref, $select_feature_annotation_columns_ref $infile_path, $outfile_path, $stderrfile_path, $range_feature_file_path, $select_feature_file_path, $select_feature_matching_column, $select_outfile, $FILEHANDLE, $parse_vep, $per_gene, $padding
+##Arguments: $range_feature_annotation_columns_ref, $select_feature_annotation_columns_ref $infile_path, $outfile_path, $stderrfile_path, $range_feature_file_path, $select_feature_file_path, $select_feature_matching_column, $select_outfile, $FILEHANDLE, $append_stderr_info, $parse_vep, $per_gene, $padding
 ##         : $range_feature_annotation_columns_ref  => Range file annotation columns
 ##         : $select_feature_annotation_columns_ref => Range file annotation columns
 ##         : $infile_path                           => Infile path
@@ -45,6 +45,7 @@ sub vcfparser {
 ##         : $select_feature_matching_column        => Select feature matching column
 ##         : $select_outfile                        => Select outfile
 ##         : $FILEHANDLE                            => Filehandle to write to
+##         : $append_stderr_info                    => Append stderr info to file
 ##         : $parse_vep                             => Parse VEP transcript specific entries
 ##         : $per_gene                              => Output most severe consequence transcript
 ##         : $padding                               => Pad each gene with X number of nucleotides
@@ -55,6 +56,7 @@ sub vcfparser {
     my $parse_vep;
     my $per_gene;
     my $padding;
+    my $append_stderr_info;
 
     ## Flatten argument(s)
     my $range_feature_annotation_columns_ref;
@@ -80,6 +82,9 @@ sub vcfparser {
 					    strict_type => 1, store => \$select_feature_matching_column },
 	select_outfile => { strict_type => 1, store => \$select_outfile },
 	FILEHANDLE => { store => \$FILEHANDLE },
+	append_stderr_info => { default => 0,
+				allow => [0, 1],
+				strict_type => 1, store => \$append_stderr_info},
 	parse_vep => { default => 0,
 		       allow => [0, 1, 2],
 		       strict_type => 1, store => \$parse_vep},
@@ -92,7 +97,7 @@ sub vcfparser {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    ## svdb
+    ## vcfparser
     my @commands = qw(vcfparser);  #Stores commands depending on input parameters
     ## Infile
     push(@commands, $infile_path);
@@ -139,8 +144,151 @@ sub vcfparser {
 	push(@commands, "> ".$outfile_path);  #Outfile prefix
     }
     if ($stderrfile_path) {
+	
+	if ($append_stderr_info) {
 
-	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+	    push(@commands, "2>> ".$stderrfile_path);  #Redirect and append stderr output to program specific stderr file
+	}
+	else {
+	    
+	    push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+	}
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
+sub calculate_af {
+
+##calculate_af
+
+##Function : Perl wrapper for writing calculate_af recipe to already open $FILEHANDLE or return commands array. Based on calculate_af 0.0.2.
+##Returns  : "@commands"
+##Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $append_stderr_info
+##         : $FILEHANDLE         => Filehandle to write to
+##         : $infile_path        => Infile path
+##         : $outfile_path       => Outfile path
+##         : $stderrfile_path    => Stderrfile path
+##         : $append_stderr_info => Append stderr info to file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $infile_path;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $append_stderr_info;
+
+    my $tmpl = { 
+	FILEHANDLE => { store => \$FILEHANDLE},
+	infile_path => { strict_type => 1, store => \$infile_path},
+	outfile_path => { strict_type => 1, store => \$outfile_path},
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path},
+	append_stderr_info => { default => 0,
+				allow => [0, 1],
+				strict_type => 1, store => \$append_stderr_info},
+    };
+    
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## calculate_af
+    my @commands = qw(calculate_af);  #Stores commands depending on input parameters
+
+    ## Options
+
+    ## Infile
+    if ($infile_path) {
+
+	push(@commands, $infile_path);
+    }
+    ## Outfile
+    if ($outfile_path) {
+
+	push(@commands, "> ".$outfile_path);
+    }
+    if ($stderrfile_path) {
+
+	if ($append_stderr_info) {
+
+	    push(@commands, "2>> ".$stderrfile_path);  #Redirect and append stderr output to program specific stderr file
+	}
+	else {
+
+	    push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+	}
+    }
+    if($FILEHANDLE) {
+	
+	print $FILEHANDLE join(" ", @commands)." ";
+    }
+    return @commands;
+}
+
+
+sub max_af {
+
+##max_af
+
+##Function : Perl wrapper for writing max_af recipe to already open $FILEHANDLE or return commands array. Based on max_af 0.0.2.
+##Returns  : "@commands"
+##Arguments: $FILEHANDLE, $infile_path, $outfile_path, $stderrfile_path, $append_stderr_info
+##         : $FILEHANDLE         => Filehandle to write to
+##         : $infile_path        => Infile path
+##         : $outfile_path       => Outfile path
+##         : $stderrfile_path    => Stderrfile path
+##         : $append_stderr_info => Append stderr info to file
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $FILEHANDLE;
+    my $infile_path;
+    my $outfile_path;
+    my $stderrfile_path;
+    my $append_stderr_info;
+
+    my $tmpl = { 
+	FILEHANDLE => { store => \$FILEHANDLE},
+	infile_path => { strict_type => 1, store => \$infile_path},
+	outfile_path => { strict_type => 1, store => \$outfile_path},
+	stderrfile_path => { strict_type => 1, store => \$stderrfile_path},
+	append_stderr_info => { default => 0,
+				allow => [0, 1],
+				strict_type => 1, store => \$append_stderr_info},
+    };
+    
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    ## max_af
+    my @commands = qw(max_af);  #Stores commands depending on input parameters
+
+    ## Options
+
+    ## Infile
+    if ($infile_path) {
+
+	push(@commands, $infile_path);
+    }
+    ## Outfile
+    if ($outfile_path) {
+
+	push(@commands, "> ".$outfile_path);
+    }
+    if ($stderrfile_path) {
+
+	if ($append_stderr_info) {
+
+	    push(@commands, "2>> ".$stderrfile_path);  #Redirect and append stderr output to program specific stderr file
+	}
+	else {
+
+	    push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+	}
     }
     if($FILEHANDLE) {
 	
