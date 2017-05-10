@@ -324,7 +324,8 @@ BEGIN {
                -pmqc/--pmultiqc Create aggregate bioinformatics analysis report across many samples (defaults to "1" (=yes))
                -prem/--premoveredundantfiles Generating sbatch script for deletion of redundant files (defaults to "1" (=yes);Note: Must be submitted manually to SLURM)
                -pars/--panalysisrunstatus Sets the analysis run status flag to finished in sample_info_file (defaults to "1" (=yes))
-               -psac/--psacct Generating sbatch script for SLURM info on each submitted job (defaults to "1" (=yes);Note: Must be submitted manually to SLURM)
+               -psac/--psacct Generating sbatch script for SLURM info on each submitted job (defaults to "1" (=yes))
+                 -sacfrf/--sacct_format_fields Format and fields of sacct output (defaults to "jobid", "jobname%50", "account", "partition", "alloccpus", "TotalCPU", "elapsed", "start", "end", "state", "exitcode")
 	   };
 }
 
@@ -629,6 +630,7 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'prem|premoveredundantfiles=n' => \$parameter{premoveredundantfiles}{value},
 	   'pars|panalysisrunstatus=n' => \$parameter{panalysisrunstatus}{value},  #analysisrunstatus change flag in sample_info file if allowed to execute
 	   'psac|psacct=n' => \$parameter{psacct}{value},
+	   'sacfrf|sacct_format_fields:s' => \@{ $parameter{sacct_format_fields}{value}},
     ) or help({USAGE => $USAGE,
 	       exit_code => 1,
 	      });
@@ -2226,13 +2228,13 @@ if ($active_parameter{pqccollect} > 0) {  #Run qccollect. Done per family
 
     $log->info("[Qccollect]\n");
 
-    qccollect({parameter_href => \%parameter,
-	       active_parameter_href => \%active_parameter,
-	       sample_info_href => \%sample_info,
-	       infile_lane_no_ending_href => \%infile_lane_no_ending,
-	       job_id_href => \%job_id,
-	       program_name => "qccollect",
-	      });
+    mqccollect({parameter_href => \%parameter,
+		active_parameter_href => \%active_parameter,
+		sample_info_href => \%sample_info,
+		infile_lane_no_ending_href => \%infile_lane_no_ending,
+		job_id_href => \%job_id,
+		program_name => "qccollect",
+	       });
 }
 
 
@@ -2240,13 +2242,13 @@ if ($active_parameter{pmultiqc} > 0) {
 
     $log->info("[Multiqc]\n");
 
-    multiqc({parameter_href => \%parameter,
-	     active_parameter_href => \%active_parameter,
-	     sample_info_href => \%sample_info,
-	     infile_lane_no_ending_href => \%infile_lane_no_ending,
-	     job_id_href => \%job_id,
-	     program_name => "multiqc",
-	    });
+    mmultiqc({parameter_href => \%parameter,
+	      active_parameter_href => \%active_parameter,
+	      sample_info_href => \%sample_info,
+	      infile_lane_no_ending_href => \%infile_lane_no_ending,
+	      job_id_href => \%job_id,
+	      program_name => "multiqc",
+	     });
 }
 
 
@@ -2287,7 +2289,7 @@ if ( ($active_parameter{psacct} > 0) && ($active_parameter{dry_run_all} == 0) ) 
 
     $log->info("[Sacct]\n");
 
-    sacct({parameter_href => \%parameter,
+    msacct({parameter_href => \%parameter,
 	   active_parameter_href => \%active_parameter,
 	   sample_info_href => \%sample_info,
 	   infile_lane_no_ending_href => \%infile_lane_no_ending,
@@ -2308,12 +2310,12 @@ if ($active_parameter{sample_info_file} ne 0) {#Write SampleInfo to yaml file
 
 
 ######################
-####Sub routines#######
+####Sub routines######
 ######################
 
-sub sacct {
+sub msacct {
 
-##sacct
+##msacct
 
 ##Function : Output SLURM info on each job via sacct command
 ##Returns  : ""
@@ -2352,8 +2354,12 @@ sub sacct {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Workloadmanager::Slurm qw(sacct);
+
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 1;
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -2362,25 +2368,26 @@ sub sacct {
 					     directory_id => $$family_id_ref,
 					     program_name => $program_name,
 					     program_directory => lc($program_name),
+					     core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					     process_time => $active_parameter_href->{module_time}{"p".$program_name},
 					    });
 
-    print $FILEHANDLE "sacct --format=jobid,jobname%50,account,partition,alloccpus,TotalCPU,elapsed,start,end,state,exitcode -j ";
-
-    ## If run in dry run mode this will be empty
-    if (keys %$job_id_href) {
-
-	say $FILEHANDLE join(',', @{ $job_id_href->{PAN}{PAN} });
-    }
+    sacct({fields_format_ref => \@{ $active_parameter_href->{sacct_format_fields} },
+	   job_ids_ref => \@{ $job_id_href->{PAN}{PAN} },
+	   FILEHANDLE => $FILEHANDLE,
+	  });
+    say $FILEHANDLE "\n";
+    
     close($FILEHANDLE);
-
+    
     if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
-
+	
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    dependencies => "chain_and_parallel_dependency",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name,
 		    job_dependency_type => "afterany",
 		   });
@@ -2429,6 +2436,9 @@ sub analysisrunstatus {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -2438,9 +2448,11 @@ sub analysisrunstatus {
 					     directory_id => $$family_id_ref,
 					     program_name => $program_name,
 					     program_directory => lc($program_name),
+					     core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					     process_time => $active_parameter_href->{module_time}{"p".$program_name},
 					    });
 
-    say $FILEHANDLE q?STATUS="0"?;  #Set status flagg so that perl notFinished remains in sample_info_file
+    say $FILEHANDLE q?STATUS="0"?;  #Set status flagg so that perl not_finished remains in sample_info_file
 
     ###Test all file that are supposed to exists as they are present in the sample_info file
     my @paths_ref;
@@ -2477,9 +2489,9 @@ sub analysisrunstatus {
 	print $FILEHANDLE q?if grep -q "WARNING Unable to fork" ?;  #not output the matched text only return the exit status code
 	say $FILEHANDLE $variant_effect_predictor_file.q?; then?;  #Infile
 	say $FILEHANDLE "\t".q?STATUS="1"?;  #Found pattern
-	say $FILEHANDLE "\t".q?echo "VariantEffectorPredictor fork status=FAILED for file: ?.$variant_effect_predictor_file.q?" >&2?;  #Echo
+	say $FILEHANDLE "\t".q?echo "variant_effector_predictor fork status=FAILED for file: ?.$variant_effect_predictor_file.q?" >&2?;  #Echo
 	say $FILEHANDLE q?else?;  #Infile is clean
-	say $FILEHANDLE "\t".q?echo "VariantEffectorPredictor fork status=PASSED for file: ?.$variant_effect_predictor_file.q?" >&2?;  #Echo
+	say $FILEHANDLE "\t".q?echo "variant_effector_predictor fork status=PASSED for file: ?.$variant_effect_predictor_file.q?" >&2?;  #Echo
 	say $FILEHANDLE q?fi?, "\n";
     }
 
@@ -2583,7 +2595,7 @@ sub analysisrunstatus {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    dependencies => "chain_and_parallel_dependency",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
 		   });
     }
@@ -2646,10 +2658,11 @@ sub removeredundantfiles {
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
-    my $time = 10;
+    my $xargs_file_name;
+
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
     my $XARGSFILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $xargs_file_name;
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -2658,6 +2671,8 @@ sub removeredundantfiles {
 					     directory_id => $$family_id_ref,
 					     program_name => $program_name,
 					     program_directory => $$outaligner_dir_ref,
+					     core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					     process_time => $active_parameter_href->{module_time}{"p".$program_name},
 					    });
 
     foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
@@ -2693,9 +2708,9 @@ sub removeredundantfiles {
 }
 
 
-sub multiqc {
+sub mmultiqc {
 
-##multiqc
+##mmultiqc
 
 ##Function : Aggregate bioinforamtics reports per case
 ##Returns  : ""
@@ -2734,8 +2749,12 @@ sub multiqc {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Qc::Multiqc qw(multiqc);
+
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
-    my $time = 1;
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name) = program_prerequisites({active_parameter_href => $active_parameter_href,
@@ -2744,6 +2763,8 @@ sub multiqc {
 					     directory_id => $$family_id_ref,
 					     program_name => $program_name,
 					     program_directory => lc($program_name),
+					     core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					     process_time => $active_parameter_href->{module_time}{"p".$program_name},
 					    });
 
     ## Assign directories
@@ -2751,13 +2772,16 @@ sub multiqc {
 
     foreach my $sample_id (@{ $active_parameter_href->{sample_ids} }) {
 
+	## Assign directories
 	my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id);
 	my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id, $program_outdirectory_name);
 
-	print $FILEHANDLE "multiqc ";
-	print $FILEHANDLE "--force ";
-	print $FILEHANDLE "--outdir ".$outsample_directory." ";
-	say $FILEHANDLE $insample_directory;
+	multiqc({indir_path => $insample_directory,
+		 outdir_path => $outsample_directory,
+		 force => 1,
+		 FILEHANDLE => $FILEHANDLE,
+		});
+	say $FILEHANDLE "\n";
     }
 
     close($FILEHANDLE);
@@ -2769,16 +2793,16 @@ sub multiqc {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    dependencies => "chain_and_parallel_dependency",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
 		   });
     }
 }
 
 
-sub qccollect {
+sub mqccollect {
 
-##qccollect
+##mqccollect
 
 ##Function : Collect qc metrics for this analysis run.
 ##Returns  : ""
@@ -2820,7 +2844,12 @@ sub qccollect {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
+    use Program::Qc::Mip qw(qccollect);
+
     my $reduce_io_ref = \$active_parameter_href->{reduce_io};
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
@@ -2830,21 +2859,20 @@ sub qccollect {
 					     directory_id => $$family_id_ref,
 					     program_name => $program_name,
 					     program_directory => lc($program_name),
+					     core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					     process_time => $active_parameter_href->{module_time}{"p".$program_name},
 					    });
 
-    my $infile = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref, "qc_sample_info.yaml");
-    my $infamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref);
+    ## Assign directories
     my $outfamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref);
 
-    print $FILEHANDLE "qccollect ";
-    print $FILEHANDLE "-sample_info_file ".$active_parameter_href->{qccollect_sampleinfo_file}." ";
-    print $FILEHANDLE "-regexp_file ".$active_parameter_href->{qccollect_regexp_file}." ";
-
-    if ($active_parameter_href->{qccollect_skip_evaluation}) {
-
-	print $FILEHANDLE "--skip_evaluation ";
-    }
-    say $FILEHANDLE "-o ".$outfamily_directory."/".$$family_id_ref."_qc_metrics.yaml ", "\n";
+    qccollect({infile_path => $active_parameter_href->{qccollect_sampleinfo_file},
+	       outfile_path => $outfamily_directory."/".$$family_id_ref."_qc_metrics.yaml",
+	       regexp_file_path => $active_parameter_href->{qccollect_regexp_file},
+	       skip_evaluation => $active_parameter_href->{qccollect_skip_evaluation},
+	       FILEHANDLE => $FILEHANDLE,
+	      });
+    say $FILEHANDLE "\n";
 
     close($FILEHANDLE);
 
@@ -2866,7 +2894,7 @@ sub qccollect {
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    dependencies => "chain_and_parallel_dependency",
-		    path => $parameter_href->{"p".$program_name}{chain},
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
 		   });
     }
@@ -2957,6 +2985,7 @@ sub evaluation {
 					     core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
 					     process_time => $active_parameter_href->{module_time}{"p".$program_name},
 					     temp_directory => $$temp_directory_ref,
+					     set_error => 0,  #Special case to allow "vcf.idx" to be created
 					     error_trap => 0,  #Special case to allow "vcf.idx" to be created
 					    });
 
@@ -2967,11 +2996,17 @@ sub evaluation {
 
     ## Assign file_tags
     my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
+    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+    my $outfile_no_ending = $$family_id_ref.".Vs.".$active_parameter_href->{nist_id}."-NIST_genome";
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending),
+    my $call_file_path = catfile($$temp_directory_ref, $$family_id_ref);
+    my $nist_file_path = catfile($$temp_directory_ref, "NIST");
 
     ## Copy file(s) to temporary directory
     say $FILEHANDLE "## Copy file(s) to temporary directory";
     migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($infamily_directory, $$family_id_ref.$infile_tag.$call_type.".vcf*"),
+		  infile_path => catfile($infamily_directory, $infile_no_ending.".vcf*"),
 		  outfile_path => $$temp_directory_ref
 		 });
     say $FILEHANDLE "wait", "\n";
@@ -2980,21 +3015,21 @@ sub evaluation {
     rename_vcf_samples({sample_ids_ref => [$active_parameter_href->{nist_id}."-NIST"],
 			temp_directory_ref => $temp_directory_ref,
 			infile => $active_parameter_href->{nist_high_confidence_call_set},
-			outfile => catfile($$temp_directory_ref, "NIST_refrm.vcf"),
+			outfile => $nist_file_path."_refrm.vcf",
 			FILEHANDLE => $FILEHANDLE,
 		       });
 
     ## Modify since different ref genomes
     say $FILEHANDLE "## Modify since different ref genomes";
     print $FILEHANDLE q?perl -nae 'unless($_=~/##contig=<ID=GL\d+/) {print $_}' ?;
-    print $FILEHANDLE catfile($$temp_directory_ref, "NIST_refrm.vcf")." ";  #Infile
-    print $FILEHANDLE "> ".catfile($$temp_directory_ref, "NIST.vcf")." ";  #Outfile
+    print $FILEHANDLE $nist_file_path."_refrm.vcf"." ";  #Infile
+    print $FILEHANDLE "> ".$nist_file_path.".vcf"." ";  #Outfile
     say $FILEHANDLE "\n";
 
     ## BcfTools Stats
     say $FILEHANDLE "## bcftools stats";
-    Program::Variantcalling::Bcftools::stats({infile_path => catfile($$temp_directory_ref, "NIST.vcf"),
-					      outfile_path => catfile($$temp_directory_ref, "NIST.vcf.stats"),
+    Program::Variantcalling::Bcftools::stats({infile_path => $nist_file_path.".vcf",
+					      outfile_path => $nist_file_path.".vcf.stats",
 					      FILEHANDLE => $FILEHANDLE,
 					     });
     say $FILEHANDLE "\n";
@@ -3013,8 +3048,8 @@ sub evaluation {
     selectvariants({sample_names_ref => [$$sample_id_ref."XXX "],
 		    logging_level => $active_parameter_href->{gatk_logging_level},
 		    referencefile_path => $active_parameter_href->{human_genome_reference},
-		    infile_path => catfile($$temp_directory_ref, "NIST.vcf"),
-		    outfile_path => catfile($$temp_directory_ref, "NISTXXX.vcf"),
+		    infile_path => $nist_file_path.".vcf",
+		    outfile_path => $nist_file_path."XXX.vcf",
 		    FILEHANDLE => $FILEHANDLE,
 		   });
     say $FILEHANDLE "\n";
@@ -3022,22 +3057,23 @@ sub evaluation {
     ## Create .interval_list file from NIST union bed
     say $FILEHANDLE "## Prepare .interval_list file from NIST union bed\n";
 
+    my $genome_dict_file_path = catfile($$temp_directory_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict");
     print $FILEHANDLE q?perl -nae 'unless($_=~/NC_007605/ || $_=~/hs37d5/ || $_=~/GL\d+/) {print $_}' ?;
     print $FILEHANDLE catfile($$reference_dir_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict")." ";
-    print $FILEHANDLE "> ".catfile($$temp_directory_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict")." ";
+    print $FILEHANDLE "> ".$genome_dict_file_path." ";
     say $FILEHANDLE "\n";
 
-    cat({infile_paths_ref => [catfile($$temp_directory_ref, $file_info_href->{human_genome_reference_name_no_ending}.".dict"),
+    cat({infile_paths_ref => [$genome_dict_file_path,
 			      $active_parameter_href->{nist_high_confidence_call_set_bed}],
-	 outfile_path => catfile($$temp_directory_ref, "NIST.bed.dict_body"),
+	 outfile_path => $nist_file_path.".bed.dict_body",
 	 FILEHANDLE => $FILEHANDLE,
 	});
     say $FILEHANDLE "\n";
 
     say $FILEHANDLE "## Remove target annotations, 'track', 'browse' and keep only 5 columns";
     print $FILEHANDLE q?perl  -nae 'if ($_=~/@/) {print $_;} elsif ($_=~/^track/) {} elsif ($_=~/^browser/) {} else {print @F[0], "\t", (@F[1] + 1), "\t", @F[2], "\t", "+", "\t", "-", "\n";}' ?;
-    print $FILEHANDLE catfile($$temp_directory_ref, "NIST.bed.dict_body")." ";  #Infile
-    print $FILEHANDLE "> ".catfile($$temp_directory_ref, "NIST.bed.dict_body_col_5.interval_list")." ";  #Remove unnecessary info and reformat
+    print $FILEHANDLE $nist_file_path.".bed.dict_body"." ";  #Infile
+    print $FILEHANDLE "> ".$nist_file_path.".bed.dict_body_col_5.interval_list"." ";  #Remove unnecessary info and reformat
     say $FILEHANDLE "\n";
 
     say $FILEHANDLE "## Create ".$active_parameter_href->{nist_high_confidence_call_set_bed}.".interval_list";
@@ -3048,8 +3084,8 @@ sub evaluation {
 	  java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
 	 });
 
-    intervallisttools({infile_paths_ref => [catfile($$temp_directory_ref, "NIST.bed.dict_body_col_5.interval_list")],
-		       outfile_path => catfile($$temp_directory_ref, "NIST.bed.interval_list"),
+    intervallisttools({infile_paths_ref => [$nist_file_path.".bed.dict_body_col_5.interval_list"],
+		       outfile_path => $nist_file_path.".bed.interval_list",
 		       FILEHANDLE => $FILEHANDLE,
 		      });
     say $FILEHANDLE "\n";
@@ -3069,8 +3105,8 @@ sub evaluation {
     selectvariants({sample_names_ref => [$$sample_id_ref],
 		    logging_level => $active_parameter_href->{gatk_logging_level},
 		    referencefile_path => $active_parameter_href->{human_genome_reference},
-		    infile_path => catfile($$temp_directory_ref, $$family_id_ref.$infile_tag.$call_type.".vcf"),
-		    outfile_path => catfile($$temp_directory_ref, "MIP.vcf"),
+		    infile_path => $file_path_no_ending.".vcf",
+		    outfile_path => $call_file_path.".vcf",
 		    exclude_nonvariants => 1,
 		    FILEHANDLE => $FILEHANDLE,
 		   });
@@ -3087,11 +3123,11 @@ sub evaluation {
 	  java_jar => catfile($active_parameter_href->{gatk_path}, "GenomeAnalysisTK.jar"),
 	 });
 
-    leftalignandtrimvariants({infile_path => catfile($$temp_directory_ref, "MIP.vcf"),
+    leftalignandtrimvariants({infile_path => $call_file_path.".vcf",
 			      logging_level => $active_parameter_href->{gatk_logging_level},
 			      referencefile_path => $active_parameter_href->{human_genome_reference},
 			      split_multiallelics => 1,
-			      outfile_path => catfile($$temp_directory_ref, "MIP_lts.vcf"),
+			      outfile_path => $call_file_path."_lts.vcf",
 			      FILEHANDLE => $FILEHANDLE,
 			     });
     say $FILEHANDLE "\n";
@@ -3099,14 +3135,14 @@ sub evaluation {
     ## Modify since different ref genomes
     say $FILEHANDLE "## Modify since different ref genomes";
     print $FILEHANDLE q?perl -nae 'unless($_=~/##contig=<ID=NC_007605,length=171823>/ || $_=~/##contig=<ID=hs37d5,length=35477943>/ || $_=~/##contig=<ID=GL\d+/) {print $_}' ?;
-    print $FILEHANDLE catfile($$temp_directory_ref, "MIP_lts.vcf")." ";  #Infile
-    print $FILEHANDLE "> ".catfile($$temp_directory_ref, "MIP_lts_refrm.vcf")." ";  #Outfile
+    print $FILEHANDLE $call_file_path."_lts.vcf"." ";  #Infile
+    print $FILEHANDLE "> ".$call_file_path."_lts_refrm.vcf"." ";  #Outfile
     say $FILEHANDLE "\n";
 
     ## BcfTools Stats
     say $FILEHANDLE "## bcftools stats";
-    Program::Variantcalling::Bcftools::stats({infile_path => catfile($$temp_directory_ref, "MIP_lts_refrm.vcf"),
-					      outfile_path => catfile($$temp_directory_ref, "MIP_lts_refrm.vcf.stats"),
+    Program::Variantcalling::Bcftools::stats({infile_path => $call_file_path."_lts_refrm.vcf",
+					      outfile_path => $call_file_path."_lts_refrm.vcf.stats",
 					      FILEHANDLE => $FILEHANDLE,
 					     });
     say $FILEHANDLE "\n";
@@ -3125,8 +3161,8 @@ sub evaluation {
     selectvariants({sample_names_ref => [$$sample_id_ref."XXX "],
 		    logging_level => $active_parameter_href->{gatk_logging_level},
 		    referencefile_path => $active_parameter_href->{human_genome_reference},
-		    infile_path => catfile($$temp_directory_ref, "MIP_lts_refrm.vcf"),
-		    outfile_path => catfile($$temp_directory_ref, "MIPXXX.vcf"),
+		    infile_path => $call_file_path."_lts_refrm.vcf",
+		    outfile_path => $call_file_path."XXX.vcf",
 		    FILEHANDLE => $FILEHANDLE,
 		   });
     say $FILEHANDLE "\n";
@@ -3139,10 +3175,10 @@ sub evaluation {
 	  java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
 	 });
 
-    genotypeconcordance({intervals_ref => [catfile($$temp_directory_ref, "NIST.bed.interval_list")],
-			 infile_path => catfile($$temp_directory_ref, "MIP_lts_refrm.vcf"),
-			 truth_file_path => catfile($$temp_directory_ref, "NIST.vcf"),
-			 outfile_prefix_path => catfile($$temp_directory_ref, "compMIP.Vs.".$active_parameter_href->{nist_id}."-NIST_genome_bed"),
+    genotypeconcordance({intervals_ref => [$nist_file_path.".bed.interval_list"],
+			 infile_path => $call_file_path."_lts_refrm.vcf",
+			 truth_file_path => $nist_file_path.".vcf",
+			 outfile_prefix_path => $outfile_path_no_ending."_bed",
 			 truth_sample => $active_parameter_href->{nist_id}."-NIST",
 			 call_sample => $$sample_id_ref,
 			 min_genotype_quality => 20,
@@ -3159,9 +3195,9 @@ sub evaluation {
 	  java_jar => catfile($active_parameter_href->{picardtools_path}, "picard.jar"),
 	 });
 
-    genotypeconcordance({infile_path => catfile($$temp_directory_ref, "MIP_lts_refrm.vcf"),
-			 truth_file_path => catfile($$temp_directory_ref, "NIST.vcf"),
-			 outfile_prefix_path => catfile($$temp_directory_ref, "compMIP.Vs.".$active_parameter_href->{nist_id}."-NIST_genome"),
+    genotypeconcordance({infile_path => $call_file_path."_lts_refrm.vcf",
+			 truth_file_path => $nist_file_path.".vcf",
+			 outfile_prefix_path => $outfile_path_no_ending,
 			 truth_sample => $active_parameter_href->{nist_id}."-NIST",
 			 call_sample => $$sample_id_ref,
 			 min_genotype_quality => 20,
@@ -3172,7 +3208,7 @@ sub evaluation {
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
-    my @outfiles = ("compMIP.Vs.NIST_ADM1059A3_genome*", "*vcf.stats");
+    my @outfiles = ($outfile_no_ending."*", "*vcf.stats");
     foreach my $outfile (@outfiles) {
 
 	migrate_file({infile_path => catfile($$temp_directory_ref, $outfile),
@@ -19745,7 +19781,7 @@ sub program_prerequisites {
 
 ##Function : Creates program directories (info & programData & programScript), program script filenames and writes sbatch header.
 ##Returns  : Path to stdout
-##Arguments: $active_parameter_href, $job_id_href, $FILEHANDLE, $directory_id, $program_directory, $program_name, $call_type, $outdata_dir, $outscript_dir, $temp_directory, $email_type, $source_environment_commands_ref, $slurm_quality_of_service, $core_number, $process_time, $error_trap, $pipefail, $sleep
+##Arguments: $active_parameter_href, $job_id_href, $FILEHANDLE, $directory_id, $program_directory, $program_name, $call_type, $outdata_dir, $outscript_dir, $temp_directory, $email_type, $source_environment_commands_ref, $slurm_quality_of_service, $core_number, $process_time, $error_trap, $set_error, $pipefail, $sleep
 ##         : $active_parameter_href           => The active parameters for this analysis hash {REF}
 ##         : $job_id_href                     => The job_id hash {REF}
 ##         : $FILEHANDLE                      => FILEHANDLE to write to
@@ -19762,6 +19798,7 @@ sub program_prerequisites {
 ##         : $core_number                     => The number of cores to allocate {Optional}
 ##         : $process_time                    => Allowed process time (Hours) {Optional}
 ##         : $error_trap                      => Error trap switch {Optional}
+##         : $set_error                       => Bash set -e {Optional}
 ##         : $pipefail                        => Pipe fail switch {Optional}
 ##         : $sleep                           => Sleep for X seconds {Optional}
 
@@ -19776,6 +19813,7 @@ sub program_prerequisites {
     my $slurm_quality_of_service;
     my $core_number;
     my $process_time;
+    my $set_error;
     my $pipefail;
     my $error_trap;
     my $sleep;
@@ -19823,6 +19861,9 @@ sub program_prerequisites {
 	slurm_quality_of_service => { default => $arg_href->{active_parameter_href}{slurm_quality_of_service},
 				      allow => ["low", "high", "normal"],
 				      strict_type => 1, store => \$slurm_quality_of_service},
+	set_error => { default => 1,
+		      allow => [0, 1],
+		      strict_type => 1, store => \$set_error},
 	pipefail => { default => 1,
 		      allow => [0, 1],
 		      strict_type => 1, store => \$pipefail},
@@ -19892,8 +19933,11 @@ sub program_prerequisites {
     open ($FILEHANDLE, ">",$file_name) or $log->logdie("Can't write to '".$file_name."' :".$!."\n");
 
     say $FILEHANDLE "#! /bin/bash -l";
-    say $FILEHANDLE "set -eu";  #Halt script if command has non-zero exit code (e) or if variable is uninitialised (u)
 
+    if ($set_error) {
+
+	say $FILEHANDLE "set -eu";  #Halt script if command has non-zero exit code (e) or if variable is uninitialised (u)
+    }
     if ($pipefail) {
 
 	say $FILEHANDLE "set -o pipefail";  #Detect errors within pipes

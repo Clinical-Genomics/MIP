@@ -135,6 +135,11 @@ module_time:
     psv_vcfparser: 2
     psv_rankvariant: 2
     psv_reformat: 1
+    pqccollect: 1
+    pmultiqc: 1
+    premoveredundantfiles: 1
+    panalysisrunstatus: 1
+    psacct: 1
   type: mip
 module_core_number:
   associated_program:
@@ -177,6 +182,11 @@ module_core_number:
     psv_vcfparser: 16
     psv_rankvariant: 16
     psv_reformat: 1
+    pqccollect: 1
+    pmultiqc: 1
+    premoveredundantfiles: 1
+    panalysisrunstatus: 1
+    psacct: 1
   type: mip
 supported_capture_kit:
   associated_program:
@@ -2195,6 +2205,24 @@ psacct:
   default: 1
   file_tag: nofile_tag
   type: program
+sacct_format_fields:
+  associated_program:
+   - psacct
+  data_type: ARRAY
+  default:
+   - jobid
+   - "jobname%50"
+   - account
+   - partition
+   - alloccpus
+   - TotalCPU
+   - elapsed
+   - start
+   - end
+   - state
+   - exitcode
+  element_separator: ,
+  type: program_argument
 exome_target_bed:
   associated_program:
    - ppicardtools_collecthsmetrics
