@@ -162,7 +162,7 @@ module_core_number:
     pbedtools_genomecov: 1
     pgatk_haplotypecaller: 16
     pgatk_genotypegvcfs: 4
-    pgatk_variantrecalibration: 2
+    pgatk_variantrecalibration: 16
     pfreebayes: 16
     psamtools_mpileup: 16
     pgatk_combinevariantcallsets: 1
@@ -1985,6 +1985,7 @@ gatk_logging_level:
    - pgatk_combinevariantcallsets
    - pgatk_phasebytransmission
    - pgatk_readbackedphasing
+   - pcnvnator
    - pgatk_variantevalall
    - pgatk_variantevalexome
    - pvarianteffectpredictor

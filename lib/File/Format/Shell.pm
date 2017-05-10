@@ -125,13 +125,14 @@ sub create_housekeeping_function {
 
 ##Function : Create housekeeping function which removes entire directory when finished
 ##Returns  : ""
-##Arguments: $job_id_href, $log_file_ref, $FILEHANDLE, $directory_remove, $trap_signals_ref, $trap_function
-##         : $job_id_href      => Job_id hash {REF}
-##         : $log_file_ref     => Log file to write job_id progress to {REF}
-##         : $FILEHANDLE       => Filehandle to write to
-##         : $directory_remove => Directory to remove when caught by trap function
-##         : $trap_signals_ref => Array with signals to enable trap for {REF}
-##         : $trap_function    => The trap function argument
+##Arguments: $job_ids_ref, $sacct_format_fields_ref, $log_file_ref, $FILEHANDLE, $directory_remove, $trap_signals_ref, $trap_function
+##         : $job_ids_ref             => Job ids
+##         : $sacct_format_fields_ref => Format and fields of sacct output
+##         : $log_file_ref            => Log file to write job_id progress to {REF}
+##         : $FILEHANDLE              => Filehandle to write to
+##         : $directory_remove        => Directory to remove when caught by trap function
+##         : $trap_signals_ref        => Array with signals to enable trap for {REF}
+##         : $trap_function           => The trap function argument
 
     my ($arg_href) = @_;
 
@@ -140,13 +141,15 @@ sub create_housekeeping_function {
     my $trap_function;
 
     ## Flatten argument(s)
-    my $job_id_href;
+    my $job_ids_ref;
+    my $sacct_format_fields_ref;
     my $log_file_ref;
     my $FILEHANDLE;
     my $directory_remove;
 
     my $tmpl = {
-	job_id_href => { default => {}, strict_type => 1, store => \$job_id_href},
+	job_ids_ref  => { default => [], strict_type => 1, store => \$job_ids_ref},
+	sacct_format_fields_ref => { default => [], strict_type => 1, store => \$sacct_format_fields_ref},
 	log_file_ref => { default => \$$, strict_type => 1, store => \$log_file_ref},
 	FILEHANDLE => { required => 1, store => \$FILEHANDLE},
 	directory_remove => {strict_type => 1, store => \$directory_remove},
@@ -173,17 +176,19 @@ sub create_housekeeping_function {
 	    recursive => 1,
 	    FILEHANDLE => $FILEHANDLE,
 	   });
-	print $FILEHANDLE "\n";
+	print $FILEHANDLE "\n\n";
     }
-    if ( (defined($job_id_href)) && (keys %$job_id_href)
+    if ( (defined($job_ids_ref)) && (@$job_ids_ref)
 	&& (defined($$log_file_ref)) && ($$log_file_ref) ) {
 
 	## Output SLURM info on each job via sacct command and write to log file(.status)
-	track_progress({job_id_href => $job_id_href,
+	track_progress({job_ids_ref => \@{ $job_ids_ref },
+			sacct_format_fields_ref => \@{ $sacct_format_fields_ref },
 			FILEHANDLE => $FILEHANDLE,
 			log_file_ref => $log_file_ref,
 		       });
     }
+
     say $FILEHANDLE q?}?;
 
     ## Enable trap function with trap signal(s)
@@ -200,13 +205,14 @@ sub create_error_trap_function {
 
 ##Function : Create error handling function and trap
 ##Returns  : ""
-##Arguments: $job_id_href, $log_file_ref, $FILEHANDLE, $trap_function_call, $trap_signals_ref, $trap_function_name
-##         : $job_id_href        => Job_id hash {REF}
-##         : $log_file_ref       => Log file to write job_id progress to {REF}
-##         : $FILEHANDLE         => Filehandle to write to
-##         : $trap_function_call => Trap function call
-##         : $trap_signals_ref   => Array with signals to enable trap for {REF}
-##         : $trap_function_name => The trap function argument
+##Arguments: $job_ids_ref, sacct_format_fields_ref, $log_file_ref, $FILEHANDLE, $trap_function_call, $trap_signals_ref, $trap_function_name
+##         : $job_ids_ref             => Job ids
+##         : $sacct_format_fields_ref => Format and fields of sacct output
+##         : $log_file_ref            => Log file to write job_id progress to {REF}
+##         : $FILEHANDLE              => Filehandle to write to
+##         : $trap_function_call      => Trap function call
+##         : $trap_signals_ref        => Array with signals to enable trap for {REF}
+##         : $trap_function_name      => The trap function argument
 
     my ($arg_href) = @_;
 
@@ -215,13 +221,15 @@ sub create_error_trap_function {
     my $trap_function_name;
 
     ## Flatten argument(s)
-    my $job_id_href;
+    my $job_ids_ref;
+    my $sacct_format_fields_ref;
     my $log_file_ref;
     my $FILEHANDLE;
     my $trap_function_call;
 
     my $tmpl = {
-	job_id_href => { default => {}, strict_type => 1, store => \$job_id_href},
+	job_ids_ref  => { default => [], strict_type => 1, store => \$job_ids_ref},
+	sacct_format_fields_ref => { default => [], strict_type => 1, store => \$sacct_format_fields_ref},
 	log_file_ref => { default => \$$, strict_type => 1, store => \$log_file_ref},
 	FILEHANDLE => { required => 1, store => \$FILEHANDLE},
 	trap_function_call => { default => q{$(error "$previous_command" "$?")},
@@ -237,20 +245,22 @@ sub create_error_trap_function {
     ## Create error handling function and trap
     say $FILEHANDLE $trap_function_name.q?() {?, "\n";
     say $FILEHANDLE "\t".q?local program="$1"?;
-    say $FILEHANDLE "\t".q?local return_code="$2"?;
-    say $FILEHANDLE "\t".q?## Display error message and exit?;
-    say $FILEHANDLE "\t".q?echo "${program}: ${return_code}: Unknown Error - ExitCode=$return_code" 1>&2?;
-    say $FILEHANDLE "\t".q?exit 1?;
+    say $FILEHANDLE "\t".q?local return_code="$2"?, "\n";
 
-    if ( (defined($job_id_href)) && (keys %$job_id_href)
+    if ( (defined($job_ids_ref)) && (@$job_ids_ref)
 	&& (defined($$log_file_ref)) && ($$log_file_ref) ) {
 
 	## Output SLURM info on each job via sacct command and write to log file(.status)
-	track_progress({job_id_href => $job_id_href,
+	track_progress({job_ids_ref => \@{ $job_ids_ref },
+			sacct_format_fields_ref => \@{ $sacct_format_fields_ref },
 			FILEHANDLE => $FILEHANDLE,
 			log_file_ref => $log_file_ref,
 		       });
     }
+
+    say $FILEHANDLE "\t".q?## Display error message and exit?;
+    say $FILEHANDLE "\t".q?echo "${program}: ${return_code}: Unknown Error - ExitCode=$return_code" 1>&2?;
+    say $FILEHANDLE "\t".q?exit 1?;
     say $FILEHANDLE q?}?;
 
     ## Enable trap function with trap signal(s)
@@ -335,33 +345,61 @@ sub track_progress {
 
 ##Function : Output SLURM info on each job via sacct command and write to log file(.status)
 ##Returns  : ""
-##Arguments: $job_id_href, $log_file_ref, $FILEHANDLE
-##         : $job_id_href  => The job_id hash {REF}
-##         : $log_file_ref => The log file {REF}
-##         : $FILEHANDLE   => Sbatch filehandle to write to
+##Arguments: $job_ids_ref, $sacct_format_fields_ref, $log_file_ref, $FILEHANDLE
+##         : $job_ids_ref             => Job ids
+##         : $sacct_format_fields_ref => Format and fields of sacct output
+##         : $log_file_ref            => The log file {REF}
+##         : $FILEHANDLE              => Sbatch filehandle to write to
 
     my ($arg_href) = @_;
 
+    ## Default(s)
+    my $sacct_format_fields_ref;
+
     ## Flatten argument(s)
-    my $job_id_href;
+    my $job_ids_ref;
     my $log_file_ref;
     my $FILEHANDLE;
 
     my $tmpl = {
-	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
+	job_ids_ref  => { default => [], strict_type => 1, store => \$job_ids_ref},
+	sacct_format_fields_ref => { default => ["jobid",
+						 "jobname%50",
+						 "account",
+						 "partition",
+						 "alloccpus",
+						 "TotalCPU",
+						 "elapsed",
+						 "start",
+						 "end",
+						 "state",
+						 "exitcode"],
+				     strict_type => 1, store => \$sacct_format_fields_ref},
 	log_file_ref => { default => \$$, strict_type => 1, store => \$log_file_ref},
 	FILEHANDLE => { store => \$FILEHANDLE},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    if (keys %$job_id_href) {
+    use Workloadmanager::Slurm qw(sacct);
 
-	print $FILEHANDLE "\t".q?sacct --format=jobid,jobname%50,account,partition,alloccpus,TotalCPU,elapsed,start,end,state,exitcode -j ?;
-	print $FILEHANDLE join(',', @{ $job_id_href->{PAN}{PAN} }), " ";
+    if (@$job_ids_ref) {
+
+	## Copy array
+	my @reformat_sacct_header = @{ $sacct_format_fields_ref };
+
+	## Remove "%digits" from headers
+	foreach my $element (@reformat_sacct_header) {
+
+	    $element =~ s/%\d+//g;
+	}
+	my @command = sacct({fields_format_ref => \@{ $sacct_format_fields_ref },
+			     job_ids_ref => \@{ $job_ids_ref },
+			    });
+	print $FILEHANDLE "\t".join(" ", @command)." ";
 	print $FILEHANDLE q?| ?;
-	print $FILEHANDLE q?perl -nae 'my @headers=(jobid,jobname,account,partition,alloccpus,TotalCPU,elapsed,start,end,state,exitcode); if($. == 1) {print "#".join("\t", @headers), "\n"} if ($.>=3 && $F[0]!~/.batch/) {print join("\t", @F), "\n"}' ?;
-	say $FILEHANDLE q?> ?.$$log_file_ref.".status";
+	print $FILEHANDLE q?perl -nae 'my @headers=(?.join(",", @reformat_sacct_header).q?); if($. == 1) {print "#".join("\t", @headers), "\n"} if ($.>=3 && $F[0]!~/.batch/) {print join("\t", @F), "\n"}' ?;
+	say $FILEHANDLE q?> ?.$$log_file_ref.".status", "\n";
     }
 }
 

@@ -808,6 +808,13 @@ foreach my $parameter_name (@parameter_keys_to_check) {
 			     });
 }
 
+## Check that the module core number do not exceed the maximum per node
+foreach my $program_name (keys %{ $active_parameter{module_core_number} }) {
+
+    $active_parameter{module_core_number}{$program_name} = check_max_core_number({max_cores_per_node => $active_parameter{max_cores_per_node},
+										  core_number => $active_parameter{module_core_number}{$program_name},
+										 });
+}
 
 ## Parameters that have elements as MIP program names
 my @parameter_elements_to_check = ("associated_program", "decompose_normalize_references");
@@ -872,9 +879,12 @@ check_vep_directories({vep_directory_path_ref => \$active_parameter{vep_director
 		      });
 
 ## Check that the supplied vcfanno toml frequency file match record 'file=' within toml config file
-check_vcfanno_toml({vcfanno_file_toml => $active_parameter{sv_vcfanno_config},
-		    vcfanno_file_freq => $active_parameter{sv_vcfanno_config_file},
-		   });
+if ( ($active_parameter{psv_combinevariantcallsets} > 0) && ($active_parameter{sv_vcfanno} > 0) ) {
+
+    check_vcfanno_toml({vcfanno_file_toml => $active_parameter{sv_vcfanno_config},
+			vcfanno_file_freq => $active_parameter{sv_vcfanno_config_file},
+		       });
+}
 
 check_snpsift_keys({snpsift_annotation_files_href => \%{ $active_parameter{snpsift_annotation_files} },
 		    snpsift_annotation_outinfo_key_href => \%{ $active_parameter{snpsift_annotation_outinfo_key} },
@@ -927,11 +937,23 @@ my %priority_call_parameter = (variant_callers => "gatk_combinevariants_prioriti
     );
 while ( my ($variant_caller_type, $prioritize_parameter_name) = each (%priority_call_parameter) ) {
 
-    check_prioritize_variant_callers({parameter_href => \%parameter,
-				      active_parameter_href => \%active_parameter,
-				      variant_callers_ref => \@{ $parameter{dynamic_parameter}{$variant_caller_type} },
-				      parameter_names_ref => \$prioritize_parameter_name,
-				     });
+    ## Check if we have any active callers
+    my $activate_caller_tracker = 0;
+    foreach my $variant_caller (@{ $parameter{dynamic_parameter}{$variant_caller_type} }) {
+
+	if ($active_parameter{$variant_caller} > 0) { 
+
+	    $activate_caller_tracker++
+	}
+    }
+    if ($activate_caller_tracker > 0) {
+
+	check_prioritize_variant_callers({parameter_href => \%parameter,
+					  active_parameter_href => \%active_parameter,
+					  variant_callers_ref => \@{ $parameter{dynamic_parameter}{$variant_caller_type} },
+					  parameter_names_ref => \$prioritize_parameter_name,
+					 });
+    }
 }
 
 
@@ -18470,7 +18492,7 @@ sub check_max_core_number {
 ##Returns  : "$core_number"
 ##Arguments: $max_cores_per_node, $core_number
 ##         : $max_cores_per_node => The max number of cores per node 
-##         : $core_number           => The number of cores to allocate
+##         : $core_number        => The number of cores to allocate
 
     my ($arg_href) = @_;
 
@@ -19995,7 +20017,8 @@ sub program_prerequisites {
 				       });
 	say $FILEHANDLE "\n";
 
-	create_housekeeping_function({job_id_href => $job_id_href,
+	create_housekeeping_function({job_ids_ref => \@{ $job_id_href->{PAN}{PAN} },
+				      sacct_format_fields_ref => \@{ $active_parameter_href->{sacct_format_fields} },
 				      log_file_ref => \$active_parameter_href->{log_file},
 				      FILEHANDLE => $FILEHANDLE,
 				      directory_remove => $temp_directory,
@@ -20013,7 +20036,8 @@ sub program_prerequisites {
 		    });
 	
 	## Create error handling function and trap
-	create_error_trap_function({job_id_href => $job_id_href,
+	create_error_trap_function({job_ids_ref => \@{ $job_id_href->{PAN}{PAN} },
+				    sacct_format_fields_ref => \@{ $active_parameter_href->{sacct_format_fields} },
 				    log_file_ref => \$active_parameter_href->{log_file},
 				    FILEHANDLE => $FILEHANDLE,
 				    trap_signals_ref => ["ERR"],
@@ -23873,15 +23897,15 @@ sub add_to_sample_info {
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
 
-    if (defined($active_parameter_href->{analysis_type})) {
+    if (exists($active_parameter_href->{analysis_type})) {
 
 	$sample_info_href->{analysis_type} = $active_parameter_href->{analysis_type};
     }
-    if (defined($active_parameter_href->{expected_coverage})) {
+    if (exists($active_parameter_href->{expected_coverage})) {
 
 	$sample_info_href->{expected_coverage} = $active_parameter_href->{expected_coverage};
     }
-    if (defined($active_parameter_href->{gatk_path})) {
+    if (exists($active_parameter_href->{gatk_path})) {
 
 	if ($active_parameter_href->{gatk_path}=~/GenomeAnalysisTK-([^,]+)/) {
 
@@ -23895,7 +23919,7 @@ sub add_to_sample_info {
 	    $sample_info_href->{program}{gatk}{version} = $ret;
 	}
     }
-    if (defined($active_parameter_href->{picardtools_path})) {  #To enable addition of version to sample_info
+    if (exists($active_parameter_href->{picardtools_path})) {  #To enable addition of version to sample_info
 
 	if ($active_parameter_href->{picardtools_path}=~/picard-tools-([^,]+)/) {
 
@@ -23909,17 +23933,21 @@ sub add_to_sample_info {
 	    $sample_info_href->{program}{picardtools}{version} = $ret;
 	}
     }
-    if ( ($active_parameter_href->{pbwa_mem} == 1) || ($active_parameter_href->{psambamba_depth} == 1) || ($active_parameter_href->{markduplicates_sambamba_markdup} == 1)) {  #To enable addition of version to sample_info as Sambamba does not generate version tag in output
+    my @sambamba_programs = ("pbwa_mem", "psambamba_depth", "markduplicates_sambamba_markdup");
+    foreach my $program (@sambamba_programs) {
 
-	if (! $active_parameter_href->{dry_run_all}) {
+	if ( (exists($active_parameter_href->{$program})) && ($active_parameter_href->{$program} == 1) ) {
 
-	    my $regexp = q?perl -nae 'if($_=~/sambamba\s(\S+)/) {print $1;last;}'?;
-	    my $ret = (`sambamba 2>&1 | $regexp`);
-	    chomp($ret);
-	    $sample_info_href->{program}{sambamba}{version} = $ret;
+	    if (! $active_parameter_href->{dry_run_all}) {
+
+		my $regexp = q?perl -nae 'if($_=~/sambamba\s(\S+)/) {print $1;last;}'?;
+		my $ret = (`sambamba 2>&1 | $regexp`);
+		chomp($ret);
+		$sample_info_href->{program}{sambamba}{version} = $ret;
+	    }
 	}
     }
-    if (defined($active_parameter_href->{pcnvnator})) {  #To enable addition of version to sample_info
+    if (exists($active_parameter_href->{pcnvnator})) {  #To enable addition of version to sample_info
 
 	if ( ($active_parameter_href->{pcnvnator} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
 
@@ -23935,12 +23963,12 @@ sub add_to_sample_info {
 	$sample_info_href->{human_genome_build}{source} = $file_info_href->{human_genome_reference_source};
 	$sample_info_href->{human_genome_build}{version} = $file_info_href->{human_genome_reference_version};
     }
-    if (defined($active_parameter_href->{pedigree_file}) ) {
+    if (exists($active_parameter_href->{pedigree_file}) ) {
 
 	$sample_info_href->{pedigree_file}{path} = $active_parameter_href->{pedigree_file};  #Add pedigree_file to sample_info
-	$sample_info_href->{pedigree_file_analysis}{path} = catfile($outdata_dir, $$family_id_ref, "qc_pedigree.yaml");  #Add pedigree_file info used in this analysis to SampleInfoFile
+	$sample_info_href->{pedigree_file_analysis}{path} = catfile($outdata_dir, $$family_id_ref, "qc_pedigree.yaml");  #Add pedigree_file info used in this analysis to sample_info_file
     }
-    if (defined($active_parameter_href->{log_file})) {
+    if (exists($active_parameter_href->{log_file})) {
 
 	my $path = dirname(dirname($active_parameter_href->{log_file}));
 	$sample_info_href->{log_file_dir} = $path;  #Add log_file_dir to SampleInfoFile
@@ -24573,10 +24601,10 @@ sub check_vt_for_references {
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
 	vt_references_ref => { required => 1, defined => 1, default => [], strict_type => 1, store => \$vt_references_ref},
 	vt_decompose => { default => 0,
-			  allow => [0, 1],
+			  allow => [undef, 0, 1],
 			  strict_type => 1, store => \$vt_decompose},
 	vt_normalize => { default => 0,
-			  allow => [0, 1],
+			  allow => [undef, 0, 1],
 			  strict_type => 1, store => \$vt_normalize},
     };
 
@@ -25304,7 +25332,7 @@ sub check_prioritize_variant_callers {
 	}
 	if ($active_parameter_href->{$variant_caller} == 0) { #Only NOT active programs
 
-	    if ( ( any {$_ eq $variant_caller_alias} @priority_calls ) ) {  #If element IS part of string
+	    if ( ( any {$_ eq $variant_caller_alias} @priority_calls ) ) {  #If element is part of string
 
 		$log->fatal($$parameter_names_ref." contains deactivated variant caller: '".$variant_caller_alias."'");
 		exit 1;
@@ -25450,7 +25478,7 @@ sub check_aligner {
 	    }
 	}
     }
-    if ($aligner{total_active_aligner_count} > 1) {
+    if ( (exists($aligner{total_active_aligner_count})) && ($aligner{total_active_aligner_count} > 1) ) {
 
 	$log->fatal($USAGE, "\n");
 	$log->fatal("You have activate more than 1 aligner: ".join(", ", @{ $aligner{active_aligners} }).". MIP currently only supports 1 aligner per analysis.", "\n");
