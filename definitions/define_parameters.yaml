@@ -172,11 +172,10 @@ module_core_number:
     pevaluation: 1
     pgatk_variantevalall: 1
     pgatk_variantevalexome: 1
-    ptiddit: 1
-    pmanta: 16
     pdelly_call: 16
     pdelly_reformat: 16
     pcnvnator: 16
+    pmanta: 16
     psv_combinevariantcallsets: 1
     psv_varianteffectpredictor: 16
     psv_vcfparser: 16
@@ -895,6 +894,7 @@ ptiddit:
   file_tag: _tiddit
   program_name_path:
    - TIDDIT
+   - svdb
   outdir_name: tiddit
   outfile_suffix: ".vcf"
   program_type: structural_variant_callers

@@ -45,7 +45,6 @@ BEGIN {
            -pmf/--perl_modules_force Force installation of perl modules
            -pic/--picardtools Set the picardtools version (Default: "2.3.0"),
            -sbb/--sambamba Set the sambamba version (Default: "0.6.1")
-           -vct/--vcftools Set the vcftools version (Default: "0.1.14")
            -bet/--bedtools Set the bedtools version (Default: "2.25.0")
            -vt/--vt Set the vt version (Default: "0.57")
            -plk/--plink  Set the plink version (Default: "160224")
@@ -127,7 +126,6 @@ $parameter{mip_scripts} = "Your current MIP version";
 $parameter{reference_dir} = undef;  #MIPs
 $parameter{picardtools} = "2.3.0";
 $parameter{sambamba} = "0.6.1";
-$parameter{vcftools} = "0.1.14";
 $parameter{bedtools} = "2.25.0";
 $parameter{vt} = "gitRepo";
 $parameter{plink2} = "160316";
@@ -140,8 +138,8 @@ $parameter{rhocall_path} = catdir($ENV{HOME}, "rhocall");
 
 $parameter{cnvnator} = "0.3.3";
 $parameter{cnvnator_root_binary} = "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz";
-$parameter{tiddit} = "1.0.2";
-$parameter{svdb} = "1.0.3"; 
+$parameter{tiddit} = "1.1.0";
+$parameter{svdb} = "1.0.5"; 
 
 ## Define default parameters
 my %array_parameter;
@@ -190,7 +188,6 @@ GetOptions('env|conda_environment:s'  => \$parameter{conda_environment},
            'pmf|perl_modules_force' =>  \$parameter{perl_modules_force},
 	   'pic|picardtools:s' => \$parameter{picardtools},
 	   'sbb|sambamba:s' => \$parameter{sambamba},
-	   'vct|vcftools:s' => \$parameter{vcftools},
 	   'bet|bedtools:s' =>\$parameter{bedtools},
 	   'vt|vt:s' => \$parameter{vt},
 	   'plk|plink2:s' => \$parameter{plink2},
@@ -369,12 +366,6 @@ if ($parameter{prefer_shell}) {
 
 if (@{ $parameter{select_programs} }) {
 
-    if ( ( grep {$_ eq "vcftools"} @{ $parameter{select_programs} } ) ) { #If element is part of array
-
-	vcftools({parameter_href => \%parameter,
-		  FILEHANDLE => $BASHFILEHANDLE,
-		 });
-    }
     if ( ( grep {$_ eq "mip_scripts"} @{ $parameter{select_programs} } ) ) { #If element is part of array
 
 	mip_scripts({parameter_href => \%parameter,
@@ -407,10 +398,6 @@ if (@{ $parameter{select_programs} }) {
     }
 }
 else {
-
-    vcftools({parameter_href => \%parameter,
-	      FILEHANDLE => $BASHFILEHANDLE,
-	     });
 
     mip_scripts({parameter_href => \%parameter,
 		 FILEHANDLE => $BASHFILEHANDLE,
@@ -1262,101 +1249,6 @@ sub sambamba {
 }
 
 
-sub vcftools {
-
-##vcftools
-
-##Function : Install vcftools
-##Returns  : ""
-##Arguments: $parameter_href, $FILEHANDLE
-##         : $parameter_href => Holds all parameters
-##         : $FILEHANDLE     => Filehandle to write to
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $parameter_href;
-    my $FILEHANDLE;
-
-    my $tmpl = {
-	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
-	FILEHANDLE => { required => 1, defined => 1, store => \$FILEHANDLE},
-    };
-
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    my $pwd = cwd();
-
-    ## Check if the binary of the program being installed already exists
-    if(check_conda_bin_file_exists({parameter_href => $parameter_href,
-				    program_name => "vcftools",
-				   })) {
-
-	return
-    }
-
-    ## Install vcftools
-    print $FILEHANDLE "### Install vcftools\n";
-
-    ## Create the temporary install directory
-    create_install_dir({FILEHANDLE => $FILEHANDLE,
-		       });
-
-    ## Download
-    print $FILEHANDLE "## Download vcftools\n";
-    Program::Download::Wget::wget({url => "https://github.com/vcftools/vcftools/releases/download/v".$parameter_href->{vcftools}."/vcftools-".$parameter_href->{vcftools}.".tar.gz",
-				   FILEHANDLE => $FILEHANDLE,
-				   quiet => $parameter_href->{quiet},
-				   verbose => $parameter_href->{verbose},
-				   outfile_path => "vcftools-".$parameter_href->{vcftools}.".tar.gz",
-				  });
-    print $FILEHANDLE "\n\n";
-
-    ## Extract
-    print $FILEHANDLE "## Extract\n";
-    print $FILEHANDLE "tar xvf vcftools-".$parameter_href->{vcftools}.".tar.gz";
-    print $FILEHANDLE "\n\n";
-
-    ## Export PERL5LIB environment variable
-    print $FILEHANDLE "## Export PERL5LIB environment variable\n";
-    print $FILEHANDLE q?export PERL5LIB=?.$Bin.q?/vcftools-?.$parameter_href->{vcftools}.q?/src/perl/?;
-    print $FILEHANDLE "\n\n";
-
-    ## Move to vcftools directory
-    print $FILEHANDLE "## Move to vcftools directory\n";
-    cd({directory_path => "vcftools-".$parameter_href->{vcftools},
-	FILEHANDLE => $FILEHANDLE,
-       });
-    print $FILEHANDLE "\n\n";
-
-    ## Configure
-    my $filePath = $parameter{conda_path}.q?/envs/?.$parameter_href->{conda_environment};
-
-    print $FILEHANDLE "## Configure", "\n";
-    print $FILEHANDLE q?./configure --prefix=?.$filePath, "\n";
-    print $FILEHANDLE "make", "\n";
-    print $FILEHANDLE "make install", "\n";
-    print $FILEHANDLE "\n\n";
-
-    ## Move perl Module
-    print $FILEHANDLE "## Copy perl module\n";
-    cp({FILEHANDLE => $FILEHANDLE,
-	infile_path => catdir("src", "perl", "Vcf.pm"),
-	outfile_path => catdir(q?$HOME?, q?perl-?.$parameter_href->{perl_version}, "lib", "perl5"),
-       });
-    print $FILEHANDLE "\n\n";
-
-    ## Remove the temporary install directory
-    remove_install_dir({FILEHANDLE => $FILEHANDLE,
-			pwd => $pwd,
-		       });
-
-    ## Reset perl envionment
-    print $FILEHANDLE q?PERL5LIB=~/perl-?.$parameter_href->{perl_version}.q?/lib/perl5?;
-    print $FILEHANDLE "\n\n";
-}
-
-
 sub bedtools {
 
 ##bedtools
@@ -2151,7 +2043,7 @@ sub tiddit {
 
     ## Download
     print $FILEHANDLE "## Download Tiddit\n";
-    Program::Download::Wget::wget({url => "https://github.com/SciLifeLab/TIDDIT/archive/".$parameter_href->{tiddit}.".zip",
+    Program::Download::Wget::wget({url => "https://github.com/J35P312/TIDDIT/archive/".$parameter_href->{tiddit}.".zip",
 				   FILEHANDLE => $FILEHANDLE,
 				   quiet => $parameter_href->{quiet},
 				   verbose => $parameter_href->{verbose},

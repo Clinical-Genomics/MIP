@@ -1663,18 +1663,14 @@ if ($active_parameter{ptiddit} > 0) {  #Run Tiddit
 
     $log->info("[Tiddit]\n");
 
-    foreach my $sample_id (@{ $active_parameter{sample_ids} }) {
-
-	tiddit({parameter_href => \%parameter,
-		active_parameter_href => \%active_parameter,
-		sample_info_href => \%sample_info,
-		file_info_href => \%file_info,
-		infile_lane_no_ending_href => \%infile_lane_no_ending,
-		job_id_href => \%job_id,
-		sample_id_ref => \$sample_id,
-		program_name => "tiddit",
-	       });
-    }
+    tiddit({parameter_href => \%parameter,
+	    active_parameter_href => \%active_parameter,
+	    sample_info_href => \%sample_info,
+	    file_info_href => \%file_info,
+	    infile_lane_no_ending_href => \%infile_lane_no_ending,
+	    job_id_href => \%job_id,
+	    program_name => "tiddit",
+	   });
 }
 
 
@@ -2889,7 +2885,8 @@ sub mqccollect {
     my $outfamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref);
 
     qccollect({infile_path => $active_parameter_href->{qccollect_sampleinfo_file},
-	       outfile_path => $outfamily_directory."/".$$family_id_ref."_qc_metrics.yaml",
+	       outfile_path => catfile($outfamily_directory, $$family_id_ref."_qc_metrics.yaml"),
+	       log_file_path => catfile($outfamily_directory, $$family_id_ref."_qccollect.log"),
 	       regexp_file_path => $active_parameter_href->{qccollect_regexp_file},
 	       skip_evaluation => $active_parameter_href->{qccollect_skip_evaluation},
 	       FILEHANDLE => $FILEHANDLE,
@@ -8898,7 +8895,7 @@ sub chanjo_sexcheck {
 			program_name => "chanjo_sexcheck",
 			infile => $infile,
 			outdirectory => $outsample_directory,
-			outfile_ending => $outfile_no_ending.$outfile_suffix,
+			outfile_ending => $outfile_tag.$outfile_suffix,
 			outdata_type => "infile_dependent"
 		       });
 	sample_info_qc({sample_info_href => $sample_info_href,
@@ -10584,7 +10581,7 @@ sub sv_combinevariantcallsets {
 
 	foreach my $structural_variant_caller (@{ $parameter_href->{dynamic_parameter}{structural_variant_callers} }) {
 
-	    if ( ($active_parameter_href->{$structural_variant_caller} > 0) && ($structural_variant_caller !~/pmanta|pdelly_reformat/) ) {  #Expect vcf. Special case: manta and delly are processed by joint calling and per family
+	    if ( ($active_parameter_href->{$structural_variant_caller} > 0) && ($structural_variant_caller !~/pmanta|pdelly_reformat|ptiddit/) ) {  #Expect vcf. Special case: manta, delly and tiddit are processed by joint calling and per family
 
 		## Assign directories
 		my $program_outdirectory_name = $parameter_href->{$structural_variant_caller}{outdir_name};
@@ -10628,7 +10625,7 @@ sub sv_combinevariantcallsets {
     ## Merged sample files to one family file (samples > 1) else reformat to standardise
     foreach my $structural_variant_caller (@{ $parameter_href->{dynamic_parameter}{structural_variant_callers} }) {
 
-	if ($active_parameter_href->{$structural_variant_caller} > 0 && ($structural_variant_caller !~/pmanta|pdelly_reformat/) ) {  #Expect vcf. Special case: manta is processed by joint calling and per family
+	if ($active_parameter_href->{$structural_variant_caller} > 0 && ($structural_variant_caller !~/pmanta|pdelly_reformat|ptiddit/) ) {  #Expect vcf. Special case: manta is processed by joint calling and per family
 	    
 	    ## Assemble file paths by adding file ending
 	    my @file_paths = map { $file_path_no_ending{$_}{$structural_variant_caller}.$suffix{$structural_variant_caller}.".gz" } @{ $active_parameter_href->{sample_ids} };
@@ -10665,7 +10662,7 @@ sub sv_combinevariantcallsets {
     ## Migrate joint calling per family callers like Manta and Delly
     foreach my $structural_variant_caller (@{ $parameter_href->{dynamic_parameter}{structural_variant_callers} }) {
 
-	if ($active_parameter_href->{$structural_variant_caller} > 0  && ($structural_variant_caller =~/pmanta|pdelly_reformat/) ) {  #Expect vcf. Special case: manta and delly are processed by joint calling and per family
+	if ($active_parameter_href->{$structural_variant_caller} > 0  && ($structural_variant_caller =~/pmanta|pdelly_reformat|ptiddit/) ) {  #Expect vcf. Special case: manta, delly, tiddit are processed by joint calling and per family
 
 	    ## Assign directories
 	    my $program_outdirectory_name = $parameter_href->{$structural_variant_caller}{outdir_name};
@@ -12200,18 +12197,18 @@ sub tiddit {
 
 ##Function : Call structural variants using tiddit
 ##Returns  : ""
-##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref
+##Arguments: $parameter_href, $active_parameter_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $sample_id_ref, family_id_ref, $temp_directory_ref, $reference_dir_ref, $outaligner_dir_ref, $call_type
 ##         : $parameter_href             => The parameter hash {REF}
 ##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
 ##         : $sample_info_href           => Info on samples and family hash {REF}
 ##         : $file_info_href             => The file_info hash {REF}
 ##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
 ##         : $job_id_href                => The job_id hash {REF}
-##         : $sample_id_ref              => The sample_id
 ##         : $family_id_ref              => The family_id {REF}
 ##         : $temp_directory_ref         => The temporary directory {REF}
 ##         : $reference_dir_ref          => MIP reference directory {REF}
 ##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
+##         : $call_type                  => The variant call type
 
     my ($arg_href) = @_;
 
@@ -12220,6 +12217,7 @@ sub tiddit {
     my $temp_directory_ref;
     my $reference_dir_ref;
     my $outaligner_dir_ref;
+    my $call_type;
 
     ## Flatten argument(s)
     my $parameter_href;
@@ -12228,7 +12226,6 @@ sub tiddit {
     my $file_info_href;
     my $infile_lane_no_ending_href;
     my $job_id_href;
-    my $sample_id_ref;
     my $program_name;
 
     my $tmpl = {
@@ -12238,7 +12235,6 @@ sub tiddit {
 	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
 	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
 	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
-	sample_id_ref => { required => 1, defined => 1, default => \$$, strict_type => 1, store => \$sample_id_ref},
 	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
 	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
 			   strict_type => 1, store => \$family_id_ref},
@@ -12248,6 +12244,7 @@ sub tiddit {
 			       strict_type => 1, store => \$reference_dir_ref},
 	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
 				strict_type => 1, store => \$outaligner_dir_ref},
+	call_type => { default => "_SV", strict_type => 1, store => \$call_type},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -12260,33 +12257,33 @@ sub tiddit {
     ## Filehandles
     my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
 
+    ## Adjust core number depending on user supplied input exists or not and max number of cores
+    my $core_number = adjust_core_number({module_core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+					  modifier_core_number => scalar(@{ $active_parameter_href->{sample_ids} }),
+					  max_cores_per_node => $active_parameter_href->{max_cores_per_node},
+					 });
 
     ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
     my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
 								 job_id_href => $job_id_href,
 								 FILEHANDLE => $FILEHANDLE,
-								 directory_id => $$sample_id_ref,
+								 directory_id => $$family_id_ref,
 								 program_name => $program_name,
 								 program_directory => catfile(lc($$outaligner_dir_ref), lc($program_outdirectory_name)),
-								 core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+								 core_number => $core_number,
 								 process_time => $active_parameter_href->{module_time}{"p".$program_name},
 								 temp_directory => $$temp_directory_ref
 								});
 
     ## Assign directories
-    my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref);
-    my $outsample_directory = catdir($active_parameter_href->{outdata_dir}, $$sample_id_ref, $$outaligner_dir_ref, $program_outdirectory_name);
-    $parameter_href->{"p".$program_name}{$$sample_id_ref}{indirectory} = $outsample_directory; #Used downstream
-
-    ## Add merged infile name after merging all BAM files per sample_id
-    my $infile = $file_info_href->{$$sample_id_ref}{merge_infile};  #Alias
+    my $outfamily_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref, $program_outdirectory_name);
+    $parameter_href->{"p".$program_name}{indirectory} = $outfamily_directory;  #Used downstream
 
     ## Assign file_tags
-    my $infile_tag = $file_info_href->{$$sample_id_ref}{pgatk_baserecalibration}{file_tag};
-    my $outfile_tag = $file_info_href->{$$sample_id_ref}{"p".$program_name}{file_tag};
-    my $infile_no_ending = $infile.$infile_tag;
-    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
-    my $outfile_path_no_ending = catfile($$temp_directory_ref, $infile.$outfile_tag);
+    my %file_path_no_ending;
+    my $outfile_tag = $file_info_href->{$$family_id_ref}{"p".$program_name}{file_tag};
+    my $outfile_no_ending = $$family_id_ref.$outfile_tag.$call_type;
+    my $outfile_path_no_ending = catfile($$temp_directory_ref, $outfile_no_ending);
 
     ## Assign suffix
     my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
@@ -12301,26 +12298,70 @@ sub tiddit {
 					  file_suffix => $parameter_href->{"p".$program_name}{outfile_suffix},
 					 });
 
-    ## Copy file(s) to temporary directory
-    say $FILEHANDLE "## Copy file(s) to temporary directory";
-    migrate_file({FILEHANDLE => $FILEHANDLE,
-		  infile_path => catfile($insample_directory, $infile_no_ending.substr($infile_suffix, 0, 2)."*"), #".bam" -> ".b*" for getting index as well
-		  outfile_path => $active_parameter_href->{temp_directory}
-		 });
+    my $core_counter = 1;
+    while ( my ($sample_id_index, $sample_id) = each (@{ $active_parameter_href->{sample_ids} }) ) {  #Collect infiles for all sample_ids
+
+	## Assign directories
+	my $insample_directory = catdir($active_parameter_href->{outdata_dir}, $sample_id, $$outaligner_dir_ref);
+
+	## Add merged infile name after merging all BAM files per sample_id
+	my $infile = $file_info_href->{$sample_id}{merge_infile};  #Alias
+
+	## Assign file_tags
+	my $infile_tag = $file_info_href->{$sample_id}{pgatk_baserecalibration}{file_tag};
+	my $infile_no_ending = $infile.$infile_tag;
+	my $sample_outfile_no_ending = $infile.$outfile_tag;
+
+	$file_path_no_ending{$sample_id}{in} = catfile($$temp_directory_ref, $infile_no_ending);
+	$file_path_no_ending{$sample_id}{out} = catfile($$temp_directory_ref, $sample_outfile_no_ending);
+
+	print_wait({counter_ref => \$sample_id_index,
+		    core_number_ref => \$core_number,
+		    core_counter_ref => \$core_counter,
+		    FILEHANDLE => $FILEHANDLE,
+		   });
+
+	## Copy file(s) to temporary directory
+	say $FILEHANDLE "## Copy file(s) to temporary directory";
+	migrate_file({FILEHANDLE => $FILEHANDLE,
+		      infile_path => catfile($insample_directory, $infile_no_ending.substr($infile_suffix, 0, 2)."*"), #".bam" -> ".b*" for getting index as well
+		      outfile_path => $$temp_directory_ref,
+		     });
+    }
     say $FILEHANDLE "wait", "\n";
 
-    ## Tiddit
-    sv({FILEHANDLE => $FILEHANDLE,
-	infile_path => $file_path_no_ending.$infile_suffix,
-	outfile_path_prefix => $outfile_path_no_ending,
-	minimum_number_supporting_pairs => $active_parameter_href->{tiddit_minimum_number_supporting_pairs},
-       });
+    $core_counter = 1;  # Restart counter
+    while ( my ($sample_id_index, $sample_id) = each (@{ $active_parameter_href->{sample_ids} }) ) {  #Collect infiles for all sample_ids
+
+	print_wait({counter_ref => \$sample_id_index,
+		    core_number_ref => \$core_number,
+		    core_counter_ref => \$core_counter,
+		    FILEHANDLE => $FILEHANDLE,
+		   });
+
+	## Tiddit
+	sv({FILEHANDLE => $FILEHANDLE,
+	    infile_path => $file_path_no_ending{$sample_id}{in}.$infile_suffix,
+	    outfile_path_prefix => $file_path_no_ending{$sample_id}{out},
+	    minimum_number_supporting_pairs => $active_parameter_href->{tiddit_minimum_number_supporting_pairs},
+	   });
+	say $FILEHANDLE "& \n";
+    }
+    say $FILEHANDLE "wait", "\n";
+
+    ## Get parameters
+    ## Tiddit sample outfiles
+    my @infile_paths = map { $file_path_no_ending{$_}{out}.$outfile_suffix } (keys %file_path_no_ending);
+    Program::Variantcalling::Svdb::merge({infile_paths_ref => \@infile_paths,
+					  outfile_path => $outfile_path_no_ending.$outfile_suffix,
+					  FILEHANDLE => $FILEHANDLE,
+					 });
     say $FILEHANDLE "\n";
 
     ## Copies file from temporary directory.
     say $FILEHANDLE "## Copy file from temporary directory";
     migrate_file({infile_path => $outfile_path_no_ending.$outfile_suffix."*",
-		  outfile_path => $outsample_directory,
+		  outfile_path => $outfamily_directory,
 		  FILEHANDLE => $FILEHANDLE,
 		 });
     say $FILEHANDLE "wait", "\n";
@@ -12331,15 +12372,15 @@ sub tiddit {
 
 	sample_info_qc({sample_info_href => $sample_info_href,
 			program_name => "tiddit",
-			outdirectory => $outsample_directory,
-			outfile_ending => $infile.$outfile_tag.$outfile_suffix,
+			outdirectory => $outfamily_directory,
+			outfile_ending => $outfile_path_no_ending.$outfile_suffix,
 			outdata_type => "static"
 		       });
+
 	submit_job({active_parameter_href => $active_parameter_href,
 		    sample_info_href => $sample_info_href,
 		    job_id_href => $job_id_href,
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
-		    sample_id => $$sample_id_ref,
 		    dependencies => "case_dependency",
 		    path => $jobid_chain,
 		    sbatch_file_name => $file_name,
@@ -23944,6 +23985,7 @@ sub add_to_sample_info {
 		my $ret = (`sambamba 2>&1 | $regexp`);
 		chomp($ret);
 		$sample_info_href->{program}{sambamba}{version} = $ret;
+		last;  #Only need to check once
 	    }
 	}
     }
