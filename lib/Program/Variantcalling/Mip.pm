@@ -32,7 +32,7 @@ sub vcfparser {
 
 ##vcfparser
 
-##Function : Perl wrapper for writing MIP vcfparser recipe to $FILEHANDLE or return commands array. Based on vcfparser 1.2.9.
+##Function : Perl wrapper for writing MIP vcfparser recipe to $FILEHANDLE or return commands array. Based on vcfparser 1.2.10.
 ##Returns  : "@commands"
 ##Arguments: $range_feature_annotation_columns_ref, $select_feature_annotation_columns_ref $infile_path, $outfile_path, $stderrfile_path, $range_feature_file_path, $select_feature_file_path, $select_feature_matching_column, $select_outfile, $FILEHANDLE, $append_stderr_info, $parse_vep, $per_gene, $padding
 ##         : $range_feature_annotation_columns_ref  => Range file annotation columns
@@ -86,10 +86,10 @@ sub vcfparser {
 				allow => [0, 1],
 				strict_type => 1, store => \$append_stderr_info},
 	parse_vep => { default => 0,
-		       allow => [0, 1, 2],
+		       allow => [undef, 0, 1, 2],
 		       strict_type => 1, store => \$parse_vep},
 	per_gene => { default => 0,
-		      allow => [0, 1],
+		      allow => [undef, 0, 1],
 		      strict_type => 1, store => \$per_gene},
 	padding => { allow => [undef, qr/^\d+$/],
 		     strict_type => 1, store => \$padding},
@@ -105,11 +105,11 @@ sub vcfparser {
     ## Options
     if ($parse_vep) {
 
-	push(@commands, "--parse_vep 1");
+	push(@commands, "--parse_vep");
     }
     if ($per_gene) {
 
-	push(@commands, "--per_gene ".$per_gene);
+	push(@commands, "--per_gene");
     }
     if (defined($padding)) {
 

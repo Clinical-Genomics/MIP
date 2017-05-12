@@ -96,13 +96,15 @@ sub annotate {
 
 ##Function : Perl wrapper for writing rhocall annotate recipe to $FILEHANDLE or return commands array. Based on rhocall 0.3.
 ##Returns  : "@commands"
-##Arguments: $infile_path, $outfile_path, $stderrfile_path, $stdoutfile_path, $FILEHANDLE, $bedfile_path
+##Arguments: $infile_path, $outfile_path, $stderrfile_path, $stdoutfile_path, $FILEHANDLE, $bedfile_path, $rohfile_path, $v14
 ##         : $infile_path     => Infile path to read from
 ##         : $outfile_path    => Outfile path to write to
 ##         : $stderrfile_path => Stderr file path to write to
 ##         : $stdoutfile_path => Stdoutfile file path to write to
 ##         : $FILEHANDLE      => Filehandle to write to
 ##         : $bedfile_path    => BED file with AZ windows
+##         : $rohfile_path    => Rho style bcftools file
+##         : $v14             => Bcftools v1.4 or newer roh file including RG calls
 
     my ($arg_href) = @_;
 
@@ -113,6 +115,8 @@ sub annotate {
     my $stdoutfile_path;
     my $FILEHANDLE;
     my $bedfile_path;
+    my $rohfile_path;
+    my $v14;
 
     my $tmpl = {
 	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path },
@@ -121,6 +125,10 @@ sub annotate {
 	stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
 	FILEHANDLE => { store => \$FILEHANDLE },
 	bedfile_path => { strict_type => 1, store => \$bedfile_path },
+	rohfile_path => { strict_type => 1, store => \$rohfile_path },
+	v14 => { default => 0,
+		 allow => [0, 1],
+		 strict_type => 1, store => \$v14},
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -129,6 +137,14 @@ sub annotate {
     my @commands = qw(rhocall annotate);  #Stores commands depending on input parameters
 
     ## Options
+    if ($v14) {
+
+	push(@commands, "--v14 ");
+    }
+    if ($rohfile_path) {
+
+	push(@commands, "-r ".$rohfile_path);
+    }
     if ($bedfile_path) {
 
 	push(@commands, "-b ".$bedfile_path);

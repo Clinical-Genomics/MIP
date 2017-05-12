@@ -33,12 +33,13 @@ sub qccollect {
 
 ##Function : Perl wrapper for writing qccollect recipe to already open $FILEHANDLE or return commands array. Based on qccollect 2.0.2.
 ##Returns  : "@commands"
-##Arguments: $infile_path, $outfile_path, $regexp_file_path, $stderrfile_path, $stdoutfile_path, $FILEHANDLE, $append_stderr_info, $skip_evaluation
+##Arguments: $infile_path, $outfile_path, $regexp_file_path, $stderrfile_path, $stdoutfile_path, $log_file_path, $FILEHANDLE, $append_stderr_info, $skip_evaluation
 ##         : $infile_path        => Infile path
 ##         : $outfile_path       => Outfile path
 ##         : $regexp_file_path   => Regular expression file
 ##         : $stderrfile_path    => Stderrfile path
 ##         : $stdoutfile_path    => Stdoutfile path
+##         : $log_file_path      => Log file path
 ##         : $FILEHANDLE         => Filehandle to write to
 ##         : $append_stderr_info => Append stderr info to file
 ##         : $skip_evaluation    => Skip evaluation step
@@ -55,6 +56,7 @@ sub qccollect {
     my $regexp_file_path;
     my $stderrfile_path;
     my $stdoutfile_path;
+    my $log_file_path;
     my $FILEHANDLE;
 
     my $tmpl = { 
@@ -63,6 +65,7 @@ sub qccollect {
 	regexp_file_path => { required => 1, defined => 1, strict_type => 1, store => \$regexp_file_path},
 	stderrfile_path => { strict_type => 1, store => \$stderrfile_path},
 	stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
+	log_file_path => { strict_type => 1, store => \$log_file_path },
 	FILEHANDLE => { store => \$FILEHANDLE},
 	append_stderr_info => { default => 0,
 				allow => [0, 1],
@@ -78,6 +81,10 @@ sub qccollect {
     my @commands = qw(qccollect);  #Stores commands depending on input parameters
 
     ## Options
+    if ($log_file_path) {
+
+        push(@commands, "--log_file ".$log_file_path);
+    }
     if ($regexp_file_path) {
 
 	push(@commands, "--regexp_file ".$regexp_file_path);
@@ -90,12 +97,12 @@ sub qccollect {
     ## Infile
     if ($infile_path) {
 
-	push(@commands, $infile_path);
+	push(@commands, "--sample_info_file ".$infile_path);
     }
     ## Outfile
     if ($outfile_path) {
 
-	push(@commands, "> ".$outfile_path);
+	push(@commands, "--outfile ".$outfile_path);
     }
     if ($stdoutfile_path) {
 

@@ -704,9 +704,10 @@ sub roh {
 
 ##roh
 
-##Function : Perl wrapper for writing bcftools roh recipe to $FILEHANDLE or return commands array. Based on bcftools 1.3.1.
+##Function : Perl wrapper for writing bcftools roh recipe to $FILEHANDLE or return commands array. Based on bcftools 1.4.1.
 ##Returns  : "@commands"
-##Arguments: $infile_path, $outfile_path, $stderrfile_path, $stdoutfile_path, $FILEHANDLE, $af_file_path, $skip_indels, $sample_id
+##Arguments:  $sample_ids_ref, $infile_path, $outfile_path, $stderrfile_path, $stdoutfile_path, $FILEHANDLE, $af_file_path, $skip_indels
+##         : $sample_ids_ref  => Sample to analyze
 ##         : $infile_path     => Infile path to read from
 ##         : $outfile_path    => Outfile path to write to
 ##         : $stderrfile_path => Stderr file path to write to
@@ -714,7 +715,6 @@ sub roh {
 ##         : $FILEHANDLE      => Filehandle to write to
 ##         : $af_file_path    => Read allele frequencies from file (CHR\tPOS\tREF,ALT\tAF)
 ##         : $skip_indels     => Skip indels as their genotypes are enriched for errors
-##         : $sample_id       => Sample to analyze
 
     my ($arg_href) = @_;
 
@@ -722,22 +722,22 @@ sub roh {
     my $skip_indels;
 
     ## Flatten argument(s)
+    my $sample_ids_ref;
     my $infile_path;
     my $outfile_path;
     my $stderrfile_path;
     my $stdoutfile_path;
     my $FILEHANDLE;
     my $af_file_path;
-    my $sample_id;
 
     my $tmpl = {
+	sample_ids_ref => { default => [], strict_type => 1, store => \$sample_ids_ref },
 	infile_path => { required => 1, defined => 1, strict_type => 1, store => \$infile_path },
 	outfile_path => { strict_type => 1, store => \$outfile_path },
 	stderrfile_path => { strict_type => 1, store => \$stderrfile_path },
 	stdoutfile_path => { strict_type => 1, store => \$stdoutfile_path },
 	FILEHANDLE => { store => \$FILEHANDLE },
 	af_file_path => { strict_type => 1, store => \$af_file_path },
-	sample_id => { strict_type => 1, store => \$sample_id },
 	skip_indels => { default => 0,
 			 allow => [0, 1],
 			 strict_type => 1, store => \$skip_indels },
@@ -757,9 +757,9 @@ sub roh {
 
 	push(@commands, "--skip-indels");
     }
-    if ($sample_id) {
+    if (@$sample_ids_ref) {
 
-	push(@commands, "--sample ".$sample_id);
+	push(@commands, "--samples ".join(",", @$sample_ids_ref));
     }
 
     ## Infile
