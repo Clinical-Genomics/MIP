@@ -6801,7 +6801,7 @@ sub rhocall {
 									     });
     }
 
-    say $FILEHANDLE "## bcftools rho calculation\n";
+    say $FILEHANDLE "## bcftools rho calculation";
     ## Create file commands for xargs
     ($xargs_file_counter, $xargs_file_name) = xargs_command({FILEHANDLE => $FILEHANDLE,
 							     XARGSFILEHANDLE => $XARGSFILEHANDLE,
@@ -6814,35 +6814,30 @@ sub rhocall {
     foreach my $contig (@{ $file_info_href->{contigs_size_ordered} }) {
 
 	## Get parameters
-	my $sample_id;
+	my @sample_ids;
 	if ( (defined($parameter_href->{dynamic_parameter}{affected}))
 	     && (@{ $parameter_href->{dynamic_parameter}{affected} }) ) {
 
-	    $sample_id = $parameter_href->{dynamic_parameter}{affected}[0];
+	    push(@sample_ids, $parameter_href->{dynamic_parameter}{affected}[0]);
 	}
 	else {
 
-	    $sample_id = $active_parameter_href->{sample_ids}[0];  #No affected - pick any sample_id
+	    push(@sample_ids, $active_parameter_href->{sample_ids}[0]);  #No affected - pick any sample_id
 	}
 
 	roh({infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
 	     outfile_path => $file_path_no_ending."_".$contig.".roh",
 	     af_file_path => $active_parameter_href->{rhocall_frequency_file},
-	     sample_id => $sample_id,
+	     sample_ids_ref => \@sample_ids,
 	     skip_indels => 1,  #Skip indels as their genotypes are enriched for errors
 	     FILEHANDLE => $XARGSFILEHANDLE,
 	    });
 	print $XARGSFILEHANDLE "; ";
 
-	Program::Variantcalling::Rhocall::aggregate({infile_path => $file_path_no_ending."_".$contig.".roh",
-						     outfile_path => $file_path_no_ending."_".$contig.".roh.bed",
-						     FILEHANDLE => $XARGSFILEHANDLE,
-						    });
-	print $XARGSFILEHANDLE "; ";
-
 	Program::Variantcalling::Rhocall::annotate({infile_path => $file_path_no_ending."_".$contig.$infile_suffix,
 						    outfile_path => $outfile_path_no_ending."_".$contig.$outfile_suffix,
-						    bedfile_path => $file_path_no_ending."_".$contig.".roh.bed",
+						    rohfile_path => $file_path_no_ending."_".$contig.".roh",
+						    v14 => 1,
 						    FILEHANDLE => $XARGSFILEHANDLE,
 						   });
 	say $XARGSFILEHANDLE "\n";

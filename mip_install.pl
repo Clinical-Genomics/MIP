@@ -43,23 +43,23 @@ BEGIN {
            -pevs/--perl_skip_test Skip "tests" in perl installation
            -pm/--perl_modules Set the perl modules to be installed via cpanm (Default: ["Modern::Perl", "List::Util", "IPC::System::Simple", "Path::Iterator::Rule", "YAML", "Log::Log4perl", "Set::IntervalTree", "Net::SSLeay",P, "LWP::Simple", "LWP::Protocol::https", "Archive::Zip", "Archive::Extract", "DBI","JSON", "DBD::mysql", "CGI", "Sereal::Encoder", "Sereal::Decoder", "Bio::Root::Version", "Module::Build"])
            -pmf/--perl_modules_force Force installation of perl modules
-           -pic/--picardtools Set the picardtools version (Default: "2.3.0"),
-           -sbb/--sambamba Set the sambamba version (Default: "0.6.1")
-           -bet/--bedtools Set the bedtools version (Default: "2.25.0")
+           -pic/--picardtools Set the picardtools version (Default: "2.5.9"),
+           -sbb/--sambamba Set the sambamba version (Default: "0.6.6")
+           -bet/--bedtools Set the bedtools version (Default: "2.26.0")
            -vt/--vt Set the vt version (Default: "0.57")
            -plk/--plink  Set the plink version (Default: "160224")
            -snpg/--snpeff_genome_versions Set the snpEff genome version (Default: ["GRCh37.75", "GRCh38.82"])
-           -vep/--varianteffectpredictor Set the VEP version (Default: "87")
+           -vep/--varianteffectpredictor Set the VEP version (Default: "88")
            -vepa/--vep_auto_flag Set the VEP auto installer flags
 	   -vepc/--vep_cache_dir Specify the cache directory to use (whole path; defaults to "~/miniconda/envs/conda_environment/ensembl-tools-release-varianteffectpredictorVersion/cache")
            -vepa/--vep_assemblies Select the assembly version (Default: ["GRCh37"])
            -vepp/--vep_plugin Supply a comma separated list of VEP plugins (Default: "UpDownDistance,LoFtool,Lof")
-           -rhc/--rhocall Set the rhocall version (Default: "0.3")
+           -rhc/--rhocall Set the rhocall version (Default: "0.4")
            -rhcp/--rhocall_path Set the path to where to install rhocall (Defaults: "HOME/rhocall")
            -cnvn/--cnvnator Set the cnvnator version (Default: 0.3.3)
            -cnvnr/--cnvnator_root_binary Set the cnvnator root binary (Default: "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz")
-           -tid/--tiddit Set the tiddit version (Default: "1.0.1")
-           -svdb/--svdb Set the svdb version (Default: "1.0.3")
+           -tid/--tiddit Set the tiddit version (Default: "1.1.1")
+           -svdb/--svdb Set the svdb version (Default: "1.0.5")
 
            ## Utility
            -psh/--prefer_shell Shell will be used for overlapping shell and biconda installations (Supply flag to enable)
@@ -90,27 +90,27 @@ $parameter{bioconda}{bwakit} = "0.7.12";
 $parameter{bioconda_bwakit_patch} = "-0";  #For correct softlinking in share and bin in conda env
 $parameter{bioconda}{fastqc} = "0.11.5";
 $parameter{bioconda}{cramtools} = "3.0.b47";
-$parameter{bioconda}{samtools} = "1.3.1";
-$parameter{bioconda}{bcftools} = "1.3.1";
-$parameter{bioconda}{snpeff} = "4.2";
-$parameter{bioconda_snpeff_patch} = "-0";  #For correct softlinking in share and bin in conda env
-$parameter{bioconda}{picard} = "2.5.0";
-$parameter{bioconda_picard_patch} = "-1";  #For correct softlinking in share and bin in conda env
-$parameter{bioconda}{htslib} = "1.3.1";
+$parameter{bioconda}{samtools} = "1.4.1";
+$parameter{bioconda}{bcftools} = "1.4.1";
+$parameter{bioconda}{snpeff} = "4.3";
+$parameter{bioconda_snpeff_patch} = "-3";  #For correct softlinking in share and bin in conda env
+$parameter{bioconda}{snpsift} = "4.3";
+$parameter{bioconda_snpsift_patch} = "-2";  #For correct softlinking in share and bin in conda env
+$parameter{bioconda}{picard} = "2.9.2";
+$parameter{bioconda_picard_patch} = "-0";  #For correct softlinking in share and bin in conda env
+$parameter{bioconda}{htslib} = "1.4.1";
 $parameter{bioconda}{bedtools} = "2.26.0";
 $parameter{bioconda}{vt} = "2015.11.10";
-$parameter{bioconda}{sambamba} = "0.6.5";
-$parameter{bioconda}{freebayes} = "1.0.2.0";
-$parameter{bioconda}{delly} = "0.7.6";
-$parameter{bioconda}{manta} = "1.0.3";
+$parameter{bioconda}{sambamba} = "0.6.6";
+$parameter{bioconda}{freebayes} = "1.1.0";
+$parameter{bioconda}{delly} = "0.7.7";
+$parameter{bioconda}{manta} = "1.1.0";
 $parameter{bioconda_manta_patch} = "-0";
-$parameter{bioconda}{multiqc} = "0.8dev0";
+$parameter{bioconda}{multiqc} = "0.9.1a0";
 $parameter{bioconda}{plink2} = "1.90b3.35";
 $parameter{bioconda}{vcfanno} = "0.1.0";
 $parameter{bioconda}{gcc} = "4.8.5";  #Required for CNVnator
 $parameter{bioconda}{cmake} = "3.3.1";
-#$parameter{bioconda}{boost} = "1.57.0";
-#$parameter{bioconda_boost_patch} = "-4";
 
 
 ##Perl Modules
@@ -130,15 +130,15 @@ $parameter{bedtools} = "2.25.0";
 $parameter{vt} = "gitRepo";
 $parameter{plink2} = "160316";
 $parameter{snpeff} = "v4_2";
-$parameter{varianteffectpredictor} = "87";
+$parameter{varianteffectpredictor} = "88.8";
 $parameter{vep_auto_flag} = "alcf";
 $parameter{vep_plugin} = "UpDownDistance,LoFtool,Lof";
-$parameter{rhocall} = "0.3";
+$parameter{rhocall} = "0.4";
 $parameter{rhocall_path} = catdir($ENV{HOME}, "rhocall");
 
 $parameter{cnvnator} = "0.3.3";
 $parameter{cnvnator_root_binary} = "root_v6.06.00.Linux-slc6-x86_64-gcc4.8.tar.gz";
-$parameter{tiddit} = "1.1.0";
+$parameter{tiddit} = "1.1.1";
 $parameter{svdb} = "1.0.5"; 
 
 ## Define default parameters
@@ -172,7 +172,7 @@ $array_parameter{perl_modules}{default} = ["Modern::Perl",  #MIP
 					   "File::Copy::Recursive", #VEP
     ];
 
-my $install_version = "1.0.1";
+my $install_version = "1.2.0";
 
 ###User Options
 GetOptions('env|conda_environment:s'  => \$parameter{conda_environment},
@@ -750,6 +750,21 @@ sub install_bioconda_modules {
 				     genome_version_ref => \$genome_version,
 				    });
 		}
+	    }
+	}
+	if ($program eq "snpsift") {
+
+	    ## Define binaries
+	    my @snpsift_binaries = ("SnpSift.jar",
+		);
+
+	    foreach my $binary (@snpsift_binaries) {
+
+		create_softlink({parameter_href => $parameter_href,
+				 FILEHANDLE => $BASHFILEHANDLE,
+				 binary => catfile($parameter{conda_path}, "envs", $parameter{conda_environment}, "share", "snpsift-".$parameter_href->{bioconda}{snpsift}.$parameter_href->{bioconda_snpsift_patch}, $binary),
+				 softlink => $binary,
+				});
 	    }
 	}
 	if ($program eq "manta") {
@@ -1693,7 +1708,14 @@ sub varianteffectpredictor {
 
     ## Move to VariantEffectPredictor directory
     print $FILEHANDLE "## Move to VariantEffectPredictor directory\n";
-    cd({directory_path => catdir("ensembl-tools-release-".$parameter_href->{varianteffectpredictor}, "scripts", "variant_effect_predictor"),
+
+    ## Needed since VEP only uses major version to name the zip file
+    my $vep_install_version = $parameter_href->{varianteffectpredictor};
+    if ($vep_install_version =~/(\d+)/) {
+
+	$vep_install_version = $1;
+    }
+    cd({directory_path => catdir("ensembl-tools-release-".$vep_install_version, "scripts", "variant_effect_predictor"),
 	FILEHANDLE => $FILEHANDLE,
        });
     print $FILEHANDLE "\n\n";
@@ -2021,7 +2043,7 @@ sub tiddit {
 
     ## Check if the binary of the program being installed already exists
     if (check_conda_bin_file_exists({parameter_href => $parameter_href,
-				     program_name => "tiddit",
+				     program_name => "TIDDIT",
 				    })) {
 
 	return

@@ -44,7 +44,7 @@ BEGIN {
 
     $USAGE =
 	basename($0).qq{ infile.vcf [OPTIONS] > outfile.vcf
-           -pvep/--parse_vep Parse VEP transcript specific entries (Default: 0 (=no))
+           -pvep/--parse_vep Parse VEP transcript specific entries (Supply flag to enable)
            -rf/--range_feature_file (tsv)
            -rf_ac/--range_feature_annotation_columns
            -sf/--select_feature_file (tsv)
@@ -52,7 +52,7 @@ BEGIN {
            -sf_ac/--select_feature_annotation_columns
            -sof/--select_outfile (vcf)
            -pad/--padding (Default: "5000" nucleotides)
-           -peg/--per_gene Output most severe consequence transcript (Default: 0 (=no))
+           -peg/--per_gene Output most severe consequence transcript (Supply flag to enable)
            -wst/--write_software_tag (Default: "1")
            -l/--log_file Log file (Default: "vcfparser.log")
            -h/--help Display this help message
@@ -63,12 +63,15 @@ BEGIN {
 my ($infile, $select_feature_file, $select_feature_matching_column, $range_feature_file, $select_outfile);
 
 ##Scalar parameters with defaults
-my ($parse_vep, $write_software_tag, $padding, $per_gene, $log_file) = (0, 1, 5000, 0, catfile(cwd(), "vcfparser.log"));
+my ($write_software_tag, $padding, $log_file) = (1, 5000, 0, catfile(cwd(), "vcfparser.log"));
+
+##Boolean
+my ($parse_vep, $per_gene);
 
 my (@range_feature_annotation_columns, @select_feature_annotation_columns);
 my (%consequence_severity, %range_data, %select_data, %snpeff_cmd, %tree, %meta_data);
 
-my $vcfparser_version = "1.2.9";
+my $vcfparser_version = "1.2.10";
 
 ## Enables cmd "vcfparser.pl" to print usage help
 if(!@ARGV) {
@@ -83,7 +86,7 @@ elsif ( (defined($ARGV)) && ($ARGV[0]!~/^-/) ) { #Collect potential infile - oth
 }
 
 ###User Options
-GetOptions('pvep|parse_vep:s' => \$parse_vep,
+GetOptions('pvep|parse_vep' => \$parse_vep,
 	   'rf|range_feature_file:s' => \$range_feature_file,
 	   'rf_ac|range_feature_annotation_columns:s'  => \@range_feature_annotation_columns, #Comma separated list
 	   'sf|select_feature_file:s' => \$select_feature_file,
@@ -92,7 +95,7 @@ GetOptions('pvep|parse_vep:s' => \$parse_vep,
 	   'sof|select_outfile:s' => \$select_outfile,
 	   'wst|write_software_tag:n' => \$write_software_tag,
 	   'pad|padding:n' => \$padding,
-	   'peg|per_gene:n' => \$per_gene,
+	   'peg|per_gene' => \$per_gene,
 	   'l|log_file:s' => \$log_file,
 	   'h|help' => sub { say STDOUT $USAGE; exit;},  #Display help text
 	   'v|version' => sub { say STDOUT "\n".basename($0)." ".$vcfparser_version, "\n"; exit;},  #Display version number
@@ -467,10 +470,10 @@ sub read_infile_vcf {
 	select_feature_file => { default => 0,
 				 strict_type => 1, store => \$select_feature_file},
 	per_gene => { default => 0,
-		      allow => [0, 1],
+		      allow => [undef, 0, 1],
 		      strict_type => 1, store => \$per_gene},
 	parse_vep => { default => 0,
-		       allow => [0, 1],
+		       allow => [undef, 0, 1],
 		       strict_type => 1, store => \$parse_vep},
 	write_software_tag => { default => 1,
 				allow => [0, 1],
@@ -705,7 +708,7 @@ sub read_infile_vcf {
 
 		if ($line_elements_counter == 7) {
 
-		    if (! $parse_vep) {
+		    if ( ! $parse_vep) {
 
 			if ($record{select_transcripts}) {
 			    
@@ -870,7 +873,7 @@ sub parse_vep_csq {
 	consequence_href  => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$consequence_href},
 	consequence_severity_href  => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$consequence_severity_href},
 	per_gene => { default => 0,
-		      allow => [0, 1],
+		      allow => [undef, 0, 1],
 		      strict_type => 1, store => \$per_gene},
     };
     
