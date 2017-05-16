@@ -43,24 +43,6 @@ project_id:
    - mip
   data_type: SCALAR
   type: mip
-email:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  mandatory: no
-  type: mip
-email_type:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: F
-  type: mip
-max_cores_per_node:
-  associated_program: 
-   - mip
-  data_type: SCALAR
-  default: 16
-  type: mip
 config_file:
   associated_program:
    - mip
@@ -87,6 +69,167 @@ config_file_analysis:
   default: 0
   type: path
   update_path: absolute_path
+supported_capture_kit:
+  associated_program:
+   - mip
+  data_type: HASH
+  default:
+    nimblegen_seqcapezexome.v2: genome_reference_source_version_nimblegen_seqcapezexome_targets_-v2-.bed
+    nimblegen_seqcapezexome.v3: genome_reference_source_version_nimblegen_seqcapezexome_targets_-v3-.bed
+    agilent_sureselect.v2: genome_reference_source_version_agilent_sureselect_targets_-v2-.bed
+    agilent_sureselect.v3: genome_reference_source_version_agilent_sureselect_targets_-v3-.bed
+    agilent_sureselect.v4: genome_reference_source_version_agilent_sureselect_targets_-v4-.bed
+    agilent_sureselect.v5: genome_reference_source_version_agilent_sureselect_targets_-v5-.bed
+    agilent_sureselect_cre.v1: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
+    agilent_sureselect_focusedexome.v1: genome_reference_source_version_agilent_sureselect_targets_focusedexome_-v1-.bed
+    latest: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
+  type: mip
+decompose_normalize_references:
+  associated_program:
+   - mip
+  data_type: ARRAY
+  default:
+   - gatk_realigner_indel_known_sites
+   - gatk_baserecalibration_known_sites
+   - gatk_haplotypecaller_snp_known_set
+   - gatk_variantrecalibration_resource_snv
+   - gatk_variantrecalibration_resource_indel
+   - vt_genmod_filter_1000g
+   - sv_vcfanno_config_file
+   - gatk_varianteval_gold
+   - gatk_varianteval_dbsnp
+   - snpsift_annotation_files
+  element_separator: ,
+  type: mip
+pedigree_file:
+  associated_program:
+   - mip
+  build_file: no_auto_build
+  data_type: SCALAR
+  type: path
+  update_path: absolute_path
+sample_ids:
+  associated_program:
+   - mip
+  element_separator: ,
+  data_type: ARRAY
+  type: mip
+analysis_type:
+  associated_program:
+   - mip
+  data_type: HASH
+  default:
+   - wgs
+  type: mip
+expected_coverage:
+  associated_program:
+   - mip
+  data_type: HASH
+  mandatory: no
+  type: mip
+infile_dirs:
+  associated_program:
+   - mip
+  exists_check: directory
+  data_type: HASH
+  default:
+   - not_set_yet
+  type: path
+  update_path: absolute_path
+sample_info_file:
+  associated_program:
+   - mip
+  build_file: no_auto_build
+  data_type: SCALAR
+  default: not_set_yet
+  exists_check: file
+  type: path
+  update_path: absolute_path
+reference_dir:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  exists_check: directory
+  type: path
+  update_path: absolute_path
+dry_run_all:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 0
+  type: mip
+genomic_set:
+  associated_program:
+   - mip
+  build_file: no_auto_build
+  data_type: SCALAR
+  exists_check: file
+  mandatory: no
+  reference: reference_dir
+  type: path
+reduce_io:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: mip
+replace_iupac:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 0
+  type: mip
+print_program_mode:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 2
+  type: mip
+## HumanGenomeReference
+human_genome_reference:
+  associated_program:
+   - mip
+   - pbwa_mem
+   - pbwa_aln
+   - pbwa_sampe
+   - pgatk_realigner
+   - pgatk_baserecalibration
+   - pgatk_haplotypecaller
+   - pgatk_genotypegvcfs
+   - psamtools_mpileup
+   - pgatk_variantrecalibration
+   - pgatk_phasebytransmission
+   - pgatk_readbackedphasing
+   - pgatk_variantevalall
+   - pgatk_variantevalexome
+   - pannovar
+   - ppicardtools_collecthsmetrics
+   - ppicardtools_collectmultiplemetrics
+  build_file: yes_auto_build
+  data_type: SCALAR
+  default: GRCh37_homo_sapiens_-d5-.fasta
+  exists_check: file
+  reference: reference_dir
+  type: path
+####Bash
+bash_set_errexit:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 0
+  type: mip
+bash_set_nounset:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 0
+  type: mip
+bash_set_pipefail:
+  associated_program:
+   - mip
+  data_type: SCALAR
+  default: 1
+  type: mip
 module_time:
   associated_program:
    - mip
@@ -187,100 +330,11 @@ module_core_number:
     panalysisrunstatus: 1
     psacct: 1
   type: mip
-supported_capture_kit:
-  associated_program:
-   - mip
-  data_type: HASH
-  default:
-    nimblegen_seqcapezexome.v2: genome_reference_source_version_nimblegen_seqcapezexome_targets_-v2-.bed
-    nimblegen_seqcapezexome.v3: genome_reference_source_version_nimblegen_seqcapezexome_targets_-v3-.bed
-    agilent_sureselect.v2: genome_reference_source_version_agilent_sureselect_targets_-v2-.bed
-    agilent_sureselect.v3: genome_reference_source_version_agilent_sureselect_targets_-v3-.bed
-    agilent_sureselect.v4: genome_reference_source_version_agilent_sureselect_targets_-v4-.bed
-    agilent_sureselect.v5: genome_reference_source_version_agilent_sureselect_targets_-v5-.bed
-    agilent_sureselect_cre.v1: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
-    agilent_sureselect_focusedexome.v1: genome_reference_source_version_agilent_sureselect_targets_focusedexome_-v1-.bed
-    latest: genome_reference_source_version_agilent_sureselect_targets_cre_-v1-.bed
-  type: mip
-decompose_normalize_references:
-  associated_program:
-   - mip
-  data_type: ARRAY
-  default:
-   - gatk_realigner_indel_known_sites
-   - gatk_baserecalibration_known_sites
-   - gatk_haplotypecaller_snp_known_set
-   - gatk_variantrecalibration_resource_snv
-   - gatk_variantrecalibration_resource_indel
-   - vt_genmod_filter_1000g
-   - sv_vcfanno_config_file
-   - gatk_varianteval_gold
-   - gatk_varianteval_dbsnp
-   - snpsift_annotation_files
-  element_separator: ,
-  type: mip
-pedigree_file:
-  associated_program:
-   - mip
-  build_file: no_auto_build
-  data_type: SCALAR
-  type: path
-  update_path: absolute_path
-source_environment_commands:
-  associated_program:
-   - mip
-  element_separator: " "
-  data_type: ARRAY
-  type: mip
-sample_ids:
-  associated_program:
-   - mip
-  element_separator: ,
-  data_type: ARRAY
-  type: mip
-analysis_type:
-  associated_program:
-   - mip
-  data_type: HASH
-  default:
-   - wgs
-  type: mip
-expected_coverage:
-  associated_program:
-   - mip
-  data_type: HASH
-  mandatory: no
-  type: mip
-infile_dirs:
-  associated_program:
-   - mip
-  exists_check: directory
-  data_type: HASH
-  default:
-   - not_set_yet
-  type: path
-  update_path: absolute_path
-sample_info_file:
-  associated_program:
-   - mip
-  build_file: no_auto_build
-  data_type: SCALAR
-  default: not_set_yet
-  exists_check: file
-  type: path
-  update_path: absolute_path
-reference_dir:
+max_cores_per_node:
   associated_program:
    - mip
   data_type: SCALAR
-  exists_check: directory
-  type: path
-  update_path: absolute_path
-dry_run_all:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 0
+  default: 16
   type: mip
 node_ram_memory:
   associated_program:
@@ -288,71 +342,36 @@ node_ram_memory:
   data_type: SCALAR
   default: 128
   type: mip
-slurm_quality_of_service:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: normal
-  type: mip
 temp_directory:
   associated_program:
    - mip
   data_type: SCALAR
   default: /scratch/$SLURM_JOB_ID
   type: path
-genomic_set:
+email:
   associated_program:
    - mip
-  build_file: no_auto_build
   data_type: SCALAR
-  exists_check: file
   mandatory: no
-  reference: reference_dir
-  type: path
-reduce_io:
-  associated_program:
-   - mip
-  data_type: SCALAR
-  default: 1
   type: mip
-replace_iupac:
+email_type:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 0
+  default: F
   type: mip
-print_program_mode:
+slurm_quality_of_service:
   associated_program:
    - mip
   data_type: SCALAR
-  default: 2
+  default: normal
   type: mip
-## HumanGenomeReference
-human_genome_reference:
+source_environment_commands:
   associated_program:
    - mip
-   - pbwa_mem
-   - pbwa_aln
-   - pbwa_sampe
-   - pgatk_realigner
-   - pgatk_baserecalibration
-   - pgatk_haplotypecaller
-   - pgatk_genotypegvcfs
-   - psamtools_mpileup
-   - pgatk_variantrecalibration
-   - pgatk_phasebytransmission
-   - pgatk_readbackedphasing
-   - pgatk_variantevalall
-   - pgatk_variantevalexome
-   - pannovar
-   - ppicardtools_collecthsmetrics
-   - ppicardtools_collectmultiplemetrics
-  build_file: yes_auto_build
-  data_type: SCALAR
-  default: GRCh37_homo_sapiens_-d5-.fasta
-  exists_check: file
-  reference: reference_dir
-  type: path
+  element_separator: " "
+  data_type: ARRAY
+  type: mip
 ###Programs
 ## GZip
 psplit_fastq_file:

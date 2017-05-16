@@ -95,45 +95,6 @@ check_user_reference({cmd_reference_ref => \%{ $parameter{cmd_reference} },
 		      reference_ref => \% { $parameter{reference} },
 		     });
 
-sub check_user_reference {
-
-##check_user_reference
-
-##Function : Check that the user supplied reference id and version
-##Returns  : ""
-##Arguments: $cmd_reference_ref, $reference_ref,
-##         : $cmd_reference_ref => User supplied reference id and version
-##         : $reference_ref     => Defined reference id and version
-
-    my ($arg_href) = @_;
-
-    ## Flatten argument(s)
-    my $cmd_reference_ref;
-    my $reference_ref;
-
-    my $tmpl = { 
-	cmd_reference_ref => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$cmd_reference_ref},
-	reference_ref => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$reference_ref},
-    };
-     
-    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
-
-    while (my ($reference_id, $version) = each(%$cmd_reference_ref) ) {
-
-	if(! exists($reference_ref->{$reference_id})) {
-
-	    $log->fatal("Cannot find reference key:".$reference_id, "\n");
-	    exit;
-	}
-	elsif (! any {$_ eq $version} @{ $reference_ref->{$reference_id} }) {  #If element is part of array
-
-	    $log->fatal("Cannot find version key: ".$version." reference key:".$reference_id, "\n");
-	    exit;
-	}
-    }
-    
-}
-
 
 ## Set default for array parameters
 Script::Utils::set_default_array_parameters({parameter_href => \%parameter,
@@ -598,3 +559,42 @@ sub update_to_absolute_path {
     }
 }
 
+
+sub check_user_reference {
+
+##check_user_reference
+
+##Function : Check that the user supplied reference id and version
+##Returns  : ""
+##Arguments: $cmd_reference_ref, $reference_ref,
+##         : $cmd_reference_ref => User supplied reference id and version
+##         : $reference_ref     => Defined reference id and version
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $cmd_reference_ref;
+    my $reference_ref;
+
+    my $tmpl = { 
+	cmd_reference_ref => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$cmd_reference_ref},
+	reference_ref => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$reference_ref},
+    };
+     
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    while (my ($reference_id, $version) = each(%$cmd_reference_ref) ) {
+
+	if(! exists($reference_ref->{$reference_id})) {
+
+	    $log->fatal("Cannot find reference key:".$reference_id, "\n");
+	    exit;
+	}
+	elsif (! any {$_ eq $version} @{ $reference_ref->{$reference_id} }) {  #If element is part of array
+
+	    $log->fatal("Cannot find version key: ".$version." reference key:".$reference_id, "\n");
+	    exit;
+	}
+    }
+    
+}

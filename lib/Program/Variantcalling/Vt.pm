@@ -34,16 +34,18 @@ sub decompose {
 
 ##Function : Perl wrapper for writing Vt decompose recipe to $FILEHANDLE or return commands array. Based on Vt v0.5.
 ##Returns  : "@commands"
-##Arguments: $infile_path, $outfile_path, $stderrfile_path, $FILEHANDLE, $smart_decomposition
+##Arguments: $infile_path, $outfile_path, $stderrfile_path, $FILEHANDLE, $append_stderr_info, $smart_decomposition
 ##         : $infile_path         => Infile path to read from
 ##         : $outfile_path        => Outfile path to write to
 ##         : $stderrfile_path     => Stderr file path to write to {OPTIONAL}
 ##         : $FILEHANDLE          => Filehandle to write to
+##         : $append_stderr_info   => Append stderr info to file
 ##         : $smart_decomposition => Smart decomposition
 
     my ($arg_href) = @_;
 
     ## Default(s)
+    my $append_stderr_info;
     my $smart_decomposition;
 
     ## Flatten argument(s)
@@ -57,6 +59,9 @@ sub decompose {
 	outfile_path => { strict_type => 1, store => \$outfile_path },
 	stderrfile_path => { strict_type => 1, store => \$stderrfile_path},
 	FILEHANDLE => { store => \$FILEHANDLE},
+	append_stderr_info => { default => 0,
+				allow => [undef, 0, 1],
+				strict_type => 1, store => \$append_stderr_info},
 	smart_decomposition => { default => 0,
 		     allow => [0, 1],
 		     strict_type => 1, store => \$smart_decomposition},
@@ -83,8 +88,15 @@ sub decompose {
 	push(@commands, $infile_path);
     }
     if ($stderrfile_path) {
+	
+	if ($append_stderr_info) {
 
-	push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+	    push(@commands, "2>> ".$stderrfile_path);  #Redirect and append stderr output to program specific stderr file
+	}
+	else {
+	    
+	    push(@commands, "2> ".$stderrfile_path);  #Redirect stderr output to program specific stderr file
+	}
     }
     if($FILEHANDLE) {
 	
@@ -129,7 +141,7 @@ sub normalize {
 	stderrfile_path => { strict_type => 1, store => \$stderrfile_path},
 	FILEHANDLE => { store => \$FILEHANDLE},
 	append_stderr_info => { default => 0,
-				allow => [0, 1],
+				allow => [undef, 0, 1],
 				strict_type => 1, store => \$append_stderr_info},
 	no_fail_inconsistent_reference => { default => 0,
 					    allow => [0, 1],

@@ -69,13 +69,9 @@ BEGIN {
                -rd/--reference_dir Reference(s) directory (mandatory)
                -p/--project_id The project ID (mandatory)
                -s/--sample_ids The sample ID(s)(comma sep; mandatory)
-               -em/--email E-mail (defaults to "")
-               -emt/--email_type E-mail type (defaults to F (=FAIL);Options: B (=BEGIN) and/or F (=FAIL) and/or E=(END))
                -odd/--outdata_dir The data output directory (mandatory)
                -osd/--outscript_dir The script files (.sh) output directory (mandatory)
                -f/--family_id Group id of samples to be compared (defaults to "", (Ex: 1 for IDN 1-1-1A))
-               -mot/--module_time Set the time allocation for each module (Format: module "program name"=time(Hours))
-               -mcn/--module_core_number Set the number of cores for each module (Format: module "program_name"=X(cores))
                -sck/--supported_capture_kit Set the capture kit acronym shortcut in pedigree file
                -dnr/--decompose_normalize_references Set the references to be decomposed and normalized (defaults: "gatk_realigner_indel_known_sites", "gatk_baserecalibration_known_sites","gatk_haplotypecaller_snp_known_set", "gatk_variantrecalibration_resource_snv", "gatk_variantrecalibration_resource_indel", "vt_genmod_filter_1000g", "sv_vcfanno_config_file", "gatk_varianteval_gold", "gatk_varianteval_dbsnp","snpsift_annotation_files")
                -ped/--pedigree_file Meta data on samples (defaults to "")
@@ -84,19 +80,13 @@ BEGIN {
                -at/--analysis_type Type of analysis to perform (sample_id=analysis_type, defaults to "wgs";Valid entries: "wgs", "wes", "rapid")
                -pl/--platform Platform/technology used to produce the reads (defaults to "ILLUMINA")
                -ec/--expected_coverage Expected mean target coverage for analysis (sample_id=expected_coverage, defaults to "")
-               -mcn/--max_cores_per_node The maximum number of processor cores per node used in the analysis (defaults to "16")
                -c/--config_file YAML config file for analysis parameters (defaults to "")
                -ccp/--cluster_constant_path Set the cluster constant path (defaults to "")
                -acp/--analysis_constant_path Set the analysis constant path (defaults to "analysis")
                -cfa/--config_file_analysis Write YAML configuration file for analysis parameters (defaults to "")
                -sif/--sample_info_file YAML file for sample info used in the analysis (defaults to "{outdata_dir}/{family_id}/{family_id}_qc_sample_info.yaml")
                -dra/--dry_run_all Sets all programs to dry run mode i.e. no sbatch submission (defaults to "0" (=no))
-               -tmd/--temp_directory Set the temporary directory for all programs (defaults to "/scratch/SLURM_JOB_ID";supply whole path)
                -jul/--java_use_large_pages Use large page memory. (defaults to "0" (=no))
-               -nrm/--node_ram_memory The RAM memory size of the node(s) in GigaBytes (Defaults to 24)
-               -qos/--slurm_quality_of_service SLURM quality of service command in sbatch scripts (defaults to "normal")
-               -sen/--source_environment_commands Source environment command in sbatch scripts (defaults to "")
-
                -ges/--genomic_set Selection of relevant regions post alignment (Format=sorted BED; defaults to "")
                -rio/--reduce_io Run consecutive models at nodes (defaults to "0" (=no))
                -riu/--replace_iupac Replace IUPAC code in alternative alleles with N (defaults to "0" (=no))
@@ -105,6 +95,20 @@ BEGIN {
                -l/--log_file Mip log file (defaults to "{outdata_dir}/{family_id}/mip_log/{date}/{scriptname}_{timestamp}.log")
                -h/--help Display this help message
                -v/--version Display version of MIP
+
+               ####Bash
+               -bse/--bash_set_errexit Set errexit in bash scripts (defaults to "0")
+               -bsu/--bash_set_nounset Set nounset in bash scripts (defaults to "0")
+               -bsp/--bash_set_pipefail Set pipefail in bash scripts (defaults to "0")
+               -mot/--module_time Set the time allocation for each module (Format: module "program name"=time(Hours))
+               -mcn/--module_core_number Set the number of cores for each module (Format: module "program_name"=X(cores))
+               -mcn/--max_cores_per_node The maximum number of processor cores per node used in the analysis (defaults to "16")
+               -nrm/--node_ram_memory The RAM memory size of the node(s) in GigaBytes (Defaults to 24)
+               -tmd/--temp_directory Set the temporary directory for all programs (defaults to "/scratch/SLURM_JOB_ID";supply whole path)
+               -em/--email E-mail (defaults to "")
+               -emt/--email_type E-mail type (defaults to F (=FAIL);Options: B (=BEGIN) and/or F (=FAIL) and/or E=(END))
+               -qos/--slurm_quality_of_service SLURM quality of service command in sbatch scripts (defaults to "normal")
+               -sen/--source_environment_commands Source environment command in sbatch scripts (defaults to "")
 
                ####Programs
                -psfq/--psplit_fastq_file Split fastq files in batches of X reads and exits (defaults to "0" (=no))
@@ -396,13 +400,9 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'rd|reference_dir:s' => \$parameter{reference_dir}{value},  #directory containing references
 	   'p|project_id:s' => \$parameter{project_id}{value},
 	   's|sample_ids:s' => \@{ $parameter{sample_ids}{value} },  #Comma separated list
-	   'em|email:s' => \$parameter{email}{value},  #Email adress
-	   'emt|email_type:s' => \$parameter{email_type}{value},  #Email type
 	   'odd|outdata_dir:s' => \$parameter{outdata_dir}{value},  #One dir above sample id, must supply whole path i.e. /proj/...
 	   'osd|outscript_dir:s' => \$parameter{outscript_dir}{value},   #One dir above sample id, must supply whole path i.e. /proj/...
-	   'f|family_id:s' => \$parameter{family_id}{value},  #Family group ID (Merged to same vcf file after GATK Base Recalibration)
-	   'mcn|module_core_number:s' => \%{ $parameter{module_core_number}{value} },
-	   'mot|module_time:s' => \%{ $parameter{module_time}{value} },
+	   'f|family_id:s' => \$parameter{family_id}{value},  #Family group ID (Merged to same vcf file after GATK base recalibration)
 	   'sck|supported_capture_kit:s' => \%{ $parameter{supported_capture_kit}{value} },
 	   'dnr|decompose_normalize_references:s' => \@{ $parameter{decompose_normalize_references}{value} }, #Reference that should be decomposed and normalized
 	   'ped|pedigree_file:s' => \$parameter{pedigree_file}{value},  #Pedigree file
@@ -411,18 +411,13 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'at|analysis_type:s' => \%{ $parameter{analysis_type}{value} },  #sample_id=analysis_type
 	   'pl|platform:s' => \$parameter{platform}{value},  #Platform/technology used to produce the reads
 	   'ec|expected_coverage:s' => \%{ $parameter{expected_coverage}{value} },  #sample_id=expected_coverage
-	   'mcn|max_cores_per_node=n' => \$parameter{max_cores_per_node}{value},  #Per node
 	   'c|config_file:s' => \$parameter{config_file}{value},
 	   'ccp|cluster_constant_path:s' => \$parameter{cluster_constant_path}{value},
 	   'acp|analysis_constant_path:s' => \$parameter{analysis_constant_path}{value},
 	   'cfa|config_file_analysis:s' => \$parameter{config_file_analysis}{value},
 	   'sif|sample_info_file:s' => \$parameter{sample_info_file}{value},  #Write all info on samples and run to YAML file
 	   'dra|dry_run_all=i' => \$parameter{dry_run_all}{value},
-	   'tmd|temp_directory:s' => \$parameter{temp_directory}{value},
-	   'sen|source_environment_commands=s{,}' => \@{ $parameter{source_environment_commands}{value} },
 	   'jul|java_use_large_pages=n' => \$parameter{java_use_large_pages}{value},
-	   'nrm|node_ram_memory=n' => \$parameter{node_ram_memory}{value},  #Per node
-	   'qos|slurm_quality_of_service=s' => \$parameter{slurm_quality_of_service}{value},
            'ges|genomic_set:s' => \$parameter{genomic_set}{value},  #Selection of relevant regions post alignment and sort
 	   'rio|reduce_io=n' => \$parameter{reduce_io}{value},
 	   'riu|replace_iupac=n' => \$parameter{replace_iupac}{value},
@@ -434,6 +429,19 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'l|log_file:s' => \$parameter{log_file}{value},
 	   'h|help' => sub { say STDOUT $USAGE; exit;},  #Display help text
 	   'v|version' => sub { say STDOUT "\n".basename($0)." ".$mip_version, "\n"; exit;},  #Display version number
+	   ####Bash               
+	   'bse|bash_set_errexit:s' => \$parameter{bash_set_errexit}{value},
+	   'bsu|bash_set_nounset:s' => \$parameter{bash_set_nounset}{value},
+	   'bsp|bash_set_pipefail:s' => \$parameter{bash_set_pipefail}{value},
+	   'em|email:s' => \$parameter{email}{value},  #Email adress
+	   'emt|email_type:s' => \$parameter{email_type}{value},  #Email type
+	   'mcn|module_core_number:s' => \%{ $parameter{module_core_number}{value} },
+	   'mot|module_time:s' => \%{ $parameter{module_time}{value} },
+	   'mcn|max_cores_per_node=n' => \$parameter{max_cores_per_node}{value},  #Per node
+	   'nrm|node_ram_memory=n' => \$parameter{node_ram_memory}{value},  #Per node
+	   'tmd|temp_directory:s' => \$parameter{temp_directory}{value},
+	   'qos|slurm_quality_of_service=s' => \$parameter{slurm_quality_of_service}{value},
+	   'sen|source_environment_commands=s{,}' => \@{ $parameter{source_environment_commands}{value} },
 	   'psfq|psplit_fastq_file=n' => \$parameter{psplit_fastq_file}{value},
 	   'sfqrdb|split_fastq_file_read_batch=n' => \$parameter{split_fastq_file_read_batch}{value},
 	   'pgz|pgzip_fastq=n' => \$parameter{pgzip_fastq}{value},
@@ -3004,7 +3012,7 @@ sub evaluation {
 					     core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
 					     process_time => $active_parameter_href->{module_time}{"p".$program_name},
 					     temp_directory => $$temp_directory_ref,
-					     set_error => 0,  #Special case to allow "vcf.idx" to be created
+					     set_errexit => 0,  #Special case to allow "vcf.idx" to be created
 					     error_trap => 0,  #Special case to allow "vcf.idx" to be created
 					    });
 
@@ -4617,6 +4625,7 @@ sub snpeff {
 		Program::Variantcalling::Snpsift::annotate({verbosity => "v",
 							    infile_path => $infile_path,
 							    outfile_path => $file_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix.".".$xargs_file_counter,
+							    config_file_path => catfile($active_parameter_href->{snpeff_path}, "snpEff.config"),
 							    database_path => $annotation_file,
 							    name_prefix => $name_prefix,
 							    info => $info_key,
@@ -4656,6 +4665,7 @@ sub snpeff {
 		Program::Variantcalling::Snpsift::dbnsfp({annotate_fields_ref => \@{ $active_parameter_href->{snpsift_dbnsfp_annotations} },
 							  infile_path => $file_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix.".".$annotation_infile_number,
 							  outfile_path => $file_path_no_ending."_".$contig.$vcfparser_analysis_type.$infile_suffix.".".$xargs_file_counter,
+							  config_file_path => catfile($active_parameter_href->{snpeff_path}, "snpEff.config"),
 							  database_path => $active_parameter_href->{snpsift_dbnsfp_file},
 							  stderrfile_path => $xargs_file_name.".".$contig.".stderr.txt",
 							  append_stderr_info => 1,
@@ -19839,7 +19849,7 @@ sub program_prerequisites {
 
 ##Function : Creates program directories (info & programData & programScript), program script filenames and writes sbatch header.
 ##Returns  : Path to stdout
-##Arguments: $active_parameter_href, $job_id_href, $FILEHANDLE, $directory_id, $program_directory, $program_name, $call_type, $outdata_dir, $outscript_dir, $temp_directory, $email_type, $source_environment_commands_ref, $slurm_quality_of_service, $core_number, $process_time, $error_trap, $set_error, $pipefail, $sleep
+##Arguments: $active_parameter_href, $job_id_href, $FILEHANDLE, $directory_id, $program_directory, $program_name, $call_type, $outdata_dir, $outscript_dir, $temp_directory, $email_type, $source_environment_commands_ref, $slurm_quality_of_service, $core_number, $process_time, $error_trap, $set_errexit, $set_nounset, $set_pipefail, $sleep
 ##         : $active_parameter_href           => The active parameters for this analysis hash {REF}
 ##         : $job_id_href                     => The job_id hash {REF}
 ##         : $FILEHANDLE                      => FILEHANDLE to write to
@@ -19856,8 +19866,9 @@ sub program_prerequisites {
 ##         : $core_number                     => The number of cores to allocate {Optional}
 ##         : $process_time                    => Allowed process time (Hours) {Optional}
 ##         : $error_trap                      => Error trap switch {Optional}
-##         : $set_error                       => Bash set -e {Optional}
-##         : $pipefail                        => Pipe fail switch {Optional}
+##         : $set_errexit                     => Bash set -e {Optional}
+##         : $set_nounset                     => BAsh set -u {Optional}
+##         : $set_pipefail                        => Pipe fail switch {Optional}
 ##         : $sleep                           => Sleep for X seconds {Optional}
 
     my ($arg_href) = @_;
@@ -19871,8 +19882,9 @@ sub program_prerequisites {
     my $slurm_quality_of_service;
     my $core_number;
     my $process_time;
-    my $set_error;
-    my $pipefail;
+    my $set_errexit;
+    my $set_nounset;
+    my $set_pipefail;
     my $error_trap;
     my $sleep;
 
@@ -19919,12 +19931,15 @@ sub program_prerequisites {
 	slurm_quality_of_service => { default => $arg_href->{active_parameter_href}{slurm_quality_of_service},
 				      allow => ["low", "high", "normal"],
 				      strict_type => 1, store => \$slurm_quality_of_service},
-	set_error => { default => 1,
-		      allow => [0, 1],
-		      strict_type => 1, store => \$set_error},
-	pipefail => { default => 1,
-		      allow => [0, 1],
-		      strict_type => 1, store => \$pipefail},
+	set_nounset => { default => $arg_href->{active_parameter_href}{bash_set_nounset},
+			 allow => [0, 1],
+			 strict_type => 1, store => \$set_nounset},
+	set_errexit => { default => $arg_href->{active_parameter_href}{bash_set_errexit},
+			 allow => [0, 1],
+			 strict_type => 1, store => \$set_errexit},
+	set_pipefail => { default => $arg_href->{active_parameter_href}{bash_set_pipefail},
+			  allow => [0, 1],
+			  strict_type => 1, store => \$set_pipefail},
 	error_trap  => { default => 1,
 			 allow => [0, 1],
 			 strict_type => 1, store => \$error_trap},
@@ -19992,11 +20007,15 @@ sub program_prerequisites {
 
     say $FILEHANDLE "#! /bin/bash -l";
 
-    if ($set_error) {
+    if ($set_errexit) {
 
-	say $FILEHANDLE "set -eu";  #Halt script if command has non-zero exit code (e) or if variable is uninitialised (u)
+	say $FILEHANDLE "set -e";  #Halt script if command has non-zero exit code (e)
     }
-    if ($pipefail) {
+    if ($set_nounset) {
+
+	say $FILEHANDLE "set -u";  #Halt script if variable is uninitialised (u)
+    }
+    if ($set_pipefail) {
 
 	say $FILEHANDLE "set -o pipefail";  #Detect errors within pipes
     }
