@@ -13,6 +13,7 @@ reference:
     - r0.3.1
   clinvar:
     - 20170104
+    - 20170501
   1000g_omni:
     - 2.5
   1000g_indels:
@@ -102,6 +103,15 @@ clinvar:
       outfile_index: GRCh37_clinvar_-2017-01-04-.vcf.gz.tbi
       outfile_check_method: md5sum
       url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/
+    20170501:
+      file: clinvar_20170501.vcf.gz
+      file_check: clinvar_20170501.vcf.gz.md5
+      file_index: clinvar_20170501.vcf.gz.tbi
+      outfile: GRCh37_clinvar_-2017-05-01-.vcf.gz
+      outfile_check: GRCh37_clinvar_-2017-05-01-.vcf.gz.md5
+      outfile_index: GRCh37_clinvar_-2017-05-01-.vcf.gz.tbi
+      outfile_check_method: md5sum
+      url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/
   hg38:
     20170104:
       file: clinvar_20170104.vcf.gz
@@ -115,6 +125,19 @@ clinvar:
       outfile_reformat_command: "perl -n -a -e ' if($_=~/^#/) { print $_;} else { $_ =~ s/^(MT)/M/g; print $_;}' hg38_clinvar_-2017-01-04-.vcf | perl -n -a -e ' if($_=~/^#/) { print $_; } else {$_ =~ s/^(.+)/chr$1/g; print $_; }' > hg38_clinvar_reformat_-2017-01-04-.vcf"
       outfile_bgzip_command: 'bgzip hg38_clinvar_reformat_-2017-01-04-.vcf'
       outfile_tabix_command: 'tabix -p vcf hg38_clinvar_reformat_-2017-01-04-.vcf.gz'
+      url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/
+    20170501:
+      file: clinvar_20170501.vcf.gz
+      file_check: clinvar_20170501.vcf.gz.md5
+      file_index: clinvar_20170501.vcf.gz.tbi
+      outfile: hg38_clinvar_-2017-05-01-.vcf.gz
+      outfile_check: hg38_clinvar_-2017-05-01-.vcf.gz.md5
+      outfile_index: hg38_clinvar_-2017-05-01-.vcf.gz.tbi
+      outfile_check_method: md5sum
+      outfile_decompress: gzip
+      outfile_reformat_command: "perl -n -a -e ' if($_=~/^#/) { print $_;} else { $_ =~ s/^(MT)/M/g; print $_;}' hg38_clinvar_-2017-05-01-.vcf | perl -n -a -e ' if($_=~/^#/) { print $_; } else {$_ =~ s/^(.+)/chr$1/g; print $_; }' > hg38_clinvar_reformat_-2017-05-01-.vcf"
+      outfile_bgzip_command: 'bgzip hg38_clinvar_reformat_-2017-05-01-.vcf'
+      outfile_tabix_command: 'tabix -p vcf hg38_clinvar_reformat_-2017-05-01-.vcf.gz'
       url_prefix: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/
 1000g_omni:
   grch37:

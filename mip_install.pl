@@ -92,10 +92,10 @@ $parameter{bioconda}{fastqc} = "0.11.5";
 $parameter{bioconda}{cramtools} = "3.0.b47";
 $parameter{bioconda}{samtools} = "1.4.1";
 $parameter{bioconda}{bcftools} = "1.4.1";
-$parameter{bioconda}{snpeff} = "4.3";
-$parameter{bioconda_snpeff_patch} = "-3";  #For correct softlinking in share and bin in conda env
-$parameter{bioconda}{snpsift} = "4.3";
-$parameter{bioconda_snpsift_patch} = "-2";  #For correct softlinking in share and bin in conda env
+$parameter{bioconda}{snpeff} = "4.3.1";
+$parameter{bioconda_snpeff_patch} = "m-0";  #For correct softlinking in share and bin in conda env
+$parameter{bioconda}{snpsift} = "4.3.1";
+$parameter{bioconda_snpsift_patch} = "m-0";  #For correct softlinking in share and bin in conda env
 $parameter{bioconda}{picard} = "2.9.2";
 $parameter{bioconda_picard_patch} = "-0";  #For correct softlinking in share and bin in conda env
 $parameter{bioconda}{htslib} = "1.4.1";
@@ -144,7 +144,7 @@ $parameter{svdb} = "1.0.5";
 ## Define default parameters
 my %array_parameter;
 $array_parameter{vep_assemblies}{default} = ["GRCh37", "GRCh38"];
-$array_parameter{snpeff_genome_versions}{default} = ["GRCh37.75", "GRCh38.82"];  #GRCh38.82 but check current on the snpEff sourceForge
+$array_parameter{snpeff_genome_versions}{default} = ["GRCh37.75", "GRCh38.86"];  #GRCh38.82 but check current on the snpEff sourceForge
 $array_parameter{reference_genome_versions}{default} = ["GRCh37", "hg38"];
 $array_parameter{perl_modules}{default} = ["Modern::Perl",  #MIP
 					   "IPC::System::Simple",  #MIP

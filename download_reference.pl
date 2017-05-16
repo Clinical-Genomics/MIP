@@ -18,6 +18,9 @@ use IO::Handle;
 use Params::Check qw[check allow last_error];
 $Params::Check::PRESERVE_CASE = 1;  #Do not convert to lower case
 
+## Third party module(s)
+use List::Util qw(any);
+
 ##MIPs lib/
 use lib catdir($Bin, "lib");
 use Check::Check_modules qw(check_modules);
@@ -74,7 +77,7 @@ my $download_reference_version = "0.0.1";
 
 ###User Options
 GetOptions('rd|reference_dir:s' => \$parameter{reference_dir},  #MIPs reference directory
-	   'r|reference:s' => \%{ $parameter{reference} },
+	   'r|reference:s' => \%{ $parameter{cmd_reference} },
 	   'rg|reference_genome_versions:s' => \@{ $parameter{reference_genome_versions} },
 	   'l|log_file:s' => \$parameter{log_file},
 	   'h|help' => sub { print STDOUT $USAGE, "\n"; exit;},  #Display help text
@@ -88,6 +91,49 @@ GetOptions('rd|reference_dir:s' => \$parameter{reference_dir},  #MIPs reference 
 my $log = MIP_log::Log4perl::initiate_logger({file_path_ref => \$parameter{log_file},
 					      log_name => "Download_reference",
 					     });
+check_user_reference({cmd_reference_ref => \%{ $parameter{cmd_reference} },
+		      reference_ref => \% { $parameter{reference} },
+		     });
+
+sub check_user_reference {
+
+##check_user_reference
+
+##Function : Check that the user supplied reference id and version
+##Returns  : ""
+##Arguments: $cmd_reference_ref, $reference_ref,
+##         : $cmd_reference_ref => User supplied reference id and version
+##         : $reference_ref     => Defined reference id and version
+
+    my ($arg_href) = @_;
+
+    ## Flatten argument(s)
+    my $cmd_reference_ref;
+    my $reference_ref;
+
+    my $tmpl = { 
+	cmd_reference_ref => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$cmd_reference_ref},
+	reference_ref => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$reference_ref},
+    };
+     
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    while (my ($reference_id, $version) = each(%$cmd_reference_ref) ) {
+
+	if(! exists($reference_ref->{$reference_id})) {
+
+	    $log->fatal("Cannot find reference key:".$reference_id, "\n");
+	    exit;
+	}
+	elsif (! any {$_ eq $version} @{ $reference_ref->{$reference_id} }) {  #If element is part of array
+
+	    $log->fatal("Cannot find version key: ".$version." reference key:".$reference_id, "\n");
+	    exit;
+	}
+    }
+    
+}
+
 
 ## Set default for array parameters
 Script::Utils::set_default_array_parameters({parameter_href => \%parameter,
@@ -168,9 +214,21 @@ sub references {
 
   REFERENCE:
     while (my ($reference_id, $versions_ref) = each(%{ $parameter_href->{reference} }) ) {
+
+	## Remodel depending on if "--reference" was used or not as the user info is stored as a scalar per reference_id while yaml is stored as arrays per reference_id
+
+	my @reference_versions;
+	if (ref($versions_ref) eq "ARRAY") {
+
+	    @reference_versions = @$versions_ref;
+	}
+	else {
+
+	    push (@reference_versions, $versions_ref);
+	}
 	
       REFERENCE_VERSION:
-	foreach my $reference_version (@$versions_ref) {
+	foreach my $reference_version (@reference_versions) {
 
 	  GENOME_VERSION:
 	    foreach my $genome_version (@{ $parameter_href->{reference_genome_versions} })    {
@@ -189,7 +247,7 @@ sub references {
 		    if (! -f $outfile_path) {
 		    
 			$log->warn("Cannot find reference file:".$outfile_path, "\n");
-			$log->warn("Will try to download reference", "\n");
+			$log->warn("Will try to download: ".$reference_id." version: ".$reference_version, "\n");
 
 			## Potential download files
 			my @file_keys = ("file",
@@ -326,6 +384,7 @@ sub download {
 	      verbose => $verbose,
 	      outfile_path => $outfile_path,
 	     });
+	say $FILEHANDLE "\n";
     }
 }
 
