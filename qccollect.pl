@@ -69,7 +69,7 @@ my (%qc_data, %evaluate_metric);
 my %qc_header; #Save header(s) in each outfile
 my %qc_program_data; #Save data in each outfile
 
-my $qccollect_version = "2.0.2";
+my $qccollect_version = "2.0.3";
 
 ###User Options
 GetOptions('si|sample_info_file:s' => \$sample_info_file,
@@ -1112,7 +1112,7 @@ sub regexp_to_yaml {
 
     $regexp{variantevalexome} = $regexp{variantevalall};
 
-    $regexp{genmod}{version} = q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect Genmod version
+    $regexp{genmod}{version} = q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+|\d+.\d+)/) {print $1;last;}' ?; #Collect Genmod version
 
     $regexp{snpeff}{version} = q?perl -nae 'if($_=~/##SnpSiftVersion=\"(.+),/) {my $ret=$1; $ret=~s/\s/_/g;print $ret;last;}' ?; #Collect SnpEff version
 
@@ -1174,7 +1174,7 @@ sub regexp_to_yaml {
 
     $regexp{sv_vcfparser}{version} = q?perl -nae 'if($_=~/##Software=<ID=vcfParser.pl,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect sv_vcfparser version
 
-    $regexp{sv_genmod}{version} = q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect SVGenmod version
+    $regexp{sv_genmod}{version} = q?perl -nae 'if($_=~/##Software=<ID=genmod,Version=(\d+.\d+.\d+|\d+.\d+)/) {print $1;last;}' ?; #Collect SVGenmod version
 
     $regexp{vcftools}{version} = q?perl -nae 'if($_=~/VCFtools\s-\s(\d+.\d+.\d+)/) {print $1;last;}' ?; #Collect VCFTools version
 
