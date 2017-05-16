@@ -107,6 +107,7 @@ $parameter{bioconda}{delly} = "0.7.7";
 $parameter{bioconda}{manta} = "1.1.0";
 $parameter{bioconda_manta_patch} = "-0";
 $parameter{bioconda}{multiqc} = "0.9.1a0";
+$parameter{bioconda}{peddy} = "0.2.9";
 $parameter{bioconda}{plink2} = "1.90b3.35";
 $parameter{bioconda}{vcfanno} = "0.1.0";
 $parameter{bioconda}{gcc} = "4.8.5";  #Required for CNVnator
@@ -788,6 +789,21 @@ sub install_bioconda_modules {
 			       binary => q?configManta.py?,
 			      });
 	}
+    }
+
+    ## Special case to remove perl installation after fastqc install
+    if (exists($parameter_href->{bioconda}{fastqc})) {
+
+	say $FILEHANDLE "## Special case to remove perl installation after fastqc install";
+	print $FILEHANDLE "conda uninstall ";
+	if ($parameter_href->{quiet}) {
+	    
+	    print $FILEHANDLE "--quiet ";  #Do not display progress bar
+	}
+	
+	print $FILEHANDLE "-n ".$parameter_href->{conda_environment}." ";
+	print $FILEHANDLE "-y ";
+	say $FILEHANDLE "perl", "\n";
     }
 }
 

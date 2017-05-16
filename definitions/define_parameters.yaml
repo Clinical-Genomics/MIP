@@ -263,6 +263,7 @@ module_time:
     psnpeff: 10
     prankvariant: 10
     pendvariantannotationblock: 2
+    ppeddy: 1
     pplink: 1
     pvariant_integrity: 1
     pevaluation: 1
@@ -310,6 +311,7 @@ module_core_number:
     psamtools_mpileup: 16
     pgatk_combinevariantcallsets: 1
     pendvariantannotationblock: 1
+    ppeddy: 4
     pplink: 1
     pvariant_integrity: 1
     pevaluation: 1
@@ -2012,7 +2014,15 @@ gatk_logging_level:
   data_type: SCALAR
   default: INFO
   type: program_argument
-## SampleCheck
+## Case_check
+ppeddy:
+  associated_program:
+   - mip
+  chain: PEDDYQC
+  data_type: SCALAR
+  default: 1
+  file_tag: nofile_tag
+  type: program
 pplink:
   associated_program:
    - mip

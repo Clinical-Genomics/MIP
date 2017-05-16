@@ -315,6 +315,7 @@ BEGIN {
                  -evabrgf/--endvariantannotationblock_remove_genes_file Remove variants in hgnc_ids (defaults to "")
 
                ###Utility
+               -pped/--ppeddy QC for familial-relationships and sexes (defaults to "1" (=yes) )
                -pplink/--pplink QC for samples gender and relationship (defaults to "1" (=yes) )
                -pvai/--pvariant_integrity QC for samples relationship (defaults to "1" (=yes) )
                -pevl/--pevaluation Compare concordance with NIST data set (defaults to "0" (=no) )
@@ -624,6 +625,7 @@ GetOptions('ifd|infile_dirs:s' => \%{ $parameter{infile_dirs}{value} },  #Hash i
 	   'pevab|pendvariantannotationblock=n' => \$parameter{pendvariantannotationblock}{value},
 	   'evabrgf|endvariantannotationblock_remove_genes_file:s' => \$parameter{endvariantannotationblock_remove_genes_file}{value},
 	   'ravbf|rankvariant_binary_file=n' => \$parameter{rankvariant_binary_file}{value},  #Produce compressed vcfs
+	   'pped|ppeddy=n' => \$parameter{ppeddy}{value},
 	   'pplink|pplink=n' => \$parameter{pplink}{value},  #QC for samples gender and relationship
 	   'pvai|pvariant_integrity=n' => \$parameter{pvariant_integrity}{value},  #QC for samples relationship
 	   'pevl|pevaluation=n' => \$parameter{pevaluation}{value},  #Compare concordance with NIST data set
@@ -1925,6 +1927,21 @@ if ($active_parameter{pgatk_combinevariantcallsets} > 0) {  #Run gatk_combinevar
 				 job_id_href => \%job_id,
 				 program_name => "gatk_combinevariantcallsets",
 				});
+}
+
+
+if ($active_parameter{ppeddy} > 0) {  #Run plink. Done per family
+
+    $log->info("[Peddy]\n");
+
+    mpeddy({parameter_href => \%parameter,
+	    active_parameter_href => \%active_parameter,
+	    sample_info_href => \%sample_info,
+	    file_info_href => \%file_info,
+	    infile_lane_no_ending_href => \%infile_lane_no_ending,
+	    job_id_href => \%job_id,
+	    program_name => "peddy",
+	   });
 }
 
 
@@ -5902,6 +5919,164 @@ sub gatk_phasebytransmission {
 		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
 		    dependencies => "case_dependency",
 		    path => $parameter_href->{"p".$program_name}{chain},
+		    sbatch_file_name => $file_name
+		   });
+    }
+}
+
+
+sub mpeddy {
+
+##mpeddy
+
+##Function : Compares familial-relationships and sexes.
+##Returns  : ""
+##Arguments: $parameter_href, $active_parameter_href, $sample_info_href, $file_info_href, $infile_lane_no_ending_href, $job_id_href, $program_name, family_id_ref, $temp_directory_ref, $outaligner_dir_ref, $call_type
+##         : $parameter_href             => The parameter hash {REF}
+##         : $active_parameter_href      => The active parameters for this analysis hash {REF}
+##         : $sample_info_href           => Info on samples and family hash {REF}
+##         : $file_info_href             => The file_info hash {REF}
+##         : $infile_lane_no_ending_href => The infile(s) without the ".ending" {REF}
+##         : $job_id_href                => The job_id hash {REF}
+##         : $program_name               => The program name
+##         : $family_id_ref              => The family_id {REF}
+##         : $temp_directory_ref         => The temporary directory {REF}
+##         : $outaligner_dir_ref         => The outaligner_dir used in the analysis {REF}
+##         : $call_type                  => The variant call type
+
+    my ($arg_href) = @_;
+
+    ## Default(s)
+    my $family_id_ref;
+    my $temp_directory_ref;
+    my $outaligner_dir_ref;
+    my $call_type;
+
+    ## Flatten argument(s)
+    my $parameter_href;
+    my $active_parameter_href;
+    my $sample_info_href;
+    my $file_info_href;
+    my $infile_lane_no_ending_href;
+    my $job_id_href;
+    my $program_name;
+
+    my $tmpl = {
+	parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$parameter_href},
+	active_parameter_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$active_parameter_href},
+	sample_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$sample_info_href},
+	file_info_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$file_info_href},
+	infile_lane_no_ending_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$infile_lane_no_ending_href},
+	job_id_href => { required => 1, defined => 1, default => {}, strict_type => 1, store => \$job_id_href},
+	program_name => { required => 1, defined => 1, strict_type => 1, store => \$program_name},
+	family_id_ref => { default => \$arg_href->{active_parameter_href}{family_id},
+			   strict_type => 1, store => \$family_id_ref},
+	temp_directory_ref => { default => \$arg_href->{active_parameter_href}{temp_directory},
+				strict_type => 1, store => \$temp_directory_ref},
+	outaligner_dir_ref => { default => \$arg_href->{active_parameter_href}{outaligner_dir},
+				strict_type => 1, store => \$outaligner_dir_ref},
+	call_type => { default => "BOTH", strict_type => 1, store => \$call_type},
+    };
+
+    check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
+
+    use Program::Variantcalling::Peddy qw(peddy);
+
+    my $jobid_chain = $parameter_href->{"p".$program_name}{chain};
+
+    ## Filehandles
+    my $FILEHANDLE = IO::Handle->new();  #Create anonymous filehandle
+
+    ## Creates program directories (info & programData & programScript), program script filenames and writes sbatch header
+    my ($file_name, $program_info_path) = program_prerequisites({active_parameter_href => $active_parameter_href,
+								 job_id_href => $job_id_href,
+								 FILEHANDLE => $FILEHANDLE,
+								 directory_id => $$family_id_ref,
+								 program_name => $program_name,
+								 program_directory => catfile(lc($$outaligner_dir_ref), "casecheck", lc($program_name)),
+								 call_type => $call_type,
+								 core_number => $active_parameter_href->{module_core_number}{"p".$program_name},
+								 process_time => $active_parameter_href->{module_time}{"p".$program_name},
+								});
+
+    my ($volume, $directory, $program_info_file) = File::Spec->splitpath($program_info_path);  #Split to enable submission to &sample_info_qc later
+    my $stderr_file = $program_info_file.".stderr.txt";  #To enable submission to &sample_info_qc later
+    my $stdout_file = $program_info_file.".stdout.txt";  #To enable submission to &sample_info_qc later
+
+    ## Assign Directories
+    my $infamily_directory = catdir($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref);
+    my $outfamily_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref, $$outaligner_dir_ref, "casecheck", lc($program_name));
+    my $outfamily_file_directory = catfile($active_parameter_href->{outdata_dir}, $$family_id_ref);
+
+    ## Assign file_tags
+    my $infile_tag = $file_info_href->{$$family_id_ref}{pgatk_combinevariantcallsets}{file_tag};
+    my $infile_no_ending = $$family_id_ref.$infile_tag.$call_type;
+    my $file_path_no_ending = catfile($$temp_directory_ref, $infile_no_ending);
+
+    ### Assign suffix
+    ## Return the current infile vcf compression suffix for this jobid chain_vcf_data
+    my $infile_suffix = get_file_suffix({parameter_href => $parameter_href,
+					 suffix_key => "variant_file_suffix",
+					 jobid_chain => $parameter_href->{pgatk_combinevariantcallsets}{chain},
+					});
+
+    my $suffix = ".vcf.gz";
+
+    my $family_file = catfile($outfamily_file_directory, $$family_id_ref.".fam");
+    ## Create .fam file to be used in variant calling analyses
+    create_fam_file({parameter_href => $parameter_href,
+		     active_parameter_href => $active_parameter_href,
+		     sample_info_href => $sample_info_href,
+		     FILEHANDLE => $FILEHANDLE,
+		     fam_file_path => $family_file,
+		    });
+
+    ## Copy file(s) to temporary directory
+    say $FILEHANDLE "## Copy file(s) to temporary directory";
+    migrate_file({FILEHANDLE => $FILEHANDLE,
+		  infile_path => catfile($infamily_directory, $infile_no_ending.$infile_suffix."*"),
+		  outfile_path => $$temp_directory_ref
+		 });
+    say $FILEHANDLE "wait", "\n";
+
+    ## Reformat variant calling file and index
+    view_vcf({infile_path => $file_path_no_ending.$infile_suffix,
+	      outfile_path_no_ending => $file_path_no_ending,
+	      output_type => "z",
+	      index => 1,
+	      index_type => "tbi",
+	      FILEHANDLE => $FILEHANDLE,
+	     });
+
+    ## peddy
+    peddy({infile_path => $file_path_no_ending.$suffix,
+	   outfile_prefix_path => catfile($outfamily_directory, $$family_id_ref),
+	   family_file_path => $family_file,
+	   FILEHANDLE => $FILEHANDLE,
+	  });
+    say $FILEHANDLE "\n";
+    
+    if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
+
+	## Collect QC metadata info for later use
+	sample_info_qc({sample_info_href => $sample_info_href,
+			program_name => "peddy",
+			outdirectory => $outfamily_directory,
+			outfile_ending => $$family_id_ref.".csv",
+			outdata_type => "infile_dependent"
+		       });
+    }
+    
+    close($FILEHANDLE);
+
+    if ( ($active_parameter_href->{"p".$program_name} == 1) && (! $active_parameter_href->{dry_run_all}) ) {
+
+	submit_job({active_parameter_href => $active_parameter_href,
+		    sample_info_href => $sample_info_href,
+		    job_id_href => $job_id_href,
+		    infile_lane_no_ending_href => $infile_lane_no_ending_href,
+		    dependencies => "case_dependency_dead_end",
+		    path => $jobid_chain,
 		    sbatch_file_name => $file_name
 		   });
     }
@@ -25414,18 +25589,20 @@ sub view_vcf {
 
 ##Function : Reformat variant calling file and index.
 ##Returns  : ""
-##Arguments: $infile_path, $FILEHANDLE, $outfile_path_no_ending, $output_type, $index
+##Arguments: $infile_path, $FILEHANDLE, $outfile_path_no_ending, $output_type, $index, $index_type
 ##         : $infile_path            => Path to infile to compress and index
 ##         : $FILEHANDLE             => SBATCH script FILEHANDLE to print to
 ##         : $outfile_path_no_ending => Out file path no file_ending {Optional}
 ##         : $output_type            => 'b' compressed BCF; 'u' uncompressed BCF; 'z' compressed VCF; 'v' uncompressed VCF [v]
 ##         : $index                  => Generate index of reformated file
+##         : $index_type             => Type of index
 
     my ($arg_href) = @_;
 
     ## Default(s)
     my $output_type;
     my $index;
+    my $index_type;
 
     ## Flatten argument(s)
     my $infile_path;
@@ -25442,6 +25619,9 @@ sub view_vcf {
 	index => { default => 1,
 		   allow => [undef, 0, 1],
 		   strict_type => 1, store => \$index },
+	index_type => { default => "csi",
+			allow => [undef, "csi", "tbi"],
+			strict_type => 1, store => \$index_type },
     };
 
     check($tmpl, $arg_href, 1) or die qw[Could not parse arguments!];
@@ -25472,7 +25652,7 @@ sub view_vcf {
 
 	say $FILEHANDLE "## Index";
 	Program::Variantcalling::Bcftools::index({infile_path => $outfile_path,
-						  output_type => "csi",
+						  output_type => $index_type,
 						  FILEHANDLE => $FILEHANDLE,
 						 });
 	say $FILEHANDLE "\n";
