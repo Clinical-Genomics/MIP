@@ -315,7 +315,7 @@ BEGIN {
                  -evabrgf/--endvariantannotationblock_remove_genes_file Remove variants in hgnc_ids (defaults to "")
 
                ###Utility
-               -pped/--ppeddy QC for familial-relationships and sexes (defaults to "1" (=yes) )
+               -pped/--ppeddy QC for familial-relationships and sexes (defaults to "0" (=yes) )
                -pplink/--pplink QC for samples gender and relationship (defaults to "1" (=yes) )
                -pvai/--pvariant_integrity QC for samples relationship (defaults to "1" (=yes) )
                -pevl/--pevaluation Compare concordance with NIST data set (defaults to "0" (=no) )

@@ -720,7 +720,6 @@ sub install_bioconda_modules {
 
 	    ## Define binaries
 	    my @snpeff_binaries = ("snpEff.jar",
-				   "SnpSift.jar",
 				   "snpEff.config",
 		);
 
